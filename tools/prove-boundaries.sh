@@ -68,6 +68,23 @@ prove domain-free-of-frameworks \
 @Injectable()
 export class Violation {}"
 
+prove api-not-to-contracts-package \
+  "$API/__boundary_fixture.ts" \
+  "export * from '../../../packages/contracts/src/index';"
+
+# A cycle needs both halves present. The partner is written here and registered for cleanup;
+# prove() writes the other half and does the cruise.
+PARTNER="$API/modules/platform/audit/__boundary_fixture_b.ts"
+mkdir -p "$(dirname "$PARTNER")"
+printf '%s\n' "import { a } from './__boundary_fixture_a';
+export const b = a;" > "$PARTNER"
+FIXTURES+=("$PARTNER")
+
+prove no-circular \
+  "$API/modules/platform/audit/__boundary_fixture_a.ts" \
+  "import { b } from './__boundary_fixture_b';
+export const a = b;"
+
 if [ "$fail" -ne 0 ]; then
   echo
   echo 'At least one boundary rule is inert. Fix the rule, not the fixture.'

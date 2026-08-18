@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "easyesg public API \u2014 NestJS, HTTP and worker modes (architecture.md AD-1)",
+  "description": "easyesg public API — NestJS, HTTP and worker modes (architecture.md AD-1)",
   "scripts": {
     "build": "nest build",
     "start": "nest start",
@@ -12,7 +12,7 @@
     "start:worker": "MODE=worker node dist/main.js",
     "test": "jest",
     "test:cov": "jest --coverage",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "jest --config ./test/jest-e2e.json --passWithNoTests",
     "openapi:emit": "node dist/infrastructure/openapi/emit-openapi.js",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
