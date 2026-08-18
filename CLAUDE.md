@@ -207,6 +207,21 @@ all resolve paths themselves, and workspace symlinks resolve to real store paths
 deliberate cross-context import actually fails CI — a rule that silently matches nothing
 looks identical to a rule that passes.
 
+## Local environment
+
+**The Compose stack is the dev environment** (architecture.md §12.5.10). A developer host needs
+**Node (fnm-managed, per `.node-version`), pnpm, Docker and git** — and nothing else. PostgreSQL,
+Redis and the worker's document toolchain (Chromium, qpdf, veraPDF, LibreOffice) are Compose
+services; reach their clients through the containers, never through a host install:
+
+```bash
+docker compose exec postgres psql -U esg_app esg
+```
+
+Installing a service or its client on the host reintroduces exactly what this avoids — a client
+on a different upgrade cycle from its server, a second PostgreSQL able to shadow the container on
+5432, and a local veraPDF that is not the validator CI gates on.
+
 ## Design principles (SOLID)
 
 Code is expected to follow SOLID. Each letter also has a structural home in this project,

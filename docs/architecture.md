@@ -1575,6 +1575,18 @@ Three separate questions hide inside "does Redis need a volume", and they have d
 
 **One rehearsal per year must restore to a host outside Hetzner**, from Scaleway using only the object store and pgBackRest. That is the rehearsal that actually exercises NFR-72's independence from the hosting provider, and it is what closes the substance of `non_functional_requirements.md` OQ-14 — a six-year statutory archive asserted to survive loss of the hosting provider, with, until then, no evidence that it does.
 
+#### 12.5.10 The local development environment is the Compose stack
+
+**Decided 18 August 2026. No service and no service client is installed on a developer machine.** PostgreSQL, Redis and the worker's document toolchain all run as Compose services locally, the same way they run in staging and production. A developer's host needs Node, pnpm, Docker and git — nothing else.
+
+This is not only convenience. Three things follow from it that a host install would break:
+
+- **Client and server versions cannot drift.** `docker compose exec postgres psql` is the client shipped inside the pinned PostgreSQL 18 image, talking to that same server. A Homebrew `psql` is a separate version on its own upgrade cycle, and the failure it produces is subtle rather than loud.
+- **A host PostgreSQL can shadow the container.** A second server listening on 5432 means migrations apply, the application connects, and the two are different databases. This is the single most expensive local-environment failure available here, and not installing a server is the only reliable way to avoid it.
+- **The document toolchain must be verified at the CI version, not the laptop version.** NFR-82's PDF/A-2a and PDF/UA-1 conformance is machine-validated by veraPDF, NFR-20's Excel check by headless LibreOffice, and both are gates. A Homebrew veraPDF on a Mac is a *different* validator from the one in the worker image; a local pass that CI rejects is worse than no local check, because it is trusted. **qpdf, veraPDF, LibreOffice and Chromium therefore live in the worker image and are exercised through it**, locally and in CI alike.
+
+The consequence for §12.5.9's Chromium controls is that they hold everywhere by construction: there is one place the renderer is installed, so the assert-at-build check and the veraPDF re-validation on a Playwright bump cover local runs too.
+
 #### 12.5.9 Chromium pinning and upgrade verification
 
 Chromium is **not separately pinnable** — it is derived from the Playwright pin. Playwright **1.62.1 ships Chromium 151.0.7922.34** (verified 18 Aug 2026). Three controls, which together are the upgrade-verification procedure OQ-27 records as missing (R-9, T-13):
