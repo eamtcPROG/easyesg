@@ -1,0 +1,252 @@
+# easyesg — ESG Platform (MVP)
+
+## What this is
+
+Multi-tenant SaaS letting Moldovan SMEs produce a **VSME Basic Module (B1–B11)** sustainability
+report in RO / EN / RU, calculate Scope 1 + location-based Scope 2 emissions (feeds B3), and export
+to PDF and the official EFRAG Excel Digital Template — plus a self-serve billing/invoicing stack with
+Moldovan fiscal compliance (e-Factura mandate, 1 Oct 2026).
+
+Scale envelope: ≤2,000 orgs · ≤3,000 users · ≤2,500 reports/year · ~150 peak concurrent · <100 GB.
+Peak season is April–May (statutory filing window).
+
+## Current state
+
+**Specification only — no code yet.** The repo contains `docs/` and nothing else. Implementation has
+not started; there is no build, test or run command.
+
+## The document set (read before deciding anything)
+
+| Doc | Owns | IDs |
+| --- | --- | --- |
+| [problem_overview.md](docs/problem_overview.md) | Problem framing, scope boundary, closed decisions | — |
+| [actors.md](docs/actors.md) | Actors and permissions | CA, RC, OA, PA, BO, SYS |
+| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…176, D-1…14 |
+| [functional_requirements.md](docs/functional_requirements.md) | What it does | FR-1…173 |
+| [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93 (+94…105 deferred) |
+| [architecture.md](docs/architecture.md) | How it's built | AD-1…14, DR-1…11 |
+| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…134, S-01…28, A-01…18 |
+
+**Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
+column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.
+
+## Architectural invariants (violating these is expensive to undo)
+
+- **Billing and compliance core are separate bounded contexts** — separate PG schemas, no cross-schema
+  FKs, no shared transaction. With `BILLING_ENABLED=false`, UC-17…48 must still pass. (DR-1, AD-1)
+- **Tenancy is enforced by PostgreSQL RLS**, not by filters at call sites. (DR-5, AD-2)
+- **The standard is data, not code** — taxonomy, thresholds, factor sets, validation rules,
+  notification templates and plans are versioned config changed without redeploy. (DR-3, AD-4)
+- **Version is a data dimension** — reports/calcs/exports pin their template + taxonomy version. (DR-4)
+- **Audit, ledger and metering are append-only**, enforced by DB privileges. (DR-6)
+- **Fiscal documents are immutable and gaplessly numbered** per series per year. (DR-8, AD-7)
+- **Nothing long-running in the request tier** — queue into a separate worker. (DR-10, AD-10)
+- **One public API, no privileged back door** — both front ends are ordinary clients. (DR-11, AD-9)
+
+## Planned stack and layout (architecture.md §10.7, §12)
+
+pnpm monorepo · NestJS (api + worker) · Next.js (tenant web) · React+Vite (admin) · PostgreSQL 18
+with RLS · Redis + BullMQ · TypeORM 1.1 (`synchronize` off, SQL migrations) · Docker Compose on
+EU/EEA VMs · Caddy edge · Playwright/Chromium for PDF.
+
+```bash
+apps/{api,web,admin}   packages/{contracts,vsme,validation,ui,xlsx-patch,i18n}
+config/{seed,efrag}    infra/{compose,caddy,postgres,ci}    docs/{adr,runbooks}
+```
+
+Build order (architecture.md §15.4): foundation → identity → reporting core → calculator/validation →
+export *(free-tier pilot milestone)* → notifications → billing (e-Factura in the first billing
+sprint) → operations.
+
+## Package versions — use current stable
+
+**Default to the newest stable release.** When introducing a dependency, look up what is
+current (Context7 — see "Looking things up") and pin that. Never scaffold from memory:
+training data lags, so a remembered version is routinely a major behind, and the resulting
+code is written against an API that has since changed.
+
+**Stable means stable** — no alpha, beta, RC or canary, and no Node Current channel.
+NestJS 12 being in alpha is why the pin is 11.
+
+**Existing pins in architecture.md §12 govern.** That table is the build contract, verified
+on a date and reviewed quarterly with the regulatory watch (NFR-12). Bumping a pinned
+version is a spec change with a recorded rationale, not something done in passing while
+fixing something else.
+
+Three standing exceptions — deliberate, not oversights:
+
+- **TypeScript stays on 6.x** (AD-13). TS 7 has no compiler API, which breaks `nest build`,
+  ts-jest and type-aware ESLint.
+- **Node tracks Active or Maintenance LTS, never Current** — per Node's own production
+  guidance.
+- **Pre-1.0 packages are pinned exactly** (e.g. the OpenTelemetry SDK); a minor bump there
+  can be breaking.
+
+When you do set or move a pin, record the version and the date you verified it, so the next
+review knows how old the check is.
+
+## pnpm setup (do this at foundation stage)
+
+pnpm is fixed by architecture.md §10.7 and §12 — changing it is an amendment to those
+sections, not a preference. Its strictness matches P-7 and the `contracts/` boundary
+(you may only use what you declared), but four things must be configured up front.
+
+- **Dependency build scripts are blocked by default** (pnpm 10+). Playwright's browser
+  download is a `postinstall`, so install "succeeds" and the PDF export fails later at
+  runtime. In `pnpm-workspace.yaml` set `strictDepBuilds: true` plus an explicit
+  `allowBuilds:` map, so a skipped build fails the install instead of passing silently.
+  In pnpm 11 `allowBuilds` **replaces** the older `onlyBuiltDependencies` — older
+  answers online still show the legacy key.
+- **Install Chromium explicitly**, in the Dockerfile and in CI:
+  `pnpm exec playwright install --with-deps chromium`. Do not rely on `postinstall`.
+- **Docker: never `COPY` a pnpm `node_modules`** — it is symlinks into a content store.
+  Use `pnpm deploy --filter=<app> --prod /prod/<app>`, one per Compose service, each into
+  its own build stage. `apps/web` needs extra care: Next.js `output: 'standalone'` does its
+  own file tracing and must be proven against the symlink layout on the first Docker build.
+- **Pin the version** with `packageManager` in the root `package.json` so CI, Docker and
+  laptops agree.
+
+Escape hatches, and when they are a red flag:
+
+- `nodeLinker: hoisted` restores npm-style flat resolution. It also restores phantom
+  dependencies — the coupling DR-1/AD-1 exist to prevent. Per-package if ever; never
+  globally.
+- `strictPeerDependencies` defaults to `false`, so peer mismatches warn rather than fail.
+  `peerDependencyRules.allowedVersions` silences a specific pair — justify each entry,
+  never blanket-apply.
+
+**Verify the boundary rules bite.** dependency-cruiser, ts-jest and TypeORM entity globs
+all resolve paths themselves, and workspace symlinks resolve to real store paths. Prove a
+deliberate cross-context import actually fails CI — a rule that silently matches nothing
+looks identical to a rule that passes.
+
+## Design principles (SOLID)
+
+Code is expected to follow SOLID. Each letter also has a structural home in this project,
+so apply the principle as the architecture already states it:
+
+- **S — Single Responsibility Principle.** A class should do only one job, meaning it has
+  only one reason to change. Here the unit is the bounded context and the `modules/*`
+  boundary (architecture.md §5.2): a module reaching across a context boundary has taken
+  on a second responsibility.
+- **O — Open/Closed Principle.** Code should be open for adding new features but closed
+  for changing old code. Here extension happens in **data, not code** — taxonomy elements,
+  thresholds, factor sets, validation rules, plans and templates are versioned
+  configuration interpreted at runtime (P-2, AD-4). Adding one must need no code change.
+- **L — Liskov Substitution Principle.** Subtypes must work properly wherever their base
+  type is expected. Here this binds to adapters: swapping one provider for another behind
+  a port must not change caller behaviour, error and retry semantics included.
+- **I — Interface Segregation Principle.** Small, specific interfaces beat one big general
+  one. Ports in `contracts/` — the only cross-context surface — stay narrow and
+  capability-shaped; a consumer must not depend on operations it never calls.
+- **D — Dependency Inversion Principle.** High- and low-level code both depend on
+  abstractions, not on concrete details. Here: depend on ports, never on a concrete
+  provider — no vendor type appears outside its adapter (P-7).
+
+Enforced by the CI boundary rules (dependency-cruiser) rather than by review alone — if a
+dependency direction needs an exception, the architecture is wrong, not the rule.
+
+## Clean architecture conventions
+
+Layer inward: **domain → application (use cases) → interface adapters → frameworks**.
+
+- **The dependency rule is absolute: dependencies point inward only.** Domain and use-case
+  code must not import NestJS, TypeORM, Express, Redis, BullMQ or any HTTP/ORM type. If a
+  domain file needs a decorator or a repository class to compile, the layering is wrong.
+- **Use cases are first-class.** UC-01…176 are named in `use_cases.md`; application services
+  should read as those use cases, orchestrating domain objects and ports — not as thin
+  pass-throughs from controller to repository.
+- **Frameworks live at the edge and are replaceable details.** Controllers, TypeORM
+  entities/repositories, queue consumers, renderers and provider SDKs are adapters. The
+  ORM entity is a persistence concern, not the domain model, and must not leak outward
+  through the API surface — cross boundaries with DTOs from `contracts/`.
+- **Business rules do not know about delivery.** The same use case must be reachable from
+  HTTP, a queued job or a test with no branching on which one is calling.
+- **Testability is the check.** Domain and use-case tests must run with no database, no
+  broker and no HTTP. Needing them is the signal that a dependency points the wrong way.
+
+**Where this project deliberately departs.** Some guarantees are placed *below* the
+application on purpose (P-4): RLS tenant isolation, gapless fiscal numbering and
+append-only ledgers are enforced by PostgreSQL. Do not abstract these into the domain in
+the name of a persistence-agnostic core — they are load-bearing exactly because the
+database, not application discipline, enforces them.
+
+## Project skills
+
+Shared with the other NestJS/Next.js projects. Real files live in `.agents/skills/`;
+`.claude/skills/` symlinks to them, so both Claude Code and other agent tooling see them.
+
+- **nestjs-best-practices** — modules, DI, security, performance. Apply when writing or
+  reviewing anything in `apps/api`.
+- **vercel-react-best-practices** — React/Next.js performance rules. Apply in `apps/web`.
+- **vercel-composition-patterns** — compound components, render props, React 19 APIs.
+  Apply in `packages/ui` and any component API that is growing boolean props.
+
+Where a skill and this project's architecture disagree, **the architecture wins** — these
+are general-purpose guides, not written against `architecture.md`.
+
+**Stripe skills are deliberately not installed.** Stripe does not serve Moldova-resident
+businesses; that fact is why the platform owns its own billing stack and puts four payment
+rails behind one adapter (D-7, D-8). Stripe guidance would misfire on exactly the work it
+looks relevant to.
+
+## Reference implementations
+
+Two sibling projects run the same stack (NestJS + Next.js/React + TypeORM + Postgres +
+BullMQ) and are further along. Read them for **a working shape**, not for structure to copy
+— easyesg's architecture differs where it differs on purpose (see the caveats below).
+
+| Project | Read it for |
+| --- | --- |
+| `/Users/mic/repos/personal/iftamaster` | The most mature patterns. `documentation/technical-design/api-design.md` is the **HTTP contract** — global conventions table, per-controller route tables with auth column and DTO links, and an explicit "specified but not exposed yet" gap list. Siblings cover backend modules, database, auth, queues, observability. `AGENTS.md` holds the conventions (shared-code lookup table, no hardcoded strings, constants placement, layer separation). |
+| `/Users/mic/repos/personal/magnamed` | Closest structural sibling — same `docs/` spec set (problem_overview / use_cases / functional_requirements / architecture) driving the build, and the same CLAUDE.md shape as this file. Its `docs/tasks.md` + `docs/build-log.md` pair is a good model for tracking execution against FRs. |
+
+### Patterns worth borrowing directly
+
+- **The API-contract document** — route tables keyed by controller, with auth, DTOs and a
+  gap list. Note the divergence: here OpenAPI is **generated from source and diffed in CI**
+  (P-5, DR-11), so a hand-written contract doc is a *reader's map*, never the contract.
+- **Global response envelope + exception filter** — one interceptor shapes every success,
+  one filter shapes every error.
+- **DI-token ports** (`Symbol('STORAGE_PROVIDER')` next to the interface, provider chosen
+  by config) — this is exactly the shape our payment rails, `EInvoicingPort` and renderer
+  need (P-7, D-8).
+- **Module layout per domain** — `controllers/` thin, `services/` orchestration,
+  `use-cases/` single flows, `models/`, `dto/`, `types/`, `constants/`.
+- **Config through `ConfigService`**, never `process.env` in business logic.
+
+### Where they must not be copied
+
+- iftamaster is **three independent npm apps with no root package.json**, so DTOs are
+  duplicated client-side and have already drifted (`Dto` vs `DTO`). We are one pnpm
+  workspace with `packages/contracts` precisely so that cannot happen.
+- Neither uses **RLS tenancy** or **config-as-data**; their patterns predate both.
+- iftamaster bills through **Stripe**, which is unavailable to us (D-7, D-8).
+
+## Conventions
+
+- All three locales are separately authored — **never machine-translate**. Romanian is the source.
+- Accessibility target is WCAG 2.2 AA.
+- Runbooks are deliverables: six NFRs are verified by rehearsal, not by test.
+
+## Looking things up
+
+When you need documentation for anything external — a library, framework, CLI, ORM,
+database, or hosted service — covering API syntax, configuration, version-specific
+behaviour, or migration steps, **use Context7 first**:
+
+1. `mcp__plugin_context7_context7__resolve-library-id` to get the library ID.
+2. `mcp__plugin_context7_context7__query-docs` with that ID and a specific,
+   single-concept question.
+
+Use it even when you think you know the answer, and even for tools you know well.
+Training data lags, and this project pins exact versions (architecture.md §12) that
+are reviewed and moved on a quarterly cycle (NFR-12) — so the pinned version is
+routinely newer than anything remembered, and majors here have changed APIs. Check
+the pin before asking, and put it in the question.
+
+**Fall back to `WebSearch` only when Context7 has no useful answer** — an unindexed
+or internal library, a specific error message, a recent CVE or advisory, or anything
+that is not library reference material: regulatory, standards and provider behaviour
+(EFRAG, e-Factura, national fiscal rules) belongs in the docs set or on the web,
+never in Context7.

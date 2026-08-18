@@ -1,0 +1,1842 @@
+# ESG Platform — System Architecture (MVP)
+
+| Field | Value |
+|---|---|
+| Document ID | architecture.md |
+| Version | 1.0 |
+| Status | Consolidated baseline |
+| Date | 2026-08-17 |
+| Consolidates | `ESG Platform System Architecture (MVP)` (primary, detail), `ESG Platform Architecture Overview (MVP)` (primary, framing), `ESG Platform Private Monetization Architecture` (commercial-layer separation), `ESG Platform Research and Architecture Notes` (background, earlier, lower authority) |
+
+---
+
+## 1. Purpose and scope; how to read this document
+
+### 1.1 What this document is
+
+This is the canonical architecture baseline for the ESG Platform MVP. It defines **how the system is built**, in the same way the FR register defines what it does and the NFR register defines how well. It is written so that a delivery team can start work from it without re-deriving decisions, and so that a reviewer can check any structural claim against the requirement that forced it.
+
+It consolidates four prior documents into one record. Where the two architecture documents overlapped, `System Architecture (MVP)` was preferred for detail and `Architecture Overview (MVP)` for framing; genuine conflicts are recorded in §17.5 rather than silently reconciled.
+
+### 1.2 The system, in one paragraph
+
+A multi-tenant SaaS that lets a Moldovan SME produce a **VSME Basic Module (B1–B11)** sustainability report in Romanian, English or Russian, calculate Scope 1 and location-based Scope 2 emissions feeding B3, and export the result as PDF and as the official EFRAG Excel Digital Template — with a full self-serve billing, invoicing and Moldovan fiscal-compliance stack behind it.
+
+| Dimension | Value |
+|---|---|
+| Scale envelope | ≤ 2,000 organizations · ≤ 3,000 users · ≤ 2,500 reports/year · ≈ 150 peak concurrent sessions · < 100 GB |
+| Peak season | April–May, peaking in the last two weeks of May (Art. 33(3), Law 287/2017 — 150 days after year end) |
+| Locales | Romanian (source), English, Russian — all separately authored, none machine-translated |
+| Hosting | EU/EEA, self-managed VMs, Docker Compose |
+| Scope | Full register: 173 FRs (FR-1 … FR-173); 93 MVP NFRs (NFR-1 … NFR-93) plus 12 deferred (NFR-94 … NFR-105). 8–12 month build |
+
+### 1.3 Companion documents and identifier scheme
+
+This document is a companion to, and traceable against, the six other baseline documents:
+
+- `problem_overview.md` — the problem, the scope and the closed scope decisions
+- `actors.md` — the actors `CA`, `RC`, `OA`, `PA`, `BO`, `SYS`
+- `use_cases.md` — UC-01 … UC-176, and the use case design decisions and constraints D-1 … D-14
+- `functional_requirements.md` — FR-1 … FR-173
+- `non_functional_requirements.md` — NFR-1 … NFR-93 (MVP) and NFR-94 … NFR-105 (deferred)
+- `design_spec.md` — UX-1 … UX-134, and the screens S-01 … S-28 and A-01 … A-18
+
+This document owns two identifier schemes of its own: the architectural decisions **AD-1 … AD-14** (§4) and the drivers **DR-1 … DR-11** (§2). The four notification qualities proposed in §17.3 as NFR-106 … NFR-109 are pending ratification into `non_functional_requirements.md`.
+
+All identifiers are preserved verbatim from the sources. There is no `ACT-*` scheme: actors are the letter codes `CA`, `RC`, `OA`, `PA`, `BO`, `SYS` (§2.4).
+
+### 1.4 How to read it
+
+- §2 is the load-bearing part. It lists the eleven **drivers** (DR-1 … DR-11) that actually shape the structure. Everything from §4 onward is a consequence of those.
+- A reader with thirty minutes should read §2, §3 and §5.
+- A reader who needs to know *why* a specific structural choice was made should read the corresponding AD in §4.
+- A reader who needs to know what is **not** decided should read §18.
+
+### 1.5 What is out of scope for this architecture
+
+By prior decision: XBRL export and the Comprehensive Module (Phase 2), energy-provider and accounting integrations, AI assistance, the public disclosure portal (Phase 3), the ESAP bridge and blockchain traceability (uncommitted roadmap). Extension points for each are named in §15 so that adding them is additive rather than structural.
+
+### 1.6 Four scope facts that drive the architecture more than the feature list does
+
+1. **Billing is not a thin Stripe wrapper.** Stripe does not serve Moldova-resident businesses. The platform owns the plan catalogue, subscription state machine, order lifecycle, invoice and credit-note documents, gapless fiscal numbering, dunning, reconciliation, and the billing ledger (D-7). Four payment rails sit behind one adapter interface (D-8). This is 69 of 173 functional requirements (FR-84 … FR-152) — about 40% of the register, and the part with statutory consequences.
+2. **e-Factura is MVP, not Phase 2.** Moldova's national B2B e-invoicing mandate takes effect **1 October 2026** (D-9). The invoice is therefore modelled as a structured platform-owned record rendered into national XML by an adapter, never as "a PDF that gets emailed".
+3. **The compliance core must be able to run with billing switched off.** D-11 and NFR-1 make this a testable obligation, not an aspiration: with `BILLING_ENABLED=false`, the UC-17 … UC-48 suite must pass.
+4. **The standard moves.** The VSME XBRL taxonomy had a backwards-incompatible release in February 2026 and updates several times a year. NFR-12, NFR-85 and NFR-86 require content, thresholds, factor sets and validation rules to change **without a code release**, and require a compatible template/taxonomy rollout to need no deployment. This forces a configuration-as-data architecture rather than a code-first one.
+
+---
+
+## 2. Architectural drivers
+
+### 2.1 The eleven structural drivers
+
+These are the constraints that determine structure. Everything else is detail.
+
+| # | Driver | Source | Structural consequence |
+|---|---|---|---|
+| DR-1 | Billing and the compliance core are separate bounded contexts sharing no transaction, foreign key or table; disabling billing leaves reporting working | D-11, NFR-1, NFR-15, FR-154 | Two PostgreSQL schemas with no cross-schema FKs; communication only by published entitlement state and domain events; a feature flag that disables the billing module wholesale |
+| DR-2 | The internal schema mirrors VSME taxonomy element names and structure | NFR-2, FR-155 | A generic, taxonomy-driven disclosure store (element-keyed values), not a hand-modelled table per module |
+| DR-3 | Content, thresholds, factor sets, validation rules, notification templates and plan definitions change without a redeploy, published within one working day and revertible in one step | NFR-12, NFR-85, NFR-86, FR-61 … FR-74, FR-173 | A versioned, publishable **configuration store** as a first-class subsystem; the application interprets it, it does not embed it |
+| DR-4 | Every report is pinned to an explicit template and taxonomy version and can be re-exported or migrated against a later one | NFR-3, FR-51, FR-65 … FR-69 | Version is a dimension of the data model, not a global; export and validation are parameterised by it; migration is a first-class operational job |
+| DR-5 | Tenant isolation is structural at the data-access layer, not a filter at call sites | NFR-63 | PostgreSQL Row-Level Security with a per-request session variable; the connection, not the query, carries the tenant |
+| DR-6 | Audit, ledger and metering records are append-only, enforced at database privilege level | NFR-33, FR-151, FR-159, FR-105 | Separate DB roles; no UPDATE/DELETE grant on ledger tables to the application role; corrections are new rows |
+| DR-7 | Money is provider-executed; the platform never touches card data or holds funds | D-7, D-8, NFR-60, NFR-74 | Payment adapters only; PCI DSS SAQ-A scope; no custody or settlement code path exists |
+| DR-8 | Fiscal documents are immutable, gaplessly numbered per series per year, and transmitted to e-Factura with acknowledgement stored | D-9, D-10, NFR-55, NFR-71, FR-123 … FR-130 | A numbering service holding a row lock inside the issuing transaction; an outbox-driven transmission pipeline; six-year independent archive |
+| DR-9 | Payment callbacks, provider webhooks and e-Factura acknowledgements are idempotent under duplicate, delayed and out-of-order delivery; order → payment → invoice → entitlement is all-or-nothing | NFR-54, NFR-59 | Transactional outbox + saga coordinator; every inbound event keyed and de-duplicated at the edge |
+| DR-10 | Export generation must not degrade interactive latency; 10× concurrency spike in the filing window with no maintenance window | NFR-37, NFR-42, NFR-44, NFR-46, NFR-48 | Export and all long-running work leaves the request tier by queue into a separate worker container; horizontal scale of API and worker independently |
+| DR-11 | Every tenant-facing capability is reachable through one documented, versioned API under identical authorization — no interface-only privileged route | FR-153, NFR-16, NFR-83 | The Next.js app is a client of the same public API, not a privileged backend; OpenAPI generated from source and diffed in CI |
+
+### 2.2 The commercial driver behind DR-1
+
+`Private Monetization Architecture` supplies the reason DR-1 is worth its cost, and it is not a technical reason. EFRAG's own VSME Excel Digital Template and open-source XBRL converter are **free, official and already available to any SME in Europe**. That sets a hard ceiling: the platform cannot charge for "the ability to produce a compliant VSME report" as a standalone feature. Every viable monetization path sells convenience, automation, integration, collaboration, aggregation or distribution — not the compliance content itself.
+
+The architectural consequence is that pricing and packaging decisions must never touch compliance logic, because the packaging is expected to change while the compliance core stays identical for a free-tier user and an enterprise contract alike. That is DR-1, and it is why §5 treats the compliance-core / commercial-layer split as the central structural fact rather than as a modularity preference.
+
+### 2.3 Confirmed platform and operational choices
+
+**Confirmed platform choices** (given, not derived): NestJS for backend services, Next.js for the tenant-facing application, React + Vite for the administrative console, PostgreSQL as the primary store, Docker and Docker Compose as the packaging and deployment mechanism. Versions are in §12.
+
+**Confirmed operational choices** (decided in review): EU-region VPS with Docker Compose; a modular monolith plus a separate worker process; shared-schema multi-tenancy with PostgreSQL Row-Level Security.
+
+### 2.4 Actors
+
+| Code | Actor | Does |
+|---|---|---|
+| CA | Common Access | Register, authenticate, manage own profile |
+| RC | Reporting Contributor | Fills the report, runs the calculator, exports |
+| OA | Organization Administrator | Entities, periods, users, plan, billing |
+| BO | Billing Operator | Reconciliation, dunning, refunds, fiscal reporting |
+| PA | Platform Administrator | Content, taxonomy versions, factor sets, plans, support grants |
+| SYS | System | Scheduled and event-driven work |
+
+---
+
+## 3. Architecture principles
+
+These are stated as principles because each one is applied in more than one place, and each is traceable to a driver or a requirement. They are not aspirations; every one has a named enforcement mechanism.
+
+| # | Principle | Enforced by | Traces to |
+|---|---|---|---|
+| P-1 | **The compliance core knows nothing about plan, price or tenant type.** It only knows how to produce a correct report, and it is identical on the free tier and on an enterprise contract | CI boundary rule; `contracts/` as the only cross-context surface; `BILLING_ENABLED=false` CI job | DR-1, D-11, NFR-1, NFR-15 |
+| P-2 | **The standard is data, not code.** Taxonomy elements, labels, thresholds, factor sets and validation rules are registered configuration interpreted at runtime | Configuration store (AD-4), taxonomy-keyed disclosure store (AD-3) | DR-2, DR-3, DR-4, NFR-12, NFR-85, NFR-86 |
+| P-3 | **Version is a dimension of the data, not a global setting.** Reports, calculations and exports each record the version of the artefact that produced them | Version pinning on `report`, `calc_run`; effective-dated config with temporal constraints | DR-4, NFR-3, NFR-19, NFR-87 |
+| P-4 | **Guarantees belong below the application.** Tenant isolation, append-only-ness and gapless numbering are enforced by the database, not by discipline at call sites | RLS `FORCED`; privilege-level `GRANT`/`REVOKE` plus triggers; `SELECT … FOR UPDATE` on the counter row | DR-5, DR-6, DR-8, NFR-33, NFR-55, NFR-63 |
+| P-5 | **One documented API, no privileged back door.** Both front ends are ordinary clients of the same versioned surface, authorized identically | OpenAPI 3.1 generated from source and diffed in CI; route-coverage diff | DR-11, FR-153, NFR-16, NFR-83 |
+| P-6 | **Nothing long-running happens in the request tier.** All generation, transmission, dispatch and scheduled work leaves by queue | BullMQ consumers in a separate `worker` container; the outbox is the only producer | DR-10, NFR-42, NFR-46 |
+| P-7 | **Every external system sits behind a port with exactly one adapter per provider.** No vendor type appears outside its adapter | Ports in `contracts/`; provider registry read from configuration; dependency review per release | DR-7, NFR-11, NFR-14 |
+| P-8 | **Cross-boundary effects are written in the same transaction as the state change that caused them.** No dual writes | `outbox_event` written transactionally; `inbound_event` unique-keyed at the edge | DR-9, NFR-54, NFR-59 |
+| P-9 | **Fail closed on tenancy, fail open on already-granted entitlements.** An absent tenant context yields zero rows; an unreachable billing context keeps granted capabilities working | RLS `missing_ok` policy form; `TenantRepository` that throws with no context; cached entitlement snapshot | NFR-49, NFR-63 |
+| P-10 | **Instrument every billable-shaped action, including actions not currently billed.** Pricing units must be evaluable end to end without a code change | Append-only `metering_event` stream | FR-105, NFR-10 |
+| P-11 | **What is expensive to retrofit is built on day one, regardless of which phase its feature lands in.** Version pinning, RLS, retained calculator inputs, per-field audit, append-only ledgers, multi-period model, outbox, config-as-data | Build order (§15.4); §16.3 debt register | NFR-19, NFR-33, NFR-63, FR-45, FR-54 |
+| P-12 | **A requirement verified by rehearsal needs a runbook, and the runbook is a deliverable.** A rehearsal without one is not repeatable and therefore not evidence | `docs/runbooks/` in the repository layout | NFR-28, NFR-29, NFR-31, NFR-51, NFR-52, NFR-85, NFR-86, NFR-93 |
+
+---
+
+## 4. Architecture decision record index
+
+Every architectural decision carries an **AD-n** identifier, cites the drivers and requirements it discharges, and records rejected alternatives where the choice was real. A decision record that only states what was chosen is a description, not a decision.
+
+### 4.1 Index
+
+| ID | Decision | Status | Drivers | Key requirements |
+|---|---|---|---|---|
+| AD-1 | Modular monolith (`api`) + worker, boundaries enforced in CI | Accepted | DR-1, DR-10 | NFR-1, NFR-15, NFR-46, D-11 |
+| AD-2 | Shared schema + PostgreSQL RLS, transaction-local tenant context per request | Accepted | DR-5 | NFR-63, NFR-62, FR-158 |
+| AD-3 | Taxonomy-driven element-keyed disclosure store + generated typed facade | Accepted | DR-2, DR-4 | NFR-2, NFR-3, NFR-86, FR-155 |
+| AD-4 | Configuration-as-data with versioned publish/revert and effective dating | Accepted | DR-3 | NFR-12, NFR-73, NFR-85 … NFR-87 |
+| AD-5 | Single key-based entitlement service, cached, degrading open for granted keys | Accepted | DR-1 | NFR-17, NFR-41, NFR-49, FR-99 … FR-104 |
+| AD-6 | Transactional outbox + inbound de-duplication + order saga | Accepted | DR-9 | NFR-54, NFR-59, NFR-50 |
+| AD-7 | Gapless fiscal numbering by `SELECT … FOR UPDATE` on a counter row at `READ COMMITTED`, consumed at issuance | Accepted | DR-8 | NFR-55, FR-123, D-10 |
+| AD-8 | Port + adapter per third party; merchant-of-record registered but inactive | Accepted | DR-7 | NFR-11, NFR-14, NFR-60, NFR-74 |
+| AD-9 | Two front ends, both clients of one public API; admin separately addressed | Accepted | DR-11 | NFR-16, NFR-65, NFR-38, NFR-56 |
+| AD-10 | All long-running work leaves the request tier by queue | Accepted | DR-10 | NFR-42, NFR-46, NFR-82 |
+| AD-11 | One channel-agnostic notification subsystem with per-recipient delivery evidence | Accepted | — | FR-157, FR-160 … FR-173 |
+| AD-12 | Short-lived JWT + server-side revocable refresh sessions | Accepted | — | FR-5 … FR-8, FR-58, NFR-62 |
+| AD-13 | TypeScript 6.0.3, single compiler; TS 7 side-by-side documented but not adopted | Accepted | — | NFR-16, NFR-26, NFR-30, NFR-58, NFR-88 |
+| AD-14 | TypeORM 1.1 with `synchronize` off, SQL migrations, ALS-bound `QueryRunner`, two `DataSource`s | Accepted | DR-1, DR-5 | NFR-1, NFR-58, NFR-63, NFR-86 |
+
+### 4.2 AD-1 — Modular monolith plus worker, not microservices
+
+| | |
+|---|---|
+| **Context** | The scale envelope is ≤ 2,000 organizations, ≤ 3,000 users, ≈ 150 concurrent sessions at peak. DR-1 demands a hard separation between billing and the compliance core; DR-10 demands that export generation not touch interactive latency; NFR-59 demands all-or-nothing behaviour across order, payment, invoice and entitlement. |
+| **Decision** | One NestJS deployable, `api`, containing all bounded contexts as NestJS modules with enforced boundaries; one NestJS deployable, `worker`, running the same codebase in worker mode, consuming queues. Both are built from the same image and differ only by entrypoint and configuration. DR-1's separation is a **compilation and schema** boundary, not a network boundary. |
+| **Alternatives considered** | *Three separate services from day one* — rejected: distributed-system cost buys nothing at this scale and works against NFR-59, which is far easier to satisfy inside one process with a durable outbox than across a service mesh; splitting later is cheap once the boundary is already enforced, because a module lifts out with its schema. *Single process including workers* — rejected outright by NFR-46: an export burst must not touch NFR-37's p95 ≤ 300 ms. |
+| **Consequences** | Boundary enforcement moves to static analysis: `dependency-cruiser` / `eslint-plugin-boundaries` rules in CI forbid any import between `modules/billing/**` and `modules/core/**` except through `contracts/`. Each context owns a PostgreSQL schema, but **runtime enforcement is not claimed** — `search_path` governs only unqualified name resolution, so a schema-qualified cross-context join would work; genuine database-level prevention would need `USAGE` revoked across the boundary, which conflicts with AD-6's outbox. The schema split therefore exists to make a violation obvious in review and to keep contexts physically separable later. Cross-context communication is one-directional: billing publishes `EntitlementChanged`; core reads entitlements through an `EntitlementService` interface whose only implementation lives in billing and whose null implementation (grant-everything) runs when billing is disabled. A second CI job runs UC-17 … UC-48 with `BILLING_ENABLED=false`; that job is what keeps the boundary honest over time. |
+
+### 4.3 AD-2 — Shared schema with PostgreSQL Row-Level Security for tenancy
+
+| | |
+|---|---|
+| **Context** | NFR-63 requires cross-tenant access to be **structurally prevented rather than filtered at call sites**. The platform is government-branded, holds fiscal and confidential sustainability data, and serves companies who are each other's competitors, while adoption is entirely voluntary. |
+| **Decision** | Every tenant-owned table carries `organization_id uuid not null`. RLS is `ENABLED` and `FORCED`, with a policy of the form `organization_id = current_setting('app.current_org', true)::uuid`. The application connects as a non-superuser, non-owner role for which RLS is not bypassable. A request-scoped interceptor sets `app.current_org` and `app.current_user` on the pooled connection **inside the transaction**, and the ORM never issues a tenant query outside a transaction. |
+| **Alternatives considered** | *Schema-per-tenant* — rejected: 2,000 schemas makes every migration a 2,000-step job and makes FR-83's adoption dashboard and FR-105's metering rollups awkward. *ORM global scope or base repository injecting the predicate* — roughly 90% as effective and materially cheaper to live with, but weaker than NFR-63's wording; if the team wants it, the honest route is to amend NFR-63 explicitly rather than implement RLS half-heartedly and describe it as structural. *One deployment per customer* — incompatible with NFR-47's per-free-tier-organization cost ceiling, and turns FR-83 and FR-105 into cross-instance ETL. |
+| **Consequences** | Three database roles, not two: `esg_app` and `esg_worker` are both RLS-enforced; only `esg_admin_ro` (read-only, `BYPASSRLS`) bypasses it, used solely for explicit cross-tenant rollups, migration runs and the admin API, with every acquisition logged (FR-79, NFR-66). Giving the worker `BYPASSRLS` would be the obvious shortcut and is wrong: the worker is what materialises one tenant's regulatory and fiscal record into a PDF, an Excel file, an e-Factura payload and an email. Session-scoped `SET` is prohibited — it leaks to the next borrower of a pooled connection, the single most common way RLS multi-tenancy is broken in production. PgBouncer, if used, runs in **transaction** pooling mode. CI carries a cross-tenant probe suite plus a job-level probe that enqueues work for organization A while the worker's context says organization B and asserts the job fails rather than returning data. Policies are enabled in **every** environment from the first sprint: the value of RLS is that a missing tenant context breaks loudly and early. |
+
+**Implementation note that is part of the decision.** The setting is written with `SELECT set_config('app.current_org', $1, true)` — **not** `SET LOCAL`, which is utility syntax and accepts no bind parameter, so writing it that way forces string interpolation into the one value the entire tenancy model rests on. The `true` third argument makes it transaction-local. The policy reads `current_setting(..., true)` in the `missing_ok` form, so an unset context yields NULL and therefore zero rows rather than a 500 on every endpoint. The organization id comes from the **server-side membership lookup** already performed in `AuthGuard`, never from the raw JWT claim — AD-12 declines to treat the token claim as authoritative, and grounding the RLS boundary in a value the auth design does not trust would make an org-switch race or a revoked membership into a cross-tenant read.
+
+**On the argument that public disclosure makes NFR-63 unnecessary.** It will be raised, so it is answered here. *Timing*: the public portal is Phase 3 and opt-in; at MVP nothing is public, and this product is a **drafting tool** — a report is confidential for the whole period a company is using the system. A leaked draft is not an early copy of a public document; it is a wrong number the company had not yet corrected. B9 carries recordable accidents and fatalities, B11 carries corruption convictions and fines. *Scope*: even if every finished report were public, that justifies relaxing access control on published report content only — one projection of one table. The field-level audit trail with previous values (FR-54, FR-55), calculator raw inputs retained permanently by site and source (FR-33), fields declared not material or omitted as sensitive, all billing data (IDNO, VAT code, legal address, invoices, dunning state), and all identity data are never public. *Consistency*: applying RLS to `billing` and `identity` but not to `core` is worse than applying it everywhere — uniform enforcement is verifiable in one pass; selective enforcement is a rule every future query author must remember, which is exactly what NFR-63 exists to eliminate.
+
+### 4.4 AD-3 — A taxonomy-driven disclosure store, not a table per module
+
+| | |
+|---|---|
+| **Context** | NFR-2 and FR-155 require the internal schema to mirror the VSME taxonomy. DR-4 requires reports pinned to different taxonomy versions to coexist and be migrated. The taxonomy already delivered one backwards-incompatible release (February 2026) and updates several times a year. Each Excel named range in the Digital Template corresponds exactly by local name to an XBRL taxonomy element, and dimensions are used sparingly — a flat mapping, friendly to a relational store. |
+| **Decision** | Disclosure data is stored as element-keyed values against a report, where the element key **is** the VSME XBRL taxonomy element local name (e.g. `EnergyConsumptionFromRenewableSources`, `NumberOfEmployeesByGender`). The set of elements, their datatypes, units, cardinality, dimensions, validation rules and applicability conditions comes from a **registered taxonomy version** held in the configuration store, not from TypeScript types or table columns. |
+| **Alternatives considered** | *Column-per-disclosure relational modelling* — rejected on DR-4 / NFR-86 grounds: a hand-modelled `b3_energy_emissions` table would need DDL migration on every taxonomy release. *Whole report as a single JSONB blob* — rejected because per-field audit attribution (FR-54, NFR-7, NFR-35), per-field validation state (FR-40) and per-field comparative display (FR-46) all need row granularity; a blob makes each of those an application-level diff. |
+| **Consequences** | A taxonomy release becomes **data registration plus a mapping**, which is what NFR-86 demands. The trade accepted is loss of compile-time typing and database-level check constraints on individual disclosures. That is bought back three ways: a typed **facade** generated per taxonomy version, so application code and the API still see `report.b3.scope1Emissions` rather than string keys; validation running from registered rule definitions (FR-73) rather than column constraints; and a golden-report cross-format regression corpus (NFR-20, NFR-21, NFR-22) that catches what the type system no longer can. |
+
+### 4.5 AD-4 — Configuration-as-data, with an explicit publish/revert step
+
+| | |
+|---|---|
+| **Context** | DR-3: content, thresholds, factor sets, validation rules, notification templates and plan definitions must change without a redeploy, publish within one working day of approval, and revert in one step. NFR-19 requires a stored calculation to reproduce exactly against its stored raw inputs and factor-set version; NFR-87 forbids a rule or factor change from silently restating a previously reported figure. |
+| **Decision** | A single **configuration store** subsystem holds every artefact that must change without a release, each versioned with `draft → in review → published → superseded` states, each revertible in one action, and each with an effective date where the domain needs one. Published versions are **immutable**. Publication is a single transactional action that writes a new immutable version and flips a pointer; revert flips the pointer back. |
+| **Alternatives considered** | *Event-based cache invalidation via PostgreSQL `LISTEN/NOTIFY`* — rejected on two counts: `LISTEN` requires a pinned session and is unsupported through PgBouncer in transaction pooling mode, which is exactly what fronts the database; and `NOTIFY` is lossy, so a replica disconnected during the notify never learns it missed one, leaving it indefinitely stale. *Effective-dating without immutability* — rejected: an edited "published" factor set silently rewrites history. |
+| **Consequences** | Cache invalidation is **version-based, not event-based**: every `api` and `worker` replica holds a cached read model stamped with a `config_version`; a cheap poll of a single-row version table (≤ 5 s) is the **authority**, and a Redis pub/sub message is only a latency optimisation. A lost message costs seconds of staleness instead of an indefinitely stale replica. Effective-dated tables carry a non-overlap guarantee at database level (§12.3). |
+
+Artefacts held, and whether they are effective-dated:
+
+| Artefact | Requirement | Effective-dated |
+|---|---|---|
+| Field labels, help text, validation messages, per locale | FR-61, FR-62, NFR-85 | No — published/superseded |
+| Locale registration | FR-63, NFR-25 | No |
+| VSME template + XBRL taxonomy versions and their artefacts | FR-65, FR-66 | Pinned per report, not dated |
+| Version-to-version field mappings | FR-67 | Pinned to a version pair |
+| Emission and conversion factor sets | FR-71, NFR-19 | **Yes** |
+| Conditional-applicability thresholds (≥50 turnover, ≥150 pay gap) | FR-72 | **Yes** |
+| Validation rule definitions and their messages | FR-73 | **Yes** |
+| Notification category catalogue and templates | FR-173 | No |
+| Plan versions, entitlements, quotas, prices, discounts | FR-84 … FR-89 | **Yes** |
+| VAT rates and treatment rules | FR-148, NFR-73 | **Yes** |
+| MIA per-transaction and cumulative ceilings | FR-118, NFR-73 | **Yes** |
+| BNM rate sourcing | FR-129, NFR-73 | **Yes** |
+
+### 4.6 AD-5 — One entitlement service, consulted by everything, depended on by nothing
+
+| | |
+|---|---|
+| **Context** | FR-100 requires gating logic to live outside the gated capability. NFR-17 requires that adding a gated capability needs no entitlement-service change and that changing a plan needs no capability change. NFR-41 sets p95 ≤ 20 ms (≤ 100 ms on cache miss). NFR-49 requires the core to keep serving UC-17 … UC-48 when the billing context is unavailable. |
+| **Decision** | A single `EntitlementService` answers every gated action with `allow \| deny \| allow_with_warning`, plus the reason and the current limit. It is defined by an interface in `contracts/`, implemented in the billing context, consumed by the core. The contract is a **key lookup, not a method per feature**: `check(orgId, key, requested?) → Decision`, where `EntitlementKey` is a string registered in configuration. Entitlements are computed from plan-version entitlements plus per-subscription overrides, cached per organization. |
+| **Alternatives considered** | *A method per gated feature* — rejected: it makes NFR-17 false by construction, since a new capability would require an entitlement-service change. |
+| **Consequences** | A new gated capability is a new key in the plan catalogue; a new plan is new data. NFR-17's verification — a synthetic entitlement key and a synthetic plan introduced in test — is a CI job. Availability behaviour is a requirement, not an accident: the cache carries a last-known-good snapshot per organization with a generous TTL, and a deny from an unreachable billing context is treated as allow for **already-granted** keys and closed for new purchases; a chaos test that disables billing mid-session is the verification. In-process cache per `api` container means no network hop on the hot path, which is what makes 20 ms trivially achievable — another point in favour of AD-1. The version poll matters more here than for content: a missed invalidation on a downgrade or cancellation would let an organization keep entitlements it no longer holds until the TTL expires. |
+
+Registered keys named in the sources: `report.export.pdf`, `org.entities.max`, `org.seats.max`, `api.calls.monthly`, `module.comprehensive`.
+
+### 4.7 AD-6 — Transactional outbox and a saga for the order lifecycle
+
+| | |
+|---|---|
+| **Context** | DR-9. Acquirers and national platforms deliver duplicate, delayed and out-of-order events, and NFR-54 requires convergence on a single state under all three. NFR-59 requires order → payment → invoice → entitlement to be all-or-nothing. |
+| **Decision** | All cross-boundary effects — e-Factura transmission, email dispatch, payment-provider calls, entitlement propagation, webhook fan-out — are written to an `outbox_event` table **in the same transaction** as the state change that caused them, and dispatched by the worker. All inbound provider events land in an `inbound_event` table keyed `(provider, provider_event_id)` with a unique constraint. The order → payment → invoice → entitlement sequence runs as an explicitly modelled **saga** with persisted state and compensations, not a chain of awaits. |
+| **Alternatives considered** | *Direct provider calls inside the request* — rejected by DR-9 and NFR-50. *Claiming exactly-once delivery* — explicitly declined: delivery is at-least-once and processing is **effectively once** (the unique constraint deduplicates insertion, the effect commits with the processed marker). "Exactly once" is not available across a network boundary and is not claimed. *Treating `invoiced` as reversible* — rejected: an issued fiscal document cannot be withdrawn (D-10) and its number cannot be released (AD-7). |
+| **Consequences** | Every outbox row carries an `idempotency_key` generated in the originating transaction and passed to every provider that supports one; adapters for providers that do not — e-Factura among them — declare a **recovery query** (for e-Factura, look up by invoice number before re-transmitting). Without this, a dispatcher restart produces a duplicate e-Factura submission or a duplicate refund execution. NFR-59's "all-or-nothing" is, strictly, **eventual convergence with compensation and a surfaced terminal inconsistency**, not atomicity; the saga's terminal `inconsistent` state is a monitored operational metric with a Billing Operator work queue, not a silent log line. Saga states: `draft → awaiting_payment → paid → invoiced → provisioned`, terminals `expired \| cancelled \| failed`, compensation out of `invoiced` is `credit_note_issued`. Invoice numbering is consumed only at the `invoiced` step. Entitlements change on confirmed payment or, for approved transfer terms, on invoice issuance — never on order creation (FR-92, FR-108). |
+
+### 4.8 AD-7 — Gapless fiscal numbering by a row lock on the counter, consumed at issuance
+
+| | |
+|---|---|
+| **Context** | NFR-55 requires gapless, sequential allocation **under concurrent issuance and partial failure**, verified by a concurrency test with induced mid-transaction failure plus a sequence audit for gaps and duplicates. D-10 makes issued documents immutable. |
+| **Decision** | Invoice numbers are allocated inside the issuing transaction by `SELECT next_number FROM billing.number_series WHERE document_type=$1 AND series=$2 AND fiscal_year=$3 FOR UPDATE`, incrementing the counter row and writing the document in the same transaction, at `READ COMMITTED`. The table carries `UNIQUE (document_type, series, fiscal_year, number)` as the invariant of record. A number is consumed **only** at issuance, never reserved at order creation. |
+| **Alternatives considered** | *PostgreSQL sequence* — rejected: sequences are explicitly non-transactional, so a rolled-back transaction burns the number and produces a gap. *Advisory lock* — rejected with the flavour distinction spelled out: `pg_advisory_lock()` is **session**-scoped and is not released by `COMMIT` or `ROLLBACK`, so under transaction-pooled PgBouncer it is returned to the pool still held and the next borrower inherits it, deadlocking issuance for that series until the backend is killed; `pg_advisory_xact_lock()` avoids that but keys on `bigint`, so `(document_type, series, fiscal_year)` would have to be hashed, accepting silent collisions between unrelated series. `FOR UPDATE` gives the identical guarantee with no flavour ambiguity, no hashing and no pooler interaction. |
+| **Consequences** | The isolation level is part of the decision, not an ambient default: read-then-increment is correct at `READ COMMITTED`, where a waiter re-reads after the lock is released; at `REPEATABLE READ` or `SERIALIZABLE` the waiter resumes on its original snapshot and the `UPDATE` aborts with a serialization failure, turning every concurrent issuance into a retry. AD-6's saga is exactly the code where someone raises the isolation level for unrelated reasons, so the issuing transaction pins its own. The cost is serialised issuance per series — at ≈ 200 documents per month this is not a bottleneck by four orders of magnitude. |
+
+### 4.9 AD-8 — Adapter-and-port for every third party, with the merchant-of-record registered but inactive
+
+| | |
+|---|---|
+| **Context** | DR-7: money is provider-executed and the platform never touches card data or holds funds. NFR-11 requires no vendor type outside its adapter, verified by a dependency review per release. NFR-14 requires an adapter to be activated with a diff limited to the adapter plus configuration. |
+| **Decision** | Each external dependency is reached through a port defined in `contracts/` with exactly one adapter per provider, registered in a provider registry read from configuration. |
+| **Alternatives considered** | *Direct SDK use in domain code* — rejected by NFR-11. *Building the merchant-of-record path at MVP* — rejected: D-8 requires activation to be configuration, not a build, so the port is registered and the adapter inactive. |
+| **Consequences** | PCI DSS scope stays SAQ-A: no PAN reaches the platform, and no custody or settlement code path exists. Phase 2 XBRL is additive because `DocumentConversionPort` exists at MVP with no adapter wired. |
+
+| Port | MVP adapters | Notes |
+|---|---|---|
+| `CardAcquiringPort` | maib (primary), Victoriabank, MICB | Hosted page / SDK only. No PAN ever reaches the platform (NFR-60, SAQ-A). Tokenisation for recurring |
+| `InstantPaymentPort` | MIA (via participating bank APIs) | Offered only where order total ≤ configured per-transaction ceiling (FR-118) |
+| `BankTransferPort` | Proforma + reconciliation | No provider call; settlement is asynchronous and reconciled (FR-131 … FR-134) |
+| `MerchantOfRecordPort` | Paddle-class — **registered, inactive** | D-8; NFR-14's verification is adapter activation in staging with the diff limited to adapter + config |
+| `EInvoicingPort` | e-Factura national XML; Peppol anticipated | FR-126, FR-127, D-9 |
+| `ExchangeRatePort` | BNM official rate, by invoice date | FR-129, D-14 |
+| `IdentityProviderPort` | Google, Microsoft (OIDC) | FR-2, FR-82, D-6. Registration/rotation without redeploy |
+| `EmailPort` | Transactional ESP, EU region | FR-169, NFR-84 (SPF/DKIM/DMARC) |
+| `DocumentConversionPort` | EFRAG open-source converter (MIT), self-hosted | Phase 2 XBRL; the port exists at MVP so Phase 2 is additive |
+| `ObjectStoragePort` | S3-compatible, EU region | Exports, archives (NFR-27, NFR-36) |
+
+### 4.10 AD-9 — Two front-end applications, both clients of one public API
+
+| | |
+|---|---|
+| **Context** | DR-11 and NFR-16 forbid an interface-only privileged route. NFR-65 requires the administrative surface to be separately addressed, network-restricted and MFA-mandatory, sharing no session, cookie scope or credential with the tenant surface. NFR-43 sets LCP ≤ 2.5 s on 4G mid-range. |
+| **Decision** | **`web`** — Next.js 16 (App Router), tenant-facing: registration, report wizard, calculator, validation, exports, organization and user administration, billing self-service. Server components for shell, navigation, list views and export preview; client components for the wizard's field-level interaction. **`admin`** — React 19 + Vite 8 SPA, the Platform Administrator console: content and translation publication, taxonomy version registration and migration runs, factor sets and thresholds, plan catalogue, reconciliation and dunning workspaces, adoption metrics, support-access grants. Both authenticate against and call the **same** `api`. |
+| **Alternatives considered** | *Admin as a route group inside the tenant app* — rejected: it shares an origin and a cookie scope by construction, which NFR-65 forbids. *Next.js for the admin console* — rejected: an internal, authenticated, behind-the-firewall console has no SEO and no cold-start latency concern, and benefits from the simpler Vite build. *A privileged Next.js server route reaching the database directly* — rejected by DR-11. |
+| **Consequences** | Next.js server-side code acts as a **session-holding proxy** — it holds the httpOnly refresh cookie and forwards requests with a short-lived access token, so no token is exposed to browser JavaScript — but every route it calls exists in the public OpenAPI surface and is authorized identically. Three Next.js 16 specifics are load-bearing: `proxy.ts` replaces `middleware.ts` and runs on the Node.js runtime, which is exactly the tier this decision describes, so the project starts on `proxy.ts`; **Cache Components (`"use cache"`) stay off as a security rule, not a performance preference** — every page is tenant-scoped, and a framework-level cache whose key the compiler generated without knowing about `organization_id` would leak across tenants **above** the RLS boundary of AD-2, where none of its probes would catch it; and `next lint` is removed, so CI must invoke ESLint directly or every gate in AD-13's table silently turns off. Turbopack is the default bundler; React Compiler stays off until the wizard's render profile is measured. |
+
+**The wizard's persistence model** is where three requirements collide: FR-37 (autosave on blur/step change, no save button), FR-38 (queue locally and retry offline), NFR-38 (p95 ≤ 250 ms, non-blocking), NFR-56 (no acknowledged change lost — acknowledge only after durable write). The design: field-level optimistic update in a client store, a debounced batched `PATCH` per field group, an IndexedDB-backed outbound queue that survives a tab close, a per-field `synced | queued | failed` indicator, and a persistent banner while anything is unsynced. The server acknowledges only post-commit. Conflict resolution is last-write-wins per field with the audit trail (FR-54) as the reconciliation record — appropriate because the realistic concurrency is one or two people in one SME, not simultaneous editing.
+
+### 4.11 AD-10 — Exports and all long-running work leave the request tier by queue
+
+| | |
+|---|---|
+| **Context** | NFR-46 requires export generation decoupled from the request tier such that an export burst affects only export latency, verified by fault injection flooding the export queue while measuring NFR-37. NFR-42 requires any generation projected beyond 30 s to run asynchronously with progress indication and completion notification. |
+| **Decision** | A BullMQ queue on Redis carries PDF generation, Excel template population, e-Factura transmission, email dispatch, dunning runs, reconciliation imports, taxonomy migration runs, trial and invitation expiry, metering rollups and backup verification. The `worker` container consumes it. The queue store is used for queueing, rate limiting and short-lived caches — **never** as a system of record. **The outbox is the only producer**: `api` does not enqueue directly. |
+| **Alternatives considered** | *Synchronous export in the request* — rejected by NFR-46. *A synchronous fast path plus an async slow path* — rejected: since NFR-42 forces the async path to exist anyway, making it the only path removes a branch. *`api` enqueueing to Redis directly* — rejected as a dual write: a job enqueued for a transaction that then rolls back runs against state that does not exist, and a commit whose `LPUSH` fails silently drops the work. *ExcelJS for the EFRAG template* — rejected (see below). *Ghostscript in the PDF path* — rejected (see below). |
+| **Consequences** | Every queued job has a durable outbox row behind it, so a total queue-store loss costs in-flight jobs that the dispatcher re-emits, not data. Export is always `202 + job id`. Completion raises a notification through AD-11. |
+
+**PDF, and why the obvious pipeline does not work.** PDF is produced by headless Chromium (Playwright) rendering the same React templates the preview uses, so FR-48's preview and FR-49's PDF cannot drift, with `tagged: true` set — Chromium emits an untagged PDF by default. Semantic HTML is what makes the resulting structure tree meaningful, which is why the templates are semantic rather than absolutely positioned. Two corrections to the conventional recipe:
+
+- **PDF/A-2b is the wrong conformance level for what NFR-75 asks.** 2b is *basic* — visual reproducibility only. Logical structure, tagging and Unicode mapping are level **a**; reading order and accessibility conformance are PDF/UA-1. A veraPDF pass against 2b proves nothing about tagged reading order, so a suite built that way reports green on a requirement it never tested. This architecture targets **PDF/A-2a plus PDF/UA-1** and validates against both profiles; NFR-82 is amended accordingly (§17.1).
+- **Ghostscript must not be in this path.** Its `pdfwrite` device does not post-process; it re-interprets and re-emits, and the structure tree, marked content and `/Lang` do not survive — it would strip exactly the tags NFR-75 requires, before veraPDF ever saw the file. (It is also AGPL-3.0, which the network clause makes a live licensing question for a hosted commercial service.) The OutputIntent, ICC profile and conformance XMP are instead injected **in place** with `qpdf`/`pikepdf`, which leave the rest of the file untouched.
+
+Chromium's tagging is real but shallow — headings, paragraphs, lists and tables, but not table header scope, artifact marking for decorative content, or PDF/UA identification metadata. Those are added in the same in-place step. If accessible tagging still proves unreachable, NFR-75 is escalated as a conflict rather than left claimed and untested.
+
+**Excel, and why ExcelJS is not the tool.** FR-50 requires writing into the **official EFRAG template's named ranges** while preserving its dropdowns and consistency formulas. ExcelJS parses an `.xlsx` into its own object model and writes a *new* workbook from it — there is no binary-base mode — so everything it does not model is lost on round trip, and data validation (the dropdowns) is its most frequently reported round-trip loss; sheet-scoped and formula-defined names generally do not survive either, and the template's named ranges are the target. The export therefore treats the `.xlsx` as what it is — a zip of XML parts — and patches it surgically: resolve the named ranges from `xl/workbook.xml`, rewrite only the target `<c>` nodes in the relevant `xl/worksheets/sheetN.xml`, delete `xl/calcChain.xml`, set `<calcPr fullCalcOnLoad="1"/>` so consumers recalculate on open, and rezip **every other part byte-for-byte unchanged**.
+
+NFR-20's verification needs restating for the same reason: LibreOffice Calc headless is automatable in CI and is the automated gate; Microsoft 365 and desktop Excel are not server-automatable on Linux, so those become a manual item on the release checklist rather than a CI job.
+
+### 4.12 AD-11 — One notification subsystem, channel-agnostic, with delivery evidence
+
+| | |
+|---|---|
+| **Context** | FR-157 requires every producer to raise through one mechanism. FR-167 requires cancelling an outstanding notice when its condition clears and deduplicating on category and subject. FR-170 requires per-recipient channel, dispatch timestamp and outcome as **the evidence that a required update was actually requested** — a compliance artefact, not telemetry. |
+| **Decision** | A notification is a first-class record (category, subject reference, recipients, state) held separately from the channels it is delivered on (FR-160). One notice to two people on two channels is one notification with four delivery records. In-app delivery writes directly to the recipient's notification centre with no external dependency (FR-168); email goes through `EmailPort`, language resolved **per recipient** (FR-169). |
+| **Alternatives considered** | *Fire-and-forget send per producer* — rejected: FR-167's cancellation and deduplication are only expressible if the notification is a stateful record keyed by `(category, subject_ref, recipient_scope)` with an upsert. |
+| **Consequences** | Every producer — payment failure, quota approach, trial expiry, dunning, service restriction, invitation, invoice delivery, version change, outstanding-report, deadline — raises through this one mechanism and acquires no delivery path of its own. FR-160 … FR-173 had no NFR counterpart, which left FR-170's delivery records with no acceptance threshold; NFR-106 … NFR-109 were authored to close that (§17.3). |
+
+### 4.13 AD-12 — Auth by short-lived JWT plus server-side revocable refresh sessions
+
+| | |
+|---|---|
+| **Context** | FR-6 requires a consumed password-reset link to invalidate all existing sessions; FR-7 offers termination of other sessions; FR-58 requires a role change to take effect **on the user's next request rather than at their next login**. FR-5 requires server-side session termination on logout. |
+| **Decision** | The access token is a short-lived (≤ 15 min) signed JWT carrying **`session_id` and nothing else of authorization consequence** — no role, no organization, no entitlement snapshot. Refresh tokens are opaque, stored server-side, rotated on use, revocable. Role, active organization and per-report rights are read server-side on every request from the session and membership records. |
+| **Alternatives considered** | *Claims in the token (role, org, entitlements)* — rejected: all three of FR-6, FR-7 and FR-58 need a per-request server-side lookup, and once that lookup exists the token is doing no authorization work. Carrying `role` anyway would be a live footgun — some guard, at some point, trusts the claim instead of the lookup, and nothing in the design would catch it. |
+| **Consequences** | The 15-minute lifetime bounds replay of a stolen token; the lookup, not the lifetime, bounds staleness. This is also why AD-2 grounds `app.current_org` in the membership lookup rather than in a claim. The admin surface needs its own token handler: AD-9's httpOnly-cookie proxy pattern depends on a server-side rendering tier, which `web` has and a static Vite SPA does not — left unaddressed, the *more* privileged surface would be the one holding its access token in browser JavaScript, inverting the intended risk gradient. `admin` therefore gets a small token-handler endpoint at `edge` so it uses the same httpOnly-cookie pattern. |
+
+### 4.14 AD-13 — TypeScript 6.0.3, single compiler
+
+| | |
+|---|---|
+| **Context** | TypeScript 7.0 shipped 3 August 2026 as the first stable release of the native Go compiler, 8–12× faster on full builds — and **without a stable programmatic API**, expected in 7.1. typescript-eslint declares support for `>=4.8.4 <6.1.0` with no tsgo support. This architecture leans on static analysis to discharge requirements that have no other verification. |
+| **Decision** | Build on **TypeScript 6.0.3**, single compiler. The optional TS 7 side-by-side type-check is documented but **not adopted**. |
+| **Alternatives considered** | *Adopt TS 7 on day one* — rejected: it would disable the tooling that several NFRs name *as their acceptance criterion*. The build would be faster and four requirements would become unverifiable — a bad trade at any compile speed. *Side-by-side (TS 7 advisory `typecheck`, TS 6 authoritative `build`)* — Microsoft's own recommended shape, documented, available, not taken; if adopted, TS 6 remains authoritative and a TS 7 failure is a signal to investigate, never a merge block. |
+| **Consequences** | Decorators are **not** the blocker — `tsgo` emits the same `__decorate`, `__metadata` and `__param` helpers, so NestJS DI, TypeORM entity metadata and class-validator all work under TS 7. The blocker is every consumer of the compiler API: `nest build` calls `createProgram()` and `program.emit()`, as do the Swagger and GraphQL CLI plugins, ts-jest, ts-loader, ts-morph and type-aware ESLint. 7.1 will ship a *different* API, so tooling must be **ported**, not widened — the wait is likely longer than 7.1's release date. Promotion criterion: make TS 7 the compiler of record when `nest build` **and** typescript-eslint both support it. Building on 6.0.3 now is the shortest route there, since 7.0 converts 6's deprecations into hard errors and makes `strict` and `esnext` the defaults. |
+
+Gates that depend on the TypeScript 6 compiler API, and the requirement each verifies:
+
+| Gate | Requirement it verifies |
+|---|---|
+| `dependency-cruiser` / `eslint-plugin-boundaries` on `modules/core` ↔ `modules/billing` | DR-1, NFR-15 — the *only* runtime-independent enforcement of the bounded-context split |
+| Rule prohibiting float in monetary types | NFR-58's stated verification, verbatim |
+| Rule prohibiting hardcoded date/number/currency format patterns | NFR-26's stated verification, verbatim |
+| Log-scanning rule for personal data | NFR-30 |
+| Route-coverage diff (interface-only privileged routes) | NFR-16 |
+
+### 4.15 AD-14 — TypeORM 1.1, adopted with five parts switched off
+
+| | |
+|---|---|
+| **Context** | The ORM choice was previously open. TypeORM sat on `0.3.x` for years with patchy maintenance; it reached **1.0 on 19 May 2026** and **1.1 on 13 July 2026**, making it — alongside Prisma — one of only two candidates with a 1.0-and-later stability commitment, while Drizzle (0.45) and Kysely (0.29) remain pre-1.0 on a system carrying a six-year fiscal retention obligation. |
+| **Decision** | **TypeORM 1.1.0** with `@nestjs/typeorm` 11.0.3 as the persistence layer, adopted with five parts deliberately switched off. |
+| **Alternatives considered** | *Prisma* — the other 1.0-committed candidate; TypeORM chosen for the first-party NestJS adapter, which removes real glue (module wiring, request scoping, health checks, testing utilities). *Drizzle, Kysely* — rejected as pre-1.0 against a six-year retention obligation. *Leaving the choice open* — closed by this decision. |
+| **Consequences** | The honest trade: an ORM's headline value is entity-driven schema generation and relational navigation, and this design uses **neither** — AD-3's disclosure store is a keyed upsert, not an object graph, and DR-1 forbids relations across the core/billing boundary. TypeORM is adopted for repository ergonomics, migration tooling and team familiarity, on condition that the parts which fight the design are switched off now rather than discovered in month four. |
+
+The five constraints, each non-negotiable:
+
+1. **`synchronize: false`, permanently, and no auto-generated migrations.** TypeORM's schema generation cannot express RLS policies or `FORCE ROW LEVEL SECURITY`, the `GRANT`/`REVOKE` model, `WITHOUT OVERLAPS` primary keys, `uuidv7()` defaults, statement-level triggers, AD-3's composite `(report_id, organization_id)` foreign key, or expression indexes. The failure mode is worse than "unsupported": a generated migration reads those objects as drift and tries to **revert** them. Migrations are hand-authored SQL inside TypeORM migration classes.
+2. **Every tenant query runs on the request's `QueryRunner`.** The largest integration risk in this decision. AD-2's RLS binding is transaction-local; a bare `repository.find()` takes an arbitrary pooled connection with no tenant GUC set. Mitigation: a `TenantRepository` base that resolves the active `QueryRunner` from `AsyncLocalStorage` and **throws when there is none**. Throwing is the point — without context, RLS returns zero rows, which presents as "this customer has no data" rather than as a bug. AD-2's CI probe suite gains a case that calls a repository method outside a request context and asserts it raises.
+3. **Two `DataSource`s, not one.** `coreDataSource` and `billingDataSource`, with `audit` entities registered on both so an outbox row commits in the same transaction as the billing state change (AD-6). This makes NFR-1's "disable the billing context" test a matter of not registering the second data source, and makes a cross-context entity relation impossible to declare rather than merely forbidden.
+4. **`numeric` stays a string.** The `pg` driver returns `numeric` as a JavaScript string and TypeORM preserves it — exactly what NFR-58 wants. The risk is a well-meaning `transformer` calling `parseFloat`; the CI float rule covers transformers explicitly.
+5. **The audit-trail write is raw SQL.** `RETURNING old.*, new.*` is not expressible in the query builder, so the field-change path uses `queryRunner.query()`. One function, deliberately.
+
+Two items for the first-week spike, listed rather than assumed: `@nestjs/typeorm` 11.0.3 declares its peer range as `^0.3.0 || ^1.0.0-dev`, which resolves 1.1.0 but loosely enough to warrant a smoke test; and TypeORM and NestJS both rely on `experimentalDecorators` / `emitDecoratorMetadata`, whose behaviour under the eventual TypeScript 7 move should be verified before that migration rather than during it.
+
+---
+
+## 5. Logical architecture
+
+### 5.1 The three layers, and why the separation is the central structural fact
+
+`Private Monetization Architecture` states the layering that DR-1 encodes. Keeping these three layers cleanly separated is what allows pricing and packaging decisions never to touch compliance logic.
+
+| Layer | Name | Owns | Knows nothing about |
+|---|---|---|---|
+| **Layer 1** | **Compliance core — "the truth"** | The entity data model mirroring the VSME taxonomy, the validation engine, and the PDF/Excel export generators | Plan, price, or tenant type. It only knows how to produce a correct report, and it is identical on the free tier and on an enterprise contract |
+| **Layer 2** | **Commerce / entitlement layer** | Plan-and-entitlement resolution ("can this org perform this action right now"), usage counters, the metering-event stream, and the payment/invoicing rails | Report content. It gates by key, not by capability |
+| **Layer 3** | **Distribution / tenancy layer** | The organization model and the typed relationships between organizations | Which monetization model is active for a given tenant |
+
+Layer 1 is the trust asset the whole product depends on. Layer 2 supports **multiple concurrent pricing units** (per-seat, per-report, per-API-call, per-managed-supplier) rather than one hardcoded unit, which is what lets several packagings run simultaneously for different customer segments without special-casing the core. Layer 3 models organization relationships as a generic typed graph from day one — retrofitting a multi-tenant hierarchy after the fact is one of the most expensive re-architectures to do later.
+
+**Cross-cutting: API-first.** The reporting core has a complete, documented API from day one, not a UI with an API bolted on afterwards. This is what makes usage-based billing, embedded/B2B2B use, enterprise integrations and white-labelling possible later without a separate engineering effort per channel — and it is the same principle DR-11 and NFR-16 require for a different reason (no privileged interface-only route).
+
+### 5.2 How the three layers map onto the deployed modules
+
+The three logical layers do not map one-to-one onto four schemas; the mapping is stated explicitly so neither model is misread.
+
+| Logical layer | Modules | Schema |
+|---|---|---|
+| Layer 1 — compliance core | `modules/core/*` (organization, entity, period, disclosure, calculator, validation, comparatives, export, trace) | `core` |
+| Layer 2 — commerce / entitlement | `modules/billing/*` (catalogue, subscription, entitlement, account, order, payment, invoicing, efactura, reconciliation, collections, refunds, enterprise, finreporting) | `billing` |
+| Layer 3 — distribution / tenancy | `modules/identity/*` (account, session, provider, membership, invitation) plus `core.organization` and `core.org_relationship` | `identity`, `core` |
+| Cross-cutting platform services | `modules/platform/*` (configuration, taxonomy, localization, notification, metering, audit, support-access, admin) | `config`, `audit` |
+| The only cross-context surface | `contracts/` — ports and event schemas | — |
+
+Note the deliberate asymmetry: the **organization aggregate lives in `core`**, not in a separate tenancy schema, while `billing` references it **by ID with no foreign key**. That is the physical expression of NFR-15 ("sharing no transaction, foreign key or table"). Metering — the instrumentation that makes Layer 2's pricing units evaluable — lives in `audit`, not in `billing`, so that the metering stream keeps flowing with `BILLING_ENABLED=false`.
+
+### 5.3 System context (C4 level 1)
+
+```mermaid
+graph TB
+    RC["Reporting Contributor<br/><i>SME staff, bookkeeper</i>"]
+    OA["Organization Administrator<br/><i>SME owner</i>"]
+    PA["Platform Administrator<br/><i>platform operator</i>"]
+    BO["Billing Operator<br/><i>finance</i>"]
+
+    SYS["<b>ESG Platform</b><br/>VSME Basic Module reporting,<br/>carbon calculator, exports,<br/>billing and fiscal compliance"]
+
+    IDP["Google / Microsoft<br/>OIDC identity providers"]
+    ACQ["maib / Victoriabank / MICB<br/>card acquiring"]
+    MIA["MIA instant payments<br/>National Bank of Moldova"]
+    BANK["Customer bank<br/>transfer + statements"]
+    EF["e-Factura<br/>national B2B e-invoicing"]
+    BNM["BNM<br/>official exchange rates"]
+    ESP["Transactional email<br/>provider (EU)"]
+    EFRAG["EFRAG artefacts<br/>Digital Template, XBRL taxonomy,<br/>open-source converter"]
+    MOR["Merchant of record<br/><i>registered, inactive at MVP</i>"]
+
+    RC --> SYS
+    OA --> SYS
+    PA --> SYS
+    BO --> SYS
+
+    SYS --> IDP
+    SYS --> ACQ
+    SYS --> MIA
+    SYS --> BANK
+    SYS --> EF
+    SYS --> BNM
+    SYS --> ESP
+    SYS -.-> EFRAG
+    SYS -.-> MOR
+```
+
+Dotted edges are offline/artefact relationships rather than runtime calls: EFRAG artefacts are registered into the configuration store by a Platform Administrator (FR-65), not fetched live — a live dependency on an external standards body inside the export path would put NFR-42 and NFR-48 at the mercy of someone else's uptime.
+
+`CA` (Common Access) and `SYS` do not appear as boxes on this diagram: `CA` is the pre-organizational capability set every authenticated principal holds, and `SYS` is the platform's own scheduled and event-driven work, which is internal. Both remain valid actors in the register.
+
+### 5.4 Container view (C4 level 2)
+
+```mermaid
+graph TB
+    BR["User's browser<br/>tenant UI · RO / EN / RU"]
+    BRA["Staff browser<br/>admin console"]
+
+    RP["<b>edge</b><br/>Caddy 2.11<br/>TLS 1.2+, HSTS, rate limit"]
+    WEB["<b>web</b><br/>Next.js 16 App Router<br/>SSR + proxy.ts session tier"]
+    ADM["<b>admin</b><br/>React + Vite SPA<br/>static bundle + token handler<br/>MFA, IP-restricted"]
+
+    API["<b>api</b><br/>NestJS 11 on Express 5<br/>modular monolith<br/>REST + OpenAPI 3.1"]
+    WRK["<b>worker</b><br/>NestJS worker mode<br/>BullMQ consumers<br/>+ scheduler"]
+
+    PG[("<b>postgres</b><br/>PostgreSQL 18<br/>schemas: core, billing,<br/>identity, config, audit<br/>RLS enforced")]
+    RDS[("<b>redis</b> 8.10<br/>queues, rate limits,<br/>ephemeral cache<br/><i>never system of record</i>")]
+    OBJ[("<b>object storage</b><br/>S3-compatible, EU<br/>exports, fiscal archive,<br/>object-locked")]
+
+    CHR["<b>renderer</b><br/>headless Chromium (tagged)<br/>+ qpdf / pikepdf / veraPDF"]
+    EXT["External providers<br/>acquiring · MIA · e-Factura ·<br/>BNM · email · OIDC"]
+
+    BR --> RP
+    BRA -->|"allowlisted IPs"| RP
+    RP --> WEB
+    RP --> ADM
+    WEB -->|"same public API"| API
+    ADM -->|"same public API,<br/>admin scope"| API
+    RP --> API
+    API -->|"outbox row<br/>(same transaction)"| PG
+    WRK -->|"dispatch → enqueue"| RDS
+    WRK -->|"consume"| RDS
+    API --> PG
+    WRK --> PG
+    WRK --> CHR
+    WRK --> OBJ
+    API --> OBJ
+    WRK --> EXT
+    API -->|"OIDC token exchange,<br/>hosted-session creation,<br/>BNM rate lookup"| EXT
+    RDS -.->|"pub/sub hint"| API
+    PG -.->|"version poll = authority<br/>(config + entitlement)"| API
+```
+
+**Seven Compose services, plus two stores outside the Compose file** — PostgreSQL runs on its own VM from the launch stage onward and object storage is an external EU S3-compatible provider. Each container exists because a requirement forces it, not because it is conventional.
+
+| Container | Responsibility | Replicas | Exists because |
+|---|---|---|---|
+| `edge` | TLS 1.2+, HSTS, rate limiting, admin IP allowlist, dynamic upstreams | 1 | NFR-61, NFR-64, and NFR-65's admin network restriction |
+| `web` | Tenant UI; holds the httpOnly refresh cookie; calls the public API only | 2 | SSR of list/preview views (NFR-43) and server-side session holding (AD-9) |
+| `admin` | Static SPA on `admin.<host>`; separate auth realm; MFA mandatory | 1 | NFR-65 — separate address, cookie scope and credential realm |
+| `api` | All bounded contexts; HTTP only; no long-running work | 2–4 | AD-1 |
+| `worker` | Outbox dispatch, queue consumers, scheduler | 1–3 | NFR-46, NFR-42, NFR-93 |
+| `renderer` | Tagged PDF generation, PDF/A-2a + PDF/UA-1 conformance | 1–2 | Chromium is heavy, has a different memory profile from Node, and must be independently restartable; NFR-82 and NFR-75 both live here |
+| `postgres` | Primary store | 1 (+ standby) | Primary store; NFR-51 |
+| `redis` | Queues, rate limits, ephemeral cache. **Never a system of record** | 1 | AD-10 |
+| `object storage` | Exports, fiscal archive (six years, object-locked) | external | NFR-36, NFR-72 |
+
+`api` and `worker` are the **same image**, different entrypoint. That matters for NFR-89 (buildable to a deployable artefact from source with no manual step) and for the reproducibility drill — one build, one version, two roles.
+
+---
+
+## 6. Component model
+
+### 6.1 Component view of the `api` container (C4 level 3)
+
+```mermaid
+graph TB
+    subgraph edge_layer["Request edge"]
+        AUTH["AuthGuard<br/>JWT + session lookup"]
+        TEN["TenantContextInterceptor<br/>transaction-local app.current_org"]
+        ENT["EntitlementGuard<br/>@RequiresEntitlement()"]
+        AUD["AuditInterceptor<br/>actor + timestamp on every mutation"]
+    end
+
+    subgraph core["<b>Compliance core</b> — schema: core"]
+        ORG["Organization &<br/>Entity"]
+        PER["Reporting Period<br/>lifecycle + version pinning"]
+        DIS["Disclosure Store<br/>taxonomy-keyed values"]
+        VAL["Validation Engine<br/>rule interpreter"]
+        CALC["Carbon Calculator<br/>factor-set versioned"]
+        COMP["Comparatives<br/>prior-period resolution"]
+        EXP["Export Orchestrator<br/>preview + enqueue"]
+        TRC["Field Audit Trail"]
+    end
+
+    subgraph billing["<b>Billing</b> — schema: billing"]
+        PLAN["Plan Catalogue"]
+        SUB["Subscription<br/>state machine"]
+        ORD["Order + Checkout<br/>saga"]
+        PAY["Payment Adapters"]
+        INV["Invoicing +<br/>gapless numbering"]
+        EFAC["e-Factura Pipeline"]
+        REC["Reconciliation"]
+        DUN["Collections / Dunning"]
+        LED["Billing Ledger<br/>append-only"]
+    end
+
+    subgraph ident["<b>Identity</b> — schema: identity"]
+        REG["Registration +<br/>verification"]
+        SESS["Session + refresh"]
+        OIDC["Provider identities"]
+        MEM["Membership + roles"]
+    end
+
+    subgraph shared["<b>Platform services</b> — schema: config, audit"]
+        CFG["Configuration Store<br/>versioned + publishable"]
+        TAX["Taxonomy Registry<br/>+ migration engine"]
+        I18N["Localization<br/>+ fallback log"]
+        NOTIF["Notification Service"]
+        METER["Metering<br/>append-only events"]
+        OUTBOX["Outbox Dispatcher"]
+        ENTS["Entitlement Service"]
+    end
+
+    AUTH --> TEN --> ENT --> AUD
+    AUD --> core
+    AUD --> billing
+    AUD --> ident
+
+    ENT -.->|"contracts/"| ENTS
+    ENTS -.->|"implemented in"| billing
+    core -.->|"reads config"| CFG
+    core --> TAX
+    VAL --> CFG
+    CALC --> CFG
+    billing --> LED
+    billing --> OUTBOX
+    core --> METER
+    billing --> METER
+    billing --> NOTIF
+    core --> NOTIF
+```
+
+### 6.2 The request edge — four cross-cutting obligations discharged once
+
+This is the only way those obligations stay true across 173 requirements.
+
+| Component | Responsibility | Requirement |
+|---|---|---|
+| `AuthGuard` | Server-side evaluation on every request; the interface layer is untrusted. Resolves session → user → membership → active organization | FR-4 … FR-8, NFR-62 |
+| `TenantContextInterceptor` | Opens the transaction and sets `app.current_org` / `app.current_user` transaction-locally (AD-2). A handler reaching the database outside this transaction gets no tenant context and therefore no rows — a fail-closed default | NFR-63 |
+| `EntitlementGuard` | `@RequiresEntitlement('report.export.pdf')` decorator, so the gated capability contains no gating logic | FR-100, NFR-17 |
+| `AuditInterceptor` | Attributes every state-changing action to an actor with a timestamp, across reporting, administration and billing alike | FR-159 |
+
+### 6.3 Compliance-core components
+
+| Component | Responsibility | Owned data | Depends on |
+|---|---|---|---|
+| Organization & Entity | Organization profile, typed organization relationships, reporting entities, sites, consolidation boundary, point-in-time entity snapshots | `core.organization`, `core.org_relationship`, `core.reporting_entity`, `core.entity_snapshot`, `core.site`, `core.consolidation_member` | Configuration (relationship types) |
+| Reporting Period | Period lifecycle, prior-period linkage, due date, template and taxonomy version pinning at period open | `core.reporting_period` | Taxonomy Registry, Configuration |
+| Disclosure Store | Element-keyed disclosure values, per-field state, not-material section declarations, carried-forward flags | `core.report`, `core.report_disclosure_value`, `core.section_declaration` | Taxonomy Registry, Field Audit Trail |
+| Validation Engine | Interprets registered rule definitions; produces per-field findings and per-module/per-report roll-up | `core.validation_finding` | Configuration (rules, thresholds) |
+| Carbon Calculator | Raw energy/fuel input capture, unit conversion, factor-set application, results written to B3 elements | `core.calc_run`, `core.calc_input`, `core.calc_result` | Configuration (factor sets) |
+| Comparatives | Prior-period resolution and year-over-year movement flags at the point of entry | — (reads across periods) | Reporting Period |
+| Export Orchestrator | Preview rendering, entitlement check, version resolution, enqueue, immutable export history | `core.export_artifact` | Entitlement Service, Outbox, Object Storage |
+| Field Audit Trail | Per-field who/when/previous-value capture, written from the same statement as the change; survives membership revocation | `core.field_change` | — |
+
+### 6.4 Commercial-layer (billing) components
+
+| Component | Responsibility | Owned data | Depends on |
+|---|---|---|---|
+| Plan Catalogue | Plans, plan versions, declarative entitlement keys, per-currency/per-cycle prices, discount codes | `billing.plan`, `plan_version`, `plan_entitlement`, `plan_price`, `discount_code` | Configuration |
+| Subscription | Subscription state machine, per-subscription overrides (Enterprise additive), change history | `billing.subscription`, `subscription_override`, `subscription_change` | Plan Catalogue |
+| Entitlement (implements `contracts/entitlement.port`) | Resolves plan entitlements + overrides into decisions; quota evaluation | — (derived; cached) | Plan Catalogue, Subscription, Metering |
+| Billing Account | Billing identity and fiscal attributes of the paying party | `billing` account records (FR-106, FR-107) | — |
+| Order + Checkout saga | Order lifecycle as its own aggregate; rail availability; terms-version capture; saga state and compensations | `billing.order` | Payment, Invoicing, Entitlement, Outbox |
+| Payment | Rail routing and provider adapters; tokenisation for recurring | `billing.payment` | `CardAcquiringPort`, `InstantPaymentPort`, `BankTransferPort` |
+| Invoicing | Proforma and invoice documents, gapless numbering, credit notes, FX rate capture at issuance | `billing.invoice`, `proforma`, `credit_note`, `number_series` | `ExchangeRatePort`, Outbox |
+| e-Factura Pipeline | Renders the invoice record into national XML, transmits, stores acknowledgement and identifier, tracks rejections | `billing.efactura_transmission` | `EInvoicingPort`, Outbox |
+| Reconciliation | Bank statement import, settlement matching, exception queue | `billing.settlement_match` | `BankTransferPort` |
+| Collections / Dunning | Dunning step sequencing, service-restriction decisions | `billing.dunning_step` | Notification, Entitlement |
+| Refunds | Refund execution against the original rail, with idempotent dispatch | (FR-139 … FR-141) | Payment, Outbox |
+| Enterprise | Contract path, additive subscription overrides, approved transfer terms | (FR-142 … FR-147) | Subscription |
+| Financial reporting | VAT treatment, fiscal reporting outputs, ledger consistency | (FR-148 … FR-152) | Billing Ledger, Configuration |
+| Billing Ledger | Append-only entries; corrections are superseding entries referencing the original | `audit.ledger_entry` | — |
+
+### 6.5 Identity components
+
+| Component | Responsibility | Owned data |
+|---|---|---|
+| Registration + verification | Account creation, email verification, password reset, uniform responses regardless of account existence | accounts, credentials, verification tokens |
+| Session + refresh | Short-lived access token issuance, opaque server-side refresh sessions rotated on use, server-side termination | sessions |
+| Provider identities | OIDC identities matched on **subject identifier**, not email | provider identities |
+| Membership + roles | Organization membership, role in active organization, per-report rights; revocation without cascading historical attribution | memberships |
+| Invitation | Invitation issuance, expiry, acceptance | invitations |
+
+### 6.6 Platform-service components
+
+| Component | Responsibility | Owned data | Notes |
+|---|---|---|---|
+| Configuration Store | Versioned artefacts with `draft → in review → published → superseded`, one-step revert, effective dating | `config.*` | AD-4. Version-poll invalidation is the authority |
+| Taxonomy Registry + migration engine | Registration of template and taxonomy versions and their artefacts, version-pair mappings, migration runs that preserve pre-migration state | `config` taxonomy tables | FR-65 … FR-70 |
+| Localization | Locale registration, label/help/message resolution, per-key runtime fallback logging into a review queue | `config` locale tables | FR-63, FR-64 |
+| Notification Service | Stateful notifications with N delivery records; dedup, cancellation, per-recipient channel and language | notification + delivery records | AD-11 |
+| Metering | Append-only event stream for every billable-shaped action, including actions not currently billed | `audit.metering_event` | FR-105, NFR-10 |
+| Audit | System audit log, support-access log | `audit.system_audit_log`, `audit.support_access_log` | FR-79, FR-81, FR-151, FR-159 |
+| Support access | Time-boxed, reasoned, ticket-referenced, auto-expiring grants to tenant content, fully logged | grant records | D-5, FR-77 … FR-79 |
+| Admin | Platform-administration surface behind the separate admin realm | — | FR-75, FR-76, FR-80, FR-82, FR-83 |
+| Outbox Dispatcher | Reads `audit.outbox_event`, dispatches with idempotency keys, is the **sole** queue producer | `audit.outbox_event`, `audit.inbound_event` | AD-6, AD-10 |
+| Entitlement Service (interface) | The `contracts/` port every gated capability consults; null implementation grants everything | — | AD-5 |
+
+### 6.7 Internal interfaces — the `contracts/` surface
+
+`contracts/` is the **only** cross-context surface, and the CI rule over it is one line of configuration and one of the highest-leverage things in the build: `modules/core/**` may not import `modules/billing/**`, and vice versa; both may import `contracts/**`. Without it, DR-1 degrades within about three sprints, because the shortest path to "show the plan name on the report page" is always a direct import.
+
+```
+apps/api/src/
+├─ contracts/                  # the ONLY cross-context surface
+│   ├─ entitlement.port.ts     # EntitlementService interface (AD-5)
+│   ├─ notification.port.ts
+│   └─ events/                 # EntitlementChanged, SubscriptionLapsed,
+│                              #   ConfigurationPublished, ReportCompleted
+│
+├─ modules/
+│   ├─ core/                   # ← schema: core        (FR-13 … FR-55, FR-83)
+│   │   ├─ organization/       #   FR-13 … FR-16
+│   │   ├─ entity/             #   FR-17 … FR-20
+│   │   ├─ period/             #   FR-21, FR-22, FR-23
+│   │   ├─ disclosure/         #   FR-24 … FR-32   (AD-3)
+│   │   ├─ calculator/         #   FR-33 … FR-36
+│   │   ├─ validation/         #   FR-40 … FR-44
+│   │   ├─ comparatives/       #   FR-45 … FR-47
+│   │   ├─ export/             #   FR-48 … FR-53
+│   │   └─ trace/              #   FR-54, FR-55
+│   │
+│   ├─ identity/               # ← schema: identity    (FR-1 … FR-12, FR-56 … FR-60)
+│   │   ├─ account/  session/  provider/  membership/  invitation/
+│   │
+│   ├─ billing/                # ← schema: billing     (FR-84 … FR-152)
+│   │   ├─ catalogue/          #   FR-84 … FR-89
+│   │   ├─ subscription/       #   FR-90 … FR-98
+│   │   ├─ entitlement/        #   FR-99 … FR-105  ← implements contracts/entitlement.port
+│   │   ├─ account/            #   FR-106, FR-107
+│   │   ├─ order/              #   FR-108 … FR-113  (saga, AD-6)
+│   │   ├─ payment/            #   FR-114 … FR-120  (adapters, AD-8)
+│   │   ├─ invoicing/          #   FR-121 … FR-130  (numbering, AD-7)
+│   │   ├─ efactura/           #   FR-126, FR-127   (D-9)
+│   │   ├─ reconciliation/     #   FR-131 … FR-134
+│   │   ├─ collections/        #   FR-135 … FR-138
+│   │   ├─ refunds/            #   FR-139 … FR-141
+│   │   ├─ enterprise/         #   FR-142 … FR-147
+│   │   └─ finreporting/       #   FR-148 … FR-152
+│   │
+│   └─ platform/               # ← schema: config, audit
+│       ├─ configuration/      #   FR-61, FR-62, FR-71 … FR-74   (AD-4)
+│       ├─ taxonomy/           #   FR-65 … FR-70
+│       ├─ localization/       #   FR-63, FR-64
+│       ├─ notification/       #   FR-157, FR-160 … FR-173       (AD-11)
+│       ├─ metering/           #   FR-105
+│       ├─ audit/              #   FR-79, FR-81, FR-151, FR-159
+│       ├─ support-access/     #   FR-77, FR-78, FR-79           (D-5)
+│       └─ admin/              #   FR-75, FR-76, FR-80, FR-82, FR-83
+│
+└─ infrastructure/
+    ├─ persistence/            # RLS session management, repositories, migrations
+    ├─ outbox/                 # AD-6
+    ├─ queue/                  # BullMQ producers
+    └─ adapters/               # one directory per port (AD-8)
+```
+
+### 6.8 The public API surface
+
+One versioned REST surface. OpenAPI 3.1 generated from source and diffed in CI. `web` and `admin` are ordinary clients — no privileged route exists. Base `/api/v1`; breaking changes only in a new version, after a stated deprecation window. Bearer access token; the active organization comes from the session, not from a header or a path segment. Errors are RFC 9457 problem+json, with *what failed / consequence / resolving action* in the detail.
+
+| Area | Paths |
+|---|---|
+| Identity | `/auth/*`, `/me`, `/me/notifications`, `/me/preferences` |
+| Organization | `/organizations/{id}`, `/members`, `/invitations` |
+| Entities | `/entities`, `/entities/{id}/periods` |
+| Reporting | `/reports/{id}`, `/reports/{id}/values`, `/validate`, `/preview` |
+| Calculator | `/reports/{id}/calculations`, `/inputs` |
+| Export | `POST /reports/{id}/exports` → 202 + job id; `/exports/{id}` |
+| Billing | `/plans`, `/subscription`, `/orders`, `/invoices`, `/payment-methods` |
+| Admin | `/admin/*` — content, taxonomy, factors, rules, plans, metrics, support-grants |
+
+---
+
+## 7. Domain and data model
+
+### 7.1 Schema layout and the cross-context rule
+
+Five schemas in one PostgreSQL 18 instance:
+
+| Schema | Contents | Cross-schema FKs |
+|---|---|---|
+| `identity` | accounts, credentials, provider identities, sessions, memberships, invitations | to `core.organization` only (membership target) |
+| `core` | organizations, entities, snapshots, periods, reports, disclosure values, calculator inputs/results, exports, field audit | none outward |
+| `billing` | plans, subscriptions, orders, payments, invoices, credit notes, ledger, dunning, reconciliation, number series | **none** — organization is referenced by ID, unenforced, deliberately (NFR-15) |
+| `config` | content, locales, taxonomy versions, mappings, factor sets, thresholds, rules, notification templates, plan data | none |
+| `audit` | system audit log, support-access log, billing ledger, metering events, outbox, inbound events | none |
+
+That `billing` holds **no foreign key** to `core.organization` is the physical expression of NFR-15. It costs referential integrity across the boundary, bought back by a nightly reconciliation job that reports orphaned billing records as an operational metric. This is the correct trade: an FK would make NFR-1's "disable billing entirely" test impossible to run, because the schema itself would not load.
+
+### 7.2 The reporting core
+
+```mermaid
+erDiagram
+    ORGANIZATION ||--o{ REPORTING_ENTITY : owns
+    ORGANIZATION ||--o{ ORG_RELATIONSHIP : "typed: SME | Advisor | Buyer | Licensee"
+    REPORTING_ENTITY ||--o{ ENTITY_SNAPSHOT : "point-in-time (FR-18)"
+    REPORTING_ENTITY ||--o{ SITE : "geolocation, B1/B5"
+    REPORTING_ENTITY ||--o{ CONSOLIDATION_MEMBER : "boundary (FR-19)"
+    REPORTING_ENTITY ||--o{ REPORTING_PERIOD : has
+    REPORTING_PERIOD ||--o| REPORTING_PERIOD : "prior period (FR-45)"
+    REPORTING_PERIOD ||--|| REPORT : contains
+    REPORT }o--|| TAXONOMY_VERSION : "pinned (FR-66, NFR-3)"
+    REPORT ||--o{ DISCLOSURE_VALUE : "element-keyed (AD-3)"
+    REPORT ||--o{ SECTION_DECLARATION : "not material + rationale (FR-31)"
+    REPORT ||--o{ VALIDATION_FINDING : "per field (FR-40)"
+    REPORT ||--o{ EXPORT_ARTIFACT : "immutable history (FR-53)"
+    DISCLOSURE_VALUE ||--o{ FIELD_CHANGE : "who, when, prior value (FR-54)"
+    REPORT ||--o{ CALC_RUN : "B3 source"
+    CALC_RUN ||--o{ CALC_INPUT : "raw, retained permanently (FR-33)"
+    CALC_RUN }o--|| FACTOR_SET_VERSION : "pinned (FR-35, NFR-19)"
+    CALC_RUN ||--o{ CALC_RESULT : "→ B3 elements"
+```
+
+Four modelling points carry disproportionate weight.
+
+**`ENTITY_SNAPSHOT`** exists because FR-18 requires entity master data to be retained point-in-time, so a report for a closed period keeps reflecting the values in force when it was prepared. Without a snapshot, an address correction in 2028 silently rewrites the 2026 report. The snapshot is taken at period open and referenced by the report.
+
+**`ORG_RELATIONSHIP` with a typed relationship** is present at MVP with only the direct-SME type active, because FR-14 and NFR-9 require Advisor, Buyer and Licensee types to be addable **without a schema migration** — NFR-9's verification is a fourth relationship type registered as data in staging, so the type is a `config` lookup, not a PostgreSQL enum. This is also Layer 3 of §5.1: the four relationship shapes the commercial model may need — direct SME, advisor managing N clients, buyer monitoring N suppliers, licensee white-labelling for M sub-orgs — are the same typed graph.
+
+*(On `state` in the disclosure store being a database enum while relationship types must be config: the rule is whether the value set changes with the standard. Relationship types are a roadmap axis and must move without DDL. The disclosure states are fixed by the Digital Template's own validation vocabulary plus the two the design decisions add, and a new one would be a genuine change in the meaning of the record — worth a migration. If a future FR adds a state such as "pending third-party data", this choice should be revisited.)*
+
+**`CALC_INPUT` retained permanently, `CALC_RUN` pinned to a factor-set version.** NFR-19 requires a stored calculation to reproduce exactly when re-run; a nightly replay of the whole report corpus is a release gate, and divergence blocks the release. This is the single strongest correctness guarantee in the system, costs almost nothing if the model is right from day one, and is nearly impossible to retrofit.
+
+**`FIELD_CHANGE` is written from the same statement that makes the change** — `RETURNING old.*, new.*` on the upsert — so there is no window in which a value has moved and its audit row has not. It also **survives membership revocation**: FR-55 requires historical attribution to be retained after a user's access to the organization is removed, so the change row carries a denormalised actor display name alongside the user reference, and membership removal (FR-59) never cascades.
+
+### 7.3 The disclosure store
+
+Element keys are VSME XBRL taxonomy local names. No table per module.
+
+```sql
+CREATE TABLE core.report_disclosure_value (
+  report_id            uuid    NOT NULL,
+  element_key          text    NOT NULL,             -- e.g. EnergyConsumptionFromRenewableSources
+  dimension_key        text    NOT NULL DEFAULT '',  -- pollutant, waste, contract, gender, country
+  ordinal              int     NOT NULL DEFAULT 0,   -- sites, subsidiaries
+  value_numeric        numeric,                      -- never float
+  value_text           text,
+  value_boolean        boolean,
+  value_date           date,
+  unit_code            text,                         -- MWh, tCO2e, m3, headcount, FTE
+  state                core.disclosure_state NOT NULL,
+  not_available_reason text,
+  carried_forward      boolean NOT NULL DEFAULT false,
+  organization_id      uuid    NOT NULL,
+  PRIMARY KEY (report_id, element_key, dimension_key, ordinal),
+  FOREIGN KEY (report_id, organization_id)
+    REFERENCES core.report(id, organization_id)
+);
+```
+
+`disclosure_state` = `ok | missing | inconsistency | error | invalid_url | not_available | not_material | nil_return`.
+
+Three structural details are deliberate rather than incidental:
+
+- `dimension_key` and `ordinal` are `NOT NULL` with `''` / `0` defaults so the key is a plain composite. PostgreSQL does not accept expressions in a `PRIMARY KEY` or `UNIQUE` *constraint*, and an expression unique index cannot be an FK target — which `FIELD_CHANGE` needs.
+- The denormalised `organization_id` is **tied** to the report's, not merely copied: `report` carries `UNIQUE (id, organization_id)` and the composite FK above enforces the pair. Without this, a wrong `organization_id` hides a row from its own tenant or exposes it to another, and RLS will faithfully enforce whatever the column says. The index leads with `organization_id`, since every RLS-filtered scan predicates on it.
+- `state` carries **nil return** (FR-30), **not available with reason** (FR-32, D-4) and **not material** (FR-31) as first-class values, distinct from an absent row. The reference reports reviewed in this project all disclose gaps explicitly rather than hiding them, and the data model has to be able to say "answered zero" and "deliberately unanswered, because X" in different ways.
+
+### 7.4 The billing core
+
+```mermaid
+erDiagram
+    PLAN ||--o{ PLAN_VERSION : "versioned (FR-87)"
+    PLAN_VERSION ||--o{ PLAN_ENTITLEMENT : "declarative keys (FR-85)"
+    PLAN_VERSION ||--o{ PLAN_PRICE : "per currency, per cycle (FR-86, D-14)"
+    PLAN_VERSION ||--o{ DISCOUNT_CODE : "FR-89"
+    SUBSCRIPTION }o--|| PLAN_VERSION : "exact version sold under"
+    SUBSCRIPTION ||--o{ SUBSCRIPTION_OVERRIDE : "Enterprise additive (FR-145)"
+    SUBSCRIPTION ||--o{ SUBSCRIPTION_CHANGE : "history (FR-98)"
+    SUBSCRIPTION ||--o{ ORDER : "FR-108"
+    ORDER ||--o| PAYMENT : "rail-routed (FR-114)"
+    ORDER ||--o| PROFORMA : "transfer rail (FR-121)"
+    ORDER ||--o| INVOICE : "on confirmed payment (FR-122)"
+    INVOICE ||--o{ CREDIT_NOTE : "corrections only (D-10)"
+    INVOICE ||--|| EFACTURA_TRANSMISSION : "ack stored (FR-126)"
+    INVOICE }o--|| NUMBER_SERIES : "gapless (AD-7, NFR-55)"
+    PAYMENT ||--o{ SETTLEMENT_MATCH : "reconciliation (FR-132)"
+    INVOICE ||--o{ DUNNING_STEP : "FR-135"
+    LEDGER_ENTRY }o--|| INVOICE : "append-only (FR-151, NFR-33)"
+```
+
+`ORDER` sits between subscription and invoice as its own aggregate with its own lifecycle, exactly as FR-108 requires, so an abandoned checkout leaves neither an orphaned subscription nor a consumed invoice number.
+
+### 7.5 Versioning and effective-dating strategy
+
+Three distinct mechanisms, applied to different things. Conflating them is the most likely modelling error in this area.
+
+| Mechanism | Applies to | Semantics |
+|---|---|---|
+| **Version pinning** | `report` → taxonomy and template version; `calc_run` → factor-set version | The record names the exact version that produced it. Re-export and re-calculation resolve the pinned version, not the current one (NFR-3, NFR-19) |
+| **Publish/supersede** | Labels, help text, validation messages, locales, notification templates | A pointer flip; the prior version becomes `superseded` and remains immutable. Revert is one action (NFR-85) |
+| **Effective dating** | Factor sets, applicability thresholds, validation rules, plan prices, VAT rates, MIA ceilings | Validity is a `daterange`; exactly one version is in force for any given date, enforced at database level |
+
+Published configuration versions are **immutable**. Effective-dating without immutability is not enough: an edited "published" factor set silently rewrites history, which NFR-87 forbids.
+
+**Taxonomy version rollout is deliberately not a schema migration** — that is the whole point of AD-3. Registering a version writes configuration; authoring a version-pair mapping writes configuration; a migration run is a worker job over a selected set of reports that **preserves the pre-migration state rather than overwriting in place** (FR-69), so a bad mapping is reversible. Affected organizations are notified through AD-11 (FR-70, FR-166), not left to discover it at export time.
+
+Schema migrations themselves follow **expand → migrate → contract**, because NFR-53 forbids any schema change that cannot be reversed while the prior version runs. Adding a column and backfilling is one release; removing the old one is a later release after the previous version is retired.
+
+### 7.6 Multi-tenancy and the tenant isolation model
+
+Every tenant table carries `organization_id uuid not null`. RLS `ENABLED` and `FORCED`.
+
+```sql
+CREATE POLICY tenant_isolation ON core.report
+  USING (organization_id = current_setting('app.current_org', true)::uuid);
+```
+
+Per request, inside the transaction:
+
+```sql
+SELECT set_config('app.current_org',  $1, true);   -- from AuthGuard membership lookup
+SELECT set_config('app.current_user', $2, true);   -- never from a JWT claim
+```
+
+| Role | RLS | Used by |
+|---|---|---|
+| `esg_app` | enforced | `api` request path |
+| `esg_worker` | enforced — sets context from the job payload's organization | `worker` |
+| `esg_admin_ro` | `BYPASSRLS`, read-only, every acquisition logged | cross-tenant rollups, migration runs, admin API |
+| migration owner | n/a | migration job only; not a superuser; credentials never available at runtime |
+
+TypeORM: all tenant queries run on the request's `QueryRunner`, resolved from `AsyncLocalStorage`. A `TenantRepository` base **throws** when no context is present.
+
+**What is expensive to retrofit is the plumbing, not the policies.** The costly parts are `organization_id` on every tenant table, the `AsyncLocalStorage` wiring and the repository discipline; the `CREATE POLICY` statements are a migration. Policies are nonetheless enabled in **every** environment from the first sprint, because the entire value of RLS is that a missing tenant context breaks loudly and early rather than leaking quietly later.
+
+### 7.7 Append-only enforcement at privilege level
+
+NFR-33 requires append-only storage of audit and ledger records **enforced at database privilege level**, with the stated verification that attempted mutation fails at the store, not in application code.
+
+```sql
+-- the migration role owns these tables; the application roles get INSERT/SELECT only
+REVOKE ALL ON ALL TABLES IN SCHEMA audit FROM PUBLIC, esg_app, esg_worker;
+ALTER DEFAULT PRIVILEGES IN SCHEMA audit REVOKE ALL ON TABLES FROM esg_app, esg_worker;
+GRANT INSERT, SELECT ON audit.ledger_entry, audit.system_audit_log,
+                        audit.metering_event, audit.support_access_log
+  TO esg_app, esg_worker;
+
+-- defence in depth: UPDATE/DELETE is a row trigger, TRUNCATE is a separate
+-- statement-level trigger — a BEFORE UPDATE OR DELETE trigger does NOT fire on TRUNCATE
+CREATE TRIGGER no_mutate  BEFORE UPDATE OR DELETE ON audit.ledger_entry
+  FOR EACH ROW       EXECUTE FUNCTION audit_immutable();
+CREATE TRIGGER no_truncate BEFORE TRUNCATE ON audit.ledger_entry
+  FOR EACH STATEMENT EXECUTE FUNCTION audit_immutable();
+```
+
+Three things this deliberately does not leave implicit. The blanket `REVOKE ... FROM PUBLIC` and the `ALTER DEFAULT PRIVILEGES` line are the load-bearing statements, not the `GRANT`: revoking `UPDATE, DELETE` from a role that was only ever granted `INSERT, SELECT` is a no-op, and the realistic failure mode is an ORM bootstrap script having issued `GRANT ALL ON ALL TABLES IN SCHEMA audit`. `TRUNCATE` needs its own statement-level trigger — the one privilege a row trigger cannot defend, and the fastest way to lose a ledger. And NFR-33's "fails at the store" holds only under an assumption that must be written down: **the owning migration role is not a superuser, is used only by the migration job, and its credentials are never available to a runtime process or an operator's psql session** — an owner can `ALTER TABLE ... DISABLE TRIGGER` or simply drop it. `esg_admin_ro` is neither the owner nor a member of the owner role.
+
+Corrections are superseding entries referencing the original (FR-151), which is also what D-10 requires of fiscal documents.
+
+### 7.8 Precision, money and time
+
+- **One representation per kind, not a choice.** Disclosure quantities are `numeric`; monetary amounts are **integer minor units** (bani). "`numeric` or minor units" would not be a rule a static-analysis gate could implement, and NFR-58's stated verification is exactly such a gate. Float is prohibited in both.
+- **Rounding is applied once at presentation for disclosure quantities** (NFR-18), so screen, PDF and Excel renderings of the same figure carry the same rounded decimal value — verified by a golden-report cross-format comparison **after locale normalisation**, since RO renders `1.234,5` where EN renders `1,234.5`. The comparison is of values, not of bytes.
+- **Money is the explicit exception: it is rounded at issuance and stored.** An invoice must foot — line nets plus VAT must equal the stated total to the bani, the e-Factura schema enforces line-to-total consistency, and the ledger must balance. Presentation-time rounding would let the PDF, the XML and the ledger each round independently from an unrounded value and legitimately differ by one minor unit, producing a rejected transmission of a document that, per D-10, cannot be corrected by editing. The rounding rule (half-up), the level (per line, then summed) and the VAT base are declared and stored with the document.
+- Foreign-currency invoices store the BNM rate for the invoice date **on the invoice record** and compute the MDL equivalent once at issuance (D-14, FR-129, NFR-58).
+- Timestamps are `timestamptz` in UTC at second precision or better, from an NTP-synchronised clock with drift alarmed above one second (NFR-34). Where a **legal date** is determined — invoice date, period end, deadline — the originating timezone is stored alongside, because "the invoice date" in a fiscal filing is a local-calendar fact, not an instant.
+
+### 7.9 Data conventions
+
+| Rule | Applies to |
+|---|---|
+| `uuidv7()` primary keys | all internal tables — **except** externally visible tokens (verification, password reset, invitation), which stay high-entropy random per NFR-64 |
+| `numeric` | disclosure quantities; rounded once at presentation |
+| Integer minor units (bani) | money; rounded at issuance, stored, half-up, per line then summed |
+| `timestamptz`, UTC, ≥ second precision | everything; originating timezone stored alongside any legal date |
+| `daterange` + `PRIMARY KEY (..., validity WITHOUT OVERLAPS)` | every effective-dated config table |
+| `RETURNING old.*, new.*` | field-change capture (raw SQL, one function) |
+| Append-only at privilege level | all `audit.*` tables; row trigger for UPDATE/DELETE, **statement** trigger for TRUNCATE |
+| `synchronize: false`, hand-written SQL migrations | always |
+| expand → migrate → contract | all schema change |
+
+**On `uuidv7()` and tokens.** UUIDv7 encodes its creation timestamp, so it must not be used where a value is externally visible and unguessability is the point. This belongs in the code-review checklist, because `uuidv7()` becoming the house default is exactly how such a token quietly becomes predictable.
+
+### 7.10 Key entity inventory
+
+**`core`** — `organization`, `org_relationship` (typed, config-driven), `reporting_entity`, `entity_snapshot` (point-in-time, taken at period open), `site`, `consolidation_member`, `reporting_period` (pins template + taxonomy version, links prior period, holds due date), `report`, `report_disclosure_value`, `section_declaration`, `validation_finding`, `export_artifact`, `field_change`, `calc_run` (pins factor-set version), `calc_input` (raw, permanent), `calc_result`.
+
+**`billing`** — `plan` → `plan_version` → `plan_entitlement` / `plan_price` / `discount_code`; `subscription` → `subscription_override` / `subscription_change`; `order`, `payment`, `proforma`, `invoice`, `credit_note`, `efactura_transmission`, `number_series`, `settlement_match`, `dunning_step`.
+
+**`audit`** — `ledger_entry`, `system_audit_log`, `support_access_log`, `metering_event`, `outbox_event`, `inbound_event`.
+
+---
+
+## 8. Integration architecture
+
+### 8.1 The anti-corruption-layer approach
+
+All third parties sit behind a **port** declared in `contracts/`, with exactly one **adapter** per provider, registered in a provider registry read from configuration. No vendor type appears outside its adapter — NFR-11's stated verification is a dependency review per release, so this is checkable by static analysis. Activation or replacement of a provider is a configuration change plus an adapter, with the diff limited to those two (NFR-14, verified by activating an adapter in staging).
+
+The port is where the external model is translated into the platform's own: an `invoice` is a platform-owned structured record that an adapter renders into national XML, not "a PDF that gets emailed"; an FX rate is a value captured onto the invoice at issuance, not a live lookup at read time; a taxonomy release is registered configuration, not a fetch.
+
+### 8.2 External systems
+
+| System | Direction | Purpose | Port |
+|---|---|---|---|
+| Google, Microsoft (OIDC) | out | Social sign-in, matched on subject identifier | `IdentityProviderPort` |
+| maib / Victoriabank / MICB | out | Card acquiring, hosted page + tokenisation | `CardAcquiringPort` |
+| MIA (National Bank) | out | Instant payment, offered only within the configured per-transaction ceiling (≈ 5,000 MDL) | `InstantPaymentPort` |
+| Customer bank | in | Statement import for transfer reconciliation | `BankTransferPort` |
+| e-Factura | out | National B2B e-invoicing XML, mandatory from 1 October 2026 | `EInvoicingPort` |
+| BNM | out | Official FX rate by invoice date | `ExchangeRatePort` |
+| Transactional email (EU) | out | Notification delivery, SPF/DKIM/DMARC aligned | `EmailPort` |
+| EFRAG artefacts | offline | Digital Template + XBRL taxonomy, registered by `PA`, **never fetched at runtime** | — (configuration) |
+| EFRAG open-source converter | out (Phase 2) | XBRL/iXBRL conversion, MIT-licensed, self-hosted | `DocumentConversionPort` |
+| Object storage (EU, S3-compatible) | out | Exports, six-year fiscal archive | `ObjectStoragePort` |
+| Merchant of record | out | Non-resident billing — **registered, inactive at MVP** | `MerchantOfRecordPort` |
+
+### 8.3 What is stubbed, inactive or absent at MVP
+
+| Integration | State at MVP | Why |
+|---|---|---|
+| `MerchantOfRecordPort` | Port registered, adapter **inactive** | D-8: activation must be configuration, not a build. Non-resident billing is Phase 2 |
+| `DocumentConversionPort` | Port present, **no adapter wired** | XBRL/iXBRL export is Phase 2; the port exists so Phase 2 is additive. Self-hosting the converter would add an eighth Compose service |
+| Peppol | **Anticipated, not built** | `EInvoicingPort` is shaped to accommodate it |
+| Energy-provider and accounting ingestion | **Not built** | Phase 3. `CALC_INPUT` already accepts sourced values with provenance, so the seam is an ingestion adapter per provider behind a port |
+| AI assistance / risk flagging | **Not built** | Phase 3. New port + adapter; the no-training-on-customer-data obligation (NFR-6) is a contractual gate on the adapter, not a code change |
+| ESAP bridge, blockchain traceability | **Not built, no seam claimed** | No requirements written |
+| Enterprise SSO (SAML / OIDC federation) | **Not built** | `IdentityProviderPort` is already provider-agnostic (D-6) |
+
+### 8.4 Integration behaviour that is architectural, not per-adapter
+
+- **Inbound events are de-duplicated at the edge**, keyed `(provider, provider_event_id)` with a unique constraint, before any handler runs (AD-6).
+- **Outbound calls carry an idempotency key** generated in the originating transaction. Providers without idempotency support — e-Factura among them — require the adapter to declare a **recovery query**; for e-Factura, look up by invoice number before re-transmitting.
+- **Provider unavailability is an operational exception with an owner, not a blocked user action.** An untransmitted invoice is a tracked exception (NFR-71); it never blocks checkout, and it is never marked delivered.
+- **Per-adapter outage simulation** is part of the availability verification set (NFR-50).
+- **e-Factura rejection is reconciled daily** (NFR-71) and cannot be repaired by editing the invoice — per D-10 the correction is a credit note. This is why XML encoding of user-entered narrative text is treated as a first-class injection concern (§9.7).
+
+---
+
+## 9. Cross-cutting concerns
+
+### 9.1 Authentication and authorization
+
+| Concern | Mechanism | Requirement |
+|---|---|---|
+| Email + password | Argon2id, per-user salt, pepper from secret manager | FR-1 |
+| Social sign-in | OIDC to Google/Microsoft; matched on **subject identifier, not email** | FR-2, FR-4, D-6 |
+| Provider registration | Config-driven; disabling stops new registrations, existing accounts keep other credentials | FR-82 |
+| Verification, reset, invitation | Single-use, high-entropy, time-limited tokens; uniform responses regardless of account existence | FR-3, FR-6, FR-11, NFR-64 |
+| Session | ≤ 15-min JWT carrying `session_id` only + server-side revocable refresh (AD-12) | FR-5 … FR-8 |
+| Active organization | Session-scoped; every read and write scoped to it | FR-12 |
+| Authorization | Server-side per request, role in active org + per-report rights | FR-158, NFR-62 |
+| Tenant isolation | RLS (AD-2) | NFR-63 |
+| Tenant MFA | **Opt-in TOTP**, available to any user, recommended to Organization Administrators (amended — §17.1) | — |
+| Admin surface | Separate host, IP allowlist, mandatory MFA, separate cookie scope and credential store | FR-75, NFR-65 |
+| Support access to tenant content | Time-boxed, reasoned, ticket-referenced grant; auto-expiring; logged | D-5, FR-77 … FR-79, NFR-66 |
+| Abuse | Rate limiting and lockout on all auth paths | FR-4, NFR-64 |
+
+**Matching a provider identity on subject rather than email (FR-4)** is worth calling out because getting it wrong is a real account-takeover path: email addresses are reassignable, and a provider may assert an address the account holder no longer controls.
+
+**WCAG 2.2's Accessible Authentication criterion constrains the login path** (§17.1), so AD-12 and D-6's social sign-in must be designed against it from the start rather than audited against it later.
+
+### 9.2 Auditability and append-only ledgers
+
+Four distinct audit surfaces, each with a different subject and a different retention driver:
+
+| Surface | Records | Retention driver |
+|---|---|---|
+| `core.field_change` | Per-field who / when / previous value, written from the same statement as the change; survives membership revocation | FR-54, FR-55, NFR-7, NFR-35 |
+| `audit.system_audit_log` | Every state-changing action attributed to an actor with a timestamp, across reporting, administration and billing | FR-159 |
+| `audit.ledger_entry` | Billing ledger; corrections are superseding entries referencing the original | FR-151, NFR-33 |
+| `audit.support_access_log` | Every support-access grant and every acquisition of the `BYPASSRLS` role | FR-79, NFR-66 |
+
+All are append-only at **database privilege level** (§7.7), not by convention. Fiscal documents are additionally written to write-once object storage with a six-year retention lock, readable independently of the application and the database (NFR-36, NFR-72); the annual verification is a restore-and-read from cold storage.
+
+### 9.3 Configurability without redeploy
+
+AD-4 is the mechanism; this is what it buys, expressed as obligations the platform must be able to meet:
+
+- A wording fix, a threshold change, a new factor set, a new validation rule, a new plan or a new notification template is published **within one working day of approval** and **reverted in one step** (NFR-85).
+- A compatible template/taxonomy rollout needs **no deployment** (NFR-86).
+- A fourth locale is content and configuration only — no code change, no schema change, no redeploy (NFR-25).
+- A new gated capability is a new entitlement key; a new plan is new data. Neither touches the other's code (NFR-17).
+- A fourth organization-relationship type is registered as data (NFR-9).
+- An unsold pricing unit can be evaluated end to end without a code change (NFR-10), because metering already emits for actions not currently billed.
+
+The staging environment is where each of these is rehearsed, and NFR-14, NFR-25, NFR-85 and NFR-86 all name staging rehearsal as their verification.
+
+### 9.4 Localization
+
+Three locales are live at MVP: **Romanian is the source**, with English and Russian each separately authored rather than machine-translated (NFR-23, as amended in §17.1).
+
+- Where EFRAG publishes an official translation of a VSME label, that translation is used **verbatim** (NFR-24) and diffed against the official template on every version rollout — the platform must not invent its own wording for a standard's label.
+- **This is unavailable for Russian.** EFRAG's Digital Template ships in EU languages only, so Russian VSME labels are platform-authored and carry no official standing. NFR-24 therefore applies to RO and EN; the Russian label set needs its own editorial sign-off, and an export intended for a bank or EU buyer should be produced in RO or EN.
+- All labels, help text and validation messages live in the configuration store as versioned data (FR-61), published as a reviewed, reversible set that takes effect across all tenants at once, so a half-finished translation is never live (FR-62).
+- Runtime fallback to the source locale is logged **per key** into a reviewable queue (FR-64, FR-10) — which is how missing translations get found in practice rather than by hoping.
+- Dates, numbers, units and currency format come from the active locale, with hardcoded format patterns blocked by a CI static-analysis rule (NFR-26).
+- Interface language, **export language** (FR-52) and **email language** (per recipient, FR-169) are selected independently.
+- Russian's addition at MVP is itself the NFR-25 verification, replacing the planned staging rehearsal. NFR-4 imposes no architectural limit on locale count.
+
+### 9.5 Notifications
+
+AD-11 is the mechanism. Operationally: a notification is one stateful record with N delivery records, deduplicated on `(category, subject_ref, recipient_scope)`, cancelled when its condition clears. In-app delivery writes directly to the notification centre with no external dependency; email goes through `EmailPort` with language resolved per recipient. Delivery records — channel, dispatch timestamp, outcome, read state — are **compliance evidence**, not telemetry. Quality thresholds are NFR-106 … NFR-109 (§17.3).
+
+### 9.6 Entitlement, metering and graceful reduction
+
+One append-only event stream (`audit.metering_event`) carries `organization_id`, action type, quantity, timestamp and a stable event key. **Every billable-shaped action emits, including actions not currently billed** (FR-105) — which is what makes NFR-10 achievable and what makes future pricing models a pricing decision rather than an instrumentation project.
+
+Three consumers read that one stream: organization usage counters (FR-105, surfaced per UC-66), quota evaluation in the entitlement service (FR-99), and the adoption dashboard (FR-83). Delivery is at-least-once with de-duplication on the event key, producing exact rather than approximate counters, continuously reconciled (NFR-57). It also feeds NFR-47's per-organization infrastructure cost attribution, which is how the free tier's viability gets measured rather than assumed.
+
+**Entitlement reduction never deletes.** Per D-13, FR-103 and FR-104: content beyond a reduced entitlement goes read-only by a deterministic, published rule — most recently active retained — with the outcome shown to the customer **before** the change takes effect (NFR-80). Previously generated documents stay downloadable throughout, and full data export in an open format works irrespective of subscription state (NFR-31), rehearsed as an exit drill.
+
+### 9.7 Output encoding and injection defence
+
+NFR-70 has three distinct destinations and one shared source — user-entered narrative text — so all three live in **one output-encoding layer** with an injection corpus in the export regression suite:
+
+| Destination | Threat | Neutralisation |
+|---|---|---|
+| Excel | A leading `=`, `+`, `-` or `@` turns the export into a formula-injection vector in the recipient's spreadsheet | Neutralise or escape the leading character |
+| PDF and interface | Markup and script injection | Markup and script escaping |
+| e-Factura XML | A malformed payload is rejected by the national platform and, per D-10, **cannot be corrected by editing the invoice** — only by a credit note | Proper XML encoding |
+
+### 9.8 Validation as a cross-cutting mechanism
+
+Validation is a **rule interpreter over registered rule definitions** (FR-73), not compiled logic, so that a rule change is a configuration publish (NFR-85). Rules are typed:
+
+- **presence** — is a required element answered, given applicability
+- **applicability** — the ≥50-employee turnover threshold, the ≥150-employee gender pay gap threshold, site-driven biodiversity relevance, sector-driven water relevance (FR-28), each evaluated **dynamically from B1 inputs** so fields are shown or hidden rather than presented and later rejected
+- **consistency** — the taxonomy's calculation linkbase, reused directly: headcount by gender and contract must total headcount; waste fractions must total waste; GHG rollups must reconcile
+- **range / format** — units, non-negativity, URL validity
+- **cross-period** — year-over-year movement flags surfacing beside the prior-period value at the point of entry (FR-46)
+
+Every finding carries the field, the rule, its plain-language explanation and a deep link (FR-42, NFR-78, NFR-79). Validation is idempotent at any completeness level (FR-43), which makes it a drafting tool rather than only a pre-export gate. State rolls up per module and per report, **discounting sections declared not material** so a legitimate exclusion does not depress the completion figure (FR-41). Export with unresolved findings is permitted after explicit warning, with gaps marked visibly in the output rather than silently omitted (FR-44). Target: p95 ≤ 2 s for a fully populated Basic Module report (NFR-39), benchmarked against a maximum-population fixture.
+
+`packages/validation` is shared between `api` and `web`: the wizard shows validation inline as the user types (FR-40) and the server re-validates authoritatively. One rule interpreter, two execution sites, no drift.
+
+### 9.9 Carbon calculation
+
+Raw energy and fuel inputs are stored permanently by source and site in invoice units, converted to MWh, and a factor set is applied; results are written to B3 elements. Every `calc_run` pins the factor-set version. A nightly replay of the whole report corpus is a release gate, and divergence blocks the release. Computed values may be overridden with attribution, and the superseded value is retained. Target: p95 ≤ 1 s.
+
+### 9.10 Observability and operations
+
+- **Correlation identifier** propagated across order → payment → fiscal document → e-Factura transmission → entitlement change (NFR-90), with weekly sampled trace-completeness checks. This is what makes a customer's "I paid and nothing happened" answerable in one query.
+- **Structured logs, no personal data** — pseudonymous identifiers in logs, error traces, metering events and analytics, with a log-scanning gate in CI and sampled scanning in production (NFR-30).
+- **Alerts** for unreconciled settlements beyond tolerance, e-Factura rejections, dunning backlog, metering-event lag, migration-run failures and locale-fallback spikes (NFR-91) — each exercised at least annually, because an untested alert is a decoration.
+- **Scheduled-job heartbeats with absence alerting** for dunning, trial and invitation expiry, reconciliation import, backup and taxonomy migration (NFR-93). Absence alerting matters more than failure alerting: a job that stops running silently is the failure mode that actually happens.
+- **SLI collection** for NFR-37 … NFR-42 and NFR-48 against a monthly-reviewed error budget (NFR-92).
+- Stack: OpenTelemetry SDK in `api` and `worker` → self-hosted Prometheus + Loki + Grafana on VM-3, which keeps NFR-27's EU data-residency assertion trivially true and adds no sub-processor.
+
+---
+
+## 10. Deployment and infrastructure architecture
+
+### 10.1 Hosting and residency constraints
+
+All compute and all stores are in the **same EU region**, with backups replicated to EU object storage (NFR-27). The platform is operated as a privately owned, EU/EEA-hosted service acting as controller or processor directly with each customer under standard EU data-protection rules; residency is asserted for the primary store, replicas, backups, exports and logs. NFR-5 and NFR-27 stand unamended. Self-hosted observability and self-hosted PostgreSQL are chosen partly for this reason — each avoids adding a sub-processor.
+
+Packaging and deployment are **Docker and Docker Compose** on self-managed VMs. Named candidate regions in the sources are illustrative (e.g. Hetzner Falkenstein, OVH Gravelines) rather than a committed provider.
+
+### 10.2 Runtime topology — end state
+
+```mermaid
+graph TB
+    subgraph internet["Internet"]
+        U["SME users<br/>RO / EN / RU"]
+        ADMU["Platform staff"]
+    end
+
+    CDN["CDN / DNS<br/>TLS termination optional"]
+
+    subgraph vps1["<b>VM-1 — application</b> (EU region)"]
+        EDGE["edge — Caddy 2.11<br/>TLS, HSTS, rate limit,<br/>IP allowlist for admin.*"]
+        WEBC["web × 2"]
+        ADMC["admin (static)"]
+        APIC["api × 2–4<br/><i>scaled for filing window</i>"]
+        WKC["worker × 1–3"]
+        RENC["renderer × 1–2"]
+        REDC["redis 8.10"]
+        PGB["pgbouncer<br/>transaction pooling"]
+    end
+
+    subgraph vps2["<b>VM-2 — data</b>"]
+        PGP[("postgres primary<br/>PG 18.x")]
+        BKP["pgBackRest<br/>WAL archiving"]
+    end
+
+    subgraph vps3["<b>VM-3 — standby + observability</b>"]
+        PGS[("postgres<br/>streaming replica")]
+        OBS["Prometheus · Loki ·<br/>Grafana"]
+    end
+
+    OBJS[("Object storage — EU<br/>S3-compatible,<br/>versioned + object lock")]
+
+    U --> CDN --> EDGE
+    ADMU -->|"allowlisted IPs"| EDGE
+    EDGE --> WEBC
+    EDGE --> ADMC
+    EDGE --> APIC
+    WEBC --> APIC
+    APIC --> PGB --> PGP
+    WKC --> PGB
+    APIC --> REDC
+    WKC --> REDC
+    WKC --> RENC
+    WKC --> OBJS
+    APIC --> OBJS
+    PGP -->|"streaming"| PGS
+    PGP --> BKP --> OBJS
+    APIC -.-> OBS
+    WKC -.-> OBS
+```
+
+**Three VMs, not one.** A single-VM Compose stack cannot meet NFR-51, because the database and the application share a failure domain. Separating data onto VM-2 with a streaming replica on VM-3 makes recovery a promotion rather than a restore. Three specifics that the diagram alone would leave misleading:
+
+- **Asynchronous streaming replication cannot deliver RPO = 0.** By default a commit is acknowledged before the WAL reaches the standby, so losing VM-2 loses the replication-lag window — and NFR-51 asks for zero on exactly the records where one lost commit is a fiscal-numbering gap. The answer is **scoped synchronous commit**: `synchronous_standby_names` names the VM-3 standby, and the invoice, payment and ledger transactions run `SET LOCAL synchronous_commit = on` while the rest of the workload stays asynchronous. The consequence must be accepted explicitly: if the sole synchronous standby is down, those transactions block — mitigated by a quorum (`ANY 1 (...)`) or a documented degradation procedure.
+- **PgBouncer runs on VM-1 with the application, not on VM-2.** Co-locating the connection router with the primary means it fails with the primary, and every client must be reconfigured before promotion counts as recovery.
+- **Failover is a manual runbook unless something automates it.** No Patroni, repmgr or VIP/DNS switch is specified. That is acceptable against RTO ≤ 4 h but must be stated rather than implied by the phrase "streaming replica".
+
+### 10.3 The topology is a schedule, not a prerequisite
+
+Nothing requires the end state on day one, and of everything in this document it is the **easiest** thing to defer, because it is the only structural decision that is fully reversible: moving PostgreSQL to its own host is a connection string and a restore, with no application code change.
+
+Two things are worth separating before choosing a start point. **Capacity is not the driver** — the scale envelope fits comfortably on one modest machine. And **the third VM buys durability, not uptime**: `edge`, `redis` and VM-1 remain single points of failure regardless, so anyone justifying the third machine on availability grounds is justifying it wrongly.
+
+| Stage | Trigger | Topology | What it satisfies |
+|---|---|---|---|
+| **Build and pilot** — free tier, invited cohort | — | **1 VM.** Everything in one Compose stack, PostgreSQL included. Nightly base backup plus WAL archiving to EU object storage | RPO in minutes, RTO "restore from backup" — adequate while no fiscal document, payment or invoice exists, which are the records NFR-51 singles out |
+| **Public launch** — open registration | Public launch | **2 VMs.** PostgreSQL on its own host | The application VM can be rebuilt, redeployed or lost without touching data. The step that buys the most per unit of effort |
+| **Commercial** | First paid invoice, or first filing window | **3 VMs.** Add the streaming standby, scoped `synchronous_commit` on fiscal transactions, PgBouncer on the app host | NFR-51 in full, including RPO = 0 where it now has actual subjects |
+
+The one thing not to defer alongside the machines is the **restore rehearsal**. NFR-52 is verified by rehearsal rather than by test, and a backup nobody has restored is a hypothesis. Run it at the single-VM stage, when it is a ten-minute exercise.
+
+### 10.4 Compose services
+
+```yaml
+# docker-compose.yml (structure; values via .env, secrets via file mounts)
+services:
+  edge:      # Caddy — TLS, HSTS, rate limiting, admin IP allowlist, dynamic upstreams
+  web:       # Next.js, standalone output          [replicas 2, no host ports]
+  admin:     # static Vite bundle served by edge
+  api:       # NestJS HTTP mode                    [replicas 2–4, no host ports]
+  worker:    # same image, MODE=worker             [replicas 1–3]
+  renderer:  # Chromium (tagged PDF) + qpdf/pikepdf + veraPDF  [memory-limited, restart policy]
+  redis:     # queues, rate limits, ephemeral cache
+  # postgres runs on VM-2 from the launch stage onward, not in this file
+```
+
+### 10.5 Environments
+
+| Environment | Purpose | Data | Gates |
+|---|---|---|---|
+| `local` | Full Compose stack + seeded fixtures | Synthetic only | — |
+| `ci` | Ephemeral stack per pipeline | Synthetic | Migrations, RLS cross-tenant probe, module boundaries, contract tests, coverage floors, accessibility, injection corpus, cross-browser, `BILLING_ENABLED=false` suite |
+| `staging` | Production-shaped; the rehearsal environment NFR-14, NFR-25, NFR-85 and NFR-86 all name as their verification | **Anonymised** (NFR-32) | Adapter activation, locale addition, config publish/revert, taxonomy rollout |
+| `production` | — | Live | — |
+
+NFR-32 prohibits production customer data in non-production environments. The anonymisation job is part of the platform, not a manual script, because a manual script is what gets skipped.
+
+### 10.6 Release, rollback and the filing window
+
+- **Zero-downtime, reversible deployment** (NFR-53) needs a mechanism Compose does not have. `deploy.replicas` is honoured by Compose v2, but `deploy.update_config` — the key that defines health-gated, one-at-a-time replacement — is **Swarm-only and ignored by `docker compose up`**, whose recreate strategy is stop-then-start with no drain and no rollback primitive. The mechanism is therefore **blue/green**: two Compose project instances behind `edge`, health-check the new one, switch the Caddy upstream, retire the old. Caddy must be configured with dynamic upstreams or an explicit upstream list, or it resolves the Docker DNS name once at config load and pins a single container — making the filing-window scale-up have no effect on traffic distribution. A service fronted by `edge` must also publish no host `ports:` mapping, or replicas collide on the port. Schema changes follow expand → migrate → contract, with a rollback drill per release train.
+- **Filing-window posture.** The window is **April–May, peaking in the final two weeks of May** (§17.2). Ahead of it: scale `api` and `worker` replicas, run the 10× load test and a 24-hour soak at 3× (NFR-44), and impose a change freeze. NFR-48 permits **no** announced maintenance inside the window.
+- **Backup and DR.** Continuous WAL archiving to EU object storage with object lock; nightly base backup; **quarterly full restore rehearsal measured against both RPO and RTO** (NFR-52). Fiscal documents are additionally written to write-once object storage with a six-year retention lock, readable independently of the application and the database (NFR-36, NFR-72).
+- **Secrets** in a managed secret manager, or SOPS-encrypted files with age keys for a Compose deployment, scoped per environment and access-logged, with CI secret scanning on source and on the image registry (NFR-69).
+
+### 10.7 Repository layout
+
+A single pnpm workspace monorepo. One repository, because the OpenAPI contract, the shared types and the boundary rules are only cheaply enforceable inside one.
+
+```
+easyesg/
+├─ apps/
+│  ├─ api/                 # NestJS — HTTP and worker modes (AD-1)
+│  ├─ web/                 # Next.js tenant application
+│  └─ admin/               # React + Vite platform console
+├─ packages/
+│  ├─ contracts/           # OpenAPI-generated client + shared DTOs + event schemas
+│  ├─ vsme/                # taxonomy model, element registry, typed facade generator (AD-3)
+│  ├─ validation/          # rule interpreter — shared by api and web for inline checks
+│  ├─ ui/                  # design system: wizard primitives, WCAG 2.2 AA components (SCSS)
+│  ├─ xlsx-patch/          # byte-preserving named-range writer for the EFRAG template
+│  └─ i18n/                # locale loading, formatting, fallback reporting
+├─ config/
+│  ├─ seed/                # initial taxonomy version, factor sets, rules, plans, templates
+│  └─ efrag/               # official Digital Template binaries, per version
+├─ infra/
+│  ├─ compose/             # docker-compose.{yml,staging.yml,prod.yml}
+│  ├─ caddy/
+│  ├─ postgres/            # roles, RLS policies, grants, pgBackRest config
+│  └─ ci/
+└─ docs/
+   ├─ architecture.md      # this document
+   ├─ adr/                 # one file per decision in §4
+   └─ runbooks/            # DR restore, taxonomy migration, e-Factura outage,
+                           #   reconciliation exception, support-access grant
+```
+
+**Runbooks are a deliverable, not an afterthought**, because six NFRs are verified by *rehearsal* rather than by test — NFR-28/29 (data-subject requests), NFR-31 (exit), NFR-51/52 (restore), NFR-85 (publish-and-revert), NFR-86 (version rollout), NFR-93 (job failure).
+
+---
+
+## 11. Key runtime flows
+
+Only flows evidenced in the sources are given here.
+
+### 11.1 Report authoring — autosave under three colliding requirements
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor RC as Reporting Contributor
+    participant W as web (Next.js)
+    participant Q as IndexedDB queue
+    participant A as api
+    participant P as postgres
+
+    RC->>W: enters value, blurs field
+    W->>W: optimistic update, mark field "queued"
+    W->>Q: enqueue change (survives tab close)
+    W->>A: PATCH /reports/:id/values (batched, debounced)
+    A->>P: BEGIN, set transaction-local app.current_org
+    A->>P: upsert disclosure_value + insert field_change
+    A->>A: re-run affected validation rules (in-request)
+    A->>P: COMMIT
+    A-->>W: 200 + updated per-field validation state (FR-40)
+    W->>Q: dequeue
+    W->>W: mark field "synced"  [p95 ≤ 250 ms — NFR-38]
+
+    Note over W,Q: offline → banner stays,<br/>queue retries with backoff (FR-38)
+```
+
+The acknowledgement lands **after** commit, never optimistically — that is the whole content of NFR-56, verified by kill-during-write fault injection across the autosave path.
+
+**Validation runs inside the same request and ships in the same response.** The alternative — computing validation asynchronously and pushing the result — would require an SSE or WebSocket transport, which exists nowhere in the container view, the Compose services or the `edge` configuration, and which brings replica-affinity consequences with it. Since NFR-39's budget is p95 ≤ 2 s for a *full* report and only the rules touching the changed fields re-run here, the incremental cost fits inside NFR-38's 250 ms. If profiling later shows it does not, adding a push transport is a deliberate change to §5.4 and §10.4, not an implementation detail.
+
+### 11.2 Order → payment → invoice → e-Factura → entitlement
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor OA as Org Administrator
+    participant W as web
+    participant A as api (billing)
+    participant ENT as Entitlement Service
+    participant ACQ as Acquirer (hosted page)
+    participant O as Outbox
+    participant WK as worker
+    participant EF as e-Factura
+
+    OA->>W: choose plan
+    W->>A: POST /orders  (plan version, cycle, currency)
+    A->>A: price, VAT by residency + VAT status (FR-124)
+    A->>A: rail availability by total (MIA ceiling — FR-118, D-8)
+    A-->>W: order summary + available rails, exclusions stated (FR-110)
+    OA->>W: accept terms, choose card
+    W->>A: POST /orders/:id/confirm  (terms version recorded — FR-111)
+    A->>ACQ: create hosted payment session
+    W->>ACQ: redirect (no card data touches platform — NFR-60)
+    ACQ-->>OA: 3-D Secure challenge
+
+    par server-to-server callback (authoritative)
+        ACQ-->>A: callback (de-duplicated on provider_event_id — NFR-54)
+        A->>A: saga: awaiting_payment → paid
+        A->>A: allocate number, FOR UPDATE on series (AD-7)
+        A->>A: issue invoice (immutable — D-10)
+        A->>O: outbox: e-Factura, invoice email, EntitlementChanged
+        A->>ENT: entitlements updated (only now — FR-92)
+        A-->>ACQ: 200
+    and browser return (may arrive FIRST)
+        OA->>W: return URL
+        W->>A: GET /orders/:id
+        A-->>W: pending → poll, show "confirming payment"
+    end
+
+    W->>A: GET /orders/:id (poll)
+    A-->>W: provisioned
+    WK->>O: dispatch
+    WK->>EF: transmit national XML
+    EF-->>WK: acknowledgement + identifier (stored — FR-126)
+    Note over WK: rejection → tracked exception with owner,<br/>never marked delivered (FR-127, NFR-71)
+```
+
+**The browser return and the acquirer callback are separate events, and the return very often arrives first.** Collapsing them — drawing the user's "provisioned" screen as a synchronous consequence of the webhook — is the most common checkout bug on hosted-payment-page rails. The rule this design encodes: **order state is authoritative from the callback only**; the return URL triggers a poll and nothing else, and a return-before-callback shows "confirming payment" rather than failing the order.
+
+### 11.3 Export generation
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor RC as Contributor
+    participant A as api
+    participant ENT as Entitlement
+    participant Q as BullMQ
+    participant WK as worker
+    participant CH as renderer
+    participant S3 as object storage
+    participant N as Notification
+
+    RC->>A: POST /reports/:id/exports  (format, language)
+    A->>ENT: check('report.export.pdf')   [p95 ≤ 20 ms — NFR-41]
+    ENT-->>A: allow | allow_with_warning (unresolved findings — FR-44)
+    A->>A: resolve pinned template/taxonomy version (FR-51)
+    A->>Q: enqueue export job (via outbox dispatch)
+    A-->>RC: 202 + job id (never blocks the request tier — NFR-46)
+    WK->>CH: render semantic HTML → PDF
+    CH->>CH: inject OutputIntent + XMP in place (qpdf), veraPDF vs PDF/A-2a + UA-1
+    WK->>S3: store artefact + metadata (NFR-22)
+    WK->>A: record immutable export history entry (FR-53)
+    WK->>N: raise completion notification (NFR-42)
+    N-->>RC: in-app + email per preference (FR-163)
+```
+
+Excel export follows the same path, writing into the official EFRAG template's named ranges at the report's pinned version and preserving its dropdowns and consistency formulas (FR-50, NFR-20). Export history is immutable, and any prior export is re-downloadable exactly as distributed.
+
+### 11.4 Entitlement check
+
+1. A gated handler carries `@RequiresEntitlement('<key>')`; `EntitlementGuard` calls `check(orgId, key, requested?)` through the `contracts/` port.
+2. The billing implementation resolves the decision from the in-process cache, keyed by `organization_id` and an entitlement snapshot version. No network hop on the hot path — p95 ≤ 20 ms.
+3. On cache miss, entitlements are computed from plan-version entitlements plus per-subscription overrides, and quota keys are evaluated against the metering counters — ≤ 100 ms.
+4. Invalidation is a version poll of a single-row table (the authority) with Redis pub/sub as the fast path. A missed message costs seconds of staleness, not an indefinitely stale replica.
+5. If the billing context is unreachable, the cached last-known-good snapshot serves: **open** for already-granted keys, **closed** for new purchases (NFR-49).
+6. With `BILLING_ENABLED=false`, the null implementation grants everything, and UC-17 … UC-48 pass.
+
+### 11.5 Taxonomy migration
+
+1. `PA` registers a new template and taxonomy version in the configuration store, uploading its artefacts (FR-65, FR-66). This is data registration — no code release, no deployment (NFR-86).
+2. `PA` authors a version-to-version field mapping, pinned to the version pair (FR-67).
+3. A migration run is enqueued as a worker job over a **selected set** of reports.
+4. The run **preserves the pre-migration state** rather than overwriting in place (FR-69), so a bad mapping is reversible.
+5. Affected organizations are notified through the notification subsystem (FR-70, FR-166), not left to discover the change at export time.
+6. Reports not migrated keep their pinned version and continue to export and validate against it (NFR-3). Two taxonomy versions are registered in staging from day one, with a report pinned to each, so the version dimension is exercised continuously rather than discovered at the first rollout.
+
+### 11.6 Configuration publish and revert
+
+1. An edit is made in the admin console against a **draft**.
+2. Review moves it to `in review`, then approval triggers publication.
+3. Publication is a **single transactional action**: write a new immutable version, flip a pointer. Effective-dated artefacts carry a validity range with a database-enforced non-overlap guarantee.
+4. Replicas notice within ≤ 5 s by version poll; Redis pub/sub may deliver it sooner.
+5. Revert flips the pointer back — one action (NFR-85).
+
+---
+
+## 12. Technology stack and rationale
+
+Versions were verified on **10 August 2026** and are part of the build contract, not a detail. This table is accurate as of that date and will not stay accurate: it rides the quarterly regulatory-watch cycle (NFR-12), because the same review that checks EFRAG taxonomy releases should check this table.
+
+### 12.1 The stack
+
+| Layer | Component | Pinned | Rationale as stated in the sources |
+|---|---|---|---|
+| Runtime | Node.js | **24.19 LTS** (Krypton) | Node's own guidance: production runs Active or Maintenance LTS, never Current. 24 is Active LTS; 26 enters LTS in October 2026 |
+| Language | TypeScript | **6.0.3** | AD-13. TS 7 has no compiler API, which breaks `nest build`, ts-jest and type-aware ESLint |
+| Backend framework | NestJS | **11.1.29** | Current stable (12.0 in alpha) |
+| HTTP adapter | Express | **5.2.1** | NestJS's default adapter. Fastify was considered; at ≈ 150 peak concurrent sessions throughput is not the constraint, and Express has the wider middleware ecosystem and the documentation NestJS examples assume |
+| ORM | TypeORM | **1.1.0** | AD-14. Left `0.3.x` on 19 May 2026; adopted with five features deliberately switched off |
+| NestJS ORM adapter | `@nestjs/typeorm` | **11.0.3** | Peer range `^0.3.0 \|\| ^1.0.0-dev`; smoke-test against 1.1 |
+| Tenant UI | Next.js | **16.3.0** | App Router; `proxy.ts` session tier; SSR for list and preview views |
+| UI library | React | **19.2.8** | No major after 19 exists |
+| Admin build | Vite | **8.2.1** | Vite 8 makes Rolldown the single bundler and Oxc the React transform, replacing esbuild/Rollup/Babel — a straight build-speed win for an internal SPA |
+| Styling | Tailwind CSS | **4.3.3** | Utilities for layout and application UI |
+| Styling | Dart Sass | **1.102.0** | SCSS for design-system primitives and the print/PDF export templates. Modern API only; `@use`, not `@import` |
+| Database | PostgreSQL | **18.4** | §12.3 — five features are load-bearing. Stable since 25 September 2025; EOL November 2030 |
+| DB driver | `pg` | **8.23.0** | Returns `numeric` as a string, which NFR-58 wants |
+| Queue store | Redis | **8.10.0** | BullMQ's officially supported and tested backend, which removes a compatibility spike rather than adding one |
+| Jobs | BullMQ | **6.0.9** | Runs on its supported backend |
+| Redis client | ioredis | **6.0.0** | MIT-licensed |
+| Edge | Caddy | **2.11.4** | TLS, HSTS, rate limiting, admin IP allowlist, dynamic upstreams |
+| Rendering | Playwright / Chromium | **1.62.1** | Renderer and cross-browser CI; `tagged: true` for PDF structure |
+| PDF post-processing | qpdf / pikepdf, veraPDF | — | In-place metadata injection; conformance validation against PDF/A-2a and PDF/UA-1 |
+| Package manager | pnpm | **11.21.0** | Workspace monorepo |
+| Lint | ESLint | **10.8.1** | Next 16 removed `next lint`; CI calls ESLint directly |
+| Lint | typescript-eslint | **8.66.0** | The constraint behind AD-13 |
+| Boundaries | dependency-cruiser | **18.1.1** | AD-1's boundary enforcement |
+| Telemetry | OpenTelemetry JS SDK | **0.221.0** | Pre-1.0; pin exactly |
+| Observability | Prometheus, Loki, Grafana | — | Self-hosted on VM-3; keeps NFR-27's EU-residency assertion trivially true and adds no sub-processor |
+| Backup | pgBackRest | — | Continuous WAL archiving to EU object storage |
+| Connection pooling | PgBouncer | — | Transaction pooling mode only, on the application host |
+
+### 12.2 The styling split, and two configuration facts
+
+Tailwind utilities for layout and application UI; SCSS for what utilities express badly — the `packages/ui` design-system primitives, and the **export templates**, where the semantic HTML that `renderer` turns into PDF needs `@page` rules, page-break control, counters and print media queries, none of which are utility-shaped.
+
+- Sass runs **before** Tailwind. Write `@use`, never `@import` — Sass would try to resolve `@import "tailwindcss"` itself. Tailwind's own entry stays in a plain `.css` file; `.scss` files consume tokens through `@use` and `@apply`.
+- Use the **modern Sass API** (`sass-embedded` where build speed matters). The legacy JS API is deprecated and `@import` is slated for removal in Dart Sass 3.
+
+### 12.3 PostgreSQL 18 — where the version changes a decision, not a version string
+
+| Feature | What it changes |
+|---|---|
+| **Temporal constraints** (`WITHOUT OVERLAPS`, `PERIOD` foreign keys) | Turns AD-4's effective dating from an application invariant into a database one. Six configuration artefacts are effective-dated, and in every one of them two overlapping validity ranges is a correctness bug of the worst kind: silent, and visible only in a figure that was already reported. `PRIMARY KEY (scope, validity WITHOUT OVERLAPS)` is declarable. This is the single strongest argument for 18 here, because NFR-19 and NFR-87 both rest on exactly one factor set being in force for any given date |
+| **`RETURNING OLD.* / NEW.*`** | Collapses the field audit trail into one statement. On 17 this is read-then-write with a lock; on 18 the upsert returns both in the same round trip, removing a lock, a round trip and a class of race from the hottest write path (NFR-38's 250 ms budget) |
+| **`uuidv7()`** | Time-ordered primary keys keep inserts at the right edge of the B-tree on the append-heavy tables (`report_disclosure_value`, `metering_event`, `outbox_event`, `field_change`), instead of v4's scatter, WAL inflation and page splits. **Not** for externally visible tokens, which encode their creation time |
+| **B-tree skip scan** | Every tenant index leads with `organization_id` because of AD-2; pre-18 a query filtering only on a later column could not use the index and needed a duplicate. Skip scan makes the composite index usable, so there are fewer indexes to maintain on already write-heavy tables |
+| **`NOT NULL ... NOT VALID`** | Fits expand-migrate-contract. Previously adding `NOT NULL` to a populated table meant a validating scan under `ACCESS EXCLUSIVE` — a de facto maintenance window, which NFR-48 forbids inside the filing window |
+
+Two further conveniences, not decisions: the asynchronous I/O subsystem (`io_method`) gives sequential scans, bitmap heap scans and vacuum more headroom against NFR-37, and `pg_upgrade` now preserves optimizer statistics, removing the post-upgrade "everything is slow until `ANALYZE` finishes" cliff from the major-version runbook.
+
+**Not used:** PostgreSQL 18's OAuth authentication method. It authenticates *database* connections against an identity provider; this system's application roles authenticate by password or certificate from inside the private network, and AD-12 governs *user* authentication. Conflating the two would be a security regression, not a simplification.
+
+**Version policy.** Pin **18.x** and track minor releases on the quarterly cadence. PostgreSQL 19 is due around September 2026, i.e. mid-build; it is a post-launch runbook item, not a build-time decision (§18).
+
+### 12.4 The Redis licence question, answered rather than avoided
+
+Redis 8.10 is tri-licensed **RSALv2 / SSPLv1 / AGPLv3** — the licensee chooses. Valkey (the BSD-3 Linux Foundation fork) was considered and is not needed, because none of the three licences creates an obligation for this platform:
+
+- **AGPLv3** — its network clause triggers on *modified* versions served over a network. The platform runs stock Redis, does not modify it, does not redistribute it, and reaches it over a wire protocol using an MIT-licensed client (`ioredis`), so there is no derivative-work argument either.
+- **SSPLv1** — targets offering *the software itself* as a service. This platform uses Redis as an internal job queue; it does not resell Redis.
+- **RSALv2** — forbids offering a competing commercial product. Not applicable.
+
+If a procurement review ever objects on principle rather than on obligation, Valkey is a drop-in replacement on the same protocol — that is the fallback, not the default.
+
+The same licence discipline is applied consistently elsewhere: the EFRAG converter is MIT and therefore embeddable; **Ghostscript is AGPL-3.0 and is excluded from the PDF path on technical grounds, with the licence noted as a second reason it should not return** (§16).
+
+---
+
+## 13. Scalability, availability and performance approach
+
+### 13.1 Performance targets
+
+| Area | Target | Requirement |
+|---|---|---|
+| Interactive read | p95 ≤ 300 ms · p99 ≤ 800 ms at peak | NFR-37 |
+| Autosave acknowledgement | p95 ≤ 250 ms, non-blocking, after durable commit | NFR-38, NFR-56 |
+| Full-report validation | p95 ≤ 2 s | NFR-39 |
+| Carbon calculation | p95 ≤ 1 s | NFR-40 |
+| Entitlement decision | p95 ≤ 20 ms · ≤ 100 ms on cache miss | NFR-41 |
+| Export | p95 ≤ 10 s; async + notification beyond 30 s | NFR-42 |
+| Web vitals | LCP ≤ 2.5 s · INP ≤ 200 ms at p75, 4G mid-range | NFR-43 |
+| Concurrency | 10× median with no maintenance window | NFR-44, NFR-48 |
+| Notification dispatch | p95 ≤ 60 s from raise | NFR-106 |
+| Content publish | ≤ 1 working day from approval, revertible in one step | NFR-85 |
+
+### 13.2 How each target is reached
+
+- **Interactive latency** is protected by moving all long-running work out of the request tier (AD-10) and by keeping the entitlement decision in-process (AD-5). NFR-46's verification is fault injection that floods the export queue while measuring NFR-37.
+- **Autosave** batches debounced field-group `PATCH`es and runs only the validation rules touching the changed fields in-request; `RETURNING OLD/NEW` removes a lock and a round trip from that path.
+- **Validation and calculation** are benchmarked against **maximum-population fixtures**, not typical ones.
+- **Export throughput** scales by adding `worker` and `renderer` replicas; it is the binding constraint at the stated envelope.
+- **Element-keyed reads** are served by indexes leading with `organization_id`, which every RLS-filtered scan predicates on.
+
+### 13.3 Availability
+
+| Aspect | Position |
+|---|---|
+| Targets | 99.5% outside the filing window, 99.9% inside it — **scoped to application availability, excluding single-host infrastructure loss** (§17.1) |
+| Why the scoping is honest | `edge`, `redis` and VM-1 are each unreplicated. The three-VM topology buys durability, not uptime. Either the target excludes VM-1 infrastructure failure, or a second application VM is added behind the CDN |
+| Maintenance windows | None announced inside the filing window (NFR-48) |
+| RPO / RTO | ≤ 15 min / ≤ 4 h; **RPO = 0** for issued fiscal documents, payments and audit entries, delivered by scoped `synchronous_commit` (§10.2) |
+| Degradation | Billing unavailable → the core keeps serving UC-17 … UC-48 on cached entitlements, open for granted keys, closed for new purchases (NFR-49) |
+| Provider outages | Per-adapter outage simulation (NFR-50); an untransmitted invoice is a tracked exception, never a blocked checkout |
+| Restore | Quarterly full restore rehearsal measured against both RPO and RTO (NFR-52) |
+| Schema change | Expand → migrate → contract; nothing ships that cannot be reversed while the prior version runs (NFR-53) |
+| Failover | A **manual runbook**. No automated promotion is specified — acceptable against RTO ≤ 4 h, but stated rather than implied |
+
+### 13.4 Capacity and scaling headroom
+
+At the stated envelope (≤ 2,000 organizations, ≈ 150 peak concurrent sessions, ≈ 200 export generations/hour, < 100 GB) this topology is comfortable, and the binding constraint is export throughput, which scales horizontally.
+
+**NFR-45 requires accommodating 100× the envelope without redesign.** The migration path at that point is: managed PostgreSQL with read replicas, `worker` onto its own VM, and object storage already external. No part of this design has to be rebuilt to get there, which is the actual requirement.
+
+Additional capacity mechanisms named in the sources: independent horizontal scaling of `api`, `worker` and `renderer`; a pre-window 10× load test and a 24-hour soak at 3×; a **partitioning plan gate for every append-only store** (NFR-8, NFR-46); and metering-derived per-organization cost attribution against the €0.50/free-tier-organization/month ceiling (NFR-47).
+
+---
+
+## 14. Security architecture
+
+### 14.1 Layered position
+
+| Layer | Controls | Requirement |
+|---|---|---|
+| Transport and edge | TLS 1.2 minimum with HSTS; rate limiting on all auth paths; IP allowlist for the admin host | NFR-61, NFR-64, NFR-65 |
+| Session and identity | Argon2id password hashing with per-user salt and a pepper from the secret manager; ≤ 15-min JWT carrying only `session_id`; opaque server-side refresh tokens rotated on use and revocable; OIDC matched on subject identifier | FR-1 … FR-8, AD-12 |
+| Authorization | Evaluated server-side on **every** request from session and membership records; the interface layer is untrusted; role changes take effect on the next request, not the next login | FR-58, FR-158, NFR-62 |
+| Multi-factor | Opt-in TOTP for tenant users; **mandatory** MFA on the isolated admin surface | FR-75, NFR-65, §17.1 |
+| Tenancy | RLS `ENABLED` and `FORCED`, transaction-local context, three DB roles, CI cross-tenant probe suite including a job-level probe | NFR-63, AD-2 |
+| Data at rest | AES-256 with annual key rotation | NFR-61 |
+| Payment | PCI DSS **SAQ-A** scope: hosted pages and SDKs only; no PAN received, stored or transmitted; no custody or settlement code path exists | NFR-60, NFR-74, DR-7 |
+| Integrity of records | Append-only at database privilege level with a separate TRUNCATE trigger; gapless numbering with a row lock; immutable issued documents corrected only by credit note | NFR-33, NFR-55, D-10 |
+| Privileged access | `esg_admin_ro` (`BYPASSRLS`, read-only) acquisition logged; support access to tenant content is time-boxed, reasoned, ticket-referenced, auto-expiring and logged | FR-77 … FR-79, NFR-66 |
+| Secrets | Managed secret manager or SOPS/age-encrypted files, scoped per environment, access-logged; CI secret scanning on source and on the image registry | NFR-69 |
+| Supply chain | SCA gate; critical CVE remediation ≤ 7 days, high ≤ 30 | NFR-13, NFR-67, NFR-68 |
+| Output | Destination-specific neutralisation for Excel, PDF/interface and e-Factura XML in one encoding layer, with an injection corpus in the export regression suite | NFR-70 |
+| Logging | Pseudonymous identifiers only; no personal data in logs, error traces, metering events or analytics; CI log-scanning gate plus sampled production scanning | NFR-30 |
+
+### 14.2 Two structural security properties worth naming
+
+**The risk gradient runs the right way round.** The more privileged surface (`admin`) is the more constrained one: separate host, IP allowlist, mandatory MFA, separate cookie scope and credential store, and — because a static SPA has no server-rendering tier — a dedicated token-handler endpoint at `edge` so it uses the same httpOnly-cookie pattern as `web` rather than holding a token in browser JavaScript.
+
+**Framework-level caching is a tenancy risk, not a performance question.** Next.js Cache Components stay disabled and `"use cache"` is prohibited in any component that reads tenant data, enforced by a lint rule. A cache key generated by the compiler without knowledge of `organization_id` would leak a rendered page across tenants **above** the RLS boundary, where none of AD-2's probes would catch it. The only legitimate use is fully static, tenant-independent content: the marketing shell, the legal pages, the locale bundles.
+
+### 14.3 Data protection
+
+EU/EEA residency for the primary store, replicas, backups, exports and logs (NFR-5, NFR-27). Production customer data is prohibited in non-production environments, with anonymisation implemented as a platform job rather than a manual script (NFR-32). Data-subject request handling and full data export in an open format irrespective of subscription state are verified by **rehearsal** with runbooks as the evidence (NFR-28, NFR-29, NFR-31). For any future AI assistance, the no-training-on-customer-data obligation with stated retention (NFR-6) is a contractual gate on the adapter, not a code change.
+
+---
+
+## 15. Evolution and extensibility
+
+### 15.1 Named seams for deferred capability
+
+Each deferred capability has a named seam so that adding it is additive rather than structural. This is the practical test of whether the MVP architecture was right.
+
+| Deferred capability | Phase | Seam already present |
+|---|---|---|
+| XBRL / iXBRL export | 2 | `DocumentConversionPort` (AD-8); the EFRAG MIT-licensed converter self-hosted as an eighth Compose service; the export pipeline is already format-parameterised |
+| Comprehensive Module C1–C9 | 2 | AD-3 — a taxonomy registration plus rules; the module flag already drives form UI and export logic |
+| Completion dashboards, deadline reminders | 2 | FR-165 lead-time notices exist at MVP; the dashboard is a read model over existing data |
+| Year-over-year analytics view | 2 | Multi-period data and prior-period resolution are MVP (D-3, FR-45) |
+| Energy-provider / accounting ingestion | 3 | `CALC_INPUT` already accepts sourced values with provenance; add an ingestion adapter per provider behind a port |
+| AI narrative drafting, risk flagging | 3 | New port + adapter; NFR-6 (no training on customer data, stated retention) is a contractual gate on the adapter, not a code change |
+| Public disclosure portal | 3 | A **separate `public_disclosure` schema**, written by an explicit publish action and readable anonymously — **not** a relaxation of AD-2. Carries disclosed fields only: no audit trail, no calculator inputs, no omitted values. Field structure already ESAP-shaped |
+| Advisor / Buyer / Licensee organizations | 2–3 | `ORG_RELATIONSHIP` typed and config-driven (FR-14, NFR-9); the Enterprise contract path exists at MVP (D-12) |
+| Non-resident billing | 2 | `MerchantOfRecordPort` registered but inactive (D-8, NFR-14) |
+| Enterprise SSO (SAML / OIDC federation) | 2–3 | `IdentityProviderPort` is provider-agnostic (D-6) |
+| Usage-based pricing | later | Metering already emits for actions not currently billed (FR-105, NFR-10) |
+| ESAP bridge, blockchain traceability | uncommitted | **No requirements written; no seam claimed** |
+
+### 15.2 The public portal seam deserves its own note
+
+When the public portal arrives, the right shape is **not** a relaxation of tenancy. It is a separate read model: an explicit publish action projects the finished report into a `public_disclosure` schema readable anonymously, carrying only the disclosed fields and none of the audit trail, raw inputs or omitted values. That is faster (cacheable, CDN-able, no per-request tenant context), it makes the publication boundary an auditable event rather than a permission, and it means the public portal is structurally incapable of being a path into tenant data.
+
+### 15.3 Cheap to defer versus expensive to retrofit
+
+The register is large against the schedule, so the lever that works is scope and sequence, not structure. These two lists say where cuts can land.
+
+**Cheap to defer** — each can be added later without touching the data model or the module boundaries:
+
+| Deferrable | Why it is safe to defer | When to add it |
+|---|---|---|
+| Three VMs → one | NFR-51's RPO = 0 clause applies to **issued fiscal documents, payments and audit entries**; before the first paid invoice, none exist | Staged, §10.3 |
+| Blue/green deployment | NFR-48's 99.9% is an in-filing-window obligation | Before the first filing window |
+| PgBouncer | ≈ 150 peak concurrent sessions does not need a pooler | When connection count actually bites |
+| Separate `renderer` container | The isolation argument is about burst load a pilot does not have | Before public launch |
+| Admin console | Seed configuration from version-controlled files; the console matters when someone who cannot open a pull request needs to edit content | When a non-engineer owns the content |
+| Notification channels | In-app plus transactional email for verification and invitation covers the MVP; the category catalogue, preferences and dunning notices follow billing | With billing |
+| Comprehensive Module, XBRL, dashboards, integrations, AI, public portal | Already Phase 2/3 by prior decision | Per §15.1 |
+
+**Expensive to retrofit** — each is close to free at the start and close to impossible later, because each changes the meaning of data already written. All are built in the first phase regardless of which phase their *feature* lands in:
+
+- **The taxonomy-keyed store and version pinning** (AD-3, DR-4). Retrofitting version pinning onto reports written without it means guessing which taxonomy each existing report was prepared under. There is no correct answer, only a plausible one.
+- **Row-Level Security** (AD-2). Adding RLS to a schema whose queries already assume they see everything means auditing every query path at once, under time pressure, after the incident that prompted it.
+- **Retained calculator inputs and factor-set versioning** (NFR-19). A figure computed without its inputs and factor version stored cannot be reconstructed. Ever. This is the guarantee an assurance provider will ask about first.
+- **Per-field audit attribution** (FR-54). History not captured is history that does not exist.
+- **Append-only audit and ledger tables** (NFR-33). Converting a mutable table to append-only does not make its past trustworthy.
+- **The multi-period data model** (FR-45, D-3). Comparatives become mandatory in a company's second reporting year — which arrives on a fixed calendar, not on a roadmap.
+- **The transactional outbox** (AD-6). Cheap as a pattern from the first write; a rewrite of every side-effecting path once they exist.
+- **Content and rules as data** (AD-4). The alternative is a code release for every wording fix, which the quarterly regulatory-watch cadence turns into a permanent tax.
+
+### 15.4 Build order
+
+Sequence, not phases of scope:
+
+1. **Foundation** — monorepo, CI gates, migrations, RLS roles and policies, tenant context, audit, outbox, configuration store.
+2. **Identity** — registration, verification, social sign-in, sessions, memberships, invitations, opt-in TOTP.
+3. **Reporting core** — organizations, entities, snapshots, periods, taxonomy registry, disclosure store, wizard, autosave.
+4. **Calculator and validation** — factor sets, calc runs, rule interpreter, inline state, roll-up.
+5. **Export** — preview, PDF pipeline, EFRAG Excel patching, export history. → *free-tier pilot milestone*
+6. **Notifications** — categories, in-app centre, email delivery, preferences. Earlier than their register position, because verification and invitation depend on the delivery mechanism.
+7. **Billing** — catalogue, entitlement service, order saga, card and transfer rails, invoicing, numbering, **e-Factura in the first billing sprint** because of the 1 October 2026 deadline.
+8. **Operations** — reconciliation, collections, refunds, Enterprise contract path, admin console, adoption metrics.
+
+Two scheduling facts shape this rather than being discovered inside it. **e-Factura is a hard external deadline** and binds from the *first paid invoice*, not from launch — so the sequence must reach billing before the first paying customer, with `EInvoicingPort` and the invoice document model in the first billing sprint, integrated against the national test environment early. **The filing window is April–May**, and a launch landing after May misses a full year of the natural adoption moment, since an SME's motivation to produce a sustainability report peaks when it is already assembling its annual accounts — the strongest argument for getting the reporting core usable early even though the full register ships later, and for treating a free-tier pilot as a milestone inside the plan rather than as a reduced scope.
+
+---
+
+## 16. Risks, trade-offs and technical debt accepted
+
+### 16.1 Trade-offs accepted deliberately
+
+Each of these is a known weakness of the design, accepted with a stated reason. None is an oversight.
+
+| # | Trade-off accepted | Why | Residual exposure |
+|---|---|---|---|
+| T-1 | **The core/billing boundary is enforced at build time, not at runtime.** The schema split makes a violation obvious in review and keeps the contexts physically separable; it does not prevent a schema-qualified cross-context join | Genuine database-level prevention needs `USAGE` revoked across the boundary, which conflicts with AD-6's requirement that a billing state change and its outbox row commit together. Claiming runtime enforcement would be false | A CI rule that is disabled or mis-scoped silently removes the only enforcement. The `BILLING_ENABLED=false` job is the backstop |
+| T-2 | **No foreign key from `billing` to `core.organization`** | The physical expression of NFR-15; an FK would make NFR-1's "disable billing entirely" test impossible, because the schema would not load | Orphaned billing records are possible; mitigated by a nightly reconciliation job reporting them as an operational metric |
+| T-3 | **The generic disclosure store gives up compile-time typing and per-disclosure check constraints** | DR-4 and NFR-86: DDL per taxonomy release is not viable when the standard already shipped one breaking change | Bought back by the generated typed facade, rule-driven validation and the golden-report cross-format corpus |
+| T-4 | **NFR-59's "all-or-nothing" is eventual convergence with compensation, not atomicity** | Atomicity is not available across a network boundary. The requirement's own closing clause about residual inconsistency reaching the Billing Operator concedes as much | The saga's terminal `inconsistent` state must be a monitored metric with a real work queue, or the concession becomes a silent failure |
+| T-5 | **"Exactly once" delivery is not claimed.** Delivery is at-least-once; processing is effectively once | Not available across a network boundary | Any adapter without provider-side idempotency must declare a recovery query, or a dispatcher restart duplicates an e-Factura submission or a refund |
+| T-6 | **Serialised invoice issuance per series** | The row lock is what makes gaplessness survive rollback | At ≈ 200 documents/month this is four orders of magnitude from being a bottleneck |
+| T-7 | **99.9% availability is not achievable in this topology and the target has been re-scoped rather than met** | `edge`, `redis` and VM-1 are unreplicated; the three-VM split buys durability, not uptime | Either the scoping stands, or a second application VM behind the CDN is added |
+| T-8 | **Failover is a manual runbook** | Acceptable against RTO ≤ 4 h; no Patroni, repmgr or VIP/DNS switch is specified | RTO depends on a human being available and the runbook being current |
+| T-9 | **Scoped `synchronous_commit` blocks fiscal transactions if the sole synchronous standby is down** | The only way to get RPO = 0 where NFR-51 asks for it without paying commit latency everywhere | Needs a quorum (`ANY 1 (...)`) or a documented degradation procedure |
+| T-10 | **TypeScript 7's 8–12× build speedup is declined** | Adopting it would disable tooling that four NFRs name as their acceptance criterion | Slower builds until `nest build` and typescript-eslint both support TS 7 |
+| T-11 | **TypeORM is adopted for ergonomics while its two headline features go unused** | Entity-driven schema generation cannot express RLS, grants, temporal constraints or the composite FK, and would try to revert them; relational navigation is forbidden across DR-1 | The `QueryRunner` discipline is the largest integration risk; mitigated by a `TenantRepository` that throws without context |
+| T-12 | **Microsoft 365 and desktop Excel verification is a manual release-checklist item, not a CI gate** | Server-side Office automation is unsupported on Linux; LibreOffice Calc headless is the automated gate | A round-trip regression specific to Microsoft Excel could reach a release |
+| T-13 | **Chromium in the export path** is the most operationally awkward component: memory-hungry, occasionally hangs, version-sensitive for tagged-PDF output | It is the only way FR-48's preview and FR-49's PDF cannot drift | Mitigated by container isolation with hard memory limits and a restart policy, a per-job timeout, and a queue that retries on a fresh instance |
+| T-14 | **Russian VSME labels are platform-authored with no official standing** | EFRAG publishes no Russian Digital Template | Needs separate editorial sign-off, and RO or EN is the authoritative rendering for a bank or EU buyer |
+
+### 16.2 Residual delivery risks
+
+Execution risks with mitigations, carried forward with their original identifiers.
+
+| ID | Risk | Mitigation |
+|---|---|---|
+| R-6 | **e-Factura is a hard external deadline on an integration whose specification this project does not control** | Build the port and the invoice document model in the first billing sprint; integrate against the national test environment early; treat the transmission outbox as the buffer — an untransmitted invoice is a tracked exception with an owner (NFR-71), never a blocked checkout |
+| R-7 | **Taxonomy churn during build.** The February 2026 release was backwards-incompatible and further releases are expected | AD-3 and AD-4 are the structural mitigation; the residual risk is that the first implementation hardcodes something. Register two taxonomy versions in staging from day one and keep a report pinned to each, so the version dimension is exercised continuously rather than discovered at the first rollout |
+| R-8 | **Scope, now expressed as schedule** | Held at the full register with the timeline re-scoped. AD-1's boundary and AD-5's null entitlement implementation keep the internal build order meaningful (§15.4) |
+| R-9 | **Chromium in the export path** — see T-13; more acute since NFR-82's amendment depends on the structure tree surviving intact | Container isolation, memory limits, per-job timeout, retry on a fresh instance |
+| R-10 | **NFR-82's original PDF/A-2b target would have reported green on a requirement it never tested** | Amended to PDF/A-2a + PDF/UA-1, validated against both profiles (§17.1) |
+| R-11 | **NFR-48's 99.9% asserted against unreplicated single points of failure** | Closed by re-scoping the target to application availability, excluding single-host infrastructure loss (§17.1). Adding a second application VM remains the alternative |
+| R-12 | **Ghostscript's licence, if it re-enters the PDF path** | Excluded on technical grounds; note that it is AGPL-3.0 and the network clause applies to a hosted commercial service |
+| R-14 | **One first-week spike:** `@nestjs/typeorm` 11.0.3's peer range resolves TypeORM 1.1.0 but loosely enough to warrant a smoke test | Run the spike in week one rather than assuming it |
+
+### 16.3 The largest scope lever, considered and declined
+
+**Decision: full register, all 173 FRs.** The alternative is recorded because it remains the fastest route to a usable product if the schedule comes under pressure later, and because knowing what was declined is worth as much as knowing what was chosen.
+
+The free tier needs no billing. Deferring the billing context would remove **FR-84 … FR-152** (69 requirements, ~40% of the register), the e-Factura integration and its October 2026 deadline, the order saga, gapless numbering, reconciliation, dunning, refunds, chargebacks, the Enterprise contract path, and every PCI-scope question — while still delivering a complete, exportable VSME Basic Module report an SME can hand to a bank. D-12 already defines Free as "deliberately enough to complete a real VSME report".
+
+Scope was held and the **timeline** was re-scoped instead: **173 functional and 93 non-functional requirements, including a complete billing, invoicing and Moldovan fiscal-compliance stack, is an 8–12 month build for a competent team**, not the 4–6 months a much smaller MVP was estimated at. That estimate was made against a reporting core alone; the register has grown roughly fourfold since. This is a defensible trade — it avoids shipping a product whose commercial model is untested — but it makes two things load-bearing: the build order in §15.4, and treating a free-tier pilot as a milestone inside the plan rather than as reduced scope, so real SME feedback arrives before the billing stack is finished rather than after.
+
+### 16.4 Technical debt accepted at MVP
+
+| Item | Nature | Repayment trigger |
+|---|---|---|
+| Manual database failover | No automated promotion | If RTO tightens below 4 h |
+| Unreplicated `edge`, `redis` and VM-1 | Single points of failure | If the availability target is un-scoped, or a second app VM is added |
+| PostgreSQL 18 baseline through launch with 19 arriving mid-build | Deliberate deferral | Revisited after the first filing window, against a named benefit rather than on principle |
+| TypeScript 6 with the TS 7 side-by-side option documented but unused | Deliberate deferral | When `nest build` **and** typescript-eslint both support TS 7 |
+| Nightly orphan-reconciliation job standing in for a foreign key | Compensating control for T-2 | Never — this is the intended end state |
+| Requirement amendments in §17.1 not yet reflected back into the FR/NFR registers | Documentation debt | **The only outstanding action against this document** |
+
+---
+
+## 17. Traceability: architectural decisions and components ↔ requirements
+
+This section maps this document against the requirement registers in both directions, and records where the two diverge. §17.1 … §17.3 are divergences that need reflecting back into the registers; §17.4 … §17.7 are the forward matrices; §17.8 records conflicts between the source documents.
+
+### 17.1 Requirement amendments agreed
+
+These are changes to the FR/NFR registers, not to the architecture. Until they are reflected in the source registers, this section is the record.
+
+| Was | Now | Consequence |
+|---|---|---|
+| **NFR-82** — PDF/A-2b | **PDF/A-2a + PDF/UA-1** | Archival conformance *and* accessible structure, both machine-validated by veraPDF in CI. Makes NFR-75's tagged reading order actually testable rather than asserted. Costs the harder renderer pipeline in AD-10: Chromium `tagged: true`, in-place metadata injection, table header scope, artifact marking |
+| **NFR-75** — WCAG 2.1 AA | **WCAG 2.2 AA** | Superset. The four additions that bite are Target Size (Minimum), Focus Appearance, Dragging Movements and **Accessible Authentication** — the last constrains the login path, so AD-12 and D-6's social sign-in must be designed against it from the start rather than audited against it later. Aligns with EN 301 549 v4.x |
+| **NFR-48** — 99.5% / 99.9% availability | **Same targets, scoped to application availability, excluding single-host infrastructure loss**, backed by a stated recovery time | Closes R-11 honestly. `edge`, `redis` and VM-1 remain unreplicated; the three-VM topology buys durability, not uptime, and this document no longer implies otherwise |
+| **NFR-47** — cost ceiling unnamed | **€0.50 per active free-tier organization per month** | At 2,000 organizations that is €1,000/month, comfortably above a three-VM EU footprint plus object storage and mail — so it functions as an alarm threshold rather than a constraint on normal operation. Measured from the FR-105 metering stream |
+| **Tenant MFA** — deferred entirely | **Opt-in TOTP at MVP** | Not enforced, but available to any user and recommended to Organization Administrators, who can authorise payments and export the company's full regulatory record. The identity model already supports it; the cost is a fraction of retrofitting after a first incident |
+| **FR-63 / NFR-23** — Romanian and English live at MVP | **Romanian, English and Russian live at MVP** | Russian is separately authored, not machine-translated. Architecturally free (NFR-4, NFR-25) and it replaces the staging locale rehearsal. Real costs: a third translation set to review on every content publish, and no official EFRAG source for Russian VSME labels (NFR-24 applies to RO/EN only) |
+| **Filing window** — assumed March–April, to be confirmed | **April–May, peaking in the final two weeks of May** | See §17.2. Changes when the load test, the soak and the change freeze happen |
+| *(absent)* | **NFR-106 … NFR-109**, notification qualities | See §17.3 |
+
+### 17.2 The filing window, resolved factually
+
+The scale envelope previously assumed a March–April peak and flagged it for confirmation. The assumption was wrong.
+
+Under **Article 33(3) of Law 287/2017 on Accounting and Financial Reporting**, Moldovan entities submit annual financial statements within **150 days of the financial year end — 30 May** for a calendar year — with the shorter 120-day deadline (30 April) applying only to **public-interest entities**, which are not this platform's population. Submission is through the *Ghișeul unic de raportare electronică* or to the territorial statistics office.
+
+Two consequences:
+
+- **The load envelope moves by two months.** NFR-44's 10× load test and 24-hour soak, and NFR-48's change freeze and no-maintenance window, are planned for **April through May**, with the peak assumed in the last two weeks of May.
+- **This is a proxy, and is labelled as one.** VSME reporting is voluntary and has no statutory deadline of its own; Moldova's draft sustainability-reporting chapter was still in consultation to 19 August 2026. The financial-statement deadline is used because a company preparing a sustainability report will almost certainly prepare it alongside its annual accounts, with the same staff. Revisit once the draft law is published — if it sets its own date, that date governs.
+
+### 17.3 New non-functional requirements: notifications (NFR-106 … NFR-109)
+
+FR-160 … FR-173 had no quality counterpart, which left FR-170's delivery records — explicitly *the evidence that a required update was actually requested* — with no acceptance threshold. Proposed for ratification into the NFR register:
+
+| ID | Category | Requirement | Verification |
+|---|---|---|---|
+| NFR-106 | Notifications | The system shall dispatch a raised notification to its first channel within p95 ≤ 60 s | **A** — production SLI on raise-to-dispatch latency |
+| NFR-107 | Notifications | The system shall retry a transient delivery failure on an exponential schedule bounded at 24 hours, and shall suppress a recipient address on its first hard bounce (FR-171) | **T** — bounce and transient-failure simulation per channel |
+| NFR-108 | Notifications | The system shall achieve ≥ 99% accepted delivery for transactional mail, SPF-, DKIM- and DMARC-aligned (extends NFR-84) | **A** — deliverability monitoring, monthly review |
+| NFR-109 | Notifications | The system shall retain per-recipient delivery records — channel, dispatch timestamp, outcome, read state — for the life of the organization plus one year | **I** — retention policy review; records readable independently of the notification centre |
+
+These four qualities were originally drafted as NFR-94 … NFR-97. Those identifiers are already occupied by the deferred register (NFR-94 … NFR-105) in `non_functional_requirements.md`, so the proposals are renumbered here to NFR-106 … NFR-109 and remain pending ratification.
+
+### 17.4 Decision ↔ driver ↔ requirement matrix
+
+| AD | Drivers discharged | FRs discharged | NFRs discharged | Design decisions |
+|---|---|---|---|---|
+| AD-1 | DR-1, DR-10 | FR-154 | NFR-1, NFR-15, NFR-46 | D-11 |
+| AD-2 | DR-5 | FR-158, FR-79 | NFR-62, NFR-63, NFR-66 | — |
+| AD-3 | DR-2, DR-4 | FR-24 … FR-32, FR-155 | NFR-2, NFR-3, NFR-18, NFR-58, NFR-86 | D-4 |
+| AD-4 | DR-3 | FR-61 … FR-74, FR-148, FR-173 | NFR-12, NFR-73, NFR-85, NFR-86, NFR-87 | — |
+| AD-5 | DR-1 | FR-99 … FR-104 | NFR-10, NFR-17, NFR-41, NFR-49 | D-13 |
+| AD-6 | DR-9 | FR-108, FR-114, FR-120, FR-126, FR-157 | NFR-50, NFR-54, NFR-59 | D-10 |
+| AD-7 | DR-8 | FR-123, FR-125 | NFR-55 | D-10 |
+| AD-8 | DR-7 | FR-114, FR-156 | NFR-11, NFR-14, NFR-50, NFR-60, NFR-74 | D-7, D-8, D-6, D-14 |
+| AD-9 | DR-11 | FR-153, FR-158 | NFR-16, NFR-38, NFR-43, NFR-56, NFR-65, NFR-77 | — |
+| AD-10 | DR-10 | FR-48 … FR-53 | NFR-20, NFR-42, NFR-46, NFR-75, NFR-82 | — |
+| AD-11 | — | FR-157, FR-160 … FR-173 | NFR-84, NFR-106 … NFR-109 | — |
+| AD-12 | — | FR-4 … FR-8, FR-12, FR-58 | NFR-62, NFR-64 | D-6 |
+| AD-13 | — | — | NFR-16, NFR-26, NFR-30, NFR-58, NFR-88 | — |
+| AD-14 | DR-1, DR-5 | — | NFR-1, NFR-58, NFR-63, NFR-86 | — |
+
+### 17.5 Component ↔ requirement coverage
+
+| Module | FR range | Principal decisions |
+|---|---|---|
+| `identity/*` | FR-1 … FR-12, FR-56 … FR-60 | AD-12 |
+| `core/organization`, `core/entity` | FR-13 … FR-20 | AD-2 |
+| `core/period` | FR-21 … FR-23 | AD-3, AD-4 |
+| `core/disclosure` | FR-24 … FR-32 | AD-3 |
+| `core/calculator` | FR-33 … FR-36 | AD-4 |
+| `core/*` wizard and autosave | FR-37 … FR-39 | AD-9 |
+| `core/validation` | FR-40 … FR-44 | AD-4 |
+| `core/comparatives` | FR-45 … FR-47 | AD-3 |
+| `core/export` | FR-48 … FR-53 | AD-10 |
+| `core/trace` | FR-54, FR-55 | AD-2 |
+| `platform/configuration` | FR-61, FR-62, FR-71 … FR-74 | AD-4 |
+| `platform/localization` | FR-63, FR-64 | AD-4 |
+| `platform/taxonomy` | FR-65 … FR-70 | AD-3, AD-4 |
+| `platform/admin` | FR-75, FR-76, FR-80, FR-82, FR-83 | AD-9 |
+| `platform/support-access` | FR-77 … FR-79 | AD-2 |
+| `platform/audit` | FR-79, FR-81, FR-151, FR-159 | AD-6 |
+| `platform/metering` | FR-105 | AD-5 |
+| `platform/notification` | FR-157, FR-160 … FR-173 | AD-11 |
+| `billing/catalogue` | FR-84 … FR-89 | AD-4, AD-5 |
+| `billing/subscription` | FR-90 … FR-98 | AD-6 |
+| `billing/entitlement` | FR-99 … FR-105 | AD-5 |
+| `billing/account` | FR-106, FR-107 | — |
+| `billing/order` | FR-108 … FR-113 | AD-6 |
+| `billing/payment` | FR-114 … FR-120 | AD-8 |
+| `billing/invoicing` | FR-121 … FR-130 | AD-7 |
+| `billing/efactura` | FR-126, FR-127 | AD-6, AD-8 |
+| `billing/reconciliation` | FR-131 … FR-134 | AD-8 |
+| `billing/collections` | FR-135 … FR-138 | AD-11 |
+| `billing/refunds` | FR-139 … FR-141 | AD-6 |
+| `billing/enterprise` | FR-142 … FR-147 | AD-5 |
+| `billing/finreporting` | FR-148 … FR-152 | AD-4 |
+| Platform-wide surface | FR-153 … FR-159 | AD-1, AD-9 |
+
+### 17.6 NFR category realization
+
+| Category | Principal mechanisms | Decisions |
+|---|---|---|
+| Architecture & modularity (NFR-1, 9, 10, 11, 14 … 17) | Schema-separated bounded contexts, CI boundary rules, `contracts/`, ports + adapters, key-based entitlements, OpenAPI-only surface | AD-1, AD-5, AD-8, AD-9 |
+| Standards conformance & data fidelity (NFR-2, 3, 18 … 22) | Taxonomy-keyed store, version pinning, `numeric` for quantities with presentation-time rounding and integer minor units rounded at issuance for money, golden-report cross-format corpus, byte-preserving EFRAG template patching | AD-3, AD-4, AD-10 |
+| Localization (NFR-4, 23 … 26) | Content in the configuration store, RO source with EN and RU authored, official EFRAG labels used verbatim where they exist, per-key fallback logging, CI rule against hardcoded formats | AD-4 |
+| Data protection & privacy (NFR-5, 6, 27 … 32) | EU-region hosting for all stores, replicas, backups and exports; pseudonymous logs with a CI scan gate; rehearsed DSR and exit runbooks; anonymised downward data flow | §10, §9.10 |
+| Auditability & assurance (NFR-7, 33 … 36) | DB-privilege append-only with a separate TRUNCATE trigger, UTC with stored originating timezone, per-field change history captured by `RETURNING OLD/NEW` in one statement, six-year independently-readable archive | AD-6, §7.7, §7.8, §12.3 |
+| Performance (NFR-37 … 43) | In-process entitlement cache, queue-decoupled exports, indexed element-keyed reads, SSR shell + client wizard, benchmarks against maximum-population fixtures | AD-1, AD-5, AD-9, AD-10 |
+| Capacity & scalability (NFR-8, 44 … 47) | Independent horizontal scaling of `api`/`worker`/`renderer`, pre-window load test and soak, partitioning plan gate for every append-only store, metering-derived cost attribution against the €0.50/org/month ceiling | AD-10, §10, §13 |
+| Availability & continuity (NFR-48 … 53) | Separate data VM + streaming replica with scoped synchronous commit, WAL archiving with quarterly restore rehearsal, cached-entitlement degradation, per-adapter outage simulation, expand-migrate-contract | AD-5, AD-8, §10 |
+| Integrity & reliability (NFR-54 … 59) | Inbound de-duplication and outbound idempotency keys, transactional outbox as sole queue producer, saga with credit-note compensation, row-locked numbering, commit-then-acknowledge, integer minor units | AD-6, AD-7, AD-9 |
+| Security (NFR-13, 60 … 70) | SAQ-A scope, TLS/HSTS/AES-256 with annual key rotation, server-side authorization, RLS, token hygiene, opt-in TOTP for tenant users and mandatory MFA on the isolated admin surface, time-boxed support grants, SCA gate, secret manager, destination-specific output neutralisation | AD-2, AD-8, AD-12, §9.1, §14 |
+| Fiscal & regulatory (NFR-71 … 74) | Outbox-driven e-Factura with daily transmission reconciliation, six-year archive, effective-dated fiscal configuration, no custody code path | AD-4, AD-6, AD-7, AD-8 |
+| Usability & accessibility (NFR-75 … 80) | WCAG 2.2 AA component library, tagged semantic-HTML PDFs validated against PDF/UA-1, moderated usability testing with ≥ 8 SME participants, three-part error messages, pre-change disclosure of read-only impact | AD-9, AD-10 |
+| Compatibility & interoperability (NFR-81 … 84) | Declared browser matrix in CI, PDF/A-2a **and** PDF/UA-1 conformance validation, versioned OpenAPI with contract tests, SPF/DKIM/DMARC-aligned mail | AD-9, AD-10, AD-11 |
+| Maintainability & changeability (NFR-12, 85 … 89) | Configuration-as-data with one-step publish/revert, non-overlapping effective dating enforced by temporal constraints, taxonomy rollout without code release, version-pinned regression suite, per-component coverage floors, clean-room rebuild | AD-3, AD-4, AD-13 |
+| Observability & operability (NFR-90 … 93) | End-to-end correlation identifier, operational alert inventory exercised annually, SLI dashboards against an error budget, scheduled-job heartbeats with absence alerting | §9.10 |
+| Notifications (NFR-106 … 109) | Stateful notification records with per-recipient delivery evidence, bounded retry, hard-bounce suppression, retention beyond organization life | AD-11 |
+
+### 17.7 Requirements verified by rehearsal rather than by test
+
+These have no automated gate, so the runbook is the evidence (P-12):
+
+| Requirement | Rehearsal |
+|---|---|
+| NFR-28, NFR-29 | Data-subject request handling |
+| NFR-31 | Exit — full data export in an open format irrespective of subscription state |
+| NFR-51, NFR-52 | Restore, measured against both RPO and RTO, quarterly |
+| NFR-85 | Configuration publish and revert |
+| NFR-86 | Template / taxonomy version rollout |
+| NFR-93 | Scheduled-job failure and absence |
+| NFR-14 | Adapter activation in staging with the diff limited to adapter + config |
+| NFR-25 | Locale addition — satisfied at MVP by Russian rather than by a staging rehearsal |
+
+### 17.8 Conflicts between source documents, and how they were resolved
+
+| # | Conflict | Resolution |
+|---|---|---|
+| C-1 | **NFR count.** `System Architecture` opens citing NFR-1 … NFR-93 and §16 says "93 non-functional requirements"; its own §15.3 then adds NFR-94 … NFR-97 and its footer cites NFR-1 … NFR-97. `Architecture Overview` says 97 | Resolved against the register in `non_functional_requirements.md`: the register is **NFR-1 … NFR-93 (MVP)** plus **NFR-94 … NFR-105 (deferred)**. The identifiers NFR-94 … NFR-97 are therefore already occupied, so the four notification qualities added in review are **renumbered NFR-106 … NFR-109** here and are pending ratification (§17.3) |
+| C-2 | **Filing window.** Earlier text assumes March–April; later text corrects to April–May | Resolved in favour of **April–May**, on the authority of Article 33(3) of Law 287/2017 (§17.2) |
+| C-3 | **Timeline.** `System Architecture` §16 opens against a 4–6 month MVP target; §15.5 re-scopes to 8–12 months | Resolved: **8–12 months**, full register retained (§16.3) |
+| C-4 | **Billing provider.** `Private Monetization Architecture` describes "integration with a billing provider (Stripe/Paddle/Chargebee-style) via webhooks". `System Architecture` states that **Stripe does not serve Moldova-resident businesses** and that the platform owns the plan catalogue, subscription state machine, order lifecycle, invoicing, numbering, dunning, reconciliation and ledger, with a Paddle-class merchant of record registered but inactive | Resolved in favour of `System Architecture`. This is a genuine evolution, not an error: the monetization document predates the Moldova-resident constraint and D-7/D-8. The **layer separation it argues for survives intact** — only the assumption that Layer 2 could be outsourced to a provider does not |
+| C-5 | **Target market.** `Private Monetization Architecture` reframes the target as European SMEs generally, with the Moldova/government scenario as one possible future channel (its Model 6). `System Architecture` scopes the MVP to a Moldovan SME with Moldovan fiscal compliance, and its context diagram names MDED as the Platform Administrator | Resolved: **the MVP is Moldova-specific** — e-Factura, IDNO, BNM, MDL, MIA and Law 287/2017 are all in MVP scope. The monetization document's contribution is retained as the *reason* for the layer separation (§2.2, §5.1) and as the Phase 2–3 seam for advisor, buyer and licensee organizations (§15.1), not as a change of MVP scope |
+| C-6 | **XBRL export.** `Research and Architecture Notes` recommends an Excel-first path piped through EFRAG's converter, treating XBRL export as an early module | Resolved in favour of `System Architecture`: **XBRL is Phase 2**, with `DocumentConversionPort` present at MVP so it is additive. The research document's Excel-first reasoning is preserved as the rationale for patching the official template rather than generating XBRL directly |
+| C-7 | **Phase numbering.** `Research and Architecture Notes` uses a four-phase map including a Phase 4 for the public portal and ESAP bridge | Resolved in favour of the later documents: **Phase 2 and Phase 3**, with ESAP and blockchain explicitly *uncommitted* and no seam claimed |
+| C-8 | **PostgreSQL host.** `Architecture Overview`'s container table says `postgres` is on its "own host from launch", while the staged topology puts everything on one VM during build and pilot | Not a real conflict: "from launch" means **from the public-launch stage**, which is exactly stage 2 of §10.3 |
+| C-9 | **Redis naming.** `Architecture Overview`'s container diagram labels the queue-store node `VK` while every statement in both documents names Redis 8.10 | Resolved: **Redis**. `VK` is a residual artefact of the Valkey comparison recorded in §12.4 |
+| C-10 | **Deployment topology.** `System Architecture` §11.1 presents three VMs as *the* topology; §16.4 and `Architecture Overview` present it as staged | Resolved: **three VMs is the end state, reached in stages**, and the staging is explicitly reversible (§10.3) |
+| C-11 | **Named external tools.** `Research and Architecture Notes` assesses Greenstone/Cority, Workiva and IFC MALENA as tools named in the ToR | Resolved: **none is an MVP integration**. Neither architecture document includes them, and no seam is claimed. MALENA-class document analysis would land behind the Phase 3 AI port |
+| C-12 | **NFR-51's RPO = 0 versus asynchronous replication** — an internal tension rather than a cross-document conflict | Resolved by **scoped `synchronous_commit`** on invoice, payment and ledger transactions only, with the blocking consequence accepted explicitly (T-9) |
+| C-13 | **Actor set.** `Architecture Overview` lists six actors including `CA`; `System Architecture`'s context diagram shows four boxes (RC, OA, PA, BO) | Resolved: **six actors — CA, RC, OA, PA, BO, SYS.** `CA` and `SYS` are omitted from the context diagram because `CA` is a pre-organizational capability set and `SYS` is internal (§5.3), not because they are not actors |
+
+---
+
+## 18. Open questions
+
+Items genuinely undecided, plus layers on which the sources are **silent**. Silence is recorded as silence; no plausible default has been supplied.
+
+### 18.1 Explicitly open decisions
+
+| # | Question | Status in sources |
+|---|---|---|
+| OQ-1 | **PostgreSQL 19 arrives around September 2026, mid-build.** Adopt, or stay on 18.x? | Deliberately open. The baseline stays **18.x through launch** and is revisited after the first filing window, against a named benefit rather than on principle |
+| OQ-2 | **NFR-106 … NFR-109 need ratification** into the NFR register. The four qualities were originally drafted as NFR-94 … NFR-97, which collide with the deferred register (NFR-94 … NFR-105); renumbered here per `non_functional_requirements.md` C-4 | Authored and proposed (§17.3); not yet ratified. Also logged in `use_cases.md` OQ-5, `functional_requirements.md` OQ-3, `non_functional_requirements.md` OQ-13 and `design_spec.md` OQ-11 |
+| OQ-3 | **The requirement amendments in §17.1 need reflecting back into the FR and NFR registers** | Named as the **only outstanding action** against the architecture baseline |
+| OQ-4 | **NFR-48: accept the re-scoped target, or add a second application VM behind the CDN?** | Closed by re-scoping, with the alternative left standing (R-11, T-7) |
+| OQ-5 | **Whether to adopt the TS 7 side-by-side advisory typecheck** now, ahead of full promotion | Documented, available, **not adopted** (AD-13) |
+| OQ-6 | **Whether NFR-63 should instead be amended to permit ORM-level scoping** rather than RLS | The honest route is named — amend the NFR explicitly — but the recommendation is to keep RLS. Not reopened |
+| OQ-7 | **Whether accessible tagging is reachable at all** through Chromium plus in-place injection | If it proves unreachable, NFR-75 is to be **escalated as a conflict** rather than left claimed and untested |
+| OQ-8 | **Moldova's draft sustainability-reporting law** was in consultation to 19 August 2026 | If the final text sets its own reporting deadline, that date governs the filing window in place of the Law 287/2017 proxy (§17.2). Also logged in `problem_overview.md` OQ-1 |
+
+### 18.2 Layers on which the sources are silent
+
+| # | Silent area | What is and is not stated |
+|---|---|---|
+| OQ-9 | **Infrastructure provider and region.** Named EU regions are illustrative examples, not a committed provider. No account, region or instance-size commitment exists | Stated: EU/EEA, self-managed VMs, Docker Compose, three VMs at the end state |
+| OQ-10 | **CDN and DNS provider**, and whether TLS terminates at the CDN or at `edge` | The topology diagram shows "CDN / DNS · TLS termination optional". Undecided |
+| OQ-11 | **Object storage provider.** "S3-compatible, EU region, versioned + object lock" is a capability specification, not a vendor choice | Capabilities are specified; the provider is not |
+| OQ-12 | **Transactional email provider.** "Transactional ESP, EU region" with SPF/DKIM/DMARC alignment | Capabilities are specified; the provider is not |
+| OQ-13 | **Secret management mechanism.** "A managed secret manager **or** SOPS-encrypted files with age keys" — the choice is not made | Both options named; neither selected |
+| OQ-14 | **CI platform.** Extensive CI *gates* are specified (boundary rules, RLS probes, contract tests, coverage floors, accessibility, injection corpus, cross-browser, `BILLING_ENABLED=false`), but no CI system is named | Gates specified; runner unspecified |
+| OQ-15 | **Infrastructure-as-code and provisioning.** No Terraform, Ansible or equivalent is named; `infra/compose`, `infra/caddy`, `infra/postgres` and `infra/ci` directories exist in the repository layout | Directory layout stated; provisioning tooling not |
+| OQ-16 | **Test tooling.** ts-jest is referenced only as a consumer of the TypeScript compiler API in AD-13's argument; no test-framework decision, no coverage-floor values, no fixture strategy beyond "maximum-population fixtures" and the golden-report corpus | Coverage floors are required by NFR-88; their values are not stated |
+| OQ-17 | **The `admin` token-handler endpoint "at `edge`".** Its host, implementation and whether it is a Caddy module, a small service or a route on `api` is not specified | The requirement (httpOnly-cookie pattern for the SPA) is stated; the implementation is not |
+| OQ-18 | **Entity identifier scheme.** The earlier research document recommends **LEI as primary**, with DUNS, EU ID and PermID as fallbacks, matching VSME's supported identifiers. **Neither architecture document carries this forward** — `billing` names IDNO and VAT code, and `core` names no identifier scheme at all | A genuine gap between the background research and the architecture baseline. Needs a decision before B1 is modelled |
+| OQ-19 | **Rate-limit thresholds.** Rate limiting is required at `edge` and on all auth paths; no numbers are given | Mechanism stated; values not |
+| OQ-20 | **Retention for non-fiscal data.** Fiscal documents and billing audit are ≥ 6 years and delivery records are organization life + 1 year. Retention for disclosure data, calculator inputs, exports and system audit is not stated, beyond "`CALC_INPUT` retained permanently" | Partial. Needs completing for the DSR and exit runbooks |
+| OQ-21 | **Redis persistence and durability configuration.** Redis is explicitly "never a system of record" and total loss is survivable because the outbox re-emits — but no persistence mode, eviction policy or memory limit is specified | Failure semantics stated; configuration not |
+| OQ-22 | **Backup retention schedule** beyond "continuous WAL archiving, nightly base backup, object-locked" and the six-year fiscal lock | Partial |
+| OQ-23 | **A public API product.** `api.calls.monthly` exists as an entitlement key and NFR-83 requires a versioned OpenAPI surface, but no MVP requirement defines a customer-facing API offering, its authentication model for machine clients, or its quota enforcement point | Key registered; product undefined |
+| OQ-24 | **White-label theming and per-tenant data residency**, which the monetization document identifies as the genuine engineering cost of the institutional-licensee model | No MVP requirement, no seam claimed. Would need a decision before any licensee engagement. Related to, but narrower than, the question of which post-MVP monetization model activates first — that one is logged in `use_cases.md` OQ-2, `functional_requirements.md` OQ-6, `actors.md` OQ-5 and `problem_overview.md` OQ-11; this document logs no equivalent |
+| OQ-25 | **Marketplace / referral attribution and consent gating**, and the **aggregate anonymized benchmarking layer**. The monetization document explicitly warns that the anonymization and consent rules are much harder to retrofit than to design in from the start | **No FR, NFR or seam exists for either.** This is the one place where an earlier document's "expensive to retrofit" warning has no counterpart in the architecture baseline, and it should be an explicit accept-or-address decision rather than an omission |
+| OQ-26 | **Permission scoping for "one organization manages many client organizations".** `ORG_RELATIONSHIP` is typed and config-driven so a new relationship type needs no migration, but how scoped permissions across a relationship are evaluated — and how `app.current_org` behaves for a user acting on a client organization's behalf — is not specified | Data shape stated; authorization semantics not. Needed before the Advisor or Buyer type is activated |
+| OQ-27 | **Chromium version pinning.** Playwright 1.62.1 is pinned, and tagged-PDF output is noted as version-sensitive (R-9, T-13), but no Chromium pin or upgrade-verification procedure is stated | Risk identified; control not specified |
+| OQ-28 | **Team shape and cost.** The 8–12 month estimate is stated for "a competent team"; no team size, composition or budget appears in any source | Silent |
+
+---
+
+*Consolidated architecture baseline for the ESG Platform (MVP). Traceable to FR-1 … FR-173, NFR-1 … NFR-105, D-1 … D-14, UC-01 … UC-176, DR-1 … DR-11 and AD-1 … AD-14. Actors are `CA`, `RC`, `OA`, `PA`, `BO`, `SYS`. The compliance core must run with `BILLING_ENABLED=false`, and that is a CI job, not an aspiration.*

@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+pnpm-debug.log*
+
+# Build output
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+next-env.d.ts
+
+# Tests and reports
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Secrets — only the .example templates are tracked
+.env
+.env.*
+!.env.example
+!.env.*.example
+apps/*/env/*
+!apps/*/env/.env.example
+
+# Keys and service-account credentials never belong in the repo
+credentials/
+*.pem
+*.p12
+*.key
+
+# Generated and tenant data. Fiscal documents, exports and backups are produced
+# at runtime and retained by the archive (DR-8), never by git.
+uploads/
+exports/
+backups/
+infra/**/data/
+
+# NOTE: config/efrag/ holds the official EFRAG Digital Template binaries, per
+# taxonomy version. Those are inputs the export pipeline needs — keep them tracked.
+
+# Per-machine Claude Code state. Tracked skills live in .claude/skills/
+# (symlinks into .agents/skills/) and are committed; these are not.
+.claude/settings.local.json
+.claude/plans/
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
