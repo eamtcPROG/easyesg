@@ -1372,7 +1372,7 @@ Versions were verified on **10 August 2026** and are part of the build contract,
 
 | Layer | Component | Pinned | Rationale as stated in the sources |
 |---|---|---|---|
-| Runtime | Node.js | **24.19 LTS** (Krypton) — **scheduled bump to 26.x on or after 28 Oct 2026, see §12.6** | Node's own guidance: production runs Active or Maintenance LTS, never Current. 24 is Active LTS; 26 enters LTS in October 2026 |
+| Runtime | Node.js | **26.7.0** (verified 18 Aug 2026) — **adopted on the Current channel, 10 weeks ahead of its 28 Oct 2026 LTS date; see §12.6** | Deliberate, time-boxed deviation from "never Current". 26 becomes Active LTS on 2026-10-28 and is supported to April 2029; v24 drops to Maintenance on 2026-10-20 |
 | Language | TypeScript | **6.0.3** | AD-13. TS 7 has no compiler API, which breaks `nest build`, ts-jest and type-aware ESLint |
 | Backend framework | NestJS | **11.1.29** | Current stable (12.0 in alpha) |
 | HTTP adapter | Express | **5.2.1** | NestJS's default adapter. Fastify was considered; at ≈ 150 peak concurrent sessions throughput is not the constraint, and Express has the wider middleware ecosystem and the documentation NestJS examples assume |
@@ -1437,27 +1437,30 @@ The same licence discipline is applied consistently elsewhere: the EFRAG convert
 
 ---
 
-### 12.6 The Node line, and the one scheduled version bump
+### 12.6 The Node line — Node 26 adopted early, deliberately
 
 Verified against `nodejs/Release` on **18 August 2026**:
 
-| Line | Status today | Active LTS from | Maintenance | End of life |
+| Line | Status on 18 Aug 2026 | Active LTS from | Maintenance | End of life |
 |---|---|---|---|---|
-| v24 "Krypton" | **Active LTS** | 2025-10-28 | 2026-10-20 | 2028-04-30 |
-| v26 | **Current** | **2026-10-28** | 2027-10-20 | **2029-04-30** |
+| v24 "Krypton" | Active LTS | 2025-10-28 | 2026-10-20 | 2028-04-30 |
+| **v26** | **Current** | **2026-10-28** | 2027-10-20 | **2029-04-30** |
 | v25 | End of life | never | 2026-04-01 | 2026-06-01 |
 
-**The target is 26, and the pin is 24 until 28 October 2026.** These are not in tension. v24 enters Maintenance on 20 October, eight days before v26 becomes Active LTS, so a project that never moves would spend its whole life on a maintenance line — and v26 is supported a year longer (April 2029 against April 2028), which comfortably outlasts this build and its first filing windows.
+**Decision: pin 26.7.0 now.** This is a knowing, time-boxed departure from the standing rule that production runs Active or Maintenance LTS and never Current. It was taken with the alternative — 24.19 until 28 October — put and declined.
 
-What the rule excludes is running **Current in production**, and that is what v26 is today. Three costs, in order of likely impact:
+**The reasoning for it.** v26 is the destination on any timeline: it becomes Active LTS on 28 October 2026, ten weeks from this decision and well inside a build estimated at 8–12 months, and it is supported to April 2029 against v24's April 2028. v24 enters Maintenance on 20 October, eight days before v26 becomes Active, so pinning 24 would mean starting a multi-year product on a line that is two months from maintenance. Adopting 26 now also means the runtime is never migrated mid-build: the foundation is laid once, on the version that will carry the product through its first several filing windows.
 
-- **The ecosystem lags the LTS date.** NestJS, TypeORM, Next.js and Playwright write support matrices against LTS lines, and native prebuilt binaries target them. Adopting a Current line means being the party that discovers a missing prebuild — diffuse debugging landing on the foundation sprint, which is the sprint least able to absorb unfamiliar failure.
-- **Current carries no stability commitment.** Until 28 October, 26.x may still change in ways an LTS line may not. v25 is the cautionary case in the table above: eight months from release to end of life, never LTS.
-- **The bump is cheap now and expensive later.** Today it is `.node-version`, the Docker base image, the CI matrix and a gate re-run. Under NFR-48's change freeze around the April–May filing window it is not something to be discovering.
+**What is being accepted, so it is not rediscovered as a surprise.** For the ten weeks to 28 October, 26.x carries no LTS stability commitment and may change in ways an LTS line may not. The ecosystem writes support matrices and ships native prebuilt binaries against LTS lines, so a missing prebuild or an untested combination is likelier here than on 24 — and it will surface during the foundation sprint. v25 in the table is the shape of the risk when it goes wrong: release to end of life in eight months, never LTS. v26 is an even-numbered line and therefore *will* reach LTS, which is what makes this a timing bet rather than a line bet, and is the whole reason it is acceptable.
 
-The asymmetry decides it: moving forward in October is a choice made on a known date, while a subtle incompatibility found in April cannot be unshipped.
+**Four controls, in force until 28 October 2026:**
 
-**Scheduled action — on or after 28 October 2026**, bump to the then-current 26.x LTS, record the version and verification date per §12's convention, rebuild the Docker base image, and re-run the full gate set before accepting. This is a recorded decision with a date, not a standing preference for old versions.
+1. **Pin the exact patch — 26.7.0 — not a floating `26`.** On a Current line a patch can carry more change than on an LTS line, so each bump is an explicit decision with a re-verification date, never an implicit pickup.
+2. **Laptops, the Docker base image and CI run the same 26.7.0.** Dev parity is doing real work here (§12.5.10); on a Current runtime a version split between host and image is the most likely source of a "works locally" failure.
+3. **A native-module or prebuild failure is a Node-version hypothesis first.** On an LTS line that would be an unlikely cause; for these ten weeks it is the first thing to check, before the dependency itself.
+4. **Any 26.x patch bump inside the window re-runs the full gate set** before acceptance — boundary rules, RLS probes, contract tests, coverage floors, accessibility, injection corpus, cross-browser, `BILLING_ENABLED=false`.
+
+**Scheduled action — on or after 28 October 2026:** confirm v26 has entered Active LTS, record the confirmation date against the §12.1 pin, and **retire this exception**. No migration is involved; the deviation closes by the calendar. Controls 1 and 3 relax to normal practice at that point; controls 2 and 4 are standing policy regardless.
 
 ### 12.5 Infrastructure, tooling and operational values
 

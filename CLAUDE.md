@@ -128,7 +128,10 @@ Three standing exceptions — deliberate, not oversights:
 - **TypeScript stays on 6.x** (AD-13). TS 7 has no compiler API, which breaks `nest build`,
   ts-jest and type-aware ESLint.
 - **Node tracks Active or Maintenance LTS, never Current** — per Node's own production
-  guidance.
+  guidance. **One recorded exception, time-boxed:** Node **26.7.0** is pinned from 18 Aug
+  2026, ten weeks ahead of its 28 Oct 2026 LTS date, because v24 enters Maintenance on
+  20 Oct and 26 is supported a year longer. The exception closes by the calendar, not by
+  a migration — see architecture.md §12.6 for the four controls that hold until then.
 - **Pre-1.0 packages are pinned exactly** (e.g. the OpenTelemetry SDK); a minor bump there
   can be breaking.
 
