@@ -1372,7 +1372,7 @@ Versions were verified on **10 August 2026** and are part of the build contract,
 
 | Layer | Component | Pinned | Rationale as stated in the sources |
 |---|---|---|---|
-| Runtime | Node.js | **24.19 LTS** (Krypton) | Node's own guidance: production runs Active or Maintenance LTS, never Current. 24 is Active LTS; 26 enters LTS in October 2026 |
+| Runtime | Node.js | **24.19 LTS** (Krypton) — **scheduled bump to 26.x on or after 28 Oct 2026, see §12.6** | Node's own guidance: production runs Active or Maintenance LTS, never Current. 24 is Active LTS; 26 enters LTS in October 2026 |
 | Language | TypeScript | **6.0.3** | AD-13. TS 7 has no compiler API, which breaks `nest build`, ts-jest and type-aware ESLint |
 | Backend framework | NestJS | **11.1.29** | Current stable (12.0 in alpha) |
 | HTTP adapter | Express | **5.2.1** | NestJS's default adapter. Fastify was considered; at ≈ 150 peak concurrent sessions throughput is not the constraint, and Express has the wider middleware ecosystem and the documentation NestJS examples assume |
@@ -1436,6 +1436,28 @@ If a procurement review ever objects on principle rather than on obligation, Val
 The same licence discipline is applied consistently elsewhere: the EFRAG converter is MIT and therefore embeddable; **Ghostscript is AGPL-3.0 and is excluded from the PDF path on technical grounds, with the licence noted as a second reason it should not return** (§16).
 
 ---
+
+### 12.6 The Node line, and the one scheduled version bump
+
+Verified against `nodejs/Release` on **18 August 2026**:
+
+| Line | Status today | Active LTS from | Maintenance | End of life |
+|---|---|---|---|---|
+| v24 "Krypton" | **Active LTS** | 2025-10-28 | 2026-10-20 | 2028-04-30 |
+| v26 | **Current** | **2026-10-28** | 2027-10-20 | **2029-04-30** |
+| v25 | End of life | never | 2026-04-01 | 2026-06-01 |
+
+**The target is 26, and the pin is 24 until 28 October 2026.** These are not in tension. v24 enters Maintenance on 20 October, eight days before v26 becomes Active LTS, so a project that never moves would spend its whole life on a maintenance line — and v26 is supported a year longer (April 2029 against April 2028), which comfortably outlasts this build and its first filing windows.
+
+What the rule excludes is running **Current in production**, and that is what v26 is today. Three costs, in order of likely impact:
+
+- **The ecosystem lags the LTS date.** NestJS, TypeORM, Next.js and Playwright write support matrices against LTS lines, and native prebuilt binaries target them. Adopting a Current line means being the party that discovers a missing prebuild — diffuse debugging landing on the foundation sprint, which is the sprint least able to absorb unfamiliar failure.
+- **Current carries no stability commitment.** Until 28 October, 26.x may still change in ways an LTS line may not. v25 is the cautionary case in the table above: eight months from release to end of life, never LTS.
+- **The bump is cheap now and expensive later.** Today it is `.node-version`, the Docker base image, the CI matrix and a gate re-run. Under NFR-48's change freeze around the April–May filing window it is not something to be discovering.
+
+The asymmetry decides it: moving forward in October is a choice made on a known date, while a subtle incompatibility found in April cannot be unshipped.
+
+**Scheduled action — on or after 28 October 2026**, bump to the then-current 26.x LTS, record the version and verification date per §12's convention, rebuild the Docker base image, and re-run the full gate set before accepting. This is a recorded decision with a date, not a standing preference for old versions.
 
 ### 12.5 Infrastructure, tooling and operational values
 
