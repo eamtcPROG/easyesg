@@ -1,0 +1,91 @@
+# Workspace and build contract.
+# In pnpm 11 these settings live here, not in .npmrc.
+# The catalog is the machine-readable form of architecture.md §12.1 — one version
+# per dependency across the workspace. Populate it with `pnpm add --save-catalog`,
+# never by typing a version in.
+
+packages:
+  - apps/*
+  - packages/*
+
+# Versions are exact; a caret would let §12.1's pin drift on the next install.
+saveExact: true
+
+# engines.node is 26.7.0 (architecture.md §12.6, a time-boxed exception that closes
+# 28 Oct 2026). engineStrict turns "laptops, Docker and CI all run 26.7.0" from a
+# written rule into a hard install failure.
+engineStrict: true
+
+# A dependency whose build script was never reviewed fails the install instead of
+# passing silently. Playwright's browser download is a postinstall: without this,
+# install "succeeds" and PDF export fails later at runtime.
+strictDepBuilds: true
+
+# strict: adding a dependency outside the catalog's range is an error, so §12.1
+# stops being a table people are supposed to consult and becomes one the installer
+# enforces.
+catalogMode: strict
+
+cleanupUnusedCatalogs: true
+
+catalog:
+  '@eslint/js': 10.0.1
+  '@nestjs/bullmq': 11.0.5
+  '@nestjs/cli': 11.0.24
+  '@nestjs/common': 11.1.29
+  '@nestjs/config': 4.0.4
+  '@nestjs/core': 11.1.29
+  '@nestjs/platform-express': 11.1.29
+  '@nestjs/schematics': 11.1.0
+  '@nestjs/swagger': 11.4.7
+  '@nestjs/testing': 11.2.1
+  '@nestjs/typeorm': 11.0.3
+  '@types/express': 5.0.6
+  '@types/jest': 30.0.0
+  '@types/node': 26.2.0
+  '@types/supertest': 7.2.1
+  'bullmq': 6.0.9
+  'class-transformer': 0.5.1
+  'class-validator': 0.15.1
+  'dependency-cruiser': 18.1.1
+  'eslint': 10.8.1
+  'express': 5.2.1
+  globals: 17.11.0
+  'ioredis': 6.0.0
+  'jest': 30.4.2
+  'nestjs-pino': 4.6.1
+  'pg': 8.23.0
+  'pino': 10.3.1
+  'pino-http': 11.0.0
+  'reflect-metadata': 0.2.2
+  'rxjs': 7.8.2
+  'source-map-support': 0.5.21
+  'supertest': 7.2.2
+  'ts-jest': 29.4.12
+  'ts-node': 10.9.2
+  'typeorm': 1.1.0
+  'typescript': 6.0.3
+  'typescript-eslint': 8.66.0
+
+allowBuilds:
+  # TypeORM's install-time analytics beacon. Denied: it is telemetry, not a build the
+  # package needs, and it phones out from every CI run and every developer install.
+  '@scarf/scarf': false
+  # Native accelerator for msgpackr, BullMQ's serialiser. Allowed: it is a real native
+  # build, and without it msgpackr silently falls back to slower pure JS.
+  'msgpackr-extract': true
+  # Native module resolver used by the ESLint import plugin. Allowed: same reasoning.
+  'unrs-resolver': true
+
+# Peer mismatches warn rather than fail (strictPeerDependencies defaults to false).
+# Each silenced pair is justified here; never blanket-applied.
+peerDependencyRules:
+  allowedVersions:
+    # §12.1 pins ioredis 6.0.0 (for BullMQ 6.0.9) and TypeORM 1.1.0, whose ioredis peer
+    # range is ^5.0.4 — the two pins are internally inconsistent. It is inert: the peer is
+    # declared optional, and TypeORM reaches for ioredis in exactly one place,
+    # cache/RedisQueryResultCache.js. This design never enables TypeORM's query-result
+    # cache — AD-4 invalidates by version poll, AD-5's entitlement cache is in-process, and
+    # Redis is never a system of record (AD-10). If anyone ever sets `cache: {type:"redis"}`
+    # on a DataSource, this entry is the thing that was hiding an untested combination.
+    "typeorm>ioredis": "6.0.0"

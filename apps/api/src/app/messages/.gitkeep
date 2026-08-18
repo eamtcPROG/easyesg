@@ -1,0 +1,3 @@
+# Message KEYS only. Wording lives in the configuration store (FR-61, FR-62), so it is publishable in a working day and revertible in one step.
+#
+# Placeholder so the directory survives a clone; delete it when the first file lands.

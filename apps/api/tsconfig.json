@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2024",
+    "sourceMap": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "incremental": true,
+    // Inside outDir on purpose: nest-cli sets deleteOutDir, and a build-info file that
+    // survives the wipe makes TypeScript believe it already emitted files that are gone —
+    // the build "succeeds" and dist is empty.
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "skipLibCheck": true,
+    // Explicit rather than "every @types package present". Deterministic, and it is what
+    // makes jest globals resolve in *.spec.ts — which tsconfig.build.json excludes, so the
+    // build alone never type-checks a test.
+    "types": ["node", "jest"],
+    "forceConsistentCasingInFileNames": true,
+
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

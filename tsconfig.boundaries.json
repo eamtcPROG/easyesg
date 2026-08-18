@@ -1,0 +1,6 @@
+{
+  "//": "Tooling-only tsconfig. dependency-cruiser resolves `include` relative to its own CWD (the repo root), not to the file's directory, so apps/api/tsconfig.json cannot be reused here. Compiler options are irrelevant — only module resolution is used.",
+  "extends": "./apps/api/tsconfig.json",
+  "compilerOptions": { "rootDir": "." },
+  "include": ["apps/*/src/**/*.ts", "packages/*/src/**/*.ts"]
+}

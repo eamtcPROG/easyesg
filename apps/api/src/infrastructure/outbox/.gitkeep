@@ -1,0 +1,3 @@
+# Transactional outbox (AD-6). The SOLE queue producer — api never enqueues directly.
+#
+# Placeholder so the directory survives a clone; delete it when the first file lands.

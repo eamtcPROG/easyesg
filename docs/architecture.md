@@ -347,7 +347,7 @@ The five constraints, each non-negotiable:
 4. **`numeric` stays a string.** The `pg` driver returns `numeric` as a JavaScript string and TypeORM preserves it — exactly what NFR-58 wants. The risk is a well-meaning `transformer` calling `parseFloat`; the CI float rule covers transformers explicitly.
 5. **The audit-trail write is raw SQL.** `RETURNING old.*, new.*` is not expressible in the query builder, so the field-change path uses `queryRunner.query()`. One function, deliberately.
 
-Two items for the first-week spike, listed rather than assumed: `@nestjs/typeorm` 11.0.3 declares its peer range as `^0.3.0 || ^1.0.0-dev`, which resolves 1.1.0 but loosely enough to warrant a smoke test; and TypeORM and NestJS both rely on `experimentalDecorators` / `emitDecoratorMetadata`, whose behaviour under the eventual TypeScript 7 move should be verified before that migration rather than during it.
+Two items for the first-week spike, listed rather than assumed: `@nestjs/typeorm` 11.0.3 declares its peer range as `^0.3.0 || ^1.0.0-dev`, which resolves 1.1.0 but loosely enough to warrant a smoke test — **discharged 18 Aug 2026: it resolves 1.1.0 cleanly with no peer warning; the only peer conflict in the tree was TypeORM's own optional `ioredis` range, recorded above**; and TypeORM and NestJS both rely on `experimentalDecorators` / `emitDecoratorMetadata`, whose behaviour under the eventual TypeScript 7 move should be verified before that migration rather than during it.
 
 ---
 
@@ -369,7 +369,7 @@ Layer 1 is the trust asset the whole product depends on. Layer 2 supports **mult
 
 ### 5.2 How the three layers map onto the deployed modules
 
-The three logical layers do not map one-to-one onto four schemas; the mapping is stated explicitly so neither model is misread.
+The three logical layers do not map one-to-one onto the five schemas; the mapping is stated explicitly so neither model is misread.
 
 | Logical layer | Modules | Schema |
 |---|---|---|
@@ -684,6 +684,31 @@ apps/api/src/
 ### 6.8 The public API surface
 
 One versioned REST surface. OpenAPI 3.1 generated from source and diffed in CI. `web` and `admin` are ordinary clients — no privileged route exists. Base `/api/v1`; breaking changes only in a new version, after a stated deprecation window. Bearer access token; the active organization comes from the session, not from a header or a path segment. Errors are RFC 9457 problem+json, with *what failed / consequence / resolving action* in the detail.
+
+**Success responses carry an envelope; errors do not. Decided 18 Aug 2026.** A successful
+response is wrapped by a global interceptor in `ResultObjectDto<T>` (`htmlcode`, `object`,
+`messages`) or `ResultListDto<T>` (`htmlcode`, `objects`, `total`, `totalpages`, `messages`),
+matching the two sibling projects so one response shape spans all three codebases. Two
+consequences follow and are recorded rather than left to be rediscovered. The siblings carry an
+`error: boolean` and route failures through the same envelope; here they cannot, because errors
+leave as problem+json — so the field is omitted rather than shipped permanently false. And
+`messages` carries a `MessageType` of `SUCCESS` or `WARNING` only: `WARNING` is what conveys
+AD-5's `allow_with_warning` to a caller who still got what they asked for, and it holds message
+*keys* resolved through `platform/localization`, never literal sentences, so FR-61/FR-62 and
+NFR-85 apply to it. Four bypasses exist: an explicit 204, `StreamableFile`/`Buffer` (FR-53
+requires an export to be re-downloadable byte-for-byte, and an envelope would corrupt it), and
+anything already wrapped.
+
+**Pagination is the compact list format. Decided 18 Aug 2026** — the doc set had specified none.
+`?filters=field,v1,v2|field2,v3&order=field,asc&page=1&onpage=25`, parsed by an opt-in
+`ListQueryInterceptor` so routes that do not list cannot silently accept list parameters. It
+carries filtering and sorting in the same parse, which is why it beats a bare `page`/`pageSize`
+here. `onpage=-1` ("all rows") is honoured **only on routes explicitly marked bounded**; every
+route over an append-only store — `audit.system_audit_log`, the billing ledger, metering events,
+all retained for six years under §12.5.7 — clamps to `MAX_ON_PAGE` instead. Accepted cost:
+OpenAPI describes a bespoke query encoding only as three strings, so the generated client types
+them loosely. NFR-83's contract tests and NFR-16's route-coverage diff are unaffected — they
+check routes, status codes and declared security, not query grammar.
 
 | Area | Paths |
 |---|---|
@@ -1387,11 +1412,11 @@ Versions were verified on **10 August 2026** and are part of the build contract,
 | DB driver | `pg` | **8.23.0** | Returns `numeric` as a string, which NFR-58 wants |
 | Queue store | Redis | **8.10.0** | BullMQ's officially supported and tested backend, which removes a compatibility spike rather than adding one |
 | Jobs | BullMQ | **6.0.9** | Runs on its supported backend |
-| Redis client | ioredis | **6.0.0** | MIT-licensed |
+| Redis client | ioredis | **6.0.0** | MIT-licensed. **Note (18 Aug 2026):** TypeORM 1.1.0 declares its `ioredis` peer as `^5.0.4`, so this pin and the TypeORM pin are internally inconsistent. Inert — the peer is `optional: true` and TypeORM touches ioredis only in `cache/RedisQueryResultCache.js`, and this design never enables TypeORM's query-result cache (AD-4 invalidates by version poll; AD-5's cache is in-process; Redis is never a system of record). Recorded as a justified `peerDependencyRules.allowedVersions` entry rather than silenced globally |
 | Edge | Caddy | **2.11.4** | TLS, HSTS, rate limiting, admin IP allowlist, dynamic upstreams |
 | Rendering | Playwright / Chromium | **1.62.1** | Renderer and cross-browser CI; `tagged: true` for PDF structure |
 | PDF post-processing | qpdf / pikepdf, veraPDF | — | In-place metadata injection; conformance validation against PDF/A-2a and PDF/UA-1 |
-| Package manager | pnpm | **11.21.0** | Workspace monorepo |
+| Package manager | pnpm | **11.22.0** (verified 18 Aug 2026) | Workspace monorepo. **Moved from 11.21.0 on 18 Aug 2026**: 11.21.0 cannot bootstrap itself from an 11.22.0 host on `darwin-x64` — pnpm writes `@pnpm/exe@11.21.0` into the lockfile and then refuses to run because `@pnpm/exe.darwin-x64` is absent from it. 11.22.0 installs with no override. Same minor; catalog, `allowBuilds` and `catalogMode` behave identically |
 | Lint | ESLint | **10.8.1** | Next 16 removed `next lint`; CI calls ESLint directly |
 | Lint | typescript-eslint | **8.66.0** | The constraint behind AD-13 |
 | Boundaries | dependency-cruiser | **18.1.1** | AD-1's boundary enforcement |
@@ -1399,6 +1424,15 @@ Versions were verified on **10 August 2026** and are part of the build contract,
 | Observability | Prometheus, Loki, Grafana | — | Self-hosted on VM-3; keeps NFR-27's EU-residency assertion trivially true and adds no sub-processor |
 | Backup | pgBackRest | — | Continuous WAL archiving to EU object storage |
 | Connection pooling | PgBouncer | — | Transaction pooling mode only, on the application host |
+
+**The catalog is this table's machine-readable form.** `pnpm-workspace.yaml`'s `catalog:` block
+holds one version per dependency across the workspace, and `catalogMode: strict` makes adding a
+dependency outside it an install error — so the pins above stop being a table people are meant to
+consult and become one the installer enforces. Packages this table does not pin are resolved to
+current stable through `pnpm add --save-catalog` and recorded there with the rest; those resolved
+**18 Aug 2026** at foundation stage were `@nestjs/swagger` 11.4.7, `@nestjs/config` 4.0.4,
+`@nestjs/bullmq` 11.0.5, `class-validator` 0.15.1, `class-transformer` 0.5.1, `nestjs-pino` 4.6.1,
+`pino` 10.3.1, `jest` 30.4.2, `ts-jest` 29.4.12 and `@types/node` 26.2.0.
 
 ### 12.2 The styling split, and two configuration facts
 
@@ -1475,7 +1509,7 @@ Decided 18 August 2026, closing §18.2's fourteen "the sources are silent" entri
 | Secrets (OQ-13) | **Self-hosted OpenBao on VM-3.** SOPS + age only for the pre-OpenBao bootstrap `.env` |
 | CI (OQ-14) | **GitHub Actions.** CI holds no long-lived production credentials |
 | Provisioning (OQ-15) | **Ansible** from foundation stage · **OpenTofu** when the DR runbook is written · Compose for the workload |
-| Test tooling (OQ-16) | **Jest + ts-jest** in `apps/{api,worker}`; **Vitest** in `apps/{web,admin}` and `packages/*`; Playwright for E2E |
+| Test tooling (OQ-16) | **Jest + ts-jest** in `apps/api` (both modes); **Vitest** in `apps/{web,admin}` and `packages/*`; Playwright for E2E |
 | Admin token handler (OQ-17) | **A route on `api`** — not a Caddy module, not a separate service |
 | Rate limits and tokens (OQ-19) | Values in §12.5.6 |
 | Non-fiscal retention (OQ-20) | Schedule in §12.5.7 |
@@ -1539,7 +1573,7 @@ The bootstrap case is a genuine chicken-and-egg and is the only reason a person 
 
 #### 12.5.6 Test tooling, coverage floors, rate limits and token bounds
 
-**Jest + ts-jest** in `apps/api` and `apps/worker` — NestJS's default, and AD-13 already assumes ts-jest in its argument for pinning TypeScript at 6.x. **Vitest** in `apps/web`, `apps/admin` and `packages/*` — `apps/admin` is Vite, where Vitest is native and materially faster on component suites. One documented exception costs less than forcing either runner across both sides. **Playwright** for E2E and cross-browser, already pinned.
+**Jest + ts-jest** in `apps/api`, which covers HTTP and worker modes alike — there is no separate `apps/worker` package, only a second entrypoint in the same image (§5.4, §10.7). **Corrected 18 Aug 2026**: this paragraph and OQ-16 previously named `apps/worker` as a workspace package, against §10.7's tree, §5.4's container table and the §10.4 Compose file, all three of which describe one image with `MODE=worker`. Jest is NestJS's default, and AD-13 already assumes ts-jest in its argument for pinning TypeScript at 6.x. **Vitest** in `apps/web`, `apps/admin` and `packages/*` — `apps/admin` is Vite, where Vitest is native and materially faster on component suites. One documented exception costs less than forcing either runner across both sides. **Playwright** for E2E and cross-browser, already pinned.
 
 **Coverage floors** — NFR-88 names five components and requires reporting per component, never as a project average. That per-component reporting is the requirement's real content; these are its missing values, closing `non_functional_requirements.md` OQ-10.
 
@@ -2021,7 +2055,7 @@ All fourteen are decided in **§12.5**, taken as one decision because the choice
 | OQ-13 | **Closed — self-hosted OpenBao on VM-3**; SOPS + age only for the pre-OpenBao bootstrap `.env` | **The either/or was already half-decided by NFR-69**, which requires secrets access-logged — SOPS-encrypted files cannot produce an access log. Self-hosting keeps NFR-27 trivially true and adds no sub-processor, the same argument the architecture already makes for observability. See §12.5 |
 | OQ-14 | **Closed — GitHub Actions**; Forgejo Actions self-hosted as the drop-in alternative | Every specified gate runs on a stock Linux runner. Part of the decision: **CI holds no long-lived production credentials** — deploys use short-lived OIDC, and CI never reads from OpenBao. See §12.5 |
 | OQ-15 | **Closed — Ansible** from foundation stage · **OpenTofu** (VMs, DNS, buckets) when the DR runbook is written · Compose (workload) | Adopted in stages: Ansible immediately, because host configuration drifts continuously; OpenTofu at the first DR rehearsal, where reproducible provisioning is what it buys. Not adopted for scale — the estate stays three VMs. Adds `infra/ansible` and later `infra/tofu` to the §12 layout. See §12.5 |
-| OQ-16 | **Closed — Jest + ts-jest** in `apps/{api,worker}`, **Vitest** in `apps/{web,admin}` and `packages/*`, Playwright for E2E. **Coverage floors set** | AD-13 already assumes ts-jest; `apps/admin` is Vite, where Vitest is native. Floors: invoice numbering and VAT calculation **100% branch** (a missed branch is a fiscal defect, and both are small pure units), calculator and validation 95/90, entitlement 90/85, project 80 — reported per component, never as an average. Closes `non_functional_requirements.md` OQ-10. See §12.5 |
+| OQ-16 | **Closed — Jest + ts-jest** in `apps/api` (HTTP and worker modes), **Vitest** in `apps/{web,admin}` and `packages/*`, Playwright for E2E. **Coverage floors set** | AD-13 already assumes ts-jest; `apps/admin` is Vite, where Vitest is native. Floors: invoice numbering and VAT calculation **100% branch** (a missed branch is a fiscal defect, and both are small pure units), calculator and validation 95/90, entitlement 90/85, project 80 — reported per component, never as an average. Closes `non_functional_requirements.md` OQ-10. See §12.5 |
 | OQ-17 | **Closed — a route on `api`** (`/auth/admin/session`), not a Caddy module and not a separate service | DR-11 is one public API with no privileged back door. A token handler at `edge` would be a second auth surface outside the API — one no contract test or OpenAPI diff (P-5) would ever see. See §12.5 |
 | OQ-18 | **Closed 18 Aug 2026 — IDNO is the primary entity identifier; LEI is an optional B1 field.** VAT code is retained alongside IDNO in `billing` as it already is. DUNS, EU ID and PermID are not modelled at MVP | **Decided against the research document's LEI-primary recommendation, on population grounds.** IDNO is the Moldovan state registry number: universal across the tenant population, free, already named in the `billing` context, and therefore the only candidate that is actually populated for every organization at signup. LEI carries an annual fee and is held by very few Moldovan SMEs — as the primary key it would be empty for the large majority. Modelling it as an optional B1 field keeps the report VSME-conformant for the cross-border readers who need an LEI (banks, EU buyers) without making the identifier block unsatisfiable for everyone else. **Correction to this question's own premise:** it stated that neither architecture document carries the scheme forward and that `core` names none. In fact **FR-16 already specified "LEI as primary and DUNS, EU ID or PermID as fallback"** — so the register was not silent, it disagreed. FR-16 is amended accordingly (18 Aug 2026), and `functional_requirements.md` §9.5's legacy FR-10 row records that the legacy intent survives while its choice of primary does not. **B1 can be modelled.** Deliberately *not* generalised into a typed multi-identifier list — that would ship an abstraction ahead of a second identifier that anyone has asked for |
 | OQ-19 | **Closed — values set.** 5 attempts/15 min per (IP, account) on auth paths; lockout at 10 consecutive failures; 60 req/min per IP and 300 req/min per organization at `edge`; tokens ≥ 256 bits, SHA-256 at rest, single-use; reset 60 min, verification 24 h, invitation 7 days | Also closes `non_functional_requirements.md` OQ-4, which left NFR-64 and FR-4's "threshold" with no pass condition. Auth limits are tighter than the general API because NFR-64's uniform response means enumeration is bounded by rate, not by response difference. See §12.5 |

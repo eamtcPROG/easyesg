@@ -1,0 +1,3 @@
+# One directory per port (AD-8). No vendor type crosses this boundary (P-7).
+#
+# Placeholder so the directory survives a clone; delete it when the first file lands.

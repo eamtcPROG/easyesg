@@ -176,11 +176,18 @@ catalog:
 ```
 
 Packages then declare `"@nestjs/common": "catalog:"`, and `pnpm add <pkg> --save-catalog` adds
-through it. Without a catalog, `apps/api` and `apps/worker` drift to different NestJS versions and
+through it. Without a catalog, `apps/web` and `apps/admin` drift to different React versions and
 nothing fails until something does — the same drift `packages/contracts` exists to prevent for
-DTOs. Set `saveExact: true` in `pnpm-workspace.yaml` next to `strictDepBuilds`; pnpm 11 keeps
-these settings there, not in `.npmrc`. *(Flags and catalog syntax verified against the pnpm 11
-docs, 18 Aug 2026.)*
+DTOs. (There is no `apps/worker` to drift from `apps/api`: one image, two entrypoints,
+`MODE=worker` — architecture.md §5.4, §10.7.) Set `saveExact: true` in `pnpm-workspace.yaml` next to `strictDepBuilds`; pnpm 11 keeps
+these settings there, not in `.npmrc`.
+
+Also set **`catalogMode: strict`**. It defaults to `manual`, which means `pnpm add` quietly
+installs outside the catalog and the catalog decays into a partial record of what someone
+remembered to route through it. `strict` makes adding a dependency outside the catalog's range an
+error — which is the difference between §12 being a table people are supposed to consult and one
+the installer enforces. `cleanupUnusedCatalogs: true` keeps removals from leaving orphans behind.
+*(Flags and catalog syntax verified against the pnpm 11 docs, 18 Aug 2026.)*
 
 
 ## pnpm setup (do this at foundation stage)
@@ -194,18 +201,35 @@ sections, not a preference. Its strictness matches P-7 and the `contracts/` boun
   runtime. In `pnpm-workspace.yaml` set `strictDepBuilds: true` plus an explicit
   `allowBuilds:` map, so a skipped build fails the install instead of passing silently.
   In pnpm 11 `allowBuilds` **replaces** the older `onlyBuiltDependencies` — older
-  answers online still show the legacy key.
+  answers online still show the legacy key. Start the map **empty** and let pnpm fill it: on
+  meeting an unreviewed build it writes `'<pkg>': set this to true or false` into
+  `pnpm-workspace.yaml` and fails the install. Each entry is then a decision someone took with
+  the package in front of them, rather than a guess made in advance — and the guess is the
+  failure mode, because the reflex is to allow whatever unblocks the install. At foundation
+  stage this surfaced three: `msgpackr-extract` and `unrs-resolver` are real native builds and
+  were allowed; `@scarf/scarf` is TypeORM's install-time analytics beacon and was denied.
+  Record the reason next to each, in the file.
 - **Install Chromium explicitly**, in the Dockerfile and in CI:
   `pnpm exec playwright install --with-deps chromium`. Do not rely on `postinstall`.
 - **Docker: never `COPY` a pnpm `node_modules`** — it is symlinks into a content store.
   Use `pnpm deploy --filter=<app> --prod /prod/<app>`, one per Compose service, each into
   its own build stage. `apps/web` needs extra care: Next.js `output: 'standalone'` does its
   own file tracing and must be proven against the symlink layout on the first Docker build.
-- **Pin the version** with `packageManager` in the root `package.json` so CI, Docker and
-  laptops agree, and **block the other package managers** — `"preinstall": "npx only-allow
-  pnpm"`. npm ships inside Node and is not removable; the risk is not that it exists but that
-  someone runs it here, producing a `package-lock.json` and a flat `node_modules` that silently
-  restores the phantom dependencies DR-1/AD-1 exist to prevent.
+- **Pin the version** in the root `package.json` so CI, Docker and laptops agree, and
+  **block the other package managers** — `"preinstall": "npx only-allow pnpm"`. Either the
+  exact `packageManager` field or `devEngines.packageManager` works and pnpm 11 honours
+  both — `pnpm init` writes the latter — so do not churn a working project between them.
+  What does bite is the **version**: pnpm fetches and verifies its own platform binary
+  against `pnpm-lock.yaml`, so a pin it cannot resolve fails every command with
+  `Cannot verify the identity of the @pnpm/exe.<platform> native binary`, including the
+  install that would have written the lockfile. If that happens, the pin is the problem,
+  not the field — check §12 and raise the difference rather than reaching for
+  `pmOnFail: ignore`, which silences the enforcement the pin exists for.
+  *(Verified 18 Aug 2026: 11.21.0 could not bootstrap on darwin-x64; 11.22.0 does.)*
+  The `preinstall` guard is separate and non-negotiable: npm ships inside Node and is not
+  removable; the risk is not that it exists but that someone runs it here, producing a
+  `package-lock.json` and a flat `node_modules` that silently restores the phantom
+  dependencies DR-1/AD-1 exist to prevent.
 - **Set `engineStrict: true`** in `pnpm-workspace.yaml` alongside `engines.node`. While the
   Node 26 exception runs (architecture.md §12.6), this is what turns "laptops, Docker and CI
   all run 26.7.0" from a written rule into a hard install failure.

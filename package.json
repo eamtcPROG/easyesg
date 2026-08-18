@@ -1,0 +1,37 @@
+{
+  "name": "easyesg",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-tenant VSME sustainability reporting platform for Moldovan SMEs",
+  "license": "UNLICENSED",
+  "type": "module",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.22.0",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": "26.7.0"
+  },
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "build": "pnpm -r build",
+    "lint": "eslint .",
+    "test": "pnpm -r test",
+    "boundaries": "depcruise --config .dependency-cruiser.cjs apps/api/src",
+    "boundaries:prove": "./tools/prove-boundaries.sh",
+    "openapi:emit": "pnpm --filter @easyesg/api openapi:emit",
+    "openapi:check": "pnpm openapi:emit && git diff --exit-code packages/contracts/openapi/v1.json",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "dependency-cruiser": "catalog:",
+    "eslint": "catalog:",
+    "globals": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  }
+}

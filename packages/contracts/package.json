@@ -1,0 +1,10 @@
+{
+  "name": "@easyesg/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Wire contract: OpenAPI-generated client, shared DTOs and event schemas. Produced from apps/api; consumed by apps/web and apps/admin only.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "files": ["src", "openapi"]
+}
