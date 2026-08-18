@@ -47,6 +47,18 @@
   --space-9: 64px;
   --space-10: 96px;
 
+  /* ── Tier 1 · layout ────────────────────────────────────────────
+     Added 18 Aug 2026 to close design_spec.md OQ-2. Standard conventions,
+     drawn from the space scale rather than invented: 24px desktop gutter
+     and a 1200px shell are the common desktop defaults, and both already
+     exist as space steps. The grid is fluid — 12 columns of 1fr — so no
+     integer column width is needed or implied. */
+  --content-max: 1200px;        /* shell maximum; regions inside may be narrower */
+  --grid-columns: 12;
+  --grid-gutter: var(--space-6);        /* 24px at >= 1024 */
+  --grid-gutter-narrow: var(--space-5); /* 16px below 1024, and the page margin */
+  --measure-text: 68ch;         /* UX-74 reading measure, ~700px at body 15/24 */
+
   /* ── Tier 1 · radius ────────────────────────────────────────────── */
   --radius-1: 3px;      /* inputs, chips, state markers */
   --radius-2: 6px;      /* cards, panels */
