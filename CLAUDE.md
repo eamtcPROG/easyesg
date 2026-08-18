@@ -227,7 +227,7 @@ looks identical to a rule that passes.
 ## Local environment
 
 **The Compose stack is the dev environment** (architecture.md §12.5.10). A developer host needs
-**Node (fnm-managed, per `.node-version`), pnpm, Docker and git** — and nothing else. PostgreSQL,
+**Node (the pinned version — architecture.md §12.1), pnpm, Docker and git** — and nothing else. PostgreSQL,
 Redis and the worker's document toolchain (Chromium, qpdf, veraPDF, LibreOffice) are Compose
 services; reach their clients through the containers, never through a host install:
 
