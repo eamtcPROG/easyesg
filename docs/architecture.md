@@ -604,8 +604,27 @@ This is the only way those obligations stay true across 173 requirements.
 | Registration + verification | Account creation, email verification, password reset, uniform responses regardless of account existence | accounts, credentials, verification tokens |
 | Session + refresh | Short-lived access token issuance, opaque server-side refresh sessions rotated on use, server-side termination | sessions |
 | Provider identities | OIDC identities matched on **subject identifier**, not email | provider identities |
-| Membership + roles | Organization membership, role in active organization, per-report rights; revocation without cascading historical attribution | memberships |
+| Membership + roles | Organization membership, role in active organization, and the inputs from which **per-report rights are evaluated** (see below); revocation without cascading historical attribution | memberships |
 | Invitation | Invitation issuance, expiry, acceptance | invitations |
+
+**Per-report rights are derived, not stored. Decided 18 Aug 2026.** FR-158 requires authorization
+"scoped per organization and per report", and this row previously read as though a grant existed per
+report. No functional requirement creates, grants or revokes one: FR-57 assigns a single organization
+role at invitation (edit or view-only), FR-22's period lock is what makes a report read-only, and
+`design_spec.md` has no screen for managing per-report access — S-16 is organization-level. A product
+that genuinely had per-report ACLs would have a surface for them.
+
+So the rights on a report are **computed per request** from the acting user's organization role, the
+state of the report's period (open or locked), and the entity the report belongs to. FR-158 is
+satisfied as written — the *evaluation* is per report; what does not exist is a per-report grant record.
+
+What this costs, stated so it is not rediscovered as a surprise: in a multi-entity organization
+(FR-17), every member holding the edit role can edit every entity's report. Narrowing that to one
+entity is not expressible and is not an MVP capability. Adding it later is additive rather than a
+rewrite — an explicit grant table would further restrict, with this derivation as the default where no
+grant exists — which is why the cheap option is also the reversible one. Related and still open:
+OQ-26, how scoped permissions are evaluated across an organization relationship, which is what an
+Advisor acting for a client organization would need.
 
 ### 6.6 Platform-service components
 
@@ -1610,12 +1629,38 @@ Project-wide floor 80%, reported alongside but never in place of the five.
 | Auth paths — login, reset request, invitation accept | 5 attempts / 15 min per (IP, account); uniform response either way (NFR-64) |
 | Account lockout — FR-4's "threshold" | 10 consecutive failures; released by reset link or PA action |
 | Unauthenticated API, per IP | 60 req / min at `edge` |
+| Provider webhooks (`/api/v1/webhooks/*`), per source IP | **600 req / min at `edge`**, a bucket separate from the unauthenticated budget; 429 beyond it, recovered by provider retry (AD-6 dedup). Alert at 70% sustained. **Set 18 Aug 2026** |
 | Authenticated API, per organization | 300 req / min at `edge` |
 | Export generation | 10 concurrent per organization; queued beyond, never rejected |
 | Token entropy | **≥ 256 bits** from a CSPRNG; stored SHA-256, compared in constant time; single-use |
 | Lifetimes | Password reset 60 min · email verification 24 h · invitation 7 days · admin session 8 h idle, 12 h absolute |
 
-Auth limits are tighter than the general API because NFR-64's uniform-response requirement means enumeration is bounded by rate, not by response difference. The export concurrency limit is a queue-depth guard, not an entitlement — entitlement quotas stay in the billing context under DR-1.
+**Why webhooks need their own bucket, and why 600.** Payment, MIA and e-Factura callbacks are
+unauthenticated *by session* — they carry a provider signature, not a user token — so under the general
+rule they consume the 60/min unauthenticated budget. That budget is per IP and every callback from one
+acquirer shares one source range, which makes it a single allowance spanning every tenant's payments.
+The consequence is specific rather than theoretical: §11.2 makes the callback the **only** authoritative
+source of order state, so a throttled callback leaves a customer who has paid sitting in
+`awaiting_payment`.
+
+Steady-state volume at the stated envelope is single digits per minute and would never approach either
+figure. The sizing case is not steady state — it is a backlog draining after a provider outage, which
+DR-9 and NFR-54 already treat as expected behaviour rather than an anomaly. At ≤ 2,000 organizations on
+monthly cycles the worst realistic backlog is roughly a day of callbacks; 600/min drains that in about
+three and a half minutes, and leaves an order of magnitude over the renewal-day sustained rate. The
+alert matters more than the ceiling: 70% sustained means the assumption behind the number has changed.
+
+**An IP allowlist was considered and deliberately not adopted as the primary control.** It is the
+stronger position — it would stop unknown traffic reaching a `@Public()` endpoint at all — but it
+depends on the acquirers publishing stable ranges *and* announcing changes, which is not established
+for maib, Victoriabank or MICB. A silently rotated range converts a delay into a hard 403 on every
+callback, which is worse than the problem. It remains available as per-provider hardening wherever a
+range is actually published; it is not what the correctness of the path rests on. Signature
+verification in the adapter, and `(provider, provider_event_id)` de-duplication before any handler
+runs, are.
+
+Auth limits are tighter than the general API because NFR-64's uniform-response requirement means "
+       "enumeration is bounded by rate, not by response difference. The export concurrency limit is a queue-depth guard, not an entitlement — entitlement quotas stay in the billing context under DR-1.
 
 #### 12.5.7 Retention for non-fiscal data
 
@@ -2084,6 +2129,8 @@ All fourteen are decided in **§12.5**, taken as one decision because the choice
 | OQ-26 | **Permission scoping for "one organization manages many client organizations".** `ORG_RELATIONSHIP` is typed and config-driven so a new relationship type needs no migration, but how scoped permissions across a relationship are evaluated — and how `app.current_org` behaves for a user acting on a client organization's behalf — is not specified | Data shape stated; authorization semantics not. Needed before the Advisor or Buyer type is activated |
 | OQ-27 | **Closed — Chromium is derived from the Playwright pin**, not separately pinnable. Playwright 1.62.1 ships **Chromium 151.0.7922.34** (verified 18 Aug 2026) | Three controls: explicit `playwright install --with-deps chromium` at the pinned version in Dockerfile and CI, never `postinstall`; the resolved build asserted at container build, failing on mismatch; and **any Playwright bump re-runs the golden-report corpus through veraPDF** for PDF/A-2a + PDF/UA-1 before acceptance. That is the upgrade-verification procedure OQ-27 records as missing (R-9, T-13). See §12.5 |
 | OQ-28 | **Team shape and cost.** The 8–12 month estimate is stated for "a competent team"; no team size, composition or budget appears in any source | Silent |
+| OQ-29 | **Closed 18 Aug 2026 — provider webhooks get their own 600 req/min per-source-IP bucket at `edge`**, separate from the 60/min unauthenticated budget. Raised at foundation stage: callbacks are unauthenticated by session and all arrive from one acquirer range, so under the general rule a single allowance spans every tenant's payments — and §11.2 makes the callback the only authoritative source of order state. See §12.5.6 | Resolved. An IP allowlist is the stronger control and was **not** adopted as primary: it depends on maib, Victoriabank and MICB publishing stable ranges and announcing changes, which is not established, and a silently rotated range turns a delay into a hard 403 on every callback. Available as per-provider hardening; correctness rests on signature verification and `(provider, provider_event_id)` de-duplication |
+| OQ-30 | **Closed 18 Aug 2026 — per-report rights are derived, not stored.** §6.5 previously read as though a per-report grant existed. No FR creates, grants or revokes one; FR-57 assigns an organization role, FR-22's period lock makes a report read-only, and `design_spec.md` has no screen for per-report access. Rights are computed per request from organization role × period state × entity. See §6.5 | Resolved, and FR-158 is satisfied as written — the *evaluation* is per report. Accepted cost: in a multi-entity organization every edit-role member can edit every entity's report, and narrowing that is not an MVP capability. Additive to reverse: an explicit grant table would further restrict, with this derivation as the default. Adjacent and still open: **OQ-26**, permission scoping across an organization relationship |
 
 ---
 
