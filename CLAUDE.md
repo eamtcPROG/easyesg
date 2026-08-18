@@ -135,6 +135,43 @@ Three standing exceptions — deliberate, not oversights:
 When you do set or move a pin, record the version and the date you verified it, so the next
 review knows how old the check is.
 
+**Install with the package manager; never hand-write a version into a manifest.** `pnpm add`
+resolves against the registry, writes `package.json` and `pnpm-lock.yaml` in one step, and
+surfaces peer conflicts at the moment you introduce them. A typed version does none of that —
+and it is, by definition, a *remembered* version, which is the failure this whole section exists
+to prevent. Hand-editing `pnpm-lock.yaml` is never correct.
+
+| Need | Command |
+| --- | --- |
+| Add to an app or package | `pnpm add <pkg> --filter <workspace>` |
+| Dev dependency | `pnpm add -D <pkg> --filter <workspace>` |
+| Root tooling | `pnpm add -Dw <pkg>` |
+| A version pinned in architecture.md §12 | `pnpm add <pkg>@<pinned> --filter <workspace>` |
+| Pre-1.0, pinned exactly | `pnpm add -E <pkg> --filter <workspace>` |
+| Another workspace package | `pnpm add <pkg> --workspace --filter <workspace>` |
+| Move a pin — a spec change, needs a rationale | `pnpm up --latest <pkg> --filter <workspace>` |
+
+**Read what it resolved.** The installed version is the fact; what you expected it to install is
+not. If it differs from architecture.md §12, that table governs — reinstall at the pinned version
+and raise the difference, rather than letting the install win silently.
+
+**One version per dependency across the workspace, held in a catalog.** §12's pin table is the
+build contract; `pnpm-workspace.yaml`'s `catalog:` is its machine-readable form:
+
+```yaml
+catalog:
+  '@nestjs/common': 11.1.29
+  typeorm: 1.1.0
+```
+
+Packages then declare `"@nestjs/common": "catalog:"`, and `pnpm add <pkg> --save-catalog` adds
+through it. Without a catalog, `apps/api` and `apps/worker` drift to different NestJS versions and
+nothing fails until something does — the same drift `packages/contracts` exists to prevent for
+DTOs. Set `saveExact: true` in `pnpm-workspace.yaml` next to `strictDepBuilds`; pnpm 11 keeps
+these settings there, not in `.npmrc`. *(Flags and catalog syntax verified against the pnpm 11
+docs, 18 Aug 2026.)*
+
+
 ## pnpm setup (do this at foundation stage)
 
 pnpm is fixed by architecture.md §10.7 and §12 — changing it is an amendment to those
