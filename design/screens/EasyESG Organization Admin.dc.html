@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #F4F6F8; }
+  * { box-sizing: border-box; }
+  a { color: #245540; text-decoration: underline; text-underline-offset: 2px; }
+  a:hover { color: #2E6A4F; }
+  ::selection { background: #D6E8DE; }
+</style>
+</helmet>
+
+<div style="background:#F4F6F8;font-family:'Onest',system-ui,sans-serif;-webkit-font-smoothing:antialiased;padding:0 0 140px">
+ <div style="width:3200px;padding:0 64px">
+
+  <header style="padding:88px 0 56px;border-bottom:1px solid #D5DBE2">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#67737F;margin-bottom:20px">EasyESG · Organization administration · Mock pass 1</div>
+    <h1 style="font-size:56px;line-height:1.05;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 20px;max-width:26ch">The settings tier, where consequences are named</h1>
+    <p style="font-size:19px;line-height:1.55;color:#4E5964;margin:0;max-width:66ch;text-wrap:pretty">Six screens the owner-administrator visits a handful of times a year, each of which can change what a colleague sees inside a report. Entities, periods, identifiers, access and the plan. Nothing here is a form for its own sake: every save, lock, removal and downgrade states the object it touches and what it does to the work already in progress.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:32px;margin-top:40px;font-size:13px;color:#67737F">
+      <div style="display:flex;flex-direction:column;gap:4px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Screens</span><span style="color:#3A434C;font-weight:500">S-13 … S-17 · S-27</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Archetypes</span><span style="color:#3A434C;font-weight:500">Index · Record · Status</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Discharges</span><span style="color:#3A434C;font-weight:500">UX-50 … UX-54 · UX-68 … UX-72</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Actor</span><span style="color:#3A434C;font-weight:500">OA · owner-administrator</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Company shown</span><span style="color:#3A434C;font-weight:500">Grupul Lina · four entities</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Revision</span><span style="color:#3A434C;font-weight:500">August 2026 · draft 1</span></div>
+    </div>
+    <p style="font-size:14px;line-height:1.6;color:#67737F;margin:28px 0 0;max-width:80ch">Chrome, tables, field anatomy and the eight validation states come from <em>EasyESG Design Foundations</em> and <em>EasyESG Reporting Core</em> unchanged. What this file adds is the settings tier's own vocabulary: an explicit save, an irreversible action that looks irreversible, an entitlement counter that warns before it blocks, and a reduction in scope that lists by name what turns read-only.</p>
+
+    <div style="margin:36px 0 0;padding:22px 24px;border:1px solid #D5DBE2;border-radius:6px;background:#FFFFFF;max-width:1080px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Contents · 9 sections</span>
+        <span style="font-size:12.5px;color:#67737F">The five records, then the three moments where administration touches reporting</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 32px">
+        <div style="display:flex;gap:11px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3;width:30px;flex-shrink:0">9.0</span><a href="#s13" style="font-size:13.5px;color:#245540;text-decoration:none">Entities index</a><span style="font-size:12.5px;color:#8B96A3">S-13 · the counter warns early</span></div>
+        <div style="display:flex;gap:11px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3;width:30px;flex-shrink:0">9.5</span><a href="#s17" style="font-size:13.5px;color:#245540;text-decoration:none">Plan, entitlements and usage</a><span style="font-size:12.5px;color:#8B96A3">S-17 · UX-50, UX-52</span></div>
+        <div style="display:flex;gap:11px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3;width:30px;flex-shrink:0">9.1</span><a href="#s13rec" style="font-size:13.5px;color:#245540;text-decoration:none">Entity record</a><span style="font-size:12.5px;color:#8B96A3">explicit save · UX-68</span></div>
+        <div style="display:flex;gap:11px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3;width:30px;flex-shrink:0">9.6</span><a href="#reduction" style="font-size:13.5px;color:#245540;text-decoration:none">Losing scope, by name</a><span style="font-size:12.5px;color:#8B96A3">UX-53, UX-54</span></div>
+        <div style="display:flex;gap:11px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3;width:30px;flex-shrink:0">9.2</span><a href="#s14" style="font-size:13.5px;color:#245540;text-decoration:none">Reporting periods, locking, reopening</a><span style="font-size:12.5px;color:#8B96A3">S-14 · UX-71, UX-72</span></div>
+        <div style="display:flex;gap:11px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3;width:30px;flex-shrink:0">9.7</span><a href="#states" style="font-size:13.5px;color:#245540;text-decoration:none">States pass</a><span style="font-size:12.5px;color:#8B96A3">empty, loading, view-only, error</span></div>
+        <div style="display:flex;gap:11px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3;width:30px;flex-shrink:0">9.3</span><a href="#s15" style="font-size:13.5px;color:#245540;text-decoration:none">Organization profile and identifiers</a><span style="font-size:12.5px;color:#8B96A3">S-15</span></div>
+        <div style="display:flex;gap:11px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3;width:30px;flex-shrink:0">9.8</span><a href="#narrow" style="font-size:13.5px;color:#245540;text-decoration:none">Narrow frames</a><span style="font-size:12.5px;color:#8B96A3">834 and 390</span></div>
+        <div style="display:flex;gap:11px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3;width:30px;flex-shrink:0">9.4</span><a href="#s16" style="font-size:13.5px;color:#245540;text-decoration:none">Users and access</a><span style="font-size:12.5px;color:#8B96A3">S-16 · UX-69</span></div>
+      </div>
+      <p style="font-size:12.5px;line-height:1.55;color:#67737F;margin:14px 0 0">Figures are continuous with <em>EasyESG Workspace</em>: Grupul Lina, four entities, nine reports, the Practice plan at 4 of 5 entities and 9 of 10 reports for 2026.</p>
+    </div>
+  </header>
+
+  <!-- ============ 9.0 S-13 ENTITIES INDEX ============ -->
+  <section id="s13" data-screen-label="9.0 S-13 Entities index" style="padding:72px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">S-13 · 1440 · UC-52 … UC-55</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">Entities index</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">The list is short and will stay short — four rows, five allowed. So the table earns its space by carrying the two facts that decide the reporting year: how many employees the entity declared, and which periods are still open. The entitlement counter sits above the primary action, warning at four of five rather than refusing at six.</p>
+    </sc-if>
+
+    <div style="width:1440px;min-height:1320px;display:flex;flex-direction:column;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#F4F6F8;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+      <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="display:flex;align-items:center;gap:24px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span><span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span></div>
+          <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+          <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px">
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+          <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+          <span style="display:inline-flex;align-items:center;gap:9px;font-size:14px;color:#FFFFFF"><span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AR</span>Ana R.<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+      </div>
+      <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:stretch;gap:28px">
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Home</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Reports</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;font-weight:600;color:#161B20;box-shadow:inset 0 -2px 0 #2E6A4F">Entities &amp; periods</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Organization</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Users &amp; access</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Plan &amp; billing</span>
+      </div>
+
+      <div style="padding:40px 56px 48px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:26px">
+          <div>
+            <h1 style="font-size:32px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Entities</h1>
+            <p style="font-size:15px;line-height:1.5;color:#4E5964;margin:0;max-width:70ch">Each entity reports separately. Employee count and sites decide which disclosures appear, so keep them current before a reporting year opens.</p>
+          </div>
+          <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;border:1px solid #9A6510;background:#FDF4E3;border-radius:4px">
+              <span style="width:6px;height:6px;border-radius:50%;background:#9A6510;flex-shrink:0"></span>
+              <span style="font-size:13px;color:#7A4F0C">4 of 5 entities used on the Practice plan · one left</span>
+              <span style="font-size:13px;color:#245540;font-weight:500;text-decoration:underline;text-underline-offset:2px">See the plan</span>
+            </div>
+            <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14.5px;font-weight:600">Add entity</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+          <div style="display:inline-flex;align-items:stretch;border:1px solid #8B96A3;border-radius:4px;overflow:hidden;background:#FFFFFF"><span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;background:#1B4031;color:#FFFFFF;font-size:14px;font-weight:500">Entities · 4</span><span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;font-size:14px;color:#161B20">Periods · 9</span></div>
+          <div style="flex:1;min-width:240px;display:inline-flex;align-items:center;height:38px;padding:0 12px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;font-size:14px;color:#8B96A3">Search by name or IDNO</div>
+          <div style="display:inline-flex;align-items:center;gap:10px;height:38px;padding:0 12px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;font-size:14px;color:#161B20">Sort: name<span style="font-size:10px;color:#67737F">▾</span></div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:1.7fr 150px 130px 90px 1.1fr 110px;gap:16px;padding:11px 20px;background:#F4F6F8;border-bottom:1px solid #D5DBE2;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F"><span>Entity</span><span>IDNO</span><span>Employees</span><span>Sites</span><span>Periods</span><span style="text-align:right">Action</span></div>
+
+          <div style="display:grid;grid-template-columns:1.7fr 150px 130px 90px 1.1fr 110px;gap:16px;padding:15px 20px;border-bottom:1px solid #E8ECF0;align-items:center">
+            <div><div style="font-size:14.5px;font-weight:600;color:#161B20">Brutăria Lina SRL</div><div style="font-size:12.5px;color:#67737F">Bakery · NACE 10.71 · Chișinău</div></div>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">1003600012345</span>
+            <div><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">38</span><div style="font-size:12px;color:#67737F">annual average</div></div>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">2</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;background:#EDF5F0;border:1px solid #ADD1BE;font-size:12px;font-weight:500;color:#245540">2026 open</span><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;background:#F4F6F8;border:1px dashed #8B96A3;font-size:12px;color:#3A434C">2025 locked</span></div>
+            <span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Open</span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.7fr 150px 130px 90px 1.1fr 110px;gap:16px;padding:15px 20px;border-bottom:1px solid #E8ECF0;align-items:center">
+            <div><div style="font-size:14.5px;font-weight:600;color:#161B20">Lina Logistic SRL</div><div style="font-size:12.5px;color:#67737F">Road freight · NACE 49.41 · Strășeni</div></div>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">1003600067890</span>
+            <div><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">54</span><div style="font-size:12px;color:#9A6510">turnover disclosure applies</div></div>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">1</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;background:#EDF5F0;border:1px solid #ADD1BE;font-size:12px;font-weight:500;color:#245540">2026 open</span><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;background:#F4F6F8;border:1px dashed #8B96A3;font-size:12px;color:#3A434C">2025 locked</span></div>
+            <span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Open</span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.7fr 150px 130px 90px 1.1fr 110px;gap:16px;padding:15px 20px;border-bottom:1px solid #E8ECF0;align-items:center">
+            <div><div style="font-size:14.5px;font-weight:600;color:#161B20">Lina Retail SRL</div><div style="font-size:12.5px;color:#67737F">Food retail · NACE 47.11 · Bălți</div></div>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">1003600054321</span>
+            <div><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">29</span><div style="font-size:12px;color:#67737F">annual average</div></div>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">4</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;background:#FDF4E3;border:1px solid #9A6510;font-size:12px;font-weight:500;color:#9A6510">2025 ready to file</span><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:3px;background:#1B4031;font-size:12px;font-weight:500;color:#FFFFFF">2024 filed</span></div>
+            <span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Open</span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.7fr 150px 130px 90px 1.1fr 110px;gap:16px;padding:15px 20px;align-items:center;background:#FBFCFD">
+            <div><div style="font-size:14.5px;font-weight:600;color:#161B20">Lina Agro SRL</div><div style="font-size:12.5px;color:#67737F">Grain wholesale · NACE 46.21 · Orhei</div></div>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">1003600098765</span>
+            <div><span style="font-size:14px;color:#8B96A3">Not entered</span><div style="font-size:12px;color:#B32318">needed before a period opens</div></div>
+            <span style="font-size:14px;color:#8B96A3">—</span>
+            <div style="font-size:13px;color:#67737F">No periods yet</div>
+            <span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:13.5px;font-weight:600">Complete</span></span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:12px 20px;background:#F4F6F8;border-top:1px solid #D5DBE2">
+            <span style="font-size:13px;color:#67737F;font-variant-numeric:tabular-nums">1–4 of 4 entities</span>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#3A434C">Rows<span style="display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 10px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;font-variant-numeric:tabular-nums">25<span style="font-size:9px;color:#67737F">▾</span></span></div>
+              <div style="display:inline-flex;align-items:center;gap:6px">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid #D5DBE2;border-radius:4px;background:#FFFFFF;font-size:12px;color:#B6BFC9">‹</span>
+                <span style="display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 8px;border:1px solid #1B4031;border-radius:4px;background:#1B4031;font-size:13px;font-weight:600;color:#FFFFFF;font-variant-numeric:tabular-nums">1</span>
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid #D5DBE2;border-radius:4px;background:#FFFFFF;font-size:12px;color:#B6BFC9">›</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:13px;line-height:1.55;color:#67737F;margin:14px 0 0">Four entities · one incomplete. An entity is never deleted while a report references it; it is deactivated, and the reports stay downloadable.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9.1 S-13 ENTITY RECORD ============ -->
+  <section id="s13rec" data-screen-label="9.1 S-13 Entity record" style="padding:88px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">S-13 · Record · UX-68 · UC-53</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">Entity record — the one place with a save button</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">The wizard autosaves; this does not. A change here rewrites what other people see inside an open report, so it waits for an explicit act and says what the act will cause. Employee count is the field with reach: crossing fifty makes turnover and further workforce disclosures appear in B1 and B8 live.</p>
+    </sc-if>
+
+    <div style="display:flex;gap:28px;align-items:flex-start">
+      <div style="width:1000px;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#FFFFFF;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+        <div style="padding:26px 32px 22px;border-bottom:1px solid #E8ECF0;background:#FBFCFD">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Entities · Lina Logistic SRL</div>
+              <h1 style="font-size:26px;line-height:1.18;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Lina Logistic SRL</h1>
+              <p style="font-size:14px;color:#4E5964;margin:0">IDNO 1003600067890 · active · 2 reports · joined 12 March 2025</p>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:13px;color:#67737F;margin-bottom:6px">Last changed by Elena P.</div>
+              <div style="font-size:13px;color:#67737F;font-variant-numeric:tabular-nums;margin-bottom:8px">4 August 2026 · 09:14</div>
+              <span style="font-size:13.5px;color:#245540;font-weight:500;text-decoration:underline;text-underline-offset:2px">Change history</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:28px 32px 8px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;margin-bottom:16px">Legal identity</div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 28px;margin-bottom:28px">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">Registered name</div>
+              <div style="height:44px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font-size:15px;color:#161B20">Lina Logistic SRL</div>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">IDNO</div>
+              <div style="height:44px;border:1px solid #D5DBE2;border-radius:4px;background:#F4F6F8;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:15px;color:#3A434C;font-variant-numeric:tabular-nums">1003600067890<span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#245540;font-family:'Onest',sans-serif"><span style="width:6px;height:6px;border-radius:50%;background:#2E6A4F"></span>verified</span></div>
+              <div style="font-size:12.5px;color:#67737F;margin-top:6px">Fixed after verification. It appears on issued invoices — write to support to correct it.</div>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">Registered address</div>
+              <div style="height:44px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font-size:15px;color:#161B20">str. Ştefan cel Mare 41, Strășeni</div>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">Primary activity (NACE)</div>
+              <div style="height:44px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:15px;color:#161B20">49.41 · Freight transport by road<span style="font-size:10px;color:#67737F">▾</span></div>
+              <div style="font-size:12.5px;color:#67737F;margin-top:6px">Drives the sector-based water and pollution questions.</div>
+            </div>
+          </div>
+
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;margin-bottom:16px">Size</div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 28px;margin-bottom:20px">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">Employees, annual average</div>
+              <div style="height:44px;border:2px solid #245540;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;padding:0 11px;font-size:15px;color:#161B20;font-variant-numeric:tabular-nums">54</div>
+              <div style="font-size:12.5px;color:#67737F;margin-top:6px">Headcount converted to full-time equivalent, averaged over the year.</div>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">Balance sheet total, MDL</div>
+              <div style="height:44px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font-size:15px;color:#161B20;font-variant-numeric:tabular-nums">14 820 000</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:14px;padding:16px 18px;border:1px solid #9A6510;background:#FDF4E3;border-radius:5px;margin-bottom:28px">
+            <span style="width:20px;height:20px;border-radius:50%;background:#9A6510;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">!</span>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#7A4F0C;margin-bottom:5px">Fifty or more employees changes what the 2026 report asks</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#5E3D09;margin:0;max-width:74ch">Saving 54 adds turnover to B1 and three workforce breakdowns to B8 of the open 2026 report. Nothing already answered is discarded. If you later correct the figure below fifty, those answers are kept and hidden, not deleted.</p>
+            </div>
+          </div>
+
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;margin-bottom:14px">Sites · 1</div>
+          <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden;margin-bottom:14px">
+            <div style="display:grid;grid-template-columns:1.6fr 1fr 150px 90px;gap:14px;padding:15px 18px;align-items:center">
+              <div><div style="font-size:14px;font-weight:600;color:#161B20">Depot Strășeni</div><div style="font-size:12.5px;color:#67737F">str. Ştefan cel Mare 41</div></div>
+              <span style="font-size:13.5px;color:#3A434C">Owned · 3 200 m²</span>
+              <span style="font-size:13.5px;color:#3A434C">No protected area within 1 km</span>
+              <span style="font-size:13.5px;color:#245540;font-weight:500;text-align:right">Edit</span>
+            </div>
+          </div>
+          <div style="display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;font-size:14px;font-weight:500;color:#161B20;margin-bottom:26px">Add site</div>
+
+          <div style="height:1px;background:#E8ECF0;margin-bottom:20px"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding-bottom:26px">
+            <span style="font-size:13.5px;color:#B32318;font-weight:500">Deactivate this entity</span>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="font-size:13.5px;color:#67737F">Two changes not saved</span>
+              <div style="display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 18px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14.5px;font-weight:500;color:#161B20">Discard</div>
+              <div style="display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 24px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14.5px;font-weight:600">Save changes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:412px;display:flex;flex-direction:column;gap:20px">
+        <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;overflow:hidden">
+          <div style="padding:16px 20px;border-bottom:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between"><span style="font-size:14.5px;font-weight:600;color:#161B20">Change history · Employees</span><span style="font-size:18px;color:#8B96A3">×</span></div>
+          <div style="padding:6px 20px 18px">
+            <div style="padding:14px 0;border-bottom:1px solid #F0F3F6"><div style="font-size:13.5px;color:#161B20;margin-bottom:3px"><strong style="font-weight:600">48 → 54</strong> · not saved yet</div><div style="font-size:12.5px;color:#67737F">Ana R. · today 11:02 · draft edit</div></div>
+            <div style="padding:14px 0;border-bottom:1px solid #F0F3F6"><div style="font-size:13.5px;color:#161B20;margin-bottom:3px"><strong style="font-weight:600">46 → 48</strong></div><div style="font-size:12.5px;color:#67737F">Elena P. · 4 Aug 2026 09:14</div></div>
+            <div style="padding:14px 0"><div style="font-size:13.5px;color:#161B20;margin-bottom:3px"><strong style="font-weight:600">Set to 46</strong></div><div style="font-size:12.5px;color:#67737F">Mihai C. · 12 Mar 2025 · access since removed, attribution kept</div></div>
+          </div>
+        </div>
+
+        <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;padding:20px">
+          <div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:8px">Deactivate, never delete</div>
+          <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0 0 12px">Two reports reference Lina Logistic SRL. Deactivating stops new periods and hides the entity from pickers. Filed reports stay downloadable exactly as distributed, and the 2026 draft becomes read-only rather than disappearing.</p>
+          <div style="display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border:1px solid #B32318;border-radius:4px;background:#FFFFFF;font-size:14px;font-weight:600;color:#B32318">Deactivate Lina Logistic SRL</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9.2 S-14 PERIODS ============ -->
+  <section id="s14" data-screen-label="9.2 S-14 Reporting periods" style="padding:88px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">S-14 · UC-56 … UC-58 · UX-71, UX-72</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">Reporting periods — locking, and the amendment that shows</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">Locking is the only action in the tenant application that takes editing away from colleagues, so it is worded as what it does to them, not as a status change. Reopening is possible, requires a reason, and leaves a mark that stays visible on the period and in the export — an amendment must look like an amendment.</p>
+    </sc-if>
+
+    <div style="display:flex;gap:28px;align-items:flex-start">
+      <div style="width:1000px;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#FFFFFF;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+        <div style="padding:26px 32px 20px;border-bottom:1px solid #E8ECF0;background:#FBFCFD">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Entities &amp; periods · Periods</div>
+          <h1 style="font-size:26px;line-height:1.18;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Reporting periods</h1>
+          <p style="font-size:14px;line-height:1.5;color:#4E5964;margin:0;max-width:72ch">A locked period stops all editing of its reports for everyone. Only you and one other administrator can lock or reopen.</p>
+        </div>
+        <div style="padding:22px 32px 32px">
+          <div style="display:grid;grid-template-columns:1.5fr 190px 1fr 1.1fr 130px;gap:16px;padding:11px 0 11px;border-bottom:1px solid #D5DBE2;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F"><span>Entity</span><span>Period</span><span>State</span><span>Reports</span><span style="text-align:right">Action</span></div>
+
+          <div style="display:grid;grid-template-columns:1.5fr 190px 1fr 1.1fr 130px;gap:16px;padding:16px 0;border-bottom:1px solid #E8ECF0;align-items:center">
+            <span style="font-size:14.5px;font-weight:600;color:#161B20">Brutăria Lina SRL</span>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">1 Jan – 31 Dec 2026</span>
+            <span><span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#EDF5F0;border:1px solid #ADD1BE;font-size:12.5px;font-weight:500;color:#245540">Open</span></span>
+            <span style="font-size:13.5px;color:#67737F">1 draft · 7 of 11 modules</span>
+            <span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Lock</span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.5fr 190px 1fr 1.1fr 130px;gap:16px;padding:16px 0;border-bottom:1px solid #E8ECF0;align-items:center;background:#FBFCFD">
+            <span style="font-size:14.5px;font-weight:600;color:#161B20">Lina Retail SRL</span>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">1 Jan – 31 Dec 2025</span>
+            <span><span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#FDF4E3;border:1px solid #9A6510;font-size:12.5px;font-weight:500;color:#9A6510">Open · ready to file</span></span>
+            <span style="font-size:13.5px;color:#67737F">1 report · 11 of 11</span>
+            <span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:13.5px;font-weight:600">Lock</span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.5fr 190px 1fr 1.1fr 130px;gap:16px;padding:16px 0;border-bottom:1px solid #E8ECF0;align-items:center">
+            <span style="font-size:14.5px;font-weight:600;color:#161B20">Lina Logistic SRL</span>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">1 Jan – 31 Dec 2025</span>
+            <span><span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#F4F6F8;border:1px dashed #8B96A3;font-size:12.5px;font-weight:500;color:#3A434C">Locked 2 Jun 2026</span></span>
+            <span style="font-size:13.5px;color:#67737F">1 filed · read-only</span>
+            <span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Reopen</span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.5fr 190px 1fr 1.1fr 130px;gap:16px;padding:16px 0;align-items:center">
+            <span style="font-size:14.5px;font-weight:600;color:#161B20">Brutăria Lina SRL</span>
+            <span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">1 Jan – 31 Dec 2025</span>
+            <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start"><span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#F4F6F8;border:1px dashed #8B96A3;font-size:12.5px;font-weight:500;color:#3A434C">Locked 24 May 2026</span><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#7A4F0C"><span style="width:5px;height:5px;border-radius:50%;background:#9A6510"></span>Reopened once · 19 May 2026</span></div>
+            <span style="font-size:13.5px;color:#67737F">1 filed · revision 2</span>
+            <span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Reopen</span></span>
+          </div>
+
+          <div style="margin-top:22px;padding:16px 18px;border:1px solid #E8ECF0;background:#F9FAFB;border-radius:5px">
+            <p style="font-size:13px;line-height:1.55;color:#67737F;margin:0">The reopening mark is permanent. It appears on this row, on the report header, and in the cover page of every export produced afterwards, with the reason given at the time.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:412px;display:flex;flex-direction:column;gap:20px">
+        <div style="border:1px solid #9A6510;border-radius:8px;background:#FFFFFF;overflow:hidden;box-shadow:0 8px 24px rgba(22,27,32,0.10)">
+          <div style="padding:18px 22px;background:#FDF4E3;border-bottom:1px solid #E8D3A8">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#7A4F0C;margin-bottom:8px">Irreversible until reopened</div>
+            <div style="font-size:17px;font-weight:600;color:#161B20;line-height:1.25">Lock 2025 for Lina Retail SRL?</div>
+          </div>
+          <div style="padding:20px 22px 22px">
+            <p style="font-size:14px;line-height:1.6;color:#3A434C;margin:0 0 14px">Locking stops all editing of <strong style="font-weight:600">Sustainability report 2025 · Lina Retail SRL</strong> for everyone, including you. Elena P. is editing B6 right now and will lose the cursor, not the text.</p>
+            <div style="padding:12px 14px;background:#F9FAFB;border:1px solid #E8ECF0;border-radius:4px;margin-bottom:16px">
+              <div style="font-size:13px;line-height:1.55;color:#4E5964">You can reopen the period later. Reopening asks for a reason and marks the period as reopened permanently.</div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:18px">
+              <span style="width:18px;height:18px;border:1px solid #8B96A3;border-radius:3px;background:#FFFFFF;flex-shrink:0;margin-top:2px"></span>
+              <span style="font-size:13.5px;line-height:1.5;color:#3A434C">I have told the two people with access that 2025 is closing today</span>
+            </div>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1;height:42px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:500;color:#161B20">Cancel</div>
+              <div style="flex:1.3;height:42px;border-radius:4px;background:#9A6510;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:600">Lock the period</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;overflow:hidden">
+          <div style="padding:18px 22px;border-bottom:1px solid #E8ECF0"><div style="font-size:16.5px;font-weight:600;color:#161B20;line-height:1.25">Reopen 2025 for Lina Logistic SRL</div></div>
+          <div style="padding:18px 22px 22px">
+            <p style="font-size:13.5px;line-height:1.55;color:#3A434C;margin:0 0 14px">The filed report stays as filed. Editing produces revision 2, and the difference between the two is shown to anyone who opens either.</p>
+            <div style="font-size:13.5px;font-weight:600;color:#161B20;margin-bottom:6px">Reason · required, and it is read by third parties</div>
+            <div style="height:78px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;padding:10px 12px;font-size:13.5px;line-height:1.5;color:#3A434C">Fuel invoice for December arrived late; Scope 1 understated by 0,4 t.</div>
+            <div style="font-size:12px;color:#67737F;margin:6px 0 16px">Shown on the period, on the report and in every later export.</div>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1;height:42px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:500;color:#161B20">Cancel</div>
+              <div style="flex:1.3;height:42px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:600">Reopen and record</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9.3 S-15 ORGANIZATION PROFILE ============ -->
+  <section id="s15" data-screen-label="9.3 S-15 Organization profile" style="padding:88px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">S-15 · Record · UC-50, UC-51</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">Organization profile and identifiers</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">The organization is the billing and access boundary; the entities inside it are what get reported. Two facts here reach outside the product — the fiscal identifiers on invoices and the e-Factura address — so both are shown with what depends on them rather than as bare fields.</p>
+    </sc-if>
+
+    <div style="width:1000px;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#FFFFFF;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+      <div style="padding:26px 32px 20px;border-bottom:1px solid #E8ECF0;background:#FBFCFD">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Organization</div>
+        <h1 style="font-size:26px;line-height:1.18;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Grupul Lina</h1>
+        <p style="font-size:14px;color:#4E5964;margin:0">Created 12 March 2025 by Ana R. · four entities · Practice plan</p>
+      </div>
+      <div style="padding:28px 32px 30px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;margin-bottom:16px">Shown to people you invite</div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 28px;margin-bottom:30px">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">Display name</div>
+            <div style="height:44px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font-size:15px;color:#161B20">Grupul Lina</div>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">Default language of reports</div>
+            <div style="height:44px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:15px;color:#161B20">Romanian<span style="font-size:10px;color:#67737F">▾</span></div>
+            <div style="font-size:12.5px;color:#67737F;margin-top:6px">Applies to new reports. Existing reports keep the language they were started in.</div>
+          </div>
+        </div>
+
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;margin-bottom:16px">Fiscal identifiers · used on invoices</div>
+        <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden;margin-bottom:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #E8ECF0">
+            <div style="padding:16px 18px;border-right:1px solid #E8ECF0"><div style="font-size:13px;color:#67737F;margin-bottom:5px">IDNO</div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:15px;color:#161B20;font-variant-numeric:tabular-nums">1003600011122</span><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#245540"><span style="width:6px;height:6px;border-radius:50%;background:#2E6A4F"></span>verified 14 Mar 2025</span></div></div>
+            <div style="padding:16px 18px"><div style="font-size:13px;color:#67737F;margin-bottom:5px">VAT registration</div><div style="font-size:15px;color:#161B20;font-variant-numeric:tabular-nums">0209431 · registered</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr">
+            <div style="padding:16px 18px;border-right:1px solid #E8ECF0"><div style="font-size:13px;color:#67737F;margin-bottom:5px">Legal address</div><div style="font-size:15px;color:#161B20">bd. Dacia 12, MD-2062 Chișinău</div></div>
+            <div style="padding:16px 18px"><div style="font-size:13px;color:#67737F;margin-bottom:5px">e-Factura recipient</div><div style="font-size:15px;color:#161B20">facturi@grupullina.md</div></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;padding:14px 16px;border:1px solid #D5DBE2;background:#F9FAFB;border-radius:5px;margin-bottom:30px">
+          <span style="width:18px;height:18px;border-radius:50%;border:1.5px solid #67737F;color:#67737F;font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">i</span>
+          <p style="font-size:13px;line-height:1.55;color:#4E5964;margin:0;max-width:76ch">Changing a fiscal identifier does not alter invoices already issued — an issued invoice is corrected by a credit note, never edited. New identifiers apply from the next invoice onwards. Request a change and support confirms it within one working day.</p>
+        </div>
+
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;margin-bottom:16px">Contact for reports</div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 28px;margin-bottom:26px">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">Name printed on the report cover</div>
+            <div style="height:44px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font-size:15px;color:#161B20">Ana Rusu, financial director</div>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:6px">Contact email printed on the cover</div>
+            <div style="height:44px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font-size:15px;color:#161B20">ana.rusu@grupullina.md</div>
+          </div>
+        </div>
+
+        <div style="height:1px;background:#E8ECF0;margin-bottom:20px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:20px">
+          <span style="font-size:13.5px;color:#67737F">Last changed by Ana R. · 3 August 2026 · <span style="color:#245540;font-weight:500;text-decoration:underline;text-underline-offset:2px">history</span></span>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 18px;border-radius:4px;border:1px solid #D5DBE2;background:#F4F6F8;font-size:14.5px;font-weight:500;color:#8B96A3">Discard</div>
+            <div style="display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 24px;border-radius:4px;background:#8B96A3;color:#FFFFFF;font-size:14.5px;font-weight:600">Save changes</div>
+          </div>
+        </div>
+        <p style="font-size:12.5px;color:#8B96A3;margin:10px 0 0;text-align:right">Nothing changed yet — save stays inert until a field differs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9.4 S-16 USERS AND ACCESS ============ -->
+  <section id="s16" data-screen-label="9.4 S-16 Users and access" style="padding:88px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">S-16 · UC-59 … UC-64 · UX-69</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">Users and access</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">Access is granted per entity, because the person who knows the depot's diesel is not the person who knows retail payroll. Removing someone takes away entry, never the trail: their name stays on every value they entered, and the interface says so at the moment of removal rather than in a policy page.</p>
+    </sc-if>
+
+    <div style="display:flex;gap:28px;align-items:flex-start">
+      <div style="width:1000px;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#FFFFFF;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+        <div style="padding:26px 32px 20px;border-bottom:1px solid #E8ECF0;background:#FBFCFD;display:flex;align-items:flex-end;justify-content:space-between;gap:24px">
+          <div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Users &amp; access</div>
+            <h1 style="font-size:26px;line-height:1.18;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Five people, four entities</h1>
+            <p style="font-size:14px;color:#4E5964;margin:0">Two administrators is the minimum the plan enforces, so that a single absence cannot close the account.</p>
+          </div>
+          <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14.5px;font-weight:600;flex-shrink:0">Invite someone</div>
+        </div>
+        <div style="padding:22px 32px 30px">
+          <div style="display:grid;grid-template-columns:1.6fr 150px 1.3fr 170px 110px;gap:16px;padding:11px 0;border-bottom:1px solid #D5DBE2;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F"><span>Person</span><span>Role</span><span>Entities</span><span>Status</span><span style="text-align:right">Action</span></div>
+
+          <div style="display:grid;grid-template-columns:1.6fr 150px 1.3fr 170px 110px;gap:16px;padding:15px 0;border-bottom:1px solid #E8ECF0;align-items:center">
+            <div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#1B4031;color:#FFFFFF;font-size:13px;font-weight:600;flex-shrink:0">AR</span><div><div style="font-size:14.5px;font-weight:600;color:#161B20">Ana Rusu</div><div style="font-size:12.5px;color:#67737F">ana.rusu@grupullina.md · you</div></div></div>
+            <span style="font-size:14px;color:#3A434C">Administrator</span>
+            <span style="font-size:13.5px;color:#3A434C">All four</span>
+            <span style="font-size:13.5px;color:#67737F;font-variant-numeric:tabular-nums">Active · today 14:32</span>
+            <span style="text-align:right;font-size:13.5px;color:#8B96A3">—</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.6fr 150px 1.3fr 170px 110px;gap:16px;padding:15px 0;border-bottom:1px solid #E8ECF0;align-items:center">
+            <div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600;flex-shrink:0">EP</span><div><div style="font-size:14.5px;font-weight:600;color:#161B20">Elena Popa</div><div style="font-size:12.5px;color:#67737F">elena.popa@grupullina.md</div></div></div>
+            <span style="font-size:14px;color:#3A434C">Administrator</span>
+            <span style="font-size:13.5px;color:#3A434C">All four</span>
+            <span style="font-size:13.5px;color:#67737F;font-variant-numeric:tabular-nums">Active · today 11:48</span>
+            <span style="text-align:right"><span style="font-size:13.5px;color:#245540;font-weight:500">Manage</span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.6fr 150px 1.3fr 170px 110px;gap:16px;padding:15px 0;border-bottom:1px solid #E8ECF0;align-items:center">
+            <div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600;flex-shrink:0">VC</span><div><div style="font-size:14.5px;font-weight:600;color:#161B20">Victor Ciobanu</div><div style="font-size:12.5px;color:#67737F">victor.c@linalogistic.md</div></div></div>
+            <span style="font-size:14px;color:#3A434C">Contributor</span>
+            <span style="font-size:13.5px;color:#3A434C">Lina Logistic SRL</span>
+            <span style="font-size:13.5px;color:#67737F;font-variant-numeric:tabular-nums">Active · 6 Aug 2026</span>
+            <span style="text-align:right"><span style="font-size:13.5px;color:#245540;font-weight:500">Manage</span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.6fr 150px 1.3fr 170px 110px;gap:16px;padding:15px 0;border-bottom:1px solid #E8ECF0;align-items:center;background:#FBFCFD">
+            <div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#F4F6F8;border:1px dashed #8B96A3;color:#67737F;font-size:13px;font-weight:600;flex-shrink:0">DM</span><div><div style="font-size:14.5px;font-weight:600;color:#161B20">doina.m@linaretail.md</div><div style="font-size:12.5px;color:#67737F">Invited by Ana R. · 5 Aug 2026</div></div></div>
+            <span style="font-size:14px;color:#3A434C">Contributor</span>
+            <span style="font-size:13.5px;color:#3A434C">Lina Retail SRL</span>
+            <span><span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#FDF4E3;border:1px solid #9A6510;font-size:12.5px;font-weight:500;color:#9A6510">Invite expires in 2 days</span></span>
+            <span style="text-align:right"><span style="font-size:13.5px;color:#245540;font-weight:500">Resend</span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.6fr 150px 1.3fr 170px 110px;gap:16px;padding:15px 0;align-items:center">
+            <div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#F4F6F8;color:#8B96A3;font-size:13px;font-weight:600;flex-shrink:0">MC</span><div><div style="font-size:14.5px;font-weight:600;color:#67737F">Mihai Cojocaru</div><div style="font-size:12.5px;color:#8B96A3">Access removed 30 Jun 2026 · entries still attributed</div></div></div>
+            <span style="font-size:14px;color:#8B96A3">—</span>
+            <span style="font-size:13.5px;color:#8B96A3">None</span>
+            <span style="font-size:13.5px;color:#8B96A3">Removed</span>
+            <span style="text-align:right"><span style="font-size:13.5px;color:#245540;font-weight:500">Restore</span></span>
+          </div>
+
+          <div style="margin-top:22px;padding:16px 18px;border:1px solid #E8ECF0;background:#F9FAFB;border-radius:5px">
+            <p style="font-size:13px;line-height:1.55;color:#67737F;margin:0">A contributor sees only the entities listed for them, can answer disclosures and attach evidence, and cannot lock a period, change the plan or invite anyone.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:412px;display:flex;flex-direction:column;gap:20px">
+        <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;overflow:hidden">
+          <div style="padding:18px 22px;border-bottom:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between"><span style="font-size:16.5px;font-weight:600;color:#161B20">Invite someone</span><span style="font-size:18px;color:#8B96A3">×</span></div>
+          <div style="padding:18px 22px 22px">
+            <div style="font-size:13.5px;font-weight:600;color:#161B20;margin-bottom:6px">Email</div>
+            <div style="height:44px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font-size:14.5px;color:#161B20;margin-bottom:16px">doina.m@linaretail.md</div>
+            <div style="font-size:13.5px;font-weight:600;color:#161B20;margin-bottom:8px">Role</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+              <div style="display:flex;gap:10px;padding:12px 14px;border:2px solid #245540;background:#EDF5F0;border-radius:4px"><span style="width:16px;height:16px;border-radius:50%;border:5px solid #2E6A4F;background:#FFFFFF;flex-shrink:0;margin-top:2px"></span><div><div style="font-size:14px;font-weight:600;color:#161B20">Contributor</div><div style="font-size:12.5px;color:#4E5964;line-height:1.5">Answers disclosures for the entities you choose</div></div></div>
+              <div style="display:flex;gap:10px;padding:12px 14px;border:1px solid #8B96A3;border-radius:4px"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #8B96A3;background:#FFFFFF;flex-shrink:0;margin-top:2px"></span><div><div style="font-size:14px;font-weight:600;color:#161B20">Administrator</div><div style="font-size:12.5px;color:#4E5964;line-height:1.5">Everything you can do, including the plan and locking periods</div></div></div>
+              <div style="display:flex;gap:10px;padding:12px 14px;border:1px solid #8B96A3;border-radius:4px"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #8B96A3;background:#FFFFFF;flex-shrink:0;margin-top:2px"></span><div><div style="font-size:14px;font-weight:600;color:#161B20">View only</div><div style="font-size:12.5px;color:#4E5964;line-height:1.5">Reads reports and downloads exports, changes nothing</div></div></div>
+            </div>
+            <div style="font-size:13.5px;font-weight:600;color:#161B20;margin-bottom:8px">Entities · at least one</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+              <span style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border:1px solid #245540;background:#EDF5F0;border-radius:16px;font-size:13.5px;font-weight:500;color:#245540">Lina Retail SRL<span style="font-size:12px">×</span></span>
+              <span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border:1px dashed #8B96A3;border-radius:16px;font-size:13.5px;color:#3A434C">+ Brutăria Lina</span>
+              <span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border:1px dashed #8B96A3;border-radius:16px;font-size:13.5px;color:#3A434C">+ Lina Logistic</span>
+              <span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border:1px dashed #8B96A3;border-radius:16px;font-size:13.5px;color:#3A434C">+ Lina Agro</span>
+            </div>
+            <p style="font-size:12.5px;line-height:1.55;color:#67737F;margin:0 0 16px">The invitation is valid for seven days and arrives in Romanian. You can withdraw it before it is accepted.</p>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1;height:42px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:500;color:#161B20">Cancel</div>
+              <div style="flex:1.2;height:42px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:600">Send invitation</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border:1px solid #B32318;border-radius:8px;background:#FFFFFF;overflow:hidden;box-shadow:0 8px 24px rgba(22,27,32,0.10)">
+          <div style="padding:18px 22px;background:#FDEDEB;border-bottom:1px solid #F0C4BF">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8E1C13;margin-bottom:8px">Removes access immediately</div>
+            <div style="font-size:17px;font-weight:600;color:#161B20;line-height:1.25">Remove Victor Ciobanu's access?</div>
+          </div>
+          <div style="padding:20px 22px 22px">
+            <p style="font-size:14px;line-height:1.6;color:#3A434C;margin:0 0 14px">Victor loses access to <strong style="font-weight:600">Lina Logistic SRL</strong> the moment you confirm, including the 2026 draft he is editing. Unsaved text in the field he has open is kept.</p>
+            <div style="padding:12px 14px;background:#F9FAFB;border:1px solid #E8ECF0;border-radius:4px;margin-bottom:16px">
+              <div style="font-size:13px;line-height:1.55;color:#4E5964">The 34 values Victor entered stay in the report, still attributed to him by name. Removing access never erases the trail — an auditor asking who entered a figure gets the same answer next year.</div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1;height:42px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:500;color:#161B20">Keep access</div>
+              <div style="flex:1.3;height:42px;border-radius:4px;background:#B32318;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:600">Remove access</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9.5 S-17 PLAN AND USAGE ============ -->
+  <section id="s17" data-screen-label="9.5 S-17 Plan and usage" style="padding:88px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">S-17 · Status · UX-50, UX-52 · UC-65, UC-66</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">Plan, entitlements and usage</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">A Status screen answers four questions in order: what state the thing is in, what that state allows, how much of it is used, and what changes it. The counters carry their warning in place, so the first mention of a limit is never the sentence that blocks the work.</p>
+    </sc-if>
+
+    <div style="display:flex;gap:28px;align-items:flex-start">
+      <div style="width:1000px;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#FFFFFF;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+        <div style="padding:26px 32px 24px;border-bottom:1px solid #E8ECF0;background:#FBFCFD">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Plan &amp; billing</div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:28px">
+            <div>
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px">
+                <h1 style="font-size:28px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0">Practice</h1>
+                <span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#EDF5F0;border:1px solid #ADD1BE;font-size:12.5px;font-weight:500;color:#245540">Active</span>
+              </div>
+              <p style="font-size:14.5px;line-height:1.55;color:#4E5964;margin:0;max-width:64ch">Renews on 1 October 2026 for 12 months at 7 200 MDL plus VAT, charged to the card ending 4417. Nothing is charged before then.</p>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px;flex-shrink:0">
+              <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;border-radius:4px;border:1px solid #245540;background:#FFFFFF;font-size:14.5px;font-weight:600;color:#245540">Compare plans</div>
+              <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14.5px;font-weight:500;color:#161B20">Invoices</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:26px 32px 30px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;margin-bottom:16px">What the plan allows · usage this period</div>
+
+          <div style="display:flex;flex-direction:column;gap:2px;border:1px solid #E8ECF0;border-radius:5px;overflow:hidden;margin-bottom:22px">
+            <div style="padding:18px 20px;background:#FFFFFF;border-bottom:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:10px">
+                <div><div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:3px">Reports for 2026</div><div style="font-size:13px;color:#67737F">Counted when a report is created, not when it is filed</div></div>
+                <div style="text-align:right;flex-shrink:0"><span style="font-size:20px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums">9</span><span style="font-size:15px;color:#8B96A3;font-variant-numeric:tabular-nums"> / 10</span></div>
+              </div>
+              <div style="height:8px;border-radius:4px;background:#E8ECF0;overflow:hidden;margin-bottom:10px"><span style="display:block;width:90%;height:100%;background:#9A6510"></span></div>
+              <div style="display:flex;gap:10px;padding:11px 13px;border:1px solid #9A6510;background:#FDF4E3;border-radius:4px">
+                <span style="width:6px;height:6px;border-radius:50%;background:#9A6510;flex-shrink:0;margin-top:7px"></span>
+                <div style="font-size:13px;line-height:1.55;color:#5E3D09">One report left on this plan. Reports already started are never affected by the limit — you can finish and export all nine whatever happens next.</div>
+              </div>
+            </div>
+            <div style="padding:18px 20px;background:#FFFFFF;border-bottom:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:10px">
+                <div><div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:3px">Entities</div><div style="font-size:13px;color:#67737F">Deactivated entities do not count</div></div>
+                <div style="text-align:right;flex-shrink:0"><span style="font-size:20px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums">4</span><span style="font-size:15px;color:#8B96A3;font-variant-numeric:tabular-nums"> / 5</span></div>
+              </div>
+              <div style="height:8px;border-radius:4px;background:#E8ECF0;overflow:hidden"><span style="display:block;width:80%;height:100%;background:#2E6A4F"></span></div>
+            </div>
+            <div style="padding:18px 20px;background:#FFFFFF;border-bottom:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:10px">
+                <div><div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:3px">People with access</div><div style="font-size:13px;color:#67737F">Pending invitations are counted</div></div>
+                <div style="text-align:right;flex-shrink:0"><span style="font-size:20px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums">4</span><span style="font-size:15px;color:#8B96A3;font-variant-numeric:tabular-nums"> / 10</span></div>
+              </div>
+              <div style="height:8px;border-radius:4px;background:#E8ECF0;overflow:hidden"><span style="display:block;width:40%;height:100%;background:#2E6A4F"></span></div>
+            </div>
+            <div style="padding:18px 20px;background:#FFFFFF">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:20px">
+                <div><div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:3px">Included in Practice</div><div style="font-size:13px;color:#67737F">Comprehensive module · English and Russian exports · evidence storage 5 GB</div></div>
+                <span style="font-size:13.5px;color:#245540;font-weight:500;flex-shrink:0;text-decoration:underline;text-underline-offset:2px">Full list</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;margin-bottom:14px">What changes this state</div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+            <div style="padding:16px 18px;border:1px solid #E8ECF0;border-radius:5px;background:#FBFCFD"><div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:5px">Renewal · 1 Oct 2026</div><div style="font-size:13px;line-height:1.5;color:#4E5964">Charged automatically. A reminder arrives 14 days before.</div></div>
+            <div style="padding:16px 18px;border:1px solid #E8ECF0;border-radius:5px;background:#FBFCFD"><div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:5px">Change plan · any time</div><div style="font-size:13px;line-height:1.5;color:#4E5964">Upgrades apply at once, pro-rated. Reductions apply at renewal.</div></div>
+            <div style="padding:16px 18px;border:1px solid #E8ECF0;border-radius:5px;background:#FBFCFD"><div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:5px">Cancel · takes effect 1 Oct</div><div style="font-size:13px;line-height:1.5;color:#4E5964">Access continues until then; documents stay downloadable after.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:412px;display:flex;flex-direction:column;gap:20px">
+        <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;overflow:hidden;box-shadow:0 8px 24px rgba(22,27,32,0.10)">
+          <div style="padding:18px 22px;border-bottom:1px solid #E8ECF0">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">At the creation boundary · UX-50</div>
+            <div style="font-size:17px;font-weight:600;color:#161B20;line-height:1.3">The tenth report is the last one Practice includes</div>
+          </div>
+          <div style="padding:18px 22px 22px">
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+              <div style="display:flex;gap:11px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;width:14px;flex-shrink:0;margin-top:2px">1</span><div style="font-size:13.5px;line-height:1.55;color:#3A434C"><strong style="font-weight:600">The limit:</strong> ten reports per calendar year.</div></div>
+              <div style="display:flex;gap:11px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;width:14px;flex-shrink:0;margin-top:2px">2</span><div style="font-size:13.5px;line-height:1.55;color:#3A434C"><strong style="font-weight:600">Your plan:</strong> Practice, 5 entities, 10 reports, 10 people.</div></div>
+              <div style="display:flex;gap:11px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;width:14px;flex-shrink:0;margin-top:2px">3</span><div style="font-size:13.5px;line-height:1.55;color:#3A434C"><strong style="font-weight:600">Used:</strong> 9 created for 2026, of which 3 filed.</div></div>
+              <div style="display:flex;gap:11px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;width:14px;flex-shrink:0;margin-top:2px">4</span><div style="font-size:13.5px;line-height:1.55;color:#3A434C"><strong style="font-weight:600">To go further:</strong> Practice+ raises it to 25 reports for 4 800 MDL more per year, effective immediately.</div></div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1;height:42px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:500;color:#161B20">Create the tenth</div>
+              <div style="flex:1;height:42px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:600">See Practice+</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;padding:20px">
+          <div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:8px">Why the counter is not a gate</div>
+          <p style="font-size:13.5px;line-height:1.6;color:#4E5964;margin:0">The block sits at creation, the one boundary where waiting costs nothing. No limit is ever enforced inside a report: a draft started on any plan stays editable, exportable and downloadable, including after a downgrade or a lapse. In May, with a deadline four days away, this is the difference between a nuisance and a disaster.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9.6 REDUCTION ============ -->
+  <section id="reduction" data-screen-label="9.6 Losing scope" style="padding:88px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">S-17 · UX-53, UX-54 · UC-101, UC-142, UC-151</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">Losing scope, named object by named object</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">Downgrade, cancellation and lapse all reduce what the account may hold, and all three are read by users as "my data will be deleted". Nothing is deleted. The interface earns that sentence by listing which entities and reports become read-only, under a rule stated plainly enough to be predicted: the most recently active are kept.</p>
+    </sc-if>
+
+    <div style="display:flex;gap:24px;align-items:flex-start">
+      <div style="width:660px;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#FFFFFF;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+        <div style="padding:22px 26px 18px;border-bottom:1px solid #E8ECF0">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Before confirming · reduction to Starter</div>
+          <div style="font-size:20px;font-weight:600;color:#161B20;line-height:1.28;margin-bottom:6px">Starter holds 2 entities. You have 4.</div>
+          <p style="font-size:14px;line-height:1.55;color:#4E5964;margin:0">From 1 October 2026, these two entities and their reports become read-only. Nothing is deleted, and every export stays downloadable.</p>
+        </div>
+        <div style="padding:8px 26px 4px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid #F0F3F6">
+            <div><div style="font-size:14.5px;font-weight:600;color:#161B20">Brutăria Lina SRL</div><div style="font-size:12.5px;color:#67737F">Active today · 1 draft, 1 filed</div></div>
+            <span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#EDF5F0;border:1px solid #ADD1BE;font-size:12.5px;font-weight:500;color:#245540">Kept editable</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid #F0F3F6">
+            <div><div style="font-size:14.5px;font-weight:600;color:#161B20">Lina Logistic SRL</div><div style="font-size:12.5px;color:#67737F">Active 6 Aug 2026 · 1 draft, 1 filed</div></div>
+            <span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#EDF5F0;border:1px solid #ADD1BE;font-size:12.5px;font-weight:500;color:#245540">Kept editable</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid #F0F3F6;background:#FDFBF6">
+            <div><div style="font-size:14.5px;font-weight:600;color:#161B20">Lina Retail SRL</div><div style="font-size:12.5px;color:#67737F">Active 28 Jul 2026 · 1 ready to file, 1 filed</div></div>
+            <span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#FDF4E3;border:1px solid #9A6510;font-size:12.5px;font-weight:500;color:#9A6510">Becomes read-only</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;background:#FDFBF6">
+            <div><div style="font-size:14.5px;font-weight:600;color:#161B20">Lina Agro SRL</div><div style="font-size:12.5px;color:#67737F">No activity · no reports</div></div>
+            <span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:3px;background:#FDF4E3;border:1px solid #9A6510;font-size:12.5px;font-weight:500;color:#9A6510">Becomes read-only</span>
+          </div>
+        </div>
+        <div style="padding:16px 26px;background:#F9FAFB;border-top:1px solid #E8ECF0;border-bottom:1px solid #E8ECF0">
+          <p style="font-size:13px;line-height:1.55;color:#4E5964;margin:0">The rule: the two entities with the most recent activity stay editable. Returning to Practice restores editing on all four, exactly as they were. <strong style="font-weight:600">Lina Retail SRL has a 2025 report at 11 of 11 modules</strong> — file it before 1 October and the reduction costs you nothing.</p>
+        </div>
+        <div style="padding:18px 26px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <span style="font-size:13.5px;color:#245540;font-weight:500">Stay on Practice</span>
+          <div style="display:flex;gap:10px">
+            <div style="display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 18px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14.5px;font-weight:500;color:#161B20">Back</div>
+            <div style="display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 20px;border-radius:4px;background:#9A6510;color:#FFFFFF;font-size:14.5px;font-weight:600">Reduce to Starter on 1 Oct</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:660px;display:flex;flex-direction:column;gap:20px">
+        <div style="border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#FFFFFF;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+          <div style="height:64px;padding:0 28px;background:#1B4031;display:flex;align-items:center;gap:14px">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span>
+            <span style="font-size:16.5px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span>
+            <span style="margin-left:auto;font-size:13.5px;color:#D6E8DE">Grupul Lina</span>
+          </div>
+          <div style="padding:18px 28px;background:#FDEDEB;border-bottom:1px solid #F0C4BF;display:flex;gap:14px;align-items:flex-start">
+            <span style="width:20px;height:20px;border-radius:50%;background:#B32318;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">!</span>
+            <div style="flex:1">
+              <div style="font-size:15.5px;font-weight:600;color:#8E1C13;margin-bottom:5px">The account is suspended for non-payment since 9 August 2026</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#5E1410;margin:0 0 12px;max-width:64ch">Invoice 2026-0417 for <strong style="font-weight:600">7 200 MDL plus VAT, due 31 July 2026</strong>, is unpaid. Reports cannot be edited or created while the account is suspended. Everything already exported stays downloadable, and nothing is deleted.</p>
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;border-radius:4px;background:#B32318;color:#FFFFFF;font-size:14.5px;font-weight:600">Pay 8 640 MDL now</div>
+                <span style="font-size:13.5px;color:#8E1C13;font-weight:500;text-decoration:underline;text-underline-offset:2px">See the invoice</span>
+              </div>
+            </div>
+          </div>
+          <div style="padding:24px 28px 28px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;margin-bottom:14px">Still available while suspended</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 16px;border:1px solid #E8ECF0;border-radius:5px"><div><div style="font-size:14px;font-weight:600;color:#161B20">Sustainability report 2025 · Brutăria Lina SRL</div><div style="font-size:12.5px;color:#67737F">Filed 19 May 2026 · 2 exports</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20;flex-shrink:0">Download</span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 16px;border:1px solid #E8ECF0;border-radius:5px"><div><div style="font-size:14px;font-weight:600;color:#161B20">Sustainability report 2024 · Lina Retail SRL</div><div style="font-size:12.5px;color:#67737F">Filed 24 May 2025 · 1 export</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20;flex-shrink:0">Download</span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 16px;border:1px dashed #D5DBE2;border-radius:5px;background:#FBFCFD"><div><div style="font-size:14px;font-weight:600;color:#67737F">Sustainability report 2026 · Brutăria Lina SRL · draft</div><div style="font-size:12.5px;color:#8B96A3">7 of 11 modules · editing resumes the moment payment clears</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:4px;border:1px solid #D5DBE2;background:#F4F6F8;font-size:13.5px;font-weight:500;color:#8B96A3;flex-shrink:0">Read</span></div>
+            </div>
+            <p style="font-size:13px;line-height:1.55;color:#67737F;margin:18px 0 0">One amount, one date, one action. The banner never says "contact us"; a suspension a user cannot end themselves at eleven at night is a suspension that lasts until morning.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9.7 STATES ============ -->
+  <sc-if value="{{ showStates }}" hint-placeholder-val="{{ true }}">
+  <section id="states" data-screen-label="9.7 States pass" style="padding:88px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">S-13 … S-17 · UX-8 · UX-90</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">States pass — empty, loading, view-only, error</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">Four states the settings tier meets often enough to design deliberately. The empty entities list is the one that teaches, since it is the first screen a new organization sees after creation.</p>
+    </sc-if>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;max-width:1440px">
+
+      <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;overflow:hidden">
+        <div style="padding:12px 20px;background:#F4F6F8;border-bottom:1px solid #E8ECF0;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F">Empty · S-13, first visit</div>
+        <div style="padding:36px 32px 40px;text-align:center">
+          <div style="width:44px;height:44px;border-radius:50%;border:2px dashed #8B96A3;margin:0 auto 18px"></div>
+          <div style="font-size:19px;font-weight:600;color:#161B20;margin-bottom:8px">Add the first company you report for</div>
+          <p style="font-size:14px;line-height:1.6;color:#4E5964;margin:0 auto 18px;max-width:52ch">An entity is one legal company: one IDNO, one set of employees, one report per year. Most organizations here have one. If you are an accountant filing for clients, add one entity per client.</p>
+          <div style="display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 22px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14.5px;font-weight:600">Add the first entity</div>
+          <div style="font-size:13px;color:#67737F;margin-top:14px">Takes about two minutes · IDNO, employees, sites</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;overflow:hidden">
+        <div style="padding:12px 20px;background:#F4F6F8;border-bottom:1px solid #E8ECF0;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F">Loading · geometry held</div>
+        <div style="padding:24px 24px 28px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px"><div style="width:180px;height:26px;border-radius:4px;background:#E8ECF0"></div><div style="width:120px;height:40px;border-radius:4px;background:#E8ECF0"></div></div>
+          <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:1.7fr 130px 100px;gap:14px;padding:14px 16px;border-bottom:1px solid #F0F3F6;align-items:center"><div style="height:15px;border-radius:3px;background:#E8ECF0"></div><div style="height:15px;border-radius:3px;background:#EFF2F5"></div><div style="height:15px;border-radius:3px;background:#EFF2F5"></div></div>
+            <div style="display:grid;grid-template-columns:1.7fr 130px 100px;gap:14px;padding:14px 16px;border-bottom:1px solid #F0F3F6;align-items:center"><div style="height:15px;border-radius:3px;background:#E8ECF0"></div><div style="height:15px;border-radius:3px;background:#EFF2F5"></div><div style="height:15px;border-radius:3px;background:#EFF2F5"></div></div>
+            <div style="display:grid;grid-template-columns:1.7fr 130px 100px;gap:14px;padding:14px 16px;align-items:center"><div style="height:15px;border-radius:3px;background:#E8ECF0"></div><div style="height:15px;border-radius:3px;background:#EFF2F5"></div><div style="height:15px;border-radius:3px;background:#EFF2F5"></div></div>
+          </div>
+          <div style="font-size:13px;color:#67737F;margin-top:14px">Four rows are reserved because the count is known from the plan. Nothing moves under the pointer when the names arrive.</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;overflow:hidden">
+        <div style="padding:12px 20px;background:#F4F6F8;border-bottom:1px solid #E8ECF0;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F">View-only membership · same layout, no affordances</div>
+        <div style="padding:0 0 24px">
+          <div style="padding:13px 24px;background:#F4F6F8;border-bottom:1px solid #E8ECF0;display:flex;align-items:center;gap:10px"><span style="width:6px;height:6px;border-radius:50%;background:#67737F"></span><span style="font-size:13.5px;color:#3A434C">You have view-only access to Grupul Lina. Ana R. can change this.</span></div>
+          <div style="padding:22px 24px 0">
+            <div style="font-size:17px;font-weight:600;color:#161B20;margin-bottom:14px">Lina Logistic SRL</div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px">
+              <div><div style="font-size:13px;color:#67737F;margin-bottom:4px">Registered name</div><div style="font-size:14.5px;color:#161B20">Lina Logistic SRL</div></div>
+              <div><div style="font-size:13px;color:#67737F;margin-bottom:4px">IDNO</div><div style="font-size:14.5px;color:#161B20;font-variant-numeric:tabular-nums">1003600067890</div></div>
+              <div><div style="font-size:13px;color:#67737F;margin-bottom:4px">Employees</div><div style="font-size:14.5px;color:#161B20;font-variant-numeric:tabular-nums">54</div></div>
+              <div><div style="font-size:13px;color:#67737F;margin-bottom:4px">Sites</div><div style="font-size:14.5px;color:#161B20">Depot Strășeni</div></div>
+            </div>
+            <div style="font-size:13px;color:#67737F;margin-top:18px">Fields are text, not disabled inputs. A greyed-out form invites the click that fails.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #C7CFD8;border-radius:8px;background:#FFFFFF;overflow:hidden">
+        <div style="padding:12px 20px;background:#F4F6F8;border-bottom:1px solid #E8ECF0;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F">Error · save rejected, work preserved</div>
+        <div style="padding:24px 24px 28px">
+          <div style="display:flex;gap:14px;padding:16px 18px;border:1px solid #B32318;background:#FDEDEB;border-radius:5px;margin-bottom:18px">
+            <span style="width:20px;height:20px;border-radius:50%;background:#B32318;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">!</span>
+            <div>
+              <div style="font-size:14.5px;font-weight:600;color:#8E1C13;margin-bottom:5px">The IDNO 1003600067890 already belongs to Lina Logistic SRL</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#5E1410;margin:0">Two entities cannot share an IDNO, so this entity was not saved. Your other changes are still on screen. Correct the IDNO, or open the existing entity instead.</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 18px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14px;font-weight:500;color:#161B20">Open Lina Logistic SRL</div>
+            <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 18px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14px;font-weight:600">Correct the IDNO</div>
+          </div>
+          <div style="font-size:13px;color:#67737F;margin-top:14px">What failed · what it means · what resolves it — in that order, and never only in a toast.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ============ 9.8 NARROW ============ -->
+  <section id="narrow" data-screen-label="9.8 Narrow frames" style="padding:88px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">S-13 · S-17 · 834 and 390 · UX-75</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">The settings tier at 834 and 390</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">Administration is desk work, so 834 is complete and 390 guarantees the two things an owner does from a phone: read the state of the plan, and pay what suspended the account. Editing an entity on a phone is possible, not optimised.</p>
+    </sc-if>
+
+    <div style="display:flex;gap:28px;align-items:flex-start">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">834 · entities index · columns fold</div>
+        <div style="width:834px;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#F4F6F8">
+          <div style="height:62px;padding:0 32px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <div style="display:flex;align-items:center;gap:14px"><span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span><span style="font-size:16.5px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span><span style="display:inline-flex;align-items:center;gap:8px;height:34px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 10px;font-size:13.5px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span></div>
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:12.5px;font-weight:600">AR</span>
+          </div>
+          <div style="height:48px;padding:0 32px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:stretch;gap:22px"><span style="display:inline-flex;align-items:center;font-size:14px;color:#3A434C">Home</span><span style="display:inline-flex;align-items:center;font-size:14px;color:#3A434C">Reports</span><span style="display:inline-flex;align-items:center;font-size:14px;font-weight:600;color:#161B20;box-shadow:inset 0 -2px 0 #2E6A4F">Entities</span><span style="display:inline-flex;align-items:center;font-size:14px;color:#3A434C">Organization</span><span style="display:inline-flex;align-items:center;font-size:14px;color:#3A434C">Users</span><span style="display:inline-flex;align-items:center;font-size:14px;color:#3A434C">Billing</span></div>
+          <div style="padding:28px 32px 34px">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:16px"><div><h1 style="font-size:26px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 5px">Entities</h1><p style="font-size:14px;color:#4E5964;margin:0">Four of five used</p></div><div style="display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 18px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14px;font-weight:600;flex-shrink:0">Add entity</div></div>
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+              <div style="padding:15px 18px;border-bottom:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between;gap:16px"><div><div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:4px">Brutăria Lina SRL</div><div style="font-size:12.5px;color:#67737F;font-variant-numeric:tabular-nums">38 employees · 2 sites · 2026 open</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;font-size:13.5px;font-weight:500;color:#161B20;flex-shrink:0">Open</span></div>
+              <div style="padding:15px 18px;border-bottom:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between;gap:16px"><div><div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:4px">Lina Logistic SRL</div><div style="font-size:12.5px;color:#67737F;font-variant-numeric:tabular-nums">54 employees · 1 site · 2026 open</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;font-size:13.5px;font-weight:500;color:#161B20;flex-shrink:0">Open</span></div>
+              <div style="padding:15px 18px;border-bottom:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between;gap:16px"><div><div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:4px">Lina Retail SRL</div><div style="font-size:12.5px;color:#67737F;font-variant-numeric:tabular-nums">29 employees · 4 sites · 2025 ready to file</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;font-size:13.5px;font-weight:500;color:#161B20;flex-shrink:0">Open</span></div>
+              <div style="padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#FBFCFD"><div><div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:4px">Lina Agro SRL</div><div style="font-size:12.5px;color:#B32318">Employees not entered · needed before a period opens</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:13.5px;font-weight:600;flex-shrink:0">Complete</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">390 · plan status and the one action</div>
+        <div style="width:390px;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#F4F6F8">
+          <div style="height:56px;padding:0 16px;background:#1B4031;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#1B4031"><span style="width:5px;height:5px;border-radius:50%;background:#FFFFFF"></span></span></span><span style="font-size:16px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span></div>
+            <span style="display:inline-flex;flex-direction:column;justify-content:center;gap:4px;width:28px;height:28px;padding:0 5px"><span style="height:1.5px;background:#FFFFFF"></span><span style="height:1.5px;background:#FFFFFF"></span><span style="height:1.5px;background:#FFFFFF"></span></span>
+          </div>
+          <div style="padding:18px 16px 26px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Plan &amp; billing</div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px"><h1 style="font-size:24px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0">Practice</h1><span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:3px;background:#FDEDEB;border:1px solid #B32318;font-size:12px;font-weight:500;color:#B32318">Suspended</span></div>
+            <p style="font-size:14px;line-height:1.55;color:#4E5964;margin:0 0 16px">Invoice 2026-0417, due 31 July 2026, is unpaid. Editing is paused. Nothing is deleted and exports stay downloadable.</p>
+            <div style="height:48px;border-radius:4px;background:#B32318;color:#FFFFFF;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-bottom:10px">Pay 8 640 MDL</div>
+            <div style="height:48px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:15px;font-weight:500;color:#161B20;display:flex;align-items:center;justify-content:center;margin-bottom:22px">See the invoice</div>
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+              <div style="padding:14px 15px;border-bottom:1px solid #E8ECF0"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px"><span style="font-size:14px;font-weight:600;color:#161B20">Reports for 2026</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">9 / 10</span></div><div style="height:6px;border-radius:3px;background:#E8ECF0;overflow:hidden"><span style="display:block;width:90%;height:100%;background:#9A6510"></span></div></div>
+              <div style="padding:14px 15px;border-bottom:1px solid #E8ECF0"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px"><span style="font-size:14px;font-weight:600;color:#161B20">Entities</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">4 / 5</span></div><div style="height:6px;border-radius:3px;background:#E8ECF0;overflow:hidden"><span style="display:block;width:80%;height:100%;background:#2E6A4F"></span></div></div>
+              <div style="padding:14px 15px"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px"><span style="font-size:14px;font-weight:600;color:#161B20">People</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">4 / 10</span></div><div style="height:6px;border-radius:3px;background:#E8ECF0;overflow:hidden"><span style="display:block;width:40%;height:100%;background:#2E6A4F"></span></div></div>
+            </div>
+            <p style="font-size:12.5px;line-height:1.55;color:#67737F;margin:16px 0 0">Locking a period, changing the plan and removing access are desk actions: at 390 they are readable and reachable, but each confirmation states the same consequence in full.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9.9 WHOLE SCREENS ============ -->
+  <section id="whole" data-screen-label="9.9 Whole screens" style="padding:88px 0 0">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3">1440 · wide · global tier + workspace tier + footer</span>
+      <h2 style="font-size:30px;font-weight:600;letter-spacing:-0.015em;color:#161B20;margin:0">Whole screens</h2>
+    </div>
+    <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0 0 28px;max-width:82ch">The settings tier as it is actually met: every record and index in the chrome it lives in, at one width, with only the screen identifier above each frame. S-13 index is already whole in 9.0.</p>
+    </sc-if>
+    <div style="display:flex;flex-direction:column;gap:36px;align-items:flex-start">
+
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">S-13 · Entity record</div>
+        <div style="width:1440px;min-height:1320px;display:flex;flex-direction:column;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#F4F6F8;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+          <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="display:flex;align-items:center;gap:24px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span><span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span></div>
+          <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+          <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px">
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+          <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+          <span style="display:inline-flex;align-items:center;gap:9px;font-size:14px;color:#FFFFFF"><span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AR</span>Ana R.<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+      </div>
+          <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:stretch;gap:28px">
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Home</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Reports</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;font-weight:600;color:#161B20;box-shadow:inset 0 -2px 0 #2E6A4F">Entities &amp; periods</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Organization</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Users &amp; access</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Plan &amp; billing</span>
+      </div>
+          <div style="padding:36px 56px 44px"><div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#67737F;margin-bottom:16px"><span>Entities &amp; periods</span><span style="color:#C7CFD8">/</span><span style="color:#161B20">Brutăria Lina SRL</span></div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:24px">
+            <div>
+              <h1 style="font-size:30px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Brutăria Lina SRL</h1>
+              <p style="font-size:14.5px;line-height:1.55;color:#4E5964;margin:0">Bakery · NACE 10.71 · Chișinău · IDNO 1003600012345 · 2 sites</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span style="display:inline-flex;align-items:center;height:38px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14px;font-weight:500;color:#161B20">Change history</span>
+              <span style="display:inline-flex;align-items:center;height:38px;padding:0 18px;border-radius:4px;background:#2E6A4F;font-size:14.5px;font-weight:600;color:#FFFFFF">Save changes</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:22px;align-items:flex-start">
+            <div style="flex:1;display:flex;flex-direction:column;gap:16px">
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">Identification</div></div>
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px">
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Registered name</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">Brutăria Lina SRL</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">IDNO</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">1003600012345</div><div style="font-size:12.5px;line-height:1.5;color:#67737F">Thirteen digits. Checked against the format only — we do not query the register.</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Legal form</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">Societate cu răspundere limitată</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">NACE code</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">10.71 · Manufacture of bread and fresh pastry</div><div style="font-size:12.5px;line-height:1.5;color:#67737F">Decides which sector disclosures appear in a report.</div></div>
+              </div>
+            </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">Size, which decides the disclosures</div><span style="font-size:12.5px;color:#67737F">Used by every open period</span></div>
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px">
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Employees · annual average</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">38</div><div style="font-size:12.5px;line-height:1.5;color:#67737F">Head count, not full-time equivalent.</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Turnover 2025 · MDL</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">24 800 000</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Balance sheet total · MDL</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">11 350 000</div></div>
+              </div>
+              <div style="margin-top:16px;border:1px solid #ADD1BE;background:#EDF5F0;border-radius:5px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start"><span style="color:#245540;font-weight:600;flex-shrink:0">✓</span><div style="font-size:13.5px;line-height:1.6;color:#245540">Under 50 employees and under 50 million MDL turnover, so the Basic Module is enough. Comprehensive disclosures stay hidden until a value crosses a threshold, and then you are told which report is affected.</div></div>
+            </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">Sites</div></div>
+              <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden">
+                <div style="display:grid;grid-template-columns:1.6fr 1fr 130px 110px;gap:16px;padding:10px 16px;background:#F4F6F8;border-bottom:1px solid #E8ECF0;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F"><span>Address</span><span>Type</span><span>Area · m²</span><span style="text-align:right">Action</span></div>
+                <div style="display:grid;grid-template-columns:1.6fr 1fr 130px 110px;gap:16px;padding:13px 16px;border-bottom:1px solid #F0F3F6;align-items:center"><span style="font-size:14px;color:#161B20">str. Alba Iulia 75, Chișinău</span><span style="font-size:13.5px;color:#4E5964">Production and offices</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">2 400</span><span style="text-align:right"><span style="font-size:13.5px;font-weight:500;color:#245540">Edit</span></span></div><div style="display:grid;grid-template-columns:1.6fr 1fr 130px 110px;gap:16px;padding:13px 16px;border-bottom:1px solid #F0F3F6;align-items:center"><span style="font-size:14px;color:#161B20">str. Ismail 33, Chișinău</span><span style="font-size:13.5px;color:#4E5964">Retail outlet</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">180</span><span style="text-align:right"><span style="font-size:13.5px;font-weight:500;color:#245540">Edit</span></span></div>
+                <div style="padding:12px 16px;background:#FBFCFD"><span style="font-size:13.5px;font-weight:500;color:#245540">Add a site</span></div>
+              </div>
+              <div style="margin-top:12px;font-size:13px;line-height:1.55;color:#67737F">Sites matter for energy and water disclosures. A site with no meter data is reported as an estimate, and the report says so.</div>
+            </div>
+            </div>
+            <div style="width:380px;display:flex;flex-direction:column;gap:16px">
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">Periods on this entity</div></div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid #ADD1BE;background:#EDF5F0;border-radius:5px"><span style="font-size:14.5px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums">2026</span><span style="font-size:13px;color:#245540">Open</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid #C7CFD8;background:#F4F6F8;border-radius:5px"><span style="font-size:14.5px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums">2025</span><span style="font-size:13px;color:#3A434C">Locked · filed 12 Mar 2026</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid #C7CFD8;background:#F4F6F8;border-radius:5px"><span style="font-size:14.5px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums">2024</span><span style="font-size:13px;color:#3A434C">Locked · filed 8 Mar 2025</span></div>
+              </div>
+              <div style="margin-top:14px;font-size:13px;line-height:1.55;color:#67737F">A locked period keeps the numbers that were filed. Editing it means opening a revision, which is recorded.</div>
+            </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">Deactivating this entity</div></div>
+              <div style="font-size:13.5px;line-height:1.6;color:#4E5964;margin-bottom:14px">Three reports reference Brutăria Lina, so it cannot be deleted. Deactivating it hides it from new reports and leaves everything already filed downloadable.</div>
+              <div style="display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border-radius:4px;border:1px solid #B32318;background:#FFFFFF;font-size:14px;font-weight:600;color:#B32318">Deactivate entity</div>
+            </div>
+            </div>
+          </div></div>
+          <div style="height:56px;flex-shrink:0;margin-top:auto;padding:0 56px;background:#FFFFFF;border-top:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between"><span style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</span><div style="display:flex;align-items:center;gap:22px;font-size:13.5px;color:#3A434C"><span>Terms of service</span><span>Privacy notice</span><span>Data processing</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">S-14 · Reporting periods</div>
+        <div style="width:1440px;min-height:1320px;display:flex;flex-direction:column;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#F4F6F8;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+          <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="display:flex;align-items:center;gap:24px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span><span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span></div>
+          <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+          <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px">
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+          <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+          <span style="display:inline-flex;align-items:center;gap:9px;font-size:14px;color:#FFFFFF"><span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AR</span>Ana R.<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+      </div>
+          <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:stretch;gap:28px">
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Home</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Reports</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;font-weight:600;color:#161B20;box-shadow:inset 0 -2px 0 #2E6A4F">Entities &amp; periods</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Organization</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Users &amp; access</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Plan &amp; billing</span>
+      </div>
+          <div style="padding:36px 56px 44px"><div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#67737F;margin-bottom:16px"><span>Entities &amp; periods</span><span style="color:#C7CFD8">/</span><span style="color:#161B20">Reporting periods</span></div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:24px">
+            <div>
+              <h1 style="font-size:30px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Reporting periods</h1>
+              <p style="font-size:15px;line-height:1.55;color:#4E5964;margin:0;max-width:76ch">A period is a year on one entity. Opening one fixes the taxonomy version it will be reported against, so a mid-year update to the standard never moves the ground under a report in progress.</p>
+            </div>
+            <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14.5px;font-weight:600;flex-shrink:0">Open a period</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+            <div style="display:inline-flex;align-items:stretch;border:1px solid #8B96A3;border-radius:4px;overflow:hidden;background:#FFFFFF"><span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;font-size:14px;color:#161B20">Entities · 4</span><span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;background:#1B4031;color:#FFFFFF;font-size:14px;font-weight:500">Periods · 9</span></div>
+            <div style="display:inline-flex;align-items:center;gap:10px;height:38px;padding:0 12px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;font-size:14px;color:#161B20">All entities<span style="font-size:10px;color:#67737F">▾</span></div>
+            <div style="display:inline-flex;align-items:center;gap:10px;height:38px;padding:0 12px;border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;font-size:14px;color:#161B20">Status: any<span style="font-size:10px;color:#67737F">▾</span></div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:1.5fr 90px 1fr 1.2fr 1fr 120px;gap:16px;padding:11px 20px;background:#F4F6F8;border-bottom:1px solid #D5DBE2;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F"><span>Entity</span><span>Year</span><span>Taxonomy</span><span>Status</span><span>Report</span><span style="text-align:right">Action</span></div>
+            <div style="display:grid;grid-template-columns:1.5fr 90px 1fr 1.2fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><span style="font-size:14.5px;font-weight:600;color:#161B20">Brutăria Lina SRL</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">2026</span><span style="font-size:13.5px;color:#4E5964">VSME 2025 · v1.2</span><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#EDF5F0;border:1px solid #ADD1BE;font-size:12.5px;font-weight:500;color:#245540">Open</span></span><span style="font-size:13.5px;color:#4E5964">In progress · 62 %</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Open</span></span></div><div style="display:grid;grid-template-columns:1.5fr 90px 1fr 1.2fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><span style="font-size:14.5px;font-weight:600;color:#161B20">Brutăria Lina SRL</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">2025</span><span style="font-size:13.5px;color:#4E5964">VSME 2025 · v1.1</span><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#F4F6F8;border:1px solid #C7CFD8;font-size:12.5px;font-weight:500;color:#3A434C">Locked</span></span><span style="font-size:13.5px;color:#4E5964">Filed 12 Mar 2026</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">View</span></span></div><div style="display:grid;grid-template-columns:1.5fr 90px 1fr 1.2fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><span style="font-size:14.5px;font-weight:600;color:#161B20">Lina Logistic SRL</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">2026</span><span style="font-size:13.5px;color:#4E5964">VSME 2025 · v1.2</span><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#EDF5F0;border:1px solid #ADD1BE;font-size:12.5px;font-weight:500;color:#245540">Open</span></span><span style="font-size:13.5px;color:#4E5964">In progress · 24 %</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Open</span></span></div><div style="display:grid;grid-template-columns:1.5fr 90px 1fr 1.2fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><span style="font-size:14.5px;font-weight:600;color:#161B20">Lina Logistic SRL</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">2025</span><span style="font-size:13.5px;color:#4E5964">VSME 2025 · v1.1</span><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#F4F6F8;border:1px solid #C7CFD8;font-size:12.5px;font-weight:500;color:#3A434C">Locked</span></span><span style="font-size:13.5px;color:#4E5964">Filed 12 Mar 2026</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">View</span></span></div><div style="display:grid;grid-template-columns:1.5fr 90px 1fr 1.2fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><span style="font-size:14.5px;font-weight:600;color:#161B20">Lina Retail SRL</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">2025</span><span style="font-size:13.5px;color:#4E5964">VSME 2025 · v1.1</span><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#FDF4E3;border:1px solid #9A6510;font-size:12.5px;font-weight:500;color:#7A4F0C">Ready to file</span></span><span style="font-size:13.5px;color:#4E5964">Validated, not filed</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Open</span></span></div><div style="display:grid;grid-template-columns:1.5fr 90px 1fr 1.2fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><span style="font-size:14.5px;font-weight:600;color:#161B20">Lina Retail SRL</span><span style="font-size:14px;color:#3A434C;font-variant-numeric:tabular-nums">2024</span><span style="font-size:13.5px;color:#4E5964">VSME 2024 · v1.0</span><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#F4F6F8;border:1px solid #C7CFD8;font-size:12.5px;font-weight:500;color:#3A434C">Locked</span></span><span style="font-size:13.5px;color:#4E5964">Filed 8 Mar 2025</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">View</span></span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:12px 20px;background:#F4F6F8;border-top:1px solid #D5DBE2"><span style="font-size:13px;color:#67737F;font-variant-numeric:tabular-nums">1–6 of 9 periods</span><span style="font-size:13px;color:#67737F">Lina Agro has none: its employee count is still missing.</span></div>
+          </div>
+          <div style="margin-top:18px;border:1px solid #E2C68C;background:#FDFBF6;border-radius:6px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start">
+            <span style="color:#9A6510;font-weight:700;flex-shrink:0">!</span>
+            <div style="font-size:13.5px;line-height:1.6;color:#4E5964;max-width:110ch"><strong style="font-weight:600;color:#161B20">A newer taxonomy is available.</strong> VSME 2025 v1.3 was published on 2 August 2026. Periods already open keep v1.2 and finish on it. You can move an open period to v1.3, and you will be shown which answers would need revisiting before anything changes.</div>
+          </div></div>
+          <div style="height:56px;flex-shrink:0;margin-top:auto;padding:0 56px;background:#FFFFFF;border-top:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between"><span style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</span><div style="display:flex;align-items:center;gap:22px;font-size:13.5px;color:#3A434C"><span>Terms of service</span><span>Privacy notice</span><span>Data processing</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">S-15 · Organization profile</div>
+        <div style="width:1440px;min-height:1320px;display:flex;flex-direction:column;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#F4F6F8;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+          <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="display:flex;align-items:center;gap:24px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span><span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span></div>
+          <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+          <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px">
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+          <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+          <span style="display:inline-flex;align-items:center;gap:9px;font-size:14px;color:#FFFFFF"><span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AR</span>Ana R.<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+      </div>
+          <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:stretch;gap:28px">
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Home</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Reports</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Entities &amp; periods</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;font-weight:600;color:#161B20;box-shadow:inset 0 -2px 0 #2E6A4F">Organization</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Users &amp; access</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Plan &amp; billing</span>
+      </div>
+          <div style="padding:36px 56px 44px"><div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#67737F;margin-bottom:16px"><span>Organization</span><span style="color:#C7CFD8">/</span><span style="color:#161B20">Profile</span></div>
+          <div style="margin-bottom:24px">
+            <h1 style="font-size:30px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Organization profile</h1>
+            <p style="font-size:15px;line-height:1.55;color:#4E5964;margin:0;max-width:78ch">This is the group as a whole. It names the account, appears on invoices and exported reports, and decides nothing about which disclosures apply — that is the entity's job.</p>
+          </div>
+          <div style="display:flex;gap:22px;align-items:flex-start">
+            <div style="flex:1;display:flex;flex-direction:column;gap:16px">
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">Name and identity</div></div>
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px">
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Organization name</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">Grupul Lina SA</div><div style="font-size:12.5px;line-height:1.5;color:#67737F">Shown in the organization switcher and on every export.</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">IDNO</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">1003600054321</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Registered address</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">bd. Ștefan cel Mare 124, Chișinău MD-2001</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Country</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">Republic of Moldova</div></div>
+              </div>
+            </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">Report defaults</div><span style="font-size:12.5px;color:#67737F">New reports inherit these</span></div>
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px">
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Working language</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">Română</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Currency</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">MDL · Moldovan leu</div><div style="font-size:12.5px;line-height:1.5;color:#67737F">Applies to every new report. A filed report keeps the currency it was filed in.</div></div>
+                <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13.5px;font-weight:600;color:#161B20">Units</label><div style="border:1px solid #8B96A3;border-radius:4px;padding:10px 12px;font-size:14.5px;color:#161B20">Metric · kWh, m³, t</div></div>
+              </div>
+            </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">Logo on exports</div></div>
+              <div style="display:flex;gap:20px;align-items:center">
+                <div style="width:180px;height:96px;border:1px dashed #B6BFC9;border-radius:5px;background:repeating-linear-gradient(135deg,#F4F6F8 0 8px,#FFFFFF 8px 16px);display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3">group logo · 2× PNG</span></div>
+                <div style="flex:1"><div style="font-size:13.5px;line-height:1.6;color:#4E5964;margin-bottom:12px">Appears on the cover and running header of exported PDFs. PNG or SVG, at least 600 px wide, on a transparent or white background.</div><div style="display:flex;gap:10px"><span style="display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Replace</span><span style="display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Remove</span></div></div>
+              </div>
+            </div>
+            </div>
+            <div style="width:380px;display:flex;flex-direction:column;gap:16px">
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">What this affects</div></div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="padding-bottom:11px;border-bottom:1px solid #F0F3F6"><div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:3px">Invoices</div><div style="font-size:13px;line-height:1.55;color:#4E5964">The name and IDNO here are the ones on the invoice, unless the billing account overrides them.</div></div><div style="padding-bottom:11px;border-bottom:1px solid #F0F3F6"><div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:3px">Exports</div><div style="font-size:13px;line-height:1.55;color:#4E5964">Cover page, running header, and the file name of every PDF and XBRL export.</div></div><div style="padding-bottom:11px;border-bottom:1px solid #F0F3F6"><div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:3px">Nothing else</div><div style="font-size:13px;line-height:1.55;color:#4E5964">Disclosure scope comes from each entity — changing the group name never changes a report.</div></div>
+              </div>
+            </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:24px 26px 26px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px"><div style="font-size:17px;font-weight:600;color:#161B20">Deleting the organization</div></div>
+              <div style="font-size:13.5px;line-height:1.6;color:#4E5964;margin-bottom:14px">Deletion removes four entities, nine periods and three filed reports, and cannot be undone. Export everything you need first — we will show you the list and ask you to type the name.</div>
+              <div style="display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border-radius:4px;border:1px solid #B32318;background:#FFFFFF;font-size:14px;font-weight:600;color:#B32318">Delete organization</div>
+            </div>
+            </div>
+          </div></div>
+          <div style="height:56px;flex-shrink:0;margin-top:auto;padding:0 56px;background:#FFFFFF;border-top:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between"><span style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</span><div style="display:flex;align-items:center;gap:22px;font-size:13.5px;color:#3A434C"><span>Terms of service</span><span>Privacy notice</span><span>Data processing</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">S-16 · Users and access</div>
+        <div style="width:1440px;min-height:1320px;display:flex;flex-direction:column;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#F4F6F8;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+          <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="display:flex;align-items:center;gap:24px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span><span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span></div>
+          <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+          <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px">
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+          <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+          <span style="display:inline-flex;align-items:center;gap:9px;font-size:14px;color:#FFFFFF"><span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AR</span>Ana R.<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+      </div>
+          <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:stretch;gap:28px">
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Home</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Reports</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Entities &amp; periods</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Organization</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;font-weight:600;color:#161B20;box-shadow:inset 0 -2px 0 #2E6A4F">Users &amp; access</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Plan &amp; billing</span>
+      </div>
+          <div style="padding:36px 56px 44px"><div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#67737F;margin-bottom:16px"><span style="color:#161B20">Users &amp; access</span></div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:24px">
+            <div>
+              <h1 style="font-size:30px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Users and access</h1>
+              <p style="font-size:15px;line-height:1.55;color:#4E5964;margin:0;max-width:76ch">Four roles, and each one says what the person can do to a report. Access is given per entity, so an accountant for one company never sees the others.</p>
+            </div>
+            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+              <span style="font-size:13px;color:#67737F">4 of 10 seats used on Practice</span>
+              <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14.5px;font-weight:600">Invite someone</div>
+            </div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;margin-bottom:18px">
+            <div style="display:grid;grid-template-columns:1.7fr 1.1fr 1.5fr 1fr 120px;gap:16px;padding:11px 20px;background:#F4F6F8;border-bottom:1px solid #D5DBE2;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F"><span>Person</span><span>Role</span><span>Entities</span><span>Last seen</span><span style="text-align:right">Action</span></div>
+            <div style="display:grid;grid-template-columns:1.7fr 1.1fr 1.5fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#EDF5F0;color:#245540;font-size:13px;font-weight:600;flex-shrink:0">AR</span><div><div style="font-size:14.5px;font-weight:600;color:#161B20">Ana Rusu</div><div style="font-size:12.5px;color:#67737F">ana.rusu@brutaria-lina.md</div></div></div><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#EDF5F0;border:1px solid #ADD1BE;font-size:12.5px;font-weight:500;color:#245540">Owner</span></span><span style="font-size:13.5px;color:#4E5964">All four entities</span><span style="font-size:13.5px;color:#4E5964">Now · this device</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Manage</span></span></div><div style="display:grid;grid-template-columns:1.7fr 1.1fr 1.5fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#EDF5F0;color:#245540;font-size:13px;font-weight:600;flex-shrink:0">IC</span><div><div style="font-size:14.5px;font-weight:600;color:#161B20">Ion Ciobanu</div><div style="font-size:12.5px;color:#67737F">ion.ciobanu@grupullina.md</div></div></div><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#F4F6F8;border:1px solid #C7CFD8;font-size:12.5px;font-weight:500;color:#3A434C">Administrator</span></span><span style="font-size:13.5px;color:#4E5964">All four entities</span><span style="font-size:13.5px;color:#4E5964">Yesterday, 17:40</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Manage</span></span></div><div style="display:grid;grid-template-columns:1.7fr 1.1fr 1.5fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#EDF5F0;color:#245540;font-size:13px;font-weight:600;flex-shrink:0">MV</span><div><div style="font-size:14.5px;font-weight:600;color:#161B20">Maria Voicu</div><div style="font-size:12.5px;color:#67737F">maria.voicu@contabil.md</div></div></div><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#F4F6F8;border:1px solid #C7CFD8;font-size:12.5px;font-weight:500;color:#3A434C">Contributor</span></span><span style="font-size:13.5px;color:#4E5964">Lina Retail SRL</span><span style="font-size:13.5px;color:#4E5964">3 August 2026</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Manage</span></span></div><div style="display:grid;grid-template-columns:1.7fr 1.1fr 1.5fr 1fr 120px;gap:16px;padding:14px 20px;border-bottom:1px solid #E8ECF0;align-items:center"><div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#EDF5F0;color:#245540;font-size:13px;font-weight:600;flex-shrink:0">RP</span><div><div style="font-size:14.5px;font-weight:600;color:#161B20">Radu Popescu</div><div style="font-size:12.5px;color:#67737F">radu@auditlex.md</div></div></div><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#F4F6F8;border:1px solid #C7CFD8;font-size:12.5px;font-weight:500;color:#3A434C">Reader</span></span><span style="font-size:13.5px;color:#4E5964">Lina Retail SRL · 2025 only</span><span style="font-size:13.5px;color:#4E5964">12 July 2026</span><span style="text-align:right"><span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Manage</span></span></div>
+            <div style="display:grid;grid-template-columns:1.7fr 1.1fr 1.5fr 1fr 120px;gap:16px;padding:14px 20px;align-items:center;background:#FBFCFD"><div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px dashed #B6BFC9;color:#8B96A3;font-size:15px;flex-shrink:0">?</span><div><div style="font-size:14.5px;font-weight:600;color:#161B20">elena.mocanu@grupullina.md</div><div style="font-size:12.5px;color:#9A6510">Invited 11 August · expires in 4 days</div></div></div><span><span style="display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:3px;background:#FDF4E3;border:1px solid #9A6510;font-size:12.5px;font-weight:500;color:#7A4F0C">Contributor · pending</span></span><span style="font-size:13.5px;color:#4E5964">Lina Agro SRL</span><span style="font-size:13.5px;color:#8B96A3">Never</span><span style="text-align:right;display:flex;gap:8px;justify-content:flex-end"><span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13px;font-weight:500;color:#161B20">Resend</span></span></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px"><div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:6px">Owner</div><div style="font-size:13px;line-height:1.6;color:#4E5964">One person. Everything an administrator can do, plus billing, deletion and handing the role on.</div></div><div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px"><div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:6px">Administrator</div><div style="font-size:13px;line-height:1.6;color:#4E5964">Entities, periods, people and reports. Cannot delete the organization or change the plan.</div></div><div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px"><div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:6px">Contributor</div><div style="font-size:13px;line-height:1.6;color:#4E5964">Answers disclosures, uploads evidence, runs validation. Cannot file or export a final report.</div></div><div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px"><div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:6px">Reader</div><div style="font-size:13px;line-height:1.6;color:#4E5964">Reads a report and downloads what is already filed. Changes nothing, and cannot see other entities.</div></div>
+          </div></div>
+          <div style="height:56px;flex-shrink:0;margin-top:auto;padding:0 56px;background:#FFFFFF;border-top:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between"><span style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</span><div style="display:flex;align-items:center;gap:22px;font-size:13.5px;color:#3A434C"><span>Terms of service</span><span>Privacy notice</span><span>Data processing</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">S-17 · Plan and usage</div>
+        <div style="width:1440px;min-height:1320px;display:flex;flex-direction:column;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#F4F6F8;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+          <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="display:flex;align-items:center;gap:24px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span><span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span></div>
+          <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+          <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px">
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+          <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+          <span style="display:inline-flex;align-items:center;gap:9px;font-size:14px;color:#FFFFFF"><span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AR</span>Ana R.<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+      </div>
+          <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:stretch;gap:28px">
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Home</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Reports</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Entities &amp; periods</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Organization</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Users &amp; access</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;font-weight:600;color:#161B20;box-shadow:inset 0 -2px 0 #2E6A4F">Plan &amp; billing</span>
+      </div>
+          <div style="padding:36px 56px 44px"><div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#67737F;margin-bottom:16px"><span>Plan &amp; billing</span><span style="color:#C7CFD8">/</span><span style="color:#161B20">Plan and usage</span></div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin-bottom:24px">
+            <div>
+              <h1 style="font-size:30px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">Practice · renews 1 October 2026</h1>
+              <p style="font-size:15px;line-height:1.55;color:#4E5964;margin:0;max-width:76ch">7 200 MDL a year excluding VAT, paid by card ending 4417. Two counters are close to their limit, so they are shown first.</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span style="display:inline-flex;align-items:center;height:40px;padding:0 16px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14px;font-weight:500;color:#161B20">Invoices</span>
+              <span style="display:inline-flex;align-items:center;height:40px;padding:0 20px;border-radius:4px;background:#245540;font-size:14.5px;font-weight:600;color:#FFFFFF">Compare plans</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:18px">
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:20px 22px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Reports this year</div>
+              <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:12px"><span style="font-size:28px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">9</span><span style="font-size:13.5px;color:#67737F">of 10</span></div>
+              <div style="height:6px;border-radius:3px;background:#EFF2F5;overflow:hidden;margin-bottom:12px"><div style="width:90%;height:100%;background:#9A6510"></div></div>
+              <div style="font-size:13px;line-height:1.55;color:#4E5964">One left. A tenth report can be started; an eleventh needs Group.</div>
+            </div><div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:20px 22px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Companies</div>
+              <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:12px"><span style="font-size:28px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">4</span><span style="font-size:13.5px;color:#67737F">of 5</span></div>
+              <div style="height:6px;border-radius:3px;background:#EFF2F5;overflow:hidden;margin-bottom:12px"><div style="width:80%;height:100%;background:#9A6510"></div></div>
+              <div style="font-size:13px;line-height:1.55;color:#4E5964">Lina Agro is the fourth. One slot remains.</div>
+            </div><div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:20px 22px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">People with access</div>
+              <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:12px"><span style="font-size:28px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">4</span><span style="font-size:13.5px;color:#67737F">of 10</span></div>
+              <div style="height:6px;border-radius:3px;background:#EFF2F5;overflow:hidden;margin-bottom:12px"><div style="width:40%;height:100%;background:#245540"></div></div>
+              <div style="font-size:13px;line-height:1.55;color:#4E5964">Six seats free, including one pending invitation.</div>
+            </div><div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:20px 22px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Evidence storage</div>
+              <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:12px"><span style="font-size:28px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">1.8 GB</span><span style="font-size:13.5px;color:#67737F">of 5 GB</span></div>
+              <div style="height:6px;border-radius:3px;background:#EFF2F5;overflow:hidden;margin-bottom:12px"><div style="width:36%;height:100%;background:#245540"></div></div>
+              <div style="font-size:13px;line-height:1.55;color:#4E5964">Documents attached to answers, kept for as long as the report exists.</div>
+            </div><div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:20px 22px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Export languages</div>
+              <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:12px"><span style="font-size:28px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">3</span><span style="font-size:13.5px;color:#67737F">of 3</span></div>
+              <div style="height:6px;border-radius:3px;background:#EFF2F5;overflow:hidden;margin-bottom:12px"><div style="width:100%;height:100%;background:#245540"></div></div>
+              <div style="font-size:13px;line-height:1.55;color:#4E5964">Română, Русский, English — all included on Practice.</div>
+            </div><div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:20px 22px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Support response</div>
+              <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:12px"><span style="font-size:28px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">One working day</span><span style="font-size:13.5px;color:#67737F"></span></div>
+              
+              <div style="font-size:13px;line-height:1.55;color:#4E5964">Four-hour response in April and May is a Group feature.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:stretch">
+            <div style="flex:1;background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:22px 24px">
+              <div style="font-size:17px;font-weight:600;color:#161B20;margin-bottom:14px">What happens at renewal</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;gap:14px;align-items:flex-start;padding-bottom:11px;border-bottom:1px solid #F0F3F6"><span style="font-size:13px;font-weight:600;color:#161B20;width:150px;flex-shrink:0">1 September 2026</span><span style="font-size:13.5px;line-height:1.55;color:#4E5964">A reminder with the amount, thirty days ahead.</span></div><div style="display:flex;gap:14px;align-items:flex-start;padding-bottom:11px;border-bottom:1px solid #F0F3F6"><span style="font-size:13px;font-weight:600;color:#161B20;width:150px;flex-shrink:0">1 October 2026</span><span style="font-size:13.5px;line-height:1.55;color:#4E5964">8 640.00 MDL including VAT is charged to the card ending 4417.</span></div><div style="display:flex;gap:14px;align-items:flex-start;padding-bottom:11px;border-bottom:1px solid #F0F3F6"><span style="font-size:13px;font-weight:600;color:#161B20;width:150px;flex-shrink:0">If it fails</span><span style="font-size:13.5px;line-height:1.55;color:#4E5964">You are told the same day, and three more attempts are made over eight days. Editing is suspended only after that; reading and downloading never stop.</span></div>
+              </div>
+            </div>
+            <div style="width:392px;background:#FFFFFF;border:1px solid #C7CFD8;border-radius:6px;padding:22px 24px">
+              <div style="font-size:17px;font-weight:600;color:#161B20;margin-bottom:8px">Thinking about Group?</div>
+              <div style="font-size:13.5px;line-height:1.6;color:#4E5964;margin-bottom:16px">20 companies, unlimited reports, Comprehensive scope. Upgrading now costs 16 143.78 MDL including VAT, with 48 unused days credited.</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:inline-flex;align-items:center;justify-content:center;height:42px;border-radius:4px;background:#245540;font-size:14.5px;font-weight:600;color:#FFFFFF">See what Group changes</div>
+                <div style="display:inline-flex;align-items:center;justify-content:center;height:40px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14px;font-weight:500;color:#161B20">Reduce to Single at renewal</div>
+              </div>
+            </div>
+          </div></div>
+          <div style="height:56px;flex-shrink:0;margin-top:auto;padding:0 56px;background:#FFFFFF;border-top:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between"><span style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</span><div style="display:flex;align-items:center;gap:22px;font-size:13.5px;color:#3A434C"><span>Terms of service</span><span>Privacy notice</span><span>Data processing</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">S-17 · Reduction · losing scope</div>
+        <div style="width:1440px;min-height:1320px;display:flex;flex-direction:column;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#F4F6F8;box-shadow:0 1px 3px rgba(22,27,32,0.06)">
+          <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="display:flex;align-items:center;gap:24px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span><span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span></div>
+          <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+          <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px">
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+          <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex-shrink:0"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+          <span style="display:inline-flex;align-items:center;gap:9px;font-size:14px;color:#FFFFFF"><span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AR</span>Ana R.<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+      </div>
+          <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:stretch;gap:28px">
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Home</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Reports</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Entities &amp; periods</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Organization</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Users &amp; access</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;font-weight:600;color:#161B20;box-shadow:inset 0 -2px 0 #2E6A4F">Plan &amp; billing</span>
+      </div>
+          <div style="padding:36px 56px 44px"><div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#67737F;margin-bottom:16px"><span>Plan &amp; billing</span><span style="color:#C7CFD8">/</span><span>Compare plans</span><span style="color:#C7CFD8">/</span><span style="color:#161B20">Reduce to Single</span></div>
+          <div style="max-width:1080px">
+            <div style="border:1px solid #E2C68C;background:#FDFBF6;border-radius:8px;padding:24px 26px;margin-bottom:20px">
+              <div style="display:flex;gap:16px;align-items:flex-start">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#9A6510;color:#FFFFFF;font-size:15px;font-weight:700;flex-shrink:0">!</span>
+                <div>
+                  <h1 style="font-size:24px;line-height:1.2;font-weight:600;letter-spacing:-0.018em;color:#161B20;margin:0 0 8px">Single holds one company. You are using four.</h1>
+                  <p style="font-size:14.5px;line-height:1.6;color:#4E5964;margin:0;max-width:88ch">Nothing is reduced today. The change takes effect at renewal on 1 October 2026, and until then everything works as it does now. This page exists so the choice is made with the consequences in front of you, not after them.</p>
+                </div>
+              </div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:8px;overflow:hidden;margin-bottom:20px">
+              <div style="padding:18px 24px;border-bottom:1px solid #E8ECF0;background:#FBFCFD;display:flex;align-items:baseline;justify-content:space-between;gap:20px"><span style="font-size:17px;font-weight:600;color:#161B20">What would be over the limit on 1 October</span><span style="font-size:13px;color:#67737F">Three counters, and what happens to each</span></div>
+              <div style="padding:18px 24px;border-bottom:1px solid #F0F3F6;display:flex;gap:20px;align-items:flex-start"><div style="width:200px;flex-shrink:0"><div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:3px">Companies</div><div style="font-size:13px;color:#B32318;font-variant-numeric:tabular-nums">4 in use · 1 allowed</div></div><div style="font-size:13.5px;line-height:1.6;color:#4E5964;max-width:88ch">You choose which company stays. The other three become read-only: their filed reports stay downloadable, and no new period can be opened on them.</div></div><div style="padding:18px 24px;border-bottom:1px solid #F0F3F6;display:flex;gap:20px;align-items:flex-start"><div style="width:200px;flex-shrink:0"><div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:3px">Reports per year</div><div style="font-size:13px;color:#9A6510;font-variant-numeric:tabular-nums">9 used · 1 allowed</div></div><div style="font-size:13.5px;line-height:1.6;color:#4E5964;max-width:88ch">The count resets at renewal, so this is not retroactive. From 1 October you would have one report for the year.</div></div><div style="padding:18px 24px;border-bottom:1px solid #F0F3F6;display:flex;gap:20px;align-items:flex-start"><div style="width:200px;flex-shrink:0"><div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:3px">People with access</div><div style="font-size:13px;color:#B32318;font-variant-numeric:tabular-nums">4 in use · 2 allowed</div></div><div style="font-size:13.5px;line-height:1.6;color:#4E5964;max-width:88ch">You choose which two keep access. The others are signed out at renewal and told why; nothing they wrote is lost.</div></div>
+              <div style="padding:18px 24px;display:flex;gap:20px;align-items:flex-start;background:#FBFCFD"><div style="width:200px;flex-shrink:0"><div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:3px">Disclosure scope</div><div style="font-size:13px;color:#245540">Basic · unchanged</div></div><div style="font-size:13.5px;line-height:1.6;color:#4E5964;max-width:88ch">Single includes the Basic Module, which is what all four entities report against today. No answer already given becomes invalid.</div></div>
+            </div>
+            <div style="display:flex;gap:16px;align-items:flex-start">
+              <div style="flex:1;background:#FFFFFF;border:1px solid #D5DBE2;border-radius:8px;padding:22px 24px">
+                <div style="font-size:16px;font-weight:600;color:#161B20;margin-bottom:12px">Which company would stay?</div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div style="display:flex;gap:13px;align-items:center;padding:13px 15px;border:1px solid #245540;background:#F7FBF9;border-radius:5px"><span style="width:18px;height:18px;border-radius:50%;border:5px solid #245540;background:#FFFFFF;flex-shrink:0"></span><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#161B20">Brutăria Lina SRL</div><div style="font-size:12.5px;color:#67737F">2026 open · 62 % answered</div></div></div><div style="display:flex;gap:13px;align-items:center;padding:13px 15px;border:1px solid #D5DBE2;background:#FFFFFF;border-radius:5px"><span style="width:18px;height:18px;border-radius:50%;border:1.5px solid #8B96A3;background:#FFFFFF;flex-shrink:0"></span><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#161B20">Lina Logistic SRL</div><div style="font-size:12.5px;color:#67737F">2026 open · 24 % answered</div></div></div><div style="display:flex;gap:13px;align-items:center;padding:13px 15px;border:1px solid #D5DBE2;background:#FFFFFF;border-radius:5px"><span style="width:18px;height:18px;border-radius:50%;border:1.5px solid #8B96A3;background:#FFFFFF;flex-shrink:0"></span><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#161B20">Lina Retail SRL</div><div style="font-size:12.5px;color:#67737F">2025 ready to file</div></div></div><div style="display:flex;gap:13px;align-items:center;padding:13px 15px;border:1px solid #D5DBE2;background:#FFFFFF;border-radius:5px"><span style="width:18px;height:18px;border-radius:50%;border:1.5px solid #8B96A3;background:#FFFFFF;flex-shrink:0"></span><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#161B20">Lina Agro SRL</div><div style="font-size:12.5px;color:#67737F">No periods yet</div></div></div>
+                </div>
+                <div style="margin-top:14px;font-size:13px;line-height:1.55;color:#67737F">This can be changed any time before 1 October. Nothing is applied until renewal.</div>
+              </div>
+              <div style="width:392px;background:#FFFFFF;border:1px solid #C7CFD8;border-radius:8px;padding:22px 24px">
+                <div style="display:flex;justify-content:space-between;gap:14px;padding-bottom:12px;border-bottom:1px solid #E8ECF0"><span style="font-size:13.5px;color:#4E5964">Practice today</span><span style="font-size:14px;color:#161B20;font-variant-numeric:tabular-nums">7 200.00 / year</span></div>
+                <div style="display:flex;justify-content:space-between;gap:14px;padding:12px 0"><span style="font-size:13.5px;color:#4E5964">Single from 1 Oct</span><span style="font-size:14px;color:#161B20;font-variant-numeric:tabular-nums">2 400.00 / year</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:12px 0 18px;border-top:1px solid #E8ECF0"><span style="font-size:14.5px;font-weight:600;color:#161B20">You would save</span><span style="font-size:20px;font-weight:600;color:#245540;font-variant-numeric:tabular-nums">4 800.00</span></div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div style="display:inline-flex;align-items:center;justify-content:center;height:44px;border-radius:4px;border:1px solid #9A6510;background:#FFFFFF;font-size:14.5px;font-weight:600;color:#7A4F0C">Reduce at renewal</div>
+                  <div style="display:inline-flex;align-items:center;justify-content:center;height:42px;border-radius:4px;background:#245540;font-size:14.5px;font-weight:600;color:#FFFFFF">Keep Practice</div>
+                </div>
+                <div style="margin-top:16px;padding-top:14px;border-top:1px solid #E8ECF0;font-size:12.5px;line-height:1.6;color:#67737F">If you reduce and change your mind, upgrading again before 1 October costs nothing extra.</div>
+              </div>
+            </div>
+          </div></div>
+          <div style="height:56px;flex-shrink:0;margin-top:auto;padding:0 56px;background:#FFFFFF;border-top:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between"><span style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</span><div style="display:flex;align-items:center;gap:22px;font-size:13.5px;color:#3A434C"><span>Terms of service</span><span>Privacy notice</span><span>Data processing</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showCaptions&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Annotations&quot;},&quot;showStates&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Annotations&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showCaptions: this.props.showCaptions ?? true,
+      showStates: this.props.showStates ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

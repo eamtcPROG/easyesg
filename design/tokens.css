@@ -1,0 +1,120 @@
+/* EasyESG — Tier 1 primitives (single source of truth).
+   Tier 2 semantic roles and tier 3 component tokens are defined below and
+   must be the only things application code references. No component may
+   reference a tier 1 variable directly. */
+
+:root {
+  /* ── Tier 1 · colour · accent ramp (pine) ───────────────────────── */
+  --pine-50: #EDF5F0;
+  --pine-100: #D6E8DE;
+  --pine-200: #ADD1BE;
+  --pine-300: #7CB49A;
+  --pine-400: #4E8F72;
+  --pine-500: #3A7A5C;
+  --pine-600: #2E6A4F;   /* the accent */
+  --pine-700: #245540;
+  --pine-800: #1B4031;
+  --pine-900: #132C22;
+
+  /* ── Tier 1 · colour · neutral ramp (slate, cool, chroma < 0.02) ── */
+  --slate-0: #FFFFFF;
+  --slate-25: #FAFBFC;
+  --slate-50: #F4F6F8;
+  --slate-100: #E8ECF0;
+  --slate-200: #D5DBE2;
+  --slate-300: #B4BDC7;
+  --slate-400: #8B96A3;
+  --slate-500: #67737F;
+  --slate-700: #3A434C;
+  --slate-900: #161B20;
+
+  /* ── Tier 1 · colour · state hues (one text-safe step + one tint) ── */
+  --amber-600: #9A6510;   --amber-tint: #FDF4E3;   /* attention */
+  --rust-600: #B4501A;    --rust-tint: #FDF0E8;    /* warning   */
+  --crimson-600: #B32318; --crimson-tint: #FDEDEB; /* error     */
+  --iris-600: #5A4FA3;    --iris-tint: #F0EFF9;    /* reasoned  */
+  --azure-600: #0E6FA8;   --azure-tint: #E9F3FA;   /* pending   */
+
+  /* ── Tier 1 · space (4px base; arbitrary values prohibited) ─────── */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --space-9: 64px;
+  --space-10: 96px;
+
+  /* ── Tier 1 · radius ────────────────────────────────────────────── */
+  --radius-1: 3px;      /* inputs, chips, state markers */
+  --radius-2: 6px;      /* cards, panels */
+  --radius-3: 10px;     /* dialogues — nothing is rounder */
+  --radius-pill: 999px; /* status chips only */
+
+  /* ── Tier 1 · type families ─────────────────────────────────────── */
+  --font-text: 'Onest', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* ── Tier 1 · motion ────────────────────────────────────────────── */
+  --motion-instant: 80ms;   /* hover, focus, checkbox */
+  --motion-quick: 160ms;    /* toast, tooltip, inline message */
+  --motion-panel: 240ms;    /* validation panel, dialogue, applicability */
+  --motion-ease: cubic-bezier(.2, 0, .2, 1); /* the only curve */
+
+  /* ── Tier 1 · elevation ─────────────────────────────────────────── */
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgba(22,27,32,0.06), 0 2px 6px rgba(22,27,32,0.05);
+  --elevation-2: 0 4px 12px rgba(22,27,32,0.10), 0 12px 32px rgba(22,27,32,0.10);
+
+  /* ── Tier 2 · semantic roles (what designers and reviewers speak) ── */
+  --surface-default: var(--slate-0);    /* card, field, panel */
+  --surface-sunken: var(--slate-50);    /* page ground, well, read-only field */
+  --surface-raised: var(--slate-0);     /* popover, sticky bar (+ elevation-1) */
+
+  --text-default: var(--slate-900);     /* 16.4:1 */
+  --text-body: var(--slate-700);        /* 10.3:1 */
+  --text-muted: var(--slate-500);       /* 5.1:1 — never the sole carrier */
+  --text-on-accent: var(--slate-0);
+
+  --border-default: var(--slate-200);   /* card edge, divider, table rule */
+  --border-strong: var(--slate-400);    /* input at rest — must look enterable */
+  --border-focus: var(--pine-600);      /* inner ring */
+  --border-focus-halo: var(--pine-200); /* outer ring */
+
+  --accent: var(--pine-600);            /* primary action, active nav — exactly one */
+  --accent-hover: var(--pine-700);
+  --accent-tint: var(--pine-50);
+
+  --state-ok: var(--pine-700);          --state-ok-tint: var(--pine-50);
+  --state-attention: var(--amber-600);  --state-attention-tint: var(--amber-tint);
+  --state-warning: var(--rust-600);     --state-warning-tint: var(--rust-tint);
+  --state-error: var(--crimson-600);    --state-error-tint: var(--crimson-tint);
+  --state-reasoned: var(--iris-600);    --state-reasoned-tint: var(--iris-tint);
+  --state-pending: var(--azure-600);    --state-pending-tint: var(--azure-tint);
+  --state-neutral: var(--slate-700);    --state-neutral-tint: var(--slate-50);
+
+  /* ── Tier 3 · component tokens (the ONLY tier components may read) ── */
+  --field-border-rest: var(--border-strong);
+  --field-border-focus: var(--border-focus);
+  --field-border-missing: var(--state-attention);
+  --field-border-invalid: var(--state-error);
+  --field-surface-reasoned: var(--state-reasoned-tint);
+  --field-unit-surface: var(--surface-sunken);
+  --wizard-step-complete: var(--state-ok);
+  --module-state-reasoned: var(--state-reasoned);
+  --savestate-queued: var(--state-pending);
+}
+
+/* Two-layer focus ring — legible on every surface. Apply to every
+   interactive element; never remove the outline without replacing it. */
+.focus-ring:focus-visible,
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}

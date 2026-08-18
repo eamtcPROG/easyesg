@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #E9EDF1; font-family: 'Onest', system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+  a { color: #245540; text-decoration: underline; text-underline-offset: 2px; }
+  a:hover { color: #2E6A4F; }
+  ::selection { background: #D6E8DE; }
+</style>
+</helmet>
+
+<div style="padding:64px 56px 96px;display:flex;flex-direction:column;gap:44px;align-items:flex-start">
+
+  <header style="max-width:78ch">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#67737F;margin-bottom:18px">EasyESG · Help centre · Desktop screen at 1440</div>
+    <h1 style="font-size:44px;line-height:1.08;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 16px">Help centre</h1>
+    <p style="font-size:17px;line-height:1.55;color:#4E5964;margin:0;text-wrap:pretty">Four desktop screens at 1440: the help centre as a signed-in user meets it, the same library on the public site with no account, one article, and the support request. Signed in, it opens knowing what the person was doing — the draft they left, the module they were in. As a guest, nothing is gated; the right-hand column carries the account instead of the draft. Articles put the answer above the explanation and end at the field they describe.</p>
+  </header>
+
+  <div data-screen-label="01 Help centre · signed in" style="display:flex;flex-direction:column;gap:10px">
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:-2px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">01 · Signed in</span><span style="font-size:14px;color:#3A434C">Help centre opened from the global bar, with work in progress</span></div>
+    </sc-if>
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:13.5px;line-height:1.55;color:#67737F;margin:0;max-width:100ch">Help is in the same place on every screen (UX-109) and never a dead end: every article says which reporting module it belongs to, and every route out of here goes back to the work. Content language is selected independently of interface language, and untranslated articles are marked rather than hidden.</p>
+    </sc-if>
+
+    <div style="width:1440px;display:flex;flex-direction:column;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#F4F6F8;box-shadow:0 2px 14px rgba(22,27,32,0.06)">
+
+      <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="display:flex;align-items:center;gap:24px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span>
+            <span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span>
+          </div>
+          <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+          <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px">
+          <span style="display:inline-flex;align-items:center;height:30px;padding:0 10px;border-radius:3px;background:rgba(255,255,255,0.14);font-size:14.5px;font-weight:500;color:#FFFFFF">Help centre</span>
+          <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+          <span style="display:inline-flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AC</span><span style="font-size:10px;color:#ADD1BE">▾</span></span>
+        </div>
+      </div>
+
+      <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:stretch;gap:28px">
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Home</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Reports</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Entities &amp; periods</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Organization</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Users &amp; access</span>
+        <span style="display:inline-flex;align-items:center;font-size:14.5px;color:#3A434C">Plan &amp; billing</span>
+      </div>
+
+      <div style="padding:36px 56px 24px;background:#FFFFFF;border-bottom:1px solid #D5DBE2">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;margin-bottom:22px">
+          <div style="max-width:62ch">
+            <h1 style="font-size:32px;line-height:1.15;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 6px">How can we help, Ana?</h1>
+            <p style="font-size:15px;line-height:1.55;color:#4E5964;margin:0">Written for people who run a business, not for people who read standards. Every article names the module it belongs to and links straight back into your report.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;flex-shrink:0;align-items:flex-end">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Help content language</span>
+            <div style="display:flex;border:1px solid #D5DBE2;border-radius:4px;overflow:hidden;background:#FFFFFF">
+              <span style="display:inline-flex;align-items:center;height:34px;padding:0 14px;font-size:13.5px;color:#3A434C;border-right:1px solid #E8ECF0">RO</span>
+              <span style="display:inline-flex;align-items:center;height:34px;padding:0 14px;font-size:13.5px;font-weight:600;color:#FFFFFF;background:#2E6A4F">EN</span>
+              <span style="display:inline-flex;align-items:center;height:34px;padding:0 14px;font-size:13.5px;color:#3A434C;border-left:1px solid #E8ECF0">RU</span>
+            </div>
+            <span style="font-size:12.5px;color:#67737F">Interface stays in English · 4 articles are Romanian only</span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;height:58px;border:1px solid #8B96A3;border-radius:5px;padding:0 20px;background:#FFFFFF;max-width:820px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#67737F" stroke-width="1.8" stroke-linecap="round" style="display:block;flex-shrink:0"><circle cx="11" cy="11" r="7"></circle><line x1="16.2" y1="16.2" x2="21" y2="21"></line></svg>
+          <span style="font-size:16.5px;color:#161B20">how do I report electricity we don't pay for</span>
+          <span style="width:1.5px;height:22px;background:#2E6A4F;margin-left:-8px"></span>
+          <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;border:1px solid #D5DBE2;border-radius:3px;padding:3px 7px">⏎ SEARCH</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <span style="font-size:13px;color:#67737F">Others searched for</span>
+          <span style="display:inline-flex;align-items:center;height:28px;padding:0 11px;border:1px solid #D5DBE2;border-radius:14px;background:#FFFFFF;font-size:13px;color:#3A434C">what counts as scope 2</span>
+          <span style="display:inline-flex;align-items:center;height:28px;padding:0 11px;border:1px solid #D5DBE2;border-radius:14px;background:#FFFFFF;font-size:13px;color:#3A434C">no data for a whole section</span>
+          <span style="display:inline-flex;align-items:center;height:28px;padding:0 11px;border:1px solid #D5DBE2;border-radius:14px;background:#FFFFFF;font-size:13px;color:#3A434C">who can see my report</span>
+          <span style="display:inline-flex;align-items:center;height:28px;padding:0 11px;border:1px solid #D5DBE2;border-radius:14px;background:#FFFFFF;font-size:13px;color:#3A434C">reopen a locked period</span>
+          <span style="display:inline-flex;align-items:center;height:28px;padding:0 11px;border:1px solid #D5DBE2;border-radius:14px;background:#FFFFFF;font-size:13px;color:#3A434C">change the invoice details</span>
+        </div>
+      </div>
+
+      <div style="padding:32px 56px 48px;display:flex;gap:32px;align-items:flex-start">
+
+        <div style="width:954px;display:flex;flex-direction:column;gap:30px">
+
+          <sc-if value="{{ showContextual }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#FFFFFF;border:1px solid #8B96A3;border-radius:6px;overflow:hidden">
+              <div style="padding:16px 22px 14px;border-bottom:1px solid #E8ECF0;display:flex;align-items:flex-start;justify-content:space-between;gap:24px">
+                <div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:6px">Because you have a draft open</div>
+                  <div style="font-size:17px;line-height:1.35;font-weight:600;color:#161B20">B8 — Workforce characteristics · Brutăria Lina SRL · 2026</div>
+                </div>
+                <span style="display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 16px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14px;font-weight:600;flex-shrink:0">Back to B8</span>
+              </div>
+              <div style="display:flex">
+                <div style="flex:1;padding:14px 22px;border-right:1px solid #E8ECF0">
+                  <div style="font-size:14.5px;line-height:1.5;color:#161B20;font-weight:500;margin-bottom:4px">Employees by contract type, in plain terms</div>
+                  <div style="font-size:13.5px;line-height:1.5;color:#67737F">Where seasonal bakery staff belong · 3 min</div>
+                </div>
+                <div style="flex:1;padding:14px 22px;border-right:1px solid #E8ECF0">
+                  <div style="font-size:14.5px;line-height:1.5;color:#161B20;font-weight:500;margin-bottom:4px">Average headcount, worked example</div>
+                  <div style="font-size:13.5px;line-height:1.5;color:#67737F">Monthly figures to one number · 4 min</div>
+                </div>
+                <div style="flex:1;padding:14px 22px">
+                  <div style="font-size:14.5px;line-height:1.5;color:#161B20;font-weight:500;margin-bottom:4px">When a figure is genuinely unavailable</div>
+                  <div style="font-size:13.5px;line-height:1.5;color:#67737F">Saying so is a valid answer · 2 min</div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+              <h2 style="font-size:13px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;font-weight:500;color:#67737F;margin:0">Browse by what you are doing</h2>
+              <span style="font-size:13px;color:#67737F">142 articles · updated for taxonomy v2.1</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:10px">
+                <div>
+                  <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Starting your first report</div>
+                  <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0">What VSME asks of a company your size, and what you need before you begin.</p>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">The 40-minute first pass</span>
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Documents worth collecting first</span>
+                  <span style="font-size:12.5px;color:#8B96A3">14 articles</span>
+                </div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:10px">
+                <div>
+                  <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Filling in the modules</div>
+                  <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0">B1 to B11 and the comprehensive modules, each explained in the wizard's own words.</p>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Module index, B1 through C9</span>
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Why a field appeared or vanished</span>
+                  <span style="font-size:12.5px;color:#8B96A3">51 articles</span>
+                </div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:10px">
+                <div>
+                  <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Figures, units, calculations</div>
+                  <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0">Where the numbers come from, which factor set was used, and how to check a result.</p>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Reading the calculation trace</span>
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Fuel, electricity, district heating</span>
+                  <span style="font-size:12.5px;color:#8B96A3">23 articles</span>
+                </div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:10px">
+                <div>
+                  <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Entities, periods, locking</div>
+                  <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0">Several companies in one account, and what changes once a period is closed.</p>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Reopening a locked period</span>
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Adding an entity mid-year</span>
+                  <span style="font-size:12.5px;color:#8B96A3">17 articles</span>
+                </div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:10px">
+                <div>
+                  <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Sharing and exporting</div>
+                  <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0">Sending the report to a bank or buyer, in the language and format they asked for.</p>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Who can see a shared link</span>
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">PDF, XBRL and the data file</span>
+                  <span style="font-size:12.5px;color:#8B96A3">19 articles</span>
+                </div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:10px">
+                <div>
+                  <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Account, users, billing</div>
+                  <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0">Invitations and roles, invoices and e-Factura, changing or ending a plan.</p>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">What each role may do</span>
+                  <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Fixing invoice details before issue</span>
+                  <span style="font-size:12.5px;color:#8B96A3">18 articles</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+              <h2 style="font-size:13px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;font-weight:500;color:#67737F;margin:0">Asked most this month</h2>
+              <span style="font-size:13px;color:#67737F">Ranked from search, not chosen by us</span>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:16px;padding:15px 20px;border-bottom:1px solid #E8ECF0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;width:28px;flex-shrink:0">01</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:15px;line-height:1.45;font-weight:500;color:#161B20;margin-bottom:2px">We rent our premises and the landlord pays the electricity. What do I enter?</div>
+                  <div style="font-size:13px;color:#67737F">B3 · Energy and emissions · updated 4 August 2026</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#67737F;flex-shrink:0">3 min</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:15px 20px;border-bottom:1px solid #E8ECF0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;width:28px;flex-shrink:0">02</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:15px;line-height:1.45;font-weight:500;color:#161B20;margin-bottom:2px">Two of my figures contradict each other and the report will not go ready</div>
+                  <div style="font-size:13px;color:#67737F">Validation · applies to every module · updated 29 July 2026</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#67737F;flex-shrink:0">4 min</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:15px 20px;border-bottom:1px solid #E8ECF0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;width:28px;flex-shrink:0">03</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:15px;line-height:1.45;font-weight:500;color:#161B20;margin-bottom:2px">We simply do not have this data for 2026. Is that allowed?</div>
+                  <div style="font-size:13px;color:#67737F">Terminal states · not material, not available, nil return · updated 11 July 2026</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#67737F;flex-shrink:0">2 min</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:15px 20px;border-bottom:1px solid #E8ECF0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;width:28px;flex-shrink:0">04</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:15px;line-height:1.45;font-weight:500;color:#161B20;margin-bottom:2px">The bank asked for the report in Russian. Can I export it separately?</div>
+                  <div style="font-size:13px;color:#67737F">Exports · language is chosen per export · updated 2 August 2026</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#67737F;flex-shrink:0">2 min</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:15px 20px">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8B96A3;width:28px;flex-shrink:0">05</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:15px;line-height:1.45;font-weight:500;color:#161B20;margin-bottom:2px">My accountant should fill in part of it. How much access does that give her?</div>
+                  <div style="font-size:13px;color:#67737F">Users &amp; access · roles and scopes · updated 21 June 2026</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#67737F;flex-shrink:0">5 min</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="width:340px;display:flex;flex-direction:column;gap:20px;flex-shrink:0">
+
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+            <div style="padding:16px 20px 14px;border-bottom:1px solid #E8ECF0">
+              <div style="font-size:16.5px;font-weight:600;color:#161B20;margin-bottom:5px">Ask a person</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0">Romanian, Russian or English. Your plan answers within one working day; we reply to the question asked, not with a link.</p>
+            </div>
+            <div style="padding:14px 20px 16px;display:flex;flex-direction:column;gap:11px">
+              <span style="display:inline-flex;align-items:center;justify-content:center;height:42px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14.5px;font-weight:600">Write to support</span>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+                <span style="font-size:13px;color:#67737F">Plan Standard · office hours</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#3A434C">09:00–18:00 EET</span>
+              </div>
+              <div style="height:1px;background:#E8ECF0"></div>
+              <div>
+                <div style="font-size:14px;font-weight:500;color:#161B20;margin-bottom:4px">Let support see your screen</div>
+                <p style="font-size:13px;line-height:1.5;color:#67737F;margin:0 0 8px">Read-only, expires in 24 hours, every action they take is recorded and shown to you afterwards.</p>
+                <span style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Grant temporary access</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:16px 20px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Platform status</div>
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+              <span style="width:8px;height:8px;border-radius:50%;background:#2E6A4F;flex-shrink:0"></span>
+              <span style="font-size:14.5px;color:#161B20">All services operating normally</span>
+            </div>
+            <p style="font-size:13px;line-height:1.5;color:#67737F;margin:0">Checked 14:31 today. Planned maintenance 23 August, 02:00–04:00 EET; drafts are not affected.</p>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+            <div style="padding:14px 20px 12px;border-bottom:1px solid #E8ECF0">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Take away with you</div>
+            </div>
+            <div style="padding:6px 0">
+              <div style="padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #F1F4F7">
+                <span style="font-size:14px;color:#161B20">Data collection checklist</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F">PDF · 2 p</span>
+              </div>
+              <div style="padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #F1F4F7">
+                <span style="font-size:14px;color:#161B20">What VSME asks, in one page</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F">PDF · 1 p</span>
+              </div>
+              <div style="padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+                <span style="font-size:14px;color:#161B20">Energy figures worksheet</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F">XLSX</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="border:1px solid #D5DBE2;border-radius:6px;padding:16px 20px;background:#EEF2F5">
+            <div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:5px">Nothing here answered it?</div>
+            <p style="font-size:13px;line-height:1.55;color:#4E5964;margin:0">Tell us what you were looking for. Unanswered searches are read weekly and become articles; you are told when yours does.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-screen-label="02 Help centre · guest" style="display:flex;flex-direction:column;gap:10px;padding:0 56px;margin:0 0 44px">
+  <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">02 · Guest</span><span style="font-size:14px;color:#3A434C">Same help centre on the public site, no account yet</span></div>
+    <p style="font-size:13.5px;line-height:1.55;color:#67737F;margin:0;max-width:100ch">Public chrome instead of the application shell, and the whole library stays readable — nothing is put behind the account. What changes is the right-hand column: where a signed-in person sees their draft, support access and their plan's response time, a visitor sees what reporting will ask of them and how to start. The questions block is the ones asked before signing up, not the ones asked mid-report.</p>
+  </sc-if>
+
+  <div style="width:1440px;display:flex;flex-direction:column;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#FFFFFF;box-shadow:0 2px 14px rgba(22,27,32,0.06)">
+
+    <div style="background:#1B4031">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:0 56px;height:68px;border-bottom:1px solid rgba(255,255,255,0.10)">
+        <div style="flex:1 1 0;display:flex;align-items:center;gap:10px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg)"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span>
+          <span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:32px">
+          <span style="font-size:14.5px;color:#D6E8DE">How it works</span>
+          <span style="font-size:14.5px;color:#D6E8DE">The questions</span>
+          <span style="font-size:14.5px;color:#D6E8DE">Plans</span>
+          <span style="font-size:14.5px;color:#FFFFFF;font-weight:500;padding-bottom:2px;border-bottom:2px solid #7CB49A">Help centre</span>
+        </div>
+        <div style="flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;gap:20px">
+          <span style="font-size:14.5px;font-weight:500;color:#FFFFFF">Sign in</span>
+          <span style="display:inline-flex;align-items:center;height:40px;border-radius:3px;background:#FFFFFF;color:#1B4031;padding:0 18px;font-size:14.5px;font-weight:600">Create an account</span>
+        </div>
+      </div>
+
+      <div style="padding:52px 56px 46px">
+        <div style="max-width:70ch">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#ADD1BE;margin-bottom:14px">Help centre · open to everyone</div>
+          <h1 style="font-size:40px;line-height:1.1;font-weight:600;letter-spacing:-0.025em;color:#FFFFFF;margin:0 0 14px">Read everything before you decide anything</h1>
+          <p style="font-size:17px;line-height:1.6;color:#D6E8DE;margin:0 0 26px;max-width:62ch">The full library — what VSME asks, section by section, and how the reporting works — with no account and no email address. Written for owners and accountants, in Romanian, Russian and English.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;height:58px;border:1px solid rgba(255,255,255,0.34);border-radius:5px;padding:0 20px;background:rgba(255,255,255,0.08);max-width:760px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ADD1BE" stroke-width="1.8" stroke-linecap="round" style="display:block;flex-shrink:0"><circle cx="11" cy="11" r="7"></circle><line x1="16.2" y1="16.2" x2="21" y2="21"></line></svg>
+          <span style="font-size:16.5px;color:#C8DDD1">Search 142 articles — try “is this mandatory for a 12-person company”</span>
+          <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#ADD1BE;border:1px solid rgba(255,255,255,0.28);border-radius:3px;padding:3px 7px">⏎</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:34px 56px 48px;background:#F4F6F8;display:flex;gap:32px;align-items:flex-start">
+
+      <div style="width:954px;display:flex;flex-direction:column;gap:30px">
+
+        <div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+            <h2 style="font-size:13px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;font-weight:500;color:#67737F;margin:0">Asked before signing up</h2>
+            <span style="font-size:13px;color:#67737F">Answered without a sales call</span>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+            <div style="padding:16px 22px;border-bottom:1px solid #E8ECF0">
+              <div style="font-size:16px;line-height:1.4;font-weight:600;color:#161B20;margin-bottom:4px">Does my company have to report at all?</div>
+              <p style="font-size:14px;line-height:1.6;color:#4E5964;margin:0">Most small companies in Moldova are not obliged by law. They are asked by a bank, a buyer or a parent company — and that request usually has a deadline attached. This article explains who asks, and what they accept.</p>
+            </div>
+            <div style="padding:16px 22px;border-bottom:1px solid #E8ECF0">
+              <div style="font-size:16px;line-height:1.4;font-weight:600;color:#161B20;margin-bottom:4px">How long does a first report take?</div>
+              <p style="font-size:14px;line-height:1.6;color:#4E5964;margin:0">Between three and six hours of work spread over a few weeks, most of it spent finding invoices. You can stop after any section; nothing is lost between sessions.</p>
+            </div>
+            <div style="padding:16px 22px;border-bottom:1px solid #E8ECF0">
+              <div style="font-size:16px;line-height:1.4;font-weight:600;color:#161B20;margin-bottom:4px">Who can see the figures I enter?</div>
+              <p style="font-size:14px;line-height:1.6;color:#4E5964;margin:0">Only the people you invite, until you export or share a report yourself. We do not file anything on your behalf and we do not pass data to any authority.</p>
+            </div>
+            <div style="padding:16px 22px">
+              <div style="font-size:16px;line-height:1.4;font-weight:600;color:#161B20;margin-bottom:4px">What does it cost, and can I see the questions first?</div>
+              <p style="font-size:14px;line-height:1.6;color:#4E5964;margin:0">All eleven basic sections are listed in full on the public site, before any payment. Plans and their limits are on the pricing page; a first report can be completed on the free tier.</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+            <h2 style="font-size:13px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;font-weight:500;color:#67737F;margin:0">The whole library</h2>
+            <span style="font-size:13px;color:#67737F">142 articles · nothing gated</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px">
+              <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Starting your first report</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0 0 10px">What VSME asks of a company your size, and what to collect before you begin.</p>
+              <span style="font-size:12.5px;color:#8B96A3;font-family:'IBM Plex Mono',monospace">14 articles</span>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px">
+              <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Filling in the modules</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0 0 10px">B1 to B11 and the comprehensive modules, each explained in plain language.</p>
+              <span style="font-size:12.5px;color:#8B96A3;font-family:'IBM Plex Mono',monospace">51 articles</span>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px">
+              <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Figures, units, calculations</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0 0 10px">Where the numbers come from, which factor set is used, how to check a result.</p>
+              <span style="font-size:12.5px;color:#8B96A3;font-family:'IBM Plex Mono',monospace">23 articles</span>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px">
+              <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Entities, periods, locking</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0 0 10px">Several companies in one account, and what changes once a period is closed.</p>
+              <span style="font-size:12.5px;color:#8B96A3;font-family:'IBM Plex Mono',monospace">17 articles</span>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px">
+              <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Sharing and exporting</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0 0 10px">Sending the report to a bank or buyer, in the language and format they asked for.</p>
+              <span style="font-size:12.5px;color:#8B96A3;font-family:'IBM Plex Mono',monospace">19 articles</span>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:18px 20px 16px">
+              <div style="font-size:16.5px;line-height:1.3;font-weight:600;color:#161B20;margin-bottom:5px">Account, users, billing</div>
+              <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0 0 10px">Invitations and roles, invoices and e-Factura, changing or ending a plan.</p>
+              <span style="font-size:12.5px;color:#8B96A3;font-family:'IBM Plex Mono',monospace">18 articles</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="width:340px;display:flex;flex-direction:column;gap:20px;flex-shrink:0">
+
+        <div style="background:#FFFFFF;border:1px solid #8B96A3;border-radius:6px;overflow:hidden">
+          <div style="padding:18px 20px 16px;border-bottom:1px solid #E8ECF0">
+            <div style="font-size:17px;font-weight:600;color:#161B20;margin-bottom:6px">Reading it is one thing</div>
+            <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0">An account gives you the wizard, your figures saved as you type, and help that knows which section you are in. No card, and your first report is free.</p>
+          </div>
+          <div style="padding:14px 20px 18px;display:flex;flex-direction:column;gap:10px">
+            <span style="display:inline-flex;align-items:center;justify-content:center;height:42px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14.5px;font-weight:600">Create an account</span>
+            <span style="display:inline-flex;align-items:center;justify-content:center;height:40px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14px;font-weight:500;color:#161B20">See the eleven sections</span>
+            <p style="font-size:12.5px;line-height:1.5;color:#67737F;margin:2px 0 0">Already invited by a colleague? <span style="color:#245540;text-decoration:underline;text-underline-offset:2px">Sign in instead</span>.</p>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:16px 20px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:9px">Ask us directly</div>
+          <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0 0 10px">Questions about whether this fits your company are answered by a person, not a form robot.</p>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#245540">ajutor@easyesg.md</span>
+            <span style="font-size:13px;color:#67737F">Mon–Fri, 09:00–18:00 EET · RO, RU, EN</span>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+          <div style="padding:14px 20px 12px;border-bottom:1px solid #E8ECF0">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Free to download</div>
+          </div>
+          <div style="padding:6px 0">
+            <div style="padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #F1F4F7"><span style="font-size:14px;color:#161B20">What VSME asks, in one page</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F">PDF</span></div>
+            <div style="padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #F1F4F7"><span style="font-size:14px;color:#161B20">Data collection checklist</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F">PDF</span></div>
+            <div style="padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font-size:14px;color:#161B20">Energy figures worksheet</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F">XLSX</span></div>
+          </div>
+        </div>
+
+        <div style="border:1px solid #D5DBE2;border-radius:6px;padding:16px 20px;background:#EEF2F5">
+          <div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:5px">Nothing here answered it?</div>
+          <p style="font-size:13px;line-height:1.55;color:#4E5964;margin:0">Tell us what you were looking for. Unanswered searches are read weekly and become articles — no email address required to send one.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="padding:24px 56px 26px;background:#FFFFFF;border-top:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between;gap:24px">
+      <div style="display:flex;align-items:center;gap:24px;font-size:13.5px;color:#3A434C">
+        <span>Plans</span><span>Terms of service</span><span>Privacy notice</span><span>Status</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:24px">
+        <div style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:12.5px;color:#67737F">Language</span>
+          <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid #D5DBE2;border-radius:3px;background:#FFFFFF;padding:0 12px;font-size:13.5px;color:#161B20">Română<span style="font-size:10px;color:#67737F">▾</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-screen-label="03 Help article · signed in" style="display:flex;flex-direction:column;gap:10px;padding:0 56px 40px">
+  <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">03 · Article</span><span style="font-size:14px;color:#3A434C">One article, opened from search while a report is in progress</span></div>
+    <p style="font-size:13.5px;line-height:1.55;color:#67737F;margin:0;max-width:100ch">The answer sits above the explanation, at reading measure. Standard references and the worked example are disclosed rather than shown by default (UX-17), and the article ends where the work is: a route straight into the field it describes. A guest sees this same page with the public chrome and the create-account card in place of “Apply this to your report”.</p>
+  </sc-if>
+
+  <div style="width:1440px;display:flex;flex-direction:column;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#F4F6F8;box-shadow:0 2px 14px rgba(22,27,32,0.06)">
+
+    <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+      <div style="display:flex;align-items:center;gap:24px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span>
+          <span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span>
+        </div>
+        <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+        <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:22px">
+        <span style="display:inline-flex;align-items:center;height:30px;padding:0 10px;border-radius:3px;background:rgba(255,255,255,0.14);font-size:14.5px;font-weight:500;color:#FFFFFF">Help centre</span>
+        <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+        <span style="display:inline-flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AC</span><span style="font-size:10px;color:#ADD1BE">▾</span></span>
+      </div>
+    </div>
+
+    <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:center;justify-content:space-between;gap:24px">
+      <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#67737F">
+        <span style="color:#245540;text-decoration:underline;text-underline-offset:2px">Help centre</span>
+        <span style="color:#B4BDC7">/</span>
+        <span style="color:#245540;text-decoration:underline;text-underline-offset:2px">Figures, units, calculations</span>
+        <span style="color:#B4BDC7">/</span>
+        <span style="color:#3A434C">Electricity paid by the landlord</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="display:flex;border:1px solid #D5DBE2;border-radius:4px;overflow:hidden">
+          <span style="display:inline-flex;align-items:center;height:30px;padding:0 11px;font-size:12.5px;color:#3A434C;border-right:1px solid #E8ECF0">RO</span>
+          <span style="display:inline-flex;align-items:center;height:30px;padding:0 11px;font-size:12.5px;font-weight:600;color:#FFFFFF;background:#2E6A4F">EN</span>
+          <span style="display:inline-flex;align-items:center;height:30px;padding:0 11px;font-size:12.5px;color:#3A434C;border-left:1px solid #E8ECF0">RU</span>
+        </div>
+        <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Save as PDF</span>
+      </div>
+    </div>
+
+    <div style="padding:36px 56px 48px;display:flex;gap:32px;align-items:flex-start">
+
+      <div style="width:236px;flex-shrink:0;display:flex;flex-direction:column;gap:22px">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">On this page</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:13.5px;line-height:1.45;color:#161B20;font-weight:600;padding:6px 0 6px 12px;box-shadow:inset 2px 0 0 #2E6A4F">The short answer</span>
+            <span style="font-size:13.5px;line-height:1.45;color:#4E5964;padding:6px 0 6px 12px;box-shadow:inset 1px 0 0 #D5DBE2">Why the standard asks this</span>
+            <span style="font-size:13.5px;line-height:1.45;color:#4E5964;padding:6px 0 6px 12px;box-shadow:inset 1px 0 0 #D5DBE2">Worked example: a leased bakery</span>
+            <span style="font-size:13.5px;line-height:1.45;color:#4E5964;padding:6px 0 6px 12px;box-shadow:inset 1px 0 0 #D5DBE2">If the landlord will not tell you</span>
+            <span style="font-size:13.5px;line-height:1.45;color:#4E5964;padding:6px 0 6px 12px;box-shadow:inset 1px 0 0 #D5DBE2">What to write in the note</span>
+          </div>
+        </div>
+        <div style="border-top:1px solid #E8ECF0;padding-top:16px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Applies to</div>
+          <div style="font-size:13.5px;line-height:1.5;color:#3A434C">B3 · Energy and emissions<br><span style="color:#67737F">Purchased electricity, heating</span></div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#67737F;margin-top:10px">Taxonomy v2.1 · 2026</div>
+        </div>
+      </div>
+
+      <div style="width:686px;flex-shrink:0">
+        <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:34px 44px 38px">
+
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:12px">B3 · Energy and emissions</div>
+          <h1 style="font-size:31px;line-height:1.2;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 12px;text-wrap:pretty">We rent our premises and the landlord pays the electricity. What do I enter?</h1>
+          <div style="display:flex;align-items:center;gap:14px;font-size:13px;color:#67737F;padding-bottom:22px;border-bottom:1px solid #E8ECF0">
+            <span>3 min read</span><span style="color:#D5DBE2">·</span><span>Updated 4 August 2026</span><span style="color:#D5DBE2">·</span><span>Reviewed against VSME by the content team</span>
+          </div>
+
+          <div style="margin:22px 0 26px;border-left:3px solid #2E6A4F;background:#EDF5F0;padding:16px 20px;border-radius:0 4px 4px 0">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#245540;margin-bottom:7px">The short answer</div>
+            <p style="font-size:16px;line-height:1.6;color:#1F2A24;margin:0">Enter the electricity your own operations used, even when the invoice is in the landlord's name. If the lease charges you a share of the building's bill, that share is your figure. If you genuinely cannot obtain it, say so in the field's note — an explained gap is accepted, an empty field is not.</p>
+          </div>
+
+          <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0 0 10px">Why the standard asks this</h2>
+          <p style="font-size:16px;line-height:1.7;color:#3A434C;margin:0 0 14px">B3 asks about energy your business consumes, not energy your business is invoiced for. Whoever reads your report — a bank, a buyer — is trying to understand the footprint of the activity, and a rented bakery consumes electricity whether or not the meter is in its name.</p>
+          <p style="font-size:16px;line-height:1.7;color:#3A434C;margin:0 0 24px">This is also why the wizard asks for premises and floor area in B1 before it asks about energy: a share of a shared bill is only defensible if the basis of the share is recorded.</p>
+
+          <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0 0 12px">Worked example: a leased bakery</h2>
+          <div style="border:1px solid #D5DBE2;border-radius:5px;overflow:hidden;margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;height:34px;padding:0 16px;background:#F9FAFB;border-bottom:1px solid #E8ECF0"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#67737F">Building bill, 2026</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#67737F">kWh</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid #F1F4F7"><span style="font-size:14.5px;color:#3A434C">Whole building, as invoiced to the landlord</span><span style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:#161B20;font-variant-numeric:tabular-nums">184 200</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid #F1F4F7"><span style="font-size:14.5px;color:#3A434C">Your floor area share, per the lease (312 m² of 1 040 m²)</span><span style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:#161B20;font-variant-numeric:tabular-nums">30 %</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid #F1F4F7"><span style="font-size:14.5px;color:#3A434C">Sub-metered oven circuit, billed to you directly</span><span style="font-family:'IBM Plex Mono',monospace;font-size:14.5px;color:#161B20;font-variant-numeric:tabular-nums">21 400</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;background:#F9FAFB"><span style="font-size:14.5px;color:#161B20;font-weight:600">Entered in B3 · purchased electricity</span><span style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#161B20;font-weight:500;font-variant-numeric:tabular-nums">76 660</span></div>
+          </div>
+          <p style="font-size:14px;line-height:1.6;color:#67737F;margin:0 0 24px">55 260 kWh from the floor-area share plus the 21 400 kWh you were billed directly. Use the sub-meter wherever one exists; fall back on a share only for what is not measured.</p>
+
+          <div style="border:1px solid #D5DBE2;border-radius:5px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#FCFDFD">
+            <div>
+              <div style="font-size:14.5px;font-weight:500;color:#161B20;margin-bottom:2px">Where this sits in the standard</div>
+              <div style="font-size:13.5px;color:#67737F">VSME Basic Module, B3 · paragraphs on energy consumption and boundaries</div>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F;border:1px solid #D5DBE2;border-radius:3px;padding:4px 9px;flex-shrink:0">SHOW</span>
+          </div>
+          <div style="border:1px solid #D5DBE2;border-radius:5px;padding:14px 18px;margin-bottom:26px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#FCFDFD">
+            <div>
+              <div style="font-size:14.5px;font-weight:500;color:#161B20;margin-bottom:2px">The conversion factors used for this figure</div>
+              <div style="font-size:13.5px;color:#67737F">Moldova grid factor set 2026 · 0.512 kg CO₂e / kWh</div>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F;border:1px solid #D5DBE2;border-radius:3px;padding:4px 9px;flex-shrink:0">SHOW</span>
+          </div>
+
+          <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0 0 10px">If the landlord will not tell you</h2>
+          <p style="font-size:16px;line-height:1.7;color:#3A434C;margin:0 0 14px">Ask once, in writing, for the annual building consumption and your share basis. If it does not arrive, mark the field <strong style="font-weight:600;color:#161B20">not available</strong> and write what you asked for and when. The report stays valid and the reader sees an honest boundary instead of a zero that would be wrong.</p>
+          <div style="border-left:3px solid #9A6510;background:#FDF4E3;padding:14px 18px;border-radius:0 4px 4px 0;margin-bottom:26px">
+            <p style="font-size:15px;line-height:1.6;color:#7A5010;margin:0">Do not enter zero. Zero means the premises used no electricity, which the validation will contradict against your headcount and floor area, and the finding will hold the report at draft.</p>
+          </div>
+
+          <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0 0 10px">What to write in the note</h2>
+          <p style="font-size:16px;line-height:1.7;color:#3A434C;margin:0 0 8px">Two sentences are enough. Name the source, the basis and the limit:</p>
+          <p style="font-size:15.5px;line-height:1.7;color:#3A434C;margin:0 0 30px;padding:14px 18px;background:#F9FAFB;border:1px solid #E8ECF0;border-radius:4px;font-style:italic">“Electricity is invoiced to the landlord for the whole building. Our figure is 30 % of the 2026 building consumption, the floor-area share stated in the lease, plus the sub-metered oven circuit billed to us directly.”</p>
+
+          <div style="border-top:1px solid #E8ECF0;padding-top:22px;display:flex;align-items:center;justify-content:space-between;gap:20px">
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:3px">Did this answer your question?</div>
+              <div style="font-size:13.5px;color:#67737F">312 of 341 people said yes this month</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-shrink:0">
+              <span style="display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 20px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14px;font-weight:500;color:#161B20">Yes</span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 20px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:14px;font-weight:500;color:#161B20">No</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:20px">
+
+        <div style="background:#FFFFFF;border:1px solid #8B96A3;border-radius:6px;overflow:hidden">
+          <div style="padding:16px 20px 14px;border-bottom:1px solid #E8ECF0">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:7px">Apply this to your report</div>
+            <div style="font-size:15.5px;line-height:1.4;font-weight:600;color:#161B20;margin-bottom:3px">Brutăria Lina SRL · 2026</div>
+            <div style="font-size:13.5px;color:#67737F">B3 · purchased electricity is still unanswered</div>
+          </div>
+          <div style="padding:14px 20px 18px;display:flex;flex-direction:column;gap:9px">
+            <span style="display:inline-flex;align-items:center;justify-content:center;height:40px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14px;font-weight:600">Open that field in B3</span>
+            <span style="display:inline-flex;align-items:center;justify-content:center;height:36px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Save this article for later</span>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+          <div style="padding:14px 20px 12px;border-bottom:1px solid #E8ECF0"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Read next</div></div>
+          <div>
+            <div style="padding:13px 20px;border-bottom:1px solid #F1F4F7"><div style="font-size:14.5px;line-height:1.45;color:#161B20;font-weight:500;margin-bottom:2px">District heating in a shared building</div><div style="font-size:12.5px;color:#67737F">B3 · 3 min</div></div>
+            <div style="padding:13px 20px;border-bottom:1px solid #F1F4F7"><div style="font-size:14.5px;line-height:1.45;color:#161B20;font-weight:500;margin-bottom:2px">When a figure is genuinely unavailable</div><div style="font-size:12.5px;color:#67737F">Terminal states · 2 min</div></div>
+            <div style="padding:13px 20px"><div style="font-size:14.5px;line-height:1.45;color:#161B20;font-weight:500;margin-bottom:2px">Reading the calculation trace</div><div style="font-size:12.5px;color:#67737F">Figures · 4 min</div></div>
+          </div>
+        </div>
+
+        <div style="border:1px solid #D5DBE2;border-radius:6px;padding:16px 20px;background:#EEF2F5">
+          <div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:5px">Still not sure about your lease?</div>
+          <p style="font-size:13px;line-height:1.55;color:#4E5964;margin:0 0 10px">Send us the clause. Support answers within one working day and can look at the draft with your permission.</p>
+          <span style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;font-size:13.5px;font-weight:500;color:#161B20">Write to support</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-screen-label="04 Write to support" style="display:flex;flex-direction:column;gap:10px;padding:0 56px 96px;margin:44px 0 0">
+  <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">04 · Support request</span><span style="font-size:14px;color:#3A434C">Write to support, opened from an article with the report in context</span></div>
+    <p style="font-size:13.5px;line-height:1.55;color:#67737F;margin:0;max-width:100ch">Four fields, and none of them ask for what the platform already knows: entity, period, module, plan and taxonomy version travel with the message and are shown before sending rather than described afterwards. Answers that already exist are offered while the person types, next to the field, never as a wall that must be dismissed first. Granting the draft is opt-in, read-only and time-boxed, and the response time is the plan's real one.</p>
+  </sc-if>
+
+  <div style="width:1440px;display:flex;flex-direction:column;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#F4F6F8;box-shadow:0 2px 14px rgba(22,27,32,0.06)">
+
+    <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+      <div style="display:flex;align-items:center;gap:24px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span>
+          <span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span>
+        </div>
+        <span style="width:1px;height:28px;background:rgba(255,255,255,0.18)"></span>
+        <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid rgba(255,255,255,0.32);border-radius:3px;padding:0 12px;font-size:14px;color:#FFFFFF">Grupul Lina<span style="font-size:10px;color:#ADD1BE">▾</span></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:22px">
+        <span style="display:inline-flex;align-items:center;height:30px;padding:0 10px;border-radius:3px;background:rgba(255,255,255,0.14);font-size:14.5px;font-weight:500;color:#FFFFFF">Help centre</span>
+        <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position:absolute;top:-2px;right:-6px;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D6E8DE;color:#1B4031;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">7</span></span>
+        <span style="display:inline-flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#D6E8DE;color:#1B4031;font-size:13px;font-weight:600">AC</span><span style="font-size:10px;color:#ADD1BE">▾</span></span>
+      </div>
+    </div>
+
+    <div style="height:52px;padding:0 56px;background:#FFFFFF;border-bottom:1px solid #D5DBE2;display:flex;align-items:center;justify-content:space-between;gap:24px">
+      <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#67737F">
+        <span style="color:#245540;text-decoration:underline;text-underline-offset:2px">Help centre</span>
+        <span style="color:#B4BDC7">/</span>
+        <span style="color:#3A434C">Write to support</span>
+      </div>
+      <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Your earlier requests (3)</span>
+    </div>
+
+    <div style="padding:36px 56px 48px;display:flex;gap:32px;align-items:flex-start">
+
+      <div style="width:954px;flex-shrink:0;background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+
+        <div style="padding:26px 34px 22px;border-bottom:1px solid #E8ECF0">
+          <h1 style="font-size:27px;line-height:1.2;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 8px">Write to support</h1>
+          <p style="font-size:15px;line-height:1.6;color:#4E5964;margin:0;max-width:70ch">Describe it in your own words — we would rather read “the electricity number looks wrong” than a form filled in correctly. A person replies, in the language you choose below.</p>
+        </div>
+
+        <div style="padding:24px 34px 8px;display:flex;flex-direction:column;gap:22px">
+
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:4px">What is it about?</div>
+            <p style="font-size:13.5px;line-height:1.5;color:#67737F;margin:0 0 9px">This only decides who reads it first.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <span style="display:inline-flex;align-items:center;height:36px;padding:0 15px;border-radius:18px;background:#1B4031;color:#FFFFFF;font-size:14px;font-weight:500">A figure or a question in a module</span>
+              <span style="display:inline-flex;align-items:center;height:36px;padding:0 15px;border-radius:18px;border:1px solid #D5DBE2;background:#FFFFFF;font-size:14px;color:#3A434C">A finding that will not clear</span>
+              <span style="display:inline-flex;align-items:center;height:36px;padding:0 15px;border-radius:18px;border:1px solid #D5DBE2;background:#FFFFFF;font-size:14px;color:#3A434C">Exports and sharing</span>
+              <span style="display:inline-flex;align-items:center;height:36px;padding:0 15px;border-radius:18px;border:1px solid #D5DBE2;background:#FFFFFF;font-size:14px;color:#3A434C">Users and access</span>
+              <span style="display:inline-flex;align-items:center;height:36px;padding:0 15px;border-radius:18px;border:1px solid #D5DBE2;background:#FFFFFF;font-size:14px;color:#3A434C">Invoices and plan</span>
+              <span style="display:inline-flex;align-items:center;height:36px;padding:0 15px;border-radius:18px;border:1px solid #D5DBE2;background:#FFFFFF;font-size:14px;color:#3A434C">Something else</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:16px">
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:9px">Which report</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;height:44px;border:1px solid #D5DBE2;border-radius:4px;padding:0 14px;background:#FFFFFF">
+                <span style="font-size:14.5px;color:#161B20">Brutăria Lina SRL · 2026 · draft</span>
+                <span style="font-size:10px;color:#67737F">▾</span>
+              </div>
+            </div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:9px">Which section, if you know</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;height:44px;border:1px solid #D5DBE2;border-radius:4px;padding:0 14px;background:#FFFFFF">
+                <span style="font-size:14.5px;color:#161B20">B3 · Energy and emissions</span>
+                <span style="font-size:10px;color:#67737F">▾</span>
+              </div>
+            </div>
+            <div style="width:200px">
+              <div style="font-size:14px;font-weight:600;color:#161B20;margin-bottom:9px">Reply in</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;height:44px;border:1px solid #D5DBE2;border-radius:4px;padding:0 14px;background:#FFFFFF">
+                <span style="font-size:14.5px;color:#161B20">Română</span>
+                <span style="font-size:10px;color:#67737F">▾</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:24px;align-items:flex-start">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px">
+                <span style="font-size:14px;font-weight:600;color:#161B20">Your question</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">Autosaved · you can leave and come back</span>
+              </div>
+              <div style="border:1px solid #8B96A3;border-radius:4px;background:#FFFFFF;padding:14px 16px;min-height:168px">
+                <p style="font-size:15.5px;line-height:1.65;color:#161B20;margin:0;max-width:70ch">We rent the bakery and the landlord is invoiced for all the electricity. He sent me the building total for 2026 but not our share, and the lease talks about square metres, not kilowatt-hours. Can I use 30 % of the building figure and</p>
+                <span style="display:inline-block;width:1.5px;height:20px;background:#2E6A4F;vertical-align:-4px;margin-left:1px"></span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px">
+                <span style="font-size:13px;color:#67737F">Screenshots and files help. PDF, images or spreadsheets, up to 20 MB.</span>
+                <span style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 13px;border-radius:4px;border:1px solid #D5DBE2;background:#FFFFFF;font-size:13px;font-weight:500;color:#3A434C">Attach a file</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;padding:9px 12px;border:1px solid #E8ECF0;border-radius:4px;background:#F9FAFB">
+                <span style="font-size:13.5px;color:#3A434C">contract-arenda-2026.pdf</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#67737F">412 KB · remove</span>
+              </div>
+            </div>
+
+            <div style="width:270px;flex-shrink:0;border:1px solid #D5DBE2;border-radius:4px;background:#F9FAFB;padding:14px 16px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:9px">While you write</div>
+              <p style="font-size:13px;line-height:1.5;color:#67737F;margin:0 0 12px">Two answers match what you are describing. Send anyway if they miss the point.</p>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div>
+                  <div style="font-size:13.5px;line-height:1.45;font-weight:500;color:#161B20;margin-bottom:2px">We rent our premises and the landlord pays the electricity</div>
+                  <div style="font-size:12px;color:#67737F">B3 · 3 min · answers 91 % of askers</div>
+                </div>
+                <div style="height:1px;background:#E8ECF0"></div>
+                <div>
+                  <div style="font-size:13.5px;line-height:1.45;font-weight:500;color:#161B20;margin-bottom:2px">Splitting a shared bill by floor area</div>
+                  <div style="font-size:12px;color:#67737F">B3 · 2 min</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="border:1px solid #D5DBE2;border-radius:5px;overflow:hidden">
+            <div style="padding:14px 18px;border-bottom:1px solid #E8ECF0;display:flex;align-items:flex-start;gap:14px">
+              <span style="flex-shrink:0;display:inline-flex;align-items:center;width:44px;height:26px;border-radius:13px;background:#2E6A4F;padding:3px;justify-content:flex-end"><span style="width:20px;height:20px;border-radius:50%;background:#FFFFFF"></span></span>
+              <div>
+                <div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:3px">Let support open this draft, read-only, for 24 hours</div>
+                <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0;max-width:78ch">They see the figures and findings in Brutăria Lina SRL · 2026 and nothing else. Every screen they open is recorded and listed for you afterwards. Access ends by itself; you can end it sooner from Users &amp; access.</p>
+              </div>
+            </div>
+            <div style="padding:13px 18px;background:#F9FAFB">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Sent with your message, so you do not have to describe it</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px 26px;font-size:13px;color:#3A434C">
+                <span>Grupul Lina · Plan Standard</span>
+                <span>Ana Ceban · owner</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#67737F">Taxonomy v2.1</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#67737F">Factor set MD-2026</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#67737F">Interface EN · Chrome 141 · Windows</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="padding:18px 34px 22px;border-top:1px solid #E8ECF0;background:#FCFDFD;display:flex;align-items:center;justify-content:space-between;gap:20px">
+          <div style="font-size:13.5px;line-height:1.5;color:#67737F;max-width:60ch">Sent to <span style="font-family:'IBM Plex Mono',monospace;color:#3A434C">ajutor@easyesg.md</span> and to your inbox at <span style="font-family:'IBM Plex Mono',monospace;color:#3A434C">a.ceban@lina.md</span>. Replying to that email continues the same request.</div>
+          <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
+            <span style="font-size:14px;color:#245540;text-decoration:underline;text-underline-offset:2px">Save as draft</span>
+            <span style="display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 24px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:15px;font-weight:600">Send to support</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:20px">
+
+        <div style="background:#FFFFFF;border:1px solid #8B96A3;border-radius:6px;padding:16px 20px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">When you will hear back</div>
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#161B20;font-variant-numeric:tabular-nums">4h 20m</span>
+            <span style="font-size:13.5px;color:#67737F">median, last 30 days</span>
+          </div>
+          <p style="font-size:13.5px;line-height:1.55;color:#4E5964;margin:0 0 10px">Plan Standard is answered within one working day. Sent now, at 15:04 on a Friday, you can expect a reply by Monday morning.</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid #E8ECF0">
+            <span style="font-size:13px;color:#67737F">Office hours</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#3A434C">09:00–18:00 EET</span>
+          </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden">
+          <div style="padding:14px 20px 12px;border-bottom:1px solid #E8ECF0"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Your earlier requests</div></div>
+          <div>
+            <div style="padding:13px 20px;border-bottom:1px solid #F1F4F7">
+              <div style="font-size:14px;line-height:1.45;color:#161B20;font-weight:500;margin-bottom:3px">Ru translation missing in the export</div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:3px;background:#EDF5F0;color:#245540;font-size:11.5px;font-weight:600">Answered</span><span style="font-size:12.5px;color:#67737F">2 August</span></div>
+            </div>
+            <div style="padding:13px 20px;border-bottom:1px solid #F1F4F7">
+              <div style="font-size:14px;line-height:1.45;color:#161B20;font-weight:500;margin-bottom:3px">Invoice needs our new IDNO</div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:3px;background:#FDF4E3;color:#7A5010;font-size:11.5px;font-weight:600">With us</span><span style="font-size:12.5px;color:#67737F">Yesterday · 16:40</span></div>
+            </div>
+            <div style="padding:13px 20px">
+              <div style="font-size:14px;line-height:1.45;color:#161B20;font-weight:500;margin-bottom:3px">Reopening the 2025 period</div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:3px;background:#E8ECF0;color:#3A434C;font-size:11.5px;font-weight:600">Closed</span><span style="font-size:12.5px;color:#67737F">21 June</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border:1px solid #D5DBE2;border-radius:6px;padding:16px 20px;background:#EEF2F5">
+          <div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:5px">Urgent and about a deadline?</div>
+          <p style="font-size:13px;line-height:1.55;color:#4E5964;margin:0">Say so in the first line, with the date. Requests naming a filing or bank deadline are moved to the front of the queue by a person, not by a keyword.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Annotation&quot;},&quot;showContextual&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Screen&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showNotes: this.props.showNotes ?? true,
+      showContextual: this.props.showContextual ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

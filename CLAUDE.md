@@ -30,6 +30,55 @@ not started; there is no build, test or run command.
 **Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
 column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.
 
+## Open questions are not debt
+
+An **open question** is anything the work needs an answer to and does not have: a genuine
+ambiguity in a spec, two documents that disagree, a value the sources never state, a threshold a
+requirement is unverifiable without, an external fact nobody has checked, a choice between
+options where the sources are silent. The seven documents carry ~91 of these explicitly, in
+their own registers — `problem_overview.md` §13, `actors.md` §10, `use_cases.md` §9,
+`functional_requirements.md` §10, `non_functional_requirements.md` §10, `architecture.md` §18,
+`design_spec.md` §14 — but those registers are one instance of the rule, not its scope. The rule
+is about any unknown, wherever it surfaces, including ones nobody has written down yet.
+
+When work meets an open question, stop and ask. Do not invent an answer, do not pick a
+sensible default, and do not leave a TODO. An unknown closed in passing by whoever happened to
+write the code is an undocumented decision: invisible as a decision, therefore never reviewed,
+and load-bearing by the time it surfaces — as a defect, in a document that still says the
+question is open.
+
+This is not a licence to ask about everything. Routine judgement calls — a name, a file's
+location, which of two equivalent idioms — are yours to make; asking about them is its own kind
+of failure. Ask when different answers produce materially different work, when the answer is
+expensive to reverse, or when a person knows something you would otherwise be guessing at.
+
+How to do it:
+
+- **Raise a unit of work's unknowns in one batch before starting it**, not one at a time as each
+  blocks you mid-implementation. Blocking late is how an assumption gets made instead of a
+  decision.
+- **Ask a decision question, not an open one.** Name the thing, say what it blocks, list the
+  options the sources already contain, and recommend one. `AskUserQuestion` is the right tool.
+  *"What identifier scheme?"* returns nothing; *"OQ-18 blocks B1 modelling; research says LEI
+  primary, `billing` says IDNO — I recommend IDNO as the tenant key with LEI optional"* returns
+  a decision today.
+- **An answer is not real until it is written into the artefact that owns it.** A register row
+  becomes *Closed — < decision >*, with the authority and the date; the normative text it changes
+  is amended in the same edit; every place it is cross-logged is updated. A decision with no
+  obvious owner goes in the closest section of `architecture.md` — not a new file and not a new
+  folder; this doc set is seven files and stays seven. Only then is the code written — a decision
+  that exists only in a chat transcript has not been made.
+- **A deferral is recorded too**, with what was assumed meanwhile and what has to change if the
+  assumption is wrong. A recorded assumption is fine; a silent one is not.
+- **Never widen a question by coding around it.** Modelling both LEI *and* IDNO "to be safe"
+  ships an abstraction nobody asked for and makes the decision more expensive to take, not less.
+  The same goes for a config flag that defers a choice and an interface with one implementation.
+- **State assumptions in the response**, not only in a comment, whenever you proceed under one
+  because the work would be useless without it.
+
+Resolving a question by citing this file is not resolving it. Where `CLAUDE.md` and a document
+disagree, the document wins and this file is what is wrong.
+
 ## Architectural invariants (violating these is expensive to undo)
 
 - **Billing and compliance core are separate bounded contexts** — separate PG schemas, no cross-schema
@@ -51,7 +100,8 @@ EU/EEA VMs · Caddy edge · Playwright/Chromium for PDF.
 
 ```bash
 apps/{api,web,admin}   packages/{contracts,vsme,validation,ui,xlsx-patch,i18n}
-config/{seed,efrag}    infra/{compose,caddy,postgres,ci}    docs/{adr,runbooks}
+config/{seed,efrag}    design/{tokens.css,screens}
+infra/{compose,caddy,postgres,ci,ansible}    docs/runbooks
 ```
 
 Build order (architecture.md §15.4): foundation → identity → reporting core → calculator/validation →
@@ -228,6 +278,13 @@ BullMQ) and are further along. Read them for **a working shape**, not for struct
 - All three locales are separately authored — **never machine-translate**. Romanian is the source.
 - Accessibility target is WCAG 2.2 AA.
 - Runbooks are deliverables: six NFRs are verified by rehearsal, not by test.
+
+The first two rest on amendments `architecture.md` §17.1 proposed and
+`non_functional_requirements.md` C-3 has **not ratified** — the register still reads RO/EN
+(FR-63, NFR-23) and WCAG 2.1 AA (NFR-75). They are followed here because the architecture
+argued them and nothing contradicts them, but they remain `design_spec.md` OQ-1 and
+`architecture.md` OQ-3 until the registers are amended. Treat this as the worked example of the
+rule above: this file recording a decision is not the same as the decision having been taken.
 
 ## Looking things up
 

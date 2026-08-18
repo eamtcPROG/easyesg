@@ -30,7 +30,7 @@ It is not a visual style guide, a page-by-page mockup set, or a component librar
 
 ### 1.4 Scope boundary
 
-MVP scope is the VSME Basic Module B1–B11, self-serve billing, and the locale set discussed in §9.1 (unresolved between sources).
+MVP scope is the VSME Basic Module B1–B11, self-serve billing, and three live locales — RO (source), EN, RU (§9.1, OQ-1, resolved 18 Aug 2026).
 
 Deliberately not designed for MVP: per-user density switching; user-configurable dashboards; in-product chat support; report collaboration with simultaneous multi-user editing and presence; commenting and review workflow on disclosures; notification assignment and escalation chains; right-to-left support for a fourth locale; native mobile applications; Comprehensive Module screens beyond the Basic Module; XBRL viewer surfaces (Phase 2); advisor and buyer portal surfaces (Phase 2 relationship types).
 
@@ -131,7 +131,7 @@ Four named breakpoints, defined by capability rather than device. Values live in
 
 ### 3.4 Language context
 
-Interface language, export language and email language are selected independently (UC-14, UC-48; source cites FR-169). Russian VSME labels are platform-authored and carry no official EFRAG standing; the interface says so at the point of export selection, not in a help centre. The number of live locales is an unresolved conflict between sources — see §9.1 and OQ-1.
+Interface language, export language and email language are selected independently (UC-14, UC-48; source cites FR-169). Russian VSME labels are platform-authored and carry no official EFRAG standing; the interface says so at the point of export selection, not in a help centre. Three locales are live at MVP — Romanian as source, English and Russian each separately authored — resolved 18 Aug 2026; see §9.1 and OQ-1.
 
 ---
 
@@ -258,9 +258,9 @@ Three use cases are served by global-tier elements and inline patterns rather th
 
 `SYS` use cases have no screen of their own and terminate in a destination named under UX-61.
 
-**UX-7** No screen shall exist that is not traceable to at least one use case, and no use case with a human actor shall be without a screen or a named global-tier pattern. The inventory in §4.4 is the coverage contract.
+**UX-7** No screen shall exist that is not traceable to at least one use case, and no use case with a human actor shall be without a screen, a named global-tier pattern or a **named exemption below**. **Amended 18 Aug 2026 (OQ-5) — two exemption classes, each exhaustively enumerated.** *Pattern-discharged:* **UC-35** (autosave in-progress report data) and **UC-36** (resume an in-progress report draft), both discharged by the draft-integrity pattern inside S-07 (UX-34 … UX-39) — they are continuous behaviours of a screen, not destinations, and inventing inventory entries for them would make the inventory describe things that are not screens. *Inactive at MVP:* **UC-122** (pay through the merchant-of-record checkout), registered as an adapter and inactive per D-8 and FR-114; it gains a screen when the rail is activated, not before. Any addition to either list is an amendment to this rule, not a note. The inventory in §4.4 remains the coverage contract.
 
-> Note: UC-16 appears both in the S-05 *Serves* column and in the no-dedicated-screen list above. Both statements are reproduced as written; see OQ-6.
+> **Resolved 18 Aug 2026 (OQ-6) — UC-16 is split by behaviour, not assigned twice.** UC-16 is *View memberships **and** switch active organization*, which is two behaviours in one use case. **S-05 owns "view memberships"** — the list of organizations the user belongs to is screen content. **The global-tier switcher owns "switch active organization"** — changing session scope is a persistent global action available from every screen, not a behaviour of any one of them. A coverage audit counts UC-16 once, against both owners, with no double count.
 
 ### 4.6 Page archetypes
 
@@ -280,7 +280,7 @@ Nine templates. Every screen is an instance of one; a screen that fits none is a
 
 **UX-8** Each archetype shall define every state in §8.1 before any instance of it is designed.
 
-Two archetype labels appear in the inventory that are not in this table of nine: *Wizard sub-flow* (S-09) and *Comparison* (S-18). They are treated here as instances of **Wizard** and **Index/Status** composition respectively; the source does not define them separately (OQ-7).
+**Resolved 18 Aug 2026 (OQ-7).** Two labels in the inventory are not among the nine: *Wizard sub-flow* (S-09) and *Comparison* (S-18). They are **compositions, not archetypes** — S-09 composes **Wizard**, S-18 composes **Index/Status** — and the rule is now stated rather than implied: **a composition inherits the complete state set of its base archetype and defines no states of its own.** That satisfies UX-8, which requires every archetype to define every state before an instance is designed: a composition has a full state definition, inherited. Adding two more archetypes was rejected — it would put two names on one state set, which is what OQ-4's validation-state finding shows going wrong elsewhere.
 
 ---
 
@@ -1066,16 +1066,20 @@ This anatomy is the source's only screen-level layout diagram. The field-level c
 
 Eight terminal states. They are a design vocabulary, not merely a data enum.
 
-| State | Meaning to the user | Field treatment | Counts as resolved? |
-|---|---|---|---|
-| `ok` | Answered and coherent | Neutral, no marker | Yes |
-| `missing` | Required and unanswered | Attention marker, non-alarming | No |
-| `inconsistency` | Conflicts with another value | Warning, with a link to the conflicting field | No |
-| `error` | Violates a rule outright | Error, blocking within the field | No |
-| `invalid_url` | Reference does not resolve | Error, with the failing URL shown | No |
-| `not_available` | Declared unavailable with reason | Distinct marker, reason shown inline | Yes — reasoned |
-| `not_material` | Section declared immaterial with rationale | Section-level, collapses the module body | Yes — reasoned |
-| `nil_return` | Affirmatively zero | Neutral, labelled as an affirmative zero | Yes |
+Marks and colour roles below are from the delivered visual layer (18 Aug 2026, §11.3). **Every state carries a mark, a text label and a colour role** — remove the colour and the state still reads, which is what makes the monochrome print layer possible and what UX-23 requires.
+
+| State | Mark | Meaning to the user | Field treatment | Colour role | Counts as resolved? |
+|---|---|---|---|---|---|
+| `ok` | ✓ | Answered and coherent | Neutral, no marker in the field itself | `state.ok` | Yes |
+| `missing` | ! | Required and unanswered | Attention marker, non-alarming — nothing is wrong yet | `state.attention` | No |
+| `inconsistency` | ≠ | Conflicts with another value | Warning, with a link to the conflicting field | `state.warning` | No |
+| `error` | × | Violates a rule outright | Error, blocking within the field | `state.error` | No |
+| `invalid_url` | × | Reference does not resolve | Error role, failing URL shown verbatim | `state.error` | No |
+| `not_available` | — | Declared unavailable with reason | Reasoned marker, reason shown inline | `state.reasoned` | Yes — reasoned |
+| `not_material` | ⊘ | Section declared immaterial with rationale | Section-level; collapses the module body, keeps the rationale visible | `state.reasoned` | Yes — reasoned |
+| `nil_return` | 0 | Affirmatively zero | Neutral, labelled as an affirmative zero — **never an empty box** | `state.neutral` | Yes |
+
+Eight design states, **six colour roles** — `error` and `invalid_url` share one, `not_available` and `not_material` share another. That is deliberate: colour carries severity, the mark and label carry identity.
 
 **UX-20** Validation state shall be shown inline at the point of entry *and* rolled up per module and per report (UC-37, UC-38). Neither presentation replaces the other.
 
@@ -1087,9 +1091,19 @@ Eight terminal states. They are a design vocabulary, not merely a data enum.
 
 **UX-24** Validation shall be runnable at any completeness and shall be idempotent (UC-40). The interface shall present it as a working tool, not a pre-export gate — the primary control is *check my report*, not *submit*.
 
-**UX-25** Export shall be permitted with unresolved findings after an explicit warning listing what is unresolved, and the gaps shall appear visibly marked in the produced document (UC-42; source cites §15.4, see OQ-8).
+**UX-25** Export shall be permitted with unresolved findings after an explicit warning listing what is unresolved, and the gaps shall appear visibly marked in the produced document (UC-42, FR-44, BR-VAL-4 — corrected 18 Aug 2026 from the source's unresolvable "§15.4", OQ-8).
 
-> **Vocabulary note.** The use case register and the FR register name five machine states in upper case — `OK`, `MISSING VALUE`, `VALUE INCONSISTENCY`, `ERROR`, `INVALID URL` — plus the declared-not-available state (UC-37, FR-40). The design vocabulary above is an eight-state superset in lower snake case. The two are reconcilable (`missing` ↔ `MISSING VALUE`, `inconsistency` ↔ `VALUE INCONSISTENCY`, and the three reasoned states elaborate what the registers treat as one declared state), and both spellings are reproduced here rather than harmonised silently. See OQ-4.
+> **Vocabulary note — resolved 18 Aug 2026 (OQ-4). The machine states are canonical.** UC-37 and FR-40's enum is the contract: it is the API value, the stored value and the name used in `packages/contracts`, normalised to `SCREAMING_SNAKE_CASE` on the wire. The eight design states above remain the design vocabulary and become presentation labels derived from it, with the mapping declared once in `packages/contracts` and nowhere else.
+>
+> Reconciling the two exposed that the eight-state list is not a superset of six — it **conflates three different axes**, and separating them is the substance of this decision:
+>
+> | Design state | Canonical home |
+> |---|---|
+> | `ok` · `missing` · `inconsistency` · `error` · `invalid_url` · `not_available` | `ValidationState` — `OK`, `MISSING_VALUE`, `VALUE_INCONSISTENCY`, `ERROR`, `INVALID_URL`, `NOT_AVAILABLE`. Six field-level validation outcomes (UC-37, FR-40) |
+> | `not_material` | **Not a field validation state.** Section-level materiality (FR-41, UX-21), which the roll-up discounts. Its own enum, on the module, not the field |
+> | `nil_return` | **Not a validation state.** An affirmative zero is a property of the *answer*, not of its validation — a field carrying `nil_return` is `OK`. Belongs to answer semantics (UX-119's zero-versus-gap distinction) |
+>
+> The practical consequence is that a field can be `OK` *and* an affirmative zero *inside* a module declared immaterial, which the flat eight-state enum could not express — it forced one of the three to win. §6.4's table stands as the design's presentation contract; §10's requirement that each state carry an icon, a label and a colour role applies to all eight as displayed, across all three axes.
 
 ### 6.5 Not material, not applicable, not available
 
@@ -1320,9 +1334,9 @@ The NFR budgets are design constraints, not backend-only concerns.
 
 ## 9. Localization and content design
 
-### 9.1 Locales supported — unresolved conflict between sources
+### 9.1 Locales supported — resolved 18 August 2026
 
-The sources do not agree on how many locales are live at MVP, and this document does not resolve the conflict by choosing.
+The sources did not agree on how many locales are live at MVP. **Settled by the requirements owner: three — Romanian as source, English and Russian, each separately authored.** Ratified into NFR-23 and FR-63; the table below is the record of the disagreement and what each source said before it was closed.
 
 | Source | Statement |
 |---|---|
@@ -1331,7 +1345,9 @@ The sources do not agree on how many locales are live at MVP, and this document 
 | *Functional Requirements (MVP)*, FR-63 | "…with Romanian and English live at MVP and no architectural limit to two" |
 | *Use Case Register (MVP)*, UC-73 | Registering an additional locale is described as adding one "beyond Romanian and English" — a PA configuration task, not a development task |
 
-Both readings are internally coherent: RO/EN is the requirement baseline and Russian is either an admitted third locale or a locale registered through UC-73 after MVP. The design consequences differ materially — the Russian caveat pattern (UX-47, UX-98), the Cyrillic typeface obligation (UX-84), and the +40 % expansion budget all assume Russian is live. **This is logged as OQ-1 and must be settled by the requirements owner, not by design.**
+Both readings were internally coherent: RO/EN as the requirement baseline, with Russian either an admitted third locale or one registered through UC-73 after MVP. The decision takes the interface specification's reading, so **all three design consequences are in MVP scope**: the Russian caveat pattern (UX-47, UX-98) ships, Cyrillic typeface coverage (UX-84) is an MVP procurement constraint, and the +40 % expansion budget is measured across three locales. NFR-23 and FR-63 are amended accordingly; UC-73 continues to govern any *fourth* locale.
+
+**The caveat pattern is factually confirmed, not merely assumed.** Russian is not an EU language and is not in EFRAG's official template or taxonomy label set — EFRAG's multi-language releases cover EU languages only. So Russian VSME labels are platform-authored with no EFRAG standing, NFR-24's official-label obligation applies to RO/EN alone, and UX-47's statement at the point of export selection is a correct disclosure rather than a defensive one. See OQ-1, closed.
 
 ### 9.2 Translatable content model
 
@@ -1421,11 +1437,15 @@ This exceeds the WCAG 2.1 baseline of the Moldovan Unified Design Model (§11.7)
 
 ## 11. Visual design system references
 
-> **Statement of what the source does and does not specify.** The primary source states explicitly that "pixel values, brand colour values and font families are deliberately absent — they are supplied by the visual identity layer and swapped without touching this document". Accordingly this section reproduces the *structure* the source defines — a three-tier token architecture, a colour-role list, a typographic role scale, spacing/elevation/icon/motion rules, breakpoint names, density modes, a 12-column grid, a reading measure, and a component inventory — and specifies **no** hex values, **no** typeface names, **no** font sizes, **no** spacing values, **no** radii, **no** shadow values, **no** motion durations and **no** breakpoint pixel values other than the `wide` entry threshold of 1024 px. Those are open items, logged as OQ-2.
+> **The visual identity layer was delivered on 18 August 2026 and this section now carries values.** The original source deliberately omitted them — "pixel values, brand colour values and font families are deliberately absent — they are supplied by the visual identity layer and swapped without touching this document" — and §11 accordingly specified only structure. That layer now exists.
+>
+> **`design/tokens.css` is the single source of truth for every value below.** It is authored against the three-tier architecture UX-78 already required, and it graduates to `packages/ui/src/styles/tokens.css` when that package is scaffolded — moved, not copied, because two token files is how a design system dies. The rendered reference is `design/screens/` (fourteen hi-fi prototypes); `design/HANDOFF.md` is the as-delivered record and is **superseded by this section** — where the two differ, §11 governs, and the handoff is provenance.
+>
+> Values below are reproduced from the token set rather than restated independently, so a change is made in `tokens.css` and reflected here, never the reverse. Two values remain unspecified — UX-73's gutter step and maximum content width — and OQ-2 is narrowed to those alone.
 
 ### 11.1 Layout grid and measure
 
-**UX-73** Layout shall be defined by a **12-column fluid grid** with a fixed gutter step and a maximum content width. Column counts, not pixel widths, are the unit of layout description in any design artefact. (The gutter step and the maximum content width are named as required but not valued — OQ-2.)
+**UX-73** Layout shall be defined by a **12-column fluid grid** with a fixed gutter step and a maximum content width. Column counts, not pixel widths, are the unit of layout description in any design artefact. Design frames are **1440 · 834 · 390**, and every screen in `design/screens/` is drawn at all three. (**The gutter step and the maximum content width remain unvalued** — the delivered set uses per-context container widths rather than one global maximum. This is the whole of the narrowed OQ-2 and must be settled before `packages/ui` fixes a layout primitive.)
 
 **UX-74** Body text and help text shall be constrained to a comfortable reading measure (approximately 60–75 characters). Narrative disclosure inputs shall match that measure — a full-width textarea produces unreadable text and worse writing.
 
@@ -1434,22 +1454,61 @@ This exceeds the WCAG 2.1 baseline of the Moldovan Unified Design Model (§11.7)
 **UX-78** All visual values shall be expressed as tokens in three tiers, and no component shall reference a tier-1 token directly.
 
 ```
-Tier 1  primitive     colour.blue.600 · space.4 · size.font.3 · radius.2
-   ↓    (raw values — the only place a literal exists)
-Tier 2  semantic      surface.default · text.muted · border.focus
-   ↓    state.attention · state.warning · state.error · state.reasoned
-Tier 3  component     field.border.rest · field.border.invalid · wizard.step.complete
+Tier 1  primitive     --pine-600 · --slate-100 · --space-4 · --radius-2 · --motion-quick
+   ↓    (raw literals — the only place a literal exists; tier 2 may read it, nothing else)
+Tier 2  semantic      --surface-default · --text-muted · --border-focus · --accent
+   ↓    --state-ok · --state-attention · --state-warning · --state-error
+   ↓    --state-reasoned · --state-neutral · --state-pending
+Tier 3  component     --field-border-rest · --field-border-invalid · --field-border-missing
+        --field-surface-reasoned · --wizard-step-complete · --savestate-queued
 ```
 
-The token names above are the source's illustrative examples of the naming *shape*; they are not an authored token set and carry no values.
+**These are the authored token names, not examples.** A component reading a tier-1 variable is a defect, catchable in review and in CI by grepping component sources for `--pine-`, `--slate-`, `--space-`, `--radius-` and the raw hue names.
 
-**UX-79** Swapping the entire visual identity shall require editing tier 1 only. This is the operational meaning of "framework-agnostic" and shall be verified by producing a second, deliberately different theme before launch.
+**UX-79** Swapping the entire visual identity shall require editing tier 1 only — and tier 3 only where a component maps to a different role. Components never change. This is the operational meaning of "framework-agnostic" and shall be verified by producing a second, deliberately different theme before launch; the MUD-approximating theme of §11.7 is that verification.
 
-**UX-80** Every semantic token shall be defined for both light and dark schemes and shall satisfy §10.2 contrast in both. Dark scheme support is a token obligation from the start, whether or not the toggle ships at MVP.
+**UX-80** Every semantic token shall be defined for both light and dark schemes and shall satisfy §10.2 contrast in both. Dark scheme support is a token obligation from the start, whether or not the toggle ships at MVP — retrofitting it after twenty screens is the expensive path.
+
+**UX-80a** Focus shall be a **two-layer ring** — `0 0 0 2px var(--border-focus), 0 0 0 4px var(--border-focus-halo)` — applied globally to `:focus-visible` on every interactive element. **No component may remove an outline without replacing it.** Two layers rather than one because a single ring is illegible on either `--surface-default` or `--surface-sunken` depending on its colour; two are legible on both.
 
 ### 11.3 Colour roles
 
-Colour is specified by role, never by hue. No hue, hex or named colour is specified anywhere in the source.
+Colour is specified by role, never by hue — application code names the role, never the hue. The ramps below are tier 1 and exist so tier 2 can point at them.
+
+**Accent — pine, exactly one.** `#2E6A4F` (`--pine-600`). Primary action and active state only, **never a validation state**, so an accent button is never mistaken for a success marker.
+
+Pine: `50 #EDF5F0` · `100 #D6E8DE` · `200 #ADD1BE` · `300 #7CB49A` · `400 #4E8F72` · `500 #3A7A5C` · **`600 #2E6A4F`** · `700 #245540` · `800 #1B4031` · `900 #132C22`
+
+**Neutral — slate, cool, chroma under 0.02.** Carries roughly 90% of every screen.
+`0 #FFFFFF` · `25 #FAFBFC` · `50 #F4F6F8` · `100 #E8ECF0` · `200 #D5DBE2` · `300 #B4BDC7` · `400 #8B96A3` · `500 #67737F` · `700 #3A434C` · `900 #161B20`
+
+**State hues — one text-safe step and one tint each, no ramps.** Deliberate: there is no room to improvise a shade.
+
+| Role | Hue | Text-safe | Tint |
+|---|---|---|---|
+| Attention | amber | `#9A6510` | `#FDF4E3` |
+| Warning | rust | `#B4501A` | `#FDF0E8` |
+| Error | crimson | `#B32318` | `#FDEDEB` |
+| Reasoned | iris | `#5A4FA3` | `#F0EFF9` |
+| Pending | azure | `#0E6FA8` | `#E9F3FA` |
+
+**Iris for `reasoned` is load-bearing, not decorative.** A declared gap is neither an answer nor an omission: green reads as complete, amber as outstanding. A hue from neither family is the only honest option, and it leaves the accent free for actions. This is UX-81 given a value.
+
+Steps at 600 and above pass 4.5:1 on `surface.default`; 300 and below are surfaces and tints only.
+
+**Semantic roles, with measured contrast:**
+
+| Token | Source | Applied to | Contrast |
+|---|---|---|---|
+| `--surface-default` | slate.0 | Card, field, panel — the reading plane | — |
+| `--surface-sunken` | slate.50 | Page ground, well, read-only field | — |
+| `--text-default` | slate.900 | Labels, values, headings | 16.4:1 |
+| `--text-body` | slate.700 | Help text, prose, message bodies | 10.3:1 |
+| `--text-muted` | slate.500 | Captions, units, metadata — never sole carrier | 5.1:1 |
+| `--border-default` | slate.200 | Card edge, divider, table rule | 1.4:1 |
+| `--border-strong` | slate.400 | Input at rest — a field must look enterable | 3.1:1 |
+| `--border-focus` | pine.600 + pine.200 | Two-layer ring, legible on every surface | 5.9:1 |
+| `--accent` | pine.600 | Primary action, active nav | 5.9:1 |
 
 | Role | Applied to |
 |---|---|
@@ -1476,7 +1535,18 @@ Breakpoint names and capabilities are in §3.3.
 
 ### 11.5 Component inventory
 
-The contract a component library must satisfy. Each entry requires every applicable state from §8.1.
+The contract a component library must satisfy. Each entry requires every applicable state from §8.1. **Every specimen is rendered in every variant and state in `design/screens/EasyESG Components.dc.html`**, which is the reference for anything ambiguous below.
+
+Four additions the delivered set makes to this inventory, each recorded because it is a decision rather than a detail:
+
+- **Buttons are four variants and there is no fifth** — primary, secondary, ghost, destructive. Minimum target 24×24 everywhere, and 40 px height on anything a first-time user must hit (WCAG 2.2 Target Size, NFR-75).
+- **A field at rest uses `--border-strong`, not `--border-default`** — a field must look enterable. This is the single most repeated mistake in enterprise form design and it is a token-level decision, not a per-component one.
+- **Nothing in Feedback ships with fewer than three parts** — what happened, so what, and what now. Toasts confirm the *user's own* action; anything the *system* decided gets an inline message or banner.
+- **The reporting-period picker is its own component**, separate from the date picker: reporting periods are the one place where a wrong date is expensive and invisible.
+
+**Domain components** exist in no library and each owns its own state machine: **disclosure field** (the most-repeated component in the product — label, help text, input, unit, state marker, reason capture, prior-period value, carry-forward action, change-history entry point) · **module card** · **wizard shell** · **validation panel** · **completeness meter**, which reports resolved / reasoned / outstanding and **never a single percentage** · **carbon calculator row** (invoice quantity in the user's own unit → derived tonnes CO₂e, factor set, override).
+
+**Five system states** the inventory must carry beyond the disclosure states of §6.4: loading, partial, pending, offline, success. No loading affordance appears below 300 ms; skeletons match the final layout; spinners are only for indeterminate waits with no known shape.
 
 **Primitives** — Button (primary · secondary · subtle · destructive) · Link · Icon · Badge · Tag · Avatar · Divider · Skeleton · Spinner · Progress · Tooltip · Popover.
 
@@ -1511,21 +1581,38 @@ The contract a component library must satisfy. Each entry requires every applica
 
 ### 11.6 Typography, space, shape, elevation, iconography, motion
 
-**UX-82** Type shall be specified as a **role scale**, not a font list: `display` · `heading.1–3` · `body` · `body.strong` · `caption` · `label` · `numeric` · `code`. Any typeface satisfying §9.5 and §10 may be substituted.
+**UX-82** Type shall be specified as a **role scale**, not a font list. Any typeface satisfying §9.5, §10 and UX-84 may be substituted. The delivered families are **Onest** (weights 400/500/600/700) for text and **IBM Plex Mono** (400/500) for identifiers, token names, payment references and code, both self-hosted.
+
+| Role | Spec |
+|---|---|
+| `display` | Onest 600 · 40/44 · −0.02em |
+| `heading.1` | Onest 600 · 28/34 |
+| `heading.2` | Onest 600 · 21/26 |
+| `heading.3` | Onest 600 · 17/22 |
+| `body` | Onest 400 · 15/24 · max 68ch |
+| `body.strong` | Onest 600 · 15/24 |
+| `label` | Onest 600 · 14/20 |
+| `caption` | Onest 400 · 13/19 |
+| `numeric` | Onest 500 · 19/26 · **tabular lining figures** |
+| `code` | IBM Plex Mono 400 · 14/22 |
 
 **UX-83** A **tabular-lining numeric** treatment shall be used for every quantity, figure, money amount and identifier, so that columns align and digits do not shift between states.
 
-**UX-84** The typeface shall carry complete Romanian diacritics (ș, ț with comma-below, ă, â, î) and full Cyrillic coverage. A typeface failing either is disqualified regardless of appearance.
+**UX-84** The typeface shall carry complete Romanian diacritics (ș, ț with **comma-below**, not the Turkish cedilla forms, plus ă, â, î) and **full Cyrillic** coverage. A typeface substituting cedillas is disqualified regardless of appearance — Romanian readers see it immediately. **Now unconditional**: the locale question it was contingent on is closed at three live locales (§9.1, OQ-1). The realistic failure is not typeface choice but **font subsetting silently dropping Cyrillic**, which passes English review unnoticed; the self-hosted subsets are verified for both scripts at Phase 0, not at the end.
 
-**UX-85** Spacing shall derive from a single geometric scale; arbitrary values are prohibited.
+**UX-85** Spacing shall derive from a single 4px-based scale; **arbitrary values are prohibited**.
 
-**UX-86** Elevation shall carry meaning — layering and transience — not decoration. Maximum three levels.
+`--space-1 2` · `--space-2 4` · `--space-3 8` · `--space-4 12` · `--space-5 16` · `--space-6 24` · `--space-7 32` · `--space-8 48` · `--space-9 64` · `--space-10 96`
+
+The two densities of §11.4 come from this one scale, differing only in which steps they choose — **comfortable** is the tenant default, **compact** belongs to the admin queues. Radius: `--radius-1 3px` inputs, chips, markers · `--radius-2 6px` cards and panels · `--radius-3 10px` dialogues · `--radius-pill` status chips only. **Nothing is rounder than a dialogue.**
+
+**UX-86** Elevation shall carry meaning — **transience, not importance** — and never decoration. Exactly three levels: `--elevation-0` flat, for content, so **a card does not float**; `--elevation-1` `0 1px 2px rgba(22,27,32,.06), 0 2px 6px rgba(22,27,32,.05)` for popover and sticky bar; `--elevation-2` `0 4px 12px rgba(22,27,32,.10), 0 12px 32px rgba(22,27,32,.10)` for dialogues and re-authentication.
 
 **UX-87** Icons shall be a single coherent set, shall never appear without an accessible name, and shall never be the sole carrier of meaning for state or action.
 
-**UX-88** Motion shall be functional only: state transitions, entry and exit of transient surfaces, and progress. Durations come from tokens; every motion shall honour reduced-motion preferences; nothing essential shall be conveyed by animation alone.
+**UX-88** Motion shall be functional only: state transitions, entry and exit of transient surfaces, and progress. Nothing essential shall be conveyed by animation alone, and `prefers-reduced-motion` drops every motion to an instant state change. Four durations and **one curve**, which are the only permitted values: `--motion-instant 80ms` hover, focus, checkbox · `--motion-quick 160ms` toast, tooltip, inline message · `--motion-panel 240ms` validation panel, dialogue, applicability change · `--motion-ease cubic-bezier(.2, 0, .2, 1)` — no bounce, no overshoot.
 
-No typeface name, no size scale value, no spacing value, no radius, no elevation value and no motion duration is specified in the source (OQ-2). The Cyrillic-coverage obligation in UX-84 is contingent on the locale question in §9.1 (OQ-1).
+**All values above are reproduced from `design/tokens.css`, which is authoritative.** UX-87's icon set is the one remaining placeholder — the prototypes use text glyphs (`✓ ! ≠ × — ⊘ 0`) where a real set belongs; pick one coherent set at 20 px and 24 px on a 24 px box, each with an accessible name, none the sole carrier of state or action. Illustration and photography are likewise placeholders and nothing in the set depends on imagery.
 
 ### 11.7 National baseline — the Unified Design Model (MUD)
 
@@ -1674,15 +1761,15 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 
 ### 13.2 Design rule group ↔ requirements discharged
 
-Reproduced verbatim from the source specification's traceability table, including its own ordering. Apparent mis-citations in the FR ranges are noted in §13.3 rather than corrected here.
+Reproduced from the source specification's traceability table, including its own ordering. **Four FR ranges were corrected on 18 Aug 2026 against the FR register (OQ-9); the source's own values are shown struck through.** Remaining observations are noted in §13.3 rather than corrected here.
 
 | Design area | Rules | Discharges |
 |---|---|---|
-| Surfaces and IA | UX-1 … UX-8 | UC-16, UC-67, FR-56 … 60, NFR-16 |
+| Surfaces and IA | UX-1 … UX-8 | UC-16, UC-67, ~~FR-56 … 60~~ → **FR-12, FR-23, FR-75**, NFR-16 |
 | Report wizard | UX-9 … UX-13 | UC-17 … 31, NFR-8, NFR-76 |
-| Disclosure field | UX-14 … UX-19 | UC-19 … 31, FR-13 … 40, NFR-78 |
-| Validation | UX-20 … UX-25 | UC-37 … 40, FR-41 … 45 |
-| Applicability | UX-26 … UX-30 | UC-26, 28, 30, 81, FR-46 |
+| Disclosure field | UX-14 … UX-19 | UC-19 … 31, ~~FR-13 … 40~~ → **FR-24 … FR-32**, NFR-78 |
+| Validation | UX-20 … UX-25 | UC-37 … 40, ~~FR-41 … 45~~ → **FR-40 … FR-44** |
+| Applicability | UX-26 … UX-30 | UC-26, 28, 30, 81, ~~FR-46~~ → **FR-28** |
 | Comparatives | UX-31 … UX-33 | UC-45, 46 |
 | Draft integrity | UX-34 … UX-39 | UC-06, 07, 35, 36, NFR-40 |
 | Calculator | UX-40 … UX-44 | UC-32 … 34, FR-33 … 36 |
@@ -1706,16 +1793,16 @@ Reproduced verbatim from the source specification's traceability table, includin
 
 ### 13.3 Coverage observations
 
-All identifiers cited in this document fall inside `UC-01` … `UC-176`, `FR-1` … `FR-173`, `NFR-1` … `NFR-105`, and the proposed `NFR-106` … `NFR-109` (architecture.md §17.3, pending ratification). The following are consistency observations against the source's own citations, carried forward as open questions rather than silently corrected:
+All identifiers cited in this document fall inside `UC-01` … `UC-176`, `FR-1` … `FR-173`, `NFR-1` … `NFR-105`, and `NFR-106` … `NFR-109` (ratified into `non_functional_requirements.md` §4.16, 18 Aug 2026). The following are consistency observations against the source's own citations, carried forward as open questions rather than silently corrected:
 
 | Observation | Detail | Logged as |
 |---|---|---|
 | Two RC use cases have no screen in the inventory | UC-35 (autosave in-progress report data) and UC-36 (resume an in-progress report draft) are RC use cases discharged by the draft-integrity pattern (§6.7) inside S-07, but neither appears in any *Serves* column. UX-7 requires every human-actor use case to have a screen or a named global-tier pattern; the pattern exists, the inventory entry does not | OQ-5 |
 | One OA use case has no screen | UC-122 (pay through the merchant-of-record checkout) is an OA use case, registered as an adapter and inactive at MVP (D-8, FR-114). No screen serves it, which is consistent with its inactivity but leaves UX-7 formally unmet | OQ-5 |
-| UC-16 is listed twice | It appears both in the S-05 *Serves* column and in the "served by global-tier elements" list (§4.5) | OQ-6 |
-| §13.2 FR ranges do not align with the FR register in four rows | *Surfaces and IA* cites FR-56 … 60, which are the users-and-access requirements rather than IA. *Disclosure field* cites FR-13 … 40, which begins at organization creation rather than at report authoring (FR-24). *Validation* cites FR-41 … 45, whereas validation is FR-40 … FR-44 and FR-45 is a comparatives requirement. *Applicability* cites FR-46, which is the prior-period display requirement, whereas applicability is FR-28 | OQ-9 |
-| Two archetype labels used in the inventory are not among the nine defined | *Wizard sub-flow* (S-09) and *Comparison* (S-18) | OQ-7 |
-| One internal cross-reference does not resolve | UX-25 and UX-122 cite "§15.4" of the source; the source's §15 has no numbered subsections | OQ-8 |
+| ~~UC-16 is listed twice~~ | **Resolved** — split by behaviour: S-05 owns *view memberships*, the global-tier switcher owns *switch active organization* | OQ-6, closed |
+| ~~§13.2 FR ranges do not align with the FR register in four rows~~ **Resolved — all four corrected in §13.2** | *Surfaces and IA* cites FR-56 … 60, which are the users-and-access requirements rather than IA. *Disclosure field* cites FR-13 … 40, which begins at organization creation rather than at report authoring (FR-24). *Validation* cites FR-41 … 45, whereas validation is FR-40 … FR-44 and FR-45 is a comparatives requirement. *Applicability* cites FR-46, which is the prior-period display requirement, whereas applicability is FR-28 | OQ-9 |
+| ~~Two archetype labels are not among the nine~~ | **Resolved** — *Wizard sub-flow* (S-09) and *Comparison* (S-18) are compositions inheriting their base's full state set | OQ-7, closed |
+| ~~One internal cross-reference does not resolve~~ | **Resolved** — UX-25 now cites UC-42, FR-44, BR-VAL-4; UX-122 stands on FR-50, FR-51, NFR-20 | OQ-8, closed |
 
 ### 13.4 Definition of done for a screen
 
@@ -1737,7 +1824,7 @@ A screen is complete when: every state in §8.1 is designed · every string is a
 
 **UX-128** This specification is versioned alongside the FR/NFR registers. A change to a `UX-n` rule is an amendment recorded with its rationale, not a silent edit.
 
-Artefacts this specification governs: token set (with a second, MUD-approximating theme per §11.7) · component library with documented states · **MUD mapping table (UX-130)** · page archetype templates · screen designs per §4.4 and §5 · content and glossary sets per locale · print stylesheet and document templates · email templates · accessibility conformance record · usability test report.
+Artefacts this specification governs, **with their delivered locations as of 18 Aug 2026**: token set — `design/tokens.css`, graduating to `packages/ui/src/styles/` at Phase 0 (a second, MUD-approximating theme per §11.7 is still outstanding) · screen designs — `design/screens/`, fourteen hi-fi prototypes covering every screen in the §4.4 inventory at 1440/834/390 · component library with documented states · **MUD mapping table (UX-130)** · page archetype templates · screen designs per §4.4 and §5 · content and glossary sets per locale · print stylesheet and document templates · email templates · accessibility conformance record · usability test report.
 
 ---
 
@@ -1745,17 +1832,17 @@ Artefacts this specification governs: token set (with a second, MUD-approximatin
 
 | ID | Question | Why it matters | Owner |
 |---|---|---|---|
-| OQ-1 | **How many locales are live at MVP — RO/EN or RO/EN/RU?** The interface specification states three live locales (Romanian source, English, Russian); UC-14 and FR-63 state Romanian and English, with UC-73 treating any further locale as a post-MVP registration task. **This conflict is unresolved and is not resolved here.** | Determines whether the Russian export caveat pattern (UX-47, UX-98) is MVP scope, whether full Cyrillic typeface coverage is an MVP procurement constraint (UX-84), and what the +40 % expansion budget is measured against | Requirements owner, not design. Also logged in `actors.md` OQ-9, and in `non_functional_requirements.md` C-3 as an unratified amendment |
-| OQ-2 | **No visual design tokens are specified anywhere in the source.** There are no hex or named colour values, no typeface names, no type size scale values, no spacing scale values, no radii, no elevation/shadow values, no motion durations, and no breakpoint pixel values other than the `wide` entry threshold of 1024 px. The gutter step and maximum content width required by UX-73 are named but not valued | Every `UX-n` rule in §11 is a contract that a token set must satisfy; until the token set exists, none of them can be verified. The second theme required by UX-79 also cannot be produced | Visual identity layer / design system owner |
+| OQ-1 | **Closed 18 Aug 2026 — three live locales: RO source, EN and RU separately authored.** Ratified into NFR-23 and FR-63 per `architecture.md` §17.1 / `non_functional_requirements.md` C-3. Russian is separately authored, never machine-translated. | Resolved, and all three dependencies are now in MVP scope: the Russian export caveat (UX-47, UX-98) ships, full Cyrillic typeface coverage is an MVP procurement constraint (UX-84), and the +40 % expansion budget is measured against Romanian as source across three locales. **Confirmed independently:** Russian is not an EU language and is not in EFRAG's official template or taxonomy label set, so the caveat pattern is factually correct as written — Russian VSME labels are platform-authored with no EFRAG standing, and NFR-24 applies to RO/EN only. | Requirements owner — decided. Also closed in `actors.md` OQ-9 and `non_functional_requirements.md` C-3 |
+| OQ-2 | **Narrowed 18 Aug 2026 — the visual identity layer was delivered and §11 now carries values.** `design/tokens.css` is the single source of truth: pine accent ramp, cool slate neutrals, five state hues with text-safe step and tint, the 4px space scale, four radii, three elevations, four motion durations and one curve, the Onest / IBM Plex Mono families and the ten type roles, and a two-layer focus ring. **What remains open is two values only: UX-73's gutter step and maximum content width** — the delivered set uses per-context container widths rather than one global maximum. | Every `UX-n` rule in §11 is now verifiable except UX-73's grid geometry, and the second theme UX-79 requires can be produced because tier 1 is swappable. The two remaining values must be settled before `packages/ui` fixes a layout primitive, or the first twenty screens will each invent their own. | Visual identity layer — delivered; grid geometry outstanding with the design-system owner |
 | OQ-3 | **AGE's written position on licensing MUD** for (a) a commercial deployment and (b) a public-sector deployment of this platform. Until it exists, UX-131 stands and MUD contributes convention only — no code, no asset, no token value | Determines whether the MUD-approximating second theme can ship, and what "MUD conformance" costs in a public-sector tender | Owned outside the design team |
-| OQ-4 | **Validation state vocabulary is spelled two ways.** The UC and FR registers name five upper-case machine states plus a declared-not-available state (UC-37, FR-40); this specification names eight lower snake-case design states (§6.4). They are reconcilable but not harmonised | A component contract, an API and a test suite cannot all be written against two spellings of the same enum | Requirements owner with design |
-| OQ-5 | **UC-35, UC-36 and UC-122 have no screen inventory entry.** UC-35 and UC-36 are discharged by the draft-integrity pattern within S-07; UC-122 is inactive at MVP | UX-7 declares the inventory the coverage contract. Either the inventory gains explicit entries or UX-7 gains an explicit exemption for pattern-discharged use cases | Design |
-| OQ-6 | **UC-16 is assigned twice** — to S-05 and to the global-tier switcher | Ambiguity about which surface owns the behaviour, and a double count in any coverage audit | Design |
-| OQ-7 | **Two archetype labels are undefined.** *Wizard sub-flow* (S-09) and *Comparison* (S-18) are used in the inventory but are not among the nine archetypes. This document treats them as compositions of Wizard and of Index/Status respectively | UX-8 requires each archetype to define every state before any instance is designed; an undefined archetype has no state definition to inherit | Design |
-| OQ-8 | **Broken internal cross-reference.** UX-25 and UX-122 cite "§15.4" of the source, which does not exist | Traceability from a normative rule to the obligation it depends on | Design |
-| OQ-9 | **Four FR ranges in the source traceability table do not match the FR register** (see §13.3) | The traceability table is the artefact a reviewer uses to check that a design discharges its requirements; a wrong range makes the check produce a false pass | Design, with the requirements owner |
-| OQ-10 | **No wireframes, per-screen layouts or column allocations exist.** The source contains exactly one layout diagram (the disclosure field anatomy, §6.2) and one flow diagram (§4.3). Screen-level layout in §5 is therefore expressed as archetype-inherited regions plus the regions the source names explicitly | The screen designs listed in §13.5 as governed artefacts do not yet exist; §5 is the brief for them, not a substitute | Design |
-| OQ-11 | **Notification non-functional properties are unspecified.** The FR register records that FR-160 … FR-173 have no NFR counterpart: delivery latency, retry bounds, email deliverability and retention of delivery records are open | The notification centre (S-26) and the email surface cannot be designed for a latency or retention behaviour that has not been stated | Requirements owner. Also logged in `use_cases.md` OQ-5, `functional_requirements.md` OQ-3, `non_functional_requirements.md` OQ-13 and `architecture.md` OQ-2; the four proposals now carry `NFR-106` … `NFR-109` |
+| OQ-4 | **Closed 18 Aug 2026 — the machine states (UC-37, FR-40) are canonical; the design states are presentation labels derived from them.** The mapping is declared once in `packages/contracts`. Reconciliation exposed that the eight design states span three axes, not one: six are field validation outcomes, `not_material` is section-level materiality (FR-41) and `nil_return` is answer semantics. See the resolved vocabulary note in §6.4. | Resolved. The component contract, the API and the test suite are written against one enum — `ValidationState` — and the two mis-filed states move to the axes that own them, which the flat list could not express simultaneously. | Requirements owner with design — decided |
+| OQ-5 | **Closed 18 Aug 2026 — UX-7 gains two exhaustively enumerated exemption classes**, rather than the inventory gaining invented entries. *Pattern-discharged:* UC-35 and UC-36, inside S-07's draft-integrity pattern. *Inactive at MVP:* UC-122, per D-8/FR-114. | Resolved. The question offered exactly this choice and the exemption is the right half: UC-35 and UC-36 are continuous behaviours of a screen rather than destinations, so an inventory entry for them would make the inventory describe things that are not screens — weakening the coverage contract UX-7 exists to hold. Both lists are closed sets; adding to either is an amendment to UX-7. | Design — decided |
+| OQ-6 | **Closed 18 Aug 2026 — split by behaviour, not assigned twice.** S-05 owns *view memberships* (screen content); the global-tier switcher owns *switch active organization* (a session-scope action available everywhere). | Resolved, and the double count is gone: a coverage audit counts UC-16 once, against two owners of two distinct behaviours. The apparent duplication was the use case's own name — "view memberships **and** switch active organization" — carrying two behaviours that genuinely live in different places. | Design — decided |
+| OQ-7 | **Closed 18 Aug 2026 — they are compositions, not archetypes**, and the inheritance rule is now stated: a composition inherits the complete state set of its base and defines none of its own. *Wizard sub-flow* (S-09) composes Wizard; *Comparison* (S-18) composes Index/Status. | Resolved. UX-8 is satisfied because a composition has a full state definition, inherited. Promoting them to archetypes ten and eleven was rejected: it would put two names on one state set, which is the same defect OQ-4 found in the validation vocabulary. | Design — decided |
+| OQ-8 | **Closed 18 Aug 2026 — the citation is corrected to the obligation it actually depends on.** UX-25 now cites **UC-42, FR-44 and BR-VAL-4** (export permitted with unresolved findings after explicit warning, gaps marked visibly). The source's "§15.4" was unresolvable — its §15 has no numbered subsections. | Resolved. Traceability from the normative rule to its obligation holds. UX-122's citation was checked in the same pass and needs no change — it stands on FR-50, FR-51 and NFR-20, which resolve. | Design — decided |
+| OQ-9 | **Closed 18 Aug 2026 — all four corrected in §13.2**, with the source's values struck through rather than deleted. *Surfaces and IA* ~~FR-56 … 60~~ → **FR-12, FR-23, FR-75** (the FRs UC-16 and UC-67 actually discharge, plus the administrative-surface split). *Disclosure field* ~~FR-13 … 40~~ → **FR-24 … FR-32**. *Validation* ~~FR-41 … 45~~ → **FR-40 … FR-44**. *Applicability* ~~FR-46~~ → **FR-28**. | Resolved. The traceability table is what a reviewer uses to check that a design discharges its requirements, and three of the four wrong ranges would have produced a **false pass** — citing requirements the design does not discharge while omitting the ones it does. Ranges verified against `architecture.md` §17.5's component-to-FR map. | Design, with the requirements owner — decided |
+| OQ-10 | **Closed 18 Aug 2026 — the screen designs exist.** `design/screens/` holds fourteen hi-fi prototypes covering the public site, identity, workspace, all eleven Basic modules and the nine Comprehensive ones, the calculator, organization admin, commerce, help centre, the 22-screen admin console and the exported document — each drawn at 1440 / 834 / 390. | Resolved. §5 is no longer a brief for artefacts that do not exist; the artefacts §13.5 declares governed are now delivered and version-controlled. Two standing caveats carried from the handoff: **icons are placeholders** (text glyphs stand in for a real set — UX-87) and **illustration and photography are placeholders**, with nothing in the set depending on imagery. The prototypes are inline-styled by an authoring constraint of their format; values are exact and are to be extracted through `packages/ui`, never copied as markup. | Design — delivered |
+| OQ-11 | **Closed 18 Aug 2026 — ratified as NFR-106 … NFR-109** into `non_functional_requirements.md` §4.16: dispatch p95 ≤ 60 s; exponential retry bounded at 24 h with suppression on first hard bounce; ≥ 99% accepted transactional-mail delivery, SPF/DKIM/DMARC-aligned; delivery records retained for organization life + 1 year. | Resolved. The notification centre (S-26) and the email surface now have a latency to design for (60 s p95 governs whether the centre needs optimistic display), and a retention behaviour to expose (organization life + 1 year, readable independently of the centre itself). | Requirements owner — decided. Also closed in `use_cases.md` OQ-5, `functional_requirements.md` OQ-3, `non_functional_requirements.md` OQ-13 and `architecture.md` OQ-2 |
 
 ---
 

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #E9EDF1; font-family: 'Onest', system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+  a { color: #245540; text-decoration: underline; text-underline-offset: 2px; }
+  a:hover { color: #2E6A4F; }
+  ::selection { background: #D6E8DE; }
+</style>
+</helmet>
+
+<div style="padding:64px 56px 96px;display:flex;flex-direction:column;gap:44px;align-items:flex-start">
+
+  <header style="max-width:78ch">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#67737F;margin-bottom:18px">EasyESG · Public legal pages · Desktop screens at 1440</div>
+    <h1 style="font-size:44px;line-height:1.08;font-weight:600;letter-spacing:-0.02em;color:#161B20;margin:0 0 16px">Terms, privacy and cookies</h1>
+    <p style="font-size:17px;line-height:1.55;color:#4E5964;margin:0;text-wrap:pretty">Three public documents on one shared layout: a tab strip that treats them as a set, a plain-language summary above the legal text, a contents column that stays put, and a sidebar for the things people actually came for — the contact address, the version history, the download. The fourth screen is the cookie choice itself: the banner, the preferences panel, and the compact version at 390.</p>
+  </header>
+
+  <div data-screen-label="01 Terms of service" style="display:flex;flex-direction:column;gap:10px">
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:baseline;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">01 · Terms</span><span style="font-size:14px;color:#3A434C">Read before signing up, and again when something goes wrong</span></div>
+    </sc-if>
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:13.5px;line-height:1.55;color:#67737F;margin:0;max-width:100ch">The two questions a first-time visitor has — does this file anything on my behalf, and what happens to my report if I stop paying — are answered in the summary panel, not in clause 6. Every version stays reachable; a material change is announced 30 days ahead and shown at sign-in.</p>
+    </sc-if>
+
+    <div style="width:1440px;display:flex;flex-direction:column;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#F4F6F8;box-shadow:0 2px 14px rgba(22,27,32,0.06)">
+
+      <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="flex:1 1 0;display:flex;align-items:center;gap:10px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span>
+          <span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:32px">
+          <span style="font-size:14.5px;color:#D6E8DE">How it works</span>
+          <span style="font-size:14.5px;color:#D6E8DE">The questions</span>
+          <span style="font-size:14.5px;color:#D6E8DE">Plans</span>
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+        </div>
+        <div style="flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;gap:20px">
+          <span style="font-size:14.5px;font-weight:500;color:#FFFFFF">Sign in</span>
+          <span style="display:inline-flex;align-items:center;height:40px;border-radius:3px;background:#FFFFFF;color:#1B4031;padding:0 18px;font-size:14.5px;font-weight:600">Create an account</span>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border-bottom:1px solid #D5DBE2;padding:40px 56px 0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;margin-bottom:26px">
+          <div style="max-width:60ch">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Legal</div>
+            <h1 style="font-size:36px;line-height:1.1;font-weight:600;letter-spacing:-0.022em;color:#161B20;margin:0 0 10px">Terms of service</h1>
+            <p style="font-size:16px;line-height:1.55;color:#4E5964;margin:0">The agreement between your company and EasyESG SRL for using this service to prepare a sustainability report.</p>
+          </div>
+          <div style="flex-shrink:0;display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">In force since</span>
+              <span style="font-size:14.5px;font-weight:500;color:#161B20;font-variant-numeric:tabular-nums">1 March 2026 · version 3.1</span>
+            </div>
+            <span style="font-size:12.5px;color:#67737F">Romanian is the binding version</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:stretch;gap:30px">
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;font-weight:600;color:#161B20;border-bottom:2px solid #2E6A4F">Terms of service</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Privacy notice</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Cookies</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Data processing agreement</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Sub-processors</span>
+        </div>
+      </div>
+
+      <div style="padding:36px 56px 52px;display:flex;gap:28px;align-items:flex-start">
+
+        <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:9px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:2px">On this page</div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid #2E6A4F;background:#EDF5F0"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#245540">1</span><span style="font-size:13.5px;font-weight:500;color:#161B20;line-height:1.4">Who we are</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">2</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">What the service does, and what it does not do</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">3</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Your account and the people you invite</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">4</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Your report content stays yours</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">5</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Plans, payment and invoices</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">6</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">If you stop paying or leave</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">7</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Availability and support</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">8</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">What we are responsible for</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">9</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Changes to these terms</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">10</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Law and disputes</span></div>
+          <div style="margin-top:14px;padding:12px 14px;border:1px solid #D5DBE2;border-radius:5px;background:#FFFFFF">
+            <div style="font-size:13px;line-height:1.5;color:#3A434C;margin-bottom:8px">Reading time about 9 minutes. Nothing here is written to be skipped.</div>
+            <span style="font-size:13px;color:#245540;text-decoration:underline;text-underline-offset:2px">Download as PDF (168 KB)</span>
+          </div>
+        </div>
+
+        <div style="width:784px;flex-shrink:0;display:flex;flex-direction:column;gap:20px">
+
+          <sc-if value="{{ showInShort }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#EDF5F0;border:1px solid #ADD1BE;border-radius:6px;padding:22px 26px 24px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#245540;margin-bottom:12px">In short — not a substitute for the text below</div>
+              <div style="display:flex;flex-direction:column;gap:11px">
+                <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#2E6A4F;flex-shrink:0;margin-top:8px"></span><div style="font-size:15px;line-height:1.55;color:#193B2D">We give you the questions, the calculations and the document. We do not file anything with any authority, and we do not audit or approve what you write.</div></div>
+                <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#2E6A4F;flex-shrink:0;margin-top:8px"></span><div style="font-size:15px;line-height:1.55;color:#193B2D">What you type stays yours. You can export it at any time, and we do not use it to train anything or show it to anyone you have not named.</div></div>
+                <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#2E6A4F;flex-shrink:0;margin-top:8px"></span><div style="font-size:15px;line-height:1.55;color:#193B2D">If you stop paying, your reports become read-only rather than deleted, and documents you already generated stay downloadable for twelve months.</div></div>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:34px 40px 38px">
+
+            <div>
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">1</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Who we are</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">EasyESG SRL, registered in the Republic of Moldova under IDNO 1026600041873, with its office at str. Alexandru cel Bun 51, office 4, Chișinău MD-2012. In these terms “we” and “EasyESG” mean that company; “you” means the company or other organisation whose report is being prepared in the account.</p>
+              <div style="display:flex;flex-wrap:wrap;gap:26px;padding:14px 18px;border:1px solid #E8ECF0;border-radius:5px;background:#FAFBFC">
+                <div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Legal notices</span><span style="font-size:14px;color:#245540">legal@easyesg.md</span></div>
+                <div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Support</span><span style="font-size:14px;color:#245540">ajutor@easyesg.md</span></div>
+                <div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">VAT code</span><span style="font-size:14px;color:#161B20;font-variant-numeric:tabular-nums">0310417</span></div>
+              </div>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">2</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">What the service does, and what it does not do</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 12px;max-width:70ch">EasyESG asks you the disclosures of the VSME voluntary standard as ordinary questions, calculates what can be calculated from your answers, and produces a report you can send to a bank, a buyer or a tender committee. The service is software. It does not include advice.</p>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">We are not an auditor, a certification body, a consultant or your accountant. We do not submit your report to any authority, register or platform. Whether a report satisfies a particular request is decided by whoever asked for it, not by us. The figures, the explanations and the decision to publish are yours.</p>
+              <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden">
+                <div style="display:grid;grid-template-columns:1fr 1fr;background:#FAFBFC;border-bottom:1px solid #E8ECF0"><div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">We do</div><div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F">We do not</div></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr">
+                  <div style="padding:14px 16px;border-right:1px solid #E8ECF0;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5;color:#3A434C"><span>Host your answers and keep them saved</span><span>Convert bills and units into emissions figures</span><span>Generate the report file and its data export</span><span>Keep a record of who changed what</span></div>
+                  <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5;color:#3A434C"><span>Check that your figures are true</span><span>File, register or publish anything for you</span><span>Give legal, tax or sustainability advice</span><span>Guarantee a bank accepts the result</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">3</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Your account and the people you invite</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 12px;max-width:70ch">An account belongs to one person and is not shared. Keep the password and the second factor to yourself; anything done with your credentials is treated as done by you. Tell us at once if you think someone else has access.</p>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">Whoever creates the organisation becomes its administrator and decides who else may read, fill in, or approve a report. You are responsible for those choices, including for external people such as your accountant or an adviser. Removing a person removes their access immediately; the record of what they entered stays in the report history.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">4</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Your report content stays yours</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 12px;max-width:70ch">You keep every right in the answers, documents and figures you put into EasyESG. You give us permission to store, process and display that content for the single purpose of running the service for you — nothing else. We do not sell it, do not use it for advertising, and do not use it to train models.</p>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">We publish counts that cannot identify anyone — how many reports were completed in a month, which sections take longest. If we ever want to describe your company by name, we ask first. The <a href="#3a">privacy notice</a> and the data processing agreement say in detail how content is handled; where they conflict with this clause, they win.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">5</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Plans, payment and invoices</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">Filling in a report is free. Payment is due when you generate a finished document, and the price of your plan is shown before you confirm. Prices are in Moldovan lei and include VAT where it applies. You can pay by card or by bank transfer; bank transfers need the payment reference we give you, or the payment cannot be matched to your account. An invoice follows each payment, by e-Factura if you ask for it.</p>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:12px;align-items:flex-start"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3;flex-shrink:0;margin-top:3px">5.1</span><div style="font-size:14.5px;line-height:1.55;color:#3A434C;max-width:68ch">A subscription renews on its own date each period until you cancel it. Saving a card for renewals is a separate authorisation you give explicitly, not a consequence of paying once.</div></div>
+                <div style="display:flex;gap:12px;align-items:flex-start"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3;flex-shrink:0;margin-top:3px">5.2</span><div style="font-size:14.5px;line-height:1.55;color:#3A434C;max-width:68ch">If we change a price, the new price applies from your next renewal and we tell you at least 30 days before it. You can cancel before then and keep the old price until the period ends.</div></div>
+                <div style="display:flex;gap:12px;align-items:flex-start"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8B96A3;flex-shrink:0;margin-top:3px">5.3</span><div style="font-size:14.5px;line-height:1.55;color:#3A434C;max-width:68ch">Generated documents are not refundable once produced. If the service was unavailable for a substantial part of a paid period, write to us and we will credit that period.</div></div>
+              </div>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">6</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">If you stop paying or leave</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">Nothing is deleted the day a payment fails. What changes is what you can do, in this order, and we name the affected entities and reports on screen before each step happens.</p>
+              <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden">
+                <div style="display:grid;grid-template-columns:150px 1fr;background:#FAFBFC;border-bottom:1px solid #E8ECF0"><div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">When</div><div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F">What happens</div></div>
+                <div style="display:grid;grid-template-columns:150px 1fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Payment fails</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C">Everything keeps working for 14 days. We show the amount, the date and the one action that settles it.</div></div>
+                <div style="display:grid;grid-template-columns:150px 1fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Day 15</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C">Reports become read-only. You can still read, export and download; you cannot edit or generate.</div></div>
+                <div style="display:grid;grid-template-columns:150px 1fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">You close the account</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C">We keep the data for 30 days in case it was a mistake, then delete it. You can ask for immediate deletion.</div></div>
+                <div style="display:grid;grid-template-columns:150px 1fr"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">After 12 months</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C">An unpaid account and its content are deleted. We write to the administrator 30 days before that date.</div></div>
+              </div>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">7</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Availability and support</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">We aim for the service to be available 99.5% of each month, measured outside planned maintenance, which we announce at least five days ahead and run at night Chișinău time. Support answers in Romanian, Russian and English on working days; the current response times and the incident history are on the service status page.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">8</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">What we are responsible for</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 12px;max-width:70ch">We are responsible for running the service with reasonable skill and care, for keeping your content secure as described in the privacy notice, and for the emission factors we publish being the ones we say they are, with their source and version shown next to every calculated figure.</p>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">We are not responsible for the content of your report, for a decision anyone makes after reading it, or for losses that follow from figures you entered. Where liability can be limited by law, ours is limited to the fees you paid in the twelve months before the claim. Nothing here limits liability for intentional harm or for anything the law of the Republic of Moldova does not allow to be limited.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">9</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Changes to these terms</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">We rewrite these terms when the service changes. A change that affects your rights or your money is announced by email and at sign-in at least 30 days before it takes effect, with the previous and the new wording side by side. Continuing to use the service after that date means you accept the new version. Every past version stays available with the date it applied.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">10</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Law and disputes</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">These terms are governed by the law of the Republic of Moldova, and disputes belong to the courts of Chișinău. Before going there, write to legal@easyesg.md; we answer every complaint within 15 working days, and most of them end at that stage.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div style="width:224px;flex-shrink:0;display:flex;flex-direction:column;gap:14px">
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:16px 18px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Version history</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div><div style="font-size:13.5px;font-weight:500;color:#161B20">3.1 · 1 Mar 2026</div><div style="font-size:12.5px;line-height:1.45;color:#67737F">Read-only period extended to 12 months</div></div>
+              <div><div style="font-size:13.5px;font-weight:500;color:#3A434C">3.0 · 12 Nov 2025</div><div style="font-size:12.5px;line-height:1.45;color:#67737F">Group accounts and e-Factura invoicing</div></div>
+              <div><div style="font-size:13.5px;font-weight:500;color:#3A434C">2.4 · 3 Jun 2025</div><div style="font-size:12.5px;line-height:1.45;color:#67737F">First public release</div></div>
+            </div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #E8ECF0;font-size:13px;color:#245540;text-decoration:underline;text-underline-offset:2px">Compare 3.0 with 3.1</div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:16px 18px">
+            <div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:6px">Something unclear?</div>
+            <p style="font-size:13px;line-height:1.55;color:#4E5964;margin:0 0 12px">Ask in plain language and we answer in plain language.</p>
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:100%;height:38px;border:1px solid #D5DBE2;border-radius:4px;background:#FAFBFC;font-size:13.5px;font-weight:600;color:#245540">Ask about the terms</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:44px 56px 38px;background:#FFFFFF;border-top:1px solid #D5DBE2">
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px;padding-bottom:30px;border-bottom:1px solid #E8ECF0">
+          <div>
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:conic-gradient(#2E6A4F 0deg 266deg,#D5DBE2 266deg 360deg)"><span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#FFFFFF"><span style="width:5.5px;height:5.5px;border-radius:50%;background:#2E6A4F"></span></span></span>
+              <span style="font-size:16px;font-weight:600;letter-spacing:-0.03em;color:#161B20">easy<span style="color:#2E6A4F">ESG</span></span>
+            </div>
+            <p style="font-size:13.5px;line-height:1.6;color:#67737F;margin:0;max-width:38ch">Sustainability reporting for small and medium companies in the Republic of Moldova, on the VSME voluntary standard.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:3px">Product</div>
+            <span style="font-size:13.5px;color:#3A434C">How it works</span>
+            <span style="font-size:13.5px;color:#3A434C">The eleven sections</span>
+            <span style="font-size:13.5px;color:#3A434C">Plans</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:3px">Support</div>
+            <span style="font-size:13.5px;color:#3A434C">Help centre</span>
+            <span style="font-size:13.5px;color:#3A434C">Contact us</span>
+            <span style="font-size:13.5px;color:#3A434C">Service status</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:3px">Legal</div>
+            <span style="font-size:13.5px;font-weight:500;color:#161B20">Terms of service</span>
+            <span style="font-size:13.5px;color:#3A434C">Privacy notice</span>
+            <span style="font-size:13.5px;color:#3A434C">Cookies</span>
+            <span style="font-size:13.5px;color:#3A434C">Cookie choices</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding-top:20px">
+          <div style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:12.5px;color:#67737F">Language</span>
+            <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid #D5DBE2;border-radius:3px;background:#FFFFFF;padding:0 12px;font-size:13.5px;color:#161B20">English<span style="font-size:10px;color:#67737F">▾</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-screen-label="02 Privacy notice" style="display:flex;flex-direction:column;gap:10px">
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:baseline;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">02 · Privacy</span><span style="font-size:14px;color:#3A434C">Same shell, different sidebar: rights and the supervisory authority</span></div>
+    </sc-if>
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:13.5px;line-height:1.55;color:#67737F;margin:0;max-width:100ch">Two roles are separated at the top, because they answer different questions: we are the controller of your account, and only a processor of the report content you enter about your own staff. Sub-processors, storage location and retention are tables rather than prose — they are what a bank's procurement officer reads.</p>
+    </sc-if>
+
+    <div style="width:1440px;display:flex;flex-direction:column;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#F4F6F8;box-shadow:0 2px 14px rgba(22,27,32,0.06)">
+
+      <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="flex:1 1 0;display:flex;align-items:center;gap:10px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span>
+          <span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:32px">
+          <span style="font-size:14.5px;color:#D6E8DE">How it works</span>
+          <span style="font-size:14.5px;color:#D6E8DE">The questions</span>
+          <span style="font-size:14.5px;color:#D6E8DE">Plans</span>
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+        </div>
+        <div style="flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;gap:20px">
+          <span style="font-size:14.5px;font-weight:500;color:#FFFFFF">Sign in</span>
+          <span style="display:inline-flex;align-items:center;height:40px;border-radius:3px;background:#FFFFFF;color:#1B4031;padding:0 18px;font-size:14.5px;font-weight:600">Create an account</span>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border-bottom:1px solid #D5DBE2;padding:40px 56px 0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;margin-bottom:26px">
+          <div style="max-width:60ch">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Legal</div>
+            <h1 style="font-size:36px;line-height:1.1;font-weight:600;letter-spacing:-0.022em;color:#161B20;margin:0 0 10px">Privacy notice</h1>
+            <p style="font-size:16px;line-height:1.55;color:#4E5964;margin:0">What personal data EasyESG holds, why we hold it, who else touches it, and how to make us change or delete it.</p>
+          </div>
+          <div style="flex-shrink:0;display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Last updated</span>
+              <span style="font-size:14.5px;font-weight:500;color:#161B20;font-variant-numeric:tabular-nums">1 March 2026 · version 2.6</span>
+            </div>
+            <span style="font-size:12.5px;color:#67737F">Registered with the National Centre for Personal Data Protection</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:stretch;gap:30px">
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Terms of service</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;font-weight:600;color:#161B20;border-bottom:2px solid #2E6A4F">Privacy notice</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Cookies</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Data processing agreement</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Sub-processors</span>
+        </div>
+      </div>
+
+      <div style="padding:36px 56px 52px;display:flex;gap:28px;align-items:flex-start">
+
+        <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:9px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:2px">On this page</div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid #2E6A4F;background:#EDF5F0"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#245540">1</span><span style="font-size:13.5px;font-weight:500;color:#161B20;line-height:1.4">Who is responsible for what</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">2</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">What we hold, and why</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">3</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Who else touches it</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">4</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Where it is stored</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">5</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">How long we keep it</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">6</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">How we keep it safe</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">7</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Your rights, and how to use them</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">8</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Complaints</span></div>
+          <div style="margin-top:14px;padding:12px 14px;border:1px solid #D5DBE2;border-radius:5px;background:#FFFFFF">
+            <div style="font-size:13px;line-height:1.5;color:#3A434C;margin-bottom:8px">Reading time about 7 minutes.</div>
+            <span style="font-size:13px;color:#245540;text-decoration:underline;text-underline-offset:2px">Download as PDF (142 KB)</span>
+          </div>
+        </div>
+
+        <div style="width:784px;flex-shrink:0;display:flex;flex-direction:column;gap:20px">
+
+          <sc-if value="{{ showInShort }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#EDF5F0;border:1px solid #ADD1BE;border-radius:6px;padding:22px 26px 24px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#245540;margin-bottom:12px">In short — not a substitute for the text below</div>
+              <div style="display:flex;flex-direction:column;gap:11px">
+                <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#2E6A4F;flex-shrink:0;margin-top:8px"></span><div style="font-size:15px;line-height:1.55;color:#193B2D">We hold your name, work email, company details and what you typed into your report. That is all we need to run the service.</div></div>
+                <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#2E6A4F;flex-shrink:0;margin-top:8px"></span><div style="font-size:15px;line-height:1.55;color:#193B2D">Everything is stored in the European Union. Four named suppliers help us run it; nobody else sees your data, and none of it is sold.</div></div>
+                <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#2E6A4F;flex-shrink:0;margin-top:8px"></span><div style="font-size:15px;line-height:1.55;color:#193B2D">You can ask for a copy, a correction or a deletion by writing to privacy@easyesg.md. We answer within 30 days.</div></div>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:34px 40px 38px">
+
+            <div>
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">1</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Who is responsible for what</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">Two different relationships run in parallel, and it matters which one a question falls under.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div style="border:1px solid #E8ECF0;border-radius:5px;padding:16px 18px;background:#FAFBFC">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#245540;margin-bottom:7px">We are the controller</div>
+                  <div style="font-size:14.5px;line-height:1.55;color:#3A434C">For your account and your company's relationship with us: name, work email, role, sign-in records, invoices, support messages.</div>
+                </div>
+                <div style="border:1px solid #E8ECF0;border-radius:5px;padding:16px 18px;background:#FAFBFC">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#245540;margin-bottom:7px">You are the controller</div>
+                  <div style="font-size:14.5px;line-height:1.55;color:#3A434C">For personal data inside your report — headcount, accident records, pay ratios. We only process it on your instructions, under the data processing agreement.</div>
+                </div>
+              </div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:14px 0 0;max-width:70ch">Our data protection contact is privacy@easyesg.md, or by post to the address in the terms of service, marked for the data protection officer.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">2</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">What we hold, and why</h2></div>
+              <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden">
+                <div style="display:grid;grid-template-columns:1.1fr 1.5fr 0.9fr;background:#FAFBFC;border-bottom:1px solid #E8ECF0">
+                  <div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">What</div>
+                  <div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">Why</div>
+                  <div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F">Basis</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1.1fr 1.5fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Name, work email, role</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">To give you an account and the right level of access</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Contract</div></div>
+                <div style="display:grid;grid-template-columns:1.1fr 1.5fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Company details, IDNO</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">To identify the reporting entity and issue invoices</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Contract, law</div></div>
+                <div style="display:grid;grid-template-columns:1.1fr 1.5fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Report answers and uploads</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">To save your work, calculate figures and produce documents</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Your instruction</div></div>
+                <div style="display:grid;grid-template-columns:1.1fr 1.5fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Payments and invoices</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">To take payment and keep the accounts. We never see full card numbers</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Contract, law</div></div>
+                <div style="display:grid;grid-template-columns:1.1fr 1.5fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Sign-ins, IP address, audit trail</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">To keep accounts secure and show who changed a figure</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Legitimate interest</div></div>
+                <div style="display:grid;grid-template-columns:1.1fr 1.5fr 0.9fr"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Page statistics</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">To see which parts of the wizard people abandon. Off unless you agree</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Consent</div></div>
+              </div>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">3</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Who else touches it</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">Four suppliers process data on our behalf, each under a written agreement and each limited to what its job needs. We publish this list, and we tell administrators by email 30 days before adding to it.</p>
+              <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden">
+                <div style="display:grid;grid-template-columns:1fr 1.3fr 0.8fr;background:#FAFBFC;border-bottom:1px solid #E8ECF0">
+                  <div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">Supplier</div>
+                  <div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">What it does</div>
+                  <div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F">Location</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1.3fr 0.8fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Hosting provider</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">Runs the servers and the database</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Frankfurt, DE</div></div>
+                <div style="display:grid;grid-template-columns:1fr 1.3fr 0.8fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Email delivery</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">Sends invitations, reminders and receipts</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Dublin, IE</div></div>
+                <div style="display:grid;grid-template-columns:1fr 1.3fr 0.8fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Payment provider</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">Takes card payments; holds the card data, we do not</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Chișinău, MD</div></div>
+                <div style="display:grid;grid-template-columns:1fr 1.3fr 0.8fr"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Error monitoring</div><div style="padding:12px 16px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">Records crashes so we can fix them; report content is stripped out</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">Frankfurt, DE</div></div>
+              </div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:14px 0 0;max-width:70ch">Beyond these, we disclose data only to the people you invite into your organisation, and to an authority where the law of the Republic of Moldova obliges us to. If we are ever compelled, we tell you unless we are forbidden to.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">4</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Where it is stored</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">Your data lives on servers in the European Union, with encrypted backups in the same region. Nothing is transferred outside the European Economic Area except to the Moldovan payment provider named above, which processes payment data under the adequacy decision that covers the Republic of Moldova. Support staff work from Chișinău and reach data over an encrypted connection; no copies are kept on their machines.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">5</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">How long we keep it</h2></div>
+              <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden">
+                <div style="display:grid;grid-template-columns:1.4fr 0.9fr;background:#FAFBFC;border-bottom:1px solid #E8ECF0"><div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">Data</div><div style="padding:9px 16px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F">Kept for</div></div>
+                <div style="display:grid;grid-template-columns:1.4fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Drafts and finished reports</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">While the account is open</div></div>
+                <div style="display:grid;grid-template-columns:1.4fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Account data after you close it</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">30 days, then deleted</div></div>
+                <div style="display:grid;grid-template-columns:1.4fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Generated documents on an unpaid account</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">12 months</div></div>
+                <div style="display:grid;grid-template-columns:1.4fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Invoices and payment records</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">5 years — fiscal law</div></div>
+                <div style="display:grid;grid-template-columns:1.4fr 0.9fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Sign-in and security logs</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">90 days</div></div>
+                <div style="display:grid;grid-template-columns:1.4fr 0.9fr"><div style="padding:12px 16px;font-size:14px;color:#161B20;border-right:1px solid #E8ECF0">Support messages</div><div style="padding:12px 16px;font-size:14px;color:#3A434C">24 months</div></div>
+              </div>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">6</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">How we keep it safe</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">Data is encrypted in transit and at rest. Access inside EasyESG follows the role a person holds, is logged, and for report content requires a written request from you with a reason recorded against it. Passwords are stored hashed and a second factor is available to every account. If a breach affects your data, we tell the administrator and the supervisory authority within 72 hours of finding it, with what happened, what was affected and what we did.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">7</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Your rights, and how to use them</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">Under Law 133/2011 on the protection of personal data, and under the GDPR where it applies to you, you can ask us to:</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin-bottom:14px">
+                <div style="display:flex;gap:10px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#8B96A3;flex-shrink:0;margin-top:8px"></span><span style="font-size:14.5px;line-height:1.5;color:#3A434C">Show you what we hold</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#8B96A3;flex-shrink:0;margin-top:8px"></span><span style="font-size:14.5px;line-height:1.5;color:#3A434C">Correct something wrong</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#8B96A3;flex-shrink:0;margin-top:8px"></span><span style="font-size:14.5px;line-height:1.5;color:#3A434C">Delete what we no longer need</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#8B96A3;flex-shrink:0;margin-top:8px"></span><span style="font-size:14.5px;line-height:1.5;color:#3A434C">Send you a machine-readable copy</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#8B96A3;flex-shrink:0;margin-top:8px"></span><span style="font-size:14.5px;line-height:1.5;color:#3A434C">Stop a particular use</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start"><span style="width:5px;height:5px;border-radius:50%;background:#8B96A3;flex-shrink:0;margin-top:8px"></span><span style="font-size:14.5px;line-height:1.5;color:#3A434C">Withdraw a consent you gave</span></div>
+              </div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">Write to privacy@easyesg.md. We answer within 30 days and do not charge for it. Report exports you can do yourself at any time from the report screen, without asking us. Where you are the controller — data about your own staff — send the request to your company, and we will help them answer it.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">8</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Complaints</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">If our answer does not satisfy you, you can complain to the National Centre for Personal Data Protection of the Republic of Moldova, str. Serghei Lazo 48, Chișinău. Complaining to them costs nothing and does not affect anything else in your account.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div style="width:224px;flex-shrink:0;display:flex;flex-direction:column;gap:14px">
+          <div style="background:#FFFFFF;border:1px solid #8B96A3;border-radius:6px;padding:16px 18px">
+            <div style="font-size:14.5px;font-weight:600;color:#161B20;margin-bottom:6px">Ask for your data</div>
+            <p style="font-size:13px;line-height:1.55;color:#4E5964;margin:0 0 12px">One form, no account needed. We reply within 30 days.</p>
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:100%;height:38px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:13.5px;font-weight:600">Make a request</span>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:16px 18px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Related</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Data processing agreement</span>
+              <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Sub-processor list and changes</span>
+              <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Security overview for buyers</span>
+              <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Cookie policy</span>
+            </div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:16px 18px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:8px">Supervisory authority</div>
+            <div style="font-size:13.5px;line-height:1.55;color:#3A434C">National Centre for Personal Data Protection<br>str. Serghei Lazo 48, Chișinău</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:44px 56px 38px;background:#FFFFFF;border-top:1px solid #D5DBE2">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:24px">
+          <div style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</div>
+          <div style="display:flex;align-items:center;gap:22px">
+            <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid #D5DBE2;border-radius:3px;background:#FFFFFF;padding:0 12px;font-size:13.5px;color:#161B20">English<span style="font-size:10px;color:#67737F">▾</span></span>
+            <span style="font-size:13px;color:#3A434C">Terms of service</span>
+            <span style="font-size:13px;font-weight:500;color:#161B20">Privacy notice</span>
+            <span style="font-size:13px;color:#3A434C">Cookies</span>
+            <span style="font-size:13px;color:#3A434C">Cookie choices</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-screen-label="03 Cookie policy" style="display:flex;flex-direction:column;gap:10px">
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:baseline;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">03 · Cookies</span><span style="font-size:14px;color:#3A434C">The full list, and the switch to change your mind, on the same page</span></div>
+    </sc-if>
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:13.5px;line-height:1.55;color:#67737F;margin:0;max-width:100ch">There are five cookies and one of them is optional, so the page states that in the first line rather than burying it. Your current choice is shown as it stands, with the date you made it, and can be changed here without hunting for a hidden link.</p>
+    </sc-if>
+
+    <div style="width:1440px;display:flex;flex-direction:column;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#F4F6F8;box-shadow:0 2px 14px rgba(22,27,32,0.06)">
+
+      <div style="height:68px;padding:0 56px;background:#1B4031;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="flex:1 1 0;display:flex;align-items:center;gap:10px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:conic-gradient(#FFFFFF 0deg 266deg,rgba(255,255,255,0.30) 266deg 360deg);flex-shrink:0"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1B4031"><span style="width:6px;height:6px;border-radius:50%;background:#FFFFFF"></span></span></span>
+          <span style="font-size:17px;font-weight:600;color:#FFFFFF;letter-spacing:-0.03em">easy<span style="opacity:0.62">ESG</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:32px">
+          <span style="font-size:14.5px;color:#D6E8DE">How it works</span>
+          <span style="font-size:14.5px;color:#D6E8DE">The questions</span>
+          <span style="font-size:14.5px;color:#D6E8DE">Plans</span>
+          <span style="font-size:14.5px;color:#D6E8DE">Help centre</span>
+        </div>
+        <div style="flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;gap:20px">
+          <span style="font-size:14.5px;font-weight:500;color:#FFFFFF">Sign in</span>
+          <span style="display:inline-flex;align-items:center;height:40px;border-radius:3px;background:#FFFFFF;color:#1B4031;padding:0 18px;font-size:14.5px;font-weight:600">Create an account</span>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border-bottom:1px solid #D5DBE2;padding:40px 56px 0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:48px;margin-bottom:26px">
+          <div style="max-width:60ch">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Legal</div>
+            <h1 style="font-size:36px;line-height:1.1;font-weight:600;letter-spacing:-0.022em;color:#161B20;margin:0 0 10px">Cookies</h1>
+            <p style="font-size:16px;line-height:1.55;color:#4E5964;margin:0">We set five cookies. Four are needed for the service to work at all. One counts page visits and stays off unless you turn it on.</p>
+          </div>
+          <div style="flex-shrink:0;display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">Last updated</span>
+              <span style="font-size:14.5px;font-weight:500;color:#161B20;font-variant-numeric:tabular-nums">1 March 2026 · version 1.4</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:stretch;gap:30px">
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Terms of service</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Privacy notice</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;font-weight:600;color:#161B20;border-bottom:2px solid #2E6A4F">Cookies</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Data processing agreement</span>
+          <span style="display:inline-flex;align-items:center;height:44px;font-size:14.5px;color:#3A434C;border-bottom:2px solid transparent">Sub-processors</span>
+        </div>
+      </div>
+
+      <div style="padding:36px 56px 52px;display:flex;gap:28px;align-items:flex-start">
+
+        <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:9px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:2px">On this page</div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid #2E6A4F;background:#EDF5F0"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#245540">1</span><span style="font-size:13.5px;font-weight:500;color:#161B20;line-height:1.4">Your current choice</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">2</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Every cookie we set</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">3</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">What we do not set</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">4</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Storage that is not a cookie</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px;padding:6px 10px;border-left:2px solid transparent"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8B96A3">5</span><span style="font-size:13.5px;color:#3A434C;line-height:1.4">Changing your mind, or your browser</span></div>
+        </div>
+
+        <div style="width:784px;flex-shrink:0;display:flex;flex-direction:column;gap:20px">
+
+          <div style="background:#FFFFFF;border:1px solid #8B96A3;border-radius:6px;overflow:hidden">
+            <div style="padding:20px 26px 18px;border-bottom:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">1</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Your current choice</h2></div>
+              <div style="font-size:14.5px;color:#4E5964">Recorded on this browser on 14 March 2026. Changing it here takes effect at once, with no reload.</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 26px;border-bottom:1px solid #F1F4F7">
+              <div>
+                <div style="font-size:15.5px;font-weight:600;color:#161B20;margin-bottom:3px">Necessary cookies</div>
+                <div style="font-size:13.5px;line-height:1.5;color:#67737F">Sign-in, form protection, language, and the record of this choice. The service cannot run without them.</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+                <span style="font-size:13px;color:#67737F">Always on</span>
+                <span style="display:inline-flex;align-items:center;width:44px;height:24px;border-radius:12px;background:#ADD1BE;padding:3px;justify-content:flex-end"><span style="width:18px;height:18px;border-radius:50%;background:#FFFFFF"></span></span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 26px">
+              <div>
+                <div style="font-size:15.5px;font-weight:600;color:#161B20;margin-bottom:3px">Page statistics</div>
+                <div style="font-size:13.5px;line-height:1.5;color:#67737F">Counts visits on our own servers so we can see which questions people abandon. No profile, no other site.</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+                <span style="font-size:13px;font-weight:500;color:#161B20">{{ statsLabel }}</span>
+                <span style="display:inline-flex;align-items:center;width:44px;height:24px;border-radius:12px;background:#D5DBE2;padding:3px"><span style="width:18px;height:18px;border-radius:50%;background:#FFFFFF"></span></span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 26px;background:#FAFBFC;border-top:1px solid #E8ECF0">
+              <span style="font-size:13px;color:#67737F">Your choice is kept for 12 months, then we ask again.</span>
+              <span style="display:inline-flex;align-items:center;height:38px;padding:0 18px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14px;font-weight:600">Save choices</span>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:34px 40px 38px">
+
+            <div>
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">2</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Every cookie we set</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">All five are set by easyesg.md itself. None of them is shared with another company.</p>
+              <div style="border:1px solid #E8ECF0;border-radius:5px;overflow:hidden">
+                <div style="display:grid;grid-template-columns:0.9fr 1.6fr 0.7fr 0.6fr;background:#FAFBFC;border-bottom:1px solid #E8ECF0">
+                  <div style="padding:9px 14px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">Name</div>
+                  <div style="padding:9px 14px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">What it is for</div>
+                  <div style="padding:9px 14px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F;border-right:1px solid #E8ECF0">Kind</div>
+                  <div style="padding:9px 14px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#67737F">Expires</div>
+                </div>
+                <div style="display:grid;grid-template-columns:0.9fr 1.6fr 0.7fr 0.6fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#161B20;border-right:1px solid #E8ECF0">esg_session</div><div style="padding:12px 14px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">Keeps you signed in as you move between screens</div><div style="padding:12px 14px;font-size:14px;color:#3A434C;border-right:1px solid #E8ECF0">Necessary</div><div style="padding:12px 14px;font-size:14px;color:#3A434C">On sign-out</div></div>
+                <div style="display:grid;grid-template-columns:0.9fr 1.6fr 0.7fr 0.6fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#161B20;border-right:1px solid #E8ECF0">esg_csrf</div><div style="padding:12px 14px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">Stops another site submitting a form as you</div><div style="padding:12px 14px;font-size:14px;color:#3A434C;border-right:1px solid #E8ECF0">Necessary</div><div style="padding:12px 14px;font-size:14px;color:#3A434C">Session</div></div>
+                <div style="display:grid;grid-template-columns:0.9fr 1.6fr 0.7fr 0.6fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#161B20;border-right:1px solid #E8ECF0">esg_lang</div><div style="padding:12px 14px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">Remembers whether you read the site in Romanian, Russian or English</div><div style="padding:12px 14px;font-size:14px;color:#3A434C;border-right:1px solid #E8ECF0">Necessary</div><div style="padding:12px 14px;font-size:14px;color:#3A434C">12 months</div></div>
+                <div style="display:grid;grid-template-columns:0.9fr 1.6fr 0.7fr 0.6fr;border-bottom:1px solid #F1F4F7"><div style="padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#161B20;border-right:1px solid #E8ECF0">esg_consent</div><div style="padding:12px 14px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">Records the choice you made about statistics, so we stop asking</div><div style="padding:12px 14px;font-size:14px;color:#3A434C;border-right:1px solid #E8ECF0">Necessary</div><div style="padding:12px 14px;font-size:14px;color:#3A434C">12 months</div></div>
+                <div style="display:grid;grid-template-columns:0.9fr 1.6fr 0.7fr 0.6fr"><div style="padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#161B20;border-right:1px solid #E8ECF0">esg_stats</div><div style="padding:12px 14px;font-size:14px;line-height:1.5;color:#3A434C;border-right:1px solid #E8ECF0">Counts a visit once. Holds a random number, not your identity</div><div style="padding:12px 14px;font-size:14px;color:#245540;font-weight:500;border-right:1px solid #E8ECF0">Optional</div><div style="padding:12px 14px;font-size:14px;color:#3A434C">6 months</div></div>
+              </div>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">3</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">What we do not set</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">No advertising cookies. No cross-site tracking. No social network buttons or embedded players. No third-party script of any kind on a screen where you are signed in — which is why there is no long list of vendors on this page, and why refusing statistics costs you nothing.</p>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">Our public pages load two fonts from a font service and nothing else. If you would rather they did not, the site is fully readable with the fonts blocked.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">4</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Storage that is not a cookie</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">While you fill in a report, your browser keeps a local copy of the answers so a lost connection does not lose your work. It sits in local storage under <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#161B20">esg_draft_cache</span>, never leaves your device on its own, and is cleared when you sign out or when the report is submitted.</p>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">This is part of the service working as intended, so it is not something you can switch off separately. Signing out removes it.</p>
+            </div>
+
+            <div style="margin-top:28px;padding-top:28px;border-top:1px solid #E8ECF0">
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8B96A3">5</span><h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin:0">Changing your mind, or your browser</h2></div>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0 0 14px;max-width:70ch">The switch above is the whole mechanism, and “Cookie choices” sits in the footer of every page. Turning statistics off deletes the <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#161B20">esg_stats</span> cookie immediately; nothing collected before that is linked to you in any way that could be undone.</p>
+              <p style="font-size:15px;line-height:1.65;color:#3A434C;margin:0;max-width:70ch">You can also clear cookies in your browser. If you clear the necessary ones you will be signed out, the site will forget your language, and it will ask about statistics again on the next visit.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div style="width:224px;flex-shrink:0;display:flex;flex-direction:column;gap:14px">
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:16px 18px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">At a glance</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div><div style="font-size:22px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums">5</div><div style="font-size:12.5px;line-height:1.45;color:#67737F">cookies in total</div></div>
+              <div><div style="font-size:22px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums">1</div><div style="font-size:12.5px;line-height:1.45;color:#67737F">optional, off by default</div></div>
+              <div><div style="font-size:22px;font-weight:600;color:#161B20;font-variant-numeric:tabular-nums">0</div><div style="font-size:12.5px;line-height:1.45;color:#67737F">third-party trackers</div></div>
+            </div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #D5DBE2;border-radius:6px;padding:16px 18px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3;margin-bottom:10px">Related</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Privacy notice</span>
+              <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Terms of service</span>
+              <span style="font-size:13.5px;color:#245540;text-decoration:underline;text-underline-offset:2px">Security overview for buyers</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:44px 56px 38px;background:#FFFFFF;border-top:1px solid #D5DBE2">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:24px">
+          <div style="font-size:12.5px;color:#8B96A3">© 2026 EasyESG SRL · Chișinău</div>
+          <div style="display:flex;align-items:center;gap:22px">
+            <span style="display:inline-flex;align-items:center;gap:10px;height:38px;border:1px solid #D5DBE2;border-radius:3px;background:#FFFFFF;padding:0 12px;font-size:13.5px;color:#161B20">English<span style="font-size:10px;color:#67737F">▾</span></span>
+            <span style="font-size:13px;color:#3A434C">Terms of service</span>
+            <span style="font-size:13px;color:#3A434C">Privacy notice</span>
+            <span style="font-size:13px;font-weight:500;color:#161B20">Cookies</span>
+            <span style="font-size:13px;color:#3A434C">Cookie choices</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-screen-label="04 The cookie choice" style="display:flex;flex-direction:column;gap:10px">
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:baseline;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8B96A3">04 · The choice itself</span><span style="font-size:14px;color:#3A434C">First visit banner, the panel behind it, and 390</span></div>
+    </sc-if>
+    <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:13.5px;line-height:1.55;color:#67737F;margin:0;max-width:100ch">Both answers are one tap, the same size, in the same place — refusing is not a second-class path. Nothing is blocked while the banner is up, because nothing optional has loaded yet. Switch between the states with the consent tweak.</p>
+    </sc-if>
+
+    <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F">banner · page fragment at 1000</div></sc-if>
+        <div style="width:1000px;border:1px solid #D5DBE2;border-radius:6px;overflow:hidden;background:#FFFFFF;box-shadow:0 2px 14px rgba(22,27,32,0.06)">
+          <div style="height:180px;background:#1B4031;padding:32px 40px;display:flex;flex-direction:column;justify-content:center;gap:12px">
+            <div style="font-size:15px;color:#7CB49A">A bank, a buyer or a tender asked you for ESG data</div>
+            <div style="font-size:38px;line-height:1.05;font-weight:600;letter-spacing:-0.03em;color:#FFFFFF;max-width:24ch">You can write your own sustainability report.</div>
+          </div>
+          <div style="padding:20px 40px 24px;background:#FFFFFF;display:flex;flex-direction:column;gap:8px">
+            <div style="height:12px;border-radius:2px;background:#EEF1F4;width:72%"></div>
+            <div style="height:12px;border-radius:2px;background:#EEF1F4;width:58%"></div>
+            <div style="height:12px;border-radius:2px;background:#F4F6F8;width:64%"></div>
+          </div>
+          <div style="border-top:1px solid #D5DBE2;background:#FAFBFC;padding:22px 40px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:40px">
+            <div style="max-width:56ch">
+              <div style="font-size:16px;font-weight:600;color:#161B20;margin-bottom:5px">Cookies on easyesg.md</div>
+              <div style="font-size:14px;line-height:1.55;color:#4E5964">Four cookies keep you signed in and remember your language; we cannot switch those off. One counts page visits, and it stays off unless you say otherwise. <span style="color:#245540;text-decoration:underline;text-underline-offset:2px">Read the cookie policy</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;width:230px">
+              <span style="display:inline-flex;align-items:center;justify-content:center;height:44px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14.5px;font-weight:600">Accept statistics too</span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;height:44px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;color:#161B20;font-size:14.5px;font-weight:600">Only what is necessary</span>
+              <span style="text-align:center;font-size:13px;color:#245540;text-decoration:underline;text-underline-offset:2px">Choose for each one</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F">preferences panel · 520</div></sc-if>
+        <div style="width:520px;border:1px solid #C7CFD8;border-radius:8px;overflow:hidden;background:#FFFFFF;box-shadow:0 10px 32px rgba(22,27,32,0.16)">
+          <div style="padding:22px 26px 18px;border-bottom:1px solid #E8ECF0">
+            <div style="font-size:19px;font-weight:600;letter-spacing:-0.01em;color:#161B20;margin-bottom:5px">Choose for each one</div>
+            <div style="font-size:14px;line-height:1.55;color:#4E5964">Two switches, and one of them is stuck on. That is the whole set.</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:16px 26px;border-bottom:1px solid #F1F4F7">
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:3px">Necessary</div>
+              <div style="font-size:13.5px;line-height:1.5;color:#67737F">esg_session, esg_csrf, esg_lang, esg_consent</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px;flex-shrink:0">
+              <span style="font-size:12.5px;color:#67737F">Always on</span>
+              <span style="display:inline-flex;align-items:center;width:44px;height:24px;border-radius:12px;background:#ADD1BE;padding:3px;justify-content:flex-end"><span style="width:18px;height:18px;border-radius:50%;background:#FFFFFF"></span></span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:16px 26px">
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#161B20;margin-bottom:3px">Page statistics</div>
+              <div style="font-size:13.5px;line-height:1.5;color:#67737F">esg_stats · counted on our own servers, kept 6 months</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px;flex-shrink:0">
+              <span style="font-size:12.5px;font-weight:500;color:#161B20">Off</span>
+              <span style="display:inline-flex;align-items:center;width:44px;height:24px;border-radius:12px;background:#D5DBE2;padding:3px"><span style="width:18px;height:18px;border-radius:50%;background:#FFFFFF"></span></span>
+            </div>
+          </div>
+          <div style="padding:16px 26px 20px;background:#FAFBFC;border-top:1px solid #E8ECF0;display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <span style="font-size:13px;color:#67737F">Kept 12 months</span>
+            <div style="display:flex;gap:10px">
+              <span style="display:inline-flex;align-items:center;height:40px;padding:0 16px;border:1px solid #D5DBE2;border-radius:4px;background:#FFFFFF;font-size:14px;font-weight:600;color:#3A434C">Cancel</span>
+              <span style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:14px;font-weight:600">Save choices</span>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#67737F;margin-top:14px">compact · 390</div></sc-if>
+        <div style="width:390px;border:1px solid #D5DBE2;border-radius:10px;overflow:hidden;background:#FFFFFF;box-shadow:0 2px 14px rgba(22,27,32,0.06)">
+          <div style="height:120px;background:#1B4031;padding:22px;display:flex;align-items:flex-end">
+            <div style="font-size:24px;line-height:1.1;font-weight:600;letter-spacing:-0.03em;color:#FFFFFF">You can write your own report.</div>
+          </div>
+          <div style="padding:16px 22px;display:flex;flex-direction:column;gap:7px">
+            <div style="height:11px;border-radius:2px;background:#EEF1F4;width:84%"></div>
+            <div style="height:11px;border-radius:2px;background:#EEF1F4;width:66%"></div>
+          </div>
+          <div style="border-top:1px solid #D5DBE2;background:#FAFBFC;padding:18px 22px 22px;display:flex;flex-direction:column;gap:12px">
+            <div>
+              <div style="font-size:15.5px;font-weight:600;color:#161B20;margin-bottom:4px">Cookies on easyesg.md</div>
+              <div style="font-size:13.5px;line-height:1.55;color:#4E5964">Four are needed to sign you in and keep your language. One counts visits and is off unless you allow it.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <span style="display:inline-flex;align-items:center;justify-content:center;height:48px;border-radius:4px;background:#2E6A4F;color:#FFFFFF;font-size:15px;font-weight:600">Accept statistics too</span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;height:48px;border-radius:4px;border:1px solid #8B96A3;background:#FFFFFF;color:#161B20;font-size:15px;font-weight:600">Only what is necessary</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span style="font-size:13px;color:#245540;text-decoration:underline;text-underline-offset:2px">Choose for each one</span>
+              <span style="font-size:13px;color:#245540;text-decoration:underline;text-underline-offset:2px">Cookie policy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Presentation&quot;},&quot;showInShort&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Presentation&quot;},&quot;statisticsAccepted&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Consent&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showNotes: this.props.showNotes ?? true,
+      showInShort: this.props.showInShort ?? true,
+      statsLabel: (this.props.statisticsAccepted ?? false) ? "On" : "Off"
+    };
+  }
+}
+</script>
+</body>
+</html>
