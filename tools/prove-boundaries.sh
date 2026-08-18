@@ -10,6 +10,11 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 API=apps/api/src
+WEB=apps/web/src
+UI=packages/ui/src
+# Must match the roots in package.json's `boundaries` script. A rule anchored at a path this
+# script never walks cannot fail, which is the same invisible pass the script exists to catch.
+ROOTS=("$API" "$WEB" "$UI")
 FIXTURES=()
 # Removes the fixture files and any directory they had to create, so a proof run leaves
 # the tree exactly as it found it.
@@ -30,7 +35,7 @@ prove() {
   FIXTURES+=("$file")
 
   local out
-  out="$(pnpm exec depcruise --config .dependency-cruiser.cjs "$API" 2>&1)"
+  out="$(pnpm exec depcruise --config .dependency-cruiser.cjs "${ROOTS[@]}" 2>&1)"
   if grep -q "$rule" <<< "$out"; then
     printf '  ok    %s rejects its violation\n' "$rule"
   else
@@ -71,6 +76,29 @@ export class Violation {}"
 prove api-not-to-contracts-package \
   "$API/__boundary_fixture.ts" \
   "export * from '../../../packages/contracts/src/index';"
+
+prove web-not-to-commerce \
+  "$WEB/features/reporting/__boundary_fixture.ts" \
+  "import { } from '../commerce';
+export const violation = 1;"
+
+prove web-public-is-a-leaf \
+  "$WEB/features/public/__boundary_fixture.ts" \
+  "import { } from '../reporting';
+export const violation = 1;"
+
+prove web-not-to-api-src \
+  "$WEB/__boundary_fixture.ts" \
+  "export * from '../../api/src/contracts/types/time';"
+
+prove client-not-to-server \
+  "$WEB/client/__boundary_fixture.ts" \
+  "import { refreshCookieName } from '../server/session';
+export const violation = refreshCookieName;"
+
+prove ui-is-presentational \
+  "$UI/__boundary_fixture.ts" \
+  "export * from '../../../apps/web/src/lib/session-cookie';"
 
 # A cycle needs both halves present. The partner is written here and registered for cleanup;
 # prove() writes the other half and does the cruise.

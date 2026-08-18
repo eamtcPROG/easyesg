@@ -12,8 +12,23 @@ Peak season is April–May (statutory filing window).
 
 ## Current state
 
-**Specification only — no code yet.** The repo contains `docs/` and nothing else. Implementation has
-not started; there is no build, test or run command.
+**Foundation scaffolding, no features.** Two applications and four packages exist; every one of them
+is structure without behaviour.
+
+| Workspace | State |
+| --- | --- |
+| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, `TenantRepository`, port surface, OpenAPI emission. No guards, no migrations, no RLS policies, no controller but health |
+| `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
+| `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
+| `packages/ui` | The tier 1/2/3 token cascade, moved from `design/`. No components |
+| `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness |
+| `packages/validation` | Empty. The interpreter is shared by `api` and `web` (§9.8) |
+
+Not started: `apps/admin`, `packages/{vsme,xlsx-patch}`, `config/`, `infra/`, `docs/runbooks/`.
+
+Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
+`pnpm boundaries:prove` (12 rules, each with a fixture proving it rejects a real violation),
+`pnpm openapi:check`. There is no CI yet — those root scripts *are* the gate set.
 
 ## The document set (read before deciding anything)
 

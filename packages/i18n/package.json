@@ -1,0 +1,20 @@
+{
+  "name": "@easyesg/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Locale registry, API-backed message loading and fallback reporting (architecture.md §9.4, §10.7). Formatting belongs to next-intl, not here.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

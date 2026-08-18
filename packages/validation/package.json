@@ -1,0 +1,20 @@
+{
+  "name": "@easyesg/validation",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Rule interpreter over versioned rule definitions (AD-4). One interpreter, two execution sites: apps/api re-validates authoritatively, apps/web shows findings inline (§9.8).",
+  "type": "module",
+  "main": "./src/index.ts",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

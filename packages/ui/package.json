@@ -1,0 +1,25 @@
+{
+  "name": "@easyesg/ui",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Design system: tier 1/2/3 token cascade, nine page archetypes, WCAG 2.2 AA components (design_spec.md §11)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "sass": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@types/react": "catalog:",
+    "react": "catalog:"
+  }
+}

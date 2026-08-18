@@ -1257,12 +1257,12 @@ easyesg/
 │  ├─ validation/          # rule interpreter — shared by api and web for inline checks
 │  ├─ ui/                  # design system: wizard primitives, WCAG 2.2 AA components (SCSS)
 │  ├─ xlsx-patch/          # byte-preserving named-range writer for the EFRAG template
-│  └─ i18n/                # locale loading, formatting, fallback reporting
+│  └─ i18n/                # locale registry, message loading, fallback reporting
 ├─ config/
 │  ├─ seed/                # initial taxonomy version, factor sets, rules, plans, templates
 │  └─ efrag/               # official Digital Template binaries, per version
 ├─ design/                # visual identity layer, delivered 18 Aug 2026 (design_spec.md §11)
-│  ├─ tokens.css           # tier 1/2/3 cascade — moves to packages/ui at Phase 0
+│  ├─ (tokens.css)         # MOVED to packages/ui/src/styles/tokens.css, 18 Aug 2026
 │  ├─ screens/             # 14 hi-fi prototypes; reference, never copied as markup
 │  ├─ HANDOFF.md           # as-delivered record, superseded by design_spec.md §11
 │  └─ IMPLEMENTATION_PLAN.md  # UI phase sequencing against §15.4
@@ -1278,6 +1278,21 @@ easyesg/
    └─ runbooks/            # DR restore, taxonomy migration, e-Factura outage,
                            #   reconciliation exception, support-access grant
 ```
+
+**Amended 18 Aug 2026, with the `apps/web` scaffold.** Three notes on the tree above:
+
+- **`design/tokens.css` is gone from `design/`.** It now lives at `packages/ui/src/styles/tokens.css`,
+  moved rather than copied per §15.4, and `git` records it as a rename so the provenance survives.
+- **`packages/i18n` no longer owns formatting.** next-intl's global `formats`, declared once in
+  `apps/web/src/i18n/formats.ts` and reached by name through `useFormatter`/`getFormatter`, owns it —
+  and a second formatting layer beside it is exactly the drift the package exists to prevent. What
+  remains here is the locale registry, the API-backed message loader, the fallback-reporting channel
+  (FR-64, UX-97) and the +40 % string-expansion harness.
+- **`apps/web`'s internal structure is documented in `apps/web/CLAUDE.md`**, not here — the same
+  split as `apps/api`, whose module tree sits in §6.7 rather than in this section. The load-bearing
+  shape is four route groups: `(public)` (the only zone where `"use cache"` is legal), `(identity)`,
+  and `(app)/(workspace)` and `(app)/(wizard)` as **siblings**, because UX-5 has the wizard suppress
+  the workspace tier rather than nest inside it.
 
 **Runbooks are a deliverable, not an afterthought**, because six NFRs are verified by *rehearsal* rather than by test — NFR-28/29 (data-subject requests), NFR-31 (exit), NFR-51/52 (restore), NFR-85 (publish-and-revert), NFR-86 (version rollout), NFR-93 (job failure).
 
@@ -1440,8 +1455,11 @@ Versions were verified on **10 August 2026** and are part of the build contract,
 | NestJS ORM adapter | `@nestjs/typeorm` | **11.0.3** | Peer range `^0.3.0 \|\| ^1.0.0-dev`; smoke-test against 1.1 |
 | Tenant UI | Next.js | **16.3.0** | App Router; `proxy.ts` session tier; SSR for list and preview views |
 | UI library | React | **19.2.8** | No major after 19 exists |
+| UI DOM renderer | `react-dom` | **19.2.8** | **Added 18 Aug 2026** with the `apps/web` scaffold. Must equal the `react` pin exactly — React and its renderer are released as one unit and a split pair fails at runtime, not at install |
+| Tenant i18n | `next-intl` | **4.13.7** | **Added 18 Aug 2026** with the `apps/web` scaffold; §12.1 previously named no i18n package. Chosen because its `getRequestConfig` accepts messages from an arbitrary async source, which is what lets the catalogue come from the configuration store (FR-61, FR-62, NFR-85) rather than from committed JSON. Its global `formats` is also where NFR-26's "no hardcoded format pattern" becomes structural. Pulls two non-optional native builds — `@swc/core` and `@parcel/watcher` — both reviewed and allowed in `pnpm-workspace.yaml` |
 | Admin build | Vite | **8.2.1** | Vite 8 makes Rolldown the single bundler and Oxc the React transform, replacing esbuild/Rollup/Babel — a straight build-speed win for an internal SPA |
 | Styling | Tailwind CSS | **4.3.3** | Utilities for layout and application UI |
+| Styling | `@tailwindcss/postcss` | **4.3.3** | **Added 18 Aug 2026.** Tailwind 4 ships its PostCSS integration separately; it tracks the Tailwind pin |
 | Styling | Dart Sass | **1.102.0** | SCSS for design-system primitives and the print/PDF export templates. Modern API only; `@use`, not `@import` |
 | Database | PostgreSQL | **18.4** | §12.3 — five features are load-bearing. Stable since 25 September 2025; EOL November 2030 |
 | DB driver | `pg` | **8.23.0** | Returns `numeric` as a string, which NFR-58 wants |
@@ -1453,6 +1471,9 @@ Versions were verified on **10 August 2026** and are part of the build contract,
 | PDF post-processing | qpdf / pikepdf, veraPDF | — | In-place metadata injection; conformance validation against PDF/A-2a and PDF/UA-1 |
 | Package manager | pnpm | **11.22.0** (verified 18 Aug 2026) | Workspace monorepo. **Moved from 11.21.0 on 18 Aug 2026**: 11.21.0 cannot bootstrap itself from an 11.22.0 host on `darwin-x64` — pnpm writes `@pnpm/exe@11.21.0` into the lockfile and then refuses to run because `@pnpm/exe.darwin-x64` is absent from it. 11.22.0 installs with no override. Same minor; catalog, `allowBuilds` and `catalogMode` behave identically |
 | Lint | ESLint | **10.8.1** | Next 16 removed `next lint`; CI calls ESLint directly |
+| Test runner (web) | Vitest | **4.1.10** | **Added 18 Aug 2026.** §12.5.6 and OQ-16 named Vitest as the runner for `apps/{web,admin}` and `packages/*` without pinning it. With `jsdom` **30.0.1**, `@vitejs/plugin-react` **6.0.5**, `@testing-library/react` **16.3.2** and `@testing-library/user-event` **14.6.4** |
+| Lint (web) | `eslint-plugin-react-hooks` **7.1.1**, `eslint-plugin-jsx-a11y` **6.10.2**, `@next/eslint-plugin-next` **16.3.1** | — | **Added 18 Aug 2026.** jsx-a11y still declares a peer range ending at ESLint ^9; verified working under 10.8.1 by loading the plugin and asserting a rule fires, and recorded as a justified `peerDependencyRules.allowedVersions` entry |
+| Accessibility CI | `@axe-core/playwright` | **4.13.0** | **Added 18 Aug 2026.** The automated half of NFR-75's verification; the manual keyboard and screen-reader audit of the wizard is the other half |
 | Lint | typescript-eslint | **8.66.0** | The constraint behind AD-13 |
 | Boundaries | dependency-cruiser | **18.1.1** | AD-1's boundary enforcement |
 | Telemetry | OpenTelemetry JS SDK | **0.221.0** | Pre-1.0; pin exactly |
@@ -2131,6 +2152,15 @@ All fourteen are decided in **§12.5**, taken as one decision because the choice
 | OQ-28 | **Team shape and cost.** The 8–12 month estimate is stated for "a competent team"; no team size, composition or budget appears in any source | Silent |
 | OQ-29 | **Closed 18 Aug 2026 — provider webhooks get their own 600 req/min per-source-IP bucket at `edge`**, separate from the 60/min unauthenticated budget. Raised at foundation stage: callbacks are unauthenticated by session and all arrive from one acquirer range, so under the general rule a single allowance spans every tenant's payments — and §11.2 makes the callback the only authoritative source of order state. See §12.5.6 | Resolved. An IP allowlist is the stronger control and was **not** adopted as primary: it depends on maib, Victoriabank and MICB publishing stable ranges and announcing changes, which is not established, and a silently rotated range turns a delay into a hard 403 on every callback. Available as per-provider hardening; correctness rests on signature verification and `(provider, provider_event_id)` de-duplication |
 | OQ-30 | **Closed 18 Aug 2026 — per-report rights are derived, not stored.** §6.5 previously read as though a per-report grant existed. No FR creates, grants or revokes one; FR-57 assigns an organization role, FR-22's period lock makes a report read-only, and `design_spec.md` has no screen for per-report access. Rights are computed per request from organization role × period state × entity. See §6.5 | Resolved, and FR-158 is satisfied as written — the *evaluation* is per report. Accepted cost: in a multi-entity organization every edit-role member can edit every entity's report, and narrowing that is not an MVP capability. Additive to reverse: an explicit grant table would further restrict, with this derivation as the default. Adjacent and still open: **OQ-26**, permission scoping across an organization relationship |
+| OQ-31 | **Which host serves the tenant application, and does the public marketing site share it?** §3.2's surface table lists five surfaces and no public marketing surface at all, yet `design/HANDOFF.md` assigns "public site, identity, workspace, reporting wizard, commerce, help centre" to `apps/web`. The prototypes show `app.easyesg.md` exactly once. This surfaced as a hard build failure, not a preference: the marketing home and S-05 both wanted `/{locale}`, and Next rejects two route groups resolving to one path | **Open — proceeding under a stated, reversible assumption.** `apps/web` scaffolded 18 Aug 2026 with the marketing home at `/{locale}` and S-05 at `/{locale}/home`. The marketing home holds the locale root because it is the SEO landing page and the only page §14.2 permits to be cached. If a host split is confirmed, `/home` becomes `/` on the tenant host behind a redirect. Related: `design_spec.md` OQ-12 |
+| OQ-32 | **Locale in the URL versus the profile preference — which is authoritative?** UX-2 forbids the active organization from ever appearing in a URL, but says nothing about language, and UX-4 requires every addressable state to have a shareable address | **Closed 18 Aug 2026 — the URL is authoritative for rendering; the profile preference is the default a bare path redirects to.** `/{locale}/` prefixes every route, public and authenticated (`localePrefix: 'always'`). Language is not a security boundary, so the reasoning that makes tenancy session-only does not transfer: a colleague opening a shared link to a validation finding should see the page, in their own language. The mechanism needs no special case — the session writes the `NEXT_LOCALE` cookie at sign-in from the profile preference (S-27, FR-10), and next-intl's ordinary detection then serves authenticated and anonymous alike |
+| OQ-33 | **CSRF and `SameSite` policy.** The doc set never uses the words CSRF, XSRF or SameSite. AD-9's design — an httpOnly cookie held by a server tier that forwards authenticated requests — is precisely the shape that makes this live | **Open, and load-bearing.** §14.1's transport row covers TLS, HSTS, rate limiting and the admin IP allowlist and stops there. The locale cookie is `SameSite=Lax` as scaffolded; the session cookie's attributes, and whether state-changing requests through `src/app/api/[...path]` carry a token, are undecided. Needed before the first authenticated write ships |
+| OQ-34 | **Content Security Policy and the security-header set.** No CSP, no header inventory, and no statement about where they are set — Caddy at the edge, or Next's own headers | **Open.** §14.1's transport row is the complete edge security surface in the doc set. NFR-70 requires markup and script escaping for interface rendering, which a CSP complements rather than replaces |
+| OQ-35 | **Tenant session idle and absolute lifetime.** §12.5.6 states 8 h idle / 12 h absolute for the *admin* session and nothing for the tenant one | **Open.** AD-12 bounds the access token at ≤ 15 min and makes the refresh token rotating and revocable, but a rotating refresh token with no absolute cap is an unbounded session. FR-7's "terminate other sessions" implies a list, which implies a lifetime |
+| OQ-36 | **Poll intervals and backoff.** §11.2 makes polling the named mechanism for order state, and AD-10 for export jobs; FR-161 requires an unread count available from any screen. No interval is stated for any of the three | **Open.** UX-116 sets the constraint qualitatively — under filing-window load no element may poll more frequently than the state it reflects actually changes — but the numbers are unset, and 300 req/min per organization at `edge` (§12.5.6) is the budget they have to fit inside |
+| OQ-37 | **The `apps/web` health-check path.** §10.6's blue/green switch health-checks the new Compose project before moving the Caddy upstream, and never names the endpoint | **Closed 18 Aug 2026 — `GET /health`**, outside the `[locale]` segment and excluded from the proxy matcher so it answers identically regardless of language and requires no session. Matches `apps/api`'s existing `/health` exclusion from the global prefix |
+| OQ-38 | **Where do the React templates shared by the preview and the PDF live?** §4.11 requires that headless Chromium render "the same React templates the preview uses, so FR-48's preview and FR-49's PDF cannot drift". S-10 is in `apps/web`; the renderer is a separate container | **Open.** `packages/ui` is the natural home — it already carries the token cascade both surfaces share (UX-127) — but §12.2 puts the export templates' `@page` rules, page-break control and counters in SCSS, and the renderer must run them with no client JS and no late web fonts. Needed before Phase 7 |
+| OQ-39 | **`next/root-params` migration.** next-intl 4.13 deprecates `requestLocale` in favour of `next/root-params`, which Next 16.3 enables by default | **Deferred 18 Aug 2026, with the blocker recorded.** `apps/web` stays on `requestLocale`: root params throw inside a Route Handler (Next error E1043 — support "is planned for a future version"), and the module is a compiler-replaced placeholder that throws on plain import, which breaks any unit test reaching `src/i18n/request.ts`. Adopting it today would add two failure modes to buy nothing. Revisit when Route Handlers are supported, or when the deprecation becomes a removal |
 
 ---
 

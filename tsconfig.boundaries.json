@@ -1,6 +1,21 @@
 {
-  "//": "Tooling-only tsconfig. dependency-cruiser resolves `include` relative to its own CWD (the repo root), not to the file's directory, so apps/api/tsconfig.json cannot be reused here. Compiler options are irrelevant — only module resolution is used.",
-  "extends": "./apps/api/tsconfig.json",
-  "compilerOptions": { "rootDir": "." },
-  "include": ["apps/*/src/**/*.ts", "packages/*/src/**/*.ts"]
+  "//": "Tooling-only tsconfig. dependency-cruiser resolves `include` relative to its own CWD (the repo root), not to the file's directory, so a package's own tsconfig cannot be reused here. Only module resolution is used — the compiler options exist to make imports resolvable across both apps, not to type-check anything.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    // `bundler` rather than apps/api's `nodenext`: it resolves both the extensionless relative
+    // imports apps/api uses and apps/web's `@/*` alias, which nodenext would not.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    // Without this, every `@/...` import in apps/web resolves to nothing — and a rule whose
+    // `from` never resolves looks exactly like a rule that passes.
+    "paths": { "@/*": ["apps/web/src/*"] }
+  },
+  "include": [
+    "apps/*/src/**/*.ts",
+    "apps/*/src/**/*.tsx",
+    "packages/*/src/**/*.ts",
+    "packages/*/src/**/*.tsx"
+  ]
 }

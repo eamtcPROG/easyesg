@@ -29,6 +29,7 @@ catalogMode: strict
 cleanupUnusedCatalogs: true
 
 catalog:
+  '@axe-core/playwright': 4.13.0
   '@eslint/js': 10.0.1
   '@nestjs/bullmq': 11.0.5
   '@nestjs/cli': 11.0.24
@@ -40,37 +41,62 @@ catalog:
   '@nestjs/swagger': 11.4.7
   '@nestjs/testing': 11.2.1
   '@nestjs/typeorm': 11.0.3
+  '@next/eslint-plugin-next': 16.3.1
+  '@playwright/test': 1.62.1
+  '@tailwindcss/postcss': 4.3.3
+  '@testing-library/react': 16.3.2
+  '@testing-library/user-event': 14.6.4
   '@types/express': 5.0.6
   '@types/jest': 30.0.0
   '@types/node': 26.2.0
+  '@types/react': 19.2.18
+  '@types/react-dom': 19.2.4
   '@types/supertest': 7.2.1
+  '@vitejs/plugin-react': 6.0.5
   'bullmq': 6.0.9
   'class-transformer': 0.5.1
   'class-validator': 0.15.1
   'dependency-cruiser': 18.1.1
   'eslint': 10.8.1
+  eslint-plugin-jsx-a11y: 6.10.2
+  eslint-plugin-react-hooks: 7.1.1
   'express': 5.2.1
   globals: 17.11.0
   'ioredis': 6.0.0
   'jest': 30.4.2
+  jsdom: 30.0.1
   'nestjs-pino': 4.6.1
+  next: 16.3.0
+  next-intl: 4.13.7
   'pg': 8.23.0
   'pino': 10.3.1
   'pino-http': 11.0.0
+  react: 19.2.8
+  react-dom: 19.2.8
   'reflect-metadata': 0.2.2
   'rxjs': 7.8.2
+  sass: 1.102.0
+  server-only: 0.0.1
   'source-map-support': 0.5.21
   'supertest': 7.2.2
+  tailwindcss: 4.3.3
   'ts-jest': 29.4.12
   'ts-node': 10.9.2
   'typeorm': 1.1.0
   'typescript': 6.0.3
   'typescript-eslint': 8.66.0
+  vitest: 4.1.10
 
 allowBuilds:
+  # next-intl's native file watcher, a non-optional dependency. Allowed: it is a real native
+  # build, and next-intl declares it rather than treating it as optional.
+  '@parcel/watcher': true
   # TypeORM's install-time analytics beacon. Denied: it is telemetry, not a build the
   # package needs, and it phones out from every CI run and every developer install.
   '@scarf/scarf': false
+  # Host for next-intl-swc-plugin-extractor, next-intl's message extractor. Allowed: same
+  # reasoning as @parcel/watcher — a declared, non-optional native compiler binary.
+  '@swc/core': true
   # Native accelerator for msgpackr, BullMQ's serialiser. Allowed: it is a real native
   # build, and without it msgpackr silently falls back to slower pure JS.
   'msgpackr-extract': true
@@ -89,3 +115,10 @@ peerDependencyRules:
     # Redis is never a system of record (AD-10). If anyone ever sets `cache: {type:"redis"}`
     # on a DataSource, this entry is the thing that was hiding an untested combination.
     "typeorm>ioredis": "6.0.0"
+    # §12.1 pins ESLint 10.8.1; eslint-plugin-jsx-a11y 6.10.2 still declares a peer range
+    # ending at ^9. Verified 18 Aug 2026 by loading the plugin under 10.8.1 and asserting
+    # jsx-a11y/alt-text fires: the range is stale metadata, not an incompatibility. Unlike the
+    # entry above, a real break here would be loud — ESLint throws at lint time on a removed
+    # API rather than silently taking an untested path — so the exposure is a failed `pnpm
+    # lint`, not a defect that ships. Revisit when the plugin declares 10.
+    "eslint-plugin-jsx-a11y>eslint": "10.8.1"

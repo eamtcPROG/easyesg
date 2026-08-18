@@ -3,8 +3,11 @@
  *
  * CLAUDE.md: "Prove a deliberate cross-context import actually fails CI — a rule that
  * silently matches nothing looks identical to a rule that passes." Every rule below has a
- * counter-fixture under tools/boundary-fixtures/, and `pnpm boundaries:prove` asserts each
- * one is still rejected.
+ * counter-fixture in tools/prove-boundaries.sh, which asserts each one still rejects it.
+ *
+ * Rules 1-6 guard apps/api; 7-11 guard apps/web and packages/ui; no-circular guards everything
+ * cruised. The `boundaries` script names all three roots — a rule anchored at a path that is
+ * never walked is inert in the same invisible way.
  */
 module.exports = {
   forbidden: [
@@ -75,6 +78,64 @@ module.exports = {
         // and the rule looks green while enforcing nothing.
         path: 'node_modules/(@nestjs|typeorm|express|ioredis|bullmq)(/|$)',
       },
+    },
+    {
+      name: 'web-not-to-commerce',
+      comment:
+        'A6: with BILLING_ENABLED=false the reporting core must still pass UC-17…48 end to end, ' +
+        'which is also the standing verification that Layer 1 holds no commercial logic (D-11). ' +
+        'IMPLEMENTATION_PLAN Phase 9 states it as a build rule: "no screen from an earlier phase ' +
+        'may import a commerce component." The realistic violation is a plan badge on the home ' +
+        'screen. The billing route subtree is exempt because rendering commerce is its job.',
+      severity: 'error',
+      from: {
+        path: '^apps/web/src/(?!features/commerce/|app/\\[locale\\]/\\(app\\)/\\(workspace\\)/billing/)',
+      },
+      to: { path: '^apps/web/src/features/commerce' },
+    },
+    {
+      name: 'web-public-is-a-leaf',
+      comment:
+        'IMPLEMENTATION_PLAN Phase 10: the public site "depends on nothing from phases 4-9. ' +
+        'Nothing later depends on them either." That is what makes it pullable forward if ' +
+        'commercial timing demands it. An import from features/public into any authenticated ' +
+        'feature quietly removes that property. packages/ui is the shared surface, as intended.',
+      severity: 'error',
+      from: { path: '^apps/web/src/features/public' },
+      to: { path: '^apps/web/src/features/(?!public)' },
+    },
+    {
+      name: 'web-not-to-api-src',
+      comment:
+        'DR-11: apps/web is an ordinary client of the public API, not a privileged backend. The ' +
+        'wire contract is @easyesg/contracts, generated from source and diffed in CI (P-5). ' +
+        'Reaching into apps/api/src would couple the front end to server internals that no ' +
+        'OpenAPI diff or contract test would ever see change.',
+      severity: 'error',
+      from: { path: '^apps/web/src' },
+      to: { path: '^apps/api/src' },
+    },
+    {
+      name: 'client-not-to-server',
+      comment:
+        'AD-9: the Next server tier holds the httpOnly refresh cookie and forwards a short-lived ' +
+        'access token, "so no token is exposed to browser JavaScript". src/server also holds ' +
+        'SESSION_SECRET via lib/env. One import from a client component bundles the credential ' +
+        'into the browser. server-only fails the build too; this fails CI, and the two failures ' +
+        'catch different mistakes.',
+      severity: 'error',
+      from: { path: '^apps/web/src/client' },
+      to: { path: '^apps/web/src/server' },
+    },
+    {
+      name: 'ui-is-presentational',
+      comment:
+        'packages/ui is consumed by apps/web AND apps/admin (§10.7), and its values are the ' +
+        'single source of truth for the print layer and email too (UX-127). A dependency on an ' +
+        'app inverts that and makes the design system unusable from the other side.',
+      severity: 'error',
+      from: { path: '^packages/ui/src' },
+      to: { path: '^apps/' },
     },
     {
       name: 'no-circular',

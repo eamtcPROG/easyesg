@@ -1,0 +1,9 @@
+/* The plain-CSS Tailwind entry (§12.2). Tailwind's own entry deliberately stays out of any
+   .scss file: Sass runs first and would try to resolve @import "tailwindcss" itself. SCSS in
+   packages/ui consumes tokens through @use instead. */
+@import 'tailwindcss';
+
+/* The tier 1/2/3 cascade. Moved here from design/tokens.css at Phase 0 — moved, not copied,
+   because two token files is how a design system dies (§15.4). Loaded after Tailwind so the
+   token layer wins any collision. */
+@import '@easyesg/ui/src/styles/tokens.css';

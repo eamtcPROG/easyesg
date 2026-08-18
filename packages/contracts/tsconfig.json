@@ -1,5 +1,12 @@
 {
-  "extends": "../../apps/api/tsconfig.json",
-  "compilerOptions": { "rootDir": "./src", "outDir": "./dist", "types": ["node"] },
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "declaration": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "types": ["node"]
+  },
   "include": ["src/**/*.ts"]
 }

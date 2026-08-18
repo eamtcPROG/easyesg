@@ -1,0 +1,126 @@
+# apps/web — working notes
+
+Scoped to this package. The root `CLAUDE.md` still governs — the doc set and its precedence, the
+open-question protocol, version pinning, SOLID and clean-architecture rules, the timestamp and
+user-facing-text conventions. This file carries only what you need in your hands while editing
+**here**: the shape that exists on disk, and the traps that shape has.
+
+`docs/architecture.md` is authoritative for every decision below, and `docs/design_spec.md` for
+every screen. Cite them; do not re-derive them.
+
+## Current state
+
+Scaffold only. What exists: 36 route files across four route groups, 6 layouts, 2 route handlers,
+the next-intl wiring, 10 feature folders, and 5 boundary rules with fixtures proving each rejects
+a real violation.
+
+**Not built, and do not assume otherwise:** every page returns `null`. No component, no data
+fetch, no session. `src/server/api-client.ts` and `src/server/session.ts` are docblocks over an
+empty export. `src/app/api/[...path]/route.ts` answers 501 to everything. `packages/ui` exports
+nothing but the token cascade, so there is no button yet. `apps/admin` does not exist.
+
+**One scaffold-only shim, marked for deletion:** `src/server/messages.ts` returns an empty
+catalogue when the localization endpoint is missing or the API is unreachable, which is what lets
+`pnpm build` prerender the public shell with no API running. `platform/localization` is one of
+the 35 registered-but-empty modules in `apps/api`. Delete `emptyCatalogueWhileUnbuilt` and both
+call sites in the first localization sprint — a page silently rendered with no words is worse
+than one that says it broke (NFR-79).
+
+## Commands
+
+Run lint and boundary checks from the **repo root**; they are workspace-wide.
+
+| From | Command | Notes |
+| --- | --- | --- |
+| root | `pnpm lint` | One flat config at the root; this package has no `lint` script of its own. Next 16 removed `next lint`, so this is the **only** lint gate — AD-9: without it "every gate in AD-13's table silently turns off" |
+| root | `pnpm boundaries` | dependency-cruiser over `apps/api/src`, `apps/web/src` and `packages/ui/src` |
+| root | `pnpm boundaries:prove` | Asserts each of the 12 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
+| here | `pnpm typecheck` | `tsc --noEmit` |
+| here | `pnpm build` | Needs **no** environment. Nothing under `[locale]` prerenders, so the build never reaches the message loader, and `src/lib/env.ts` resolves through getters so a secret is a runtime input rather than a build input |
+| here | `pnpm start:dev` / `test` | |
+
+## Where things live
+
+```
+src/
+├─ proxy.ts        Next 16's middleware. Locale AND session — see below
+├─ i18n/           next-intl: routing · navigation · request · formats
+├─ app/            routes only, thin. No logic, no data access
+├─ features/       10 domains, mirroring apps/api/src/modules names
+├─ server/         server-only: session, api-client, data/
+├─ client/         browser-only: autosave (IndexedDB queue), polling
+└─ lib/            env, pagination, session-cookie
+```
+
+Route groups carry no URL segment, which is the whole reason there are four:
+
+| Group | Layout it establishes | Screens |
+| --- | --- | --- |
+| `(public)` | None. **The only zone where `"use cache"` is legal** (§14.2) | Marketing, legal, help |
+| `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03 |
+| `(app)/(workspace)` | Global tier + workspace tier | S-05, S-06, S-13…S-28 |
+| `(app)/(wizard)` | Global tier only; module rail replaces the workspace tier | S-07…S-12 |
+
+`(workspace)` and `(wizard)` are siblings, not parent and child, because **UX-5** says the wizard
+*suppresses* the workspace tier. `/reports` and `/reports/:id/:module` therefore sit under
+different layout ancestries over one address space. Nesting them would make the rail a
+conditional render, which is how it ends up half-suppressed on one screen.
+
+## The traps
+
+- **`proxy.ts` has two jobs and only one file.** Next accepts one proxy module; AD-9 needs the
+  session tier there and next-intl needs locale negotiation there. They compose in one exported
+  `proxy` function, locale first. The matcher excludes `api` — `src/app/api/[...path]` is the
+  token-attaching proxy and a locale rewrite would corrupt the forwarded path — and `health`,
+  which must answer identically at every locale, meaning at none.
+
+- **Never import `next/link` or `next/navigation`'s locale-aware members.** Use
+  `@/i18n/navigation`. A raw `next/link` renders a working-looking anchor that drops the locale
+  prefix: nothing throws, nothing logs, and it survives review. Lint-enforced.
+
+- **`UNAUTHENTICATED_SEGMENTS` in `proxy.ts` is the auth boundary, and it is a list.** Route
+  groups are invisible in URLs, so `(public)` and `(identity)` cannot be detected from the path.
+  The default is closed — anything unnamed requires a session. Adding a public screen means
+  adding it there.
+
+- **The active organization never appears in a URL.** UX-2, and it is a security property, not a
+  style: a second source of tenancy turns an org-switch race or a revoked membership into a
+  cross-tenant read (AD-2). Language is the opposite case and *is* in the URL — do not
+  generalise from one to the other.
+
+- **Nothing prerenders, and there are two separate reasons.** `[locale]` is `force-dynamic`
+  because NFR-85 requires a copy change to reach production in a working day and be revertible
+  in one step — a page with its strings baked into the build artefact needs a redeploy to change
+  a sentence, and the failure is invisible (the build is green, the copy is stale). `(app)`
+  declares it again for the stronger reason: every route below it is tenant-scoped, and §14.2
+  treats framework caching there as a tenancy risk, not a performance question.
+
+- **`NextIntlClientProvider` is `messages={null}` at the root.** The default ships every message
+  to the browser — the full B1–B11 label set across three locales, against NFR-43's LCP budget.
+  Client components get a namespace-scoped provider instead.
+
+- **Formatting has one home.** `src/i18n/formats.ts` declares named formats; components reach
+  them by name through `useFormatter()`. `toFixed`, `toLocaleString` and `new Intl.*Format` are
+  lint errors, because NFR-26's stated verification is a static analysis rule.
+
+- **`requestLocale`, not `next/root-params`.** next-intl marks the former deprecated, but root
+  params throw inside a Route Handler (Next E1043) and the module is a compiler-replaced
+  placeholder that throws on plain import, breaking unit tests that reach `request.ts`. Migrate
+  when Route Handlers are supported. Logged in `architecture.md` §18.
+
+- **Nothing pushes.** Order state, export jobs and the notification unread count all poll (§11.2).
+  SSE and WebSockets exist nowhere in §5.4, §10.4 or the edge config; adding one is an amendment
+  to those sections, not a ticket.
+
+## Before you add a screen
+
+- It has an `S-nn` in `design_spec.md` §4.4, or it is one of the public/legal/help surfaces that
+  deliberately has none — which is itself an open question, not a licence to invent an id.
+- It is an instance of one of the nine archetypes (§4.6). A screen that fits none is an
+  escalation to design review.
+- All eleven §8.1 states are designed before implementation. An undefined state is a defect, not
+  an omission (UX-90).
+- Every string is a message key. Every error states what failed, the consequence, and the action
+  that resolves it (NFR-79) — the "what now" slot is required, not optional.
+- No internal identifier reaches the screen: no `FR-`/`UC-`/`S-`, no enum member, no taxonomy
+  element key, no problem-type slug.

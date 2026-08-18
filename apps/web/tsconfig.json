@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The base deliberately carries no module or emit settings: apps/api is nodenext with
+    // decorators, this is a bundler-resolved React app, and one of those inherited into the
+    // other is the reason tsconfig.base.json exists.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["dom", "dom.iterable", "ES2024"],
+    "jsx": "preserve",
+    "noEmit": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    // No "vitest/globals": specs import from 'vitest' explicitly, so the global namespace
+    // stays clean and isolatedModules has nothing to argue with.
+    "types": ["node"],
+    "paths": { "@/*": ["./src/*"] },
+    "plugins": [{ "name": "next" }]
+  },
+  // .next/types carries the generated next/root-params declarations that src/i18n/request.ts
+  // depends on; next-env.d.ts is what wires them in. Both are gitignored and regenerated.
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next", "dist"]
+}

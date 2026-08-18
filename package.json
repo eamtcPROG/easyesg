@@ -20,16 +20,21 @@
     "build": "pnpm -r build",
     "lint": "eslint .",
     "test": "pnpm -r test",
-    "boundaries": "depcruise --config .dependency-cruiser.cjs apps/api/src",
+    "boundaries": "depcruise --config .dependency-cruiser.cjs apps/api/src apps/web/src packages/ui/src",
     "boundaries:prove": "./tools/prove-boundaries.sh",
     "openapi:emit": "pnpm --filter @easyesg/api openapi:emit",
     "openapi:check": "pnpm openapi:emit && git diff --exit-code packages/contracts/openapi/v1.json",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@eslint/js": "catalog:",
+    "@next/eslint-plugin-next": "catalog:",
+    "@playwright/test": "catalog:",
     "dependency-cruiser": "catalog:",
     "eslint": "catalog:",
+    "eslint-plugin-jsx-a11y": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
     "globals": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"

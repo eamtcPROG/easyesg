@@ -1,0 +1,40 @@
+{
+  "name": "@easyesg/web",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "easyesg tenant application — Next.js App Router, session-holding proxy tier (architecture.md AD-9)",
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "start": "next start",
+    "start:dev": "next dev --port 3100",
+    "start:prod": "next start",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@easyesg/contracts": "workspace:*",
+    "@easyesg/i18n": "workspace:*",
+    "@easyesg/ui": "workspace:*",
+    "@easyesg/validation": "workspace:*",
+    "next": "catalog:",
+    "next-intl": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "server-only": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "jsdom": "catalog:",
+    "tailwindcss": "catalog:",
+    "vitest": "catalog:"
+  }
+}
