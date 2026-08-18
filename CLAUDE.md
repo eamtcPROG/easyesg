@@ -123,6 +123,13 @@ on a date and reviewed quarterly with the regulatory watch (NFR-12). Bumping a p
 version is a spec change with a recorded rationale, not something done in passing while
 fixing something else.
 
+**The risk axis is supported versus unsupported, not new versus old.** New is the default and
+old is the usual failure — deferred upgrades compound, and three majors behind costs far more
+than three single-major hops, which is why every pin carries a verification date and rides the
+quarterly review. But *newest* is not the protective property: Node 25 was the newest Node for
+months and was end-of-life eight months after release. Old-and-supported beats
+new-and-unsupported. None of the three exceptions below is a preference for old versions.
+
 Three standing exceptions — deliberate, not oversights:
 
 - **TypeScript stays on 6.x** (AD-13). TS 7 has no compiler API, which breaks `nest build`,
@@ -132,8 +139,9 @@ Three standing exceptions — deliberate, not oversights:
   2026, ten weeks ahead of its 28 Oct 2026 LTS date, because v24 enters Maintenance on
   20 Oct and 26 is supported a year longer. The exception closes by the calendar, not by
   a migration — see architecture.md §12.6 for the four controls that hold until then.
-- **Pre-1.0 packages are pinned exactly** (e.g. the OpenTelemetry SDK); a minor bump there
-  can be breaking.
+- **Pre-1.0 packages are pinned exactly** (e.g. the OpenTelemetry SDK). Semver makes no
+  promise below 1.0, so a minor bump can break. Exact pinning makes each bump deliberate —
+  it does not mean staying behind.
 
 When you do set or move a pin, record the version and the date you verified it, so the next
 review knows how old the check is.
@@ -194,7 +202,13 @@ sections, not a preference. Its strictness matches P-7 and the `contracts/` boun
   its own build stage. `apps/web` needs extra care: Next.js `output: 'standalone'` does its
   own file tracing and must be proven against the symlink layout on the first Docker build.
 - **Pin the version** with `packageManager` in the root `package.json` so CI, Docker and
-  laptops agree.
+  laptops agree, and **block the other package managers** — `"preinstall": "npx only-allow
+  pnpm"`. npm ships inside Node and is not removable; the risk is not that it exists but that
+  someone runs it here, producing a `package-lock.json` and a flat `node_modules` that silently
+  restores the phantom dependencies DR-1/AD-1 exist to prevent.
+- **Set `engineStrict: true`** in `pnpm-workspace.yaml` alongside `engines.node`. While the
+  Node 26 exception runs (architecture.md §12.6), this is what turns "laptops, Docker and CI
+  all run 26.7.0" from a written rule into a hard install failure.
 
 Escape hatches, and when they are a red flag:
 
