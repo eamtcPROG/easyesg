@@ -1503,6 +1503,15 @@ Two tools with different jobs, adopted at different times.
 
 The staging is deliberate. Three VMs do not need declarative provisioning for scale, and adopting both at once front-loads two unfamiliar tools onto the foundation sprint. Ansible earns its place immediately; OpenTofu earns its place at the first disaster-recovery rehearsal. The workload itself stays Docker Compose, as already specified. New directories `infra/ansible` and, later, `infra/tofu`.
 
+**Both are deploy-path tooling and neither is a developer-workstation prerequisite.** "Adopted from foundation stage" is when the tool enters the project, not when it is installed on a laptop. They run in one of two places and nowhere else:
+
+| | Where it runs | Installed as |
+|---|---|---|
+| Normal operation | The CI runner (§12.5.4) | A pinned job step, not a machine-level install |
+| Initial bootstrap and disaster recovery | One operator machine | A deliberate, documented install — the estate has to exist before CI can deploy to it |
+
+The bootstrap case is a genuine chicken-and-egg and is the only reason a person installs either locally: CI deploys to infrastructure, and infrastructure is what OpenTofu creates. Recording it here so the first VM is not provisioned by hand "just this once", which is exactly the undocumented drift Ansible is being adopted to prevent. A developer building `apps/*` or `packages/*` never needs either tool.
+
 #### 12.5.6 Test tooling, coverage floors, rate limits and token bounds
 
 **Jest + ts-jest** in `apps/api` and `apps/worker` — NestJS's default, and AD-13 already assumes ts-jest in its argument for pinning TypeScript at 6.x. **Vitest** in `apps/web`, `apps/admin` and `packages/*` — `apps/admin` is Vite, where Vitest is native and materially faster on component suites. One documented exception costs less than forcing either runner across both sides. **Playwright** for E2E and cross-browser, already pinned.
