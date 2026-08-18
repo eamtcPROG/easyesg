@@ -379,6 +379,55 @@ argued them and nothing contradicts them, but they remain `design_spec.md` OQ-1 
 `architecture.md` OQ-3 until the registers are amended. Treat this as the worked example of the
 rule above: this file recording a decision is not the same as the decision having been taken.
 
+### Time is an epoch-millisecond integer; a legal date is not
+
+**An instant is a Unix epoch timestamp in milliseconds — an integer, UTC-based.** That is the
+representation in storage, on the wire and in every DTO: `createdAt`, `updatedAt`, `dispatchedAt`,
+`transmittedAt`, `occurredAt`, token expiries, job timings, metering event times. No locale-formatted
+string ever reaches storage or the API; formatting is a presentation concern and NFR-26 requires it be
+derived from the active locale with no hardcoded pattern. Name the field so it reads as a time and
+state the unit in its `@ApiProperty` — OpenAPI can only describe it as `integer`, so nothing else will.
+
+**A calendar date that carries legal force stays a calendar date.** NFR-34 requires storing the
+originating timezone wherever a legal date is determined, and that requirement is closed — an
+epoch instant alone cannot settle which fiscal year a document falls in. So invoice and credit-note
+dates, the fiscal year a number series belongs to (DR-8, AD-7), reporting period start, end and due
+dates (FR-21), the BNM rate date (FR-129), and the effective dates on VAT rules, factor sets and
+thresholds (AD-4) are calendar dates plus the timezone that determines them — never an instant that
+happens to fall near midnight. Encoding *31 December 2026* as an epoch value is how a document lands
+in the wrong fiscal year, and that error is not correctable by editing (FR-125).
+
+The test for which you are holding: *would a different timezone change the answer to a legal or
+regulatory question?* If yes it is a date, not an instant.
+
+### User-facing text carries no internal identifiers
+
+**Nothing a user reads may contain a development-side notion.** No `FR-`, `UC-`, `NFR-`, `AD-`,
+`DR-`, `UX-`, `OQ-` or `BR-` identifier; no enum member (`VALUE_INCONSISTENCY`, `allow_with_warning`);
+no VSME taxonomy element key (`EnergyConsumptionFromRenewableSources`); no table or column name; no
+problem-type slug; no stack trace or provider error string. This binds every surface a person sees —
+screen labels and help text, validation findings, notification bodies, email, the PDF and Excel
+exports, and the `title` and `detail` of a problem+json response.
+
+This is not cosmetic. The reader is an SME owner or a bookkeeper with no ESG background, reading in
+Romanian, Russian or English; `FR-102` and `MISSING VALUE` tell them nothing about what to do next.
+NFR-79 already requires the three-part shape — *what happened / so what / what now* — and an
+identifier occupies the space where the "what now" belongs.
+
+Two things this does **not** forbid:
+
+- **Message keys in code are correct and required.** `entitlement.quota.approaching` is a pointer,
+  not a label; the wording lives in the configuration store and is publishable within a working day
+  and revertible in one step (FR-61, FR-62, NFR-85). A literal sentence in a `.ts` file is the
+  violation — it needs a release to change.
+- **A reference code shown on purpose is fine**, where a person needs to quote it: an invoice number,
+  a payment reference, the NFR-90 correlation id on an error. Present it as a reference the user can
+  cite, not as internal jargon they are expected to decode.
+
+Taxonomy element keys resolve to labels through `platform/localization`, using the official EFRAG
+translation wherever one is published (NFR-24) — and Russian VSME labels are platform-authored with
+no EFRAG standing, which the export must say rather than imply.
+
 ## Looking things up
 
 When you need documentation for anything external — a library, framework, CLI, ORM,

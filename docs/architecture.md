@@ -710,6 +710,22 @@ OpenAPI describes a bespoke query encoding only as three strings, so the generat
 them loosely. NFR-83's contract tests and NFR-16's route-coverage diff are unaffected — they
 check routes, status codes and declared security, not query grammar.
 
+**Time on the wire is an epoch-millisecond integer. Decided 18 Aug 2026.** Every instant — creation,
+update, dispatch, transmission, token expiry, metering event — is a UTC-based Unix timestamp in
+milliseconds, in storage and in the DTO alike; no locale-formatted string reaches either (NFR-26 puts
+formatting at presentation). OpenAPI can only type it `integer`, so the field name must read as a time
+and its `@ApiProperty` must state the unit — nothing else in the contract will.
+
+This does **not** extend to a date carrying legal force, and the distinction is load-bearing rather
+than stylistic. NFR-34 requires the originating timezone to be stored wherever a legal date is
+determined, and an epoch instant cannot settle which fiscal year a document belongs to. Invoice and
+credit-note dates, the fiscal year a number series rolls on (AD-7, DR-8), reporting period start, end
+and due dates (FR-21), the BNM rate date (FR-129), and the effective dates on VAT rules, factor sets
+and thresholds (AD-4) therefore stay calendar dates plus the timezone that determines them. The test:
+*would a different timezone change the answer to a legal or regulatory question?* If yes, it is a date.
+An invoice dated 31 December encoded as an instant lands in the wrong fiscal year, and FR-125 makes
+that uncorrectable by editing — only by credit note.
+
 | Area | Paths |
 |---|---|
 | Identity | `/auth/*`, `/me`, `/me/notifications`, `/me/preferences` |

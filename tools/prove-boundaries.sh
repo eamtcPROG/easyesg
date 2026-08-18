@@ -57,6 +57,11 @@ prove cross-cutting-not-to-modules \
   "import { PeriodModule } from '../modules/core/period/period.module';
 export const violation = PeriodModule;"
 
+prove contracts-is-a-leaf \
+  "$API/contracts/__boundary_fixture.ts" \
+  "import { MessageDto } from '../app/dto/message.dto';
+export const violation = MessageDto;"
+
 prove domain-free-of-frameworks \
   "$API/modules/core/disclosure/domain/__boundary_fixture.ts" \
   "import { Injectable } from '@nestjs/common';

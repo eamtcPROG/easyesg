@@ -48,6 +48,18 @@ module.exports = {
       to: { path: 'packages/contracts' },
     },
     {
+      name: 'contracts-is-a-leaf',
+      comment:
+        'contracts/ is the shared kernel every context imports, so it must depend on nothing inside ' +
+        'the app. If it can reach into app/, modules/ or infrastructure/, then core importing ' +
+        'contracts transitively imports whatever contracts reached for — and DR-1 leaks through the ' +
+        'one surface that exists to hold it. Shared primitives live here; they do not get fetched ' +
+        'from elsewhere.',
+      severity: 'error',
+      from: { path: '^apps/api/src/contracts' },
+      to: { path: '^apps/api/src/(app|modules|infrastructure)/' },
+    },
+    {
       name: 'domain-free-of-frameworks',
       comment:
         'CLAUDE.md: "Domain and use-case code must not import NestJS, TypeORM, Express, Redis, ' +
