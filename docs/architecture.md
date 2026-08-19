@@ -1470,6 +1470,8 @@ Versions were verified on **10 August 2026** and are part of the build contract,
 | HTTP adapter | Express | **5.2.1** | NestJS's default adapter. Fastify was considered; at ≈ 150 peak concurrent sessions throughput is not the constraint, and Express has the wider middleware ecosystem and the documentation NestJS examples assume |
 | ORM | TypeORM | **1.1.0** | AD-14. Left `0.3.x` on 19 May 2026; adopted with five features deliberately switched off |
 | NestJS ORM adapter | `@nestjs/typeorm` | **11.0.3** | Peer range `^0.3.0 \|\| ^1.0.0-dev`; smoke-test against 1.1 |
+| Auth — password hashing | `@node-rs/argon2` | **2.1.0** (verified 19 Aug 2026) | **Added 19 Aug 2026.** §9.1 closed the algorithm — Argon2id, per-user salt, pepper from the secret manager — but named no package. Chosen over `argon2` 0.45.1: it ships N-API prebuilds as platform `optionalDependencies` with **no install script**, so `strictDepBuilds` has nothing to gate, and an ABI-stable prebuild is indifferent to the §12.6 Node window, while `argon2`'s node-gyp `install` script is exactly the source-build path control 3 warns about. Its `secret` option is where the §9.1 pepper goes. bcrypt (the iftamaster reference's choice) was declined on the spec: §9.1 is closed, and bcrypt truncates input at 72 bytes with no memory hardness. The binding is canaried by `argon2-binding.spec.ts` — a missing prebuild surfaces at require-time, not install-time |
+| Auth — tokens and middleware | `@nestjs/jwt` **11.0.2**, `@nestjs/passport` **11.0.5**, `passport` **0.7.0**, `passport-jwt` **4.0.1** | — (verified 19 Aug 2026) | **Added 19 Aug 2026.** AD-12 closed the design — ≤15-min JWT carrying only `session_id`, opaque server-side refresh tokens — but named no packages. `@nestjs/jwt` wraps `jsonwebtoken` 9, which is CommonJS, so no OQ-48 pressure; `jose` was declined for being ESM-only, which would have been OQ-48's stated revisit trigger, not a library choice. The passport trio is the strategy seam the NestJS guard shape documents; a bare guard would also serve AD-12, but the strategy interface is where OIDC (§9.1) later attaches without a second mechanism. Refresh tokens need no package — they are opaque DB rows by design |
 | Tenant UI | Next.js | **16.3.0** | App Router; `proxy.ts` session tier; SSR for list and preview views |
 | UI library | React | **19.2.8** | No major after 19 exists |
 | UI DOM renderer | `react-dom` | **19.2.8** | **Added 18 Aug 2026** with the `apps/web` scaffold. Must equal the `react` pin exactly — React and its renderer are released as one unit and a split pair fails at runtime, not at install |
@@ -1482,6 +1484,8 @@ Versions were verified on **10 August 2026** and are part of the build contract,
 | Styling | Tailwind CSS | **4.3.3** | Utilities for layout and application UI |
 | Styling | `@tailwindcss/postcss` | **4.3.3** | **Added 18 Aug 2026.** Tailwind 4 ships its PostCSS integration separately; it tracks the Tailwind pin |
 | Styling | Dart Sass | **1.102.0** | SCSS for design-system primitives and the print/PDF export templates. Modern API only; `@use`, not `@import` |
+| Icons | `lucide-react` | **1.32.0** (verified 19 Aug 2026) | **Added 19 Aug 2026**, closing design_spec.md OQ-15 (the icon set, which blocked Phase 1). ISC-licensed continuation of Feather: stroke-consistent, tree-shakeable per-icon exports, and icons inherit `currentColor`, so the tier-2 semantic tokens stay the only colour authority (UX-78). Lives in `packages/ui`, the design system's home. Registry latest on the verification date was 1.33.0, published four hours earlier; pnpm's release-age supply-chain policy held resolution to 1.32.0, and the pin records what installed rather than overriding that guard — the next quarterly pass collects the tail |
+| UI primitives | `radix-ui` | **1.6.7** (verified 19 Aug 2026) | **Added 19 Aug 2026**; no document had named a component library — design_spec.md §1.2 is deliberately library-agnostic and states only the contract one must satisfy. Headless and unstyled, so §12.2's split holds: the SCSS token cascade stays the sole styling authority and UX-79's "re-skinning edits tier 1 only" survives the dependency. The unified `radix-ui` package supersedes the per-primitive `@radix-ui/react-*` scatter. Base UI was declined on the stable-means-stable rule — it has never shipped a stable release, and its `1.0.0-rc.0` had sat unchanged since 4 Dec 2025 on the verification date. React Aria Components (stable, active) was the runner-up, declined for its heavier API surface; a shadcn-style copy-in was declined because its Tailwind-styled output contradicts §12.2. The 14 domain components remain first-party per design_spec.md §11.5 — the primitives sit underneath them only |
 | Database | PostgreSQL | **18.4** | §12.3 — five features are load-bearing. Stable since 25 September 2025; EOL November 2030 |
 | DB driver | `pg` | **8.23.0** | Returns `numeric` as a string, which NFR-58 wants |
 | Queue store | Redis | **8.10.0** | BullMQ's officially supported and tested backend, which removes a compatibility spike rather than adding one |
@@ -1509,7 +1513,13 @@ consult and become one the installer enforces. Packages this table does not pin 
 current stable through `pnpm add --save-catalog` and recorded there with the rest; those resolved
 **18 Aug 2026** at foundation stage were `@nestjs/swagger` 11.4.7, `@nestjs/config` 4.0.4,
 `@nestjs/bullmq` 11.0.5, `class-validator` 0.15.1, `class-transformer` 0.5.1, `nestjs-pino` 4.6.1,
-`pino` 10.3.1, `jest` 30.4.2, `ts-jest` 29.4.12 and `@types/node` 26.2.0.
+`pino` 10.3.1, `jest` 30.4.2, `ts-jest` 29.4.12 and `@types/node` 26.2.0; `@types/passport-jwt`
+4.0.1 followed on **19 Aug 2026** with the auth stack.
+
+Two identity-phase packages are **deliberately still unpinned**: the TOTP library and the OIDC
+client §9.1's MFA and SSO rows imply. Neither is needed by the auth seam installed on 19 Aug 2026,
+and the identity build raises its remaining unknowns as one batch when it starts — pinning them now
+would be deciding them without the work in front of us.
 
 ### 12.2 The styling split, and two configuration facts
 
