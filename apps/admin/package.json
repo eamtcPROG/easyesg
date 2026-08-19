@@ -1,0 +1,40 @@
+{
+  "name": "@easyesg/admin",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "easyesg platform administration console — React + Vite SPA on a separate auth realm (architecture.md AD-9, NFR-65)",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "start:dev": "vite --port 3200",
+    "start:prod": "vite preview --port 3200",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@easyesg/contracts": "workspace:*",
+    "@easyesg/i18n": "workspace:*",
+    "@easyesg/ui": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "catalog:",
+    "@tanstack/router-plugin": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "jsdom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

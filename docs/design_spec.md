@@ -109,7 +109,7 @@ Actor definitions are normative in *System Actors (MVP)*. This table adds only w
 | Surface | Audience | Auth realm | Device target | Design system relationship |
 |---|---|---|---|---|
 | **Tenant application** | CA, RC, OA | Tenant session | Entry ≥ 1024 px · full operation at tablet · full readability at phone | Canonical consumer of the design system |
-| **Administrative console** | PA, BO | Separate realm, separate host, mandatory MFA | Desktop only | Same tokens and primitives, different density and composition (§12) |
+| **Administrative console** | PA, BO | Separate realm, separate host, mandatory MFA | Desktop only (`wide` and `extra`, UX-77) | Same tokens and primitives, different density and composition (§12). **Romanian-only interface**, no locale segment in its URLs — amended 19 Aug 2026, `non_functional_requirements.md` NFR-23 and `architecture.md` OQ-42. Strings are still message keys, so this narrows how many catalogues the chrome ships in, not whether wording is configuration |
 | **Generated document** (PDF, Excel) | External readers — banks, buyers, auditors | None | Print and screen reading | Separate print layer sharing tokens; typography and layout diverge deliberately (§11.8) |
 | **Notification** (in-app, email) | All | Tenant session / none | Any, including phone | In-app uses the design system; email uses a constrained, client-tolerant subset (§6.12) |
 | **External checkout** (acquirer, MIA) | OA | Provider-controlled | Provider-controlled | **Not designable.** The platform designs the hand-off and the return, never the payment page itself (§6.11) |

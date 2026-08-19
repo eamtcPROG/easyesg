@@ -1,0 +1,26 @@
+/* The plain-CSS Tailwind entry (§12.2). Tailwind's own entry deliberately stays out of any
+   .scss file: Sass runs first and would try to resolve @import "tailwindcss" itself. SCSS in
+   packages/ui consumes tokens through @use instead. Identical ordering to apps/web — the two
+   front ends consume one cascade (UX-127) and must not diverge in how they load it. */
+@import 'tailwindcss';
+
+/* The tier 1/2/3 cascade, from packages/ui. Loaded after Tailwind so the token layer wins any
+   collision. This app defines no tokens of its own: design_spec.md §12 is "same tokens, same
+   primitives, deliberately different composition", and a second token file in apps/admin is
+   exactly what UX-127 calls a defect. */
+@import '@easyesg/ui/src/styles/tokens.css';
+
+/* ── Compact density (design_spec.md §11.4, §12) ─────────────────────────────────────────────
+   ASSUMPTION, RECORDED — the selector below is a hook with nothing behind it yet.
+
+   §11.4 specifies two density modes over one token set, and §12 makes `compact` the admin
+   default. `packages/ui/src/styles/tokens.css` currently defines a single scale and no density
+   selector, so the compact steps do not exist to reference. They belong in packages/ui, not
+   here: authoring them in apps/admin would create the second token file UX-127 forbids.
+
+   `[data-density="compact"]` is declared on <html> in index.html so the attribute contract is
+   fixed and every admin screen is already inside it. When packages/ui grows the compact steps,
+   they attach to this selector and nothing in this app changes. Until then admin renders at the
+   tenant scale, which is a known, stated divergence from §12 — not an oversight.
+
+   Logged in architecture.md §18 and apps/admin/CLAUDE.md. */

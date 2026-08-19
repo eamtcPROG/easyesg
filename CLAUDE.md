@@ -19,16 +19,17 @@ is structure without behaviour.
 | --- | --- |
 | `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, `TenantRepository`, port surface, OpenAPI emission. No guards, no migrations, no RLS policies, no controller but health |
 | `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
+| `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
 | `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
 | `packages/ui` | The tier 1/2/3 token cascade, moved from `design/`. No components |
 | `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness |
 | `packages/validation` | Empty. The interpreter is shared by `api` and `web` (§9.8) |
 
-Not started: `apps/admin`, `packages/{vsme,xlsx-patch}`, `config/`, `infra/`, `docs/runbooks/`.
+Not started: `packages/{vsme,xlsx-patch}`, `config/`, `infra/`, `docs/runbooks/`.
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
-`pnpm boundaries:prove` (12 rules, each with a fixture proving it rejects a real violation),
-`pnpm openapi:check`. There is no CI yet — those root scripts *are* the gate set.
+`pnpm boundaries:prove` (19 rules, each with a fixture proving it rejects a real violation),
+`pnpm openapi:check`, `pnpm routes:check`. There is no CI yet — those root scripts *are* the gate set.
 
 ## The document set (read before deciding anything)
 

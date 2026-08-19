@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@easyesg/web", "start:dev"],
       "port": 3100
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@easyesg/admin", "start:dev"],
+      "port": 3200
     }
   ]
 }

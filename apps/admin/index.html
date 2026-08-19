@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ro" data-density="compact">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      The console is never public. `edge` already restricts it by IP allowlist (§10.2) and it
+      sits behind mandatory MFA (NFR-65); this is the belt-and-braces half of the same rule.
+    -->
+    <meta name="robots" content="noindex, nofollow" />
+    <!--
+      A product name, not copy — the one string here that is not a message key. Everything a
+      person reads inside the app resolves through the catalogue (FR-61, FR-62); a sentence in
+      this file would need a release to change, which is what NFR-85 forbids.
+    -->
+    <title>easyesg</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

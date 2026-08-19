@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The base deliberately carries no module or emit settings: apps/api is nodenext with
+    // decorators, this is a bundler-resolved React SPA, and one of those inherited into the
+    // other is the reason tsconfig.base.json exists.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["dom", "dom.iterable", "ES2024"],
+    // "react-jsx", not apps/web's "preserve": Next compiles JSX itself, Vite does not.
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    // "vite/client" carries ImportMetaEnv, without which every VITE_* read is an error.
+    "types": ["node", "vite/client"],
+    // "~", not apps/web's "@" — see the comment in tsconfig.boundaries.json for why the two
+    // apps must not share an alias key.
+    "paths": { "~/*": ["./src/*"] }
+  },
+  // The two config files are included so `pnpm typecheck` covers them and ESLint's
+  // projectService can type-aware-lint them. Excluding them is how a broken vite.config.ts
+  // reaches CI green.
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -11,10 +11,11 @@ cd "$(dirname "$0")/.."
 
 API=apps/api/src
 WEB=apps/web/src
+ADMIN=apps/admin/src
 UI=packages/ui/src
 # Must match the roots in package.json's `boundaries` script. A rule anchored at a path this
 # script never walks cannot fail, which is the same invisible pass the script exists to catch.
-ROOTS=("$API" "$WEB" "$UI")
+ROOTS=("$API" "$WEB" "$ADMIN" "$UI")
 FIXTURES=()
 # Removes the fixture files and any directory they had to create, so a proof run leaves
 # the tree exactly as it found it.
@@ -99,6 +100,36 @@ export const violation = refreshCookieName;"
 prove ui-is-presentational \
   "$UI/__boundary_fixture.ts" \
   "export * from '../../../apps/web/src/lib/session-cookie';"
+
+# ── apps/admin, and the separation between the two front ends ────────────────────────────────
+
+prove admin-not-to-api-src \
+  "$ADMIN/__boundary_fixture.ts" \
+  "export * from '../../api/src/contracts/types/time';"
+
+prove admin-not-to-web \
+  "$ADMIN/lib/__boundary_fixture.ts" \
+  "export * from '../../../web/src/lib/session-cookie';"
+
+prove web-not-to-admin \
+  "$WEB/lib/__boundary_fixture.ts" \
+  "export * from '../../../admin/src/lib/pagination';"
+
+prove admin-platform-not-to-billing \
+  "$ADMIN/features/platform/taxonomy/__boundary_fixture.ts" \
+  "export * from '../../billing/catalogue';"
+
+prove admin-billing-not-to-platform \
+  "$ADMIN/features/billing/catalogue/__boundary_fixture.ts" \
+  "export * from '../../platform/configuration';"
+
+prove admin-realm-is-a-leaf \
+  "$ADMIN/realm/__boundary_fixture.ts" \
+  "export * from '../features/platform/admin';"
+
+prove admin-shared-is-a-leaf \
+  "$ADMIN/shared/__boundary_fixture.ts" \
+  "export * from '../features/billing/invoicing';"
 
 # A cycle needs both halves present. The partner is written here and registered for cleanup;
 # prove() writes the other half and does the cruise.
