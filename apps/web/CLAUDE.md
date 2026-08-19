@@ -118,6 +118,21 @@ conditional render, which is how it ends up half-suppressed on one screen.
   SSE and WebSockets exist nowhere in §5.4, §10.4 or the edge config; adding one is an amendment
   to those sections, not a ticket.
 
+- **TanStack Query is for client islands, and calling the API directly from one is a security
+  bug, not a shortcut.** It is here for the three polls above plus autosave's queued mutations
+  (§12.1, shared catalog pin with `apps/admin`). Everything reachable server-side keeps going
+  through `src/app/api/[...path]` and `src/server/session.ts` — that proxy is what holds the
+  access token out of browser JavaScript (AD-9, AD-12). A `useQuery` whose `queryFn` fetches the
+  API origin itself works perfectly in development and moves the token to exactly where AD-12
+  says it must never be. Point every `queryFn` at the proxy path.
+
+- **There is no global client store, and that is a decision (OQ-41 follow-up).** Server state is
+  Query, URL state is `searchParams`, form state is `react-hook-form`, session and the active
+  organization are server-side. What is left — theme, density, toasts, wizard-local flags — is
+  React context. Reaching for Zustand or Redux almost always means caching server state twice;
+  and a store holding the active organization is the second source of tenancy UX-2 forbids from
+  the URL, wearing a different hat.
+
 ## Before you add a screen
 
 - It has an `S-nn` in `design_spec.md` §4.4, or it is one of the public/legal/help surfaces that

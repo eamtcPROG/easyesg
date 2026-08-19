@@ -19,6 +19,7 @@
     "@easyesg/i18n": "workspace:*",
     "@easyesg/ui": "workspace:*",
     "@easyesg/validation": "workspace:*",
+    "@tanstack/react-query": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",
     "react": "catalog:",

@@ -536,6 +536,22 @@ boundaries hold, and each is already closed elsewhere:
   assumption recorded; do not close it in passing.
 - **Error text is a message key**, in NFR-79's three parts, like every other string a person reads.
 
+**State has four homes and a global store is not one of them.** The kinds were settled in
+separate decisions; listed together they leave almost no residue:
+
+| Kind | Where it lives |
+| --- | --- |
+| Server state | `@tanstack/react-query` in both front ends (§12.1) — **client islands only** in `apps/web`, never a parallel data path around the session proxy (AD-9, AD-12) |
+| URL state | The router. Typed search params in `apps/admin`, `searchParams` in `apps/web`. UX-4 requires every addressable state to be in the URL |
+| Form state | `react-hook-form` (above) |
+| Session, and the active organization | Server-side, from the session. **Never the URL and never client state** (UX-2, AD-2) |
+
+What remains — theme, density, toasts, wizard-local flags — is React context. **Do not add
+Zustand, Redux or Jotai**: the pull is almost always to cache server state a second time, which
+is what Query removes, and a store holding the active organization is the second source of
+tenancy UX-2 forbids from the URL, in a different container — where an org-switch race reads as
+a cross-tenant render above the RLS boundary, and AD-2's probes never see it.
+
 ## Looking things up
 
 When you need documentation for anything external — a library, framework, CLI, ORM,
