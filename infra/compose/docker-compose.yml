@@ -1,0 +1,105 @@
+# Local development dependencies only — PostgreSQL and Redis.
+#
+# architecture.md §12.5.10: the Compose stack IS the development environment. No service and
+# no service client is installed on a developer host, which needs Node, pnpm, Docker and git
+# and nothing else. Reach a client through its container:
+#
+#     docker compose exec postgres psql -U esg_app esg
+#
+# The applications themselves run on the host (`pnpm --filter @easyesg/api start:dev`), which
+# keeps hot reload. §12.5.10 permits that explicitly — it bans installing a *service or its
+# client*, not Node. Building app images is a separate unit: there is no Dockerfile yet.
+#
+# This is the base file. `docker-compose.prod.yml` drops `postgres` at the launch stage, when
+# the primary moves to VM-2 (§10.4); `redis` stays on VM-1 in every file (§10.2).
+name: easyesg
+
+services:
+  postgres:
+    image: postgres:18.4
+    container_name: easyesg-postgres
+    restart: unless-stopped
+    environment:
+      # The image superuser. Deliberately NOT esg_app: §7.6 requires the application role to
+      # be non-superuser and non-BYPASSRLS, and a dev database where the app connects as
+      # superuser makes every future RLS probe pass for the wrong reason.
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/compose/.env}
+      POSTGRES_DB: esg
+      # Read by init/init.sh. Declared here or the script cannot see them.
+      ESG_APP_PASSWORD: ${ESG_APP_PASSWORD:?set ESG_APP_PASSWORD in infra/compose/.env}
+      ESG_WORKER_PASSWORD: ${ESG_WORKER_PASSWORD:?set ESG_WORKER_PASSWORD in infra/compose/.env}
+      ESG_ADMIN_RO_PASSWORD: ${ESG_ADMIN_RO_PASSWORD:?set ESG_ADMIN_RO_PASSWORD in infra/compose/.env}
+      # A subdirectory, so the volume mount point is not itself the data directory.
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs only against a *fresh* data directory — an existing pgdata volume never sees it.
+      # init.sh is therefore idempotent and runnable by hand; see its header.
+      - ../postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # -h 127.0.0.1 forces TCP, and that is the whole point. During initdb the official
+      # entrypoint runs a temporary server on the unix socket ONLY, so a socket-based
+      # pg_isready reports healthy before the init scripts have run — a false positive that
+      # lets a dependent service race a half-built cluster.
+      #
+      # $$ escapes Compose's own interpolation so the container shell expands the variable.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - easyesg-net
+
+  redis:
+    image: redis:8.10.0
+    container_name: easyesg-redis
+    restart: unless-stopped
+    # architecture.md §12.5, OQ-21 — closed 18 Aug 2026: RDB snapshots on a volume, AOF off,
+    # maxmemory-policy noeviction. Flags rather than a redis.conf because §10.7's tree names
+    # no infra/redis/, and adding a directory to that tree is a documentation amendment.
+    #
+    # noeviction is the load-bearing setting, not the persistence choice (§12.5.8). BullMQ job
+    # state is not a cache: under allkeys-lru Redis would silently discard queued work to stay
+    # under maxmemory, and the loss would surface as reports that never rendered. Raise
+    # maxmemory before you touch this policy.
+    command:
+      - redis-server
+      - --save
+      - "3600"
+      - "1"
+      - "300"
+      - "100"
+      - "60"
+      - "10000"
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 2gb
+      - --maxmemory-policy
+      - noeviction
+    ports:
+      - 6379:6379
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - easyesg-net
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+
+networks:
+  easyesg-net:
+    driver: bridge

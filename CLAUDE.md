@@ -25,7 +25,9 @@ is structure without behaviour.
 | `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness (now wired) |
 | `packages/validation` | Empty. The interpreter is shared by `api` and `web` (§9.8) |
 
-Not started: `packages/{vsme,xlsx-patch}`, `config/`, `infra/`, `docs/runbooks/`.
+`infra/{compose,postgres}` holds the dev stack — Postgres and Redis, started with `pnpm dev:up`.
+Not started: `packages/{vsme,xlsx-patch}`, `config/`, `infra/{caddy,ci,ansible,tofu}`,
+`docs/runbooks/`.
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (20 rules, each with a fixture proving it rejects a real violation),
@@ -276,8 +278,12 @@ Redis and the worker's document toolchain (Chromium, qpdf, veraPDF, LibreOffice)
 services; reach their clients through the containers, never through a host install:
 
 ```bash
-docker compose exec postgres psql -U esg_app esg
+cd infra/compose && docker compose exec postgres psql -U esg_app esg
 ```
+
+The working directory is not incidental: Compose resolves `.env` and the relative init mount
+against the compose file's own directory, so the same command from the repo root finds neither.
+`pnpm dev:up` and `pnpm dev:down` pass `-f` and can be run from anywhere.
 
 Installing a service or its client on the host reintroduces exactly what this avoids — a client
 on a different upgrade cycle from its server, a second PostgreSQL able to shadow the container on

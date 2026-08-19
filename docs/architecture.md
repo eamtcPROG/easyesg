@@ -1225,8 +1225,20 @@ services:
   worker:    # same image, MODE=worker             [replicas 1–3]
   renderer:  # Chromium (tagged PDF) + qpdf/pikepdf + veraPDF  [memory-limited, restart policy]
   redis:     # queues, rate limits, ephemeral cache
-  # postgres runs on VM-2 from the launch stage onward, not in this file
+  # postgres — see the note below: in the base file, not in docker-compose.prod.yml
 ```
+
+**Clarified 19 August 2026**, with the Compose scaffold. The comment above described the
+**production** file, and read as though `postgres` were absent everywhere. It is not.
+`infra/compose/docker-compose.yml` is the base file and carries `postgres`, because §10.3's
+build-and-pilot stage is one VM with PostgreSQL in the stack and §12.5.10 makes that same file the
+local development environment — a base file without `postgres` would mean no developer and no CI
+job has a database. It is `docker-compose.prod.yml` that drops the service at the launch stage,
+when the primary moves to VM-2 and the application connects to it across the private network.
+`redis` stays in every file: it is on VM-1 in the end-state topology (§10.2).
+
+The base file as scaffolded holds `postgres` and `redis` only. The seven application services
+above arrive with the first Dockerfile, which does not exist yet.
 
 ### 10.5 Environments
 

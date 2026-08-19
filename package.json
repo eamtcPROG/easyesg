@@ -18,6 +18,8 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "build": "pnpm -r build",
+    "dev:up": "docker compose -f infra/compose/docker-compose.yml up -d",
+    "dev:down": "docker compose -f infra/compose/docker-compose.yml down",
     "lint": "eslint .",
     "test": "pnpm -r test",
     "boundaries": "depcruise --config .dependency-cruiser.cjs apps/api/src apps/web/src apps/admin/src packages/ui/src packages/i18n/src",
