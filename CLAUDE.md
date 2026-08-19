@@ -196,13 +196,16 @@ to prevent. Hand-editing `pnpm-lock.yaml` is never correct.
 | A version pinned in architecture.md §12 | `pnpm add <pkg>@<pinned> --filter <workspace>` |
 | Pre-1.0, pinned exactly | `pnpm add -E <pkg> --filter <workspace>` |
 | Another workspace package | `pnpm add <pkg> --workspace --filter <workspace>` |
-| Move a pin — a spec change, needs a rationale | `pnpm remove <pkg> --filter <ws>` then `pnpm add <pkg> --save-catalog --filter <ws>` |
+| Move a pin — a spec change, needs a rationale | `pnpm up --latest <pkg>` (`--filter <ws>` for a package-scoped dep) |
 
-**`pnpm up --latest` does not move a catalog pin** — not from the root, not with `--filter`, not
-with `-r`. It reports success and changes nothing, which is why the row above is two commands:
-`remove` lets `cleanupUnusedCatalogs` prune the entry, and `add --save-catalog` writes the new one.
-Do not reach for `pnpm-workspace.yaml` when the single command appears not to work; hand-editing it
-is never correct. *(pnpm 11.22, verified 19 Aug 2026.)*
+**A pin move warns as though it refused, then performs the move anyway.** `pnpm up --latest`
+prints `Skip adding <pkg> to the default catalog because it already exists as <old>. Please use
+pnpm update to update the catalogs` — a message from the `catalogMode: strict` *add* path, telling
+you to run the command you are already running — and updates the catalog entry regardless. **Read
+the diff, not the warning.** Taking it as a refusal is how someone concludes the command is broken
+and reaches for `pnpm-workspace.yaml`, which is never correct. *(Verified on pnpm 11.22,
+19 Aug 2026: a catalog entry moved 18.1.1 → 18.2.0 with that warning printed. Older answers online
+describe `pnpm update` ignoring catalogs entirely — that was pnpm/pnpm#8641, since fixed.)*
 
 **Read what it resolved.** The installed version is the fact; what you expected it to install is
 not. If it differs from architecture.md §12, that table governs — reinstall at the pinned version
@@ -215,6 +218,12 @@ to the *previous* release while `pnpm view` still shows the new one as `latest`.
 cache and do not bypass it: accept the held version and record what actually installed in its §12.1
 row, as done for `lucide-react` 1.32.0.
 
+**These two paragraphs are the same trap from opposite ends, and conflating them is how this
+section got a wrong command in it for a day.** A pin move that appears to do nothing is almost
+always the release-age policy correctly finding nothing installable to bump — not a broken
+`pnpm up`. Confirm which you are looking at with `pnpm outdated -r` before concluding anything: if
+it lists no newer version, the command had nothing to do.
+
 **One version per dependency across the workspace, held in a catalog.** §12's pin table is the
 build contract; `pnpm-workspace.yaml`'s `catalog:` is its machine-readable form:
 
@@ -224,8 +233,14 @@ catalog:
   typeorm: 1.1.0
 ```
 
-Packages then declare `"@nestjs/common": "catalog:"`, and `pnpm add <pkg> --save-catalog` adds
-through it. Without a catalog, `apps/web` and `apps/admin` drift to different React versions and
+Packages then declare `"@nestjs/common": "catalog:"`, and under `catalogMode: strict` a plain
+`pnpm add <pkg>` routes through the catalog on its own — **`--save-catalog` is redundant here**,
+and is only needed under pnpm's default `manual` mode, which this repo does not use. That is what
+`catalogMode` controls: per the pnpm settings reference it decides "if and how dependencies are
+added to the default catalog, when running `pnpm add`", and `strict` additionally makes a version
+outside the catalog's range an error.
+
+Without a catalog, `apps/web` and `apps/admin` drift to different React versions and
 nothing fails until something does — the same drift `packages/contracts` exists to prevent for
 DTOs. (There is no `apps/worker` to drift from `apps/api`: one image, two entrypoints,
 `MODE=worker` — architecture.md §5.4, §10.7.) Set `saveExact: true` in `pnpm-workspace.yaml` next to `strictDepBuilds`; pnpm 11 keeps
