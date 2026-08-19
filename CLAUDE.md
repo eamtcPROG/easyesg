@@ -17,7 +17,7 @@ is structure without behaviour.
 
 | Workspace | State |
 | --- | --- |
-| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, `TenantRepository`, port surface, OpenAPI emission, and the migration runner — a baseline creating §7.1's five schemas + `btree_gist`, applying and reverting from empty. No guards, no tables, no RLS policies, no controller but health; the two runtime `DataSource`s are defined but not yet registered with Nest (task 11) |
+| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, `TenantRepository`, port surface, OpenAPI emission, and the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` as the tenant root, with five §7 invariants each proving its own rule bites. No guards, no RLS policies, no controller but health; the two runtime `DataSource`s are defined but not yet registered with Nest (task 11) |
 | `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
 | `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
@@ -33,8 +33,9 @@ Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnp
 `pnpm boundaries:prove` (20 rules, each with a fixture proving it rejects a real violation),
 `pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`. There is no CI yet — those root
 scripts *are* the gate set. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
-applies, reverts and re-applies against the Compose stack, because "the baseline applies from an
-empty database" is not a property any hermetic test can assert. The other eight run anywhere, and
+applies, reverts, re-applies and then asserts §7's schema invariants against the Compose stack,
+because neither "the baseline applies from an empty database" nor "no foreign key crosses the
+core/billing boundary" is a property any hermetic test can assert. The other eight run anywhere, and
 keeping that true is why `TypeOrmModule` is not registered until task 11 — `openapi:check` boots the
 whole `AppModule`.
 
@@ -464,12 +465,20 @@ rule above: this file recording a decision is not the same as the decision havin
 
 ### Time is an epoch-millisecond integer; a legal date is not
 
-**An instant is a Unix epoch timestamp in milliseconds — an integer, UTC-based.** That is the
-representation in storage, on the wire and in every DTO: `createdAt`, `updatedAt`, `dispatchedAt`,
-`transmittedAt`, `occurredAt`, token expiries, job timings, metering event times. No locale-formatted
-string ever reaches storage or the API; formatting is a presentation concern and NFR-26 requires it be
-derived from the active locale with no hardcoded pattern. Name the field so it reads as a time and
-state the unit in its `@ApiProperty` — OpenAPI can only describe it as `integer`, so nothing else will.
+**An instant is a Unix epoch timestamp in milliseconds — an integer, UTC-based — on the wire and in
+every DTO:** `createdAt`, `updatedAt`, `dispatchedAt`, `transmittedAt`, `occurredAt`, token expiries,
+job timings, metering event times. No locale-formatted string ever reaches storage or the API;
+formatting is a presentation concern and NFR-26 requires it be derived from the active locale with no
+hardcoded pattern. Name the field so it reads as a time and state the unit in its `@ApiProperty` —
+OpenAPI can only describe it as `integer`, so nothing else will.
+
+**In storage it is `timestamptz`, and that is not the same statement** (architecture.md §7.8, §7.9;
+OQ-50, closed 19 Aug 2026). This file previously said epoch-ms was the representation "in storage" too,
+following a sentence in §6.8 that reached past what that section owns. The column keeps `date_trunc`,
+range partitioning and interval arithmetic available on the `audit`, ledger and metering tables retained
+for six years, and keeps them readable by an auditor querying directly. **The conversion happens once,
+at the persistence-to-DTO boundary, and never leaks inward** — a domain or use-case signature taking a
+number of milliseconds has let the wire format into the core.
 
 **A calendar date that carries legal force stays a calendar date.** NFR-34 requires storing the
 originating timezone wherever a legal date is determined, and that requirement is closed — an

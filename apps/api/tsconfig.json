@@ -13,7 +13,13 @@
     "experimentalDecorators": true,
 
     "sourceMap": true,
-    "rootDir": "./src",
+    // The package root, not ./src, so that test/ is inside the program — `./src` puts it outside
+    // and TypeScript refuses (TS6059), which would force a second tsconfig just to type-check it
+    // and in turn hide test/ from ESLint's project service, since that discovers `tsconfig.json`
+    // and nothing else. It cannot simply be omitted either: ts-jest compiles per file and demands
+    // an explicit rootDir whenever outDir is set (TS5011). tsconfig.build.json narrows it back to
+    // ./src, which is what keeps emit at dist/main.js rather than dist/src/main.js.
+    "rootDir": ".",
     "outDir": "./dist",
     "incremental": true,
     // Inside outDir on purpose: nest-cli sets deleteOutDir, and a build-info file that
@@ -25,6 +31,6 @@
     // build alone never type-checks a test.
     "types": ["node", "jest"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "test/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

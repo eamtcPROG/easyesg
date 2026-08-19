@@ -1,4 +1,5 @@
 import { Baseline1787097600000 } from './1787097600000-baseline';
+import { CoreOrganization1787140800000 } from './1787140800000-core-organization';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -14,4 +15,4 @@ import { Baseline1787097600000 } from './1787097600000-baseline';
  * second is forgotten, because "it worked locally and the deploy skipped a migration" is not
  * a class of bug worth discovering in production.
  */
-export const migrations = [Baseline1787097600000];
+export const migrations = [Baseline1787097600000, CoreOrganization1787140800000];

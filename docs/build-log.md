@@ -184,7 +184,72 @@ owner inside one transaction; all six schemas owned by `esg_migrator`; `btree_gi
 left only the bootstrap `migration` schema behind, with the extension gone; the compiled
 `dist` datasource loads without ts-node. All nine gates green.
 
+## Task 10 — Core and billing schemas · 2026-08-19
+
+Batching the unknowns turned up a contradiction inside `architecture.md` itself, which is the
+substance of this task rather than a side finding.
+
+- **OQ-50, raised and closed: are instants stored as `timestamptz` or as epoch-ms integers?**
+  §6.8 said "in storage and in the DTO alike"; §7.8 and §7.9's conventions table said `timestamptz`
+  for everything. Both normative, same document. `git show 0371292` — the commit that introduced
+  the epoch-ms convention — amended **§6.8 only**, describing it in its own message as "the section
+  which owns the wire contract", so the "in storage" clause was reach rather than decision.
+  **Closed as `timestamptz` in storage, epoch-ms on the wire**, converted where a row becomes a
+  DTO. Decided on what the columns must support: `date_trunc`, range partitioning and interval
+  arithmetic over the `audit`, ledger and metering tables retained for **six years**, and direct
+  readability by an auditor years later. §6.8 is corrected, and `CLAUDE.md` and
+  `contracts/types/time.ts` — which had both propagated the superseded reading — were amended in
+  the same change.
+- **Only `core.organization` was created.** §7.10's billing inventory holds nothing that would
+  exist yet (plan, subscription, order and invoice are all Phase 7), so a billing table to
+  demonstrate "no FK crosses them" would have had to be invented — which CLAUDE.md names as
+  widening a question by coding around it. The deliverable is met by a gate instead, vacuously true
+  today and biting the moment task 53 adds `billing.plan`.
+- **FR-15's profile fields and FR-16's identifiers were deliberately left out**, along with RLS and
+  any `updated_at` trigger. Each is named in the migration with the task that owns it, so nobody
+  "completes" the table in passing. The trigger in particular would have forced a decision this
+  task should not take — where a function shared by `core` and `billing` lives, when DR-1 says the
+  two contexts share nothing.
+
+The gate, and why it is shaped the way it is:
+
+- **`migrations:check` grew a fourth step**: apply → revert → apply → **invariants**. Five
+  structural rules from §7 are asserted against the migrated database — the cross-schema FK rule
+  with its single permitted exception (`identity → core.organization`), no float anywhere (NFR-58),
+  no naive `timestamp` (OQ-50), and every `date` column paired with a `_tz` sibling (NFR-34).
+- **Each invariant proves itself.** Following `boundaries:prove`'s lesson that a rule matching
+  nothing looks exactly like a rule that passes, every check has a companion test that creates a
+  real violation and asserts the same query catches it. The violation is made inside a transaction
+  that is always rolled back — PostgreSQL's transactional DDL is what makes that free.
+- **It reads `pg_catalog`, never `information_schema`.** Those views filter rows by the querying
+  role's privileges, so a table the role cannot touch is simply absent — an invariant check that
+  silently sees fewer tables than exist is worse than none, because it passes.
+
+Three tooling problems this uncovered, each of which would have cost someone an afternoon:
+
+- **jest sandboxes `process`**, so `process.loadEnvFile()` inside a spec mutates a copy and the
+  real credentials never arrive. The symptom is `SASL: client password must be a string`, which
+  reads as a database fault. The env is loaded before jest starts instead.
+- **`Pick<QueryRunner, 'query'>` is not the query surface `DataSource` has** — `QueryRunner.query`
+  carries a `useStructuredResult` overload whose third parameter conflicts. A structural interface
+  with method syntax satisfies both.
+- **`pg` ships no type declarations and `@types/pg` is not installed**, so a bare `Client` types
+  every row `any` — which would have turned strict assertions into ones that cannot fail. The check
+  uses TypeORM's typed `query<T>` instead, adding no dependency.
+
+**`apps/api`'s tsconfig moved `rootDir` to `tsconfig.build.json`.** Adding the first file under
+`test/` exposed a three-way bind: `rootDir: ./src` puts test/ outside the program (TS6059), omitting
+it breaks ts-jest which demands one whenever `outDir` is set (TS5011), and a second tsconfig hides
+test/ from ESLint's project service, which discovers `tsconfig.json` and nothing else. `rootDir: "."`
+in the base with `./src` in the build config satisfies all three, and emit still lands at
+`dist/main.js`. Verified: `dist/test` does not exist.
+
+Verified by running: volume destroyed, both migrations applied from empty, the newest reverted and
+re-applied, ten invariant tests green including five that prove their own rule bites. All nine gates
+green.
+
 ---
 
-*Next up: task 10 — core and billing schemas. The baseline holds no tables on purpose; the column
-conventions (epoch-ms instants, calendar date + originating timezone) land with the first ones.*
+*Next up: task 11 — tenant context propagation. It registers `TypeOrmModule` for the first time,
+which is the moment `openapi:check` stops being able to boot the app without a database unless the
+registration is made conditional.*

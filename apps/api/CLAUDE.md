@@ -12,14 +12,16 @@ user-facing-text conventions. This file carries only what you need in your hands
 Foundation only. What works: the module tree, the response envelope, the problem+json filter,
 `TenantRepository`, the `contracts/` ports, OpenAPI emission, seven boundary rules, message
 resolution (`app/messages/`) — locale negotiation plus catalogue lookup, with the catalogues
-themselves still empty — and the migration runner: a baseline that creates §7.1's five schemas
-plus `btree_gist`, applying and reverting cleanly from an empty database.
+themselves still empty — and the migration runner: §7.1's five schemas plus `btree_gist`, and
+`core.organization` as the tenant root, applying and reverting cleanly from an empty database.
 
 **Not built yet, and do not assume otherwise:** the four edge guards (`AuthGuard`,
-`TenantTransactionGuard`, `EntitlementGuard`, `AdminRealmGuard`), RLS policies, any table at all,
-any controller other than health, and every module body — the 35 `*.module.ts` files are
-registered but empty. `test/` holds no e2e specs yet; the RLS cross-tenant probe and the
-`BILLING_ENABLED=false` suite land there.
+`TenantTransactionGuard`, `EntitlementGuard`, `AdminRealmGuard`), RLS policies, any table beyond
+`core.organization`, any controller other than health, and every module body — the 35 `*.module.ts`
+files are registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
+only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by
+expand→migrate→contract. `test/` holds the schema-invariant probe; the RLS cross-tenant probe and
+the `BILLING_ENABLED=false` suite land beside it.
 
 **The two runtime `DataSource`s exist as options and are not registered with Nest.**
 `infrastructure/persistence/data-source.ts` exports `coreDataSourceOptions` and
@@ -42,7 +44,8 @@ Run boundary and lint checks from the **repo root**; they are workspace-wide.
 | here | `pnpm build` / `test` / `test:e2e` | |
 | here | `pnpm start:dev` | HTTP mode. `pnpm start:worker` for `MODE=worker` |
 | here | `pnpm db:migrate` / `db:revert` / `db:show` | Needs the Compose stack (`pnpm dev:up`) and `apps/api/.env`. Connects as `esg_migrator`, never as `esg_app` |
-| root | `pnpm migrations:check` | The ninth gate: apply → revert → apply. Needs Docker, unlike the other eight |
+| here | `pnpm db:invariants` | §7's structural rules against the migrated database. Each proves its own rule bites |
+| root | `pnpm migrations:check` | The ninth gate: apply → revert → apply → invariants. Needs Docker, unlike the other eight |
 
 **`build` does not type-check tests.** `tsconfig.build.json` excludes `*.spec.ts`, and ts-jest
 compiles per-file without whole-program checking. `pnpm typecheck` is what covers them. A spec can
@@ -153,6 +156,18 @@ would leak to the next borrower).
 - **The ledger schema is bootstrapped by `init.sh`, not by a migration.** `MigrationExecutor`
   creates its table before executing anything and never calls `createSchema`, so a ledger schema
   created by a migration could never be created at all.
+- **Storage is `timestamptz`; the wire is epoch-ms** (OQ-50, closed 19 Aug 2026). The conversion
+  happens where a row becomes a DTO and must not leak inward — a use-case signature taking a number
+  of milliseconds has admitted the wire format into the core. `test/schema-invariants.e2e-spec.ts`
+  fails on a naive `timestamp` column, and on a `date` with no `_tz` sibling (NFR-34).
+- **`test/` is inside `tsconfig.json`'s program, and `rootDir` lives in `tsconfig.build.json`.**
+  Three constraints meet here: `rootDir: ./src` in the base puts test/ outside the program
+  (TS6059), omitting rootDir breaks ts-jest which demands one whenever outDir is set (TS5011), and
+  a separate test tsconfig hides test/ from ESLint's project service, which discovers
+  `tsconfig.json` only. Do not "tidy" this back.
+- **jest hands a test a *copy* of `process`**, so `process.loadEnvFile()` in a spec mutates a
+  sandbox and real credentials never arrive — the symptom is a SASL error naming the password,
+  which reads as a database fault. Load env before jest starts, as `db:invariants` does.
 
 ## The two things called "contracts"
 
