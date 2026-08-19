@@ -498,6 +498,44 @@ Taxonomy element keys resolve to labels through `platform/localization`, using t
 translation wherever one is published (NFR-24) — and Russian VSME labels are platform-authored with
 no EFRAG standing, which the export must say rather than imply.
 
+### A component is reused, or it becomes a new reusable component
+
+**This is UX-89 and it is closed, not a preference:** *"No screen shall introduce a one-off
+component. A need not met by this inventory is an addition to the inventory, reviewed once and
+reused."* The inventory is `design_spec.md` §11.5 — primitives, form controls, feedback,
+navigation, data display, and the fourteen domain components that carry the product. Every
+specimen is rendered in `design/screens/EasyESG Components.dc.html`, which settles anything the
+prose leaves ambiguous.
+
+The order of moves when a screen needs something:
+
+1. **Use the inventory component.** If it exists, it is the answer — variants and states included.
+2. **If nothing fits, add to the inventory**, in `packages/ui`, with all eleven §8.1 states designed
+   before any instance is built (UX-8, UX-90). It is now reusable by construction.
+3. **Never inline it in the screen.** A bespoke component under `apps/web/src/app/…` or
+   `apps/admin/src/app/routes/…` is the defect UX-89 names. The cost is not untidiness: a component
+   living in a screen has no state set, no dark map, no expansion-harness coverage and no
+   accessibility review, and the next screen that needs it copies all four omissions.
+
+The judgement this leaves you is what "nothing fits" means. It is a difference in **anatomy**, not
+in content or variant — a disclosure field with a different unit is still the disclosure field.
+The reliable smell is a boolean prop added per screen: that means the split is wrong, not that the
+component needs another flag. The `vercel-composition-patterns` skill is installed for exactly this.
+
+**Form state is `react-hook-form`** (§12.1, 7.85.0, in `apps/web` and `apps/admin`). Three
+boundaries hold, and each is already closed elsewhere:
+
+- **`packages/ui` does not depend on it.** Form controls take `value`/`onChange`/`ref` and stay
+  presentational — `ui-is-presentational` enforces it, and it is what keeps UX-79's "re-skinning
+  edits tier 1 only" true even if the form library is later replaced.
+- **Business validation does not live in the form.** Rules are interpreted from definitions in
+  `packages/validation`, shared with `apps/api` so the server verdict and the inline verdict cannot
+  drift (§9.8). A rule restated as a client-side schema is a second source of truth. Field-level UX
+  carrying no business meaning — required, input mask, "must be a number before it can be
+  evaluated" — may stay in the form. How a verdict reaches a field is **OQ-49**, deferred with its
+  assumption recorded; do not close it in passing.
+- **Error text is a message key**, in NFR-79's three parts, like every other string a person reads.
+
 ## Looking things up
 
 When you need documentation for anything external — a library, framework, CLI, ORM,
