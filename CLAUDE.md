@@ -48,6 +48,15 @@ Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnp
 **Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
 column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.
 
+**Two tracking files sit beside them and are not part of the set.** They own no decisions and no
+identifiers; where either disagrees with a document, the document wins and the tracking file is
+what is wrong.
+
+| File | Owns | Use it |
+| --- | --- | --- |
+| [task.md](docs/task.md) | The execution plan — §15.4's build order as 73 sequential tasks, each with its scope and deliverables | Read before starting work to find the next task; update its `Status` when one closes |
+| [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
+
 ## Open questions are not debt
 
 An **open question** is anything the work needs an answer to and does not have: a genuine
@@ -84,8 +93,9 @@ How to do it:
   becomes *Closed — < decision >*, with the authority and the date; the normative text it changes
   is amended in the same edit; every place it is cross-logged is updated. A decision with no
   obvious owner goes in the closest section of `architecture.md` — not a new file and not a new
-  folder; this doc set is seven files and stays seven. Only then is the code written — a decision
-  that exists only in a chat transcript has not been made.
+  folder; the specification set is seven files and stays seven, and the two tracking files beside
+  it hold no decisions. Only then is the code written — a decision that exists only in a chat
+  transcript has not been made.
 - **A deferral is recorded too**, with what was assumed meanwhile and what has to change if the
   assumption is wrong. A recorded assumption is fine; a silent one is not.
 - **Never widen a question by coding around it.** Modelling both LEI *and* IDNO "to be safe"
@@ -122,9 +132,13 @@ EU/EEA VMs · Caddy edge · Playwright/Chromium for PDF.
 
 ```bash
 apps/{api,web,admin}   packages/{contracts,vsme,validation,ui,xlsx-patch,i18n}
-config/{seed,efrag}    design/{tokens.css,screens}
+config/{seed,efrag}    design/{IMPLEMENTATION_PLAN.md,HANDOFF.md,screens}
 infra/{compose,caddy,postgres,ci,ansible}    docs/runbooks
 ```
+
+The token cascade is **not** in `design/` — it moved to `packages/ui/src/styles/tokens.css` in
+Phase 0 (§15.4), moved rather than copied so no later phase can invent a second one.
+`design/IMPLEMENTATION_PLAN.md` sequences the UI half against this same build order.
 
 Build order (architecture.md §15.4): foundation → identity → reporting core → calculator/validation →
 export *(free-tier pilot milestone)* → notifications → billing (e-Factura in the first billing
@@ -182,11 +196,24 @@ to prevent. Hand-editing `pnpm-lock.yaml` is never correct.
 | A version pinned in architecture.md §12 | `pnpm add <pkg>@<pinned> --filter <workspace>` |
 | Pre-1.0, pinned exactly | `pnpm add -E <pkg> --filter <workspace>` |
 | Another workspace package | `pnpm add <pkg> --workspace --filter <workspace>` |
-| Move a pin — a spec change, needs a rationale | `pnpm up --latest <pkg> --filter <workspace>` |
+| Move a pin — a spec change, needs a rationale | `pnpm remove <pkg> --filter <ws>` then `pnpm add <pkg> --save-catalog --filter <ws>` |
+
+**`pnpm up --latest` does not move a catalog pin** — not from the root, not with `--filter`, not
+with `-r`. It reports success and changes nothing, which is why the row above is two commands:
+`remove` lets `cleanupUnusedCatalogs` prune the entry, and `add --save-catalog` writes the new one.
+Do not reach for `pnpm-workspace.yaml` when the single command appears not to work; hand-editing it
+is never correct. *(pnpm 11.22, verified 19 Aug 2026.)*
 
 **Read what it resolved.** The installed version is the fact; what you expected it to install is
 not. If it differs from architecture.md §12, that table governs — reinstall at the pinned version
 and raise the difference, rather than letting the install win silently.
+
+**A version newer than what installed is often policy, not a stale cache.** pnpm 11 applies a
+built-in release-age supply-chain policy **even with `minimumReleaseAge` unset** — the "Lockfile
+passes supply-chain policies" install line is the tell — so a package published hours ago resolves
+to the *previous* release while `pnpm view` still shows the new one as `latest`. Do not clear the
+cache and do not bypass it: accept the held version and record what actually installed in its §12.1
+row, as done for `lucide-react` 1.32.0.
 
 **One version per dependency across the workspace, held in a catalog.** §12's pin table is the
 build contract; `pnpm-workspace.yaml`'s `catalog:` is its machine-readable form:
