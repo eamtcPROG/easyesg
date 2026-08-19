@@ -22,13 +22,13 @@ is structure without behaviour.
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
 | `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
 | `packages/ui` | The tier 1/2/3 token cascade, moved from `design/`. No components |
-| `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness |
+| `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness (now wired) |
 | `packages/validation` | Empty. The interpreter is shared by `api` and `web` (§9.8) |
 
 Not started: `packages/{vsme,xlsx-patch}`, `config/`, `infra/`, `docs/runbooks/`.
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
-`pnpm boundaries:prove` (19 rules, each with a fixture proving it rejects a real violation),
+`pnpm boundaries:prove` (20 rules, each with a fixture proving it rejects a real violation),
 `pnpm openapi:check`, `pnpm routes:check`. There is no CI yet — those root scripts *are* the gate set.
 
 ## The document set (read before deciding anything)
@@ -100,8 +100,12 @@ disagree, the document wins and this file is what is wrong.
 - **Billing and compliance core are separate bounded contexts** — separate PG schemas, no cross-schema
   FKs, no shared transaction. With `BILLING_ENABLED=false`, UC-17…48 must still pass. (DR-1, AD-1)
 - **Tenancy is enforced by PostgreSQL RLS**, not by filters at call sites. (DR-5, AD-2)
-- **The standard is data, not code** — taxonomy, thresholds, factor sets, validation rules,
-  notification templates and plans are versioned config changed without redeploy. (DR-3, AD-4)
+- **The standard is data, not code** — taxonomy, thresholds, factor sets, validation rule
+  definitions, effective dates, notification behaviour and plans are versioned config changed
+  without redeploy. (DR-3, AD-4) **Narrowed 19 Aug 2026 (architecture.md OQ-43):** this covers
+  behaviour, not wording. The *text* of labels, help, validation messages and notification
+  templates ships in the release as committed message catalogues; only help-centre articles and
+  plan presentation copy — the text edited by people who cannot deploy — stay in the store.
 - **Version is a data dimension** — reports/calcs/exports pin their template + taxonomy version. (DR-4)
 - **Audit, ledger and metering are append-only**, enforced by DB privileges. (DR-6)
 - **Fiscal documents are immutable and gaplessly numbered** per series per year. (DR-8, AD-7)
@@ -291,7 +295,9 @@ so apply the principle as the architecture already states it:
 - **O — Open/Closed Principle.** Code should be open for adding new features but closed
   for changing old code. Here extension happens in **data, not code** — taxonomy elements,
   thresholds, factor sets, validation rules, plans and templates are versioned
-  configuration interpreted at runtime (P-2, AD-4). Adding one must need no code change.
+  configuration interpreted at runtime (P-2, AD-4). Adding one must need no code change. Its
+  *label* is a catalogue key resolved in the front end (OQ-43), so adding an element ships the
+  element as data and its wording with the release.
 - **L — Liskov Substitution Principle.** Subtypes must work properly wherever their base
   type is expected. Here this binds to adapters: swapping one provider for another behind
   a port must not change caller behaviour, error and retry semantics included.

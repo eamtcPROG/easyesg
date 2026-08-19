@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { QueryRunner } from 'typeorm';
+import type { Locale } from '@easyesg/i18n';
 
 /**
  * The one AsyncLocalStorage in the process.
@@ -11,6 +12,13 @@ import type { QueryRunner } from 'typeorm';
  */
 export interface RequestContext {
   correlationId: string;
+  /**
+   * Negotiated from `Accept-Language` by the middleware (OQ-46). Every user-facing string this
+   * request produces — problem+json `title` and `detail`, envelope messages — is resolved in it.
+   * Held here rather than passed down because the exception filter needs it and never sees a
+   * service signature.
+   */
+  locale: Locale;
   /** Resolved by AuthGuard from the session record — never read from a JWT claim (AD-12). */
   actorId?: string;
   /** Resolved by the server-side membership lookup, which is what AD-2 grounds RLS on. */

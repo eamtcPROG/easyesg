@@ -13,9 +13,10 @@ API=apps/api/src
 WEB=apps/web/src
 ADMIN=apps/admin/src
 UI=packages/ui/src
+I18N=packages/i18n/src
 # Must match the roots in package.json's `boundaries` script. A rule anchored at a path this
 # script never walks cannot fail, which is the same invisible pass the script exists to catch.
-ROOTS=("$API" "$WEB" "$ADMIN" "$UI")
+ROOTS=("$API" "$WEB" "$ADMIN" "$UI" "$I18N")
 FIXTURES=()
 # Removes the fixture files and any directory they had to create, so a proof run leaves
 # the tree exactly as it found it.
@@ -130,6 +131,10 @@ prove admin-realm-is-a-leaf \
 prove admin-shared-is-a-leaf \
   "$ADMIN/shared/__boundary_fixture.ts" \
   "export * from '../features/billing/invoicing';"
+
+prove i18n-is-a-leaf \
+  "$I18N/__boundary_fixture.ts" \
+  "export * from '../../ui/src/index';"
 
 # A cycle needs both halves present. The partner is written here and registered for cleanup;
 # prove() writes the other half and does the cruise.

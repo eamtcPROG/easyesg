@@ -48,9 +48,28 @@ const restrictedSyntaxBrowser = [
   {
     selector: 'JSXText[value=/[^\\s]/]',
     message:
-      'No user-facing text in code. Wording is versioned configuration published from the ' +
-      'admin console (FR-61, FR-62) and revertible in one step (NFR-85); a literal here ' +
-      'would need a release to change. Use a message key.',
+      'No user-facing text in code. Every string a person reads is a message key resolved ' +
+      'from a catalogue (design_spec.md §13.4); a literal here is invisible to the parity ' +
+      'gate and to every translator. Use a message key.',
+  },
+  // JSXText catches the text BETWEEN tags and nothing else, so a sentence moved into an
+  // attribute slipped through — and these are the attributes a screen reader reads aloud,
+  // which makes it the accessibility surface (WCAG 2.2 AA) as much as the localization one.
+  // Split from `alt` below because the empty string is meaningful there and nowhere else.
+  {
+    selector:
+      "JSXAttribute[name.name=/^(title|placeholder|aria-label|aria-description|aria-placeholder|aria-valuetext|aria-roledescription)$/] > Literal",
+    message:
+      'No user-facing text in code — an attribute is still text a person reads, and a screen ' +
+      'reader announces these. Resolve it from the catalogue: title={t(\'…\')}.',
+  },
+  {
+    // `alt=""` is the correct, required marking for a decorative image, so only a non-empty
+    // literal is a violation.
+    selector: "JSXAttribute[name.name='alt'] > Literal[value!='']",
+    message:
+      'No user-facing text in code — alt text is read aloud. Resolve it from the catalogue. ' +
+      'An intentionally decorative image keeps alt="".',
   },
 ];
 

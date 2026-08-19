@@ -5,18 +5,21 @@
   "license": "UNLICENSED",
   "description": "easyesg public API — NestJS, HTTP and worker modes (architecture.md AD-1)",
   "scripts": {
+    "pretest": "pnpm --filter @easyesg/i18n build",
     "build": "nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
     "start:worker": "MODE=worker node dist/main.js",
-    "test": "jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json --passWithNoTests",
     "openapi:emit": "node dist/infrastructure/openapi/emit-openapi.js",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch"
   },
   "dependencies": {
+    "@easyesg/i18n": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
@@ -29,13 +32,15 @@
     "class-validator": "catalog:",
     "express": "catalog:",
     "ioredis": "catalog:",
+    "negotiator": "catalog:",
     "nestjs-pino": "catalog:",
     "pg": "catalog:",
     "pino": "catalog:",
     "pino-http": "catalog:",
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:",
-    "typeorm": "catalog:"
+    "typeorm": "catalog:",
+    "use-intl": "catalog:"
   },
   "devDependencies": {
     "@nestjs/cli": "catalog:",
@@ -43,6 +48,7 @@
     "@nestjs/testing": "catalog:",
     "@types/express": "catalog:",
     "@types/jest": "catalog:",
+    "@types/negotiator": "catalog:",
     "@types/node": "catalog:",
     "@types/supertest": "catalog:",
     "jest": "catalog:",

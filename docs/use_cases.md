@@ -134,7 +134,7 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-70 | Manage social identity provider configuration | PA | Register, enable, disable and rotate provider credentials | MVP | FR-82 |
 | UC-71 | Create or edit a translatable content string | PA | Correct wording without a release | MVP | FR-61, FR-74 |
 | UC-72 | Publish a translation set | PA | Make a reviewed content set live across all tenants at once | MVP | FR-62 |
-| UC-73 | Register an additional locale | PA | Add an interface and export language by configuration | MVP | FR-63 |
+| UC-73 | Register an additional locale | PA | Add an interface and export language by authoring its catalogue | MVP | FR-63 |
 | UC-74 | Review untranslated content keys | PA | Work localization gaps as a maintained queue | MVP | FR-64 |
 | UC-75 | Register a new taxonomy or template version | PA | Bring a newly published EFRAG version into the platform | MVP | FR-65, FR-66 |
 | UC-76 | Define the field mapping between versions | PA | Author the input that migration depends on | MVP | FR-67 |
@@ -1303,7 +1303,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
 - **Trigger:** A language beyond Romanian and English is required.
 - **Main success scenario:**
   1. The Administrator adds a new interface and export language.
-- **Business rules:** Localization is not hardcoded to two languages — EFRAG's own template ships in eleven — so adding one is a configuration and content task, not a development task.
+- **Business rules:** Localization is not hardcoded to two languages — EFRAG's own template ships in eleven — so adding one requires no schema change, no route change and no per-locale branch in application code. **Amended 19 Aug 2026 (architecture.md OQ-43):** authoring the catalogue and rebuilding is the mechanism; it is a content task that ships on the release cadence rather than a pure configuration task.
 - **Related FRs:** FR-63
 - **Related UCs:** UC-14, UC-48, UC-71
 

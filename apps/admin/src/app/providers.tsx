@@ -1,6 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
+import { IntlProvider } from 'use-intl';
 import { routeTree } from '~/app/route-tree.gen';
+import { CONSOLE_LOCALE, CONSOLE_TIME_ZONE, formats, messages } from '~/i18n';
+import { RouteError, RouteNotFound } from '~/app/route-fallbacks';
 
 /**
  * Composition root for the console: server-state client, then router. Nothing else belongs
@@ -37,6 +40,12 @@ const router = createRouter({
   routeTree,
   context: { queryClient },
   defaultPreload: 'intent',
+  // A library default is user-facing text nobody here wrote. Unset, TanStack Router renders
+  // its own hardcoded English "Not Found" — which the ESLint JSXText ban structurally cannot
+  // catch, because the literal lives in node_modules. Both fallbacks resolve through the
+  // catalogue and carry NFR-79's three parts.
+  defaultNotFoundComponent: RouteNotFound,
+  defaultErrorComponent: RouteError,
 });
 
 declare module '@tanstack/react-router' {
@@ -45,10 +54,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+/**
+ * `IntlProvider` wraps the router rather than sitting inside it, because the router's own
+ * fallback components render outside every route — a provider mounted per route would leave
+ * `defaultNotFoundComponent` with no catalogue, which is the one screen guaranteed to need one.
+ *
+ * The console is Romanian-only (OQ-42), so the locale is a constant and there is no switcher
+ * and no `[locale]` segment in the route tree.
+ */
 export function AdminProviders() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <IntlProvider
+      locale={CONSOLE_LOCALE}
+      messages={messages}
+      formats={formats}
+      timeZone={CONSOLE_TIME_ZONE}
+    >
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </IntlProvider>
   );
 }

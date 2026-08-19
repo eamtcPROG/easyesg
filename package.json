@@ -20,7 +20,7 @@
     "build": "pnpm -r build",
     "lint": "eslint .",
     "test": "pnpm -r test",
-    "boundaries": "depcruise --config .dependency-cruiser.cjs apps/api/src apps/web/src apps/admin/src packages/ui/src",
+    "boundaries": "depcruise --config .dependency-cruiser.cjs apps/api/src apps/web/src apps/admin/src packages/ui/src packages/i18n/src",
     "boundaries:prove": "./tools/prove-boundaries.sh",
     "openapi:emit": "pnpm --filter @easyesg/api openapi:emit",
     "openapi:check": "pnpm openapi:emit && git diff --exit-code packages/contracts/openapi/v1.json",

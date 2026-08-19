@@ -29,7 +29,7 @@ describe('TenantRepository', () => {
   });
 
   it('raises when a context exists but carries no QueryRunner', () => {
-    runInRequestContext({ correlationId: 'c-1', organizationId: 'org-1' }, () => {
+    runInRequestContext({ correlationId: 'c-1', locale: 'ro', organizationId: 'org-1' }, () => {
       expect(() => repo.read()).toThrow(TenantContextMissingError);
     });
   });

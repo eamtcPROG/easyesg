@@ -762,13 +762,13 @@ The administrative console shares tokens and primitives with the tenant applicat
 
 ### A-03 — Content and translation console
 
-- **Purpose:** make every field label, help text and validation message editable as data, so a wording correction reaches users without a release.
+- **Purpose:** make the content edited by people who cannot deploy — help-centre articles and plan presentation copy — editable as data, and hold the locale registry and the translation-gap queue. **Amended 19 Aug 2026 (architecture.md OQ-43):** label, help-text and validation-message wording moved into committed message catalogues and is no longer edited here; a catalogue gap is now caught by a build-time parity gate rather than surfacing in this queue.
 - **Primary actors:** PA.
 - **Archetype:** Editor + Publish.
 - **Entry points:** console navigation; the untranslated-key queue; a content review gate (§13.4).
-- **Layout and regions:** editor for the string set per locale; publish surface following UX-123 — preview → scope disclosure → confirm → progress → result → revert.
-- **Content and data shown:** content keys with their value per locale; platform-authored terms marked as such (UX-93); the queue of keys that fell back to the default locale at runtime (UC-74); the diff against the EFRAG template on a version rollout, where EFRAG publishes an official translation of a VSME label.
-- **Controls and actions:** edit a string; register an additional locale; publish a reviewed set; revert a publication; review the fallback queue.
+- **Layout and regions:** editor for the FR-61 content set per locale; publish surface following UX-123 — preview → scope disclosure → confirm → progress → result → revert.
+- **Content and data shown:** FR-61 content keys with their value per locale; platform-authored terms marked as such (UX-93); the queue of keys that fell back to the default locale at runtime in that content (UC-74); the diff against the EFRAG template on a version rollout, where EFRAG publishes an official translation of a VSME label — read against the committed label catalogue for that taxonomy version.
+- **Controls and actions:** edit an article or plan description; register an additional locale; publish a reviewed set; revert a publication; review the fallback queue; review the EFRAG label diff.
 - **States:** empty — filtered; loading — initial; pending — async (publication in progress); partial; error — recoverable; success.
 - **Validation behaviour:** publication is an explicit, versioned, reversible step rather than a side effect of editing, so half-finished translations are never live (FR-62). Scope disclosure names how many organizations and reports are affected before confirmation (UX-123).
 - **Exits:** back to the queue; the system audit log (A-08) records the publication.
@@ -972,13 +972,13 @@ The administrative console shares tokens and primitives with the tenant applicat
 
 ### A-17 — Notification categories and templates
 
-- **Purpose:** make adding a notice or changing its wording configuration rather than a release.
+- **Purpose:** make a notice's behaviour — channels, classification, lead times, repeat interval — configuration rather than a release. **Amended 19 Aug 2026 (architecture.md OQ-43):** template wording moved into the committed message catalogues, because a category cannot exist without code calling `raise()` for it, so its words always arrive with that release. What an operator tunes here is behaviour.
 - **Primary actors:** PA.
 - **Archetype:** Editor + Publish.
 - **Entry points:** console navigation.
-- **Layout and regions:** editor for the category catalogue and the per-locale templates; publish surface following UX-123.
-- **Content and data shown:** the category catalogue — default channels, transactional-or-optional classification, deadline lead times, and the interval at which an outstanding-report notice repeats; in-app and email templates per locale.
-- **Controls and actions:** edit a category; author a template per locale; publish; revert.
+- **Layout and regions:** editor for the category catalogue; publish surface following UX-123. Template wording is shown read-only, resolved from the catalogue by category key.
+- **Content and data shown:** the category catalogue — default channels, transactional-or-optional classification, deadline lead times, and the interval at which an outstanding-report notice repeats; the rendered in-app and email wording per locale, read-only, so an operator can see what a classification change affects.
+- **Controls and actions:** edit a category's behaviour; publish; revert.
 - **States:** loading — initial; pending — async (publication); error — recoverable; success with revert.
 - **Validation behaviour:** transactional classification determines non-suppressibility on S-27, so reclassifying a category is a consequence-disclosing action naming what changes for recipients (FR-163, UX-65). Email templates shall degrade to plain text and shall not depend on images or external CSS to be comprehensible (UX-66) — a template-level obligation this editor must enforce.
 - **Exits:** A-08 records the publication.

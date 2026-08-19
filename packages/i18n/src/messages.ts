@@ -1,16 +1,19 @@
-import type { Locale } from './locales';
+import type { Locale } from './locales.js';
 
 /**
- * Messages are NOT bundled with the application.
+ * Where messages come from is an adapter's decision, not this port's.
  *
- * Labels, help text and validation messages are versioned configuration published from the
- * administrative console as a reviewed, reversible set (FR-61, FR-62), reaching production
- * within one working day of approval and revertible in a single step (NFR-85). A `.json` file
- * committed to this repo would need a release to change, which is that requirement inverted.
+ * **Amended 19 Aug 2026 (architecture.md OQ-43).** This docblock previously read "Messages are
+ * NOT bundled with the application", on the reasoning that a committed `.json` would need a
+ * release to change and FR-61/NFR-85 forbid that. OQ-43 narrowed FR-61: catalogue text — chrome,
+ * VSME labels, validation messages, notification wording — ships in the release, and only the
+ * text edited by people who cannot deploy (help-centre articles, plan presentation copy) stays
+ * in the configuration store. So both origins are now legitimate, and the port is what keeps
+ * them interchangeable.
  *
- * next-intl is agnostic about where messages come from, so `apps/web`'s `getRequestConfig`
- * calls a loader satisfying this port. The port is the seam; the adapter lives in `apps/web`
- * because it is the thing that holds the API client.
+ * That interchangeability is the whole value. A key can move from a committed catalogue into the
+ * store later without touching a single call site — the cheap direction of OQ-43 — because every
+ * consumer depends on this interface rather than on an import path.
  */
 export interface MessageCatalogue {
   readonly [key: string]: string | MessageCatalogue;

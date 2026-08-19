@@ -1,0 +1,14 @@
+{
+  "chrome": {
+    "notFound": {
+      "title": "Pagina nu a fost găsită",
+      "body": "Adresa cerută nu corespunde niciunui ecran din consolă, deci nu există conținut de afișat. Verificați adresa sau reveniți la ecranul principal.",
+      "action": "Înapoi la ecranul principal"
+    },
+    "error": {
+      "title": "Ceva nu a funcționat",
+      "body": "Acțiunea nu a fost finalizată și nicio modificare nu a fost salvată. Reîncărcați pagina; dacă problema persistă, contactați echipa tehnică.",
+      "action": "Reîncărcați pagina"
+    }
+  }
+}

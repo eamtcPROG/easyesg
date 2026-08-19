@@ -3,8 +3,15 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './app/filters/problem-details.filter';
 import { correlationMiddleware } from './infrastructure/observability/correlation.middleware';
+import { initialiseCatalogue } from './app/messages/catalogue';
 
 export async function bootstrapHttp(): Promise<void> {
+  // Before anything can serve. The ICU engine is ESM-only and this app is CommonJS, so the
+  // catalogue is loaded through a dynamic import (see app/messages/catalogue.ts). A request
+  // served before this resolves would carry no wording at all — problem documents with no
+  // title, envelope messages with no text.
+  await initialiseCatalogue();
+
   // rawBody is required for webhook HMAC verification: re-serialising JSON changes the
   // bytes the provider signed, and the signature fails for reasons that look like anything
   // except the real cause.

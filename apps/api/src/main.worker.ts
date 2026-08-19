@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { initialiseCatalogue } from './app/messages/catalogue';
 
 /**
  * Worker mode. Same image as `api`, different entrypoint (AD-1, §5.4) — one build, one
@@ -11,6 +12,10 @@ import { AppModule } from './app.module';
  * one tenant's regulatory and fiscal record into a PDF, an e-Factura payload and an email.
  */
 export async function bootstrapWorker(): Promise<void> {
+  // The worker needs this more than the HTTP tier does: it renders every PDF, Excel export and
+  // email, and there is no client downstream to resolve a key it leaves unresolved.
+  await initialiseCatalogue();
+
   const app = await NestFactory.createApplicationContext(AppModule);
   app.enableShutdownHooks();
 }

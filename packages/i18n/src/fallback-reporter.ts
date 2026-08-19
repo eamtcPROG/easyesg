@@ -1,4 +1,4 @@
-import type { Locale } from './locales';
+import type { Locale } from './locales.js';
 
 /**
  * UX-97: where a string falls back to the source locale at runtime, the user sees the fallback

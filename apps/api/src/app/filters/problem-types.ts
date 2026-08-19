@@ -3,10 +3,12 @@
  *
  * The URI is dereferenceable by design: RFC 9457 says the type SHOULD resolve to
  * human-readable documentation. Titles and detail templates are NOT here — they live
- * in the configuration store as localized content (FR-61, FR-62), so error wording is
- * publishable within one working day and revertible in one step (NFR-85), and NFR-79's
- * three-part rule (what failed / consequence / resolving action) applies to error text
- * on the same mechanism as every other message.
+ * in the shared message catalogues under `packages/i18n/catalogues`, keyed
+ * `problem.<slug>.title` and `problem.<slug>.detail`, and NFR-79's three-part rule
+ * (what failed / consequence / resolving action) applies to them as to every other
+ * message. **Amended 19 Aug 2026 (architecture.md OQ-43):** this previously said the
+ * configuration store, which is now only help-centre articles and plan copy — error
+ * wording ships with the release that can raise the error.
  *
  * This file therefore holds only the closed set of slugs. Adding one is a code change;
  * rewording one is not.
@@ -47,7 +49,12 @@ export const problemTypeUri = (slug: ProblemTypeSlug): string => `${PROBLEM_BASE
 /** RFC 9457 problem detail. Extension members are permitted and used. */
 export interface ProblemDetails {
   type: string;
-  title: string;
+  /**
+   * Optional, and omitted when the catalogue has no entry. RFC 9457 makes every member
+   * optional; a title holding the slug would be an internal identifier on a surface a person
+   * reads, which CLAUDE.md forbids by name. `type` is the machine-readable identity.
+   */
+  title?: string;
   status: number;
   detail?: string;
   instance?: string;

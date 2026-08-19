@@ -13,13 +13,19 @@ every screen. Cite them; do not re-derive them.
 Scaffold only. What exists: 26 route files covering all 18 administrative screens, two pathless
 layouts, the TanStack Router tree, the query client, the `packages/ui` token cascade, 15 feature
 folders across two bounded contexts, and 7 boundary rules with fixtures proving each rejects a real
-violation.
+violation. The i18n wiring is in place — see below.
 
 **Not built, and do not assume otherwise:** every screen returns `null`. No component, no data
 fetch, no session, no MFA, no guard. `src/realm/session.ts` and `src/realm/api-client.ts` are
-docblocks over an empty export, as are `src/lib/*` and `src/i18n/*`. `packages/ui` exports nothing
-but the token cascade, so there is no button to build with. `apps/api` has no `/admin/*` controller
-and no `/auth/admin/session` route — the API this app is a client of does not answer yet.
+docblocks over an empty export, as is `src/lib/*`. `packages/ui` exports nothing but the token
+cascade, so there is no button to build with. `apps/api` has no `/admin/*` controller and no
+`/auth/admin/session` route — the API this app is a client of does not answer yet.
+
+**`src/i18n/` is built.** `use-intl` (pinned to `next-intl`'s version, §12.1) is mounted in
+`app/providers.tsx` around the router, the catalogue is `src/messages/ro.json`, and named formats
+live in `src/i18n/formats.ts`. `src/global.d.ts` types the keys, so a mistyped one fails
+`pnpm typecheck` — which is the only thing catching it, because UX-97 makes a missing key render
+as a blank rather than a marker, and one catalogue means no parity gate to cross-check against.
 
 `A-01` is Phase 2; `A-02 … A-18` are Phase 11 (`design/IMPLEMENTATION_PLAN.md`).
 
@@ -30,8 +36,8 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 | From | Command | Notes |
 | --- | --- | --- |
 | root | `pnpm lint` | One flat config at the root; this package has no `lint` script of its own. The browser tier covers `apps/web`, `apps/admin` and `packages/ui`; the Next-only block does not apply here |
-| root | `pnpm boundaries` | dependency-cruiser over four roots, `apps/admin/src` among them |
-| root | `pnpm boundaries:prove` | Asserts each of the 19 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
+| root | `pnpm boundaries` | dependency-cruiser over five roots, `apps/admin/src` among them |
+| root | `pnpm boundaries:prove` | Asserts each of the 20 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
 | root | `pnpm routes:check` | Rebuilds and fails if the committed route tree differs from the one the plugin generates. The analogue of `openapi:check` |
 | here | `pnpm typecheck` | `tsc --noEmit`, and it covers `vite.config.ts` and `vitest.config.ts` too |
 | here | `pnpm build` | Emits `dist/`. **Regenerates `src/app/route-tree.gen.ts` as a side effect** — commit it if it changed |
@@ -94,11 +100,14 @@ else; treat it as an incident, not a refactor.
   Name route files normally; if you want one deliberately excluded, use the plugin's configured
   `routeFileIgnorePrefix` (`-`) so the intent is legible.
 
-- **Library defaults are user-facing text you did not write.** An unmatched route currently renders
-  TanStack Router's built-in `Not Found` — a hardcoded English string. The ESLint `JSXText` ban
-  cannot catch it because the literal is in `node_modules`. Set `defaultNotFoundComponent` and
-  `defaultErrorComponent` on the router, resolving through the message catalogue, in the first
-  sprint that has a message loader. The same applies to any library that ships default copy.
+- **Library defaults are user-facing text you did not write.** TanStack Router's built-in
+  `Not Found` is a hardcoded English string, and the ESLint `JSXText` ban cannot catch it because
+  the literal is in `node_modules`. Discharged for the router — `defaultNotFoundComponent` and
+  `defaultErrorComponent` are set in `app/providers.tsx` to `app/route-fallbacks.tsx`, which
+  resolve through the catalogue and carry NFR-79's three parts. **The rule generalises and the
+  next library will not announce itself:** anything shipping default copy — a date picker's month
+  names, a table's "no rows", a form library's validation strings — needs the same treatment, and
+  no gate here will tell you.
 
 - **Compact density is a hook with nothing behind it yet.** `[data-density="compact"]` is declared
   on `<html>` and every screen is inside it, but `packages/ui/src/styles/tokens.css` defines a
@@ -116,10 +125,12 @@ else; treat it as an incident, not a refactor.
   convenience. Report data is reachable only through A-07's time-boxed, reasoned, auto-expiring
   grant, and every acquisition is logged (FR-79, NFR-66).
 
-- **No locale segment in the URL.** The console is Romanian-only at MVP (`architecture.md` §18),
-  which is a decision about how many catalogues the chrome ships in — **not** permission to put a
-  sentence in a `.tsx` file. Every string is still a message key, because NFR-85 requires wording to
-  reach production in a working day and revert in one step.
+- **No locale segment in the URL.** The console is Romanian-only at MVP (`architecture.md`
+  OQ-42), which is a decision about how many catalogues the chrome ships in — **not** permission to
+  put a sentence in a `.tsx` file. Every string is still a message key: not for NFR-85's sake any
+  more (OQ-43 moved catalogue text into the release, so a wording change ships with a deploy), but
+  because a key is what the type system, the translator and any future locale can all see. A
+  literal is invisible to all three.
 
 - **`~/*`, not `@/*`.** `tsconfig.boundaries.json` maps `@/*` to `apps/web/src`, and a TS `paths`
   key holds one meaning. Sharing it would resolve this app's `~/lib/env` to *web's* `lib/env` —

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import { runInRequestContext } from '../persistence/request-context';
+import { negotiateLocale } from '../../app/messages/negotiate-locale';
 
 declare module 'express' {
   interface Request {
@@ -11,7 +12,8 @@ declare module 'express' {
 const TRACEPARENT = /^00-([0-9a-f]{32})-[0-9a-f]{16}-[0-9a-f]{2}$/;
 
 /**
- * Opens the request context and establishes the correlation id (NFR-90).
+ * Opens the request context, establishes the correlation id (NFR-90) and negotiates the
+ * response locale (OQ-46).
  *
  * The id is DERIVED from an inbound W3C `traceparent` trace-id where one is present,
  * rather than minted alongside it. One value, not two — otherwise OpenTelemetry spans
@@ -29,5 +31,12 @@ export function correlationMiddleware(req: Request, res: Response, next: NextFun
   req.correlationId = correlationId;
   res.setHeader('x-correlation-id', correlationId);
 
-  runInRequestContext({ correlationId }, () => next());
+  // Negotiated here, with the correlation id, because both must exist before the first guard
+  // can throw — and a guard that throws produces a problem document that needs a locale.
+  const locale = negotiateLocale(req.header('accept-language'));
+
+  // RFC 9110: state the language actually served, which is not always the one asked for.
+  res.setHeader('content-language', locale);
+
+  runInRequestContext({ correlationId, locale }, () => next());
 }

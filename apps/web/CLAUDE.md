@@ -17,14 +17,14 @@ a real violation.
 **Not built, and do not assume otherwise:** every page returns `null`. No component, no data
 fetch, no session. `src/server/api-client.ts` and `src/server/session.ts` are docblocks over an
 empty export. `src/app/api/[...path]/route.ts` answers 501 to everything. `packages/ui` exports
-nothing but the token cascade, so there is no button yet. `apps/admin` does not exist.
+nothing but the token cascade, so there is no button yet.
 
-**One scaffold-only shim, marked for deletion:** `src/server/messages.ts` returns an empty
-catalogue when the localization endpoint is missing or the API is unreachable, which is what lets
-`pnpm build` prerender the public shell with no API running. `platform/localization` is one of
-the 35 registered-but-empty modules in `apps/api`. Delete `emptyCatalogueWhileUnbuilt` and both
-call sites in the first localization sprint — a page silently rendered with no words is worse
-than one that says it broke (NFR-79).
+**The message catalogues are wired and empty.** `src/messages/{ro,en,ru}.json` declare the
+`chrome`, `validation` and `notification` namespaces and hold no copy yet; `src/server/messages.ts`
+loads them through the `MessageLoader` port. Adding a string is a JSON edit — and adding it to
+`ro.json` alone fails `src/messages/messages.parity.spec.ts`, which is what replaces FR-64's
+runtime queue now that every locale is present at build time (architecture.md OQ-43). The
+scaffold-only `emptyCatalogueWhileUnbuilt` shim is deleted.
 
 ## Commands
 
@@ -33,8 +33,8 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 | From | Command | Notes |
 | --- | --- | --- |
 | root | `pnpm lint` | One flat config at the root; this package has no `lint` script of its own. Next 16 removed `next lint`, so this is the **only** lint gate — AD-9: without it "every gate in AD-13's table silently turns off" |
-| root | `pnpm boundaries` | dependency-cruiser over `apps/api/src`, `apps/web/src` and `packages/ui/src` |
-| root | `pnpm boundaries:prove` | Asserts each of the 12 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
+| root | `pnpm boundaries` | dependency-cruiser over five roots, `apps/web/src` among them |
+| root | `pnpm boundaries:prove` | Asserts each of the 20 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
 | here | `pnpm typecheck` | `tsc --noEmit` |
 | here | `pnpm build` | Needs **no** environment. Nothing under `[locale]` prerenders, so the build never reaches the message loader, and `src/lib/env.ts` resolves through getters so a secret is a runtime input rather than a build input |
 | here | `pnpm start:dev` / `test` | |
@@ -88,16 +88,22 @@ conditional render, which is how it ends up half-suppressed on one screen.
   cross-tenant read (AD-2). Language is the opposite case and *is* in the URL — do not
   generalise from one to the other.
 
-- **Nothing prerenders, and there are two separate reasons.** `[locale]` is `force-dynamic`
-  because NFR-85 requires a copy change to reach production in a working day and be revertible
-  in one step — a page with its strings baked into the build artefact needs a redeploy to change
-  a sentence, and the failure is invisible (the build is green, the copy is stale). `(app)`
-  declares it again for the stronger reason: every route below it is tenant-scoped, and §14.2
-  treats framework caching there as a tenancy risk, not a performance question.
+- **Nothing prerenders, and `[locale]`'s stated reason has expired.** `force-dynamic` was set
+  there because NFR-85 required a copy change to reach production without a redeploy, so strings
+  could not be baked into the build artefact. Under **OQ-43 they now are, deliberately**, and
+  NFR-85 no longer covers catalogue text — so that justification is gone. It has not been
+  removed, because removing it is a caching decision with a tenancy blast radius and belongs in
+  its own change: §14.2 permits caching only for "fully static, tenant-independent content: the
+  marketing shell, the legal pages, the locale bundles", and telling those apart from the rest of
+  `[locale]` is the actual work. `(app)` declares `force-dynamic` again for the stronger reason
+  that survives untouched: every route below it is tenant-scoped, and §14.2 treats framework
+  caching there as a tenancy risk, not a performance question.
 
 - **`NextIntlClientProvider` is `messages={null}` at the root.** The default ships every message
   to the browser — the full B1–B11 label set across three locales, against NFR-43's LCP budget.
-  Client components get a namespace-scoped provider instead.
+  Client components get a namespace-scoped provider instead. This matters more now that the
+  catalogues are bundled: they are reachable from any import, so the only thing keeping them out
+  of the client bundle is this deliberate `null` plus scoped providers below it.
 
 - **Formatting has one home.** `src/i18n/formats.ts` declares named formats; components reach
   them by name through `useFormatter()`. `toFixed`, `toLocaleString` and `new Intl.*Format` are
@@ -124,3 +130,13 @@ conditional render, which is how it ends up half-suppressed on one screen.
   that resolves it (NFR-79) — the "what now" slot is required, not optional.
 - No internal identifier reaches the screen: no `FR-`/`UC-`/`S-`, no enum member, no taxonomy
   element key, no problem-type slug.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

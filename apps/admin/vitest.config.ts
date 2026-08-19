@@ -12,7 +12,17 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   plugins: [react()],
-  resolve: { alias: { '~': fileURLToPath(new URL('./src', import.meta.url)) } },
+  resolve: {
+    alias: {
+      '~': fileURLToPath(new URL('./src', import.meta.url)),
+    // `@easyesg/i18n` builds to dist/ for Node (architecture.md OQ-47), so its `exports` map
+      // sends every non-opted-in consumer there. Tests point back at source so `pnpm test` works
+      // on a fresh clone with no prior build — the package's `source` condition expresses the same
+      // intent, but Vite 6+ REPLACES the default conditions rather than extending them, and an
+      // alias states it without that trap.
+      '@easyesg/i18n': fileURLToPath(new URL('../../packages/i18n/src/index.ts', import.meta.url)),
+    },
+  },
   test: {
     environment: 'jsdom',
     include: ['src/**/*.spec.{ts,tsx}'],

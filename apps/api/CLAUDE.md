@@ -10,7 +10,9 @@ user-facing-text conventions. This file carries only what you need in your hands
 ## Current state
 
 Foundation only. What works: the module tree, the response envelope, the problem+json filter,
-`TenantRepository`, the `contracts/` ports, OpenAPI emission, seven boundary rules.
+`TenantRepository`, the `contracts/` ports, OpenAPI emission, seven boundary rules, and message
+resolution (`app/messages/`) — locale negotiation plus catalogue lookup, with the catalogues
+themselves still empty.
 
 **Not built yet, and do not assume otherwise:** the four edge guards (`AuthGuard`,
 `TenantTransactionGuard`, `EntitlementGuard`, `AdminRealmGuard`), migrations and RLS policies, the
@@ -144,9 +146,26 @@ every context depends on, so anything it reaches for becomes a transitive depend
   `?filters=f,v1,v2|f2,v3&order=f,asc&page=1&onpage=25`. `onpage=-1` only on routes marked bounded.
 - **Time**: instants are `EpochMillis`; anything whose answer changes with timezone is a
   `LegalDate` (see `contracts/types/time.ts`).
-- **No user-facing text in code.** DTOs and errors carry message *keys*; wording lives in the
-  configuration store (FR-61, FR-62). No `FR-`/`UC-` identifier, enum name or element key ever
-  reaches a screen, an export or a problem+json `detail`.
+- **No user-facing text in code, and this tier is where it gets resolved.** DTOs and errors carry
+  message *keys*; wording lives in the committed catalogues under `packages/i18n/catalogues`
+  (OQ-43 — the configuration store now holds only help-centre articles and plan copy). The API
+  resolves them server-side against the locale negotiated from `Accept-Language` (OQ-46), so an
+  envelope message carries `key` **and** rendered `text`, and a problem document carries a
+  resolved `title`/`detail`. **A missing key omits the member rather than falling back to the
+  slug** — `title: 'validation-failed'` is an internal identifier on a surface CLAUDE.md names
+  explicitly, and RFC 9457 makes every member optional. No `FR-`/`UC-` identifier, enum name or
+  element key ever reaches a screen, an export or a problem+json `detail`.
+
+- **`DomainError` takes a message key and params, never a sentence.** The key is passed to
+  `Error` so logs and traces still identify the failure — that surface is developer-facing and
+  stays untranslated on purpose.
+
+- **The catalogue must be initialised before anything serves.** `use-intl` and every current
+  FormatJS release ship ESM only, and this app is CommonJS (OQ-48), so `initialiseCatalogue()`
+  bridges with a dynamic `import()` and is awaited in both entrypoints. Forgetting it does not
+  crash — every message silently vanishes — so it logs once at error level. Jest needs
+  `NODE_OPTIONS=--experimental-vm-modules` to execute that import, which is why the `test` script
+  sets it.
 - OpenAPI is **3.1** only because `document.factory.ts` calls `setOpenAPIVersion('3.1.0')` —
   `DocumentBuilder` defaults to 3.0 and nothing fails loudly if the call is removed.
 

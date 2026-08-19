@@ -5,6 +5,8 @@
     "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
     "declaration": true,
+    // The shared message catalogues are JSON, imported from @easyesg/i18n/catalogues (OQ-43).
+    "resolveJsonModule": true,
     "removeComments": true,
 
     "emitDecoratorMetadata": true,

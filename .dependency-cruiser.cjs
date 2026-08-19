@@ -218,6 +218,19 @@ module.exports = {
       to: { path: '^apps/admin/src/features' },
     },
     {
+      name: 'i18n-is-a-leaf',
+      comment:
+        'The mirror of contracts-is-a-leaf, for the other shared kernel. packages/i18n holds the ' +
+        'locale registry both front ends and the export pipeline read; a dependency on an app ' +
+        'inverts that and makes the registry unusable from the other side, exactly as ' +
+        'ui-is-presentational prevents for the token cascade. It must also not reach packages/ui: ' +
+        'the registry is consumed by the PDF worker and by email rendering, neither of which has ' +
+        'a DOM, and a token import would drag CSS into both.',
+      severity: 'error',
+      from: { path: '^packages/i18n/src' },
+      to: { path: '^(apps/|packages/(ui|contracts|validation|vsme|xlsx-patch)/)' },
+    },
+    {
       name: 'no-circular',
       comment:
         'A cycle here is a design smell, not a packaging problem. forwardRef is not an approved ' +
