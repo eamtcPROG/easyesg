@@ -118,5 +118,20 @@ the check is.
 
 ---
 
-*Next up: task 9 — database baseline and migrations. Its unknowns should be batched before
+## Plan revision — tasks 9–43 re-sliced into 9–73 · 2026-08-19
+
+Before any TODO task was started, the plan was cut finer: the 35 remaining tasks became 65,
+and a **Scope** column now names the workspaces each touches. The slicing rule: vertical
+slices in build order, with a feature's API task immediately before its screen task, and
+front+back combined only where splitting would produce fragments (social sign-in, TOTP,
+invitations). Splitting by application was considered and rejected — §15.4's order is
+feature-driven, and an all-api-then-all-web grouping would leave nothing verifiable
+end-to-end until two distant halves met.
+
+Task numbers 1–8 did not move, so every citation in this file stays valid; the renumbering
+touched only tasks nothing had cited yet.
+
+---
+
+*Next up: task 9 — migration runner and datasource. Its unknowns should be batched before
 its first file is written.*
