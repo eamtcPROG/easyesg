@@ -17,7 +17,7 @@ is structure without behaviour.
 
 | Workspace | State |
 | --- | --- |
-| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, `TenantRepository`, port surface, OpenAPI emission. No guards, no migrations, no RLS policies, no controller but health |
+| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, `TenantRepository`, port surface, OpenAPI emission, and the migration runner — a baseline creating §7.1's five schemas + `btree_gist`, applying and reverting from empty. No guards, no tables, no RLS policies, no controller but health; the two runtime `DataSource`s are defined but not yet registered with Nest (task 11) |
 | `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
 | `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
@@ -31,7 +31,12 @@ Not started: `packages/{vsme,xlsx-patch}`, `config/`, `infra/{caddy,ci,ansible,t
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (20 rules, each with a fixture proving it rejects a real violation),
-`pnpm openapi:check`, `pnpm routes:check`. There is no CI yet — those root scripts *are* the gate set.
+`pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`. There is no CI yet — those root
+scripts *are* the gate set. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
+applies, reverts and re-applies against the Compose stack, because "the baseline applies from an
+empty database" is not a property any hermetic test can assert. The other eight run anywhere, and
+keeping that true is why `TypeOrmModule` is not registered until task 11 — `openapi:check` boots the
+whole `AppModule`.
 
 ## The document set (read before deciding anything)
 
@@ -321,6 +326,14 @@ services; reach their clients through the containers, never through a host insta
 
 ```bash
 cd infra/compose && docker compose exec postgres psql -U esg_app esg
+```
+
+Schema migrations do **not** run as `esg_app`. They connect as `esg_migrator`, the migration owner
+of §7.6 — a role no runtime process may hold, because §7.7's append-only guarantee rests on the
+owner's credentials being unavailable (an owner can `ALTER TABLE ... DISABLE TRIGGER`):
+
+```bash
+pnpm --filter @easyesg/api db:migrate
 ```
 
 The working directory is not incidental: Compose resolves `.env` and the relative init mount

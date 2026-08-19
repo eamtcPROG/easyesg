@@ -776,6 +776,8 @@ Five schemas in one PostgreSQL 18 instance:
 | `config` | content, locales, taxonomy versions, mappings, factor sets, thresholds, rules, notification templates, plan data | none |
 | `audit` | system audit log, support-access log, billing ledger, metering events, outbox, inbound events | none |
 
+A sixth schema, `migration`, sits beside these and is deliberately not in the table above: it holds nothing but TypeORM's applied-migration ledger. **Added 19 Aug 2026, with task 9.** The five are domain storage and this is bookkeeping. Separating it does two things: no runtime role is granted `USAGE` on it, so the record of what has been applied is unreadable and unforgeable from the application tier by construction rather than by table grants someone has to remember not to write; and the table above stays literally true — the five schemas are the domain, and `public` still holds nothing but extensions. It is created by `infra/postgres/init/init.sh` rather than by the baseline migration, and that is forced rather than chosen: TypeORM's `MigrationExecutor` calls `createMigrationsTableIfNotExist()` before executing anything, and that path calls `createTable()` without ever calling `createSchema()` — so a ledger schema created by a migration could never be created at all. Same shape as the roles below, same resolution.
+
 That `billing` holds **no foreign key** to `core.organization` is the physical expression of NFR-15. It costs referential integrity across the boundary, bought back by a nightly reconciliation job that reports orphaned billing records as an operational metric. This is the correct trade: an FK would make NFR-1's "disable billing entirely" test impossible to run, because the schema itself would not load.
 
 ### 7.2 The reporting core
@@ -908,8 +910,10 @@ SELECT set_config('app.current_user', $2, true);   -- never from a JWT claim
 |---|---|---|
 | `esg_app` | enforced | `api` request path |
 | `esg_worker` | enforced — sets context from the job payload's organization | `worker` |
-| `esg_admin_ro` | `BYPASSRLS`, read-only, every acquisition logged | cross-tenant rollups, migration runs, admin API |
-| migration owner | n/a | migration job only; not a superuser; credentials never available at runtime |
+| `esg_admin_ro` | `BYPASSRLS`, read-only, every acquisition logged | cross-tenant rollups, **taxonomy** migration runs (§11.5), admin API |
+| `esg_migrator` | n/a — see below | schema migration job only; not a superuser; credentials never available at runtime |
+
+**The fourth role is named `esg_migrator` as of 19 Aug 2026 (task 9); the row previously read "migration owner" and named nothing, so nothing created it.** Two clarifications came with it. `esg_admin_ro`'s "migration runs" means §11.5's *taxonomy* migration runs — worker jobs over report data — and never schema migrations, which it is read-only and therefore incapable of. And its RLS column reads "n/a" for a reason that is a trap rather than an exemption: a table's **owner is exempt from its own RLS policies regardless of `rolbypassrls`**, so `esg_migrator` is created `NOBYPASSRLS` and AD-2's policies must additionally be written with `FORCE ROW LEVEL SECURITY`. Without `FORCE`, the exemption is invisible until a probe runs as the owner and passes.
 
 TypeORM: all tenant queries run on the request's `QueryRunner`, resolved from `AsyncLocalStorage`. A `TenantRepository` base **throws** when no context is present.
 

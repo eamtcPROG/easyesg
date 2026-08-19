@@ -131,7 +131,60 @@ end-to-end until two distant halves met.
 Task numbers 1–8 did not move, so every citation in this file stays valid; the renumbering
 touched only tasks nothing had cited yet.
 
+## Task 9 — Migration runner and datasource · 2026-08-19
+
+Three unknowns were batched and decided before the first file, per the protocol.
+
+- **The migration owner role did not exist.** §7.6's fourth row read "migration owner" and named
+  nothing, so `init.sh` created three roles and no schema migration could have run at all —
+  `esg_app`/`esg_worker` own nothing, and `esg_admin_ro` is read-only. It is now **`esg_migrator`**,
+  created by `init.sh` for the reason that file already documents for the others: a migration
+  cannot create the role it connects as. Two clarifications came with it and are in §7.6:
+  `esg_admin_ro`'s "migration runs" means §11.5's *taxonomy* runs, not schema ones; and a table's
+  **owner is exempt from its own RLS policies regardless of `rolbypassrls`**, so task 12's policies
+  need `FORCE ROW LEVEL SECURITY` or its cross-tenant probe passes for the wrong reason.
+- **The ledger lives in a sixth schema, `migration`, bootstrapped by `init.sh` — and that is
+  forced, not chosen.** TypeORM's `MigrationExecutor` calls `createMigrationsTableIfNotExist()`
+  before executing anything, and that path calls `createTable()` without ever calling
+  `createSchema()`, so a ledger schema created by a migration could never be created. Found by
+  reading the installed source, not the docs. No runtime role holds `USAGE` on it, which was
+  verified rather than assumed: `esg_app` reading `migration.migrations` fails at the store.
+- **`TypeOrmModule` is deliberately not registered yet.** `emit-openapi.ts` boots the whole
+  `AppModule`, so registering it here would have made `openapi:check` — and every future test that
+  boots the app — require Docker, two tasks before anything needs a connection. The options
+  factories are real and typed; task 11 adds the one line.
+
+Deviations and findings worth the next reader's time:
+
+- **`migrations` is an explicit array, not a glob.** The conventional
+  `[__dirname + '/migrations/*{.ts,.js}']` also matches the `.d.ts` files `declaration: true`
+  emits — confirmed present in `dist` — and a history assembled in filesystem order is not
+  reviewable. `migrations/index.spec.ts` fails if a file is added without its line.
+- **`name` was removed from `DataSourceOptions` in TypeORM 1.1**, a 0.3-era `ConnectionManager`
+  leftover; naming a connection is `@nestjs/typeorm`'s concern now. Every pre-1.0 example still
+  puts it in the options object, where it is a type error — the good outcome, since in JavaScript
+  both contexts would have silently shared one connection.
+- **The datasource module may export exactly one `DataSource`.** `CommandUtils.loadDataSource()`
+  counts exports, not instances, so a named export plus `export default` of the same object fails.
+- **`migration.data-source.ts` reads `process.env` directly**, the only file in `apps/api` that
+  may. It is loaded by the TypeORM CLI, outside Nest, where no `ConfigService` exists — and routing
+  the owner's credentials through `config/configuration.ts` to satisfy the house rule would put
+  them on the runtime configuration surface, which is exactly what §7.7 forbids.
+- **`migrations:check` is the ninth gate and the first that needs Docker.** Apply → revert → apply
+  against the Compose stack; there is no hermetic way to assert "applies from an empty database".
+  Task 17's ephemeral per-pipeline stack is what supplies the genuinely empty half — a developer's
+  persistent volume gives the reversibility half only.
+- Node's `--env-file` is rejected inside `NODE_OPTIONS`, so the scripts invoke
+  `node --env-file-if-exists=.env ./node_modules/typeorm/cli-ts-node-commonjs.js` directly. It does
+  **not** override already-set variables, so Compose and CI environments beat a stale local `.env`.
+
+Verified by running, not by inspection: baseline applied from an empty database as a non-superuser
+owner inside one transaction; all six schemas owned by `esg_migrator`; `btree_gist` in `public`;
+`esg_app` has `USAGE` but not `CREATE` on `core` and is denied the ledger schema outright; revert
+left only the bootstrap `migration` schema behind, with the extension gone; the compiled
+`dist` datasource loads without ts-node. All nine gates green.
+
 ---
 
-*Next up: task 9 — migration runner and datasource. Its unknowns should be batched before
-its first file is written.*
+*Next up: task 10 — core and billing schemas. The baseline holds no tables on purpose; the column
+conventions (epoch-ms instants, calendar date + originating timezone) land with the first ones.*

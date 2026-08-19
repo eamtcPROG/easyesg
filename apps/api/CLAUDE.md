@@ -10,15 +10,23 @@ user-facing-text conventions. This file carries only what you need in your hands
 ## Current state
 
 Foundation only. What works: the module tree, the response envelope, the problem+json filter,
-`TenantRepository`, the `contracts/` ports, OpenAPI emission, seven boundary rules, and message
+`TenantRepository`, the `contracts/` ports, OpenAPI emission, seven boundary rules, message
 resolution (`app/messages/`) — locale negotiation plus catalogue lookup, with the catalogues
-themselves still empty.
+themselves still empty — and the migration runner: a baseline that creates §7.1's five schemas
+plus `btree_gist`, applying and reverting cleanly from an empty database.
 
 **Not built yet, and do not assume otherwise:** the four edge guards (`AuthGuard`,
-`TenantTransactionGuard`, `EntitlementGuard`, `AdminRealmGuard`), migrations and RLS policies, the
-two `DataSource`s, any controller other than health, and every module body — the 35 `*.module.ts`
-files are registered but empty. `test/` holds no e2e specs yet; the RLS cross-tenant probe and the
+`TenantTransactionGuard`, `EntitlementGuard`, `AdminRealmGuard`), RLS policies, any table at all,
+any controller other than health, and every module body — the 35 `*.module.ts` files are
+registered but empty. `test/` holds no e2e specs yet; the RLS cross-tenant probe and the
 `BILLING_ENABLED=false` suite land there.
+
+**The two runtime `DataSource`s exist as options and are not registered with Nest.**
+`infrastructure/persistence/data-source.ts` exports `coreDataSourceOptions` and
+`billingDataSourceOptions`; `TypeOrmModule` is wired in task 11, where the request's
+`QueryRunner` first has work to do. Nothing in this app opens a runtime connection yet — which
+is why `pnpm openapi:check`, which boots the whole `AppModule` to emit the spec, still runs with
+no database. Keep that true unless the task in hand actually needs a connection.
 
 ## Commands
 
@@ -33,6 +41,8 @@ Run boundary and lint checks from the **repo root**; they are workspace-wide.
 | here | `pnpm typecheck` | `tsc --noEmit`. **Not the same as `build`** — see below |
 | here | `pnpm build` / `test` / `test:e2e` | |
 | here | `pnpm start:dev` | HTTP mode. `pnpm start:worker` for `MODE=worker` |
+| here | `pnpm db:migrate` / `db:revert` / `db:show` | Needs the Compose stack (`pnpm dev:up`) and `apps/api/.env`. Connects as `esg_migrator`, never as `esg_app` |
+| root | `pnpm migrations:check` | The ninth gate: apply → revert → apply. Needs Docker, unlike the other eight |
 
 **`build` does not type-check tests.** `tsconfig.build.json` excludes `*.spec.ts`, and ts-jest
 compiles per-file without whole-program checking. `pnpm typecheck` is what covers them. A spec can
@@ -117,10 +127,32 @@ would leak to the next borrower).
    classes; generated ones read RLS policies, grants and `uuidv7()` defaults as drift and revert them.
 2. Every tenant query on the request's `QueryRunner` (above).
 3. **Two `DataSource`s** — `coreDataSource`, `billingDataSource`, with `audit` entities on both so
-   an outbox row commits in the same transaction as the billing state change.
+   an outbox row commits in the same transaction as the billing state change. A **third**,
+   `migration.data-source.ts`, runs the migrations and is not one of them: it connects as
+   `esg_migrator`, a role the runtime never holds (§7.6, §7.7).
 4. `numeric` stays a **string** (NFR-58). A `transformer` calling `parseFloat` is the failure mode.
 5. The field-change audit write is raw `queryRunner.query()` — `RETURNING old.*, new.*` is not
    expressible in the query builder.
+
+### Migrations — five things that cost time to rediscover
+
+- **`migrations` is an explicit array, not a glob** (`persistence/migrations/index.ts`). A
+  `*{.ts,.js}` glob also matches the emitted `.d.ts` files, and a history assembled by filesystem
+  order is not reviewable. Adding a migration is two edits — the file and one line — and
+  `index.spec.ts` fails if the second is forgotten.
+- **Schema-qualify every object.** TypeORM's postgres driver does not set `search_path`, so an
+  unqualified `CREATE` lands wherever the migration role's default points — `public`, here. That
+  is a silent wrong answer, not an error.
+- **The datasource module may export exactly one `DataSource`.** `CommandUtils.loadDataSource()`
+  walks every export and refuses when more than one matches, so adding `export default` beside the
+  named export fails with "must contain only one export of DataSource instance" — naming the same
+  object twice.
+- **`name` is gone from `DataSourceOptions` in TypeORM 1.1.** It was a 0.3-era `ConnectionManager`
+  leftover; naming a connection is now `@nestjs/typeorm`'s `TypeOrmModuleOptions.name`. Every
+  pre-1.0 example still puts it in the options object.
+- **The ledger schema is bootstrapped by `init.sh`, not by a migration.** `MigrationExecutor`
+  creates its table before executing anything and never calls `createSchema`, so a ledger schema
+  created by a migration could never be created at all.
 
 ## The two things called "contracts"
 

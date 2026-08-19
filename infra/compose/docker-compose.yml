@@ -30,6 +30,7 @@ services:
       ESG_APP_PASSWORD: ${ESG_APP_PASSWORD:?set ESG_APP_PASSWORD in infra/compose/.env}
       ESG_WORKER_PASSWORD: ${ESG_WORKER_PASSWORD:?set ESG_WORKER_PASSWORD in infra/compose/.env}
       ESG_ADMIN_RO_PASSWORD: ${ESG_ADMIN_RO_PASSWORD:?set ESG_ADMIN_RO_PASSWORD in infra/compose/.env}
+      ESG_MIGRATOR_PASSWORD: ${ESG_MIGRATOR_PASSWORD:?set ESG_MIGRATOR_PASSWORD in infra/compose/.env}
       # A subdirectory, so the volume mount point is not itself the data directory.
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
