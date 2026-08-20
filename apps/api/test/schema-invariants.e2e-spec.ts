@@ -107,6 +107,39 @@ const unpairedLegalDates = (x: Executor) =>
     [DOMAIN_SCHEMAS],
   );
 
+/**
+ * DR-5 and AD-2, made mechanical. Two clauses, because tenant scoping has two shapes: `core` is
+ * tenant storage in its entirety, and the tenant root is scoped by its own `id` rather than by an
+ * `organization_id` a single-clause rule would look for — so the one table whose policy failing is
+ * worst is the one table that rule would miss. The second clause catches tenant tables outside
+ * `core`, such as task 57's invoices.
+ *
+ * Deliberately NOT every table everywhere: `billing`'s plan catalogue and `config` are global data,
+ * and a rule that fired on them would be switched off rather than satisfied.
+ *
+ * `ENABLED` and `FORCED` are asserted together. Forced is the half `esg_migrator`'s ownership makes
+ * necessary and the half that is invisible when missing — without it the policies are inert for the
+ * owner and every application-role probe still passes.
+ */
+const tablesMissingRowLevelSecurity = (x: Executor) =>
+  x.query<{ location: string; enabled: boolean; forced: boolean }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location,
+            c.relrowsecurity           AS enabled,
+            c.relforcerowsecurity      AS forced
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relkind = 'r'
+        AND n.nspname = ANY($1)
+        AND (n.nspname = 'core'
+             OR EXISTS (SELECT 1 FROM pg_attribute a
+                         WHERE a.attrelid = c.oid
+                           AND a.attname = 'organization_id'
+                           AND NOT a.attisdropped))
+        AND NOT (c.relrowsecurity AND c.relforcerowsecurity)
+      ORDER BY 1`,
+    [DOMAIN_SCHEMAS],
+  );
+
 describe('schema invariants (§7)', () => {
   let db: DataSource;
 
@@ -230,6 +263,49 @@ describe('schema invariants (§7)', () => {
       const caught = await provingViolation(
         `CREATE TABLE core.__probe_paired (period_end date, period_end_tz text)`,
         unpairedLegalDates,
+      );
+      expect(caught).toEqual([]);
+    });
+  });
+
+  describe('every tenant-scoped table has RLS enabled and forced (DR-5, AD-2)', () => {
+    it('holds', async () => {
+      expect(await tablesMissingRowLevelSecurity(db)).toEqual([]);
+    });
+
+    it('catches a new core table that forgot its policies — task 29 and task 31 land here', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_entity (id uuid PRIMARY KEY, organization_id uuid NOT NULL)`,
+        tablesMissingRowLevelSecurity,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.__probe_entity']);
+    });
+
+    it('catches a tenant table outside core — task 57 lands here', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE billing.__probe_invoice (id uuid PRIMARY KEY, organization_id uuid NOT NULL)`,
+        tablesMissingRowLevelSecurity,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['billing.__probe_invoice']);
+    });
+
+    // ENABLE without FORCE is the shape that looks protected and is not: policies are inert for the
+    // owner, and every probe run as the application role still passes (§7.6).
+    it('catches ENABLE without FORCE, which no application-role probe can see', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_half (id uuid PRIMARY KEY);
+         ALTER TABLE core.__probe_half ENABLE ROW LEVEL SECURITY`,
+        tablesMissingRowLevelSecurity,
+      );
+      expect(caught).toEqual([{ location: 'core.__probe_half', enabled: true, forced: false }]);
+    });
+
+    it('accepts the fully protected form, so the rule is satisfiable', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_ok (id uuid PRIMARY KEY);
+         ALTER TABLE core.__probe_ok ENABLE ROW LEVEL SECURITY;
+         ALTER TABLE core.__probe_ok FORCE ROW LEVEL SECURITY`,
+        tablesMissingRowLevelSecurity,
       );
       expect(caught).toEqual([]);
     });

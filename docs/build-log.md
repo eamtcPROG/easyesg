@@ -313,8 +313,60 @@ Shape worth keeping:
 Verified by running: 53 unit tests, 14 e2e including the T-11 pair, all nine gates green, and the
 eight hermetic ones re-run with the Compose stack stopped.
 
+## Task 12 — RLS policies and isolation proof · 2026-08-20
+
+Writing the first policy forced two amendments to AD-2's stated form. Both are in §4.3 rather than
+taken quietly against it.
+
+- **The tenant root is scoped by its own `id`.** AD-2 says every tenant-owned table carries
+  `organization_id`, but `core.organization` *is* the tenant. The rule is now two clauses — root by
+  `id`, everything else by `organization_id` — both enforced by the gate rather than by review. A
+  generated `organization_id` column was considered for single-clause uniformity and declined: a
+  stored duplicate of the primary key reads as clever now and puzzling later.
+- **`INSERT` on the root carries `WITH CHECK (true)`, and only there.** FR-13 creates an
+  organization from a verified account with no membership, so `app.current_org` cannot already
+  equal an id that does not exist — a `WITH CHECK` there makes creation impossible rather than
+  secure. Creating a row you then own is not a cross-tenant act; `SELECT`, `UPDATE` and `DELETE`
+  stay scoped, and every other tenant table keeps a real `WITH CHECK`.
+- **`NULLIF(..., '')` around the setting.** AD-2's `missing_ok` form gives NULL for an *unset*
+  context, which filters to zero rows as intended. An **empty** one casts as `invalid input syntax
+  for type uuid` and raises — the 500-on-every-endpoint AD-2 was avoiding, by a route it did not
+  consider. Verified in psql before relying on it.
+
+**The isolation proof connects as two roles, and the second is the point.** `esg_app` is the
+runtime role; `esg_migrator` owns every table, and an owner is exempt from its own policies
+regardless of `rolbypassrls`. Had the migration said `ENABLE` without `FORCE`, every assertion would
+still have passed as `esg_app` while the owner saw everything — the failure §7.6 records and AD-2
+calls worse than having no probe. A separate test then **proves `FORCE` is the clause doing the
+work**: inside a rolled-back transaction it drops `FORCE` and watches isolation collapse from one
+row to two on the same connection with the same tenant bound.
+
+The probe issues bare SQL with no `WHERE organization_id` — the query a careless repository method
+would write. That absence is the assertion; NFR-63 asks for isolation that holds regardless of who
+writes the query.
+
+Smaller things worth keeping:
+
+- **`UPDATE`/`DELETE` assert on `affected`, not on an empty `RETURNING`.** TypeORM's postgres driver
+  returns `[rows, affectedCount]` for those, and an empty RETURNING only proves nothing came back
+  while `affected = 0` proves nothing was written. Found by the assertion failing with `[[], 0]`.
+- **The invariant gained a two-clause RLS rule**: every `core` table, plus any table anywhere with
+  `organization_id`, must have RLS `ENABLED` **and** `FORCED`. Four proofs, including one for
+  `ENABLE`-without-`FORCE` — the shape no application-role probe can see. It deliberately does not
+  fire on `billing`'s plan catalogue or on `config`, which are global data; a rule that fired there
+  would be switched off rather than satisfied.
+- **Policies are `TO PUBLIC`**, the default. Naming `esg_app, esg_worker` would leave a role added
+  later unfiltered until someone remembered to alter every policy.
+- **Recorded for future data migrations:** with `FORCE`, a backfill run by `esg_migrator` sees zero
+  rows unless it sets `app.current_org` per organization. A migration that appears to update nothing
+  is this, not an empty table.
+
+Verified by running: volume destroyed, all three migrations applied from empty, the newest reverted
+and re-applied, 33 e2e tests including 12 isolation assertions across both roles and the FORCE
+collapse proof, 15 schema invariants, all nine gates green.
+
 ---
 
-*Next up: task 12 — RLS policies and isolation proof. Policies must carry `FORCE ROW LEVEL
-SECURITY`: `esg_migrator` owns every table and an owner is exempt from its own policies regardless
-of `rolbypassrls`, so without it the cross-tenant probe passes for the wrong reason.*
+*Next up: task 13 — the append-only substrate. §7.7's `REVOKE` model plus row and **statement**
+triggers; the statement-level one is not optional, because `TRUNCATE` is the single privilege a row
+trigger cannot defend and the fastest way to lose a ledger.*

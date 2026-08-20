@@ -18,10 +18,13 @@ the tenant transaction: both `DataSource`s registered, `TenantTransactionGuard` 
 `app.current_org` / `app.current_user` transaction-locally, commit in `TransactionInterceptor` and
 rollback in `ProblemDetailsFilter`.
 
+RLS is `ENABLED` and `FORCED` on `core.organization`, proven isolated as both `esg_app` and the
+owning role, with a test that drops `FORCE` in a rolled-back transaction and watches isolation
+collapse.
+
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
-`EntitlementGuard`, `AdminRealmGuard`), RLS policies, any table beyond
-`core.organization`, any controller other than health, and every module body — the 35 `*.module.ts`
-files are registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
+`EntitlementGuard`, `AdminRealmGuard`), any table beyond `core.organization`, any controller other
+than health, and every module body — the 35 `*.module.ts` files are registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
 only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by
 expand→migrate→contract. `test/` holds the schema-invariant probe; the RLS cross-tenant probe and
 the `BILLING_ENABLED=false` suite land beside it.
@@ -139,6 +142,24 @@ Tenant binding is `SELECT set_config('app.current_org', $1, true)` — a bind pa
 transaction-local. Never `SET LOCAL` (utility syntax, no bind parameter, forces interpolation into
 the one value tenancy rests on) and never session-scoped (PgBouncer runs transaction pooling; it
 would leak to the next borrower).
+
+### Adding a tenant table
+
+Four things in the **same** migration, or `pnpm migrations:check` fails the build:
+
+1. `organization_id uuid NOT NULL` — except the tenant root, which is scoped by its own `id`.
+2. `ENABLE ROW LEVEL SECURITY` **and** `FORCE ROW LEVEL SECURITY`. `ENABLE` alone is the shape that
+   looks protected and is not: `esg_migrator` owns every table, an owner is exempt from its own
+   policies regardless of `rolbypassrls`, and no probe run as `esg_app` can see the difference.
+3. Policies reading `NULLIF(current_setting('app.current_org', true), '')::uuid`. The `NULLIF`
+   matters — an empty context raises `invalid input syntax for type uuid` where an unset one
+   correctly yields zero rows.
+4. `WITH CHECK` on writes. `core.organization`'s permissive `INSERT` is a named exception for FR-13
+   and the only one; copying it elsewhere lets a tenant write another tenant's rows.
+
+**A backfill run by `esg_migrator` sees zero rows** unless it sets `app.current_org` per
+organization — `FORCE` applies to the owner too. A data migration that appears to update nothing is
+this, not an empty table.
 
 ## Persistence — AD-14's five constraints
 

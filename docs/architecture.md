@@ -168,9 +168,32 @@ Every architectural decision carries an **AD-n** identifier, cites the drivers a
 | | |
 |---|---|
 | **Context** | NFR-63 requires cross-tenant access to be **structurally prevented rather than filtered at call sites**. The platform is government-branded, holds fiscal and confidential sustainability data, and serves companies who are each other's competitors, while adoption is entirely voluntary. |
-| **Decision** | Every tenant-owned table carries `organization_id uuid not null`. RLS is `ENABLED` and `FORCED`, with a policy of the form `organization_id = current_setting('app.current_org', true)::uuid`. The application connects as a non-superuser, non-owner role for which RLS is not bypassable. A request-scoped interceptor sets `app.current_org` and `app.current_user` on the pooled connection **inside the transaction**, and the ORM never issues a tenant query outside a transaction. |
+| **Decision** | Every tenant-owned table carries `organization_id uuid not null`. RLS is `ENABLED` and `FORCED`, with a policy of the form `organization_id = current_setting('app.current_org', true)::uuid`. **Two clarifications, 20 Aug 2026 (task 12), each forced by writing the first policy — see below the table.** The application connects as a non-superuser, non-owner role for which RLS is not bypassable. A request-scoped interceptor sets `app.current_org` and `app.current_user` on the pooled connection **inside the transaction**, and the ORM never issues a tenant query outside a transaction. |
 | **Alternatives considered** | *Schema-per-tenant* — rejected: 2,000 schemas makes every migration a 2,000-step job and makes FR-83's adoption dashboard and FR-105's metering rollups awkward. *ORM global scope or base repository injecting the predicate* — roughly 90% as effective and materially cheaper to live with, but weaker than NFR-63's wording; if the team wants it, the honest route is to amend NFR-63 explicitly rather than implement RLS half-heartedly and describe it as structural. *One deployment per customer* — incompatible with NFR-47's per-free-tier-organization cost ceiling, and turns FR-83 and FR-105 into cross-instance ETL. |
 | **Consequences** | Three database roles, not two: `esg_app` and `esg_worker` are both RLS-enforced; only `esg_admin_ro` (read-only, `BYPASSRLS`) bypasses it, used solely for explicit cross-tenant rollups, migration runs and the admin API, with every acquisition logged (FR-79, NFR-66). Giving the worker `BYPASSRLS` would be the obvious shortcut and is wrong: the worker is what materialises one tenant's regulatory and fiscal record into a PDF, an Excel file, an e-Factura payload and an email. Session-scoped `SET` is prohibited — it leaks to the next borrower of a pooled connection, the single most common way RLS multi-tenancy is broken in production. PgBouncer, if used, runs in **transaction** pooling mode. CI carries a cross-tenant probe suite plus a job-level probe that enqueues work for organization A while the worker's context says organization B and asserts the job fails rather than returning data. Policies are enabled in **every** environment from the first sprint: the value of RLS is that a missing tenant context breaks loudly and early. |
+
+**Two clarifications from the first policy, 20 Aug 2026 (task 12).** Both are amendments to the
+stated form above rather than exceptions taken quietly against it.
+
+- **The tenant root is scoped by its own `id`.** `core.organization` *is* the tenant, so it carries
+  no `organization_id`; its policy reads `id = current_setting('app.current_org', true)::uuid`. The
+  rule is therefore two clauses — the root by `id`, every other tenant table by `organization_id` —
+  and both are enforced mechanically by the schema-invariant gate rather than by review. A
+  self-referencing or generated `organization_id` column was considered for uniformity and declined:
+  a stored duplicate of the primary key reads as clever now and as puzzling later, and two clauses
+  checked by a gate is not the kind of exception that erodes.
+- **`INSERT` on the tenant root carries `WITH CHECK (true)`, and only there.** FR-13 creates an
+  organization from a verified account that holds no membership yet, so `app.current_org` cannot
+  already equal an id that does not exist — a `WITH CHECK` on that insert makes organization creation
+  impossible rather than secure. Creating a row you then own is not a cross-tenant act; reading or
+  altering another tenant's data is, and the `SELECT`, `UPDATE` and `DELETE` policies still prevent
+  both. Every other tenant table keeps a real `WITH CHECK`.
+
+**A third detail, smaller but load-bearing:** the policy wraps the setting in `NULLIF(..., '')`. The
+`missing_ok` form below gives NULL for an *unset* context, which filters to zero rows as intended —
+but a context set to the **empty string** casts as `invalid input syntax for type uuid` and raises,
+which is the 500-on-every-endpoint this note exists to avoid, arriving by a route it did not
+consider. `NULLIF` collapses both to the same fail-closed NULL.
 
 **Implementation note that is part of the decision.** The setting is written with `SELECT set_config('app.current_org', $1, true)` — **not** `SET LOCAL`, which is utility syntax and accepts no bind parameter, so writing it that way forces string interpolation into the one value the entire tenancy model rests on. The `true` third argument makes it transaction-local. The policy reads `current_setting(..., true)` in the `missing_ok` form, so an unset context yields NULL and therefore zero rows rather than a 500 on every endpoint. The organization id comes from the **server-side membership lookup** already performed in `AuthGuard`, never from the raw JWT claim — AD-12 declines to treat the token claim as authoritative, and grounding the RLS boundary in a value the auth design does not trust would make an org-switch race or a revoked membership into a cross-tenant read.
 
