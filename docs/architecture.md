@@ -1321,8 +1321,23 @@ job has a database. It is `docker-compose.prod.yml` that drops the service at th
 when the primary moves to VM-2 and the application connects to it across the private network.
 `redis` stays in every file: it is on VM-1 in the end-state topology (§10.2).
 
-The base file as scaffolded holds `postgres` and `redis` only. The seven application services
-above arrive with the first Dockerfile, which does not exist yet.
+The base file as scaffolded holds `postgres` and `redis` only. **Three Dockerfiles now exist
+(20 Aug 2026, task 18)** — `apps/{api,web,admin}/Dockerfile`, each built with the repository root as
+context because a pnpm workspace install needs the lockfile and every workspace package. `renderer`
+arrives with task 44, where Chromium and veraPDF have a pipeline to serve; the Compose services
+themselves still wait for the deploy work of task 72.
+
+**`pnpm deploy` is deliberately not used, and CLAUDE.md's Docker guidance is amended with the
+reason.** Both of its paths are wrong for this workspace on pnpm 11: `--legacy` (which pnpm 11
+requires, otherwise refusing with `ERR_PNPM_DEPLOY_NONINJECTED_WORKSPACE`) ignores the shared
+lockfile and re-resolves the whole graph — observed resolving 475 packages with 0 reused before
+dying on `JavaScript heap out of memory` — and the non-legacy path needs
+`inject-workspace-packages: true`, which copies workspace packages instead of linking them and would
+make a rebuild of `packages/i18n` invisible to `apps/api` until a reinstall. What replaces it is
+`pnpm install --frozen-lockfile --prod --filter <app>...`, which resolves nothing, followed by
+copying the three directories pnpm's **relative** links span: the root `node_modules`, the workspace
+package, and the app. The rule CLAUDE.md states still holds and is the reason this works — an app's
+`node_modules` copied alone yields dangling links.
 
 ### 10.5 Environments
 

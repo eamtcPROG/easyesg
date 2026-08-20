@@ -107,3 +107,87 @@ jobs:
       - name: Stack logs
         if: failure()
         run: docker compose -f infra/compose/docker-compose.yml logs --no-color --tail 100
+
+  # NFR-1 and DR-1's backstop: the compliance core must not acquire a hard dependency on billing.
+  # It runs the same suites with the context switched off — and, crucially, `billing-disabled.e2e`
+  # asserts the OPPOSITE thing in each mode, so this job and the one above only mean something as a
+  # pair. Either alone would keep passing if the conditional registration were deleted.
+  billing-off:
+    name: BILLING_ENABLED=false
+    runs-on: ubuntu-latest
+    env:
+      BILLING_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./infra/ci/setup
+      - name: Provide the local environment files
+        run: |
+          cp infra/compose/.env.example infra/compose/.env
+          cp apps/api/.env.example apps/api/.env
+          # The committed example enables billing; this job is the one that must not.
+          sed -i 's/^BILLING_ENABLED=.*/BILLING_ENABLED=false/' apps/api/.env
+      - run: pnpm dev:up
+      - run: pnpm --filter @easyesg/api db:migrate
+      - run: pnpm test
+      - run: pnpm e2e
+      - name: Stack logs
+        if: failure()
+        run: docker compose -f infra/compose/docker-compose.yml logs --no-color --tail 100
+
+  # Images are the one place a real dependency on the gates exists: an artefact must not be built
+  # from a commit whose gates are red. The two gate jobs above stay parallel with each other — see
+  # the measurement in this file's header — but nothing is packaged until both have passed.
+  images:
+    name: Images
+    needs: [hermetic, database]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # No pnpm setup: each image installs from the lockfile inside its own build, which is the
+      # point — an image that depended on the runner's node_modules would not be reproducible.
+      - name: Build the three images
+        run: |
+          docker build -f apps/api/Dockerfile   -t easyesg-api:ci   .
+          docker build -f apps/web/Dockerfile   -t easyesg-web:ci   .
+          docker build -f apps/admin/Dockerfile -t easyesg-admin:ci .
+
+      # Building is not running, and the difference is not academic: the api image built cleanly
+      # while dying at start on a workspace package whose dist had never been built. Every image is
+      # therefore started and asked for something.
+      - name: Provide the local environment files
+        run: cp infra/compose/.env.example infra/compose/.env
+      - run: pnpm dev:up
+
+      - name: api serves, as both entrypoints from one image (AD-1)
+        run: |
+          docker run -d --name api --network easyesg_easyesg-net -p 3000:3000 \
+            -e DB_HOST=postgres -e DB_USER=esg_app -e DB_PASSWORD=devonly-app -e DB_NAME=esg \
+            -e REDIS_HOST=redis easyesg-api:ci
+          docker run -d --name worker --network easyesg_easyesg-net -e MODE=worker \
+            -e DB_HOST=postgres -e DB_WORKER_USER=esg_worker -e DB_WORKER_PASSWORD=devonly-worker \
+            -e DB_NAME=esg -e REDIS_HOST=redis easyesg-api:ci
+          sleep 15
+          curl -fsS http://localhost:3000/health
+          test "$(docker inspect -f '{{.State.Status}}' worker)" = running
+
+      # Next.js standalone output against pnpm's symlink layout, which CLAUDE.md asks to be proven
+      # on the first Docker build. `/health` sits outside the [locale] segment and needs no session
+      # (OQ-37), so a 200 here means the traced bundle resolved every module it needs.
+      - name: web serves its standalone bundle
+        run: |
+          docker run -d --name web -p 3001:3000 easyesg-web:ci
+          sleep 10
+          curl -fsS http://localhost:3001/health
+
+      # The SPA rewrite: a deep link must survive a refresh, or UX-4's shareable addresses are not.
+      - name: admin serves the bundle, deep links included
+        run: |
+          docker run -d --name admin -p 8080:8080 easyesg-admin:ci
+          sleep 5
+          curl -fsS -o /dev/null http://localhost:8080/
+          curl -fsS -o /dev/null http://localhost:8080/billing/invoices
+
+      - name: Container logs
+        if: failure()
+        run: docker logs api; docker logs worker; docker logs web; docker logs admin

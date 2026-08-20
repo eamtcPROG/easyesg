@@ -675,8 +675,61 @@ never the problem, the tree was. Writing the rule also surfaced a defect in its 
 `pnpm gates` ran the nine root scripts and stopped, omitting `pnpm e2e`, which is the tenth thing CI
 runs and the one that had failed.
 
+## Task 18 — CI images and the billing-off job · 2026-08-20
+
+Three images: `api` (which is also `worker` — one image, two entrypoints, AD-1), `web`, `admin`.
+`renderer` moves to task 44 with the PDF pipeline, and the explicit Chromium install goes with it;
+an image whose only content is Chromium proves nothing about a pipeline that does not exist.
+
+**`pnpm deploy` is the stated mechanism in CLAUDE.md and turned out to be unusable here.** Both its
+paths are wrong for this workspace on pnpm 11, and each fails differently:
+
+- `--legacy`, which pnpm 11 requires — it otherwise refuses with
+  `ERR_PNPM_DEPLOY_NONINJECTED_WORKSPACE` — ignores the shared lockfile and re-resolves everything.
+  Measured in the build: 475 packages resolved, **0 reused**, then `JavaScript heap out of memory`.
+  A build step that reaches for the registry to rebuild a graph the lockfile already describes is
+  not something to tune.
+- The non-legacy path needs `inject-workspace-packages: true`, which copies workspace packages
+  rather than linking them — so rebuilding `packages/i18n` would be invisible to `apps/api` until a
+  reinstall, breaking the `pretest`/`pretest:e2e` hooks that task 17 added to keep the gates honest.
+
+What replaces it: `pnpm install --frozen-lockfile --prod --filter <app>...`, which resolves nothing,
+then copying the three directories pnpm's **relative** links span — root `node_modules`, the
+workspace package, the app. CLAUDE.md's actual rule is untouched and is why this works: an app's
+`node_modules` copied *alone* dangles. Both CLAUDE.md and §10.4 record the amendment.
+
+**Two more traps, each of which cost a build:**
+
+- pnpm asks for a TTY before purging a modules directory, so a build stage needs `ENV CI=true` or it
+  stops with `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`.
+- `--filter <app>` does **not** build workspace dependencies; `--filter <app>...` does. Without the
+  dots the api image built cleanly and the container died at start on
+  `Cannot find module '@easyesg/i18n/dist/cjs/index.js'` — a workspace symlink pointing at a package
+  with no output. The same shape as task 17's missing `pretest:e2e`: a step that did not build what
+  it depends on, invisible until something ran.
+
+**Next.js standalone against pnpm's symlink layout — the check CLAUDE.md asked for, now done.** The
+bundle carries **29 symlinks and every one is relative and resolves inside it**: Next reproduces the
+`.pnpm` virtual store rather than dereferencing it, so the tree is self-contained and copyable.
+Verified by resolving each link rather than by reading the docs. It is re-checkable on a Next major,
+and CI runs the container so a regression fails loudly instead of shipping.
+
+**The billing-off job asserts the opposite of the billing-on one, and that pairing is the point.**
+Both suites already passed with `BILLING_ENABLED=false` before this task — which proved nothing,
+since they would keep passing if the conditional registration were deleted. `billing-disabled.e2e`
+now asserts that the billing connection is **present** when the flag is on and **absent** when it is
+off; the flag is read at module-definition time, so one process cannot exercise both branches and
+CI runs it in both. Verified by inverting the off-branch: it fails with `Nest could not find
+billingDataSource element (this provider does not exist in the current context)`.
+
+**Verified locally: api and admin build and run** — api serves `/health` with the envelope as both
+entrypoints from one image, admin serves index and a deep link through the SPA rewrite. **web could
+not be built on this machine**: Docker Desktop's VM has 0.9 GB and the Next build exhausts it. That
+is a laptop limit rather than a Dockerfile defect — it builds on the host — and it is why the images
+job runs every container in CI, where the runner has the memory to prove it.
+
 ---
 
-*Next up: task 18 — CI images and the billing-off job. Per-app Docker images via `pnpm deploy`
-(never COPY a pnpm `node_modules`), explicit Chromium install, `apps/web` standalone output proven
-against the symlink layout, and the `BILLING_ENABLED=false` job that keeps DR-1's boundary honest.*
+*Phase 1 is complete. Next up: task 19 — registration and verification API, the first task with a
+controller behind it, and the first use of the mail port that task 49's notification system later
+absorbs rather than duplicates.*

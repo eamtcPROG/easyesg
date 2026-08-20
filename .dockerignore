@@ -1,0 +1,24 @@
+# Keeps the build context to the source. Without this, `docker build .` uploads 1.4 GB of
+# node_modules — which would also be the wrong node_modules: pnpm's is symlinks into a content
+# store, and CLAUDE.md's rule is that it is never copied into an image. Every image below installs
+# from the lockfile instead.
+node_modules
+**/node_modules
+
+# Build output. Images build their own; a host artefact copied in would be from a different
+# platform and a different moment.
+**/dist
+**/.next
+**/coverage
+**/*.tsbuildinfo
+
+# Never in an image, and .env especially never: §12.5.3 puts secrets in a SOPS-encrypted bootstrap
+# file and then OpenBao, not in a layer that anyone who can pull the image can read.
+.env
+**/.env
+.git
+.github
+docs
+design
+**/*.md
+!config/seed/README.md

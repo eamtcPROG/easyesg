@@ -17,7 +17,7 @@ is structure without behaviour.
 
 | Workspace | State |
 | --- | --- |
-| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — seventeen §7 invariants each proving its own rule bites, the tenant transaction (`TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor, rollback in the filter), **RLS enabled and forced on the tenant root** proven as both `esg_app` and the owning role, the **append-only substrate** — `audit.enforce_append_only(regclass)` plus a partitioned `audit.system_audit_log` — **per-field audit capture** by trigger onto `core.field_change`, unbypassable and unforgeable, the **transactional outbox** with its worker dispatcher onto BullMQ, and the **configuration store** — one generic versioned store with a `WITHOUT OVERLAPS` schedule and a ≤5 s replica poll. No `AuthGuard`, no controller but health |
+| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, a Dockerfile serving both entrypoints (AD-1), the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — seventeen §7 invariants each proving its own rule bites, the tenant transaction (`TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor, rollback in the filter), **RLS enabled and forced on the tenant root** proven as both `esg_app` and the owning role, the **append-only substrate** — `audit.enforce_append_only(regclass)` plus a partitioned `audit.system_audit_log` — **per-field audit capture** by trigger onto `core.field_change`, unbypassable and unforgeable, the **transactional outbox** with its worker dispatcher onto BullMQ, and the **configuration store** — one generic versioned store with a `WITHOUT OVERLAPS` schedule and a ≤5 s replica poll. No `AuthGuard`, no controller but health |
 | `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
 | `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
@@ -27,8 +27,11 @@ is structure without behaviour.
 
 `infra/{compose,postgres}` holds the dev stack — Postgres and Redis, started with `pnpm dev:up`.
 `config/seed/` holds the configuration store's starting state, applied idempotently by
-`pnpm --filter @easyesg/api config:seed`. Not started: `packages/{vsme,xlsx-patch}`,
-`config/efrag/`, `infra/{caddy,ci,ansible,tofu}`, `docs/runbooks/`.
+`pnpm --filter @easyesg/api config:seed`. `.github/workflows/gates.yml` runs four jobs on every
+push — two gate jobs in parallel, plus `BILLING_ENABLED=false` and images. `apps/{api,web,admin}`
+each carry a Dockerfile, built with the repository root as context. Not started:
+`packages/{vsme,xlsx-patch}`, `config/efrag/`, `infra/{caddy,ansible,tofu}`, `docs/runbooks/`,
+and the `renderer` image (task 44).
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (20 rules, each with a fixture proving it rejects a real violation),
@@ -322,10 +325,21 @@ sections, not a preference. Its strictness matches P-7 and the `contracts/` boun
   Record the reason next to each, in the file.
 - **Install Chromium explicitly**, in the Dockerfile and in CI:
   `pnpm exec playwright install --with-deps chromium`. Do not rely on `postinstall`.
-- **Docker: never `COPY` a pnpm `node_modules`** — it is symlinks into a content store.
-  Use `pnpm deploy --filter=<app> --prod /prod/<app>`, one per Compose service, each into
-  its own build stage. `apps/web` needs extra care: Next.js `output: 'standalone'` does its
-  own file tracing and must be proven against the symlink layout on the first Docker build.
+- **Docker: never `COPY` a pnpm `node_modules` in isolation** — it is symlinks into a content
+  store, and copied alone they dangle. **`pnpm deploy` was the stated answer and is not usable
+  here (amended 20 Aug 2026, task 18):** on pnpm 11 it refuses without
+  `inject-workspace-packages: true`, and `--legacy` ignores the shared lockfile to re-resolve the
+  whole graph — measured at 475 packages, 0 reused, then `JavaScript heap out of memory`. Injection
+  is worse: it copies workspace packages instead of linking them, so rebuilding `packages/i18n`
+  would be invisible to `apps/api` until a reinstall. What works is
+  `pnpm install --frozen-lockfile --prod --filter <app>...` (resolves nothing) and then copying the
+  directories the **relative** links span — root `node_modules`, the workspace package, the app.
+  Two further traps, both cost a build: pnpm asks for a TTY before purging a modules directory, so
+  a build stage needs `ENV CI=true`; and the `...` in `--filter <app>...` is what builds the
+  workspace dependencies, without which the image builds cleanly and the container dies on a
+  missing `dist`. `apps/web` is different again — Next.js `output: 'standalone'` traces its own
+  files. **Proven on Next 16.3.0 / pnpm 11.22:** the bundle carries 29 symlinks, every one relative
+  and resolving inside the bundle, so it is self-contained. Re-check it on a Next major.
 - **Pin the version** in the root `package.json` so CI, Docker and laptops agree, and
   **block the other package managers** — `"preinstall": "npx only-allow pnpm"`. Either the
   exact `packageManager` field or `devEngines.packageManager` works and pnpm 11 honours
