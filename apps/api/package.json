@@ -20,7 +20,7 @@
     "db:invariants": "node --env-file-if-exists=.env ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runTestsByPath test/schema-invariants.e2e-spec.ts",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:cov": "jest --coverage",
-    "test:e2e": "jest --config ./test/jest-e2e.json --passWithNoTests",
+    "test:e2e": "node --experimental-vm-modules --env-file-if-exists=.env ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runInBand --passWithNoTests",
     "openapi:emit": "node dist/infrastructure/openapi/emit-openapi.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch"

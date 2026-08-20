@@ -15,19 +15,33 @@ import type { AppConfig } from '../../config/configuration';
  * two tasks before anything needs a connection.
  */
 
-/**
- * Connection names, which are also the injection tokens task 11 resolves against.
- *
- * They are constants here rather than a `name` field on the options below because TypeORM 1.1
- * **removed** `name` from `DataSourceOptions` — it was a 0.3-era leftover from the old
- * ConnectionManager. Naming a connection is now `@nestjs/typeorm`'s concern: task 11 passes
- * these to `TypeOrmModule.forRootAsync({ name: CORE_DATA_SOURCE, useFactory })`. Every
- * pre-1.0 example on the internet still puts `name` in the options object, where it is now a
- * type error — which is the good outcome; in JavaScript it would have been ignored, and both
- * contexts would have quietly shared the default connection.
- */
+/** Connection names, which are also the injection tokens `@InjectDataSource` resolves against. */
 export const CORE_DATA_SOURCE = 'core';
 export const BILLING_DATA_SOURCE = 'billing';
+
+/**
+ * `DataSourceOptions` plus the `name` TypeORM 1.1 removed from it — and it has to come back,
+ * because `@nestjs/typeorm` 11.0.3 is inconsistent about where it reads the name from.
+ *
+ * `forRootAsync({ name: 'core', useFactory })` takes the name from its **module** options in two
+ * places and from the **factory result** in a third:
+ *
+ *  - the provider token is `getDataSourceToken(moduleOptions)` → `'coreDataSource'`, correct;
+ *  - creation spreads `{ ...factoryResult, name: moduleOptions.name }`, also correct;
+ *  - but `onApplicationShutdown` calls `getDataSourceToken(TYPEORM_MODULE_OPTIONS)` — the factory
+ *    result. With no `name` on it that resolves the **default** token, which does not exist when
+ *    every data source is named, and the hook throws before it can destroy anything.
+ *
+ * That is a real production failure and not a test artefact: `main.http.ts` calls
+ * `enableShutdownHooks()`, so a SIGTERM would fail the graceful path and leave pooled connections
+ * to be reset by the server. Carrying `name` on the options makes all three agree.
+ *
+ * architecture.md §12 flagged this pairing as warranting a smoke test and recorded the check as
+ * discharged on 18 Aug 2026 — but that verified *resolution*, that 11.0.3 accepts TypeORM 1.1 with
+ * no peer warning. This is the same seam failing at runtime instead, found on 19 Aug 2026 by
+ * task 11's first `app.close()`.
+ */
+export type NamedDataSourceOptions = DataSourceOptions & { name: string };
 
 /**
  * Shared by both, and every line of it is a decision rather than a default.
@@ -65,6 +79,13 @@ const base = (config: AppConfig) => ({
   migrationsRun: false,
   dropSchema: false,
   entities: [],
+
+  // §12.5, set with task 11. Every request holds a QueryRunner for its lifetime (AD-2's binding is
+  // transaction-local), so this is what bounds concurrency until PgBouncer arrives — §16 defers it
+  // on the grounds that ~150 peak concurrent sessions do not need a pooler. Four pools exist at
+  // peak, core + billing on each of api and worker, so 40 of PostgreSQL's default max_connections
+  // of 100, leaving room for the migration job, esg_admin_ro, monitoring and an operator's psql.
+  poolSize: 10,
 });
 
 /**
@@ -73,8 +94,9 @@ const base = (config: AppConfig) => ({
  * errors: when a tenant reports missing data, "which connection ran this, in which mode" is
  * the first question, and without this every backend is indistinguishably "node".
  */
-export const coreDataSourceOptions = (config: AppConfig): DataSourceOptions => ({
+export const coreDataSourceOptions = (config: AppConfig): NamedDataSourceOptions => ({
   ...base(config),
+  name: CORE_DATA_SOURCE,
   schema: 'core',
   applicationName: `easyesg-${config.mode}-core`,
 });
@@ -84,8 +106,9 @@ export const coreDataSourceOptions = (config: AppConfig): DataSourceOptions => (
  * still pass UC-17…48 end to end (DR-1, NFR-1), and the honest way to test that is for the
  * connection not to exist — not for it to exist and be unused.
  */
-export const billingDataSourceOptions = (config: AppConfig): DataSourceOptions => ({
+export const billingDataSourceOptions = (config: AppConfig): NamedDataSourceOptions => ({
   ...base(config),
+  name: BILLING_DATA_SOURCE,
   schema: 'billing',
   applicationName: `easyesg-${config.mode}-billing`,
 });

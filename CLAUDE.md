@@ -17,7 +17,7 @@ is structure without behaviour.
 
 | Workspace | State |
 | --- | --- |
-| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, `TenantRepository`, port surface, OpenAPI emission, and the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` as the tenant root, with five §7 invariants each proving its own rule bites. No guards, no RLS policies, no controller but health; the two runtime `DataSource`s are defined but not yet registered with Nest (task 11) |
+| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — five §7 invariants each proving its own rule bites, and the tenant transaction: both `DataSource`s registered, `TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor and rollback in the filter. No RLS policies yet, no `AuthGuard`, no controller but health |
 | `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
 | `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |

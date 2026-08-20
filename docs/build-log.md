@@ -248,8 +248,73 @@ Verified by running: volume destroyed, both migrations applied from empty, the n
 re-applied, ten invariant tests green including five that prove their own rule bites. All nine gates
 green.
 
+## Task 11 — Tenant context propagation · 2026-08-19
+
+The largest integration risk in AD-14 (T-11) now runs through a real request. Three decisions were
+batched first; a fourth surfaced during the work and was a genuine defect.
+
+- **§6.2's `TenantContextInterceptor` cannot be an interceptor, and §6.2 now says so.** NestJS runs
+  every guard before any interceptor, and `EntitlementGuard` reads per-organization subscription
+  state, so the binding must already exist when it runs. It is `TenantTransactionGuard`. The
+  deviation was not new — `apps/api/CLAUDE.md` had claimed it was "recorded in §6.2 itself" since
+  the task-3 scaffold — but §6.2 and the §5 diagram both still said interceptor. **A working-notes
+  file asserting an amendment that never happened is exactly the failure the open-question rule
+  describes**, so the document was amended rather than the note re-worded.
+- **`openapi:check` stays hermetic via `preview: true`.** Registering `TypeOrmModule` was about to
+  make it need Docker. Preview mode builds the module graph without instantiating providers, and
+  emits a byte-identical document — verified with a real path present before committing to it.
+  **Cost accepted and recorded:** a full boot also proved the DI graph resolves, and preview mode
+  does not, so a missing provider now surfaces at startup rather than at the gate. Verified after
+  the fact by stopping the stack: eight of nine gates pass with no database.
+- **The e2e's organization comes from a fixture in `test/`, never from production code.** `AuthGuard`
+  is task 28 and memberships are task 25, so nothing resolves an active organization yet. A header
+  or query seam would have been simpler and is precisely what AD-2 and UX-2 forbid — one deploy
+  from being a tenancy bypass. The fixture is middleware, which is guaranteed to run before every
+  guard, where the real resolution will sit.
+- **Pool size is 10 per `DataSource`, now in §12.5.** No source stated one, and it stopped being
+  ignorable once every request began holding a `QueryRunner` for its lifetime. Four pools at peak
+  across `api` and `worker` is 40 of `max_connections` 100. It is also TypeORM's inherited default,
+  so this records existing behaviour and gives §16's PgBouncer trigger a number.
+
+**The defect: `@nestjs/typeorm` 11.0.3 fails to shut down a named `DataSource` under TypeORM 1.1.**
+`forRootAsync({ name, useFactory })` takes the name from its *module* options for the provider token
+and for creation, but `onApplicationShutdown` resolves it from the *factory result* — and TypeORM 1.1
+removed `name` from `DataSourceOptions`, so that resolves the default token, which does not exist
+when every source is named. The hook throws before destroying anything. `main.http.ts` calls
+`enableShutdownHooks()`, so this was **a failed SIGTERM in production**, not a test artefact; it
+surfaced on the first `app.close()` in an e2e. Fixed by carrying `name` on the options
+(`NamedDataSourceOptions`) so all three paths agree, with a spec asserting it.
+
+Worth noting against §12: that pairing was flagged as warranting a smoke test and recorded as
+discharged on 18 Aug 2026 — but that check verified *resolution*, that 11.0.3 accepts 1.1.0 with no
+peer warning. This is the same seam failing at *runtime*. Task 10's build-log entry called the
+removal of `name` "the good outcome"; that was right about the type error and incomplete about the
+consequence.
+
+Shape worth keeping:
+
+- **Commit and rollback are deliberately not symmetric.** `TransactionInterceptor` commits on
+  success; rollback lives in `ProblemDetailsFilter`, because a guard that throws never reaches an
+  interceptor. The filter took an `onRollback` callback from the task-3 scaffold for exactly this,
+  so the seam was already there.
+- **`configureHttpApp` was extracted from `bootstrapHttp`** so the e2e drives the pipeline that
+  ships rather than one assembled in the test. The first thing that divergence cost was a 404: the
+  hand-built app had no global prefix.
+- **`concatMap`, not `tap`, for the commit.** `tap` does not await, so the response would be written
+  before the commit resolved and a commit failure would arrive as an unhandled rejection after the
+  client was told the write succeeded.
+- **No organization means no transaction and no connection**, so `/health` does not depend on the
+  database. A tenant query on such a request throws at `TenantRepository` instead of returning zero
+  rows — T-11's mitigation, and the e2e asserts both halves.
+- The e2e also asserts **no connection is left `idle in transaction`** after both a successful and a
+  failing request. A leaked runner is not an error at the point of the bug; it is the application
+  hanging under load an hour later.
+
+Verified by running: 53 unit tests, 14 e2e including the T-11 pair, all nine gates green, and the
+eight hermetic ones re-run with the Compose stack stopped.
+
 ---
 
-*Next up: task 11 — tenant context propagation. It registers `TypeOrmModule` for the first time,
-which is the moment `openapi:check` stops being able to boot the app without a database unless the
-registration is made conditional.*
+*Next up: task 12 — RLS policies and isolation proof. Policies must carry `FORCE ROW LEVEL
+SECURITY`: `esg_migrator` owns every table and an owner is exempt from its own policies regardless
+of `rolbypassrls`, so without it the cross-tenant probe passes for the wrong reason.*

@@ -490,7 +490,7 @@ graph TB
 graph TB
     subgraph edge_layer["Request edge"]
         AUTH["AuthGuard<br/>JWT + session lookup"]
-        TEN["TenantContextInterceptor<br/>transaction-local app.current_org"]
+        TEN["TenantTransactionGuard<br/>transaction-local app.current_org"]
         ENT["EntitlementGuard<br/>@RequiresEntitlement()"]
         AUD["AuditInterceptor<br/>actor + timestamp on every mutation"]
     end
@@ -561,9 +561,28 @@ This is the only way those obligations stay true across 173 requirements.
 | Component | Responsibility | Requirement |
 |---|---|---|
 | `AuthGuard` | Server-side evaluation on every request; the interface layer is untrusted. Resolves session → user → membership → active organization | FR-4 … FR-8, NFR-62 |
-| `TenantContextInterceptor` | Opens the transaction and sets `app.current_org` / `app.current_user` transaction-locally (AD-2). A handler reaching the database outside this transaction gets no tenant context and therefore no rows — a fail-closed default | NFR-63 |
+| `TenantTransactionGuard` | Opens the transaction and sets `app.current_org` / `app.current_user` transaction-locally (AD-2). A handler reaching the database outside this transaction gets no tenant context and therefore no rows — a fail-closed default | NFR-63 |
 | `EntitlementGuard` | `@RequiresEntitlement('report.export.pdf')` decorator, so the gated capability contains no gating logic | FR-100, NFR-17 |
 | `AuditInterceptor` | Attributes every state-changing action to an actor with a timestamp, across reporting, administration and billing alike | FR-159 |
+
+**The order above is normative; the component *kinds* are not, and one of them could not be what
+this table originally called it.** Rows two and three read `TenantContextInterceptor` until
+19 Aug 2026 (task 11), when building it made the contradiction concrete: **NestJS runs every guard
+before any interceptor**, and `EntitlementGuard` reads per-organization subscription state, which
+needs `app.current_org` already bound. An interceptor cannot open a transaction that a guard
+running earlier depends on. It is therefore a **guard**, `TenantTransactionGuard`, and the naming
+is corrected here rather than left to a working-notes file.
+
+Two consequences follow and are worth stating, because both are easy to get wrong once:
+
+- **Commit and rollback are not symmetric.** A `TransactionInterceptor` commits on the success
+  path, but rollback cannot live there — a guard that throws never reaches an interceptor, so
+  `AuthGuard` or `EntitlementGuard` failing would leave the transaction open. Rollback belongs to
+  the exception filter, which is the single error exit every failure passes through (§6.8).
+- **No transaction is opened when no organization is bound.** Anonymous and pre-authentication
+  requests, and `/health`, take no connection at all, so liveness does not depend on the database.
+  A tenant query on such a request then fails loudly at `TenantRepository` rather than quietly
+  returning zero rows, which is T-11's stated mitigation.
 
 ### 6.3 Compliance-core components
 
@@ -1516,7 +1535,8 @@ Versions were verified on **10 August 2026** and are part of the build contract,
 | Telemetry | OpenTelemetry JS SDK | **0.221.0** | Pre-1.0; pin exactly |
 | Observability | Prometheus, Loki, Grafana | — | Self-hosted on VM-3; keeps NFR-27's EU-residency assertion trivially true and adds no sub-processor |
 | Backup | pgBackRest | — | Continuous WAL archiving to EU object storage |
-| Connection pooling | PgBouncer | — | Transaction pooling mode only, on the application host |
+| Connection pooling | PgBouncer | — | Transaction pooling mode only, on the application host. Deferred until connection count bites (§16) |
+| Application pool size | `poolSize` per `DataSource` | **10** | **Set 19 Aug 2026 (task 11).** No source stated one, and it stopped being ignorable when every request began holding a `QueryRunner` for its lifetime: the pool is what bounds concurrency until PgBouncer arrives. Four pools exist at peak — `core` + `billing` on `api`, the same two on `worker` — so 40 of PostgreSQL's default `max_connections` of 100, leaving headroom for the migration job, `esg_admin_ro`, monitoring and an operator's `psql`. It is also TypeORM's inherited default, so this records existing behaviour rather than changing it, and gives §16's PgBouncer trigger a number to be measured against |
 
 **The catalog is this table's machine-readable form.** `pnpm-workspace.yaml`'s `catalog:` block
 holds one version per dependency across the workspace, and `catalogMode: strict` makes adding a

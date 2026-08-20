@@ -59,6 +59,22 @@ describe('runtime data source options', () => {
     expect(CORE_DATA_SOURCE).not.toBe(BILLING_DATA_SOURCE);
   });
 
+  /**
+   * `@nestjs/typeorm` 11.0.3 resolves the shutdown token from the factory *result*, not from the
+   * module options — so options with no `name` resolve the default token, which does not exist
+   * when every data source is named, and `onApplicationShutdown` throws before destroying
+   * anything. `main.http.ts` enables shutdown hooks, so that is a failed SIGTERM in production,
+   * not a test-only annoyance.
+   */
+  it.each(sources)('%s carries its name, which @nestjs/typeorm needs at shutdown', (_l, o, n) => {
+    expect(o).toMatchObject({ name: n });
+  });
+
+  it.each(sources)('%s bounds concurrency explicitly rather than by inherited default', (_l, o) => {
+    // §12.5: four pools at peak across api and worker, 40 of max_connections 100.
+    expect(o).toMatchObject({ poolSize: 10 });
+  });
+
   it('never enables the query-result cache, TypeORM’s one ioredis consumer', () => {
     expect(coreDataSourceOptions(config)).not.toHaveProperty('cache');
     expect(billingDataSourceOptions(config)).not.toHaveProperty('cache');

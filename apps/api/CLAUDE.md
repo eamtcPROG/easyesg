@@ -12,23 +12,26 @@ user-facing-text conventions. This file carries only what you need in your hands
 Foundation only. What works: the module tree, the response envelope, the problem+json filter,
 `TenantRepository`, the `contracts/` ports, OpenAPI emission, seven boundary rules, message
 resolution (`app/messages/`) — locale negotiation plus catalogue lookup, with the catalogues
-themselves still empty — and the migration runner: §7.1's five schemas plus `btree_gist`, and
-`core.organization` as the tenant root, applying and reverting cleanly from an empty database.
+themselves still empty — the migration runner (§7.1's five schemas plus `btree_gist`, and
+`core.organization` as the tenant root, applying and reverting cleanly from an empty database), and
+the tenant transaction: both `DataSource`s registered, `TenantTransactionGuard` binding
+`app.current_org` / `app.current_user` transaction-locally, commit in `TransactionInterceptor` and
+rollback in `ProblemDetailsFilter`.
 
-**Not built yet, and do not assume otherwise:** the four edge guards (`AuthGuard`,
-`TenantTransactionGuard`, `EntitlementGuard`, `AdminRealmGuard`), RLS policies, any table beyond
+**Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
+`EntitlementGuard`, `AdminRealmGuard`), RLS policies, any table beyond
 `core.organization`, any controller other than health, and every module body — the 35 `*.module.ts`
 files are registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
 only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by
 expand→migrate→contract. `test/` holds the schema-invariant probe; the RLS cross-tenant probe and
 the `BILLING_ENABLED=false` suite land beside it.
 
-**The two runtime `DataSource`s exist as options and are not registered with Nest.**
-`infrastructure/persistence/data-source.ts` exports `coreDataSourceOptions` and
-`billingDataSourceOptions`; `TypeOrmModule` is wired in task 11, where the request's
-`QueryRunner` first has work to do. Nothing in this app opens a runtime connection yet — which
-is why `pnpm openapi:check`, which boots the whole `AppModule` to emit the spec, still runs with
-no database. Keep that true unless the task in hand actually needs a connection.
+**`emit-openapi.ts` uses `preview: true`, and that is load-bearing.** `PersistenceModule` opens
+connections at boot, so a full boot would make `openapi:check` require Docker. Preview mode builds
+the module graph without instantiating providers and emits a byte-identical document, because
+Swagger reads decorator metadata. Eight of the nine gates run with no database and it is worth
+keeping that true. The accepted cost: emission no longer proves the DI graph resolves, so a missing
+provider surfaces at startup instead of at the gate.
 
 ## Commands
 
@@ -45,6 +48,7 @@ Run boundary and lint checks from the **repo root**; they are workspace-wide.
 | here | `pnpm start:dev` | HTTP mode. `pnpm start:worker` for `MODE=worker` |
 | here | `pnpm db:migrate` / `db:revert` / `db:show` | Needs the Compose stack (`pnpm dev:up`) and `apps/api/.env`. Connects as `esg_migrator`, never as `esg_app` |
 | here | `pnpm db:invariants` | §7's structural rules against the migrated database. Each proves its own rule bites |
+| here | `pnpm test:e2e` | Needs the Compose stack. Runs the tenant-context probe and the schema invariants |
 | root | `pnpm migrations:check` | The ninth gate: apply → revert → apply → invariants. Needs Docker, unlike the other eight |
 
 **`build` does not type-check tests.** `tsconfig.build.json` excludes `*.spec.ts`, and ts-jest
@@ -89,8 +93,14 @@ A module is a unit of ownership, not a URL prefix. Several own no routes at all
 Order is fixed by §6.2: **auth → tenant context → entitlement → audit**.
 
 That order is normative; the *component kinds* in §6.2 are not, and cannot be. NestJS runs every
-guard before any interceptor, so §6.2's "TenantContextInterceptor" is implemented as a **guard**
-(`TenantTransactionGuard`) — recorded in §6.2 itself.
+guard before any interceptor, and `EntitlementGuard` reads per-organization state, so the binding
+must exist before it runs — §6.2's "TenantContextInterceptor" is therefore a **guard**,
+`TenantTransactionGuard`. §6.2 and the §5 diagram were amended to say so on 19 Aug 2026 (task 11);
+before that this file claimed the amendment existed when it did not.
+
+**`AuthGuard` must be registered BEFORE `TenantTransactionGuard`.** `APP_GUARD` order follows
+registration order, and `AuthGuard` is what puts the organization in the context the transaction
+guard reads. Registered after, it would bind nothing and every tenant read would throw.
 
 Traps, each of which has cost someone a day:
 
@@ -100,7 +110,13 @@ Traps, each of which has cost someone a day:
   interceptor sees the handler's raw return value — which is how it records a created row's id.
 - **A guard that throws never reaches an interceptor.** `TenantTransactionGuard` opens a
   transaction, so the rollback cannot live only in a transaction interceptor —
-  `ProblemDetailsFilter` must roll back too.
+  `ProblemDetailsFilter` rolls back, `TransactionInterceptor` only commits. The asymmetry is the
+  design, not an oversight.
+- **A named `DataSource` must carry `name` in its options** (`NamedDataSourceOptions`), even though
+  TypeORM 1.1 removed it from `DataSourceOptions`. `@nestjs/typeorm` 11.0.3 resolves the shutdown
+  token from the factory *result*, so without it `onApplicationShutdown` looks up the default token,
+  fails to find it and throws before destroying anything — a failed SIGTERM, since `main.http.ts`
+  enables shutdown hooks.
 - **`rawBody: true`** on `NestFactory.create`. Webhook HMAC breaks if the body is re-serialised.
 - **`app.use(...)`, not `MiddlewareConsumer.forRoutes('*')`** — the middleware must wrap the guards,
   and Express 5 changed wildcard path matching.

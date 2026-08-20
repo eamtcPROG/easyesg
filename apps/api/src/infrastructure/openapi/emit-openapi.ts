@@ -12,9 +12,20 @@ import { buildOpenApiDocument } from './document.factory';
  *
  * A PR that changes a route must commit the regenerated spec, which is what makes
  * "OpenAPI generated from source and diffed in CI" a gate rather than an aspiration.
+ *
+ * **`preview: true` since task 11**, when `PersistenceModule` began opening connections at boot.
+ * Preview mode builds the module graph without instantiating providers, so no `DataSource`
+ * connects and this gate keeps running with no database — verified as emitting a byte-identical
+ * document with a real path present, because Swagger reads decorator metadata rather than
+ * instances.
+ *
+ * **The cost is real and is accepted rather than overlooked:** a full boot also proved the DI
+ * graph resolves, and preview mode does not. A missing provider or a circular dependency will now
+ * surface when the app actually starts instead of here. That trade buys eight of the nine gates
+ * staying runnable without Docker; the ninth, `migrations:check`, needs it by nature.
  */
 async function emit(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(AppModule, { logger: false, preview: true });
   await app.init();
 
   const document = buildOpenApiDocument(app);
