@@ -610,8 +610,51 @@ reformatting a seed file is not a configuration change.
 Verified: volume destroyed, seven migrations applied from empty, the newest reverted and re-applied,
 the seed run twice with the second a no-op, 89 e2e tests, 27 schema invariants, all nine gates green.
 
+## Task 17 — CI gate workflow · 2026-08-20
+
+Two parallel jobs, split on whether Docker is needed — eight gates run anywhere and one cannot, and
+keeping that visible means a lint error fails in under a minute instead of waiting on a database it
+has no use for. Neither job defines a gate: both run the same root scripts a developer runs, so a
+gate cannot pass locally and fail in CI for reasons that live only in the workflow.
+
+- **The database is `pnpm dev:up`, not `services:` containers**, which §12.5.4 is amended to say.
+  That paragraph was written before `infra/postgres/init/init.sh` existed, and a `services:` block
+  has no clean way to run it — so CI would carry a second copy of §7.6's role split, and the copy CI
+  ran would be the one no developer ever executes. Compose gives the roles, the health checks and
+  the init script for free.
+- **`dev:up` now passes `--wait`**, which blocks until every health check passes. CI needed
+  deterministic readiness, and the same change removes the guesswork locally — the stack was
+  previously returning before PostgreSQL could accept a connection.
+- **Workflows live in `.github/workflows/`** because GitHub reads them from nowhere else; §10.7's
+  `infra/ci` holds the composite setup action all jobs share, which task 18's image and
+  `BILLING_ENABLED=false` jobs will use unchanged.
+
+**Action versions were looked up, not remembered, and the gap was three majors.** `actions/checkout`
+is on v7, `actions/setup-node` on v7 and `pnpm/action-setup` on v6; from memory each would have been
+pinned at v4. This is the failure mode CLAUDE.md's version section exists for, arriving in a file
+where nothing would have caught it — a stale major usually still runs, with a deprecation warning
+nobody reads.
+
+Two pins are stated in the composite action as well as in the manifests, deliberately:
+`pnpm/action-setup` reads `packageManager` and this repository declares `devEngines.packageManager`,
+which pnpm 11 honours and the action does not; and `setup-node` needs a version, with
+`engineStrict: true` making a drift from §12.1 fail the install rather than pass quietly.
+
+**Verified before pushing, by simulating a fresh clone rather than trusting the local tree.**
+`git checkout-index` exported exactly the 612 tracked files a checkout would produce, into a
+directory with no `node_modules` and none of the untracked artefacts local runs leave behind —
+`pnpm install --frozen-lockfile` and all nine gates were run there. Two things that would have made
+the first pipeline red:
+
+- `apps/web/next-env.d.ts` is gitignored, so a fresh checkout does not have it. Checked explicitly:
+  `typecheck` passes without it.
+- `openapi:check` and `routes:check` end in `git diff --exit-code`, which exits 129 outside a
+  repository. They failed in the export until it was `git init`-ed — an artefact of the method
+  rather than of CI, where `actions/checkout` supplies a real repository, but worth knowing that
+  those two gates have a dependency the other seven do not.
+
 ---
 
-*Next up: task 17 — the CI gate workflow. All nine root scripts on every push, with the ephemeral
-per-pipeline stack (§12.5) supplying the genuinely empty database that `migrations:check` needs and
-a developer's persistent volume cannot give.*
+*Next up: task 18 — CI images and the billing-off job. Per-app Docker images via `pnpm deploy`
+(never COPY a pnpm `node_modules`), explicit Chromium install, `apps/web` standalone output proven
+against the symlink layout, and the `BILLING_ENABLED=false` job that keeps DR-1's boundary honest.*

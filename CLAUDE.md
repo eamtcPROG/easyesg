@@ -32,8 +32,9 @@ is structure without behaviour.
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (20 rules, each with a fixture proving it rejects a real violation),
-`pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`. There is no CI yet — those root
-scripts *are* the gate set. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
+`pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`. **CI runs exactly these**
+(`.github/workflows/gates.yml`, two parallel jobs split on whether Docker is needed) — adding a gate
+means adding a root script and one line, never workflow-only logic. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
 applies, reverts, re-applies and then asserts §7's schema invariants against the Compose stack,
 because neither "the baseline applies from an empty database" nor "no foreign key crosses the
 core/billing boundary" is a property any hermetic test can assert. The other eight run anywhere, and

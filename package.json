@@ -18,7 +18,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "build": "pnpm -r build",
-    "dev:up": "docker compose -f infra/compose/docker-compose.yml up -d",
+    "dev:up": "docker compose -f infra/compose/docker-compose.yml up -d --wait",
     "dev:down": "docker compose -f infra/compose/docker-compose.yml down",
     "lint": "eslint .",
     "test": "pnpm -r test",

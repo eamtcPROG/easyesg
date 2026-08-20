@@ -1726,7 +1726,11 @@ SOPS + age is retained for exactly one purpose: encrypting the bootstrap `.env` 
 
 #### 12.5.4 CI, and what it may not hold
 
-**GitHub Actions** on hosted `ubuntu-latest` runners. The gates were already fully specified — boundary rules, RLS probes, contract tests, coverage floors, accessibility, injection corpus, cross-browser, `BILLING_ENABLED=false` — and all of them run on a stock Linux runner: PostgreSQL 18 and Redis as service containers, Chromium via Playwright, veraPDF for NFR-82, headless LibreOffice Calc for NFR-20's CI half.
+**GitHub Actions** on hosted `ubuntu-latest` runners. The gates were already fully specified — boundary rules, RLS probes, contract tests, coverage floors, accessibility, injection corpus, cross-browser, `BILLING_ENABLED=false` — and all of them run on a stock Linux runner: PostgreSQL 18 and Redis, Chromium via Playwright, veraPDF for NFR-82, headless LibreOffice Calc for NFR-20's CI half.
+
+**Clarified 20 Aug 2026 (task 17): the database comes from the Compose stack, not from `services:` containers.** This paragraph said "service containers", written before `infra/postgres/init/init.sh` existed. That script creates the four roles of §7.6, and a `services:` block has no clean way to run it — so CI would carry a second copy of the role split, and the copy CI ran would be the one no developer ever executes. `pnpm dev:up` gives the roles, the health checks and the init script for free, and makes CI-versus-dev drift impossible in the one place built to catch drift. `--wait` blocks until every health check passes, so no step races a half-built cluster.
+
+**Workflow entrypoints live in `.github/workflows/`**, which is the only place GitHub reads them; §10.7's `infra/ci` holds the composite setup action every job shares (Node, pnpm, frozen install).
 
 **CI holds no long-lived production credentials.** Deploys use short-lived OIDC-issued credentials; CI never reads from OpenBao. A CI compromise must not be a production compromise. **Forgejo Actions** self-hosted on VM-3 is the drop-in alternative — near-identical workflow syntax — if the repository ever cannot live on GitHub.
 

@@ -1,0 +1,97 @@
+# The gate set, enforced on every push (§12.5.4, task 17).
+#
+# There is no separate list of what CI checks: the jobs below run the same root scripts a developer
+# runs, so a gate cannot pass locally and fail here for reasons that live only in this file. Adding
+# a gate means adding a root script and one line.
+#
+# The split between the two jobs is a property worth keeping visible rather than a scheduling
+# convenience: eight gates run anywhere, and one cannot. A lint error should not wait on a database
+# it has no use for.
+name: Gates
+
+on:
+  push:
+  pull_request:
+
+# A newer push supersedes an older one on the same ref. The exception is the default branch, where
+# every commit's result is a fact someone may need later.
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  hermetic:
+    name: Gates that need no database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./infra/ci/setup
+
+      # Ordered cheapest-first so the common failures report soonest. Each is a root script; none
+      # of them is defined here.
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm boundaries
+
+      # Asserts each boundary rule still REJECTS a real violation. A rule that matches nothing looks
+      # exactly like a rule that passes, which is the failure this exists for.
+      - run: pnpm boundaries:prove
+
+      - run: pnpm build
+
+      # Both diff a generated artefact against the committed one, so they must run after build.
+      # A pull request that changes a route or the admin route tree fails until the regenerated
+      # file is committed — which is what makes the OpenAPI document the contract (P-5, DR-11)
+      # rather than a description of it.
+      - run: pnpm openapi:check
+      - run: pnpm routes:check
+
+  database:
+    name: Gates that need the stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./infra/ci/setup
+
+      # The same Compose stack a developer runs, not a reimplementation of it. That matters most
+      # here: infra/postgres/init/init.sh creates the four roles of §7.6, and a CI-only copy of that
+      # role split would be the one nobody executes by hand. The values are the synthetic ones from
+      # the committed examples, which is exactly right for a database discarded at the end of a run.
+      - name: Provide the local environment files
+        run: |
+          cp infra/compose/.env.example infra/compose/.env
+          cp apps/api/.env.example apps/api/.env
+
+      # `--wait` blocks until every health check passes, so nothing below races a half-built
+      # cluster — the false positive the postgres health check's TCP form was written to avoid.
+      - run: pnpm dev:up
+
+      # A genuinely empty database, which is what this job supplies and a developer's persistent
+      # volume cannot: the stack is created for this run and destroyed with the runner. Applies
+      # every migration from nothing, reverts the newest, re-applies it, then asserts §7's
+      # structural invariants — each of which proves its own rule bites.
+      - run: pnpm migrations:check
+
+      # Before the e2e suite, so the first run publishes against an empty store and the second is
+      # the no-op. Idempotence matters because a redeploy must not register as a configuration
+      # change — it would move the store version and invalidate every replica's cache for nothing.
+      #
+      # The e2e suite asserts the same property against the library; this asserts it against the
+      # script an operator actually runs, which is the part with its own connection and environment
+      # handling.
+      - name: Seed configuration, twice
+        run: |
+          pnpm --filter @easyesg/api config:seed
+          pnpm --filter @easyesg/api config:seed
+
+      # RLS isolation as both roles, append-only enforcement, per-field capture, the outbox crash
+      # window and configuration publish/revert. AD-2 calls for exactly this suite in CI.
+      - run: pnpm --filter @easyesg/api test:e2e
+
+      - name: Stack logs
+        if: failure()
+        run: docker compose -f infra/compose/docker-compose.yml logs --no-color --tail 100
