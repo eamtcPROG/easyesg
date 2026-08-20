@@ -155,9 +155,13 @@ jobs:
       # Building is not running, and the difference is not academic: the api image built cleanly
       # while dying at start on a workspace package whose dist had never been built. Every image is
       # therefore started and asked for something.
-      - name: Provide the local environment files
-        run: cp infra/compose/.env.example infra/compose/.env
-      - run: pnpm dev:up
+      # docker compose directly, not `pnpm dev:up`: this job installs no Node and no pnpm on the
+      # runner on purpose — each image installs from the lockfile inside its own build — so the
+      # root script is not available here. The flags are the ones dev:up passes.
+      - name: Start the stack the api image talks to
+        run: |
+          cp infra/compose/.env.example infra/compose/.env
+          docker compose -f infra/compose/docker-compose.yml up -d --wait
 
       - name: api serves, as both entrypoints from one image (AD-1)
         run: |
@@ -188,6 +192,11 @@ jobs:
           curl -fsS -o /dev/null http://localhost:8080/
           curl -fsS -o /dev/null http://localhost:8080/billing/invoices
 
+      # Tolerant of containers that never started: this runs when an earlier step failed, which is
+      # frequently the step that would have created them.
       - name: Container logs
         if: failure()
-        run: docker logs api; docker logs worker; docker logs web; docker logs admin
+        run: |
+          for c in api worker web admin; do
+            echo "── $c"; docker logs "$c" 2>&1 | tail -40 || true
+          done
