@@ -163,6 +163,20 @@ jobs:
           cp infra/compose/.env.example infra/compose/.env
           docker compose -f infra/compose/docker-compose.yml up -d --wait
 
+      # The api reads the configuration store at boot (AD-4's version poll), so it cannot start
+      # against an unmigrated database — it exits on `42P01 undefined_table` rather than serving
+      # something it cannot configure. That makes migrate-then-start an ordering fact for task 72's
+      # deploy, not a CI detail, so it is exercised here the way a deploy would: **by the image
+      # itself**, which carries typeorm and the compiled datasource. Nothing on the runner is used.
+      - name: Migrate, using the image the deploy would use
+        run: |
+          docker run --rm --network easyesg_easyesg-net \
+            -e DB_HOST=postgres -e DB_NAME=esg \
+            -e DB_MIGRATOR_USER=esg_migrator -e DB_MIGRATOR_PASSWORD=devonly-migrator \
+            easyesg-api:ci \
+            node ./node_modules/typeorm/cli.js migration:run \
+              -d dist/infrastructure/persistence/migration.data-source.js
+
       - name: api serves, as both entrypoints from one image (AD-1)
         run: |
           docker run -d --name api --network easyesg_easyesg-net -p 3000:3000 \
