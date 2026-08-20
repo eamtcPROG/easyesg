@@ -653,6 +653,15 @@ the first pipeline red:
   rather than of CI, where `actions/checkout` supplies a real repository, but worth knowing that
   those two gates have a dependency the other seven do not.
 
+**And one the simulation structurally could not catch, found by the first real run.** `test:e2e`
+depends on `@easyesg/i18n` being built — its `dist/` is gitignored — but only `test` carried a
+`pretest` hook, so the database job failed with `Cannot find module '@easyesg/i18n'`. The fresh-clone
+run had passed because `pnpm build` was executed there first for `openapi:check`; in CI the two jobs
+are isolated and the database job never builds. Reproduced locally by deleting `packages/i18n/dist`,
+and fixed with a `pretest:e2e` hook rather than a build step in the workflow — so `pnpm test:e2e`
+works on a fresh clone regardless of what ran before it, which is the same rule the rest of the gate
+set follows.
+
 ---
 
 *Next up: task 18 — CI images and the billing-off job. Per-app Docker images via `pnpm deploy`
