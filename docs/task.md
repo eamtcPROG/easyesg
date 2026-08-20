@@ -22,6 +22,11 @@ went, deviations included.
 debt"). A task is not started by writing its first file; it is started by checking what it needs
 decided.
 
+**Before closing one, run `pnpm gates` — and `pnpm gates:clean` before pushing** (CLAUDE.md,
+"Closing a task"). The clean run is what catches a gate depending on state a previous command left
+behind, which an incrementally-built tree hides completely. Then write the build-log entry: a task
+whose reasons are not recorded is not closed.
+
 ---
 
 ## Phase 1 — Foundation (§15.4 #1)
@@ -45,7 +50,7 @@ decided.
 | 15 | Transactional outbox | api+worker | `audit.outbox_event`; a state change and its outbox row commit together (AD-6, P-8); the worker dispatcher enqueueing to AD-10's single BullMQ queue — enqueue **before** marking dispatched, so delivery is at-least-once, with the idempotency key as the job id for effectively-once processing (T-5) | Dispatcher on the worker entrypoint; redelivery-after-crash test passes | DONE |
 | 16 | Configuration store | api+config | The config-as-data substrate (DR-3, AD-4): **one generic store**, artefacts as data — `config.entry_version` (immutable, all states) plus `config.entry_schedule` (what is in force, carrying §7.9's `WITHOUT OVERLAPS` key), a store-version counter bumped by trigger, and the ≤5 s replica poll. Seeded idempotently from `config/seed`. Taxonomy, factor sets, rules, plans and notification behaviour are rows added by tasks 33, 37, 40, 49 and 53 — no table and no code per artefact | A config change takes effect with no redeploy and reverts in one step | DONE |
 | 17 | CI gate workflow | infra | The root gate set enforced on every push, in two parallel jobs split on whether Docker is needed. Workflows in `.github/workflows/` (the only place GitHub reads them); `infra/ci/setup` holds the composite action every job shares. The stack is `pnpm dev:up` rather than `services:` containers, so `init.sh`'s four roles are not reimplemented in YAML (§12.5.4, clarified 20 Aug 2026) | Green pipeline running all nine gates | DONE |
-| 18 | CI images and billing-off job | infra | Per-app Docker images via `pnpm deploy` (never COPY a pnpm `node_modules`), explicit Chromium install, web `standalone` output proven against the symlink layout; the `BILLING_ENABLED=false` job as the boundary backstop (T-1, NFR-1) | Three images build in CI; the billing-off job exists and grows the UC-17…48 suite as it lands | TODO |
+| 18 | CI images and billing-off job | infra | Per-app Docker images via `pnpm deploy` (never COPY a pnpm `node_modules`), explicit Chromium install, web `standalone` output proven against the symlink layout; the `BILLING_ENABLED=false` job as the boundary backstop (T-1, NFR-1). The image job takes **`needs: [hermetic, database]`** — an image must not be built from a commit whose gates are red, and that is the one place in the pipeline where a real dependency exists (task 17's two gate jobs stay parallel, with the measurement in `gates.yml`) | Three images build in CI; the billing-off job exists and grows the UC-17…48 suite as it lands | TODO |
 
 ## Phase 2 — Identity (§15.4 #2)
 

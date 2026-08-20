@@ -34,12 +34,51 @@ Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnp
 `pnpm boundaries:prove` (20 rules, each with a fixture proving it rejects a real violation),
 `pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`. **CI runs exactly these**
 (`.github/workflows/gates.yml`, two parallel jobs split on whether Docker is needed) — adding a gate
-means adding a root script and one line, never workflow-only logic. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
+means adding a root script and one line, never workflow-only logic.
+
+`pnpm gates` runs all nine plus `pnpm e2e`, in CI's order — the e2e suite is the tenth thing CI runs
+and a local runner that omitted it would not be the same check. `pnpm gates:clean` removes every
+build output first, and the difference between the two is the subject of the next section. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
 applies, reverts, re-applies and then asserts §7's schema invariants against the Compose stack,
 because neither "the baseline applies from an empty database" nor "no foreign key crosses the
 core/billing boundary" is a property any hermetic test can assert. The other eight run anywhere, and
 keeping that true is why `TypeOrmModule` is not registered until task 11 — `openapi:check` boots the
 whole `AppModule`.
+
+## Closing a task
+
+A task is not finished when its code works. It is finished when the gate set passes **and** the
+build-log entry is written — the two are the same obligation, since a decision recorded only in a
+chat transcript has not been made.
+
+**Run `pnpm gates` before saying a task is done.** Everything CI runs, in CI's order, failing fast.
+Running them one at a time as you go is fine and usually faster; this is the run that says the whole
+set still holds together — and it includes `pnpm e2e`, because CI does. Writing this rule surfaced
+that the first draft did not: the gate set is nine root scripts, the e2e suite is a tenth thing CI
+runs, and a runner that stopped at nine would have missed the very defect that prompted the rule.
+
+**Run `pnpm gates:clean` before pushing.** It removes every build output first, and that is not
+belt-and-braces — it is the only local run that can see a whole class of defect:
+
+> **A gate must not depend on state a previous command left behind.**
+
+That rule earned its place on 20 Aug 2026. `pnpm test:e2e` needed `packages/i18n/dist`, which only
+`pnpm test` built. Every gate passed locally every time, because on a developer's machine that
+directory is always already there from some earlier command. CI's two jobs are isolated, the
+database job never runs `build`, and the pipeline went red on a gate that had been green all week.
+Re-running the gates would never have found it; the tree was the problem, not the commands.
+
+Two things follow, and both are cheap:
+
+- **A script must be runnable on its own.** If `pnpm x` needs something `pnpm y` produces, that
+  belongs in a `prex` hook, not in the order someone happens to run them or in a CI step. The fix
+  for the case above was `pretest:e2e`, not a build step in the workflow.
+- **Reproduce a CI failure locally before fixing it.** Deleting `packages/i18n/dist` reproduced that
+  one in seconds and proved the fix, rather than pushing a guess and waiting two minutes to find out.
+
+**A red pipeline is a finding, not an interruption.** It caught something no local run could,
+because job isolation is a property a single working directory cannot model. Read the failure before
+changing anything — `gh run view <id> --log-failed` — and fix the cause rather than the symptom.
 
 ## The document set (read before deciding anything)
 

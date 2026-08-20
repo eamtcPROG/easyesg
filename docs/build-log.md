@@ -662,6 +662,19 @@ and fixed with a `pretest:e2e` hook rather than a build step in the workflow —
 works on a fresh clone regardless of what ran before it, which is the same rule the rest of the gate
 set follows.
 
+**The rule that would have caught it is now written down, with a mechanism.** CLAUDE.md gains a
+"Closing a task" section stating it plainly — *a gate must not depend on state a previous command
+left behind* — and `pnpm gates` / `pnpm gates:clean` make it one command instead of a habit. The
+clean runner removes build outputs and keeps `node_modules` and `.env`, so it costs a rebuild rather
+than a reinstall. Verified by reintroducing the defect: with `pretest:e2e` removed, `pnpm clean`
+followed by the e2e suite reproduces `Cannot find module '@easyesg/i18n'` exactly.
+
+Worth recording that "run lint and tests after a task" would **not** have prevented this, and was
+already being done after every task including 17. The operative word is *clean*: the commands were
+never the problem, the tree was. Writing the rule also surfaced a defect in its own first draft —
+`pnpm gates` ran the nine root scripts and stopped, omitting `pnpm e2e`, which is the tenth thing CI
+runs and the one that had failed.
+
 ---
 
 *Next up: task 18 — CI images and the billing-off job. Per-app Docker images via `pnpm deploy`

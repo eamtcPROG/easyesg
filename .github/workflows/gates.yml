@@ -7,6 +7,18 @@
 # The split between the two jobs is a property worth keeping visible rather than a scheduling
 # convenience: eight gates run anywhere, and one cannot. A lint error should not wait on a database
 # it has no use for.
+#
+# THE JOBS RUN IN PARALLEL ON PURPOSE. The obvious change is `needs: hermetic` on the database job,
+# so e2e never runs against a commit whose unit tests are already red. Measured on run 32353913669
+# before deciding against it: a green run consumes the SAME runner minutes either way (1m47 + 1m04),
+# because both jobs run to completion regardless; serializing changes only wall-clock, from 1m50 to
+# 2m51 — a 60% increase on the path that happens most. It would save minutes on a red run, which is
+# the rarer one. The cost accepted is that a broken unit test also burns the database job and
+# reports two failures for one cause.
+#
+# The dependency that IS real belongs to task 18: a Docker image must not be built from a commit
+# whose gates are red, so the image job takes `needs: [hermetic, database]`. That is where an
+# artefact depends on the gates, rather than one gate depending on another.
 name: Gates
 
 on:
