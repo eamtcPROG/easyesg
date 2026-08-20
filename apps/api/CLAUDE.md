@@ -23,7 +23,8 @@ owning role, with a test that drops `FORCE` in a rolled-back transaction and wat
 collapse. `audit.system_audit_log` is the first append-only table: partitioned, privilege-denied to
 the application, and trigger-guarded against the owner. `core.field_change` carries per-field audit,
 written only by a `SECURITY DEFINER` trigger — the application can read its trail and holds no
-privilege to author, alter or erase one.
+privilege to author, alter or erase one. `audit.outbox_event` and its worker dispatcher are wired
+onto BullMQ; `MODE=worker` boots, polls and dispatches.
 
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any table beyond `core.organization`, any controller other
@@ -183,6 +184,25 @@ deny-all on direct access, while parent queries keep using the parent's policies
 parent only; a routed `INSERT` is privilege-checked there, so the application never needs to name a
 partition. Add a partition in a later task and you must re-run the procedure — the invariant gate
 fails the build otherwise.
+
+### The outbox — the only way work leaves the request tier
+
+`api` **never enqueues** (AD-10 rejects it as a dual write). It calls `writeOutboxEvent(queryRunner,
+…)` on the request's own runner, so the effect commits with the state change or not at all. The
+dispatcher on the worker is the sole queue producer (§6.7).
+
+Three things about it that are load-bearing:
+
+- **Enqueue, then mark dispatched — never the reverse.** Both inside one transaction. A crash
+  between marking and enqueueing loses the row silently; a crash between enqueueing and committing
+  re-emits it, which is at-least-once. The idempotency key is BullMQ's `jobId`, so the duplicate is
+  discarded — that is where "effectively once" comes from.
+- **`RETURNING` requires `SELECT` privilege.** `esg_app` holds `INSERT` on the outbox and nothing
+  else, which is why the table needs no RLS policy — so a `RETURNING` clause in the writer would
+  force a SELECT grant and dismantle the guarantee. It has already been written once and removed.
+- **The worker runs as `esg_worker`, not `esg_app`.** Set `DB_WORKER_USER`/`DB_WORKER_PASSWORD`
+  locally; production containers just supply their own `DB_USER`. Running the worker as `esg_app`
+  fails on the first poll, because `esg_app` may only INSERT into the outbox.
 
 ### Adding an audited table
 

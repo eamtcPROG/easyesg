@@ -6,6 +6,8 @@ import { TenantTransactionGuard } from './app/guards/tenant-transaction.guard';
 import { GlobalResponseInterceptor } from './app/interceptors/global-response.interceptor';
 import { TransactionInterceptor } from './app/interceptors/transaction.interceptor';
 import { PersistenceModule } from './infrastructure/persistence/persistence.module';
+import { QueueModule } from './infrastructure/queue/queue.module';
+import { OutboxModule } from './infrastructure/outbox/outbox.module';
 import { HealthController } from './infrastructure/observability/health.controller';
 import { CoreModule } from './modules/core/core.module';
 import { IdentityModule } from './modules/identity/identity.module';
@@ -45,6 +47,8 @@ import { PlatformModule } from './modules/platform/platform.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
     PersistenceModule,
+    QueueModule,
+    OutboxModule,
     IdentityModule,
     CoreModule,
     BillingModule,

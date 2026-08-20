@@ -493,9 +493,69 @@ Verified by running: volume destroyed, five migrations applied from empty, the n
 re-applied, 67 e2e tests, 25 schema invariants with every rule proving it bites, all nine gates
 green.
 
+## Task 15 — Transactional outbox · 2026-08-20
+
+**The ordering inside the dispatcher is the whole design, and reversing it would pass every test.**
+Rows are claimed with `FOR UPDATE SKIP LOCKED`, enqueued, and only then marked dispatched — all in
+one transaction. A crash anywhere rolls it back and the rows return to pending. Marking first would
+lose every row the crash caught in between, silently, because nothing errors: an at-most-once system
+that looks identical from outside. The `idempotency_key` is passed to BullMQ as the **job id**, so
+the re-emitted duplicate is discarded by the queue. That pairing is what makes AD-6's "delivery is
+at-least-once and processing is effectively once" true in code; AD-6 now records it.
+
+Three decisions batched first:
+
+- **No RLS on `audit.outbox_event`, protected by grant instead.** The dispatcher must scan every
+  tenant's pending work to find any of it, and AD-2 rejects giving the worker `BYPASSRLS` in terms.
+  `esg_app` holds `INSERT` and nothing else, so there is no tenant read for a policy to scope — an
+  outbox row is a dispatch instruction, not tenant data. It is on an explicit exempt list in the
+  gate, **and the gate now also asserts the grant that makes the exemption safe**: a `SELECT` to
+  `esg_app` would turn a considered exemption into an unscoped cross-tenant read that nothing else
+  would notice.
+- **BullMQ wired now**, since §6.7 calls the dispatcher the sole queue producer and a dispatcher
+  that does not dispatch is not that component. AD-10 says "A BullMQ queue" — one queue, the event
+  type as the job name — so task 44 adds a consumer and changes nothing here.
+- **Dispatcher cadence recorded in §12.5**: 1 s, batch of 100, ten attempts then a tracked exception
+  with an owner (NFR-71). LISTEN/NOTIFY was declined by an existing decision rather than by
+  preference — AD-4 records that it needs a pinned session and is unsupported through PgBouncer in
+  transaction pooling mode.
+
+**Two real defects, both found by running rather than reading:**
+
+- **`RETURNING` requires `SELECT` privilege.** The writer returned the idempotency key, which forced
+  a SELECT grant on `esg_app` — quietly dismantling the write-only grant that is the entire reason
+  the table needs no RLS policy. The writer no longer returns from the database: the key is either
+  supplied by the caller or generated a line above, so the echo bought nothing and cost the
+  guarantee.
+- **The worker had no way to be `esg_worker`.** `configuration.ts` had one database credential for
+  both entrypoints, so `MODE=worker` connected as `esg_app` and the dispatcher failed on its first
+  poll with `permission denied for table outbox_event` — correctly, since `esg_app` may only INSERT.
+  §7.6 gives the worker its own role and nothing selected it. A `DB_WORKER_*` pair is now read only
+  in worker mode, falling back to `DB_USER` so production containers keep supplying their own role
+  and no worker credential sits in the api's environment.
+
+Verified by running the real thing, not only the suite: `MODE=worker node dist/main.js` booted with
+zero errors, polled, and dispatched a seeded row — which is what "dispatcher on the worker
+entrypoint" actually claims.
+
+Smaller notes:
+
+- **Not partitioned and not append-only**, unlike tasks 13 and 14. The dispatcher must mark a row,
+  which is an UPDATE, and §12.5.7 gives it no retention because it is a work list rather than a
+  record of what happened.
+- The poll skips while a previous one is in flight, and the timer is `unref`'d so it never holds the
+  process open during shutdown or keeps a test runner alive.
+- A failed batch counts its attempt in a **separate** transaction. The one that failed was rolled
+  back and would have discarded the count with everything else, so the attempt limit would never
+  arrive and a poisonous row would retry for ever at one second.
+
+Verified: volume destroyed, six migrations applied from empty, the newest reverted and re-applied,
+77 e2e tests including the crash-window pair, 27 schema invariants with every rule proving it bites,
+all nine gates green.
+
 ---
 
-*Next up: task 15 — the transactional outbox. `audit.outbox_event` is already named in the
-invariant's mutable list with the reason, so the classification gate will accept it; AD-6 requires
-the state change and its outbox row to commit together, and T-5 requires an idempotent consumer
-because delivery is at-least-once.*
+*Next up: task 16 — the configuration store. DR-3 and AD-4 make taxonomy, thresholds, factor sets,
+rules, plans and notification behaviour versioned data changed without redeploy; §7.9 requires every
+effective-dated config table to carry `daterange` with `PRIMARY KEY (..., validity WITHOUT
+OVERLAPS)`, which is what `btree_gist` was installed in the baseline for.*

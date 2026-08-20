@@ -138,6 +138,7 @@ const tablesMissingRowLevelSecurity = (x: Executor) =>
        JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE c.relkind IN ('r', 'p')
         AND n.nspname = ANY($1)
+        AND NOT (n.nspname || '.' || c.relname = ANY($2))
         AND (n.nspname = 'core'
              OR EXISTS (SELECT 1 FROM pg_attribute a
                          WHERE a.attrelid = c.oid
@@ -145,7 +146,7 @@ const tablesMissingRowLevelSecurity = (x: Executor) =>
                            AND NOT a.attisdropped))
         AND NOT (c.relrowsecurity AND c.relforcerowsecurity)
       ORDER BY 1`,
-    [DOMAIN_SCHEMAS],
+    [DOMAIN_SCHEMAS, RLS_EXEMPT_TABLES],
   );
 
 /**
@@ -164,8 +165,21 @@ const tablesMissingRowLevelSecurity = (x: Executor) =>
  */
 const APPEND_ONLY_TABLES = ['audit.system_audit_log', 'core.field_change'];
 
-/** Named, with the reason, so task 15 does not have to rediscover why these are exempt. */
+/** Named, with the reason, so task 15 did not have to rediscover why these are exempt. */
 const MUTABLE_AUDIT_TABLES = ['audit.outbox_event', 'audit.inbound_event'];
+
+/**
+ * Tables carrying `organization_id` that are deliberately **not** RLS-scoped, each with its reason.
+ *
+ * `audit.outbox_event` is cross-tenant by nature: the dispatcher must scan every tenant's pending
+ * work to find any of it, and AD-2 rejects giving the worker `BYPASSRLS` in terms. Protection is
+ * the grant instead — `esg_app` holds INSERT and nothing else, so there is no tenant read for a
+ * policy to scope. `audit.inbound_event` will be the same when task 56 adds it: a provider webhook
+ * arrives before anything knows which tenant it belongs to.
+ *
+ * This list is the exemption being a decision on record. Everything not on it still has to comply.
+ */
+const RLS_EXEMPT_TABLES = ['audit.outbox_event', 'audit.inbound_event'];
 
 /**
  * An append-only table is protected only if **all** of it is: the parent carries both triggers, and
@@ -271,6 +285,27 @@ const unclassifiedCoreTables = (x: Executor) =>
         AND NOT (n.nspname || '.' || c.relname = ANY($2))
       ORDER BY 1`,
     [FIELD_AUDITED_TABLES, UNAUDITED_CORE_TABLES],
+  );
+
+/**
+ * What makes the RLS exemption above safe, asserted rather than assumed.
+ *
+ * `audit.outbox_event` has no policy because the application tier cannot read it — that is the
+ * whole argument. Granting `SELECT` to `esg_app` would turn a considered exemption into an
+ * unscoped cross-tenant read, and nothing else in the system would notice: no test fails, no error
+ * is raised, every row is simply visible to every tenant that asks.
+ */
+const readableRlsExemptTables = (x: Executor) =>
+  x.query<{ location: string; grantee: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location, pg_get_userbyid(a.grantee) AS grantee
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+      WHERE n.nspname || '.' || c.relname = ANY($1)
+        AND pg_get_userbyid(a.grantee) = 'esg_app'
+        AND a.privilege_type = 'SELECT'
+      ORDER BY 1`,
+    [RLS_EXEMPT_TABLES],
   );
 
 describe('schema invariants (§7)', () => {
@@ -511,6 +546,20 @@ describe('schema invariants (§7)', () => {
         unclassifiedCoreTables,
       );
       expect(caught.map((r) => r.location)).toEqual(['core.__probe_entity']);
+    });
+  });
+
+  describe('an RLS-exempt table is unreadable by the application tier', () => {
+    it('holds', async () => {
+      expect(await readableRlsExemptTables(db)).toEqual([]);
+    });
+
+    it('catches the grant that would turn the exemption into a cross-tenant read', async () => {
+      const caught = await provingViolation(
+        `GRANT SELECT ON audit.outbox_event TO esg_app`,
+        readableRlsExemptTables,
+      );
+      expect(caught).toEqual([{ location: 'audit.outbox_event', grantee: 'esg_app' }]);
     });
   });
 
