@@ -430,9 +430,72 @@ Verified by running: volume destroyed, all four migrations applied from empty, t
 and re-applied, 51 e2e tests including the three-layer append-only proof, 21 schema invariants with
 every rule proving it bites, all nine gates green.
 
+## Task 14 — Per-field audit capture · 2026-08-20
+
+**AD-14 constraint 5 is amended: capture is a trigger, not an application function.** That
+constraint says the field-change path uses `queryRunner.query()` with `RETURNING old.*, new.*`, and
+§12.3 argues for it on the grounds that PostgreSQL 17 needed a read-then-write under a lock. Both
+arguments are about the *application* path — the query builder cannot express `RETURNING old.*`, and
+17's pattern cost a round trip. **Neither argues against a trigger, which was never considered and
+never needed a read at all.** The deciding property is that a function must be called: a plain
+`UPDATE` written in task 34 or 36 bypasses it silently, which is the application-discipline failure
+DR-6 rejects for append-only records of exactly this kind, and FR-54 exists to support a
+limited-assurance review (NFR-7) that a trail with unknown gaps cannot serve. Both §12.3 and AD-14
+record the change and the reasoning.
+
+The verification stayed useful anyway: `RETURNING old.*, new.*` was confirmed on 18.4 for INSERT,
+UPDATE and DELETE alike, with the absent image reading NULL. §12.3 now says so, since a caller
+wanting both images still has it.
+
+**The trail cannot be forged, which is the other half.** The capture function is `SECURITY
+DEFINER`, so `esg_app` holds `SELECT` on `core.field_change` and **no `INSERT`**. The application
+can read its audit trail and has no privilege by which to author, alter or erase one — verified for
+all four verbs. `SET search_path` is set on the function, which on a SECURITY DEFINER routine is not
+decoration: without it the caller controls name resolution and can shadow the target table.
+
+Also decided:
+
+- **`core.field_change` stays in `core`** per §7.10 — it is tenant data, scoped by the same RLS as
+  the rows it describes — and is append-only via `audit.enforce_append_only` across the schema
+  boundary. The invariant's classification is no longer audit-schema-scoped: protection follows what
+  a table is, not where it sits. Partitioned for the same §15 reason as task 13, and it is the
+  highest-volume audit table in the system since autosave writes continuously (NFR-38).
+- **`system_audit_log.organization_id` is now nullable**, closing what task 13 deferred. FR-80's
+  administrator account changes belong to no organization. Tenants cannot see those rows and it cost
+  nothing to arrange — `organization_id = <bound>` never matches NULL. A platform row may only be
+  written by a request that is *not* acting for a tenant, which is a real structural distinction
+  rather than a naming convention and stops a tenant request forging platform history; a bare
+  `organization_id IS NULL` policy would have permitted exactly that, since permissive policies are
+  OR'd.
+- **`actor_id` carries no foreign key**, and the gate asserts it. FR-55 requires attribution to
+  survive a member's access being removed; an FK would make FR-59's removal either fail or cascade,
+  and both erase the trail.
+
+Three mistakes worth recording, because each was silent in a different way:
+
+- **`akeys(hstore(...))` in the capture function.** hstore is not installed, and **a plpgsql body is
+  not validated at creation** — so the migration applied cleanly and the failure waited for the
+  first write. `jsonb_object_keys` instead.
+- **Backticks inside a SQL comment closed the TypeScript template literal**, turning the rest of the
+  migration into TypeScript. Caught by `typecheck`, which is the gate earning its place.
+- **The capture trigger broke organization creation, and that was a real bug rather than a test
+  artefact.** Scoping `field_change`'s INSERT policy to the bound tenant meant that creating an
+  organization — which FR-13 does *before* any tenant context can exist, the reason
+  `core.organization` has a permissive INSERT policy — had its own capture refused, and the insert
+  failed with it. The policy is now `WITH CHECK (true)`, which is unusually the tighter option:
+  the grant already restricts writers to the trigger, so the policy has nothing left to defend.
+
+The invariant gained two rules with proofs: every audited table carries the capture trigger, and
+every `core` table is classified as audited or explicitly not — so tasks 29, 31 and 34 cannot ship a
+table with an invisible gap in its history.
+
+Verified by running: volume destroyed, five migrations applied from empty, the newest reverted and
+re-applied, 67 e2e tests, 25 schema invariants with every rule proving it bites, all nine gates
+green.
+
 ---
 
-*Next up: task 14 — per-field audit capture. It writes onto this substrate through
-`RETURNING old.*, new.*` (AD-14, constraint 5), which is raw SQL because the query builder cannot
-express it, and it owns the question this task deferred: where platform-level events with no
-organization belong.*
+*Next up: task 15 — the transactional outbox. `audit.outbox_event` is already named in the
+invariant's mutable list with the reason, so the classification gate will accept it; AD-6 requires
+the state change and its outbox row to commit together, and T-5 requires an idempotent consumer
+because delivery is at-least-once.*

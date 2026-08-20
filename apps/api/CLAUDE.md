@@ -21,7 +21,9 @@ rollback in `ProblemDetailsFilter`.
 RLS is `ENABLED` and `FORCED` on `core.organization`, proven isolated as both `esg_app` and the
 owning role, with a test that drops `FORCE` in a rolled-back transaction and watches isolation
 collapse. `audit.system_audit_log` is the first append-only table: partitioned, privilege-denied to
-the application, and trigger-guarded against the owner.
+the application, and trigger-guarded against the owner. `core.field_change` carries per-field audit,
+written only by a `SECURITY DEFINER` trigger — the application can read its trail and holds no
+privilege to author, alter or erase one.
 
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any table beyond `core.organization`, any controller other
@@ -182,6 +184,27 @@ parent only; a routed `INSERT` is privilege-checked there, so the application ne
 partition. Add a partition in a later task and you must re-run the procedure — the invariant gate
 fails the build otherwise.
 
+### Adding an audited table
+
+Attach the capture trigger in the same migration and add the table to
+`FIELD_AUDITED_TABLES` in `test/schema-invariants.e2e-spec.ts` — or to `UNAUDITED_CORE_TABLES` with
+a reason. The gate fails a `core` table that is in neither, because an unaudited table produces no
+error, just a gap nobody can see later.
+
+```sql
+CREATE TRIGGER capture_field_change AFTER INSERT OR UPDATE OR DELETE ON core.<table>
+  FOR EACH ROW EXECUTE FUNCTION core.capture_field_change('organization_id', 'updated_at');
+```
+
+`TG_ARGV[0]` names the tenant column — `id` for the tenant root, `organization_id` everywhere else.
+`TG_ARGV[1..]` are columns to ignore. The comparison is over `jsonb` row images, so no table needs
+its own plpgsql.
+
+**Two traps this function has already sprung.** A plpgsql body is **not validated at creation**, so
+a missing function inside it applies cleanly and fails on the first write — `akeys(hstore(...))` did
+exactly that. And backticks inside a SQL comment close the TypeScript template literal the migration
+is written in.
+
 **Three layers deny, in this order**, and only the first two are visible in a normal test: privilege
 (`esg_app` holds `INSERT, SELECT`), then RLS (no UPDATE/DELETE policy, so even the owner matches
 zero rows and gets `UPDATE 0` rather than an error), then the triggers. To see a trigger fire you
@@ -198,8 +221,9 @@ because a trigger that never fires looks exactly like one that was never created
    `migration.data-source.ts`, runs the migrations and is not one of them: it connects as
    `esg_migrator`, a role the runtime never holds (§7.6, §7.7).
 4. `numeric` stays a **string** (NFR-58). A `transformer` calling `parseFloat` is the failure mode.
-5. The field-change audit write is raw `queryRunner.query()` — `RETURNING old.*, new.*` is not
-   expressible in the query builder.
+5. `RETURNING old.*, new.*` is raw `queryRunner.query()` — not expressible in the query builder.
+   **Per-field capture itself is a trigger, not an application function** (AD-14 amended 20 Aug
+   2026): a function must be called, and a plain `UPDATE` would bypass it silently.
 
 ### Migrations — five things that cost time to rediscover
 

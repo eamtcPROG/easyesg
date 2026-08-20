@@ -151,13 +151,18 @@ const tablesMissingRowLevelSecurity = (x: Executor) =>
 /**
  * DR-6 and NFR-33, per table rather than per schema.
  *
+ * The list is not schema-scoped, and that is the point: `core.field_change` sits in `core` because
+ * §7.10 puts it there — it is tenant data, scoped by the same RLS as the rows it describes — but
+ * FR-54/55 make it an audit trail, so protection follows what a table *is* rather than where it
+ * lives.
+ *
  * `audit` is **not** uniformly append-only, and assuming it is would be wrong in a way that only
  * shows up in task 15: §7.10 puts `outbox_event` and `inbound_event` in this schema, and AD-6's
  * dispatcher has to mark an outbox row dispatched — an UPDATE. So the schema keeps §7.7's
  * default-deny posture and each table declares itself, with the lists below forcing a decision
  * whenever a new audit table appears rather than letting it default to unprotected.
  */
-const APPEND_ONLY_TABLES = ['audit.system_audit_log'];
+const APPEND_ONLY_TABLES = ['audit.system_audit_log', 'core.field_change'];
 
 /** Named, with the reason, so task 15 does not have to rediscover why these are exempt. */
 const MUTABLE_AUDIT_TABLES = ['audit.outbox_event', 'audit.inbound_event'];
@@ -228,6 +233,44 @@ const unclassifiedAuditTables = (x: Executor) =>
         AND NOT (n.nspname || '.' || c.relname = ANY($2))
       ORDER BY 1`,
     [APPEND_ONLY_TABLES, MUTABLE_AUDIT_TABLES],
+  );
+
+/**
+ * P-11 and FR-54, made mechanical. Per-field audit is named as expensive-to-retrofit and built on
+ * day one regardless of which phase its feature lands in — so a `core` table added in task 29, 31
+ * or 34 must either carry the capture trigger or say why it does not. Silence is the failure: an
+ * unaudited table produces no error, just a trail with a gap nobody can see afterwards.
+ */
+const FIELD_AUDITED_TABLES = ['core.organization'];
+
+/** The trail itself. Auditing it would recurse, and it is append-only by other means. */
+const UNAUDITED_CORE_TABLES = ['core.field_change'];
+
+const auditedTablesMissingCapture = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname || '.' || c.relname = ANY($1)
+        AND NOT EXISTS (SELECT 1 FROM pg_trigger t
+                         WHERE t.tgrelid = c.oid AND NOT t.tgisinternal
+                           AND t.tgname = 'capture_field_change')
+      ORDER BY 1`,
+    [FIELD_AUDITED_TABLES],
+  );
+
+const unclassifiedCoreTables = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'core'
+        AND c.relkind IN ('r', 'p')
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
+        AND NOT (n.nspname || '.' || c.relname = ANY($1))
+        AND NOT (n.nspname || '.' || c.relname = ANY($2))
+      ORDER BY 1`,
+    [FIELD_AUDITED_TABLES, UNAUDITED_CORE_TABLES],
   );
 
 describe('schema invariants (§7)', () => {
@@ -441,6 +484,33 @@ describe('schema invariants (§7)', () => {
 
     it('holds — every audit table today is classified', async () => {
       expect(await unclassifiedAuditTables(db)).toEqual([]);
+    });
+  });
+
+  describe('per-field audit capture is attached where it is claimed (P-11, FR-54)', () => {
+    it('holds — every audited table carries the capture trigger', async () => {
+      expect(await auditedTablesMissingCapture(db)).toEqual([]);
+    });
+
+    it('holds — every core table is classified as audited or explicitly not', async () => {
+      expect(await unclassifiedCoreTables(db)).toEqual([]);
+    });
+
+    it('catches an audited table whose trigger was dropped', async () => {
+      const caught = await provingViolation(
+        `DROP TRIGGER capture_field_change ON core.organization`,
+        auditedTablesMissingCapture,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.organization']);
+    });
+
+    // Tasks 29, 31 and 34 all add core tables. This is what stops one of them shipping unaudited.
+    it('catches a new core table that declared neither', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_entity (id uuid PRIMARY KEY, organization_id uuid NOT NULL)`,
+        unclassifiedCoreTables,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.__probe_entity']);
     });
   });
 
