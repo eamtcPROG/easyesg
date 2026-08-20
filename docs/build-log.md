@@ -728,6 +728,21 @@ not be built on this machine**: Docker Desktop's VM has 0.9 GB and the Next buil
 is a laptop limit rather than a Dockerfile defect — it builds on the host — and it is why the images
 job runs every container in CI, where the runner has the memory to prove it.
 
+**Two things the pipeline caught that no local run could**, both in the images job:
+
+- `pnpm dev:up` in a job that installs no pnpm. The images job deliberately has no Node on the
+  runner — every image installs from the lockfile inside its own build, and a job depending on the
+  runner's `node_modules` would not be proving what it claims. It calls `docker compose` directly.
+- **The api cannot start against an unmigrated database**, and that is correct rather than a defect:
+  it reads the configuration store at boot (AD-4's version poll) and exits on `42P01
+  undefined_table` rather than serving something it cannot configure. So migrate-then-start is an
+  ordering fact for task 72's deploy, not a CI detail. The job now exercises it the way a deploy
+  would — **by the image itself**, which carries typeorm and the compiled datasource and uses
+  nothing on the runner. Seven migrations apply, then the container serves.
+
+Final run: all four jobs green, and the **web image built and served `/health` in CI** — the
+verification that could not happen on a 0.9 GB Docker VM.
+
 ---
 
 *Phase 1 is complete. Next up: task 19 — registration and verification API, the first task with a
