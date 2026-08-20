@@ -1,6 +1,6 @@
 import { CallHandler, ExecutionContext, Injectable, type NestInterceptor } from '@nestjs/common';
 import { Observable, concatMap } from 'rxjs';
-import { commitTenantTransaction } from '../../infrastructure/persistence/tenant-transaction';
+import { commitTenantTransaction } from '@api/infrastructure/persistence/tenant-transaction';
 
 /**
  * Commits the request's tenant transaction on the success path.

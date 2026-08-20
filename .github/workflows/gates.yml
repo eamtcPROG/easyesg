@@ -244,12 +244,17 @@ jobs:
       # "never came up" into a step failure the log step below can explain.
       - name: api serves, as both entrypoints from one image (AD-1)
         run: |
+          # The two entrypoints take DIFFERENT secrets, and that asymmetry is the point rather
+          # than an oversight: the HTTP tier hashes passwords and needs §9.1's pepper but never
+          # sends mail, and the worker sends mail but never hashes. Each container failing at boot
+          # without its own is what proves the split is real (task 19).
           docker run -d --name api --network easyesg_easyesg-net -p 3000:3000 \
             -e DB_HOST=postgres -e DB_USER=esg_app -e DB_PASSWORD=devonly-app -e DB_NAME=esg \
-            -e REDIS_HOST=redis easyesg-api:ci
+            -e REDIS_HOST=redis -e AUTH_PASSWORD_PEPPER=devonly-pepper easyesg-api:ci
           docker run -d --name worker --network easyesg_easyesg-net -e MODE=worker \
             -e DB_HOST=postgres -e DB_WORKER_USER=esg_worker -e DB_WORKER_PASSWORD=devonly-worker \
-            -e DB_NAME=esg -e REDIS_HOST=redis easyesg-api:ci
+            -e DB_NAME=esg -e REDIS_HOST=redis -e EMAIL_PROVIDER=log \
+            -e PUBLIC_WEB_URL=http://localhost:3100 easyesg-api:ci
           timeout 60 bash -c 'until curl -fsS http://localhost:3000/health; do sleep 2; done'
           # "Serves" can be polled; "has not crashed" can only be waited on — a crash-looping
           # container reads `running` at any single instant. The worker gets a fixed window

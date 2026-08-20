@@ -1,8 +1,8 @@
 import { Injectable, type CanActivate } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { DataSource } from 'typeorm';
-import { CORE_DATA_SOURCE } from '../../infrastructure/persistence/data-source';
-import { openTenantTransaction } from '../../infrastructure/persistence/tenant-transaction';
+import { CORE_DATA_SOURCE } from '@api/infrastructure/persistence/data-source';
+import { openTenantTransaction } from '@api/infrastructure/persistence/tenant-transaction';
 
 /**
  * §6.2's second obligation: open the request's transaction and bind the tenant to it (AD-2).

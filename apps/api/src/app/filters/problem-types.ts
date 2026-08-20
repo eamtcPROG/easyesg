@@ -21,6 +21,7 @@ export const ProblemType = {
   CredentialInvalid: 'credential-invalid',
   AccountLocked: 'account-locked',
   EmailUnverified: 'email-unverified',
+  VerificationTokenInvalid: 'verification-token-invalid',
   MfaRequired: 'mfa-required',
   MembershipRequired: 'membership-required',
   InsufficientRole: 'insufficient-role',

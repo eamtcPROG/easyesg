@@ -10,7 +10,7 @@
     "jsx": "preserve",
     // Without this, every `@/...` import in apps/web resolves to nothing — and a rule whose
     // `from` never resolves looks exactly like a rule that passes.
-    "paths": { "@/*": ["apps/web/src/*"] }
+    "paths": { "@/*": ["apps/web/src/*"], "@api/*": ["apps/api/src/*"] }
   },
   "include": [
     "apps/*/src/**/*.ts",

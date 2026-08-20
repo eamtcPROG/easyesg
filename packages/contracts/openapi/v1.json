@@ -1,6 +1,145 @@
 {
   "openapi": "3.1.0",
-  "paths": {},
+  "paths": {
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Creates an unverified account and issues a verification challenge by email. No application data is reachable until verification completes.",
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterAccountRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The account was created and a verification email was queued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AccountResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The password does not meet the policy, or the address is malformed.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The address already holds an account.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Register an account with an email address and a password",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "post": {
+        "description": "Consumes the single-use token from the verification link and activates the account. The token is sent in the body rather than followed as a link so that a mail scanner opening the URL cannot consume it.",
+        "operationId": "AuthController_verify",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The account is active.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AccountResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The link is not valid — never issued, already used, expired, or belonging to an account that has itself expired. The four are deliberately indistinguishable.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Verify control of a registered email address",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/verification-email": {
+      "post": {
+        "description": "Sends a fresh confirmation link if the address holds an unverified account, and does nothing otherwise. The response is identical in every case, so it cannot be used to discover whether an address is registered.",
+        "operationId": "AuthController_resend",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerificationEmailRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted. Empty by design — a body describing what happened would be the disclosure this endpoint exists without."
+          },
+          "400": {
+            "description": "The address is malformed. A statement about the request, not about whether an account exists.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Request a new verification link",
+        "tags": [
+          "identity"
+        ]
+      }
+    }
+  },
   "info": {
     "title": "easyesg API",
     "description": "One versioned REST surface. Both front ends are ordinary clients of it and no privileged route exists (DR-11, NFR-16). The active organization comes from the session — never from a header, a path segment or a token claim.",
@@ -17,6 +156,138 @@
         "type": "http"
       }
     },
-    "schemas": {}
+    "schemas": {
+      "MessageDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "WARNING"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "example": "entitlement.quota.approaching"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "key"
+        ]
+      },
+      "ResultObjectDto": {
+        "type": "object",
+        "properties": {
+          "htmlcode": {
+            "type": "number",
+            "example": 200
+          },
+          "object": {
+            "type": "object",
+            "nullable": true
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageDto"
+            }
+          }
+        },
+        "required": [
+          "htmlcode",
+          "object",
+          "messages"
+        ]
+      },
+      "AccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ana.popescu@example.md"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "active"
+            ],
+            "description": "No application data is reachable while an account is unverified (FR-1). An unverified account expires 7 days after registration."
+          },
+          "createdAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC.",
+            "example": 1787356800000
+          },
+          "verifiedAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Unix epoch milliseconds, UTC. Null while the account is unverified.",
+            "example": 1787360400000
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "status",
+          "createdAt"
+        ]
+      },
+      "RegisterAccountRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ana.popescu@example.md",
+            "description": "Case is preserved as supplied; uniqueness is case-insensitive."
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "Minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character. Letters are matched by Unicode property, so Romanian and Russian letters count as letters."
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "VerifyEmailRequestDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The value from the verification link. Single-use and valid for 24 hours from issue."
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ResendVerificationEmailRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ana.popescu@example.md"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      }
+    }
   }
 }

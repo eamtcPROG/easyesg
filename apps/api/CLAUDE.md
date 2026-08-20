@@ -27,9 +27,15 @@ privilege to author, alter or erase one. `audit.outbox_event` and its worker dis
 onto BullMQ; `MODE=worker` boots, polls and dispatches. The configuration store publishes, reverts
 and propagates by version poll.
 
+Task 19 adds the first behaviour: `identity.{account,credential,verification_token}`,
+`POST /api/v1/auth/{register,verify-email,verification-email}`, `contracts/email.port.ts` with a
+logging adapter, and `OutboxConsumer` — the queue's single `@Processor`, routing by job name to
+whatever claimed it with `@HandlesJob`.
+
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
-`EntitlementGuard`, `AdminRealmGuard`), any table beyond `core.organization`, any controller other
-than health, and every module body — the 35 `*.module.ts` files are registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
+`EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
+other than health and `/auth`, and almost every module body — 34 of the 35 `*.module.ts` files are
+registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
 only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by
 expand→migrate→contract. `test/` holds the schema-invariant probe; the RLS cross-tenant probe and
 the `BILLING_ENABLED=false` suite land beside it.
@@ -92,6 +98,27 @@ errors/ validators/ constants/ consumers/ sagas/ domain/`. Tests colocated as `*
 `use-cases/` is not optional where `use_cases.md` names a flow. Those classes stay **framework-free**
 — no `@Injectable`, no TypeORM, no Express — and the check is that their tests run with no database,
 no broker and no HTTP. `domain-free-of-frameworks` enforces it.
+
+**Controllers call services; services call use cases** (added 20 Aug 2026, task 19 review). Each
+layer holds one kind of knowledge: `controllers/` maps transport — routes, status codes, DTOs,
+OpenAPI — to the module's service and nothing else; `services/` is the Nest-aware application seam
+that orchestrates use cases and resolves ambient request context (the registration locale is the
+worked example); `use-cases/` stays framework-free. A controller importing from `use-cases/` is the
+violation. A service wrapping a single use case is the honest minimum, not the pass-through
+CLAUDE.md warns against — the seam is the rule, and it is where a later task composes two flows
+without the controller growing a second caller. `identity/account` is the template.
+
+**No `@Injectable` means no `useClass`.** A framework-free use case has no constructor metadata for
+Nest to read, so it is registered with `useFactory` + `inject` naming its port tokens. That is the
+price of the constraint and it is the shape to copy — `identity/account/account.module.ts` is the
+worked example. Inject the clock the same way (`() => new Date()`): OQ-52's seven-day window is
+otherwise only testable by waiting a week.
+
+**`testing/` holds test doubles shared by more than one spec** — `tsconfig.build.json` excludes it
+so it never reaches `dist`, while `tsconfig.json` keeps it in the program so `pnpm typecheck` holds
+a fake to the interface it claims to implement. A fake worth writing models **rollback**, not just
+return values: `FakeAccountStore.run` restores its snapshot when the callback throws, which is what
+lets a spec assert P-8's "all of it or none of it" instead of only that an error was raised.
 
 A module is a unit of ownership, not a URL prefix. Several own no routes at all
 (`core/comparatives`, `platform/configuration`, `billing/entitlement`); that is correct.
@@ -205,6 +232,24 @@ Three things about it that are load-bearing:
   locally; production containers just supply their own `DB_USER`. Running the worker as `esg_app`
   fails on the first poll, because `esg_app` may only INSERT into the outbox.
 
+### Consuming from the queue
+
+**There is exactly one `@Processor(OUTBOX_QUEUE)` in this application and there must stay one.** A
+BullMQ worker consumes every job on its queue and cannot subscribe to a name, so a second
+`@Processor` on AD-10's single queue does not divide the work — the two compete, each receiving
+jobs meant for the other and failing on them. `OutboxConsumer` is that one processor; a module
+claims a job name by marking a provider `@HandlesJob('<event_type>')`, and it is found by
+`DiscoveryService` so the module that owns the work owns its registration.
+
+- The string must equal the `eventType` written to `audit.outbox_event` — both sides read one
+  exported constant.
+- A handler takes `(payload, context)`, never a `Job`, so it is testable without a queue.
+  `context.jobId` **is** the outbox row's idempotency key, which is what §8.4's outbound calls need.
+- An unclaimed job name **throws**. An outbox row exists because a transaction committed a decision;
+  dropping it silently is the loss the outbox exists to prevent. A failed job is visible and
+  re-runnable.
+- Consumers run on the worker entrypoint only, like the dispatcher.
+
 ### Adding a configuration artefact
 
 No table and no code. Add a `config/seed/<kind>.<scope>.json` file and read it with
@@ -294,9 +339,31 @@ because a trigger that never fires looks exactly like one that was never created
   (TS6059), omitting rootDir breaks ts-jest which demands one whenever outDir is set (TS5011), and
   a separate test tsconfig hides test/ from ESLint's project service, which discovers
   `tsconfig.json` only. Do not "tidy" this back.
+- **`queryRunner.query()` returns a different SHAPE per SQL command, and nothing warns you.**
+  `SELECT` and `INSERT ... RETURNING` give you the rows; `UPDATE ... RETURNING` and
+  `DELETE ... RETURNING` give you `[rows, rowCount]` — TypeORM builds `raw` with a switch on the
+  driver's `command`. So the identical `RETURNING` clause reads as `rows[0].id` after an INSERT and
+  as `undefined` after an UPDATE, with no error where you wrote it: it surfaces later as a
+  `TypeError` on a property of what should have been a row. Normalise at the call site — see
+  `returnedRows` in `persistence/identity/account-store.repository.ts` — rather than remembering
+  which command you are in. Found on task 19, on the first `UPDATE ... RETURNING` in the codebase.
 - **jest hands a test a *copy* of `process`**, so `process.loadEnvFile()` in a spec mutates a
   sandbox and real credentials never arrive — the symptom is a SASL error naming the password,
   which reads as a database fault. Load env before jest starts, as `db:invariants` does.
+
+## Secrets are split per entrypoint
+
+`AUTH_PASSWORD_PEPPER` (§9.1) is read by the **HTTP** tier and `EMAIL_PROVIDER` by the **worker**,
+and each throws at boot when its own is missing. That is least privilege rather than tidiness: the
+api hashes passwords and never sends mail, the worker sends mail and never hashes, and neither
+should hold a secret it has no caller for. `AccountModule` splits its providers on `MODE` to make
+it so, the way `OutboxModule` already splits the dispatcher.
+
+Neither has a default, and `EMAIL_PROVIDER`'s absence is deliberate: the `log` adapter writes a
+recipient address and a verification link into the application log, which NFR-30 forbids of a
+production pipeline — so a deployment that has not chosen a provider fails to start rather than
+logging personal data for months. `emit-openapi.ts` runs in `preview` mode and instantiates no
+provider, so the hermetic gates still need no secrets.
 
 ## The two things called "contracts"
 
@@ -336,6 +403,41 @@ every context depends on, so anything it reaches for becomes a transitive depend
   `Error` so logs and traces still identify the failure — that surface is developer-facing and
   stays untranslated on purpose.
 
+- **Cross-tree imports use `@api/*`, never a `../../` climb** (added 20 Aug 2026, task 19
+  review). `@api/*` maps to `src/*`; one level up (`../dto/x`) stays relative, because that is a
+  within-module neighbourhood reference. Enforced by ESLint (`no-restricted-imports`, gitignore
+  patterns) — and NOT `@/*`, because `tsconfig.boundaries.json` is one resolver shared by every
+  workspace and `@/*` is apps/web's there (`~/*` is admin's). It also keeps `@api/contracts/…`
+  (the port surface) visually apart from `@easyesg/contracts` (the wire package).
+
+  **tsc does not rewrite aliases in emitted JS**, so the alias is carried by five surfaces, and
+  each has a guard: `postbuild` runs `tsc-alias` so `dist/` holds plain relative requires (the
+  image runs `node dist/main.js` with no runtime dependency — verified by grepping dist for
+  `@api/` after build); both jest configs restate it as `moduleNameMapper`;
+  `tsconfig.boundaries.json` carries it for dependency-cruiser, guarded by `api-no-unresolvable`
+  — without that rule a dropped mapping would not fail the boundary rules, it would make them
+  **silently stop matching** — and by the `controllers-not-to-use-cases` fixture, which violates
+  through the alias on purpose; `nest start --watch` works because @nestjs/cli registers
+  tsconfig-paths for the process it spawns (verified 20 Aug 2026, not assumed). The **TypeORM
+  CLI and seed runner have no registration at all**, which is why the files they load — the
+  migration datasource, every migration, `seed-configuration*` — are lint-banned from the alias:
+  an `@api/` import there fails at run time in whichever environment migrates first.
+- **A closed vocabulary is declared once, as an `as const` object with a derived union — never
+  scattered string literals** (added 20 Aug 2026, task 19 review; widened same day to every
+  non-free-text field). This covers two shapes of the same defect. Comparisons: `MODE === 'worker'`
+  split provider sets in five files, and a typo'd literal does not error — the comparison is simply
+  false and the wrong branch registers silently. Field values: a status, kind, state or
+  discriminator written as `'unverified'` at each site has no single place its spelling is true.
+  `ACCOUNT_STATUS`, `APP_MODE`, `ProblemType` and `LOG_EMAIL_PROVIDER` are the pattern — an
+  `as const` object (it erases to nothing and has none of a TS `enum`'s ambient/`isolatedModules`
+  edges; `MessageType` predates this and is not worth churning), with the type derived from it and
+  contract surfaces derived too (`@ApiProperty({ enum: Object.values(ACCOUNT_STATUS) })`, where
+  declaration order is contract order). Two deliberate exceptions: **migration SQL stays literal**
+  — a migration is frozen history, and interpolating a constant that can later be renamed would
+  silently rewrite what that history says (the CHECK constraint is the database's own copy of the
+  vocabulary, and the app object mirrors it); and **tests may assert literals on purpose**, because
+  a spec pinning `'active'` is pinning the wire value — it must break if someone renames the
+  constant's value, which a test written in constants never would.
 - **The catalogue must be initialised before anything serves.** `use-intl` and every current
   FormatJS release ship ESM only, and this app is CommonJS (OQ-48), so `initialiseCatalogue()`
   bridges with a dynamic `import()` and is awaited in both entrypoints. Forgetting it does not
@@ -344,12 +446,18 @@ every context depends on, so anything it reaches for becomes a transitive depend
   sets it.
 - OpenAPI is **3.1** only because `document.factory.ts` calls `setOpenAPIVersion('3.1.0')` —
   `DocumentBuilder` defaults to 3.0 and nothing fails loudly if the call is removed.
+- **Swagger UI is served at `/docs`** (raw document at `/docs-json`), mounted in
+  `configureHttpApp` over the same `buildOpenApiDocument` output the CI gate diffs — one
+  generator, two consumers, and `docs.e2e-spec.ts` asserts the served document deep-equals the
+  committed contract so the two cannot drift. Outside `/api/v1` like `health`, so it is an NFR-16
+  allowlist entry; whether the production edge exposes it is task 71's routing decision, taken
+  there rather than behind a config flag here.
 
 ## Boundary rules
 
-Seven, in `.dependency-cruiser.cjs`: `core-not-to-billing`, `billing-not-to-core`,
-`cross-cutting-not-to-modules`, `api-not-to-contracts-package`, `contracts-is-a-leaf`,
-`domain-free-of-frameworks`, `no-circular`.
+Nine, in `.dependency-cruiser.cjs`: `core-not-to-billing`, `billing-not-to-core`,
+`api-no-unresolvable`, `controllers-not-to-use-cases`, `cross-cutting-not-to-modules`,
+`api-not-to-contracts-package`, `contracts-is-a-leaf`, `domain-free-of-frameworks`, `no-circular`.
 
 All seven have a fixture in `tools/prove-boundaries.sh` proving they reject a real violation. Keep
 that true: if you add or edit a rule, add its fixture in the same change. A rule that matches nothing

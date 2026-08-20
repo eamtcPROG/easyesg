@@ -4,5 +4,14 @@
   // program for type-checking and linting — see the note in tsconfig.json.
   "extends": "./tsconfig.json",
   "compilerOptions": { "rootDir": "./src" },
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  // `**/testing/**` holds in-memory test doubles that live beside the port they implement rather
+  // than inside one spec, so several specs can share one fake. They are excluded here for the same
+  // reason specs are: they must never reach dist. They stay inside tsconfig.json's program, so
+  // `pnpm typecheck` still holds them to the interface they claim to implement — which is the
+  // whole value of a fake that is checked rather than cast.
+  // `__boundary_fixture.ts` matters HERE, not only in tsconfig.json: nest-cli builds and — the
+  // part that bites — WATCHES on this file, and exclude arrays replace rather than merge, so the
+  // base exclusion alone would leave `nest start --watch` compiling prove-boundaries' transient
+  // fixtures. See tsconfig.json for the full story.
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "**/testing/**", "**/__boundary_fixture.ts"]
 }

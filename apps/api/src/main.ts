@@ -1,6 +1,5 @@
+import { APP_MODE } from './config/configuration';
 import { bootstrapHttp } from './main.http';
 import { bootstrapWorker } from './main.worker';
 
-const mode = process.env.MODE === 'worker' ? 'worker' : 'http';
-
-void (mode === 'worker' ? bootstrapWorker() : bootstrapHttp());
+void (process.env.MODE === APP_MODE.WORKER ? bootstrapWorker() : bootstrapHttp());

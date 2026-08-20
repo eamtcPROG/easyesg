@@ -1,5 +1,32 @@
 {
-  "problem": {},
+  "problem": {
+    "conflict": {
+      "title": "Conflict cu datele existente"
+    },
+    "validation-failed": {
+      "title": "Date incomplete sau incorecte",
+      "detail": "Cererea nu a putut fi procesată, pentru că unele valori lipsesc sau nu au forma așteptată. Verificați câmpurile indicate și încercați din nou."
+    },
+    "verification-token-invalid": {
+      "title": "Link de confirmare invalid"
+    }
+  },
   "validation": {},
-  "notification": {}
+  "identity": {
+    "registration": {
+      "email_taken": "Există deja un cont pentru această adresă, așa că nu putem crea încă unul. Autentificați-vă cu adresa respectivă sau cereți resetarea parolei dacă nu v-o mai amintiți.",
+      "password_policy": "Parola aleasă nu îndeplinește cerințele, deci contul nu a fost creat. Folosiți între {minimum} și {maximum} caractere, cu cel puțin o literă mică, o literă mare, o cifră și încă un caracter."
+    },
+    "verification": {
+      "token_invalid": "Linkul de confirmare nu mai este valabil, așa că adresa nu a fost confirmată. Linkurile expiră după 24 de ore și pot fi folosite o singură dată — cereți unul nou de pe pagina de confirmare."
+    }
+  },
+  "notification": {
+    "identity": {
+      "email_verification": {
+        "subject": "Confirmați-vă adresa de e-mail",
+        "body": "Bună ziua,\n\nCineva a creat un cont easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a confirma adresa și a activa contul:\n\n{verificationUrl}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată.\n\nDacă nu dumneavoastră ați creat contul, ignorați acest mesaj: fără confirmare contul nu poate fi folosit și se șterge automat după 7 zile."
+      }
+    }
+  }
 }

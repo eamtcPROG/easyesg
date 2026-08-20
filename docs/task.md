@@ -56,7 +56,7 @@ whose reasons are not recorded is not closed.
 
 | # | Name | Scope | Description | Expected result (deliverables) | Status |
 | --- | --- | --- | --- | --- | --- |
-| 19 | Registration and verification API | api | Email + password registration (Argon2id), verification token issue/consume, dispatch through a minimal mail port — task 49's notification system absorbs the port later; it must not wait for it (P-7) | Signup → verify e2e at the API; no vendor type outside the mail adapter | TODO |
+| 19 | Registration and verification API | api | Email + password registration (Argon2id), verification token issue/consume, dispatch through a minimal mail port — task 49's notification system absorbs the port later; it must not wait for it (P-7). Four values the sources never stated are closed here: password policy (OQ-51), FR-3's unverified window (OQ-52), whether registration answers uniformly (OQ-53) and whether a raw token may travel in the outbox payload (OQ-54) | Signup → verify e2e at the API; no vendor type outside the mail adapter | DONE |
 | 20 | Registration and verification screens | web | The sign-up and verification screens per design_spec, three locales | A user registers and verifies from the browser; expansion harness passes on the new screens | TODO |
 | 21 | Sessions and sign-in API | api | Session issuance, expiry and sign-out; one public API serving both front ends (DR-11, AD-9) | Sign-in/out e2e; expiry honoured | TODO |
 | 22 | Web sign-in and session proxy | web | The sign-in screens and the session proxy wired end-to-end — the only place a browser credential is exchanged | Browser sign-in/out against the public API | TODO |
@@ -96,7 +96,7 @@ whose reasons are not recorded is not closed.
 | # | Name | Scope | Description | Expected result (deliverables) | Status |
 | --- | --- | --- | --- | --- | --- |
 | 43 | Report preview | api+web | HTML preview from the same rendering the PDF will use, so the two cannot drift (FR-48, FR-49) | Preview renders a full report in three locales | TODO |
-| 44 | PDF pipeline | worker | Playwright/Chromium PDF on the worker via queue (DR-10, AD-10) — the first real consumer, registering for the job **name** on task 15's single queue; whether export needs a queue of its own (NFR-46's wording) is a capacity question to settle here, with something to measure: container-isolated, memory-capped, per-job timeout, retry on a fresh instance (T-13) | A queued export yields a tagged PDF; a hung render is killed and retried; nothing renders in the request tier | TODO |
+| 44 | PDF pipeline | worker | Playwright/Chromium PDF on the worker via queue (DR-10, AD-10), registering for the job **name** on task 15's single queue — **the first *long-running* consumer, not the first consumer**: task 19 put verification email on that queue, because sending inside the request transaction is the dual write P-8 removes (corrected 20 Aug 2026); whether export needs a queue of its own (NFR-46's wording) is a capacity question to settle here, with something to measure: container-isolated, memory-capped, per-job timeout, retry on a fresh instance (T-13) | A queued export yields a tagged PDF; a hung render is killed and retried; nothing renders in the request tier | TODO |
 | 45 | EFRAG template patching package | pkg:xlsx-patch | Patch the official EFRAG Digital Template rather than regenerate it | The package round-trips the template with values patched in | TODO |
 | 46 | Excel export integration | worker | The xlsx-patch package on the export path; LibreOffice Calc headless round-trip as the automated gate, desktop Excel a release-checklist item (T-12); the Russian labels' platform-authored status stated in the export (T-14) | Export passes the Calc gate; the golden-report cross-format corpus started | TODO |
 | 47 | Export history | api+web | Export records carrying their pinned template + taxonomy version (DR-4), artifact storage, re-download — API and screens together | Export history per report; artifacts retrievable; the pinned version visible | TODO |
@@ -108,7 +108,7 @@ whose reasons are not recorded is not closed.
 | --- | --- | --- | --- | --- | --- |
 | 49 | Notification core | api | Categories with behaviour in the config store (AD-4); task 19's minimal mail port absorbed, not duplicated | Category-driven dispatch; behaviour changes without redeploy | TODO |
 | 50 | In-app centre | api+web | The in-app notification centre — endpoints and screens together | In-app notifications delivered and read from the browser | TODO |
-| 51 | Email channel | worker | Email on the outbox/worker path; template wording ships as release catalogues, behaviour stays in the store (OQ-43) | Emails delivered through the outbox; no template sentence hardcoded in a `.ts` file | TODO |
+| 51 | Email channel | worker | The real ESP adapter (Mailjet, OQ-12) behind task 19's `EmailPort`, and every remaining category onto the outbox/worker path that verification email already uses; template wording ships as release catalogues, behaviour stays in the store (OQ-43) | Emails delivered through the outbox; no template sentence hardcoded in a `.ts` file | TODO |
 | 52 | Notification preferences | api+web | Per-user preferences — API and screens together | Preference opt-outs honoured end-to-end | TODO |
 
 ## Phase 7 — Billing (§15.4 #7)

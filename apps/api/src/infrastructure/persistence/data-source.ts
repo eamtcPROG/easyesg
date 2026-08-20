@@ -1,5 +1,5 @@
 import type { DataSourceOptions } from 'typeorm';
-import type { AppConfig } from '../../config/configuration';
+import type { AppConfig } from '@api/config/configuration';
 
 /**
  * Runtime connection options — AD-14, constraint 3: two DataSources, not one.

@@ -1,6 +1,6 @@
 import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { runInRequestContext } from '../../infrastructure/persistence/request-context';
+import { runInRequestContext } from '@api/infrastructure/persistence/request-context';
 import { DomainError } from './domain.error';
 import { ProblemDetailsFilter } from './problem-details.filter';
 import { ProblemType, ProblemTypeSlug, PROBLEM_BASE_URI } from './problem-types';

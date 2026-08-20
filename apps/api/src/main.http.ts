@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './app/filters/problem-details.filter';
 import { correlationMiddleware } from './infrastructure/observability/correlation.middleware';
 import { initialiseCatalogue } from './app/messages/catalogue';
+import { buildOpenApiDocument } from './infrastructure/openapi/document.factory';
 import { rollbackTenantTransaction } from './infrastructure/persistence/tenant-transaction';
 
 /**
@@ -41,6 +43,21 @@ export function configureHttpApp(app: NestExpressApplication): void {
   // reaches: a guard that throws never reaches an interceptor, so TransactionInterceptor's commit
   // has no rollback counterpart and this is it (§6.2).
   app.useGlobalFilters(new ProblemDetailsFilter(() => rollbackTenantTransaction()));
+
+  // The interactive UI over the SAME document the CI gate diffs (P-5, DR-11) — one generator,
+  // two consumers, so what a developer clicks through cannot drift from what the contract says.
+  // Mounted here rather than in bootstrapHttp because this file's whole point is that the e2e
+  // suite runs the same surface that ships; a docs route mounted only at boot would be the one
+  // route no test ever saw. Serves the UI at /docs and the raw document at /docs-json.
+  //
+  // `/docs` sits outside `/api/v1` like `health`, and NFR-16's route-coverage diff treats both
+  // as explicit allowlist entries. The mount is unconditional: whether the production edge
+  // exposes /docs is task 71's routing decision, and a config flag here deferring it would be
+  // the flag-that-defers-a-choice anti-pattern CLAUDE.md names. `persistAuthorization` keeps a
+  // pasted bearer token across reloads — usable the day task 21 starts issuing them.
+  SwaggerModule.setup('docs', app, buildOpenApiDocument(app), {
+    swaggerOptions: { persistAuthorization: true },
+  });
 }
 
 export async function bootstrapHttp(): Promise<void> {

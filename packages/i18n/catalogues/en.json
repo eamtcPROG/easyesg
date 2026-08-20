@@ -1,5 +1,32 @@
 {
-  "problem": {},
+  "problem": {
+    "conflict": {
+      "title": "Conflicts with existing data"
+    },
+    "validation-failed": {
+      "title": "Missing or incorrect details",
+      "detail": "The request could not be processed because some values are missing or are not in the expected form. Check the fields listed and try again."
+    },
+    "verification-token-invalid": {
+      "title": "Confirmation link is not valid"
+    }
+  },
   "validation": {},
-  "notification": {}
+  "identity": {
+    "registration": {
+      "email_taken": "An account already exists for this address, so a second one cannot be created. Sign in with that address instead, or ask for a password reset if you no longer remember it.",
+      "password_policy": "The password you chose does not meet the requirements, so the account was not created. Use between {minimum} and {maximum} characters, with at least one lowercase letter, one uppercase letter, one digit and one further character."
+    },
+    "verification": {
+      "token_invalid": "This confirmation link is no longer valid, so the address has not been confirmed. Links last 24 hours and work only once — request a new one from the confirmation page."
+    }
+  },
+  "notification": {
+    "identity": {
+      "email_verification": {
+        "subject": "Confirm your email address",
+        "body": "Hello,\n\nSomeone created an easyesg account with this email address. Open the link below to confirm the address and activate the account:\n\n{verificationUrl}\n\nThe link is valid for 24 hours and works only once.\n\nIf you did not create the account, ignore this message: without confirmation the account cannot be used, and it is deleted automatically after 7 days."
+      }
+    }
+  }
 }

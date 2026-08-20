@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import { runInRequestContext } from '../persistence/request-context';
-import { negotiateLocale } from '../../app/messages/negotiate-locale';
+import { negotiateLocale } from '@api/app/messages/negotiate-locale';
 
 declare module 'express' {
   interface Request {

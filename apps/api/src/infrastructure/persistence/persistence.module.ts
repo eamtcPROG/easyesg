@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import configuration, { type AppConfig } from '../../config/configuration';
+import configuration, { type AppConfig } from '@api/config/configuration';
 import {
   BILLING_DATA_SOURCE,
   CORE_DATA_SOURCE,
@@ -67,5 +67,8 @@ function configFrom(config: ConfigService<AppConfig, true>): AppConfig {
     billingEnabled: config.get('billingEnabled', { infer: true }),
     database: config.get('database', { infer: true }),
     redis: config.get('redis', { infer: true }),
+    auth: config.get('auth', { infer: true }),
+    email: config.get('email', { infer: true }),
+    web: config.get('web', { infer: true }),
   };
 }

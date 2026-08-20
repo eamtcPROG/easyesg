@@ -745,9 +745,7 @@ verification that could not happen on a 0.9 GB Docker VM.
 
 ---
 
-*Phase 1 is complete. Next up: task 19 — registration and verification API, the first task with a
-controller behind it, and the first use of the mail port that task 49's notification system later
-absorbs rather than duplicates.*
+*Phase 1 is complete.*
 
 ## CI mechanics hardening, from the magnamed comparison · 2026-08-20
 
@@ -800,3 +798,184 @@ change replays api and web entirely from cache and pays one real build, not thre
 
 Verified: YAML parses, `actionlint` clean. The change itself can only be proven by the next push —
 a workflow's first real run is its test.
+
+## Task 19 — Registration and verification API · 2026-08-20
+
+The first task with behaviour behind it. `identity.{account, credential, verification_token}`,
+three routes under `/api/v1/auth`, Argon2id behind a port, `EmailPort` with a logging adapter, and
+the job router that AD-10's single queue turns out to require.
+
+**Five values the seven documents never stated, closed here rather than assumed.** Each was raised
+before any code was written, and each is a register row with its cost recorded — `architecture.md`
+OQ-51 … OQ-55. Worth noting how few of them were *ambiguities*: four were simple silences, and the
+fifth did not exist until two separate decisions were laid side by side.
+
+- **OQ-51, the password policy.** §9.1 closed the hashing and said nothing about the input, while
+  `design_spec.md` S-02 required "password policy enforced on entry" against a policy nobody had
+  written. Decided: ≥ 8 and ≤ 128 characters, four character classes. Taken over a NIST
+  SP 800-63B-shaped alternative, and the framing in the question was too strong — **composition
+  rules do not breach UX-108.** WCAG 2.2's 3.3.8 prohibits a cognitive-function *test* and
+  explicitly permits password entry wherever paste and password-manager autofill work, which is a
+  task-20 property. The cost is SP 800-63B's advice, not conformance.
+- **OQ-52, FR-3's "defined window".** Seven days, and the record is deleted. Built as a
+  **predicate rather than a sweep**, which is the part worth recording: the requirement is that an
+  unverified account cannot be verified and stops holding its address, and both are answerable from
+  `created_at` at the moment they are asked. So FR-3 holds from this task rather than from Phase 6's
+  scheduler — and it cannot silently stop holding because a job is down.
+- **OQ-53, whether registration answers uniformly.** `409` on a duplicate. NFR-64's
+  uniform-response clause cites FR-4, FR-6 and FR-11 — login, reset request, invitation accept — and
+  not FR-1, so this is the register read literally rather than an exception to it. The consequence
+  is recorded where task 71 will meet it: enumeration on this route is bounded by the edge rate
+  limit alone.
+- **OQ-54, a raw token in `audit.outbox_event.payload`.** AD-6 puts the email on the outbox, so the
+  raw value has to reach the worker while NFR-64 requires tokens stored SHA-256. Decided on the
+  grounds that all three token kinds must share one shape: an invitation (FR-11) is a revocable
+  record that must exist when the request commits, so it can never be minted by a consumer. What
+  bounds it was already in place — `esg_app` holds `INSERT` and no `SELECT`, so the tier that mints
+  a token cannot read one back.
+- **OQ-55 did not exist until two closed decisions were set beside each other.** The link lives 24 h
+  (§12.5.6) and the account seven days (OQ-52), so for six days the account exists, cannot be
+  verified, cannot be signed in to, and cannot be re-registered — `register` answers `409`. Nothing
+  in the FR set provides a second link. It surfaced while authoring the failure message, because
+  NFR-79 requires a "what now" and there was none to write. Closed as
+  `POST /auth/verification-email` answering `202` uniformly, recorded against FR-3 rather than as a
+  new FR: a time-limited link that cannot be reissued is not a satisfiable requirement.
+
+**AD-10's single queue needs a router, and finding out why is cheap now and expensive later.** A
+BullMQ worker consumes every job on its queue and cannot subscribe to a name — so two classes each
+carrying `@Processor(OUTBOX_QUEUE)` do not divide the work between them; they compete, each
+receiving jobs meant for the other and failing on them. `queue.constants.ts` had already recorded
+that "the kind of work is the job name", which is right and is not self-executing. There is now
+exactly one `@Processor`, and a module claims a name with `@HandlesJob`, discovered rather than
+listed centrally so the module that owns the work owns its registration. An unclaimed name throws:
+an outbox row exists because a transaction committed a decision, and dropping it silently is the
+loss the outbox exists to prevent.
+
+**`task.md` said task 44 would be "the first real consumer" and that is now wrong** — corrected in
+the row, per the header's own rule that the identifier wins and the row is what is wrong. Sending
+inside the request transaction is the dual write P-8 removes, and its failure is concrete: roll back
+after the send and someone holds a working verification link for an account that does not exist.
+Task 51's row is corrected too — it adds the Mailjet adapter and the remaining categories to a path
+that already exists, rather than establishing the path.
+
+**Two defects found in `architecture.md` §18 while adding rows to it.** `OQ-43` and `OQ-44` are each
+assigned twice, and the `OQ-44`/`OQ-50` rows shared a line so `OQ-50` did not render as a row at
+all. The line break is fixed. The **duplicates are recorded rather than renumbered**: both
+widely-cited members are cited by number from `CLAUDE.md`, `task.md` and the other documents, so a
+table at the head of §18.1 now says which row a bare citation means. New identifiers continue from
+`OQ-51`.
+
+**The OpenAPI gate paid for itself on the first path it has ever had.** `openapi:check` has diffed a
+zero-path document since task 3, and the first emission produced `/auth/register` where the server
+serves `/api/v1/auth/register` — `emit-openapi.ts` created the app and read decorator metadata but
+never called `configureHttpApp`, where `setGlobalPrefix` lives. A generated client would have called
+the wrong URL, from a spec that is generated from source and therefore trusted. A prefix cannot be
+wrong when there is nothing to prefix, which is exactly why the gate existed before the first
+endpoint. It now emits through the same function `bootstrapHttp` uses.
+
+**`ApiObjectResponse` exists for the same class of drift.** The envelope wraps every success (§6.8),
+so a handler annotated `@ApiOkResponse({ type: AccountResponseDto })` would emit a contract saying
+the body *is* that DTO. `allOf` over `ResultObjectDto` with `object` narrowed is how OpenAPI, which
+has no generics, expresses the wrapper — and it is one decorator every later controller reuses
+rather than each one re-deciding.
+
+**One trap cost a debugging cycle and would have cost a second immediately after.** TypeORM's
+`queryRunner.query()` returns a different **shape** per SQL command: `SELECT` and
+`INSERT ... RETURNING` yield rows, while `UPDATE ... RETURNING` yields `[rows, rowCount]`. The
+identical `RETURNING` clause therefore reads as `rows[0].token_hash` after an insert and as
+`undefined` after an update, with no error where it is written — it surfaced as a `TypeError` two
+frames away, on the first `UPDATE ... RETURNING` in the codebase. Normalised at the call site and
+written into `apps/api/CLAUDE.md`, since `markAccountVerified` was the next statement in line for it.
+
+**Secrets are split per entrypoint, and that is least privilege rather than tidiness.**
+`AUTH_PASSWORD_PEPPER` is read by the HTTP tier and `EMAIL_PROVIDER` by the worker; each throws at
+boot without its own. The api hashes passwords and never sends mail; the worker sends mail and never
+hashes. `EMAIL_PROVIDER` deliberately has **no default**: the `log` adapter writes a recipient and a
+verification link into the application log, which NFR-30 forbids of a production pipeline, so a
+deployment that has not chosen a provider fails to start rather than logging personal data for
+months. `emit-openapi.ts` runs in preview mode and instantiates no provider, so the eight hermetic
+gates still need no secrets.
+
+**Verified:** `pnpm gates:clean` green — 113 unit tests, 103 e2e including 27 schema invariants,
+`boundaries:prove`'s 20 rules, and the contract diff. The e2e runs the whole chain rather than the
+two routes: it reads the outbox row **as `esg_worker`**, which is the only role permitted to (the
+grant split is what stands in for RLS there), hashes the token the payload carried and finds exactly
+that row in `identity.verification_token`, drives the consumer with a recording `EmailPort`, parses
+the resulting link, and posts it back. It also asserts the `409` carries resolved wording in the
+negotiated locale with no internal identifier in it, and that the resend endpoint's response is
+byte-identical for a known and an unknown address.
+
+**Post-close review, same day.** Four points from the project owner, two of which changed code:
+
+- **Controllers call services; services call use cases** — now a house rule, a dependency-cruiser
+  rule (`controllers-not-to-use-cases`, the 21st, with its fixture), and applied: `AuthController`
+  depends on `AccountService` alone, which orchestrates the three use cases and owns the
+  registration-locale resolution. Use cases stay framework-free; the service is the Nest-aware seam.
+- **No magic strings in comparisons** — `MODE === 'worker'` appeared in five files; `APP_MODE` in
+  `config/configuration.ts` replaces every occurrence, and `LOG_EMAIL_PROVIDER` does the same for
+  the provider switch. Recorded as a rule in `apps/api/CLAUDE.md`.
+- **Why no TypeORM decorators on the model** — answered, not changed: AD-14 constraint 1 (generated
+  schema reads RLS, FORCE, grants and partition triggers as drift and reverts them), `entities: []`
+  on both DataSources, and `domain-free-of-frameworks` forbidding a `typeorm` import in the layers
+  the model is consumed by.
+- **Why `Date` rather than epoch-ms** — answered, not changed: OQ-50 fixes epoch-ms as the *wire*
+  representation and `timestamptz` as storage, with the conversion at the persistence-to-DTO
+  boundary and a standing rule it never leaks inward. Every DTO already emits epoch-ms integers.
+
+**Also from the review: the `@api/*` import alias, replacing every `../../` climb.** 38 imports
+across 24 files. The prefix is `@api`, not `@` — `tsconfig.boundaries.json` is one resolver shared
+by every workspace and apps/web already owns `@/*` there (admin owns `~/*`); it also keeps
+`@api/contracts/…` visually apart from `@easyesg/contracts`. The real work was the runtime story,
+because tsc never rewrites aliases in emitted JS: `tsc-alias` (**1.9.2**, §12.1) rewrites `dist/`
+in `postbuild` so the image still runs plain `node dist/main.js`; both jest configs restate the
+mapping; `nest start --watch` was verified to work because @nestjs/cli registers tsconfig-paths for
+its spawned process; and the TypeORM CLI and seed runner register nothing, so the files they load
+are lint-banned from the alias. The dangerous surface was dependency-cruiser: an alias it stops
+resolving does not fail the boundary rules — it makes them **silently stop matching**. Two guards
+close that: a 22nd rule, `api-no-unresolvable` (any unresolvable import from `apps/api/src` is an
+error), and the `controllers-not-to-use-cases` fixture now violates *through* the alias, so the
+proof run fails the moment aliased imports stop resolving to paths the rules match on. ESLint bans
+`../../` climbs in the api (gitignore-pattern `../../**`; one level up stays relative — that is a
+within-module reference and aliasing it would hide which module a file belongs to).
+
+**Also from the review: Swagger UI now actually serves.** The generator existed from task 3 —
+the document is the contract, emitted and CI-diffed — but nothing mounted the UI, so there was no
+`/docs` to open. It is mounted in `configureHttpApp` (that file's charter is that everything
+shaping the HTTP surface lives in the one function the e2e suite also runs), serving `/docs` and
+`/docs-json` from the same `buildOpenApiDocument` call the gate uses. `docs.e2e-spec.ts` pins the
+non-obvious half: the served document is **deep-equal to the committed contract**, which is not
+tautological — the gate emits from a `preview` app before `init`, the runtime serves from a booted
+one, and a future Swagger feature reading boot-only state would split them silently. Verified that
+the preview-mode emitter still works with the mount in place and the contract is byte-identical.
+Exposure of `/docs` at the production edge is task 71's routing decision; no config flag was added
+here, per CLAUDE.md's flag-that-defers-a-choice rule.
+
+**Also from the review: the magic-string rule is widened from comparisons to every closed
+vocabulary.** `AccountStatus` was a bare union with `'unverified'`/`'active'` written literally at
+six sites; it is now `ACCOUNT_STATUS`, an `as const` object the union, the domain checks, the
+repository bind parameter and the DTO's contract enum all derive from —
+`enum: Object.values(ACCOUNT_STATUS)` makes declaration order contract order, verified
+byte-identical against the committed spec. Two exceptions are part of the rule, not exemptions from
+it: migration SQL stays literal (frozen history; the CHECK constraint is the database's own copy of
+the vocabulary), and tests keep asserting literals because a spec pinning `'active'` must break if
+the constant's value is ever renamed — a test written in constants never would.
+
+**One defect class found twice before it was fixed structurally.** prove-boundaries writes its
+fixtures into the watched source tree, and the `api-not-to-contracts-package` fixture deliberately
+imports outside apps/api's `rootDir` — so any running `nest start --watch` compiles it and leaves
+stray `index.js`/`.d.ts` emits beside `packages/contracts/src/index.ts`, which fail lint one gates
+run later. It surfaced first from a leftover smoke-test watcher (whose `pkill -f "nest start"`
+missed a process reading `nest.js start`), was answered with a look-for-a-watcher comment, and then
+recurred the same day from the ordinary dev loop — which proved the comment was treating the
+symptom. The fix is structural: `**/__boundary_fixture.ts` is excluded from **both** api tsconfigs
+(exclude arrays replace rather than merge, and nest watches on `tsconfig.build.json`, so the base
+exclusion alone would not have held), while dependency-cruiser walks the cruised roots directly and
+never consults the program — verified by running the full proof with a dev server alive throughout:
+22 rules bite, no strays.
+
+**Two things left open, deliberately.** The RO/EN/RU catalogue entries authored here are the first
+user-facing text in the product and **have not been reviewed by a native speaker** — the parity gate
+proves the three files share a key space, not that any of them reads well. That review belongs before
+the pilot (R-8), not to this task. And `audit.outbox_event` still has no retention rule, which
+§12.5.7 justified while it was a pure work list; OQ-54 changes that, since a dispatched row now holds
+a spent secret. Both are recorded in the register rather than carried as intentions.

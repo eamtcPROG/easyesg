@@ -29,8 +29,28 @@
     // Explicit rather than "every @types package present". Deterministic, and it is what
     // makes jest globals resolve in *.spec.ts — which tsconfig.build.json excludes, so the
     // build alone never type-checks a test.
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    // `@api/*` — this app's alias for anything that would otherwise be a `../../` climb
+    // (house rule, 20 Aug 2026). NOT `@/*`: tsconfig.boundaries.json is one resolver shared by
+    // every workspace, apps/web already owns `@/*` there and apps/admin owns `~/*`, so the key
+    // must be distinct. It also keeps `@api/contracts/…` (the in-process port surface) visually
+    // apart from `@easyesg/contracts` (the wire package). No `baseUrl`, deliberately — paths
+    // entries relative to this file work without it, and baseUrl would additionally make every
+    // bare specifier resolvable from src/, which is a typo amnesty nothing here wants.
+    //
+    // tsc does NOT rewrite these in emitted JS — four other surfaces carry the alias:
+    // `postbuild` (tsc-alias rewrites dist to relative), both jest configs (moduleNameMapper),
+    // tsconfig.boundaries.json (dependency-cruiser), and @nestjs/cli's own tsconfig-paths hook
+    // for `start:dev`. The TypeORM CLI and the seed runner have NO registration, which is why
+    // the files they load are lint-banned from using the alias.
+    "paths": { "@api/*": ["./src/*"] }
   },
   "include": ["src/**/*.ts", "test/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  // `__boundary_fixture.ts` is prove-boundaries' transient violation file, written INTO src and
+  // deleted seconds later. It must never join a tsc program: `nest start --watch` compiles every
+  // program file, and the api-not-to-contracts-package fixture deliberately imports outside
+  // rootDir — a running dev server turns that into stray index.js/.d.ts emits beside
+  // packages/contracts/src/index.ts, which fail lint one gates run later. dependency-cruiser
+  // walks the cruised roots directly and never consults this program, so the proof still sees it.
+  "exclude": ["node_modules", "dist", "**/__boundary_fixture.ts"]
 }

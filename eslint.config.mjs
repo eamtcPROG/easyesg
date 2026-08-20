@@ -204,6 +204,70 @@ export default tseslint.config(
     },
   },
 
+  // ── apps/api only: import climbs and the alias ──────────────────────────────────────────
+  {
+    files: ['apps/api/**/*.ts'],
+    rules: {
+      /**
+       * A relative import that climbs two or more levels uses `@api/*` instead (house rule,
+       * 20 Aug 2026). One level (`../dto/x`) stays relative — that is a within-module
+       * neighbourhood reference and aliasing it would hide which module a file belongs to.
+       * `../../**` is gitignore-style and matches every deeper climb too, since a three-level
+       * climb still starts with `../../`.
+       */
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../../*', '../../**'],
+              message:
+                'Use the @api/* alias for anything above the parent directory — a ../../ climb ' +
+                'breaks on every file move and hides what is being imported.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  /**
+   * The files the TypeORM CLI and the seed runner load — the migration datasource, every
+   * migration, and the seed entrypoints — run under plain ts-node with NO paths registration
+   * (`db:cli` and `config:seed` in apps/api/package.json), so an `@api/*` import anywhere in
+   * their graph fails only at run time, in whichever environment migrates first. This makes it
+   * a lint failure instead. The `../../` ban is restated because a later block REPLACES the
+   * earlier rule config for matching files rather than merging with it.
+   */
+  {
+    files: [
+      'apps/api/src/infrastructure/persistence/migration.data-source.ts',
+      'apps/api/src/infrastructure/persistence/migrations/**/*.ts',
+      'apps/api/src/infrastructure/configuration/seed-configuration*.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@api/*'],
+              message:
+                'This file is loaded by a ts-node CLI (db:cli / config:seed) that registers no ' +
+                'path aliases — @api/* fails there at run time. Keep this graph relative.',
+            },
+            {
+              group: ['../../*', '../../**'],
+              message:
+                'Use the @api/* alias… except that this file cannot (see above). Restructure so ' +
+                'the import is at most one level up, or move the shared code.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // ── apps/admin only: TanStack Router control flow ───────────────────────────────────────
   {
     files: ['apps/admin/**/*.{ts,tsx}'],

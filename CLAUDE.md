@@ -17,7 +17,7 @@ is structure without behaviour.
 
 | Workspace | State |
 | --- | --- |
-| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, a Dockerfile serving both entrypoints (AD-1), the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — seventeen §7 invariants each proving its own rule bites, the tenant transaction (`TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor, rollback in the filter), **RLS enabled and forced on the tenant root** proven as both `esg_app` and the owning role, the **append-only substrate** — `audit.enforce_append_only(regclass)` plus a partitioned `audit.system_audit_log` — **per-field audit capture** by trigger onto `core.field_change`, unbypassable and unforgeable, the **transactional outbox** with its worker dispatcher onto BullMQ, and the **configuration store** — one generic versioned store with a `WITHOUT OVERLAPS` schedule and a ≤5 s replica poll. No `AuthGuard`, no controller but health |
+| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, a Dockerfile serving both entrypoints (AD-1), the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — seventeen §7 invariants each proving its own rule bites, the tenant transaction (`TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor, rollback in the filter), **RLS enabled and forced on the tenant root** proven as both `esg_app` and the owning role, the **append-only substrate** — `audit.enforce_append_only(regclass)` plus a partitioned `audit.system_audit_log` — **per-field audit capture** by trigger onto `core.field_change`, unbypassable and unforgeable, the **transactional outbox** with its worker dispatcher onto BullMQ, the **configuration store** — one generic versioned store with a `WITHOUT OVERLAPS` schedule and a ≤5 s replica poll — and, from task 19, the **first behaviour**: `identity.{account,credential,verification_token}`, `POST /api/v1/auth/{register,verify-email,verification-email}` (FR-1, FR-3), Argon2id behind a port, `EmailPort` with a logging adapter, and `OutboxConsumer` — the queue's single `@Processor`, routing by job name. No `AuthGuard` |
 | `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
 | `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
@@ -36,7 +36,7 @@ each carry a Dockerfile, built with the repository root as context. Not started:
 and the `renderer` image (task 44).
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
-`pnpm boundaries:prove` (20 rules, each with a fixture proving it rejects a real violation),
+`pnpm boundaries:prove` (22 rules, each with a fixture proving it rejects a real violation),
 `pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`. **CI runs exactly these**
 (`.github/workflows/gates.yml`, two parallel jobs split on whether Docker is needed) — adding a gate
 means adding a root script and one line, never workflow-only logic.

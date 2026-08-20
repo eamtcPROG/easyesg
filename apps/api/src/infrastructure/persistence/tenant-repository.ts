@@ -1,6 +1,6 @@
 import { EntityManager, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
-import { DomainError } from '../../app/filters/domain.error';
-import { ProblemType, ProblemTypeSlug } from '../../app/filters/problem-types';
+import { DomainError } from '@api/app/filters/domain.error';
+import { ProblemType, ProblemTypeSlug } from '@api/app/filters/problem-types';
 import { requestContext } from './request-context';
 
 export class TenantContextMissingError extends DomainError {

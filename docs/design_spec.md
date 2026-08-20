@@ -321,9 +321,9 @@ Three limits on what follows must be stated plainly, because the alternative is 
 - **Entry points:** a time-limited verification link; a single-use, time-limited reset link; the reset-request route from S-01.
 - **Layout and regions:** single column, centred, one primary action. No further per-screen layout is specified in the source.
 - **Content and data shown:** the address being verified or reset; the password policy; for a reset request, a response identical whether or not the address is registered (UC-08).
-- **Controls and actions:** request a reset; set a new password; confirm verification.
+- **Controls and actions:** request a reset; set a new password; confirm verification; **request a new confirmation link** (added 20 Aug 2026, `architecture.md` OQ-55 — the link expires in 24 h while the unverified account lives 7 days, so this is the state's only exit). Like the reset request, its response is identical whether or not the address is registered.
 - **States:** loading — initial; success (account active, next step offered); error — recoverable (link expired, link already consumed, password fails policy).
-- **Validation behaviour:** password policy enforced on entry with the three-part message formula (§8.2). Account enumeration is prevented by an invariant response. Consuming a reset link invalidates all existing sessions for the account (FR-6), which the screen must state as a consequence before it happens (P5).
+- **Validation behaviour:** password policy enforced on entry with the three-part message formula (§8.2). **The policy is stated as of 20 Aug 2026** — ≥ 8 and ≤ 128 characters requiring a lowercase letter, an uppercase letter, a digit and one further character (`architecture.md` §12.5.6, OQ-51); it is displayed before entry rather than only on failure, and **UX-108** binds here as it does on S-01, so paste and password-manager autofill must work on every field. Account enumeration is prevented by an invariant response. Consuming a reset link invalidates all existing sessions for the account (FR-6), which the screen must state as a consequence before it happens (P5).
 - **Exits:** on verification, the founding-organization flow (S-04) or a pending invitation (S-03) becomes available; on reset completion, S-01.
 - **Use cases:** UC-03, UC-08, UC-09.
 - **FRs:** FR-3, FR-6.

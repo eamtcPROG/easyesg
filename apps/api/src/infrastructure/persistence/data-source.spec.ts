@@ -1,5 +1,5 @@
 import type { DataSourceOptions } from 'typeorm';
-import type { AppConfig } from '../../config/configuration';
+import type { AppConfig } from '@api/config/configuration';
 import {
   BILLING_DATA_SOURCE,
   CORE_DATA_SOURCE,
@@ -13,6 +13,12 @@ const config: AppConfig = {
   billingEnabled: true,
   database: { host: 'db', port: 5432, name: 'esg', user: 'esg_app', password: 'secret' },
   redis: { host: 'redis', port: 6379 },
+  // Task 19's settings. None of them reaches a DataSource, which is the point of listing them:
+  // AppConfig is one shape and this fixture is the whole of it, so a key added for one subsystem
+  // cannot quietly become a connection option for another.
+  auth: { passwordPepper: 'not-a-real-pepper' },
+  email: { provider: 'log' },
+  web: { publicUrl: 'http://localhost:3100' },
 };
 
 /**

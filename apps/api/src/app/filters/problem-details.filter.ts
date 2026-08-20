@@ -1,7 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { SOURCE_LOCALE, type Locale } from '@easyesg/i18n';
-import { requestContext } from '../../infrastructure/persistence/request-context';
+import { requestContext } from '@api/infrastructure/persistence/request-context';
 import { translate } from '../messages/catalogue';
 import { DomainError } from './domain.error';
 import { ProblemDetails, ProblemType, ProblemTypeSlug, problemTypeUri } from './problem-types';

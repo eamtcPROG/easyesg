@@ -6,6 +6,15 @@
 #
 # Each fixture is written into the path its rule guards, cruised, then removed. A rule
 # that fails to reject its fixture fails this script.
+#
+# Fixtures land inside WATCHED source trees. That bit twice on 20 Aug 2026: a running
+# `nest start --watch` compiled the api-not-to-contracts-package fixture — which deliberately
+# reaches outside apps/api's rootDir — and left stray index.js/.d.ts emits beside
+# packages/contracts/src/index.ts, failing lint one gates run later. The structural fix is that
+# `**/__boundary_fixture.ts` is excluded from BOTH apps/api tsconfigs (exclude arrays replace,
+# not merge — and nest watches on tsconfig.build.json), so no tsc program ever contains a
+# fixture; this script walks the cruised roots directly, so the proof still sees them. Keep the
+# filename if you add a fixture — the exclusion matches on it.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
@@ -58,6 +67,19 @@ prove billing-not-to-core \
   "$API/modules/billing/order/__boundary_fixture.ts" \
   "import { PeriodModule } from '../../core/period/period.module';
 export const violation = PeriodModule;"
+
+# Deliberately violates THROUGH the @api/* alias rather than relatively: this fixture is also
+# the proof that an aliased import still resolves to a path the boundary rules match on. If
+# tsconfig.boundaries.json loses the @api mapping, this fails — and so does api-no-unresolvable.
+prove controllers-not-to-use-cases \
+  "$API/modules/identity/account/controllers/__boundary_fixture.ts" \
+  "import { VerifyEmail } from '@api/modules/identity/account/use-cases/verify-email.use-case';
+export const violation = VerifyEmail;"
+
+prove api-no-unresolvable \
+  "$API/app/constants/__boundary_fixture.ts" \
+  "import { nothing } from '@api/no-such-module';
+export const violation = nothing;"
 
 prove cross-cutting-not-to-modules \
   "$API/app/__boundary_fixture.ts" \

@@ -32,6 +32,30 @@ module.exports = {
       to: { path: '^apps/api/src/modules/core' },
     },
     {
+      name: 'api-no-unresolvable',
+      comment:
+        'The @api/* alias resolves through tsconfig.boundaries.json, and an alias this config ' +
+        'stopped resolving would not fail the boundary rules — it would make them silently stop ' +
+        'matching, since a rule\'s to.path never sees a module that resolved to nothing. This ' +
+        'converts that silent pass into an error on every import. Scoped to apps/api because the ' +
+        'browser workspaces import assets (css, svg) whose resolution is the bundler\'s business.',
+      severity: 'error',
+      from: { path: '^apps/api/src' },
+      to: { couldNotResolve: true },
+    },
+    {
+      name: 'controllers-not-to-use-cases',
+      comment:
+        'House rule (20 Aug 2026, task 19 review): controllers call services, services call use ' +
+        'cases. A controller reaching into use-cases/ collapses the seam where orchestration and ' +
+        'ambient-context resolution live, and the drift is one convenient import away every time. ' +
+        'The same rule covers domain/: a controller holding domain logic is the same collapse one ' +
+        'layer deeper.',
+      severity: 'error',
+      from: { path: '^apps/api/src/modules/[^/]+/[^/]+/controllers/' },
+      to: { path: '^apps/api/src/modules/[^/]+/[^/]+/(use-cases|domain)/' },
+    },
+    {
       name: 'cross-cutting-not-to-modules',
       comment:
         'app/ is cross-cutting only. Code there that reaches into a domain has stopped being ' +
