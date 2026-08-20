@@ -553,9 +553,65 @@ Verified: volume destroyed, six migrations applied from empty, the newest revert
 77 e2e tests including the crash-window pair, 27 schema invariants with every rule proving it bites,
 all nine gates green.
 
+## Task 16 — Configuration store · 2026-08-20
+
+**§7.9's stated constraint cannot go where §7.9 puts it, and finding that out shaped the schema.**
+Both §7.9 and §12.3 specify `PRIMARY KEY (scope, validity WITHOUT OVERLAPS)` for effective-dated
+configuration — but AD-4 also keeps superseded versions, and two versions of one scope necessarily
+cover overlapping dates, so every supersession would violate it. The store is therefore two tables:
+`config.entry_version` holds every version and no validity at all, and `config.entry_schedule` holds
+only what is in force and carries that primary key. The split is not a workaround — the schedule
+**is** AD-4's pointer, and the constraint lands on the table it was describing. AD-4 and §7.9 both
+record it.
+
+`btree_gist`, installed in the baseline four tasks ago on §12.3's word, is what makes the `=` half
+of that key indexable. Verified on 18.4: overlapping ranges refused, adjacent accepted, scopes
+independent, unbounded upper bound allowed — which is what a non-effective-dated artefact uses.
+
+Decisions batched first:
+
+- **One generic store, artefacts as data.** AD-4 says "a single configuration store subsystem holds
+  every artefact", and DR-3's point — restated as P-2 and Open/Closed in CLAUDE.md — is that adding
+  an element needs no code change. Twelve typed tables would mean twelve publish paths and twelve
+  reverts to keep identical, and the failure is that the eleventh differs subtly and nobody finds
+  out until a revert is needed under pressure. Cost accepted: payload shape is validated in
+  application code, the same trade AD-3 took for the disclosure store.
+- **The version poll ships now**, because "takes effect with no redeploy" is a claim about
+  propagation. Redis pub/sub is deliberately absent: AD-4 calls it a latency optimisation over an
+  authority that already works.
+
+**Three guarantees are in the database rather than in the publish service**, on the grounds that a
+service can be bypassed by the next query someone writes: published versions are immutable by
+trigger (only `published → superseded` is permitted, and nothing else about the row may move); one
+date holds one version by primary key; and the store version is bumped by a trigger on the schedule,
+because a publish that forgot to bump it is a change no replica ever notices — the exact failure
+`LISTEN/NOTIFY` was rejected for.
+
+Three things found by running:
+
+- **A statement-level trigger fires even when the statement matches no rows.** The first pointer
+  flip did an UPDATE that might match nothing and then an INSERT — so a first publication bumped the
+  store version twice, invalidating every replica's cache for a change that had not happened. The
+  publisher now checks for the slot first.
+- **The pointer flip needed no DELETE grant, and originally took one.** Deleting and re-inserting
+  the schedule row failed with `permission denied` — correctly, since an application role able to
+  delete a slot could un-publish an artefact and nothing in AD-4 asks for that. Flipping
+  `version_id` in place is both what AD-4 literally describes and what the grants allow.
+- **The delete-immutability test was passing for the wrong reason.** `esg_app` has no DELETE grant,
+  so it never reached the trigger — the same layering as task 13. It now asserts both: privilege
+  denies the application, the trigger denies the owner.
+
+`config/seed` exists with its first artefact: locale registration, which AD-4 lists as store data
+(FR-63, NFR-25) — *which* locales are offered is configuration, while the catalogues themselves are
+committed (OQ-43). The loader is idempotent **by comparison rather than assertion**, so a redeploy
+publishes nothing and an operator's later edit survives one. Payloads compare as canonical JSON, so
+reformatting a seed file is not a configuration change.
+
+Verified: volume destroyed, seven migrations applied from empty, the newest reverted and re-applied,
+the seed run twice with the second a no-op, 89 e2e tests, 27 schema invariants, all nine gates green.
+
 ---
 
-*Next up: task 16 — the configuration store. DR-3 and AD-4 make taxonomy, thresholds, factor sets,
-rules, plans and notification behaviour versioned data changed without redeploy; §7.9 requires every
-effective-dated config table to carry `daterange` with `PRIMARY KEY (..., validity WITHOUT
-OVERLAPS)`, which is what `btree_gist` was installed in the baseline for.*
+*Next up: task 17 — the CI gate workflow. All nine root scripts on every push, with the ephemeral
+per-pipeline stack (§12.5) supplying the genuinely empty database that `migrations:check` needs and
+a developer's persistent volume cannot give.*

@@ -17,7 +17,7 @@ is structure without behaviour.
 
 | Workspace | State |
 | --- | --- |
-| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — seventeen §7 invariants each proving its own rule bites, the tenant transaction (`TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor, rollback in the filter), **RLS enabled and forced on the tenant root** proven as both `esg_app` and the owning role, the **append-only substrate** — `audit.enforce_append_only(regclass)` plus a partitioned `audit.system_audit_log` — **per-field audit capture** by trigger onto `core.field_change`, unbypassable and unforgeable, and the **transactional outbox** with its worker dispatcher onto BullMQ. No `AuthGuard`, no controller but health |
+| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — seventeen §7 invariants each proving its own rule bites, the tenant transaction (`TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor, rollback in the filter), **RLS enabled and forced on the tenant root** proven as both `esg_app` and the owning role, the **append-only substrate** — `audit.enforce_append_only(regclass)` plus a partitioned `audit.system_audit_log` — **per-field audit capture** by trigger onto `core.field_change`, unbypassable and unforgeable, the **transactional outbox** with its worker dispatcher onto BullMQ, and the **configuration store** — one generic versioned store with a `WITHOUT OVERLAPS` schedule and a ≤5 s replica poll. No `AuthGuard`, no controller but health |
 | `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
 | `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
@@ -26,8 +26,9 @@ is structure without behaviour.
 | `packages/validation` | Empty. The interpreter is shared by `api` and `web` (§9.8) |
 
 `infra/{compose,postgres}` holds the dev stack — Postgres and Redis, started with `pnpm dev:up`.
-Not started: `packages/{vsme,xlsx-patch}`, `config/`, `infra/{caddy,ci,ansible,tofu}`,
-`docs/runbooks/`.
+`config/seed/` holds the configuration store's starting state, applied idempotently by
+`pnpm --filter @easyesg/api config:seed`. Not started: `packages/{vsme,xlsx-patch}`,
+`config/efrag/`, `infra/{caddy,ci,ansible,tofu}`, `docs/runbooks/`.
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (20 rules, each with a fixture proving it rejects a real violation),

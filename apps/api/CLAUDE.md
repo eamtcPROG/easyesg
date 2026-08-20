@@ -24,7 +24,8 @@ collapse. `audit.system_audit_log` is the first append-only table: partitioned, 
 the application, and trigger-guarded against the owner. `core.field_change` carries per-field audit,
 written only by a `SECURITY DEFINER` trigger — the application can read its trail and holds no
 privilege to author, alter or erase one. `audit.outbox_event` and its worker dispatcher are wired
-onto BullMQ; `MODE=worker` boots, polls and dispatches.
+onto BullMQ; `MODE=worker` boots, polls and dispatches. The configuration store publishes, reverts
+and propagates by version poll.
 
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any table beyond `core.organization`, any controller other
@@ -203,6 +204,26 @@ Three things about it that are load-bearing:
 - **The worker runs as `esg_worker`, not `esg_app`.** Set `DB_WORKER_USER`/`DB_WORKER_PASSWORD`
   locally; production containers just supply their own `DB_USER`. Running the worker as `esg_app`
   fails on the first poll, because `esg_app` may only INSERT into the outbox.
+
+### Adding a configuration artefact
+
+No table and no code. Add a `config/seed/<kind>.<scope>.json` file and read it with
+`ConfigurationStore.get(kind, scope, onDate)` — that is what DR-3 and Open/Closed mean here.
+
+- **Two tables, and the split matters.** `config.entry_version` keeps every version, immutable once
+  published; `config.entry_schedule` keeps only what is in force and carries
+  `PRIMARY KEY (kind, scope, validity WITHOUT OVERLAPS)`. §7.9 states that key for "every
+  effective-dated config table", but it cannot sit on a table holding superseded versions — they
+  necessarily overlap.
+- **Publish flips `version_id` on the slot; revert flips it back.** Neither deletes anything, which
+  is why revert is safe under pressure and why the schedule needs no DELETE grant.
+- **The store version is bumped by a trigger on the schedule**, not by the publishing code. A
+  publish that forgot to bump it is a change no replica ever notices.
+- **A statement-level trigger fires even for a zero-row statement.** An UPDATE that matches nothing
+  still bumps the version, so check the slot exists before flipping it. This has already cost one
+  spurious cache invalidation per first publish.
+- Dates are **calendar dates** (NFR-34). Which factor set applies on 1 January must not change with
+  the reader's timezone.
 
 ### Adding an audited table
 

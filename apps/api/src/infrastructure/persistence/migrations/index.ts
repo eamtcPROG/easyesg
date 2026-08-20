@@ -4,6 +4,7 @@ import { OrganizationRls1787184000000 } from './1787184000000-organization-rls';
 import { AppendOnlySubstrate1787227200000 } from './1787227200000-append-only-substrate';
 import { FieldChangeAudit1787248800000 } from './1787248800000-field-change-audit';
 import { OutboxEvent1787263200000 } from './1787263200000-outbox-event';
+import { ConfigurationStore1787270400000 } from './1787270400000-configuration-store';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -26,4 +27,5 @@ export const migrations = [
   AppendOnlySubstrate1787227200000,
   FieldChangeAudit1787248800000,
   OutboxEvent1787263200000,
+  ConfigurationStore1787270400000,
 ];
