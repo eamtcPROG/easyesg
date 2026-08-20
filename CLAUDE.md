@@ -28,7 +28,9 @@ is structure without behaviour.
 `infra/{compose,postgres}` holds the dev stack — Postgres and Redis, started with `pnpm dev:up`.
 `config/seed/` holds the configuration store's starting state, applied idempotently by
 `pnpm --filter @easyesg/api config:seed`. `.github/workflows/gates.yml` runs four jobs on every
-push — two gate jobs in parallel, plus `BILLING_ENABLED=false` and images. `apps/{api,web,admin}`
+push to `dev`/`main` (docs-only pushes skipped) and every PR — three gate jobs in parallel
+(`hermetic`, `database`, `BILLING_ENABLED=false`), then images behind all three, buildx-cached so
+only the image whose inputs changed pays a real build. `apps/{api,web,admin}`
 each carry a Dockerfile, built with the repository root as context. Not started:
 `packages/{vsme,xlsx-patch}`, `config/efrag/`, `infra/{caddy,ansible,tofu}`, `docs/runbooks/`,
 and the `renderer` image (task 44).

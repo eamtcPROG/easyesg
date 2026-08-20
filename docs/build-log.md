@@ -748,3 +748,55 @@ verification that could not happen on a 0.9 GB Docker VM.
 *Phase 1 is complete. Next up: task 19 — registration and verification API, the first task with a
 controller behind it, and the first use of the mail port that task 49's notification system later
 absorbs rather than duplicates.*
+
+## CI mechanics hardening, from the magnamed comparison · 2026-08-20
+
+Not a numbered task. Prompted by comparing `gates.yml` against magnamed's `ci.yml`, which is a
+milestone further along (deployed, publishing to GHCR). The comparison split three ways, and only
+the first third was adopted:
+
+**Adopted — mechanics, not gates**, so the "a gate is a root script plus one line" rule is
+untouched:
+
+- **`timeout-minutes` on every job** (15/15/15/30). GitHub's default is 360 minutes; one wedged
+  `--wait` or curl on a metered private repository burns six hours. The values are ~5x measured
+  green durations.
+- **Buildx with the GHA layer cache** in the images job — `mode=max` so the builder stages (the
+  pnpm installs) are cached, separate scopes per image, `load: true` because the job runs the
+  images it builds. magnamed measured the same change at 32 s warm against 5m57 cold.
+- **Polls instead of fixed sleeps** before the serve assertions: `timeout N bash -c 'until curl
+  …'`. A sleep is too long on the common path and too short on a slow runner, at the same time.
+  The worker keeps a fixed window — "has not crashed" cannot be polled, a crash-looping container
+  reads `running` at any instant.
+- **`needs: [hermetic, database, billing-off]`** on images. The header's own rule — no artefact
+  from a commit whose gates are red — listed two of the three gates; billing-off is a gate.
+- **Triggers**: push filtered to `dev`/`main` with `paths-ignore` for `docs/**`, `design/**`,
+  `**/*.md` (push only — a skipped required PR check never reports and blocks the PR forever,
+  magnamed's own recorded caveat); `pull_request` deliberately unfiltered, unlike magnamed's,
+  because PRs here may target `dev`; `workflow_dispatch` added.
+- Action majors verified per action, not assumed: `docker/setup-buildx-action@v4` and
+  `docker/build-push-action@v7` are current and declare `runs.using: node24` (checked 20 Aug 2026).
+
+**Deliberately not adopted**, because the constraint that produced each does not exist here yet:
+
+- **Service containers** instead of Compose — disqualifying, not premature: `init.sh`'s four-role
+  split (§7.6) is part of what the e2e suite proves, and a `services:` block cannot run it without
+  a second copy of the bootstrap that no developer executes. Already recorded in §12.5.4.
+- **The e2e-at-PR-boundary tier.** magnamed's biggest saving assumes a PR flow; under this repo's
+  direct-push-to-dev flow it would mean e2e never runs at all.
+- **GHCR publishing** — task 72's work. magnamed's `docker` job is the model to take wholesale
+  then: the `org.opencontainers.image.source` label trap, sha-plus-moving tags, the
+  `!cancelled()` skipped-needs handling.
+- **Chained gate jobs.** Same measured fact in both files — a green run bills identical minutes
+  either way — weighed oppositely: magnamed stops a red lint at ~90 s of spend, this repo keeps
+  green wall-clock at 1m50 instead of 2m51. Revisit if red runs become common.
+
+**One question answered along the way**: a push touching only `apps/admin` does run the images job
+and does "build" all three images — there is no per-image path conditioning, on purpose. Restating
+the workspace dependency graph (lockfile → everything, `packages/ui` → web and admin) as YAML path
+filters would drift from the real graph silently; the layer cache is the non-drifting form of the
+same optimisation. The Dockerfiles already copy lockfile-and-manifests first, so an admin-only
+change replays api and web entirely from cache and pays one real build, not three.
+
+Verified: YAML parses, `actionlint` clean. The change itself can only be proven by the next push —
+a workflow's first real run is its test.
