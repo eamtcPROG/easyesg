@@ -73,7 +73,8 @@ const columnsOfType = (x: Executor, types: string[]) =>
        FROM pg_attribute a
        JOIN pg_class     c ON c.oid = a.attrelid
        JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE c.relkind = 'r'
+      WHERE c.relkind IN ('r', 'p')
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
         AND a.attnum > 0 AND NOT a.attisdropped
         AND n.nspname = ANY($1)
         AND format_type(a.atttypid, a.atttypmod) = ANY($2)
@@ -94,7 +95,8 @@ const unpairedLegalDates = (x: Executor) =>
        FROM pg_attribute a
        JOIN pg_class     c ON c.oid = a.attrelid
        JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE c.relkind = 'r'
+      WHERE c.relkind IN ('r', 'p')
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
         AND a.attnum > 0 AND NOT a.attisdropped
         AND n.nspname = ANY($1)
         AND format_type(a.atttypid, a.atttypmod) = 'date'
@@ -120,6 +122,12 @@ const unpairedLegalDates = (x: Executor) =>
  * `ENABLED` and `FORCED` are asserted together. Forced is the half `esg_migrator`'s ownership makes
  * necessary and the half that is invisible when missing — without it the policies are inert for the
  * owner and every application-role probe still passes.
+ *
+ * **Both `r` and `p` relkinds, and partitions are checked individually** — corrected 20 Aug 2026,
+ * when task 13 introduced the first partitioned table. A partitioned parent is relkind `p`, which
+ * the original single-relkind rule did not see at all; and RLS does **not** propagate from a parent
+ * to its partitions, so a partition reads `relrowsecurity = false` and any direct grant on it would
+ * expose every tenant's rows. Verified against PostgreSQL 18 rather than assumed.
  */
 const tablesMissingRowLevelSecurity = (x: Executor) =>
   x.query<{ location: string; enabled: boolean; forced: boolean }[]>(
@@ -128,7 +136,7 @@ const tablesMissingRowLevelSecurity = (x: Executor) =>
             c.relforcerowsecurity      AS forced
        FROM pg_class     c
        JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE c.relkind = 'r'
+      WHERE c.relkind IN ('r', 'p')
         AND n.nspname = ANY($1)
         AND (n.nspname = 'core'
              OR EXISTS (SELECT 1 FROM pg_attribute a
@@ -138,6 +146,88 @@ const tablesMissingRowLevelSecurity = (x: Executor) =>
         AND NOT (c.relrowsecurity AND c.relforcerowsecurity)
       ORDER BY 1`,
     [DOMAIN_SCHEMAS],
+  );
+
+/**
+ * DR-6 and NFR-33, per table rather than per schema.
+ *
+ * `audit` is **not** uniformly append-only, and assuming it is would be wrong in a way that only
+ * shows up in task 15: §7.10 puts `outbox_event` and `inbound_event` in this schema, and AD-6's
+ * dispatcher has to mark an outbox row dispatched — an UPDATE. So the schema keeps §7.7's
+ * default-deny posture and each table declares itself, with the lists below forcing a decision
+ * whenever a new audit table appears rather than letting it default to unprotected.
+ */
+const APPEND_ONLY_TABLES = ['audit.system_audit_log'];
+
+/** Named, with the reason, so task 15 does not have to rediscover why these are exempt. */
+const MUTABLE_AUDIT_TABLES = ['audit.outbox_event', 'audit.inbound_event'];
+
+/**
+ * An append-only table is protected only if **all** of it is: the parent carries both triggers, and
+ * so does every partition. The row trigger PostgreSQL clones onto partitions by itself; the
+ * statement-level TRUNCATE trigger it does not — verified — which means a partition added by a
+ * later task is a hole unless `audit.enforce_append_only` is re-run over it. This is the check that
+ * says so.
+ */
+const unprotectedAppendOnlyRelations = (x: Executor) =>
+  x.query<{ location: string; missing: string }[]>(
+    `WITH protected AS (
+       SELECT c.oid, n.nspname || '.' || c.relname AS location, c.relkind
+         FROM pg_class     c
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname || '.' || c.relname = ANY($1)
+        UNION ALL
+       SELECT p.oid, np.nspname || '.' || p.relname, p.relkind
+         FROM pg_inherits  i
+         JOIN pg_class     p  ON p.oid = i.inhrelid
+         JOIN pg_namespace np ON np.oid = p.relnamespace
+         JOIN pg_class     pa ON pa.oid = i.inhparent
+         JOIN pg_namespace na ON na.oid = pa.relnamespace
+        WHERE na.nspname || '.' || pa.relname = ANY($1)
+     )
+     SELECT location,
+            CASE WHEN NOT EXISTS (SELECT 1 FROM pg_trigger t
+                                   WHERE t.tgrelid = protected.oid AND NOT t.tgisinternal
+                                     AND t.tgname = 'no_truncate')
+                 THEN 'no_truncate' ELSE 'row trigger' END AS missing
+       FROM protected
+      WHERE NOT EXISTS (SELECT 1 FROM pg_trigger t
+                         WHERE t.tgrelid = protected.oid AND t.tgname = 'no_truncate')
+         OR NOT EXISTS (SELECT 1 FROM pg_trigger t
+                         WHERE t.tgrelid = protected.oid AND t.tgname = 'no_mutate')
+      ORDER BY 1`,
+    [APPEND_ONLY_TABLES],
+  );
+
+/** No application role may hold a privilege that could rewrite history (§7.7's real subject). */
+const mutationGrantsOnAppendOnlyTables = (x: Executor) =>
+  x.query<{ location: string; grantee: string; privilege: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location, g.grantee, g.privilege_type AS privilege
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       CROSS JOIN LATERAL aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+       JOIN LATERAL (SELECT pg_get_userbyid(a.grantee) AS grantee,
+                            a.privilege_type          AS privilege_type) g ON true
+      WHERE n.nspname || '.' || c.relname = ANY($1)
+        AND g.grantee IN ('esg_app', 'esg_worker')
+        AND g.privilege_type IN ('UPDATE', 'DELETE', 'TRUNCATE')
+      ORDER BY 1, 2, 3`,
+    [APPEND_ONLY_TABLES],
+  );
+
+/** A new audit table must be classified, not silently unprotected. */
+const unclassifiedAuditTables = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location
+       FROM pg_class     c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'audit'
+        AND c.relkind IN ('r', 'p')
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
+        AND NOT (n.nspname || '.' || c.relname = ANY($1))
+        AND NOT (n.nspname || '.' || c.relname = ANY($2))
+      ORDER BY 1`,
+    [APPEND_ONLY_TABLES, MUTABLE_AUDIT_TABLES],
   );
 
 describe('schema invariants (§7)', () => {
@@ -311,6 +401,49 @@ describe('schema invariants (§7)', () => {
     });
   });
 
+  describe('append-only tables are protected end to end (DR-6, NFR-33)', () => {
+    it('holds — parent and every partition carry both triggers', async () => {
+      expect(await unprotectedAppendOnlyRelations(db)).toEqual([]);
+    });
+
+    it('holds — no application role can UPDATE, DELETE or TRUNCATE them', async () => {
+      expect(await mutationGrantsOnAppendOnlyTables(db)).toEqual([]);
+    });
+
+    // The hole partitioning reopens. §7.7 calls TRUNCATE "the fastest way to lose a ledger" and
+    // answers it with a statement trigger — which PostgreSQL does not clone onto partitions.
+    it('catches a partition added without its TRUNCATE trigger', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE audit.system_audit_log_2099 PARTITION OF audit.system_audit_log
+           FOR VALUES FROM ('2099-01-01 00:00:00+00') TO ('2100-01-01 00:00:00+00')`,
+        unprotectedAppendOnlyRelations,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['audit.system_audit_log_2099']);
+    });
+
+    it('catches a grant that would let the application rewrite history', async () => {
+      const caught = await provingViolation(
+        `GRANT UPDATE ON audit.system_audit_log TO esg_app`,
+        mutationGrantsOnAppendOnlyTables,
+      );
+      expect(caught).toEqual([
+        { location: 'audit.system_audit_log', grantee: 'esg_app', privilege: 'UPDATE' },
+      ]);
+    });
+
+    it('catches a new audit table that declared itself neither append-only nor mutable', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE audit.__probe_unclassified (id uuid PRIMARY KEY)`,
+        unclassifiedAuditTables,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['audit.__probe_unclassified']);
+    });
+
+    it('holds — every audit table today is classified', async () => {
+      expect(await unclassifiedAuditTables(db)).toEqual([]);
+    });
+  });
+
   /**
    * Proves the checks above are looking at a migrated database rather than an empty one. Without
    * it, a connection to the wrong database satisfies every "holds" assertion by finding nothing at
@@ -320,7 +453,7 @@ describe('schema invariants (§7)', () => {
     const [{ count }] = await db.query<{ count: string }[]>(
       `SELECT count(*)::text AS count FROM pg_class c
          JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE c.relkind = 'r' AND n.nspname = ANY($1)`,
+        WHERE c.relkind IN ('r', 'p') AND n.nspname = ANY($1)`,
       [DOMAIN_SCHEMAS],
     );
     expect(Number(count)).toBeGreaterThan(0);

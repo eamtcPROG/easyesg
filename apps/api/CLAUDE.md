@@ -20,7 +20,8 @@ rollback in `ProblemDetailsFilter`.
 
 RLS is `ENABLED` and `FORCED` on `core.organization`, proven isolated as both `esg_app` and the
 owning role, with a test that drops `FORCE` in a rolled-back transaction and watches isolation
-collapse.
+collapse. `audit.system_audit_log` is the first append-only table: partitioned, privilege-denied to
+the application, and trigger-guarded against the owner.
 
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any table beyond `core.organization`, any controller other
@@ -160,6 +161,32 @@ Four things in the **same** migration, or `pnpm migrations:check` fails the buil
 **A backfill run by `esg_migrator` sees zero rows** unless it sets `app.current_org` per
 organization — `FORCE` applies to the owner too. A data migration that appears to update nothing is
 this, not an empty table.
+
+### Adding an append-only table
+
+`CALL audit.enforce_append_only('audit.<table>')` **after** creating the table and all its
+partitions. It does four things, and omitting any one is silent: revokes UPDATE/DELETE/TRUNCATE,
+creates the row trigger, creates the statement TRUNCATE trigger, and seals every partition.
+
+**Partitions do not inherit what you think they inherit.** Verified against PostgreSQL 18:
+
+| | Propagates to partitions? |
+| --- | --- |
+| `BEFORE UPDATE OR DELETE ... FOR EACH ROW` trigger | **Yes** — PostgreSQL clones it |
+| `BEFORE TRUNCATE ... FOR EACH STATEMENT` trigger | **No** — `TRUNCATE <partition>` succeeds |
+| Row-level security | **No** — the partition reads `relrowsecurity = false` |
+
+So each partition gets its own TRUNCATE trigger, and RLS `ENABLED` + `FORCED` with **no policy** —
+deny-all on direct access, while parent queries keep using the parent's policies. Grant on the
+parent only; a routed `INSERT` is privilege-checked there, so the application never needs to name a
+partition. Add a partition in a later task and you must re-run the procedure — the invariant gate
+fails the build otherwise.
+
+**Three layers deny, in this order**, and only the first two are visible in a normal test: privilege
+(`esg_app` holds `INSERT, SELECT`), then RLS (no UPDATE/DELETE policy, so even the owner matches
+zero rows and gets `UPDATE 0` rather than an error), then the triggers. To see a trigger fire you
+must lift the first two — which `append-only.e2e-spec.ts` does inside a rolled-back transaction,
+because a trigger that never fires looks exactly like one that was never created.
 
 ## Persistence — AD-14's five constraints
 

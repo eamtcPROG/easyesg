@@ -987,6 +987,37 @@ CREATE TRIGGER no_truncate BEFORE TRUNCATE ON audit.ledger_entry
   FOR EACH STATEMENT EXECUTE FUNCTION audit_immutable();
 ```
 
+**Two things partitioning changes, added 20 Aug 2026 (task 13) and verified against PostgreSQL 18
+rather than assumed.** §15 requires "a partitioning plan gate for every append-only store", and
+§12.5.7's 24-month retention on system audit and metering is only executable by `DETACH PARTITION`
++ `DROP TABLE`, since `DELETE` is denied — so these tables are partitioned, and partitioning
+reopens two doors the design above closes:
+
+- **A statement-level `TRUNCATE` trigger on a partitioned parent does not propagate to its
+  partitions.** `TRUNCATE audit.system_audit_log_2026` succeeds where `TRUNCATE` on the parent is
+  refused — precisely the hole the paragraph above calls the fastest way to lose a ledger, reopened
+  by a storage decision. The row trigger *is* cloned onto partitions, so `UPDATE` and `DELETE` are
+  covered either way.
+- **RLS does not propagate either.** A partition reads `relrowsecurity = false`, and any role
+  holding a direct grant on it sees every tenant's rows.
+
+Both are closed by `audit.enforce_append_only(regclass)`, which seals each partition: its own
+`TRUNCATE` trigger, and RLS `ENABLED` + `FORCED` with **no policy**, which denies direct access
+outright while queries through the parent continue to use the parent's policies. The application is
+granted on the parent only — a routed `INSERT` is privilege-checked against the parent — so a
+partition is a storage detail the application can never name. The schema-invariant gate asserts all
+of this per partition, because the next one is added by a task that will not be reading this
+paragraph.
+
+**And a fourth thing, about what is actually doing the work.** The three layers deny in order:
+privilege first (`esg_app` holds `INSERT, SELECT` and nothing else), then RLS (no `UPDATE` or
+`DELETE` policy exists, so even the owner matches zero rows and sees `UPDATE 0` rather than an
+error), and only then the triggers. The triggers are therefore the last line rather than the first,
+and become operative exactly in the case this section names — a `GRANT ALL` that should not have
+happened. That is why the test suite lifts the first two layers inside a rolled-back transaction to
+prove the trigger is live rather than merely present: a trigger that never fires is
+indistinguishable from one that was never created.
+
 Three things this deliberately does not leave implicit. The blanket `REVOKE ... FROM PUBLIC` and the `ALTER DEFAULT PRIVILEGES` line are the load-bearing statements, not the `GRANT`: revoking `UPDATE, DELETE` from a role that was only ever granted `INSERT, SELECT` is a no-op, and the realistic failure mode is an ORM bootstrap script having issued `GRANT ALL ON ALL TABLES IN SCHEMA audit`. `TRUNCATE` needs its own statement-level trigger — the one privilege a row trigger cannot defend, and the fastest way to lose a ledger. And NFR-33's "fails at the store" holds only under an assumption that must be written down: **the owning migration role is not a superuser, is used only by the migration job, and its credentials are never available to a runtime process or an operator's psql session** — an owner can `ALTER TABLE ... DISABLE TRIGGER` or simply drop it. `esg_admin_ro` is neither the owner nor a member of the owner role.
 
 Corrections are superseding entries referencing the original (FR-151), which is also what D-10 requires of fiscal documents.

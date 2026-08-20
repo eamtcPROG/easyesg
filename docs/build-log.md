@@ -365,8 +365,74 @@ Verified by running: volume destroyed, all three migrations applied from empty, 
 and re-applied, 33 e2e tests including 12 isolation assertions across both roles and the FORCE
 collapse proof, 15 schema invariants, all nine gates green.
 
+## Task 13 — Append-only substrate · 2026-08-20
+
+Three decisions batched, and then partitioning turned out to reopen the exact hole §7.7 exists to
+close.
+
+- **The mechanism plus one table.** `audit.reject_mutation()` and
+  `audit.enforce_append_only(regclass)`, applied to `audit.system_audit_log` — the table task 14
+  needs next. §7.7's GRANT names four append-only tables, but ledger belongs to task 61, metering to
+  62 and support access to 67; designing a double-entry ledger before the billing model exists would
+  be a guess that looks decided. Those tasks call the same procedure, and the gate fails any audit
+  table that skips it.
+- **Partitioned from creation.** §15 requires "a partitioning plan gate for every append-only
+  store", and §12.5.7 gives system audit 24-month retention while DELETE is denied — so pruning can
+  only be `DETACH PARTITION` + `DROP TABLE`. Converting a populated table later means a rewrite
+  under `ACCESS EXCLUSIVE`, which NFR-48 forbids in the filing window, on a table that would by then
+  hold six-year billing audit. Asymmetric, so pay now.
+- **Append-only is per table, not per schema.** `audit` is not uniformly append-only: §7.10 puts
+  `outbox_event` and `inbound_event` there, and AD-6's dispatcher must mark an outbox row
+  dispatched. The schema keeps §7.7's default-deny posture; each table declares itself, and the gate
+  fails an audit table that is on neither list — so task 15 makes a decision rather than inheriting
+  one.
+
+**Two holes partitioning reopens, both found by probing PostgreSQL 18 rather than by reading:**
+
+- **A statement-level `TRUNCATE` trigger on a partitioned parent does not propagate.**
+  `TRUNCATE audit.system_audit_log_2026` succeeded while `TRUNCATE` on the parent was refused —
+  §7.7's "fastest way to lose a ledger", reopened by a storage decision. The row trigger *is* cloned
+  onto partitions, so UPDATE and DELETE were covered either way.
+- **RLS does not propagate either.** A partition reads `relrowsecurity = false`; a role with a
+  direct grant on one saw both tenants' rows in the probe.
+
+Both are closed by sealing each partition: its own TRUNCATE trigger, and RLS `ENABLED` + `FORCED`
+with **no policy** — which denies direct access outright while parent queries keep using the
+parent's policies. Verified: parent SELECT returns the tenant's row, direct partition SELECT returns
+none. The application is granted on the parent only, since a routed INSERT is privilege-checked
+against the parent. §7.7 records all of it, and the invariant gate asserts it per partition.
+
+**What is actually doing the work, which the tests had to be reshaped to show.** The layers deny in
+order: privilege first (`esg_app` holds INSERT, SELECT and nothing else), then RLS (no UPDATE or
+DELETE policy, so even the owner matches zero rows), and only then the triggers. The first attempt
+to prove the trigger reported `UPDATE 0` — indistinguishable from a trigger that was never created.
+The suite now lifts the first two layers inside a rolled-back transaction, reproducing exactly the
+`GRANT ALL` §7.7 names as the realistic failure, and shows the trigger refusing anyway.
+
+Smaller things:
+
+- **A revert bug caught while writing it.** `down()` initially reversed the schema-wide
+  `ALTER DEFAULT PRIVILEGES ... REVOKE` with a matching `GRANT ALL`. That does not restore the prior
+  state — which was no grants at all — it creates a broader one, leaving every future audit table
+  writable by the application on the strength of a rollback. The two schema-wide statements are now
+  deliberately not reversed, with the reason in the migration.
+- **The task-12 RLS invariant was checking the wrong relkinds.** It filtered `relkind = 'r'`, so a
+  partitioned parent (`p`) was not checked at all. Corrected to cover both, with partitions checked
+  individually since RLS does not propagate; the column invariants now skip partitions instead, to
+  avoid reporting an inherited column twice.
+- The primary key is `(id, occurred_at)` because PostgreSQL requires a unique constraint on a
+  partitioned table to include every partitioning column — a consequence of partitioning, not a
+  modelling choice.
+- `organization_id` is NOT NULL. Starting scoped and relaxing later is the safe direction; whether
+  platform-level events belong here or in task 67's `support_access_log` is task 14's question.
+
+Verified by running: volume destroyed, all four migrations applied from empty, the newest reverted
+and re-applied, 51 e2e tests including the three-layer append-only proof, 21 schema invariants with
+every rule proving it bites, all nine gates green.
+
 ---
 
-*Next up: task 13 — the append-only substrate. §7.7's `REVOKE` model plus row and **statement**
-triggers; the statement-level one is not optional, because `TRUNCATE` is the single privilege a row
-trigger cannot defend and the fastest way to lose a ledger.*
+*Next up: task 14 — per-field audit capture. It writes onto this substrate through
+`RETURNING old.*, new.*` (AD-14, constraint 5), which is raw SQL because the query builder cannot
+express it, and it owns the question this task deferred: where platform-level events with no
+organization belong.*

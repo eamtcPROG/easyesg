@@ -17,7 +17,7 @@ is structure without behaviour.
 
 | Workspace | State |
 | --- | --- |
-| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — six §7 invariants each proving its own rule bites, the tenant transaction (`TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor, rollback in the filter), and **RLS enabled and forced on the tenant root**, proven as both `esg_app` and the owning role. No `AuthGuard`, no controller but health |
+| `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — nine §7 invariants each proving its own rule bites, the tenant transaction (`TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor, rollback in the filter), **RLS enabled and forced on the tenant root** proven as both `esg_app` and the owning role, and the **append-only substrate** — `audit.enforce_append_only(regclass)` plus a partitioned `audit.system_audit_log`. No `AuthGuard`, no controller but health |
 | `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
 | `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
