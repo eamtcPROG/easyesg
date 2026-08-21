@@ -1,0 +1,67 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font: 600 14px/20px var(--font-text);
+  color: var(--text-default);
+}
+
+/* The border lives on the wrapper so a trailing control (password reveal) sits inside it.
+   Focus is drawn here via :focus-within; the input's own global ring is suppressed below,
+   replaced — never removed (tokens.css) — by the wrapper's. */
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  border: 1px solid var(--field-border-rest);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  padding: 0 var(--space-4);
+  transition: border-color var(--motion-instant) var(--motion-ease);
+}
+
+.control:focus-within {
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 1px var(--field-border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.invalid {
+  border-color: var(--field-border-invalid);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-default);
+}
+
+.input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.input:disabled {
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.control:has(.input:disabled) {
+  background: var(--surface-sunken);
+}
+
+.help {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
+
+.error {
+  font: 400 13px/19px var(--font-text);
+  color: var(--state-error);
+}

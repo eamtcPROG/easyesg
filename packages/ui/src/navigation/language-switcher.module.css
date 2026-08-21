@@ -1,0 +1,55 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 38px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-1);
+  background: transparent;
+  font: 400 13.5px/1 var(--font-text);
+  color: var(--text-default);
+  cursor: pointer;
+}
+
+/* On the dark Focus header the trigger keeps the header's own contrast pairing. */
+.header {
+  border-color: var(--focus-header-border);
+  color: var(--focus-header-text);
+}
+
+.chevron {
+  inline-size: 14px;
+  block-size: 14px;
+  opacity: 0.75;
+}
+
+.menu {
+  min-width: 180px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  box-shadow: var(--elevation-1);
+  padding: var(--space-2);
+  z-index: 10;
+}
+
+.item {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-1);
+  font: 400 14px/20px var(--font-text);
+  color: var(--text-default);
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--accent-tint);
+}
+
+.item[data-current] {
+  font-weight: 600;
+  color: var(--accent-hover);
+}

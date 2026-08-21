@@ -10,21 +10,53 @@ every screen. Cite them; do not re-derive them.
 
 ## Current state
 
-Scaffold only. What exists: 36 route files across four route groups, 6 layouts, 2 route handlers,
-the next-intl wiring, 10 feature folders, and 5 boundary rules with fixtures proving each rejects
-a real violation.
+Scaffold plus the first screens. What exists: 36 route files across four route groups, 6 layouts,
+2 route handlers, the next-intl wiring, 10 feature folders, 5 boundary rules with fixtures — and,
+from task 20, **S-01 register and S-02 verify/resend live end to end**: `features/identity/`
+(server actions, RHF forms, the sessionStorage hand-off store), the `(identity)` layout on
+`@easyesg/ui`'s FocusShell, self-hosted fonts in `globals.css`, and `e2e/web/` at the repo root
+driving the journey in a real browser (`pnpm e2e:web`).
 
-**Not built, and do not assume otherwise:** every page returns `null`. No component, no data
-fetch, no session. `src/server/api-client.ts` and `src/server/session.ts` are docblocks over an
-empty export. `src/app/api/[...path]/route.ts` answers 501 to everything. `packages/ui` exports
-nothing but the token cascade, so there is no button yet.
+**Transport decision (task 20):** unauthenticated identity calls travel by **Server Action** —
+the Next server tier calls the public API as the ordinary client AD-9 says it is.
+`src/server/api-client.ts` is the full client seam: `api.get / getList / post / patch / delete`,
+each returning one `ApiOutcome<T>` (envelope unwrapped — `messages[]` included, because
+`WARNING` is how AD-5's `allow_with_warning` reaches a caller — problem+json as received,
+202/204 as Ok-with-no-value, network/timeout/gateway failures as `unreachable`). List queries
+are built by `src/lib/pagination.ts`, the typed inverse of the API's `ListQueryInterceptor` —
+its grammar has no escaping, so the builder throws on a value containing `|` or `,` rather than
+letting it parse as extra groups. **Note `API_BASE_URL` already carries `/api/v1`**, so client
+paths are version-relative (`/auth/register`). Byte streams (export re-download, FR-53) are
+deliberately NOT this client's job — they must pass through `src/app/api/[...path]`
+byte-for-byte, which still answers 501 and is task 22's, together with the session.
 
-**The message catalogues are wired and empty.** `src/messages/{ro,en,ru}.json` declare the
-`chrome`, `validation` and `notification` namespaces and hold no copy yet; `src/server/messages.ts`
-loads them through the `MessageLoader` port. Adding a string is a JSON edit — and adding it to
-`ro.json` alone fails `src/messages/messages.parity.spec.ts`, which is what replaces FR-64's
-runtime queue now that every locale is present at build time (architecture.md OQ-43). The
-scaffold-only `emptyCatalogueWhileUnbuilt` shim is deleted.
+Two rules hold around that seam (post-close review, 20 Aug 2026 — iftamaster's
+`GeneralAxiosRepository` is the reference shape):
+
+- **Ambient request context is assembled at the seam, never at call sites.** `postToApi`
+  resolves the locale itself and puts it on `Accept-Language`; an action repeating
+  `await getLocale()` is the violation. When task 22 adds the access token, it joins the same
+  place.
+- **One outcome shape end to end, its discriminators a closed vocabulary.**
+  `src/lib/api-outcome.ts` declares `API_OUTCOME` (`as const`, derived union — the same rule
+  `apps/api` records for `ACCOUNT_STATUS`/`APP_MODE`) and `ApiOutcome<T>`, which travels
+  unchanged from `postToApi` through the action to the component; the action only projects the
+  value with `mapOutcome`, which owns the failure passthrough. A scattered `'problem'` literal
+  or a hand-written `if (!result.ok) …` translation block is the defect this replaced. Specs
+  may still pin the literals — they are the RSC wire values, and must break if a constant's
+  value is renamed.
+
+**Still not built:** session (`src/server/session.ts` is a docblock), sign-in, reset and
+set-password (their routes return `null` until their APIs exist, tasks 21–22).
+
+**The message catalogues have their first content.** `src/messages/{ro,en,ru}.json` carry
+`chrome` and `identity`; all three separately authored, RO the source. Adding a string is a JSON
+edit — and adding it to `ro.json` alone fails `src/messages/messages.parity.spec.ts`, which is
+what replaces FR-64's runtime queue now that every locale is present at build time
+(architecture.md OQ-43). `global.d.ts` derives key types from `ro.json`, so a typo'd key fails
+`pnpm typecheck`. Component specs run against the real RO catalogue with
+`src/test/setup.ts` registering jest-dom matchers and the explicit `cleanup()` that
+`globals: false` withholds.
 
 ## Commands
 

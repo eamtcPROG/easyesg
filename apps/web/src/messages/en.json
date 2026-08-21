@@ -1,3 +1,80 @@
 {
-  "chrome": {}
+  "chrome": {
+    "brandHome": "easyesg — home",
+    "helpCentre": "Help centre",
+    "language": "Interface language",
+    "locales": {
+      "ro": "Română",
+      "en": "English",
+      "ru": "Русский"
+    },
+    "footer": {
+      "legalNote": "© 2026 EasyESG SRL · Chișinău",
+      "legalNav": "Legal documents",
+      "terms": "Terms of service",
+      "privacy": "Privacy notice",
+      "cookies": "Cookie policy"
+    }
+  },
+  "identity": {
+    "unreachable": {
+      "title": "The server cannot be reached",
+      "body": "Your request never reached the server, so nothing was sent and nothing has changed.",
+      "action": "Check your internet connection and try again in a few moments."
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "One account can hold several organizations. You will add the first one after you confirm your email address.",
+      "emailLabel": "Work email",
+      "emailHelp": "We send the confirmation link here. Notifications will arrive here too.",
+      "emailMissing": "The email address is missing, so there is nowhere to send the confirmation link. Fill in the address before continuing.",
+      "emailInvalid": "What you entered is not shaped like an email address, so the confirmation link would go nowhere. Check the address and correct it.",
+      "passwordLabel": "Password",
+      "pasteHint": "A password manager and pasting from the clipboard both work here.",
+      "show": "Show",
+      "hide": "Hide",
+      "requirements": {
+        "length": "Between {minimum} and {maximum} characters",
+        "lowercase": "At least one lowercase letter",
+        "uppercase": "At least one uppercase letter",
+        "digit": "At least one digit",
+        "further": "At least one other character — a symbol, a space, anything else"
+      },
+      "met": "met",
+      "unmet": "not met yet",
+      "passwordPolicy": "The password you chose does not meet all the requirements shown, so the account was not created. Complete every item on the list — between {minimum} and {maximum} characters, with a lowercase letter, an uppercase letter, a digit and one further character.",
+      "submit": "Create account",
+      "alreadyHave": "Already have an account?",
+      "signIn": "Sign in",
+      "summaryTitle": "A few fields need attention before you can continue",
+      "problemTitle": "The request could not be processed",
+      "problemBody": "The account was not created because the request could not be processed.",
+      "problemAction": "Correct the details indicated and try again."
+    },
+    "verify": {
+      "title": "Confirm your email address",
+      "sentIntro": "We sent a confirmation link to",
+      "instructions": "Open the link on any device. It works once and expires after 24 hours. You can close this page without worry — nothing is lost.",
+      "resend": "Resend the link",
+      "cooldown": "You can resend in {seconds} s",
+      "sentTitle": "Your request was recorded",
+      "sentBody": "If this address holds an account awaiting confirmation, a new link is on its way.",
+      "sentAction": "Check your inbox, including the spam folder.",
+      "wrongAddress": "Wrong address?",
+      "changeIt": "Change it and send again",
+      "enterEmailIntro": "Enter the address you registered with and we will send you a fresh confirmation link.",
+      "emailLabel": "Email address",
+      "emailMissing": "The email address is missing, so there is nowhere to send the new link. Fill in the address before sending.",
+      "emailInvalid": "What you entered is not shaped like an email address, so the link would go nowhere. Check the address and correct it.",
+      "send": "Send the link",
+      "confirmIntro": "Press the button below to confirm the address and activate your account. The link works only once.",
+      "confirm": "Confirm the address",
+      "successTitle": "Your address is confirmed",
+      "successBody": "Your account is active. From here you can sign in and create your organization.",
+      "successAction": "Go to sign-in",
+      "problemTitle": "The link could not be used",
+      "problemBody": "The address was not confirmed because the request could not be processed.",
+      "problemAction": "Request a new link"
+    }
+  }
 }

@@ -4,6 +4,10 @@ import type { NextConfig } from 'next';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
+  // @easyesg/ui ships raw TypeScript + CSS modules (main → src/index.ts) so both bundlers
+  // compile one source of truth; Next only does that for a linked package when told to.
+  transpilePackages: ['@easyesg/ui'],
+
   // §10.4 runs this service at 2 replicas with no host ports. Standalone output is what the
   // Compose image copies; verify its file tracing against pnpm's symlink layout on the first
   // Docker build (root CLAUDE.md) — Next traces real paths, pnpm ships links.

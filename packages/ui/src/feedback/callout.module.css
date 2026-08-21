@@ -1,0 +1,76 @@
+.callout {
+  display: flex;
+  gap: var(--space-4);
+  border: 1px solid;
+  border-radius: var(--radius-2);
+  padding: var(--space-5);
+}
+
+.icon {
+  inline-size: 20px;
+  block-size: 20px;
+  flex-shrink: 0;
+  margin-block-start: 1px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font: 600 15px/22px var(--font-text);
+  color: var(--text-default);
+}
+
+.body {
+  font: 400 14px/21px var(--font-text);
+  color: var(--text-body);
+}
+
+.action {
+  font: 400 14px/21px var(--font-text);
+}
+
+.info {
+  border-color: var(--state-pending);
+  background: var(--state-pending-tint);
+}
+.info .icon {
+  color: var(--state-pending);
+}
+
+.attention {
+  border-color: var(--state-attention);
+  background: var(--state-attention-tint);
+}
+.attention .icon {
+  color: var(--state-attention);
+}
+
+.warning {
+  border-color: var(--state-warning);
+  background: var(--state-warning-tint);
+}
+.warning .icon {
+  color: var(--state-warning);
+}
+
+.error {
+  border-color: var(--state-error);
+  background: var(--state-error-tint);
+}
+.error .icon {
+  color: var(--state-error);
+}
+
+.success {
+  border-color: var(--state-ok);
+  background: var(--state-ok-tint);
+}
+.success .icon {
+  color: var(--state-ok);
+}

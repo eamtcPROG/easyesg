@@ -1,7 +1,16 @@
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, passwordMeetsPolicy } from './password-policy';
+import { describe, expect, it } from 'vitest';
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  evaluatePasswordPolicy,
+  passwordMeetsPolicy,
+} from './password-policy';
 
 /**
  * The policy closed by OQ-51 on 20 Aug 2026, asserted at its edges rather than in the middle.
+ * Moved from `apps/api` with the implementation (task 20); the behaviour pinned here is the one
+ * the API re-exports, so a change that breaks these breaks both execution sites at once — which
+ * is the point of the shared home.
  *
  * The Unicode cases are the ones worth having: the live locales are Romanian and Russian, and an
  * ASCII class test would tell a Russian speaker their password contains no lowercase letter. That
@@ -57,6 +66,34 @@ describe('password policy (OQ-51)', () => {
     // further character". Passphrases are the population this policy least wants to turn away.
     it('accepts a space as the further character', () => {
       expect(passwordMeetsPolicy('Parola 1234')).toBe(true);
+    });
+  });
+
+  describe('the per-requirement verdict (S-02 checklist)', () => {
+    it('names exactly the requirement an input fails', () => {
+      expect(evaluatePasswordPolicy('parola123!')).toMatchObject({
+        length: true,
+        lowercase: true,
+        uppercase: false,
+        digit: true,
+        further: true,
+        satisfied: false,
+      });
+    });
+
+    it('reports every requirement unmet on the empty string', () => {
+      expect(evaluatePasswordPolicy('')).toMatchObject({
+        length: false,
+        lowercase: false,
+        uppercase: false,
+        digit: false,
+        further: false,
+        satisfied: false,
+      });
+    });
+
+    it('agrees with the aggregate answer', () => {
+      expect(evaluatePasswordPolicy(VALID).satisfied).toBe(passwordMeetsPolicy(VALID));
     });
   });
 });

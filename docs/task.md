@@ -57,7 +57,7 @@ whose reasons are not recorded is not closed.
 | # | Name | Scope | Description | Expected result (deliverables) | Status |
 | --- | --- | --- | --- | --- | --- |
 | 19 | Registration and verification API | api | Email + password registration (Argon2id), verification token issue/consume, dispatch through a minimal mail port — task 49's notification system absorbs the port later; it must not wait for it (P-7). Four values the sources never stated are closed here: password policy (OQ-51), FR-3's unverified window (OQ-52), whether registration answers uniformly (OQ-53) and whether a raw token may travel in the outbox payload (OQ-54) | Signup → verify e2e at the API; no vendor type outside the mail adapter | DONE |
-| 20 | Registration and verification screens | web | The sign-up and verification screens per design_spec, three locales | A user registers and verifies from the browser; expansion harness passes on the new screens | TODO |
+| 20 | Registration and verification screens | web | The sign-up and verification screens per design_spec, three locales | A user registers and verifies from the browser; expansion harness passes on the new screens | DONE |
 | 21 | Sessions and sign-in API | api | Session issuance, expiry and sign-out; one public API serving both front ends (DR-11, AD-9) | Sign-in/out e2e; expiry honoured | TODO |
 | 22 | Web sign-in and session proxy | web | The sign-in screens and the session proxy wired end-to-end — the only place a browser credential is exchanged | Browser sign-in/out against the public API | TODO |
 | 23 | Admin sign-in | admin | The console authenticates as an ordinary client of the same public API — no privileged back door (DR-11, AD-9) | Admin sign-in/out e2e through the public surface | TODO |

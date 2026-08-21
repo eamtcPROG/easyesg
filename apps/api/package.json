@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "easyesg public API \u2014 NestJS, HTTP and worker modes (architecture.md AD-1)",
+  "description": "easyesg public API — NestJS, HTTP and worker modes (architecture.md AD-1)",
   "scripts": {
-    "pretest": "pnpm --filter @easyesg/i18n build",
-    "pretest:e2e": "pnpm --filter @easyesg/i18n build",
+    "pretest": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build",
+    "pretest:e2e": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build",
     "build": "nest build",
     "postbuild": "tsc-alias -p tsconfig.build.json",
     "start": "nest start",
@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@easyesg/i18n": "workspace:*",
+    "@easyesg/validation": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",

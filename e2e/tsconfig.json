@@ -1,0 +1,14 @@
+{
+  // Exists for typescript-eslint's project service: the browser e2e lives at the repo root
+  // rather than inside a workspace, so no workspace tsconfig covers it and type-aware lint
+  // would otherwise refuse to parse it. Playwright compiles the specs itself; this config is
+  // analysis-only ("noEmit") and is not part of any build.
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}

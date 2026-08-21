@@ -1,0 +1,57 @@
+/* Tier discipline (UX-78): tier 2/3 tokens only. */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-1);
+  border: 1px solid transparent;
+  font: 600 14.5px/1 var(--font-text);
+  cursor: pointer;
+  transition: background-color var(--motion-instant) var(--motion-ease),
+    border-color var(--motion-instant) var(--motion-ease),
+    color var(--motion-instant) var(--motion-ease);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.secondary {
+  background: var(--surface-default);
+  border-color: var(--border-strong);
+  color: var(--text-default);
+  font-weight: 500;
+}
+.secondary:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+
+.subtle {
+  background: transparent;
+  color: var(--accent);
+  font-weight: 500;
+}
+.subtle:hover:not(:disabled) {
+  background: var(--accent-tint);
+}
+
+.destructive {
+  background: var(--state-error);
+  color: var(--text-on-accent);
+}
+.destructive:hover:not(:disabled) {
+  filter: brightness(0.92);
+}

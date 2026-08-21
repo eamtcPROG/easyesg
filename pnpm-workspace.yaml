@@ -31,6 +31,8 @@ cleanupUnusedCatalogs: true
 catalog:
   '@axe-core/playwright': 4.13.0
   '@eslint/js': 10.0.1
+  '@fontsource/ibm-plex-mono': 5.3.0
+  '@fontsource/onest': 5.3.0
   '@nestjs/bullmq': 11.0.5
   '@nestjs/cli': 11.0.24
   '@nestjs/common': 11.1.29
@@ -50,6 +52,7 @@ catalog:
   '@tanstack/react-query': 5.101.4
   '@tanstack/react-router': 1.170.29
   '@tanstack/router-plugin': 1.168.32
+  '@testing-library/jest-dom': 7.0.1
   '@testing-library/react': 16.3.2
   '@testing-library/user-event': 14.6.4
   '@types/express': 5.0.6
@@ -57,6 +60,7 @@ catalog:
   '@types/negotiator': 0.6.5
   '@types/node': 26.2.0
   '@types/passport-jwt': 4.0.1
+  '@types/pg': 8.23.1
   '@types/react': 19.2.18
   '@types/react-dom': 19.2.4
   '@types/supertest': 7.2.1
@@ -78,6 +82,7 @@ catalog:
   'nestjs-pino': 4.6.1
   next: 16.3.0
   next-intl: 4.13.7
+  openapi-typescript: 7.13.0
   passport: 0.7.0
   passport-jwt: 4.0.1
   'pg': 8.23.0
@@ -139,3 +144,10 @@ peerDependencyRules:
     # API rather than silently taking an untested path — so the exposure is a failed `pnpm
     # lint`, not a defect that ships. Revisit when the plugin declares 10.
     "eslint-plugin-jsx-a11y>eslint": "10.8.1"
+    # §12.1 pins TypeScript 6.0.3 (AD-13); openapi-typescript 7.13.0 declares ^5.x, a range
+    # that predates TS 6. TS 6 retains the TS 5 compiler API — that is AD-13's whole ground
+    # for staying on 6 rather than 7 — and generation was verified against 6.0.3 on
+    # 20 Aug 2026 (task 20): `pnpm --filter @easyesg/contracts generate` emits and the
+    # emitted file typechecks. A real break would be loud — a failed generate in the
+    # openapi:check gate — not a defect that ships. Revisit when the tool declares 6.
+    "openapi-typescript>typescript": "6.0.3"

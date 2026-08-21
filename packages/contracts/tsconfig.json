@@ -6,7 +6,9 @@
     "declaration": true,
     "rootDir": "./src",
     "outDir": "./dist",
-    "types": ["node"]
+    // Empty rather than ["node"]: this package is types-only and isomorphic — consumed by the
+    // browser bundle and the admin SPA — and uses no Node API. Same reasoning as packages/i18n.
+    "types": []
   },
   "include": ["src/**/*.ts"]
 }

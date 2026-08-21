@@ -16,5 +16,15 @@
  * `not_material` is section-level materiality (FR-41), its own enum on the module. `nil_return`
  * is not a validation state at all — a field carrying an affirmative zero is OK. Do not build a
  * flat eight-value enum; the mapping is declared once in `packages/contracts` and nowhere else.
+ *
+ * Beside the interpreter, the package holds the **password policy** (OQ-51) — moved here in
+ * task 20, for the same one-implementation-two-sites reason. See `password-policy.ts`.
  */
-export {};
+export {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  evaluatePasswordPolicy,
+  passwordMeetsPolicy,
+  type PasswordPolicyVerdict,
+} from './password-policy.js';
+

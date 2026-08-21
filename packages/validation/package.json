@@ -3,13 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Rule interpreter over versioned rule definitions (AD-4). One interpreter, two execution sites: apps/api re-validates authoritatively, apps/web shows findings inline (§9.8).",
+  "description": "Rule interpreter over versioned rule definitions (AD-4). One interpreter, two execution sites: apps/api re-validates authoritatively, apps/web shows findings inline (§9.8). Also the password policy (OQ-51), shared for the same reason.",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "module": "./dist/esm/index.js",
   "files": [
-    "src"
+    "src",
+    "dist"
   ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "source": "./src/index.ts",
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/esm/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json && node -e \"require('node:fs').writeFileSync('dist/cjs/package.json','{\\\"type\\\":\\\"commonjs\\\"}')\"",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

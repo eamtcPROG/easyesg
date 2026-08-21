@@ -979,3 +979,148 @@ proves the three files share a key space, not that any of them reads well. That 
 the pilot (R-8), not to this task. And `audit.outbox_event` still has no retention rule, which
 §12.5.7 justified while it was a pure work list; OQ-54 changes that, since a dispatched row now holds
 a spent secret. Both are recorded in the register rather than carried as intentions.
+
+## Task 20 — Registration and verification screens · 2026-08-20
+
+The first screens in the product, and the task's true size was not in the screens. `packages/ui`
+held tokens and no components, `@easyesg/contracts` exported nothing, and Phase 0's fonts were
+never delivered — so "the sign-up and verification screens" implicitly carried the first §11.5
+inventory slice (Button, TextField/PasswordField, RequirementList, FormErrorSummary, Callout,
+Panel, TextLink, Spinner, BrandMark, LanguageSwitcher, the Focus archetype shell), the ten §11.6
+type roles into `tokens.css`, self-hosted Onest/Plex Mono, and the first generated contract types.
+A task row names its deliverable, not its prerequisites; reconnaissance before the unknowns batch
+is what surfaced the difference.
+
+**Four decisions taken up front, one against the recommendation.** Raised as one batch before any
+code (CLAUDE.md's protocol), each with options and a recommendation:
+
+- **Transport: Server Actions.** Unauthenticated identity calls go browser → Next server tier →
+  public API, `Accept-Language` forwarded so problem+json arrives resolved. The `/api/[...path]`
+  pass-through keeps its documented charter (traffic that cannot go through the server tier) and
+  stays task 22's.
+- **Register captures email + password.** The Identity prototype shows a full-name field, a
+  Terms/Privacy consent checkbox and a pre-OQ-51 password rule; `design_spec.md` S-01's content
+  list and the task-19 API have none of them. Documents beat prototypes (OQ-10), so the screen
+  follows the documents — and the divergence is now **design_spec OQ-16**, open, because whether
+  consent must be *recorded* is a legal question that a UI default must not close in passing.
+- **Playwright now.** The deliverable sentence — *a user registers and verifies from the browser*
+  — became a literal test.
+- **The password policy moved to `@easyesg/validation`** — the owner chose the shared package over
+  the recommended cite-and-mirror. The package choice inside that decision was forced by the
+  dependency graph, not taste: `@easyesg/contracts` cannot hold it because `apps/api` may never
+  import the package it produces (`api-not-to-contracts-package`), while validation's charter is
+  exactly "evaluated identically in both runtimes" (§9.8, amended to record the placement). The
+  api's domain module re-exports from the package, so no call site moved; the behaviour tests
+  moved with the code and gained per-requirement verdicts for the S-02 checklist.
+
+**The browser e2e runs the artefact the image ships, not `next dev`.** `next start` refuses under
+`output: 'standalone'`, so `pree2e:web` assembles the standalone tree the way the Dockerfile does
+(static and public are assets, deliberately untraced) and Playwright runs `server.js` — twice, the
+second instance with `EASYESG_PSEUDOLOCALE=1`, which is how the +40% expansion check (UX-94) rides
+the same run as behaviour. **No worker is started**: the raw token is in the outbox row the moment
+registration commits (P-8, OQ-54), so the suite reads it as `esg_worker` exactly like the api e2e
+and never needs the email sent. The axe scan (`@axe-core/playwright`, §12.1's stated purpose for
+the pin) reports zero violations on register in all three locales and on verify; expansion holds at
+1440/834/390. CI runs it in the database job, Chromium cached by Playwright version; failure
+uploads traces.
+
+**Assumptions recorded rather than asked** (routine judgement, reversible): the resend cooldown is
+60 s of client-side pacing only — no source states one; the edge rate limit (task 71) is the real
+control — recorded in `features/identity/constants.ts`; the S-01 → S-02 address hand-off rides
+sessionStorage (never the URL — an address in a query string reaches server logs and history, and
+never a cookie — it has no server-side reader); the footer's legal slugs (`terms`, `privacy`,
+`cookies`) follow the legal route's own docblock, pages still null.
+
+**Traps that cost a cycle each, recorded for the next screen task:**
+
+- `API_BASE_URL` already carries `/api/v1` (the committed `.env.example` convention) — the api
+  client's paths are version-relative, and the first draft double-prefixed them.
+- Vitest with `globals: false` withholds the global `afterEach` Testing Library's auto-cleanup
+  registers against, so every `render` accumulates into one document ("found multiple elements"),
+  and jest-dom's matchers never self-register. `src/test/setup.ts` now does both explicitly.
+- `eslint-disable-next-line` cannot reach a JSXText node: the node *starts* at the directive
+  comment's own line (the newline after the comment belongs to the text node), so the next-line
+  scope misses it. The BrandMark wordmark uses a disable/enable region instead — after first
+  establishing the wordmark is identity, not copy, and no catalogue owns it.
+- `react-hooks/set-state-in-effect` rejects the read-storage-in-an-effect hydration idiom. The
+  compliant shape is `useSyncExternalStore` with a null server snapshot —
+  `pending-verification-store.ts` — which also deleted the `hydrated` flag and made the cooldown
+  a once-per-second subscription (UX-116's cadence rule, incidentally satisfied).
+- `openapi-typescript` declares a `typescript ^5.x` peer that predates TS 6; verified generating
+  under 6.0.3 and recorded as the third justified `peerDependencyRules.allowedVersions` entry.
+- Root-level TS files (the Playwright config) have no project for type-aware lint; the config
+  moved into `e2e/` where `e2e/tsconfig.json` covers it, rather than growing an
+  `allowDefaultProject` carve-out.
+
+**Contract types are now generated, and the gate grew to cover the whole chain.** `openapi:check`
+runs decorators → `v1.json` → `src/generated/v1.ts` and diffs both, so a route change that forgets
+either regeneration fails the same gate. The package exports hand-curated aliases plus the RFC
+9457 `ProblemDocument` — hand-authored because OpenAPI describes problem bodies as opaque per
+route while the filter fixes their members globally.
+
+**Standing caveat extended, not resolved:** the RO/EN/RU screen copy authored here — the second
+batch of user-facing text in the product — has still seen no native-speaker review; the parity
+gate proves a shared key space, not that any locale reads well. Same owner and deadline as task
+19's entry: before the pilot (R-8).
+
+**Verified:** `pnpm gates:clean` green from an empty tree — all nine gates, the api e2e suite, and
+the new browser suite (14 tests: the full register → verify journey in Romanian against the real
+stack, the spent-link and duplicate-409 surfaces rendering the api's resolved wording verbatim,
+the locale switcher round-tripping ro→ru→en, four axe scans with zero WCAG 2.2 AA violations, six
+expansion-harness checks). 16 component tests pin the form behaviour against the real Romanian
+catalogue; 14 policy tests moved to `packages/validation` with the implementation. The flow was
+also driven by hand in the browser against the dev stack, screenshots in the task record.
+
+**Post-close review, same day.** Three findings from the project owner, all on the action layer,
+all accepted — iftamaster's `GeneralAxiosRepository` cited as the reference shape (one seam
+assembles ambient context and shapes every outcome; call sites repeat nothing):
+
+- **`await getLocale()` repeated per action** — moved inside `postToApi`, which now owns ambient
+  request context the way the reference does. An action can no longer forget the header, and
+  task 22's access token has a place waiting for it.
+- **The failure-mapping block pasted three times** — the root cause was two structurally identical
+  result shapes (`ApiResult` on the client, `AuthActionResult` on the action) with a hand-written
+  translation between them. Replaced by ONE `ApiOutcome<T>` in `src/lib/api-outcome.ts` that
+  travels unchanged from `postToApi` through the Server Action to the component, plus `mapOutcome`
+  — the single function that projects a success and passes every failure through. Each action is
+  now one call and one per-endpoint projection.
+- **`'problem'` / `'unreachable'` / `'ok'` as scattered literals** — task 19's closed-vocabulary
+  rule applied to the web tier: `API_OUTCOME` is an `as const` object with the derived union,
+  compared against by every component. The rule is now recorded in `apps/web/CLAUDE.md` too, with
+  the same carve-out as the api's: specs pin the literals on purpose, because they are the RSC
+  wire values and must break if a constant's value is renamed.
+
+Deliberately NOT widened in the same pass: `postToApi` still speaks only POST — every consumer is
+a POST, and growing verbs nobody calls is the speculative abstraction CLAUDE.md's open-questions
+rule warns against. The GET side arrives with task 22's session reads, into the same seam.
+Verified after the rework: `pnpm gates:clean` green from an empty tree again, browser suite
+included.
+
+**Second round, same review thread: the full client, by owner request.** The previous paragraph's
+"POST-only until task 22" is superseded — the owner asked for the complete verb surface now, so
+the seam grew to `api.get / getList / post / patch / delete` around one private `send` (ambient
+context, problem+json, unreachable — written once) and two envelope finishers. What came with it,
+because "full" means the wire conventions, not just the verbs:
+
+- **The list side, end to end.** `lib/pagination.ts` — the module whose docblock had reserved the
+  job — now builds §6.8's compact format as the typed inverse of `ListQueryInterceptor`, pinned by
+  a spec against the documented example strings. The grammar has no escaping, so the builder
+  throws on a value containing a separator rather than letting it parse as extra filter groups;
+  and it deliberately emits nothing for absent members, so the defaults stay server-side only.
+  `ResultList<T>` is hand-authored in `@easyesg/contracts` against the api's DTO, with a marker to
+  re-derive it from the generated schema when the first list route lands (task 29). A list call's
+  value is `ListResult<T>` inside the same `ApiOutcome` container, so `mapOutcome` and every
+  screen idiom work on lists unchanged.
+- **Envelope `messages[]` surfaced on the Ok arm.** The first client dropped them; `WARNING` is
+  how AD-5's `allow_with_warning` reaches a caller who still got what they asked for, and a
+  client that swallows it would hide that surface from every future screen.
+- **A request timeout** (10 s, `AbortSignal.timeout`), absorbed into `unreachable`: a stuck
+  upstream must fail the Server Action with the catalogue's try-again text, not hang it.
+- **The client has its own spec** — every §6.8 shape pinned once against a stubbed `fetch`
+  (`server-only` and the ambient locale mocked as the seam's own dependencies). One test bug
+  worth keeping: a `Response` body reads once, so a mock serving the same object to two calls
+  fails on the second — `mockImplementation` with a fresh `Response` per call.
+
+Still deliberately out: byte streams. FR-53's re-download must be byte-identical, which means the
+`/api/[...path]` proxy passes it through untouched — a JSON client that also did downloads would
+be two conventions in one seam, and that path stays task 22's.

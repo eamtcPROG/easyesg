@@ -1,0 +1,16 @@
+.spinner {
+  display: inline-block;
+  inline-size: 16px;
+  block-size: 16px;
+  border-radius: var(--radius-pill);
+  border: 2px solid currentColor;
+  border-inline-start-color: transparent;
+  opacity: 0.9;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

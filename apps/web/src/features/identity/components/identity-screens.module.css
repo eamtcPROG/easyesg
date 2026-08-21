@@ -1,0 +1,97 @@
+/* Screen-level composition for S-01/S-02 — spacing and column rhythm only. Anything with its
+   own anatomy is an inventory component in @easyesg/ui (UX-89); these classes only arrange
+   them, with values from the Identity prototype (OQ-10). */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.title {
+  margin: 0 0 var(--space-3);
+  color: var(--text-default);
+}
+
+.subtitle {
+  margin: 0 0 var(--space-6);
+  color: var(--text-body);
+}
+
+.formPanel {
+  /* The prototype's card padding: 28px 32px 30px. */
+  padding: 28px 32px 30px;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.passwordGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.altAction {
+  margin: var(--space-2) 0 0;
+  text-align: center;
+  font: 400 14px/21px var(--font-text);
+  color: var(--text-body);
+}
+
+.address {
+  font: 400 14px/22px var(--font-mono);
+  color: var(--text-default);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-1);
+  padding: 10px 12px;
+  margin: 0 0 18px;
+  overflow-wrap: anywhere;
+}
+
+.bodyText {
+  margin: 0 0 var(--space-5);
+  color: var(--text-body);
+}
+
+.cooldown {
+  margin: var(--space-3) 0 0;
+  text-align: center;
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.divided {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--focus-footer-border);
+  font: 400 13.5px/21px var(--font-text);
+  color: var(--text-body);
+}
+
+.footerNote {
+  font: 400 12.5px/18px var(--font-text);
+  color: var(--text-muted);
+}
+
+.footerLinks {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  font: 400 13.5px/18px var(--font-text);
+}
+
+.footerLinks a {
+  color: var(--text-body);
+  text-decoration: none;
+  border-radius: var(--radius-1);
+}
+
+.footerLinks a:hover {
+  text-decoration: underline;
+}

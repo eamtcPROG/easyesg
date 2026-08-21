@@ -1,0 +1,6 @@
+.panel {
+  background: var(--surface-default);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  padding: var(--space-7) var(--space-7) var(--space-7);
+}

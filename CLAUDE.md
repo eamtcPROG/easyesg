@@ -18,12 +18,12 @@ is structure without behaviour.
 | Workspace | State |
 | --- | --- |
 | `apps/api` | Module tree (35 registered, empty), response envelope, problem+json filter, port surface, OpenAPI emission, a Dockerfile serving both entrypoints (AD-1), the migration runner — §7.1's five schemas + `btree_gist`, plus `core.organization` — seventeen §7 invariants each proving its own rule bites, the tenant transaction (`TenantTransactionGuard` binding `app.current_org` transaction-locally, commit in an interceptor, rollback in the filter), **RLS enabled and forced on the tenant root** proven as both `esg_app` and the owning role, the **append-only substrate** — `audit.enforce_append_only(regclass)` plus a partitioned `audit.system_audit_log` — **per-field audit capture** by trigger onto `core.field_change`, unbypassable and unforgeable, the **transactional outbox** with its worker dispatcher onto BullMQ, the **configuration store** — one generic versioned store with a `WITHOUT OVERLAPS` schedule and a ≤5 s replica poll — and, from task 19, the **first behaviour**: `identity.{account,credential,verification_token}`, `POST /api/v1/auth/{register,verify-email,verification-email}` (FR-1, FR-3), Argon2id behind a port, `EmailPort` with a logging adapter, and `OutboxConsumer` — the queue's single `@Processor`, routing by job name. No `AuthGuard` |
-| `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy. Every page returns `null` |
+| `apps/web` | 36 route files across four route groups, next-intl wiring, session proxy — and, from task 20, the **first live screens**: S-01 register and S-02 verify/resend, reaching the API through Server Actions (the decided transport for unauthenticated identity calls; the `/api/[...path]` pass-through stays task 22's), catalogue content in all three locales, self-hosted Onest/Plex Mono. Every other page returns `null` |
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing. Every screen returns `null`. No `features/core/` — that absence is D-5 |
-| `packages/contracts` | The wire contract. `openapi/v1.json` emits with zero paths |
-| `packages/ui` | The tier 1/2/3 token cascade, moved from `design/`. No components |
+| `packages/contracts` | The wire contract. `openapi/v1.json` carries task 19's three auth routes; since task 20 `src/generated/v1.ts` (openapi-typescript) plus hand-curated aliases and the RFC 9457 `ProblemDocument` are the exported surface, regenerated and diffed by the same `openapi:check` gate as the spec |
+| `packages/ui` | The tier 1/2/3 token cascade, moved from `design/` — plus, from task 20, the ten §11.6 type roles and the first §11.5 inventory slice: Button, TextField/PasswordField, RequirementList, FormErrorSummary, Callout, Panel, TextLink, Spinner, BrandMark, LanguageSwitcher, and the Focus archetype shell. Presentational by rule: no text, no router — strings and anchors arrive as props |
 | `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness (now wired) |
-| `packages/validation` | Empty. The interpreter is shared by `api` and `web` (§9.8) |
+| `packages/validation` | The password policy (OQ-51), shared by `api` and `web` since task 20 — architecture.md §9.8 records the placement. The rule interpreter (§9.8) is still to come |
 
 `infra/{compose,postgres}` holds the dev stack — Postgres and Redis, started with `pnpm dev:up`.
 `config/seed/` holds the configuration store's starting state, applied idempotently by
@@ -41,8 +41,11 @@ Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnp
 (`.github/workflows/gates.yml`, two parallel jobs split on whether Docker is needed) — adding a gate
 means adding a root script and one line, never workflow-only logic.
 
-`pnpm gates` runs all nine plus `pnpm e2e`, in CI's order — the e2e suite is the tenth thing CI runs
-and a local runner that omitted it would not be the same check. `pnpm gates:clean` removes every
+`pnpm gates` runs all nine plus the two e2e suites (`pnpm e2e`, then `pnpm e2e:web` — task 20's
+Playwright browser suite, which drives register → verify through the shipped screens, runs the axe
+scan and the +40% expansion check, and needs the migrated Compose stack plus
+`pnpm exec playwright install chromium` once per machine), in CI's order — a local runner that
+omitted either suite would not be the same check. `pnpm gates:clean` removes every
 build output first, and the difference between the two is the subject of the next section. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
 applies, reverts, re-applies and then asserts §7's schema invariants against the Compose stack,
 because neither "the baseline applies from an empty database" nor "no foreign key crosses the

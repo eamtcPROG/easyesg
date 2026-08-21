@@ -1,0 +1,77 @@
+/* Values extracted from EasyESG Identity.dc.html (OQ-10). Breakpoint pixel values are an OPEN
+   question (design_spec OQ-13) — this layout deliberately avoids encoding any: the column is
+   fluid, and the padding steps ride the existing gutter tokens. */
+
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-sunken);
+}
+
+.header {
+  min-height: 68px;
+  padding: var(--space-4) var(--space-8);
+  background: var(--focus-header-surface);
+  color: var(--focus-header-text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  color: var(--focus-header-text);
+}
+
+.brand a {
+  color: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  border-radius: var(--radius-1);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.actions a {
+  color: var(--focus-header-text-muted);
+  text-decoration: none;
+  font: 400 14.5px/1.4 var(--font-text);
+  border-radius: var(--radius-1);
+}
+
+.actions a:hover {
+  color: var(--focus-header-text);
+  text-decoration: underline;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-9) var(--grid-gutter-narrow);
+}
+
+.column {
+  width: min(440px, 100%);
+}
+
+.footer {
+  min-height: 56px;
+  padding: var(--space-4) var(--space-8);
+  background: var(--focus-footer-surface);
+  border-top: 1px solid var(--focus-footer-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}

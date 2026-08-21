@@ -117,7 +117,32 @@
   --wizard-step-complete: var(--state-ok);
   --module-state-reasoned: var(--state-reasoned);
   --savestate-queued: var(--state-pending);
+
+  /* Focus archetype (S-01…S-04, S-20, S-25) — the dark identity header and its footer, added
+     with the first Focus screens (task 20). Values extracted from `EasyESG Identity.dc.html`
+     per OQ-10: extracted through tokens, never copied as inline markup. */
+  --focus-header-surface: var(--pine-800);
+  --focus-header-text: var(--slate-0);
+  --focus-header-text-muted: var(--pine-100);
+  --focus-header-border: var(--pine-200);
+  --focus-footer-surface: var(--slate-0);
+  --focus-footer-border: var(--slate-100);
 }
+
+/* ── Type roles (§11.6 — the ten-role scale; UX-82, UX-83) ─────────────
+   Components and screens take a role class, never a font-size. `numeric` carries
+   tabular lining figures by definition, so columns align and digits do not shift
+   between states. Heading letter-spacing is extracted from the prototypes (OQ-10). */
+.t-display { font: 600 40px/44px var(--font-text); letter-spacing: -0.02em; }
+.t-heading-1 { font: 600 28px/34px var(--font-text); letter-spacing: -0.015em; }
+.t-heading-2 { font: 600 21px/26px var(--font-text); letter-spacing: -0.015em; }
+.t-heading-3 { font: 600 17px/22px var(--font-text); }
+.t-body { font: 400 15px/24px var(--font-text); }
+.t-body-strong { font: 600 15px/24px var(--font-text); }
+.t-label { font: 600 14px/20px var(--font-text); }
+.t-caption { font: 400 13px/19px var(--font-text); }
+.t-numeric { font: 500 19px/26px var(--font-text); font-variant-numeric: tabular-nums lining-nums; }
+.t-code { font: 400 14px/22px var(--font-mono); }
 
 /* Two-layer focus ring — legible on every surface. Apply to every
    interactive element; never remove the outline without replacing it. */

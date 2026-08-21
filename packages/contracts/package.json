@@ -6,5 +6,16 @@
   "description": "Wire contract: OpenAPI-generated client, shared DTOs and event schemas. Produced from apps/api; consumed by apps/web and apps/admin only.",
   "type": "module",
   "main": "./src/index.ts",
-  "files": ["src", "openapi"]
+  "files": [
+    "src",
+    "openapi"
+  ],
+  "scripts": {
+    "generate": "openapi-typescript ./openapi/v1.json -o ./src/generated/v1.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "openapi-typescript": "catalog:",
+    "typescript": "catalog:"
+  }
 }

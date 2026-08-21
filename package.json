@@ -27,10 +27,12 @@
     "migrations:check": "pnpm --filter @easyesg/api db:check",
     "clean": "./tools/clean-build-outputs.sh",
     "e2e": "pnpm --filter @easyesg/api test:e2e",
-    "gates": "pnpm lint && pnpm typecheck && pnpm test && pnpm boundaries && pnpm boundaries:prove && pnpm build && pnpm openapi:check && pnpm routes:check && pnpm migrations:check && pnpm e2e",
+    "pree2e:web": "pnpm --filter @easyesg/api... --filter @easyesg/web... build && ./tools/assemble-web-standalone.sh",
+    "e2e:web": "playwright test --config e2e/playwright.config.ts",
+    "gates": "pnpm lint && pnpm typecheck && pnpm test && pnpm boundaries && pnpm boundaries:prove && pnpm build && pnpm openapi:check && pnpm routes:check && pnpm migrations:check && pnpm e2e && pnpm e2e:web",
     "gates:clean": "pnpm clean && pnpm gates",
     "openapi:emit": "pnpm --filter @easyesg/api openapi:emit",
-    "openapi:check": "pnpm openapi:emit && git diff --exit-code packages/contracts/openapi/v1.json",
+    "openapi:check": "pnpm openapi:emit && pnpm --filter @easyesg/contracts generate && git diff --exit-code packages/contracts/openapi/v1.json packages/contracts/src/generated",
     "routes:check": "pnpm --filter @easyesg/admin build && git diff --exit-code apps/admin/src/app/route-tree.gen.ts",
     "typecheck": "pnpm -r typecheck"
   },
@@ -39,11 +41,13 @@
     "@eslint/js": "catalog:",
     "@next/eslint-plugin-next": "catalog:",
     "@playwright/test": "catalog:",
+    "@types/pg": "catalog:",
     "dependency-cruiser": "catalog:",
     "eslint": "catalog:",
     "eslint-plugin-jsx-a11y": "catalog:",
     "eslint-plugin-react-hooks": "catalog:",
     "globals": "catalog:",
+    "pg": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"
   }

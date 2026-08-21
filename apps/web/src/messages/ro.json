@@ -1,3 +1,80 @@
 {
-  "chrome": {}
+  "chrome": {
+    "brandHome": "easyesg — prima pagină",
+    "helpCentre": "Centrul de ajutor",
+    "language": "Limba interfeței",
+    "locales": {
+      "ro": "Română",
+      "en": "English",
+      "ru": "Русский"
+    },
+    "footer": {
+      "legalNote": "© 2026 EasyESG SRL · Chișinău",
+      "legalNav": "Documente legale",
+      "terms": "Termeni și condiții",
+      "privacy": "Politica de confidențialitate",
+      "cookies": "Politica de cookie-uri"
+    }
+  },
+  "identity": {
+    "unreachable": {
+      "title": "Serverul nu poate fi contactat",
+      "body": "Cererea nu a ajuns la server, așa că nimic nu s-a trimis și nimic nu s-a schimbat.",
+      "action": "Verifică-ți conexiunea la internet și încearcă din nou peste câteva momente."
+    },
+    "register": {
+      "title": "Creează-ți contul",
+      "subtitle": "Un cont poate ține mai multe organizații. Pe prima o adaugi după ce îți confirmi adresa de e-mail.",
+      "emailLabel": "E-mail de serviciu",
+      "emailHelp": "Aici trimitem linkul de confirmare. Tot aici vor ajunge și notificările.",
+      "emailMissing": "Adresa de e-mail lipsește, deci nu avem unde trimite linkul de confirmare. Completează adresa înainte de a continua.",
+      "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci linkul de confirmare nu ar ajunge nicăieri. Verifică adresa și corecteaz-o.",
+      "passwordLabel": "Parolă",
+      "pasteHint": "Managerul de parole și lipirea din clipboard funcționează aici.",
+      "show": "Arată",
+      "hide": "Ascunde",
+      "requirements": {
+        "length": "Între {minimum} și {maximum} de caractere",
+        "lowercase": "Cel puțin o literă mică",
+        "uppercase": "Cel puțin o literă mare",
+        "digit": "Cel puțin o cifră",
+        "further": "Cel puțin un alt caracter — semn, spațiu sau orice altceva"
+      },
+      "met": "îndeplinit",
+      "unmet": "încă neîndeplinit",
+      "passwordPolicy": "Parola aleasă nu îndeplinește toate cerințele afișate, deci contul nu a fost creat. Completează fiecare punct din listă — între {minimum} și {maximum} de caractere, cu literă mică, literă mare, cifră și încă un alt caracter.",
+      "submit": "Creează contul",
+      "alreadyHave": "Ai deja un cont?",
+      "signIn": "Autentifică-te",
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+      "problemTitle": "Cererea nu a putut fi procesată",
+      "problemBody": "Contul nu a fost creat din cauza unei erori la procesarea cererii.",
+      "problemAction": "Corectează datele indicate și încearcă din nou."
+    },
+    "verify": {
+      "title": "Confirmă-ți adresa de e-mail",
+      "sentIntro": "Am trimis un link de confirmare la",
+      "instructions": "Deschide linkul pe orice dispozitiv. Funcționează o singură dată și expiră după 24 de ore. Poți închide pagina fără grijă — nimic nu se pierde.",
+      "resend": "Retrimite linkul",
+      "cooldown": "Poți retrimite peste {seconds} s",
+      "sentTitle": "Cererea a fost înregistrată",
+      "sentBody": "Dacă adresa are un cont care așteaptă confirmarea, un link nou este pe drum.",
+      "sentAction": "Verifică-ți căsuța de e-mail, inclusiv dosarul de spam.",
+      "wrongAddress": "Adresă greșită?",
+      "changeIt": "Schimb-o și trimite din nou",
+      "enterEmailIntro": "Scrie adresa cu care te-ai înregistrat și îți trimitem un link de confirmare nou.",
+      "emailLabel": "Adresa de e-mail",
+      "emailMissing": "Adresa de e-mail lipsește, deci nu avem unde trimite linkul nou. Completează adresa înainte de a trimite.",
+      "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci linkul nu ar ajunge nicăieri. Verifică adresa și corecteaz-o.",
+      "send": "Trimite linkul",
+      "confirmIntro": "Apasă butonul de mai jos ca să confirmi adresa și să îți activezi contul. Linkul funcționează o singură dată.",
+      "confirm": "Confirmă adresa",
+      "successTitle": "Adresa este confirmată",
+      "successBody": "Contul tău este activ. De aici te poți autentifica și îți poți crea organizația.",
+      "successAction": "Mergi la autentificare",
+      "problemTitle": "Linkul nu a putut fi folosit",
+      "problemBody": "Adresa nu a fost confirmată din cauza unei erori la procesarea cererii.",
+      "problemAction": "Cere un link nou"
+    }
+  }
 }
