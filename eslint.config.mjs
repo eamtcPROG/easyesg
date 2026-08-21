@@ -5,6 +5,7 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import nextPlugin from '@next/eslint-plugin-next';
+import sonarjs from 'eslint-plugin-sonarjs';
 
 /**
  * One flat config for the workspace. Type-aware rules are on: AD-13 pins TypeScript at 6.x
@@ -91,6 +92,12 @@ export default tseslint.config(
       // Committed so `pnpm typecheck` needs no prior build, and kept honest by `routes:check`
       // — but machine output, so not ours to lint.
       '**/route-tree.gen.ts',
+      // The same case, and it had been missed: openapi-typescript writes this from
+      // packages/contracts/openapi/v1.json, it is committed for the same reason, and
+      // `openapi:check` regenerates and diffs it. Added 21 Aug 2026, when a duplicated literal
+      // inside it was the only lint finding outside a test — a machine's output is not a code
+      // convention's business.
+      'packages/contracts/src/generated/**',
     ],
   },
   eslint.configs.recommended,
@@ -105,6 +112,51 @@ export default tseslint.config(
       // present as an empty result rather than an error.
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
+    },
+  },
+
+  // ── Duplicated string literals ──────────────────────────────────────────────────────────
+  // Added 21 Aug 2026 to put a mechanical check under CLAUDE.md's closed-vocabulary rule.
+  //
+  // **Read what it actually covers before relying on it, because it is a PARTIAL check and the
+  // gap is not the one you would guess.** `no-duplicate-string` carries two constants in its
+  // implementation: `MIN_LENGTH = 10`, and `NO_SEPARATOR_REGEXP = /^\w*$/` — where `\w` includes
+  // the underscore. So a literal that is one word of word-characters is invisible to it, at any
+  // repetition count. Measured on this repo, not assumed: `'unverified'` × 3 and
+  // `'password_reset'` × 3 pass clean, while `'a sentence with separators'` × 3 is caught.
+  //
+  // What that leaves is real and worth having — message keys (`identity.sign_in.credential_invalid`),
+  // route paths, SQL fragments and any prose literal all carry separators — but it does NOT see
+  // the bare `'unverified'`/`'worker'`/`'expired'` tokens the convention is mostly about. Those
+  // stay review-enforced. Saying otherwise in CLAUDE.md would be worse than leaving it unchecked:
+  // a rule that matches nothing looks exactly like a rule that passes.
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: { sonarjs },
+    rules: { 'sonarjs/no-duplicate-string': ['error', { threshold: 3 }] },
+  },
+  // Its exclusions are CLAUDE.md's two exceptions, mechanically — not a noise filter. Enabling
+  // it across the repo flagged 28 sites and **not one was production source**: the convention
+  // was already universal, and everything caught sat where it deliberately does not apply.
+  {
+    files: ['**/*.spec.{ts,tsx}', '**/*.e2e-spec.ts', 'apps/api/test/**/*.ts', 'e2e/**/*.ts'],
+    rules: {
+      // "Tests may assert literals on purpose": a spec pinning `'active'` pins the WIRE value and
+      // must break when someone renames the constant, which a spec written in constants never
+      // would. Scoped by filename, so a fake under `testing/` is still held to the rule — it
+      // models behaviour rather than asserting, and none of them tripped this.
+      'sonarjs/no-duplicate-string': 'off',
+    },
+  },
+  {
+    files: ['apps/api/src/infrastructure/persistence/migrations/**/*.ts'],
+    rules: {
+      // "Migration SQL stays literal" — a migration is frozen history, and a constant that can
+      // later be renamed would silently rewrite what it says. Nothing here trips the rule today;
+      // it is off in advance because the alternative when it does fire is someone reaching for an
+      // inline disable, or hoisting a constant into frozen SQL, which is the defect the exception
+      // exists to prevent.
+      'sonarjs/no-duplicate-string': 'off',
     },
   },
 

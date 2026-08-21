@@ -46,6 +46,7 @@
     "eslint": "catalog:",
     "eslint-plugin-jsx-a11y": "catalog:",
     "eslint-plugin-react-hooks": "catalog:",
+    "eslint-plugin-sonarjs": "catalog:",
     "globals": "catalog:",
     "pg": "catalog:",
     "typescript": "catalog:",

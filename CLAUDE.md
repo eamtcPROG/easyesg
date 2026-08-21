@@ -627,6 +627,17 @@ TypeScript does type-check a discriminated union's literals, so that particular 
 as silently as `MODE === 'worker'` did. The rule holds anyway: a reader should not have to work out
 which literals the compiler is guarding and which it is not.
 
+**`sonarjs/no-duplicate-string` sits under this rule as a partial check, and the word partial is
+load-bearing.** Enabled 21 Aug 2026 (§12.1) at threshold 3, off in tests and migrations — its two
+exclusions are the exceptions above, mechanically. What it cannot see is the interesting part: the
+rule carries `MIN_LENGTH = 10` and `NO_SEPARATOR_REGEXP = /^\w*$/`, and `\w` includes the
+underscore, so **a literal that is one word of word-characters is invisible to it at any repetition
+count.** Measured rather than assumed: `'unverified'` × 3 and `'password_reset'` × 3 pass clean,
+while `'a sentence with separators'` × 3 is caught. So it covers message keys, route paths, SQL and
+prose — and misses precisely the bare `'unverified'`/`'worker'`/`'expired'` tokens most of this
+convention is about, which stay enforced by review. Do not read the green gate as coverage: that
+misreading is the failure `boundaries:prove` exists to prevent, one level up.
+
 ### A component is reused, or it becomes a new reusable component
 
 **This is UX-89 and it is closed, not a preference:** *"No screen shall introduce a one-off
