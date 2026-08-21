@@ -2,7 +2,8 @@ import { BrandMark, FocusShell } from '@easyesg/ui';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { IdentityFooter, IdentityHeaderActions } from '@/features/identity/components/identity-chrome';
+import { IdentityHeaderActions } from '@/features/identity/components/identity-chrome';
+import { SiteFooter } from '@/shared/site-footer';
 import { Link } from '@/i18n/navigation';
 
 /**
@@ -32,7 +33,7 @@ export default async function IdentityLayout({ children }: { children: ReactNode
           </Link>
         }
         actions={<IdentityHeaderActions />}
-        footer={<IdentityFooter />}
+        footer={<SiteFooter />}
       >
         {children}
       </FocusShell>

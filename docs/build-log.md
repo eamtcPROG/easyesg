@@ -1238,3 +1238,32 @@ Now guarded in the same idiom, with three decisions worth recording:
 Logged reasons name the shape and the path and **never the body**, which may hold personal data
 (NFR-30) — asserted by a test that puts an address in a malformed payload and greps the log for it.
 Eleven new cases cover the guards, including that a legitimately `null` object is not malformed.
+
+**The copyright year was frozen into the catalogues (21 Aug 2026).** `© 2026 EasyESG SRL ·
+Chișinău` was authored as a literal in all three locales, so on 1 January it would have become
+quietly wrong and needed a release to correct — a staleness bug with no failing test to announce
+it. Raised as "should this be a general component with a dynamic year", and it is both.
+
+`src/shared/site-footer.tsx` is the component — a new `src/shared/` for chrome owned by no single
+feature, mirroring `apps/admin/src/shared/`. The footer is not identity's: the public and help
+surfaces carry the same one in Phase 10, and UX-89's rule is that a need met twice is an addition
+to the inventory rather than a second copy. It cannot live in `packages/ui`, which owns no text and
+no router, and here those are the whole substance. It renders the footer's CONTENT rather than the
+`<footer>` element, because the archetype owns that — `FocusShell` already emits one.
+
+Three decisions inside a change that looked like one line:
+
+- **A Server Component.** Reading the clock in a Client Component evaluates it twice, and a reader
+  in Tokyo at 23:30 Chișinău on 31 December would hydrate a different year than the server
+  rendered. Computed on the server it is rendered once and leaves the browser bundle entirely.
+- **Chișinău's year, not the reader's** — NFR-34's own test on a small case: a copyright notice is
+  a legal statement by a Moldovan company, so a different timezone must not change its answer.
+  `i18n/request.ts` already pins `Europe/Chisinau` and the formatter uses it.
+- **A year is a date, not a number**, and this is the trap worth recording. ICU formats a bare
+  `{year}` argument holding a number, so `2026` renders as **"2 026"** in `ro` and `ru` and
+  "2,026" in `en` — the space thousands separator §11 asked for everywhere else, in the one place
+  it is wrong. `formats.ts` gains a named `year` date format, which is also what keeps NFR-26's
+  "no hardcoded pattern" true; the e2e asserts no separator appears in any of the three locales.
+
+The test computes the expected year the same way the page does rather than hardcoding one — a
+spec carrying `2026` would be the very defect it guards against.

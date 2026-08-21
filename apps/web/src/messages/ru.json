@@ -9,7 +9,7 @@
       "ru": "Русский"
     },
     "footer": {
-      "legalNote": "© 2026 EasyESG SRL · Кишинёв",
+      "legalNote": "© {year} EasyESG SRL · Кишинёв",
       "legalNav": "Правовые документы",
       "terms": "Условия использования",
       "privacy": "Политика конфиденциальности",

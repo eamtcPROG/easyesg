@@ -1,0 +1,25 @@
+/* Moved from the identity screens' stylesheet when the footer became shared chrome. Values are
+   the Identity prototype's (OQ-10), extracted through the token cascade. */
+
+.note {
+  font: 400 12.5px/18px var(--font-text);
+  color: var(--text-muted);
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  font: 400 13.5px/18px var(--font-text);
+}
+
+.links a {
+  color: var(--text-body);
+  text-decoration: none;
+  border-radius: var(--radius-1);
+}
+
+.links a:hover {
+  text-decoration: underline;
+}

@@ -77,6 +77,47 @@ test.describe('the source locale is served unprefixed (SEO)', () => {
   });
 });
 
+test.describe('the legal footer', () => {
+  /**
+   * The copyright year was frozen into all three catalogues (`© 2026 …`), so it would have gone
+   * quietly wrong on 1 January and needed a release to correct. It is read from the clock now,
+   * in Europe/Chisinau — the timezone that determines a Moldovan company's legal statements
+   * (NFR-34's test applied to a small case).
+   *
+   * The assertion computes the expected year the same way the page does rather than hardcoding
+   * one, because a test carrying `2026` would be the very defect it is guarding against.
+   */
+  const currentYear = () =>
+    new Intl.DateTimeFormat('ro', { year: 'numeric', timeZone: 'Europe/Chisinau' }).format(
+      new Date(),
+    );
+
+  test('states the current year, not a year baked into the catalogue', async ({ page }) => {
+    await page.goto('/register');
+    await expect(page.getByText(`© ${currentYear()} EasyESG SRL · Chișinău`)).toBeVisible();
+  });
+
+  test('renders the year without a thousands separator in every locale', async ({ page }) => {
+    // ICU formats a bare numeric `{year}` as a number, which is "2 026" in ro and ru and
+    // "2,026" in en. The named `year` date format is what avoids that; this is its guard.
+    for (const path of ['/register', '/en/register', '/ru/register']) {
+      await page.goto(path);
+      const note = await page.locator('footer span').first().innerText();
+      expect(note, path).toContain(currentYear());
+      expect(note, path).not.toMatch(/\d[\s,]\d{3}/);
+    }
+  });
+
+  test('links to the three legal documents in the active locale', async ({ page }) => {
+    await page.goto('/ru/register');
+    const footer = page.locator('footer');
+    await expect(footer.getByRole('link', { name: 'Условия использования' })).toHaveAttribute(
+      'href',
+      '/ru/legal/terms',
+    );
+  });
+});
+
 test.describe('the auth boundary holds on unprefixed paths', () => {
   /**
    * The regression this file exists for. `requiresSession` used to read segment 2 as the route

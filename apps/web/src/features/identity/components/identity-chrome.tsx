@@ -5,12 +5,12 @@ import { LanguageSwitcher } from '@easyesg/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
-import styles from './identity-screens.module.css';
 
 /**
- * The Focus header's actions and the legal footer — chrome the identity screens share
- * (IMPLEMENTATION_PLAN Phase 2: the language switcher lands here because identity is the
- * first surface that has one).
+ * The Focus header's actions (IMPLEMENTATION_PLAN Phase 2: the language switcher lands here
+ * because identity is the first surface that has one). The legal footer used to live here too
+ * and now lives in `src/shared/site-footer.tsx` — it is shared with the public surfaces, and it
+ * belongs on the server, which this file is not.
  *
  * Language is URL state (routing.ts), so switching is a `Link` to the same path in the other
  * locale — query string included, because a verification token must survive the switch
@@ -47,17 +47,8 @@ export function IdentityHeaderActions() {
   );
 }
 
-export function IdentityFooter() {
-  const t = useTranslations('chrome.footer');
-
-  return (
-    <>
-      <span className={styles.footerNote}>{t('legalNote')}</span>
-      <nav className={styles.footerLinks} aria-label={t('legalNav')}>
-        <Link href="/legal/terms">{t('terms')}</Link>
-        <Link href="/legal/privacy">{t('privacy')}</Link>
-        <Link href="/legal/cookies">{t('cookies')}</Link>
-      </nav>
-    </>
-  );
-}
+/**
+ * The footer moved to `src/shared/site-footer.tsx` (21 Aug 2026): the public and help surfaces
+ * carry the same one, and as a Server Component it computes the copyright year from the clock
+ * once, rather than shipping a client component that would compute it on both sides.
+ */

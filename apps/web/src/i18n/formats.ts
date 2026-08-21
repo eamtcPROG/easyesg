@@ -29,6 +29,16 @@ export const formats = {
     long: { day: 'numeric', month: 'long', year: 'numeric' },
     // Audit surfaces: S-12 field change history, provenance, delivery records.
     stamp: { dateStyle: 'medium', timeStyle: 'short' },
+    /**
+     * A bare year — the copyright notice, and later any year-only label.
+     *
+     * It exists as a *date* format rather than being interpolated as a number on purpose: ICU
+     * formats a plain `{year}` argument holding a number, so `2026` renders as "2,026" in `en`
+     * and "2 026" in `ro`/`ru`, where the space thousands separator is exactly the convention
+     * §11 asked for everywhere else. Formatting the date yields "2026" in every locale, which
+     * is what a year is.
+     */
+    year: { year: 'numeric' },
   },
   number: {
     // Headcount, site counts, anything countable.

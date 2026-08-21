@@ -9,7 +9,7 @@
       "ru": "Русский"
     },
     "footer": {
-      "legalNote": "© 2026 EasyESG SRL · Chișinău",
+      "legalNote": "© {year} EasyESG SRL · Chișinău",
       "legalNav": "Legal documents",
       "terms": "Terms of service",
       "privacy": "Privacy notice",

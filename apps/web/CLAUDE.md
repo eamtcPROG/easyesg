@@ -89,6 +89,7 @@ src/
 ├─ i18n/           next-intl: routing · navigation · request · formats
 ├─ app/            routes only, thin. No logic, no data access
 ├─ features/       10 domains, mirroring apps/api/src/modules names
+├─ shared/         chrome owned by no single feature (SiteFooter) — mirrors apps/admin/src/shared
 ├─ server/         server-only: session, api-client, data/
 ├─ client/         browser-only: autosave (IndexedDB queue), polling
 └─ lib/            env, pagination, session-cookie
@@ -161,6 +162,18 @@ conditional render, which is how it ends up half-suppressed on one screen.
 - **Formatting has one home.** `src/i18n/formats.ts` declares named formats; components reach
   them by name through `useFormatter()`. `toFixed`, `toLocaleString` and `new Intl.*Format` are
   lint errors, because NFR-26's stated verification is a static analysis rule.
+
+  **A year is a date, not a number** — the trap the `year` format exists for. ICU formats a bare
+  `{year}` argument holding a number, so `2026` renders as "2 026" in `ro`/`ru` and "2,026" in
+  `en`: the space thousands separator §11 asked for everywhere else, in the one place it is
+  wrong. Format the date (`format.dateTime(date, 'year')`) and pass the string.
+
+- **Nothing user-visible is derived from the clock in a Client Component.** The copyright year is
+  computed in `SiteFooter`, a Server Component: computed on the client it would be evaluated
+  twice, and a reader in Tokyo at 23:30 Chișinău on 31 December would hydrate a different year
+  than the server rendered. It also uses **Chișinău's** clock rather than the reader's, which is
+  NFR-34's test on a small case — a Moldovan company's legal statement must not change answer
+  with the reader's timezone.
 
 - **`requestLocale`, not `next/root-params`.** next-intl marks the former deprecated, but root
   params throw inside a Route Handler (Next E1043) and the module is a compiler-replaced
