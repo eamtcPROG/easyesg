@@ -249,6 +249,12 @@ export class FakeAccountStore implements AccountStore {
         for (const session of store.sessions) {
           if (session.accountId === accountId && !session.revokedAt) {
             session.revokedAt = at;
+            // Literal on purpose, and it is the migration's exception rather than a lapse from
+            // the closed-vocabulary rule: this fake stands in for the DATABASE, whose own copy
+            // of the vocabulary is the `session_revoked_reason_known` CHECK. Importing
+            // `SESSION_REVOKED_REASON` here would also hand the account module the session
+            // module's vocabulary — the exact coupling the port avoids by baking the reason into
+            // the method name instead of taking it as a parameter.
             session.revokedReason = 'password_reset';
           }
         }

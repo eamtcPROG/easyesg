@@ -444,7 +444,16 @@ every context depends on, so anything it reaches for becomes a transitive depend
   `as const` object (it erases to nothing and has none of a TS `enum`'s ambient/`isolatedModules`
   edges; `MessageType` predates this and is not worth churning), with the type derived from it and
   contract surfaces derived too (`@ApiProperty({ enum: Object.values(ACCOUNT_STATUS) })`, where
-  declaration order is contract order). Two deliberate exceptions: **migration SQL stays literal**
+  declaration order is contract order). **"Declared once" is about the declaration, not the
+  location** (clarified 21 Aug 2026, task 21 review): all four examples above are exported,
+  persisted vocabularies, which reads as though the rule were only about values that cross a file
+  — it is not. `RefreshSession`'s three-value outcome discriminator was written as literals at
+  eight sites on that misreading; it now declares `REFRESH_OUTCOME` **in its own file,
+  unexported**, because internal control flow has no reader elsewhere and a `constants/` file for
+  it would be the opposite over-correction. A TypeScript discriminated union does type-check its
+  literals, so this class does not fail silently the way `MODE === 'worker'` did — the rule holds
+  anyway, because a reader should not have to work out which literals are guarded and which are
+  not. Two deliberate exceptions: **migration SQL stays literal**
   — a migration is frozen history, and interpolating a constant that can later be renamed would
   silently rewrite what that history says (the CHECK constraint is the database's own copy of the
   vocabulary, and the app object mirrors it); and **tests may assert literals on purpose**, because
