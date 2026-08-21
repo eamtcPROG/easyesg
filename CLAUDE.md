@@ -580,6 +580,53 @@ Taxonomy element keys resolve to labels through `platform/localization`, using t
 translation wherever one is published (NFR-24) — and Russian VSME labels are platform-authored with
 no EFRAG standing, which the export must say rather than imply.
 
+### A closed vocabulary is declared once, never as scattered literals
+
+**Any value drawn from a fixed set — a status, kind, state, mode, discriminator, provider name —
+is declared once as an `as const` object with its union derived from it, and referenced through
+that object at every site.** Not a TypeScript `enum`: `as const` erases to nothing and has none of
+the `enum`'s ambient/`isolatedModules` edges. This binds every workspace, not only `apps/api`
+(moved here 21 Aug 2026, having been written package-scoped by mistake — the rule was always
+general, and `apps/web` was already following it unwritten).
+
+```ts
+export const ACCOUNT_STATUS = { UNVERIFIED: 'unverified', ACTIVE: 'active' } as const;
+export type AccountStatus = (typeof ACCOUNT_STATUS)[keyof typeof ACCOUNT_STATUS];
+```
+
+It covers two shapes of one defect. **Comparisons:** `MODE === 'worker'` split provider sets across
+five files, and a typo'd literal does not error — the comparison is simply false and the wrong
+branch registers silently. **Field values and discriminators:** a status written as `'unverified'`
+at each site has no single place its spelling is true. `ACCOUNT_STATUS`, `APP_MODE`, `ProblemType`
+(`apps/api`) and `API_OUTCOME` (`apps/web`) are the pattern; `MessageType` predates it and is not
+worth churning.
+
+**"Declared once" is about the declaration, not the location.** A vocabulary several files share
+lives where its owner does — `models/` for a domain value, `lib/` for a client one. One internal to
+a single file is declared *in that file, unexported*: `RefreshSession`'s three-value outcome is not
+a `constants/` directory's business, and building one for it is the opposite over-correction, a
+folder of values with one reader each. This clause exists because the rule's original examples were
+all exported, persisted vocabularies, which read as though it only governed values crossing a file
+boundary — and on that misreading a discriminator shipped as literals at eight sites (task 21).
+
+**Derive every surface generated from a vocabulary**, rather than restating it: `@ApiProperty({ enum:
+Object.values(ACCOUNT_STATUS) })` makes declaration order contract order, so the OpenAPI diff catches
+a reordering. A hand-written copy of the same list is a second source of truth by definition.
+
+Two deliberate exceptions, part of the rule rather than escapes from it:
+
+- **Migration SQL stays literal.** A migration is frozen history, and interpolating a constant that
+  can later be renamed would silently rewrite what that history says. The `CHECK` constraint is the
+  database's own copy of the vocabulary; the `as const` object mirrors it.
+- **Tests may assert literals on purpose.** A spec pinning `'active'` is pinning the *wire value* —
+  it must break if someone renames the constant's value, which a test written in constants never
+  would. This covers assertions, not test doubles: a fake that *models* behaviour follows the rule
+  like any other code, unless it is standing in for the database's own literal copy.
+
+TypeScript does type-check a discriminated union's literals, so that particular class cannot fail
+as silently as `MODE === 'worker'` did. The rule holds anyway: a reader should not have to work out
+which literals the compiler is guarding and which it is not.
+
 ### A component is reused, or it becomes a new reusable component
 
 **This is UX-89 and it is closed, not a preference:** *"No screen shall introduce a one-off

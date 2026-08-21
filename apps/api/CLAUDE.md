@@ -435,30 +435,17 @@ every context depends on, so anything it reaches for becomes a transitive depend
   migration datasource, every migration, `seed-configuration*` — are lint-banned from the alias:
   an `@api/` import there fails at run time in whichever environment migrates first.
 - **A closed vocabulary is declared once, as an `as const` object with a derived union — never
-  scattered string literals** (added 20 Aug 2026, task 19 review; widened same day to every
-  non-free-text field). This covers two shapes of the same defect. Comparisons: `MODE === 'worker'`
-  split provider sets in five files, and a typo'd literal does not error — the comparison is simply
-  false and the wrong branch registers silently. Field values: a status, kind, state or
-  discriminator written as `'unverified'` at each site has no single place its spelling is true.
-  `ACCOUNT_STATUS`, `APP_MODE`, `ProblemType` and `LOG_EMAIL_PROVIDER` are the pattern — an
-  `as const` object (it erases to nothing and has none of a TS `enum`'s ambient/`isolatedModules`
-  edges; `MessageType` predates this and is not worth churning), with the type derived from it and
-  contract surfaces derived too (`@ApiProperty({ enum: Object.values(ACCOUNT_STATUS) })`, where
-  declaration order is contract order). **"Declared once" is about the declaration, not the
-  location** (clarified 21 Aug 2026, task 21 review): all four examples above are exported,
-  persisted vocabularies, which reads as though the rule were only about values that cross a file
-  — it is not. `RefreshSession`'s three-value outcome discriminator was written as literals at
-  eight sites on that misreading; it now declares `REFRESH_OUTCOME` **in its own file,
-  unexported**, because internal control flow has no reader elsewhere and a `constants/` file for
-  it would be the opposite over-correction. A TypeScript discriminated union does type-check its
-  literals, so this class does not fail silently the way `MODE === 'worker'` did — the rule holds
-  anyway, because a reader should not have to work out which literals are guarded and which are
-  not. Two deliberate exceptions: **migration SQL stays literal**
-  — a migration is frozen history, and interpolating a constant that can later be renamed would
-  silently rewrite what that history says (the CHECK constraint is the database's own copy of the
-  vocabulary, and the app object mirrors it); and **tests may assert literals on purpose**, because
-  a spec pinning `'active'` is pinning the wire value — it must break if someone renames the
-  constant's value, which a test written in constants never would.
+  scattered string literals.** The rule and its two exceptions moved to the root `CLAUDE.md`
+  ("Conventions") on 21 Aug 2026: it was written here on 20 Aug and is not package-scoped —
+  `apps/web`'s `API_OUTCOME` was already following it unwritten. Read it there; what is specific
+  to this package is that a **contract surface is derived from the object** — `@ApiProperty({ enum:
+  Object.values(ACCOUNT_STATUS) })`, where declaration order becomes contract order, so a
+  reordering is a diff `openapi:check` fails on rather than a silent change to the published
+  enum. `ACCOUNT_STATUS`, `APP_MODE`, `ProblemType`, `LOG_EMAIL_PROVIDER` and
+  `SESSION_REVOKED_REASON` are this package's instances; `MessageType` predates the rule. Of the
+  root file's two exceptions, the **migration-SQL** one lands only here, since migrations exist in
+  no other workspace — and it pairs with a `CHECK` constraint holding the same vocabulary, so the
+  object and the constraint are two copies that must be changed together by hand.
 - **The catalogue must be initialised before anything serves.** `use-intl` and every current
   FormatJS release ship ESM only, and this app is CommonJS (OQ-48), so `initialiseCatalogue()`
   bridges with a dynamic `import()` and is awaited in both entrypoints. Forgetting it does not
