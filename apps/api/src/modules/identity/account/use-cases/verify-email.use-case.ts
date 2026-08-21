@@ -3,6 +3,7 @@ import { hashVerificationToken, verificationTokenMatches } from '../domain/verif
 import { VerificationTokenInvalidError } from '../errors/account.errors';
 import type { AccountStore } from '../interfaces/account-store.interface';
 import type { Account } from '../models/account.model';
+import type { Clock } from '@api/contracts/clock.port';
 
 /**
  * UC-03 — verify email address (FR-3).
@@ -19,13 +20,19 @@ import type { Account } from '../models/account.model';
  * Rejections after the claim roll it back with the rest of the transaction, which is correct: a
  * token rejected for expiry is no more usable un-claimed than claimed.
  */
+export interface VerifyEmailCommand {
+  /** The single-use value from the verification link. */
+  readonly token: string;
+}
+
 export class VerifyEmail {
   constructor(
     private readonly store: AccountStore,
-    private readonly now: () => Date,
+    private readonly now: Clock,
   ) {}
 
-  async execute(presentedToken: string): Promise<Account> {
+  async execute(command: VerifyEmailCommand): Promise<Account> {
+    const presentedToken = command.token;
     const presentedHash = hashVerificationToken(presentedToken);
 
     return this.store.run(async (tx) => {

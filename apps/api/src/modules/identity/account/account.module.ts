@@ -7,6 +7,7 @@ import { AccountStoreRepository } from '@api/infrastructure/persistence/identity
 import { AuthController } from './controllers/auth.controller';
 import { PasswordResetEmailHandler } from './consumers/password-reset-email.handler';
 import { VerificationEmailHandler } from './consumers/verification-email.handler';
+import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { ACCOUNT_STORE, type AccountStore } from './interfaces/account-store.interface';
 import { AccountService } from './services/account.service';
 import { PASSWORD_HASHER, type PasswordHasher } from './interfaces/password-hasher.interface';
@@ -62,32 +63,41 @@ const httpProviders: Provider[] = [
       // mode and instantiates no provider, so the hermetic gates still need no secret.
       new Argon2PasswordHasher(config.get('auth.passwordPepper', { infer: true })),
   },
+  /**
+   * One clock for the module (P-7, `contracts/clock.port.ts`). It replaced `() => new Date()`
+   * written at each factory: five copies of one decision, and no way for a test to move time for
+   * the module as a whole without re-wiring every use case individually.
+   */
+  { provide: CLOCK, useValue: () => new Date() },
   {
     provide: RegisterAccount,
-    inject: [ACCOUNT_STORE, PASSWORD_HASHER],
-    useFactory: (store: AccountStore, hasher: PasswordHasher) =>
-      new RegisterAccount(store, hasher, () => new Date()),
+    inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AccountStore, hasher: PasswordHasher, now: Clock) =>
+      new RegisterAccount(store, hasher, now),
   },
   {
     provide: VerifyEmail,
-    inject: [ACCOUNT_STORE],
-    useFactory: (store: AccountStore) => new VerifyEmail(store, () => new Date()),
+    inject: [ACCOUNT_STORE, CLOCK],
+    useFactory: (store: AccountStore, now: Clock) =>
+      new VerifyEmail(store, now),
   },
   {
     provide: ResendVerificationEmail,
-    inject: [ACCOUNT_STORE],
-    useFactory: (store: AccountStore) => new ResendVerificationEmail(store, () => new Date()),
+    inject: [ACCOUNT_STORE, CLOCK],
+    useFactory: (store: AccountStore, now: Clock) =>
+      new ResendVerificationEmail(store, now),
   },
   {
     provide: RequestPasswordReset,
-    inject: [ACCOUNT_STORE],
-    useFactory: (store: AccountStore) => new RequestPasswordReset(store, () => new Date()),
+    inject: [ACCOUNT_STORE, CLOCK],
+    useFactory: (store: AccountStore, now: Clock) =>
+      new RequestPasswordReset(store, now),
   },
   {
     provide: ResetPassword,
-    inject: [ACCOUNT_STORE, PASSWORD_HASHER],
-    useFactory: (store: AccountStore, hasher: PasswordHasher) =>
-      new ResetPassword(store, hasher, () => new Date()),
+    inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AccountStore, hasher: PasswordHasher, now: Clock) =>
+      new ResetPassword(store, hasher, now),
   },
 ];
 

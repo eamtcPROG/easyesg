@@ -12,6 +12,7 @@ import {
   PASSWORD_RESET_REQUESTED,
   type PasswordResetRequested,
 } from '../constants/account.constants';
+import type { Clock } from '@api/contracts/clock.port';
 
 export interface RequestPasswordResetCommand {
   readonly email: string;
@@ -49,7 +50,7 @@ export interface RequestPasswordResetCommand {
 export class RequestPasswordReset {
   constructor(
     private readonly store: AccountStore,
-    private readonly now: () => Date,
+    private readonly now: Clock,
   ) {}
 
   async execute(command: RequestPasswordResetCommand): Promise<void> {

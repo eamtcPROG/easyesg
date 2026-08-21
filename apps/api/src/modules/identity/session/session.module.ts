@@ -8,6 +8,7 @@ import {
   PASSWORD_HASHER,
   type PasswordHasher,
 } from '@api/modules/identity/account/interfaces/password-hasher.interface';
+import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { SessionController } from './controllers/session.controller';
 import {
   ACCESS_TOKEN_SIGNER,
@@ -43,6 +44,8 @@ const { mode } = configuration();
 const httpProviders: Provider[] = [
   SessionService,
   { provide: SESSION_STORE, useClass: SessionStoreRepository },
+  /** One clock for the module — see `AccountModule`'s equivalent (P-7). */
+  { provide: CLOCK, useValue: () => new Date() },
   {
     provide: PASSWORD_HASHER,
     inject: [ConfigService],
@@ -59,20 +62,25 @@ const httpProviders: Provider[] = [
   },
   {
     provide: SignIn,
-    inject: [SESSION_STORE, PASSWORD_HASHER, ACCESS_TOKEN_SIGNER],
-    useFactory: (store: SessionStore, hasher: PasswordHasher, signer: AccessTokenSigner) =>
-      new SignIn(store, hasher, signer, () => new Date()),
+    inject: [SESSION_STORE, PASSWORD_HASHER, ACCESS_TOKEN_SIGNER, CLOCK],
+    useFactory: (
+      store: SessionStore,
+      hasher: PasswordHasher,
+      signer: AccessTokenSigner,
+      now: Clock,
+    ) => new SignIn(store, hasher, signer, now),
   },
   {
     provide: RefreshSession,
-    inject: [SESSION_STORE, ACCESS_TOKEN_SIGNER],
-    useFactory: (store: SessionStore, signer: AccessTokenSigner) =>
-      new RefreshSession(store, signer, () => new Date()),
+    inject: [SESSION_STORE, ACCESS_TOKEN_SIGNER, CLOCK],
+    useFactory: (store: SessionStore, signer: AccessTokenSigner, now: Clock) =>
+      new RefreshSession(store, signer, now),
   },
   {
     provide: SignOut,
-    inject: [SESSION_STORE],
-    useFactory: (store: SessionStore) => new SignOut(store, () => new Date()),
+    inject: [SESSION_STORE, CLOCK],
+    useFactory: (store: SessionStore, now: Clock) =>
+      new SignOut(store, now),
   },
 ];
 

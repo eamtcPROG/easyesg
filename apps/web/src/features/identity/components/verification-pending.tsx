@@ -61,7 +61,7 @@ export function VerificationPending() {
   const send = (address: string) => {
     setUnreachable(false);
     startTransition(async () => {
-      const result = await resendVerificationAction(address);
+      const result = await resendVerificationAction({ email: address });
       if (result.status === API_OUTCOME.Unreachable) {
         setUnreachable(true);
         return;

@@ -6,6 +6,7 @@ import {
 } from '../errors/account.errors';
 import type { AccountStore } from '../interfaces/account-store.interface';
 import type { PasswordHasher } from '../interfaces/password-hasher.interface';
+import type { Clock } from '@api/contracts/clock.port';
 
 export interface ResetPasswordCommand {
   readonly token: string;
@@ -37,7 +38,7 @@ export class ResetPassword {
   constructor(
     private readonly store: AccountStore,
     private readonly hasher: PasswordHasher,
-    private readonly now: () => Date,
+    private readonly now: Clock,
   ) {}
 
   async execute(command: ResetPasswordCommand): Promise<void> {

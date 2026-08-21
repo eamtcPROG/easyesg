@@ -2,11 +2,28 @@ import { Injectable } from '@nestjs/common';
 import { SOURCE_LOCALE } from '@easyesg/i18n';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
 import type { Account } from '../models/account.model';
-import { RegisterAccount } from '../use-cases/register-account.use-case';
-import { RequestPasswordReset } from '../use-cases/request-password-reset.use-case';
-import { ResendVerificationEmail } from '../use-cases/resend-verification-email.use-case';
-import { ResetPassword } from '../use-cases/reset-password.use-case';
-import { VerifyEmail } from '../use-cases/verify-email.use-case';
+import { RegisterAccount, type RegisterAccountCommand } from '../use-cases/register-account.use-case';
+import {
+  RequestPasswordReset,
+  type RequestPasswordResetCommand,
+} from '../use-cases/request-password-reset.use-case';
+import {
+  ResendVerificationEmail,
+  type ResendVerificationEmailCommand,
+} from '../use-cases/resend-verification-email.use-case';
+import { ResetPassword, type ResetPasswordCommand } from '../use-cases/reset-password.use-case';
+import { VerifyEmail, type VerifyEmailCommand } from '../use-cases/verify-email.use-case';
+
+/**
+ * A use case's command minus the fields THIS layer supplies from ambient request context.
+ *
+ * Derived rather than hand-written, so the two can never disagree: adding a field to a command
+ * adds it here, and a caller that must now provide it stops compiling — which is the point. It
+ * also documents, in the type, exactly which inputs a caller is not expected to know: `locale`
+ * comes from the negotiated `Accept-Language` (OQ-46) and `clientIp` from the socket, and a
+ * controller has no business passing either.
+ */
+type AccountServiceInput<C> = Omit<C, 'locale' | 'clientIp'>;
 
 /**
  * The module's service — the seam between controllers and use cases (house rule, added 20 Aug
@@ -42,10 +59,9 @@ export class AccountService {
     private readonly resetPasswordUseCase: ResetPassword,
   ) {}
 
-  register(email: string, password: string): Promise<Account> {
+  register(input: AccountServiceInput<RegisterAccountCommand>): Promise<Account> {
     return this.registerAccount.execute({
-      email,
-      password,
+      ...input,
       // The locale negotiated for this request (OQ-46) — the only evidence of preference that
       // exists before the user has seen a settings screen. Persisted on the account because
       // FR-169 resolves email language per recipient from their record; the worker sending the
@@ -54,24 +70,26 @@ export class AccountService {
     });
   }
 
-  verify(token: string): Promise<Account> {
-    return this.verifyEmail.execute(token);
+  verify(input: AccountServiceInput<VerifyEmailCommand>): Promise<Account> {
+    return this.verifyEmail.execute(input);
   }
 
-  resend(email: string): Promise<void> {
-    return this.resendVerificationEmail.execute(email);
+  resend(input: AccountServiceInput<ResendVerificationEmailCommand>): Promise<void> {
+    return this.resendVerificationEmail.execute(input);
   }
 
-  requestPasswordReset(email: string): Promise<void> {
+  requestPasswordReset(
+    input: AccountServiceInput<RequestPasswordResetCommand>,
+  ): Promise<void> {
     return this.requestPasswordResetUseCase.execute({
-      email,
+      ...input,
       // The request's address, for §12.5.6's per-(IP, account) window — ambient context resolved
       // here for the registration-locale reason above.
       clientIp: requestContext()?.clientIp,
     });
   }
 
-  resetPassword(token: string, password: string): Promise<void> {
-    return this.resetPasswordUseCase.execute({ token, password });
+  resetPassword(input: AccountServiceInput<ResetPasswordCommand>): Promise<void> {
+    return this.resetPasswordUseCase.execute(input);
   }
 }

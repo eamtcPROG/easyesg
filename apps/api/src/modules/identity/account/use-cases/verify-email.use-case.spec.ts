@@ -30,14 +30,14 @@ describe('VerifyEmail (UC-03, FR-3)', () => {
 
   it('activates the account', async () => {
     const at = new Date(REGISTERED_AT.getTime() + 60_000);
-    const account = await verifyAt(at).execute(token);
+    const account = await verifyAt(at).execute({ token: token });
 
     expect(account.status).toBe('active');
     expect(account.verifiedAt).toEqual(at);
   });
 
   it('refuses a token that was never issued', async () => {
-    await expect(verifyAt(REGISTERED_AT).execute('not-a-token')).rejects.toBeInstanceOf(
+    await expect(verifyAt(REGISTERED_AT).execute({ token: 'not-a-token' })).rejects.toBeInstanceOf(
       VerificationTokenInvalidError,
     );
   });
@@ -49,20 +49,20 @@ describe('VerifyEmail (UC-03, FR-3)', () => {
    */
   it('refuses a token that has already been used', async () => {
     const at = new Date(REGISTERED_AT.getTime() + 60_000);
-    await verifyAt(at).execute(token);
-    await expect(verifyAt(at).execute(token)).rejects.toBeInstanceOf(VerificationTokenInvalidError);
+    await verifyAt(at).execute({ token: token });
+    await expect(verifyAt(at).execute({ token: token })).rejects.toBeInstanceOf(VerificationTokenInvalidError);
   });
 
   it('refuses a token past its 24-hour lifetime', async () => {
     const late = new Date(REGISTERED_AT.getTime() + VERIFICATION_TOKEN_TTL_MS + 1);
-    await expect(verifyAt(late).execute(token)).rejects.toBeInstanceOf(
+    await expect(verifyAt(late).execute({ token: token })).rejects.toBeInstanceOf(
       VerificationTokenInvalidError,
     );
   });
 
   it('accepts a token one millisecond before it lapses', async () => {
     const justInTime = new Date(REGISTERED_AT.getTime() + VERIFICATION_TOKEN_TTL_MS - 1);
-    await expect(verifyAt(justInTime).execute(token)).resolves.toMatchObject({ status: 'active' });
+    await expect(verifyAt(justInTime).execute({ token: token })).resolves.toMatchObject({ status: 'active' });
   });
 
   /**
@@ -76,7 +76,7 @@ describe('VerifyEmail (UC-03, FR-3)', () => {
     const wayLater = new Date(REGISTERED_AT.getTime() + UNVERIFIED_ACCOUNT_TTL_MS + 1);
     store.tokens[0].expiresAt = new Date(wayLater.getTime() + VERIFICATION_TOKEN_TTL_MS);
 
-    await expect(verifyAt(wayLater).execute(token)).rejects.toBeInstanceOf(
+    await expect(verifyAt(wayLater).execute({ token: token })).rejects.toBeInstanceOf(
       VerificationTokenInvalidError,
     );
     expect(store.accounts[0].status).toBe('unverified');
@@ -84,7 +84,7 @@ describe('VerifyEmail (UC-03, FR-3)', () => {
 
   it('leaves the account untouched when it refuses', async () => {
     const late = new Date(REGISTERED_AT.getTime() + VERIFICATION_TOKEN_TTL_MS + 1);
-    await expect(verifyAt(late).execute(token)).rejects.toThrow();
+    await expect(verifyAt(late).execute({ token: token })).rejects.toThrow();
 
     expect(store.accounts[0].status).toBe('unverified');
     expect(store.accounts[0].verifiedAt).toBeNull();

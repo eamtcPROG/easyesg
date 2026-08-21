@@ -63,7 +63,7 @@ export class SessionController {
     content: { 'application/problem+json': {} },
   })
   async signIn(@Body() body: SignInRequestDto): Promise<SessionResponseDto> {
-    return new SessionResponseDto(await this.sessionService.signIn(body.email, body.password));
+    return new SessionResponseDto(await this.sessionService.signIn(body));
   }
 
   @Post('session/refresh')
@@ -88,7 +88,7 @@ export class SessionController {
     content: { 'application/problem+json': {} },
   })
   async refresh(@Body() body: RefreshSessionRequestDto): Promise<SessionResponseDto> {
-    return new SessionResponseDto(await this.sessionService.refresh(body.refreshToken));
+    return new SessionResponseDto(await this.sessionService.refresh(body));
   }
 
   @Delete('session')
@@ -103,6 +103,6 @@ export class SessionController {
   })
   @ApiResponse({ status: 204, description: 'The session is terminated, or already was.' })
   async signOut(@Body() body: SignOutRequestDto): Promise<void> {
-    await this.sessionService.signOut(body.refreshToken);
+    await this.sessionService.signOut(body);
   }
 }

@@ -30,7 +30,7 @@ export function ConfirmEmail({ token }: { token: string }) {
 
   const confirm = () => {
     startTransition(async () => {
-      const outcome = await verifyEmailAction(token);
+      const outcome = await verifyEmailAction({ token });
       if (outcome.status === API_OUTCOME.Ok) {
         // The challenge is answered; the pending screen's stored address has no reader left.
         forgetPendingVerification();

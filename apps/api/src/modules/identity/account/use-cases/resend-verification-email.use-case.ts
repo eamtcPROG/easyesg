@@ -3,6 +3,7 @@ import { normaliseEmail } from '../domain/email-address';
 import type { AccountStore } from '../interfaces/account-store.interface';
 import { ACCOUNT_STATUS } from '../models/account.model';
 import { issueVerificationChallenge } from './issue-verification-challenge';
+import type { Clock } from '@api/contracts/clock.port';
 
 /**
  * Reissue a verification link (FR-3; OQ-55, closed 20 Aug 2026).
@@ -25,13 +26,18 @@ import { issueVerificationChallenge } from './issue-verification-challenge';
  * cause one email to be sent to that address and nothing else — which is the same exposure FR-6's
  * reset request already carries, bounded by the edge rate limit (§12.5.6).
  */
+export interface ResendVerificationEmailCommand {
+  readonly email: string;
+}
+
 export class ResendVerificationEmail {
   constructor(
     private readonly store: AccountStore,
-    private readonly now: () => Date,
+    private readonly now: Clock,
   ) {}
 
-  async execute(rawEmail: string): Promise<void> {
+  async execute(command: ResendVerificationEmailCommand): Promise<void> {
+    const rawEmail = command.email;
     const email = normaliseEmail(rawEmail);
 
     await this.store.run(async (tx) => {

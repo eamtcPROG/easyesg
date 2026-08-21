@@ -35,7 +35,7 @@ describe('ResendVerificationEmail (FR-3, OQ-55)', () => {
   describe('for an unverified account', () => {
     it('issues a fresh challenge', async () => {
       await registerAt(REGISTERED_AT);
-      await resendAt(LATER).execute('ana.popescu@example.md');
+      await resendAt(LATER).execute({ email: 'ana.popescu@example.md' });
 
       expect(store.effects).toHaveLength(2);
       const reissued = store.effects[1].payload as unknown as EmailVerificationRequested;
@@ -49,7 +49,7 @@ describe('ResendVerificationEmail (FR-3, OQ-55)', () => {
       await registerAt(REGISTERED_AT);
       const original = (store.effects[0].payload as unknown as EmailVerificationRequested).token;
 
-      await resendAt(LATER).execute('ana.popescu@example.md');
+      await resendAt(LATER).execute({ email: 'ana.popescu@example.md' });
 
       const live = store.tokens.filter((token) => !token.consumedAt);
       expect(live).toHaveLength(1);
@@ -58,24 +58,24 @@ describe('ResendVerificationEmail (FR-3, OQ-55)', () => {
 
     it('produces a link that actually verifies', async () => {
       await registerAt(REGISTERED_AT);
-      await resendAt(LATER).execute('ana.popescu@example.md');
+      await resendAt(LATER).execute({ email: 'ana.popescu@example.md' });
       const reissued = (store.effects[1].payload as unknown as EmailVerificationRequested).token;
 
-      await expect(new VerifyEmail(store, () => LATER).execute(reissued)).resolves.toMatchObject({
+      await expect(new VerifyEmail(store, () => LATER).execute({ token: reissued })).resolves.toMatchObject({
         status: 'active',
       });
     });
 
     it('matches the address case-insensitively', async () => {
       await registerAt(REGISTERED_AT);
-      await resendAt(LATER).execute('ANA.POPESCU@EXAMPLE.MD');
+      await resendAt(LATER).execute({ email: 'ANA.POPESCU@EXAMPLE.MD' });
       expect(store.effects).toHaveLength(2);
     });
   });
 
   describe('every other case, indistinguishably', () => {
     it('does nothing for an address that holds no account', async () => {
-      await expect(resendAt(LATER).execute('nobody@example.md')).resolves.toBeUndefined();
+      await expect(resendAt(LATER).execute({ email: 'nobody@example.md' })).resolves.toBeUndefined();
       expect(store.effects).toEqual([]);
       expect(store.accounts).toEqual([]);
     });
@@ -86,9 +86,9 @@ describe('ResendVerificationEmail (FR-3, OQ-55)', () => {
       // Inside the link's 24 h, unlike LATER — verifying with a lapsed link would throw, and the
       // spec would then be asserting about an account that is still unverified.
       const verifiedAt = new Date(REGISTERED_AT.getTime() + 60_000);
-      await new VerifyEmail(store, () => verifiedAt).execute(token);
+      await new VerifyEmail(store, () => verifiedAt).execute({ token });
 
-      await expect(resendAt(LATER).execute('ana.popescu@example.md')).resolves.toBeUndefined();
+      await expect(resendAt(LATER).execute({ email: 'ana.popescu@example.md' })).resolves.toBeUndefined();
       expect(store.effects).toHaveLength(1);
     });
 
@@ -97,12 +97,12 @@ describe('ResendVerificationEmail (FR-3, OQ-55)', () => {
       await registerAt(REGISTERED_AT);
       const wayLater = new Date(REGISTERED_AT.getTime() + UNVERIFIED_ACCOUNT_TTL_MS + 1);
 
-      await expect(resendAt(wayLater).execute('ana.popescu@example.md')).resolves.toBeUndefined();
+      await expect(resendAt(wayLater).execute({ email: 'ana.popescu@example.md' })).resolves.toBeUndefined();
       expect(store.effects).toHaveLength(1);
     });
 
     it('never creates an account', async () => {
-      await resendAt(LATER).execute('nobody@example.md');
+      await resendAt(LATER).execute({ email: 'nobody@example.md' });
       expect(store.accounts).toEqual([]);
     });
   });

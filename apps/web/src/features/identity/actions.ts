@@ -43,17 +43,17 @@ export async function registerAction(input: RegisterAccountRequest): Promise<Reg
   return mapOutcome(outcome, toAccountSummary);
 }
 
-export async function verifyEmailAction(token: string): Promise<VerifyResult> {
-  const outcome = await api.post<VerifyEmailRequest, AccountResponse>('/auth/verify-email', {
-    token,
-  });
+export async function verifyEmailAction(input: VerifyEmailRequest): Promise<VerifyResult> {
+  const outcome = await api.post<VerifyEmailRequest, AccountResponse>('/auth/verify-email', input);
   return mapOutcome(outcome, toAccountSummary);
 }
 
-export async function resendVerificationAction(email: string): Promise<ResendResult> {
+export async function resendVerificationAction(
+  input: ResendVerificationEmailRequest,
+): Promise<ResendResult> {
   const outcome = await api.post<ResendVerificationEmailRequest, undefined>(
     '/auth/verification-email',
-    { email },
+    input,
   );
   // 202, uniformly and by design (OQ-55): the answer says nothing about whether the address
   // holds an account, and neither may the screen.

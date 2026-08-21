@@ -23,6 +23,7 @@ import {
 import type { AccessTokenSigner } from '../interfaces/access-token-signer.interface';
 import type { SessionStore, SessionTransaction } from '../interfaces/session-store.interface';
 import type { IssuedSession } from '../models/session.model';
+import type { Clock } from '@api/contracts/clock.port';
 
 export interface SignInCommand {
   readonly email: string;
@@ -66,7 +67,7 @@ export class SignIn {
     private readonly store: SessionStore,
     private readonly hasher: PasswordHasher,
     private readonly signer: AccessTokenSigner,
-    private readonly now: () => Date,
+    private readonly now: Clock,
   ) {}
 
   async execute(command: SignInCommand): Promise<IssuedSession> {

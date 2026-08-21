@@ -7,6 +7,7 @@ import type { AccountStore } from '../interfaces/account-store.interface';
 import type { PasswordHasher } from '../interfaces/password-hasher.interface';
 import type { Account } from '../models/account.model';
 import { issueVerificationChallenge } from './issue-verification-challenge';
+import type { Clock } from '@api/contracts/clock.port';
 
 export interface RegisterAccountCommand {
   readonly email: string;
@@ -35,7 +36,7 @@ export class RegisterAccount {
   constructor(
     private readonly store: AccountStore,
     private readonly hasher: PasswordHasher,
-    private readonly now: () => Date,
+    private readonly now: Clock,
   ) {}
 
   async execute(command: RegisterAccountCommand): Promise<Account> {

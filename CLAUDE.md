@@ -652,6 +652,40 @@ check, `x === ''` (a length test — the `alt` rule takes the same view), and th
 Turning the pair on flagged 17 sites and all 17 are now fixed, so the gate starts green and any
 new finding is new code. Tests are exempt, per the exception above.
 
+### An application-boundary call takes one object, never positional parameters
+
+**A use case's `execute`, a service method, and a Server Action take a single named input —
+`Command`, `Input` or the request DTO — not a parameter list.** Added 21 Aug 2026. It applies at
+the application boundary, which is where a caller crosses a layer; a domain helper or a pure
+function keeps ordinary parameters.
+
+It is the Open/Closed principle in the one place this codebase actually feels it. `SignIn` gained
+`clientIp` for §12.5.6's throttle after it was written, and because the input was an object that
+was an additive optional field — no caller changed. As `signIn(email, password)` it would have
+been a third positional parameter threaded through the service, the controller and every test.
+Extension without modification, concretely.
+
+Two more things it buys, and the second is a real defect class rather than a preference:
+
+- **The type says which fields a caller is not expected to supply.** `AccountService.register`
+  takes `Omit<RegisterAccountCommand, 'locale' | 'clientIp'>` — derived, so adding a command field
+  adds it to the service signature automatically, and the omission list *is* the documentation of
+  what the service resolves from ambient request context (OQ-46's negotiated locale, the socket
+  address).
+- **Adjacent same-typed parameters are a silent bug.** `resetPassword(token: string, password:
+  string)` compiles perfectly with the arguments swapped, and fails at runtime as "invalid link" —
+  a wrong answer with a plausible message. `sessionExpiresAt(sessionCreatedAt, tokenIssuedAt)` has
+  the same hazard with two `Date`s. Named fields make the swap unrepresentable.
+
+**Naming is `<UseCase>Command` for a use case** (`SignInCommand`, `ResetPasswordCommand`), and the
+service takes that type minus its ambient fields. A single-field command is still an object:
+`execute({ token })` reads no worse than `execute(token)` and is the one that survives the second
+field being added.
+
+The controller is the boundary's outer edge and already complies by construction — it passes its
+validated `@Body()` DTO straight through, which is why `auth.controller.ts` now reads
+`this.accountService.register(body)`.
+
 ### A component is reused, or it becomes a new reusable component
 
 **This is UX-89 and it is closed, not a preference:** *"No screen shall introduce a one-off

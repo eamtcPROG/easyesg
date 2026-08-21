@@ -61,7 +61,7 @@ export class AuthController {
     content: { 'application/problem+json': {} },
   })
   async register(@Body() body: RegisterAccountRequestDto): Promise<AccountResponseDto> {
-    return new AccountResponseDto(await this.accountService.register(body.email, body.password));
+    return new AccountResponseDto(await this.accountService.register(body));
   }
 
   @Post('verify-email')
@@ -85,7 +85,7 @@ export class AuthController {
     content: { 'application/problem+json': {} },
   })
   async verify(@Body() body: VerifyEmailRequestDto): Promise<AccountResponseDto> {
-    return new AccountResponseDto(await this.accountService.verify(body.token));
+    return new AccountResponseDto(await this.accountService.verify(body));
   }
 
   @Post('verification-email')
@@ -111,7 +111,7 @@ export class AuthController {
     content: { 'application/problem+json': {} },
   })
   async resend(@Body() body: ResendVerificationEmailRequestDto): Promise<void> {
-    await this.accountService.resend(body.email);
+    await this.accountService.resend(body);
   }
 
   @Post('password-reset-email')
@@ -141,7 +141,7 @@ export class AuthController {
     content: { 'application/problem+json': {} },
   })
   async requestPasswordReset(@Body() body: RequestPasswordResetRequestDto): Promise<void> {
-    await this.accountService.requestPasswordReset(body.email);
+    await this.accountService.requestPasswordReset(body);
   }
 
   @Post('password-reset')
@@ -164,6 +164,6 @@ export class AuthController {
     content: { 'application/problem+json': {} },
   })
   async resetPassword(@Body() body: ResetPasswordRequestDto): Promise<void> {
-    await this.accountService.resetPassword(body.token, body.password);
+    await this.accountService.resetPassword(body);
   }
 }

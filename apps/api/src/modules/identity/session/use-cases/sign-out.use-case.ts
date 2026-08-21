@@ -1,6 +1,7 @@
 import { hashRefreshToken } from '../domain/refresh-token';
 import type { SessionStore } from '../interfaces/session-store.interface';
 import { SESSION_REVOKED_REASON } from '../models/session.model';
+import type { Clock } from '@api/contracts/clock.port';
 
 export interface SignOutCommand {
   readonly refreshToken: string;
@@ -28,7 +29,7 @@ export interface SignOutCommand {
 export class SignOut {
   constructor(
     private readonly store: SessionStore,
-    private readonly now: () => Date,
+    private readonly now: Clock,
   ) {}
 
   async execute(command: SignOutCommand): Promise<void> {

@@ -55,7 +55,7 @@ describe('S-02 · confirm surface (?token=…)', () => {
     expect(verify).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Confirmă adresa' }));
-    await waitFor(() => expect(verify).toHaveBeenCalledWith(TOKEN));
+    await waitFor(() => expect(verify).toHaveBeenCalledWith({ token: TOKEN }));
 
     // Success confirms what happened and offers the next step (§8.1: never a bare toast).
     const status = await screen.findByRole('status');
@@ -113,7 +113,7 @@ describe('S-02 · waiting/resend surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retrimite linkul' }));
 
-    await waitFor(() => expect(resend).toHaveBeenCalledWith(EMAIL));
+    await waitFor(() => expect(resend).toHaveBeenCalledWith({ email: EMAIL }));
     // The confirmation reveals nothing the uniform 202 does not.
     const status = await screen.findByRole('status');
     expect(status).toHaveTextContent('Dacă adresa are un cont care așteaptă confirmarea');
@@ -128,7 +128,7 @@ describe('S-02 · waiting/resend surface', () => {
     await user.type(field, EMAIL);
     await user.click(screen.getByRole('button', { name: 'Trimite linkul' }));
 
-    await waitFor(() => expect(resend).toHaveBeenCalledWith(EMAIL));
+    await waitFor(() => expect(resend).toHaveBeenCalledWith({ email: EMAIL }));
     // The address is remembered, so the screen converges to the waiting state.
     await waitFor(() => expect(screen.getByText(EMAIL)).toBeInTheDocument());
   });
