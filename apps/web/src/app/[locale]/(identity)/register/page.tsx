@@ -1,6 +1,7 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { RegisterForm } from '@/features/identity/components/register-form';
 import styles from '@/features/identity/components/identity-screens.module.css';
+import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
  * S-01 — Register · CA · UC-01…05 · Focus
@@ -13,20 +14,12 @@ import styles from '@/features/identity/components/identity-screens.module.css';
  * `design_spec.md` §5 owns this screen's content, controls and states; the Identity prototype
  * is the rendered reference — values extracted, markup never copied (OQ-10).
  */
-// `Locale`, not `string`: `[locale]/layout.tsx` already 404s anything outside the registry,
-// so by the time a page runs the value is one of the three.
-type Props = { params: Promise<{ locale: import('@easyesg/i18n').Locale }> };
+type Props = { params: LocaleParams };
 
-export async function generateMetadata({ params }: Props) {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'identity.register' });
-  // WCAG 2.2 AA 2.4.2 (Page Titled): the tab must name the task.
-  return { title: t('title') };
-}
+export const generateMetadata = localizedPageTitle('identity.register');
 
 export default async function RegisterPage({ params }: Props) {
-  const { locale } = await params;
-  setRequestLocale(locale);
+  await activateRequestLocale(params);
   const t = await getTranslations('identity.register');
 
   return (

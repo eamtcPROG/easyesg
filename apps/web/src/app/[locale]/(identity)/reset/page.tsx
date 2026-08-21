@@ -1,6 +1,7 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { RequestResetForm } from '@/features/identity/components/request-reset-form';
 import styles from '@/features/identity/components/identity-screens.module.css';
+import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
  * S-02 — Request password reset · CA · UC-08 · Focus
@@ -8,17 +9,12 @@ import styles from '@/features/identity/components/identity-screens.module.css';
  * Uniform responses regardless of whether the account exists (NFR-64), and the only lockout
  * release before Phase 8 (task 21) — S-01's locked state routes here on purpose.
  */
-type Props = { params: Promise<{ locale: import('@easyesg/i18n').Locale }> };
+type Props = { params: LocaleParams };
 
-export async function generateMetadata({ params }: Props) {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'identity.resetRequest' });
-  return { title: t('title') };
-}
+export const generateMetadata = localizedPageTitle('identity.resetRequest');
 
 export default async function ResetPasswordPage({ params }: Props) {
-  const { locale } = await params;
-  setRequestLocale(locale);
+  await activateRequestLocale(params);
   const t = await getTranslations('identity.resetRequest');
 
   return (

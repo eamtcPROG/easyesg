@@ -97,7 +97,7 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 ```
 src/
 ├─ proxy.ts        Next 16's middleware. Locale AND session — see below
-├─ i18n/           next-intl: routing · navigation · request · formats
+├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
 ├─ features/       10 domains, mirroring apps/api/src/modules names
 ├─ shared/         chrome owned by no single feature (SiteFooter) — mirrors apps/admin/src/shared
@@ -225,6 +225,14 @@ conditional render, which is how it ends up half-suppressed on one screen.
 
 - It has an `S-nn` in `design_spec.md` §4.4, or it is one of the public/legal/help surfaces that
   deliberately has none — which is itself an open question, not a licence to invent an id.
+- **The locale ritual is declared once, in `src/i18n/page.ts` — do not restate it.** A page
+  types its params as `LocaleParams`, opens with `await activateRequestLocale(params)`, and
+  gets its tab title with `export const generateMetadata = localizedPageTitle('<namespace>')`
+  (the namespace must carry a `title` leaf, enforced by type). What cannot be centralised is
+  the *call*: Next renders layouts and pages in parallel, so `[locale]/layout.tsx`'s
+  `setRequestLocale` does not reach its pages — one line per page is the floor. A hand-written
+  `const { locale } = await params; setRequestLocale(locale);` in a page is the DRY violation
+  this module removed (post-task-22 review, 21 Aug 2026).
 - It is an instance of one of the nine archetypes (§4.6). A screen that fits none is an
   escalation to design review.
 - All eleven §8.1 states are designed before implementation. An undefined state is a defect, not

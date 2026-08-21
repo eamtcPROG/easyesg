@@ -1,7 +1,8 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { ConfirmEmail } from '@/features/identity/components/confirm-email';
 import { VerificationPending } from '@/features/identity/components/verification-pending';
 import styles from '@/features/identity/components/identity-screens.module.css';
+import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
  * S-02 — Verify email · CA · UC-03 · Focus
@@ -14,24 +15,18 @@ import styles from '@/features/identity/components/identity-screens.module.css';
  *  - bare `/verify` — the waiting/resend surface: the challenge screen S-01 exits to, and the
  *    only exit for a link that expired inside the account's 7-day window (OQ-55).
  *
- * The reset/set-password surfaces S-02 also names arrive with their API (task 21+); their
- * routes exist and stay null.
+ * The reset and set-password surfaces S-02 also names live at `/reset` and `/set-password`
+ * (task 22).
  */
-// `Locale`, not `string`: `[locale]/layout.tsx` already 404s anything outside the registry.
 type Props = {
-  params: Promise<{ locale: import('@easyesg/i18n').Locale }>;
+  params: LocaleParams;
   searchParams: Promise<{ token?: string }>;
 };
 
-export async function generateMetadata({ params }: Props) {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'identity.verify' });
-  return { title: t('title') };
-}
+export const generateMetadata = localizedPageTitle('identity.verify');
 
 export default async function VerifyPage({ params, searchParams }: Props) {
-  const { locale } = await params;
-  setRequestLocale(locale);
+  await activateRequestLocale(params);
   const t = await getTranslations('identity.verify');
   const { token } = await searchParams;
 

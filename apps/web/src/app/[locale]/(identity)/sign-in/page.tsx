@@ -1,6 +1,7 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { SignInForm } from '@/features/identity/components/sign-in-form';
 import styles from '@/features/identity/components/identity-screens.module.css';
+import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
  * S-01 — Sign in · CA · UC-01…05 · Focus
@@ -16,22 +17,15 @@ import styles from '@/features/identity/components/identity-screens.module.css';
  * `design_spec.md` §5 owns this screen's content, controls and states; prototypes in
  * `design/screens/` are the rendered reference — values extracted, markup never copied (OQ-10).
  */
-// `Locale`, not `string`: `[locale]/layout.tsx` already 404s anything outside the registry.
 type Props = {
-  params: Promise<{ locale: import('@easyesg/i18n').Locale }>;
+  params: LocaleParams;
   searchParams: Promise<{ return?: string }>;
 };
 
-export async function generateMetadata({ params }: Props) {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'identity.signIn' });
-  // WCAG 2.2 AA 2.4.2 (Page Titled): the tab must name the task.
-  return { title: t('title') };
-}
+export const generateMetadata = localizedPageTitle('identity.signIn');
 
 export default async function SignInPage({ params, searchParams }: Props) {
-  const { locale } = await params;
-  setRequestLocale(locale);
+  await activateRequestLocale(params);
   const t = await getTranslations('identity.signIn');
   const { return: returnTo } = await searchParams;
 

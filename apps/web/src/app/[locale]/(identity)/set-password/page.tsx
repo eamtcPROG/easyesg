@@ -1,8 +1,9 @@
 import { Callout, TextLink } from '@easyesg/ui';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { SetPasswordForm } from '@/features/identity/components/set-password-form';
 import styles from '@/features/identity/components/identity-screens.module.css';
 import { Link } from '@/i18n/navigation';
+import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
  * S-02 — Set password · CA · UC-09 · Focus
@@ -13,19 +14,14 @@ import { Link } from '@/i18n/navigation';
  * explanation offers the request route, mirroring `/verify`'s two-surfaces-one-address split.
  */
 type Props = {
-  params: Promise<{ locale: import('@easyesg/i18n').Locale }>;
+  params: LocaleParams;
   searchParams: Promise<{ token?: string }>;
 };
 
-export async function generateMetadata({ params }: Props) {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'identity.setPassword' });
-  return { title: t('title') };
-}
+export const generateMetadata = localizedPageTitle('identity.setPassword');
 
 export default async function SetPasswordPage({ params, searchParams }: Props) {
-  const { locale } = await params;
-  setRequestLocale(locale);
+  await activateRequestLocale(params);
   const t = await getTranslations('identity.setPassword');
   const { token } = await searchParams;
 
