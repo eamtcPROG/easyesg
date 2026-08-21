@@ -44,10 +44,21 @@ port header explains); and the throttle's per-(IP, account) key reads `req.ip`, 
 proxy's address until task 71 sets `trust proxy` — degraded to per-account, not broken.
 `AUTH_JWT_SECRET` joins the HTTP tier's secrets; the worker still holds neither it nor the pepper.
 
+Task 23 adds the admin realm (FR-75, UC-68, OQ-17): `identity.{admin_account,admin_session,
+admin_refresh_token}`, `POST/GET/DELETE /auth/admin/session` in `modules/platform/admin` —
+sign-in with mandatory TOTP (hand-rolled RFC 6238 in `domain/totp.ts`, vectors pinned), the
+session pair sealed AES-256-GCM into an httpOnly `SameSite=Strict` cookie the api itself sets
+and rotates (keys HKDF-derived from `AUTH_ADMIN_SECRET` under distinct labels), CORS pinned to
+`ADMIN_ORIGIN` with credentials, an Origin proof on the realm's writes, and the
+`admin:provision` CLI (runs from `dist/` so `tsc-alias` has resolved `@api/*` — the alias ban on
+ts-node-loaded CLI graphs does not bite it). §12.5.6's task-23 rows carry the decisions; the
+recorded costs: a revoked admin session's last access token is honoured ≤15 min until task 28's
+guard adds a lookup, and `totp_secret` is unencrypted at rest — task 27's hardening debt.
+
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
-other than health and `/auth`, and almost every module body — 34 of the 35 `*.module.ts` files are
-registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
+other than health, `/auth` and `/auth/admin`, and almost every module body — 33 of the 35
+`*.module.ts` files are registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
 only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by
 expand→migrate→contract. `test/` holds the schema-invariant probe; the RLS cross-tenant probe and
 the `BILLING_ENABLED=false` suite land beside it.

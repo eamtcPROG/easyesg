@@ -10,16 +10,21 @@ every screen. Cite them; do not re-derive them.
 
 ## Current state
 
-Scaffold only. What exists: 26 route files covering all 18 administrative screens, two pathless
-layouts, the TanStack Router tree, the query client, the `packages/ui` token cascade, 15 feature
-folders across two bounded contexts, and 7 boundary rules with fixtures proving each rejects a real
-violation. The i18n wiring is in place — see below.
+Scaffold plus the realm (task 23). What exists: 26 route files covering all 18 administrative
+screens, two pathless layouts, the TanStack Router tree, the query client, the `packages/ui`
+token cascade, 15 feature folders across two bounded contexts, 7 boundary rules with fixtures —
+and **A-01 live end to end**: `src/realm/` holds the api client (the web seam's shape —
+`credentials: 'include'`, `Accept-Language: ro`, the shared `@easyesg/contracts` outcome
+readers), the session view (a TanStack Query entry over `GET /auth/admin/session`; the session
+itself is the sealed httpOnly cookie the API sets and rotates, OQ-17), the sign-in screen
+(email + password + mandatory TOTP, FR-75, built from the §11.5 inventory), and the interim
+`SessionStrip` (task 67's row owns replacing it). `_realm.tsx`'s `beforeLoad` is the
+closed-by-default guard: no session → A-01 with `?redirect=` carried, sanitized on return.
+`e2e/admin/` drives the journey in a real browser against the built bundle on its own origin,
+so CORS, the `SameSite=Strict` cookie and the Origin proof are exercised for real.
 
-**Not built, and do not assume otherwise:** every screen returns `null`. No component, no data
-fetch, no session, no MFA, no guard. `src/realm/session.ts` and `src/realm/api-client.ts` are
-docblocks over an empty export, as is `src/lib/*`. `packages/ui` exports nothing but the token
-cascade, so there is no button to build with. `apps/api` has no `/admin/*` controller and no
-`/auth/admin/session` route — the API this app is a client of does not answer yet.
+**Not built:** every screen behind the realm still returns `null` (A-02…A-18 are tasks 67–68),
+and `src/lib/pagination.ts` stays a docblock until the first Index screen.
 
 **`src/i18n/` is built.** `use-intl` (pinned to `next-intl`'s version, §12.1) is mounted in
 `app/providers.tsx` around the router, the catalogue is `src/messages/ro.json`, and named formats
@@ -81,8 +86,12 @@ else; treat it as an incident, not a refactor.
 
 - **No dev proxy, deliberately.** Production is cross-origin — `admin.<host>` calling `api.<host>`
   — and that is what NFR-65's separate cookie scope requires. A `server.proxy` in `vite.config.ts`
-  would make development same-origin and hide the CSRF/SameSite question (**OQ-33**) until staging.
-  OQ-33 says its answer is "needed before the first authenticated write ships", which is A-01.
+  would make development same-origin and hide the CSRF/SameSite question until staging. That
+  question is now CLOSED for this realm (task 23, §12.5.6's task-23 rows): the api sets one
+  sealed httpOnly `SameSite=Strict` cookie (same-site cross-origin, so Strict still flows),
+  allows exactly `ADMIN_ORIGIN` in CORS with credentials, and refuses state-changing
+  admin-realm requests whose `Origin` differs. The client's whole contribution is
+  `credentials: 'include'` — no token ever reaches this bundle.
 
 - **`VITE_*` is inlined into the bundle at build time.** No secret may ever be read through
   `src/lib/env.ts`. The IP allowlist in front of `admin.<host>` restricts who can fetch the bundle,

@@ -27,7 +27,7 @@
     "migrations:check": "pnpm --filter @easyesg/api db:check",
     "clean": "./tools/clean-build-outputs.sh",
     "e2e": "pnpm --filter @easyesg/api test:e2e",
-    "pree2e:web": "pnpm --filter @easyesg/api... --filter @easyesg/web... build && ./tools/assemble-web-standalone.sh",
+    "pree2e:web": "pnpm --filter @easyesg/api... --filter @easyesg/web... --filter @easyesg/admin... build && ./tools/assemble-web-standalone.sh",
     "e2e:web": "playwright test --config e2e/playwright.config.ts",
     "gates": "pnpm lint && pnpm typecheck && pnpm test && pnpm boundaries && pnpm boundaries:prove && pnpm build && pnpm openapi:check && pnpm routes:check && pnpm migrations:check && pnpm e2e && pnpm e2e:web",
     "gates:clean": "pnpm clean && pnpm gates",

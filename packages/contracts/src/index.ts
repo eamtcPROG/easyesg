@@ -26,6 +26,17 @@ export {
   type ProblemTypeUri,
 } from './problem';
 export type { Message, ResultList, ResultObject } from './envelope';
+export {
+  API_OUTCOME,
+  mapOutcome,
+  readProblemDocument,
+  readResultList,
+  readResultObject,
+  type ApiFailure,
+  type ApiOutcome,
+  type ApiOutcomeStatus,
+  type ListResult,
+} from './outcome';
 
 // identity — /api/v1/auth (FR-1, FR-3; task 19)
 export type RegisterAccountRequest = components['schemas']['RegisterAccountRequestDto'];
@@ -43,3 +54,9 @@ export type SessionAccount = components['schemas']['SessionAccountDto'];
 export type RequestPasswordResetRequest =
   components['schemas']['RequestPasswordResetRequestDto'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequestDto'];
+
+// platform — /api/v1/auth/admin (FR-75; task 23). The session travels as a sealed httpOnly
+// cookie the api sets — these shapes are the BODY surface only, tokens deliberately absent.
+export type AdminSignInRequest = components['schemas']['AdminSignInRequestDto'];
+export type AdminSessionResponse = components['schemas']['AdminSessionResponseDto'];
+export type AdminAccount = components['schemas']['AdminAccountDto'];

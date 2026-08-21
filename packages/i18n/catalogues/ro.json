@@ -19,6 +19,12 @@
     "account-locked": {
       "title": "Cont blocat temporar"
     },
+    "factor-invalid": {
+      "title": "Cod de verificare incorect"
+    },
+    "admin-account-locked": {
+      "title": "Cont de operator blocat"
+    },
     "email-unverified": {
       "title": "Adresă neconfirmată"
     },

@@ -1,5 +1,9 @@
 import 'server-only';
-import type { Message, ProblemDocument } from '@easyesg/contracts';
+import {
+  readProblemDocument,
+  readResultList,
+  readResultObject,
+} from '@easyesg/contracts';
 import { cookies } from 'next/headers';
 import { getLocale } from 'next-intl/server';
 import { API_OUTCOME, type ApiFailure, type ApiOutcome, type ListResult } from '@/lib/api-outcome';
@@ -71,95 +75,10 @@ const METHOD = {
 type Method = (typeof METHOD)[keyof typeof METHOD];
 
 /**
- * Reading a body **validates it rather than asserting over it** — the same rule
- * `VerificationEmailHandler.readEvent` follows on the worker, and for the same reason.
- *
- * The API is ours and its shape is contract-tested (P-5), so a malformed body means something is
- * genuinely wrong rather than merely unexpected: a rolling deploy answering mid-request from two
- * versions, a proxy interposing its own JSON, a route that stopped using the envelope. A blind
- * `as` cast reads `envelope.object` as `undefined` and hands that to a screen, which renders it
- * as *empty* — a silent wrong answer, and the exact failure shape this codebase keeps naming.
- *
- * These throw; `requestObject`/`requestList` catch and answer `unreachable`, because a body this
- * tier cannot understand is, to the person reading the screen, the same fact as no answer at all,
- * with the same remedy — and `unreachable` already carries NFR-79's three parts in the bundled
- * catalogue. Inventing a fourth outcome would mean authoring new copy in three locales for a case
- * that should never occur. The thrown message is developer-facing and stays untranslated, like
- * `DomainError`'s key; it names the shape and **never the body**, which may hold personal data
- * (NFR-30).
+ * The body READERS live in `@easyesg/contracts` since task 23 (`outcome.ts` there carries the
+ * validate-never-cast argument in full) — this seam keeps what is its own: turning a reader's
+ * throw into `unreachable`, and logging the reason for a developer without the body (NFR-30).
  */
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-/**
- * Each reader returns exactly the members it checked, built explicitly rather than cast wholesale
- * — `body as ResultObject<T>` would claim `htmlcode` too, which nothing here validates or reads,
- * and TypeScript is right to refuse that. The one remaining assertion is on the generic payload
- * (`TObject`), whose shape is the route's contract rather than this function's business: the
- * envelope is the wire convention, and that is all this tier owns.
- */
-function readResultObject<TObject>(
-  body: unknown,
-  path: string,
-): { object: TObject; messages: Message[] } {
-  if (!isRecord(body) || !('object' in body) || !Array.isArray(body.messages)) {
-    // `object` must be PRESENT, not truthy: `ResultObjectDto.object` is nullable, and a route
-    // that legitimately answers null must not be mistaken for a malformed envelope.
-    throw new Error(`${path}: response is not a result envelope (expected object, messages[]).`);
-  }
-  return { object: body.object as TObject, messages: body.messages as Message[] };
-}
-
-function readResultList<TObject>(
-  body: unknown,
-  path: string,
-): ListResult<TObject> & { messages: Message[] } {
-  if (
-    !isRecord(body) ||
-    !Array.isArray(body.objects) ||
-    typeof body.total !== 'number' ||
-    typeof body.totalpages !== 'number' ||
-    !Array.isArray(body.messages)
-  ) {
-    // `total` and `totalpages` are checked because they are READ — they drive the pager, and a
-    // NaN there renders as garbage rather than failing.
-    throw new Error(
-      `${path}: response is not a list envelope (expected objects[], total, totalpages, messages[]).`,
-    );
-  }
-  return {
-    items: body.objects as TObject[],
-    total: body.total,
-    totalpages: body.totalpages,
-    messages: body.messages as Message[],
-  };
-}
-
-/**
- * A problem document is repaired rather than rejected where it can be, because a failure that
- * arrives slightly malformed is still a failure the user must be told about — dropping it to
- * `unreachable` would replace "the address is already taken" with "try again later".
- *
- * RFC 9457 makes every member optional, so absence is valid rather than broken: `type` falls back
- * to the standard's own `about:blank`, `status` to the HTTP status (which is authoritative anyway),
- * and `title`/`detail` are simply omitted — the screens already fall back to catalogue copy when
- * they are, per the API's own "a missing key omits the member" rule.
- */
-function readProblemDocument(body: unknown, httpStatus: number): ProblemDocument {
-  const source = isRecord(body) ? body : {};
-  const text = (value: unknown): string | undefined =>
-    typeof value === 'string' ? value : undefined;
-
-  return {
-    type: text(source.type) ?? 'about:blank',
-    status: typeof source.status === 'number' ? source.status : httpStatus,
-    title: text(source.title),
-    detail: text(source.detail),
-    instance: text(source.instance),
-    correlationId: text(source.correlationId),
-  };
-}
-
 /**
  * Parses a JSON body, turning any failure — malformed JSON, or a body that is not the envelope
  * this tier expects — into `unreachable`. The reason is logged for a developer, without the body.

@@ -19,6 +19,12 @@
     "account-locked": {
       "title": "Account temporarily locked"
     },
+    "factor-invalid": {
+      "title": "Incorrect verification code"
+    },
+    "admin-account-locked": {
+      "title": "Operator account locked"
+    },
     "email-unverified": {
       "title": "Address not confirmed yet"
     },

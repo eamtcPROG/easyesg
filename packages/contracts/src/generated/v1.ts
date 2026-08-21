@@ -148,6 +148,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/admin/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the current administrative session
+         * @description The console router’s probe. Judges the sealed cookie: a live access token answers directly; an expired one is rotated server-side and the successor cookie set on this response. 401 means sign in again.
+         */
+        get: operations["AdminSessionController_currentSession"];
+        put?: never;
+        /**
+         * Sign in to the administrative realm
+         * @description Verifies the elevated credential and the mandatory TOTP code (FR-75), and establishes the session as a sealed httpOnly cookie — no token appears in the body. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.
+         */
+        post: operations["AdminSessionController_signIn"];
+        /**
+         * Sign out of the administrative realm
+         * @description Revokes the session server-side and clears the cookie. Idempotent, and identical for cookies that were never real — signing out is not an endpoint that confirms anything.
+         */
+        delete: operations["AdminSessionController_signOut"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -280,6 +308,45 @@ export interface components {
         SignOutRequestDto: {
             /** @description The refresh token of the session to terminate. Possession is the authentication: it is what the web tier actually holds, and it keeps sign-out working after the access token has already expired. */
             refreshToken: string;
+        };
+        AdminAccountDto: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: email
+             * @example operator@easyesg.md
+             */
+            email: string;
+            /**
+             * @description The platform-side actor (actors.md: PA or BO).
+             * @enum {string}
+             */
+            role: "platform_administrator" | "billing_operator";
+        };
+        AdminSessionResponseDto: {
+            account: components["schemas"]["AdminAccountDto"];
+            /**
+             * @description Unix epoch milliseconds, UTC. When the session dies if never used again — the earlier of its idle (8 h) and absolute (12 h) bounds.
+             * @example 1787444100000
+             */
+            expiresAt: number;
+        };
+        AdminSignInRequestDto: {
+            /**
+             * Format: email
+             * @example operator@easyesg.md
+             */
+            email: string;
+            /**
+             * Format: password
+             * @description Verified against the elevated credential; failures are uniform and throttled.
+             */
+            password: string;
+            /**
+             * @description The current TOTP code (FR-75 — the second factor is mandatory, without exception).
+             * @example 287082
+             */
+            totpCode: string;
         };
     };
     responses: never;
@@ -578,6 +645,108 @@ export interface operations {
                 content: {
                     "application/problem+json": unknown;
                 };
+            };
+        };
+    };
+    AdminSessionController_currentSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current session, rotated if its access token had expired. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminSessionResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminSessionController_signIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminSignInRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The session was established; the cookie carries it. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminSessionResponseDto"];
+                    };
+                };
+            };
+            /** @description The email address or the password is not right (one answer for both, problem type credential-invalid) — or the password is right and the code is not (problem type factor-invalid, disclosed only past the credential bar). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator account is locked after repeated failures (problem type admin-account-locked; released by another administrator or the provisioning CLI). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many attempts for this address in the window. Identical either way. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminSessionController_signOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session is terminated, or already was. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

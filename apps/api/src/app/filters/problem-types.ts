@@ -20,6 +20,12 @@ export const ProblemType = {
   SessionExpired: 'session-expired',
   CredentialInvalid: 'credential-invalid',
   AccountLocked: 'account-locked',
+  /** The password was right and the second factor was not (FR-75, task 23) — disclosed only past
+   *  the credential bar, so it breaches no NFR-64 uniformity. */
+  FactorInvalid: 'factor-invalid',
+  /** The admin realm's lockout: same threshold as `account-locked`, different release — a PA
+   *  action or the provisioning CLI, never a reset link (the realm has none). */
+  AdminAccountLocked: 'admin-account-locked',
   EmailUnverified: 'email-unverified',
   VerificationTokenInvalid: 'verification-token-invalid',
   ResetTokenInvalid: 'reset-token-invalid',

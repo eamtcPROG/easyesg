@@ -25,6 +25,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.spec.{ts,tsx}'],
     // Project-wide floor is 80% (§12.5.6). None of the five components carrying a higher floor
     // is front-end; those live in apps/api and packages/validation.

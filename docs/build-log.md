@@ -1423,3 +1423,70 @@ httpOnly assertion, the `?return=` round trip, the uniform wrong-password docume
 unverified answer with the address hand-off, the full reset journey ending signed in on the
 new password, and the bare set-password arrival). Native-speaker review of the new RO/EN/RU
 entries stays pooled with tasks 19–21's before the pilot.
+
+## Task 23 — Admin sign-in · 2026-08-21
+
+The console's A-01 and the realm behind it — and the task's true size was in the row's Scope
+column being wrong. It said `admin`; OQ-17 (closed since the scaffold) puts the realm's token
+handler ON the api — `POST /auth/admin/session` — and the api had no admin routes, no staff
+model, no CORS. The row could not meet its own deliverable, so the batch corrected it to
+`api+admin`, the same class of finding as task 21's missing FR-6 owner.
+
+**Three decisions in the batch, and the middle one went against the recommendation.** MFA ships
+NOW as a TOTP challenge on every sign-in, with the secret provisioned at account creation —
+UC-68's own precondition, mechanised as the `admin:provision` CLI until UC-87's screens exist
+(task 67); FR-75's "without exception" survives, enrolment UX and recovery codes land where the
+TOTP machinery does (task 27). The session shape: the owner chose to MIRROR the tenant
+mechanism — ≤15-min JWT plus rotating, reuse-detected refresh with task 21's race grace, over
+separate admin tables — against the recommended opaque server session, for uniformity across
+realms; the recorded cost is a revoked session's last access token honoured ≤15 min until task
+28's guard adds a lookup. And the cookie posture completes §14.2's risk gradient: the MORE
+privileged surface gets the STRICTER cookie — `SameSite=Strict` works where web's `Lax` was
+forced, because `admin.<host>` → `api.<host>` is same-SITE cross-origin (Strict still flows on
+every console fetch) and no email-link arrival exists to preserve. CORS allows exactly
+`ADMIN_ORIGIN` with credentials, and the Origin header — not `Sec-Fetch-Site`, which cannot
+tell one sibling subdomain from another — is what state-changing realm requests must prove.
+
+**Everything the web tier learned in task 22 crossed to the console, mostly by extraction
+rather than copying.** The `ApiOutcome` container, its closed `API_OUTCOME` vocabulary and the
+validated-never-cast envelope readers moved into `@easyesg/contracts` the moment a second
+consumer existed — `apps/web`'s `lib/api-outcome.ts` is now a re-export, its call sites
+untouched. The console's seam holds what is genuinely its own: `credentials: 'include'` and
+`Accept-Language: ro` (OQ-42/46); no Authorization header exists in the bundle, because no
+token ever reaches it. The realm guard is `_realm.tsx`'s closed-by-default `beforeLoad` with
+the destination carried in `?redirect=` and sanitized on return (web's open-redirect guard,
+restated); A-01 is built from the same §11.5 inventory on the same `FocusShell`; the interim
+`SessionStrip` mirrors task 22's decision with task 67 recorded as its replacement.
+
+**Hand-rolled TOTP, for the cookie-codec's reason, and the RFC's own vectors as the spec.**
+One HMAC, one truncation, a base32 codec — under forty lines against a standard that ships its
+test vectors, where a dependency would be a §12 row (and the obvious candidates are years
+stale). RFC 6238 Appendix B passes verbatim; the negative-window probe found `writeBigUInt64BE`
+throwing on a pre-epoch candidate step, fixed to a skip because nothing on a sign-in path may
+throw on shape. The browser e2e plays the operator's authenticator with a deliberate small COPY
+of the arithmetic — sharing code with the verifier would prove only that a function agrees with
+itself. `AUTH_ADMIN_SECRET` is one secret with two HKDF-derived keys (JWT, cookie sealing) —
+disjoint from the tenant's signing secret by NFR-65's "no shared credential", which is what
+makes a tenant token structurally unable to pass for an admin one, no `aud` claim to forget.
+
+**Two mechanics found by tests, both worth keeping.** The `cors` package REFLECTS a string
+`origin` on every response regardless of requester; the one-element array form is what matches
+and withholds — refusal by silence, per the register. And the e2e's cleanup as `esg_app` was
+refused by the task's own migration (no DELETE on the realm's tables) — the suite now cleans as
+the owner, and the refusal stands as accidental proof the grant split holds. Recorded
+assumptions, each with its owner: `totp_secret` unencrypted at rest (task 27's hardening debt,
+named in §12.5.6), lockout release by CLI or PA action only (the realm deliberately has no
+reset flow), and A-01's per-privilege-level home deferred to task 67 — every sign-in lands on
+the register (A-02) meanwhile.
+
+**Verified:** `pnpm gates` green from the staged tree. API: 165 unit tests (23 new: the RFC
+vector matrix, UC-68's uniform/factor/lockout/throttle matrix with counters proven to survive
+refusals, rotation with grace, reuse and deactivation) and 132 e2e (7 new: the sealed-cookie
+journey with attributes asserted and no token in any body, factor-invalid past the credential
+bar, the Origin refusal, CORS granted to exactly the console origin, server-side rotation
+resealing the successor, tamper, and the lockout with its CLI-shaped release). Console: its
+first component spec (4 tests, which surfaced that the admin vitest config predated component
+testing — jest-dom and cleanup now registered) and a third Playwright project (3 tests:
+closed-by-default realm through sign-in/out with `document.cookie` proven empty of the session,
+the distinct wrong-code answer, axe clean on A-01) — 35 browser tests across the two apps.
+Native-speaker review of the new RO strings pools with the identity backlog.

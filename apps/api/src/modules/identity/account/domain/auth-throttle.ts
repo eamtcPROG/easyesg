@@ -41,3 +41,8 @@ export const signInThrottleKey = (clientIp: string | undefined, email: string): 
 
 export const passwordResetThrottleKey = (clientIp: string | undefined, email: string): string =>
   throttleKey('password-reset', clientIp, email);
+
+/** The admin realm's sign-in (FR-75, task 23) — its own path segment, so an address probed on
+ *  both surfaces spends two budgets and neither leaks into the other's window. */
+export const adminSignInThrottleKey = (clientIp: string | undefined, email: string): string =>
+  throttleKey('admin-sign-in', clientIp, email);

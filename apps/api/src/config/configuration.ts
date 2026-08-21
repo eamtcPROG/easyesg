@@ -61,6 +61,22 @@ export interface AppConfig {
      * token — a ≤15-minute blip by design — and no refresh token, which is a database row.
      */
     jwtSecret: string | undefined;
+    /**
+     * The admin realm's one secret (task 23, §12.5.6): the JWT signing key and the cookie
+     * sealing key are both HKDF-derived from it under distinct labels, so one rotation retires
+     * both. Deliberately NOT `jwtSecret` — NFR-65's "no shared credential" includes the signing
+     * key, and cryptographic disjointness is what makes a tenant access token structurally
+     * unable to pass for an admin one. HTTP tier only, undefaulted, for the pepper's reason.
+     */
+    adminSecret: string | undefined;
+  };
+  admin: {
+    /**
+     * The console's exact origin — what CORS allows with credentials and what the Origin proof
+     * on state-changing admin-realm requests compares against (§12.5.6, task 23). Not a secret;
+     * defaulted to the dev port the way `web.publicUrl` is.
+     */
+    origin: string;
   };
   email: {
     /**
@@ -113,7 +129,11 @@ export default (): AppConfig => ({
   auth: {
     passwordPepper: process.env.AUTH_PASSWORD_PEPPER,
     jwtSecret: process.env.AUTH_JWT_SECRET,
+    adminSecret: process.env.AUTH_ADMIN_SECRET,
   },
+  // 3200 is `apps/admin`'s dev port, so a host run works with no .env entry (same convention
+  // as `web.publicUrl` below).
+  admin: { origin: process.env.ADMIN_ORIGIN ?? 'http://localhost:3200' },
   email: { provider: process.env.EMAIL_PROVIDER },
   // 3100 is `apps/web`'s dev port (`next dev --port 3100`), so a host run works with no .env entry.
   web: { publicUrl: process.env.PUBLIC_WEB_URL ?? 'http://localhost:3100' },

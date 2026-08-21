@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import configuration from './config/configuration';
 import { ProblemDetailsFilter } from './app/filters/problem-details.filter';
 import { correlationMiddleware } from './infrastructure/observability/correlation.middleware';
 import { initialiseCatalogue } from './app/messages/catalogue';
@@ -21,6 +22,21 @@ export function configureHttpApp(app: NestExpressApplication): void {
   // `health` stays outside the versioned surface; NFR-16's route-coverage gate treats that
   // as an allowlist entry rather than an exemption.
   app.setGlobalPrefix('api/v1', { exclude: ['health'] });
+
+  // §12.5.6's admin-realm CORS row (task 23): exactly one allowed origin — the console — with
+  // credentials, because `admin.<host>` → `api.<host>` is cross-origin by design (NFR-65's
+  // separate cookie scope; apps/admin declines a dev proxy for the same reason). The web tier
+  // needs no CORS entry: its browser traffic terminates at its own origin's pass-through, and
+  // its server tier is not a browser. Configured here rather than in bootstrap so the e2e
+  // suite runs the same surface that ships.
+  // The one-element ARRAY is load-bearing: a plain string makes the cors middleware reflect
+  // that value on every response regardless of the requester, while the array form matches the
+  // request's Origin against it and withholds the header otherwise — refusal by silence, which
+  // is the §12.5.6 posture (a foreign origin learns nothing, not even the console's address).
+  app.enableCors({
+    origin: [configuration().admin.origin],
+    credentials: true,
+  });
 
   // app.use, not MiddlewareConsumer: this must wrap the guards, and Express 5 changed
   // wildcard path matching.

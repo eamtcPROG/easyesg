@@ -344,6 +344,120 @@
           "identity"
         ]
       }
+    },
+    "/api/v1/auth/admin/session": {
+      "post": {
+        "description": "Verifies the elevated credential and the mandatory TOTP code (FR-75), and establishes the session as a sealed httpOnly cookie — no token appears in the body. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
+        "operationId": "AdminSessionController_signIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminSignInRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The session was established; the cookie carries it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminSessionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The email address or the password is not right (one answer for both, problem type credential-invalid) — or the password is right and the code is not (problem type factor-invalid, disclosed only past the credential bar).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator account is locked after repeated failures (problem type admin-account-locked; released by another administrator or the provisioning CLI).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many attempts for this address in the window. Identical either way.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Sign in to the administrative realm",
+        "tags": [
+          "platform"
+        ]
+      },
+      "get": {
+        "description": "The console router’s probe. Judges the sealed cookie: a live access token answers directly; an expired one is rotated server-side and the successor cookie set on this response. 401 means sign in again.",
+        "operationId": "AdminSessionController_currentSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The current session, rotated if its access token had expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminSessionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read the current administrative session",
+        "tags": [
+          "platform"
+        ]
+      },
+      "delete": {
+        "description": "Revokes the session server-side and clears the cookie. Idempotent, and identical for cookies that were never real — signing out is not an endpoint that confirms anything.",
+        "operationId": "AdminSessionController_signOut",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "The session is terminated, or already was."
+          }
+        },
+        "summary": "Sign out of the administrative realm",
+        "tags": [
+          "platform"
+        ]
+      }
     }
   },
   "info": {
@@ -628,6 +742,75 @@
         },
         "required": [
           "refreshToken"
+        ]
+      },
+      "AdminAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "operator@easyesg.md"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "platform_administrator",
+              "billing_operator"
+            ],
+            "description": "The platform-side actor (actors.md: PA or BO)."
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role"
+        ]
+      },
+      "AdminSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AdminAccountDto"
+          },
+          "expiresAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC. When the session dies if never used again — the earlier of its idle (8 h) and absolute (12 h) bounds.",
+            "example": 1787444100000
+          }
+        },
+        "required": [
+          "account",
+          "expiresAt"
+        ]
+      },
+      "AdminSignInRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "operator@easyesg.md"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "Verified against the elevated credential; failures are uniform and throttled."
+          },
+          "totpCode": {
+            "type": "string",
+            "description": "The current TOTP code (FR-75 — the second factor is mandatory, without exception).",
+            "example": "287082"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "totpCode"
         ]
       }
     }

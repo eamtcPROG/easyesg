@@ -22,6 +22,9 @@ import { defineConfig, devices } from '@playwright/test';
 const API_PORT = 3000;
 const WEB_PORT = 3100;
 const EXPANSION_PORT = 3101;
+// The console's dev port, which is also what the api's ADMIN_ORIGIN defaults to — served here
+// from `vite preview` over `dist/`, the artefact the image ships (task 23).
+const ADMIN_PORT = 3200;
 
 /** The Compose stack's synthetic dev credentials (infra/compose/.env.example) as fallbacks,
  *  so the suite runs identically on a laptop and in CI's database job. */
@@ -57,7 +60,9 @@ const webEnv = {
 };
 
 export default defineConfig({
-  testDir: './web',
+  // `.` rather than `./web` since task 23: the suite covers both browser apps, and each
+  // project below scopes itself to its directory.
+  testDir: '.',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
@@ -72,13 +77,19 @@ export default defineConfig({
   projects: [
     {
       name: 'identity',
+      testMatch: /web\/.*\.spec\.ts/,
       testIgnore: /expansion/,
       use: { baseURL: `http://localhost:${WEB_PORT}` },
     },
     {
       name: 'expansion',
-      testMatch: /expansion/,
+      testMatch: /web\/expansion.*\.spec\.ts/,
       use: { baseURL: `http://localhost:${EXPANSION_PORT}` },
+    },
+    {
+      name: 'admin',
+      testMatch: /admin\/.*\.spec\.ts/,
+      use: { baseURL: `http://localhost:${ADMIN_PORT}` },
     },
   ],
   webServer: [
@@ -97,6 +108,10 @@ export default defineConfig({
         REDIS_HOST: process.env.REDIS_HOST ?? 'localhost',
         REDIS_PORT: process.env.REDIS_PORT ?? '6379',
         AUTH_PASSWORD_PEPPER: process.env.AUTH_PASSWORD_PEPPER ?? 'devonly-pepper',
+        // Task 23: the admin realm's secret and the console origin the api's CORS and Origin
+        // proof are configured for — the admin project's preview server below.
+        AUTH_ADMIN_SECRET: process.env.AUTH_ADMIN_SECRET ?? 'devonly-admin-secret',
+        ADMIN_ORIGIN: `http://localhost:${ADMIN_PORT}`,
         BILLING_ENABLED: process.env.BILLING_ENABLED ?? 'true',
       },
     },
@@ -119,6 +134,16 @@ export default defineConfig({
         PORT: String(EXPANSION_PORT),
         EASYESG_PSEUDOLOCALE: '1',
       },
+    },
+    {
+      // The console, served from its built bundle — `vite preview` over `dist/`, which
+      // `pree2e:web` produced. Its API base URL is a BUILD input (VITE_*, one artefact per
+      // environment); the default in src/lib/env.ts targets this stack's api port.
+      command: 'pnpm --filter @easyesg/admin start:prod',
+      cwd: '..',
+      url: `http://localhost:${ADMIN_PORT}/`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
     },
   ],
 });

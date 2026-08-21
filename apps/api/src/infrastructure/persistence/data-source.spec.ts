@@ -16,7 +16,12 @@ const config: AppConfig = {
   // Task 19's settings. None of them reaches a DataSource, which is the point of listing them:
   // AppConfig is one shape and this fixture is the whole of it, so a key added for one subsystem
   // cannot quietly become a connection option for another.
-  auth: { passwordPepper: 'not-a-real-pepper', jwtSecret: 'not-a-real-secret' },
+  auth: {
+    passwordPepper: 'not-a-real-pepper',
+    jwtSecret: 'not-a-real-secret',
+    adminSecret: 'not-a-real-admin-secret',
+  },
+  admin: { origin: 'http://localhost:3200' },
   email: { provider: 'log' },
   web: { publicUrl: 'http://localhost:3100' },
 };
