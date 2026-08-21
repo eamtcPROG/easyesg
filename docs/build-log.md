@@ -1346,3 +1346,80 @@ failure locks, the sixth attempt 429s, and a locked account resets its way back 
 migration applies, reverts and re-applies; the schema invariants pass over the four new
 tables. Native-speaker review of the new RO/EN/RU entries remains outstanding, pooled with
 task 19's before the pilot.
+
+## Task 22 — Web sign-in and session proxy · 2026-08-21
+
+S-01's sign-in half, S-02's reset-request and set-password surfaces, the session tier that AD-9
+promised (`src/server/session.ts` was a docblock until today), and the `/api/[...path]`
+pass-through's 501 replaced by the real token-attaching forward. The browser now signs in, holds
+an httpOnly session, and signs out against the public API — with no token ever readable from
+browser JavaScript, which the e2e asserts from inside the page (`document.cookie`).
+
+**Three decisions in the up-front batch, and the first was OQ-33 — flagged in its own register
+row as "needed before the first authenticated write ships", which this task is.** Closed by the
+project owner as recommended: the whole AD-12 session — both tokens, both expiries, the identity
+block — travels as **one** httpOnly cookie, sealed AES-256-GCM under `SESSION_SECRET`
+(node:crypto; a sealing library would be a §12 pin for thirty lines), `Secure; SameSite=Lax;
+Path=/`, `Max-Age` to the refresh expiry the API stated. CSRF is `Lax` plus a same-origin proof
+on every state-changing pass-through request — `Sec-Fetch-Site: same-origin`, Origin/Host as
+the fallback — with Server Actions covered by Next's own Origin/Host rejection (verified in the
+pinned Next 16 docs, not remembered). `Strict` was declined because a top-level arrival from an
+email link — the reset link's own delivery path, UX-38's re-entry — would present no cookie and
+bounce a signed-in user to S-01; a double-submit token was declined as plumbing for a vector the
+pair already closes. §12.5.6 carries the normative text. The other two decisions are interim
+surfaces, each recorded on the task row that owns its replacement: sign-in lands on
+`?return=`-or-`/home` until task 25's membership branch (§4.3 is unbuildable with no memberships
+API), and the `(app)` layout carries a minimal `SessionStrip` — email plus sign-out, inventory
+components only — until task 30's real global tier.
+
+**The load-bearing constraint came from the platform, not the spec: cookie writes throw during
+Server Component rendering.** Laid beside task 21's rotation design it becomes a tripwire —
+rotation CONSUMES the single-use refresh token, so a refresh anywhere the successor cannot be
+persisted leaves the browser holding a consumed value, and its next presentation past the 30 s
+grace reads as theft and revokes the session: a random sign-out with no error anywhere. So the
+codec is pure, reads happen anywhere, and rotation exists in exactly two places that may write —
+the pass-through handler and Server Actions — single-flighted per token value, as task 21's
+build log asked. The api-client seam attaches the bearer but never rotates, and deliberately
+attaches it even when this tier thinks it expired: the API is the authority on liveness, and a
+proxy that pre-judges expiry converts clock skew into phantom 401s. When Server Components
+start calling the API (task 29+), the page-load rotation point becomes `proxy.ts` — written
+into `session.ts`'s header and the package CLAUDE.md so that task inherits a note, not a
+surprise.
+
+**`PROBLEM_TYPE` is the contracts package's first runtime value, and it flushed out a latent
+misconfiguration.** The sign-in screen must tell `email-unverified` (routes to the resend
+challenge, OQ-57) from `account-locked` (routes to reset, the only release before Phase 8), so
+the branched-on type URIs joined `packages/contracts` — a hand-maintained mirror of the api's
+registry, like the migration-SQL `CHECK` constraints, because the api may never import the
+package it produces. The package was `moduleResolution: nodenext` with `.js`-suffixed internal
+imports — fine for three tasks because consumers imported only types, which erase; the first
+runtime import made Turbopack actually resolve `./problem.js` and fail. Aligned with
+`packages/ui`, the existing TS-source runtime package: `bundler` resolution, extensionless
+imports, premise recorded in the tsconfig comment.
+
+**Smaller decisions, each recorded rather than silent.** Sign-out clears the cookie whatever
+the API answered — the person asked to leave this browser, and a termination the API never
+heard leaves a row its lifetimes still bound; refusing to sign out during an outage is the
+worse failure. The `?return=` target is sanitized in one place (`lib/locale-path.ts`) because
+it round-trips the browser: only a same-app path survives (no `//`, no `/\`), and a prefixed
+path keeps its own locale per OQ-32's "the URL is authoritative" while the profile preference
+decides only when there was nowhere to return to. Problems this tier mints carry `type` and
+`status` only — RFC 9457 makes the rest optional, screens fall back to catalogue copy, and a
+sentence minted in the proxy would be wording in code (OQ-43); a refused refresh passes the
+API's own document through, wording included. The set-password screen states FR-6's
+all-sessions-out consequence before it happens (P5), reusing `identity.register`'s policy
+catalogue block rather than authoring the same five sentences twice in three locales. And the
+closed-vocabulary lint pair earned its keep on its own author: seven findings in this task's
+first lint run, all in the new code.
+
+**Verified:** `pnpm gates` green end to end, `pnpm gates:clean` green from a scrubbed tree —
+which this task specifically owed, having changed a package's module resolution. 62 web unit
+tests (20 new: the codec's round-trip/tamper/rotation/shape matrix, the pass-through's
+security content — 401 with no session, cross-site and sibling-subdomain writes refused,
+bearer attach with the cookie never forwarded, rotate-reseal-forward, refused refresh passed
+through with the cookie dropped — the sign-in form's four error shapes, and the seam's bearer
+and delete-with-body). Browser suite now 32 (6 new in `session.spec.ts`: sign-in/out with the
+httpOnly assertion, the `?return=` round trip, the uniform wrong-password document, OQ-57's
+unverified answer with the address hand-off, the full reset journey ending signed in on the
+new password, and the bare set-password arrival). Native-speaker review of the new RO/EN/RU
+entries stays pooled with tasks 19–21's before the pilot.

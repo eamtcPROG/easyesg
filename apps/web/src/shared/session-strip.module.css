@@ -1,0 +1,21 @@
+/* Interim chrome (task 22) — replaced by the real global tier with the first workspace
+   screens (task 30). Tokens only, like every shared surface. */
+
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.account {
+  font: 400 13.5px/18px var(--font-text);
+  color: var(--text-muted);
+}
+
+.account strong {
+  font-weight: 600;
+  color: var(--text-body);
+}

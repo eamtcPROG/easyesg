@@ -1,13 +1,18 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    // `bundler`, matching packages/ui: since task 22 this package carries its first runtime
+    // value (PROBLEM_TYPE), and its only consumers are bundlers — Turbopack (web) and Vite
+    // (admin) — which resolve the TS source `main` directly. It was `nodenext` while the
+    // package was types-only; the `.js`-suffixed internal imports that mode requires never
+    // resolved at runtime, and the first runtime import surfaced that in the web build.
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "declaration": true,
     "rootDir": "./src",
     "outDir": "./dist",
-    // Empty rather than ["node"]: this package is types-only and isomorphic — consumed by the
-    // browser bundle and the admin SPA — and uses no Node API. Same reasoning as packages/i18n.
+    // Empty rather than ["node"]: this package is isomorphic — consumed by the browser bundle
+    // and the admin SPA — and uses no Node API. Same reasoning as packages/i18n.
     "types": []
   },
   "include": ["src/**/*.ts"]

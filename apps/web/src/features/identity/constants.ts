@@ -21,3 +21,14 @@ export const PENDING_EMAIL_STORAGE_KEY = 'easyesg.verification.email';
 
 /** Sibling timestamp (epoch ms) pacing the cooldown across reloads of the pending screen. */
 export const RESEND_SENT_AT_STORAGE_KEY = 'easyesg.verification.sentAt';
+
+/**
+ * Where sign-in lands when the proxy wrote no `?return=` target.
+ *
+ * **Assumption, recorded (task 22's open-question batch):** S-01's real exits branch on
+ * memberships (§4.3 — none → S-04, one → S-05, several → organization choice), and the
+ * memberships API is task 25's. Until it exists there is nothing to branch on, so every
+ * sign-in lands on S-05's route. Task 25's row in `docs/task.md` owns replacing this with the
+ * real branch; if that assumption is wrong, this constant is the single thing that moves.
+ */
+export const POST_SIGN_IN_PATH = '/home';

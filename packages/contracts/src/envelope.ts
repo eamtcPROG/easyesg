@@ -1,4 +1,4 @@
-import type { components } from './generated/v1.js';
+import type { components } from './generated/v1';
 
 /**
  * §6.8's success envelopes, as `apps/api`'s `GlobalResponseInterceptor` emits them.

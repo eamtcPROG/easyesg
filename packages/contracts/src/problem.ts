@@ -25,3 +25,23 @@ export interface ProblemDocument {
 
 /** Narrowing helper: a fetch body is a problem document iff the response said so. */
 export const PROBLEM_CONTENT_TYPE = 'application/problem+json';
+
+/**
+ * The problem-type URIs a front end branches on — the consumer-side declaration of wire
+ * values `apps/api` derives from its own `ProblemType` registry. Two copies exist **because
+ * of the boundary, not despite it**: the api produces this package and must never import it,
+ * so, like the migration-SQL `CHECK` constraints, this is a mirror that changes together with
+ * its source by hand. Only the types a client actually branches on are declared — a screen
+ * renders `title`/`detail` as received and needs `type` solely to choose a *different action*,
+ * so a full copy of the registry would be width nobody consumes.
+ */
+export const PROBLEM_TYPE = {
+  /** Minted by the web pass-through when a request arrives with no usable session (task 22). */
+  AuthenticationRequired: 'https://easyesg.md/problems/authentication-required',
+  /** OQ-57: correct password, unverified address — S-01 routes to the resend challenge. */
+  EmailUnverified: 'https://easyesg.md/problems/email-unverified',
+  /** FR-4's lockout — S-01 offers the reset route, its only release before Phase 8. */
+  AccountLocked: 'https://easyesg.md/problems/account-locked',
+} as const;
+
+export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

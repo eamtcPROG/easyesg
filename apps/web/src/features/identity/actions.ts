@@ -3,15 +3,29 @@
 import type {
   AccountResponse,
   RegisterAccountRequest,
+  RequestPasswordResetRequest,
   ResendVerificationEmailRequest,
+  ResetPasswordRequest,
+  SessionResponse,
+  SignInRequest,
+  SignOutRequest,
   VerifyEmailRequest,
 } from '@easyesg/contracts';
-import { mapOutcome } from '@/lib/api-outcome';
+import { SOURCE_LOCALE } from '@easyesg/i18n';
+import { getLocale } from 'next-intl/server';
+import { API_OUTCOME, mapOutcome } from '@/lib/api-outcome';
+import { sanitizeReturnPath } from '@/lib/locale-path';
 import { api } from '@/server/api-client';
+import { destroySession, establishSession, readSession } from '@/server/session';
+import { redirect } from '@/i18n/navigation';
+import { POST_SIGN_IN_PATH } from './constants';
 import type {
   AccountSummary,
   RegisterResult,
+  RequestResetResult,
+  ResetPasswordResult,
   ResendResult,
+  SignInFailure,
   VerifyResult,
 } from './types/action-results';
 
@@ -57,5 +71,75 @@ export async function resendVerificationAction(
   );
   // 202, uniformly and by design (OQ-55): the answer says nothing about whether the address
   // holds an account, and neither may the screen.
+  return mapOutcome(outcome, () => null);
+}
+
+/** `returnTo` is `proxy.ts`'s `?return=` value, carried through the screen — sanitized here
+ *  because it round-trips through the browser and is therefore attacker-shapeable. */
+export interface SignInCommand {
+  email: string;
+  password: string;
+  returnTo?: string;
+}
+
+/**
+ * S-01 sign-in (FR-4, UC-04) — the only action that ends in a redirect rather than a result,
+ * because success ends the SCREEN: the session cookie is set, the locale cookie follows the
+ * profile preference (OQ-32), and the user lands where they were headed. Only failures return
+ * — the type says so (`SignInFailure`, not an outcome), and the client sees `undefined` when
+ * the redirect won.
+ *
+ * A `?return=` path keeps its own locale (OQ-32: the URL is authoritative for rendering — a
+ * session that expired on `/en/reports` resumes in English whatever the profile says); the
+ * profile preference decides only when there was nowhere to return to.
+ */
+export async function signInAction(command: SignInCommand): Promise<SignInFailure> {
+  const outcome = await api.post<SignInRequest, SessionResponse>('/auth/session', {
+    email: command.email,
+    password: command.password,
+  });
+  if (outcome.status !== API_OUTCOME.Ok) return outcome;
+
+  const session = await establishSession(outcome.value);
+  const target = sanitizeReturnPath(command.returnTo);
+  // An unprefixed return path IS the source locale's form (`localePrefix: 'as-needed'`).
+  redirect({
+    href: target?.href ?? POST_SIGN_IN_PATH,
+    locale: target ? (target.locale ?? SOURCE_LOCALE) : session.account.locale,
+  });
+}
+
+/**
+ * FR-5, UC-06. The API call authenticates by the refresh token itself (task 21: possession is
+ * the proof, and it works after the access token expired). The cookie is cleared whatever the
+ * API answered: the person asked to leave THIS browser, and refusing because of a network blip
+ * would strand them signed in; a termination the API never heard leaves a row its idle and
+ * absolute lifetimes still bound (OQ-35).
+ */
+export async function signOutAction(): Promise<void> {
+  const session = await readSession();
+  if (session) {
+    await api.delete<SignOutRequest>('/auth/session', { refreshToken: session.refreshToken });
+  }
+  await destroySession();
+  redirect({ href: '/sign-in', locale: await getLocale() });
+}
+
+export async function requestPasswordResetAction(
+  input: RequestPasswordResetRequest,
+): Promise<RequestResetResult> {
+  const outcome = await api.post<RequestPasswordResetRequest, undefined>(
+    '/auth/password-reset-email',
+    input,
+  );
+  // 202, identical whether or not the address is registered (UC-08, NFR-64) — the screen's
+  // confirmation states the same conditional fact and no more.
+  return mapOutcome(outcome, () => null);
+}
+
+export async function resetPasswordAction(input: ResetPasswordRequest): Promise<ResetPasswordResult> {
+  const outcome = await api.post<ResetPasswordRequest, undefined>('/auth/password-reset', input);
+  // No redirect: S-02's exit to S-01 is the success state's OFFERED next step, after the
+  // screen has stated what consuming the link just did (every session signed out, FR-6/P5).
   return mapOutcome(outcome, () => null);
 }

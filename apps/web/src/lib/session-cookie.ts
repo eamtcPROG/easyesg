@@ -5,9 +5,11 @@
  */
 
 /**
- * The opaque, server-side, rotated-on-use refresh token (AD-12). httpOnly, so no token is ever
- * exposed to browser JavaScript (AD-9). The short-lived access JWT is exchanged for it inside
- * the Node tier and never persisted here.
+ * The one session cookie (OQ-33, closed 21 Aug 2026 — architecture.md §12.5.6): AD-12's whole
+ * session — access token, rotated-on-use refresh token, both expiries, the identity block —
+ * sealed AES-256-GCM under `SESSION_SECRET` by `src/server/session-codec.ts`. httpOnly, so no
+ * token is ever exposed to browser JavaScript (AD-9); sealed, so none leaves the Node tier in
+ * any readable form either.
  */
 export const REFRESH_COOKIE = 'easyesg_session';
 

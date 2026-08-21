@@ -35,8 +35,8 @@ const webEnv = {
   NODE_ENV: 'production',
   API_BASE_URL: `http://localhost:${API_PORT}/api/v1`,
   BILLING_ENABLED: process.env.BILLING_ENABLED ?? 'true',
-  // Synthetic and e2e-only: no session is issued on these screens (that is task 21+); the env
-  // var exists because src/lib/env.ts refuses to run without one, which is its job.
+  // Synthetic and e2e-only — but load-bearing since task 22: it seals the session cookie the
+  // sign-in journey sets and the pass-through unseals (OQ-33).
   SESSION_SECRET: 'e2e-only-0000000000000000000000000000000000',
   /**
    * **`0.0.0.0`, matching `apps/web/Dockerfile` — and never `127.0.0.1`, which breaks the app.**

@@ -11,8 +11,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 vi.mock('next-intl/server', () => ({ getLocale: () => Promise.resolve('ro') }));
 
+/** The request's cookie view, settable per test — the seam reads the sealed session from it. */
+const cookieJar = new Map<string, string>();
+vi.mock('next/headers', () => ({
+  cookies: () =>
+    Promise.resolve({
+      get: (name: string) =>
+        cookieJar.has(name) ? { name, value: cookieJar.get(name) } : undefined,
+    }),
+}));
+
 import { API_OUTCOME } from '@/lib/api-outcome';
+import { REFRESH_COOKIE } from '@/lib/session-cookie';
 import { api } from './api-client';
+import { sealSession, type SessionPayload } from './session-codec';
 
 const fetchMock = vi.fn();
 
@@ -25,6 +37,8 @@ const jsonResponse = (body: unknown, init?: { status?: number; contentType?: str
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   vi.stubEnv('API_BASE_URL', 'http://api.test/api/v1');
+  vi.stubEnv('SESSION_SECRET', 'spec-secret-0000000000000000000000000000');
+  cookieJar.clear();
 });
 
 afterEach(() => {
@@ -85,6 +99,37 @@ describe('the api client (§6.8 wire conventions, in one place)', () => {
     await api.get('/things/x');
 
     expect(lastCall().init.headers).toMatchObject({ 'accept-language': 'ro' });
+  });
+
+  it('attaches the access token from the sealed session cookie, and nothing without one (task 22)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ htmlcode: 200, object: null, messages: [] }));
+
+    await api.get('/things/x');
+    expect(lastCall().init.headers).not.toHaveProperty('authorization');
+
+    const session: SessionPayload = {
+      accessToken: 'live-access-token',
+      accessTokenExpiresAt: Date.now() + 10 * 60 * 1000,
+      refreshToken: 'refresh-token-1',
+      refreshTokenExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      account: { id: 'a', email: 'ana@example.md', locale: 'ro' },
+    };
+    cookieJar.set(
+      REFRESH_COOKIE,
+      sealSession(session, 'spec-secret-0000000000000000000000000000'),
+    );
+
+    await api.get('/things/x');
+    expect(lastCall().init.headers).toMatchObject({ authorization: 'Bearer live-access-token' });
+  });
+
+  it('sends a body on delete when one is given — sign-out authenticates by the token it carries', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    await api.delete('/auth/session', { refreshToken: 'r-1' });
+
+    expect(lastCall().init.method).toBe('DELETE');
+    expect(JSON.parse(lastCall().init.body as string)).toEqual({ refreshToken: 'r-1' });
   });
 
   it('sends a JSON body on post/patch and none on get/delete', async () => {

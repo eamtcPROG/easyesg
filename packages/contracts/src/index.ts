@@ -16,11 +16,16 @@
  * indexing `components['schemas'][…]` at every call site — the indexing is the generated file's
  * concern, and keeping it here means a renamed schema breaks one line, not every screen.
  */
-import type { components } from './generated/v1.js';
+import type { components } from './generated/v1';
 
-export type { paths, operations, components } from './generated/v1.js';
-export { PROBLEM_CONTENT_TYPE, type ProblemDocument } from './problem.js';
-export type { Message, ResultList, ResultObject } from './envelope.js';
+export type { paths, operations, components } from './generated/v1';
+export {
+  PROBLEM_CONTENT_TYPE,
+  PROBLEM_TYPE,
+  type ProblemDocument,
+  type ProblemTypeUri,
+} from './problem';
+export type { Message, ResultList, ResultObject } from './envelope';
 
 // identity — /api/v1/auth (FR-1, FR-3; task 19)
 export type RegisterAccountRequest = components['schemas']['RegisterAccountRequestDto'];

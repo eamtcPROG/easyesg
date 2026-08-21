@@ -14,7 +14,9 @@
       "terms": "Termeni și condiții",
       "privacy": "Politica de confidențialitate",
       "cookies": "Politica de cookie-uri"
-    }
+    },
+    "signedInAs": "Contul activ:",
+    "signOut": "Ieși din cont"
   },
   "identity": {
     "unreachable": {
@@ -75,6 +77,63 @@
       "problemTitle": "Linkul nu a putut fi folosit",
       "problemBody": "Adresa nu a fost confirmată din cauza unei erori la procesarea cererii.",
       "problemAction": "Cere un link nou"
+    },
+    "signIn": {
+      "title": "Autentifică-te",
+      "subtitle": "Intră în contul tău ca să lucrezi la rapoartele organizațiilor tale.",
+      "emailLabel": "Adresa de e-mail",
+      "emailMissing": "Adresa de e-mail lipsește, deci nu știm ce cont să deschidem. Completează adresa înainte de a continua.",
+      "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci autentificarea nu poate începe. Verifică adresa și corecteaz-o.",
+      "passwordLabel": "Parolă",
+      "passwordMissing": "Parola lipsește, deci nu îți putem verifica identitatea. Completează parola înainte de a continua.",
+      "show": "Arată",
+      "hide": "Ascunde",
+      "submit": "Intră în cont",
+      "forgot": "Ți-ai uitat parola?",
+      "noAccount": "Nu ai încă un cont?",
+      "register": "Creează unul",
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+      "problemTitle": "Autentificarea nu a reușit",
+      "problemBody": "Nu te-am putut autentifica din cauza unei erori la procesarea cererii.",
+      "problemAction": "Verifică datele introduse și încearcă din nou.",
+      "unverifiedAction": "Mergi la confirmarea adresei",
+      "lockedAction": "Resetează-ți parola"
+    },
+    "resetRequest": {
+      "title": "Resetează-ți parola",
+      "subtitle": "Îți trimitem pe e-mail un link din care setezi o parolă nouă.",
+      "emailLabel": "Adresa de e-mail",
+      "emailHelp": "Adresa cu care te-ai înregistrat. Acolo trimitem linkul de resetare.",
+      "emailMissing": "Adresa de e-mail lipsește, deci nu avem unde trimite linkul de resetare. Completează adresa înainte de a trimite.",
+      "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci linkul nu ar ajunge nicăieri. Verifică adresa și corecteaz-o.",
+      "submit": "Trimite linkul",
+      "sentTitle": "Cererea a fost înregistrată",
+      "sentBody": "Dacă adresa are un cont, un link de resetare este pe drum. Funcționează o singură dată și expiră după 60 de minute.",
+      "sentAction": "Verifică-ți căsuța de e-mail, inclusiv dosarul de spam.",
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+      "problemTitle": "Cererea nu a putut fi procesată",
+      "problemBody": "Linkul de resetare nu a fost trimis din cauza unei erori la procesarea cererii.",
+      "problemAction": "Așteaptă câteva minute și încearcă din nou.",
+      "backToSignIn": "Înapoi la autentificare"
+    },
+    "setPassword": {
+      "title": "Setează o parolă nouă",
+      "subtitle": "Alege parola nouă pentru contul tău.",
+      "consequenceTitle": "Toate sesiunile existente vor fi închise",
+      "consequenceBody": "Când salvezi parola nouă, ieși automat din cont pe toate dispozitivele pe care ești autentificat. Te autentifici din nou cu parola nouă.",
+      "consequenceAction": "Salvează parola nouă doar când ești gata să te autentifici din nou.",
+      "passwordLabel": "Parola nouă",
+      "submit": "Salvează parola nouă",
+      "successTitle": "Parola a fost schimbată",
+      "successBody": "Toate sesiunile existente au fost închise. De aici te poți autentifica cu parola nouă.",
+      "successAction": "Mergi la autentificare",
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+      "problemTitle": "Linkul nu a putut fi folosit",
+      "problemBody": "Parola nu a fost schimbată din cauza unei erori la procesarea cererii.",
+      "requestNew": "Cere un link nou",
+      "missingTitle": "Linkul este incomplet",
+      "missingBody": "Adresa deschisă nu conține codul de resetare, deci nu știm ce cont să modificăm. Deschide linkul exact cum a venit în e-mail sau cere unul nou.",
+      "missingAction": "Cere un link nou"
     }
   }
 }

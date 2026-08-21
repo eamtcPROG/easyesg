@@ -27,16 +27,17 @@ are built by `src/lib/pagination.ts`, the typed inverse of the API's `ListQueryI
 its grammar has no escaping, so the builder throws on a value containing `|` or `,` rather than
 letting it parse as extra groups. **Note `API_BASE_URL` already carries `/api/v1`**, so client
 paths are version-relative (`/auth/register`). Byte streams (export re-download, FR-53) are
-deliberately NOT this client's job — they must pass through `src/app/api/[...path]`
-byte-for-byte, which still answers 501 and is task 22's, together with the session.
+deliberately NOT this client's job — they pass through `src/app/api/[...path]` byte-for-byte,
+live since task 22 (see "The session tier" below).
 
 Two rules hold around that seam (post-close review, 20 Aug 2026 — iftamaster's
 `GeneralAxiosRepository` is the reference shape):
 
 - **Ambient request context is assembled at the seam, never at call sites.** `postToApi`
   resolves the locale itself and puts it on `Accept-Language`; an action repeating
-  `await getLocale()` is the violation. When task 22 adds the access token, it joins the same
-  place.
+  `await getLocale()` is the violation. Since task 22 the access token is the second piece:
+  read from the sealed session cookie inside the seam, attached as the bearer whenever a
+  session exists — and **never rotated there** (see the session trap below).
 - **A response body is validated, never cast.** `readResultObject` / `readResultList` /
   `readProblemDocument` in `api-client.ts` check the members they return, the way
   `VerificationEmailHandler.readEvent` does on the worker. A blind `as` reads a missing `object`
@@ -56,8 +57,18 @@ Two rules hold around that seam (post-close review, 20 Aug 2026 — iftamaster's
   may still pin the literals — they are the RSC wire values, and must break if a constant's
   value is renamed.
 
-**Still not built:** session (`src/server/session.ts` is a docblock), sign-in, reset and
-set-password (their routes return `null` until their APIs exist, tasks 21–22).
+**The session tier is live (task 22).** S-01 sign-in and S-02 reset/set-password reach the API
+through Server Actions like registration does; sign-in seals the whole AD-12 session — both
+tokens, expiries, the identity block — into ONE httpOnly `easyesg_session` cookie
+(`Secure; SameSite=Lax; Path=/`, AES-256-GCM under `SESSION_SECRET` — OQ-33, closed
+21 Aug 2026, architecture.md §12.5.6) and writes `NEXT_LOCALE` from the profile preference
+(OQ-32). `src/server/session-codec.ts` is the pure seal/unseal; `src/server/session.ts` is the
+request-scoped tier (read, establish, destroy, single-flighted refresh);
+`src/app/api/[...path]` is the real pass-through — same-origin proof on writes, 401 without a
+session, rotate-if-expiring, then forward with the bearer and stream both bodies untouched.
+Interim surfaces, each recorded on its owning task row in `docs/task.md`: sign-in lands on
+`?return=`-or-`/home` until task 25's membership branch, and the `(app)` layout's
+`SessionStrip` carries sign-out until task 30's real global tier.
 
 **The message catalogues have their first content.** `src/messages/{ro,en,ru}.json` carry
 `chrome` and `identity`; all three separately authored, RO the source. Adding a string is a JSON
@@ -116,6 +127,17 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `proxy` function, locale first. The matcher excludes `api` — `src/app/api/[...path]` is the
   token-attaching proxy and a locale rewrite would corrupt the forwarded path — and `health`,
   which must answer identically at every locale, meaning at none.
+
+- **A refresh may only happen where the successor cookie can be written** — Server Actions and
+  Route Handlers; cookie writes THROW during Server Component rendering (pinned Next 16 docs).
+  This is not an inconvenience but a tripwire: rotation CONSUMES the single-use refresh token
+  (task 21), so a refresh whose successor is not persisted leaves the browser holding a
+  consumed token, and its next presentation past the 30 s grace reads as theft and revokes the
+  session — a random sign-out with no error anywhere. `session.ts` single-flights refreshes
+  per token for the same reason. When Server Components start calling the API (task 29+), the
+  page-load rotation point becomes `proxy.ts`, which may set response cookies — planned there,
+  not rediscovered. And rotating a `SESSION_SECRET` signs everyone out by design: unsealable
+  is indistinguishable from absent, and that is the correct failure.
 
 - **Never import `next/link` or `next/navigation`'s locale-aware members.** Use
   `@/i18n/navigation`. A raw `next/link` renders a working-looking anchor that drops the locale

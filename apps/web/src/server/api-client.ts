@@ -1,9 +1,12 @@
 import 'server-only';
 import type { Message, ProblemDocument } from '@easyesg/contracts';
+import { cookies } from 'next/headers';
 import { getLocale } from 'next-intl/server';
 import { API_OUTCOME, type ApiFailure, type ApiOutcome, type ListResult } from '@/lib/api-outcome';
 import { buildListQuery, type ListQuery } from '@/lib/pagination';
+import { REFRESH_COOKIE } from '@/lib/session-cookie';
 import { env } from '@/lib/env';
+import { unsealSession } from './session-codec';
 
 /**
  * The typed client for the public API. **The only place that knows the wire conventions — and
@@ -12,7 +15,9 @@ import { env } from '@/lib/env';
  * token or a timezone header themselves, the seam does). Here the ambient context is the
  * active locale: `getLocale()` is resolved HERE and rides `Accept-Language` on every call, so
  * problem text and envelope messages arrive resolved in the language the user is reading —
- * and no action repeats the resolution. Task 22's access token joins the same place.
+ * and no action repeats the resolution. Since task 22 the access token is the second piece:
+ * read from the sealed session cookie (never rotated here — see `sessionAuthorization`) and
+ * attached as the `Authorization` bearer whenever a session exists.
  *
  * Three response shapes have to be told apart, and getting this wrong once means getting it
  * wrong everywhere — which is why it is written here and nowhere else (§6.8):
@@ -176,6 +181,20 @@ async function readBody<T>(
   }
 }
 
+/**
+ * The second piece of ambient context, joining the locale as task 20's docblock said it would:
+ * the access token from the sealed session cookie (task 22, OQ-33). Read-only on purpose —
+ * this seam serves Server Components, where cookie writes throw, so it must never rotate;
+ * `session.ts` owns rotation and the callers that may. Attached whenever a session exists,
+ * expiry included: the API is the authority on token liveness, and withholding a token this
+ * tier merely *believes* expired would turn clock skew into a 401 the API never issued.
+ */
+async function sessionAuthorization(): Promise<Record<string, string>> {
+  const sealed = (await cookies()).get(REFRESH_COOKIE)?.value;
+  const session = sealed ? unsealSession(sealed, env.sessionSecret) : null;
+  return session ? { authorization: `Bearer ${session.accessToken}` } : {};
+}
+
 /** Everything up to reading a success body: fetch, ambient context, problem/unreachable. */
 async function send(
   method: Method,
@@ -183,6 +202,7 @@ async function send(
   body?: unknown,
 ): Promise<{ response: Response } | ApiFailure> {
   const locale = await getLocale();
+  const authorization = await sessionAuthorization();
 
   let response: Response;
   try {
@@ -190,6 +210,7 @@ async function send(
       method,
       headers: {
         'accept-language': locale,
+        ...authorization,
         ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -277,6 +298,13 @@ export const api = {
   patch: <TBody, TObject>(path: string, body: TBody): Promise<ApiOutcome<TObject>> =>
     requestObject<TObject>(METHOD.Patch, path, body),
 
-  delete: <TObject = undefined>(path: string): Promise<ApiOutcome<TObject>> =>
-    requestObject<TObject>(METHOD.Delete, path),
+  /**
+   * `delete` returns `undefined` by default because the API's deletes answer 204 — and it
+   * accepts a body because `DELETE /auth/session` authenticates by the refresh token it
+   * carries (task 21: possession is the proof, and it works after the access token expired).
+   */
+  delete: <TBody = undefined, TObject = undefined>(
+    path: string,
+    body?: TBody,
+  ): Promise<ApiOutcome<TObject>> => requestObject<TObject>(METHOD.Delete, path, body),
 } as const;

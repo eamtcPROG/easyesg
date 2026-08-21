@@ -14,7 +14,9 @@
       "terms": "Terms of service",
       "privacy": "Privacy notice",
       "cookies": "Cookie policy"
-    }
+    },
+    "signedInAs": "Signed in as",
+    "signOut": "Sign out"
   },
   "identity": {
     "unreachable": {
@@ -75,6 +77,63 @@
       "problemTitle": "The link could not be used",
       "problemBody": "The address was not confirmed because the request could not be processed.",
       "problemAction": "Request a new link"
+    },
+    "signIn": {
+      "title": "Sign in",
+      "subtitle": "Sign in to your account to work on your organizations' reports.",
+      "emailLabel": "Email address",
+      "emailMissing": "The email address is missing, so we do not know which account to open. Fill in the address before continuing.",
+      "emailInvalid": "The text entered is not shaped like an email address, so sign-in cannot start. Check the address and correct it.",
+      "passwordLabel": "Password",
+      "passwordMissing": "The password is missing, so we cannot verify your identity. Fill in the password before continuing.",
+      "show": "Show",
+      "hide": "Hide",
+      "submit": "Sign in",
+      "forgot": "Forgot your password?",
+      "noAccount": "Don't have an account yet?",
+      "register": "Create one",
+      "summaryTitle": "A few fields need attention before you can continue",
+      "problemTitle": "Sign-in did not succeed",
+      "problemBody": "We could not sign you in because of an error while processing the request.",
+      "problemAction": "Check the details you entered and try again.",
+      "unverifiedAction": "Go to address confirmation",
+      "lockedAction": "Reset your password"
+    },
+    "resetRequest": {
+      "title": "Reset your password",
+      "subtitle": "We will email you a link from which you set a new password.",
+      "emailLabel": "Email address",
+      "emailHelp": "The address you registered with. That is where the reset link goes.",
+      "emailMissing": "The email address is missing, so there is nowhere to send the reset link. Fill in the address before sending.",
+      "emailInvalid": "The text entered is not shaped like an email address, so the link would not reach anyone. Check the address and correct it.",
+      "submit": "Send the link",
+      "sentTitle": "Your request has been recorded",
+      "sentBody": "If the address has an account, a reset link is on its way. It works once and expires after 60 minutes.",
+      "sentAction": "Check your inbox, including the spam folder.",
+      "summaryTitle": "A few fields need attention before you can continue",
+      "problemTitle": "The request could not be processed",
+      "problemBody": "The reset link was not sent because of an error while processing the request.",
+      "problemAction": "Wait a few minutes and try again.",
+      "backToSignIn": "Back to sign-in"
+    },
+    "setPassword": {
+      "title": "Set a new password",
+      "subtitle": "Choose the new password for your account.",
+      "consequenceTitle": "All existing sessions will be signed out",
+      "consequenceBody": "When you save the new password, you are automatically signed out on every device where you are signed in. You sign in again with the new password.",
+      "consequenceAction": "Save the new password only when you are ready to sign in again.",
+      "passwordLabel": "New password",
+      "submit": "Save the new password",
+      "successTitle": "Your password has been changed",
+      "successBody": "All existing sessions have been signed out. From here you can sign in with the new password.",
+      "successAction": "Go to sign-in",
+      "summaryTitle": "A few fields need attention before you can continue",
+      "problemTitle": "The link could not be used",
+      "problemBody": "The password was not changed because of an error while processing the request.",
+      "requestNew": "Request a new link",
+      "missingTitle": "The link is incomplete",
+      "missingBody": "The address you opened does not carry the reset code, so we do not know which account to change. Open the link exactly as it arrived in the email, or request a new one.",
+      "missingAction": "Request a new link"
     }
   }
 }

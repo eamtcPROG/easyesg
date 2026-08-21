@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { SessionStrip } from '@/shared/session-strip';
 
 /**
  * The authenticated shell. `proxy.ts` guarantees a session above this point.
@@ -33,5 +34,13 @@ import type { ReactNode } from 'react';
 export const dynamic = 'force-dynamic';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  // The strip is task 22's interim rendering of the global tier's account corner — email and
+  // sign-out, inventory components only. Task 30 replaces it with the real §4.2 chrome; the
+  // deferral is recorded on its row in docs/task.md.
+  return (
+    <>
+      <SessionStrip />
+      {children}
+    </>
+  );
 }

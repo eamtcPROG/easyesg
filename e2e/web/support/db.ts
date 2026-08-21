@@ -33,11 +33,17 @@ const asOwner = () =>
     process.env.DB_MIGRATOR_PASSWORD ?? 'devonly-migrator',
   );
 
-/** The wire value is pinned on purpose — a renamed event type must break this suite. */
+/** The wire values are pinned on purpose — a renamed event type must break this suite. */
 const EMAIL_VERIFICATION_REQUESTED = 'identity.email_verification.requested';
+const PASSWORD_RESET_REQUESTED = 'identity.password_reset.requested';
 
-/** Polls the outbox for the verification token registration committed for `email`. */
-export async function verificationTokenFor(email: string, timeoutMs = 15_000): Promise<string> {
+/** Polls the outbox for the raw token a committed request left for `email` — the same
+ *  arrangement for both single-use links: the row IS where the token exists (OQ-54). */
+async function outboxTokenFor(
+  eventType: string,
+  email: string,
+  timeoutMs: number,
+): Promise<string> {
   const client = new Client(asWorker());
   await client.connect();
   try {
@@ -47,12 +53,12 @@ export async function verificationTokenFor(email: string, timeoutMs = 15_000): P
         `SELECT payload FROM audit.outbox_event
           WHERE event_type = $1 AND payload->>'email' = $2
           ORDER BY occurred_at DESC LIMIT 1`,
-        [EMAIL_VERIFICATION_REQUESTED, email],
+        [eventType, email],
       );
       const token = result.rows[0]?.payload.token;
       if (token) return token;
       if (Date.now() > deadline) {
-        throw new Error(`No outbox verification event for ${email} within ${timeoutMs}ms`);
+        throw new Error(`No ${eventType} outbox event for ${email} within ${timeoutMs}ms`);
       }
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
@@ -60,6 +66,14 @@ export async function verificationTokenFor(email: string, timeoutMs = 15_000): P
     await client.end();
   }
 }
+
+/** Polls the outbox for the verification token registration committed for `email`. */
+export const verificationTokenFor = (email: string, timeoutMs = 15_000): Promise<string> =>
+  outboxTokenFor(EMAIL_VERIFICATION_REQUESTED, email, timeoutMs);
+
+/** Polls the outbox for the reset token a reset request committed for `email` (task 21). */
+export const passwordResetTokenFor = (email: string, timeoutMs = 15_000): Promise<string> =>
+  outboxTokenFor(PASSWORD_RESET_REQUESTED, email, timeoutMs);
 
 /** Removes the accounts and outbox rows a run created (addresses share a unique prefix). */
 export async function cleanupAccounts(prefix: string): Promise<void> {
