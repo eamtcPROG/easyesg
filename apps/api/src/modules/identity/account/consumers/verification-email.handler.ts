@@ -27,6 +27,15 @@ import {
  * table and its origin is deployment configuration — neither of which the compliance core should
  * know. It is also why the origin comes from `PUBLIC_WEB_URL` and never from a request header:
  * there is no request, and a link built from `Host` is a textbook redirect-poisoning path.
+ *
+ * **It always prefixes the locale, including the source locale, and that is deliberate.** Since
+ * 21 Aug 2026 `apps/web` serves Romanian unprefixed (architecture.md §10.8), so a `ro` link lands
+ * on `/ro/verify` and is `307`-redirected to `/verify` with the query preserved — verified, and
+ * next-intl's documented behaviour for a superfluous prefix. Teaching this handler which locale
+ * takes no prefix would duplicate a front-end routing decision inside the compliance core, where
+ * it could go stale invisibly; one redirect on a link each account follows once is the cheaper
+ * side of that trade. The redirect is also harmless to the mail-scanner defence: the token is
+ * consumed by an explicit POST, never by opening the URL.
  */
 @Injectable()
 @HandlesJob(EMAIL_VERIFICATION_REQUESTED)

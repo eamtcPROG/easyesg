@@ -1415,6 +1415,47 @@ easyesg/
 
 **Runbooks are a deliverable, not an afterthought**, because six NFRs are verified by *rehearsal* rather than by test — NFR-28/29 (data-subject requests), NFR-31 (exit), NFR-51/52 (restore), NFR-85 (publish-and-revert), NFR-86 (version rollout), NFR-93 (job failure).
 
+### 10.8 Public URL structure and locale prefixes
+
+**Decided 21 Aug 2026 (product owner), on SEO grounds.** The tenant application serves the **source
+locale unprefixed** and prefixes the other two: `/`, `/register`, `/reports/:id` are Romanian;
+`/en/register` and `/ru/register` are the English and Russian variants. A request carrying a
+superfluous `ro` prefix — `/ro/register` — is `307`-redirected onto the canonical unprefixed
+address, so one page never has two live addresses. This is `localePrefix: 'as-needed'` in
+`apps/web/src/i18n/routing.ts`, replacing next-intl's `'always'` default, which the scaffold had
+adopted deliberately and which is now amended rather than silently flipped.
+
+**What the change buys is the root URL, not a ranking rule.** Google supports either scheme when
+`hreflang` is declared, so this is not a conformance question. It is that `/` is the most linked,
+most typed and most crawled address in the product, and under `'always'` every hit on it — every
+crawl, every card, every typed visit — paid a redirect hop before rendering anything. Romanian is
+the source locale (NFR-23) and Moldova the only market at MVP, so the unprefixed address and the
+primary audience are the same set of pages.
+
+The alternates are emitted by next-intl's `alternateLinks` as a **`Link` response header** rather
+than as `<link>` tags in the markup — a form Google reads for `hreflang`, and worth stating because
+grepping the HTML for `rel="alternate"` finds nothing and proves nothing. The set includes
+`x-default`, pointing at the unprefixed source locale.
+
+**Language is in the URL; tenancy never is, and the two must not be reasoned about together.** UX-2
+forbids the active organization from appearing in a path segment because a second source of tenancy
+turns an org-switch race into a cross-tenant read (AD-2). Language carries no such property, and
+UX-4 requires every addressable state to have a shareable address.
+
+**One consequence is a security property and is recorded here because it cost a real defect.** Under
+`'always'`, `apps/web/src/proxy.ts` could read the locale as path segment 1 and the route as
+segment 2. Unprefixed, `/home` has no segment 2 — the auth boundary read that as "no route segment,
+therefore the marketing home" and returned *public*. Every authenticated Romanian route would have
+been reachable with no session, failing open on the one branch no test covered, because every test
+URL at the time was prefixed. The boundary now resolves the first **non-locale** segment and the
+allowlist stays default-closed; `e2e/web/routing.spec.ts` is the regression guard, and it asserts
+the closed default for an unknown segment as well as for the known authenticated ones.
+
+Interacts with **OQ-31** (which host serves the tenant application, and whether the public marketing
+site shares it): that question is still open, and if a host split is confirmed the marketing home
+moves off `/` and `/home` takes it. This section fixes the *locale* half of the address; OQ-31 owns
+the *host* half.
+
 ---
 
 ## 11. Key runtime flows

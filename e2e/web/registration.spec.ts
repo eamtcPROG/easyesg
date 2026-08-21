@@ -22,7 +22,7 @@ test.afterAll(async () => {
 test('a user registers and verifies from the browser (UC-01, UC-03)', async ({ page }) => {
   const email = addressFor('happy');
 
-  await page.goto('/ro/register');
+  await page.goto('/register');
   await expect(page.getByRole('heading', { name: 'Creează-ți contul' })).toBeVisible();
 
   // The policy is displayed before entry (S-02 §5) and answers itself while typing.
@@ -35,13 +35,13 @@ test('a user registers and verifies from the browser (UC-01, UC-03)', async ({ p
   await page.getByRole('button', { name: 'Creează contul' }).click();
 
   // S-01 exits to the S-02 challenge, which states the address the link went to.
-  await page.waitForURL('**/ro/verify');
+  await page.waitForURL('**/verify');
   await expect(page.getByText(email)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Retrimite linkul' })).toBeDisabled();
 
   // The link the email would carry (built by the worker as /{locale}/verify?token=…).
   const token = await verificationTokenFor(email);
-  await page.goto(`/ro/verify?token=${token}`);
+  await page.goto(`/verify?token=${token}`);
 
   // Arrival must not consume the token; the explicit action does.
   await page.getByRole('button', { name: 'Confirmă adresa' }).click();
@@ -49,7 +49,7 @@ test('a user registers and verifies from the browser (UC-01, UC-03)', async ({ p
   await expect(page.getByText('Adresa este confirmată')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Mergi la autentificare' })).toHaveAttribute(
     'href',
-    /\/ro\/sign-in$/,
+    /\/sign-in$/,
   );
 });
 
@@ -58,19 +58,19 @@ test('a spent link explains itself and offers the resend route (S-02 error state
 }) => {
   const email = addressFor('spent');
 
-  await page.goto('/ro/register');
+  await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creează contul' }).click();
-  await page.waitForURL('**/ro/verify');
+  await page.waitForURL('**/verify');
 
   const token = await verificationTokenFor(email);
-  await page.goto(`/ro/verify?token=${token}`);
+  await page.goto(`/verify?token=${token}`);
   await page.getByRole('button', { name: 'Confirmă adresa' }).click();
   await expect(page.getByText('Adresa este confirmată')).toBeVisible();
 
   // Second use of a single-use link: the api's resolved three-part wording, as received.
-  await page.goto(`/ro/verify?token=${token}`);
+  await page.goto(`/verify?token=${token}`);
   await page.getByRole('button', { name: 'Confirmă adresa' }).click();
   await expect(page.getByText('Linkul de confirmare nu mai este valabil', { exact: false })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Cere un link nou' })).toBeVisible();
@@ -81,13 +81,13 @@ test('a duplicate registration surfaces the 409 with sign-in as the way out (OQ-
 }) => {
   const email = addressFor('duplicate');
 
-  await page.goto('/ro/register');
+  await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creează contul' }).click();
-  await page.waitForURL('**/ro/verify');
+  await page.waitForURL('**/verify');
 
-  await page.goto('/ro/register');
+  await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creează contul' }).click();
@@ -100,7 +100,7 @@ test('a duplicate registration surfaces the 409 with sign-in as the way out (OQ-
 test('the language switcher reaches the same screen in all three locales (UX-4)', async ({
   page,
 }) => {
-  await page.goto('/ro/register');
+  await page.goto('/register');
   await page.getByRole('button', { name: /Limba interfeței/ }).click();
   await page.getByRole('menuitem', { name: 'Русский' }).click();
   await page.waitForURL('**/ru/register');
@@ -110,4 +110,12 @@ test('the language switcher reaches the same screen in all three locales (UX-4)'
   await page.getByRole('menuitem', { name: 'English' }).click();
   await page.waitForURL('**/en/register');
   await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
+
+  // …and back to the source locale, which is served UNPREFIXED (localePrefix 'as-needed').
+  // Asserted through the switcher rather than by navigation, because the switcher builds its
+  // hrefs from next-intl's Link and is the surface that would silently reintroduce `/ro`.
+  await page.getByRole('button', { name: /Interface language/ }).click();
+  await page.getByRole('menuitem', { name: 'Română' }).click();
+  await page.waitForURL((url) => url.pathname === '/register');
+  await expect(page.getByRole('heading', { name: 'Creează-ți contul' })).toBeVisible();
 });

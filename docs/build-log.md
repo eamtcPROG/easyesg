@@ -1153,3 +1153,50 @@ Verified after: the image builds, both entrypoints start against the Compose sta
 `/repo/packages/validation/dist/cjs/index.js`, and `POST /auth/register` with a weak password
 returns the policy's resolved Romanian three-part message — so the package that moved in this task
 is not merely resolvable in the image but executing.
+
+## Task 20 addendum — the source locale loses its prefix · 2026-08-21
+
+**Decision (product owner, on SEO grounds):** the tenant application serves Romanian unprefixed.
+`/` and `/register` are the canonical Romanian addresses, `/en/…` and `/ru/…` keep theirs, and
+`/ro/register` 307s onto `/register`. That is `localePrefix: 'as-needed'`, amending a decision the
+scaffold had taken deliberately and stated in `routing.ts` — recorded properly in architecture.md
+**§10.8**, which is new and owns the locale half of the public URL structure (OQ-31 still owns the
+host half). The gain is not a ranking rule — Google accepts either scheme given `hreflang` — it is
+that `/`, the most linked and most crawled address in the product, stopped paying a redirect hop.
+
+Verified rather than assumed: `alternateLinks` emits the three alternates **plus `x-default`** as a
+`Link` RESPONSE HEADER, not as `<link>` tags. The first draft of the spec asserted markup and would
+have passed only by finding nothing; grepping the HTML for `rel="alternate"` proves nothing here.
+
+**Two defects came out of a one-line config change, and neither was in the config.**
+
+**1. The auth boundary would have failed open across the whole default locale.** `proxy.ts` read
+the locale as path segment 1 and the route as segment 2 — correct under `'always'`, and silently
+wrong the moment the default locale lost its prefix: `/home` has no segment 2, so the boundary read
+it as "no route segment, therefore the marketing home" and returned **public**. Every authenticated
+Romanian route would have been reachable with no session. Proven by running both implementations
+side by side rather than by reading them — old returns `false` for `/home`, `/reports`, `/billing`,
+new returns `true` — and the reason nothing would have caught it is that *every* test URL in the
+suite was prefixed at the time, so the broken branch had no coverage at all. It now resolves the
+first **non-locale** segment, and `e2e/web/routing.spec.ts` covers the unprefixed authenticated
+routes, the prefixed ones, and an unknown segment (still default-closed).
+
+**2. `HOSTNAME=127.0.0.1` in the e2e harness makes the standalone server run the proxy twice.**
+Six expansion tests died on `ERR_TOO_MANY_REDIRECTS` while the identity project passed — which was
+itself a clue, because `reuseExistingServer` had quietly pointed the identity project at a *dev*
+server that happened to be running, while expansion started a real standalone one. Measured on a
+single build: with `HOSTNAME=127.0.0.1` one request to `/register` produces **two** proxy passes,
+the second on the already-rewritten `/ro/register` and carrying the first pass's response headers
+as request headers (`link`, `set-cookie`, `x-next-intl-locale`); next-intl then correctly applies
+its superfluous-prefix rule, redirects to `/register`, and the browser loops. With `0.0.0.0` — what
+`apps/web/Dockerfile` sets — or with the variable unset: one pass, 200. **The production image was
+never affected.** It was latent until this task: under `'always'` an unprefixed path was
+*redirected*, never *rewritten*, and only a rewrite re-enters. The harness now sets the same bind
+address the image does, because a suite whose whole purpose is to run the shipped artefact must
+also run it the way the image runs it.
+
+**Verified:** 23 browser tests green against real standalone servers with no dev server running —
+the nine new routing/boundary assertions included — plus 30 web unit tests and typecheck. The
+emailed verification link still works unchanged: the api keeps prefixing (`/ro/verify?token=…`),
+next-intl 307s it to `/verify` with the query intact, and teaching the compliance core which locale
+takes no prefix would duplicate a front-end routing decision where it could go stale invisibly.

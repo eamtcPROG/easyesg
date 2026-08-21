@@ -9,7 +9,7 @@ import { expect, test } from '@playwright/test';
  * All three locales on the register screen: the axe pass is mostly locale-independent, but
  * `lang` correctness and accessible names are precisely what varies.
  */
-const SCREENS = ['/ro/register', '/en/register', '/ru/register', '/ro/verify'];
+const SCREENS = ['/register', '/en/register', '/ru/register', '/verify'];
 
 for (const screen of SCREENS) {
   test(`axe finds no violations on ${screen}`, async ({ page }) => {

@@ -115,10 +115,21 @@ conditional render, which is how it ends up half-suppressed on one screen.
   The default is closed — anything unnamed requires a session. Adding a public screen means
   adding it there.
 
+  **Never read the locale as path segment 1.** The source locale is served *unprefixed*
+  (`localePrefix: 'as-needed'`, architecture.md §10.8), so `/home` and `/ru/home` are the same
+  route in different languages. `routeSegment()` resolves the first **non-locale** segment for
+  exactly this reason: the earlier positional read treated `/home` as "no segment, therefore the
+  marketing home" and returned public, which would have opened every authenticated Romanian
+  route. It failed open, and silently — every test URL at the time carried a prefix, so nothing
+  caught it. `e2e/web/routing.spec.ts` is the guard now.
+
 - **The active organization never appears in a URL.** UX-2, and it is a security property, not a
   style: a second source of tenancy turns an org-switch race or a revoked membership into a
   cross-tenant read (AD-2). Language is the opposite case and *is* in the URL — do not
-  generalise from one to the other.
+  generalise from one to the other. Romanian, the source locale, is the one that is **not** in
+  the URL: `/register` is Romanian, `/en/register` and `/ru/register` are the others, and
+  `/ro/register` 307s onto `/register` (architecture.md §10.8). Build links with
+  `@/i18n/navigation` and this stays automatic; hand-built `/${locale}/…` strings do not.
 
 - **Nothing prerenders, and `[locale]`'s stated reason has expired.** `force-dynamic` was set
   there because NFR-85 required a copy change to reach production without a redeploy, so strings

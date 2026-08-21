@@ -38,6 +38,22 @@ const webEnv = {
   // Synthetic and e2e-only: no session is issued on these screens (that is task 21+); the env
   // var exists because src/lib/env.ts refuses to run without one, which is its job.
   SESSION_SECRET: 'e2e-only-0000000000000000000000000000000000',
+  /**
+   * **`0.0.0.0`, matching `apps/web/Dockerfile` — and never `127.0.0.1`, which breaks the app.**
+   *
+   * Measured 21 Aug 2026 on one build: with `HOSTNAME=127.0.0.1` the standalone server runs the
+   * proxy TWICE per request — the second pass on the already-rewritten pathname, carrying the
+   * first pass's response headers as request headers — so next-intl sees a superfluous `/ro`
+   * prefix, redirects to the unprefixed form, and the browser loops
+   * (`ERR_TOO_MANY_REDIRECTS`). With `0.0.0.0` or unset: one pass, 200.
+   *
+   * It was latent until `localePrefix: 'as-needed'` (§10.8): under `'always'` an unprefixed path
+   * was REDIRECTED, never rewritten, and only a rewrite re-enters. The lesson is the harness's,
+   * not the app's — this suite exists to run the artefact the image ships, so it must also run
+   * it the way the image runs it, and a "tidier" bind address is a difference that can decide
+   * whether the product works.
+   */
+  HOSTNAME: '0.0.0.0',
 };
 
 export default defineConfig({
@@ -90,7 +106,7 @@ export default defineConfig({
       url: `http://localhost:${WEB_PORT}/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
-      env: { ...webEnv, PORT: String(WEB_PORT), HOSTNAME: '127.0.0.1' },
+      env: { ...webEnv, PORT: String(WEB_PORT) },
     },
     {
       command: 'node apps/web/.next/standalone/apps/web/server.js',
@@ -101,7 +117,6 @@ export default defineConfig({
       env: {
         ...webEnv,
         PORT: String(EXPANSION_PORT),
-        HOSTNAME: '127.0.0.1',
         EASYESG_PSEUDOLOCALE: '1',
       },
     },
