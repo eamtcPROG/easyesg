@@ -34,7 +34,7 @@ describe('shared catalogues', () => {
   it.each(TRANSLATIONS)('matches the source key space in %s', (locale) => {
     // Two named sets rather than a bare inequality: "missing" is a translation still to write,
     // "unexpected" is a rename applied to one file only — or a key someone invented.
-    expect(compareToSource(CATALOGUES[SOURCE_LOCALE], CATALOGUES[locale])).toEqual({
+    expect(compareToSource({ source: CATALOGUES[SOURCE_LOCALE], translated: CATALOGUES[locale] })).toEqual({
       missing: [],
       unexpected: [],
     });

@@ -229,16 +229,15 @@ export class FakeAccountStore implements AccountStore {
       },
 
       replaceCredentialPassword(
-        accountId: string,
-        passwordHash: string,
+        credential: { readonly accountId: string; readonly passwordHash: string },
         at: Date,
       ): Promise<boolean> {
         void at;
-        const credential = store.credentials.get(accountId);
-        if (!credential) return Promise.resolve(false);
-        store.credentials.set(accountId, {
-          ...credential,
-          passwordHash,
+        const existing = store.credentials.get(credential.accountId);
+        if (!existing) return Promise.resolve(false);
+        store.credentials.set(credential.accountId, {
+          ...existing,
+          passwordHash: credential.passwordHash,
           failedAttempts: 0,
           lockedAt: null,
         });
@@ -285,8 +284,8 @@ export class FakePasswordHasher {
     return Promise.resolve(`hashed:${password}`);
   }
 
-  verify(digest: string, password: string): Promise<boolean> {
-    this.verified.push(digest);
-    return Promise.resolve(digest === `hashed:${password}`);
+  verify(candidate: { readonly digest: string; readonly password: string }): Promise<boolean> {
+    this.verified.push(candidate.digest);
+    return Promise.resolve(candidate.digest === `hashed:${candidate.password}`);
   }
 }

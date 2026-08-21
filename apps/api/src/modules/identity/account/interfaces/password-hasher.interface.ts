@@ -12,7 +12,7 @@
  */
 export interface PasswordHasher {
   hash(password: string): Promise<string>;
-  verify(digest: string, password: string): Promise<boolean>;
+  verify(candidate: { readonly digest: string; readonly password: string }): Promise<boolean>;
 }
 
 export const PASSWORD_HASHER = Symbol('PASSWORD_HASHER');

@@ -35,12 +35,18 @@ export interface ParityResult {
   readonly unexpected: readonly string[];
 }
 
-export function compareToSource(
-  source: MessageCatalogue,
-  translated: MessageCatalogue,
-): ParityResult {
-  const sourceKeys = leafKeys(source);
-  const translatedKeys = leafKeys(translated);
+/**
+ * Named rather than positional (CLAUDE.md, "Conventions"): both are `MessageCatalogue`, and
+ * swapping them compiled while inverting the answer — `missing` and `unexpected` would trade
+ * places, so a locale with an untranslated key would report a key someone invented instead. Two
+ * plausible-looking findings pointing at the wrong file.
+ */
+export function compareToSource(catalogues: {
+  readonly source: MessageCatalogue;
+  readonly translated: MessageCatalogue;
+}): ParityResult {
+  const sourceKeys = leafKeys(catalogues.source);
+  const translatedKeys = leafKeys(catalogues.translated);
   return {
     missing: sourceKeys.filter((k) => !translatedKeys.includes(k)).sort(),
     unexpected: translatedKeys.filter((k) => !sourceKeys.includes(k)).sort(),

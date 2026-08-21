@@ -26,19 +26,35 @@ export const SESSION_IDLE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const SESSION_ABSOLUTE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
+ * The two instants the clocks above anchor on, as one named input (CLAUDE.md, "Conventions").
+ *
+ * They were positional, and both are `Date`: swapping them compiled and produced a *plausible*
+ * wrong answer rather than a failure — a session's idle window measured from sign-in and its
+ * absolute cap from the last rotation, which is roughly right in the first week and increasingly
+ * wrong afterwards. Named fields make the swap unrepresentable.
+ */
+export interface SessionLifetimeAnchors {
+  /** Sign-in. The absolute cap counts from here and rotation cannot move it. */
+  readonly sessionCreatedAt: Date;
+  /** The CURRENT refresh token's issuance. The idle window counts from here and rolls. */
+  readonly tokenIssuedAt: Date;
+}
+
+/**
  * When the session dies if never refreshed again — the earlier of the two bounds. This is also
  * what the sign-in and refresh responses report as `refreshTokenExpiresAt`, so the client is told
  * the truth even in the last idle window before the absolute cap.
  */
-export function sessionExpiresAt(sessionCreatedAt: Date, tokenIssuedAt: Date): Date {
+export function sessionExpiresAt(anchors: SessionLifetimeAnchors): Date {
   return new Date(
     Math.min(
-      tokenIssuedAt.getTime() + SESSION_IDLE_TTL_MS,
-      sessionCreatedAt.getTime() + SESSION_ABSOLUTE_TTL_MS,
+      anchors.tokenIssuedAt.getTime() + SESSION_IDLE_TTL_MS,
+      anchors.sessionCreatedAt.getTime() + SESSION_ABSOLUTE_TTL_MS,
     ),
   );
 }
 
-export function sessionHasExpired(sessionCreatedAt: Date, tokenIssuedAt: Date, now: Date): boolean {
-  return now.getTime() >= sessionExpiresAt(sessionCreatedAt, tokenIssuedAt).getTime();
+/** `now` stays a separate parameter: it is the clock reading, not one of the session's anchors. */
+export function sessionHasExpired(anchors: SessionLifetimeAnchors, now: Date): boolean {
+  return now.getTime() >= sessionExpiresAt(anchors).getTime();
 }

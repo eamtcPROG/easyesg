@@ -27,7 +27,7 @@ describe('chrome catalogue', () => {
   });
 
   it.each(TRANSLATIONS)('matches the source key space in %s', (locale) => {
-    expect(compareToSource(CATALOGUES[SOURCE_LOCALE], CATALOGUES[locale])).toEqual({
+    expect(compareToSource({ source: CATALOGUES[SOURCE_LOCALE], translated: CATALOGUES[locale] })).toEqual({
       missing: [],
       unexpected: [],
     });

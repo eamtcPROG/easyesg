@@ -29,6 +29,20 @@ export const ENTITLEMENT_DECISION_KIND = {
 export type EntitlementDecisionKind =
   (typeof ENTITLEMENT_DECISION_KIND)[keyof typeof ENTITLEMENT_DECISION_KIND];
 
+/**
+ * One entitlement question. Named rather than positional (CLAUDE.md, "Conventions"): the first
+ * two arguments were both `string`, and swapping an organization id for an entitlement key
+ * compiles — it would resolve to "no such key", which AD-5 answers as a deny, so the failure is a
+ * customer refused a capability they hold. Converted before the port has an implementation
+ * (task 54), which is the cheapest moment it will ever be.
+ */
+export interface EntitlementQuery {
+  readonly organizationId: string;
+  readonly key: string;
+  /** Units the caller wants to consume, where the key is metered. */
+  readonly requested?: number;
+}
+
 export interface EntitlementDecision {
   kind: EntitlementDecisionKind;
   /** Message key resolved through platform/localization — never a literal sentence. */
@@ -62,7 +76,7 @@ export interface EntitlementPort {
    * granted and CLOSED for new purchases. An outage must not make a customer's report
    * read-only.
    */
-  check(organizationId: string, key: string, requested?: number): Promise<EntitlementDecision>;
+  check(query: EntitlementQuery): Promise<EntitlementDecision>;
 }
 
 /** DI token. Lives beside the interface so a consumer imports one thing (CLAUDE.md, P-7). */

@@ -306,8 +306,7 @@ class AccountTransactionAdapter implements AccountTransaction {
   }
 
   async replaceCredentialPassword(
-    accountId: string,
-    passwordHash: string,
+    credential: { readonly accountId: string; readonly passwordHash: string },
     at: Date,
   ): Promise<boolean> {
     // One statement replaces the hash AND releases the lockout — §12.5.6 names the consumed
@@ -319,7 +318,7 @@ class AccountTransactionAdapter implements AccountTransaction {
             SET password_hash = $2, failed_attempts = 0, locked_at = NULL, updated_at = $3
           WHERE account_id = $1
           RETURNING account_id`,
-        [accountId, passwordHash, at],
+        [credential.accountId, credential.passwordHash, at],
       ),
     );
     return rows.length > 0;

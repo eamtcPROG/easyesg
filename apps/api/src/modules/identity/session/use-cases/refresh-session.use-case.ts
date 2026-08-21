@@ -85,7 +85,13 @@ export class RefreshSession {
         return { kind: REFRESH_OUTCOME.INVALID };
       }
 
-      if (sessionHasExpired(presented.sessionCreatedAt, presented.tokenIssuedAt, now)) {
+      if (sessionHasExpired(
+          {
+            sessionCreatedAt: presented.sessionCreatedAt,
+            tokenIssuedAt: presented.tokenIssuedAt,
+          },
+          now,
+        )) {
         return { kind: REFRESH_OUTCOME.EXPIRED };
       }
 
@@ -117,7 +123,7 @@ export class RefreshSession {
       accessToken: await this.signer.sign(outcome.sessionId, accessTokenExpiresAt),
       accessTokenExpiresAt,
       refreshToken: next.value,
-      refreshTokenExpiresAt: sessionExpiresAt(outcome.sessionCreatedAt, now),
+      refreshTokenExpiresAt: sessionExpiresAt({ sessionCreatedAt: outcome.sessionCreatedAt, tokenIssuedAt: now }),
     };
   }
 }

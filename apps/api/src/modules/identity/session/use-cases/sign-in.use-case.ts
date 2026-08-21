@@ -90,7 +90,7 @@ export class SignIn {
 
     const matches =
       account !== null && credential !== null
-        ? await this.hasher.verify(credential.passwordHash, command.password)
+        ? await this.hasher.verify({ digest: credential.passwordHash, password: command.password })
         : await this.burnVerificationTime(command.password);
 
     if (account === null || credential === null || !matches) {
@@ -118,7 +118,7 @@ export class SignIn {
       accessToken: await this.signer.sign(session.id, accessTokenExpiresAt),
       accessTokenExpiresAt,
       refreshToken: minted.value,
-      refreshTokenExpiresAt: sessionExpiresAt(session.createdAt, now),
+      refreshTokenExpiresAt: sessionExpiresAt({ sessionCreatedAt: session.createdAt, tokenIssuedAt: now }),
     };
   }
 
@@ -156,7 +156,7 @@ export class SignIn {
    */
   private async burnVerificationTime(password: string): Promise<false> {
     this.dummyHash ??= await this.hasher.hash(mintRefreshToken().value);
-    await this.hasher.verify(this.dummyHash, password);
+    await this.hasher.verify({ digest: this.dummyHash, password });
     return false;
   }
 }

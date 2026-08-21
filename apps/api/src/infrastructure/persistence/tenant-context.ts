@@ -15,11 +15,28 @@ import type { QueryRunner } from 'typeorm';
  * 3. The policies read `current_setting(..., true)` in the missing_ok form, so an unset
  *    context yields NULL and therefore zero rows — rather than a 500 on every endpoint.
  */
+/**
+ * The two identifiers the binding writes. Named rather than positional (CLAUDE.md,
+ * "Conventions") because both are `string` and this is the one signature in the codebase where a
+ * silent swap is a **tenancy** failure: `app.current_org` set to a user id matches no policy, so
+ * every tenant read returns zero rows — which reads downstream as "this customer has no data",
+ * exactly the failure `TenantRepository`'s throw exists to prevent, and one that survives review.
+ */
+export interface TenantBinding {
+  readonly organizationId: string;
+  readonly actorId: string;
+}
+
 export async function setTenantContext(
   queryRunner: QueryRunner,
-  organizationId: string,
-  actorId: string,
+  binding: TenantBinding,
 ): Promise<void> {
-  await queryRunner.query('SELECT set_config($1, $2, true)', ['app.current_org', organizationId]);
-  await queryRunner.query('SELECT set_config($1, $2, true)', ['app.current_user', actorId]);
+  await queryRunner.query('SELECT set_config($1, $2, true)', [
+    'app.current_org',
+    binding.organizationId,
+  ]);
+  await queryRunner.query('SELECT set_config($1, $2, true)', [
+    'app.current_user',
+    binding.actorId,
+  ]);
 }

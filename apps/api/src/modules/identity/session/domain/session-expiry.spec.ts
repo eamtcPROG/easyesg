@@ -19,28 +19,28 @@ describe('session expiry (OQ-35)', () => {
   });
 
   it('expires by the idle clock while the absolute cap is far away', () => {
-    expect(sessionExpiresAt(signedInAt, signedInAt).getTime()).toBe(
+    expect(sessionExpiresAt({ sessionCreatedAt: signedInAt, tokenIssuedAt: signedInAt }).getTime()).toBe(
       signedInAt.getTime() + SESSION_IDLE_TTL_MS,
     );
   });
 
   it('rotation rolls the idle window from the current token, not from sign-in', () => {
     const rotatedAt = new Date(signedInAt.getTime() + 10 * 24 * 60 * 60 * 1000);
-    expect(sessionExpiresAt(signedInAt, rotatedAt).getTime()).toBe(
+    expect(sessionExpiresAt({ sessionCreatedAt: signedInAt, tokenIssuedAt: rotatedAt }).getTime()).toBe(
       rotatedAt.getTime() + SESSION_IDLE_TTL_MS,
     );
   });
 
   it('the absolute cap wins in the last window — rotation cannot roll past it', () => {
     const rotatedAt = new Date(signedInAt.getTime() + SESSION_ABSOLUTE_TTL_MS - 60_000);
-    expect(sessionExpiresAt(signedInAt, rotatedAt).getTime()).toBe(
+    expect(sessionExpiresAt({ sessionCreatedAt: signedInAt, tokenIssuedAt: rotatedAt }).getTime()).toBe(
       signedInAt.getTime() + SESSION_ABSOLUTE_TTL_MS,
     );
   });
 
   it('is expired AT the bound, not only past it', () => {
-    const bound = sessionExpiresAt(signedInAt, signedInAt);
-    expect(sessionHasExpired(signedInAt, signedInAt, new Date(bound.getTime() - 1))).toBe(false);
-    expect(sessionHasExpired(signedInAt, signedInAt, bound)).toBe(true);
+    const bound = sessionExpiresAt({ sessionCreatedAt: signedInAt, tokenIssuedAt: signedInAt });
+    expect(sessionHasExpired({ sessionCreatedAt: signedInAt, tokenIssuedAt: signedInAt }, new Date(bound.getTime() - 1))).toBe(false);
+    expect(sessionHasExpired({ sessionCreatedAt: signedInAt, tokenIssuedAt: signedInAt }, bound)).toBe(true);
   });
 });

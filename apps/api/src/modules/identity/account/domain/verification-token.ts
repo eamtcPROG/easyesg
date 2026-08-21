@@ -66,7 +66,14 @@ export function hashVerificationToken(value: string): Buffer {
  * `timingSafeEqual` throws on a length mismatch, which would itself be a timing signal — so the
  * lengths are checked first and a mismatch is simply "no".
  */
-export function verificationTokenMatches(presented: Buffer, stored: Buffer): boolean {
-  if (presented.length !== stored.length) return false;
-  return timingSafeEqual(presented, stored);
+export function verificationTokenMatches(hashes: {
+  readonly presented: Buffer;
+  readonly stored: Buffer;
+}): boolean {
+  // Named rather than positional because both are `Buffer` (CLAUDE.md, "Conventions"). The
+  // comparison itself is symmetric, so a swap would not change this answer — but the names are
+  // what tell the next reader which side came from the request and which from the table, and
+  // that distinction is the whole reason the comparison is constant-time.
+  if (hashes.presented.length !== hashes.stored.length) return false;
+  return timingSafeEqual(hashes.presented, hashes.stored);
 }

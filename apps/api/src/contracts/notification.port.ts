@@ -22,7 +22,7 @@ export interface RaiseNotificationCommand {
 export interface NotificationPort {
   raise(command: RaiseNotificationCommand): Promise<{ notificationId: string }>;
   /** FR-167 — cancel and stop repetition the moment the condition clears. */
-  cancel(categoryKey: string, subjectRef: string): Promise<void>;
+  cancel(target: { readonly categoryKey: string; readonly subjectRef: string }): Promise<void>;
 }
 
 export const NOTIFICATION_PORT = Symbol('NOTIFICATION_PORT');

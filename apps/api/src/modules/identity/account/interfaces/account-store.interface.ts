@@ -89,7 +89,10 @@ export interface AccountTransaction {
    * link as a lockout release, so the two must not be separable. False when the account holds no
    * password credential, which the caller treats as an invalid token rather than explaining.
    */
-  replaceCredentialPassword(accountId: string, passwordHash: string, at: Date): Promise<boolean>;
+  replaceCredentialPassword(
+    credential: { readonly accountId: string; readonly passwordHash: string },
+    at: Date,
+  ): Promise<boolean>;
 
   /**
    * FR-6: consuming a reset link invalidates every live session for the account, recorded with

@@ -55,7 +55,7 @@ export class ResetPassword {
         throw new ResetTokenInvalidError();
       }
 
-      if (!(await tx.replaceCredentialPassword(claimed.accountId, passwordHash, now))) {
+      if (!(await tx.replaceCredentialPassword({ accountId: claimed.accountId, passwordHash }, now))) {
         throw new ResetTokenInvalidError();
       }
 

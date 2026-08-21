@@ -682,6 +682,33 @@ service takes that type minus its ambient fields. A single-field command is stil
 `execute({ token })` reads no worse than `execute(token)` and is the one that survives the second
 field being added.
 
+**The same applies to any function whose adjacent parameters share a type** — extended 21 Aug 2026
+from the boundary to everything, because the swap hazard is a property of the signature, not of the
+layer. It reaches domain helpers, ports and adapters alike. A sweep found eleven, and what they had
+in common is that the swapped call *compiles and returns a plausible wrong answer* rather than
+failing:
+
+- `setTenantContext(runner, organizationId, actorId)` — two `string`s, and this one is a **tenancy**
+  failure: `app.current_org` holding a user id matches no policy, so every read returns zero rows
+  and presents as "this customer has no data".
+- `sessionExpiresAt(sessionCreatedAt, tokenIssuedAt)` — two `Date`s, measuring the idle window from
+  sign-in and the absolute cap from the last rotation: roughly right in week one, increasingly
+  wrong after.
+- `compareToSource(source, translated)` — two catalogues; swapped, `missing` and `unexpected` trade
+  places and a parity failure points at the wrong file.
+- `new ResultListDto(objects, total, totalpages, …)` — two adjacent `number`s, reporting page count
+  as row count on every list endpoint.
+- `EntitlementPort.check(organizationId, key)` — converted while the port still has **no
+  implementation** (task 54), which is the cheapest moment such a change will ever have.
+
+Different types adjacent are fine — the compiler already rejects the swap — so `(runner, key,
+since)` or `(anchors, now)` keep ordinary parameters. That is why `sessionHasExpired(anchors, now)`
+takes an object *and* a `Date`: the two swappable values are named, and the clock stays a plain
+argument because nothing can be confused with it.
+
+Model constructors mapping one row or response stay as they are: `new AccountResponseDto(account)`
+is already a single object.
+
 The controller is the boundary's outer edge and already complies by construction — it passes its
 validated `@Body()` DTO straight through, which is why `auth.controller.ts` now reads
 `this.accountService.register(body)`.

@@ -49,19 +49,27 @@ describe('verification token (NFR-64, §12.5.6)', () => {
   describe('comparison', () => {
     it('matches a hash against itself', () => {
       const hash = hashVerificationToken('a-token');
-      expect(verificationTokenMatches(hash, Buffer.from(hash))).toBe(true);
+      expect(verificationTokenMatches({ presented: hash, stored: Buffer.from(hash) })).toBe(true);
     });
 
     it('rejects a different token', () => {
       expect(
-        verificationTokenMatches(hashVerificationToken('a'), hashVerificationToken('b')),
+        verificationTokenMatches({
+          presented: hashVerificationToken('a'),
+          stored: hashVerificationToken('b'),
+        }),
       ).toBe(false);
     });
 
     // `timingSafeEqual` throws on a length mismatch, and a throw is itself a timing signal. This
     // is what proves the guard in front of it is there.
     it('returns false rather than throwing on a length mismatch', () => {
-      expect(verificationTokenMatches(Buffer.from('short'), hashVerificationToken('a'))).toBe(false);
+      expect(
+        verificationTokenMatches({
+          presented: Buffer.from('short'),
+          stored: hashVerificationToken('a'),
+        }),
+      ).toBe(false);
     });
   });
 });

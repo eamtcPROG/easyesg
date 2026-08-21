@@ -55,9 +55,9 @@ export class Argon2PasswordHasher implements PasswordHasher {
    * for a corrupt stored hash exactly as it does for a wrong password — a 500 there is an oracle
    * that says the account exists and its record is unusual.
    */
-  async verify(digest: string, password: string): Promise<boolean> {
+  async verify(candidate: { readonly digest: string; readonly password: string }): Promise<boolean> {
     try {
-      return await verify(digest, password, { secret: this.secret });
+      return await verify(candidate.digest, candidate.password, { secret: this.secret });
     } catch {
       return false;
     }

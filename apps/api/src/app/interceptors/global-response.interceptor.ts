@@ -54,11 +54,16 @@ export class GlobalResponseInterceptor implements NestInterceptor {
         if (data instanceof ResultObjectDto || data instanceof ResultListDto) return data;
 
         if (isPaged(data)) {
-          return new ResultListDto(data.objects, data.total, data.totalpages, status);
+          return new ResultListDto({
+            objects: data.objects,
+            total: data.total,
+            totalpages: data.totalpages,
+            htmlcode: status,
+          });
         }
         if (Array.isArray(data)) {
           // An unpaginated array is a complete set: one page containing all of it.
-          return new ResultListDto(data, data.length, 1, status);
+          return new ResultListDto({ objects: data, total: data.length, totalpages: 1, htmlcode: status });
         }
         return new ResultObjectDto(data ?? null, status);
       }),

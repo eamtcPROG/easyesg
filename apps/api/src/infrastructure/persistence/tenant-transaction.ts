@@ -29,7 +29,10 @@ export async function openTenantTransaction(dataSource: DataSource): Promise<voi
   await queryRunner.connect();
   try {
     await queryRunner.startTransaction();
-    await setTenantContext(queryRunner, ctx.organizationId, ctx.actorId);
+    await setTenantContext(queryRunner, {
+      organizationId: ctx.organizationId,
+      actorId: ctx.actorId,
+    });
   } catch (error) {
     // The runner is connected but the transaction may not have started; releasing is safe either
     // way and is the difference between a failed request and a permanently borrowed connection.

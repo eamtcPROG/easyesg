@@ -47,7 +47,7 @@ export class VerifyEmail {
       // the hash, so this cannot fail in practice — it is here because the requirement says so,
       // it costs one comparison, and it keeps the property true if the lookup is ever rewritten
       // to fetch a candidate and compare in application code.
-      if (!verificationTokenMatches(presentedHash, claimed.tokenHash)) {
+      if (!verificationTokenMatches({ presented: presentedHash, stored: claimed.tokenHash })) {
         throw new VerificationTokenInvalidError();
       }
 
