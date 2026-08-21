@@ -635,8 +635,22 @@ underscore, so **a literal that is one word of word-characters is invisible to i
 count.** Measured rather than assumed: `'unverified'` × 3 and `'password_reset'` × 3 pass clean,
 while `'a sentence with separators'` × 3 is caught. So it covers message keys, route paths, SQL and
 prose — and misses precisely the bare `'unverified'`/`'worker'`/`'expired'` tokens most of this
-convention is about, which stay enforced by review. Do not read the green gate as coverage: that
-misreading is the failure `boundaries:prove` exists to prevent, one level up.
+convention is about. Do not read its green gate as coverage of the convention.
+
+**Two `no-restricted-syntax` selectors cover that gap** (same date, `eslint.config.mjs`), by
+matching the *shape* a vocabulary takes rather than how often a value repeats — which is what the
+`MODE === 'worker'` case needed, being one comparison per file across five files:
+
+- **a union of string literals**, as a type alias or a property's type → declare the `as const`
+  object and derive. Deriving changes no caller: the derived type is the same union, so
+  `variant="primary"` keeps compiling, and the set gains a runtime value to iterate.
+- **a comparison against a string literal** → compare against a member instead.
+
+Three things are deliberately *not* matched, each because it is not a vocabulary: a `typeof`
+check, `x === ''` (a length test — the `alt` rule takes the same view), and the key unions in
+`Pick<T, 'a' | 'b'>` / `Omit<T, 'a'>`, which select property names and have no `as const` form.
+Turning the pair on flagged 17 sites and all 17 are now fixed, so the gate starts green and any
+new finding is new code. Tests are exempt, per the exception above.
 
 ### A component is reused, or it becomes a new reusable component
 

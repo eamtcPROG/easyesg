@@ -26,8 +26,15 @@ export const EXPANSION_FLAG = 'EASYESG_PSEUDOLOCALE';
  * pads every label in production because someone wrote `EASYESG_PSEUDOLOCALE=false` is a worse
  * outage than the layout bug it exists to catch.
  */
+/**
+ * The one value that means on. Named rather than compared as a bare literal (CLAUDE.md,
+ * "Conventions") — the whole behaviour of this function is that exactly one string counts, so
+ * that string deserves to be a declaration rather than a character inside an `if`.
+ */
+const EXPANSION_ON = '1';
+
 export function expansionEnabled(flag: string | undefined): boolean {
-  return flag === '1';
+  return flag === EXPANSION_ON;
 }
 
 /** Padding character: visually distinct, single-width, and not a letter in any live locale. */

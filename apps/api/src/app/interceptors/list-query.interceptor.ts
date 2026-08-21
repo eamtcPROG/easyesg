@@ -5,7 +5,13 @@ import {
   DEFAULT_ON_PAGE, DEFAULT_PAGE, LIST_GROUP_SEPARATOR, LIST_VALUE_SEPARATOR,
   MAX_ON_PAGE, ON_PAGE_ALL,
 } from '../constants/pagination.constants';
-import { RequestFilterDto, RequestListDto, RequestSortCriteriaDto } from '../dto/request-list.dto';
+import {
+  RequestFilterDto,
+  RequestListDto,
+  RequestSortCriteriaDto,
+  SORT_DIRECTION,
+  isSortDirection,
+} from '../dto/request-list.dto';
 
 declare module 'express' {
   interface Request {
@@ -48,9 +54,16 @@ export class ListQueryInterceptor implements NestInterceptor {
       parts.length < 2 ? null : new RequestFilterDto(parts[0], parts.slice(1)));
 
     list.order = this.parseGroups(q.order, (parts) => {
-      const dir = (parts[1] ?? 'asc').toLowerCase();
-      if (dir !== 'asc' && dir !== 'desc') {
-        throw new BadRequestException(`Sort direction must be asc or desc, received "${parts[1]}"`);
+      const dir = (parts[1] ?? SORT_DIRECTION.ASC).toLowerCase();
+      if (!isSortDirection(dir)) {
+        // The accepted set is read from the vocabulary rather than spelled out, so adding a
+        // direction cannot leave this sentence describing the previous one. Untranslated on
+        // purpose: this is field-level validation output addressed to the developer integrating
+        // against the API, not wording an SME owner reads.
+        throw new BadRequestException(
+          `Sort direction must be ${Object.values(SORT_DIRECTION).join(' or ')}, ` +
+            `received "${parts[1]}"`,
+        );
       }
       return new RequestSortCriteriaDto(parts[0], dir);
     });

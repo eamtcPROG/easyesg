@@ -25,6 +25,14 @@ export interface SwitcherLocale<Code extends string = string> {
   label: string;
 }
 
+/**
+ * The two surfaces this switcher sits on, as an `as const` object with the union derived
+ * (CLAUDE.md, "Conventions"). Deriving changes no caller — `tone="header"` still compiles.
+ */
+export const SWITCHER_TONE = { DEFAULT: 'default', HEADER: 'header' } as const;
+
+export type SwitcherTone = (typeof SWITCHER_TONE)[keyof typeof SWITCHER_TONE];
+
 export interface LanguageSwitcherProps<Code extends string = string> {
   /** Accessible name for the trigger ("Language"), localized by the app. */
   label: string;
@@ -33,7 +41,7 @@ export interface LanguageSwitcherProps<Code extends string = string> {
   /** Returns the app's locale-aware anchor for one locale; wrapped in a menu item. */
   renderItem: (locale: SwitcherLocale<Code>) => ReactNode;
   /** `header` renders on the dark Focus header; `default` on light surfaces. */
-  tone?: 'default' | 'header';
+  tone?: SwitcherTone;
 }
 
 export function LanguageSwitcher<Code extends string = string>({
@@ -41,12 +49,12 @@ export function LanguageSwitcher<Code extends string = string>({
   current,
   locales,
   renderItem,
-  tone = 'default',
+  tone = SWITCHER_TONE.DEFAULT,
 }: LanguageSwitcherProps<Code>) {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        className={[styles.trigger, tone === 'header' ? styles.header : ''].join(' ')}
+        className={[styles.trigger, tone === SWITCHER_TONE.HEADER ? styles.header : ''].join(' ')}
         aria-label={`${label}: ${current.label}`}
       >
         {current.label}

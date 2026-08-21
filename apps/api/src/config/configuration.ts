@@ -19,6 +19,16 @@ export const APP_MODE = {
   WORKER: 'worker',
 } as const;
 
+/**
+ * How a boolean is spelled in an environment variable. Named rather than compared as a bare
+ * `'false'` (CLAUDE.md, "Conventions"): the opt-out is deliberately the exact string, so that
+ * an unset, misspelled or empty `BILLING_ENABLED` leaves billing ON — the safe direction — and
+ * naming it is what makes that a stated rule instead of an artefact of `!==`.
+ * `apps/web/src/lib/env.ts` carries the same constant for the same variable; they are two
+ * runtimes reading one deployment's environment, not a shared module (AD-9).
+ */
+const ENV_FALSE = 'false';
+
 export type AppMode = (typeof APP_MODE)[keyof typeof APP_MODE];
 
 export interface AppConfig {
@@ -74,7 +84,7 @@ export interface AppConfig {
 export default (): AppConfig => ({
   mode: process.env.MODE === APP_MODE.WORKER ? APP_MODE.WORKER : APP_MODE.HTTP,
   port: Number.parseInt(process.env.PORT ?? '3000', 10),
-  billingEnabled: process.env.BILLING_ENABLED !== 'false',
+  billingEnabled: process.env.BILLING_ENABLED !== ENV_FALSE,
   database: {
     host: process.env.DB_HOST ?? 'postgres',
     port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),

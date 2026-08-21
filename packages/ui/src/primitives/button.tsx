@@ -15,8 +15,23 @@ import styles from './button.module.css';
  * button stops accepting clicks, and `aria-busy` says so. It is distinct from `disabled`,
  * which means "not available", not "in progress".
  */
+/**
+ * The four variants, as an `as const` object with the union derived (CLAUDE.md, "Conventions").
+ * Deriving changes no caller — `variant="primary"` still compiles — and it gives the set a
+ * runtime value, which is what a specimen page needs to render every variant without a second
+ * hand-written list going stale beside this one.
+ */
+export const BUTTON_VARIANT = {
+  PRIMARY: 'primary',
+  SECONDARY: 'secondary',
+  SUBTLE: 'subtle',
+  DESTRUCTIVE: 'destructive',
+} as const;
+
+export type ButtonVariant = (typeof BUTTON_VARIANT)[keyof typeof BUTTON_VARIANT];
+
 export interface ButtonProps extends ComponentPropsWithRef<'button'> {
-  variant?: 'primary' | 'secondary' | 'subtle' | 'destructive';
+  variant?: ButtonVariant;
   /** Pending-async: label + spinner, non-interactive, `aria-busy`. */
   busy?: boolean;
   children: ReactNode;

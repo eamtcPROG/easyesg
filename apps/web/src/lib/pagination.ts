@@ -35,9 +35,19 @@ export interface ListFilter {
   values: readonly (string | number)[];
 }
 
+/**
+ * The sort vocabulary of §6.8's compact list format, mirroring `apps/api`'s `SORT_DIRECTION`.
+ * Declared here rather than imported: this is the client's half of a WIRE format, and the wire
+ * contract crosses through `@easyesg/contracts` (AD-9) — reaching into the API's DTO module
+ * would be the coupling that package exists to prevent.
+ */
+export const SORT_DIRECTION = { ASC: 'asc', DESC: 'desc' } as const;
+
+export type SortDirection = (typeof SORT_DIRECTION)[keyof typeof SORT_DIRECTION];
+
 export interface ListSort {
   field: string;
-  direction: 'asc' | 'desc';
+  direction: SortDirection;
 }
 
 export interface ListQuery {

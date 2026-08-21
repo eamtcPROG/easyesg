@@ -102,10 +102,29 @@ const toAccount = (row: AccountRow): Account => ({
   updatedAt: row.updated_at,
 });
 
-/** `23505` is `unique_violation`. The constraint name is what says *which* uniqueness failed. */
+/**
+ * `23505` is PostgreSQL's `unique_violation` SQLSTATE. The constraint name is what says *which*
+ * uniqueness failed.
+ *
+ * Both are named rather than compared as bare literals (CLAUDE.md, "Conventions"), and here the
+ * rule's stated rationale is exactly the failure mode: a typo in either makes the comparison
+ * quietly false, the branch never fires, and a duplicate registration answers `500` instead of
+ * OQ-53's `409` — a wrong status on a path with an e2e test that would still pass, because the
+ * test asserts the 409 comes back and would simply see the 500 as the whole endpoint breaking.
+ *
+ * `ACCOUNT_EMAIL_UNIQUE_INDEX` mirrors the index name in `1787356800000-identity-account.ts`,
+ * which stays literal there because a migration is frozen history. Two copies, deliberately,
+ * changed together by hand — the same shape as an `as const` object mirroring a CHECK.
+ */
+const UNIQUE_VIOLATION = '23505';
+const ACCOUNT_EMAIL_UNIQUE_INDEX = 'account_email_key';
+
 const isEmailUniqueViolation = (error: unknown): boolean => {
   const driverError = (error as { driverError?: { code?: string; constraint?: string } }).driverError;
-  return driverError?.code === '23505' && driverError.constraint === 'account_email_key';
+  return (
+    driverError?.code === UNIQUE_VIOLATION &&
+    driverError.constraint === ACCOUNT_EMAIL_UNIQUE_INDEX
+  );
 };
 
 const ACCOUNT_COLUMNS = 'id, email, status, locale, verified_at, created_at, updated_at';

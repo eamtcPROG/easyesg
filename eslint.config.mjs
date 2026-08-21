@@ -74,6 +74,58 @@ const restrictedSyntaxBrowser = [
   },
 ];
 
+/**
+ * The closed-vocabulary rule (root `CLAUDE.md`, "Conventions"), as the part of it a syntax
+ * selector can actually decide — added 21 Aug 2026 after `sonarjs/no-duplicate-string` turned
+ * out to be blind to exactly the literals this convention is about (`MIN_LENGTH = 10` and
+ * `NO_SEPARATOR_REGEXP = /^\w*$/`, so any single word of word-characters is invisible to it).
+ *
+ * These two selectors see what it cannot, by matching the *shape* rather than the repetition:
+ * a vocabulary written as a union type, and a literal compared against. Both are the forms the
+ * convention names, and neither depends on how many times the value appears — which matters,
+ * because the `MODE === 'worker'` defect was one comparison per file across five files.
+ *
+ * Spread into every block that sets `no-restricted-syntax`, for the reason the constant below
+ * documents: the option REPLACES rather than merges.
+ */
+const restrictedSyntaxVocabulary = [
+  // Anchored on the two parents that mean "this union IS the vocabulary" — a type alias, and a
+  // property's type. Matching `TSUnionType` alone was the first draft and it was wrong: it also
+  // caught `Pick<AccountResponse, 'id' | 'email' | 'status'>` and `Omit<TextFieldProps, 'type'>`,
+  // where the union selects KEYS rather than declaring values. Those have no `as const` form and
+  // are not what the convention is about.
+  {
+    selector: "TSTypeAliasDeclaration > TSUnionType > TSLiteralType > Literal[raw=/^['\"]/]",
+    message:
+      'A closed vocabulary is declared once as an `as const` object with its union derived from ' +
+      'it (CLAUDE.md, "Conventions"), never as a hand-written union of string literals — a union ' +
+      'written here has no runtime value to reference, so every call site spells the member out ' +
+      'again. Declare the object and derive: type X = (typeof X_VALUES)[keyof typeof X_VALUES].',
+  },
+  {
+    selector:
+      "TSPropertySignature > TSTypeAnnotation > TSUnionType > TSLiteralType > Literal[raw=/^['\"]/]",
+    message:
+      'A closed vocabulary is declared once as an `as const` object with its union derived from ' +
+      'it (CLAUDE.md, "Conventions"), never as a hand-written union of string literals on a ' +
+      'property. Deriving changes no caller — the derived type is still the same union of ' +
+      'literals, so `variant="primary"` keeps compiling — and it gives the set a runtime value ' +
+      'to iterate, which a hand-written union does not have.',
+  },
+  {
+    // `[value!='']` for the reason the `alt` rule above gives: the empty string is a value test
+    // (`x === ''` is `x.length === 0`), never a member of a vocabulary. `parity.ts` compares a
+    // catalogue entry against it to find blank translations, which is not this rule's business.
+    selector:
+      'BinaryExpression[operator=/^[!=]==$/][left.operator!="typeof"] > Literal[raw=/^[\'"]/][value!=\'\']',
+    message:
+      'Comparing against a string literal (CLAUDE.md, "Conventions"): a typo does not error — ' +
+      'the comparison is simply false and the wrong branch registers silently, which is how ' +
+      "`MODE === 'worker'` split provider sets across five files. Compare against the member of " +
+      'an `as const` object instead. A `typeof` check is not this and is already excluded.',
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -160,6 +212,16 @@ export default tseslint.config(
     },
   },
 
+  // The vocabulary selectors, for every workspace. The browser tier and apps/web set
+  // `no-restricted-syntax` themselves and therefore REPLACE this — both respread the constant,
+  // which is the only reason they still carry it. Tests are exempt for the reason CLAUDE.md
+  // gives: a spec compares against the wire value on purpose.
+  {
+    files: ['**/*.{ts,tsx}'],
+    ignores: ['**/*.spec.{ts,tsx}', '**/*.e2e-spec.ts', 'apps/api/test/**/*.ts', 'e2e/**/*.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...restrictedSyntaxVocabulary] },
+  },
+
   // ── The browser tier: apps/web, apps/admin, packages/ui ─────────────────────────────────
   // Both front ends and the design system. AD-9 makes them two ordinary clients of one API, so
   // the rules that encode project conventions — accessibility, hooks, NFR-26, no user-facing
@@ -185,7 +247,7 @@ export default tseslint.config(
       // A-01 — so scoping a11y to the tenant app would exempt the one admin screen that names
       // an accessibility criterion.
       ...jsxA11y.flatConfigs.recommended.rules,
-      'no-restricted-syntax': ['error', ...restrictedSyntaxBrowser],
+      'no-restricted-syntax': ['error', ...restrictedSyntaxBrowser, ...restrictedSyntaxVocabulary],
     },
   },
 
@@ -221,6 +283,7 @@ export default tseslint.config(
             'about organization_id and would leak across tenants above the RLS boundary.',
         },
         ...restrictedSyntaxBrowser,
+        ...restrictedSyntaxVocabulary,
       ],
 
       /**

@@ -1,6 +1,15 @@
 import 'server-only';
 
 /**
+ * How a boolean is spelled in an environment variable, named rather than compared as a bare
+ * literal (CLAUDE.md, "Conventions"). The opt-out is the exact string, so an unset, misspelled
+ * or empty value leaves the flag ON — the safe direction, and a stated rule rather than an
+ * artefact of `!==`. `apps/api/src/config/configuration.ts` carries the same constant for the
+ * same variable: two runtimes reading one deployment's environment, not a shared module (AD-9).
+ */
+const ENV_FALSE = 'false';
+
+/**
  * Typed environment access, resolved once at module load.
  *
  * `apps/api`'s rule is "business logic reads ConfigService, never `process.env`" (CLAUDE.md).
@@ -35,7 +44,7 @@ export const env = {
    * With it off, the commerce subtree renders its unavailable state and UC-17…48 still pass (A6).
    */
   get billingEnabled(): boolean {
-    return process.env.BILLING_ENABLED !== 'false';
+    return process.env.BILLING_ENABLED !== ENV_FALSE;
   },
 
   get sessionSecret(): string {

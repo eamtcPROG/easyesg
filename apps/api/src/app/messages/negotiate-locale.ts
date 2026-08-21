@@ -2,6 +2,13 @@ import Negotiator from 'negotiator';
 import { LOCALES, SOURCE_LOCALE, type Locale } from '@easyesg/i18n';
 
 /**
+ * RFC 9110's wildcard language range. Named rather than compared as a bare literal (CLAUDE.md,
+ * "Conventions") — it is a one-member vocabulary belonging to the HTTP spec rather than to this
+ * platform, and a name is what says which of the two it is at the comparison below.
+ */
+const ANY_LANGUAGE_TAG = '*';
+
+/**
  * Resolves the response locale from an `Accept-Language` header (architecture.md OQ-46).
  *
  * **The API resolves wording server-side**, so this decides the language of every problem+json
@@ -31,7 +38,7 @@ export function negotiateLocale(acceptLanguage: string | undefined): Locale {
 
   for (const tag of preferred) {
     // `*` means "anything acceptable". The source locale is the platform's answer to that.
-    if (tag === '*') return SOURCE_LOCALE;
+    if (tag === ANY_LANGUAGE_TAG) return SOURCE_LOCALE;
 
     const language = tag.split('-')[0]?.toLowerCase();
     const match = LOCALES.find((supported: Locale) => supported === language);

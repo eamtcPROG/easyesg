@@ -11,7 +11,23 @@
  * and a new plan is new data.
  */
 
-export type EntitlementDecisionKind = 'allow' | 'deny' | 'allow_with_warning';
+/**
+ * AD-5's three decisions, as an `as const` object with the union derived (CLAUDE.md,
+ * "Conventions"). Closed, unlike the entitlement KEYS below — the keys are configuration and
+ * deliberately open (NFR-17), while the outcomes of a check are fixed by the design.
+ *
+ * `allow_with_warning` is the member CLAUDE.md's user-facing-text rule names by example, so it
+ * is worth restating where it is declared: this value is compared and stored, and it never
+ * reaches a screen. FR-102's wording travels as `reasonKey` below.
+ */
+export const ENTITLEMENT_DECISION_KIND = {
+  ALLOW: 'allow',
+  DENY: 'deny',
+  ALLOW_WITH_WARNING: 'allow_with_warning',
+} as const;
+
+export type EntitlementDecisionKind =
+  (typeof ENTITLEMENT_DECISION_KIND)[keyof typeof ENTITLEMENT_DECISION_KIND];
 
 export interface EntitlementDecision {
   kind: EntitlementDecisionKind;
