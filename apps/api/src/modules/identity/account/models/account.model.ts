@@ -45,6 +45,20 @@ export interface Account {
   readonly updatedAt: Date;
 }
 
+/**
+ * The password credential (task 19's table, task 21's lockout columns). A separate row and a
+ * separate model from `Account` so the hash never sits in the shape ordinary reads map to a DTO;
+ * only the sign-in and reset flows ever hold one of these.
+ */
+export interface Credential {
+  readonly accountId: string;
+  readonly passwordHash: string;
+  /** Consecutive failures (FR-4). Reset to zero by a correct password or a consumed reset link. */
+  readonly failedAttempts: number;
+  /** Non-null means locked out — released by reset link (FR-6) or PA action (task 67), §12.5.6. */
+  readonly lockedAt: Date | null;
+}
+
 /** What registration hands the store. The password is already hashed — see `RegisterAccount`. */
 export interface NewAccount {
   readonly email: string;
@@ -62,5 +76,17 @@ export interface NewVerificationToken {
 export interface ClaimedVerificationToken {
   readonly accountId: string;
   readonly tokenHash: Buffer;
+  readonly expiresAt: Date;
+}
+
+/** Mirrors `NewVerificationToken` for FR-6's reset challenge — same shape, different object. */
+export interface NewPasswordResetToken {
+  readonly accountId: string;
+  readonly tokenHash: Buffer;
+  readonly expiresAt: Date;
+}
+
+export interface ClaimedPasswordResetToken {
+  readonly accountId: string;
   readonly expiresAt: Date;
 }

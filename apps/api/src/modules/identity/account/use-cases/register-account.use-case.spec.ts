@@ -59,7 +59,7 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
     it('hashes the password and never stores it', async () => {
       const account = await register();
       expect(hasher.hashed).toEqual(['Parola123!']);
-      expect(store.credentials.get(account.id)).toBe('hashed:Parola123!');
+      expect(store.credentials.get(account.id)?.passwordHash).toBe('hashed:Parola123!');
     });
   });
 

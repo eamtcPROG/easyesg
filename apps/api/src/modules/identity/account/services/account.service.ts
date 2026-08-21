@@ -3,7 +3,9 @@ import { SOURCE_LOCALE } from '@easyesg/i18n';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
 import type { Account } from '../models/account.model';
 import { RegisterAccount } from '../use-cases/register-account.use-case';
+import { RequestPasswordReset } from '../use-cases/request-password-reset.use-case';
 import { ResendVerificationEmail } from '../use-cases/resend-verification-email.use-case';
+import { ResetPassword } from '../use-cases/reset-password.use-case';
 import { VerifyEmail } from '../use-cases/verify-email.use-case';
 
 /**
@@ -36,6 +38,8 @@ export class AccountService {
     private readonly registerAccount: RegisterAccount,
     private readonly verifyEmail: VerifyEmail,
     private readonly resendVerificationEmail: ResendVerificationEmail,
+    private readonly requestPasswordResetUseCase: RequestPasswordReset,
+    private readonly resetPasswordUseCase: ResetPassword,
   ) {}
 
   register(email: string, password: string): Promise<Account> {
@@ -56,5 +60,18 @@ export class AccountService {
 
   resend(email: string): Promise<void> {
     return this.resendVerificationEmail.execute(email);
+  }
+
+  requestPasswordReset(email: string): Promise<void> {
+    return this.requestPasswordResetUseCase.execute({
+      email,
+      // The request's address, for §12.5.6's per-(IP, account) window — ambient context resolved
+      // here for the registration-locale reason above.
+      clientIp: requestContext()?.clientIp,
+    });
+  }
+
+  resetPassword(token: string, password: string): Promise<void> {
+    return this.resetPasswordUseCase.execute({ token, password });
   }
 }

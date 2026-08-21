@@ -67,3 +67,34 @@ export class VerificationTokenInvalidError extends DomainError {
     super('identity.verification.token_invalid');
   }
 }
+
+/**
+ * FR-6's reset link, collapsed the same four ways for the same reason as the verification
+ * token — and additionally covering "the account holds no password credential", which becomes
+ * reachable when FR-2's provider-only accounts arrive (task 24) and is nobody's business on an
+ * unauthenticated endpoint either.
+ */
+export class ResetTokenInvalidError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ResetTokenInvalid;
+  readonly status = 400;
+
+  constructor() {
+    super('identity.password_reset.token_invalid');
+  }
+}
+
+/**
+ * §12.5.6's 5-attempts-per-15-minutes window on the auth paths (NFR-64), shared by sign-in
+ * (`identity/session`) and the reset request — it lives here so both import one direction, the
+ * same reason `domain/auth-throttle.ts` gives. `429` and one message key regardless of path or
+ * of whether the address holds an account: the throttle must not become the enumeration oracle
+ * the uniform responses close.
+ */
+export class AuthRateLimitedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.RateLimited;
+  readonly status = 429;
+
+  constructor() {
+    super('identity.auth.rate_limited');
+  }
+}

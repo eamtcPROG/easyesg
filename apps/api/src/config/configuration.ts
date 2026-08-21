@@ -44,6 +44,13 @@ export interface AppConfig {
      * graph with no secrets (emit-openapi.ts runs in `preview` mode and instantiates nothing).
      */
     passwordPepper: string | undefined;
+    /**
+     * AD-12's access-token signing secret (task 21). HTTP tier only, like the pepper, and NOT
+     * defaulted for the pepper's reason: a token signed with a default is indistinguishable from
+     * a correct one until verification meets it. Rotating it invalidates every outstanding access
+     * token — a ≤15-minute blip by design — and no refresh token, which is a database row.
+     */
+    jwtSecret: string | undefined;
   };
   email: {
     /**
@@ -93,7 +100,10 @@ export default (): AppConfig => ({
     host: process.env.REDIS_HOST ?? 'redis',
     port: Number.parseInt(process.env.REDIS_PORT ?? '6379', 10),
   },
-  auth: { passwordPepper: process.env.AUTH_PASSWORD_PEPPER },
+  auth: {
+    passwordPepper: process.env.AUTH_PASSWORD_PEPPER,
+    jwtSecret: process.env.AUTH_JWT_SECRET,
+  },
   email: { provider: process.env.EMAIL_PROVIDER },
   // 3100 is `apps/web`'s dev port (`next dev --port 3100`), so a host run works with no .env entry.
   web: { publicUrl: process.env.PUBLIC_WEB_URL ?? 'http://localhost:3100' },

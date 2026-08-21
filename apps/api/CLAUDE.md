@@ -32,6 +32,18 @@ Task 19 adds the first behaviour: `identity.{account,credential,verification_tok
 logging adapter, and `OutboxConsumer` — the queue's single `@Processor`, routing by job name to
 whatever claimed it with `@HandlesJob`.
 
+Task 21 adds sessions, sign-in and password reset (FR-4, FR-5, FR-6 per OQ-56):
+`identity.{session,refresh_token,password_reset_token,auth_attempt}` plus lockout columns on
+`credential`; `POST/DELETE /auth/session`, `POST /auth/session/refresh`,
+`POST /auth/{password-reset-email,password-reset}`. AD-12 as shipped: HS256 JWT (`sub` = session
+id, nothing else) behind `AccessTokenSigner`, opaque refresh rows rotated by conditional consume
+with a 30 s race grace and reuse-revocation, 7 d idle / 30 d absolute computed at the point of
+use (OQ-35). Two traps recorded: **sign-in's use case runs several short transactions and throws
+only after commit** — folding it into one `run` rolls back the very counters FR-4 requires (the
+port header explains); and the throttle's per-(IP, account) key reads `req.ip`, which is the
+proxy's address until task 71 sets `trust proxy` — degraded to per-account, not broken.
+`AUTH_JWT_SECRET` joins the HTTP tier's secrets; the worker still holds neither it nor the pepper.
+
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
 other than health and `/auth`, and almost every module body — 34 of the 35 `*.module.ts` files are

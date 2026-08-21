@@ -1267,3 +1267,82 @@ Three decisions inside a change that looked like one line:
 
 The test computes the expected year the same way the page does rather than hardcoding one — a
 spec carrying `2026` would be the very defect it guards against.
+
+## Task 21 — Sessions and sign-in API · 2026-08-21
+
+FR-4 sign-in, FR-5 sign-out, AD-12's rotation — and FR-6 password reset, which was not in the
+task row when the day started. `identity.{session, refresh_token, password_reset_token,
+auth_attempt}`, lockout columns on `credential`, four new routes under `/auth`, and the first
+JWT the platform has ever signed.
+
+**Three values closed in one batch before any code, per the protocol** — `architecture.md`
+OQ-35, OQ-56, OQ-57. The second is the one worth retelling, because it began as plan
+housekeeping and turned out to be a defect with a date on it. No task row anywhere owned FR-6
+or FR-7. Laying that beside §12.5.6 — lockout "released by reset link or PA action" — and
+beside the plan, where PA tooling is task 67 in Phase 8, produced the finding: **shipping
+FR-4's lockout without FR-6 leaves a locked-out user with no release path for months.** The
+lockout and its release are one mechanism split across two requirements, and only the plan gap
+made them separable. FR-6 landed here; FR-7 was *assigned* to task 27 (the security-settings
+slice TOTP already occupies), assigned rather than deferred-in-passing, so the requirement has
+an owner in the plan. OQ-35 set the tenant session at 7 days idle / 30 days absolute; OQ-57
+gave correct-password-but-unverified a distinct verification-pending answer, on the reading
+that NFR-64 defends against enumeration and a caller holding the password is not enumerating.
+
+**Sign-in inverts task 19's transaction shape, and the inversion is the security content.**
+`RegisterAccount` wants atomicity: one `run`, all four writes or none. Sign-in wants the
+opposite on failure: the throttle row and the lockout increment must be DURABLE while the
+request answers 401 — and a domain error thrown inside `run` rolls them back, which is
+unlimited guessing wearing a green test suite. So the use case runs several short
+transactions, returns outcomes, and throws only after the commit. The shape is documented on
+the store port itself, because "fold it into one transaction for consistency" is a refactor
+that would reintroduce the defect without failing a single check — and `FakeSessionStore`
+models rollback precisely so the specs can pin the counters' survival, not just the error.
+
+**Refresh-token reuse is a tripwire, and rotation is what arms it.** Every issued token is a
+retained row; rotation consumes rather than deletes. A presented token that matches a consumed
+row is evidence of a copy in the wrong hands — the session is revoked on the spot, silently
+(the refusal is indistinguishable from any other invalid token). One judgement call inside
+that, recorded as an assumption: a token consumed **within 30 seconds** reads as a benign race
+(two tabs, a retry whose first attempt landed) and refuses without revoking, because
+revoke-on-race signs users out at random under exactly the load conditions where retries
+happen. Task 22's proxy should still single-flight its refreshes; the grace narrows the
+window, it does not remove it.
+
+**Smaller decisions, each recorded rather than silent.** Sign-out authenticates by the refresh
+token itself — possession of the 256-bit secret is the proof, it is what the proxy actually
+holds (AD-9), and it works in UC-07's exact state (access token already expired), which also
+keeps task 21 free of any guard machinery that belongs to task 28. Reset links go only to
+verified accounts: a link that activated an account by side effect would be a second
+verification flow, so the unverified holder's exit stays OQ-55's resend. A locked account may
+always *request* a reset — the lock is what the flow rescues — and consumption releases it in
+the same UPDATE that replaces the hash, so the two cannot be separated by a crash. The
+throttle counts only processed attempts, so a block always drains 15 minutes after the fifth
+rather than rolling forever under a hammering client. The unknown-address path burns a real
+Argon2id verification against a cached dummy digest, because at §9.1's parameters the hash IS
+the response time. And expiry is computed at the point of use from `issued_at`/`created_at`,
+never stored — a stored deadline would freeze policy into rows and turn a register amendment
+into a data migration.
+
+**Two traps for later tasks, written where they will be met.** `req.ip` is the socket peer
+until task 71 configures `trust proxy` against the real edge — behind Caddy the per-(IP,
+account) throttle degrades to per-account, which is a note in `request-context.ts`, not a
+surprise. And the sixth `/auth` route means `AUTH_JWT_SECRET` joins the pepper as an HTTP-tier
+secret: same no-default rule, same boot-time throw, worker still holds neither.
+
+**The gate rule paid out again, on `openapi:emit`.** It runs `node dist/...` with no build
+hook, so the first emission after writing the controllers produced a spec with task 19's three
+routes — from a stale `dist/` that looked exactly like a wrong decorator. CI never sees this
+(the gate chain runs `build` first) which is precisely the 20 Aug class: a dependency
+satisfied by command order on one machine. Fixed structurally per the `pretest:e2e` precedent
+— `preopenapi:emit` builds the api and its workspace deps — not with a comment.
+
+**Verified:** `pnpm gates` green — 142 unit tests (29 new: sign-in's uniform/lockout/throttle
+matrix, rotation with reuse and grace, expiry arithmetic pinned to the register values, both
+reset flows with rollback assertions) and 125 e2e (22 new across `sessions.e2e-spec.ts` and
+`password-reset.e2e-spec.ts`: the JWT's claim set is exactly `{sub, exp, iat}`, wrong-password
+and unknown-address answer one indistinguishable document, reuse past the grace kills the
+CURRENT token too, idle and absolute expiry proven by backdating rows as the owner, the tenth
+failure locks, the sixth attempt 429s, and a locked account resets its way back in). The
+migration applies, reverts and re-applies; the schema invariants pass over the four new
+tables. Native-speaker review of the new RO/EN/RU entries remains outstanding, pooled with
+task 19's before the pilot.

@@ -64,6 +64,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/password-reset-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a password reset link
+         * @description Sends a single-use, time-limited reset link if the address holds a verified account, and does nothing otherwise. The response is identical in every case. Requests are rate-limited per address; a locked account may always request one — consuming the link is what releases the lock.
+         */
+        post: operations["AuthController_requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set a new password with a reset link
+         * @description Consumes the single-use token and replaces the password. Every existing session for the account is terminated, and a lockout, if one stood, is released. The token is sent in the body rather than followed as a link so a mail scanner cannot consume it. No session is issued: sign in with the new password.
+         */
+        post: operations["AuthController_resetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign in with an email address and a password
+         * @description Verifies the credential and issues a session: a short-lived access token and a single-use refresh token. Failures are uniform for unknown addresses and wrong passwords alike, rate-limited per address, and locked out after repeated failure.
+         */
+        post: operations["SessionController_signIn"];
+        /**
+         * Sign out
+         * @description Terminates the session server-side: the refresh token is dead from here on, whatever copies of it exist. Idempotent, and identical for tokens that were never real — signing out is not an endpoint that confirms anything. Signing out of the platform does not end any session at a social identity provider.
+         */
+        delete: operations["SessionController_signOut"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/session/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exchange a refresh token for a fresh token pair
+         * @description Rotates the session: the presented refresh token is consumed and a successor pair issued. Presenting an already-consumed token is refused; the session stays bounded by its idle and absolute lifetimes.
+         */
+        post: operations["SessionController_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -128,6 +212,74 @@ export interface components {
              * @example ana.popescu@example.md
              */
             email: string;
+        };
+        RequestPasswordResetRequestDto: {
+            /**
+             * Format: email
+             * @description Malformed addresses are refused as requests; well-formed ones are never.
+             * @example ana.popescu@example.md
+             */
+            email: string;
+        };
+        ResetPasswordRequestDto: {
+            /** @description The single-use value from the reset link. */
+            token: string;
+            /**
+             * Format: password
+             * @description The replacement password, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.
+             */
+            password: string;
+        };
+        SessionAccountDto: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: email
+             * @example ana.popescu@example.md
+             */
+            email: string;
+            /**
+             * @description The interface language persisted on the account (FR-10).
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+        };
+        SessionResponseDto: {
+            /** @description Bearer token for the Authorization header. Signed, short-lived; carries the session identity and no authorization data. */
+            accessToken: string;
+            /**
+             * @description Unix epoch milliseconds, UTC. At most 15 minutes after issuance.
+             * @example 1787444100000
+             */
+            accessTokenExpiresAt: number;
+            /** @description Opaque, single-use. Present it to the refresh endpoint to obtain a successor pair; it is invalidated by that refresh, by sign-out, and by a consumed password reset. */
+            refreshToken: string;
+            /**
+             * @description Unix epoch milliseconds, UTC. When this session dies if never refreshed again — the earlier of its idle and absolute bounds.
+             * @example 1788048000000
+             */
+            refreshTokenExpiresAt: number;
+            account: components["schemas"]["SessionAccountDto"];
+        };
+        SignInRequestDto: {
+            /**
+             * Format: email
+             * @example ana.popescu@example.md
+             */
+            email: string;
+            /**
+             * Format: password
+             * @description Verified against the stored credential; failures are uniform and rate-limited.
+             */
+            password: string;
+        };
+        RefreshSessionRequestDto: {
+            /** @description The refresh token exactly as issued. Single-use: a successful refresh replaces it, and the replaced value is rejected from then on. */
+            refreshToken: string;
+        };
+        SignOutRequestDto: {
+            /** @description The refresh token of the session to terminate. Possession is the authentication: it is what the web tier actually holds, and it keeps sign-out working after the access token has already expired. */
+            refreshToken: string;
         };
     };
     responses: never;
@@ -239,6 +391,187 @@ export interface operations {
             };
             /** @description The address is malformed. A statement about the request, not about whether an account exists. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AuthController_requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestPasswordResetRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Accepted. Empty by design, for the same reason as the verification resend: a body describing what happened would be the disclosure this endpoint exists without. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The address is malformed. A statement about the request, not about accounts. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many requests for this address in the window. Identical either way. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AuthController_resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The password is replaced. Sign in to continue. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The password does not meet the policy, or the link is not valid — never issued, already used, expired, or superseded by a newer request. The four are deliberately indistinguishable. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SessionController_signIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignInRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The session was issued. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SessionResponseDto"];
+                    };
+                };
+            };
+            /** @description The email address or the password is not right. Deliberately one answer for both, and for a wrong password on an unverified account. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The credential is valid but cannot sign in: the address is not verified yet (problem type email-unverified), or the account is locked after repeated failures (problem type account-locked, released by password reset). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many attempts for this address in the window. Identical either way. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SessionController_signOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignOutRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The session is terminated, or already was. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SessionController_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshSessionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The rotated session. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SessionResponseDto"];
+                    };
+                };
+            };
+            /** @description The token is not usable (problem type authentication-required), or the session has reached a lifetime bound (problem type session-expired) — the latter is the signal to re-authenticate in place with work preserved. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

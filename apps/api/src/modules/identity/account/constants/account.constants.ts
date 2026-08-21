@@ -34,3 +34,20 @@ export interface EmailVerificationRequested {
   readonly locale: Locale;
   readonly token: string;
 }
+
+/** FR-6's reset email as it travels — same pattern as the verification event above (task 21). */
+export const PASSWORD_RESET_REQUESTED = 'identity.password_reset.requested';
+
+export const PASSWORD_RESET_TEMPLATE = 'identity.password_reset';
+
+/**
+ * Carries the raw token under OQ-54's decision and its bounds: the table holds the SHA-256,
+ * `esg_app` cannot read the outbox back, and the payload is the one durable place the usable
+ * value exists on its way to the account holder.
+ */
+export interface PasswordResetRequested {
+  readonly accountId: string;
+  readonly email: string;
+  readonly locale: Locale;
+  readonly token: string;
+}

@@ -6,8 +6,11 @@ import type {
 import {
   ACCOUNT_STATUS,
   type Account,
+  type ClaimedPasswordResetToken,
   type ClaimedVerificationToken,
+  type Credential,
   type NewAccount,
+  type NewPasswordResetToken,
   type NewVerificationToken,
 } from '../models/account.model';
 import { EmailAlreadyRegisteredError } from '../errors/account.errors';
@@ -33,17 +36,31 @@ interface StoredToken {
   consumedAt: Date | null;
 }
 
+/** A session as FR-6's revocation sees it — enough to assert "every live one died". */
+export interface FakeSession {
+  id: string;
+  accountId: string;
+  revokedAt: Date | null;
+  revokedReason: string | null;
+}
+
 interface Snapshot {
   accounts: Account[];
-  credentials: [string, string][];
+  credentials: [string, Credential][];
   tokens: StoredToken[];
+  resetTokens: StoredToken[];
+  sessions: FakeSession[];
+  attempts: { key: string; at: Date }[];
   effects: AccountEffect[];
 }
 
 export class FakeAccountStore implements AccountStore {
   accounts: Account[] = [];
-  credentials = new Map<string, string>();
+  credentials = new Map<string, Credential>();
   tokens: StoredToken[] = [];
+  resetTokens: StoredToken[] = [];
+  sessions: FakeSession[] = [];
+  attempts: { key: string; at: Date }[] = [];
   effects: AccountEffect[] = [];
 
   /** How many times `run` rolled back. A spec asserting "nothing was written" checks this too. */
@@ -74,8 +91,13 @@ export class FakeAccountStore implements AccountStore {
   private snapshot(): Snapshot {
     return {
       accounts: [...this.accounts],
-      credentials: [...this.credentials.entries()],
+      credentials: [...this.credentials.entries()].map(
+        ([id, credential]): [string, Credential] => [id, { ...credential }],
+      ),
       tokens: this.tokens.map((token) => ({ ...token })),
+      resetTokens: this.resetTokens.map((token) => ({ ...token })),
+      sessions: this.sessions.map((session) => ({ ...session })),
+      attempts: this.attempts.map((attempt) => ({ ...attempt })),
       effects: [...this.effects],
     };
   }
@@ -84,6 +106,9 @@ export class FakeAccountStore implements AccountStore {
     this.accounts = snapshot.accounts;
     this.credentials = new Map(snapshot.credentials);
     this.tokens = snapshot.tokens;
+    this.resetTokens = snapshot.resetTokens;
+    this.sessions = snapshot.sessions;
+    this.attempts = snapshot.attempts;
     this.effects = snapshot.effects;
   }
 
@@ -108,7 +133,12 @@ export class FakeAccountStore implements AccountStore {
           updatedAt: now,
         };
         store.accounts.push(created);
-        store.credentials.set(created.id, account.passwordHash);
+        store.credentials.set(created.id, {
+          accountId: created.id,
+          passwordHash: account.passwordHash,
+          failedAttempts: 0,
+          lockedAt: null,
+        });
         return Promise.resolve(created);
       },
 
@@ -165,6 +195,66 @@ export class FakeAccountStore implements AccountStore {
         return Promise.resolve();
       },
 
+      countRecentAuthAttempts(key: string, since: Date): Promise<number> {
+        return Promise.resolve(
+          store.attempts.filter((a) => a.key === key && a.at.getTime() >= since.getTime()).length,
+        );
+      },
+
+      recordAuthAttempt(key: string, at: Date): Promise<void> {
+        store.attempts.push({ key, at });
+        return Promise.resolve();
+      },
+
+      invalidateOutstandingPasswordResetTokens(accountId: string, at: Date): Promise<void> {
+        for (const token of store.resetTokens) {
+          if (token.accountId === accountId && !token.consumedAt) token.consumedAt = at;
+        }
+        return Promise.resolve();
+      },
+
+      issuePasswordResetToken(token: NewPasswordResetToken): Promise<void> {
+        store.resetTokens.push({ ...token, consumedAt: null });
+        return Promise.resolve();
+      },
+
+      claimPasswordResetToken(
+        tokenHash: Buffer,
+        at: Date,
+      ): Promise<ClaimedPasswordResetToken | null> {
+        const token = store.resetTokens.find((t) => t.tokenHash.equals(tokenHash) && !t.consumedAt);
+        if (!token) return Promise.resolve(null);
+        token.consumedAt = at;
+        return Promise.resolve({ accountId: token.accountId, expiresAt: token.expiresAt });
+      },
+
+      replaceCredentialPassword(
+        accountId: string,
+        passwordHash: string,
+        at: Date,
+      ): Promise<boolean> {
+        void at;
+        const credential = store.credentials.get(accountId);
+        if (!credential) return Promise.resolve(false);
+        store.credentials.set(accountId, {
+          ...credential,
+          passwordHash,
+          failedAttempts: 0,
+          lockedAt: null,
+        });
+        return Promise.resolve(true);
+      },
+
+      revokeAllSessionsForPasswordReset(accountId: string, at: Date): Promise<void> {
+        for (const session of store.sessions) {
+          if (session.accountId === accountId && !session.revokedAt) {
+            session.revokedAt = at;
+            session.revokedReason = 'password_reset';
+          }
+        }
+        return Promise.resolve();
+      },
+
       emit(effect: AccountEffect): Promise<void> {
         store.effects.push(effect);
         return Promise.resolve();
@@ -177,12 +267,20 @@ export class FakeAccountStore implements AccountStore {
 export class FakePasswordHasher {
   readonly hashed: string[] = [];
 
+  /**
+   * Every digest `verify` was asked about, recorded so sign-in's timing-uniformity spec can
+   * assert the unknown-address path still performed a verification (task 21) — a property that
+   * would otherwise only be observable with a stopwatch.
+   */
+  readonly verified: string[] = [];
+
   hash(password: string): Promise<string> {
     this.hashed.push(password);
     return Promise.resolve(`hashed:${password}`);
   }
 
   verify(digest: string, password: string): Promise<boolean> {
+    this.verified.push(digest);
     return Promise.resolve(digest === `hashed:${password}`);
   }
 }

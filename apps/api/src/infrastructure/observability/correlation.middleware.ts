@@ -38,5 +38,5 @@ export function correlationMiddleware(req: Request, res: Response, next: NextFun
   // RFC 9110: state the language actually served, which is not always the one asked for.
   res.setHeader('content-language', locale);
 
-  runInRequestContext({ correlationId, locale }, () => next());
+  runInRequestContext({ correlationId, locale, clientIp: req.ip }, () => next());
 }

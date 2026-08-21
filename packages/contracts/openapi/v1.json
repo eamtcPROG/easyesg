@@ -138,6 +138,212 @@
           "identity"
         ]
       }
+    },
+    "/api/v1/auth/password-reset-email": {
+      "post": {
+        "description": "Sends a single-use, time-limited reset link if the address holds a verified account, and does nothing otherwise. The response is identical in every case. Requests are rate-limited per address; a locked account may always request one — consuming the link is what releases the lock.",
+        "operationId": "AuthController_requestPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPasswordResetRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted. Empty by design, for the same reason as the verification resend: a body describing what happened would be the disclosure this endpoint exists without."
+          },
+          "400": {
+            "description": "The address is malformed. A statement about the request, not about accounts.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many requests for this address in the window. Identical either way.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Request a password reset link",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/password-reset": {
+      "post": {
+        "description": "Consumes the single-use token and replaces the password. Every existing session for the account is terminated, and a lockout, if one stood, is released. The token is sent in the body rather than followed as a link so a mail scanner cannot consume it. No session is issued: sign in with the new password.",
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The password is replaced. Sign in to continue."
+          },
+          "400": {
+            "description": "The password does not meet the policy, or the link is not valid — never issued, already used, expired, or superseded by a newer request. The four are deliberately indistinguishable.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Set a new password with a reset link",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/session": {
+      "post": {
+        "description": "Verifies the credential and issues a session: a short-lived access token and a single-use refresh token. Failures are uniform for unknown addresses and wrong passwords alike, rate-limited per address, and locked out after repeated failure.",
+        "operationId": "SessionController_signIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The session was issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SessionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The email address or the password is not right. Deliberately one answer for both, and for a wrong password on an unverified account.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The credential is valid but cannot sign in: the address is not verified yet (problem type email-unverified), or the account is locked after repeated failures (problem type account-locked, released by password reset).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many attempts for this address in the window. Identical either way.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Sign in with an email address and a password",
+        "tags": [
+          "identity"
+        ]
+      },
+      "delete": {
+        "description": "Terminates the session server-side: the refresh token is dead from here on, whatever copies of it exist. Idempotent, and identical for tokens that were never real — signing out is not an endpoint that confirms anything. Signing out of the platform does not end any session at a social identity provider.",
+        "operationId": "SessionController_signOut",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignOutRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The session is terminated, or already was."
+          }
+        },
+        "summary": "Sign out",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/session/refresh": {
+      "post": {
+        "description": "Rotates the session: the presented refresh token is consumed and a successor pair issued. Presenting an already-consumed token is refused; the session stays bounded by its idle and absolute lifetimes.",
+        "operationId": "SessionController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshSessionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The rotated session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SessionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token is not usable (problem type authentication-required), or the session has reached a lifetime bound (problem type session-expired) — the latter is the signal to re-authenticate in place with work preserved.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Exchange a refresh token for a fresh token pair",
+        "tags": [
+          "identity"
+        ]
+      }
     }
   },
   "info": {
@@ -286,6 +492,142 @@
         },
         "required": [
           "email"
+        ]
+      },
+      "RequestPasswordResetRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ana.popescu@example.md",
+            "description": "Malformed addresses are refused as requests; well-formed ones are never."
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordRequestDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The single-use value from the reset link."
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "The replacement password, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character."
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ]
+      },
+      "SessionAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ana.popescu@example.md"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The interface language persisted on the account (FR-10)."
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "locale"
+        ]
+      },
+      "SessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Bearer token for the Authorization header. Signed, short-lived; carries the session identity and no authorization data."
+          },
+          "accessTokenExpiresAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC. At most 15 minutes after issuance.",
+            "example": 1787444100000
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Opaque, single-use. Present it to the refresh endpoint to obtain a successor pair; it is invalidated by that refresh, by sign-out, and by a consumed password reset."
+          },
+          "refreshTokenExpiresAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC. When this session dies if never refreshed again — the earlier of its idle and absolute bounds.",
+            "example": 1788048000000
+          },
+          "account": {
+            "$ref": "#/components/schemas/SessionAccountDto"
+          }
+        },
+        "required": [
+          "accessToken",
+          "accessTokenExpiresAt",
+          "refreshToken",
+          "refreshTokenExpiresAt",
+          "account"
+        ]
+      },
+      "SignInRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ana.popescu@example.md"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "Verified against the stored credential; failures are uniform and rate-limited."
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshSessionRequestDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "The refresh token exactly as issued. Single-use: a successful refresh replaces it, and the replaced value is rejected from then on."
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "SignOutRequestDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "The refresh token of the session to terminate. Possession is the authentication: it is what the web tier actually holds, and it keeps sign-out working after the access token has already expired."
+          }
+        },
+        "required": [
+          "refreshToken"
         ]
       }
     }

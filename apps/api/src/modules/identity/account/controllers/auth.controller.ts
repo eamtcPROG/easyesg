@@ -3,12 +3,15 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { AccountResponseDto } from '../dto/account.response.dto';
 import { RegisterAccountRequestDto } from '../dto/register-account.request.dto';
+import { RequestPasswordResetRequestDto } from '../dto/request-password-reset.request.dto';
 import { ResendVerificationEmailRequestDto } from '../dto/resend-verification-email.request.dto';
+import { ResetPasswordRequestDto } from '../dto/reset-password.request.dto';
 import { VerifyEmailRequestDto } from '../dto/verify-email.request.dto';
 import { AccountService } from '../services/account.service';
 
 /**
- * `/api/v1/auth` — registration and verification (FR-1, FR-3; UC-01, UC-03).
+ * `/api/v1/auth` — registration, verification and password reset (FR-1, FR-3, FR-6; UC-01,
+ * UC-03, UC-08, UC-09 — FR-6 assigned to task 21 by OQ-56).
  *
  * The first controller in the product beyond health, so three things about it are the pattern
  * rather than incidental:
@@ -109,5 +112,58 @@ export class AuthController {
   })
   async resend(@Body() body: ResendVerificationEmailRequestDto): Promise<void> {
     await this.accountService.resend(body.email);
+  }
+
+  @Post('password-reset-email')
+  @HttpCode(202)
+  @ApiOperation({
+    summary: 'Request a password reset link',
+    description:
+      'Sends a single-use, time-limited reset link if the address holds a verified account, ' +
+      'and does nothing otherwise. The response is identical in every case. Requests are ' +
+      'rate-limited per address; a locked account may always request one — consuming the ' +
+      'link is what releases the lock.',
+  })
+  @ApiResponse({
+    status: 202,
+    description:
+      'Accepted. Empty by design, for the same reason as the verification resend: a body ' +
+      'describing what happened would be the disclosure this endpoint exists without.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'The address is malformed. A statement about the request, not about accounts.',
+    content: { 'application/problem+json': {} },
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests for this address in the window. Identical either way.',
+    content: { 'application/problem+json': {} },
+  })
+  async requestPasswordReset(@Body() body: RequestPasswordResetRequestDto): Promise<void> {
+    await this.accountService.requestPasswordReset(body.email);
+  }
+
+  @Post('password-reset')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Set a new password with a reset link',
+    description:
+      'Consumes the single-use token and replaces the password. Every existing session for ' +
+      'the account is terminated, and a lockout, if one stood, is released. The token is sent ' +
+      'in the body rather than followed as a link so a mail scanner cannot consume it. ' +
+      'No session is issued: sign in with the new password.',
+  })
+  @ApiResponse({ status: 204, description: 'The password is replaced. Sign in to continue.' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'The password does not meet the policy, or the link is not valid — never issued, already ' +
+      'used, expired, or superseded by a newer request. The four are deliberately ' +
+      'indistinguishable.',
+    content: { 'application/problem+json': {} },
+  })
+  async resetPassword(@Body() body: ResetPasswordRequestDto): Promise<void> {
+    await this.accountService.resetPassword(body.token, body.password);
   }
 }

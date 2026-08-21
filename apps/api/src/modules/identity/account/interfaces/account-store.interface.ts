@@ -1,7 +1,9 @@
 import type {
   Account,
+  ClaimedPasswordResetToken,
   ClaimedVerificationToken,
   NewAccount,
+  NewPasswordResetToken,
   NewVerificationToken,
 } from '../models/account.model';
 
@@ -65,6 +67,38 @@ export interface AccountTransaction {
   findAccountById(accountId: string): Promise<Account | null>;
 
   markAccountVerified(accountId: string, at: Date): Promise<Account>;
+
+  /** §12.5.6's throttle window — same semantics as the session store's pair (task 21). */
+  countRecentAuthAttempts(key: string, since: Date): Promise<number>;
+
+  recordAuthAttempt(key: string, at: Date): Promise<void>;
+
+  /** FR-6's reissue rule, same as the verification flow: one live challenge per account. */
+  invalidateOutstandingPasswordResetTokens(accountId: string, at: Date): Promise<void>;
+
+  issuePasswordResetToken(token: NewPasswordResetToken): Promise<void>;
+
+  /**
+   * Single-use by conditional UPDATE, for `claimVerificationToken`'s reason exactly; expiry is
+   * the caller's comparison, and an expired claim un-claims by rollback, harmlessly.
+   */
+  claimPasswordResetToken(tokenHash: Buffer, at: Date): Promise<ClaimedPasswordResetToken | null>;
+
+  /**
+   * Replaces the hash AND clears the lockout in one statement — §12.5.6 names the consumed reset
+   * link as a lockout release, so the two must not be separable. False when the account holds no
+   * password credential, which the caller treats as an invalid token rather than explaining.
+   */
+  replaceCredentialPassword(accountId: string, passwordHash: string, at: Date): Promise<boolean>;
+
+  /**
+   * FR-6: consuming a reset link invalidates every live session for the account, recorded with
+   * the `password_reset` reason. The reason is baked into the method rather than passed, because
+   * FR-6 is this port's only session-revoking caller and a reason parameter here would hand the
+   * account module the session module's vocabulary. On this transaction, so a reset that fails
+   * to commit revokes nothing.
+   */
+  revokeAllSessionsForPasswordReset(accountId: string, at: Date): Promise<void>;
 
   /** OQ-52's expiry. `ON DELETE CASCADE` takes the credential and any outstanding tokens with it. */
   deleteAccount(accountId: string): Promise<void>;

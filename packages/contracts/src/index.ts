@@ -28,3 +28,13 @@ export type VerifyEmailRequest = components['schemas']['VerifyEmailRequestDto'];
 export type ResendVerificationEmailRequest =
   components['schemas']['ResendVerificationEmailRequestDto'];
 export type AccountResponse = components['schemas']['AccountResponseDto'];
+
+// identity — sessions and password reset (FR-4, FR-5, FR-6; task 21)
+export type SignInRequest = components['schemas']['SignInRequestDto'];
+export type RefreshSessionRequest = components['schemas']['RefreshSessionRequestDto'];
+export type SignOutRequest = components['schemas']['SignOutRequestDto'];
+export type SessionResponse = components['schemas']['SessionResponseDto'];
+export type SessionAccount = components['schemas']['SessionAccountDto'];
+export type RequestPasswordResetRequest =
+  components['schemas']['RequestPasswordResetRequestDto'];
+export type ResetPasswordRequest = components['schemas']['ResetPasswordRequestDto'];

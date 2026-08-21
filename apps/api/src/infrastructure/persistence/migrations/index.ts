@@ -6,6 +6,7 @@ import { FieldChangeAudit1787248800000 } from './1787248800000-field-change-audi
 import { OutboxEvent1787263200000 } from './1787263200000-outbox-event';
 import { ConfigurationStore1787270400000 } from './1787270400000-configuration-store';
 import { IdentityAccount1787356800000 } from './1787356800000-identity-account';
+import { IdentitySession1787443200000 } from './1787443200000-identity-session';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -30,4 +31,5 @@ export const migrations = [
   OutboxEvent1787263200000,
   ConfigurationStore1787270400000,
   IdentityAccount1787356800000,
+  IdentitySession1787443200000,
 ];

@@ -9,6 +9,27 @@
     },
     "verification-token-invalid": {
       "title": "Link de confirmare invalid"
+    },
+    "reset-token-invalid": {
+      "title": "Link de resetare invalid"
+    },
+    "credential-invalid": {
+      "title": "Autentificare nereușită"
+    },
+    "account-locked": {
+      "title": "Cont blocat temporar"
+    },
+    "email-unverified": {
+      "title": "Adresă neconfirmată"
+    },
+    "rate-limited": {
+      "title": "Prea multe încercări"
+    },
+    "session-expired": {
+      "title": "Sesiune expirată"
+    },
+    "authentication-required": {
+      "title": "Autentificare necesară"
     }
   },
   "validation": {},
@@ -19,6 +40,21 @@
     },
     "verification": {
       "token_invalid": "Linkul de confirmare nu mai este valabil, așa că adresa nu a fost confirmată. Linkurile expiră după 24 de ore și pot fi folosite o singură dată — cereți unul nou de pe pagina de confirmare."
+    },
+    "sign_in": {
+      "credential_invalid": "Adresa de e-mail sau parola nu este corectă, așa că nu v-am putut autentifica. Verificați datele introduse și încercați din nou, sau cereți resetarea parolei dacă nu v-o mai amintiți.",
+      "account_locked": "Contul a fost blocat temporar după prea multe încercări nereușite, așa că autentificarea nu este posibilă deocamdată. Folosiți resetarea parolei pentru a-l debloca imediat.",
+      "email_unverified": "Adresa de e-mail nu a fost încă confirmată, așa că nu vă puteți autentifica deocamdată. Deschideți linkul primit la înregistrare sau cereți un link nou de pe pagina de confirmare."
+    },
+    "auth": {
+      "rate_limited": "Au fost prea multe încercări pentru această adresă într-un interval scurt, așa că am oprit temporar altele noi. Așteptați 15 minute și încercați din nou."
+    },
+    "session": {
+      "invalid": "Sesiunea nu mai este valabilă, așa că cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
+      "expired": "Sesiunea a expirat după o perioadă de inactivitate, dar lucrul în curs a fost păstrat. Autentificați-vă din nou pentru a continua exact de unde ați rămas."
+    },
+    "password_reset": {
+      "token_invalid": "Linkul de resetare nu mai este valabil, așa că parola nu a fost schimbată. Linkurile expiră după 60 de minute și pot fi folosite o singură dată — cereți unul nou de pe pagina de autentificare."
     }
   },
   "notification": {
@@ -26,6 +62,10 @@
       "email_verification": {
         "subject": "Confirmați-vă adresa de e-mail",
         "body": "Bună ziua,\n\nCineva a creat un cont easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a confirma adresa și a activa contul:\n\n{verificationUrl}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată.\n\nDacă nu dumneavoastră ați creat contul, ignorați acest mesaj: fără confirmare contul nu poate fi folosit și se șterge automat după 7 zile."
+      },
+      "password_reset": {
+        "subject": "Resetați-vă parola",
+        "body": "Bună ziua,\n\nAm primit o cerere de resetare a parolei pentru contul easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a alege o parolă nouă:\n\n{resetUrl}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După schimbarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut resetarea, ignorați acest mesaj: parola actuală rămâne neschimbată."
       }
     }
   }

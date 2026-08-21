@@ -5,12 +5,15 @@ import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hash
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
 import { AccountStoreRepository } from '@api/infrastructure/persistence/identity/account-store.repository';
 import { AuthController } from './controllers/auth.controller';
+import { PasswordResetEmailHandler } from './consumers/password-reset-email.handler';
 import { VerificationEmailHandler } from './consumers/verification-email.handler';
 import { ACCOUNT_STORE, type AccountStore } from './interfaces/account-store.interface';
 import { AccountService } from './services/account.service';
 import { PASSWORD_HASHER, type PasswordHasher } from './interfaces/password-hasher.interface';
 import { RegisterAccount } from './use-cases/register-account.use-case';
+import { RequestPasswordReset } from './use-cases/request-password-reset.use-case';
 import { ResendVerificationEmail } from './use-cases/resend-verification-email.use-case';
+import { ResetPassword } from './use-cases/reset-password.use-case';
 import { VerifyEmail } from './use-cases/verify-email.use-case';
 
 /**
@@ -75,10 +78,21 @@ const httpProviders: Provider[] = [
     inject: [ACCOUNT_STORE],
     useFactory: (store: AccountStore) => new ResendVerificationEmail(store, () => new Date()),
   },
+  {
+    provide: RequestPasswordReset,
+    inject: [ACCOUNT_STORE],
+    useFactory: (store: AccountStore) => new RequestPasswordReset(store, () => new Date()),
+  },
+  {
+    provide: ResetPassword,
+    inject: [ACCOUNT_STORE, PASSWORD_HASHER],
+    useFactory: (store: AccountStore, hasher: PasswordHasher) =>
+      new ResetPassword(store, hasher, () => new Date()),
+  },
 ];
 
 /** The worker side: whatever `OutboxConsumer` routes to this module by job name. */
-const workerProviders: Provider[] = [VerificationEmailHandler];
+const workerProviders: Provider[] = [VerificationEmailHandler, PasswordResetEmailHandler];
 
 @Module({
   imports: mode === APP_MODE.WORKER ? [EmailModule] : [],

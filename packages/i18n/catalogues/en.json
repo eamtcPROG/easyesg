@@ -9,6 +9,27 @@
     },
     "verification-token-invalid": {
       "title": "Confirmation link is not valid"
+    },
+    "reset-token-invalid": {
+      "title": "Reset link is not valid"
+    },
+    "credential-invalid": {
+      "title": "Sign-in unsuccessful"
+    },
+    "account-locked": {
+      "title": "Account temporarily locked"
+    },
+    "email-unverified": {
+      "title": "Address not confirmed yet"
+    },
+    "rate-limited": {
+      "title": "Too many attempts"
+    },
+    "session-expired": {
+      "title": "Session expired"
+    },
+    "authentication-required": {
+      "title": "Sign-in required"
     }
   },
   "validation": {},
@@ -19,6 +40,21 @@
     },
     "verification": {
       "token_invalid": "This confirmation link is no longer valid, so the address has not been confirmed. Links last 24 hours and work only once — request a new one from the confirmation page."
+    },
+    "sign_in": {
+      "credential_invalid": "The email address or the password is not right, so you have not been signed in. Check what you entered and try again, or ask for a password reset if you no longer remember it.",
+      "account_locked": "The account has been locked temporarily after too many unsuccessful attempts, so signing in is not possible for now. Use a password reset to unlock it right away.",
+      "email_unverified": "This email address has not been confirmed yet, so you cannot sign in for now. Open the link you received at registration, or request a new one from the confirmation page."
+    },
+    "auth": {
+      "rate_limited": "There have been too many attempts for this address in a short time, so new ones are paused for now. Wait 15 minutes and try again."
+    },
+    "session": {
+      "invalid": "The session is no longer valid, so the request was not processed. Sign in again to continue.",
+      "expired": "The session expired after a period of inactivity, but your work in progress has been kept. Sign in again to continue exactly where you left off."
+    },
+    "password_reset": {
+      "token_invalid": "This reset link is no longer valid, so the password has not been changed. Links last 60 minutes and work only once — request a new one from the sign-in page."
     }
   },
   "notification": {
@@ -26,6 +62,10 @@
       "email_verification": {
         "subject": "Confirm your email address",
         "body": "Hello,\n\nSomeone created an easyesg account with this email address. Open the link below to confirm the address and activate the account:\n\n{verificationUrl}\n\nThe link is valid for 24 hours and works only once.\n\nIf you did not create the account, ignore this message: without confirmation the account cannot be used, and it is deleted automatically after 7 days."
+      },
+      "password_reset": {
+        "subject": "Reset your password",
+        "body": "Hello,\n\nWe received a request to reset the password for the easyesg account with this email address. Open the link below to choose a new password:\n\n{resetUrl}\n\nThe link is valid for 60 minutes and works only once. After the password changes, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for a reset, ignore this message: your current password stays unchanged."
       }
     }
   }

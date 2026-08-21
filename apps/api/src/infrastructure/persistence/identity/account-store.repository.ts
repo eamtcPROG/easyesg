@@ -11,12 +11,16 @@ import type {
 import {
   ACCOUNT_STATUS,
   type Account,
+  type ClaimedPasswordResetToken,
   type ClaimedVerificationToken,
   type NewAccount,
+  type NewPasswordResetToken,
   type NewVerificationToken,
 } from '@api/modules/identity/account/models/account.model';
+import { SESSION_REVOKED_REASON } from '@api/modules/identity/session/models/session.model';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
+import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
 /**
  * The `AccountStore` adapter — §6.7 puts repositories in `infrastructure/persistence/`.
@@ -235,6 +239,80 @@ class AccountTransactionAdapter implements AccountTransaction {
       ),
     );
     return toAccount(rows[0]);
+  }
+
+  countRecentAuthAttempts(key: string, since: Date): Promise<number> {
+    return countRecentAuthAttempts(this.queryRunner, key, since);
+  }
+
+  recordAuthAttempt(key: string, at: Date): Promise<void> {
+    return recordAuthAttempt(this.queryRunner, key, at);
+  }
+
+  async invalidateOutstandingPasswordResetTokens(accountId: string, at: Date): Promise<void> {
+    // `consumed_at` means "no longer usable", as on the verification table — a reissue leaves
+    // exactly one live challenge.
+    await this.queryRunner.query(
+      `UPDATE identity.password_reset_token
+          SET consumed_at = $2
+        WHERE account_id = $1 AND consumed_at IS NULL`,
+      [accountId, at],
+    );
+  }
+
+  async issuePasswordResetToken(token: NewPasswordResetToken): Promise<void> {
+    await this.queryRunner.query(
+      `INSERT INTO identity.password_reset_token (account_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [token.accountId, token.tokenHash, token.expiresAt],
+    );
+  }
+
+  async claimPasswordResetToken(
+    tokenHash: Buffer,
+    at: Date,
+  ): Promise<ClaimedPasswordResetToken | null> {
+    // The same conditional UPDATE as `claimVerificationToken`, for the same single-use argument.
+    const rows = returnedRows<{ account_id: string; expires_at: Date }>(
+      await this.queryRunner.query(
+        `UPDATE identity.password_reset_token
+            SET consumed_at = $2
+          WHERE token_hash = $1 AND consumed_at IS NULL
+          RETURNING account_id, expires_at`,
+        [tokenHash, at],
+      ),
+    );
+    if (rows.length === 0) return null;
+    return { accountId: rows[0].account_id, expiresAt: rows[0].expires_at };
+  }
+
+  async replaceCredentialPassword(
+    accountId: string,
+    passwordHash: string,
+    at: Date,
+  ): Promise<boolean> {
+    // One statement replaces the hash AND releases the lockout — §12.5.6 names the consumed
+    // reset link as a release, and separating the two would create a state where one happened
+    // without the other.
+    const rows = returnedRows<{ account_id: string }>(
+      await this.queryRunner.query(
+        `UPDATE identity.credential
+            SET password_hash = $2, failed_attempts = 0, locked_at = NULL, updated_at = $3
+          WHERE account_id = $1
+          RETURNING account_id`,
+        [accountId, passwordHash, at],
+      ),
+    );
+    return rows.length > 0;
+  }
+
+  async revokeAllSessionsForPasswordReset(accountId: string, at: Date): Promise<void> {
+    await this.queryRunner.query(
+      `UPDATE identity.session
+          SET revoked_at = $2, revoked_reason = $3
+        WHERE account_id = $1 AND revoked_at IS NULL`,
+      [accountId, at, SESSION_REVOKED_REASON.PASSWORD_RESET],
+    );
   }
 
   async deleteAccount(accountId: string): Promise<void> {
