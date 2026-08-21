@@ -1124,3 +1124,32 @@ because "full" means the wire conventions, not just the verbs:
 Still deliberately out: byte streams. FR-53's re-download must be byte-identical, which means the
 `/api/[...path]` proxy passes it through untouched — a JSON client that also did downloads would
 be two conventions in one seam, and that path stays task 22's.
+
+**The pipeline caught what the gate set cannot, one push later.** Task 20 pushed green locally and
+the images job went red: `packages/validation build: error TS5058: The specified path does not
+exist: 'tsconfig.build.json'`. The cause is exactly the class CLAUDE.md's "gate must not depend on
+state a previous command left behind" rule describes, one level up — **the api Dockerfile hand-listed
+the workspace packages it copies** (`COPY packages/i18n packages/i18n`), which was true right up
+until this task gave `apps/api` a second workspace dependency. `--filter @easyesg/api...` then
+selected `@easyesg/validation` for the build and found a directory holding only the `package.json`
+from the manifest layer. No local run can see it: the whole tree is always present on a developer's
+machine, and no gate builds an image.
+
+Two edits, and the second matters more than the one that was failing:
+
+- **Build stage copies `packages` wholesale**, as `apps/web` and `apps/admin` already did — api was
+  the only Dockerfile with a hand-listed subset. This is the same argument `gates.yml` records for
+  the images job itself: the workspace dependency graph is not something to restate as a per-image
+  file list, because that list drifts from the real graph silently.
+- **Runtime stage copies `packages/validation` too.** That list is deliberately still explicit — a
+  runtime image should carry only what it runs — and the cost of that choice is now written next to
+  it: a missing entry builds *cleanly* and dies at container start on a dangling relative symlink,
+  never at build. What catches it is the images job actually RUNNING the container, which is why
+  that step exists and why "building is not running" is in this log twice.
+
+Reproduced before fixing, per the rule: `docker build --target build` failed identically in 4 s.
+Verified after: the image builds, both entrypoints start against the Compose stack,
+`require.resolve('@easyesg/validation')` inside the image answers
+`/repo/packages/validation/dist/cjs/index.js`, and `POST /auth/register` with a weak password
+returns the policy's resolved Romanian three-part message — so the package that moved in this task
+is not merely resolvable in the image but executing.

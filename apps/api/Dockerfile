@@ -41,7 +41,16 @@ COPY packages/validation/package.json packages/validation/
 RUN pnpm install --frozen-lockfile --filter @easyesg/api...
 
 COPY tsconfig.base.json ./
-COPY packages/i18n packages/i18n
+# The WHOLE packages tree, not a hand-listed subset (corrected 21 Aug 2026, task 20). It was
+# `packages/i18n` alone, which was true until apps/api gained a second workspace dependency —
+# then `--filter @easyesg/api...` selected @easyesg/validation for the build below and found a
+# directory holding nothing but the package.json copied in the manifest layer, failing with
+# `TS5058: The specified path does not exist: 'tsconfig.build.json'`. Invisible locally, where
+# the whole tree is always present. This is the same reasoning gates.yml already applies to the
+# images job: the workspace dependency graph is not something to restate as a per-image file
+# list, because that list drifts from the real graph silently. apps/web's Dockerfile has always
+# copied the tree wholesale; this one now matches it.
+COPY packages packages
 COPY apps/api apps/api
 # The trailing `...` is load-bearing: it selects apps/api AND its workspace dependencies. Without
 # it, packages/i18n is never built, the image builds cleanly, and the container dies on start with
@@ -75,10 +84,18 @@ WORKDIR /repo
 # The workspace layout is preserved rather than flattened, because pnpm's links are RELATIVE:
 # apps/api/node_modules/@easyesg/i18n points at ../../../../packages/i18n, and everything else at
 # ../../node_modules/.pnpm/... . Copying apps/api's node_modules alone is what CLAUDE.md forbids —
-# it yields dangling links. Copying the three directories that the links span keeps every one of
-# them resolvable, and after the prune above they carry production dependencies only.
+# it yields dangling links. Copying the directories that the links span keeps every one of them
+# resolvable, and after the prune above they carry production dependencies only.
+#
+# **This list is exactly apps/api's workspace dependencies, and it grows with them.** It stays
+# explicit where the build stage does not, because a runtime image should carry only what it
+# runs — but the cost of that choice is real: a missing entry builds cleanly and then dies at
+# start on a dangling symlink (`Cannot find module '@easyesg/<pkg>/dist/cjs/index.js'`), never
+# at build. `packages/validation` joined it with task 20. What catches an omission is the images
+# job actually RUNNING the container, which is why that step exists.
 COPY --from=build --chown=node:node /repo/node_modules ./node_modules
 COPY --from=build --chown=node:node /repo/packages/i18n ./packages/i18n
+COPY --from=build --chown=node:node /repo/packages/validation ./packages/validation
 COPY --from=build --chown=node:node /repo/apps/api ./apps/api
 
 # Never root. The image runs an HTTP tier reachable through the edge, and node's own image already
