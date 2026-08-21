@@ -148,3 +148,106 @@ describe('the api client (§6.8 wire conventions, in one place)', () => {
     expect(await api.get('/things/x')).toEqual({ status: API_OUTCOME.Unreachable });
   });
 });
+
+/**
+ * The body guards, which exist because the alternative is a silent wrong answer: a blind cast
+ * reads a missing `object` as `undefined` and a screen renders that as *empty*. Every case here
+ * asserts the outcome is `unreachable` rather than a malformed success — a guard that never
+ * fires looks exactly like a guard that passes.
+ */
+describe('unusable response bodies (readEvent-style guards)', () => {
+  // The guards log for a developer; silence the expected noise and assert the body never leaks.
+  let logged: unknown[][];
+
+  beforeEach(() => {
+    logged = [];
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      logged.push(args);
+    });
+  });
+
+  const cases: [string, unknown][] = [
+    ['a bare array', []],
+    ['a JSON scalar', 42],
+    ['null', null],
+    ['an envelope with no `object` member', { htmlcode: 200, messages: [] }],
+    ['an envelope whose `messages` is not an array', { htmlcode: 200, object: {}, messages: 'x' }],
+  ];
+
+  for (const [label, body] of cases) {
+    it(`rejects ${label} rather than passing undefined to a screen`, async () => {
+      fetchMock.mockResolvedValue(jsonResponse(body));
+      expect(await api.get('/things/x')).toEqual({ status: API_OUTCOME.Unreachable });
+    });
+  }
+
+  it('accepts a legitimately null object — nullable is not malformed', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ htmlcode: 200, object: null, messages: [] }));
+    expect(await api.get('/things/x')).toEqual({
+      status: API_OUTCOME.Ok,
+      value: null,
+      messages: [],
+    });
+  });
+
+  it('rejects malformed JSON', async () => {
+    fetchMock.mockResolvedValue(
+      new Response('{ not json', { status: 200, headers: { 'content-type': 'application/json' } }),
+    );
+    expect(await api.get('/things/x')).toEqual({ status: API_OUTCOME.Unreachable });
+  });
+
+  it('rejects a list envelope missing its counts — a NaN pager renders garbage', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ htmlcode: 200, objects: [], messages: [] }));
+    expect(await api.getList('/things')).toEqual({ status: API_OUTCOME.Unreachable });
+  });
+
+  it('logs the reason for a developer, never the body (NFR-30)', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ htmlcode: 200, messages: [], secret: 'ana.popescu@example.md' }),
+    );
+    await api.get('/things/x');
+
+    const serialised = JSON.stringify(logged);
+    expect(serialised).toContain('/things/x');
+    expect(serialised).toContain('result envelope');
+    expect(serialised).not.toContain('ana.popescu@example.md');
+  });
+
+  describe('a problem document is repaired rather than dropped', () => {
+    it('keeps a failure a failure when optional members are absent', async () => {
+      // RFC 9457 makes every member optional. Dropping this to `unreachable` would replace
+      // "the address is already taken" with "try again later" — a worse answer, not a safer one.
+      fetchMock.mockResolvedValue(
+        jsonResponse({}, { status: 409, contentType: 'application/problem+json' }),
+      );
+
+      expect(await api.post('/auth/register', {})).toEqual({
+        status: API_OUTCOME.Problem,
+        problem: {
+          type: 'about:blank',
+          status: 409,
+          title: undefined,
+          detail: undefined,
+          instance: undefined,
+          correlationId: undefined,
+        },
+      });
+    });
+
+    it('falls back to the HTTP status when the body omits one', async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(
+          { type: 'https://easyesg.md/problems/conflict', detail: 'resolved' },
+          { status: 409, contentType: 'application/problem+json' },
+        ),
+      );
+
+      const outcome = await api.post('/auth/register', {});
+      expect(outcome).toMatchObject({
+        status: API_OUTCOME.Problem,
+        problem: { status: 409, detail: 'resolved' },
+      });
+    });
+  });
+});

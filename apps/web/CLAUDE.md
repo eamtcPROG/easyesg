@@ -37,6 +37,16 @@ Two rules hold around that seam (post-close review, 20 Aug 2026 — iftamaster's
   resolves the locale itself and puts it on `Accept-Language`; an action repeating
   `await getLocale()` is the violation. When task 22 adds the access token, it joins the same
   place.
+- **A response body is validated, never cast.** `readResultObject` / `readResultList` /
+  `readProblemDocument` in `api-client.ts` check the members they return, the way
+  `VerificationEmailHandler.readEvent` does on the worker. A blind `as` reads a missing `object`
+  as `undefined` and a screen renders that as *empty* — a silent wrong answer, not an error. An
+  unusable body becomes `unreachable` (same fact and same remedy as no answer, and the copy
+  already exists in three locales); a problem document is *repaired* instead, because RFC 9457
+  makes every member optional and dropping it would replace "the address is taken" with "try
+  again later". The thrown reason is developer-facing and names the shape, **never the body** —
+  it may carry personal data (NFR-30).
+
 - **One outcome shape end to end, its discriminators a closed vocabulary.**
   `src/lib/api-outcome.ts` declares `API_OUTCOME` (`as const`, derived union — the same rule
   `apps/api` records for `ACCOUNT_STATUS`/`APP_MODE`) and `ApiOutcome<T>`, which travels

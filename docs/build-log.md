@@ -1200,3 +1200,41 @@ the nine new routing/boundary assertions included — plus 30 web unit tests and
 emailed verification link still works unchanged: the api keeps prefixing (`/ro/verify?token=…`),
 next-intl 307s it to `/verify` with the query intact, and teaching the compliance core which locale
 takes no prefix would duplicate a front-end routing decision where it could go stale invisibly.
+
+**A gap closed, found by a question rather than a failure (21 Aug 2026).** Asked whether zod would
+improve validation, the answer was mostly no — business rules are **data, not code** (DR-3, AD-4),
+so a rule expressed as a schema would need a deploy to change; OQ-49 has already recorded that no
+resolver package is installed, deliberately; and of §9.8's five rule types zod fits *range/format*
+and passably *presence*, while applicability, consistency (the calculation linkbase) and
+cross-period are a rule engine over a data model rather than a parser over a shape. Replacing
+`class-validator` on the API DTOs was declined on cost: `@nestjs/swagger` reads decorator metadata
+to emit the contract that CI diffs (P-5), so the swap would rebuild a load-bearing chain to respell
+two decorators, and the NFR-79 objection recorded on task 19 applies to zod's issue array exactly
+as it did to `class-validator`'s.
+
+**The question did surface a real defect, in the client written earlier the same day.** Three
+`response.json()` results were cast blind. The API is ours and contract-tested, so a malformed body
+means something is genuinely wrong — a rolling deploy answering from two versions, a proxy
+interposing its own JSON — and the cast turns that into `envelope.object === undefined`, which a
+screen renders as **empty**: the silent wrong answer this codebase keeps naming. The norm already
+existed and had simply not been followed here — task 19's `readEvent` validates its outbox payload
+for the same reason, in the same words.
+
+Now guarded in the same idiom, with three decisions worth recording:
+
+- **An unusable body answers `unreachable`** rather than throwing or gaining a fourth outcome. To
+  the reader it is the same fact as no answer with the same remedy, and `unreachable` already
+  carries NFR-79's three parts in three locales; a new member would mean authoring copy for a case
+  that should never occur.
+- **A problem document is repaired, not dropped.** RFC 9457 makes every member optional, so `type`
+  falls back to its own `about:blank` and `status` to the HTTP status. Dropping a malformed problem
+  to `unreachable` would replace "the address is already taken" with "try again later" — a worse
+  answer, not a safer one.
+- **The readers build what they validated** instead of casting the whole envelope. TypeScript
+  refused `body as ResultObject<T>` on exactly the right grounds: four members were checked and
+  five were claimed. The only assertion left is the generic payload, whose shape is the route's
+  contract rather than this tier's business.
+
+Logged reasons name the shape and the path and **never the body**, which may hold personal data
+(NFR-30) — asserted by a test that puts an address in a malformed payload and greps the log for it.
+Eleven new cases cover the guards, including that a legitimately `null` object is not malformed.
