@@ -124,6 +124,12 @@ prove ui-is-presentational \
   "$UI/__boundary_fixture.ts" \
   "export * from '../../../apps/web/src/lib/session-cookie';"
 
+# The fixture sits where the real hazard is: the barrel. src/index.ts re-exporting the bound
+# controls is the one edit that would put react-hook-form into every consumer of @easyesg/ui.
+prove ui-forms-out-of-the-barrel \
+  "$UI/form/__boundary_fixture.ts" \
+  "export { FormTextField } from '../forms/form-text-field';"
+
 # ── apps/admin, and the separation between the two front ends ────────────────────────────────
 
 prove admin-not-to-api-src \

@@ -143,7 +143,13 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
     expect(beginMock).not.toHaveBeenCalled();
     const summary = await screen.findByRole('alert');
     expect(summary).toHaveTextContent('Câteva câmpuri au nevoie de atenție');
-    expect(summary.querySelector('a[href="#admin-sign-in-password"]')).not.toBeNull();
+    // The summary link resolves to the field's OWN id — the property `@easyesg/ui/forms` exists
+    // to guarantee, and the one the three hand-kept copies (constant, `id=`, summary entry) used
+    // to break silently on a rename. Read off the DOM rather than pinned to a literal: what must
+    // hold is that they agree, not what they agree on.
+    const passwordFieldId = screen.getByLabelText('Parolă').id;
+    expect(passwordFieldId).not.toBe('');
+    expect(summary.querySelector(`a[href="#${passwordFieldId}"]`)).not.toBeNull();
   });
 
   it('lets the operator change account from the factor step', async () => {

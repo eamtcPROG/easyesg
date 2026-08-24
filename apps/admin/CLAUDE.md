@@ -51,7 +51,7 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 | --- | --- | --- |
 | root | `pnpm lint` | One flat config at the root; this package has no `lint` script of its own. The browser tier covers `apps/web`, `apps/admin` and `packages/ui`; the Next-only block does not apply here |
 | root | `pnpm boundaries` | dependency-cruiser over five roots, `apps/admin/src` among them |
-| root | `pnpm boundaries:prove` | Asserts each of the 20 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
+| root | `pnpm boundaries:prove` | Asserts each of the 23 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
 | root | `pnpm routes:check` | Rebuilds and fails if the committed route tree differs from the one the plugin generates. The analogue of `openapi:check` |
 | here | `pnpm typecheck` | `tsc --noEmit`, and it covers `vite.config.ts` and `vitest.config.ts` too |
 | here | `pnpm build` | Emits `dist/`. **Regenerates `src/app/route-tree.gen.ts` as a side effect** — commit it if it changed |
@@ -167,6 +167,21 @@ else; treat it as an incident, not a refactor.
 - **Nothing pushes.** Every queue, counter and job status polls (§11.2). SSE and WebSockets appear
   nowhere in §5.4, §10.4 or the edge configuration; adding one is an amendment to those sections,
   not a ticket. TanStack Query's `refetchInterval` is the shape of every screen here.
+
+- **A form field is `@easyesg/ui/forms`, not `TextField` + `register`.** Since 24 Aug 2026 the
+  bound controls take `control` and `name` and derive the rest: `<FormTextField control={control}
+  name="email" label={…} rules={{ required: … }} />`, with `<FormSummary control={control}
+  title={…} />` above them. A-01's two steps are the reference. Reaching for the presentational
+  `TextField` inside a form reintroduces the five hand-kept pieces the layer removed — the id
+  constant, `id=`, `error=`, the `register()` spread and the summary entry — of which the id
+  existed in three copies that a rename broke silently. The unbound controls stay exported for
+  what is not a form: a queue's filter box, a search input, a read-only display. `required` must
+  carry a message; the type refuses `required: true`, because a message-less rule renders no
+  text, no `aria-invalid` and no summary entry — the form just refuses to submit in silence.
+
+  **Type the form as the wire DTO** where one exists (`useForm<AdminChallengeRequest>`), as both
+  steps do: `name="email"` is then checked against the contract rather than being a string
+  nobody validates.
 
 - **Nothing is memoized, no compiler is doing it for you, and this app has none of web's cover.**
   As of 24 Aug 2026 there is not one `useMemo`, `useCallback` or `memo()` in `apps/web`,

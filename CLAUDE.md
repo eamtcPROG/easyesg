@@ -21,7 +21,7 @@ is structure without behaviour.
 | `apps/web` | 36 route files across four route groups, next-intl wiring — and, from task 20, the **first live screens**: S-01 register and S-02 verify/resend, reaching the API through Server Actions, catalogue content in all three locales, self-hosted Onest/Plex Mono. From task 21's API, task 22 ships **the session tier live end to end** (OQ-33 closed — one sealed httpOnly `SameSite=Lax` cookie carrying the whole AD-12 session, `src/server/session{,-codec}.ts`, single-flighted rotation only where cookies can be written), S-01 sign-in, S-02 reset request and set-password, the `/api/[...path]` pass-through for real (same-origin proof on writes, bearer attach, rotate-if-expiring, streamed bodies), and two recorded interims: sign-in lands on `?return=`-or-`/home` until task 25's membership branch, and a minimal `SessionStrip` carries sign-out until task 30's global tier. Every other page returns `null` |
 | `apps/admin` | 26 route files covering all 18 admin screens (`A-01`…`A-18`), two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing, no `features/core/` (that absence is D-5) — and, from task 23, **A-01 live end to end**: `src/realm/` (api client with `credentials: 'include'` over the shared `@easyesg/contracts` outcome readers, the session query, the two-step sign-in screen per the A-01 artboard, the interim strip — under `realm/components/`), `_realm`'s closed-by-default guard with sanitized `?redirect=`, and a third Playwright project driving the journey cross-origin against the built bundle. Every screen behind the realm still returns `null` |
 | `packages/contracts` | The wire contract. `openapi/v1.json` carries the seven `/auth` routes (tasks 19 and 21) plus `/auth/admin/session` (task 23); since task 20 `src/generated/v1.ts` (openapi-typescript) plus hand-curated aliases and the RFC 9457 `ProblemDocument` are the exported surface, regenerated and diffed by the same `openapi:check` gate as the spec. Since task 23 it also carries the first **runtime** exports shared by both front ends: `PROBLEM_TYPE`, the `API_OUTCOME` outcome container and the validated envelope readers (`outcome.ts`) |
-| `packages/ui` | The tier 1/2/3 token cascade, moved from `design/` — plus, from task 20, the ten §11.6 type roles and the first §11.5 inventory slice: Button, TextField/PasswordField, RequirementList, FormErrorSummary, Callout, Panel, TextLink, Spinner, BrandMark, LanguageSwitcher, and the Focus archetype shell. Presentational by rule: no text, no router — strings and anchors arrive as props |
+| `packages/ui` | The tier 1/2/3 token cascade, moved from `design/` — plus, from task 20, the ten §11.6 type roles and the first §11.5 inventory slice: Button, TextField/PasswordField, RequirementList, FormErrorSummary, Callout, Panel, TextLink, Spinner, BrandMark, LanguageSwitcher, and the Focus archetype shell. Presentational by rule: no text, no router — strings and anchors arrive as props. Since 24 Aug 2026 one exception with its own entry point and its own boundary rule: **`@easyesg/ui/forms`**, the react-hook-form binding (`FormTextField`, `FormPasswordField`, `FormSummary` — `control` + `name` is the whole contract), plus the package's first test harness |
 | `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness (now wired) |
 | `packages/validation` | The password policy (OQ-51), shared by `api` and `web` since task 20 — architecture.md §9.8 records the placement. The rule interpreter (§9.8) is still to come |
 
@@ -36,7 +36,7 @@ each carry a Dockerfile, built with the repository root as context. Not started:
 and the `renderer` image (task 44).
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
-`pnpm boundaries:prove` (22 rules, each with a fixture proving it rejects a real violation),
+`pnpm boundaries:prove` (23 rules, each with a fixture proving it rejects a real violation),
 `pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`. **CI runs exactly these**
 (`.github/workflows/gates.yml`, two parallel jobs split on whether Docker is needed) — adding a gate
 means adding a root script and one line, never workflow-only logic.
@@ -752,9 +752,34 @@ component needs another flag. The `vercel-composition-patterns` skill is install
 **Form state is `react-hook-form`** (§12.1, 7.85.0, in `apps/web` and `apps/admin`). Three
 boundaries hold, and each is already closed elsewhere:
 
-- **`packages/ui` does not depend on it.** Form controls take `value`/`onChange`/`ref` and stay
-  presentational — `ui-is-presentational` enforces it, and it is what keeps UX-79's "re-skinning
+- **The form *controls* do not depend on it; one folder does.** `packages/ui/src/form/`'s controls
+  take `value`/`onChange`/`ref` and stay presentational, which is what keeps UX-79's "re-skinning
   edits tier 1 only" true even if the form library is later replaced.
+
+  **Amended 24 Aug 2026.** This read "`packages/ui` does not depend on it", and the wiring that
+  cost proved too high: every field needed an id constant, `id=`, `error=`, a `register()` spread
+  **and** a matching entry in the UX-111 summary array — three hand-kept copies of one id, which a
+  rename broke silently, with the summary then linking to nothing and no gate seeing it.
+  `packages/ui/src/forms/` is the binding, reachable only as **`@easyesg/ui/forms`**, and it is
+  the sole place in the package that may import a form library. `control` plus `name` is the whole
+  contract: `FormTextField`, `FormPasswordField` and `FormSummary` derive the id, the error and
+  the summary links from the same `control`, so they cannot disagree.
+
+  The rule's *purpose* is intact and now enforced rather than asserted: the presentational
+  controls are untouched, react-hook-form is a **peer** dependency (the apps own the §12.1 pin),
+  and **`ui-forms-out-of-the-barrel`** fails the build if anything outside that folder — the
+  `src/index.ts` barrel above all — imports it. That is what keeps the library out of the graph of
+  the PDF worker and the email renderer, which read this package for UX-127's values and have no
+  DOM. Replacing react-hook-form means deleting one folder. The old sentence also mis-stated its
+  own enforcement: `ui-is-presentational` bans `packages/ui → apps/` and never saw the library
+  question at all.
+
+  Two things the binding settles that are worth knowing before writing a rule. **`required` must
+  carry a message** — `BoundRules` narrows react-hook-form's `required: true` out of the type,
+  because a message-less rule renders no inline text, no `aria-invalid` and no summary entry, so
+  the form just refuses to submit in silence; NFR-79 wanted the message anyway. And the bound
+  controls use `useController`, which subscribes **per field**, where `register` plus a read of
+  `formState.errors` re-renders the whole form on any field's error.
 - **Business validation does not live in the form.** Rules are interpreted from definitions in
   `packages/validation`, shared with `apps/api` so the server verdict and the inline verdict cannot
   drift (§9.8). A rule restated as a client-side schema is a second source of truth. Field-level UX

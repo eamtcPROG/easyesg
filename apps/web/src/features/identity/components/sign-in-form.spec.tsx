@@ -73,7 +73,12 @@ describe('S-01 · sign-in form', () => {
     expect(action).not.toHaveBeenCalled();
     const summary = await screen.findByRole('alert');
     expect(summary).toHaveTextContent('Câteva câmpuri au nevoie de atenție');
-    expect(summary.querySelector('a[href="#sign-in-password"]')).not.toBeNull();
+    // The link resolves to the field's OWN id — the property `@easyesg/ui/forms` guarantees, and
+    // the one the hand-kept copies (constant, `id=`, summary entry) used to break silently on a
+    // rename. Read off the DOM, not pinned to a literal: what must hold is that they agree.
+    const passwordFieldId = screen.getByLabelText('Parolă').id;
+    expect(passwordFieldId).not.toBe('');
+    expect(summary.querySelector(`a[href="#${passwordFieldId}"]`)).not.toBeNull();
   });
 
   it('renders the uniform failure as received — one document for unknown address and wrong password (NFR-64)', async () => {

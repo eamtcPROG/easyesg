@@ -11,5 +11,8 @@
     // happens to be visible" — same reasoning as apps/api, opposite conclusion.
     "types": []
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  // `vitest.config.ts` is in the program deliberately: type-aware lint resolves files through the
+  // tsconfig, and a config file outside it fails `eslint .` with a parsing error rather than
+  // being skipped. apps/admin includes its own configs for the same reason.
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
 }

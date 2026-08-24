@@ -1,18 +1,11 @@
 'use client';
 
 import { evaluatePasswordPolicy, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@easyesg/validation';
-import {
-  Button,
-  Callout,
-  FormErrorSummary,
-  Panel,
-  PasswordField,
-  RequirementList,
-  TextLink,
-} from '@easyesg/ui';
+import { Button, Callout, Panel, RequirementList, TextLink } from '@easyesg/ui';
+import { FormPasswordField, FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { Link } from '@/i18n/navigation';
 import { resetPasswordAction } from '../actions';
@@ -38,8 +31,6 @@ interface SetPasswordInput {
   password: string;
 }
 
-const PASSWORD_FIELD_ID = 'set-password-password';
-
 export function SetPasswordForm({ token }: { token: string }) {
   const t = useTranslations('identity.setPassword');
   const tPolicy = useTranslations('identity.register');
@@ -47,14 +38,11 @@ export function SetPasswordForm({ token }: { token: string }) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<ResetPasswordResult | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors, submitCount },
-  } = useForm<SetPasswordInput>({ mode: 'onTouched' });
+  const { control, handleSubmit } = useForm<SetPasswordInput>({ mode: 'onTouched' });
 
-  const password = watch('password') ?? '';
+  // `useWatch`, not `watch()` — see register-form: one field's subscription, and the API
+  // `react-hooks/incompatible-library` does not refuse to compile.
+  const password = useWatch({ control, name: 'password' }) ?? '';
   const verdict = evaluatePasswordPolicy(password);
 
   const requirements = [
@@ -94,15 +82,9 @@ export function SetPasswordForm({ token }: { token: string }) {
     );
   }
 
-  const summaryItems = errors.password
-    ? [{ fieldId: PASSWORD_FIELD_ID, message: errors.password.message }]
-    : [];
-
   return (
     <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
-      {submitCount > 0 && summaryItems.length > 0 ? (
-        <FormErrorSummary title={t('summaryTitle')} items={summaryItems} />
-      ) : null}
+      <FormSummary control={control} title={t('summaryTitle')} />
 
       {result?.status === API_OUTCOME.Problem ? (
         <Callout
@@ -135,22 +117,22 @@ export function SetPasswordForm({ token }: { token: string }) {
       <Panel className={styles.formPanel}>
         <div className={styles.fields}>
           <div className={styles.passwordGroup}>
-            <PasswordField
-              id={PASSWORD_FIELD_ID}
+            <FormPasswordField
+              control={control}
+              name="password"
               label={t('passwordLabel')}
               help={tPolicy('pasteHint')}
               autoComplete="new-password"
               revealLabel={tPolicy('show')}
               concealLabel={tPolicy('hide')}
-              error={errors.password?.message}
-              {...register('password', {
+              rules={{
                 validate: (value) =>
                   evaluatePasswordPolicy(value ?? '').satisfied ||
                   tPolicy('passwordPolicy', {
                     minimum: PASSWORD_MIN_LENGTH,
                     maximum: PASSWORD_MAX_LENGTH,
                   }),
-              })}
+              }}
             />
             <RequirementList
               items={requirements}

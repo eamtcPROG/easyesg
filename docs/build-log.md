@@ -1627,3 +1627,66 @@ comes from `@easyesg/ui`, and what was added is this screen's composition, not a
 
 **Verified:** `pnpm gates` and `pnpm gates:clean` green, unchanged counts — 7 console component
 tests (two carrying the new assertions) and the browser journey through the same handshake.
+
+## The form binding layer — `@easyesg/ui/forms` · 2026-08-24
+
+"A new layer above the input field — passing `control` from `useForm` should be enough." Measured
+before designing: six touchpoints per field, and three of them were one fact written three times.
+A field needed an `X_FIELD_ID` constant, `id=`, `error={errors.x?.message}`, a `register()` spread,
+an entry in the screen's `summaryItems` array and the array's render guard — and the id, the field
+and the summary entry were hand-kept copies whose disagreement is silent: rename the field and
+UX-111's summary links to nothing, with no gate to notice.
+
+**Two decisions were the owner's, both taken as recommended.** Placement: `packages/ui/src/forms/`
+behind a new `@easyesg/ui/forms` entry, with react-hook-form as a **peer** dependency — over a
+seventh workspace package (a §10.7/§12 amendment for ~80 lines) and over per-app copies (the
+iftamaster drift the root `CLAUDE.md` cites). Scope: field **plus** bound summary, because the two
+are not separable — once a field generates its own id, a hand-written summary can no longer name
+it.
+
+**The rule this amends, and why the amendment is narrow.** The root `CLAUDE.md` said
+"`packages/ui` does not depend on it". The presentational controls in `src/form/` still do not:
+they take `value`/`onChange`/`ref` and know of no form library, `src/forms/` is the only folder
+that imports one, and the `@easyesg/ui` barrel does not re-export it — so the PDF worker and the
+email renderer, which read this package for UX-127's values and have no DOM, never pull it in.
+**`ui-forms-out-of-the-barrel`** (rule 23, with its fixture) fails the build if that changes, which
+is the difference between the guarantee being asserted and being enforced. The old sentence also
+mis-stated its own enforcement: `ui-is-presentational` bans `packages/ui → apps/` and never saw
+the library question.
+
+**The design problem was the id, not the binding.** `control` alone must yield the same id from a
+field and from a summary that may render before it, after it, or not at all — so the scope is a
+module-level `WeakMap` keyed by the control object, seeded from `useId()` by whichever consumer
+renders first. `useId` rather than a counter is load-bearing: a counter increments on a long-lived
+server and starts at zero in the browser, so every form would hydrate mismatched.
+
+**Two findings came out of writing the layer's own tests, and both changed the code.** A rule
+declared `required: true` is valid react-hook-form and produces a `FieldError` with no message —
+so the field renders no inline text, no `aria-invalid` and no summary entry, and the form simply
+refuses to submit in silence. Caught because an `aria-invalid` assertion would not go true.
+`BoundRules` now narrows `required` to a message at the type level, which NFR-79 wanted anyway.
+The second was mine, not the code's: a message-less rule renders *no summary at all*, and asserting
+that it renders an empty one was the wrong expectation — `FormErrorSummary` returning null there is
+correct.
+
+**Three things came along because the migration touched them.** `watch()` became
+`useWatch({ control, name })` in the two password screens, which subscribes to one field and
+silences the two `react-hooks/incompatible-library` warnings that had been standing. The admin
+steps type their form as the **wire DTO**, so `name="email"` is checked against the contract.
+And `packages/ui` gained its first test harness — until now its `test` script was
+`--passWithNoTests`, which was honest while the package was presentational and specimens in
+`design/screens/` were the contract, and stopped being honest the moment it carried behaviour.
+
+**One lint-config change, and it was a red gate first.** The `JSXText` ban fired on the new spec's
+fixtures. Rather than an inline disable or turning the rule off, `restrictedSyntaxBrowser` split
+into `restrictedSyntaxFormatting` and `restrictedSyntaxText`: a fixture's `<button>Continue</button>`
+is never shipped, translated or seen by the parity gate, but a spec that formats a number is still
+an NFR-26 violation, so browser-tier specs keep the formatting half. The exemption sits **last** in
+the array — rule options replace rather than merge, and `apps/web`'s own block would have
+overwritten it anywhere above.
+
+**Verified:** `pnpm gates` green — and the first run reported exit 0 while the log showed three lint
+errors, which is the second time that wrapper has lied and the reason the log gets read rather than
+the exit code. 8 new `packages/ui` tests, 62 web, 7 console, 176 api unit, 27 schema invariants,
+133 api e2e, 35 browser (the tenant identity journeys drive the migrated forms for real). 23
+boundary rules, each still rejecting its fixture.

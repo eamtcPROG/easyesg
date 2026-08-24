@@ -163,6 +163,20 @@ module.exports = {
       to: { path: '^apps/' },
     },
     {
+      name: 'ui-forms-out-of-the-barrel',
+      comment:
+        'packages/ui/src/forms is the ONE place in the design system allowed to import a form ' +
+        'library, and it is reachable only as @easyesg/ui/forms. Nothing else in the package may ' +
+        'import it — the moment src/index.ts does, react-hook-form joins the graph of every ' +
+        'consumer of the barrel, including the PDF worker and the email renderer, which read ' +
+        'this package for UX-127 values and have no DOM to hand it. This is also what keeps the ' +
+        'root CLAUDE.md amendment narrow: the presentational controls stay replaceable-library-' +
+        'agnostic, and swapping react-hook-form means deleting one folder.',
+      severity: 'error',
+      from: { path: '^packages/ui/src', pathNot: '^packages/ui/src/forms' },
+      to: { path: '^packages/ui/src/forms' },
+    },
+    {
       name: 'admin-not-to-api-src',
       comment:
         'DR-11 and P-5: both front ends are ordinary clients of one documented, versioned API. ' +

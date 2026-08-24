@@ -1,19 +1,11 @@
 'use client';
 
 import { evaluatePasswordPolicy, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@easyesg/validation';
-import {
-  Button,
-  Callout,
-  FormErrorSummary,
-  Panel,
-  PasswordField,
-  RequirementList,
-  TextField,
-  TextLink,
-} from '@easyesg/ui';
+import { Button, Callout, Panel, RequirementList, TextLink } from '@easyesg/ui';
+import { FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { Link, useRouter } from '@/i18n/navigation';
 import { registerAction } from '../actions';
@@ -42,9 +34,6 @@ interface RegisterInput {
 /** Light shape check only — deliverability is unknowable client-side; the API is authoritative. */
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const EMAIL_FIELD_ID = 'register-email';
-const PASSWORD_FIELD_ID = 'register-password';
-
 export function RegisterForm() {
   const t = useTranslations('identity.register');
   const tCommon = useTranslations('identity');
@@ -52,14 +41,12 @@ export function RegisterForm() {
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<ApiFailure | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors, submitCount },
-  } = useForm<RegisterInput>({ mode: 'onTouched' });
+  const { control, handleSubmit } = useForm<RegisterInput>({ mode: 'onTouched' });
 
-  const password = watch('password') ?? '';
+  // `useWatch`, not `watch()`: it subscribes to this one field instead of re-rendering the form
+  // on every change, and it is the API React Compiler can memoize — `watch()` is what
+  // `react-hooks/incompatible-library` was warning about here.
+  const password = useWatch({ control, name: 'password' }) ?? '';
   const verdict = evaluatePasswordPolicy(password);
 
   const requirements = [
@@ -92,18 +79,11 @@ export function RegisterForm() {
     });
   });
 
-  const summaryItems = [
-    errors.email ? { fieldId: EMAIL_FIELD_ID, message: errors.email.message } : null,
-    errors.password ? { fieldId: PASSWORD_FIELD_ID, message: errors.password.message } : null,
-  ].filter((item) => item !== null);
-
   const isConflict = failure?.status === API_OUTCOME.Problem && failure.problem.status === 409;
 
   return (
     <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
-      {submitCount > 0 && summaryItems.length > 0 ? (
-        <FormErrorSummary title={t('summaryTitle')} items={summaryItems} />
-      ) : null}
+      <FormSummary control={control} title={t('summaryTitle')} />
 
       {failure?.status === API_OUTCOME.Problem ? (
         <Callout
@@ -135,37 +115,37 @@ export function RegisterForm() {
 
       <Panel className={styles.formPanel}>
         <div className={styles.fields}>
-          <TextField
-            id={EMAIL_FIELD_ID}
+          <FormTextField
+            control={control}
+            name="email"
             label={t('emailLabel')}
             help={t('emailHelp')}
             type="email"
             autoComplete="email"
             inputMode="email"
-            error={errors.email?.message}
-            {...register('email', {
+            rules={{
               required: t('emailMissing'),
               pattern: { value: EMAIL_SHAPE, message: t('emailInvalid') },
-            })}
+            }}
           />
 
           <div className={styles.passwordGroup}>
-            <PasswordField
-              id={PASSWORD_FIELD_ID}
+            <FormPasswordField
+              control={control}
+              name="password"
               label={t('passwordLabel')}
               help={t('pasteHint')}
               autoComplete="new-password"
               revealLabel={t('show')}
               concealLabel={t('hide')}
-              error={errors.password?.message}
-              {...register('password', {
+              rules={{
                 validate: (value) =>
                   evaluatePasswordPolicy(value ?? '').satisfied ||
                   t('passwordPolicy', {
                     minimum: PASSWORD_MIN_LENGTH,
                     maximum: PASSWORD_MAX_LENGTH,
                   }),
-              })}
+              }}
             />
             <RequirementList
               items={requirements}

@@ -76,7 +76,11 @@ describe('S-01 · register form', () => {
     // The three-part message inline, and the UX-111 summary linking to the field.
     const summary = await screen.findByRole('alert');
     expect(summary).toHaveTextContent('Câteva câmpuri au nevoie de atenție');
-    expect(summary.querySelector('a[href="#register-password"]')).not.toBeNull();
+    // The link resolves to the field's OWN id — see sign-in-form.spec.tsx: the agreement is the
+    // property under test, not the literal the two sides used to be kept equal by hand.
+    const passwordFieldId = screen.getByLabelText('Parolă').id;
+    expect(passwordFieldId).not.toBe('');
+    expect(summary.querySelector(`a[href="#${passwordFieldId}"]`)).not.toBeNull();
   });
 
   it('submits, stores the address for the S-02 challenge and exits to /verify', async () => {

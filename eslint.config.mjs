@@ -19,14 +19,18 @@ import sonarjs from 'eslint-plugin-sonarjs';
  * turns off."
  */
 /**
- * NFR-26 and the no-user-facing-text rule, shared by every browser-tier package.
+ * NFR-26's formatting bans, shared by every browser-tier package.
  *
  * Hoisted into a constant rather than repeated because ESLint rule options REPLACE rather than
- * merge: a second `no-restricted-syntax` block matching apps/web would silently drop these four
+ * merge: a second `no-restricted-syntax` block matching apps/web would silently drop these
  * entries from it, and a lint rule that stopped matching looks exactly like a lint rule that
  * passes. Spread into each block instead, so adding a browser tier cannot quietly lose them.
+ *
+ * Split from `restrictedSyntaxText` on 24 Aug 2026: a spec's JSX fixture is not user-facing
+ * text, but a spec asserting a formatted value would still be an NFR-26 violation, so the two
+ * halves need different scopes. See the spec block below.
  */
-const restrictedSyntaxBrowser = [
+const restrictedSyntaxFormatting = [
   {
     selector: 'CallExpression > MemberExpression[property.name="toFixed"]',
     message:
@@ -46,6 +50,18 @@ const restrictedSyntaxBrowser = [
       'NFR-26: declare the format in the app\'s i18n/formats.ts and reach it by name. A ' +
       'formatter constructed here is a format pattern in a component.',
   },
+];
+
+/**
+ * The no-user-facing-text rule — every string a person reads is a catalogue key.
+ *
+ * Separate from the formatting list because it is the one part of the browser tier that does
+ * NOT apply to a spec: a fixture's `<button>Continue</button>` is never shipped, never
+ * translated and invisible to the parity gate by construction. Leaving it on there is how a
+ * component spec ends up carrying an inline disable, which the migration exception below
+ * already names as the failure to avoid.
+ */
+const restrictedSyntaxText = [
   {
     selector: 'JSXText[value=/[^\\s]/]',
     message:
@@ -247,7 +263,7 @@ export default tseslint.config(
       // A-01 — so scoping a11y to the tenant app would exempt the one admin screen that names
       // an accessibility criterion.
       ...jsxA11y.flatConfigs.recommended.rules,
-      'no-restricted-syntax': ['error', ...restrictedSyntaxBrowser, ...restrictedSyntaxVocabulary],
+      'no-restricted-syntax': ['error', ...restrictedSyntaxFormatting, ...restrictedSyntaxText, ...restrictedSyntaxVocabulary],
     },
   },
 
@@ -282,7 +298,8 @@ export default tseslint.config(
             'Every page here is tenant-scoped; a compiler-generated cache key does not know ' +
             'about organization_id and would leak across tenants above the RLS boundary.',
         },
-        ...restrictedSyntaxBrowser,
+        ...restrictedSyntaxFormatting,
+        ...restrictedSyntaxText,
         ...restrictedSyntaxVocabulary,
       ],
 
@@ -409,6 +426,23 @@ export default tseslint.config(
         },
       ],
     },
+  },
+
+  // Browser-tier specs: the no-user-facing-text half only. A fixture's `<button>Continue</button>`
+  // is never shipped, never translated and invisible to the parity gate, so §13.4 has nothing to
+  // say about it — but a spec that formats a number is still an NFR-26 violation, which is why
+  // `restrictedSyntaxFormatting` is respread here rather than the block simply turning the rule
+  // off. The vocabulary selectors stay off, as they are for every spec (see above).
+  //
+  // LAST in the array on purpose: rule options REPLACE rather than merge, so apps/web's own
+  // `no-restricted-syntax` block would overwrite this one if it came after.
+  {
+    files: [
+      'apps/web/**/*.spec.{ts,tsx}',
+      'apps/admin/**/*.spec.{ts,tsx}',
+      'packages/ui/**/*.spec.{ts,tsx}',
+    ],
+    rules: { 'no-restricted-syntax': ['error', ...restrictedSyntaxFormatting] },
   },
 
   // src/i18n/navigation.ts is where the wrappers are created, so it is the one file that must

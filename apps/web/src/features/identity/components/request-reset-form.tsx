@@ -1,6 +1,7 @@
 'use client';
 
-import { Button, Callout, FormErrorSummary, Panel, TextField, TextLink } from '@easyesg/ui';
+import { Button, Callout, Panel, TextLink } from '@easyesg/ui';
+import { FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
@@ -27,19 +28,13 @@ interface RequestResetInput {
 
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const EMAIL_FIELD_ID = 'reset-email';
-
 export function RequestResetForm() {
   const t = useTranslations('identity.resetRequest');
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<RequestResetResult | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, submitCount },
-  } = useForm<RequestResetInput>({ mode: 'onTouched' });
+  const { control, handleSubmit } = useForm<RequestResetInput>({ mode: 'onTouched' });
 
   const submit = handleSubmit((input) => {
     startTransition(async () => {
@@ -63,15 +58,9 @@ export function RequestResetForm() {
     );
   }
 
-  const summaryItems = errors.email
-    ? [{ fieldId: EMAIL_FIELD_ID, message: errors.email.message }]
-    : [];
-
   return (
     <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
-      {submitCount > 0 && summaryItems.length > 0 ? (
-        <FormErrorSummary title={t('summaryTitle')} items={summaryItems} />
-      ) : null}
+      <FormSummary control={control} title={t('summaryTitle')} />
 
       {result?.status === API_OUTCOME.Problem ? (
         <Callout
@@ -95,18 +84,18 @@ export function RequestResetForm() {
 
       <Panel className={styles.formPanel}>
         <div className={styles.fields}>
-          <TextField
-            id={EMAIL_FIELD_ID}
+          <FormTextField
+            control={control}
+            name="email"
             label={t('emailLabel')}
             help={t('emailHelp')}
             type="email"
             autoComplete="username"
             inputMode="email"
-            error={errors.email?.message}
-            {...register('email', {
+            rules={{
               required: t('emailMissing'),
               pattern: { value: EMAIL_SHAPE, message: t('emailInvalid') },
-            })}
+            }}
           />
 
           <Button type="submit" busy={pending}>

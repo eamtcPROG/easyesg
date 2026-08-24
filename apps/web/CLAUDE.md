@@ -87,7 +87,7 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 | --- | --- | --- |
 | root | `pnpm lint` | One flat config at the root; this package has no `lint` script of its own. Next 16 removed `next lint`, so this is the **only** lint gate — AD-9: without it "every gate in AD-13's table silently turns off" |
 | root | `pnpm boundaries` | dependency-cruiser over five roots, `apps/web/src` among them |
-| root | `pnpm boundaries:prove` | Asserts each of the 20 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
+| root | `pnpm boundaries:prove` | Asserts each of the 23 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
 | here | `pnpm typecheck` | `tsc --noEmit` |
 | here | `pnpm build` | Needs **no** environment. Nothing under `[locale]` prerenders, so the build never reaches the message loader, and `src/lib/env.ts` resolves through getters so a secret is a runtime input rather than a build input |
 | here | `pnpm start:dev` / `test` | |
@@ -220,6 +220,19 @@ conditional render, which is how it ends up half-suppressed on one screen.
   React context. Reaching for Zustand or Redux almost always means caching server state twice;
   and a store holding the active organization is the second source of tenancy UX-2 forbids from
   the URL, wearing a different hat.
+
+- **A form field is `@easyesg/ui/forms`, not `TextField` + `register`.** Since 24 Aug 2026 the
+  bound controls take `control` and `name` and derive the rest: `<FormTextField control={control}
+  name="email" label={…} rules={{ required: … }} />`, with `<FormSummary control={control}
+  title={…} />` above them. Reaching for the presentational `TextField` in a form means
+  reintroducing the five hand-kept pieces the layer removed — the id constant, `id=`, `error=`,
+  the `register()` spread and the summary entry — of which the id existed in three copies that a
+  rename broke silently. The unbound controls stay exported for what is not a form: a filter box,
+  a search input, a read-only display. Two consequences worth knowing: `required` must carry a
+  message (the type refuses `required: true`, because a message-less rule renders no text, no
+  `aria-invalid` and no summary entry — the form just refuses to submit in silence), and prefer
+  **`useWatch({ control, name })` over `watch()`** — one field's subscription, and the API
+  `react-hooks/incompatible-library` does not refuse to compile.
 
 - **Nothing here is memoized, and no compiler is doing it for you.** `next.config.ts` sets
   `reactCompiler: false` with a recorded reason (AD-9 — off until the wizard's render profile is

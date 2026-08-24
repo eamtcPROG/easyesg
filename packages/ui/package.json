@@ -6,6 +6,11 @@
   "description": "Design system: tier 1/2/3 token cascade, nine page archetypes, WCAG 2.2 AA components (design_spec.md §11)",
   "type": "module",
   "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./forms": "./src/forms/index.ts",
+    "./src/*": "./src/*"
+  },
   "files": [
     "src"
   ],
@@ -14,6 +19,12 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "jsdom": "catalog:",
+    "react-hook-form": "catalog:",
     "sass": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
@@ -23,5 +34,8 @@
     "lucide-react": "catalog:",
     "radix-ui": "catalog:",
     "react": "catalog:"
+  },
+  "peerDependencies": {
+    "react-hook-form": "catalog:"
   }
 }

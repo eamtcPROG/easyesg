@@ -1,4 +1,5 @@
-import { Button, FormErrorSummary, TextField, TextLink } from '@easyesg/ui';
+import { Button, TextLink } from '@easyesg/ui';
+import { FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'use-intl';
 import type { AdminFactorRequest } from '@easyesg/contracts';
@@ -13,8 +14,8 @@ import type { AdminFactorRequest } from '@easyesg/contracts';
  * screen leaves it mounted and the retyped code completes the same challenge.
  *
  * UX-108: paste and password managers work, and `one-time-code` is what surfaces the platform's
- * own autofill from the SMS/authenticator sheet — the reason this is a plain `TextField` and not
- * a masked control.
+ * own autofill from the authenticator sheet — the reason this is a plain text field and not a
+ * masked control.
  *
  * Drawn by the artboard, deliberately not here, each with its owner: the segmented six-cell code
  * input (a §11.5 inventory addition, with task 27's tenant challenge as its second consumer — a
@@ -22,8 +23,6 @@ import type { AdminFactorRequest } from '@easyesg/contracts';
  * recovery-code route (task 27). `factor.totpHelp` states the five-minute bound in words
  * meanwhile, so the operator is not left to discover it by being timed out.
  */
-const TOTP_FIELD_ID = 'admin-sign-in-totp';
-
 export function FactorStep({
   busy,
   onSubmit,
@@ -34,14 +33,9 @@ export function FactorStep({
   onChangeAccount: () => void;
 }) {
   const t = useTranslations('realm.signIn');
-  const form = useForm<AdminFactorRequest>({ mode: 'onTouched' });
-  const { errors, submitCount } = form.formState;
+  const { control, handleSubmit } = useForm<AdminFactorRequest>({ mode: 'onTouched' });
 
-  const submit = form.handleSubmit(onSubmit);
-
-  const summary = errors.totpCode
-    ? [{ fieldId: TOTP_FIELD_ID, message: errors.totpCode.message }]
-    : [];
+  const submit = handleSubmit(onSubmit);
 
   return (
     <form
@@ -49,18 +43,16 @@ export function FactorStep({
       noValidate
       className="flex flex-col gap-[var(--space-4)]"
     >
-      {submitCount > 0 && summary.length > 0 ? (
-        <FormErrorSummary title={t('summaryTitle')} items={summary} />
-      ) : null}
+      <FormSummary control={control} title={t('summaryTitle')} />
 
-      <TextField
-        id={TOTP_FIELD_ID}
+      <FormTextField
+        control={control}
+        name="totpCode"
         label={t('factor.totpLabel')}
         help={t('factor.totpHelp')}
         autoComplete="one-time-code"
         inputMode="numeric"
-        error={errors.totpCode?.message}
-        {...form.register('totpCode', { required: t('factor.totpMissing') })}
+        rules={{ required: t('factor.totpMissing') }}
       />
 
       <Button type="submit" busy={busy}>

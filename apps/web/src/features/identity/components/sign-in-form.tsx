@@ -1,15 +1,8 @@
 'use client';
 
 import { PROBLEM_TYPE } from '@easyesg/contracts';
-import {
-  Button,
-  Callout,
-  FormErrorSummary,
-  Panel,
-  PasswordField,
-  TextField,
-  TextLink,
-} from '@easyesg/ui';
+import { Button, Callout, Panel, TextLink } from '@easyesg/ui';
+import { FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
@@ -49,20 +42,13 @@ interface SignInInput {
 /** Light shape check only — the API is authoritative, and NFR-64 keeps its answer uniform. */
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const EMAIL_FIELD_ID = 'sign-in-email';
-const PASSWORD_FIELD_ID = 'sign-in-password';
-
 export function SignInForm({ returnTo }: { returnTo?: string }) {
   const t = useTranslations('identity.signIn');
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<SignInFailure>(undefined);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, submitCount },
-  } = useForm<SignInInput>({ mode: 'onTouched' });
+  const { control, handleSubmit } = useForm<SignInInput>({ mode: 'onTouched' });
 
   const submit = handleSubmit((input) => {
     setFailure(undefined);
@@ -82,20 +68,13 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
     });
   });
 
-  const summaryItems = [
-    errors.email ? { fieldId: EMAIL_FIELD_ID, message: errors.email.message } : null,
-    errors.password ? { fieldId: PASSWORD_FIELD_ID, message: errors.password.message } : null,
-  ].filter((item) => item !== null);
-
   const problem = failure?.status === API_OUTCOME.Problem ? failure.problem : null;
   const isUnverified = problem?.type === PROBLEM_TYPE.EmailUnverified;
   const isLocked = problem?.type === PROBLEM_TYPE.AccountLocked;
 
   return (
     <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
-      {submitCount > 0 && summaryItems.length > 0 ? (
-        <FormErrorSummary title={t('summaryTitle')} items={summaryItems} />
-      ) : null}
+      <FormSummary control={control} title={t('summaryTitle')} />
 
       {problem ? (
         <Callout
@@ -131,27 +110,27 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
 
       <Panel className={styles.formPanel}>
         <div className={styles.fields}>
-          <TextField
-            id={EMAIL_FIELD_ID}
+          <FormTextField
+            control={control}
+            name="email"
             label={t('emailLabel')}
             type="email"
             autoComplete="username"
             inputMode="email"
-            error={errors.email?.message}
-            {...register('email', {
+            rules={{
               required: t('emailMissing'),
               pattern: { value: EMAIL_SHAPE, message: t('emailInvalid') },
-            })}
+            }}
           />
 
-          <PasswordField
-            id={PASSWORD_FIELD_ID}
+          <FormPasswordField
+            control={control}
+            name="password"
             label={t('passwordLabel')}
             autoComplete="current-password"
             revealLabel={t('show')}
             concealLabel={t('hide')}
-            error={errors.password?.message}
-            {...register('password', { required: t('passwordMissing') })}
+            rules={{ required: t('passwordMissing') }}
           />
 
           <Button type="submit" busy={pending}>
