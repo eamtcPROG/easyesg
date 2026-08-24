@@ -465,9 +465,21 @@ Shared with the other NestJS/Next.js projects. Real files live in `.agents/skill
 
 - **nestjs-best-practices** — modules, DI, security, performance. Apply when writing or
   reviewing anything in `apps/api`.
-- **vercel-react-best-practices** — React/Next.js performance rules. Apply in `apps/web`.
+- **vercel-react-best-practices** — React/Next.js performance rules. Apply in `apps/web`,
+  `apps/admin` and `packages/ui`. **Corrected 24 Aug 2026:** this line read "Apply in `apps/web`",
+  which left the console — 33 Client Components with no server tier to absorb a render — outside
+  the only React guidance the repo names. It is not a Next.js skill; `apps/web` is where its
+  `server-` and `async-` categories land, and `apps/admin` is where `rerender-` and `client-` do.
 - **vercel-composition-patterns** — compound components, render props, React 19 APIs.
   Apply in `packages/ui` and any component API that is growing boolean props.
+
+**A skill is loaded and read against the diff, not recalled.** Every finding a review has raised on
+the front ends was invisible to all nine gates — the wrong data-fetching idiom, a screen that did
+not match its artboard, components in the wrong folder, and no `useMemo`/`useCallback`/`memo()`
+anywhere in three React workspaces while `reactCompiler: false`. Gates prove code runs; they say
+nothing about whether it belongs. Each app's `CLAUDE.md` carries a **"Before you call it done"**
+checklist making that pass part of finishing a task, and a rule considered and declined with a
+reason is a decision — a rule never opened is an omission wearing the same clothes.
 
 Where a skill and this project's architecture disagree, **the architecture wins** — these
 are general-purpose guides, not written against `architecture.md`.

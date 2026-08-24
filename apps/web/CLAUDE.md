@@ -221,6 +221,34 @@ conditional render, which is how it ends up half-suppressed on one screen.
   and a store holding the active organization is the second source of tenancy UX-2 forbids from
   the URL, wearing a different hat.
 
+- **Nothing here is memoized, and no compiler is doing it for you.** `next.config.ts` sets
+  `reactCompiler: false` with a recorded reason (AD-9 — off until the wizard's render profile is
+  measured), so the escape hatch the `vercel-react-best-practices` skill names in
+  `rerender-memo.md` — *if React Compiler is enabled, manual memoization is not necessary* — does
+  **not** apply in this repo. The repo took the measure-first branch and then never staffed the
+  manual one: as of 24 Aug 2026 there is not one `useMemo`, `useCallback` or `memo()` in
+  `apps/web`, `apps/admin` or `packages/ui`. Raised by the project owner, 24 Aug 2026.
+
+  Read that as "the decision has no owner", not as "add memoization everywhere" — the same skill's
+  `rerender-simple-expression-in-memo` says a simple expression with a primitive result must stay
+  unwrapped, because the dependency compare costs more than the expression. What it does mean is
+  that in a **Client Component** the three cases below are yours to handle by hand, and nothing
+  will flag them:
+
+  - a non-primitive (object, array, function) passed as a prop into a `memo()`'d child, or into a
+    `useEffect`/`useMemo` dependency array — recreated each render, it defeats the thing it feeds;
+  - genuinely expensive derivation — parsing, sorting, grouping a list — recomputed per render;
+  - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
+    passed to a plain DOM element observes nothing, and wrapping it is noise.
+
+  Only seven files here are Client Components, all under `features/identity/`, and none currently
+  has a case — Server Components have no render loop to optimise, which is why this has cost
+  nothing yet. It starts to bite at the wizard (S-07…S-12), autosave's IndexedDB queue and the
+  three polls. `eslint-plugin-react-hooks` 7.1.1 already runs the compiler's static analysis and
+  will tell you when a component is *un*-compilable (`react-hooks/incompatible-library` fires on
+  RHF's `watch()` in two forms today) — advisory while the compiler is off, and worth reading as
+  the signal it is.
+
 ## Before you add a screen
 
 - It has an `S-nn` in `design_spec.md` §4.4, or it is one of the public/legal/help surfaces that
@@ -241,6 +269,32 @@ conditional render, which is how it ends up half-suppressed on one screen.
   that resolves it (NFR-79) — the "what now" slot is required, not optional.
 - No internal identifier reaches the screen: no `FR-`/`UC-`/`S-`, no enum member, no taxonomy
   element key, no problem-type slug.
+
+## Before you call it done
+
+The root `CLAUDE.md` requires `pnpm gates`, and that is necessary rather than sufficient: the gates
+prove the code *runs*, not that it *belongs here*. Every finding the project owner has raised on
+this app and on `apps/admin` was invisible to all nine — a screen carrying the wrong idiom, a
+screen that did not match its artboard, components in the wrong folder, no memoization anywhere.
+Gates cannot see any of those, so a convention pass is part of finishing, not a courtesy after it.
+
+Run it against **the diff**, not from memory, and in this order:
+
+1. **Load the `vercel-react-best-practices` skill and read the diff against it.** Every task that
+   adds or edits a `.tsx` file under `apps/web`, no exceptions — 70 rules in 8 categories, and its
+   own priority order is the one to use: waterfalls and bundle size are CRITICAL, re-render
+   optimisation is MEDIUM. The categories that bite hardest here are `server-` and `async-`,
+   because most of this app is Server Components; `rerender-` applies only inside the seven
+   `'use client'` files, where the memoization trap above says the work is manual.
+2. **Load `vercel-composition-patterns`** when the change adds a component API or a third boolean
+   prop to an existing one — that prop is the smell UX-89 names, and the skill is installed for it.
+3. **Re-read this file's traps and the checklist above** against what you actually wrote. They are
+   not background reading: each one is a defect that already happened here once.
+4. **Re-read the screen's own source** — `design_spec.md` §4.4's `S-nn` row and the artboard in
+   `design/screens/` — and check the built screen against it. "I read it before starting" is how
+   A-01 shipped without its staged flow; the check is against the finished thing.
+5. **Say what you did not apply, and why.** A rule considered and declined with a reason is a
+   decision; a rule never opened is an omission wearing the same clothes.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

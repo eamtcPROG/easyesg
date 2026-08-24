@@ -168,6 +168,29 @@ else; treat it as an incident, not a refactor.
   nowhere in §5.4, §10.4 or the edge configuration; adding one is an amendment to those sections,
   not a ticket. TanStack Query's `refetchInterval` is the shape of every screen here.
 
+- **Nothing is memoized, no compiler is doing it for you, and this app has none of web's cover.**
+  As of 24 Aug 2026 there is not one `useMemo`, `useCallback` or `memo()` in `apps/web`,
+  `apps/admin` or `packages/ui` — raised by the project owner. The escape hatch the
+  `vercel-react-best-practices` skill names in `rerender-memo.md` (*if React Compiler is enabled,
+  manual memoization is not necessary*) does not apply: `apps/web` disables it deliberately
+  (`reactCompiler: false`, AD-9) and `vite.config.ts` here never had it.
+
+  It matters more here than there, for two reasons that are this app's defining properties. **There
+  is no server tier**, so all 33 components are Client Components — `apps/web` gets away with it
+  because only seven of its files are, and a Server Component has no render loop to optimise.
+  And **every screen polls** (the trap above): a `refetchInterval` re-renders its subscriber on
+  every tick whether or not the data changed, so a list derived inline — sorted, grouped, filtered
+  by the URL's search params — redoes that work on a timer, forever, on screens whose whole job is
+  a table.
+
+  That is a reason to memoize the derivation, not to memoize by reflex: the same skill's
+  `rerender-simple-expression-in-memo` says a simple expression with a primitive result must stay
+  unwrapped, because comparing the dependencies costs more than recomputing. Three cases are real
+  and nothing will flag them — a non-primitive passed into a `memo()`'d child or a dependency
+  array, an expensive derivation, and a handler whose identity a child or effect actually observes.
+  A-01 has none of them, which is why the absence has cost nothing yet; A-02…A-18 are tables and
+  queues, and they are where it starts.
+
 ## Before you add a screen
 
 - It has an `A-nn` in `design_spec.md` §4.4. All eighteen already exist as routes — you are filling
@@ -193,3 +216,32 @@ else; treat it as an incident, not a refactor.
 - If it shows a ledger, entries are superseded and never edited, and the interface offers no
   affordance implying otherwise (UX-126) — the append-only guarantee is a database privilege
   (DR-6), so an edit control would be a lie the database refuses.
+
+## Before you call it done
+
+The root `CLAUDE.md` requires `pnpm gates`, and that is necessary rather than sufficient: the gates
+prove the code *runs*, not that it *belongs here*. Every finding the project owner has raised on
+this app was invisible to all nine and to both e2e suites — sign-in carrying web's Server-Action
+idiom where the console's data layer is Query, a screen that did not match its artboard,
+components loose at `realm/` root instead of in `components/`, no memoization anywhere. A green
+pipeline said nothing about any of them, so the convention pass is part of finishing rather than
+a courtesy after it.
+
+Run it against **the diff**, not from memory, and in this order:
+
+1. **Load the `vercel-react-best-practices` skill and read the diff against it.** Every task that
+   adds or edits a `.tsx` file here, no exceptions. The root skills table used to scope that skill
+   to `apps/web`; that was wrong and is corrected — this app is 33 Client Components with no server
+   tier, which makes it the one with *more* to answer for, not less. Its `rerender-` and `client-`
+   categories are the ones that bite here (the memoization trap above, and Query's own caching);
+   `server-` mostly does not apply, and saying so is part of having read it.
+2. **Load `vercel-composition-patterns`** when the change adds a component API or a third boolean
+   prop to an existing one — that prop is the smell UX-89 names, and the skill is installed for it.
+3. **Re-read this file's traps and the checklist above** against what you actually wrote. Each one
+   is a defect that already happened here once; the DOM-node reuse trap cost a real leak.
+4. **Re-read the screen's own source** — `design_spec.md` §4.4's `A-nn` row and the artboard in
+   `design/screens/EasyESG Admin Console Screens.dc.html` — and check the finished screen against
+   it. "I read it before starting" is exactly how A-01 shipped without its staged flow; the check
+   is against the built thing, not the intention.
+5. **Say what you did not apply, and why.** A rule considered and declined with a reason is a
+   decision; a rule never opened is an omission wearing the same clothes.
