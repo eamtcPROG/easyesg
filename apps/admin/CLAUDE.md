@@ -16,9 +16,15 @@ token cascade, 15 feature folders across two bounded contexts, 7 boundary rules 
 and **A-01 live end to end**: `src/realm/` holds the api client (the web seam's shape —
 `credentials: 'include'`, `Accept-Language: ro`, the shared `@easyesg/contracts` outcome
 readers), the session view (a TanStack Query entry over `GET /auth/admin/session`; the session
-itself is the sealed httpOnly cookie the API sets and rotates, OQ-17), the sign-in screen
-(email + password + mandatory TOTP, FR-75, built from the §11.5 inventory), and the interim
-`SessionStrip` (task 67's row owns replacing it). `_realm.tsx`'s `beforeLoad` is the
+itself is the sealed httpOnly cookie the API sets and rotates, OQ-17), and — under
+`realm/components/`, the same anatomy every feature folder has — the sign-in screen and the
+interim `SessionStrip` (task 67's row owns replacing it). Sign-in is **A-01's two-step
+handshake** (24 Aug 2026 review): the credential opens a sealed five-minute challenge, the
+factor step names the server-verified address, mutations ride `useMutation` with `ApiOutcome`
+as the resolved value. The screen carries the artboard's card anatomy and realm statement; its
+docblock lists what is deliberately deferred (segmented code input → task 27's inventory
+addition, recovery routes → task 27, the LOGGED audit note → task 28) and the one recorded
+divergence (the artboard's full-dark ground). `_realm.tsx`'s `beforeLoad` is the
 closed-by-default guard: no session → A-01 with `?redirect=` carried, sanitized on return.
 `e2e/admin/` drives the journey in a real browser against the built bundle on its own origin,
 so CORS, the `SameSite=Strict` cookie and the Origin proof are exercised for real.

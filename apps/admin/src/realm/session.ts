@@ -2,8 +2,10 @@ import { queryOptions } from '@tanstack/react-query';
 import {
   API_OUTCOME,
   type AdminAccount,
+  type AdminChallengeRequest,
+  type AdminChallengeResponse,
+  type AdminFactorRequest,
   type AdminSessionResponse,
-  type AdminSignInRequest,
   type ApiOutcome,
 } from '@easyesg/contracts';
 import { api } from './api-client';
@@ -17,7 +19,9 @@ import { api } from './api-client';
  * identity block — as a TanStack Query entry, because "am I signed in" is server state like any
  * other (§11.2) and the router's guard and the strip both read it.
  *
- * §12.5.6's task-23 rows carry the whole design: 8 h idle / 12 h absolute, `SameSite=Strict`,
+ * Sign-in is A-01's two-step handshake (24 Aug 2026): the credential opens a sealed
+ * five-minute challenge, the factor completes it — both cookies the api's, neither readable
+ * here. §12.5.6's task-23 rows carry the whole design: 8 h idle / 12 h absolute, `SameSite=Strict`,
  * mandatory TOTP (FR-75), and the CSRF stance the api enforces (Origin proof + CORS pinned to
  * this origin — which is why `vite.config.ts` deliberately has no dev proxy).
  */
@@ -45,9 +49,23 @@ export const adminSessionQuery = queryOptions({
   retry: false,
 });
 
-export function signIn(command: AdminSignInRequest): Promise<ApiOutcome<AdminAccount>> {
+/** UC-68 step one: the credential. The sealed five-minute challenge rides an httpOnly cookie
+ *  the api set; what returns is only whose factor is awaited, and until when. */
+export function beginSignIn(
+  command: AdminChallengeRequest,
+): Promise<ApiOutcome<AdminChallengeResponse>> {
+  return api.post<AdminChallengeRequest, AdminChallengeResponse>(
+    `${ADMIN_SESSION_PATH}/challenge`,
+    command,
+  );
+}
+
+/** UC-68 step two: the factor against the challenge cookie. Success answers the operator. */
+export function completeSignIn(
+  command: AdminFactorRequest,
+): Promise<ApiOutcome<AdminAccount>> {
   return api
-    .post<AdminSignInRequest, AdminSessionResponse>(ADMIN_SESSION_PATH, command)
+    .post<AdminFactorRequest, AdminSessionResponse>(ADMIN_SESSION_PATH, command)
     .then((outcome) =>
       outcome.status === API_OUTCOME.Ok
         ? { ...outcome, value: outcome.value.account }

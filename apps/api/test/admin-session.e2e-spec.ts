@@ -8,8 +8,13 @@ import { configureHttpApp } from '../src/main.http';
 import { Argon2PasswordHasher } from '../src/infrastructure/adapters/password-hasher/argon2-password.hasher';
 import { JwtAdminTokens } from '../src/infrastructure/adapters/token-signer/jwt-admin-tokens';
 import {
+  ADMIN_CHALLENGE_COOKIE,
   ADMIN_SESSION_COOKIE,
 } from '../src/modules/platform/admin/constants/admin-session.constants';
+import {
+  ADMIN_CHALLENGE_KIND,
+  sealAdminChallenge,
+} from '../src/modules/platform/admin/domain/admin-challenge-codec';
 import {
   sealAdminCookie,
   unsealAdminCookie,
@@ -19,7 +24,8 @@ import { totpCodeAt } from '../src/modules/platform/admin/domain/totp';
 
 /**
  * The admin realm end to end (task 23's stated deliverable: admin sign-in/out through the
- * public surface, TOTP challenged on every sign-in).
+ * public surface, TOTP challenged on every sign-in — as A-01's two-step handshake since the
+ * 24 Aug 2026 review: credential → sealed five-minute challenge cookie → factor → session).
  *
  * What only this suite can prove, beyond the use-case specs: that the sealed cookie round-trips
  * the real controller with §12.5.6's attributes; that NO token ever appears in a response body
@@ -60,16 +66,19 @@ const sessionBody = (response: { body: unknown }): AdminSessionBody =>
 const problemType = (response: { body: unknown }): string =>
   (response.body as { type: string }).type;
 
-/** The sealed value out of this response's Set-Cookie, attribute-checked on the way. */
-const sealedCookieOf = (response: { headers: Record<string, unknown> }): string => {
+/** The named cookie's sealed value out of this response's Set-Cookie, attributes checked. */
+const sealedCookieOf = (
+  response: { headers: Record<string, unknown> },
+  name: string = ADMIN_SESSION_COOKIE,
+): string => {
   const header = ([] as string[]).concat(response.headers['set-cookie'] as string[]).join('\n');
-  expect(header).toContain(`${ADMIN_SESSION_COOKIE}=`);
+  expect(header).toContain(`${name}=`);
   expect(header).toContain('HttpOnly');
   expect(header).toContain('Secure');
   expect(header).toContain('SameSite=Strict');
   expect(header).toContain('Path=/');
-  const match = /easyesg_admin_session=([^;]*)/u.exec(header);
-  if (!match) throw new Error('no admin session cookie on the response');
+  const match = new RegExp(`${name}=([^;]*)`, 'u').exec(header);
+  if (!match || !match[1]) throw new Error(`no ${name} cookie on the response`);
   return match[1];
 };
 
@@ -141,23 +150,49 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
     );
   };
 
-  const signIn = (email: string, overrides: Partial<Record<'password' | 'totpCode', string>> = {}) =>
+  /** UC-68 step one. */
+  const beginSignIn = (email: string, overrides: Partial<Record<'password', string>> = {}) =>
+    http()
+      .post('/api/v1/auth/admin/session/challenge')
+      .set('origin', ADMIN_ORIGIN)
+      .send({ email, password: PASSWORD, ...overrides });
+
+  /** UC-68 step two, against a sealed challenge from step one. */
+  const completeSignIn = (challengeCookie: string, totpCode: string = currentCode()) =>
     http()
       .post('/api/v1/auth/admin/session')
       .set('origin', ADMIN_ORIGIN)
-      .send({ email, password: PASSWORD, totpCode: currentCode(), ...overrides });
+      .set('cookie', `${ADMIN_CHALLENGE_COOKIE}=${challengeCookie}`)
+      .send({ totpCode });
+
+  /** The whole happy handshake, asserted as such — for tests whose subject is what follows. */
+  const signIn = async (email: string) => {
+    const opened = await beginSignIn(email).expect(201);
+    return completeSignIn(sealedCookieOf(opened, ADMIN_CHALLENGE_COOKIE)).expect(201);
+  };
 
   it('signs in with credential + code, holds the session in the cookie only, and signs out', async () => {
     const email = addressFor('happy');
     await provision(email);
 
-    const signedIn = await signIn(email).expect(201);
+    const opened = await beginSignIn(email).expect(201);
+    // Step one names whose factor is awaited and until when — and NOTHING sealed in the body.
+    const challenge = (opened.body as Envelope<{ email: string; expiresAt: number }>).object;
+    expect(challenge.email).toBe(email);
+    expect(challenge.expiresAt).toBeGreaterThan(Date.now());
+    const challengeCookie = sealedCookieOf(opened, ADMIN_CHALLENGE_COOKIE);
+
+    const signedIn = await completeSignIn(challengeCookie).expect(201);
     const body = sessionBody(signedIn);
     expect(body.account.email).toBe(email);
     expect(body.account.role).toBe('platform_administrator');
     // The design's whole point, asserted on the wire: no token in any readable body (OQ-17).
+    expect(JSON.stringify(opened.body)).not.toContain(ADMIN_CHALLENGE_KIND);
     expect(JSON.stringify(signedIn.body)).not.toContain('accessToken');
     expect(JSON.stringify(signedIn.body)).not.toContain('refreshToken');
+    // Completion sets the session and clears the challenge in one response.
+    const completionHeader = String(signedIn.headers['set-cookie']);
+    expect(completionHeader).toContain(`${ADMIN_CHALLENGE_COOKIE}=;`);
     const sealed = sealedCookieOf(signedIn);
 
     const current = await http()
@@ -187,11 +222,43 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
     const email = addressFor('factor');
     await provision(email);
 
-    const wrongPassword = await signIn(email, { password: 'Gresita999!' }).expect(401);
+    const wrongPassword = await beginSignIn(email, { password: 'Gresita999!' }).expect(401);
     expect(problemType(wrongPassword)).toBe('https://easyesg.md/problems/credential-invalid');
 
-    const wrongCode = await signIn(email, { totpCode: '000000' }).expect(401);
+    const opened = await beginSignIn(email).expect(201);
+    const challengeCookie = sealedCookieOf(opened, ADMIN_CHALLENGE_COOKIE);
+    const wrongCode = await completeSignIn(challengeCookie, '000000').expect(401);
     expect(problemType(wrongCode)).toBe('https://easyesg.md/problems/factor-invalid');
+
+    // A-01's "failed factor" is recoverable: the SAME challenge accepts the retyped code.
+    await completeSignIn(challengeCookie).expect(201);
+  });
+
+  it('refuses a lapsed or forged challenge with the answer that restarts sign-in', async () => {
+    const email = addressFor('lapsed');
+    await provision(email);
+
+    const rows: { id: string }[] = await db.query(
+      `SELECT id FROM identity.admin_account WHERE email = $1`,
+      [email],
+    );
+    // Crafted with the api's own codec and key — only the clock is aged past the five minutes.
+    const lapsed = sealAdminChallenge(
+      {
+        kind: ADMIN_CHALLENGE_KIND,
+        accountId: rows[0].id,
+        email,
+        role: 'platform_administrator',
+        issuedAt: Date.now() - 6 * 60 * 1000,
+      },
+      tokens.cookieKey(),
+    );
+    const refused = await completeSignIn(lapsed).expect(401);
+    expect(problemType(refused)).toBe('https://easyesg.md/problems/authentication-required');
+
+    // A session cookie presented as a challenge dies on the kind discriminator, not by luck.
+    const session = sealedCookieOf(await signIn(email));
+    await completeSignIn(session).expect(401);
   });
 
   it('refuses a state-changing request from any other origin (§12.5.6 CSRF row)', async () => {
@@ -199,22 +266,27 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
     await provision(email);
 
     await http()
+      .post('/api/v1/auth/admin/session/challenge')
+      .set('origin', 'http://evil.test')
+      .send({ email, password: PASSWORD })
+      .expect(403);
+    await http()
       .post('/api/v1/auth/admin/session')
       .set('origin', 'http://evil.test')
-      .send({ email, password: PASSWORD, totpCode: currentCode() })
+      .send({ totpCode: currentCode() })
       .expect(403);
   });
 
   it('grants CORS with credentials to exactly the console origin', async () => {
     const preflight = await http()
-      .options('/api/v1/auth/admin/session')
+      .options('/api/v1/auth/admin/session/challenge')
       .set('origin', ADMIN_ORIGIN)
       .set('access-control-request-method', 'POST');
     expect(preflight.headers['access-control-allow-origin']).toBe(ADMIN_ORIGIN);
     expect(preflight.headers['access-control-allow-credentials']).toBe('true');
 
     const foreign = await http()
-      .options('/api/v1/auth/admin/session')
+      .options('/api/v1/auth/admin/session/challenge')
       .set('origin', 'http://evil.test')
       .set('access-control-request-method', 'POST');
     expect(foreign.headers['access-control-allow-origin']).toBeUndefined();
@@ -223,7 +295,7 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
   it('rotates server-side when the access token expires, resealing the successor cookie', async () => {
     const email = addressFor('rotate');
     await provision(email);
-    const sealed = sealedCookieOf(await signIn(email).expect(201));
+    const sealed = sealedCookieOf(await signIn(email));
 
     // Age only the ACCESS half: reseal the same live refresh token behind an already-expired
     // JWT — the resolve path's exact mid-session state fifteen minutes after any sign-in.
@@ -269,10 +341,10 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
       if (failure % 4 === 3) {
         await db.query(`DELETE FROM identity.auth_attempt WHERE attempt_key LIKE '%task23-%'`);
       }
-      await signIn(email, { password: 'Gresita999!' }).expect(401);
+      await beginSignIn(email, { password: 'Gresita999!' }).expect(401);
     }
 
-    const locked = await signIn(email).expect(403);
+    const locked = await beginSignIn(email).expect(403);
     expect(problemType(locked)).toBe('https://easyesg.md/problems/admin-account-locked');
 
     // The provisioning CLI's --unlock is this one statement (its entrypoint's header says so);
@@ -281,6 +353,10 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
       `UPDATE identity.admin_account SET locked_at = NULL, failed_attempts = 0 WHERE email = $1`,
       [email],
     );
-    await signIn(email).expect(201);
+    // The §12.5.6 window is a separate control from the lockout and does not clear with it —
+    // and the handshake spends TWO of its slots per full sign-in (challenge + factor), so the
+    // test drains its own rows before proving the released account signs in.
+    await owner.query(`DELETE FROM identity.auth_attempt WHERE attempt_key LIKE '%task23-%'`);
+    await signIn(email);
   });
 });

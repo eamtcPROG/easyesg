@@ -6,7 +6,9 @@ import { currentTotpCode } from './support/totp';
 /**
  * Task 23's stated deliverable, literally: **admin sign-in/out e2e through the public
  * surface** — the console as an ordinary, cross-origin client of the one API (DR-11, AD-9,
- * OQ-17), TOTP challenged on every sign-in (FR-75).
+ * OQ-17), TOTP challenged on every sign-in (FR-75), as A-01's two-step handshake since the
+ * 24 Aug 2026 review: the credential opens a sealed five-minute challenge, the factor screen
+ * names the server-verified address, the code completes it.
  *
  * The journey runs against the built console bundle on its own origin, so the whole §12.5.6
  * posture is exercised for real: CORS with credentials, the `SameSite=Strict` cookie flowing
@@ -22,11 +24,20 @@ test.afterAll(async () => {
   await cleanupOperators(RUN_PREFIX);
 });
 
-async function signIn(page: Page, email: string, code = currentTotpCode(TOTP_SECRET)) {
+/** UC-68 step one, through the screen. */
+async function beginSignIn(page: Page, email: string) {
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Continuă' }).click();
+  // The factor step names the address the SERVER verified — the handshake's point.
+  await expect(page.getByRole('heading', { name: 'Confirmă al doilea factor' })).toBeVisible();
+  await expect(page.getByText(email)).toBeVisible();
+}
+
+async function signIn(page: Page, email: string, code = currentTotpCode(TOTP_SECRET)) {
+  await beginSignIn(page, email);
   await page.getByLabel('Cod de verificare').fill(code);
-  await page.getByRole('button', { name: 'Intră în consolă' }).click();
+  await page.getByRole('button', { name: 'Continuă în consolă' }).click();
 }
 
 test('the realm is closed by default, admits credential + code, and signs out (UC-68)', async ({
@@ -58,7 +69,7 @@ test('the realm is closed by default, admits credential + code, and signs out (U
   await page.waitForURL('**/sign-in?*redirect=*');
 });
 
-test('a wrong code refuses distinctly — the factor is disclosed only past the credential bar', async ({
+test('a wrong code refuses distinctly and the challenge survives for the retype', async ({
   page,
 }) => {
   const email = emailFor('factor');
@@ -67,8 +78,12 @@ test('a wrong code refuses distinctly — the factor is disclosed only past the 
   await page.goto('/sign-in');
   await signIn(page, email, '000000');
 
-  // The api's resolved wording, as received — the screen branches on nothing (task 23).
+  // The api's resolved wording, as received — and the flow STAYS on the factor step: A-01's
+  // "failed factor" is recoverable, so the retyped code completes the same challenge.
   await expect(page.getByText('Cod de verificare incorect')).toBeVisible();
+  await page.getByLabel('Cod de verificare').fill(currentTotpCode(TOTP_SECRET));
+  await page.getByRole('button', { name: 'Continuă în consolă' }).click();
+  await page.waitForURL('**/organizations');
 });
 
 test('axe finds no violations on A-01', async ({ page }) => {

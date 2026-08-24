@@ -14,8 +14,9 @@ import {
 } from './interfaces/admin-session-store.interface';
 import { ADMIN_TOKENS, type AdminTokens } from './interfaces/admin-token.interface';
 import { AdminSessionService } from './services/admin-session.service';
+import { BeginAdminSignIn } from './use-cases/begin-admin-sign-in.use-case';
+import { CompleteAdminSignIn } from './use-cases/complete-admin-sign-in.use-case';
 import { ResolveAdminSession } from './use-cases/resolve-admin-session.use-case';
-import { SignInAdmin } from './use-cases/sign-in-admin.use-case';
 import { SignOutAdmin } from './use-cases/sign-out-admin.use-case';
 
 /**
@@ -23,7 +24,8 @@ import { SignOutAdmin } from './use-cases/sign-out-admin.use-case';
  *
  * Platform administration behind the separate admin realm (NFR-65). Task 23 fills in FR-75:
  * the realm's token handler (OQ-17 — `/auth/admin/session` on this api, sealed-cookie
- * sessions, mandatory TOTP per §12.5.6's task-23 rows). FR-76/80/82/83 are tasks 67–68.
+ * sessions, mandatory TOTP per §12.5.6's task-23 rows; reshaped to A-01's two-step credential →
+ * factor handshake by the 24 Aug 2026 review). FR-76/80/82/83 are tasks 67–68.
  *
  * **What this module deliberately borrows from `identity`, and why that is not a boundary
  * breach:** the Argon2id hasher port, the refresh-token mint/hash, and the throttle domain
@@ -62,14 +64,16 @@ const httpProviders: Provider[] = [
       new JwtAdminTokens(config.get('auth.adminSecret', { infer: true })),
   },
   {
-    provide: SignInAdmin,
-    inject: [ADMIN_SESSION_STORE, ADMIN_PASSWORD_HASHER, ADMIN_TOKENS, CLOCK],
-    useFactory: (
-      store: AdminSessionStore,
-      hasher: PasswordHasher,
-      tokens: AdminTokens,
-      now: Clock,
-    ) => new SignInAdmin(store, hasher, tokens, now),
+    provide: BeginAdminSignIn,
+    inject: [ADMIN_SESSION_STORE, ADMIN_PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AdminSessionStore, hasher: PasswordHasher, now: Clock) =>
+      new BeginAdminSignIn(store, hasher, now),
+  },
+  {
+    provide: CompleteAdminSignIn,
+    inject: [ADMIN_SESSION_STORE, ADMIN_TOKENS, CLOCK],
+    useFactory: (store: AdminSessionStore, tokens: AdminTokens, now: Clock) =>
+      new CompleteAdminSignIn(store, tokens, now),
   },
   {
     provide: ResolveAdminSession,

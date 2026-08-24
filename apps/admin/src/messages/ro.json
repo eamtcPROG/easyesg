@@ -13,23 +13,33 @@
   },
   "realm": {
     "signIn": {
-      "title": "Autentificare operator",
-      "subtitle": "Consola administrativă cere parola și codul din aplicația de autentificare, la fiecare intrare.",
-      "emailLabel": "Adresa de e-mail",
-      "emailMissing": "Adresa de e-mail lipsește, deci nu știm ce cont de operator să deschidem. Completează adresa înainte de a continua.",
-      "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci autentificarea nu poate începe. Verifică adresa și corecteaz-o.",
-      "passwordLabel": "Parolă",
-      "passwordMissing": "Parola lipsește, deci nu îți putem verifica identitatea. Completează parola înainte de a continua.",
-      "totpLabel": "Cod de verificare",
-      "totpHelp": "Cele șase cifre din aplicația de autentificare. Codul se schimbă la 30 de secunde.",
-      "totpMissing": "Codul de verificare lipsește, iar al doilea factor este obligatoriu pe această suprafață. Completează codul înainte de a continua.",
-      "show": "Arată",
-      "hide": "Ascunde",
-      "submit": "Intră în consolă",
+      "kicker": "Administrarea platformei",
+      "credential": {
+        "title": "Autentificare operator",
+        "lede": "Consola cere parola și, la fiecare intrare, codul din aplicația de autentificare.",
+        "emailLabel": "Adresa de e-mail",
+        "emailMissing": "Adresa de e-mail lipsește, deci nu știm ce cont de operator să deschidem. Completează adresa înainte de a continua.",
+        "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci autentificarea nu poate începe. Verifică adresa și corecteaz-o.",
+        "passwordLabel": "Parolă",
+        "passwordMissing": "Parola lipsește, deci nu îți putem verifica identitatea. Completează parola înainte de a continua.",
+        "show": "Arată",
+        "hide": "Ascunde",
+        "submit": "Continuă"
+      },
+      "factor": {
+        "title": "Confirmă al doilea factor",
+        "lede": "Conectat ca <email></email>. Introdu codul de șase cifre din aplicația de autentificare.",
+        "totpLabel": "Cod de verificare",
+        "totpHelp": "Codul se schimbă la 30 de secunde; ai cinci minute pentru acest pas, apoi autentificarea reîncepe.",
+        "totpMissing": "Codul de verificare lipsește, iar al doilea factor este obligatoriu pe această suprafață. Completează codul înainte de a continua.",
+        "submit": "Continuă în consolă",
+        "changeAccount": "Folosește alt cont"
+      },
       "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
       "problemTitle": "Autentificarea nu a reușit",
       "problemBody": "Nu te-am putut autentifica din cauza unei erori la procesarea cererii.",
-      "problemAction": "Verifică datele introduse și încearcă din nou."
+      "problemAction": "Verifică datele introduse și încearcă din nou.",
+      "realmNote": "Conturile de platformă sunt create de un alt administrator — aici nu există înregistrare. Conturile companiilor se autentifică în aplicația pentru companii și nu pot fi folosite pe această consolă."
     },
     "strip": {
       "signedInAs": "Operator:",

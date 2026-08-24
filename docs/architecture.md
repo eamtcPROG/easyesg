@@ -1851,6 +1851,7 @@ Project-wide floor 80%, reported alongside but never in place of the five.
 | Admin session cookie — task 23 | One httpOnly cookie (`easyesg_admin_session`), set by the **api itself** (OQ-17): the same AD-12 pair — ≤15-min HS256 JWT + rotating single-use refresh token — plus the operator identity block, sealed AES-256-GCM. Keys derived (HKDF, distinct labels) from one `AUTH_ADMIN_SECRET`, disjoint from the tenant realm's secrets (NFR-65). `Secure; SameSite=Strict; Path=/`, host-only on the api origin. **Set 21 Aug 2026, project owner** |
 | Admin realm CORS and CSRF — task 23 | The api allows exactly the configured `ADMIN_ORIGIN`, with credentials; state-changing admin-realm requests must present an `Origin` equal to it (`Sec-Fetch-Site` alone cannot tell one sibling subdomain from another, and NFR-65 treats each as its own trust zone). `Strict` rather than the web tier's `Lax` because nothing legitimate ever arrives at the api origin by top-level navigation carrying an admin session. **Set 21 Aug 2026** |
 | Admin MFA — task 23 | TOTP (RFC 6238, 30 s step, ±1 window), challenged on **every** sign-in (FR-75: without exception). The secret is provisioned with the account — UC-68's own precondition — by CLI until UC-87's screens exist (task 67); enrolment UX and recovery codes land with the TOTP machinery (task 27). Stored unencrypted at rest for now, **recorded as task 27's hardening debt**, not a decision that it is fine. **Set 21 Aug 2026** |
+| Admin factor challenge — task 23 review | **Five minutes**, stateless: A-01's two-step handshake (chosen by the project owner, 24 Aug 2026, over presentational staging) verifies the credential first and seals `{account, issuedAt}` into its own httpOnly `SameSite=Strict` cookie — no table, TTL evaluated at the point of use. Deliberately NOT single-use: a mistyped code stays on the factor step (A-01's recoverable "failed factor"), with guessing bounded exactly as the one-shot flow bounded it — both steps spend the same 5/15-min window, and factor failures count toward the ten-failure lockout. **Set 24 Aug 2026** |
 
 **Why webhooks need their own bucket, and why 600.** Payment, MIA and e-Factura callbacks are
 unauthenticated *by session* — they carry a provider signature, not a user token — so under the general
@@ -1899,7 +1900,9 @@ Lax-plus-origin-proof pair already closes, and it is revisitable without migrati
 surface (an embedded widget, a cross-site POST target) changes the premise.
 
 **The admin realm's session — task 23 (21 Aug 2026, project owner, from the task's open-question
-batch).** OQ-17 put the token handler on the api; these are the decisions that make it concrete.
+batch; sign-in reshaped to A-01's two-step handshake in the 24 Aug 2026 review — the drawn flow's
+"Signed in as …" is a server-established fact, per the challenge row above).** OQ-17 put the token
+handler on the api; these are the decisions that make it concrete.
 The realm **mirrors the tenant session mechanism** — a ≤15-min JWT plus a rotating, single-use,
 reuse-detected refresh token with task 21's race grace — rather than an opaque server-side
 session, chosen for uniformity: one session model across both realms, at the recorded cost that

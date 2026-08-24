@@ -148,6 +148,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/admin/session/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify the elevated credential and open the second-factor challenge
+         * @description UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.
+         */
+        post: operations["AdminSessionController_beginSignIn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/admin/session": {
         parameters: {
             query?: never;
@@ -162,13 +182,13 @@ export interface paths {
         get: operations["AdminSessionController_currentSession"];
         put?: never;
         /**
-         * Sign in to the administrative realm
-         * @description Verifies the elevated credential and the mandatory TOTP code (FR-75), and establishes the session as a sealed httpOnly cookie — no token appears in the body. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.
+         * Complete sign-in with the second factor
+         * @description UC-68 step two. Judges the TOTP code against the challenge cookie step one set; on success the session is established as a sealed httpOnly cookie and the challenge is cleared — no token appears in the body (FR-75: the factor is mandatory, without exception).
          */
-        post: operations["AdminSessionController_signIn"];
+        post: operations["AdminSessionController_completeSignIn"];
         /**
          * Sign out of the administrative realm
-         * @description Revokes the session server-side and clears the cookie. Idempotent, and identical for cookies that were never real — signing out is not an endpoint that confirms anything.
+         * @description Revokes the session server-side and clears the cookies — any half-open factor challenge included. Idempotent, and identical for cookies that were never real — signing out is not an endpoint that confirms anything.
          */
         delete: operations["AdminSessionController_signOut"];
         options?: never;
@@ -309,6 +329,30 @@ export interface components {
             /** @description The refresh token of the session to terminate. Possession is the authentication: it is what the web tier actually holds, and it keeps sign-out working after the access token has already expired. */
             refreshToken: string;
         };
+        AdminChallengeResponseDto: {
+            /**
+             * Format: email
+             * @example operator@easyesg.md
+             */
+            email: string;
+            /**
+             * @description Unix epoch milliseconds, UTC. When the challenge lapses and sign-in restarts from the credential (§12.5.6 — five minutes).
+             * @example 1787444100000
+             */
+            expiresAt: number;
+        };
+        AdminChallengeRequestDto: {
+            /**
+             * Format: email
+             * @example operator@easyesg.md
+             */
+            email: string;
+            /**
+             * Format: password
+             * @description Verified against the elevated credential; failures are uniform and throttled.
+             */
+            password: string;
+        };
         AdminAccountDto: {
             /** Format: uuid */
             id: string;
@@ -331,17 +375,7 @@ export interface components {
              */
             expiresAt: number;
         };
-        AdminSignInRequestDto: {
-            /**
-             * Format: email
-             * @example operator@easyesg.md
-             */
-            email: string;
-            /**
-             * Format: password
-             * @description Verified against the elevated credential; failures are uniform and throttled.
-             */
-            password: string;
+        AdminFactorRequestDto: {
             /**
              * @description The current TOTP code (FR-75 — the second factor is mandatory, without exception).
              * @example 287082
@@ -648,6 +682,59 @@ export interface operations {
             };
         };
     };
+    AdminSessionController_beginSignIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminChallengeRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The credential held; the factor challenge is open and rides the cookie. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminChallengeResponseDto"];
+                    };
+                };
+            };
+            /** @description The email address or the password is not right — one answer for both (problem type credential-invalid). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator account is locked after repeated failures (problem type admin-account-locked; released by another administrator or the provisioning CLI). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many attempts for this address in the window. Identical either way. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     AdminSessionController_currentSession: {
         parameters: {
             query?: never;
@@ -679,7 +766,7 @@ export interface operations {
             };
         };
     };
-    AdminSessionController_signIn: {
+    AdminSessionController_completeSignIn: {
         parameters: {
             query?: never;
             header?: never;
@@ -688,7 +775,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AdminSignInRequestDto"];
+                "application/json": components["schemas"]["AdminFactorRequestDto"];
             };
         };
         responses: {
@@ -703,7 +790,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description The email address or the password is not right (one answer for both, problem type credential-invalid) — or the password is right and the code is not (problem type factor-invalid, disclosed only past the credential bar). */
+            /** @description No open challenge, or it lapsed (problem type authentication-required — sign-in restarts from the credential); or the code is wrong (problem type factor-invalid, disclosed only past the credential bar — the challenge stays open for a retype). */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -712,7 +799,7 @@ export interface operations {
                     "application/problem+json": unknown;
                 };
             };
-            /** @description The operator account is locked after repeated failures (problem type admin-account-locked; released by another administrator or the provisioning CLI). */
+            /** @description The operator account is locked (problem type admin-account-locked) — a wrong code counts toward the same threshold as a wrong password. */
             403: {
                 headers: {
                     [name: string]: unknown;

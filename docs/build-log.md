@@ -1538,3 +1538,57 @@ the RFC vectors carry the math, and the suite is left doing its actual job — t
 matrix now runs in both directions, generate and verify, plus the boundary guard and a
 mint-round-trip); the 7 admin e2e and 3 admin browser tests pass unchanged, which is the point
 — the swap is behind a stable domain surface, so nothing above it moved.
+
+## Task 23 addendum 2 — three review findings and the handshake · 2026-08-24
+
+The project owner's review of A-01 landed three findings in one message, and each was real.
+
+**"The admin uses TanStack Query for data fetching, doesn't it?"** It does — and the sign-in
+screen didn't. The session probe rode Query and sign-out rode `useMutation`, but the sign-in
+call had web's Server-Action idiom (`useTransition` + local state) carried across in the name
+of pattern parity. Parity was applied too literally: web's idiom exists because its transport
+is Server Actions and Query is client-islands-only there; the console's data layer IS Query
+(§12.1). Both sign-in steps are `useMutation` now, `ApiOutcome` staying the resolved value so
+failures remain values end to end.
+
+**"The placement in the folder is not good."** The screen and strip sat loose at `realm/` root
+while every feature folder in the app carries the `components/ hooks/ queries/ …` anatomy.
+They live in `realm/components/` now; `session.ts` and `api-client.ts` keep their
+scaffold-designated names at realm root.
+
+**"The screen does not respect the design."** The artboard (read for values per OQ-10, this
+time actually read) draws more than styling: the second factor as its own step — "Signed in
+as …", implying a server-verified credential — plus the card's three-section anatomy, the mono
+kicker, the realm statement in the footer, and the ADMIN chip + host in the chrome. Asked as a
+batch, **the owner chose the real challenge handshake over presentational staging**: the api
+gained `POST /auth/admin/session/challenge` (credential → sealed, stateless, five-minute
+challenge cookie — its own name and a `kind` discriminator, so it can never be read as the
+session under the shared key), and `POST /auth/admin/session` became the factor step against
+it. The one-shot `SignInAdmin` split into `BeginAdminSignIn`/`CompleteAdminSignIn` with the
+§12.5.6 accounting preserved deliberately: both steps spend the one throttle window, factor
+failures still count toward the lockout, only the completed pair clears — and a wrong code
+does NOT consume the challenge, because A-01's "failed factor" is a recoverable state and
+bouncing a typo back to the password step punishes exactly the person the race grace exists
+for. The challenge TTL (five minutes) had no source value; §12.5.6 carries the row. The screen
+now has the card anatomy, kicker, footer statement and chrome chips, with the artboard's
+task-owned flourishes deferred by name in its docblock (segmented input → task 27's inventory
+addition; recovery routes → task 27; the LOGGED note → task 28, decided in this batch — omitted
+rather than stated while untrue) and one recorded divergence (the full-dark ground vs the
+Focus shell's, for design review rather than a per-screen archetype fork).
+
+**Three defects the rebuild's own tests caught.** React reused the uncontrolled `<input>` DOM
+node across the step switch — both steps render a TextField-led form at the same position — so
+the email typed at step one surfaced inside the code field; the step forms are keyed now, and
+the hazard is named in the component. The footer note's `--text-muted` on `--surface-sunken`
+measured 4.47:1 — the muted role's 5.1:1 rating is against white — caught by the axe gate;
+body ink there now. And the lockout e2e found the handshake's honest cost: a full sign-in
+spends two throttle slots, so the released account needed its window drained — the test now
+states that the window and the lockout are separate controls on purpose.
+
+**Verified:** `pnpm gates` and `pnpm gates:clean` green. API 176 unit (the split matrices, the
+challenge TTL, the wrong-code-keeps-challenge property, the deactivated/locked mid-challenge
+re-reads) and 132 e2e (8 admin: the handshake wire journey with both cookies' attributes, a
+lapsed and a forged challenge — a session cookie presented as a challenge dies on the
+discriminator — and the two-slot throttle accounting). Console: 7 component tests over the
+staged flow; 3 browser tests including the wrong-code retype completing the same challenge,
+and axe clean on the redesigned card.

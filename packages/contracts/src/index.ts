@@ -55,8 +55,11 @@ export type RequestPasswordResetRequest =
   components['schemas']['RequestPasswordResetRequestDto'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequestDto'];
 
-// platform — /api/v1/auth/admin (FR-75; task 23). The session travels as a sealed httpOnly
-// cookie the api sets — these shapes are the BODY surface only, tokens deliberately absent.
-export type AdminSignInRequest = components['schemas']['AdminSignInRequestDto'];
+// platform — /api/v1/auth/admin (FR-75; task 23, the two-step handshake since 24 Aug 2026).
+// The challenge and the session travel as sealed httpOnly cookies the api sets — these shapes
+// are the BODY surface only; tokens and the challenge deliberately absent.
+export type AdminChallengeRequest = components['schemas']['AdminChallengeRequestDto'];
+export type AdminChallengeResponse = components['schemas']['AdminChallengeResponseDto'];
+export type AdminFactorRequest = components['schemas']['AdminFactorRequestDto'];
 export type AdminSessionResponse = components['schemas']['AdminSessionResponseDto'];
 export type AdminAccount = components['schemas']['AdminAccountDto'];

@@ -11,6 +11,10 @@
  */
 export const ADMIN_SESSION_COOKIE = 'easyesg_admin_session';
 
+/** Step one's sealed factor challenge (the handshake, 24 Aug 2026) — same attributes, its own
+ *  name, so neither cookie can ever be read as the other even before the codecs' shape checks. */
+export const ADMIN_CHALLENGE_COOKIE = 'easyesg_admin_challenge';
+
 const COOKIE_ATTRIBUTES = 'Path=/; HttpOnly; Secure; SameSite=Strict';
 
 export function adminSessionCookie(sealed: string, maxAgeSeconds: number): string {
@@ -22,18 +26,32 @@ export function clearedAdminSessionCookie(): string {
   return `${ADMIN_SESSION_COOKIE}=; Max-Age=0; ${COOKIE_ATTRIBUTES}`;
 }
 
+export function adminChallengeCookie(sealed: string, maxAgeSeconds: number): string {
+  return `${ADMIN_CHALLENGE_COOKIE}=${sealed}; Max-Age=${Math.max(0, maxAgeSeconds)}; ${COOKIE_ATTRIBUTES}`;
+}
+
+export function clearedAdminChallengeCookie(): string {
+  return `${ADMIN_CHALLENGE_COOKIE}=; Max-Age=0; ${COOKIE_ATTRIBUTES}`;
+}
+
 /**
  * The one cookie this realm reads, out of a raw `Cookie` header. A full parser is not needed —
  * the name is fixed and the value is base64url, so the first `name=` pair wins and no decoding
  * applies.
  */
-export function readAdminSessionCookie(header: string | undefined): string | undefined {
+function readCookie(header: string | undefined, name: string): string | undefined {
   if (!header) return undefined;
   for (const part of header.split(';')) {
     const trimmed = part.trim();
-    if (trimmed.startsWith(`${ADMIN_SESSION_COOKIE}=`)) {
-      return trimmed.slice(ADMIN_SESSION_COOKIE.length + 1) || undefined;
+    if (trimmed.startsWith(`${name}=`)) {
+      return trimmed.slice(name.length + 1) || undefined;
     }
   }
   return undefined;
 }
+
+export const readAdminSessionCookie = (header: string | undefined): string | undefined =>
+  readCookie(header, ADMIN_SESSION_COOKIE);
+
+export const readAdminChallengeCookie = (header: string | undefined): string | undefined =>
+  readCookie(header, ADMIN_CHALLENGE_COOKIE);

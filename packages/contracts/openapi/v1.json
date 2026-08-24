@@ -345,17 +345,79 @@
         ]
       }
     },
-    "/api/v1/auth/admin/session": {
+    "/api/v1/auth/admin/session/challenge": {
       "post": {
-        "description": "Verifies the elevated credential and the mandatory TOTP code (FR-75), and establishes the session as a sealed httpOnly cookie — no token appears in the body. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
-        "operationId": "AdminSessionController_signIn",
+        "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
+        "operationId": "AdminSessionController_beginSignIn",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminSignInRequestDto"
+                "$ref": "#/components/schemas/AdminChallengeRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The credential held; the factor challenge is open and rides the cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminChallengeResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The email address or the password is not right — one answer for both (problem type credential-invalid).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator account is locked after repeated failures (problem type admin-account-locked; released by another administrator or the provisioning CLI).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many attempts for this address in the window. Identical either way.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Verify the elevated credential and open the second-factor challenge",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/session": {
+      "post": {
+        "description": "UC-68 step two. Judges the TOTP code against the challenge cookie step one set; on success the session is established as a sealed httpOnly cookie and the challenge is cleared — no token appears in the body (FR-75: the factor is mandatory, without exception).",
+        "operationId": "AdminSessionController_completeSignIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminFactorRequestDto"
               }
             }
           }
@@ -383,13 +445,13 @@
             }
           },
           "401": {
-            "description": "The email address or the password is not right (one answer for both, problem type credential-invalid) — or the password is right and the code is not (problem type factor-invalid, disclosed only past the credential bar).",
+            "description": "No open challenge, or it lapsed (problem type authentication-required — sign-in restarts from the credential); or the code is wrong (problem type factor-invalid, disclosed only past the credential bar — the challenge stays open for a retype).",
             "content": {
               "application/problem+json": {}
             }
           },
           "403": {
-            "description": "The operator account is locked after repeated failures (problem type admin-account-locked; released by another administrator or the provisioning CLI).",
+            "description": "The operator account is locked (problem type admin-account-locked) — a wrong code counts toward the same threshold as a wrong password.",
             "content": {
               "application/problem+json": {}
             }
@@ -401,7 +463,7 @@
             }
           }
         },
-        "summary": "Sign in to the administrative realm",
+        "summary": "Complete sign-in with the second factor",
         "tags": [
           "platform"
         ]
@@ -445,7 +507,7 @@
         ]
       },
       "delete": {
-        "description": "Revokes the session server-side and clears the cookie. Idempotent, and identical for cookies that were never real — signing out is not an endpoint that confirms anything.",
+        "description": "Revokes the session server-side and clears the cookies — any half-open factor challenge included. Idempotent, and identical for cookies that were never real — signing out is not an endpoint that confirms anything.",
         "operationId": "AdminSessionController_signOut",
         "parameters": [],
         "responses": {
@@ -744,6 +806,44 @@
           "refreshToken"
         ]
       },
+      "AdminChallengeResponseDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "operator@easyesg.md"
+          },
+          "expiresAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC. When the challenge lapses and sign-in restarts from the credential (§12.5.6 — five minutes).",
+            "example": 1787444100000
+          }
+        },
+        "required": [
+          "email",
+          "expiresAt"
+        ]
+      },
+      "AdminChallengeRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "operator@easyesg.md"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "Verified against the elevated credential; failures are uniform and throttled."
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
       "AdminAccountDto": {
         "type": "object",
         "properties": {
@@ -788,19 +888,9 @@
           "expiresAt"
         ]
       },
-      "AdminSignInRequestDto": {
+      "AdminFactorRequestDto": {
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "operator@easyesg.md"
-          },
-          "password": {
-            "type": "string",
-            "format": "password",
-            "description": "Verified against the elevated credential; failures are uniform and throttled."
-          },
           "totpCode": {
             "type": "string",
             "description": "The current TOTP code (FR-75 — the second factor is mandatory, without exception).",
@@ -808,8 +898,6 @@
           }
         },
         "required": [
-          "email",
-          "password",
           "totpCode"
         ]
       }

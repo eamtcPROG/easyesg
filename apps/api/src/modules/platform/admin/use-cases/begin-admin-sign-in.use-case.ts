@@ -9,56 +9,55 @@ import { AuthRateLimitedError } from '@api/modules/identity/account/errors/accou
 import type { PasswordHasher } from '@api/modules/identity/account/interfaces/password-hasher.interface';
 import { mintRefreshToken } from '@api/modules/identity/session/domain/refresh-token';
 import {
-  ADMIN_ACCESS_TOKEN_TTL_MS,
-  adminSessionExpiresAt,
-} from '../domain/admin-session-expiry';
-import { verifyTotp } from '../domain/totp';
-import {
   AdminAccountLockedError,
   AdminCredentialInvalidError,
-  AdminFactorInvalidError,
 } from '../errors/admin-session.errors';
-import type { AdminSessionStore, AdminSessionTransaction } from '../interfaces/admin-session-store.interface';
-import type { AdminTokens } from '../interfaces/admin-token.interface';
-import type { AdminAccount, IssuedAdminSession } from '../models/admin-session.model';
+import type {
+  AdminSessionStore,
+  AdminSessionTransaction,
+} from '../interfaces/admin-session-store.interface';
+import type { AdminAccount, AdminIdentity } from '../models/admin-session.model';
 import type { Clock } from '@api/contracts/clock.port';
 
-export interface SignInAdminCommand {
+export interface BeginAdminSignInCommand {
   readonly email: string;
   readonly password: string;
-  readonly totpCode: string;
   /** For §12.5.6's per-(IP, account) window. Absent until task 71 configures trust-proxy. */
   readonly clientIp?: string;
 }
 
+/** What step one hands the service to seal: who was verified, and when the clock started. */
+export interface AdminFactorChallenge {
+  readonly identity: AdminIdentity;
+  readonly issuedAt: Date;
+}
+
 /**
- * UC-68 — log in with elevated privileges (FR-75; task 23).
+ * UC-68, step one — verify the elevated credential and open the factor challenge (task 23,
+ * reshaped by the 24 Aug 2026 review: A-01 draws the second factor as its own step, and the
+ * owner chose the real handshake over presentational staging, so "Signed in as …" on the
+ * factor screen is a fact the server established rather than copy).
  *
- * `SignIn`'s structure with one more rung: several short transactions so failures count durably
- * while the request answers 401 (the store header carries the argument), the uniform
- * `AdminCredentialInvalidError` timed alike by burning a real Argon2id verification on the
- * no-account paths, the lockout check ahead of verification so a locked credential ends the
- * oracle — and then the factor. The TOTP check runs strictly AFTER the password succeeds, and
- * its failure both counts toward the same lockout (or a known password buys an unbounded
- * code-guessing budget) and answers distinctly (`factor-invalid`): A-01 names "failed factor"
- * as its own recoverable state, and the disclosure costs nothing — whoever sees it has already
- * proven the password.
+ * This is the front half of the retired one-shot `SignInAdmin`, semantics preserved exactly:
+ * several short transactions so failures count durably while the request answers 401 (the
+ * store header's argument), the uniform `AdminCredentialInvalidError` timed alike by burning a
+ * real Argon2id verification on the no-account paths, and the lockout check ahead of
+ * verification so a locked credential ends the oracle.
  *
- * What this realm deliberately lacks, versus the tenant flow: no unverified state (accounts are
- * provisioned, UC-87), no reset-releases-lock (the realm has no reset; §12.5.6's task-23
- * paragraph names the CLI and task 67's PA action as the releases).
+ * **What step one deliberately does NOT do:** touch the TOTP secret, issue any token, or clear
+ * the failure count — a verified password ends nothing that FR-4's threshold counts, because
+ * the factor behind it may still be under attack; only the completed pair clears (step two).
  */
-export class SignInAdmin {
+export class BeginAdminSignIn {
   private dummyHash?: string;
 
   constructor(
     private readonly store: AdminSessionStore,
     private readonly hasher: PasswordHasher,
-    private readonly tokens: AdminTokens,
     private readonly now: Clock,
   ) {}
 
-  async execute(command: SignInAdminCommand): Promise<IssuedAdminSession> {
+  async execute(command: BeginAdminSignInCommand): Promise<AdminFactorChallenge> {
     const email = normaliseEmail(command.email);
     const now = this.now();
 
@@ -80,28 +79,9 @@ export class SignInAdmin {
       throw new AdminCredentialInvalidError();
     }
 
-    if (!verifyTotp({ secret: account.totpSecret, code: command.totpCode }, now)) {
-      await this.store.run((tx) => tx.registerFailedSignIn(account.id, LOCKOUT_THRESHOLD, now));
-      throw new AdminFactorInvalidError();
-    }
-
-    const minted = mintRefreshToken();
-    const session = await this.store.run(async (tx) => {
-      await tx.clearFailedSignIns(account.id);
-      return tx.createSession(account.id, minted.hash, now);
-    });
-
-    const accessTokenExpiresAt = new Date(now.getTime() + ADMIN_ACCESS_TOKEN_TTL_MS);
     return {
       identity: { id: account.id, email: account.email, role: account.role },
-      sessionId: session.id,
-      accessToken: await this.tokens.sign(session.id, accessTokenExpiresAt),
-      accessTokenExpiresAt,
-      refreshToken: minted.value,
-      refreshTokenExpiresAt: adminSessionExpiresAt({
-        sessionCreatedAt: session.createdAt,
-        tokenIssuedAt: now,
-      }),
+      issuedAt: now,
     };
   }
 
@@ -110,10 +90,7 @@ export class SignInAdmin {
     clientIp: string | undefined,
     email: string,
     now: Date,
-  ): Promise<
-    | { limited: true; account?: never }
-    | { limited: false; account: AdminAccount | null }
-  > {
+  ): Promise<{ limited: true; account?: never } | { limited: false; account: AdminAccount | null }> {
     const key = adminSignInThrottleKey(clientIp, email);
     const since = new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS);
     if ((await tx.countRecentAuthAttempts(key, since)) >= AUTH_ATTEMPT_LIMIT) {

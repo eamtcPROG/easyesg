@@ -14,6 +14,19 @@
 
 export const ADMIN_ACCESS_TOKEN_TTL_MS = 15 * 60 * 1000;
 
+/**
+ * How long step one's verified credential holds while the operator finds their authenticator
+ * (task 23 review, 24 Aug 2026 — A-01's handshake; §12.5.6's challenge row). Five minutes:
+ * ten TOTP windows, generous for a phone fished out of a bag, far too short to park a
+ * half-finished sign-in. No source stated a value — recorded as set here, revisited with the
+ * register like every §12.5.6 lifetime.
+ */
+export const ADMIN_FACTOR_CHALLENGE_TTL_MS = 5 * 60 * 1000;
+
+export function adminChallengeHasExpired(issuedAt: number, now: Date): boolean {
+  return now.getTime() >= issuedAt + ADMIN_FACTOR_CHALLENGE_TTL_MS;
+}
+
 export const ADMIN_SESSION_IDLE_TTL_MS = 8 * 60 * 60 * 1000;
 
 export const ADMIN_SESSION_ABSOLUTE_TTL_MS = 12 * 60 * 60 * 1000;

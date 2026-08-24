@@ -26,6 +26,12 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // 15 s, not Vitest's 5 s default: the root `pnpm test` runs three workspaces' suites in
+    // PARALLEL, and under that contention a userEvent typing spec that takes 1 s alone has
+    // been measured at 5–7 s — ten timeouts in one gates run (24 Aug 2026), all green in
+    // isolation. The value buys headroom for the harness, not slack for the code: a genuine
+    // hang still fails, three times slower.
+    testTimeout: 15_000,
     include: ['src/**/*.spec.{ts,tsx}'],
     // Project-wide floor is 80% (§12.5.6). None of the five components carrying a higher floor
     // is front-end; those live in apps/api and packages/validation.
