@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
-import { LOCALES, SOURCE_LOCALE, type Locale } from '@easyesg/i18n';
+import { toLocale } from '@easyesg/i18n';
 import { EmailAlreadyRegisteredError } from '@api/modules/identity/account/errors/account.errors';
 import type {
   AccountEffect,
@@ -80,15 +80,6 @@ interface VerificationTokenRow {
   token_hash: Buffer;
   expires_at: Date;
 }
-
-/**
- * A stored locale that is no longer a live one — a locale retired after accounts were created in it
- * — must not make a record unreadable. Falling back to the source locale is what FR-10's own
- * fallback rule already does per string; doing it here keeps the type honest instead of asserting
- * `as Locale` over whatever the column happens to hold.
- */
-const toLocale = (value: string): Locale =>
-  LOCALES.find((supported: Locale) => supported === value) ?? SOURCE_LOCALE;
 
 const toAccount = (row: AccountRow): Account => ({
   id: row.id,

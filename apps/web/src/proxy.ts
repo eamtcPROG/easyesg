@@ -1,5 +1,6 @@
 import createMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isLocale, toLocale, type Locale } from '@easyesg/i18n';
 import { routing } from '@/i18n/routing';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
 
@@ -38,11 +39,6 @@ const UNAUTHENTICATED_SEGMENTS = new Set([
   'invitation',
 ]);
 
-type Locale = (typeof routing.locales)[number];
-
-const isLocale = (value: string | undefined): value is Locale =>
-  routing.locales.some((locale) => locale === value);
-
 /**
  * The first segment that is **not** a locale — the route segment, whether or not the URL
  * carries a locale prefix.
@@ -59,10 +55,10 @@ function routeSegment(pathname: string): string | undefined {
   return isLocale(first) ? second : first;
 }
 
-/** The locale a path is in — the prefix when there is one, the default when there is not. */
+/** The locale a path is in — the prefix when there is one, the source locale when there is not
+ *  (`localePrefix: 'as-needed'` serves the source locale unprefixed). */
 function localeOf(pathname: string): Locale {
-  const [first] = pathname.split('/').filter(Boolean);
-  return isLocale(first) ? first : routing.defaultLocale;
+  return toLocale(pathname.split('/').filter(Boolean)[0]);
 }
 
 /** Prefixes a path for a locale, honouring `as-needed`: the default locale takes no prefix. */

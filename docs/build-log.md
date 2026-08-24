@@ -1765,3 +1765,37 @@ the committed seed payload after. React conventions pass applied `async-suspense
 `bundle-barrel-imports` (house convention), `vercel-composition-patterns` not loaded (one new
 primitive — `ProviderButton`, an anchor in the secondary button's clothes, added to §11.5 under
 UX-89 with zero client JS — no boolean-prop growth anywhere).
+
+## Task 24 addendum — one locale narrowing, not six · 2026-08-24
+
+Raised by the project owner against the new social repository: `toLocale` was reimplemented per
+repository. A sweep found the copy count was worse than the report — **six** private
+implementations of a narrowing over one shared vocabulary: `account-store`, `session-store` and
+the new `social-sign-in-store` repositories (identical, named `toLocale`), both email consumers
+(the same expression inlined), and `apps/web`'s session codec (the predicate half, named
+`isLocale`). Two further sites in `apps/web` — `proxy.ts` and `locale-path.ts` — did the same job
+against `routing.locales`, which `defineRouting` receives *from* `LOCALES`, so they were copies
+too, one indirection removed.
+
+**The interesting part is that they had already diverged, and no test could have caught it.**
+`negotiateLocale` needs the *predicate* — it tests each `Accept-Language` tag in preference order,
+and a fallback applied inside that loop answers the source locale for the reader's first
+unsupported tag instead of trying their second. Since source is a plausible answer to every
+request, that is a wrong answer that looks right. So the six copies were not one function written
+six times; they were **two** functions, and the split between them was invisible because each copy
+was locally correct and locally untested.
+
+`isLocale` and `toLocale` now live in `packages/i18n/src/locales.ts`, beside the `LOCALES` they
+narrow and next to the existing `hasOfficialEfragLabels` — the same module already owned one
+derived helper, which is what makes this placement obvious in hindsight. `toLocale` takes
+`unknown` rather than `string` because every caller is at a trust boundary (a `text` column, a
+queued payload, a cookie), which also let `social-flow.ts`'s cookie read drop its own
+`?? defaultLocale`. Ten call sites now import them; `locales.spec.ts` states both semantics and
+pins their relationship, which is the test that did not exist while the behaviour was scattered.
+
+**The rule this exposed is now written down** (root `CLAUDE.md`, "A closed vocabulary is declared
+once"): sharing the *declaration* is only half of it — an operation derived from a vocabulary
+belongs in the module that owns the vocabulary. The smell is a helper whose body mentions an
+imported vocabulary and nothing else local; that is a missing export, not a local helper. Recorded
+because the previous wording covered `as const` objects and their generated surfaces, and every one
+of these six copies satisfied it.

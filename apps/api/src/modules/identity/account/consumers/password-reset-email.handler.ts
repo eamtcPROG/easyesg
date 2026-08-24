@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { LOCALES, SOURCE_LOCALE, type Locale } from '@easyesg/i18n';
+import { toLocale } from '@easyesg/i18n';
 import type { AppConfig } from '@api/config/configuration';
 import { EMAIL_PORT, type EmailPort } from '@api/contracts/email.port';
 import { HandlesJob, type JobContext, type JobHandler } from '@api/infrastructure/queue/job-handler';
@@ -66,6 +66,6 @@ function readEvent(payload: Record<string, unknown>): PasswordResetRequested {
     accountId,
     email,
     token,
-    locale: LOCALES.find((supported: Locale) => supported === locale) ?? SOURCE_LOCALE,
+    locale: toLocale(locale),
   };
 }

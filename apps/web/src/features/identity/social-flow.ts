@@ -11,12 +11,12 @@ import {
   type SessionResponse,
   type SocialSignInIntent,
 } from '@easyesg/contracts';
+import { SOURCE_LOCALE, toLocale, type Locale } from '@easyesg/i18n';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
 import { sanitizeReturnPath } from '@/lib/locale-path';
 import { LOCALE_COOKIE } from '@/lib/session-cookie';
 import { getPathname } from '@/i18n/navigation';
-import { routing } from '@/i18n/routing';
 import { api } from '@/server/api-client';
 import { establishSession } from '@/server/session';
 import {
@@ -25,7 +25,6 @@ import {
 } from '@/server/social-transaction';
 import { SOCIAL_NOTICE, type SocialNotice } from './social';
 import { POST_SIGN_IN_PATH } from './constants';
-import { SOURCE_LOCALE } from '@easyesg/i18n';
 
 /**
  * The web tier's half of the provider flow (task 24, §12.5.6's task-24 flow row) — the two
@@ -39,12 +38,9 @@ import { SOURCE_LOCALE } from '@easyesg/i18n';
  * mid-flow between two screens they know, and S-01 is where every path is recoverable from.
  */
 
-type AppLocale = (typeof routing.locales)[number];
-
-/** The locale for our own redirect targets: the cookie next-intl maintains, or the default. */
-function requestLocale(request: NextRequest): AppLocale {
-  const cookie = request.cookies.get(LOCALE_COOKIE)?.value;
-  return routing.locales.find((locale) => locale === cookie) ?? routing.defaultLocale;
+/** The locale for our own redirect targets: the cookie next-intl maintains, or the source. */
+function requestLocale(request: NextRequest): Locale {
+  return toLocale(request.cookies.get(LOCALE_COOKIE)?.value);
 }
 
 const SCREEN = {
@@ -54,7 +50,7 @@ const SCREEN = {
 
 type Screen = (typeof SCREEN)[keyof typeof SCREEN];
 
-function noticeRedirect(locale: AppLocale, screen: Screen, notice: SocialNotice): NextResponse {
+function noticeRedirect(locale: Locale, screen: Screen, notice: SocialNotice): NextResponse {
   const pathname = getPathname({ locale, href: screen });
   // Based on the PUBLIC origin, never `request.url`: the standalone server binds `0.0.0.0`
   // (playwright.config.ts owns that story), and a redirect built from the bind address sends

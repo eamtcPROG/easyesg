@@ -1,6 +1,6 @@
 import 'server-only';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
-import { LOCALES, type Locale } from '@easyesg/i18n';
+import { isLocale, type Locale } from '@easyesg/i18n';
 
 /**
  * The sealed session cookie's codec — OQ-33 (closed 21 Aug 2026, architecture.md §12.5.6).
@@ -78,9 +78,6 @@ export function unsealJson(sealed: string, secret: string): unknown {
 export function sealSession(payload: SessionPayload, secret: string): string {
   return sealJson(payload, secret);
 }
-
-const isLocale = (value: unknown): value is Locale =>
-  typeof value === 'string' && (LOCALES as readonly string[]).includes(value);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

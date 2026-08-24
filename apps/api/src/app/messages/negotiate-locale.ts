@@ -1,5 +1,5 @@
 import Negotiator from 'negotiator';
-import { LOCALES, SOURCE_LOCALE, type Locale } from '@easyesg/i18n';
+import { SOURCE_LOCALE, isLocale, type Locale } from '@easyesg/i18n';
 
 /**
  * RFC 9110's wildcard language range. Named rather than compared as a bare literal (CLAUDE.md,
@@ -40,9 +40,12 @@ export function negotiateLocale(acceptLanguage: string | undefined): Locale {
     // `*` means "anything acceptable". The source locale is the platform's answer to that.
     if (tag === ANY_LANGUAGE_TAG) return SOURCE_LOCALE;
 
+    // `isLocale`, deliberately NOT `toLocale`: the fallback belongs after the loop, not inside
+    // it. Absorbing a non-match here would answer the source locale for the reader's FIRST
+    // unsupported tag instead of going on to their second preference — and since source is a
+    // plausible answer to every request, that wrong answer would look right.
     const language = tag.split('-')[0]?.toLowerCase();
-    const match = LOCALES.find((supported: Locale) => supported === language);
-    if (match) return match;
+    if (isLocale(language)) return language;
   }
 
   return SOURCE_LOCALE;

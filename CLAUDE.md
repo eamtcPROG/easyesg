@@ -625,6 +625,22 @@ boundary — and on that misreading a discriminator shipped as literals at eight
 Object.values(ACCOUNT_STATUS) })` makes declaration order contract order, so the OpenAPI diff catches
 a reordering. A hand-written copy of the same list is a second source of truth by definition.
 
+**An operation over a vocabulary lives with the vocabulary, not with each caller** (added
+24 Aug 2026, raised by the project owner on task 24's review). Sharing the declaration is only half
+the rule: the *narrowing* — "is this unvalidated string one of them", "make it one or fall back" —
+is derived from the set and belongs in the module that owns the set. `LOCALES` was correctly shared
+from `@easyesg/i18n` while a private `toLocale` was retyped in **six** places: three identity
+repositories, both email consumers and the web session codec, with the API's locale negotiation
+having grown the *other* semantics. That divergence is the point. The two operations are not
+interchangeable — inside `negotiateLocale`'s preference loop a fallback answers the source locale
+for the reader's first unsupported tag instead of trying their second — and with a copy per caller
+no test could see the difference, because each copy was locally correct. `isLocale` and `toLocale`
+now sit in `packages/i18n/src/locales.ts` beside `LOCALES`, with the one spec that states both
+semantics and pins their relationship.
+
+The smell is a helper whose body mentions an imported vocabulary and nothing else local. That is
+not a helper for this file; it is a missing export from the vocabulary's own module.
+
 Two deliberate exceptions, part of the rule rather than escapes from it:
 
 - **Migration SQL stays literal.** A migration is frozen history, and interpolating a constant that

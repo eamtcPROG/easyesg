@@ -1,4 +1,4 @@
-import { routing } from '@/i18n/routing';
+import { isLocale, type Locale } from '@easyesg/i18n';
 
 /**
  * The sign-in return path, made safe and split for `@/i18n/navigation`'s `redirect`.
@@ -16,14 +16,9 @@ import { routing } from '@/i18n/routing';
  * only when there was no return path at all; a Romanian URL stays Romanian).
  */
 
-type AppLocale = (typeof routing.locales)[number];
-
-const isAppLocale = (value: string | undefined): value is AppLocale =>
-  routing.locales.some((locale) => locale === value);
-
 export interface LocalizedPath {
   href: string;
-  locale: AppLocale | undefined;
+  locale: Locale | undefined;
 }
 
 export function splitLocalePrefix(path: string): LocalizedPath {
@@ -33,7 +28,7 @@ export function splitLocalePrefix(path: string): LocalizedPath {
   const pathname = queryIndex === -1 ? path : path.slice(0, queryIndex);
   const query = queryIndex === -1 ? '' : path.slice(queryIndex);
   const [first, ...rest] = pathname.split('/').filter(Boolean);
-  if (!isAppLocale(first)) return { href: path, locale: undefined };
+  if (!isLocale(first)) return { href: path, locale: undefined };
   return { href: `/${rest.join('/')}${query}`, locale: first };
 }
 

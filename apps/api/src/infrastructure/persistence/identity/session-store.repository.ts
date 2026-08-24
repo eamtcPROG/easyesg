@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
-import { LOCALES, SOURCE_LOCALE, type Locale } from '@easyesg/i18n';
+import { toLocale } from '@easyesg/i18n';
 import type {
   Account,
   Credential,
@@ -84,9 +84,6 @@ interface PresentedRefreshTokenRow {
   session_created_at: Date;
   session_revoked_at: Date | null;
 }
-
-const toLocale = (value: string): Locale =>
-  LOCALES.find((supported: Locale) => supported === value) ?? SOURCE_LOCALE;
 
 const toAccount = (row: AccountRow): Account => ({
   id: row.id,
