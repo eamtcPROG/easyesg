@@ -48,6 +48,7 @@
     "eslint-plugin-react-hooks": "catalog:",
     "eslint-plugin-sonarjs": "catalog:",
     "globals": "catalog:",
+    "otpauth": "catalog:",
     "pg": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"

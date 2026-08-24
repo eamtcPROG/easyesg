@@ -46,7 +46,8 @@ proxy's address until task 71 sets `trust proxy` — degraded to per-account, no
 
 Task 23 adds the admin realm (FR-75, UC-68, OQ-17): `identity.{admin_account,admin_session,
 admin_refresh_token}`, `POST/GET/DELETE /auth/admin/session` in `modules/platform/admin` —
-sign-in with mandatory TOTP (hand-rolled RFC 6238 in `domain/totp.ts`, vectors pinned), the
+sign-in with mandatory TOTP (`domain/totp.ts`, a thin wrapper over `otpauth` — §12.1; it was
+hand-rolled until 24 Aug 2026 and the header records why that was wrong), the
 session pair sealed AES-256-GCM into an httpOnly `SameSite=Strict` cookie the api itself sets
 and rotates (keys HKDF-derived from `AUTH_ADMIN_SECRET` under distinct labels), CORS pinned to
 `ADMIN_ORIGIN` with credentials, an Origin proof on the realm's writes, and the

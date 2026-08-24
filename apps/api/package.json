@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "easyesg public API \u2014 NestJS, HTTP and worker modes (architecture.md AD-1)",
+  "description": "easyesg public API — NestJS, HTTP and worker modes (architecture.md AD-1)",
   "scripts": {
     "pretest": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build",
     "pretest:e2e": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build",
@@ -51,6 +51,7 @@
     "ioredis": "catalog:",
     "negotiator": "catalog:",
     "nestjs-pino": "catalog:",
+    "otpauth": "catalog:",
     "passport": "catalog:",
     "passport-jwt": "catalog:",
     "pg": "catalog:",

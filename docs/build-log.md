@@ -1490,3 +1490,51 @@ testing — jest-dom and cleanup now registered) and a third Playwright project 
 closed-by-default realm through sign-in/out with `document.cookie` proven empty of the session,
 the distinct wrong-code answer, axe clean on A-01) — 35 browser tests across the two apps.
 Native-speaker review of the new RO strings pools with the identity backlog.
+
+## Task 23 addendum — the hand-rolled TOTP is replaced by a library · 2026-08-24
+
+Raised by the project owner as a question — *are there not already implementations of these
+algorithms?* — about `encodeBase32`/`decodeBase32`. There were, the original reasoning was
+wrong, and the way it was wrong is the part worth keeping.
+
+**What the review established, in order.** Node 26.7.0 has no base32 (`Buffer` does
+`base64url` and `hex`; `base32` throws), so the codec was a genuine need rather than a
+reimplemented built-in — but that only justified writing *something*, never writing it here.
+`domain-free-of-frameworks` turned out to permit it: the rule names NestJS, TypeORM, Express,
+ioredis and BullMQ, so a pure computation library belongs in `domain/` exactly as `node:crypto`
+already does. And the constraint that actually decides library choices in this repo — OQ-48's
+CommonJS requirement, which declined `jose` — does not bite `otpauth`: it declares
+`exports['.'].node.require` and a real `require('otpauth')` returns `HOTP, Secret, TOTP, URI`,
+verified rather than inferred from manifest fields.
+
+**The original argument was "the RFC ships test vectors, so forty lines are defensible", and
+task 23's own history refutes it.** That version passed all six of RFC 6238 Appendix B's
+vectors *while carrying a real defect* — at step 0 the ±1 window reached for counter −1 and
+`writeBigUInt64BE` threw — caught by a negative-case probe, not by the vectors. Which is the
+general lesson: a specification's examples prove the happy path, and security-primitive
+failures live in the boundary and malformed inputs they omit. The regression is now a named
+test, and it asserts the *right* thing: at the epoch boundary the window legitimately admits
+step 1's code, so the invariant is that a verdict is REACHED, not that it refuses. Writing that
+test against the library corrected a second error in the first attempt — the assertion said
+`false` where `true` is correct.
+
+**`otpauth` 9.5.1 over the alternatives, and why not just a codec.** It covers the whole
+primitive — base32 `Secret`, the truncation, windowed `validate`, and `toString()` for the Key
+Uri Format — so ~90 lines became a thin parameter wrapper and nothing is left hand-rolled.
+`@scure/base` was declined precisely because a bare codec leaves the truncation and window in
+local code, which is the half the bug was in; `otplib` needs preset assembly for the same
+result. MIT, one dependency (`@noble/hashes` 2.2.0), and it compares with
+`crypto.timingSafeEqual` internally. §12.1 carries the row, the verification date and the one
+recorded behavioural difference (first-match return, so timing can reveal which of three
+windows matched — a ±30 s offset disclosed to someone already holding a valid code).
+
+**The e2e's second copy went too, and its stated justification with it.** The browser suite
+played the operator's authenticator with a deliberate copy of the arithmetic, on the argument
+that sharing code with the verifier proves only that a function agrees with itself. True while
+the verifier was ours; false once it is a third-party library. Both sides now use `otpauth`,
+the RFC vectors carry the math, and the suite is left doing its actual job — the wire journey.
+
+**Verified:** `pnpm gates` and `pnpm gates:clean` green. API unit tests 165 → 171 (the vector
+matrix now runs in both directions, generate and verify, plus the boundary guard and a
+mint-round-trip); the 7 admin e2e and 3 admin browser tests pass unchanged, which is the point
+— the swap is behind a stable domain surface, so nothing above it moved.
