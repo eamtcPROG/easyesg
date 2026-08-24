@@ -21,7 +21,10 @@ itself is the sealed httpOnly cookie the API sets and rotates, OQ-17), and — u
 interim `SessionStrip` (task 67's row owns replacing it). Sign-in is **A-01's two-step
 handshake** (24 Aug 2026 review): the credential opens a sealed five-minute challenge, the
 factor step names the server-verified address, mutations ride `useMutation` with `ApiOutcome`
-as the resolved value. The screen carries the artboard's card anatomy and realm statement; its
+as the resolved value. It is three files on the cohesion line — `sign-in-screen.tsx` owns the
+flow and the card (step, mutations, failure), `credential-step.tsx` and `factor-step.tsx` own
+one form each, since a step's `useForm`, field ids and field-level messages are read by nothing
+else. The screen carries the artboard's card anatomy and realm statement; its
 docblock lists what is deliberately deferred (segmented code input → task 27's inventory
 addition, recovery routes → task 27, the LOGGED audit note → task 28) and the one recorded
 divergence (the artboard's full-dark ground). `_realm.tsx`'s `beforeLoad` is the
@@ -114,6 +117,16 @@ else; treat it as an incident, not a refactor.
   `routes:check` stays green because nothing changed. It looks exactly like a route that exists.
   Name route files normally; if you want one deliberately excluded, use the plugin's configured
   `routeFileIgnorePrefix` (`-`) so the intent is legible.
+
+- **Two forms swapped at the same position share their inputs' DOM nodes.** React reconciles by
+  position and element type, so a wizard rendering `<form>`→`<form>` REUSES the uncontrolled
+  `<input>` underneath — A-01's step one leaked the typed email into step two's code field, and
+  nothing failed: the field simply had a value nobody put there. Two fixes work and only one
+  survives a refactor. A `key` per branch works while someone remembers it; **making each step its
+  own component type** makes the reuse unrepresentable, because React cannot reconcile
+  `CredentialStep` into `FactorStep`. A-01 is the second shape and its spec pins the empty field.
+  This is generic to every multi-step form and every screen that swaps a filter panel — no gate
+  sees it, and it presents as data appearing from nowhere.
 
 - **Library defaults are user-facing text you did not write.** TanStack Router's built-in
   `Not Found` is a hardcoded English string, and the ESLint `JSXText` ban cannot catch it because

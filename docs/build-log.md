@@ -1592,3 +1592,38 @@ lapsed and a forged challenge — a session cookie presented as a challenge dies
 discriminator — and the two-slot throttle accounting). Console: 7 component tests over the
 staged flow; 3 browser tests including the wrong-code retype completing the same challenge,
 and axe clean on the redesigned card.
+
+## Task 23 addendum 3 — A-01 splits along its steps · 2026-08-24
+
+"`sign-in-screen.tsx` should be split in 2 smaller components." The file was 270 lines doing two
+unrelated jobs, and the split line was not a size judgement — it is where the state stops being
+shared. A step's `useForm` instance, its field ids and its field-level messages are read by
+nothing else in the file; the challenge, the failure and which step is showing are read by both.
+So `sign-in-screen.tsx` keeps the flow and the card, and `credential-step.tsx` /
+`factor-step.tsx` take one form each. Each form is now typed as its **wire** DTO
+(`AdminChallengeRequest`, `AdminFactorRequest`) rather than a local mirror interface, so a
+contract change fails `typecheck` in the form instead of arriving `undefined` at the api.
+
+**The `key` from addendum 2 is retired, and that is the point rather than a side effect.** The
+DOM-node reuse it held off was a consequence of both steps being a `<form>` at the same position;
+distinct component types cannot be reconciled into each other, so the hazard is gone
+structurally instead of by a prop somebody has to keep. The spec now asserts the code field is
+empty on arrival, so a future merge back into one component fails loudly rather than silently
+leaking a field again. Generalised into `apps/admin/CLAUDE.md`'s traps — it is every multi-step
+form's bug, not this screen's.
+
+**One behaviour changed, deliberately.** With each `useForm` inside its step, leaving a step
+discards what was typed into it — previously the hooks lived in the parent and react-hook-form
+restored the values on return. That is the better behaviour and not merely the convenient one:
+"Folosește alt cont" means the previous address is precisely what must not be prefilled, and
+neither a password nor a spent code has any reason to outlive the step that collected it. Pinned
+by spec, so it is a decision rather than an artefact of where a hook happens to sit.
+
+The refusal Callouts stayed in the screen. An `ApiFailureCallout` is the obvious third extraction
+and will probably be right once a second console screen mutates anything — today it would be an
+abstraction with one call site, which the root `CLAUDE.md` names as its own failure. Splitting a
+screen into its steps is not UX-89's one-off component either: every control they render still
+comes from `@easyesg/ui`, and what was added is this screen's composition, not an inventory item.
+
+**Verified:** `pnpm gates` and `pnpm gates:clean` green, unchanged counts — 7 console component
+tests (two carrying the new assertions) and the browser journey through the same handshake.

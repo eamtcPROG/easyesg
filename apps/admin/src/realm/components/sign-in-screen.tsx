@@ -1,15 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
-import {
-  Button,
-  Callout,
-  FormErrorSummary,
-  Panel,
-  PasswordField,
-  TextField,
-  TextLink,
-} from '@easyesg/ui';
+import { Callout, Panel } from '@easyesg/ui';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { useTranslations } from 'use-intl';
 import {
   API_OUTCOME,
@@ -18,6 +9,8 @@ import {
   type ApiFailure,
 } from '@easyesg/contracts';
 import { beginSignIn, completeSignIn } from '../session';
+import { CredentialStep } from './credential-step';
+import { FactorStep } from './factor-step';
 
 /**
  * A-01 · Admin sign-in (UC-68, FR-75) — the two-step handshake the artboard draws (`EasyESG
@@ -26,22 +19,40 @@ import { beginSignIn, completeSignIn } from '../session';
  * has verified** — "Conectat ca …" is a fact, not copy. One card, three sections (header with
  * its mono kicker, body, footer with the realm statement), on the Focus archetype's column.
  *
- * Mutations ride TanStack Query — the console's data layer (§12.1; the 24 Aug 2026 review
- * caught this screen carrying web's Server-Action idiom instead) — with `ApiOutcome` as the
- * resolved value, so failures stay values and the container's discipline holds end to end.
+ * This component owns the **flow and the card**; each step owns its own form
+ * (`credential-step.tsx`, `factor-step.tsx`). The line between them is where the state lives: a
+ * step's `useForm`, its field ids and its field-level messages are read by nothing else, while
+ * the challenge, the failure and which step is showing are read by both. The steps are not
+ * inventory components and adding them is not UX-89's one-off — every control they render comes
+ * from `@easyesg/ui`; what they are is this screen's own composition, split where it is cohesive.
+ *
+ * Two properties fall out of that split rather than being maintained by hand:
+ *
+ * - **The step switch can no longer leak a field between steps.** Both steps used to be a
+ *   `<form>` at the same position, so React reconciled them and REUSED the uncontrolled input's
+ *   DOM node — the email typed at step one surfaced inside the code field, and a `key` was what
+ *   held it off. Distinct component types cannot be reconciled into each other, so the hazard is
+ *   now structural. Reintroducing a shared step component brings it back.
+ * - **Leaving a step discards what was typed into it**, because the form unmounts with it. That
+ *   is the behaviour this screen wants: "Folosește alt cont" means the previous address is
+ *   exactly what should not be prefilled, and neither a password nor a spent code has any reason
+ *   to outlive the step that collected it. Pinned by spec so it stays a decision.
+ *
+ * Mutations ride TanStack Query — the console's data layer (§12.1; the 24 Aug 2026 review caught
+ * this screen carrying web's Server-Action idiom instead) — with `ApiOutcome` as the resolved
+ * value, so failures stay values and the container's discipline holds end to end. The refusal
+ * Callouts stay here because the failure is the mutation's, and both steps render it identically;
+ * an `ApiFailureCallout` component would be an abstraction with one call site today.
  *
  * States (§8.1 subset): rest · submitting · invalid (inline + UX-111 summary) · error —
  * recoverable, as received; the one branch is `authentication-required` on the factor step —
  * the challenge lapsed, so the flow returns to the credential with the api's wording shown.
- * UX-108: paste and password managers work; `one-time-code` surfaces platform autofill.
  *
- * Drawn by the artboard, deliberately NOT here, each with its owner: the segmented six-cell
- * code input (a §11.5 inventory addition, with task 27's tenant challenge as its second
- * consumer), the code-window countdown, the recovery-code routes (task 27), and the LOGGED
- * audit note (owed with task 28's request-tier audit capture — omitted rather than stated
- * while untrue, per the 24 Aug review's batch). The artboard's full-dark ground vs the Focus
- * shell's dark-header-light-ground is a recorded divergence for design review, not a fork of
- * the archetype.
+ * Drawn by the artboard and deferred at screen level: the LOGGED audit note (owed with task 28's
+ * request-tier audit capture — omitted rather than stated while untrue, per the 24 Aug review's
+ * batch). The artboard's full-dark ground vs the Focus shell's dark-header-light-ground is a
+ * recorded divergence for design review, not a fork of the archetype. The factor step's own
+ * deferrals are listed in `factor-step.tsx`.
  */
 const STEP = {
   Credential: 'credential',
@@ -52,36 +63,17 @@ type SignInStep =
   | { kind: typeof STEP.Credential }
   | { kind: typeof STEP.Factor; email: string };
 
-interface CredentialInput {
-  email: string;
-  password: string;
-}
-
-interface FactorInput {
-  totpCode: string;
-}
-
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const EMAIL_FIELD_ID = 'admin-sign-in-email';
-const PASSWORD_FIELD_ID = 'admin-sign-in-password';
-const TOTP_FIELD_ID = 'admin-sign-in-totp';
-
 export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccount) => void }) {
   const t = useTranslations('realm.signIn');
   const tCommon = useTranslations('realm');
   const [step, setStep] = useState<SignInStep>({ kind: STEP.Credential });
   const [failure, setFailure] = useState<ApiFailure | null>(null);
 
-  const credentialForm = useForm<CredentialInput>({ mode: 'onTouched' });
-  const factorForm = useForm<FactorInput>({ mode: 'onTouched' });
-
   const begin = useMutation({
     mutationFn: beginSignIn,
     onSuccess: (outcome) => {
       if (outcome.status === API_OUTCOME.Ok) {
         setFailure(null);
-        factorForm.reset();
         setStep({ kind: STEP.Factor, email: outcome.value.email });
         return;
       }
@@ -108,36 +100,13 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccoun
     },
   });
 
-  const submitCredential = credentialForm.handleSubmit((input) => {
-    setFailure(null);
-    begin.mutate(input);
-  });
-
-  const submitFactor = factorForm.handleSubmit((input) => {
-    setFailure(null);
-    complete.mutate(input);
-  });
-
   const restart = () => {
     setFailure(null);
     setStep({ kind: STEP.Credential });
   };
 
-  const credentialErrors = credentialForm.formState.errors;
-  const credentialSummary = [
-    credentialErrors.email
-      ? { fieldId: EMAIL_FIELD_ID, message: credentialErrors.email.message }
-      : null,
-    credentialErrors.password
-      ? { fieldId: PASSWORD_FIELD_ID, message: credentialErrors.password.message }
-      : null,
-  ].filter((item) => item !== null);
-
-  const factorErrors = factorForm.formState.errors;
-  const factorSummary = factorErrors.totpCode
-    ? [{ fieldId: TOTP_FIELD_ID, message: factorErrors.totpCode.message }]
-    : [];
-
+  // A const alias of a discriminant check, so TypeScript narrows `step` through it — `step.email`
+  // below is checked, not asserted.
   const onFactorStep = step.kind === STEP.Factor;
 
   return (
@@ -159,7 +128,7 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccoun
         </p>
       </div>
 
-      {/* Body section — the step's form. */}
+      {/* Body section — the refusal, then the step that is showing. */}
       <div className="flex flex-col gap-[var(--space-4)] px-[var(--space-7)] py-[var(--space-5)]">
         {failure?.status === API_OUTCOME.Problem ? (
           <Callout
@@ -182,82 +151,22 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccoun
         ) : null}
 
         {onFactorStep ? (
-          <form
-            // The key is load-bearing: both steps render a TextField-led form at the same
-            // position, so an unkeyed switch makes React REUSE the uncontrolled input's DOM
-            // node — and the email typed at step one surfaces inside the code field. Found by
-            // the spec, kept as a named hazard.
-            key={STEP.Factor}
-            onSubmit={(event) => void submitFactor(event)}
-            noValidate
-            className="flex flex-col gap-[var(--space-4)]"
-          >
-            {factorForm.formState.submitCount > 0 && factorSummary.length > 0 ? (
-              <FormErrorSummary title={t('summaryTitle')} items={factorSummary} />
-            ) : null}
-
-            <TextField
-              id={TOTP_FIELD_ID}
-              label={t('factor.totpLabel')}
-              help={t('factor.totpHelp')}
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              error={factorErrors.totpCode?.message}
-              {...factorForm.register('totpCode', { required: t('factor.totpMissing') })}
-            />
-
-            <Button type="submit" busy={complete.isPending}>
-              {t('factor.submit')}
-            </Button>
-
-            <p className="t-caption">
-              <TextLink asChild>
-                <button type="button" onClick={restart} className="cursor-pointer">
-                  {t('factor.changeAccount')}
-                </button>
-              </TextLink>
-            </p>
-          </form>
+          <FactorStep
+            busy={complete.isPending}
+            onSubmit={(command) => {
+              setFailure(null);
+              complete.mutate(command);
+            }}
+            onChangeAccount={restart}
+          />
         ) : (
-          <form
-            key={STEP.Credential}
-            onSubmit={(event) => void submitCredential(event)}
-            noValidate
-            className="flex flex-col gap-[var(--space-4)]"
-          >
-            {credentialForm.formState.submitCount > 0 && credentialSummary.length > 0 ? (
-              <FormErrorSummary title={t('summaryTitle')} items={credentialSummary} />
-            ) : null}
-
-            <TextField
-              id={EMAIL_FIELD_ID}
-              label={t('credential.emailLabel')}
-              type="email"
-              autoComplete="username"
-              inputMode="email"
-              error={credentialErrors.email?.message}
-              {...credentialForm.register('email', {
-                required: t('credential.emailMissing'),
-                pattern: { value: EMAIL_SHAPE, message: t('credential.emailInvalid') },
-              })}
-            />
-
-            <PasswordField
-              id={PASSWORD_FIELD_ID}
-              label={t('credential.passwordLabel')}
-              autoComplete="current-password"
-              revealLabel={t('credential.show')}
-              concealLabel={t('credential.hide')}
-              error={credentialErrors.password?.message}
-              {...credentialForm.register('password', {
-                required: t('credential.passwordMissing'),
-              })}
-            />
-
-            <Button type="submit" busy={begin.isPending}>
-              {t('credential.submit')}
-            </Button>
-          </form>
+          <CredentialStep
+            busy={begin.isPending}
+            onSubmit={(command) => {
+              setFailure(null);
+              begin.mutate(command);
+            }}
+          />
         )}
       </div>
 

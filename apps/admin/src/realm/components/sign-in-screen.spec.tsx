@@ -71,6 +71,11 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
     // "Conectat ca …" is a server-established fact on this step (the handshake's point).
     expect(screen.getByText(EMAIL)).toBeInTheDocument();
     expect(screen.queryByLabelText('Parolă')).not.toBeInTheDocument();
+    // The code field arrives EMPTY. Not a formality: while both steps were a `<form>` at the
+    // same position, React reconciled them and reused the uncontrolled input's DOM node, so the
+    // address typed at step one appeared here. Distinct step components make that
+    // unrepresentable — this pins it, so a future merge back into one component fails loudly.
+    expect(screen.getByLabelText('Cod de verificare')).toHaveValue('');
   });
 
   it('completes with the code and hands the operator up', async () => {
@@ -149,6 +154,12 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
     await user.click(screen.getByRole('button', { name: 'Folosește alt cont' }));
 
     expect(screen.getByRole('heading', { name: 'Autentificare operator' })).toBeInTheDocument();
+    // …with nothing prefilled. "Use a different account" means the previous address is exactly
+    // what must not come back, and a password has no reason to outlive the step that took it —
+    // the step's form unmounts with it, and this is what makes that a decision rather than an
+    // accident of where the `useForm` happens to sit.
+    expect(screen.getByLabelText('Adresa de e-mail')).toHaveValue('');
+    expect(screen.getByLabelText('Parolă')).toHaveValue('');
   });
 
   it('explains an unreachable api from the bundled catalogue', async () => {
