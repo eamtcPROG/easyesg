@@ -70,6 +70,22 @@ Interim surfaces, each recorded on its owning task row in `docs/task.md`: sign-i
 `?return=`-or-`/home` until task 25's membership branch, and the `(app)` layout's
 `SessionStrip` carries sign-out until task 30's real global tier.
 
+**The provider flow is live (task 24).** `/auth/social/{provider}/start|callback` are Route
+Handlers OUTSIDE `[locale]` — they are the redirect URIs registered at the providers, so they
+cannot vary by language, and they are excluded from `proxy.ts`'s matcher (locale negotiation
+would rewrite them; the session gate would bounce the sessionless callback). The flow logic lives
+in `features/identity/social-flow.ts`; the in-flight OAuth transaction (state, nonce, PKCE
+verifier, intent, return path) rides in its own sealed httpOnly cookie
+(`src/server/social-transaction.ts`, over the codec's generic `sealJson`/`unsealJson`), and a
+successful completion calls `establishSession` exactly as password sign-in does. Two traps with
+scars: **every redirect this flow issues is based on `env.publicOrigin`, never `request.url`** —
+the standalone server binds `0.0.0.0`, and a redirect built from the bind address lands the
+browser on a host the session cookie was never set on; and the transaction cookie is
+`SameSite=Lax` by necessity — the provider callback is a cross-site top-level GET, which `Strict`
+would strip the cookie from. S-01's provider buttons (`SocialProviders`, a Server Component
+streamed behind the form) and the `?notice=` callout (`SocialNoticeCallout`, closed vocabulary in
+`features/identity/social.ts`) are the screen surface; FR-8 link/unlink is task 27's, on S-28.
+
 **The message catalogues have their first content.** `src/messages/{ro,en,ru}.json` carry
 `chrome` and `identity`; all three separately authored, RO the source. Adding a string is a JSON
 edit — and adding it to `ro.json` alone fails `src/messages/messages.parity.spec.ts`, which is

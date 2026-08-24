@@ -1,0 +1,7 @@
+{
+  "enabled": false,
+  "clientId": "",
+  "issuer": "https://accounts.google.com",
+  "scopes": ["openid", "email", "profile"],
+  "redirectUris": ["http://localhost:3100/auth/social/google/callback"]
+}

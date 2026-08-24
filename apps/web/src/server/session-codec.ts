@@ -40,14 +40,43 @@ const GCM_TAG_LENGTH = 16;
 /** One 256-bit key from whatever length the deployment's secret has. */
 const keyFor = (secret: string): Buffer => createHash('sha256').update(secret).digest();
 
-export function sealSession(payload: SessionPayload, secret: string): string {
+/**
+ * The generic sealed box under both codecs — this one and task 24's OAuth transaction
+ * (`social-transaction.ts`). One GCM implementation on purpose: a nonce-handling or tag-length
+ * fix must not have a second copy to miss. Each caller still owns its payload's validation,
+ * which is what keeps a transaction cookie unable to pass for a session — the shapes share no
+ * fields, so the other codec's `read` returns `null`.
+ */
+export function sealJson(value: unknown, secret: string): string {
   const iv = randomBytes(GCM_IV_LENGTH);
   const cipher = createCipheriv('aes-256-gcm', keyFor(secret), iv);
-  const ciphertext = Buffer.concat([
-    cipher.update(JSON.stringify(payload), 'utf8'),
-    cipher.final(),
-  ]);
+  const ciphertext = Buffer.concat([cipher.update(JSON.stringify(value), 'utf8'), cipher.final()]);
   return Buffer.concat([iv, cipher.getAuthTag(), ciphertext]).toString('base64url');
+}
+
+/** `null` for anything `sealJson` under this secret did not produce — never a throw. */
+export function unsealJson(sealed: string, secret: string): unknown {
+  try {
+    const raw = Buffer.from(sealed, 'base64url');
+    if (raw.length <= GCM_IV_LENGTH + GCM_TAG_LENGTH) return null;
+    const decipher = createDecipheriv(
+      'aes-256-gcm',
+      keyFor(secret),
+      raw.subarray(0, GCM_IV_LENGTH),
+    );
+    decipher.setAuthTag(raw.subarray(GCM_IV_LENGTH, GCM_IV_LENGTH + GCM_TAG_LENGTH));
+    const plaintext = Buffer.concat([
+      decipher.update(raw.subarray(GCM_IV_LENGTH + GCM_TAG_LENGTH)),
+      decipher.final(),
+    ]).toString('utf8');
+    return JSON.parse(plaintext) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+export function sealSession(payload: SessionPayload, secret: string): string {
+  return sealJson(payload, secret);
 }
 
 const isLocale = (value: unknown): value is Locale =>
@@ -91,21 +120,5 @@ function readPayload(parsed: unknown): SessionPayload | null {
  * session — and none of them may throw, because this runs on every request carrying the cookie.
  */
 export function unsealSession(sealed: string, secret: string): SessionPayload | null {
-  try {
-    const raw = Buffer.from(sealed, 'base64url');
-    if (raw.length <= GCM_IV_LENGTH + GCM_TAG_LENGTH) return null;
-    const decipher = createDecipheriv(
-      'aes-256-gcm',
-      keyFor(secret),
-      raw.subarray(0, GCM_IV_LENGTH),
-    );
-    decipher.setAuthTag(raw.subarray(GCM_IV_LENGTH, GCM_IV_LENGTH + GCM_TAG_LENGTH));
-    const plaintext = Buffer.concat([
-      decipher.update(raw.subarray(GCM_IV_LENGTH + GCM_TAG_LENGTH)),
-      decipher.final(),
-    ]).toString('utf8');
-    return readPayload(JSON.parse(plaintext));
-  } catch {
-    return null;
-  }
+  return readPayload(unsealJson(sealed, secret));
 }

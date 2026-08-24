@@ -19,3 +19,13 @@ export const REFRESH_COOKIE = 'easyesg_session';
  * redirect without the redirect having to know about sessions.
  */
 export const LOCALE_COOKIE = 'NEXT_LOCALE';
+
+/**
+ * The in-flight OAuth transaction (task 24, §12.5.6's task-24 flow row): `state`, `nonce`, the
+ * PKCE verifier, the intent and the return path, sealed under `SESSION_SECRET` by
+ * `src/server/social-transaction.ts`. Short-lived, path-scoped to `/auth/social`, and
+ * `SameSite=Lax` **by necessity, not habit**: the provider's callback arrives as a cross-site
+ * top-level GET, which is exactly the navigation `Lax` still sends cookies on and `Strict`
+ * does not — under `Strict` every callback would look like a restarted flow.
+ */
+export const SOCIAL_TRANSACTION_COOKIE = 'easyesg_social';

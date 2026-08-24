@@ -51,6 +51,7 @@
     "ioredis": "catalog:",
     "negotiator": "catalog:",
     "nestjs-pino": "catalog:",
+    "openid-client": "catalog:",
     "otpauth": "catalog:",
     "passport": "catalog:",
     "passport-jwt": "catalog:",

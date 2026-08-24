@@ -36,6 +36,25 @@
     },
     "authentication-required": {
       "title": "Autentificare necesară"
+    },
+    "social-provider-unavailable": {
+      "title": "Autentificare prin furnizor indisponibilă",
+      "detail": "Acest mod de autentificare nu este disponibil momentan. Folosiți adresa de e-mail și parola, sau încercați mai târziu."
+    },
+    "social-exchange-failed": {
+      "title": "Autentificare prin furnizor nereușită",
+      "detail": "Conectarea prin furnizorul ales nu a putut fi finalizată. Reluați autentificarea de la început."
+    },
+    "social-identity-unknown": {
+      "title": "Niciun cont asociat",
+      "detail": "Contul de la furnizor nu este asociat niciunui cont de pe platformă. Puteți crea un cont nou."
+    },
+    "social-email-in-use": {
+      "title": "Adresă deja folosită",
+      "detail": "Există deja un cont cu această adresă de e-mail. Autentificați-vă cu parola contului."
+    },
+    "social-redirect-rejected": {
+      "title": "Cerere de autentificare invalidă"
     }
   },
   "validation": {},

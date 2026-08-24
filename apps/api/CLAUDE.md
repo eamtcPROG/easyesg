@@ -59,6 +59,25 @@ ts-node-loaded CLI graphs does not bite it). §12.5.6's task-23 rows carry the d
 recorded costs: a revoked admin session's last access token is honoured ≤15 min until task 28's
 guard adds a lookup, and `totp_secret` is unencrypted at rest — task 27's hardening debt.
 
+Task 24 adds social sign-in (FR-2, FR-4, FR-82; D-6): `identity.provider_identity` — matched on
+`(provider, subject)`, never email (§9.1 calls the email-match variant an account-takeover path) —
+`contracts/identity-provider.port.ts` with the `openid-client` 6.8.7 adapter (ESM-only; a plain
+static import, because on `module: nodenext`/Node 26 `require(esm)` loads it — the OQ-48 revisit,
+proven for Node and Jest alike), and `modules/identity/provider` serving
+`POST /auth/social/{provider}/{challenge,session}` + `GET /auth/social/providers` as the back
+channel of `apps/web`'s redirect endpoints (§12.5.6's task-24 rows — no passport middleware, the
+recorded deviation from the task row). Provider behaviour is config-store data (kind
+`identity_provider`, scope per provider — enable/disable with no redeploy); client secrets are
+env (`AUTH_SOCIAL_*_CLIENT_SECRET`, missing ⇒ that ONE provider unavailable, logged, never
+boot-fatal). Traps recorded: the completion use case returns outcomes and throws AFTER commit
+(the unverified-registration path must commit account + challenge while answering 403), and the
+social throttle key is per (IP, provider) — the account is unknowable before the exchange — so
+suites sharing a stack share ONE §12.5.6 window; both e2e suites drain
+`attempt_key LIKE 'social-sign-in:%'` for that reason. `test/support/oidc-provider-stub.ts` is a
+minimal Authorization Server both e2e suites (and the browser suite, by relative import) drive a
+real code flow against; `AUTH_SOCIAL_ALLOW_INSECURE=true` is what lets discovery hit its http
+issuer, and is never set in production.
+
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
 other than health, `/auth` and `/auth/admin`, and almost every module body — 33 of the 35

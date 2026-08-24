@@ -1690,3 +1690,78 @@ errors, which is the second time that wrapper has lied and the reason the log ge
 the exit code. 8 new `packages/ui` tests, 62 web, 7 console, 176 api unit, 27 schema invariants,
 133 api e2e, 35 browser (the tenant identity journeys drive the migrated forms for real). 23
 boundary rules, each still rejecting its fixture.
+
+## Task 24 — Social sign-in · 2026-08-24
+
+Four unknowns raised as one batch before any code, per the standing rule — one of them the batch
+§12.1 had explicitly reserved ("the identity build raises its remaining unknowns as one batch when
+it starts"). All four closed by the project owner as recommended, and each was written into its
+owning artefact before implementation: the `openid-client` 6.8.7 pin and the OQ-48 revisit in
+§12.1/§18, the flow topology and the provider-configuration split as §12.5.6 task-24 rows, the
+FR-8 deferral on task 27's row.
+
+**The OQ-48 revisit was decided by an experiment, not an argument.** `openid-client` is ESM-only —
+the exact trigger OQ-48 named — but the premise that each ESM-only dependency needs its own
+dynamic-import bridge predated `module: nodenext` on Node 26: an actual `require('openid-client')`
+on 26.7.0 loads it natively (no top-level await in its graph), and a throwaway Jest spec proved
+ts-jest's runtime does the same. The adapter uses a plain static import; the bridge remains
+`use-intl`'s alone. Also verified before writing the adapter: the declined
+`passport-google-oauth20` last published in **March 2019**, and openid-client resolves Entra's
+`{tenantid}` issuer template from the token's own `tid` claim, so Microsoft multi-tenant needs no
+special-casing in our config payload.
+
+**The task row said "passport adapters" and the design does not use passport, recorded as a
+deviation rather than performed as written.** Only `apps/web` holds `SESSION_SECRET` and only its
+Route Handlers may write the session cookie, so the browser-facing redirect endpoints live on web
+(`/auth/social/{provider}/start|callback`, unlocalized — they are the URIs registered at the
+provider) and the api is a back channel (challenge → token exchange → the same `SessionResponse`
+as password sign-in). Passport middleware has nothing to mount on in that shape. The 19 Aug §12.1
+row expecting OIDC "to attach at the strategy seam" was amended rather than silently
+contradicted.
+
+**What UC-05's alternate flow did to the design: intent.** "Offered registration rather than
+silently signed in" requires knowing what the user was doing when the flow began, so the sealed
+transaction cookie carries an `intent` (`sign-in` | `register`) and the completion endpoint
+branches on it: sign-in + unknown identity → 404 `social-identity-unknown` (web lands on the
+register surface with the offer); register + taken address → 409 `social-email-in-use`, nothing
+created, nothing linked (BR-ID-3 — the linking route is FR-8, task 27, and the interim copy
+deliberately does not promise it).
+
+**`CompleteSocialSignIn` inherits `SignIn`'s several-short-transactions shape for a new reason.**
+The unverified-registration path (provider did not assert the address — Microsoft's common case,
+since Entra rarely asserts `email_verified`) must COMMIT account + identity + challenge + outbox
+row while the request answers 403 `email-unverified`; a throw inside the transaction would roll
+back the very account the emailed link names. So the one transaction returns outcomes, and the
+403 is thrown after commit — the unit spec asserts the survival against a fake that genuinely
+rolls back on throw.
+
+**Assumptions recorded in code and here:** the social throttle key is per (IP, provider) — the
+account dimension is unknowable before the exchange the throttle guards — which is *stricter*
+than §12.5.6's per-(IP, account) intent; both e2e suites tripped it as a single-IP burst, which is
+the office-NAT-in-April shape in miniature. Watch it when trust-proxy lands (task 71). One
+identity per provider per account (`UNIQUE (account_id, provider)`), matching S-28's linked-or-not
+presentation; revisit only if a UC states the need. The asserted display name (FR-2's third
+scope) is received and unconsumed — the profile (FR-9) is a later task, and the provider-identity
+data inventory row deliberately does not store it. UC-06's "logging out does not end the provider
+session, and the interface says so" is half-true today: the API's sign-out description states it;
+the interface's disclosure belongs to task 30's real sign-out surface.
+
+**Two harness findings cost a rebuild each and are recorded where they bit.** The standalone
+server binds `0.0.0.0`, so a redirect built from `request.url` sends the browser to a host the
+session cookie was never set on — signed in and signed out at once; every social-flow redirect is
+now based on `env.publicOrigin` (the browser suite caught it on its first run). And Playwright
+compiles specs as ESM, so `__dirname` throws in e2e support files — `import.meta.url` is the
+anchor.
+
+**Verification:** 15 unit specs over the two use cases (fakes with rollback, per the house
+pattern); 8 api e2e tests driving a REAL OIDC code flow — discovery, authorize, token, JWKS, with
+a tampered-nonce probe proving the ID-token validation is load-bearing — against a ~150-line stub
+Authorization Server (`test/support/oidc-provider-stub.ts`; `oidc-provider` the package was
+declined as a second AS implementation to debug when a test goes red); 3 Playwright tests driving
+the browser journey through the shipped screens against the same stub, with FR-82's no-redeploy
+half exercised by enabling the provider through a configuration publish mid-suite and restoring
+the committed seed payload after. React conventions pass applied `async-suspense-boundaries`
+(the provider list streams behind S-01's credential form); declined with reasons:
+`bundle-barrel-imports` (house convention), `vercel-composition-patterns` not loaded (one new
+primitive — `ProviderButton`, an anchor in the secondary button's clothes, added to §11.5 under
+UX-89 with zero client JS — no boolean-prop growth anywhere).

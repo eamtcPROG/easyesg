@@ -84,6 +84,7 @@ catalog:
   next: 16.3.0
   next-intl: 4.13.7
   openapi-typescript: 7.13.0
+  openid-client: 6.8.7
   otpauth: 9.5.1
   passport: 0.7.0
   passport-jwt: 4.0.1

@@ -36,6 +36,25 @@
     },
     "authentication-required": {
       "title": "Sign-in required"
+    },
+    "social-provider-unavailable": {
+      "title": "Provider sign-in unavailable",
+      "detail": "This way of signing in is not available right now. Use your email address and password, or try again later."
+    },
+    "social-exchange-failed": {
+      "title": "Provider sign-in unsuccessful",
+      "detail": "Signing in with the chosen provider could not be completed. Start the sign-in again from the beginning."
+    },
+    "social-identity-unknown": {
+      "title": "No account linked",
+      "detail": "The provider account is not linked to any account on the platform. You can create a new account."
+    },
+    "social-email-in-use": {
+      "title": "Address already in use",
+      "detail": "An account with this email address already exists. Sign in with the account's password."
+    },
+    "social-redirect-rejected": {
+      "title": "Invalid sign-in request"
     }
   },
   "validation": {},

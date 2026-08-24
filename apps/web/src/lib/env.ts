@@ -50,4 +50,16 @@ export const env = {
   get sessionSecret(): string {
     return required('SESSION_SECRET');
   },
+
+  /**
+   * This app's own public origin, for the OAuth redirect URIs task 24 registers at the
+   * providers (`{origin}/auth/social/{provider}/callback`). An env value with the dev default —
+   * `next dev --port 3100` — rather than the request's Host header: the api refuses a redirect
+   * URI outside its configured allowlist either way, but a URI built from Host would make the
+   * one the provider sees attacker-influenced, which is the classic redirect-poisoning shape.
+   * Mirrors the api's `PUBLIC_WEB_URL` (same variable name, two runtimes — AD-9).
+   */
+  get publicOrigin(): string {
+    return process.env.PUBLIC_WEB_URL ?? 'http://localhost:3100';
+  },
 } as const;

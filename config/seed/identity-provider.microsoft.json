@@ -1,0 +1,7 @@
+{
+  "enabled": false,
+  "clientId": "",
+  "issuer": "https://login.microsoftonline.com/common/v2.0",
+  "scopes": ["openid", "email", "profile"],
+  "redirectUris": ["http://localhost:3100/auth/social/microsoft/callback"]
+}

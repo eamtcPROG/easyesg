@@ -24,6 +24,7 @@
 export { BrandMark } from './primitives/brand-mark';
 export { Button, type ButtonProps } from './primitives/button';
 export { Panel } from './primitives/panel';
+export { ProviderButton, type ProviderButtonProps } from './primitives/provider-button';
 export { Spinner } from './primitives/spinner';
 export { TextLink, type TextLinkProps } from './primitives/text-link';
 

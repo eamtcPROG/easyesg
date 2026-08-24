@@ -20,6 +20,11 @@ const config: AppConfig = {
     passwordPepper: 'not-a-real-pepper',
     jwtSecret: 'not-a-real-secret',
     adminSecret: 'not-a-real-admin-secret',
+    social: {
+      allowInsecureIssuers: false,
+      google: { clientSecret: 'not-a-real-secret' },
+      microsoft: { clientSecret: 'not-a-real-secret' },
+    },
   },
   admin: { origin: 'http://localhost:3200' },
   email: { provider: 'log' },

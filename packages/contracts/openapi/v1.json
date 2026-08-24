@@ -345,6 +345,196 @@
         ]
       }
     },
+    "/api/v1/auth/social/providers": {
+      "get": {
+        "description": "The set the sign-in screen renders. Providers are enabled and disabled through configuration without a redeploy; a disabled provider disappears from here and refuses both sign-in and registration.",
+        "operationId": "SocialAuthController_providers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The currently enabled providers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SocialProvidersResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "List the identity providers currently accepting sign-in",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/social/{provider}/challenge": {
+      "post": {
+        "description": "Builds the authorization redirect for the provider. The caller sends the browser to `authorizationUrl` and must hold `state`, `nonce` and `codeVerifier` server-side across the redirect — they bind the callback to this challenge and are required to complete it.",
+        "operationId": "SocialAuthController_challenge",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "google",
+                "microsoft"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialChallengeRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The authorization challenge.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SocialChallengeResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The redirect URI is not within the provider’s registered redirect configuration (problem type social-redirect-rejected).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The provider is not available for sign-in (problem type social-provider-unavailable). Identical for a provider that is disabled and one that is not registered.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Begin a provider sign-in",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/social/{provider}/session": {
+      "post": {
+        "description": "Redeems the authorization code, validates the identity assertion, and issues the same session shape as password sign-in — matching on the provider’s stable subject identifier, never on the email address. A first-time identity registers when the flow began as registration; a sign-in that matches nothing is answered distinctly so registration can be offered instead.",
+        "operationId": "SocialAuthController_session",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "google",
+                "microsoft"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteSocialSignInRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The session was issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SessionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The exchange failed (problem type social-exchange-failed), or the identity is linked to no account and the flow began as sign-in — see 404.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The provider is unavailable (problem type social-provider-unavailable), or the account awaits email verification (problem type email-unverified) — for a fresh registration whose provider did not assert the address verified, the account exists and the verification email is on its way when this answers.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The authenticated identity is linked to no account (problem type social-identity-unknown). Nothing was created; the caller offers registration.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The asserted address already has an account (problem type social-email-in-use). A provider assertion alone never attaches to an existing account; the resolution is password sign-in.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many completion attempts from this address in the window.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Complete a provider sign-in",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -804,6 +994,107 @@
         },
         "required": [
           "refreshToken"
+        ]
+      },
+      "SocialProvidersResponseDto": {
+        "type": "object",
+        "properties": {
+          "providers": {
+            "type": "array",
+            "description": "Providers currently accepting sign-in and registration.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "google",
+                "microsoft"
+              ]
+            }
+          }
+        },
+        "required": [
+          "providers"
+        ]
+      },
+      "SocialChallengeResponseDto": {
+        "type": "object",
+        "properties": {
+          "authorizationUrl": {
+            "type": "string",
+            "description": "The provider's authorization endpoint with this flow's parameters applied."
+          },
+          "state": {
+            "type": "string",
+            "description": "Binds the callback to this challenge. Compare against the callback query."
+          },
+          "nonce": {
+            "type": "string",
+            "description": "Required by the completion endpoint; validated against the ID token."
+          },
+          "codeVerifier": {
+            "type": "string",
+            "description": "The PKCE verifier the completion endpoint presents to the token endpoint."
+          }
+        },
+        "required": [
+          "authorizationUrl",
+          "state",
+          "nonce",
+          "codeVerifier"
+        ]
+      },
+      "SocialChallengeRequestDto": {
+        "type": "object",
+        "properties": {
+          "redirectUri": {
+            "type": "string",
+            "description": "Where the provider returns the browser. Must match the redirect configuration registered for the provider exactly.",
+            "example": "http://localhost:3100/auth/social/google/callback"
+          }
+        },
+        "required": [
+          "redirectUri"
+        ]
+      },
+      "CompleteSocialSignInRequestDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The authorization code from the provider's callback."
+          },
+          "state": {
+            "type": "string",
+            "description": "The state the challenge issued, as returned by the callback."
+          },
+          "nonce": {
+            "type": "string",
+            "description": "The nonce the challenge issued."
+          },
+          "codeVerifier": {
+            "type": "string",
+            "description": "The PKCE verifier the challenge issued."
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "The redirect URI the flow began with — must match the challenge exactly.",
+            "example": "http://localhost:3100/auth/social/google/callback"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "sign-in",
+              "register"
+            ],
+            "description": "What the user was doing when the flow began. A sign-in that matches no account is offered registration rather than silently given one; a registration that matches an existing address is refused rather than linked."
+          }
+        },
+        "required": [
+          "code",
+          "state",
+          "nonce",
+          "codeVerifier",
+          "redirectUri",
+          "intent"
         ]
       },
       "AdminChallengeResponseDto": {

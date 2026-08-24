@@ -46,3 +46,13 @@ export const passwordResetThrottleKey = (clientIp: string | undefined, email: st
  *  both surfaces spends two budgets and neither leaks into the other's window. */
 export const adminSignInThrottleKey = (clientIp: string | undefined, email: string): string =>
   throttleKey('admin-sign-in', clientIp, email);
+
+/**
+ * The social completion path (task 24). §12.5.6's per-(IP, account) key cannot be built here —
+ * the account is unknowable before the code exchange the throttle guards — so the key degrades
+ * to per (IP, provider), the same recorded degradation as task 21's missing `clientIp`: a
+ * narrower net than specified, never no net. The credential itself is guessed at the provider,
+ * not here; this bounds how fast one address can spend our token-endpoint round trips.
+ */
+export const socialSignInThrottleKey = (clientIp: string | undefined, provider: string): string =>
+  throttleKey('social-sign-in', clientIp, provider);

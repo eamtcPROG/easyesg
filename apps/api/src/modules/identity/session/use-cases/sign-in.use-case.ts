@@ -13,8 +13,8 @@ import {
   type Account,
   type Credential,
 } from '@api/modules/identity/account/models/account.model';
+import { finaliseIssuedSession } from '../domain/issue-session';
 import { mintRefreshToken } from '../domain/refresh-token';
-import { ACCESS_TOKEN_TTL_MS, sessionExpiresAt } from '../domain/session-expiry';
 import {
   AccountLockedError,
   CredentialInvalidError,
@@ -111,15 +111,10 @@ export class SignIn {
       return tx.createSession(account.id, minted.hash, now);
     });
 
-    const accessTokenExpiresAt = new Date(now.getTime() + ACCESS_TOKEN_TTL_MS);
-    return {
-      account,
-      sessionId: session.id,
-      accessToken: await this.signer.sign(session.id, accessTokenExpiresAt),
-      accessTokenExpiresAt,
-      refreshToken: minted.value,
-      refreshTokenExpiresAt: sessionExpiresAt({ sessionCreatedAt: session.createdAt, tokenIssuedAt: now }),
-    };
+    return finaliseIssuedSession(
+      { account, session, refreshTokenValue: minted.value, now },
+      this.signer,
+    );
   }
 
   /**

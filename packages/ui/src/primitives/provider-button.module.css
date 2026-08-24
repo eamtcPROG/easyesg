@@ -1,0 +1,19 @@
+/* Tier discipline (UX-78): tier 2/3 tokens only. */
+
+.provider {
+  /* An anchor wearing the secondary button's clothes: undo anchor text decoration and let the
+     shared .button rules govern everything else. Full width — S-01 stacks one per provider. */
+  width: 100%;
+  text-decoration: none;
+}
+
+.glyph {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+
+.glyph > * {
+  width: 100%;
+  height: 100%;
+}

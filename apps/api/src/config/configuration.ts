@@ -29,6 +29,13 @@ export const APP_MODE = {
  */
 const ENV_FALSE = 'false';
 
+/**
+ * The opt-IN spelling, for flags whose safe direction is OFF: `AUTH_SOCIAL_ALLOW_INSECURE`
+ * weakens a security posture (http issuers, for the e2e stub), so an unset, misspelled or empty
+ * value must leave TLS required — the mirror of `ENV_FALSE`'s argument, with the sign flipped.
+ */
+const ENV_TRUE = 'true';
+
 export type AppMode = (typeof APP_MODE)[keyof typeof APP_MODE];
 
 export interface AppConfig {
@@ -69,6 +76,20 @@ export interface AppConfig {
      * unable to pass for an admin one. HTTP tier only, undefaulted, for the pepper's reason.
      */
     adminSecret: string | undefined;
+    /**
+     * Social sign-in's environment half (task 24, §12.5.6's task-24 configuration row): the
+     * per-provider client secrets — everything else about a provider is configuration-store
+     * data. Undefaulted but, unlike the pepper, NOT boot-fatal: a missing secret makes ONE
+     * provider unavailable (logged at error where it is resolved), because taking the tier down
+     * over one provider would be the outage FR-82 exists to prevent. Moves to OpenBao when it
+     * exists; until then rotation is an environment change, the recorded FR-82 deferral.
+     */
+    social: {
+      /** Permits `http://` issuers — the e2e stub provider. Never set in production. */
+      allowInsecureIssuers: boolean;
+      google: { clientSecret: string | undefined };
+      microsoft: { clientSecret: string | undefined };
+    };
   };
   admin: {
     /**
@@ -130,6 +151,11 @@ export default (): AppConfig => ({
     passwordPepper: process.env.AUTH_PASSWORD_PEPPER,
     jwtSecret: process.env.AUTH_JWT_SECRET,
     adminSecret: process.env.AUTH_ADMIN_SECRET,
+    social: {
+      allowInsecureIssuers: process.env.AUTH_SOCIAL_ALLOW_INSECURE === ENV_TRUE,
+      google: { clientSecret: process.env.AUTH_SOCIAL_GOOGLE_CLIENT_SECRET },
+      microsoft: { clientSecret: process.env.AUTH_SOCIAL_MICROSOFT_CLIENT_SECRET },
+    },
   },
   // 3200 is `apps/admin`'s dev port, so a host run works with no .env entry (same convention
   // as `web.publicUrl` below).

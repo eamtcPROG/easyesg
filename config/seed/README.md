@@ -28,6 +28,8 @@ edited by people who cannot deploy — stay in the store.
 | File | Kind | Why it is here and not in code |
 | --- | --- | --- |
 | `locale-registration.global.json` | `locale_registration` | AD-4 lists locale registration as store data (FR-63, NFR-25): *which* locales are offered is configuration, while the catalogues themselves are committed. Registering a fourth is A-03's screen, not a release |
+| `identity-provider.google.json` | `identity_provider` | FR-82: a social provider's behaviour — enabled state, client id, issuer, scopes, redirect allowlist — is store data so it can be withdrawn or rotated without a redeploy (A-18's screen, task 67). Ships **disabled with an empty client id**: enabling is a deployment's decision, made by publishing real values. The client secret is deliberately NOT here — it is an environment variable until OpenBao exists (§12.5.6's task-24 configuration row) |
+| `identity-provider.microsoft.json` | `identity_provider` | As above. The issuer is the Entra multi-tenant `common` endpoint; its `{tenantid}` issuer template is resolved per token by the OIDC client |
 
 ## Arriving later
 

@@ -27,6 +27,23 @@ export const ProblemType = {
    *  action or the provisioning CLI, never a reset link (the realm has none). */
   AdminAccountLocked: 'admin-account-locked',
   EmailUnverified: 'email-unverified',
+  /** FR-82: the provider is not registered or is disabled — refused for sign-in and registration
+   *  alike, which is the "stops new registrations" half; existing accounts keep their OTHER
+   *  credentials, which is why this never says anything about the account. */
+  SocialProviderUnavailable: 'social-provider-unavailable',
+  /** Every way the provider or its ID token can refuse the code exchange, collapsed — the
+   *  distinctions would describe our infrastructure to a caller probing it (task 24). */
+  SocialExchangeFailed: 'social-exchange-failed',
+  /** UC-05's alternate flow: the identity authenticated but is linked to no account. The caller
+   *  offers registration; nothing was created. Disclosed only to someone who authenticated at the
+   *  provider for that identity, so no NFR-64 enumeration surface opens. */
+  SocialIdentityUnknown: 'social-identity-unknown',
+  /** UC-02's alternate / BR-ID-3: the asserted address already has an account, and a provider
+   *  assertion alone never attaches to one. Routed to password sign-in (linking is FR-8, task 27). */
+  SocialEmailInUse: 'social-email-in-use',
+  /** The presented redirect_uri is not in the provider's configured allowlist (A-18's redirect
+   *  configuration) — a misconfigured or hostile caller, never a user-recoverable state. */
+  SocialRedirectRejected: 'social-redirect-rejected',
   VerificationTokenInvalid: 'verification-token-invalid',
   ResetTokenInvalid: 'reset-token-invalid',
   MfaRequired: 'mfa-required',

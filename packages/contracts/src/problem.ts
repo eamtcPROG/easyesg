@@ -42,6 +42,15 @@ export const PROBLEM_TYPE = {
   EmailUnverified: 'https://easyesg.md/problems/email-unverified',
   /** FR-4's lockout — S-01 offers the reset route, its only release before Phase 8. */
   AccountLocked: 'https://easyesg.md/problems/account-locked',
+  /** FR-82: the provider is disabled or unregistered — the callback shows "use email and
+   *  password" rather than a retry (task 24). */
+  SocialProviderUnavailable: 'https://easyesg.md/problems/social-provider-unavailable',
+  /** The exchange or ID-token validation failed — the callback offers starting over. */
+  SocialExchangeFailed: 'https://easyesg.md/problems/social-exchange-failed',
+  /** UC-05's alternate flow — the callback offers registration instead of a session. */
+  SocialIdentityUnknown: 'https://easyesg.md/problems/social-identity-unknown',
+  /** BR-ID-3's collision — the callback routes to password sign-in (linking is task 27). */
+  SocialEmailInUse: 'https://easyesg.md/problems/social-email-in-use',
 } as const;
 
 export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

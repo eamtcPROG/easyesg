@@ -148,6 +148,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/social/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the identity providers currently accepting sign-in
+         * @description The set the sign-in screen renders. Providers are enabled and disabled through configuration without a redeploy; a disabled provider disappears from here and refuses both sign-in and registration.
+         */
+        get: operations["SocialAuthController_providers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/social/{provider}/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Begin a provider sign-in
+         * @description Builds the authorization redirect for the provider. The caller sends the browser to `authorizationUrl` and must hold `state`, `nonce` and `codeVerifier` server-side across the redirect — they bind the callback to this challenge and are required to complete it.
+         */
+        post: operations["SocialAuthController_challenge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/social/{provider}/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete a provider sign-in
+         * @description Redeems the authorization code, validates the identity assertion, and issues the same session shape as password sign-in — matching on the provider’s stable subject identifier, never on the email address. A first-time identity registers when the flow began as registration; a sign-in that matches nothing is answered distinctly so registration can be offered instead.
+         */
+        post: operations["SocialAuthController_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -328,6 +388,47 @@ export interface components {
         SignOutRequestDto: {
             /** @description The refresh token of the session to terminate. Possession is the authentication: it is what the web tier actually holds, and it keeps sign-out working after the access token has already expired. */
             refreshToken: string;
+        };
+        SocialProvidersResponseDto: {
+            /** @description Providers currently accepting sign-in and registration. */
+            providers: ("google" | "microsoft")[];
+        };
+        SocialChallengeResponseDto: {
+            /** @description The provider's authorization endpoint with this flow's parameters applied. */
+            authorizationUrl: string;
+            /** @description Binds the callback to this challenge. Compare against the callback query. */
+            state: string;
+            /** @description Required by the completion endpoint; validated against the ID token. */
+            nonce: string;
+            /** @description The PKCE verifier the completion endpoint presents to the token endpoint. */
+            codeVerifier: string;
+        };
+        SocialChallengeRequestDto: {
+            /**
+             * @description Where the provider returns the browser. Must match the redirect configuration registered for the provider exactly.
+             * @example http://localhost:3100/auth/social/google/callback
+             */
+            redirectUri: string;
+        };
+        CompleteSocialSignInRequestDto: {
+            /** @description The authorization code from the provider's callback. */
+            code: string;
+            /** @description The state the challenge issued, as returned by the callback. */
+            state: string;
+            /** @description The nonce the challenge issued. */
+            nonce: string;
+            /** @description The PKCE verifier the challenge issued. */
+            codeVerifier: string;
+            /**
+             * @description The redirect URI the flow began with — must match the challenge exactly.
+             * @example http://localhost:3100/auth/social/google/callback
+             */
+            redirectUri: string;
+            /**
+             * @description What the user was doing when the flow began. A sign-in that matches no account is offered registration rather than silently given one; a registration that matches an existing address is refused rather than linked.
+             * @enum {string}
+             */
+            intent: "sign-in" | "register";
         };
         AdminChallengeResponseDto: {
             /**
@@ -673,6 +774,147 @@ export interface operations {
             };
             /** @description The token is not usable (problem type authentication-required), or the session has reached a lifetime bound (problem type session-expired) — the latter is the signal to re-authenticate in place with work preserved. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SocialAuthController_providers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The currently enabled providers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SocialProvidersResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    SocialAuthController_challenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "google" | "microsoft";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialChallengeRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The authorization challenge. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SocialChallengeResponseDto"];
+                    };
+                };
+            };
+            /** @description The redirect URI is not within the provider’s registered redirect configuration (problem type social-redirect-rejected). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The provider is not available for sign-in (problem type social-provider-unavailable). Identical for a provider that is disabled and one that is not registered. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SocialAuthController_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "google" | "microsoft";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteSocialSignInRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The session was issued. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SessionResponseDto"];
+                    };
+                };
+            };
+            /** @description The exchange failed (problem type social-exchange-failed), or the identity is linked to no account and the flow began as sign-in — see 404. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The provider is unavailable (problem type social-provider-unavailable), or the account awaits email verification (problem type email-unverified) — for a fresh registration whose provider did not assert the address verified, the account exists and the verification email is on its way when this answers. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The authenticated identity is linked to no account (problem type social-identity-unknown). Nothing was created; the caller offers registration. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The asserted address already has an account (problem type social-email-in-use). A provider assertion alone never attaches to an existing account; the resolution is password sign-in. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many completion attempts from this address in the window. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

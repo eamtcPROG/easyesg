@@ -134,6 +134,47 @@
       "missingTitle": "Linkul este incomplet",
       "missingBody": "Adresa deschisă nu conține codul de resetare, deci nu știm ce cont să modificăm. Deschide linkul exact cum a venit în e-mail sau cere unul nou.",
       "missingAction": "Cere un link nou"
+    },
+    "social": {
+      "divider": "sau",
+      "continueWith": "Continuați cu {provider}",
+      "notice": {
+        "cancelled": {
+          "title": "Autentificare întreruptă",
+          "body": "Conectarea prin furnizor a fost anulată înainte de final, deci nu ați fost autentificat.",
+          "action": "Alegeți din nou furnizorul, sau folosiți adresa de e-mail și parola."
+        },
+        "restart": {
+          "title": "Reluați autentificarea",
+          "body": "Pasul de conectare prin furnizor a expirat sau nu a putut fi verificat, deci nu ați fost autentificat.",
+          "action": "Porniți din nou autentificarea prin furnizor."
+        },
+        "unavailable": {
+          "title": "Metodă de autentificare indisponibilă",
+          "body": "Autentificarea prin acest furnizor nu este disponibilă momentan, deci contul rămâne accesibil doar prin celelalte metode.",
+          "action": "Folosiți adresa de e-mail și parola, sau încercați mai târziu."
+        },
+        "failed": {
+          "title": "Autentificarea prin furnizor a eșuat",
+          "body": "Conectarea prin furnizor nu a putut fi finalizată, deci nu ați fost autentificat.",
+          "action": "Încercați din nou; dacă problema persistă, folosiți adresa de e-mail și parola."
+        },
+        "emailInUse": {
+          "title": "Există deja un cont cu această adresă",
+          "body": "Adresa confirmată de furnizor aparține unui cont existent, iar o conectare prin furnizor nu poate prelua un cont existent.",
+          "action": "Autentificați-vă cu parola contului, folosind formularul de mai jos."
+        },
+        "verifySent": {
+          "title": "Confirmați adresa de e-mail",
+          "body": "Contul a fost creat, dar adresa de e-mail nu este încă confirmată. V-am trimis un mesaj cu linkul de confirmare.",
+          "action": "Deschideți ecranul de confirmare dacă mesajul nu a ajuns."
+        },
+        "unknownIdentity": {
+          "title": "Niciun cont pentru această identitate",
+          "body": "Contul de la furnizor nu este asociat niciunui cont de pe platformă, deci nu există încă nimic în care să vă autentificați.",
+          "action": "Creați un cont nou cu butonul furnizorului de mai jos, sau cu adresa de e-mail."
+        }
+      }
     }
   }
 }

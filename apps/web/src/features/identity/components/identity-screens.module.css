@@ -74,3 +74,30 @@
 }
 
 /* The footer's styles moved to `src/shared/site-footer.module.css` with the component. */
+
+/* Task 24 — S-01's provider choices, below the credential form (§11.5 ProviderButton). */
+.socialBlock {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.socialDivider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--text-muted);
+  font: 400 13px/19px var(--font-text);
+}
+
+.socialDivider::before,
+.socialDivider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border-default);
+}
+
+/* The notice callout keeps the form's width and sits above it, first in reading order. */
+.notice {
+  margin-bottom: var(--space-5);
+}

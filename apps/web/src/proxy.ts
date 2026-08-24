@@ -98,12 +98,15 @@ export default function proxy(request: NextRequest): NextResponse {
 
 export const config = {
   /**
-   * next-intl's recommended matcher, plus `health`.
+   * next-intl's recommended matcher, plus `health` and `auth`.
    *
    * Excluding `api` is not cosmetic: `src/app/api/[...path]` is the token-attaching proxy the
    * browser calls, and a locale rewrite applied to it would corrupt the forwarded path. `health`
    * is the blue/green switch target (§10.6) and must answer identically at every locale — which
-   * means at none.
+   * means at none. `auth` is task 24's OAuth redirect surface (`/auth/social/…`): its paths are
+   * registered at the identity providers, so they cannot vary by language, and the provider's
+   * callback arrives sessionless by definition — the closed-by-default session gate must not
+   * bounce it to sign-in.
    */
-  matcher: '/((?!api|health|_next|_vercel|.*\\..*).*)',
+  matcher: '/((?!api|auth|health|_next|_vercel|.*\\..*).*)',
 };

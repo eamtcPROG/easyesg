@@ -55,6 +55,23 @@ export type RequestPasswordResetRequest =
   components['schemas']['RequestPasswordResetRequestDto'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequestDto'];
 
+// identity — /api/v1/auth/social (FR-2, FR-4, FR-82; task 24). The OAuth transaction — state,
+// nonce, verifier — travels through apps/web's sealed transaction cookie, never readable in the
+// browser; these shapes are the back-channel surface between the web tier and the api.
+export {
+  SOCIAL_PROVIDER,
+  SOCIAL_SIGN_IN_INTENT,
+  isSocialProvider,
+  isSocialSignInIntent,
+  type SocialProvider,
+  type SocialSignInIntent,
+} from './social';
+export type SocialChallengeRequest = components['schemas']['SocialChallengeRequestDto'];
+export type SocialChallengeResponse = components['schemas']['SocialChallengeResponseDto'];
+export type CompleteSocialSignInRequest =
+  components['schemas']['CompleteSocialSignInRequestDto'];
+export type SocialProvidersResponse = components['schemas']['SocialProvidersResponseDto'];
+
 // platform — /api/v1/auth/admin (FR-75; task 23, the two-step handshake since 24 Aug 2026).
 // The challenge and the session travel as sealed httpOnly cookies the api sets — these shapes
 // are the BODY surface only; tokens and the challenge deliberately absent.

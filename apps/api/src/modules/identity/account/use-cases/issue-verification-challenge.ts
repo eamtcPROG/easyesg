@@ -19,7 +19,10 @@ import type { Account } from '../models/account.model';
  * retiring the previous challenge — or neither does.
  */
 export async function issueVerificationChallenge(
-  tx: AccountTransaction,
+  // A `Pick`, not the whole transaction (ISP): the challenge needs exactly these two operations,
+  // and the narrowing is what lets task 24's social store reuse THIS implementation rather than
+  // growing a second challenge flow — the drift this header warns about, structurally prevented.
+  tx: Pick<AccountTransaction, 'issueVerificationToken' | 'emit'>,
   account: Account,
   now: Date,
 ): Promise<void> {

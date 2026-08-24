@@ -134,6 +134,47 @@
       "missingTitle": "The link is incomplete",
       "missingBody": "The address you opened does not carry the reset code, so we do not know which account to change. Open the link exactly as it arrived in the email, or request a new one.",
       "missingAction": "Request a new link"
+    },
+    "social": {
+      "divider": "or",
+      "continueWith": "Continue with {provider}",
+      "notice": {
+        "cancelled": {
+          "title": "Sign-in interrupted",
+          "body": "The provider sign-in was cancelled before it finished, so you were not signed in.",
+          "action": "Choose the provider again, or use your email address and password."
+        },
+        "restart": {
+          "title": "Start the sign-in again",
+          "body": "The provider sign-in step expired or could not be verified, so you were not signed in.",
+          "action": "Start the provider sign-in again from the beginning."
+        },
+        "unavailable": {
+          "title": "Sign-in method unavailable",
+          "body": "Signing in through this provider is not available right now, so the account can only be reached the other ways.",
+          "action": "Use your email address and password, or try again later."
+        },
+        "failed": {
+          "title": "Provider sign-in unsuccessful",
+          "body": "The provider sign-in could not be completed, so you were not signed in.",
+          "action": "Try again; if it keeps failing, use your email address and password."
+        },
+        "emailInUse": {
+          "title": "An account with this address already exists",
+          "body": "The address the provider confirmed belongs to an existing account, and a provider sign-in cannot take over an existing account.",
+          "action": "Sign in with the account's password, using the form below."
+        },
+        "verifySent": {
+          "title": "Confirm your email address",
+          "body": "Your account was created, but the email address is not confirmed yet. We have sent you a message with the confirmation link.",
+          "action": "Open the confirmation screen if the message has not arrived."
+        },
+        "unknownIdentity": {
+          "title": "No account for this identity",
+          "body": "The provider account is not linked to any account on the platform, so there is nothing to sign in to yet.",
+          "action": "Create a new account with the provider's button below, or with your email address."
+        }
+      }
     }
   }
 }
