@@ -328,4 +328,4 @@ The domain state a developer will need to model, independent of framework:
 
 ## Build order
 
-See `IMPLEMENTATION_PLAN.md` in this folder — the UI work sequenced against `architecture.md` §15.4 (foundation → identity → reporting core → calculator/validation → export → notifications → billing → operations), with screen-by-screen scope per phase.
+See `IMPLEMENTATION_PLAN.md` in this folder — the UI work sequenced against `architecture.md` §15.4 (foundation → identity → reporting core → calculator/validation → export → notifications → billing → operations → public tier), with screen-by-screen scope per phase.

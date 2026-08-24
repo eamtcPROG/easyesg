@@ -7,7 +7,7 @@
 
 # EasyESG — UI implementation plan
 
-Sequenced against `architecture.md` §15.4 (foundation → identity → reporting core → calculator/validation → export *(free-tier pilot milestone)* → notifications → billing → operations). This document covers only the **interface** half of each phase; the docs set owns the rest.
+Sequenced against `architecture.md` §15.4 (foundation → identity → reporting core → calculator/validation → export *(free-tier pilot milestone)* → notifications → billing → operations → public tier). This document covers only the **interface** half of each phase; the docs set owns the rest.
 
 Accessibility target throughout is **WCAG 2.2 AA**, verified per phase, not at the end.
 
@@ -159,6 +159,8 @@ The four bank returns are four distinct designed states — success, failure, ca
 Marketing home at 1440 / 834 / 390, the three legal documents plus the cookie choice, and the four help screens.
 
 These can be pulled earlier if commercial timing demands it — they share the token layer and the primitives and depend on nothing from phases 4–9. Nothing later depends on them either.
+
+**One of them is not discretionary, corrected 24 Aug 2026 with §15.4's ninth step.** The three legal documents and the cookie choice are a compliance obligation on the registration path, not a marketing asset: GDPR Article 13 and Law No. 195/2024 (applicable 23 August 2026, NFR-5) require the information where personal data is collected, and Phase 2 already collects an email address. They bind at **Phase 7's free-tier pilot**, where the first real SMEs arrive. The sentence above governs the marketing home and the help centre; it does not govern the legal screens.
 
 **Reference:** `EasyESG Public Home.dc.html`, `EasyESG Public Legal.dc.html`, `EasyESG Help Centre.dc.html`.
 

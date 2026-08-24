@@ -1,4 +1,14 @@
-# Tasks
+What each task must still raise in its own batch is named in its row. **`design_spec.md` OQ-17 was raised and
+closed the same day** — the three reading surfaces fit none of §4.6's nine archetypes, so §4.6 gained a tenth,
+**Content**, derived from the delivered prototypes; nothing here is blocked on it. Three questions stay open on
+purpose: `architecture.md` **OQ-31** (host split — task 74 builds under its stated, reversible assumption),
+`design_spec.md` **OQ-16** (whether the cookie choice is recorded — task 75) and `design_spec.md` **OQ-18** (how
+many legal documents the set holds — the prototype draws five, every normative source says three — task 75).
+
+**The states passes are these tasks' own work, under UX-90.** `EasyESG Public Home`, `Public Legal` and
+`Help Centre` carry no states-pass artboard where `Identity` and `Workspace` do. That is an implementation
+obligation on tasks 74, 75 and 77 — every applicable §8.1 state designed before the screen is built — not a
+precondition anyone else owes them.# Tasks
 
 The execution plan: the build order of [architecture.md](architecture.md) §15.4, sliced into
 sequential tasks. Task *n+1* assumes task *n* is done. Tasks are **vertical slices in build
@@ -17,6 +27,14 @@ restating them.
 **Status:** `DONE` · `IN PROGRESS` · `TODO` · `BLOCKED`. Task numbers are stable — cite them in
 commits and in [build-log.md](build-log.md), which records *how* each completed task actually
 went, deviations included.
+
+**A number is an identifier; only tasks 1–73 are also the order.** Those were sliced together and
+each assumes its predecessor. Anything added afterwards is **appended, never inserted**: a task
+number is cited in commit messages, in `architecture.md`, in `build-log.md`, in nine migration
+files and in source comments, so renumbering would falsify every one of them and leave the stale
+copies in git history wrong forever. The cost is that in the appended section the document's order
+and the number's order differ — so each of those rows states where it actually lands, and a row
+that must precede an earlier number says so in bold.
 
 **Before starting a task, raise its unknowns in one batch** (CLAUDE.md, "Open questions are not
 debt"). A task is not started by writing its first file; it is started by checking what it needs
@@ -141,3 +159,42 @@ whose reasons are not recorded is not closed.
 | 71 | Edge and topology | infra | Caddy edge and the EU/EEA VM topology | The staging stack reachable through the edge | TODO |
 | 72 | Deploy pipeline | infra | Ansible/OpenTofu deploy from CI images; backup and restore | A staging deploy from CI; a restore actually rehearsed, not assumed | TODO |
 | 73 | Runbooks and rehearsals | docs | `docs/runbooks/` as deliverables — six NFRs are verified by rehearsal, not by test | Each runbook written and its rehearsal executed and recorded | TODO |
+
+## Phase 9 — Public tier (§15.4 #9)
+
+**Appended 24 Aug 2026, and the cause was fixed at source in the same change.** These four were
+missing because §15.4's build order ran to **eight** steps and none of them was the unauthenticated
+surface — so a plan sliced from §15.4, which is what this file is, could not contain the public
+tier and never did. `design/IMPLEMENTATION_PLAN.md` carried it all along as Phase 10, the only one
+of its twelve MVP phases with no task against it (Phase 12 is post-MVP by its own heading and
+correctly has none), while §15.4 claimed to sequence "the interface half of each step". Both
+statements were locally true and together implied a coverage that did not exist. **§15.4 now carries
+a ninth step**, so the next re-slice of this file inherits the tier instead of losing it again.
+
+Meanwhile the routes have existed under `apps/web/src/app/[locale]/(public)/` since task 4 and every
+one of them returns `null`; the prototypes (`EasyESG Public Home`, `EasyESG Public Legal`,
+`EasyESG Help Centre`) have existed since task 1.
+
+**Task 75 is a precondition of task 48**, and that is now §15.4's third scheduling fact rather than
+this file's opinion: a step's position in the build order is a dependency statement, not a date, and
+the legal slice binds at the pilot. The other three tasks are genuinely movable — Phase 10 records
+that the public tier "depends on nothing from phases 4–9" and that "nothing later depends on them
+either", and `web-public-is-a-leaf` is the CI rule holding that true.
+
+**Both blocking questions closed 24 Aug 2026, and these rows now cite identifiers rather than prototypes.**
+`design_spec.md` **OQ-12** closed by numbering the screens `S-29 … S-34`, registering the **Visitor (`VI`)** as an
+MVP actor and writing `UC-177 … UC-182` — so UX-7 needed no exemption and §5 states content, controls and states
+for every one of them. `architecture.md`'s shadowed **OQ-44** closed on **`platform/content`**, a module of its
+own. What each task must still raise in its own batch is named in its row, and three things stay open on purpose:
+`architecture.md` **OQ-31** (host split — task 74 builds under its stated, reversible assumption), `design_spec.md`
+**OQ-16** (whether the cookie choice is recorded — task 75), and `design_spec.md` **OQ-17**, raised by closing
+OQ-12: three of the six screens fit none of §4.6's nine archetypes, which §4.6 makes an escalation. **UX-8 is not
+satisfied for S-29, S-30 and S-33 until OQ-17 closes**, so those three cannot be built against an archetype that
+does not exist — task 74 owns two of them.
+
+| # | Name | Scope | Description | Expected result (deliverables) | Status |
+| --- | --- | --- | --- | --- | --- |
+| 74 | Public shell and marketing home | web | **S-29** (marketing home, UC-177) and **S-30** (legal set navigation shared with task 75), for VI. The `(public)` group made real: the marketing home at `/{locale}`, the public header and footer chrome, and §14.2's `"use cache"` exception — legal in this zone and prohibited in every other, because a compiler-generated cache key that knows nothing of `organization_id` leaks a rendered page across tenants **above** AD-2's boundary, where none of its probes look. Built under `architecture.md` **OQ-31**'s stated, reversible assumption (the home holds the locale root as the SEO landing page; if a host split is confirmed, `/home` becomes `/` behind a redirect) — the task proceeds under it and does not settle it. Adding a route means adding it to `UNAUTHENTICATED_SEGMENTS` in `proxy.ts`: route groups are invisible in URLs, so the auth boundary is a list whose default is closed. **Unknowns for the batch:** how three locales are addressed to a search engine, since `localePrefix: 'as-needed'` serves Romanian unprefixed and no NFR governs canonical or `hreflang`; and whether the home's pricing section ships before the plan catalogue (task 53) and the FR-61 read path (task 76) exist, and against what if so | Marketing home live in three locales at UX-73's 1440 / 834 / 390; the +40% expansion harness and the axe scan pass on it; `"use cache"` present in `(public)` and nowhere else; `web-public-is-a-leaf` still green | TODO |
+| 75 | Legal documents and the cookie choice | web | **S-30** (UC-178) and **S-31** (UC-179) — terms of service, privacy notice, cookie policy and the cookie choice, drawn as the four artboards of `EasyESG Public Legal.dc.html`, one shared layout treating the three documents as a set with a plain-language summary above the formal text. **This slice must land before task 48** and the reason is not scheduling preference: `SiteFooter` has rendered `/legal/terms`, `/legal/privacy` and `/legal/cookies` on every identity screen since task 20 and all three return `null`, so three dead links ship today; and NFR-5's instrument — **Law No. 195/2024, applicable 23 August 2026** — binds the registration path task 19 already ships, while task 48 is where real SMEs arrive. **Three unknowns to raise in one batch, none answerable by a screen:** where the legal text lives, since FR-61 as narrowed by `architecture.md` OQ-43 names help-centre articles and plan presentation copy and **not** legal documents, and a terms change carries a version and an effective date wherever it lives; whether cookie consent is **recorded** or implied — **OQ-16**, which S-31's entry names as giving the screen two different postconditions, and recording it needs an API and a schema, not a checkbox; what the application actually sets, because the prototype's "What we do not set" is a factual claim about shipped code; and **OQ-18** — whether the set is three documents or the five the prototype's tab strip draws, the extra two being a data processing agreement and a sub-processor list, both of which commit the platform to maintaining them | The three documents and the cookie choice live in three locales; `SiteFooter`'s links resolve; the legal text's home and the consent decision are each written into the artefact that owns them **before** the screens are built | TODO |
+| 76 | Published content read path | api | **`platform/content`** — the 36th module, decided 24 Aug 2026 by the shadowed OQ-44. FR-61's content — help-centre articles and plan presentation copy — readable by an unauthenticated client. The gap is narrow and total: task 16 built the generic store, tasks 33, 37, 40, 49 and 53 add rows to it, A-03's editor is task 67 (FR-62, UC-71, UC-72), and **nothing serves what has been published**. `apps/web` may not read the store around the API (DR-11, AD-9), so this is the read half of config-as-data. Published-only by construction rather than by a filter — `config.entry_schedule` is what is in force (task 16), so a draft has no address. Per locale, with FR-64's fallback reporting, which applies to FR-61 content only: catalogue gaps fail the build instead. **The module question is closed:** `platform/content`, not `platform/configuration` — which owns the store mechanism and knows nothing of any artefact's meaning — and not `platform/localization`, which resolves keys from committed catalogues rather than store rows. §6.7 and `CLAUDE.md` carry it. **Remaining unknowns for the batch:** whether the route is rate-limited as an auth path or as generic unauthenticated traffic (§12.5.6 — OQ-53 and OQ-55 are the precedent for naming a route rather than letting it inherit); and whether FR-61 rows are seeded here or by task 67 | A published article and a plan description readable in three locales through the public API; an unpublished version has no address; the routes appear in `packages/contracts/openapi/v1.json` and pass `openapi:check` | TODO |
+| 77 | Help centre and write to support | web | **S-32** (UC-180), **S-33** (UC-181) and **S-34** (UC-182), for VI and CA. The four artboards of `EasyESG Help Centre.dc.html` — the help centre as guest and as a signed-in user, the article, and write to support — reading task 76's content. **UX-109**'s Consistent Help (WCAG 2.2 3.2.6) puts help in the same place on every screen, so this task owns that placement across both the public chrome and the authenticated one. **"Write to support" is a blocking unknown and is raised before the task starts, not inside it:** no FR and no use case creates a support request. UC-85's precondition is that "a support request exists with a ticket reference", which presupposes a channel none of the seven documents specifies — so the candidates are an address the screen publishes, a form posting to the API and dispatching through task 15's outbox as verification email already does, or an external helpdesk, and those are three different products with three different data-protection footprints. The Scope column reads `web` provisionally and widens to `api+web` if the channel turns out to be a form — the same correction task 23's batch made to its own row, recorded rather than discovered mid-build. **S-32 settles the guest/signed-in question**: one screen with a session-dependent shell, not two — the same relationship S-01 holds across its three artboards — which `web-public-is-a-leaf` makes a real constraint, since `features/public` may not import an authenticated feature. Remaining for the batch: S-33's states pass, which the Help Centre prototype does not carry (UX-90) | Articles browsable and readable in three locales as guest and as a signed-in user; help reachable from the same place on every screen; the support channel decided and recorded before it is built; expansion harness and axe scan pass | TODO |

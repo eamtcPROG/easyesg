@@ -1000,7 +1000,9 @@ FR-1→UC-01 · FR-2→UC-02 · FR-3→UC-03 · FR-4→UC-04, UC-05 · FR-5→UC
 
 ### 9.3 Where the two documents deliberately do not align one-to-one
 
-Counting rows in the two registers gives 176 use cases against 173 requirements. The difference is not a gap; it is the sum of two intentional deviations.
+Counting rows in the two registers gives **182** use cases against 173 requirements. The difference is not a gap; it is the sum of two intentional deviations — and, since 24 Aug 2026, one recorded one.
+
+**Four of the six public-tier use cases originate no requirement** (UC-177, UC-178, UC-179, UC-182), which is G-9 in §9.4 rather than a third deviation: it is a gap the register acknowledges owing, not a place the two documents were designed to differ. The count ran to 176 against 173 before that date.
 
 **Several use cases share one requirement**, where the capability is genuinely identical and testing it twice would test the same code.
 
@@ -1041,6 +1043,7 @@ Counting rows in the two registers gives 176 use cases against 173 requirements.
 | G-6 | **UC-148 cites legacy `FR-23`** ("central entitlement/plan-check service plus metering events"), which in the current sequence is "Present an organization-wide overview of every entity and period". | **Reading key required**, section 9.5. The current requirements are FR-99, FR-100 and FR-105. |
 | G-7 | **Design decision D-3 cites legacy `FR-15`** ("multi-period comparative records in a year-over-year view") and calls for its split; current FR-15 is the organization profile requirement. | **Reading key required**, section 9.5. The split is realised as FR-45, FR-46, FR-47 at MVP with the standalone analytics view deferred. |
 | G-8 | **The FR Deferred Scope document states the register holds 159 MVP requirements and that "every use case UC-01 … UC-164" is covered.** | **Stale counts.** The register holds 173 and the use case register holds 176. Resolved in favour of the register (section 9.6, C-2 and C-3). |
+| G-9 | **UC-177, UC-178, UC-179 and UC-182 originate no functional requirement.** Added 24 Aug 2026 with the Visitor actor (`design_spec.md` OQ-12): the marketing home, the legal documents, the cookie choice and the route to support have screens (S-29, S-30, S-31, S-34) and use cases, and no FR anywhere in this register describes them. UC-180 and UC-181 are covered — FR-61 already holds help-centre articles as versioned data. | **A real gap, recorded rather than closed by inventing numbers.** Three reasons it is not closed here. The MVP block is FR-1 … FR-173 and FR-174 … FR-189 are the deferred register, so a new MVP requirement would have to be numbered outside its own block — a scheme change, not a requirement. The legal-document obligation is discharged **non-functionally** and there is precedent for exactly that: G-4 records NFR-5 as having no FR at all, and §7.3 states the same disposition. And UC-182's delivery channel is undecided (`task.md` task 77), so an FR written now would specify a mechanism nobody has chosen. **What this costs:** four use cases whose acceptance criteria live in `design_spec.md` §5 rather than here, which is the weaker place for them. Owned by the requirements owner alongside `design_spec.md` OQ-12's cascade. |
 
 ### 9.5 Reading key for the superseded legacy FR set
 

@@ -225,6 +225,12 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-26 | Notification centre | CA | UC-165 … 167 | Index |
 | S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | Record |
 | S-28 | Credentials and linked identities | CA | UC-10 … 12 | Record |
+| S-29 | Marketing home | VI | UC-177 | *escalated — OQ-17* |
+| S-30 | Legal documents (terms · privacy · cookies) | VI, all | UC-178 | *escalated — OQ-17* |
+| S-31 | Cookie choice | VI | UC-179 | Focus |
+| S-32 | Help centre | VI, CA | UC-180 | Index |
+| S-33 | Help article | VI, CA | UC-181 | *escalated — OQ-17* |
+| S-34 | Write to support | VI, CA | UC-182 | Focus |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | Focus |
 | A-02 | Organization register | PA | UC-69 | Index |
 | A-03 | Content and translation console | PA | UC-71 … 74 | Editor + Publish |
@@ -244,7 +250,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-17 | Notification categories and templates | PA | UC-176 | Editor + Publish |
 | A-18 | Identity provider configuration | PA | UC-70 | Editor |
 
-**Count:** 46 screens — 28 tenant (`S-01 … S-28`) and 18 administrative (`A-01 … A-18`).
+**Count:** 52 screens — 34 tenant (`S-01 … S-34`) and 18 administrative (`A-01 … A-18`). `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -264,7 +270,7 @@ Three use cases are served by global-tier elements and inline patterns rather th
 
 ### 4.6 Page archetypes
 
-Nine templates. Every screen is an instance of one; a screen that fits none is an escalation to design review, not a licence to invent.
+Ten templates. Every screen is an instance of one; a screen that fits none is an escalation to design review, not a licence to invent — a clause used once, on 24 Aug 2026, and answered by the tenth row below rather than by an exception.
 
 | Archetype | Purpose | Fixed elements | Notes |
 |---|---|---|---|
@@ -277,8 +283,11 @@ Nine templates. Every screen is an instance of one; a screen that fits none is a
 | **Status** | Current state of a long-lived thing | State name, what it means, what changes it, next date | Subscription, plan, entitlements |
 | **Exception queue** | Work a human must resolve | Dense table, saved filters, bulk action, per-item resolution with mandatory rationale | Admin only; keyboard-first |
 | **Dashboard** | Aggregate view | Figures with confidence marking, period filter, export | Admin only; never the tenant home |
+| **Content** | Be read | Reading measure rather than the workspace grid — 64–70ch for prose, up to 100ch for wider blocks; heading hierarchy as the navigation; a peer strip where the page is one of a set; no primary action required; no chrome of its own beyond the public shell | The only archetype with no authenticated instance, and the only one §14.2 permits the framework to cache |
 
 **UX-8** Each archetype shall define every state in §8.1 before any instance of it is designed.
+
+**Resolved 24 Aug 2026 (OQ-17) — a tenth archetype, not a composition.** The nine were derived from an authenticated application and had no template for a page whose job is to be read, which only became visible when `S-29`, `S-30` and `S-33` entered the inventory. **OQ-7's own test decided it**: OQ-7 rejected promoting compositions to archetypes because that "would put two names on one state set", and the inverse applies here — composing *Content* from *Document* would put one name on two different sets, since Document's states are those of a generating artefact preview (loading, pending — async, partial) and a reading surface's are ready, error — recoverable and error — not found. The eight states **Content** excludes are excluded because nothing on it is a task; that exclusion list is the argument for the row. **Derived from the delivered prototypes**, per OQ-10 — the reading measures above are the dominant values in `EasyESG Public Legal.dc.html` (70ch across thirty blocks) and `EasyESG Public Home.dc.html` (64ch), and the peer strip is the legal set's tab strip. Values are to be extracted through `packages/ui`, never copied as markup.
 
 **Resolved 18 Aug 2026 (OQ-7).** Two labels in the inventory are not among the nine: *Wizard sub-flow* (S-09) and *Comparison* (S-18). They are **compositions, not archetypes** — S-09 composes **Wizard**, S-18 composes **Index/Status** — and the rule is now stated rather than implied: **a composition inherits the complete state set of its base archetype and defines no states of its own.** That satisfies UX-8, which requires every archetype to define every state before an instance is designed: a composition has a full state definition, inherited. Adding two more archetypes was rejected — it would put two names on one state set, which is what OQ-4's validation-state finding shows going wrong elsewhere.
 
@@ -725,6 +734,104 @@ Three limits on what follows must be stated plainly, because the alternative is 
 - **Exits:** S-27.
 - **Use cases:** UC-10, UC-11, UC-12.
 - **FRs:** FR-7, FR-8.
+
+### 5.1b Public tier screens
+
+`S-29 … S-34` are the unauthenticated surface — `architecture.md` §15.4's ninth step, `design/IMPLEMENTATION_PLAN.md` Phase 10, and the `(public)` route group in `apps/web`. Two properties hold across all six and are stated once here rather than per screen. They are the **only** screens `architecture.md` §14.2 permits the framework to cache, because they are the only tenant-independent ones. And they carry no session: nothing on them may read or imply an active organization, which is what keeps `web-public-is-a-leaf` — the CI rule forbidding `features/public` from importing an authenticated feature — enforceable rather than aspirational.
+
+**Three of the six are the reason §4.6 has ten archetypes rather than nine.** `S-29`, `S-30` and `S-33` are long-form reading surfaces, and the nine — derived from an authenticated application — had no template for one. §4.6 makes that an escalation rather than a licence to invent; it was escalated as **OQ-17** and closed the same day with the **Content** archetype, drawn from the delivered prototypes. `S-31` and `S-34` are Focus, `S-32` is Index.
+
+### S-29 — Marketing home
+
+- **Purpose:** let a prospective customer decide whether the platform produces the report they need, before spending an email address on it.
+- **Primary actors:** VI.
+- **Archetype:** Content.
+- **Entry points:** direct arrival at the platform's public address; a search result; the brand mark from any public screen.
+- **Layout and regions:** full-width banded sections over the `--content-max` measure, at UX-73's three frames. The prototype's bands are a deep pine hero, then white, slate and pine-tinted sections; real interface fragments stand in for imagery, and UX-87's icon and illustration placeholders mean nothing here depends on an image existing.
+- **Content and data shown:** what the platform produces and for whom; the eleven Basic sections named; how the work is sequenced; what it costs per company per reporting year; what is asked before signing up; where the answers sit and who can see them. **The pricing section presents FR-61 plan presentation copy**, which `task.md` task 76 serves and task 53 populates — until both exist, what it presents is a `task.md` task 74 decision, recorded there rather than assumed here.
+- **Controls and actions:** register; sign in; language choice; routes to the help centre and the legal set.
+- **States:** ready; error — system (the content read path unavailable, which must degrade to the page without its pricing section rather than to an error page, since the page's job is reachable without it).
+- **Validation behaviour:** none of its own.
+- **Exits:** S-01 for register or sign in; S-32; S-30.
+- **Use cases:** UC-177.
+- **FRs:** — (see `functional_requirements.md` G-9).
+
+### S-30 — Legal documents (terms · privacy · cookies)
+
+- **Purpose:** state what is being agreed to and how personal data is handled, before either is agreed to.
+- **Primary actors:** VI, and every authenticated actor through the footer.
+- **Archetype:** Content.
+- **Entry points:** the `SiteFooter` legal links, present on every screen that renders it; S-29; a link from the registration screen.
+- **Layout and regions:** one shared layout treating the three documents as a set — a tab strip across them, a plain-language summary above the formal text of each. Reading measure, not the workspace grid.
+- **Content and data shown:** terms of service; privacy notice; cookie policy. **Where the text lives is a `task.md` task 75 decision and is open**: FR-61 as narrowed by `architecture.md` OQ-43 names help-centre articles and plan presentation copy and *not* legal documents, so a terms change is either a release or a store entry — and it carries a version and an effective date either way, which is a property this screen must display whichever answer is taken.
+- **Controls and actions:** move between the documents; reach the cookie choice (S-31).
+- **Open:** **how many documents the set holds is OQ-18.** This entry is written for three because three is what every normative source says; the prototype's tab strip draws five, adding a data processing agreement and a sub-processor list. The peer strip is a fixed element of the Content archetype either way, so the count changes the scope of task 75 and not the shape of this screen.
+- **States:** ready; error — system.
+- **Validation behaviour:** none of its own.
+- **Exits:** S-31; back to the entry point.
+- **Use cases:** UC-178.
+- **FRs:** — (see `functional_requirements.md` G-9). NFR-5 is the obligation this screen discharges; no FR is written against it, which §7.3 of `non_functional_requirements.md` records as deliberate.
+
+### S-31 — Cookie choice
+
+- **Purpose:** tell the reader what is set before it is set, and let them answer.
+- **Primary actors:** VI.
+- **Archetype:** Focus.
+- **Entry points:** first arrival at any public screen; the cookie policy, for a reader changing a previous answer.
+- **Layout and regions:** Focus fixed elements — single column, one primary action — presented without obscuring the content behind it, since a reader who has not answered must still be able to read the privacy notice that explains the question.
+- **Content and data shown:** every cookie the site sets, by purpose; what it does not set; storage that is not a cookie; the current answer where one exists.
+- **Controls and actions:** accept non-essential storage; decline it; open the cookie policy.
+- **States:** ready; ready — answered (the choice is restated rather than re-asked); error — system.
+- **Validation behaviour:** the disclosure is a factual claim about shipped code, so it is verified against the build rather than authored as copy. Declining must be no more effort than accepting.
+- **Exits:** back to the screen the reader was on; S-30.
+- **Use cases:** UC-179.
+- **FRs:** — (see `functional_requirements.md` G-9).
+- **Open:** whether the answer is **recorded** server-side as a consent record or applied client-side as an implied-consent preference is **OQ-16**, and the two give this screen different postconditions. The screen exists either way, because the disclosure obligation does not depend on the answer being stored.
+
+### S-32 — Help centre
+
+- **Purpose:** get the reader to the one piece of guidance their task needs, whether or not they have an account.
+- **Primary actors:** VI, CA.
+- **Archetype:** Index.
+- **Entry points:** the help affordance, which **UX-109** requires to sit in the same place on every screen; S-29; a deep link.
+- **Layout and regions:** Index fixed elements — filter, empty state, row action. The signed-in and signed-out variants are **one screen with a session-dependent shell**, not two screens: the content is identical and only the surrounding chrome differs, which is the same relationship S-01 holds across its three artboards.
+- **Content and data shown:** articles grouped by what the reader is doing; the most-read set; the full library. Every article names the module it belongs to.
+- **States:** loading; ready; empty — the empty state teaches, per the Index archetype; error — system.
+- **Validation behaviour:** none of its own.
+- **Exits:** S-33; S-34; back into the product for a signed-in reader.
+- **Use cases:** UC-180.
+- **FRs:** FR-61.
+
+### S-33 — Help article
+
+- **Purpose:** answer one question in the reader's own terms.
+- **Primary actors:** VI, CA.
+- **Archetype:** Content.
+- **Entry points:** S-32; a deep link; a contextual help affordance from the screen the article is about.
+- **Layout and regions:** reading measure, with the module the article belongs to named at the top.
+- **Content and data shown:** the article in the active locale, from the FR-61 store's published entries. A locale fallback is reported (FR-64), which reaches FR-61 content because catalogue gaps fail the build instead.
+- **Controls and actions:** return to the help centre; contact support; follow the article into the product where it names a screen.
+- **States:** loading; ready; error — not found (an unpublished or withdrawn article has no address, since `config.entry_schedule` holds only what is in force); error — system.
+- **Validation behaviour:** none of its own.
+- **Exits:** S-32; S-34; the screen the article is about.
+- **Use cases:** UC-181.
+- **FRs:** FR-61, FR-64.
+
+### S-34 — Write to support
+
+- **Purpose:** reach a person when the published guidance does not answer the question.
+- **Primary actors:** VI, CA.
+- **Archetype:** Focus.
+- **Entry points:** S-32; S-33.
+- **Layout and regions:** Focus fixed elements — single column, one primary action.
+- **Content and data shown:** what to say, and what the reader will get back. For a signed-in reader, what the platform already knows and will not re-request (**UX-109**, Redundant Entry).
+- **Controls and actions:** send the request.
+- **States:** ready; loading — submitting; error — recoverable; ready — sent, showing the reference the reader can quote.
+- **Validation behaviour:** the reference shown on success is a reference the reader is expected to cite, which the user-facing-text rule permits explicitly — it is not internal jargon.
+- **Exits:** back to S-32.
+- **Use cases:** UC-182.
+- **FRs:** — (see `functional_requirements.md` G-9).
+- **Open:** **the channel is undecided** — an address the screen publishes, a form posting to the API and dispatching through the outbox, or an external helpdesk (`task.md` task 77). UC-85's precondition that "a support request exists with a ticket reference" has never had a source that creates one; this screen is where that gap becomes a build decision.
 
 ### 5.2 Administrative screens
 
@@ -1854,11 +1961,13 @@ Artefacts this specification governs, **with their delivered locations as of 18 
 | OQ-9 | **Closed 18 Aug 2026 — all four corrected in §13.2**, with the source's values struck through rather than deleted. *Surfaces and IA* ~~FR-56 … 60~~ → **FR-12, FR-23, FR-75** (the FRs UC-16 and UC-67 actually discharge, plus the administrative-surface split). *Disclosure field* ~~FR-13 … 40~~ → **FR-24 … FR-32**. *Validation* ~~FR-41 … 45~~ → **FR-40 … FR-44**. *Applicability* ~~FR-46~~ → **FR-28**. | Resolved. The traceability table is what a reviewer uses to check that a design discharges its requirements, and three of the four wrong ranges would have produced a **false pass** — citing requirements the design does not discharge while omitting the ones it does. Ranges verified against `architecture.md` §17.5's component-to-FR map. | Design, with the requirements owner — decided |
 | OQ-10 | **Closed 18 Aug 2026 — the screen designs exist.** `design/screens/` holds fourteen hi-fi prototypes covering the public site, identity, workspace, all eleven Basic modules and the nine Comprehensive ones, the calculator, organization admin, commerce, help centre, the 22-screen admin console and the exported document — each drawn at 1440 / 834 / 390. | Resolved. §5 is no longer a brief for artefacts that do not exist; the artefacts §13.5 declares governed are now delivered and version-controlled. Two standing caveats carried from the handoff: **icons are placeholders** (text glyphs stand in for a real set — UX-87) and **illustration and photography are placeholders**, with nothing in the set depending on imagery. The prototypes are inline-styled by an authoring constraint of their format; values are exact and are to be extracted through `packages/ui`, never copied as markup. | Design — delivered |
 | OQ-11 | **Closed 18 Aug 2026 — ratified as NFR-106 … NFR-109** into `non_functional_requirements.md` §4.16: dispatch p95 ≤ 60 s; exponential retry bounded at 24 h with suppression on first hard bounce; ≥ 99% accepted transactional-mail delivery, SPF/DKIM/DMARC-aligned; delivery records retained for organization life + 1 year. | Resolved. The notification centre (S-26) and the email surface now have a latency to design for (60 s p95 governs whether the centre needs optimistic display), and a retention behaviour to expose (organization life + 1 year, readable independently of the centre itself). | Requirements owner — decided. Also closed in `use_cases.md` OQ-5, `functional_requirements.md` OQ-3, `non_functional_requirements.md` OQ-13 and `architecture.md` OQ-2 |
-| OQ-12 | **The public marketing site, the four legal screens and the four help-centre screens have no `S-nn` identifier.** §4.4's inventory runs S-01…S-28 and contains none of them, yet all three ship from `apps/web` (`design/HANDOFF.md`'s ownership table; `IMPLEMENTATION_PLAN` Phase 10) and prototypes exist for all of them | **Open — a coverage gap in the inventory, not in the design.** UX-7 makes §4.4 the coverage contract ("no screen shall exist that is not traceable to at least one use case"), and these screens sit outside it entirely. They also serve no MVP actor: §6.2 of `actors.md` records that no unauthenticated read surface exists at MVP, which may be why they were never numbered. Either they gain identifiers and UX-7 gains a third exemption class, or the inventory states that the unauthenticated surface is out of its scope. Scaffolded 18 Aug 2026 under `(public)` without identifiers. Related: `architecture.md` OQ-31 |
+| OQ-12 | **Closed 24 Aug 2026 — the six screens are numbered `S-29 … S-34`, and the Visitor (`VI`) is an MVP actor with `UC-177 … UC-182`.** Decided by the project owner over the row's own two horns. | **Resolved, and neither horn was taken.** The row offered *identifiers plus a third UX-7 exemption class*, or *the inventory declaring the unauthenticated surface out of scope*. The first buys the screens their state sets and their coverage but weakens the rule; the second closes the register row while leaving §5 silent, so `task.md` tasks 74–77 would have stayed exactly as unstartable as before — it answers the question without solving what the question was blocking. Making the visitor an actor removes the need for an exemption at all: **UX-7 is unamended**, because these screens now trace to use cases like every other. Cost accepted and paid in the same change: `actors.md` gains VI in §3, §4, §5's matrix and §8; `use_cases.md` gains UC-177 … UC-182 and a Public tier module; `actors.md` §6.2 splits, keeping the *public disclosure portal reader* out of MVP (FR-174) while the *visitor* comes in — the two senses of "unauthenticated" that one sentence had been carrying. **What it surfaced:** three of the six fit none of §4.6's nine archetypes, which §4.6 makes an escalation rather than a licence to invent — now **OQ-17**. And two screens carry an open question rather than a mechanism: S-31's consent recording is OQ-16, S-34's support channel is `task.md` task 77. Neither is closed here | Design, with the requirements owner — decided |
 | OQ-13 | **`compact`, `medium` and `extra` have no pixel values.** §3.3 gives four named breakpoints and exactly one number — the `wide` entry threshold of 1024 px — and says "values live in tokens". `tokens.css` contains no breakpoint tokens | **Open.** The three design frames (1440 / 834 / 390, UX-73) are the obvious candidates but are frames, not thresholds, and UX-76 prohibits silently hiding functionality by viewport — which is unverifiable without the boundaries. Needed at Phase 0, since every component built before it is settled encodes a guess |
 | OQ-14 | **`tokens.css` ships no dark-scheme map.** UX-80 requires every semantic token to be defined for both schemes and to satisfy §10.2 contrast in both, "whether or not the toggle ships at MVP", and `IMPLEMENTATION_PLAN` Phase 0 lists the dark token map as deliverable 6 | **Open.** The file as delivered — now at `packages/ui/src/styles/tokens.css` — defines tier 1, tier 2 and tier 3 for light only. UX-80 states the cost of deferring: "retrofitting it after twenty screens is the expensive path". Phase 0's exit check cannot pass until it exists |
 | OQ-15 | **Closed 19 Aug 2026 — Lucide** (`lucide-react` **1.32.0**, pinned and rationalised in `architecture.md` §12.1). An ISC-licensed, stroke-consistent set drawn on a 24 px box — UX-87's geometry — rendered as React components that take an accessible name per instance, tree-shakeable so only used icons ship, and inheriting `currentColor` so the tier-2 semantic tokens stay the only colour authority (UX-78). Heroicons was declined for coverage (~300 icons runs out before the domain glyphs do); Phosphor for its six weights, which invite exactly the incoherence UX-87's "one coherent set" exists to prevent | Resolved. Phase 1 (component library) is no longer blocked on this question. The eight disclosure-state glyphs map to named Lucide icons during Phase 1 — UX-102's prohibition on shape-alone meaning governs each mapping — and the prototypes' text glyphs (`✓ ! ≠ × — ⊘ 0`) remain placeholders until that pass | Product owner with design — decided |
 | OQ-16 | **The Register prototype captures more than S-01 specifies and the API accepts.** `EasyESG Identity.dc.html`'s Register artboard shows a *full name* field and a *Terms of Service / Privacy Notice consent* checkbox; §5's S-01 content list ("email address and password inputs") and the task-19 registration API (`RegisterAccountRequestDto`: email + password) have neither. The artboard also states a pre-OQ-51 password rule ("at least 10 characters"), superseded by the closed policy (`architecture.md` OQ-51: 8–128 characters, four classes) | **Open — raised 20 Aug 2026 while building task 20, which followed the documents:** the shipped screen captures email + password and displays the OQ-51 policy, per §1.5 precedence (a prototype is a rendered reference, never a normative source — OQ-10). What remains open is whether the *product* should capture a display name at registration and whether consent must be **recorded** rather than implied — the latter is a legal/compliance question that also touches the unnumbered legal screens (OQ-12) and would need an API and identity-schema change, not a screen change. Deciding it here in passing would have closed a legal question by UI default | Requirements owner with design; consent wording with legal |
+| OQ-17 | **Closed 24 Aug 2026 — a tenth archetype, `Content`.** Raised and closed the same day: raised by OQ-12 putting six unauthenticated screens into the inventory, closed once it was established that the delivered prototypes already specify the template. | **Resolved.** Two things had to be separated to answer it. **UX-8 versus UX-90:** UX-8 requires an archetype to define its states before an instance is designed, and §4.6 gives each archetype Purpose, Fixed elements and Notes — **no archetype in this document carries a written state set**, and §5.0's second limit says the per-screen enumeration is "the checklist, not a design". So a states pass in the prototype is a **UX-90** obligation at implementation, owned by `task.md` tasks 74, 75 and 77, and never was a precondition of defining an archetype. Holding the tenth to a bar the nine do not meet was the error, corrected here. **The decision** — tenth row rather than a composition of *Document* — follows OQ-7's own test, applied in §4.6. **The evidence** is the delivered set (OQ-10): three widths of the marketing home, the legal set's shared layout with its tab strip, banner fragment and preferences panel, and the help centre in signed-in and guest variants. That is more than most of the nine were written from | Design — decided |
+| OQ-18 | **How many legal documents does the platform publish — three or five?** `EasyESG Public Legal.dc.html`'s tab strip carries **five**: terms of service, privacy notice, cookies, **data processing agreement** and **sub-processors**. Every other source says three — `design/HANDOFF.md` describes the file as "01 Terms of service · 02 Privacy notice · 03 Cookie policy · 04 The cookie choice", `apps/web`'s `SiteFooter` has linked to exactly three since task 20, and S-30 above is written for three | **Open — surfaced 24 Aug 2026 while deriving the Content archetype from the prototypes.** Not resolved by reading the mockup: §1.5 makes a prototype a rendered reference and never a normative source (OQ-10), so five tabs are evidence that someone intended five, not a decision that there are. It matters because the two extra are not marketing pages — a **data processing agreement** is the Article 28 instrument a customer's own compliance function will ask for, and a **sub-processor list** is already named in `non_functional_requirements.md` §4.6 as a compliance artefact with a quarterly review (NFR-27). Publishing them is a commitment to maintaining them. Blocks the scope of S-30 and `task.md` task 75, and belongs with that task's batch | Requirements owner with legal |
 
 ---
 

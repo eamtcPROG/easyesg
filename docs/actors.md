@@ -58,6 +58,7 @@ The sources use two orthogonal classifications. Neither is invented here.
 | **PA** | Platform Administrator | Human — platform-side | Primary — MVP | Maintains platform-wide content and infrastructure: translated field labels and help text, taxonomy/template version rollouts across all tenants, and usage/adoption metrics dashboards. Has cross-organization visibility but no access to any single org's report data beyond support requests. | Keep content, taxonomy versions, emission factors, thresholds and validation rules current without a release; know adoption; support customers without holding standing access to their data | UC-68 … UC-88, UC-176 |
 | **BO** | Billing Operator | Human — platform-side | Primary — MVP (new actor: recommended addition to the System Actors doc) | Internal finance role: plan catalogue and pricing, invoice issuance and correction, bank reconciliation, collections, refunds, and fiscal reporting. Separated from PA because issuing a credit note and running a taxonomy migration are different privileges that should not sit in one account. | Bill correctly and fiscally compliantly under Moldovan rules; collect; keep an evidential ledger; keep the plan catalogue out of code | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164 |
 | **SYS** | System (scheduled/event-driven) | System | Primary — MVP | Automated behaviour with no human initiator: recurring charge execution, dunning runs, entitlement evaluation, metering, e-Factura transmission, notification dispatch. Registered as use cases because each has a defined trigger, outcome, and failure path that must be specified and tested. | Execute on schedule and on event, idempotently, and terminate every run in something a human can see | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174 |
+| **VI** | Visitor | Human — unauthenticated | Primary — MVP (added 24 Aug 2026, `design_spec.md` OQ-12) | A person who has not identified themselves, reading the surfaces that exist to be read before an account does: the marketing home, the three legal documents and the cookie choice, the help centre and its articles, and the route to support. Holds no session, no organization and no data of the platform's; every capability is a public read plus one outbound message. | Decide whether the platform is worth an account; know what is being agreed to and how personal data is handled, before agreeing to it; get an answer to a question without signing up | UC-177 … UC-182 |
 
 Forward-looking actors are registered separately in §6; they carry no MVP permissions and no MVP use cases.
 
@@ -163,54 +164,94 @@ Forward-looking actors are registered separately in §6; they carry no MVP permi
 
 ---
 
+### VI — Visitor
+
+**Description.** A person who has not identified themselves to the platform. Registered as an actor on
+24 Aug 2026 when `design_spec.md` OQ-12 closed: `architecture.md` §15.4's ninth step puts six unauthenticated
+screens in the build order, UX-7 requires every screen to trace to at least one use case, and a use case
+requires an actor. The alternative — exempting the public screens from UX-7 — was declined because the OQ-5
+precedent that justified UX-7's first two exemptions does not reach them: UC-35 and UC-36 are continuous
+behaviours rather than destinations, and a marketing home is a destination.
+
+**Responsibilities.** Read the marketing home, read the terms of service, the privacy notice and the cookie
+policy, set the cookie choice, browse the help centre, read a help article, and contact support.
+
+**Goals and motivations.** Establish whether the platform does what they need before spending anything —
+including an email address. Understand the commitment and the data handling before accepting either. Resolve
+a question without first creating an account, which is the whole reason the help centre has a signed-out
+variant.
+
+**Permissions and authority.** None over any platform data. Every capability is a read of content published
+deliberately for an unidentified reader — the FR-61 configuration store's published entries, and the legal
+documents — plus one outbound message to support. **No tenant data is reachable and none becomes reachable**;
+`actors.md` §6.2's actor claim is unchanged by this addition, and the public disclosure portal that would let
+an unidentified reader see another organization's report content remains a Phase 3 item (FR-174), out of MVP
+scope. A visitor becomes a CA the moment they register (UC-01, UC-02) and holds nothing carried over.
+
+**Pain points.** Arriving at a privacy notice written for lawyers rather than for the person deciding whether
+to register — which is why the prototypes put a plain-language summary above the formal text. Needing an
+answer that is behind a sign-up wall. Being asked to accept cookies before being told what is set.
+
+**Interaction channels.** Web interface only, unauthenticated. No email, no notification, no session. The one
+outbound channel is the support route (UC-182), whose delivery mechanism is undecided — see `task.md` task 77.
+
+**Volume and frequency.** Structurally the largest population and the least measured: every visitor precedes
+every registration, and none of them is counted anywhere in the platform, since NFR-30 keeps personal data out
+of analytics and no session exists to attribute a visit to. 6 of the 182 registered use cases belong to this
+actor.
+
 ## 5. Roles and permissions matrix
 
 Legend: **Y** granted; **—** not granted; **R** read-only; **T** time-boxed and audited on request; **S** granted through the system rather than a human action. Every cell traces to a statement in the sources; nothing is inferred where the sources are silent, and silence is recorded in §10.
 
-| Capability | CA | RC | OA | PA | BO | SYS |
-|---|---|---|---|---|---|---|
-| Own account, credentials, identity links | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — |
-| Own profile, interface language, notification preferences | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — |
-| Accept invitation; view memberships; switch active organization | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — |
-| In-app notification centre (view, open, mark read) | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — |
-| View accessible reporting entities and periods | — | Y | R (org-wide overview) | — | — | — |
-| Edit report field data (B1–B11) | — | Y | — | — | — | — |
-| Declare a section not material / a field not available | — | Y | — | — | — | — |
-| Run the carbon calculator; override a computed figure | — | Y (override flagged and attributed) | — | — | — | S (computation) |
-| View validation state and re-run validation | — | Y | R (rollup) | — | — | S (rollup input) |
-| Export PDF / EFRAG Excel Digital Template; re-download exports | — | Y | — | — | — | — |
-| View report change history | — | Y | — | — | — | — |
-| Select export language independently of interface language | — | Y | — | — | — | — |
-| Organization profile and entity identifiers | — | — | Y | R (account metadata only) | — | S (identifier validation) |
-| Reporting entities: create, edit, consolidation scope, archive | — | — | Y | — | — | — |
-| Reporting periods: open, lock, reopen | — | — | Y | — | — | — |
-| Organization users: invite, re-role, remove, promote to OA | — | — | Y | — | — | — |
-| Plan and entitlement status; usage counters | — | — | R | — | Y (catalogue side) | S (evaluation) |
-| Subscription lifecycle: trial, start, upgrade, downgrade, cancel, reactivate | — | — | Y | — | Y (Enterprise provisioning only) | S (renewal, lapse) |
-| Orders, checkout, discount application, terms acceptance | — | — | Y | — | — | — |
-| Payment execution (card, MIA, bank transfer, saved instruments) | — | — | Y | — | — | S (recurring charge) |
-| Billing account and fiscal identifiers | — | — | Y | — | — | S (validation) |
-| View and download own invoices | — | — | Y | — | Y (all) | — |
-| Plan catalogue, entitlements, pricing, versioning, discounts, trials | — | — | — | — | Y | — |
-| Fiscal invoice issuance | — | — | — | — | — | S |
-| Credit notes and corrective invoices; refunds; chargebacks | — | — | — | — | Y | S (entitlement reversal) |
-| Invoice numbering series; statutory archiving | — | — | — | — | Y | — |
-| Bank statement import; reconciliation exceptions; manual mark-paid; write-off | — | — | — | — | Y | S (automatic matching) |
-| VAT rates and tax rules | — | — | — | — | Y | S (application) |
-| Revenue dashboard, VAT/accounting export, billing audit ledger, settlement reconciliation | — | — | — | — | Y | — |
-| Enterprise quote, contract record, custom billing schedule, renewal | — | — | R (request, PO reference) | — | Y | — |
-| e-Factura transmission | — | — | — | — | Y (failure resolution) | S (transmission) |
-| Translatable content, translation publication, locales, untranslated-key queue | — | — | — | Y | — | — |
-| Taxonomy/template versions, field mapping, exposure view, migration runs | — | — | — | Y | — | — |
-| Emission factor set, applicability thresholds, validation rule definitions | — | — | — | Y | — | — |
-| Social identity provider configuration and credential rotation | — | — | — | Y | — | — |
-| Organization register (account metadata, not report content) | — | — | — | Y | — | — |
-| Access to a specific organization's report data | — | Y (own org) | — (no direct field edit) | T (UC-85, logged UC-86) | — | — |
-| Adoption/usage metrics and metrics export | — | — | R (own org only) | Y | R (read alongside revenue) | S (metering) |
-| Platform administrator accounts and privilege levels; platform audit log | — | — | — | Y | — | — |
-| Notification categories and templates | — | — | — | Y | — | — |
-| Send a manual reminder to a user | — | — | Y | — | — | S (scheduled notices) |
-| Entitlement evaluation, quota handling, metering emission | — | — | — | — | — | S |
+| Capability | CA | RC | OA | PA | BO | SYS | VI |
+|---|---|---|---|---|---|---|---|
+| Own account, credentials, identity links | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — |
+| Own profile, interface language, notification preferences | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — |
+| Accept invitation; view memberships; switch active organization | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — |
+| In-app notification centre (view, open, mark read) | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — |
+| View accessible reporting entities and periods | — | Y | R (org-wide overview) | — | — | — | — |
+| Edit report field data (B1–B11) | — | Y | — | — | — | — | — |
+| Declare a section not material / a field not available | — | Y | — | — | — | — | — |
+| Run the carbon calculator; override a computed figure | — | Y (override flagged and attributed) | — | — | — | S (computation) | — |
+| View validation state and re-run validation | — | Y | R (rollup) | — | — | S (rollup input) | — |
+| Export PDF / EFRAG Excel Digital Template; re-download exports | — | Y | — | — | — | — | — |
+| View report change history | — | Y | — | — | — | — | — |
+| Select export language independently of interface language | — | Y | — | — | — | — | — |
+| Organization profile and entity identifiers | — | — | Y | R (account metadata only) | — | S (identifier validation) | — |
+| Reporting entities: create, edit, consolidation scope, archive | — | — | Y | — | — | — | — |
+| Reporting periods: open, lock, reopen | — | — | Y | — | — | — | — |
+| Organization users: invite, re-role, remove, promote to OA | — | — | Y | — | — | — | — |
+| Plan and entitlement status; usage counters | — | — | R | — | Y (catalogue side) | S (evaluation) | — |
+| Subscription lifecycle: trial, start, upgrade, downgrade, cancel, reactivate | — | — | Y | — | Y (Enterprise provisioning only) | S (renewal, lapse) | — |
+| Orders, checkout, discount application, terms acceptance | — | — | Y | — | — | — | — |
+| Payment execution (card, MIA, bank transfer, saved instruments) | — | — | Y | — | — | S (recurring charge) | — |
+| Billing account and fiscal identifiers | — | — | Y | — | — | S (validation) | — |
+| View and download own invoices | — | — | Y | — | Y (all) | — | — |
+| Plan catalogue, entitlements, pricing, versioning, discounts, trials | — | — | — | — | Y | — | — |
+| Fiscal invoice issuance | — | — | — | — | — | S | — |
+| Credit notes and corrective invoices; refunds; chargebacks | — | — | — | — | Y | S (entitlement reversal) | — |
+| Invoice numbering series; statutory archiving | — | — | — | — | Y | — | — |
+| Bank statement import; reconciliation exceptions; manual mark-paid; write-off | — | — | — | — | Y | S (automatic matching) | — |
+| VAT rates and tax rules | — | — | — | — | Y | S (application) | — |
+| Revenue dashboard, VAT/accounting export, billing audit ledger, settlement reconciliation | — | — | — | — | Y | — | — |
+| Enterprise quote, contract record, custom billing schedule, renewal | — | — | R (request, PO reference) | — | Y | — | — |
+| e-Factura transmission | — | — | — | — | Y (failure resolution) | S (transmission) | — |
+| Translatable content, translation publication, locales, untranslated-key queue | — | — | — | Y | — | — | — |
+| Taxonomy/template versions, field mapping, exposure view, migration runs | — | — | — | Y | — | — | — |
+| Emission factor set, applicability thresholds, validation rule definitions | — | — | — | Y | — | — | — |
+| Social identity provider configuration and credential rotation | — | — | — | Y | — | — | — |
+| Organization register (account metadata, not report content) | — | — | — | Y | — | — | — |
+| Access to a specific organization's report data | — | Y (own org) | — (no direct field edit) | T (UC-85, logged UC-86) | — | — | — |
+| Adoption/usage metrics and metrics export | — | — | R (own org only) | Y | R (read alongside revenue) | S (metering) | — |
+| Platform administrator accounts and privilege levels; platform audit log | — | — | — | Y | — | — | — |
+| Notification categories and templates | — | — | — | Y | — | — | — |
+| Send a manual reminder to a user | — | — | Y | — | — | S (scheduled notices) | — |
+| Entitlement evaluation, quota handling, metering emission | — | — | — | — | — | S | — |
+| Read the public marketing surface | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | — | Y |
+| Read the published legal documents and set the cookie choice | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | — | Y |
+| Browse the help centre and read a published help article | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | Y |
+| Contact support | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | Y |
 
 Supporting requirements: FR-25, FR-57, FR-58 (more than one user within an org may view/edit a shared report — the accessible-report list honouring per-report permissions, invitation with an edit or view-only role, and role change on an existing membership), FR-14 (typed organization relationships so Advisor/Buyer/Licensee types need no schema change), FR-99, FR-100, FR-105 (central entitlement/plan-check service and metering events), NFR-13 (RBAC per org/role, secure auth, authenticated API surface), NFR-9 (relationship model extensible to Advisor, Buyer, Licensee), NFR-7 (every disclosure field change attributable to user and timestamp).
 
@@ -231,9 +272,15 @@ Named so that schema and permissions anticipate them. Not built at MVP. Source: 
 
 Also deliberately excluded at MVP, per the design decisions document: Advisor, Buyer and Licensee capability generally, enterprise SSO, and tenant MFA (MFA is required for PA on the administrative surface under UC-68, but is not offered to tenant actors).
 
-### 6.2 Public / unauthenticated user
+### 6.2 Public disclosure portal reader
 
-Not an MVP actor. A public disclosure portal is a Phase 3 item (FR-174), and browsing it is registered only as a forward-looking use case in the combined doc. No unauthenticated read surface exists at MVP.
+**Superseded in part, 24 Aug 2026.** This section read *"Public / unauthenticated user — not an MVP actor"* and carried a second sentence, ~~"No unauthenticated read surface exists at MVP"~~, struck the same day as an overreach: it stated a fact about surfaces from a section that owns actors. Closing `design_spec.md` OQ-12 then split the actor itself in two, and only one half is out of scope.
+
+**In scope, and now an MVP actor:** the **Visitor (VI)**, §3 and §4 — a person reading what the platform publishes for unidentified readers. That is the marketing home, the legal documents, the cookie choice and the help centre, all six of them screens in `architecture.md` §15.4's ninth step.
+
+**Out of scope, and unchanged:** a person reading *another organization's disclosure data*. The public disclosure portal is a Phase 3 item (FR-174), opt-in, with its field structure aligned to what ESAP will expect (`problem_overview.md` §6.2 item 6); browsing it is registered only as a forward-looking use case in the combined doc. No tenant report content is reachable without authentication at MVP, and VI does not weaken that: every VI capability reads content published deliberately for an unidentified reader, and none of it is any tenant's.
+
+**The distinction is the whole point of the split.** "Unauthenticated" was doing two jobs in one sentence — *has no session* and *may see tenant data* — and only the second was ever out of scope. Conflating them is what left six real screens with no actor, no use case and no `S-nn` for six days after they were scaffolded.
 
 ### 6.3 Actors that are not actors
 
@@ -261,7 +308,7 @@ The Use Case Register adds further MVP-active external counterparties not listed
 
 ## 8. Actor-to-use-case coverage summary
 
-Against "ESG Platform Use Case Register (MVP)" — 176 use cases across 37 modules.
+Against "ESG Platform Use Case Register (MVP)" — **182** use cases across 38 modules. UC-177 … UC-182 and the Public tier module were added 24 Aug 2026 with the Visitor actor (`design_spec.md` OQ-12); the register ran to 176 across 37 before that.
 
 | ID | Actor | Use cases | Share | Ranges | Domain concentration |
 |---|---|---|---|---|---|
@@ -272,11 +319,12 @@ Against "ESG Platform Use Case Register (MVP)" — 176 use cases across 37 modul
 | BO | Billing Operator | 27 | 15% | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164 | Plan catalogue, invoicing corrections, reconciliation and collections, refunds and disputes, enterprise contracting, financial reporting and audit |
 | SYS | System | 26 | 15% | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174 | Recurring charges, invoicing automation, reconciliation matching, dunning and restriction, entitlement enforcement and metering, notification generation and delivery |
 
-Structural split of the register: UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications.
+| VI | Visitor | 6 | 3% | UC-177 … UC-182 | Public marketing surface, legal documents and the cookie choice, help centre and articles, the route to support |
+Structural split of the register: UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, UC-177 … UC-182 the public tier.
 
 **Forward-looking actor coverage.** The combined doc §2.4 maps forward-looking actors to legacy use case identifiers: **UC-17** (Advisor — manage a portfolio of client orgs), **UC-18** (Buyer — invite/monitor supplier orgs, aggregated dashboards, consented data requests), **UC-19** (Licensee Admin — brand an instance, manage sub-orgs). These legacy identifiers collide numerically with RC use cases in the current register (see §9.3). No forward-looking actor has coverage in the current MVP register, which is correct: they are design targets, not build items.
 
-**Coverage assertions.** Every MVP actor in §3 has at least one use case. No use case in the register lacks an actor. No MVP actor is defined without a corresponding capability row in §5. The Assurance / Referral Partner actor has no use case in any register, which the combined doc states explicitly as an open item (§10, OQ-4 below).
+**Coverage assertions.** Re-checked 24 Aug 2026 against VI, whose addition was forced by the converse assertion failing — six screens existed with no use case and therefore no actor. Every MVP actor in §3 has at least one use case. No use case in the register lacks an actor. No MVP actor is defined without a corresponding capability row in §5. The Assurance / Referral Partner actor has no use case in any register, which the combined doc states explicitly as an open item (§10, OQ-4 below).
 
 ---
 

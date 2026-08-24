@@ -26,7 +26,7 @@ A use case here is a single, distinct outcome an actor sets out to achieve in th
 
 ## 2. Use case model conventions
 
-**ID scheme.** Use case identifiers take the form `UC-nn`. Identifiers UC-01 … UC-09 are zero-padded; UC-10 … UC-176 are not. This is the form in which the identifiers were originally assigned and it is preserved verbatim. IDs are stable: they are never reused and never renumbered once assigned, so they can be cited from designs, backlog items, and test cases.
+**ID scheme.** Use case identifiers take the form `UC-nn`. Identifiers UC-01 … UC-09 are zero-padded; UC-10 … UC-182 are not. This is the form in which the identifiers were originally assigned and it is preserved verbatim. IDs are stable: they are never reused and never renumbered once assigned, so they can be cited from designs, backlog items, and test cases.
 
 **Level.** Every entry in this register is a user-goal-level use case — a single distinct outcome, not a sub-step and not a business summary. Sub-steps that cannot fail, be built, or be tested independently are not registered as use cases; they appear inside a flow.
 
@@ -42,6 +42,7 @@ A use case here is a single, distinct outcome an actor sets out to achieve in th
 | **PA** | Platform Administrator | Maintains platform-wide content and infrastructure across all tenants. No standing access to any organization's report data. | System Actors (MVP) |
 | **BO** | Billing Operator | Internal finance role: plan catalogue and pricing, invoice issuance and correction, bank reconciliation, collections, refunds, and fiscal reporting. Separated from PA because issuing a credit note and running a taxonomy migration are different privileges that should not sit in one account. | Use case register — recommended addition to the System Actors doc |
 | **SYS** | System (scheduled/event-driven) | Automated behaviour with no human initiator: recurring charge execution, dunning runs, entitlement evaluation, metering, e-Factura transmission, notification dispatch. | Use case register |
+| **VI** | Visitor | A person who has not identified themselves, reading what the platform publishes for unidentified readers: the marketing home, the legal documents and the cookie choice, the help centre and its articles, and the route to support. Holds no session and reaches no tenant data. | Added 24 Aug 2026 by `design_spec.md` OQ-12; profiled in `actors.md` §4 |
 
 **Module.** The module groups each use case with those it is functionally adjacent to. Modules are an organizing aid for reading, estimating, and assigning work; they are not a system boundary and carry no permission meaning of their own.
 
@@ -238,8 +239,14 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-174 | Record delivery outcome and handle a failed send | SYS | Distinguish an undeliverable address from an ignored notice | MVP | FR-160, FR-170, FR-171 |
 | UC-175 | Send a manual reminder to a user | OA | Prompt a colleague without waiting for the schedule | MVP | FR-173 |
 | UC-176 | Maintain notification categories and templates | PA | Change a notice or its wording as configuration | MVP | FR-173 |
+| UC-177 | Evaluate the platform before registering | VI | Decide whether the platform does what the company needs, without creating an account | MVP | — |
+| UC-178 | Read a published legal document | VI | Know what is being agreed to and how personal data is handled, before agreeing to either | MVP | — |
+| UC-179 | Set the cookie choice | VI | Decide what non-essential storage the site may set | MVP | — |
+| UC-180 | Browse the help centre | VI | Find guidance for the task in hand, signed in or not | MVP | FR-61 |
+| UC-181 | Read a published help article | VI | Follow one piece of guidance through to an answer | MVP | FR-61 |
+| UC-182 | Contact support | VI | Ask a question the published guidance does not answer | MVP | — |
 
-**Count:** 176 use cases — 20 CA, 32 RC, 49 OA, 22 PA, 27 BO, 26 SYS, across 37 modules. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, and UC-165 … UC-176 notifications.
+**Count:** 182 use cases — 20 CA, 32 RC, 49 OA, 22 PA, 27 BO, 26 SYS, 6 VI, across 38 modules. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7.
 
 ---
 
@@ -302,6 +309,18 @@ Three domains, thirty-seven modules. Modules are a reading and estimating aid, n
 **One mechanism, every producer.** UC-172, UC-173 and UC-174 are not private to the notifications module. Payment failure (UC-125), quota approach (UC-149), trial expiry (UC-98), dunning (UC-141), invitation (UC-60), invoice delivery (UC-131) and version change (UC-79) all run through the same delivery and recording path.
 
 **Two things are deliberately kept out of the notifications module.** There is no per-notification ownership or assignment model: a notice about an incomplete report goes to everyone with edit access on it, and the Organization Administrator sees the same picture through the report status overview (UC-67). And there is no escalation chain — a notice repeats at a configured interval and stops when the report is complete. Both can be added later if usage shows they are needed; neither is worth building for an SME with two people on the report.
+
+---
+
+### 4.4 Public tier (UC-177 … UC-182)
+
+Added 24 Aug 2026 with the Visitor actor, closing `design_spec.md` OQ-12. These six are the use cases the six unauthenticated screens of `architecture.md` §15.4's ninth step trace to, and they exist because UX-7 requires every screen to trace to at least one — which these screens did not, for as long as no actor could initiate them.
+
+| Module | Use cases | Primary actor |
+|---|---|---|
+| Public tier | UC-177 … UC-182 | VI |
+
+Two of them carry an open question rather than a settled mechanism, stated in their §5 entries rather than resolved here: **UC-179** does not decide whether the cookie choice is *recorded* server-side or implied (`design_spec.md` OQ-16), and **UC-182** does not decide by what channel support is reached (`task.md` task 77). Both are registered because the goal is real and the screen exists; neither is specified past what the sources support.
 
 ---
 
@@ -2666,6 +2685,97 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
 - **Related FRs:** FR-173
 - **Related UCs:** UC-71, UC-72, UC-168, UC-169, UC-170
 
+### UC-177 — Evaluate the platform before registering
+
+- **Primary actor:** VI (Visitor)
+- **Module:** Public tier
+- **Stakeholders and interests:** Prospective customer — wants to know whether the platform produces the report they are obliged or asked to produce, before spending an email address on it; platform — wants the free tier's on-ramp to be reachable without a sign-up wall.
+- **Preconditions:** None. No account and no session exist.
+- **Trigger:** A person arrives at the platform's public address.
+- **Main success scenario:**
+  1. The visitor reads what the platform produces, what it costs, and what is asked of them.
+  2. The visitor proceeds to registration (UC-01, UC-02), or leaves.
+- **Postconditions:** None on the platform. Nothing is stored against the visitor, and NFR-30 keeps personal data out of the analytics that would otherwise record the visit.
+- **Business rules:** This is the only screen `architecture.md` §14.2 permits to be cached by the framework, because it is the only tenant-independent one; the same section prohibits `"use cache"` everywhere a tenant is in scope.
+- **Related FRs:** —
+- **Related UCs:** UC-01, UC-02, UC-178, UC-180
+
+### UC-178 — Read a published legal document
+
+- **Primary actor:** VI (Visitor); available to every authenticated actor through the footer
+- **Module:** Public tier
+- **Stakeholders and interests:** Reader — wants to know what is being agreed to and how personal data is handled; platform — is obliged to say so before collecting anything.
+- **Preconditions:** None.
+- **Trigger:** The reader follows a legal link, from the public site or from the footer of any screen.
+- **Main success scenario:**
+  1. The reader opens the terms of service, the privacy notice or the cookie policy.
+  2. The reader reads a plain-language summary and, beneath it, the formal text.
+- **Postconditions:** None on the platform.
+- **Business rules:** The information duty is discharged **where personal data is collected**, which is registration (UC-01) — so this use case is a precondition of a lawful registration path rather than a companion to it. GDPR Article 13 and Law No. 195/2024 (applicable 23 August 2026) are the obligation; NFR-5 is where the platform holds it. The three documents are one set with one navigation, so a reader who arrives at the cookie policy can see the other two.
+- **Related FRs:** —
+- **Related UCs:** UC-01, UC-179, UC-177
+
+### UC-179 — Set the cookie choice
+
+- **Primary actor:** VI (Visitor)
+- **Module:** Public tier
+- **Stakeholders and interests:** Reader — wants to know what is set before it is set, and to change their mind later; platform — must not set non-essential storage it has not disclosed.
+- **Preconditions:** None.
+- **Trigger:** First arrival, or the reader returning to the cookie policy to change a previous answer.
+- **Main success scenario:**
+  1. The visitor is shown what the site sets and what it does not.
+  2. The visitor accepts or declines the non-essential categories.
+  3. The site honours the answer.
+- **Postconditions:** **Undecided — `design_spec.md` OQ-16.** Whether the answer is *recorded* server-side as a consent record, or applied client-side as an implied-consent preference, is open; the two produce different postconditions and the second needs no API. Recorded rather than assumed, because deciding it here would close a legal question by UI default — which is what OQ-16 says about it.
+- **Business rules:** What the application actually sets is a factual claim the screen makes about shipped code, not a template sentence; the prototype's "What we do not set" section has to be true of the build.
+- **Related FRs:** —
+- **Related UCs:** UC-178
+
+### UC-180 — Browse the help centre
+
+- **Primary actor:** VI (Visitor); the same screen serves CA signed in
+- **Module:** Public tier
+- **Stakeholders and interests:** Reader — wants guidance for the task in hand; platform — wants a support question answered before it is asked.
+- **Preconditions:** Published help content exists (UC-71, UC-72).
+- **Trigger:** The reader opens help, from the public site or from any screen's help affordance.
+- **Main success scenario:**
+  1. The reader browses articles grouped by what they are doing.
+  2. The reader opens one (UC-181), or contacts support (UC-182).
+- **Postconditions:** None on the platform.
+- **Business rules:** **UX-109** (WCAG 2.2, Consistent Help) puts help in the same place on every screen, so this screen has one entry affordance and it does not move. Articles are the FR-61 configuration store's published entries, so a wording correction reaches the reader without a release; an unpublished version has no address.
+- **Related FRs:** FR-61
+- **Related UCs:** UC-71, UC-72, UC-181, UC-182
+
+### UC-181 — Read a published help article
+
+- **Primary actor:** VI (Visitor); the same screen serves CA signed in
+- **Module:** Public tier
+- **Stakeholders and interests:** Reader — wants one question answered in terms they use; platform — wants the article to name the module it belongs to, so the answer lands somewhere.
+- **Preconditions:** The article is published in the reader's locale, or a fallback locale is available (FR-64).
+- **Trigger:** The reader selects an article, or arrives on a deep link.
+- **Main success scenario:**
+  1. The reader reads the article in the active locale.
+  2. The reader returns to the help centre, follows the article into the product, or contacts support.
+- **Postconditions:** None on the platform. A locale fallback is reported (FR-64), which applies to FR-61 content because catalogue gaps fail the build instead.
+- **Business rules:** Articles are written for people who run a business, not for people who read standards. No article may carry an internal identifier — `FR-`, an enum member, a taxonomy element key — under the user-facing-text rule.
+- **Related FRs:** FR-61
+- **Related UCs:** UC-180, UC-182, UC-71
+
+### UC-182 — Contact support
+
+- **Primary actor:** VI (Visitor); the same screen serves CA signed in
+- **Module:** Public tier
+- **Stakeholders and interests:** Reader — has a question the published guidance does not answer; platform — needs the request to arrive somewhere with a reference, since UC-85 presupposes exactly that.
+- **Preconditions:** None.
+- **Trigger:** The reader cannot resolve their question from the help centre.
+- **Main success scenario:**
+  1. The reader states their question.
+  2. The request reaches support.
+- **Postconditions:** A support request exists with a ticket reference — **which is what UC-85 has always assumed and no source has ever provided.** This use case is registered to close that gap in the register; it does not close the mechanism.
+- **Business rules:** **The channel is undecided** (`task.md` task 77). The candidates are an address the screen publishes, a form posting to the API and dispatching through the outbox as verification email already does, or an external helpdesk — three different products with three different data-protection footprints, and the choice governs whether this use case has a postcondition inside the platform at all.
+- **Related FRs:** —
+- **Related UCs:** UC-85, UC-180, UC-181
+
 ---
 
 ## 6. Use case design decisions and constraints
@@ -2795,7 +2905,8 @@ There is no per-notification ownership or assignment model and no escalation cha
 | PA | Platform Administrator | UC-68 … UC-88, UC-176 | 22 |
 | BO | Billing Operator | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164 | 27 |
 | SYS | System (scheduled/event-driven) | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174 | 26 |
-| | | **Total** | **176** |
+| VI | Visitor | UC-177 … UC-182 | 6 |
+| | | **Total** | **182** |
 
 Note that OA is the primary actor of UC-108 while UC-109 in the same module is SYS-initiated, and that the Invoicing module mixes SYS (issuance, transmission, delivery, exchange rate), BO (correction, numbering, archiving) and OA (viewing) initiators. The module is not an actor boundary.
 
@@ -2805,7 +2916,7 @@ The per-use-case FR links are held in the register in section 3 and repeated in 
 
 Coverage observations from that inversion:
 
-- Every use case UC-01 … UC-176 maps to at least one MVP functional requirement. There is no orphan use case.
+- Every use case UC-01 … UC-176 maps to at least one MVP functional requirement. **UC-177 … UC-182 do not, and four of them map to none at all** — UC-177, UC-178, UC-179 and UC-182, recorded as `functional_requirements.md` G-9 when the Visitor actor was registered on 24 Aug 2026. UC-180 and UC-181 map to FR-61. So the register does now hold orphan use cases, deliberately and with the reason written down, rather than by oversight; the sentence is left standing for UC-01 … UC-176 because that part of it is still true and is what a reader checking the original register needs.
 - Seven functional requirements have no source use case because they are cross-cutting obligations no single use case owns: **FR-153** (documented API surface), **FR-154** (compliance core free of plan/price/tenant dependency, testable by disabling billing and re-running UC-17 … UC-48), **FR-155** (VSME-mirroring internal schema), **FR-156** (third-party components behind internal interfaces), **FR-157** (one channel-agnostic notification mechanism), **FR-158** (server-side RBAC on every request), **FR-159** (attribution of every state-changing action). **FR-172** (asynchronous notification dispatch) is likewise architectural.
 - One-to-many and many-to-one relationships are normal and are not forced into alignment: FR-24 serves UC-18 and UC-19 … UC-29; UC-116 is served by FR-114, FR-115 and FR-116.
 
