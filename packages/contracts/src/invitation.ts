@@ -37,9 +37,6 @@ export const INVITATION_STANDING = {
 
 export type InvitationStanding = (typeof INVITATION_STANDING)[keyof typeof INVITATION_STANDING];
 
-export const isInvitationStanding = (value: string): value is InvitationStanding =>
-  (Object.values(INVITATION_STANDING) as string[]).includes(value);
-
 /**
  * What accepting actually did — `POST /invitations/acceptance`'s `grant`.
  *

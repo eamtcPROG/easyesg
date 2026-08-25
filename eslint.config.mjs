@@ -180,6 +180,24 @@ export default tseslint.config(
       // present as an empty result rather than an error.
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
+
+      /**
+       * `ignoreRestSiblings` — omit-by-destructure is a language idiom, not an unused variable.
+       *
+       * Added 26 Aug 2026, after the default cost `packages/ui`'s `Button` a real defect. Excluding
+       * a component's own props from a DOM spread is written `const { asChild, busy, ...rest }`,
+       * and with the rule at its default those two names are "assigned but never used" — so the
+       * author discriminated the props union on **key presence** (`'asChild' in props`) instead,
+       * to avoid the destructure entirely. That made `asChild={false}` take the Slot branch and
+       * throw at render. The lint rule pushed the code into a worse shape than the one it was
+       * objecting to.
+       *
+       * This is the option typescript-eslint documents for exactly that pattern, and turning it on
+       * removes the pressure for every component written from here on rather than for the one that
+       * hit it. Everything else the rule catches is untouched: a genuinely unused local, parameter
+       * or import still fails.
+       */
+      '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }],
     },
   },
 

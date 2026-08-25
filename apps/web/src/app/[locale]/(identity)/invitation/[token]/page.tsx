@@ -13,6 +13,7 @@ import {
   invitationView,
   type InvitationView,
   type UnusableStanding,
+  type UsableInvitation,
 } from '@/features/identity/invitation';
 import styles from '@/features/identity/components/identity-screens.module.css';
 import { readSession } from '@/server/session';
@@ -117,7 +118,7 @@ function InvitationBody({ view, token }: { view: InvitationView; token: string }
  * reason and S-01's: the provider list is an API round trip, and the routes that always work must
  * not wait on it. With the api unreachable it renders nothing and the two links stand alone.
  */
-async function SignedOut({ token, invitation }: { token: string; invitation: UsableInvitationProp }) {
+async function SignedOut({ token, invitation }: { token: string; invitation: UsableInvitation }) {
   const t = await getTranslations(MESSAGES);
   const links = invitationHandOff(token);
 
@@ -228,5 +229,4 @@ async function Unreachable() {
   );
 }
 
-type UsableInvitationProp = Parameters<typeof InvitationSummary>[0]['invitation'];
 

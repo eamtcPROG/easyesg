@@ -71,7 +71,6 @@ export type AccountMembership = components['schemas']['AccountMembershipResponse
 export {
   INVITATION_STANDING,
   MEMBERSHIP_GRANT_KIND,
-  isInvitationStanding,
   type InvitationStanding,
   type MembershipGrantKind,
 } from './invitation';

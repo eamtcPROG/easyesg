@@ -112,31 +112,33 @@ class FakeBearerTransaction implements InvitationBearerTransaction {
     return Promise.resolve(this.store.emailOf(accountId));
   }
 
-  consume(input: { readonly invitationId: string; readonly at: Date }): Promise<boolean> {
-    const row = this.store.find(input.invitationId);
-    if (row === null || row.status !== INVITATION_STATUS.PENDING) return Promise.resolve(false);
+  consume(input: { readonly at: Date }): Promise<boolean> {
+    const row = this.requireResolved();
+    if (row.status !== INVITATION_STATUS.PENDING) return Promise.resolve(false);
     this.store.replace({ ...row, status: INVITATION_STATUS.ACCEPTED, acceptedAt: input.at });
     return Promise.resolve(true);
   }
 
   grantMembership(input: {
     readonly accountId: string;
-    readonly organizationId: string;
-    readonly role: InvitedRole;
     readonly at: Date;
   }): Promise<MembershipGranted> {
+    // Derived from the resolved invitation, exactly as the adapter does — a fake that took the
+    // organization and the role as arguments would model a port that no longer accepts them, and
+    // a spec passing the wrong ones would still pass.
+    const invitation = this.requireResolved();
     const existing = this.store.memberships.find(
-      (m) => m.accountId === input.accountId && m.organizationId === input.organizationId,
+      (m) => m.accountId === input.accountId && m.organizationId === invitation.organizationId,
     );
 
     if (existing === undefined) {
       this.store.memberships.push({
         accountId: input.accountId,
-        organizationId: input.organizationId,
-        role: input.role,
+        organizationId: invitation.organizationId,
+        role: invitation.role,
         status: MEMBERSHIP_STATUS.ACTIVE,
       });
-      return Promise.resolve({ kind: MEMBERSHIP_GRANT_KIND.CREATED, role: input.role });
+      return Promise.resolve({ kind: MEMBERSHIP_GRANT_KIND.CREATED, role: invitation.role });
     }
 
     if (existing.status === MEMBERSHIP_STATUS.ACTIVE) {
@@ -146,17 +148,33 @@ class FakeBearerTransaction implements InvitationBearerTransaction {
       });
     }
 
-    existing.role = input.role;
+    existing.role = invitation.role;
     existing.status = MEMBERSHIP_STATUS.ACTIVE;
-    return Promise.resolve({ kind: MEMBERSHIP_GRANT_KIND.REACTIVATED, role: input.role });
+    return Promise.resolve({ kind: MEMBERSHIP_GRANT_KIND.REACTIVATED, role: invitation.role });
   }
 
+  /**
+   * Keyed by session AND account, because the adapter's statement is — a fake that ignored the
+   * account would let a spec pass while production scoped the write and matched nothing.
+   */
   setActiveOrganization(input: {
     readonly sessionId: string;
-    readonly organizationId: string;
+    readonly accountId: string;
   }): Promise<void> {
-    this.store.activeOrganizationBySession[input.sessionId] = input.organizationId;
+    this.store.activeOrganizationBySession[`${input.accountId}:${input.sessionId}`] =
+      this.requireResolved().organizationId;
     return Promise.resolve();
+  }
+
+  /** The adapter throws here too: a write before `findInvitation` resolves nothing and must be loud. */
+  private requireResolved(): BearerInvitation {
+    const row = this.store.find(this.invitationId);
+    if (row === null) {
+      throw new Error(
+        'The invitation must be resolved with findInvitation() before any write on this transaction.',
+      );
+    }
+    return row;
   }
 }
 
@@ -171,7 +189,12 @@ export const bearerInvitation = (row: {
 }): BearerInvitation => ({
   id: row.id,
   organizationId: row.organizationId ?? 'organization-alpha',
-  organizationName: 'Alpha SRL',
+  // **Null once the invitation stops being pending**, because that is what the LEFT JOIN yields
+  // under `organization_invitation_select`'s narrowing (26 Aug 2026). A fake that always supplied
+  // a name would let a spec pass while production answered null — the exact drift that made an
+  // inner join look correct until the e2e ran.
+  organizationName:
+    (row.status ?? INVITATION_STATUS.PENDING) === INVITATION_STATUS.PENDING ? 'Alpha SRL' : null,
   invitedEmail: row.invitedEmail ?? 'ana@example.md',
   role: row.role ?? 'editor',
   status: row.status ?? INVITATION_STATUS.PENDING,

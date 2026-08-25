@@ -70,6 +70,16 @@ export class PreviewInvitation {
         return { standing, details: null };
       }
 
+      // **The name is nullable and this is the one place that check earns its keep.**
+      // `organization_invitation_select` admits the tenant root only for a live invitation, so a
+      // null here would mean the row went from pending to spent between the two reads of one
+      // transaction — impossible under REPEATABLE READ and harmless besides. Reporting it as
+      // `consumed` is the true answer for that instant, and it is the only branch that does not
+      // require inventing a name to show a person.
+      if (invitation.organizationName === null) {
+        return { standing: INVITATION_STANDING.CONSUMED, details: null };
+      }
+
       return {
         standing,
         details: {

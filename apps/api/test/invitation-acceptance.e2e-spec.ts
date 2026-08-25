@@ -228,7 +228,7 @@ describe('invitation acceptance (UC-15)', () => {
 
     // No Authorization header at all: this is the moment UC-15 step 2 has them deciding whether to
     // create an account, and the answer has to arrive before they have one.
-    const res = await http().post('/api/v1/invitations/preview').send({ token }).expect(201);
+    const res = await http().post('/api/v1/invitations/preview').send({ token }).expect(200);
 
     expect((res.body as { object: unknown }).object).toEqual({
       standing: INVITATION_STANDING.ACCEPTABLE,
@@ -243,7 +243,7 @@ describe('invitation acceptance (UC-15)', () => {
     const { id, token } = await inviteAndReadToken({ admin: alphaAdmin, email: EMAILS.joiner });
     await http().delete(`/api/v1/invitations/${id}`).set(alphaAdmin.authorization).expect(204);
 
-    const res = await http().post('/api/v1/invitations/preview').send({ token }).expect(201);
+    const res = await http().post('/api/v1/invitations/preview').send({ token }).expect(200);
 
     expect((res.body as { object: unknown }).object).toEqual({
       standing: INVITATION_STANDING.REVOKED,
@@ -257,7 +257,8 @@ describe('invitation acceptance (UC-15)', () => {
     const res = await http()
       .post('/api/v1/invitations/preview')
       .send({ token: 'x'.repeat(43) })
-      .expect(201);
+      // 200, not 201: the preview creates nothing, and the contract must not say Created.
+      .expect(200);
 
     expect((res.body as { object: { standing: string } }).object.standing).toBe(
       INVITATION_STANDING.UNKNOWN,
@@ -339,7 +340,7 @@ describe('invitation acceptance (UC-15)', () => {
       `${PROBLEM_BASE_URI}/invitation-address-mismatch`,
     );
     // Untouched: still good for the person it names.
-    const preview = await http().post('/api/v1/invitations/preview').send({ token }).expect(201);
+    const preview = await http().post('/api/v1/invitations/preview').send({ token }).expect(200);
     expect((preview.body as { object: { standing: string } }).object.standing).toBe(
       INVITATION_STANDING.ACCEPTABLE,
     );

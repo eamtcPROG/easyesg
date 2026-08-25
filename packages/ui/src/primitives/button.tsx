@@ -53,16 +53,10 @@ interface ButtonCommon {
 /**
  * A real `<button>`: everything an element of that kind accepts, plus the pending-async state.
  */
-/**
- * A real `<button>`: everything an element of that kind accepts, plus the pending-async state.
- *
- * It carries **no `asChild` key at all**, which is what makes the union discriminate by presence —
- * `'asChild' in props`. Declaring it as `asChild?: false` would put a prop in this shape that the
- * element branch must then destructure and discard, and a discarded destructure is the one thing
- * the lint config has no ignore pattern for.
- */
 export type ButtonElementProps = ButtonCommon &
   Omit<ComponentPropsWithRef<'button'>, 'className' | 'children'> & {
+    /** Present and false is the same as absent — see the discriminator in `Button`. */
+    asChild?: false;
     /** Pending-async: label + spinner, non-interactive, `aria-busy`. */
     busy?: boolean;
   };
@@ -79,23 +73,28 @@ export type ButtonSlotProps = ButtonCommon & { asChild: true };
 export type ButtonProps = ButtonElementProps | ButtonSlotProps;
 
 export function Button(props: ButtonProps) {
-  const classes = (variant: ButtonVariant, className: string | undefined) =>
-    [styles.button, styles[variant], className].filter(Boolean).join(' ');
+  const classes = [
+    styles.button,
+    styles[props.variant ?? BUTTON_VARIANT.PRIMARY],
+    props.className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-  if ('asChild' in props) {
-    const { variant = 'primary', className, children } = props;
-    return <Slot.Root className={classes(variant, className)}>{children}</Slot.Root>;
+  // **On the VALUE, never on `'asChild' in props`.** The key-presence form was written first, to
+  // dodge a lint rule that has since been configured out of the way, and it was wrong twice over:
+  // `asChild={false}` and a spread carrying `asChild: undefined` both took the Slot branch, where
+  // Radix's `React.Children.only` throws on a string child and takes the screen with it. A union
+  // discriminated by value cannot be entered by a key that happens to exist.
+  if (props.asChild === true) {
+    return <Slot.Root className={classes}>{props.children}</Slot.Root>;
   }
 
-  const {
-    variant = 'primary',
-    className,
-    children,
-    busy = false,
-    disabled,
-    type = 'button',
-    ...rest
-  } = props;
+  // `asChild` and `busy` are this component's own vocabulary and must not reach the DOM — React
+  // forwards unknown attributes to `<button>` and warns on every render. Omitting them by
+  // destructure is what `ignoreRestSiblings` exists for (eslint.config.mjs).
+  const { variant, className, children, asChild, busy = false, disabled, type = 'button', ...rest } =
+    props;
 
   return (
     <button
@@ -103,7 +102,7 @@ export function Button(props: ButtonProps) {
       type={type}
       disabled={disabled || busy}
       aria-busy={busy || undefined}
-      className={classes(variant, className)}
+      className={classes}
     >
       {busy ? <Spinner /> : null}
       {children}

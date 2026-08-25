@@ -13,8 +13,15 @@ import type { AcceptedInvitation } from '../use-cases/accept-invitation.use-case
  * `INVITED_ROLE` — an existing member may hold `organization_administrator`, which FR-57 makes it
  * impossible for any invitation to assign.
  *
- * **`grant` is published rather than hidden** so the screen can say what actually happened: joined,
+ * **`grant` is published rather than hidden** so a screen can say what actually happened: joined,
  * rejoined, or "you already had access". Three different sentences, and NFR-79 wants the true one.
+ *
+ * **No screen says them yet, and that is a recorded deferral rather than an oversight** (26 Aug 2026
+ * review). S-03's exit is a redirect to S-05, which is task 30.5 and renders nothing today — so
+ * there is nowhere to put the sentence, and inventing a fourth screen to hold it would be the
+ * one-off UX-89 forbids. The obligation is on task 30.5's row: the home it builds states which of
+ * the three happened. Until then acceptance is silent, and someone who already had access sees the
+ * same landing as a new member.
  *
  * The active organization has already been changed server-side by the time this is read, so no
  * client action is needed and none is offered — the session is the only place tenancy lives (AD-2,

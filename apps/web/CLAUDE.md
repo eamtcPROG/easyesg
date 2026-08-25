@@ -211,6 +211,13 @@ conditional render, which is how it ends up half-suppressed on one screen.
   that survives untouched: every route below it is tenant-scoped, and §14.2 treats framework
   caching there as a tenancy risk, not a performance question.
 
+  **When that decision is taken, `loading.tsx` is the file to check first** (recorded 26 Aug 2026,
+  review). Next passes it no props, so it cannot call `activateRequestLocale` the way every page
+  does — it resolves messages through `requestLocale` alone, which is correct only *because*
+  everything is dynamic. Un-force `(identity)` and S-03's loading state silently renders the source
+  locale to a Russian reader while the page beneath it renders correctly. Nothing would catch it: a
+  loading state is transient, so no browser test asserts one.
+
 - **`NextIntlClientProvider` is `messages={null}` at the root.** The default ships every message
   to the browser — the full B1–B11 label set across three locales, against NFR-43's LCP budget.
   Client components get a namespace-scoped provider instead. This matters more now that the

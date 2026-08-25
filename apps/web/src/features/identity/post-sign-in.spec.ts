@@ -126,6 +126,31 @@ describe('a return path that renders without an organization (task 26.3)', () =>
     ).toEqual({ href: POST_SIGN_IN.HOME });
   });
 
+  /**
+   * The narrowing the review asked for (26 Aug 2026). These four render without an organization,
+   * so the first version of the predicate — the bare inverse of the session gate — honoured them:
+   * `?return=/sign-in` sent someone who had just authenticated back to the sign-in form.
+   */
+  it.each(['/sign-in', '/register', '/reset', '/set-password'])(
+    'refuses to return a signed-in caller to %s',
+    (entry) => {
+      const returnTo = { href: entry, locale: undefined };
+      expect(postSignInTarget({ memberships: [], returnTo })).toEqual({
+        href: POST_SIGN_IN.CREATE_ORGANIZATION,
+      });
+      expect(
+        postSignInTarget({ memberships: [membership('a'), membership('b')], returnTo }),
+      ).toEqual({ href: POST_SIGN_IN.HOME });
+    },
+  );
+
+  /** The marketing home is not a destination the branch should prefer over S-04 either. */
+  it('refuses to return a member of nothing to the marketing home', () => {
+    expect(
+      postSignInTarget({ memberships: [], returnTo: { href: '/', locale: undefined } }),
+    ).toEqual({ href: POST_SIGN_IN.CREATE_ORGANIZATION });
+  });
+
   /** A failed membership read still wins: the branch could not be taken at all (S-35). */
   it('does not override the unavailable arm', () => {
     expect(postSignInTarget({ memberships: null, returnTo: invitation })).toEqual({

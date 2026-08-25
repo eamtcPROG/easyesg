@@ -37,7 +37,6 @@ const asOwner = () =>
 /** The wire values are pinned on purpose — a renamed event type must break this suite. */
 const EMAIL_VERIFICATION_REQUESTED = 'identity.email_verification.requested';
 const PASSWORD_RESET_REQUESTED = 'identity.password_reset.requested';
-const INVITATION_ISSUED = 'identity.invitation.issued';
 
 /** Polls the outbox for the raw token a committed request left for `email` — the same
  *  arrangement for both single-use links: the row IS where the token exists (OQ-54). */
@@ -76,10 +75,6 @@ export const verificationTokenFor = (email: string, timeoutMs = 15_000): Promise
 /** Polls the outbox for the reset token a reset request committed for `email` (task 21). */
 export const passwordResetTokenFor = (email: string, timeoutMs = 15_000): Promise<string> =>
   outboxTokenFor(PASSWORD_RESET_REQUESTED, email, timeoutMs);
-
-/** Polls the outbox for the token an invitation committed for `email` (task 26.1). */
-export const invitationTokenFor = (email: string, timeoutMs = 15_000): Promise<string> =>
-  outboxTokenFor(INVITATION_ISSUED, email, timeoutMs);
 
 /** Removes the accounts and outbox rows a run created (addresses share a unique prefix). */
 export async function cleanupAccounts(prefix: string): Promise<void> {

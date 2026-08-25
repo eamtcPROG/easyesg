@@ -94,7 +94,12 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
         // The S-02 challenge screen states the address it was sent to. Session storage, not the
         // URL: an email address in a query string reaches server logs and history (constants.ts).
         rememberPendingVerification(result.value.email);
-        router.push('/verify');
+        // **`?return=` survives the challenge too** (26 Aug 2026 review). This branch is reached
+        // from an invitation whenever the token was stale, revoked or for another address — the API
+        // ignores it and issues an ordinary challenge — and dropping the return path there stranded
+        // the invitee: they verified, signed in with nowhere to go, and landed on "create your first
+        // organization" with no sign the invitation existed. S-02 threads it on to sign-in.
+        router.push(returnTo ? `/verify?return=${encodeURIComponent(returnTo)}` : '/verify');
         return;
       }
       setFailure(result);

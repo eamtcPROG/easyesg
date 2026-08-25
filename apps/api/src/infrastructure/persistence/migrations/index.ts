@@ -13,6 +13,7 @@ import { IdentityMembership1787702400000 } from './1787702400000-identity-member
 import { MembershipDirectory1787788800000 } from './1787788800000-membership-directory';
 import { IdentityInvitation1787875200000 } from './1787875200000-identity-invitation';
 import { InvitationAcceptance1787961600000 } from './1787961600000-invitation-acceptance';
+import { InvitationPolicyNarrowing1788048000000 } from './1788048000000-invitation-policy-narrowing';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -44,4 +45,5 @@ export const migrations = [
   MembershipDirectory1787788800000,
   IdentityInvitation1787875200000,
   InvitationAcceptance1787961600000,
+  InvitationPolicyNarrowing1788048000000,
 ];

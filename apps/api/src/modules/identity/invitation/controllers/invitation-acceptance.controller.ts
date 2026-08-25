@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '@api/app/decorators/public.decorator';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
@@ -38,7 +38,15 @@ import { InvitationService } from '../services/invitation.service';
 export class InvitationAcceptanceController {
   constructor(private readonly invitationService: InvitationService) {}
 
+  /**
+   * **`200`, not Nest's POST default of `201`.** This creates nothing — the whole design point is
+   * that the link is spent by an explicit acceptance and never by being read — and a published
+   * contract saying Created is one a generated client will treat as a creation, with the retry,
+   * caching and monitoring semantics that follow. The body is a POST only to keep the token out of
+   * the URL, which is a transport choice rather than a creation.
+   */
   @Post('preview')
+  @HttpCode(200)
   @Public()
   @ApiOperation({
     summary: 'Read an invitation without using it',
@@ -49,7 +57,7 @@ export class InvitationAcceptanceController {
       'or out of date answers why and withholds the rest.',
   })
   @ApiObjectResponse(InvitationPreviewResponseDto, {
-    status: 201,
+    status: 200,
     description: 'The invitation’s standing, with its details where it is still usable.',
   })
   async preview(

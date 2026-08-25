@@ -58,13 +58,37 @@ export function requiresSession(pathname: string): boolean {
 }
 
 /**
- * Can this destination render for someone who belongs to **no organization**? (Task 26.3.)
+ * The screens a signed-in person must never be *returned* to — the credential entry points.
  *
- * A route that needs no session certainly needs no organization — the two `(app)` screens that
- * need one but not the other (`/create-organization`, `/organization-unavailable`) are not in the
- * set, so this errs toward the branch's default rather than toward honouring a link that cannot
- * render. That is the safe direction, and it is why this is defined as the session predicate
- * inverted rather than as a second list to keep in step.
+ * They render without a session and therefore without an organization, so the predicate below would
+ * otherwise honour them: `/sign-in?return=/sign-in` would send someone who has just authenticated
+ * back to the sign-in form, and `?return=/register` would offer an account to someone who now has
+ * one. Both are craftable, and one is reachable by accident from any flow that echoes the current
+ * path into a return parameter.
+ *
+ * Derived from the same list rather than kept beside it: these are exactly the `(identity)` screens
+ * whose purpose is *obtaining* a session, as against the ones that merely tolerate not having one
+ * (`/invitation`, `/verify`) and are legitimate destinations.
  */
-export const rendersWithoutOrganization = (pathname: string): boolean =>
-  !requiresSession(pathname);
+const SESSION_ENTRY_SEGMENTS = new Set(['sign-in', 'register', 'reset', 'set-password']);
+
+/**
+ * May a post-sign-in branch honour this deep link, whatever the caller's memberships? (Task 26.3,
+ * narrowed 26 Aug 2026.)
+ *
+ * Two conditions, and naming the concept is what keeps them together. The destination must render
+ * **without an organization** — a route that needs no session certainly needs none, and the two
+ * `(app)` screens that need an organization-free session (`/create-organization`,
+ * `/organization-unavailable`) are outside the set, so this errs toward the branch's own default
+ * rather than toward honouring a link that cannot render. And it must not be a screen whose job is
+ * to hand out the session the caller already holds.
+ *
+ * Defined here rather than as `!requiresSession(...)` at the call site because it is a different
+ * question from the proxy's, and the first version — the bare inversion — silently answered "yes"
+ * for the four segments above.
+ */
+export const isReturnableAfterSignIn = (pathname: string): boolean => {
+  const segment = routeSegment(pathname);
+  if (segment === undefined) return false; // the marketing home is not a destination worth honouring
+  return !requiresSession(pathname) && !SESSION_ENTRY_SEGMENTS.has(segment);
+};

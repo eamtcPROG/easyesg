@@ -15,6 +15,13 @@ import styles from '@/features/identity/components/identity-screens.module.css';
  * read, so there is no shell worth streaming ahead of it — which is `async-suspense-boundaries`'
  * own test, applied and answered the other way from the provider list below the fold.
  *
+ * **It cannot pin the locale, and that is a real coupling rather than an oversight.** Next passes
+ * `loading.tsx` no props, so `activateRequestLocale` — the one line every page under `[locale]`
+ * opens with — is unavailable here; messages resolve through `requestLocale` alone, which is
+ * correct only while `[locale]` declares `force-dynamic`. Un-forcing it is §14.2's own open caching
+ * decision, and this file is the first thing that would break silently when it is taken. Recorded
+ * in `apps/web/CLAUDE.md` beside that decision, because that is where someone will be reading.
+ *
  * The heading is the real one, so the shell does not shift when the content arrives; the spinner is
  * decorative and the Panel's text is what names the wait (UX-102, UX-115 — a skeleton is for a
  * layout whose shape is known, and here the arm that renders is exactly what is unknown).

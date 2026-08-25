@@ -1518,7 +1518,7 @@ export interface operations {
         };
         responses: {
             /** @description The invitation’s standing, with its details where it is still usable. */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

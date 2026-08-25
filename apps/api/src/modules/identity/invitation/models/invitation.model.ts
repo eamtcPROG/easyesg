@@ -110,5 +110,14 @@ export interface PendingInvitation {
  * UUID.
  */
 export interface BearerInvitation extends Invitation {
-  readonly organizationName: string;
+  /**
+   * **Nullable, and the null is the policy showing through the type** (26 Aug 2026 review).
+   * `organization_invitation_select` admits the tenant root only while the invitation is `pending`,
+   * so the name behind a spent or withdrawn link is not readable — which is the point of that
+   * narrowing. The invitation row itself always resolves for its bearer, because the preview's whole
+   * job is telling the holder of a dead link *which* kind of dead it is. Reading the name therefore
+   * requires having established that the invitation is live, and the compiler enforces that rather
+   * than a comment.
+   */
+  readonly organizationName: string | null;
 }

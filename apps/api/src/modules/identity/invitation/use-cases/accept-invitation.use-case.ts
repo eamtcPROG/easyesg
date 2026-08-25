@@ -97,15 +97,37 @@ export class AcceptInvitation {
       async (tx): Promise<Outcome> => {
         const now = this.now();
 
-        // §12.5.6's auth-path row names invitation accept in terms. Counted then recorded before
-        // any work, so a refusal below still spends the budget — which is the point of a throttle,
-        // and is only true because nothing in this callback throws.
+        // §12.5.6's auth-path row names invitation accept in terms. The window is *checked* here
+        // and *spent* only by a refusal — `refuse` below is the single place that records.
+        //
+        // **A success costs nothing** (26 Aug 2026 review). Recording every call made the control
+        // bite the case FR-12 exists for: a bookkeeper onboarding to six client organizations in
+        // one sitting was told there had been too many attempts and asked to wait a quarter of an
+        // hour. §12.5.6's control bounds *guessing*, and a success is not a guess — it is proof the
+        // caller held a live token addressed to them. Refusals still spend the budget, which is what
+        // bounds someone trying tokens, and the throttle's own refusal records nothing so a block
+        // drains rather than rolling forward (`auth-throttle.ts` states that property).
         const key = invitationAcceptThrottleKey(command.clientIp, command.accountId);
         const since = new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS);
         if ((await tx.countRecentAuthAttempts(key, since)) >= AUTH_ATTEMPT_LIMIT) {
           return { kind: OUTCOME.RATE_LIMITED };
         }
-        await tx.recordAuthAttempt(key, now);
+
+        /**
+         * Records the attempt, then reports it. Every refusal below goes through here, so "a
+         * refusal spends the budget" is a property of one function rather than a rule each branch
+         * has to remember — which is what the first version got wrong in the other direction.
+         *
+         * It works only because nothing in this callback throws: a throw would roll the transaction
+         * back and take the row with it, which is the trap `apps/api/CLAUDE.md` records from task
+         * 21's sign-in and the reason `execute` returns an outcome and raises after the commit.
+         */
+        const refuse = async <T extends Exclude<Outcome, { kind: typeof OUTCOME.ACCEPTED }>>(
+          outcome: T,
+        ): Promise<T> => {
+          await tx.recordAuthAttempt(key, now);
+          return outcome;
+        };
 
         // The two checks are separate, and the compiler is what asked for it: with them combined
         // by `||`, `standing` stays the full union inside the branch and cannot be handed to a
@@ -113,14 +135,22 @@ export class AcceptInvitation {
         // reads better — a token naming no row is its own sentence, not a variant of "expired".
         const invitation = await tx.findInvitation();
         if (invitation === null) {
-          return { kind: OUTCOME.NOT_ACCEPTABLE, standing: INVITATION_STANDING.UNKNOWN };
+          return refuse({ kind: OUTCOME.NOT_ACCEPTABLE, standing: INVITATION_STANDING.UNKNOWN });
         }
 
         const standing = invitationStanding(invitation, now);
-        if (standing !== INVITATION_STANDING.ACCEPTABLE) {
+        // `organizationName` is null exactly when `organization_invitation_select` refused the
+        // tenant root, which it does for every standing but `acceptable` — so a null here and a
+        // non-acceptable standing are the same fact arriving by two routes, and both refuse.
+        if (standing !== INVITATION_STANDING.ACCEPTABLE || invitation.organizationName === null) {
           // Carries the standing, because S-03 draws expired, already-used and revoked as three
           // distinguishable recoverable states and a screen cannot branch on wording.
-          return { kind: OUTCOME.NOT_ACCEPTABLE, standing };
+          return refuse({
+            kind: OUTCOME.NOT_ACCEPTABLE,
+            standing: standing === INVITATION_STANDING.ACCEPTABLE
+              ? INVITATION_STANDING.CONSUMED
+              : standing,
+          });
         }
 
         // FR-11's binding, and UC-15's business rule in one comparison: "the invitation binds to
@@ -136,36 +166,37 @@ export class AcceptInvitation {
           acceptorEmail === null ||
           emailIdentityKey(acceptorEmail) !== emailIdentityKey(invitation.invitedEmail)
         ) {
-          return { kind: OUTCOME.ADDRESS_MISMATCH };
+          return refuse({ kind: OUTCOME.ADDRESS_MISMATCH });
         }
 
         // Conditional on the row still being `pending`, so FR-11's single-use is the database's
         // claim: two simultaneous clicks produce one `true` and one `false`, and the loser is told
         // the link is spent rather than being granted a second membership.
-        if (!(await tx.consume({ invitationId: invitation.id, at: now }))) {
-          return { kind: OUTCOME.NOT_ACCEPTABLE, standing: INVITATION_STANDING.CONSUMED };
+        if (!(await tx.consume({ at: now }))) {
+          return refuse({ kind: OUTCOME.NOT_ACCEPTABLE, standing: INVITATION_STANDING.CONSUMED });
         }
 
-        const grant = await tx.grantMembership({
-          accountId: command.accountId,
-          organizationId: invitation.organizationId,
-          role: invitation.role,
-          at: now,
-        });
+        // The organization and the role are the store's to derive from the invitation it resolved,
+        // not this use case's to hand over — see the port's header for what that prevents.
+        // Narrowed by the guard above, and named so the object literal below reads as data.
+        const { organizationName } = invitation;
+
+        const grant = await tx.grantMembership({ accountId: command.accountId, at: now });
 
         // §12.5.6's task-26.2 row. Written even when they were `already_member`, because the
         // outcome S-03 promises — landing in this organization — is what the person clicked for,
         // and it is true of that case too.
         await tx.setActiveOrganization({
           sessionId: command.sessionId,
-          organizationId: invitation.organizationId,
+          // Scopes the write to a session this account owns; `identity.session` has no RLS.
+          accountId: command.accountId,
         });
 
         return {
           kind: OUTCOME.ACCEPTED,
           accepted: {
             organizationId: invitation.organizationId,
-            organizationName: invitation.organizationName,
+            organizationName,
             // From the grant, NOT from the invitation. For an existing member the two differ — the
             // invitation does not change their role — and answering with the invitation's would
             // tell an administrator they are an editor, on the screen they land on to use it.

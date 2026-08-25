@@ -2575,3 +2575,98 @@ Verified: `pnpm gates`, then `pnpm gates:clean`. 48 browser tests across three p
 new; 89 web unit tests including the branch's eight arms and the four new post-sign-in cases; 298
 api unit tests. Both amended documents are cross-logged: `design_spec.md` S-03 and S-01,
 `architecture.md` §12.5.6's task-26.3 rows, and `apps/web/CLAUDE.md`'s two affected traps.
+
+## Review of 26.1–26.3, and fixes taken at the depth that stops them recurring · 2026-08-26
+
+Fourteen findings from an extra-high-effort review of the nine unpushed commits. Eleven are fixed
+here; three are recorded rather than patched, with the reason each. What the project owner asked for
+shaped the fixes more than the findings did — *fix them so they are not needed again* — so several
+landed one level below where the defect surfaced.
+
+**The lint rule was the cause, not the collateral.** `Button`'s `asChild` discriminated on **key
+presence** (`'asChild' in props`), so `asChild={false}` and any spread carrying `asChild: undefined`
+entered the Slot branch and threw inside Radix's `React.Children.only`. The reason it was written
+that way is in the git history: omitting a component's own props from a DOM spread requires
+`const { asChild, busy, ...rest }`, and `@typescript-eslint/no-unused-vars` at its default called
+those two "assigned but never used" — so the author avoided the destructure. **The rule pushed the
+code into a worse shape than the one it objected to.** `ignoreRestSiblings: true` is the option
+typescript-eslint documents for exactly that pattern; turning it on removes the pressure for every
+component written from here on, and the discriminator is now on the value with a spec pinning all
+three forms.
+
+**Two caller-supplied identifiers, fixed by making the wrong value unpassable.**
+`grantMembership` bound `app.current_org` to whatever the caller passed — while `bindOrganizationOf`,
+twenty lines away in the same class, carried a comment explaining why it refused to do exactly that.
+One method obeyed the rule and its neighbour did not. And `setActiveOrganization` wrote
+`identity.session` by a caller-supplied id on a table with **no RLS at all**, so nothing but caller
+discipline stood between a mistaken id and moving a stranger's active organization. A third careful
+caller was not the answer: `findInvitation` now **resolves once and the transaction remembers**, the
+writes take no invitation id, organization id or role, and the session write is scoped by
+`account_id`. The compiler found all four call sites. The extra read `consume` used to do is gone
+with it, which was a separate efficiency finding.
+
+**`organization_invitation_select` was wider than the product rule.** Keyed on the token alone, it
+admitted the tenant root to the bearer of an invitation accepted last month or revoked this morning.
+Nothing leaked — the preview withholds details for every standing but `acceptable` — but that is
+application code standing in for a policy, and task 26.2's own header argues against it in terms,
+citing task 25.3: *"task 29 is about to put IDNO, registered address and contact details on this
+row"*. A new migration adds `AND i.status = 'pending'`, measured in both states: a live token reads
+one organization, a revoked one reads none. The **invitation** policy is deliberately not narrowed
+the same way — the preview's whole job is telling the holder of a dead link which kind of dead it is.
+
+**A predicate with no name of its own inherits every future change to the list it was derived from.**
+`?return=` honoured any destination that `!requiresSession(...)` admitted, which silently included
+`/sign-in`, `/register`, `/reset` and `/set-password` — so `?return=/sign-in` sent someone who had
+just authenticated back to the sign-in form. The fix is `isReturnableAfterSignIn`, a named concept in
+`route-access.ts` asking its own question, so the next public screen added to
+`UNAUTHENTICATED_SEGMENTS` does not quietly become a post-sign-in destination.
+
+**The stale-invitation detour lost its return path.** Registration from S-03 pushes to sign-in when
+the account came back verified, and to `/verify` otherwise — dropping `returnTo` on the second
+branch, which is exactly the branch an expired or revoked invitation takes. The invitee verified,
+signed in with nowhere to go, and landed on "create your first organization" with no sign the
+invitation existed. `?return=` now passes through S-02 to the success state's sign-in link.
+
+**The throttle spent budget on successes.** Every acceptance recorded an attempt, so a bookkeeper
+onboarding to six client organizations in one sitting — FR-12's own scenario — was told there had
+been too many attempts. §12.5.6's control bounds guessing, and a success is proof the caller held a
+live token addressed to them. Refusals now record, through a single `refuse` helper so the property
+belongs to one function rather than to four branches remembering.
+
+Also fixed: `POST /invitations/preview` answers **200**, not Nest's POST default of 201, for a read
+that creates nothing and had published `Created` in the contract; three dead exports removed
+(`invitationTokenFor` in the browser e2e helper, `isInvitationStanding` in the wire contract); and
+`UsableInvitationProp` reaches for the exported type instead of `Parameters<typeof …>[0][…]`.
+
+**Three recorded rather than patched.**
+
+- **The acceptance outcome nothing shows.** `grant` is published so a screen can say joined,
+  rejoined, or "you already had access" — and S-03's exit redirects to S-05, which is task 30.5 and
+  renders nothing today. Inventing a fourth screen to hold the sentence is the one-off UX-89 forbids,
+  so the DTO stops claiming a delivered behaviour and **task 30.5's row now owes it**, naming the
+  vocabulary to read.
+- **`loading.tsx` cannot pin its locale.** Next passes it no props, so `activateRequestLocale` is
+  unavailable and messages resolve through `requestLocale` alone — correct only while `[locale]`
+  declares `force-dynamic`. Un-forcing it is §14.2's own open caching decision, and this is the first
+  file that would break silently when it is taken. Recorded in `apps/web/CLAUDE.md` **beside that
+  decision**, because that is where someone will be reading.
+- **`emitInvitationEmail` reads the organization name per issue and per resend.** One round trip on a
+  route used a handful of times per organization per year; the alternative couples the outbox payload
+  to a value the caller would have to thread. Left alone deliberately.
+
+**The gate caught a regression the narrowing itself introduced, and it is the best thing in this
+entry.** The policy fix reasoned "nothing in the acceptance path breaks" — verified, and true — and
+did not ask the same of the *preview*. `findInvitation` joined `core.organization` with an **inner**
+join, so making the organization invisible for a non-pending invitation dropped the **invitation**
+row too: the preview answered `unknown` where S-03 needs `revoked`, defeating the four-standing
+vocabulary that whole screen is built on. One e2e assertion failed and named it exactly.
+
+The repair is more than a `LEFT JOIN`. `BearerInvitation.organizationName` is now `string | null`,
+which puts the policy in the type: **the name of the organization behind a spent link is not
+knowable**, so reading it requires having established the invitation is live, and the compiler
+enforces that at both call sites rather than a comment asking. The fake models it too — it returns
+null for any non-pending status — because a fake that always supplied a name is what let an inner
+join look correct until the database ran.
+
+Verified: `pnpm gates:clean`. 299 api unit tests, 94 web unit tests, 13 `packages/ui` tests (5 of
+them the new Button spec), 48 browser tests.

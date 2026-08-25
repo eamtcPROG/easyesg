@@ -17,10 +17,16 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  *
  * The reset and set-password surfaces S-02 also names live at `/reset` and `/set-password`
  * (task 22).
+ *
+ * **`?return=` passes through both surfaces** (26 Aug 2026 review). S-03 hands off to registration
+ * carrying an invitation; when that invitation turns out to be stale the account is created
+ * unverified and the journey detours through here — so the return path has to survive the detour,
+ * or the invitee finishes verifying with nowhere to go and the invitation is orphaned. It is
+ * sanitised where it is finally used, by the sign-in route, exactly as the proxy's own is.
  */
 type Props = {
   params: LocaleParams;
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; return?: string }>;
 };
 
 export const generateMetadata = localizedPageTitle('identity.verify');
@@ -28,12 +34,12 @@ export const generateMetadata = localizedPageTitle('identity.verify');
 export default async function VerifyPage({ params, searchParams }: Props) {
   await activateRequestLocale(params);
   const t = await getTranslations('identity.verify');
-  const { token } = await searchParams;
+  const { token, return: returnTo } = await searchParams;
 
   return (
     <>
       <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-      {token ? <ConfirmEmail token={token} /> : <VerificationPending />}
+      {token ? <ConfirmEmail token={token} returnTo={returnTo} /> : <VerificationPending />}
     </>
   );
 }

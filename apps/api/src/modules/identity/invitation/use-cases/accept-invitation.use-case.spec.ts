@@ -53,7 +53,7 @@ describe('AcceptInvitation (UC-15, FR-11)', () => {
 
     await accept(store);
 
-    expect(store.activeOrganizationBySession[SESSION]).toBe('organization-beta');
+    expect(store.activeOrganizationBySession[`${ACCOUNT}:${SESSION}`]).toBe('organization-beta');
   });
 
   it('binds the acceptor, unlike the preview', async () => {
@@ -173,7 +173,7 @@ describe('AcceptInvitation (UC-15, FR-11)', () => {
     // Consumed all the same, so the invitation stops holding the address (26.1's partial index).
     expect(store.find('a')?.status).toBe(INVITATION_STATUS.ACCEPTED);
     // And they still land where they clicked to land.
-    expect(store.activeOrganizationBySession[SESSION]).toBe('organization-alpha');
+    expect(store.activeOrganizationBySession[`${ACCOUNT}:${SESSION}`]).toBe('organization-alpha');
   });
 
   /** Task 25.1's arc: one row per (account, organization) ever, so removal then re-invitation
@@ -212,6 +212,18 @@ describe('AcceptInvitation (UC-15, FR-11)', () => {
     await expect(accept(store)).rejects.toBeInstanceOf(InvitationNotYoursError);
 
     expect(store.attempts).toHaveLength(1);
+  });
+
+  /**
+   * The complement, and the case the first version got wrong: joining six organizations in a
+   * quarter of an hour is FR-12's own scenario, not an attack.
+   */
+  it('spends nothing when it succeeds', async () => {
+    const store = storeWith([bearerInvitation({ id: 'a' })]);
+
+    await accept(store);
+
+    expect(store.attempts).toHaveLength(0);
   });
 
   it('refuses past the window limit (§12.5.6)', async () => {

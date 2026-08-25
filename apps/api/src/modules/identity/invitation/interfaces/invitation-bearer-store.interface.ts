@@ -1,5 +1,5 @@
 import type { MembershipRole } from '@api/modules/identity/membership/models/membership.model';
-import type { BearerInvitation, InvitedRole } from '../models/invitation.model';
+import type { BearerInvitation } from '../models/invitation.model';
 
 /**
  * The store the **bearer of an invitation link** reads and writes through — UC-15 (task 26.2).
@@ -20,9 +20,20 @@ import type { BearerInvitation, InvitedRole } from '../models/invitation.model';
  *
  * **The bindings are the interesting part.** `run` binds `app.current_invitation` (the presented
  * token's SHA-256) so `invitation_bearer_select` admits the one row, and `app.current_user` when
- * there is an actor — the preview has none, and must not. `app.current_org` is bound by the write
- * methods themselves, from the invitation's **own** organization, because that is a persistence
+ * there is an actor — the preview has none, and must not. `app.current_org` is bound by the
+ * transaction itself, from the invitation's **own** organization, because that is a persistence
  * concern and a use case has no business naming an RLS setting.
+ *
+ * **No write below takes an invitation id, an organization id or a role, and that is the point.**
+ * They were parameters until 26 Aug 2026, and the review found what that costs: `grantMembership`
+ * bound `app.current_org` to whatever the caller passed — the tenancy model handed to every future
+ * caller — while `bindOrganizationOf`, twenty lines away, carried a comment explaining why it
+ * refused to do exactly that. One method obeyed the rule and its neighbour did not.
+ *
+ * The fix is structural rather than a third careful caller: `findInvitation` **resolves once and
+ * the transaction remembers**, so every write derives its organization, its role and its target row
+ * from the row the bound token actually named. Passing the wrong one is unrepresentable now rather
+ * than merely discouraged, and the extra read `consume` used to do is gone with it.
  */
 export interface InvitationBearerStore {
   /**
@@ -114,10 +125,11 @@ export interface InvitationBearerTransaction {
    * database's claim and not the application's: two simultaneous clicks on one link produce one
    * update and one `false`, rather than two memberships.
    */
-  consume(input: { readonly invitationId: string; readonly at: Date }): Promise<boolean>;
+  consume(input: { readonly at: Date }): Promise<boolean>;
 
   /**
-   * Creates the membership, restores a removed one, or reports that one already stands.
+   * Creates the membership, restores a removed one, or reports that one already stands — at the
+   * role and in the organization the resolved invitation names.
    *
    * The read half needs only `app.current_user`, which `run` has already bound —
    * `membership_self_select` lets an account see its own rows in any organization, which is task
@@ -125,8 +137,6 @@ export interface InvitationBearerTransaction {
    */
   grantMembership(input: {
     readonly accountId: string;
-    readonly organizationId: string;
-    readonly role: InvitedRole;
     readonly at: Date;
   }): Promise<MembershipGranted>;
 
@@ -134,10 +144,15 @@ export interface InvitationBearerTransaction {
    * Points the session at the organization just joined (§12.5.6's task-26.2 row), so S-03's exit —
    * "S-05 in the newly joined organization" — holds for someone who already belonged elsewhere.
    * The third writer of that column, after 25.4's post-sign-in branch and ahead of 30.1's switcher.
+   *
+   * **`accountId` is passed so the write can be scoped to a session that account actually owns.**
+   * `identity.session` carries no row-level security — it belongs to an account rather than to a
+   * tenant — so nothing but this predicate stands between a mistaken session id and moving a
+   * stranger's active organization.
    */
   setActiveOrganization(input: {
     readonly sessionId: string;
-    readonly organizationId: string;
+    readonly accountId: string;
   }): Promise<void>;
 }
 

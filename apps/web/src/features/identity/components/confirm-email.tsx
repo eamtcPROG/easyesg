@@ -17,12 +17,17 @@ import styles from './identity-screens.module.css';
  * body precisely so a mail scanner prefetching the URL cannot burn the single use (task 19's
  * controller states this), and a GET that mutated on render would re-introduce exactly that.
  *
+ * **`returnTo` is the invitation detour** (26 Aug 2026 review): S-03 → registration with a stale
+ * token → an ordinary challenge → here. Carrying it means the success state offers sign-in *back to
+ * the invitation* rather than to a blank one, which is what stops the link being orphaned. Absent on
+ * every other arrival, which is most of them.
+ *
  * States (§8.1 subset): rest (explanation + one primary action) · confirming (pending-async) ·
  * success (account active, next step offered — never a bare toast for a consequential action) ·
  * error — recoverable (the problem's own three-part text as received, with the resend route as
  * the way out, per §8.4's finding-to-destination rule) · unreachable (bundled catalogue).
  */
-export function ConfirmEmail({ token }: { token: string }) {
+export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: string }) {
   const t = useTranslations('identity.verify');
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
@@ -46,7 +51,9 @@ export function ConfirmEmail({ token }: { token: string }) {
         title={t('successTitle')}
         action={
           <TextLink asChild>
-            <Link href="/sign-in">{t('successAction')}</Link>
+            <Link href={returnTo ? `/sign-in?return=${encodeURIComponent(returnTo)}` : '/sign-in'}>
+              {t('successAction')}
+            </Link>
           </TextLink>
         }
       >

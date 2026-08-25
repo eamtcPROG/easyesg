@@ -25,7 +25,7 @@ import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queri
 interface BearerInvitationRow {
   id: string;
   organization_id: string;
-  organization_name: string;
+  organization_name: string | null;
   invited_email: string;
   role: InvitedRole;
   status: InvitationStatus;
@@ -99,6 +99,17 @@ export class InvitationBearerStoreRepository implements InvitationBearerStore {
 }
 
 class BearerTransaction implements InvitationBearerTransaction {
+  /**
+   * The row the bound token resolved to, remembered from `findInvitation`.
+   *
+   * **This is what makes an identifier unpassable rather than merely discouraged** (26 Aug 2026
+   * review). Every write below derives its target row, its organization and its role from here, so
+   * there is no argument a caller could get wrong — and the organization `app.current_org` is bound
+   * to is, by construction, the one the token named. It also removes the extra read `consume` used
+   * to do to answer the same question.
+   */
+  private resolved: BearerInvitation | null = null;
+
   constructor(private readonly runner: QueryRunner) {}
 
   /**
@@ -110,18 +121,26 @@ class BearerTransaction implements InvitationBearerTransaction {
    * The join to `core.organization` is reachable only because `organization_invitation_select`
    * exists; before task 26.2 it would have returned zero rows and the invitee would have been shown
    * an invitation from nobody.
+   *
+   * **LEFT, not INNER, and the gate caught the difference** (26 Aug 2026 review). Narrowing that
+   * policy to a live invitation made the organization row invisible for a spent or revoked one — so
+   * an inner join dropped the **invitation** too, and the preview answered `unknown` where S-03
+   * needed `revoked`. The invitation must always resolve for its bearer; only the organization's
+   * name disappears with it, which is exactly what the narrowing intends and what
+   * `BearerInvitation.organizationName` being nullable now says.
    */
   async findInvitation(): Promise<BearerInvitation | null> {
     const rows = (await this.runner.query(
       `SELECT i.id, i.organization_id, o.name AS organization_name, i.invited_email, i.role,
               i.status, i.locale, i.issued_at, i.expires_at, i.accepted_at, i.revoked_at
          FROM identity.invitation i
-         JOIN core.organization o ON o.id = i.organization_id`,
+         LEFT JOIN core.organization o ON o.id = i.organization_id`,
     )) as BearerInvitationRow[];
 
     const row = rows[0];
     if (row === undefined) return null;
-    return {
+
+    this.resolved = {
       id: row.id,
       organizationId: row.organization_id,
       organizationName: row.organization_name,
@@ -134,6 +153,7 @@ class BearerTransaction implements InvitationBearerTransaction {
       acceptedAt: row.accepted_at,
       revokedAt: row.revoked_at,
     };
+    return this.resolved;
   }
 
   /** `identity.account` carries no RLS — an account exists before any organization does. */
@@ -144,17 +164,17 @@ class BearerTransaction implements InvitationBearerTransaction {
     return rows[0]?.email ?? null;
   }
 
-  async consume(input: { readonly invitationId: string; readonly at: Date }): Promise<boolean> {
+  async consume(input: { readonly at: Date }): Promise<boolean> {
     // The organization must be bound before this runs: `invitation_bearer_select` is a SELECT
     // policy and grants no write, so the UPDATE is admitted by `invitation_tenant_update` alone.
     // That is deliberate — knowing a token must not by itself confer the ability to write a row.
-    await this.bindOrganizationOf(input.invitationId);
+    const invitation = await this.bindResolvedOrganization();
 
     const result: unknown = await this.runner.query(
       `UPDATE identity.invitation
           SET status = $2, accepted_at = $3, updated_at = $3
         WHERE id = $1 AND status = $4 RETURNING id`,
-      [input.invitationId, INVITATION_STATUS.ACCEPTED, input.at, INVITATION_STATUS.PENDING],
+      [invitation.id, INVITATION_STATUS.ACCEPTED, input.at, INVITATION_STATUS.PENDING],
     );
     const [rows] = result as [unknown[], number];
     return rows.length === 1;
@@ -168,25 +188,25 @@ class BearerTransaction implements InvitationBearerTransaction {
    */
   async grantMembership(input: {
     readonly accountId: string;
-    readonly organizationId: string;
-    readonly role: InvitedRole;
     readonly at: Date;
   }): Promise<MembershipGranted> {
+    const invitation = this.requireResolved();
+
     const existing = (await this.runner.query(
       `SELECT id, role, status FROM identity.membership
         WHERE account_id = $1 AND organization_id = $2`,
-      [input.accountId, input.organizationId],
+      [input.accountId, invitation.organizationId],
     )) as { id: string; role: MembershipRole; status: string }[];
 
-    await bind(this.runner, 'app.current_org', input.organizationId);
+    await this.bindResolvedOrganization();
 
     const row = existing[0];
     if (row === undefined) {
       await this.runner.query(
         `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1, $2, $3)`,
-        [input.accountId, input.organizationId, input.role],
+        [input.accountId, invitation.organizationId, invitation.role],
       );
-      return { kind: MEMBERSHIP_GRANT_KIND.CREATED, role: input.role };
+      return { kind: MEMBERSHIP_GRANT_KIND.CREATED, role: invitation.role };
     }
 
     if (row.status === MEMBERSHIP_STATUS.ACTIVE) {
@@ -201,9 +221,9 @@ class BearerTransaction implements InvitationBearerTransaction {
       `UPDATE identity.membership
           SET role = $2, status = $3, removed_at = NULL, updated_at = $4
         WHERE id = $1`,
-      [row.id, input.role, MEMBERSHIP_STATUS.ACTIVE, input.at],
+      [row.id, invitation.role, MEMBERSHIP_STATUS.ACTIVE, input.at],
     );
-    return { kind: MEMBERSHIP_GRANT_KIND.REACTIVATED, role: input.role };
+    return { kind: MEMBERSHIP_GRANT_KIND.REACTIVATED, role: invitation.role };
   }
 
   /** §12.5.6's window, through the one shared implementation the other two stores use. */
@@ -215,32 +235,50 @@ class BearerTransaction implements InvitationBearerTransaction {
     return recordAuthAttempt(this.runner, key, at);
   }
 
-  /** `identity.session` carries no RLS — it belongs to an account, not to a tenant (task 25.1). */
+  /**
+   * `identity.session` carries no RLS — it belongs to an account, not to a tenant (task 25.1) — so
+   * `account_id` in the predicate is the only thing scoping this write. Without it a mistaken
+   * session id moves a stranger's active organization, and no policy would object.
+   */
   async setActiveOrganization(input: {
     readonly sessionId: string;
-    readonly organizationId: string;
+    readonly accountId: string;
   }): Promise<void> {
     await this.runner.query(
-      `UPDATE identity.session SET active_organization_id = $2 WHERE id = $1`,
-      [input.sessionId, input.organizationId],
+      `UPDATE identity.session SET active_organization_id = $3
+        WHERE id = $1 AND account_id = $2`,
+      [input.sessionId, input.accountId, this.requireResolved().organizationId],
     );
   }
 
   /**
-   * Binds the invitation's **own** organization, read back through the bearer policy rather than
-   * taken from the caller. Taking it as a parameter would let a caller bind any organization they
-   * named and then write to it under `invitation_tenant_update`, which is the whole tenancy model
-   * handed to whoever calls this method.
+   * Binds the resolved invitation's **own** organization for the writes that need it.
+   *
+   * Idempotent and called by each write rather than once up front, so correctness does not depend
+   * on call order — `set_config` costs a round trip nobody will measure, and a method whose
+   * behaviour depends on another having run first is the coupling that survives review.
    */
-  private async bindOrganizationOf(invitationId: string): Promise<void> {
-    const rows = (await this.runner.query(
-      `SELECT organization_id FROM identity.invitation WHERE id = $1`,
-      [invitationId],
-    )) as { organization_id: string }[];
+  private async bindResolvedOrganization(): Promise<BearerInvitation> {
+    const invitation = this.requireResolved();
+    await bind(this.runner, 'app.current_org', invitation.organizationId);
+    return invitation;
+  }
 
-    const row = rows[0];
-    if (row === undefined) return;
-    await bind(this.runner, 'app.current_org', row.organization_id);
+  /**
+   * A write reached before `findInvitation` is a programming error, and it must be loud.
+   *
+   * Under RLS the quiet failure is the dangerous one: with nothing resolved and no organization
+   * bound, every statement below would match zero rows and report "the link is spent" — a wrong
+   * answer with a plausible message, which is the exact failure `TenantRepository`'s own throw
+   * exists to prevent.
+   */
+  private requireResolved(): BearerInvitation {
+    if (this.resolved === null) {
+      throw new Error(
+        'The invitation must be resolved with findInvitation() before any write on this transaction.',
+      );
+    }
+    return this.resolved;
   }
 }
 

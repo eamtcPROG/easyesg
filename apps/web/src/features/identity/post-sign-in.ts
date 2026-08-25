@@ -1,6 +1,6 @@
 import type { AccountMembership } from '@easyesg/contracts';
 import type { LocalizedPath } from '@/lib/locale-path';
-import { rendersWithoutOrganization } from '@/lib/route-access';
+import { isReturnableAfterSignIn } from '@/lib/route-access';
 import type { Locale } from '@easyesg/i18n';
 
 /**
@@ -29,9 +29,11 @@ import type { Locale } from '@easyesg/i18n';
  * found it: `/invitation/<token>` renders perfectly for someone who belongs to nowhere, and is the
  * one deep link such a person must be returned to — a registration handed off from an invitation
  * was landing on S-04 with the invitation lost. So the override is now scoped to destinations that
- * need a session, which `rendersWithoutOrganization` reads from **the proxy's own list** rather
- * than from a second one: the closed-by-default gate and this branch must not disagree about which
- * routes those are.
+ * need a session, which `isReturnableAfterSignIn` reads from **the proxy's own list** rather than
+ * from a second one: the closed-by-default gate and this branch must not disagree about which routes
+ * those are. That predicate additionally excludes the credential entry points — `/sign-in`,
+ * `/register`, `/reset`, `/set-password` — which render without an organization and are nonetheless
+ * absurd places to send someone who has just signed in (narrowed 26 Aug 2026, after review).
  *
  * **This file carries no `server-only` and reaches no API**, which is why the branch has a spec at
  * all: `api-client` is server-only, and importing it here would make the whole module unloadable in
@@ -73,7 +75,7 @@ export const postSignInTarget = (input: {
   if (input.memberships.length === 0) {
     // Even here a session-free destination is honoured: the member-of-nothing arriving from an
     // invitation is going back to accept it, which is precisely how they stop being one.
-    return input.returnTo && rendersWithoutOrganization(input.returnTo.href)
+    return input.returnTo && isReturnableAfterSignIn(input.returnTo.href)
       ? { href: input.returnTo.href, locale: input.returnTo.locale }
       : { href: POST_SIGN_IN.CREATE_ORGANIZATION };
   }
@@ -81,7 +83,10 @@ export const postSignInTarget = (input: {
   // Exactly one membership is the only state in which an organization is already resolved, so it is
   // the only one where a deep link INTO `(app)` can be honoured. A destination that renders without
   // a session renders without an organization too, so it is honoured from any arm — see the header.
-  if (input.returnTo && (input.memberships.length === 1 || rendersWithoutOrganization(input.returnTo.href))) {
+  if (
+    input.returnTo &&
+    (input.memberships.length === 1 || isReturnableAfterSignIn(input.returnTo.href))
+  ) {
     return { href: input.returnTo.href, locale: input.returnTo.locale };
   }
   return { href: POST_SIGN_IN.HOME };
