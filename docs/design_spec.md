@@ -1858,6 +1858,8 @@ This governs A-10, A-11, A-13 and A-14.
 
 Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations are resolved from the `Source UC` column of the FR register; all lie within `FR-1 … FR-173`.
 
+**Four rows cite no FR, and the dash is a record rather than an omission.** S-29, S-30, S-31 and S-34 serve UC-177, UC-178, UC-179 and UC-182, which originate no functional requirement — `functional_requirements.md` §9.4 **G-9** records that as a real gap, deliberately not closed by inventing numbers outside the MVP block, with the acceptance criteria living in §5.1b of this document instead. S-30's obligation is discharged non-functionally by NFR-5, for which G-4 is the precedent. *(The six public-tier rows were added 25 Aug 2026: they entered §4.4 with §5.1b on 24 Aug and this table was not updated in the same edit.)*
+
 | Screen | Name | Actors | Use cases | Functional requirements |
 |---|---|---|---|---|
 | S-01 | Sign in / register / provider choice | CA | UC-01 … 05 | FR-1, FR-2, FR-4, FR-82 |
@@ -1888,6 +1890,12 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-26 | Notification centre | CA | UC-165 … 167 | FR-160, FR-161, FR-162 |
 | S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | FR-9, FR-10, FR-163 |
 | S-28 | Credentials and linked identities | CA | UC-10 … 12 | FR-7, FR-8 |
+| S-29 | Marketing home | VI | UC-177 | — (G-9) |
+| S-30 | Legal documents (terms · privacy · cookies) | VI, all | UC-178 | — (G-9); NFR-5 is the obligation this screen discharges |
+| S-31 | Cookie choice | VI | UC-179 | — (G-9) |
+| S-32 | Help centre | VI, CA | UC-180 | FR-61 |
+| S-33 | Help article | VI, CA | UC-181 | FR-61, FR-64 |
+| S-34 | Write to support | VI, CA | UC-182 | — (G-9) |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | FR-12 |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | FR-75 |
 | A-02 | Organization register | PA | UC-69 | FR-76, FR-77 |
@@ -1945,7 +1953,7 @@ Reproduced from the source specification's traceability table, including its own
 
 ### 13.3 Coverage observations
 
-All identifiers cited in this document fall inside `UC-01` … `UC-176`, `FR-1` … `FR-173`, `NFR-1` … `NFR-105`, and `NFR-106` … `NFR-109` (ratified into `non_functional_requirements.md` §4.16, 18 Aug 2026). The following are consistency observations against the source's own citations, carried forward as open questions rather than silently corrected:
+All identifiers cited in this document fall inside `UC-01` … `UC-182` (extended from `UC-176` on 25 Aug 2026: the public tier added UC-177 … UC-182 with the Visitor actor on 24 Aug, and this sentence was not amended with it), `FR-1` … `FR-173`, `NFR-1` … `NFR-105`, and `NFR-106` … `NFR-109` (ratified into `non_functional_requirements.md` §4.16, 18 Aug 2026). The following are consistency observations against the source's own citations, carried forward as open questions rather than silently corrected:
 
 | Observation | Detail | Logged as |
 |---|---|---|
