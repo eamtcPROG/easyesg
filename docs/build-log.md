@@ -2670,3 +2670,56 @@ join look correct until the database ran.
 
 Verified: `pnpm gates:clean`. 299 api unit tests, 94 web unit tests, 13 `packages/ui` tests (5 of
 them the new Button spec), 48 browser tests.
+
+## The worker had not booted since task 28.1, and only CI could say so · 2026-08-26
+
+The first CI run after ten commits went red in the **Images** job — the one that starts the
+containers a deploy would use. All three gate jobs passed. The api served; the worker exited:
+
+> `Nest can't resolve dependencies of the APP_GUARD (?). Please make sure that the argument
+> AuthGuard at index [0] is available in the AppModule module.`
+
+**Task 28.1 broke it and four tasks shipped on top.** `AppModule` registered `AuthGuard` as an
+`APP_GUARD` unconditionally; `SessionModule` provides it on the HTTP side only (`providers: mode ===
+APP_MODE.WORKER ? [] : httpProviders`). So `useExisting: AuthGuard` had nothing to resolve, and
+`MODE=worker` refused to start from that commit onward.
+
+**Why nine green gates said nothing.** `openapi:check` boots the module graph in `preview: true` and
+instantiates no provider — a property this file already records as a deliberate trade, and this is
+the first time the accepted cost was paid. Every e2e suite boots HTTP. `pnpm build` compiles and
+does not run. Nothing in the repository started the worker, so the only thing that could catch it
+was a job that runs the image, and that lives in CI. This is the rule the root `CLAUDE.md` states
+having its second instance: *a red pipeline is a finding, not an interruption*, and job isolation is
+a property one working directory cannot model.
+
+**The fix is one conditional, not four guarded providers.** `main.worker.ts` builds an application
+context — no HTTP server, no controllers, no requests — so a guard or interceptor there governs
+nothing. `AppModule` now registers the whole request pipeline in HTTP mode only. Guarding each
+provider individually would have been the smaller diff and the worse fix: the next guard added below
+is one someone has to remember to guard too, whereas one conditional over the list states the thing
+that is actually true and cannot be forgotten by an addition to it.
+
+**The gate that would have caught it, added as the tenth.** `entrypoint-boot.e2e-spec.ts` boots
+`AppModule` through `createApplicationContext` — the worker's own factory, so the HTTP run exercises
+the same resolution path rather than a friendlier one — and asserts the pipeline is present in HTTP
+mode and absent on the worker. `MODE` is read at module-definition time, so one process cannot
+exercise both branches: `pnpm e2e` is the HTTP half and **`pnpm e2e:worker`** the worker half, and
+neither alone proves the split. That is exactly `billing-disabled.e2e-spec.ts`'s arrangement, chosen
+for the same reason and carrying the same honest limitation.
+
+It is a root script plus one workflow line, per the rule that a gate is never workflow-only logic —
+and it was verified the way the boundary rules are: reintroducing the unconditional registration
+makes it fail.
+
+**Its first draft was itself a rule that matched nothing**, which is worth recording because the
+repository keeps meeting this shape. The spec asserted `expect(() => app.get(APP_GUARD)).toThrow()`
+on the worker — and passed, for a reason with nothing to do with the worker: `APP_GUARD` and
+`APP_INTERCEPTOR` are **enhancer tokens** that Nest consumes while building the pipeline and never
+exposes through `app.get`, so the lookup throws in *both* modes. The HTTP half is what surfaced it,
+by failing on the same call. The assertion is now on `AuthGuard` itself — exported by
+`SessionModule` in HTTP mode, not provided at all on the worker — which is the actual asymmetry that
+broke, and it discriminates.
+
+**What this does not fix.** The Images job's `web` and `admin` container checks never ran, because
+the api step failed first, so they are unverified by this push rather than proven. Both images
+*built* clean, which is the step that would have caught a bundling change.

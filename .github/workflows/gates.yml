@@ -125,6 +125,14 @@ jobs:
       # window and configuration publish/revert. AD-2 calls for exactly this suite in CI.
       - run: pnpm --filter @easyesg/api test:e2e
 
+      # AD-1's second entrypoint, booted (26 Aug 2026). `MODE` is read at module-definition time,
+      # so one process cannot exercise both branches — the run above is the HTTP half and this is
+      # the worker half, and neither alone proves the split. It exists because task 28.1 registered
+      # `AuthGuard` as an APP_GUARD unconditionally while `SessionModule` provides it on the HTTP
+      # side only, and the worker container refused to start: caught by the Images job, which boots
+      # the container a deploy would use, and by nothing before it.
+      - run: pnpm e2e:worker
+
       # The browser e2e (task 20): register → verify through the shipped screens against this
       # same stack, plus the axe scan (NFR-75's automated half) and the +40% expansion check
       # (UX-94). Chromium is derived from the Playwright pin (§12.5.9) and cached by that

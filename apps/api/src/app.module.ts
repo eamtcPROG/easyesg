@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, type Provider } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import configuration from './config/configuration';
+import configuration, { APP_MODE } from './config/configuration';
 import { AuthGuard } from '@api/modules/identity/session/guards/auth.guard';
 import { TenantTransactionGuard } from './app/guards/tenant-transaction.guard';
 import { GlobalResponseInterceptor } from './app/interceptors/global-response.interceptor';
@@ -34,17 +34,45 @@ import { PlatformModule } from './modules/platform/platform.module';
  *    FIRST. Nest scans filters backwards from the last registered, so a catch-all added
  *    last swallows every specific filter.
  *
- * TenantTransactionGuard is registered here as of task 11. The other three edge guards
- * (AuthGuard, EntitlementGuard, AdminRealmGuard) still wait for the identity phase — they
- * need session and membership records to resolve against, and a guard that cannot do its
+ * TenantTransactionGuard is registered here as of task 11, AuthGuard as of task 28.1.
+ * EntitlementGuard and AdminRealmGuard still wait for their phases — a guard that cannot do its
  * job is worse than one that is not yet installed.
  *
- * TenantTransactionGuard does not need them: it opens a transaction when the request context
- * already carries an organization and does nothing when it does not, so it is correct both
- * before AuthGuard exists and after. APP_GUARD order follows registration order, which is why
- * AuthGuard must be added BEFORE this one — it is what puts the organization in the context
- * this reads.
+ * **The request pipeline is registered in HTTP mode only, and that is one fact rather than four**
+ * (26 Aug 2026, after CI). `main.worker.ts` builds an *application context* — no HTTP server, no
+ * controllers, no requests — so a guard or an interceptor there governs nothing. Registering them
+ * anyway was not merely redundant: `SessionModule` provides `AuthGuard` on the HTTP side only, so
+ * `useExisting: AuthGuard` had nothing to resolve and **the worker refused to boot from task 28.1
+ * onward**. Nothing local saw it — `openapi:check` runs in preview mode and instantiates no
+ * provider, and every e2e boots HTTP — so the first CI run after that task was what found it, in
+ * the Images job that starts the container the deploy would use.
+ *
+ * Guarding each provider individually would have been the smaller diff and the worse fix: the next
+ * guard added below is one someone has to remember to guard too. One conditional over the list
+ * states the thing that is actually true — the worker serves no requests — and cannot be forgotten
+ * by an addition to it.
  */
+const { mode } = configuration();
+
+/**
+ * §6.2's order, and it is the contract rather than a preference.
+ *
+ * `APP_GUARD` runs in registration order, and `AuthGuard` is what writes the organization into the
+ * request context that `TenantTransactionGuard` binds `app.current_org` from. Registered the other
+ * way round it would bind nothing, and every tenant read would return zero rows rather than fail —
+ * the silent failure AD-2 and `TenantRepository` both exist to prevent.
+ *
+ * `useExisting` because `SessionModule` constructs `AuthGuard`: it needs the JWT secret and the
+ * request-identity store, and a `useClass` here would ask Nest to build a second one from this
+ * module's empty provider scope. That is also why this list is HTTP-only — see the header.
+ * Task 28.2's `EntitlementGuard` and `AdminRealmGuard` join it in order.
+ */
+const requestPipeline: Provider[] = [
+  { provide: APP_GUARD, useExisting: AuthGuard },
+  { provide: APP_GUARD, useClass: TenantTransactionGuard },
+  { provide: APP_INTERCEPTOR, useClass: TransactionInterceptor },
+  { provide: APP_INTERCEPTOR, useClass: GlobalResponseInterceptor },
+];
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
@@ -57,23 +85,7 @@ import { PlatformModule } from './modules/platform/platform.module';
     BillingModule,
     PlatformModule,
   ],
-  controllers: [HealthController],
-  providers: [
-    /**
-     * **Order is the contract here, not a preference** (§6.2). `APP_GUARD` runs in registration
-     * order, and `AuthGuard` is what writes the organization into the request context that
-     * `TenantTransactionGuard` binds `app.current_org` from. Registered the other way round it
-     * would bind nothing, and every tenant read would return zero rows rather than fail — the
-     * silent failure AD-2 and `TenantRepository` both exist to prevent.
-     *
-     * `useExisting` because `SessionModule` constructs it: the guard needs the JWT secret and the
-     * request-identity store, and a `useClass` here would ask Nest to build it from this module's
-     * (empty) provider scope. Task 28.2's `EntitlementGuard` and `AdminRealmGuard` join below it.
-     */
-    { provide: APP_GUARD, useExisting: AuthGuard },
-    { provide: APP_GUARD, useClass: TenantTransactionGuard },
-    { provide: APP_INTERCEPTOR, useClass: TransactionInterceptor },
-    { provide: APP_INTERCEPTOR, useClass: GlobalResponseInterceptor },
-  ],
+  controllers: mode === APP_MODE.WORKER ? [] : [HealthController],
+  providers: mode === APP_MODE.WORKER ? [] : requestPipeline,
 })
 export class AppModule {}

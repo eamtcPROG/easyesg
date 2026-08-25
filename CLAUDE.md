@@ -39,11 +39,11 @@ and the `renderer` image (task 44).
 
 Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (23 rules, each with a fixture proving it rejects a real violation),
-`pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`. **CI runs exactly these**
+`pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`, `pnpm e2e:worker`. **CI runs exactly these**
 (`.github/workflows/gates.yml`, two parallel jobs split on whether Docker is needed) — adding a gate
 means adding a root script and one line, never workflow-only logic.
 
-`pnpm gates` runs all nine plus the two e2e suites (`pnpm e2e`, then `pnpm e2e:web` — the
+`pnpm gates` runs all ten plus the two e2e suites (`pnpm e2e`, then `pnpm e2e:web` — the
 Playwright browser run, three projects since task 23: the tenant journeys with their axe scan,
 the +40% expansion check, and the admin console driven cross-origin against its built bundle;
 it needs the migrated Compose stack plus `pnpm exec playwright install chromium` once per

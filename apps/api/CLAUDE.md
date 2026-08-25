@@ -177,6 +177,25 @@ only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by
 expand→migrate→contract. `test/` holds the schema-invariant probe; the RLS cross-tenant probe and
 the `BILLING_ENABLED=false` suite land beside it.
 
+**Both entrypoints must boot, and only a gate that boots them can say so** (26 Aug 2026, after
+CI). Task 28.1 registered `AuthGuard` as an `APP_GUARD` in `AppModule` while `SessionModule`
+provides it on the HTTP side only — so `MODE=worker` failed dependency resolution and **the worker
+container refused to start for four tasks**. Every local gate was green: `openapi:check` boots in
+preview mode and instantiates no provider, and every e2e boots HTTP. CI's Images job found it,
+because it is the only thing that starts the container a deploy would use.
+
+Two things came out of that and both are load-bearing:
+
+- **The request pipeline is registered in HTTP mode only** — one conditional over the list rather
+  than four guarded providers, because the next guard added is one somebody has to remember to
+  guard. `main.worker.ts` builds an application context: no HTTP server, no controllers, no
+  requests, so a guard there governs nothing.
+- **`pnpm e2e:worker` is the tenth gate**, and it runs the same `entrypoint-boot.e2e-spec.ts` the
+  HTTP suite runs — the mode is read at module-definition time, so one process cannot exercise both
+  branches and neither run alone proves the split. That is `billing-disabled.e2e-spec.ts`'s
+  arrangement, for the same reason. Verified the way the boundary rules are: reintroduce the
+  unconditional registration and the gate fails.
+
 **`emit-openapi.ts` uses `preview: true`, and that is load-bearing.** `PersistenceModule` opens
 connections at boot, so a full boot would make `openapi:check` require Docker. Preview mode builds
 the module graph without instantiating providers and emits a byte-identical document, because
@@ -200,6 +219,7 @@ Run boundary and lint checks from the **repo root**; they are workspace-wide.
 | here | `pnpm db:migrate` / `db:revert` / `db:show` | Needs the Compose stack (`pnpm dev:up`) and `apps/api/.env`. Connects as `esg_migrator`, never as `esg_app` |
 | here | `pnpm db:invariants` | §7's structural rules against the migrated database. Each proves its own rule bites |
 | here | `pnpm test:e2e` | Needs the Compose stack. Runs the tenant-context probe and the schema invariants |
+| here | `pnpm test:worker` | The same `AppModule` booted as `MODE=worker`. Needs the stack. The tenth gate, added 26 Aug 2026 — see below |
 | root | `pnpm migrations:check` | The ninth gate: apply → revert → apply → invariants. Needs Docker, unlike the other eight |
 
 **`build` does not type-check tests.** `tsconfig.build.json` excludes `*.spec.ts`, and ts-jest
