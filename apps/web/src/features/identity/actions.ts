@@ -11,14 +11,12 @@ import type {
   SignOutRequest,
   VerifyEmailRequest,
 } from '@easyesg/contracts';
-import { SOURCE_LOCALE } from '@easyesg/i18n';
 import { getLocale } from 'next-intl/server';
 import { API_OUTCOME, mapOutcome } from '@/lib/api-outcome';
-import { sanitizeReturnPath } from '@/lib/locale-path';
+import { resolvePostSignIn } from '@/server/post-sign-in';
 import { api } from '@/server/api-client';
 import { destroySession, establishSession, readSession } from '@/server/session';
 import { redirect } from '@/i18n/navigation';
-import { POST_SIGN_IN_PATH } from './constants';
 import type {
   AccountSummary,
   RegisterResult,
@@ -91,7 +89,8 @@ export interface SignInCommand {
  *
  * A `?return=` path keeps its own locale (OQ-32: the URL is authoritative for rendering — a
  * session that expired on `/en/reports` resumes in English whatever the profile says); the
- * profile preference decides only when there was nowhere to return to.
+ * profile preference decides only when there was nowhere to return to — which, since task 25.4,
+ * includes every case where the branch overrode the return path.
  */
 export async function signInAction(command: SignInCommand): Promise<SignInFailure> {
   const outcome = await api.post<SignInRequest, SessionResponse>('/auth/session', {
@@ -101,12 +100,13 @@ export async function signInAction(command: SignInCommand): Promise<SignInFailur
   if (outcome.status !== API_OUTCOME.Ok) return outcome;
 
   const session = await establishSession(outcome.value);
-  const target = sanitizeReturnPath(command.returnTo);
-  // An unprefixed return path IS the source locale's form (`localePrefix: 'as-needed'`).
-  redirect({
-    href: target?.href ?? POST_SIGN_IN_PATH,
-    locale: target ? (target.locale ?? SOURCE_LOCALE) : session.account.locale,
-  });
+  // §4.3's branch, over the memberships the session can now read (task 25.4). It replaces the
+  // recorded interim that landed every sign-in on `/home`, and it decides the `?return=` question
+  // too: a deep link is honoured only where an organization resolves.
+  const target = await resolvePostSignIn(command.returnTo);
+  // An unprefixed return path IS the source locale's form (`localePrefix: 'as-needed'`); a
+  // branch destination has no locale of its own, so the profile preference decides (OQ-32).
+  redirect({ href: target.href, locale: target.locale ?? session.account.locale });
 }
 
 /**

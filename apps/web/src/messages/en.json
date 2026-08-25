@@ -175,6 +175,11 @@
           "action": "Create a new account with the provider's button below, or with your email address."
         }
       }
+    },
+    "organizationUnavailable": {
+      "title": "We could not load your organisations",
+      "body": "You are signed in, but the list of organisations you belong to could not be retrieved, so the workspace cannot be opened yet. Try again in a moment; if it keeps happening, sign out and come back later.",
+      "retry": "Try again"
     }
   }
 }

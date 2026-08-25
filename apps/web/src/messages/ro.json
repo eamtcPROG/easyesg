@@ -175,6 +175,11 @@
           "action": "Creați un cont nou cu butonul furnizorului de mai jos, sau cu adresa de e-mail."
         }
       }
+    },
+    "organizationUnavailable": {
+      "title": "Nu am putut încărca organizațiile",
+      "body": "Autentificarea a reușit, dar lista organizațiilor din care faceți parte nu a putut fi obținută, așa că nu putem deschide spațiul de lucru. Încercați din nou peste câteva momente; dacă problema persistă, ieșiți din cont și reveniți mai târziu.",
+      "retry": "Încercați din nou"
     }
   }
 }

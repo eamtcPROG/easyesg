@@ -11,10 +11,11 @@ import {
   type SessionResponse,
   type SocialSignInIntent,
 } from '@easyesg/contracts';
-import { SOURCE_LOCALE, toLocale, type Locale } from '@easyesg/i18n';
+import { toLocale, type Locale } from '@easyesg/i18n';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
 import { sanitizeReturnPath } from '@/lib/locale-path';
+import { resolvePostSignIn } from '@/server/post-sign-in';
 import { LOCALE_COOKIE } from '@/lib/session-cookie';
 import { getPathname } from '@/i18n/navigation';
 import { api } from '@/server/api-client';
@@ -24,7 +25,6 @@ import {
   persistSocialTransaction,
 } from '@/server/social-transaction';
 import { SOCIAL_NOTICE, type SocialNotice } from './social';
-import { POST_SIGN_IN_PATH } from './constants';
 
 /**
  * The web tier's half of the provider flow (task 24, §12.5.6's task-24 flow row) — the two
@@ -143,13 +143,13 @@ export async function completeSocialFlow(
 
   if (outcome.status === API_OUTCOME.Ok) {
     const session = await establishSession(outcome.value);
-    // Task 22's exit, verbatim: `?return=` or `/home` until task 25's membership branch — a
-    // provider session is the same session (UC-05), so it exits the same way.
-    const target = sanitizeReturnPath(transaction.returnPath ?? undefined);
-    const targetLocale = target ? (target.locale ?? SOURCE_LOCALE) : session.account.locale;
+    // §4.3's branch (task 25.4), replacing task 22's recorded `?return=`-or-`/home` interim — a
+    // provider session is the same session (UC-05), so it exits through the same decision rather
+    // than through a copy of it.
+    const target = await resolvePostSignIn(transaction.returnPath ?? undefined);
     const pathname = getPathname({
-      locale: targetLocale,
-      href: target?.href ?? POST_SIGN_IN_PATH,
+      locale: target.locale ?? session.account.locale,
+      href: target.href,
     });
     return NextResponse.redirect(new URL(pathname, env.publicOrigin), 302);
   }

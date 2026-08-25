@@ -1,5 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
-import { cleanupAccounts, passwordResetTokenFor, verificationTokenFor } from './support/db';
+import {
+  cleanupAccounts,
+  cleanupOrganizations,
+  grantMembership,
+  passwordResetTokenFor,
+  verificationTokenFor,
+} from './support/db';
 
 /**
  * Task 22's stated deliverable, literally: **browser sign-in/out against the public API** —
@@ -16,7 +22,10 @@ const addressFor = (label: string) => `${RUN_PREFIX}-${label}@example.md`;
 const PASSWORD = 'Parola123!';
 const NEW_PASSWORD = 'ParolaNoua456!';
 
+const organizations: string[] = [];
+
 test.afterAll(async () => {
+  await cleanupOrganizations(organizations);
   await cleanupAccounts(RUN_PREFIX);
 });
 
@@ -48,8 +57,9 @@ test('a user signs in, holds an httpOnly session, and signs out (UC-04, UC-06)',
 
   await signIn(page, email, PASSWORD);
 
-  // §4.3's membership branch is task 25's; until then sign-in lands on S-05's route.
-  await page.waitForURL('**/home');
+  // §4.3's branch, real since task 25.4: this account belongs to nothing, so it lands on S-04
+  // rather than on the home it has no organization to fill.
+  await page.waitForURL('**/create-organization');
   await expect(page.getByText(email)).toBeVisible();
 
   // AD-9's whole point, asserted from inside the browser: the session cookie is httpOnly and
@@ -65,9 +75,16 @@ test('a user signs in, holds an httpOnly session, and signs out (UC-04, UC-06)',
   await page.waitForURL('**/sign-in?**');
 });
 
+/**
+ * UX-38's deep-link contract. **The account is given a membership since task 25.4**, and that is
+ * the test staying true rather than being adjusted to pass: `?return=` is honoured only where an
+ * organization resolves, so without one this would now assert S-04 and prove nothing about the
+ * return path. `post-sign-in.spec.ts` owns the override case.
+ */
 test('a guarded route redirects to sign-in and returns after it (UX-38)', async ({ page }) => {
   const email = addressFor('return');
   await registerAndVerify(page, email);
+  organizations.push(await grantMembership(email, `${RUN_PREFIX} Return`));
 
   await page.goto('/reports');
   await page.waitForURL('**/sign-in?return=%2Freports');
@@ -133,7 +150,8 @@ test('the reset flow: uniform request, stated consequence, new password signs in
   await page.getByRole('link', { name: 'Mergi la autentificare' }).click();
   await page.waitForURL('**/sign-in');
   await signIn(page, email, NEW_PASSWORD);
-  await page.waitForURL('**/home');
+  // No membership, so §4.3 sends them to S-04 — the new password worked, which is the claim.
+  await page.waitForURL('**/create-organization');
 });
 
 test('a bare set-password arrival explains itself and offers the request route', async ({

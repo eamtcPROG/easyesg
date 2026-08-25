@@ -2165,3 +2165,98 @@ Costs and boundaries, recorded:
 Verified: `pnpm gates` — 34 unit suites, 26 members e2e, 7 memberships, 6 tenant-context, and both
 browser suites, which is what says `@Public()` landed on the right controllers: `apps/web`'s sign-in
 and reset flows and `apps/admin`'s cross-origin realm journey all still pass with the guard in place.
+
+## Task 25.4 — §4.3's branch made real, and a screen that had to be invented · 2026-08-25
+
+The last sub-step of task 25, and the first `api+web` one. Sign-in — by password and by provider —
+now reads the caller's memberships and takes §4.3's three-armed exit: **none → S-04**, **one →
+S-05**, **several → S-05**, where the global-tier switcher chooses. Both recorded interims are
+**deleted**, not left dead: `POST_SIGN_IN_PATH` is gone from `features/identity/constants.ts`, and
+`social-flow.ts` no longer carries task 22's `?return=`-or-`/home` landing. Each named this task as
+its owner in its own comment; both comments are gone with the code.
+
+**The "several" arm needed no screen, and finding that out was most of the design work.** §4.3's
+flow chart draws a *Choose organization* node, which reads like a missing screen — but §4.4's
+inventory never gave it an identifier, and `design_spec.md` OQ-6 closed the question on 18 Aug 2026
+by splitting UC-16 in half: S-05 owns *viewing* memberships, the global-tier switcher owns
+*switching*. Task 30.5's row says the same thing from the other side — "which 25.4's *one* and
+*several* branches land on". So both arms go to `/home` and only the "none" arm diverges.
+
+**The web branches on the count; the API resolves the active organization.** Those are two rules
+with two owners — §4.3 is navigation and names URLs the API has no business knowing, AD-12 is
+authorization — and they agree at sign-in by construction, because a fresh session has chosen
+nothing. The coupling is real and is written into both files rather than engineered away: the
+alternative was putting a design_spec concept into the wire contract, where a change to §4.3 becomes
+a contract change.
+
+**`?return=` is honoured only where an organization resolves**, which is a change to task 22's
+behaviour rather than an addition. UX-38's deep-link contract sends someone back where they were
+headed; returning a member-of-nothing to `/reports` lands them on a screen that cannot render
+without an organization, so a preserved intention that cannot be honoured is not preserved. The
+browser suite asserts both directions, and `session.spec.ts`'s UX-38 test was **given a membership**
+rather than adjusted to expect the new destination — without one it would have asserted S-04 and
+proved nothing about the return path.
+
+**S-35 — Organization unavailable — is an addition to the screen inventory.** Sign-in succeeds, the
+cookie is written, and the membership read then fails: the person is authenticated with nowhere
+resolved to send them. Three options went to the project owner. S-05's own `error — recoverable`
+state was the recommendation and was **declined**: the branch has not resolved where the user
+belongs, so sending them to the organization overview asserts an organization, and until task 30.5
+builds S-05 they would see a blank page rather than an explanation. A dedicated Focus screen was
+chosen, which UX-7 makes an amendment to §4.4 rather than a note — so the inventory row, the
+coverage row and a full §5 specification landed before the code. It is numbered **35** because
+S-29 … S-34 are the public tier, appended 24 Aug 2026; the first draft assumed 29 and checking is
+the only reason it is not wrong.
+
+Its recorded cost: two screens now own a "could not load your organizations" state, and 30.5's row
+gains the obligation not to duplicate this one's wording.
+
+**Retrying is reloading, and that is why S-35 has no button and no action.** The page is a Server
+Component that re-runs the branch on every render — if the API answers this time it redirects to
+wherever the person actually belongs, and the screen is never seen again. That works because
+`api-client` is read-only by construction and never rotates the session, which is exactly what makes
+calling it from a Server Component safe. It cannot loop: reaching the render means the read failed,
+and a successful read never resolves to that route. Sign-out is deliberately absent — the `(app)`
+layout's account corner carries it, and a second control would be the one-off UX-89 forbids.
+
+**`null` and `[]` are different answers and the branch keeps them apart.** An empty list means the
+account genuinely belongs to nothing and belongs on S-04; `null` means we could not find out.
+Collapsing them would invite someone whose organizations failed to load to create a second one.
+
+**The pure rule is split from the server seam, and `server-only` is why.** `postSignInTarget` lives
+in `features/identity/post-sign-in.ts` with no `server-only` import and no API reach;
+`resolvePostSignIn` lives in `server/post-sign-in.ts` and fetches. The split was forced by the first
+test run — `import 'server-only'` throws at module load outside a Server Component, so a single file
+would have made the branch untestable, and every arm but the happy one would have been exercised
+only through a browser journey. Nine unit tests now cover arms that three browser tests could not
+reach economically.
+
+Two RLS traps, both measured rather than reasoned about, both now recorded in the helper that hit
+them:
+
+- **`INSERT ... RETURNING` on `core.organization` fails with no tenant bound.** PostgreSQL applies
+  the SELECT policies to the returned row, so the insert is refused with *"new row violates
+  row-level security policy"* while the `WITH CHECK` it names is `true`. The e2e helper generates
+  the id instead.
+- **A cleanup that finds rows by name finds none.** `SELECT ... WHERE name LIKE` on the tenant root
+  is readable only as the bound tenant or, since 25.3, to a bound account — and a cleanup routine is
+  neither. It would have deleted nothing and reported success. The caller keeps the ids it created.
+
+Verified: `pnpm gates` — 71 web unit tests including the nine-arm branch spec, and 42 browser tests
+across three projects, four of them the new branch arms. Three existing suites moved with the
+behaviour rather than around it: `session.spec.ts` (twice) and `social.spec.ts` asserted task 22's
+`/home` landing for accounts that belong to nothing, and now assert S-04 — a provider session is the
+same session (UC-05), so both flows exit through one decision rather than through two copies of it.
+
+React conventions pass, against the diff. One `.tsx` was added and it is a Server Component, so the
+`rerender-` category does not apply (and the memoization gap `apps/web/CLAUDE.md` records is a
+Client Component concern). Applied: **`async-defer-await`** — the catalogue is awaited *after* the
+redirect check, so the arm that redirects does no work nobody reads. Declined with reasons:
+**`async-parallel`** — the two awaits look like a waterfall and are a data dependency, since
+`api-client` puts the activated locale on `Accept-Language`, so hoisting the read into a
+`Promise.all` would fetch before the locale exists and bring problem text back in the wrong
+language; the page now says so where someone would otherwise "fix" it. **`async-suspense-boundaries`**
+— the whole page is one short message about a failure that has already happened; there is no shell
+worth streaming ahead of it. **`bundle-barrel-imports`** — the repo's standing house convention,
+declined on task 24 for the same reason. `vercel-composition-patterns` was not loaded: no component
+API was added and no boolean prop grew.

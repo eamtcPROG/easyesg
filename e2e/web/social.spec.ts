@@ -90,9 +90,11 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     await page.goto('/register');
     await page.getByRole('link', { name: 'Continuați cu Google' }).click();
 
-    // Through the stub and back: the callback established the session and the interim exit
-    // applies — `/home`, where task 22's strip shows the signed-in address.
-    await expect(page).toHaveURL(/\/home$/);
+    // Through the stub and back: the callback established the session and took §4.3's branch
+    // (task 25.4, replacing task 22's interim exit). A provider session is the same session
+    // (UC-05), so a brand-new account belonging to nothing lands on S-04 exactly as a password
+    // sign-in does — which is the point of routing both through one decision.
+    await expect(page).toHaveURL(/\/create-organization$/);
     await expect(page.getByText(email)).toBeVisible();
   });
 

@@ -66,9 +66,18 @@ tokens, expiries, the identity block — into ONE httpOnly `easyesg_session` coo
 request-scoped tier (read, establish, destroy, single-flighted refresh);
 `src/app/api/[...path]` is the real pass-through — same-origin proof on writes, 401 without a
 session, rotate-if-expiring, then forward with the bearer and stream both bodies untouched.
-Interim surfaces, each recorded on its owning task row in `docs/task.md`: sign-in lands on
-`?return=`-or-`/home` until task 25's membership branch, and the `(app)` layout's
-`SessionStrip` carries sign-out until task 30's real global tier.
+One interim surface remains, recorded on its owning task row in `docs/task.md`: the `(app)`
+layout's `SessionStrip` carries sign-out until task 30's real global tier.
+
+**§4.3's post-sign-in branch is live (task 25.4).** `features/identity/post-sign-in.ts` holds the
+rule — none → S-04, one → S-05, several → S-05 where the switcher chooses (OQ-6) — and
+`server/post-sign-in.ts` the seam that reads `/memberships` and applies it. Both sign-in flows exit
+through it; a provider session is the same session (UC-05). Three things to know before touching
+it: **`?return=` is honoured only where an organization resolves**, because returning a
+member-of-nothing to a route inside `(app)` lands them on a screen that cannot render;
+**`null` memberships and `[]` are different answers** — could not read (S-35) versus belongs to
+nothing (S-04); and **the rule carries no `server-only`** deliberately, since importing the
+API client there would make every arm untestable outside a browser.
 
 **The provider flow is live (task 24).** `/auth/social/{provider}/start|callback` are Route
 Handlers OUTSIDE `[locale]` — they are the redirect URIs registered at the providers, so they

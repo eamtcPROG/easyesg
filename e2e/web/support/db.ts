@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 
 /**
@@ -84,6 +85,77 @@ export async function cleanupAccounts(prefix: string): Promise<void> {
     await client.query(`DELETE FROM audit.outbox_event WHERE payload->>'email' LIKE $1`, [
       `${prefix}%`,
     ]);
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * Gives the account at `email` a membership in a fresh organization, and returns the organization's
+ * id — §4.3's branch needs one to distinguish "none" from "one", and no route creates either yet
+ * (task 29 founds an organization, task 26.2 accepts an invitation).
+ *
+ * **Bound per organization, in a transaction, and both halves matter.** `set_config(..., true)` is
+ * transaction-local, so without a transaction the binding does not reach the next statement; and
+ * `identity.membership`'s INSERT policy is a real `WITH CHECK`, so an unbound insert is refused
+ * rather than mis-scoped. The organization row itself goes in unbound, through the permissive
+ * INSERT policy the tenant root carries for FR-13.
+ */
+export async function grantMembership(email: string, organizationName: string): Promise<string> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    // The id is generated here rather than taken from `RETURNING`, and that is not a preference.
+    // `INSERT ... RETURNING` makes PostgreSQL apply the SELECT policies to the new row — and with
+    // no tenant and no account bound, none of them match, so the insert fails with "new row
+    // violates row-level security policy" while the WITH CHECK it names is `true`. Measured.
+    const organizationId = randomUUID();
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', '', true)`);
+    await client.query(`INSERT INTO core.organization (id, name) VALUES ($1, $2)`, [
+      organizationId,
+      organizationName,
+    ]);
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [organizationId]);
+    await client.query(
+      `INSERT INTO identity.membership (account_id, organization_id, role)
+       SELECT a.id, $2, 'organization_administrator' FROM identity.account a
+        WHERE lower(a.email) = lower($1)`,
+      [email, organizationId],
+    );
+    await client.query('COMMIT');
+    return organizationId;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * Removes organizations this run created, by id, cascading their memberships.
+ *
+ * **It takes ids rather than finding them, and the first draft did not.** A
+ * `SELECT ... WHERE name LIKE` here returns nothing: `core.organization` is readable only as the
+ * bound tenant or, since task 25.3, to a bound account through the directory policy — and a
+ * cleanup routine is neither. It would have deleted nothing and reported success. So the caller
+ * keeps what it created, and each row is deleted with itself bound.
+ *
+ * There is no membership delete and there cannot be: no role holds `DELETE` on that table
+ * (task 25.1), so the cascade from the organization is the only way those rows leave.
+ */
+export async function cleanupOrganizations(organizationIds: readonly string[]): Promise<void> {
+  if (organizationIds.length === 0) return;
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    for (const organizationId of organizationIds) {
+      await client.query('BEGIN');
+      await client.query(`SELECT set_config('app.current_org', $1, true)`, [organizationId]);
+      await client.query(`DELETE FROM core.organization WHERE id = $1`, [organizationId]);
+      await client.query('COMMIT');
+    }
   } finally {
     await client.end();
   }

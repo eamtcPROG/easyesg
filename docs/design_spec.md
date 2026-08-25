@@ -231,6 +231,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-32 | Help centre | VI, CA | UC-180 | Index |
 | S-33 | Help article | VI, CA | UC-181 | *escalated — OQ-17* |
 | S-34 | Write to support | VI, CA | UC-182 | Focus |
+| S-35 | Organization unavailable | CA | UC-16 (failure path) | Focus |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | Focus |
 | A-02 | Organization register | PA | UC-69 | Index |
 | A-03 | Content and translation console | PA | UC-71 … 74 | Editor + Publish |
@@ -734,6 +735,38 @@ Three limits on what follows must be stated plainly, because the alternative is 
 - **Exits:** S-27.
 - **Use cases:** UC-10, UC-11, UC-12.
 - **FRs:** FR-7, FR-8.
+
+### S-35 — Organization unavailable
+
+**Added 25 Aug 2026 (task 25.4), and it is an addition to the inventory rather than a note** — UX-7
+makes a new screen an amendment. It is numbered 35 because S-29 … S-34 are the public tier
+(§5.1b, 24 Aug 2026); the identifier is appended, never inserted.
+
+- **Purpose:** say plainly that the platform could not determine which organizations this account
+  belongs to, and offer the way out — rather than land a signed-in person in an empty workspace that
+  implies they belong to none.
+- **Primary actors:** CA.
+- **Archetype:** Focus.
+- **Entry points:** the post-sign-in branch (§4.3), by password or by provider, when the membership
+  read fails. No navigation reaches it and nothing links to it; arriving is always a consequence.
+- **Layout and regions:** single column, centred, one primary action — the Focus fixed elements.
+- **Content and data shown:** NFR-79's three parts and nothing else: the membership list could not
+  be loaded, so the workspace cannot be opened yet; try again, or sign out. **It states no
+  membership count**, because not knowing one is the entire reason the screen exists.
+- **Controls and actions:** retry; sign out.
+- **States:** error — recoverable (its only state; the screen *is* an error state).
+- **Validation behaviour:** none of its own.
+- **Exits:** the branch, re-run — so S-04, S-05, or back here. Sign-out exits to S-01.
+- **Use cases:** UC-16 (failure path).
+- **FRs:** FR-12.
+
+**Why not S-05's own error state, which §4.6 and S-05's `States` line already provide.** That was
+the alternative and it was considered: S-05 specifies "partial (some data resolved, some failed,
+with per-part retry); error — recoverable", which fits. It was declined by the project owner on the
+grounds that the branch has not resolved *where the user belongs*, so sending them to the
+organization overview asserts an organization — and until task 30.5 builds S-05 they would see a
+blank page rather than an explanation. The cost is recorded: two screens now own a "could not load
+your organizations" state, and 30.5 must not duplicate this one's wording.
 
 ### 5.1b Public tier screens
 
@@ -1855,6 +1888,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-26 | Notification centre | CA | UC-165 … 167 | FR-160, FR-161, FR-162 |
 | S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | FR-9, FR-10, FR-163 |
 | S-28 | Credentials and linked identities | CA | UC-10 … 12 | FR-7, FR-8 |
+| S-35 | Organization unavailable | CA | UC-16 (failure path) | FR-12 |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | FR-75 |
 | A-02 | Organization register | PA | UC-69 | FR-76, FR-77 |
 | A-03 | Content and translation console | PA | UC-71 … 74 | FR-61, FR-62, FR-63, FR-64, FR-74 |
