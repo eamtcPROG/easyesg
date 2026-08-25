@@ -95,6 +95,8 @@ export class AuthGuard implements CanActivate {
     const ctx = requestContext();
     if (ctx) {
       ctx.actorId = identity.accountId;
+      // Task 26.2's one reader: acceptance writes the joined organization onto this session.
+      ctx.sessionId = sessionId;
       ctx.organizationId = active?.organizationId;
       ctx.role = active?.role;
     }

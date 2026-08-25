@@ -866,6 +866,106 @@
         ]
       }
     },
+    "/api/v1/invitations/preview": {
+      "post": {
+        "description": "What the invitation offers, so the recipient can decide whether to create an account. Consumes nothing: the link is spent by an explicit acceptance, never by being opened, so a mail scanner following it cannot burn someone’s invitation. A link that is spent, withdrawn or out of date answers why and withholds the rest.",
+        "operationId": "InvitationAcceptanceController_preview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The invitation’s standing, with its details where it is still usable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/InvitationPreviewResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read an invitation without using it",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/invitations/acceptance": {
+      "post": {
+        "description": "Grants the invited role in that organization and makes it the active one for this session, so the next request is already scoped to it. The invitation is single-use and is spent here. Someone who already has access keeps the role they hold — accepting never changes an existing role — and someone whose access was withdrawn earlier has it restored.",
+        "operationId": "InvitationAcceptanceController_accept",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The organization joined, the role now held, and which of the three happened.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AcceptedInvitationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The request carries no session (problem type authentication-required), or is signed in as an account the invitation does not name (problem type invitation-address-mismatch). An invitation binds to one address, which is what stops a sign-in for a different one using it.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "410": {
+            "description": "The link cannot be used (problem type invitation-not-acceptable). The document carries a standing member saying which: expired, consumed, revoked, or unknown. None is retryable — ask an administrator for a new invitation.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Join the organization the invitation names",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -1159,6 +1259,12 @@
             "type": "string",
             "format": "password",
             "description": "Minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character. Letters are matched by Unicode property, so Romanian and Russian letters count as letters."
+          },
+          "invitationToken": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "description": "An organization invitation being acted on. When it is still usable and was sent to this same address, the account is created already confirmed and no confirmation email is sent — the invitation link is itself proof the address was reached. Anything else is ignored and registration proceeds normally."
           }
         },
         "required": [
@@ -1631,6 +1737,100 @@
         "required": [
           "email",
           "role"
+        ]
+      },
+      "InvitationPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "standing": {
+            "type": "string",
+            "enum": [
+              "acceptable",
+              "expired",
+              "consumed",
+              "revoked",
+              "unknown"
+            ],
+            "description": "Whether the link can still be used, and if not, why. The three unusable values are separate because each has its own resolution and its own sentence on screen."
+          },
+          "organizationName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The organization doing the inviting. Null unless the link is usable."
+          },
+          "invitedEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "description": "The address the invitation is bound to — acceptance is refused for any other, including one a social provider asserts. Null unless the link is usable."
+          },
+          "role": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "editor",
+              "viewer"
+            ],
+            "description": "The role acceptance grants. Null unless the link is usable."
+          }
+        },
+        "required": [
+          "standing",
+          "organizationName",
+          "invitedEmail",
+          "role"
+        ]
+      },
+      "InvitationTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The single-use token from the invitation email. Sent in the body rather than the URL so it stays out of access logs and referrer headers.",
+            "minLength": 43,
+            "maxLength": 43
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "AcceptedInvitationResponseDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The organization just joined, now the active one."
+          },
+          "organizationName": {
+            "type": "string",
+            "description": "Its name, for the confirmation the screen shows."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "editor",
+              "viewer",
+              "organization_administrator"
+            ],
+            "description": "The role the account now holds. For someone who was already a member this is their existing role — accepting an invitation never changes it."
+          },
+          "grant": {
+            "type": "string",
+            "enum": [
+              "created",
+              "reactivated",
+              "already_member"
+            ],
+            "description": "What the acceptance did: created a new membership, restored one that had been withdrawn, or found that access already stood."
+          }
+        },
+        "required": [
+          "organizationId",
+          "organizationName",
+          "role",
+          "grant"
         ]
       },
       "AdminChallengeResponseDto": {

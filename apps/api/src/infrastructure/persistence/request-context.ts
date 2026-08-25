@@ -29,6 +29,20 @@ export interface RequestContext {
   clientIp?: string;
   /** Resolved by AuthGuard from the session record — never read from a JWT claim (AD-12). */
   actorId?: string;
+  /**
+   * The session this request is acting on — AD-12's access token carries it as `sub`, and
+   * `AuthGuard` has already verified and resolved it before writing it here.
+   *
+   * Added with task 26.2, for one caller: accepting an invitation points the session at the
+   * organization just joined (§12.5.6), and the write needs to name the row. Held here rather than
+   * threaded through a signature for the reason every other field is — a use case reached from a
+   * queued job has no request, and the service layer is what resolves ambient context.
+   *
+   * **It is the session id, never the account's.** They are different rows with different
+   * lifetimes: one account has many sessions, and writing an active organization against the wrong
+   * one would move a tenant under a different device.
+   */
+  sessionId?: string;
   /** Resolved by the server-side membership lookup, which is what AD-2 grounds RLS on. */
   organizationId?: string;
   /**

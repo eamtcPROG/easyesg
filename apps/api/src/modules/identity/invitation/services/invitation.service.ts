@@ -6,6 +6,13 @@ import { IssueInvitation, type IssueInvitationCommand } from '../use-cases/issue
 import { ListInvitations } from '../use-cases/list-invitations.use-case';
 import { ResendInvitation, type ResendInvitationCommand } from '../use-cases/resend-invitation.use-case';
 import { RevokeInvitation, type RevokeInvitationCommand } from '../use-cases/revoke-invitation.use-case';
+import { AcceptInvitation, type AcceptInvitationCommand, type AcceptedInvitation } from '../use-cases/accept-invitation.use-case';
+import {
+  PreviewInvitation,
+  type InvitationPreview,
+  type PreviewInvitationCommand,
+} from '../use-cases/preview-invitation.use-case';
+import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
 
 /**
  * A use case's command minus the fields THIS layer supplies from ambient request context — the
@@ -44,6 +51,8 @@ export class InvitationService {
     private readonly issueInvitation: IssueInvitation,
     private readonly resendInvitation: ResendInvitation,
     private readonly revokeInvitation: RevokeInvitation,
+    private readonly previewInvitation: PreviewInvitation,
+    private readonly acceptInvitation: AcceptInvitation,
   ) {}
 
   list(): Promise<PendingInvitation[]> {
@@ -67,4 +76,45 @@ export class InvitationService {
   revoke(command: RevokeInvitationCommand): Promise<void> {
     return this.revokeInvitation.execute(command);
   }
+
+  preview(input: PreviewInvitationServiceInput): Promise<InvitationPreview> {
+    return this.previewInvitation.execute({ ...input, clientIp: requestContext()?.clientIp });
+  }
+
+  /**
+   * Resolves the acceptor and their session from ambient request context, which is the reason this
+   * layer exists (task 26.2).
+   *
+   * **Neither may ever arrive from the caller**, and that is not a style point: an `accountId` in a
+   * request body would let anyone holding a link make *somebody else* a member of an organization,
+   * and a `sessionId` would let them move a stranger's active tenant. `RequiresAccountGuard` has
+   * already refused a request with no actor; this throws rather than trusting that, for
+   * `listOwn`'s reason — the guard is a declaration, and this is the layer that would otherwise
+   * write a membership for `undefined`.
+   */
+  accept(input: AcceptInvitationServiceInput): Promise<AcceptedInvitation> {
+    const context = requestContext();
+    if (!context?.actorId || !context.sessionId) throw new AuthenticationRequiredError();
+
+    return this.acceptInvitation.execute({
+      ...input,
+      accountId: context.actorId,
+      sessionId: context.sessionId,
+      clientIp: context.clientIp,
+    });
+  }
 }
+
+/**
+ * Each command minus what this layer supplies from ambient context — `AccountService`'s shape,
+ * derived so a field added to either arrives here without touching this file.
+ *
+ * `clientIp` is in both omissions for the reason `AccountServiceInput` states: it comes from the
+ * socket, and a caller supplying it would be choosing which throttle bucket to spend.
+ */
+type PreviewInvitationServiceInput = Omit<PreviewInvitationCommand, 'clientIp'>;
+
+type AcceptInvitationServiceInput = Omit<
+  AcceptInvitationCommand,
+  'accountId' | 'sessionId' | 'clientIp'
+>;

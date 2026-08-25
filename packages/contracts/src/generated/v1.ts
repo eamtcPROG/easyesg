@@ -336,6 +336,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/invitations/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read an invitation without using it
+         * @description What the invitation offers, so the recipient can decide whether to create an account. Consumes nothing: the link is spent by an explicit acceptance, never by being opened, so a mail scanner following it cannot burn someone’s invitation. A link that is spent, withdrawn or out of date answers why and withholds the rest.
+         */
+        post: operations["InvitationAcceptanceController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join the organization the invitation names
+         * @description Grants the invited role in that organization and makes it the active one for this session, so the next request is already scoped to it. The invitation is single-use and is spent here. Someone who already has access keeps the role they hold — accepting never changes an existing role — and someone whose access was withdrawn earlier has it restored.
+         */
+        post: operations["InvitationAcceptanceController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -437,6 +477,8 @@ export interface components {
              * @description Minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character. Letters are matched by Unicode property, so Romanian and Russian letters count as letters.
              */
             password: string;
+            /** @description An organization invitation being acted on. When it is still usable and was sent to this same address, the account is created already confirmed and no confirmation email is sent — the invitation link is itself proof the address was reached. Anything else is ignored and registration proceeds normally. */
+            invitationToken?: string;
         };
         VerifyEmailRequestDto: {
             /** @description The value from the verification link. Single-use and valid for 24 hours from issue. */
@@ -650,6 +692,48 @@ export interface components {
              * @enum {string}
              */
             role: "editor" | "viewer";
+        };
+        InvitationPreviewResponseDto: {
+            /**
+             * @description Whether the link can still be used, and if not, why. The three unusable values are separate because each has its own resolution and its own sentence on screen.
+             * @enum {string}
+             */
+            standing: "acceptable" | "expired" | "consumed" | "revoked" | "unknown";
+            /** @description The organization doing the inviting. Null unless the link is usable. */
+            organizationName: string | null;
+            /**
+             * Format: email
+             * @description The address the invitation is bound to — acceptance is refused for any other, including one a social provider asserts. Null unless the link is usable.
+             */
+            invitedEmail: string | null;
+            /**
+             * @description The role acceptance grants. Null unless the link is usable.
+             * @enum {string|null}
+             */
+            role: "editor" | "viewer" | null;
+        };
+        InvitationTokenRequestDto: {
+            /** @description The single-use token from the invitation email. Sent in the body rather than the URL so it stays out of access logs and referrer headers. */
+            token: string;
+        };
+        AcceptedInvitationResponseDto: {
+            /**
+             * Format: uuid
+             * @description The organization just joined, now the active one.
+             */
+            organizationId: string;
+            /** @description Its name, for the confirmation the screen shows. */
+            organizationName: string;
+            /**
+             * @description The role the account now holds. For someone who was already a member this is their existing role — accepting an invitation never changes it.
+             * @enum {string}
+             */
+            role: "editor" | "viewer" | "organization_administrator";
+            /**
+             * @description What the acceptance did: created a new membership, restored one that had been withdrawn, or found that access already stood.
+             * @enum {string}
+             */
+            grant: "created" | "reactivated" | "already_member";
         };
         AdminChallengeResponseDto: {
             /**
@@ -1411,6 +1495,76 @@ export interface operations {
             };
             /** @description No outstanding invitation of this organization has that id. An invitation that has already been accepted is a membership; end that person’s access from the members collection. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    InvitationAcceptanceController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The invitation’s standing, with its details where it is still usable. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["InvitationPreviewResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    InvitationAcceptanceController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The organization joined, the role now held, and which of the three happened. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AcceptedInvitationResponseDto"];
+                    };
+                };
+            };
+            /** @description The request carries no session (problem type authentication-required), or is signed in as an account the invitation does not name (problem type invitation-address-mismatch). An invitation binds to one address, which is what stops a sign-in for a different one using it. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The link cannot be used (problem type invitation-not-acceptable). The document carries a standing member saying which: expired, consumed, revoked, or unknown. None is retryable — ask an administrator for a new invitation. */
+            410: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -63,6 +63,14 @@ export const ProblemType = {
    *  A different slug from the one above because the resolution is different — resend it or revoke
    *  it — and the two arrive at the same route from the same form. */
   InvitationOutstanding: 'invitation-outstanding',
+  /** UC-15 refused: the link is spent, withdrawn, lapsed, or names nothing. One slug carrying a
+   *  `standing` extension rather than four, because the four share a resolution shape — ask for a
+   *  new invitation — while S-03 still needs to tell them apart (task 26.2). */
+  InvitationNotAcceptable: 'invitation-not-acceptable',
+  /** UC-15 refused: signed in as an account the invitation does not name. FR-11 binds an invitation
+   *  to the invited address, which is what stops a social sign-in for a different one consuming it.
+   *  Its own slug because the resolution is to sign in as someone else, not to ask for a resend. */
+  InvitationAddressMismatch: 'invitation-address-mismatch',
   EntitlementDenied: 'entitlement-denied',
   EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
   TenantContextMissing: 'tenant-context-missing',

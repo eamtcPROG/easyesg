@@ -74,6 +74,12 @@
     },
     "invitation-outstanding": {
       "title": "Invitație în așteptare"
+    },
+    "invitation-not-acceptable": {
+      "title": "Invitație indisponibilă"
+    },
+    "invitation-address-mismatch": {
+      "title": "Invitație pentru altă adresă"
     }
   },
   "validation": {},
@@ -110,7 +116,14 @@
     "invitation": {
       "already_member": "Persoana cu această adresă are deja acces la organizație, așa că invitația nu a fost trimisă. Deschideți lista utilizatorilor dacă doriți să îi schimbați rolul.",
       "already_pending": "Există deja o invitație în așteptare pentru această adresă, așa că nu am creat una nouă. Retrimiteți-o din lista de invitații pentru un link nou sau anulați-o, dacă vreți să invitați persoana cu alt rol.",
-      "not_found": "Invitația indicată nu mai este în așteptare — a fost acceptată sau anulată — așa că acțiunea nu a fost efectuată. Reîmprospătați lista pentru a vedea situația curentă."
+      "not_found": "Invitația indicată nu mai este în așteptare — a fost acceptată sau anulată — așa că acțiunea nu a fost efectuată. Reîmprospătați lista pentru a vedea situația curentă.",
+      "address_mismatch": "Invitația este pentru altă adresă de e-mail decât cea a contului cu care sunteți autentificat, așa că nu a fost folosită. Autentificați-vă cu adresa la care ați primit invitația sau cereți una pentru adresa pe care o folosiți.",
+      "standing": {
+        "expired": "Această invitație a expirat, așa că linkul nu mai funcționează și nu ați fost adăugat în organizație. Cereți administratorului organizației să v-o retrimită — veți primi un link nou, valabil încă 7 zile.",
+        "consumed": "Această invitație a fost deja folosită, așa că linkul nu mai funcționează. Dacă ați acceptat-o dumneavoastră, autentificați-vă; altfel, cereți administratorului organizației o invitație nouă.",
+        "revoked": "Această invitație a fost anulată de administratorul organizației, așa că nu ați fost adăugat. Dacă este o greșeală, cereți-i să vă invite din nou.",
+        "unknown": "Linkul acesta nu corespunde niciunei invitații, așa că nu ați fost adăugat în nicio organizație. Verificați dacă l-ați copiat complet din e-mail sau cereți o invitație nouă."
+      }
     }
   },
   "notification": {

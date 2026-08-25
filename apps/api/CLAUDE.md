@@ -140,9 +140,37 @@ organization is not the missing part. It cost twelve e2e failures, all presentin
 `409`s two tests later. Clean up the way the product does (revoke), or drop the parent row and let
 the cascade do it — referential actions bypass row security by design.
 
+Task 26.2 adds acceptance (UC-15, FR-11): `POST /api/v1/invitations/{preview,acceptance}` on a
+**second controller at the same path prefix**, because `InvitationsController` is
+`@RequiresRole(OA)` at the class and the invitee is by definition not a member — `preview` is
+`@Public()`, `acceptance` is `@RequiresAccount()`. Two new policies, both keyed on a **third
+transaction-local binding, `app.current_invitation`** (the presented token's SHA-256, hex):
+`invitation_bearer_select` on `identity.invitation` and `organization_invitation_select` on
+`core.organization`, the latter because S-03 names the inviting organization to a signed-out
+visitor. `InvitationBearerStoreRepository` is the only binder; it hashes the raw token, and no route
+accepts a hash. Acceptance is **one transaction** — consume, grant, point the session — and it
+returns an outcome, throwing after the commit. **Registering with a live invitation for the same
+address creates a verified account and sends no challenge** (FR-3's third route, §12.5.6): one
+optional field on `POST /auth/register`, validated with `invitationIsAcceptable` and
+`emailIdentityKey`, the same two functions acceptance uses. `RequestContext` gains `sessionId`, for
+one reader. Both bearer routes are throttled (§12.5.6): accept per (IP, account), preview per IP.
+
+**A store may need its own transaction because the request's is bound to the WRONG tenant**
+(task 26.2 — the third and sharpest reason an identity store opens its own). The acceptor is signed
+in and may already hold an active organization, so `TenantTransactionGuard` has bound the one they
+are *currently* in, not the one inviting them. On the request's transaction the invitation read
+returns zero rows and the membership insert is refused — both presenting as "the link is invalid".
+
+**`app.current_org IS NULL` is NOT the right conjunct when the binding IS the capability**
+(task 26.2). `organization_directory_select` needs it because its qualifying condition — being a
+member — is true on every ordinary request. `invitation_bearer_select`'s is *knowing the token*,
+which no ordinary request does; adding the conjunct buys nothing and breaks the bookkeeper accepting
+their second client's invitation with a tenant already bound.
+
 **Not built yet, and do not assume otherwise:** two of the four edge guards
 (`EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
-other than health, `/auth`, `/auth/admin`, `/members`, `/memberships` and `/invitations`, and
+other than health, `/auth`, `/auth/admin`, `/members`, `/memberships` and `/invitations` (the
+administrator's three plus the bearer's two), and
 almost every module body — 29 of the 35 leaf `*.module.ts` files are registered but empty (counted
 25 Aug 2026: six carry a body, all in `identity/*` plus `platform/admin`). `core.organization` holds `id`/`name`/`created_at`/`updated_at`
 only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by

@@ -95,3 +95,20 @@ export interface PendingInvitation {
   readonly issuedAt: Date;
   readonly expiresAt: Date;
 }
+
+/**
+ * The invitation as its **bearer** sees it — the row joined to the name of the organization doing
+ * the inviting (task 26.2).
+ *
+ * The join is reachable only because `organization_invitation_select` exists: neither policy on
+ * `core.organization` admits someone who is not a member and holds no tenant binding, which the
+ * invitee is by definition until the moment they accept. It is the same shape task 25.3 needed for
+ * the switcher, with a token as the qualifying condition instead of a membership.
+ *
+ * `organizationName` rather than only the id, for `OrganizationMember`'s reason: S-03 exists to be
+ * read by a person deciding whether to join, and nobody recognises their accountancy client from a
+ * UUID.
+ */
+export interface BearerInvitation extends Invitation {
+  readonly organizationName: string;
+}

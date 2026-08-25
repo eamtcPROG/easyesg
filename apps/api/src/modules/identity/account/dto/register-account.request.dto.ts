@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 /**
  * `POST /api/v1/auth/register` (FR-1, UC-01).
@@ -40,4 +40,33 @@ export class RegisterAccountRequestDto {
   })
   @IsString()
   password!: string;
+
+  /**
+   * S-03's "create an account by password" path (UC-15 step 2), and optional everywhere else.
+   *
+   * `@IsOptional` rather than a required field with a nullable type: a registration that never saw
+   * an invitation must not have to say so. The length bounds are the token's own — 32 bytes of
+   * base64url is 43 characters unpadded — and they bound work on an unauthenticated route rather
+   * than validating the token, which only the database can do.
+   *
+   * **A bad token never fails the registration.** Spent, revoked, lapsed, for another address, or
+   * simply wrong: the account is created unverified and the ordinary challenge is sent. A stale
+   * link is a poor reason to refuse someone an account, and the verification email is a working way
+   * forward — so this field can only ever *remove* a step, never add a failure.
+   */
+  @ApiProperty({
+    required: false,
+    minLength: 43,
+    maxLength: 43,
+    description:
+      'An organization invitation being acted on. When it is still usable and was sent to this ' +
+      'same address, the account is created already confirmed and no confirmation email is sent — ' +
+      'the invitation link is itself proof the address was reached. Anything else is ignored and ' +
+      'registration proceeds normally.',
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(43)
+  @MaxLength(43)
+  invitationToken?: string;
 }

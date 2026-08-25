@@ -3,10 +3,13 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
 import { toLocale } from '@easyesg/i18n';
 import { EmailAlreadyRegisteredError } from '@api/modules/identity/account/errors/account.errors';
+import { hashInvitationToken } from '@api/modules/identity/invitation/domain/invitation-token';
+import type { InvitationStatus } from '@api/modules/identity/invitation/models/invitation.model';
 import type {
   AccountEffect,
   AccountStore,
   AccountTransaction,
+  PresentedInvitation,
 } from '@api/modules/identity/account/interfaces/account-store.interface';
 import {
   ACCOUNT_STATUS,
@@ -233,6 +236,40 @@ class AccountTransactionAdapter implements AccountTransaction {
       tokenHash: rows[0].token_hash,
       expiresAt: rows[0].expires_at,
     };
+  }
+
+  /**
+   * Reads the invitation a registration presented, through `invitation_bearer_select` (task 26.2).
+   *
+   * **The binding is what makes this reachable at all.** `identity.invitation` is tenant-scoped and
+   * this transaction has no organization bound — registration precedes every tenant — so without
+   * `app.current_invitation` the read returns zero rows and every registration would proceed
+   * unverified, silently. The setting is transaction-local, so it is gone when this unit of work
+   * ends and no other statement in it is affected.
+   *
+   * **This adapter hashes; the wire never carries a hash.** A route accepting one would make the
+   * stored value the credential, which is what NFR-64's SHA-256-at-rest rule denies. Hex rather
+   * than a `::bytea` cast, because a cast reads PostgreSQL's escape format and a hash containing
+   * `0x5c` would decode to something other than itself — a silent miss on one token in 256.
+   *
+   * No `WHERE token_hash = $1`: the policy scopes the read, and a predicate restating it would be
+   * the second source of truth every repository here avoids.
+   */
+  async findPresentedInvitation(token: string): Promise<PresentedInvitation | null> {
+    await this.queryRunner.query('SELECT set_config($1, $2, true)', [
+      'app.current_invitation',
+      hashInvitationToken(token).toString('hex'),
+    ]);
+
+    const rows = returnedRows<{ invited_email: string; status: InvitationStatus; expires_at: Date }>(
+      await this.queryRunner.query(
+        `SELECT invited_email, status, expires_at FROM identity.invitation`,
+      ),
+    );
+
+    const row = rows[0];
+    if (row === undefined) return null;
+    return { invitedEmail: row.invited_email, status: row.status, expiresAt: row.expires_at };
   }
 
   async markAccountVerified(accountId: string, at: Date): Promise<Account> {

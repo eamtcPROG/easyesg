@@ -12,6 +12,7 @@ import { ProviderIdentity1787616000000 } from './1787616000000-provider-identity
 import { IdentityMembership1787702400000 } from './1787702400000-identity-membership';
 import { MembershipDirectory1787788800000 } from './1787788800000-membership-directory';
 import { IdentityInvitation1787875200000 } from './1787875200000-identity-invitation';
+import { InvitationAcceptance1787961600000 } from './1787961600000-invitation-acceptance';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -42,4 +43,5 @@ export const migrations = [
   IdentityMembership1787702400000,
   MembershipDirectory1787788800000,
   IdentityInvitation1787875200000,
+  InvitationAcceptance1787961600000,
 ];

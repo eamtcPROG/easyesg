@@ -2376,3 +2376,100 @@ the real outbox — the payload is read as `esg_worker`, because `esg_app` holds
 outbox" is only expressible from a connection the request tier does not have. Plus 21 unit tests
 across the three use cases and the token domain, and the schema-invariant gate, which had named
 `identity.invitation` as its next case since task 25.1 and caught it as designed.
+
+## Task 26.2 — acceptance, and the binding that is the capability · 2026-08-25
+
+UC-15 end to end (FR-11): `POST /api/v1/invitations/preview` and
+`POST /api/v1/invitations/acceptance`, the two RLS policies that let a non-member read an
+invitation at all, and — the decision with the longest reach — **registering from an invitation now
+produces a verified account**.
+
+**Four unknowns were raised as a batch before the first file, and all four are in §12.5.6.**
+
+- **The bearer read is a third transaction-local binding, `app.current_invitation`**, with a
+  permissive `SELECT` policy reading `token_hash = ` that value. It says in SQL exactly what is
+  true — *the bearer of this token may read this one row* — and it was necessary because neither
+  existing binding can serve the case: `app.current_org` is unbound before you are a member, and
+  S-03 renders the inviting organization's name to a visitor who is **still signed out**, which no
+  policy over `app.current_user` can answer.
+- **The email language decision from 26.1 has a sibling here**: registering while holding a live
+  invitation for that same address creates an already-verified account and sends no challenge.
+- **Acceptance writes `identity.session.active_organization_id`**, its third writer.
+- **An address already held by an active member** consumes the invitation and leaves their role
+  alone.
+
+**`organization_invitation_select` was not in the plan and the code demanded it.** The preview's
+first draft returned `invitation.organizationName`, and there is no such column — the name lives on
+`core.organization`, whose two policies both refuse a caller who is neither bound to a tenant nor a
+member. So the same binding opens the same door one row wide, in `organization_directory_select`'s
+shape with a token as the qualifying condition instead of a membership. Measured in three states
+before it was written and in five for the invitation policy: unbound with no token reads nothing,
+unbound with the right token reads exactly one row, unbound with the wrong or an empty token reads
+nothing, and a tenant-bound request reads what it read yesterday.
+
+**The `app.current_org IS NULL` conjunct that task 25.3 needed is deliberately absent here, and the
+difference is the whole argument.** There, the qualifying condition — being a member — is true on
+every ordinary request, so without the conjunct a normal tenant request silently sees more rows.
+Here it is *knowing the token*, which no ordinary request does and which is itself the capability
+the invitation grants: to read the row you must already hold the value emailed to the person it
+names. Adding the conjunct would buy nothing and would break the case that matters most — a
+bookkeeper accepting their second client's invitation has a tenant bound, and the read must work.
+
+**That case is also what forced the bearer store to open its own transaction**, and it is the
+sharpest of the three reasons an identity store does so. `AccountStoreRepository` opens its own
+because registration precedes every tenant; `AccountMembershipStoreRepository` because
+`organization_directory_select` requires *no* organization bound. This one opens its own because the
+request's transaction is bound to the **wrong** tenant: `TenantTransactionGuard` has bound the
+organization the acceptor is currently in, not the one inviting them. On the request's transaction
+the invitation read returns zero rows and the membership insert is refused — both presenting as
+"the link is invalid".
+
+**A bug in my own code, caught by writing the response DTO.** For someone who was already a member,
+the first draft returned the *invitation's* role rather than the one they hold — telling an
+administrator they are an editor, on the screen they land on to use that access. `grantMembership`
+now returns `{ kind, role }` and the role is typed `MembershipRole`, not `InvitedRole`, because an
+existing member may hold `organization_administrator` and FR-57 makes that unassignable by any
+invitation.
+
+**The compiler enforced a vocabulary decision.** `InvitationNotAcceptableError` takes an
+`UnacceptableStanding` — the four values derived from `INVITATION_STANDING` by excluding
+`acceptable` — so the refusal cannot be constructed with a value that is not a refusal. That
+rejected the first draft's `invitation === null || standing !== ACCEPTABLE`, where the `||` leaves
+`standing` un-narrowed; splitting the checks reads better anyway, since a token naming no row is its
+own sentence rather than a variant of "expired".
+
+**`invitation-expiry.ts` came back.** Task 26.1 wrote it and deleted it the same hour for having no
+caller; acceptance is the caller it was always for, and it returns with the two predicates split,
+because a revoked invitation is not "expired" and telling an invitee their link timed out when an
+administrator withdrew it is a false statement where NFR-79 requires a true one. `invitationStanding`
+reads status before the clock for the same reason, and a spec pins it.
+
+**The `nestjs-best-practices` pass found the defect the gates could not.** `security-rate-limiting`
+sent me back to §12.5.6, whose auth-path row **names invitation accept** — a closed decision this
+task had simply not implemented, and which `auth-throttle.ts` and `auth-attempt.queries.ts` both
+carry comments anticipating ("the invitation module will import from here at task 26"). Building it
+surfaced the real defect: acceptance threw its refusals from **inside** its own transaction, so the
+rollback would have taken the `identity.auth_attempt` row with it and the limit would never have
+bitten. It now returns an outcome and throws after the commit — `RequestPasswordReset`'s shape, and
+the trap `apps/api/CLAUDE.md` records from task 21's sign-in. The preview is throttled too, per IP,
+because it is the one unauthenticated surface that answers a question about a token.
+
+Also declined with reasons: **`error-throw-http-exceptions`** — the architecture wins, as on 26.1.
+**`perf-optimize-database`** — the bearer flow is five round trips on one transaction (invitation,
+account email, consume, membership, session) and each answers a different question; the invitation
+is re-read once inside `bindOrganizationOf` deliberately, because taking the organization from the
+caller would let whoever calls that method bind any tenant and then write to it.
+
+**A test-only finding worth keeping.** This suite failed on its third run in fifteen minutes and the
+cause was the *sign-in* throttle, not the invitation one: `recordAuthAttempt` prunes rows older than
+fifteen minutes, so a budget spent by one run survives into the next. CI never sees it — its
+database is fresh — and the drain is now by address rather than by key prefix so it covers both
+paths.
+
+Verified: `pnpm gates`, then `pnpm gates:clean`. 16 e2e tests against real sessions, the real
+policies and the real outbox, including the two that could not exist without this task's decisions —
+accepting a second organization's invitation while active in the first, and registering an invitee
+who then signs in immediately with no verification email ever queued. Plus 21 unit tests across the
+two use cases and the standing domain, one of which walks every refusal key through all three
+locales, because a key built by interpolation would otherwise ship a problem document with no
+`detail` at all and nothing would say so.

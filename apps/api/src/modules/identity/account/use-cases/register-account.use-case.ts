@@ -1,12 +1,13 @@
 import type { Locale } from '@easyesg/i18n';
 import { unverifiedAccountHasExpired } from '../domain/account-expiry';
-import { normaliseEmail } from '../domain/email-address';
+import { emailIdentityKey, normaliseEmail } from '../domain/email-address';
 import { passwordMeetsPolicy } from '../domain/password-policy';
 import { EmailAlreadyRegisteredError, PasswordPolicyViolationError } from '../errors/account.errors';
-import type { AccountStore } from '../interfaces/account-store.interface';
+import type { AccountStore, AccountTransaction } from '../interfaces/account-store.interface';
 import type { PasswordHasher } from '../interfaces/password-hasher.interface';
 import type { Account } from '../models/account.model';
 import { issueVerificationChallenge } from './issue-verification-challenge';
+import { invitationIsAcceptable } from '@api/modules/identity/invitation/domain/invitation-expiry';
 import type { Clock } from '@api/contracts/clock.port';
 
 export interface RegisterAccountCommand {
@@ -14,6 +15,17 @@ export interface RegisterAccountCommand {
   readonly password: string;
   /** Negotiated from `Accept-Language` for this request; seeds FR-10's persisted preference. */
   readonly locale: Locale;
+  /**
+   * An organization invitation the registrant is holding — S-03's "create an account by password"
+   * path (UC-15 step 2), optional everywhere else.
+   *
+   * Presenting a **live** one for **this same address** creates a verified account and issues no
+   * challenge (FR-3, §12.5.6's task-26.2 row). Anything else — spent, revoked, lapsed, for another
+   * address, or not an invitation at all — is ignored, and registration proceeds exactly as it does
+   * without one. It never fails the registration: a stale link is a bad reason to refuse someone an
+   * account, and the ordinary verification email is a working way forward.
+   */
+  readonly invitationToken?: string;
 }
 
 /**
@@ -70,9 +82,57 @@ export class RegisterAccount {
         passwordHash,
       });
 
+      // FR-3's third route to a verified account, added 25 Aug 2026 (§12.5.6's task-26.2 row).
+      //
+      // The reasoning is task 24's, not a new principle: `signInLinked` marks an account verified
+      // when a provider vouches for **the account's own address**, and an invitation link is the
+      // same proof of mailbox control — it was emailed to that address, and the holder is
+      // presenting it. What it buys is concrete: sign-in refuses an unverified account (OQ-57), so
+      // without this the invitee registers, waits for a second email, verifies, signs in, and only
+      // then can accept — six steps and two emails, the second arriving while they look at a screen
+      // telling them to check their inbox.
+      //
+      // The account is still INSERTED unverified and then marked, rather than created verified.
+      // That keeps `insertUnverifiedAccount` the one shape registration has, and it means the
+      // `account_verified_at_matches_status` CHECK is satisfied by the same code path in both
+      // cases.
+      if (await invitationVouchesFor(tx, command.invitationToken, email, now)) {
+        return tx.markAccountVerified(account.id, now);
+      }
+
       await issueVerificationChallenge(tx, account, now);
 
       return account;
     });
   }
+}
+
+/**
+ * Does the presented token prove control of the address being registered? (FR-3, task 26.2.)
+ *
+ * A free function taking a `Pick` of the transaction (ISP), because it is one decision made from
+ * one read and belongs beside the use case that makes it rather than inside the store — the store
+ * returning "yes" would be a second definition of a live invitation.
+ *
+ * **Both halves reuse what acceptance uses.** `invitationIsAcceptable` is UC-15's own gate, so a
+ * spent, revoked or lapsed link vouches for nothing here for exactly the reason it grants nothing
+ * there; and `emailIdentityKey` is what `account_email_key` and 26.1's partial index both mean by
+ * equality. An invitation for `bob@x.md` cannot verify an account being registered as `ana@x.md`,
+ * which is the whole content of FR-11's binding applied one step earlier.
+ */
+async function invitationVouchesFor(
+  tx: Pick<AccountTransaction, 'findPresentedInvitation'>,
+  token: string | undefined,
+  email: string,
+  now: Date,
+): Promise<boolean> {
+  if (token === undefined) return false;
+
+  const invitation = await tx.findPresentedInvitation(token);
+  if (invitation === null) return false;
+
+  return (
+    invitationIsAcceptable(invitation, now) &&
+    emailIdentityKey(invitation.invitedEmail) === emailIdentityKey(email)
+  );
 }

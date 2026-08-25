@@ -5,7 +5,8 @@
  * Lives in `account/domain` rather than in the session module because both consumers can then
  * depend one way: sign-in (session module) already imports account models, and the reset request
  * (this module) is the other throttled path — §12.5.6 names login, reset request and invitation
- * accept, and the invitation module will import from here at task 26.
+ * accept. **The invitation module imports from here since task 26.2**, which is the third of the
+ * three the table names and the one this comment was written in anticipation of.
  *
  * Two distinct controls, often conflated:
  *
@@ -56,3 +57,36 @@ export const adminSignInThrottleKey = (clientIp: string | undefined, email: stri
  */
 export const socialSignInThrottleKey = (clientIp: string | undefined, provider: string): string =>
   throttleKey('social-sign-in', clientIp, provider);
+
+/**
+ * UC-15's acceptance — the third path §12.5.6's auth row names, in terms (task 26.2).
+ *
+ * **The per-(IP, account) key is buildable here, unlike on the social path.** The route requires a
+ * session, so the account is known before the token is looked at, and this is the specified key
+ * rather than a degradation of it.
+ *
+ * What it bounds is token guessing against a known actor. The token is 256 bits, so guessing is
+ * hopeless on the arithmetic alone — this is the belt to that: it costs one row per attempt and it
+ * is what the requirement says, and it keeps the property true if the token is ever shortened or a
+ * lookup is ever rewritten to compare in application code.
+ */
+export const invitationAcceptThrottleKey = (
+  clientIp: string | undefined,
+  accountId: string,
+): string => throttleKey('invitation-accept', clientIp, accountId);
+
+/**
+ * S-03's preview (task 26.2), which §12.5.6 does **not** name — it is this task's own route.
+ *
+ * It is throttled anyway, and the reason is the shape rather than the register: it is the one
+ * **unauthenticated** surface in the system that answers a question about a token, so it is where a
+ * token would be probed if anyone tried. The account half of the key is unbuildable — there is no
+ * session, and serving someone who has no account is the route's entire purpose — so it degrades to
+ * per IP, the same recorded degradation the social path carries and for the same reason: a narrower
+ * net than the table specifies, never no net.
+ *
+ * The third segment is a constant rather than the token itself. Keying by token would give every
+ * guess its own fresh budget, which is the opposite of a throttle.
+ */
+export const invitationPreviewThrottleKey = (clientIp: string | undefined): string =>
+  throttleKey('invitation-preview', clientIp, 'anonymous');

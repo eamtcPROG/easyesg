@@ -74,6 +74,12 @@
     },
     "invitation-outstanding": {
       "title": "Invitation already sent"
+    },
+    "invitation-not-acceptable": {
+      "title": "Invitation no longer usable"
+    },
+    "invitation-address-mismatch": {
+      "title": "Invitation is for another address"
     }
   },
   "validation": {},
@@ -110,7 +116,14 @@
     "invitation": {
       "already_member": "The person at this address already has access to the organisation, so no invitation was sent. Open the user list if you want to change their role.",
       "already_pending": "An invitation to this address is already outstanding, so a second one was not created. Send it again from the invitation list to issue a fresh link, or withdraw it if you want to invite the person at a different role.",
-      "not_found": "That invitation is no longer outstanding — it was accepted or withdrawn — so the action was not carried out. Refresh the list to see where things stand."
+      "not_found": "That invitation is no longer outstanding — it was accepted or withdrawn — so the action was not carried out. Refresh the list to see where things stand.",
+      "address_mismatch": "The invitation is for a different email address from the account you are signed in with, so it has not been used. Sign in with the address the invitation was sent to, or ask for one addressed to the account you use.",
+      "standing": {
+        "expired": "This invitation has run out of time, so the link no longer works and you have not been added to the organisation. Ask an administrator of the organisation to send it again — you will get a fresh link, good for another 7 days.",
+        "consumed": "This invitation has already been used, so the link no longer works. If you accepted it yourself, sign in; otherwise ask an administrator of the organisation for a new invitation.",
+        "revoked": "An administrator of the organisation withdrew this invitation, so you have not been added. If that was a mistake, ask them to invite you again.",
+        "unknown": "This link does not match any invitation, so you have not been added to an organisation. Check that you copied all of it from the email, or ask for a new invitation."
+      }
     }
   },
   "notification": {

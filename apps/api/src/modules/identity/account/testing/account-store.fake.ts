@@ -2,6 +2,7 @@ import type {
   AccountEffect,
   AccountStore,
   AccountTransaction,
+  PresentedInvitation,
 } from '../interfaces/account-store.interface';
 import {
   ACCOUNT_STATUS,
@@ -62,6 +63,15 @@ export class FakeAccountStore implements AccountStore {
   sessions: FakeSession[] = [];
   attempts: { key: string; at: Date }[] = [];
   effects: AccountEffect[] = [];
+
+  /**
+   * Invitations a spec has put in front of registration, keyed by the raw token (task 26.2).
+   *
+   * **Read-only, and therefore deliberately outside the snapshot.** Nothing in `identity/account`
+   * writes an invitation — registration only *reads* one to decide FR-3's verification question —
+   * so including it in the rollback state would model a write that cannot happen.
+   */
+  invitations: Record<string, PresentedInvitation> = {};
 
   /** How many times `run` rolled back. A spec asserting "nothing was written" checks this too. */
   rollbacks = 0;
@@ -172,6 +182,18 @@ export class FakeAccountStore implements AccountStore {
           tokenHash: token.tokenHash,
           expiresAt: token.expiresAt,
         });
+      },
+
+      /**
+       * Whatever the spec seeded for that token — the fake judges nothing (task 26.2).
+       *
+       * That is the port's contract restated where it can be checked: liveness and the address
+       * match are `RegisterAccount`'s to decide, so a fake that answered "vouches / does not" would
+       * let a spec pass against a second definition of a live invitation while the real store used
+       * the first.
+       */
+      findPresentedInvitation(token: string): Promise<PresentedInvitation | null> {
+        return Promise.resolve(store.invitations[token] ?? null);
       },
 
       markAccountVerified(accountId: string, at: Date): Promise<Account> {

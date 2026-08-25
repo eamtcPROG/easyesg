@@ -6,6 +6,7 @@ import type {
   NewPasswordResetToken,
   NewVerificationToken,
 } from '../models/account.model';
+import type { InvitationStatus } from '@api/modules/identity/invitation/models/invitation.model';
 
 /**
  * The `identity/account` store, and the transaction it runs in.
@@ -68,6 +69,24 @@ export interface AccountTransaction {
 
   markAccountVerified(accountId: string, at: Date): Promise<Account>;
 
+  /**
+   * The invitation a registration presented, or null when the token names none — FR-3's third
+   * route to a verified account (§12.5.6's task-26.2 row, task 26.2).
+   *
+   * **It returns the row and judges nothing.** Whether the invitation is live, and whether it names
+   * this address, are decided by `invitationIsAcceptable` and `emailIdentityKey` — the same two
+   * functions acceptance itself uses. A store method answering "does this vouch?" would be a second
+   * definition of a live invitation, and the two would drift the day one of them learned about a
+   * new status.
+   *
+   * **It takes the raw token, and the adapter hashes it.** The wire never carries a hash: a route
+   * accepting one would make the stored value the credential, which is what NFR-64's
+   * SHA-256-at-rest rule exists to deny. The adapter reads through `invitation_bearer_select` by
+   * binding `app.current_invitation`, so this transaction sees exactly the one row the token names
+   * and no other invitation in the system.
+   */
+  findPresentedInvitation(token: string): Promise<PresentedInvitation | null>;
+
   /** §12.5.6's throttle window — same semantics as the session store's pair (task 21). */
   countRecentAuthAttempts(key: string, since: Date): Promise<number>;
 
@@ -112,6 +131,21 @@ export interface AccountTransaction {
    * outside the transaction would be a dual write available by accident.
    */
   emit(effect: AccountEffect): Promise<void>;
+}
+
+/**
+ * As much of an invitation as registration needs to decide FR-3's verification question — the
+ * address it binds to and whether it is still live (task 26.2).
+ *
+ * Deliberately three fields rather than the whole row: registration is not accepting anything, so
+ * the role, the organization and the locale are none of its business. The two `Invitation` fields
+ * are structurally what `invitationIsAcceptable` takes, which is the point — the predicate is
+ * shared, not reimplemented.
+ */
+export interface PresentedInvitation {
+  readonly invitedEmail: string;
+  readonly status: InvitationStatus;
+  readonly expiresAt: Date;
 }
 
 /**
