@@ -27,8 +27,8 @@ export const RESEND_SENT_AT_STORAGE_KEY = 'easyesg.verification.sentAt';
  *
  * **Assumption, recorded (task 22's open-question batch):** S-01's real exits branch on
  * memberships (§4.3 — none → S-04, one → S-05, several → organization choice), and the
- * memberships API is task 25's. Until it exists there is nothing to branch on, so every
- * sign-in lands on S-05's route. Task 25's row in `docs/task.md` owns replacing this with the
- * real branch; if that assumption is wrong, this constant is the single thing that moves.
+ * membership read it branches on is task 25.3's. Until that exists there is nothing to branch
+ * on, so every sign-in lands on S-05's route. Task 25.4's row in `docs/task.md` owns replacing
+ * this with the real branch; if that assumption is wrong, this constant is the one that moves.
  */
 export const POST_SIGN_IN_PATH = '/home';
