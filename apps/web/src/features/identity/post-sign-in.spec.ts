@@ -87,3 +87,49 @@ describe('postSignInTarget (§4.3)', () => {
     });
   });
 });
+
+/**
+ * The refinement task 26.3 needed (25 Aug 2026): `?return=` is overridden because a destination
+ * inside `(app)` cannot render without an organization — which says nothing about a destination
+ * outside it.
+ *
+ * S-03 is the case that found it. A registration handed off from an invitation was landing on S-04
+ * with the invitation lost, because the member-of-nothing arm discarded the return path — the one
+ * arm where the return path is how they *stop* being a member of nothing.
+ */
+describe('a return path that renders without an organization (task 26.3)', () => {
+  const invitation = { href: '/invitation/tok', locale: undefined };
+
+  it('is honoured for a member of nothing', () => {
+    expect(postSignInTarget({ memberships: [], returnTo: invitation })).toEqual({
+      href: '/invitation/tok',
+      locale: undefined,
+    });
+  });
+
+  it('is honoured for someone who has not chosen among several', () => {
+    expect(
+      postSignInTarget({ memberships: [membership('a'), membership('b')], returnTo: invitation }),
+    ).toEqual({ href: '/invitation/tok', locale: undefined });
+  });
+
+  /** The original rule still holds where it was written for: `(app)` needs an organization. */
+  it('does not widen the rule for a destination that needs one', () => {
+    expect(postSignInTarget({ memberships: [], returnTo: { href: '/reports', locale: undefined } })).toEqual({
+      href: POST_SIGN_IN.CREATE_ORGANIZATION,
+    });
+    expect(
+      postSignInTarget({
+        memberships: [membership('a'), membership('b')],
+        returnTo: { href: '/reports', locale: undefined },
+      }),
+    ).toEqual({ href: POST_SIGN_IN.HOME });
+  });
+
+  /** A failed membership read still wins: the branch could not be taken at all (S-35). */
+  it('does not override the unavailable arm', () => {
+    expect(postSignInTarget({ memberships: null, returnTo: invitation })).toEqual({
+      href: POST_SIGN_IN.ORGANIZATION_UNAVAILABLE,
+    });
+  });
+});

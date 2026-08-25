@@ -180,6 +180,48 @@
       "title": "We could not load your organisations",
       "body": "You are signed in, but the list of organisations you belong to could not be retrieved, so the workspace cannot be opened yet. Try again in a moment; if it keeps happening, sign out and come back later.",
       "retry": "Try again"
+    },
+    "invitation": {
+      "title": "You have been invited",
+      "loading": "Checking the invitation…",
+      "summaryOrganization": "Organisation",
+      "summaryRole": "Role granted",
+      "summaryAddress": "Invited address",
+      "role": {
+        "editor": "Edit",
+        "viewer": "View only"
+      },
+      "signedOutIntro": "You need an easyesg account to accept this invitation. Create one now, or sign in if you already have one — we will bring you straight back here.",
+      "createAccount": "Create an account",
+      "haveAccount": "Already have an account? <link>Sign in</link>",
+      "acceptIntro": "Accepting joins you to {organization} with the role “{role}”. You can start work straight away.",
+      "accept": "Accept the invitation",
+      "problemTitle": "The invitation could not be accepted",
+      "problemBody": "Something stopped the invitation being accepted, so you have not been added to the organisation. Refresh the page and try again.",
+      "problemAction": "Go to sign in",
+      "wrongAccountTitle": "The invitation is for another address",
+      "wrongAccountBody": "The invitation was sent to {invited} and you are signed in as {current}, so this account cannot use it. Sign out and sign in with the invited address.",
+      "signInAsInvited": "Sign out and sign in as {invited}",
+      "wrongAccountAlternative": "If you would rather use your current address, ask an administrator of the organisation for an invitation to it.",
+      "standingAction": "Go to sign in",
+      "standing": {
+        "expired": {
+          "title": "Invitation out of time",
+          "body": "This invitation has run out of time, so the link no longer works and you have not been added to the organisation. Ask an administrator of the organisation to send it again — you will get a fresh link, good for another 7 days."
+        },
+        "consumed": {
+          "title": "Invitation already used",
+          "body": "This invitation has already been used, so the link no longer works. If you accepted it yourself, sign in; otherwise ask an administrator of the organisation for a new invitation."
+        },
+        "revoked": {
+          "title": "Invitation withdrawn",
+          "body": "An administrator of the organisation withdrew this invitation, so you have not been added. If that was a mistake, ask them to invite you again."
+        },
+        "unknown": {
+          "title": "Link not recognised",
+          "body": "This link does not match any invitation, so you have not been added to an organisation. Check that you copied all of it from the email, or ask for a new invitation."
+        }
+      }
     }
   }
 }

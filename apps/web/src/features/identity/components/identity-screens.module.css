@@ -101,3 +101,55 @@
 .notice {
   margin-bottom: var(--space-5);
 }
+
+/**
+ * S-03's invitation summary (task 26.3) — the three facts the screen shows before anything is
+ * accepted: the inviting organization, the role, the invited address.
+ *
+ * A definition list, because that is what it is: three label/value pairs, which gives assistive
+ * technology the association for free where a stack of paragraphs would give it none. The grid is
+ * label-above-value on narrow viewports and two columns from the container width up, so the +40%
+ * expansion harness has somewhere for a long Russian label to go.
+ */
+.summary {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-2);
+}
+
+.summary dt {
+  color: var(--text-muted);
+}
+
+.summary dd {
+  margin: 0 0 var(--space-2);
+  color: var(--text-default);
+  overflow-wrap: anywhere;
+}
+
+.summary dd:last-child {
+  margin-bottom: 0;
+}
+
+/* The address keeps the monospace treatment `.address` gives it elsewhere, without its own box —
+   it is already inside one here. */
+.summary .address {
+  background: none;
+  padding: 0;
+  margin: 0;
+}
+
+@media (min-width: 30rem) {
+  .summary {
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+  }
+
+  .summary dd {
+    margin-bottom: 0;
+  }
+}

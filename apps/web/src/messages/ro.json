@@ -180,6 +180,48 @@
       "title": "Nu am putut încărca organizațiile",
       "body": "Autentificarea a reușit, dar lista organizațiilor din care faceți parte nu a putut fi obținută, așa că nu putem deschide spațiul de lucru. Încercați din nou peste câteva momente; dacă problema persistă, ieșiți din cont și reveniți mai târziu.",
       "retry": "Încercați din nou"
+    },
+    "invitation": {
+      "title": "Ați fost invitat",
+      "loading": "Se verifică invitația…",
+      "summaryOrganization": "Organizația",
+      "summaryRole": "Rolul acordat",
+      "summaryAddress": "Adresa invitată",
+      "role": {
+        "editor": "Editare",
+        "viewer": "Doar vizualizare"
+      },
+      "signedOutIntro": "Pentru a accepta invitația aveți nevoie de un cont easyesg. Creați-l acum sau autentificați-vă, dacă aveți deja unul — vă aducem înapoi aici.",
+      "createAccount": "Creați un cont",
+      "haveAccount": "Aveți deja un cont? <link>Autentificați-vă</link>",
+      "acceptIntro": "Acceptând, vă alăturați organizației {organization} cu rolul „{role}”. Veți putea începe lucrul imediat.",
+      "accept": "Acceptați invitația",
+      "problemTitle": "Invitația nu a putut fi acceptată",
+      "problemBody": "Ceva a împiedicat acceptarea invitației, așa că nu ați fost adăugat în organizație. Reîmprospătați pagina și încercați din nou.",
+      "problemAction": "Mergeți la autentificare",
+      "wrongAccountTitle": "Invitația este pentru altă adresă",
+      "wrongAccountBody": "Invitația a fost trimisă la {invited}, iar acum sunteți autentificat ca {current}, așa că nu poate fi folosită de acest cont. Ieșiți din cont și autentificați-vă cu adresa invitată.",
+      "signInAsInvited": "Ieșiți și autentificați-vă ca {invited}",
+      "wrongAccountAlternative": "Dacă preferați să folosiți adresa actuală, cereți administratorului organizației o invitație pentru ea.",
+      "standingAction": "Mergeți la autentificare",
+      "standing": {
+        "expired": {
+          "title": "Invitație expirată",
+          "body": "Această invitație a expirat, așa că linkul nu mai funcționează și nu ați fost adăugat în organizație. Cereți administratorului organizației să v-o retrimită — veți primi un link nou, valabil încă 7 zile."
+        },
+        "consumed": {
+          "title": "Invitație deja folosită",
+          "body": "Această invitație a fost deja folosită, așa că linkul nu mai funcționează. Dacă ați acceptat-o dumneavoastră, autentificați-vă; altfel, cereți administratorului organizației o invitație nouă."
+        },
+        "revoked": {
+          "title": "Invitație anulată",
+          "body": "Această invitație a fost anulată de administratorul organizației, așa că nu ați fost adăugat. Dacă este o greșeală, cereți-i să vă invite din nou."
+        },
+        "unknown": {
+          "title": "Link nerecunoscut",
+          "body": "Linkul acesta nu corespunde niciunei invitații, așa că nu ați fost adăugat în nicio organizație. Verificați dacă l-ați copiat complet din e-mail sau cereți o invitație nouă."
+        }
+      }
     }
   }
 }

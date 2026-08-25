@@ -39,6 +39,7 @@ export {
 } from './outcome';
 
 // identity — /api/v1/auth (FR-1, FR-3; task 19)
+export { ACCOUNT_STATUS, type AccountStatus } from './account';
 export type RegisterAccountRequest = components['schemas']['RegisterAccountRequestDto'];
 export type VerifyEmailRequest = components['schemas']['VerifyEmailRequestDto'];
 export type ResendVerificationEmailRequest =
@@ -61,6 +62,24 @@ export type ResetPasswordRequest = components['schemas']['ResetPasswordRequestDt
 export type Member = components['schemas']['MemberResponseDto'];
 export type ChangeMemberRoleRequest = components['schemas']['ChangeMemberRoleRequestDto'];
 export type AccountMembership = components['schemas']['AccountMembershipResponseDto'];
+
+// identity — invitations (FR-11, FR-57; tasks 26.1, 26.2). Two audiences on one resource, which is
+// why the shapes do not overlap: `Invitation` is a row on the administrator's list, read with a
+// tenant bound; the preview and acceptance shapes belong to the **bearer** of a link, who may hold
+// no session at all. `InvitationTokenRequest` is the body of both bearer routes — the token travels
+// in a POST body rather than a URL so it stays out of access logs and referrer headers.
+export {
+  INVITATION_STANDING,
+  MEMBERSHIP_GRANT_KIND,
+  isInvitationStanding,
+  type InvitationStanding,
+  type MembershipGrantKind,
+} from './invitation';
+export type Invitation = components['schemas']['InvitationResponseDto'];
+export type IssueInvitationRequest = components['schemas']['IssueInvitationRequestDto'];
+export type InvitationTokenRequest = components['schemas']['InvitationTokenRequestDto'];
+export type InvitationPreview = components['schemas']['InvitationPreviewResponseDto'];
+export type AcceptedInvitation = components['schemas']['AcceptedInvitationResponseDto'];
 
 // identity — /api/v1/auth/social (FR-2, FR-4, FR-82; task 24). The OAuth transaction — state,
 // nonce, verifier — travels through apps/web's sealed transaction cookie, never readable in the

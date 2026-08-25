@@ -74,19 +74,3 @@ export const invitationAcceptThrottleKey = (
   clientIp: string | undefined,
   accountId: string,
 ): string => throttleKey('invitation-accept', clientIp, accountId);
-
-/**
- * S-03's preview (task 26.2), which §12.5.6 does **not** name — it is this task's own route.
- *
- * It is throttled anyway, and the reason is the shape rather than the register: it is the one
- * **unauthenticated** surface in the system that answers a question about a token, so it is where a
- * token would be probed if anyone tried. The account half of the key is unbuildable — there is no
- * session, and serving someone who has no account is the route's entire purpose — so it degrades to
- * per IP, the same recorded degradation the social path carries and for the same reason: a narrower
- * net than the table specifies, never no net.
- *
- * The third segment is a constant rather than the token itself. Keying by token would give every
- * guess its own fresh budget, which is the opposite of a throttle.
- */
-export const invitationPreviewThrottleKey = (clientIp: string | undefined): string =>
-  throttleKey('invitation-preview', clientIp, 'anonymous');

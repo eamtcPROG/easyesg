@@ -73,8 +73,12 @@ layout's `SessionStrip` carries sign-out until task 30's real global tier.
 rule — none → S-04, one → S-05, several → S-05 where the switcher chooses (OQ-6) — and
 `server/post-sign-in.ts` the seam that reads `/memberships` and applies it. Both sign-in flows exit
 through it; a provider session is the same session (UC-05). Three things to know before touching
-it: **`?return=` is honoured only where an organization resolves**, because returning a
-member-of-nothing to a route inside `(app)` lands them on a screen that cannot render;
+it: **`?return=` is honoured where the destination can actually render** — refined 25 Aug 2026 by
+task 26.3, from "only where an organization resolves". The override exists because a route inside
+`(app)` needs a bound organization, which says nothing about one outside it: S-03's
+`/invitation/<token>` renders perfectly for a member of nothing and is the one deep link such a
+person must be returned to. `rendersWithoutOrganization` reads `lib/route-access.ts`, which is the
+proxy's own list — the gate and the branch must not disagree about which routes need a session;
 **`null` memberships and `[]` are different answers** — could not read (S-35) versus belongs to
 nothing (S-04); and **the rule carries no `server-only`** deliberately, since importing the
 API client there would make every arm untestable outside a browser.
@@ -168,10 +172,17 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `@/i18n/navigation`. A raw `next/link` renders a working-looking anchor that drops the locale
   prefix: nothing throws, nothing logs, and it survives review. Lint-enforced.
 
-- **`UNAUTHENTICATED_SEGMENTS` in `proxy.ts` is the auth boundary, and it is a list.** Route
-  groups are invisible in URLs, so `(public)` and `(identity)` cannot be detected from the path.
-  The default is closed — anything unnamed requires a session. Adding a public screen means
-  adding it there.
+- **`UNAUTHENTICATED_SEGMENTS` is the auth boundary, it is a list, and since task 26.3 it lives in
+  `src/lib/route-access.ts`.** Route groups are invisible in URLs, so `(public)` and `(identity)`
+  cannot be detected from the path. The default is closed — anything unnamed requires a session.
+  Adding a public screen means adding it there.
+
+  It moved out of `proxy.ts` when a second reader appeared: §4.3's post-sign-in branch needs to know
+  which destinations render without an organization, and a route that needs no session needs no
+  organization. Copying the list was never an option — one of the two readers is the closed-by-default
+  gate, and a drifted copy would either bounce a public screen to sign-in or, in the direction that
+  matters, quietly stop bouncing an authenticated one. `lib/` rather than beside the proxy because
+  `post-sign-in.ts` deliberately carries no `server-only`.
 
   **Never read the locale as path segment 1.** The source locale is served *unprefixed*
   (`localePrefix: 'as-needed'`, architecture.md §10.8), so `/home` and `/ru/home` are the same

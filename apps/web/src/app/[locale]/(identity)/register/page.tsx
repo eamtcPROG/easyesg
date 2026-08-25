@@ -19,17 +19,26 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * `social-unknown-identity`, offering the registration a sign-in must never perform silently.
  * Exits to the S-02 challenge on success (§4.3), or straight to a session where the provider
  * asserted the address verified (UC-03's alternate).
+ *
+ * **`?invitation=` and `?return=` are S-03's hand-off** (task 26.3, `design_spec.md` S-01 amended
+ * 25 Aug 2026). The invitation reaches the API, where a live one for this same address creates an
+ * already-verified account — so that registration exits to sign-in rather than to S-02, and the
+ * invitee comes back to accept with one email instead of two. Both are optional and absent on every
+ * other arrival; a stale one changes nothing, because the API ignores it.
  * `design_spec.md` §5 owns this screen's content, controls and states; the Identity prototype
  * is the rendered reference — values extracted, markup never copied (OQ-10).
  */
-type Props = { params: LocaleParams; searchParams: Promise<{ notice?: string }> };
+type Props = {
+  params: LocaleParams;
+  searchParams: Promise<{ notice?: string; invitation?: string; return?: string }>;
+};
 
 export const generateMetadata = localizedPageTitle('identity.register');
 
 export default async function RegisterPage({ params, searchParams }: Props) {
   await activateRequestLocale(params);
   const t = await getTranslations('identity.register');
-  const { notice } = await searchParams;
+  const { notice, invitation, return: returnTo } = await searchParams;
 
   return (
     <>
@@ -38,12 +47,12 @@ export default async function RegisterPage({ params, searchParams }: Props) {
       <div className={styles.notice}>
         <SocialNoticeCallout notice={notice} />
       </div>
-      <RegisterForm />
+      <RegisterForm invitationToken={invitation} returnTo={returnTo} />
       {/* Streams behind the form (async-suspense-boundaries): the provider list is an API
           round trip, and S-01's credential form must not wait on it — with the api
           unreachable, the component renders null and password sign-in stands alone. */}
       <Suspense fallback={null}>
-        <SocialProviders intent={SOCIAL_SIGN_IN_INTENT.REGISTER} />
+        <SocialProviders intent={SOCIAL_SIGN_IN_INTENT.REGISTER} returnTo={returnTo} />
       </Suspense>
     </>
   );

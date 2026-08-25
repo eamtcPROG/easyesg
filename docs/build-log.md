@@ -2473,3 +2473,105 @@ who then signs in immediately with no verification email ever queued. Plus 21 un
 two use cases and the standing domain, one of which walks every refusal key through all three
 locales, because a key built by interpolation would otherwise ship a problem document with no
 `detail` at all and nothing would say so.
+
+## Task 26.3 — S-03, and a rule that was right for the case it was written for · 2026-08-25
+
+S-03 live in three locales: `POST /invitations/preview` read server-side, five surfaces branched on
+in `features/identity/invitation.ts`, and the acceptance journey working end to end in a browser.
+Six new Playwright tests, and the deliverable stated as one of them — *a user joins an organization
+from the browser, and expiry is a designed state rather than an error page*.
+
+**Two sources disagreed and the batch settled it.** S-03's "Controls and actions" lists four
+affordances, which reads as four forms on one screen; task 26.3's row says the signed-out entry
+hands off to S-01. The project owner chose the hand-off, and `design_spec.md` S-03 and S-01 are both
+amended rather than left to be re-derived: the first three controls are **routes**, which keeps S-03
+a true Focus screen with `accept` as its one primary action and keeps S-01 the single place a
+credential is entered. The registration route carries the invitation, so 26.2's verified-account
+path serves the flow it was built for — one email instead of two.
+
+**The other three decisions:** the permission state names both addresses and offers to sign out and
+return; provider sign-in is offered, its refusal being a designed state rather than a dead end; and
+the invitation rides the URL rather than a sealed cookie (§12.5.6's task-26.3 row — the token is
+already a path segment on S-03, so a second URL opens no new class of exposure, and task 24's
+transaction cookie guards values that exist *only* for the round trip).
+
+**`Button` gained `asChild`, and that is a UX-89 inventory change rather than a screen-local
+workaround.** S-03's signed-out arm hands off, so its one primary action is a *navigation* — and
+`apps/web` must navigate through `@/i18n/navigation`'s locale-aware `Link`, which `packages/ui`
+cannot import. Without the seam the choice was a bespoke anchor in the screen (the defect UX-89
+names) or demoting the primary action to a text link (which the Focus archetype does not survive).
+`TextLink` and `ProviderButton` already carry the same Radix Slot seam for the same reason. The
+props are a **union**, so `asChild` and `busy` cannot both be passed — an anchor has no
+pending-async state, and that is enforced rather than documented. Two bugs were caught writing it:
+`busy` and `asChild` leaking onto the DOM through the rest spread, and — after fixing that — four
+discarded destructures that the lint config has no ignore pattern for, which is why the union
+discriminates on **key presence** rather than on `asChild?: false`.
+
+**The finding that mattered, and it was a product defect I introduced in 26.2.** The preview was
+throttled per IP at five per fifteen minutes, so **every signed-out invitee behind one office NAT
+shared a single budget** — the sixth colleague to open their invitation would be refused. §12.5.6's
+auth row names invitation *accept*, not the preview, and the key it specifies is unbuildable on a
+route whose entire purpose is serving someone with no account. The throttle is removed and the row
+corrected: what bounds that route is the edge's 60 req/min per IP, exactly as it bounds
+`/auth/register` and `/auth/verification-email` (OQ-53 and OQ-55 record the same reasoning), and
+guessing is bounded by arithmetic besides. The browser suite found it on its second test.
+
+**A second 26.2 defect, found by probing the API directly:** `invitationToken: null` answered
+**500**. `@IsOptional()` skips validation for `null` as well as for an absent key, so a body several
+HTTP clients emit by default reached `createHash().update(null)`. The guard is truthy now.
+
+**`?return=` was refined, which amends a decision task 25.4 took** (project owner, this batch).
+That rule — honour a deep link only when an organization resolves — was written for a real reason
+and keeps it: returning a member-of-nothing to a route inside `(app)` lands them on a screen that
+cannot render. What it never covered is a destination *outside* `(app)`: `/invitation/{token}`
+renders perfectly for someone who belongs nowhere and is the one deep link such a person must be
+returned to, so the hand-off was landing them on S-04 with the invitation lost. The override is now
+scoped to destinations that need a session, read from **the proxy's own list** —
+`UNAUTHENTICATED_SEGMENTS` moved from `proxy.ts` to `lib/route-access.ts`, shared rather than
+copied, because one of the two readers is the closed-by-default session gate and a drifted copy
+would eventually stop bouncing an authenticated route.
+
+**Three things the code demanded that the batch had not anticipated.** The preview's first draft
+returned `invitation.organizationName` and there is no such column — the name lives on
+`core.organization`, whose policies both refuse a caller who is neither tenant-bound nor a member,
+so `organization_invitation_select` had to exist (26.2, measured in three states). The degradation
+path — `acceptable` with details missing — reports **unreachable**, not unusable, because nothing is
+known to be wrong with the invitation; our own tier failed to describe it, and "your link is
+probably fine" is the only true sentence available. And `UnusableStanding` is derived by excluding
+`acceptable`, because next-intl type-checks message keys: widened to the full union,
+`standing.acceptable.title` would be a key with no message and the Callout would render an empty
+heading in three languages with nothing failing.
+
+**The React pass, against the diff.** Applied: **`async-parallel`** — the preview and the session
+read are independent and run together; **`async-suspense-boundaries`** — the provider list streams
+behind the two routes that always work, and is answered the *other* way for the page body itself,
+where the whole screen depends on one read and there is no shell worth streaming, which is why
+`loading.tsx` exists instead; **`rendering-conditional-render`** — ternaries, no `&&`;
+**`rendering-usetransition-loading`**; and **`rerender-no-inline-components`**, which does not
+strictly fire (a Server Component, and the function was called rather than rendered as a type) but
+named the exact habit — the switch was nested to reach `view` and `token` without passing them, and
+is now a top-level component taking props. Declined with reasons: **`bundle-barrel-imports`**, the
+standing house convention, as on tasks 24 and 25.4; and **manual memoization** in
+`AcceptInvitation`, whose one handler is passed to a non-memoized `Button` and observes nothing —
+`apps/web/CLAUDE.md`'s own note says wrapping that is noise.
+
+**Re-reading S-03's row against the finished screen found the omission the checklist exists for:**
+**loading — initial** was designed and not built. Every other `(identity)` screen renders instantly
+and only its *action* waits, so a busy button covers §8.1; S-03 is different in kind, because its
+server render blocks on an API round trip before it can say anything at all — without a
+`loading.tsx` the person who clicked a link in their email watches the previous page for the length
+of it.
+
+**A harness lesson that cost three debugging rounds, worth recording because it will recur.**
+`pnpm exec playwright test` is not `pnpm e2e:web`: the latter's `pree2e:web` builds *and* runs
+`assemble-web-standalone.sh`, which copies `.next/static` and `public/` beside the standalone
+server. Skipping it serves a bundle with no JavaScript, so every interactive test fails in a way
+that looks like a hydration bug. Worse, `reuseExistingServer: !CI` then let a hand-started server
+from that broken state be **reused** by a subsequent proper run — 19 pre-existing tests failed
+against a stale artefact and none of it was the code. Run the script, not the tool; and kill
+anything on 3000/3100/3101/3200 before concluding anything about a failure.
+
+Verified: `pnpm gates`, then `pnpm gates:clean`. 48 browser tests across three projects, six of them
+new; 89 web unit tests including the branch's eight arms and the four new post-sign-in cases; 298
+api unit tests. Both amended documents are cross-logged: `design_spec.md` S-03 and S-01,
+`architecture.md` §12.5.6's task-26.3 rows, and `apps/web/CLAUDE.md`'s two affected traps.

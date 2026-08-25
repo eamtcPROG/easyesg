@@ -1,7 +1,10 @@
 'use server';
 
 import type {
+  AcceptedInvitation,
   AccountResponse,
+  InvitationPreview,
+  InvitationTokenRequest,
   RegisterAccountRequest,
   RequestPasswordResetRequest,
   ResendVerificationEmailRequest,
@@ -14,11 +17,15 @@ import type {
 import { getLocale } from 'next-intl/server';
 import { API_OUTCOME, mapOutcome } from '@/lib/api-outcome';
 import { resolvePostSignIn } from '@/server/post-sign-in';
+import { POST_SIGN_IN } from './post-sign-in';
 import { api } from '@/server/api-client';
 import { destroySession, establishSession, readSession } from '@/server/session';
 import { redirect } from '@/i18n/navigation';
+import { sanitizeReturnPath } from '@/lib/locale-path';
 import type {
+  AcceptInvitationFailure,
   AccountSummary,
+  InvitationPreviewResult,
   RegisterResult,
   RequestResetResult,
   ResetPasswordResult,
@@ -116,13 +123,21 @@ export async function signInAction(command: SignInCommand): Promise<SignInFailur
  * would strand them signed in; a termination the API never heard leaves a row its idle and
  * absolute lifetimes still bound (OQ-35).
  */
-export async function signOutAction(): Promise<void> {
+export async function signOutAction(returnTo?: string): Promise<void> {
   const session = await readSession();
   if (session) {
     await api.delete<SignOutRequest>('/auth/session', { refreshToken: session.refreshToken });
   }
   await destroySession();
-  redirect({ href: '/sign-in', locale: await getLocale() });
+
+  // `returnTo` is S-03's permission state (task 26.3): someone opened an invitation while signed
+  // in as a different address, and the way out is to sign out and come back to THIS invitation
+  // rather than to a generic sign-in that loses the link. Sanitised like every other return path,
+  // because it reaches this action through the browser and an unchecked one turns sign-out into an
+  // open redirect — `proxy.ts` writes its own and this is the second writer.
+  const back = sanitizeReturnPath(returnTo);
+  const href = back ? `/sign-in?return=${encodeURIComponent(back.href)}` : '/sign-in';
+  redirect({ href, locale: back?.locale ?? (await getLocale()) });
 }
 
 export async function requestPasswordResetAction(
@@ -142,4 +157,51 @@ export async function resetPasswordAction(input: ResetPasswordRequest): Promise<
   // No redirect: S-02's exit to S-01 is the success state's OFFERED next step, after the
   // screen has stated what consuming the link just did (every session signed out, FR-6/P5).
   return mapOutcome(outcome, () => null);
+}
+
+/**
+ * S-03's opening read (UC-15) — what the invitation offers, before anything is used.
+ *
+ * **The token goes in a POST body, not a URL**, which is the API's shape for all three token kinds
+ * and the reason a mail scanner prefetching the link cannot burn it: nothing is consumed on render,
+ * here or on the server.
+ *
+ * An unusable link comes back as `Ok` carrying a `standing`, not as a problem — S-03 draws expired,
+ * already-used, revoked and not-found as four distinguishable recoverable states, so the screen has
+ * to branch on a value rather than on prose. Only transport failures reach the `Problem` and
+ * `Unreachable` arms.
+ */
+export async function previewInvitationAction(
+  input: InvitationTokenRequest,
+): Promise<InvitationPreviewResult> {
+  const outcome = await api.post<InvitationTokenRequest, InvitationPreview>(
+    '/invitations/preview',
+    input,
+  );
+  return mapOutcome(outcome, (preview) => preview);
+}
+
+/**
+ * UC-15's acceptance (FR-11), and the exit S-03 promises: **S-05 in the newly joined
+ * organization**.
+ *
+ * No `?return=` and no branch: unlike sign-in, this call has already decided where the user
+ * belongs, and the API pointed the session at that organization inside the same transaction
+ * (`architecture.md` §12.5.6's task-26.2 row). So the redirect is unconditional, and `/home`
+ * resolves to the organization just joined without this tier knowing which it was.
+ *
+ * `postSignInTarget` is deliberately NOT consulted. Its job is to choose among none / one /
+ * several, and none of those questions is open here — the answer is the organization on the
+ * invitation, chosen by the person who clicked.
+ */
+export async function acceptInvitationAction(
+  input: InvitationTokenRequest,
+): Promise<AcceptInvitationFailure> {
+  const outcome = await api.post<InvitationTokenRequest, AcceptedInvitation>(
+    '/invitations/acceptance',
+    input,
+  );
+  if (outcome.status !== API_OUTCOME.Ok) return outcome;
+
+  redirect({ href: POST_SIGN_IN.HOME, locale: await getLocale() });
 }

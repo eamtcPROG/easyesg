@@ -77,8 +77,8 @@ export class InvitationService {
     return this.revokeInvitation.execute(command);
   }
 
-  preview(input: PreviewInvitationServiceInput): Promise<InvitationPreview> {
-    return this.previewInvitation.execute({ ...input, clientIp: requestContext()?.clientIp });
+  preview(command: PreviewInvitationCommand): Promise<InvitationPreview> {
+    return this.previewInvitation.execute(command);
   }
 
   /**
@@ -106,14 +106,13 @@ export class InvitationService {
 }
 
 /**
- * Each command minus what this layer supplies from ambient context — `AccountService`'s shape,
- * derived so a field added to either arrives here without touching this file.
+ * The accept command minus what this layer supplies from ambient context — `AccountService`'s
+ * shape, derived so a field added to it arrives here without touching this file.
  *
- * `clientIp` is in both omissions for the reason `AccountServiceInput` states: it comes from the
- * socket, and a caller supplying it would be choosing which throttle bucket to spend.
+ * `clientIp` is omitted for the reason `AccountServiceInput` states: it comes from the socket, and
+ * a caller supplying it would be choosing which throttle bucket to spend. The preview has no such
+ * omission because it has no throttle — §12.5.6's task-26.3 row records why.
  */
-type PreviewInvitationServiceInput = Omit<PreviewInvitationCommand, 'clientIp'>;
-
 type AcceptInvitationServiceInput = Omit<
   AcceptInvitationCommand,
   'accountId' | 'sessionId' | 'clientIp'

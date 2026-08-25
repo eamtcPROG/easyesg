@@ -31,7 +31,10 @@ export async function SessionStrip() {
       <span className={styles.account}>
         {t('signedInAs')} <strong>{session.account.email}</strong>
       </span>
-      <form action={signOutAction}>
+      {/* Bound with no return path: the strip's sign-out is a plain "leave", not S-03's "leave and
+          come back as somebody else" (task 26.3 gave the action that parameter). Binding is what
+          keeps the signature a form action, since React would otherwise pass FormData into it. */}
+      <form action={signOutAction.bind(null, undefined)}>
         <Button type="submit" variant="subtle">
           {t('signOut')}
         </Button>

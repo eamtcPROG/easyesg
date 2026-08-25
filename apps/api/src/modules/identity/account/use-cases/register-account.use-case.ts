@@ -25,7 +25,7 @@ export interface RegisterAccountCommand {
    * without one. It never fails the registration: a stale link is a bad reason to refuse someone an
    * account, and the ordinary verification email is a working way forward.
    */
-  readonly invitationToken?: string;
+  readonly invitationToken?: string | null;
 }
 
 /**
@@ -122,11 +122,16 @@ export class RegisterAccount {
  */
 async function invitationVouchesFor(
   tx: Pick<AccountTransaction, 'findPresentedInvitation'>,
-  token: string | undefined,
+  token: string | null | undefined,
   email: string,
   now: Date,
 ): Promise<boolean> {
-  if (token === undefined) return false;
+  // Truthy, not `=== undefined`, and the difference was a **500**. `@IsOptional()` skips validation
+  // for `null` as well as for an absent key, so a client sending `"invitationToken": null` — which
+  // is what several HTTP clients emit for an unset optional, and what a hand-written body naturally
+  // contains — reached the store and threw inside `createHash().update(null)`. A registration is
+  // not the place to answer "no invitation" with an internal error.
+  if (!token) return false;
 
   const invitation = await tx.findPresentedInvitation(token);
   if (invitation === null) return false;

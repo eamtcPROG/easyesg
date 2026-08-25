@@ -12,11 +12,7 @@ describe('PreviewInvitation (UC-15, FR-11)', () => {
     const store = new FakeInvitationBearerStore(invitations, { [TOKEN]: invitations[0]?.id });
     return {
       store,
-      run: () =>
-        new PreviewInvitation(store, () => NOW).execute({
-          token: TOKEN,
-          clientIp: '198.51.100.7',
-        }),
+      run: () => new PreviewInvitation(store, () => NOW).execute({ token: TOKEN }),
     };
   };
 
@@ -78,10 +74,7 @@ describe('PreviewInvitation (UC-15, FR-11)', () => {
   it('reports a token naming nothing as unknown', async () => {
     const store = new FakeInvitationBearerStore([], {});
     await expect(
-      new PreviewInvitation(store, () => NOW).execute({
-        token: TOKEN,
-        clientIp: '198.51.100.7',
-      }),
+      new PreviewInvitation(store, () => NOW).execute({ token: TOKEN }),
     ).resolves.toEqual({ standing: INVITATION_STANDING.UNKNOWN, details: null });
   });
 });

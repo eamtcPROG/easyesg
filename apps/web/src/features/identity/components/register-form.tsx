@@ -6,6 +6,7 @@ import { FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
+import { ACCOUNT_STATUS } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { Link, useRouter } from '@/i18n/navigation';
 import { registerAction } from '../actions';
@@ -34,7 +35,18 @@ interface RegisterInput {
 /** Light shape check only — deliverability is unknowable client-side; the API is authoritative. */
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function RegisterForm() {
+export interface RegisterFormProps {
+  /**
+   * An invitation being acted on — S-03's registration hand-off (task 26.3), absent everywhere
+   * else. Carried through to the API, where a live one for this same address creates an
+   * **already-verified** account and suppresses the challenge email (FR-3, §12.5.6's task-26.2 row).
+   */
+  invitationToken?: string;
+  /** Where to go once an account exists. UX-38's contract, sanitised by the route it lands on. */
+  returnTo?: string;
+}
+
+export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
   const t = useTranslations('identity.register');
   const tCommon = useTranslations('identity');
   const router = useRouter();
@@ -67,8 +79,18 @@ export function RegisterForm() {
   const submit = handleSubmit((input) => {
     setFailure(null);
     startTransition(async () => {
-      const result = await registerAction(input);
+      const result = await registerAction({ ...input, invitationToken });
       if (result.status === API_OUTCOME.Ok) {
+        // **Branch on what came back, not on whether a token was sent.** A stale or misaddressed
+        // invitation is ignored by the API and yields an ordinary unverified account (task 26.2's
+        // register DTO says so in terms), so trusting the request would push someone to a sign-in
+        // that refuses them — while trusting the response is right in every case.
+        if (result.value.status === ACCOUNT_STATUS.ACTIVE) {
+          // Verified by the invitation itself, so there is no challenge to wait for: straight on to
+          // sign in, and `?return=` brings them back to the invitation to accept it.
+          router.push(returnTo ? `/sign-in?return=${encodeURIComponent(returnTo)}` : '/sign-in');
+          return;
+        }
         // The S-02 challenge screen states the address it was sent to. Session storage, not the
         // URL: an email address in a query string reaches server logs and history (constants.ts).
         rememberPendingVerification(result.value.email);

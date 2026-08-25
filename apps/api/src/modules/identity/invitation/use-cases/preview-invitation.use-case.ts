@@ -1,11 +1,5 @@
 import type { Clock } from '@api/contracts/clock.port';
 import {
-  AUTH_ATTEMPT_LIMIT,
-  AUTH_ATTEMPT_WINDOW_MS,
-  invitationPreviewThrottleKey,
-} from '@api/modules/identity/account/domain/auth-throttle';
-import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
-import {
   INVITATION_STANDING,
   invitationStanding,
   type InvitationStanding,
@@ -15,8 +9,6 @@ import type { InvitedRole } from '../models/invitation.model';
 
 export interface PreviewInvitationCommand {
   readonly token: string;
-  /** §12.5.6's throttle half. From the socket, resolved by the service — never from the body. */
-  readonly clientIp: string | undefined;
 }
 
 /**
@@ -35,6 +27,16 @@ export interface PreviewInvitationCommand {
  * **It consumes nothing and writes nothing.** The invitation is spent by an explicit POST from an
  * authenticated caller, never by opening a link — the same property task 19 built the verification
  * flow around, and the reason a mail scanner following the URL cannot burn someone's invitation.
+ *
+ * **There is no application-level throttle here, and that is a correction rather than an omission**
+ * (§12.5.6's task-26.3 row). One was written and removed: §12.5.6's auth row names invitation
+ * *accept*, not this, and the key it specifies — per (IP, account) — is unbuildable on a route whose
+ * entire purpose is serving someone with no account. Keying it per IP alone made every invitee
+ * behind one office NAT share a five-per-quarter-hour budget, so the sixth colleague to open their
+ * invitation would be refused; the browser suite hit it on its second test. What bounds this route
+ * is the edge's 60 req/min per IP, exactly as it bounds `/auth/register` and `/auth/verification-email`
+ * — the two other unauthenticated token paths (OQ-53, OQ-55 record the same reasoning). Guessing is
+ * bounded by arithmetic besides: the token is 256 bits.
  *
  * **Details are withheld unless the invitation is acceptable.** A spent, revoked or expired
  * invitation answers its standing and nothing else. That is not enumeration defence — the caller
@@ -59,21 +61,8 @@ export class PreviewInvitation {
   ) {}
 
   async execute(command: PreviewInvitationCommand): Promise<InvitationPreview> {
-    const outcome = await this.store.run({ token: command.token, actorId: null }, async (tx) => {
+    return this.store.run({ token: command.token, actorId: null }, async (tx) => {
       const now = this.now();
-
-      // The only **unauthenticated** route in the system that answers a question about a token, so
-      // it is where one would be probed. §12.5.6 does not name it — it is this task's own route —
-      // and the account half of its key is unbuildable, since serving someone with no account is
-      // the whole point. Per IP, then, which is the degradation the social path already records.
-      //
-      // Counted and recorded before the read, and nothing here throws, so the row survives the
-      // commit — the trap task 21 recorded and `AcceptInvitation` restates at length.
-      const key = invitationPreviewThrottleKey(command.clientIp);
-      const since = new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS);
-      if ((await tx.countRecentAuthAttempts(key, since)) >= AUTH_ATTEMPT_LIMIT) return null;
-      await tx.recordAuthAttempt(key, now);
-
       const invitation = await tx.findInvitation();
       const standing = invitationStanding(invitation, now);
 
@@ -90,10 +79,5 @@ export class PreviewInvitation {
         },
       };
     });
-
-    // Null is the throttle's answer, thrown after the commit so the attempt row it just wrote
-    // survives. Every other outcome is a preview, including the four unusable standings.
-    if (outcome === null) throw new AuthRateLimitedError();
-    return outcome;
   }
 }

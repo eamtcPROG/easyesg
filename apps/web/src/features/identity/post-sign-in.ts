@@ -1,5 +1,6 @@
 import type { AccountMembership } from '@easyesg/contracts';
 import type { LocalizedPath } from '@/lib/locale-path';
+import { rendersWithoutOrganization } from '@/lib/route-access';
 import type { Locale } from '@easyesg/i18n';
 
 /**
@@ -18,10 +19,19 @@ import type { Locale } from '@easyesg/i18n';
  * **If either moves, check the other**; that is the recorded cost of not putting a design_spec
  * concept into the wire contract.
  *
- * **`?return=` is honoured only when an organization resolves** (same decision). UX-38's deep-link
- * contract sends someone back where they were headed — but returning a member-of-nothing, or someone
- * who has not yet chosen among several, to a route inside `(app)` lands them on a screen that cannot
- * render without an organization. A preserved intention that cannot be honoured is not preserved.
+ * **`?return=` is honoured when the destination can actually render** — refined 25 Aug 2026 (task
+ * 26.3, project owner), from "only when an organization resolves". UX-38's deep-link contract sends
+ * someone back where they were headed, and the original override existed for a concrete reason:
+ * returning a member-of-nothing to a route inside `(app)` lands them on a screen that cannot render
+ * without an organization, and a preserved intention that cannot be honoured is not preserved.
+ *
+ * What that reasoning did **not** cover is a destination outside `(app)`. S-03 is the case that
+ * found it: `/invitation/<token>` renders perfectly for someone who belongs to nowhere, and is the
+ * one deep link such a person must be returned to — a registration handed off from an invitation
+ * was landing on S-04 with the invitation lost. So the override is now scoped to destinations that
+ * need a session, which `rendersWithoutOrganization` reads from **the proxy's own list** rather
+ * than from a second one: the closed-by-default gate and this branch must not disagree about which
+ * routes those are.
  *
  * **This file carries no `server-only` and reaches no API**, which is why the branch has a spec at
  * all: `api-client` is server-only, and importing it here would make the whole module unloadable in
@@ -60,11 +70,18 @@ export const postSignInTarget = (input: {
   readonly returnTo: LocalizedPath | null;
 }): PostSignInTarget => {
   if (input.memberships === null) return { href: POST_SIGN_IN.ORGANIZATION_UNAVAILABLE };
-  if (input.memberships.length === 0) return { href: POST_SIGN_IN.CREATE_ORGANIZATION };
+  if (input.memberships.length === 0) {
+    // Even here a session-free destination is honoured: the member-of-nothing arriving from an
+    // invitation is going back to accept it, which is precisely how they stop being one.
+    return input.returnTo && rendersWithoutOrganization(input.returnTo.href)
+      ? { href: input.returnTo.href, locale: input.returnTo.locale }
+      : { href: POST_SIGN_IN.CREATE_ORGANIZATION };
+  }
 
   // Exactly one membership is the only state in which an organization is already resolved, so it is
-  // the only one where a deep link can be honoured.
-  if (input.memberships.length === 1 && input.returnTo) {
+  // the only one where a deep link INTO `(app)` can be honoured. A destination that renders without
+  // a session renders without an organization too, so it is honoured from any arm — see the header.
+  if (input.returnTo && (input.memberships.length === 1 || rendersWithoutOrganization(input.returnTo.href))) {
     return { href: input.returnTo.href, locale: input.returnTo.locale };
   }
   return { href: POST_SIGN_IN.HOME };
