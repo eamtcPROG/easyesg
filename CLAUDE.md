@@ -3,7 +3,9 @@
 ## What this is
 
 Multi-tenant SaaS letting Moldovan SMEs produce a **VSME Basic Module (B1–B11)** sustainability
-report in RO / EN / RU, calculate Scope 1 + location-based Scope 2 emissions (feeds B3), and export
+report — and, since 25 Aug 2026, the **Comprehensive Module (C1–C9)** additively over it
+(`problem_overview.md` OQ-12: a report-level scope flag per D-A, sold as its own plan scope) — in
+RO / EN / RU, calculate Scope 1 + location-based Scope 2 emissions (feeds B3), and export
 to PDF and the official EFRAG Excel Digital Template — plus a self-serve billing/invoicing stack with
 Moldovan fiscal compliance (e-Factura mandate, 1 Oct 2026).
 
@@ -94,7 +96,7 @@ changing anything — `gh run view <id> --log-failed` — and fix the cause rath
 | --- | --- | --- |
 | [problem_overview.md](docs/problem_overview.md) | Problem framing, scope boundary, closed decisions | — |
 | [actors.md](docs/actors.md) | Actors and permissions | CA, RC, OA, PA, BO, SYS |
-| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…176, D-1…14 |
+| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…192, D-1…14 |
 | [functional_requirements.md](docs/functional_requirements.md) | What it does | FR-1…173 |
 | [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93 (+94…105 deferred) |
 | [architecture.md](docs/architecture.md) | How it's built | AD-1…14, DR-1…11 |
@@ -441,7 +443,7 @@ Layer inward: **domain → application (use cases) → interface adapters → fr
 - **The dependency rule is absolute: dependencies point inward only.** Domain and use-case
   code must not import NestJS, TypeORM, Express, Redis, BullMQ or any HTTP/ORM type. If a
   domain file needs a decorator or a repository class to compile, the layering is wrong.
-- **Use cases are first-class.** UC-01…176 are named in `use_cases.md`; application services
+- **Use cases are first-class.** UC-01…192 are named in `use_cases.md`; application services
   should read as those use cases, orchestrating domain objects and ports — not as thin
   pass-throughs from controller to repository.
 - **Frameworks live at the edge and are replaceable details.** Controllers, TypeORM

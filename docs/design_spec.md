@@ -30,7 +30,7 @@ It is not a visual style guide, a page-by-page mockup set, or a component librar
 
 ### 1.4 Scope boundary
 
-MVP scope is the VSME Basic Module B1–B11, self-serve billing, and three live locales — RO (source), EN, RU (§9.1, OQ-1, resolved 18 Aug 2026).
+MVP scope is the VSME Basic Module B1–B11 **and the Comprehensive Module C1–C9** (promoted 25 Aug 2026, `problem_overview.md` OQ-12 — Comprehensive is a report-level scope flag per D-A, additive over Basic and sold as its own plan scope), self-serve billing, and three live locales — RO (source), EN, RU (§9.1, OQ-1, resolved 18 Aug 2026).
 
 Deliberately not designed for MVP: per-user density switching; user-configurable dashboards; in-product chat support; report collaboration with simultaneous multi-user editing and presence; commenting and review workflow on disclosures; notification assignment and escalation chains; right-to-left support for a fourth locale; native mobile applications; Comprehensive Module screens beyond the Basic Module; XBRL viewer surfaces (Phase 2); advisor and buyer portal surfaces (Phase 2 relationship types).
 
@@ -203,7 +203,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-04 | Create organization | OA | UC-49 | Focus |
 | S-05 | Home / organization overview | all | UC-16, 67 | Workspace |
 | S-06 | Reports index | RC, OA | UC-17 | Index |
-| S-07 | **Report wizard — module step** | RC | UC-18 … 31, 37, 45, 46 | Wizard |
+| S-07 | **Report wizard — module step** | RC | UC-18 … 31, 37, 45, 46, 183 … 192 | Wizard |
 | S-08 | Validation panel (in-wizard, persistent) | RC | UC-37 … 40 | Panel |
 | S-09 | Carbon calculator | RC | UC-32 … 34 | Wizard sub-flow |
 | S-10 | Report preview | RC | UC-41 | Document |
@@ -399,7 +399,7 @@ Three limits on what follows must be stated plainly, because the alternative is 
 
 ### S-07 — Report wizard — module step
 
-- **Purpose:** the whole product for the RC actor: capture the eleven Basic Module sections B1–B11 as a sequence of answerable questions.
+- **Purpose:** the whole product for the RC actor: capture the eleven Basic Module sections B1–B11 — and, when the report's scope flag is Comprehensive, the nine C1–C9 sections additively over them (FR-177, OQ-12) — as a sequence of answerable questions.
 - **Primary actors:** RC.
 - **Archetype:** Wizard.
 - **Entry points:** S-06; S-05 resume; a validation finding deep link (UX-22); a notification deep link (UX-63); return from S-09, S-10, S-11.
@@ -1115,7 +1115,7 @@ Patterns are defined once here and referenced from the screen specifications. Th
 
 ### 6.1 The report authoring wizard
 
-**UX-9** The wizard shall present the eleven Basic Module sections as a persistent, always-visible list with a per-module state indicator, and shall permit free navigation between them. Sequence is guidance, not a gate — except that **B1 shall be completed before any conditional module is presented**, because B1 answers determine applicability (UC-19, P2).
+**UX-9** The wizard shall present the report's sections as a persistent, always-visible list with a per-module state indicator, and shall permit free navigation between them. Sequence is guidance, not a gate — except that **B1 shall be completed before any conditional module is presented**, because B1 answers determine applicability (UC-19, P2). **Amended 25 Aug 2026 (`problem_overview.md` OQ-12):** the list was "the eleven Basic Module sections"; with Comprehensive promoted it is eleven or twenty depending on the report's scope flag (D-A), so the rule now names the report's sections rather than a count. Everything else about the rule is unchanged, B1's precedence included — it gates C's conditional sections for the same reason it gates B's.
 
 **UX-10** Opening a report shall place the user at the first incomplete step, not at the beginning (UC-18).
 

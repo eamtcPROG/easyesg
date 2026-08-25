@@ -73,6 +73,7 @@ CSRD obliged large companies to disclose value-chain data → SMEs received unst
 
 - VSME is **two-tier and additive**: Basic Module **B1–B11** first, Comprehensive Module **C1–C9** on top. Micro-undertakings may use a reduced subset of Basic. The July 2026 formalisation did not change this structure.
 - **Basic Module contents:** B1 basis for preparation · B2 practices, policies, future initiatives · B3 energy and GHG emissions · B4 pollution · B5 biodiversity · B6 water · B7 resource use, circular economy and waste · B8 workforce characteristics · B9 health and safety · B10 remuneration, bargaining and training · B11 corruption and bribery.
+- **Comprehensive Module contents:** C1 strategy — business model and sustainability-related initiatives · C2 practices, policies and future initiatives for the transition · C3 GHG reduction targets and climate transition · C4 climate risks · C5 additional workforce characteristics · C6 human rights policies and processes · C7 severe negative human rights incidents · C8 revenues from certain sectors and exclusion from EU reference benchmarks · C9 gender diversity ratio in the governance body. **Added 25 Aug 2026 with OQ-12's promotion**; names follow the published EFRAG standard because NFR-2 makes element names the schema's vocabulary, not labels over it.
 - **Conditional applicability is part of the standard**, not a UI nicety: B8 turnover rate only at ≥50 employees, B10 gender pay gap only at ≥150 employees, biodiversity site-driven, water sector-driven.
 - **Comparative-year data is mandatory from year two onward** — multi-period records per entity are a day-one requirement, not a later feature.
 - **The official tooling is free.** The Digital Template (v1.3.0 as of June 2026, 11 languages, with a data-migration tool) maps each named range **exactly by local name** to an XBRL taxonomy element; the Digital-Template→XBRL converter is **MIT-licensed, open-source and self-hostable**.
@@ -124,7 +125,7 @@ An SME's report is produced for someone else to read: a bank, an EU corporate bu
 
 ### 5.1 Vision
 
-A multi-tenant SaaS on which a Moldovan SME can produce a VSME Basic Module (B1–B11) sustainability report in Romanian, English or Russian, calculate Scope 1 and location-based Scope 2 emissions, and export to PDF and the official EFRAG Excel Digital Template — with self-serve billing, invoicing and Moldovan fiscal compliance behind it.
+A multi-tenant SaaS on which a Moldovan SME can produce a VSME Basic Module (B1–B11) sustainability report — and, since 25 Aug 2026 (OQ-12), the Comprehensive Module (C1–C9) additively over it — in Romanian, English or Russian, calculate Scope 1 and location-based Scope 2 emissions, and export to PDF and the official EFRAG Excel Digital Template.
 
 ### 5.2 The guiding architectural principle
 
@@ -153,7 +154,7 @@ EFRAG's Excel template and open-source converter are free, official and already 
 
 | # | Item | Note |
 |---|---|---|
-| 1 | Guided VSME **Basic Module** form, B1–B11 | Core reporting engine. Module choice is Basic at MVP |
+| 1 | Guided VSME **Basic Module** form, B1–B11 | Core reporting engine. Module choice is a **report-level flag** (D-A) — Basic is the default and Comprehensive is row 15, promoted into scope 25 Aug 2026 (OQ-12) |
 | 2 | Conditional-applicability logic as business rules | ≥50 employees turnover rate, ≥150 employees gender pay gap, site-driven biodiversity, sector-driven water — evaluated from B1, configured not hard-coded |
 | 3 | **Carbon footprint calculator** | Energy/fuel input → Scope 1 and location-based Scope 2 tCO2e → auto-populates B3. Raw inputs retained permanently in invoice units; every run pins its factor-set version |
 | 4 | Validation engine | Presence, applicability, consistency (taxonomy calculation linkbase), range/format and cross-period rules; the template's validation states reproduced as first-class platform states, because the taxonomy does not enforce them |
@@ -167,6 +168,7 @@ EFRAG's Excel template and open-source converter are free, official and already 
 | 12 | Administrative console | Content and translation publishing, taxonomy-version registration and migration runs, factor sets, thresholds, validation rules, plans, adoption metrics, time-boxed support access |
 | 13 | Regulatory-watch process | Quarterly cadence over EFRAG taxonomy releases, the value-chain-cap "necessary data points" classification, and Moldova's draft law — an ongoing function, not a kickoff task |
 | 14 | Training and onboarding materials | Carried forward from the ToR deliverables |
+| 15 | Guided VSME **Comprehensive Module** form, C1–C9, and the scope tier that sells it | **Added 25 Aug 2026 (OQ-12).** Additive over row 1 per D-A's report-level flag and NFR-2's element-name mirroring; carries its own conditional applicability, its own validation and export treatment, and a *Basic and Comprehensive* plan scope with upgrade pricing |
 
 Registered but **inactive** at MVP: the merchant-of-record path.
 
@@ -174,7 +176,7 @@ Registered but **inactive** at MVP: the merchant-of-record path.
 
 | # | Item | Disposition |
 |---|---|---|
-| 1 | VSME **Comprehensive Module** C1–C9 | Phase 2 |
+| 1 | VSME **Comprehensive Module** C1–C9 | **Promoted to §6.1 row 15 on 25 Aug 2026** (OQ-12, project owner). Was Phase 2, deferred on FR-177's reasoning that the schema already mirrors C1–C9 so the module is additive. The row is kept rather than deleted so the disposition column records the move and rows 2–6 keep their numbers |
 | 2 | **XBRL / iXBRL export** via EFRAG's self-hosted open-source converter | Phase 2. The integration port exists; the adapter is Phase 2 |
 | 3 | Company dashboards and deadline reminders beyond MVP notification categories | Phase 2 |
 | 4 | **Energy-provider and accounting-software integrations** | Phase 3. Genuine market white space and the hardest item; needs provider-by-provider scoping and a feasibility study |
@@ -395,3 +397,4 @@ Identifier conventions that all seven share: actor codes are `CA` / `RC` / `OA` 
 | OQ-9 | **What is the contractual status, if any, of Workiva, Greenstone/Cority and MALENA with the Moldovan government?** | Unconfirmed in any public source; the pairings exist only in internal draft documents. Must be resolved before any external communication references them |
 | OQ-10 | **Is `sustenabilitate.gov.md` live, and what does it host?** | Could not be reached from the research environment. Now a Model 6 consideration rather than the MVP's hosting target, but still unverified |
 | OQ-11 | **Which channel activates Model 6, and when?** | The original ToR is retained as a target-account brief for a ministry, chamber of commerce or EU-funded national initiative, but no timeline, counterparty or funding route has been fixed. Eligibility of Moldova for TSI-style funding via pre-accession or twinning mechanisms is also unverified. Also logged in `use_cases.md` OQ-2, `functional_requirements.md` OQ-6, `actors.md` OQ-5, `architecture.md` OQ-24 |
+| OQ-12 | **Closed 25 Aug 2026 — the Comprehensive Module C1–C9 is promoted into MVP scope, commercial tier included.** Authority: project owner. §6.2 row 1 is marked *Promoted* rather than deleted, so the disposition column records the move; §6.1 gains row 15; `functional_requirements.md` FR-177 leaves the deferred range; `use_cases.md` gains UC-183 … UC-192; `architecture.md` §15.4's third step and `task.md` carry the work. | **Raised by the design set, decided against it.** Seven prototypes carry Comprehensive — `Reporting Core` ("adds nine sections", cover and identity line), `Commerce` (a sellable *Basic → Basic and Comprehensive* tier with upgrade pricing), `Organization Admin` (disclosures hidden until a threshold is crossed), `Reporting Screens` (the module added mid-report), `Admin Console` (a Comprehensive taxonomy version), plus `Exported Document` and `Help Centre`. Under `design_spec.md` OQ-10 a prototype is a rendered reference and never a normative source, so that is evidence of intent rather than a decision — which is why this row exists instead of the design being read as settling it. **What the investigation changed:** the mechanism was already MVP and only the content was deferred. D-A makes *Basic vs Comprehensive a report-level flag driving form UI, validation and export*; NFR-2 mirrors element names for B1–B11 **and C1–C9**; FR-177 deferred the nine disclosures precisely because that made them "additive rather than a rework". Neither D-A's flag nor NFR-2's mirroring had a `task.md` row — MVP work, unplanned, and the reason the design looked out of scope when it was not. **Cost accepted:** R-8 re-scoped the timeline once already, and this adds nine disclosure modules, their conditional applicability, and a second sellable scope tier to a register that grew fourfold before. The trade is that the product boundary now matches what the design was drawn against, rather than the design running ahead of the scope it was drawn for. |

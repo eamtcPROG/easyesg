@@ -245,8 +245,18 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-180 | Browse the help centre | VI | Find guidance for the task in hand, signed in or not | MVP | FR-61 |
 | UC-181 | Read a published help article | VI | Follow one piece of guidance through to an answer | MVP | FR-61 |
 | UC-182 | Contact support | VI | Ask a question the published guidance does not answer | MVP | — |
+| UC-183 | Complete C1 — Strategy: business model and sustainability-related initiatives | RC | Describe the business model and the sustainability initiatives it carries | MVP | FR-177, FR-24, FR-27 |
+| UC-184 | Complete C2 — Practices, policies and future initiatives for the transition | RC | Extend B2's practices and policies to the transition toward a sustainable economy | MVP | FR-177, FR-24, FR-27 |
+| UC-185 | Complete C3 — GHG reduction targets and climate transition | RC | State reduction targets against a base year and the transition that meets them | MVP | FR-177, FR-24, FR-27 |
+| UC-186 | Complete C4 — Climate risks | RC | Disclose physical and transition climate risks and the response to them | MVP | FR-177, FR-24, FR-27 |
+| UC-187 | Complete C5 — Additional workforce characteristics | RC | Extend B8's headcount with the further breakdowns a lender asks for | MVP | FR-177, FR-24, FR-27 |
+| UC-188 | Complete C6 — Human rights policies and processes | RC | Disclose the policies and due-diligence processes covering own workforce | MVP | FR-177, FR-24, FR-27 |
+| UC-189 | Complete C7 — Severe negative human rights incidents | RC | Report severe incidents, or record their absence as a positive statement | MVP | FR-177, FR-24, FR-27 |
+| UC-190 | Complete C8 — Revenues from certain sectors and benchmark exclusion | RC | Answer the sector-exclusion question a bank's benchmark screening asks | MVP | FR-177, FR-24, FR-27 |
+| UC-191 | Complete C9 — Gender diversity ratio in the governance body | RC | Report the governance-body gender ratio | MVP | FR-177, FR-24, FR-27 |
+| UC-192 | Add the Comprehensive Module to a report in progress | RC | Extend a report already under way when a bank or large customer asks for Comprehensive scope | MVP | FR-177 |
 
-**Count:** 182 use cases — 20 CA, 32 RC, 49 OA, 22 PA, 27 BO, 26 SYS, 6 VI, across 38 modules. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7.
+**Count:** 192 use cases — 20 CA, 42 RC, 49 OA, 22 PA, 27 BO, 26 SYS, 6 VI, across 39 modules. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7.
 
 ---
 
@@ -321,6 +331,15 @@ Added 24 Aug 2026 with the Visitor actor, closing `design_spec.md` OQ-12. These 
 | Public tier | UC-177 … UC-182 | VI |
 
 Two of them carry an open question rather than a settled mechanism, stated in their §5 entries rather than resolved here: **UC-179** does not decide whether the cookie choice is *recorded* server-side or implied (`design_spec.md` OQ-16), and **UC-182** does not decide by what channel support is reached (`task.md` task 77). Both are registered because the goal is real and the screen exists; neither is specified past what the sources support.
+
+
+### 4.5 Comprehensive Module (UC-183 … UC-192)
+
+Added 25 Aug 2026 with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12, FR-177). Nine disclosures plus the act of adding the module to a report already in progress — the state `EasyESG Reporting Screens` draws and UC-192 names. Disclosure names follow the published EFRAG standard, because NFR-2 makes element names the schema's own vocabulary rather than labels over it. They are **additive over B1–B11 and share its mechanisms**: D-A's report-level scope flag drives which are shown, and conditional applicability, validation and both export formats are FR-27 … FR-32's, not parallel ones.
+
+| Module | Use cases | Primary actor |
+|---|---|---|
+| Comprehensive Module | UC-183 … UC-192 | RC |
 
 ---
 

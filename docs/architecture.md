@@ -2118,7 +2118,7 @@ Sequence, not phases of scope:
 
 1. **Foundation** — monorepo, CI gates, migrations, RLS roles and policies, tenant context, audit, outbox, configuration store.
 2. **Identity** — registration, verification, social sign-in, sessions, memberships, invitations, opt-in TOTP.
-3. **Reporting core** — organizations, entities, snapshots, periods, taxonomy registry, disclosure store, wizard, autosave.
+3. **Reporting core** — organizations, entities, snapshots, periods, taxonomy registry, disclosure store, wizard, autosave, and **D-A's report-level Basic/Comprehensive scope flag**. The flag lands here rather than with the Comprehensive content because it drives form UI, validation and export, and P-11 puts what is expensive to retrofit on day one; the nine C1–C9 disclosures are authored on top of it (FR-177, promoted into MVP scope 25 Aug 2026 per `problem_overview.md` OQ-12) and NFR-2 already mirrors their element names, so the module is additive rather than a rework.
 4. **Calculator and validation** — factor sets, calc runs, rule interpreter, inline state, roll-up.
 5. **Export** — preview, PDF pipeline, EFRAG Excel patching, export history. → *free-tier pilot milestone*
 6. **Notifications** — categories, in-app centre, email delivery, preferences. Earlier than their register position, because verification and invitation depend on the delivery mechanism.
