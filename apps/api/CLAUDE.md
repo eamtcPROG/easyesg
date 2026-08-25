@@ -86,6 +86,17 @@ the bootstrap reason above; `core.capture_field_change` attached with `last_acti
 `identity.session.active_organization_id` added as the expand half task 21 recorded. Nothing writes
 either new column until tasks 28 and 25.4.
 
+Task 25.2 adds the members API (UC-59, UC-62, UC-63, UC-64): `GET/PATCH/DELETE /api/v1/members`,
+`MembershipStoreRepository` — the **first repository that actually extends `TenantRepository`**, so
+every statement runs on the request's `QueryRunner` and none names an organization — and
+`@RequiresRole`, which composes `SetMetadata` **with** `UseGuards` so a route cannot carry the
+metadata and miss the gate. `wouldLeaveNoAdministrator` is a domain predicate shared by the role
+change and the removal, because FR-60's lockout arrives by both. Three refusals with three
+resolutions: 401 `authentication-required`, 403 `membership-required`, 403 `insufficient-role`.
+**These routes answer 401 in production until task 28** — fail-closed, and why they could ship ahead
+of `AuthGuard` rather than wait for it. The task-11 identity fixture moved to
+`test/support/request-identity.fixture.ts` and now carries `role`.
+
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
 other than health, `/auth` and `/auth/admin`, and almost every module body — 33 of the 35
@@ -424,6 +435,12 @@ because a trigger that never fires looks exactly like one that was never created
   `TypeError` on a property of what should have been a row. Normalise at the call site — see
   `returnedRows` in `persistence/identity/account-store.repository.ts` — rather than remembering
   which command you are in. Found on task 19, on the first `UPDATE ... RETURNING` in the codebase.
+- **`EntityManager.query` and `QueryRunner.query` take their row type differently, and neither
+  spelling works for the other.** `EntityManager.query<Row[]>(sql, params)` is generic and
+  unoverloaded, so a trailing `as Row[]` is flagged by `no-unnecessary-type-assertion`.
+  `QueryRunner.query` carries a `useStructuredResult` overload, so a type argument selects the wrong
+  signature (TS2558) and the assertion is the only form. Same call, two spellings, each forced —
+  `membership-store.repository.ts` and `account-store.repository.ts` are the two worked examples.
 - **jest hands a test a *copy* of `process`**, so `process.loadEnvFile()` in a spec mutates a
   sandbox and real credentials never arrive — the symptom is a SASL error naming the password,
   which reads as a database fault. Load env before jest starts, as `db:invariants` does.
@@ -546,5 +563,14 @@ because dependency-cruiser matches npm dependencies by *resolved* path, so `^@ne
   An `{id}` in a tenant path is a second, contradictory source of tenancy.
 - Nothing long-running in the request tier (AD-10). Long work is `202` + job id, enqueued **through
   the outbox** — `api` never enqueues directly.
+- Gate it with `@RequiresRole(...)` or record why it is public. The decorator applies its own
+  guard, so there is no second thing to remember — but a route that declares neither is open, and
+  no decorator can catch that. Until task 28's chain, "closed by default" is a review property.
 - Gate it with `@RequiresEntitlement(key)` or record why it needs no key.
-- Regenerate and commit the spec: `pnpm openapi:check` fails otherwise.
+- A list handler returns a bare array and is annotated `@ApiListResponse(Dto, …)`. Annotating it
+  `@ApiOkResponse({ type: [Dto] })` publishes a contract saying the body IS an array, while
+  `ResultListDto` arrives — the generated client then reads `response[0]` where `response.objects[0]`
+  is.
+- Regenerate and commit the spec: `pnpm openapi:check` fails otherwise. It compares the working tree
+  to the index, so **staging the regenerated files is what makes it pass** — the gate is "the spec
+  in the commit matches the source in the commit", not "the spec is unchanged".

@@ -535,6 +535,133 @@
         ]
       }
     },
+    "/api/v1/members": {
+      "get": {
+        "description": "Answers \"who can see our ESG data\": every active member with their role, status and last activity. Unpaginated by design — the collection is bounded by the plan’s seat entitlement. Pending invitations are a separate resource and do not appear here.",
+        "operationId": "MembersController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The organization’s members.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/MemberResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller holds no membership in an active organization (problem type membership-required), or holds one in a role that is not organization_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "List everyone with access to the active organization",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/members/{membershipId}": {
+      "patch": {
+        "description": "Takes effect on that member’s next request rather than at their next login, because the role is read from the membership record per request and is never carried in a token. Granting organization_administrator is how a second administrator is created, which is what makes demoting or removing the first one permissible.",
+        "operationId": "MembersController_changeRole",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeMemberRoleRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The role was changed."
+          },
+          "404": {
+            "description": "No active member of this organization has that membership id.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The change would leave the organization with no Organization Administrator (problem type last-administrator). Promote another member first.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Change a member’s role, or promote them to Organization Administrator",
+        "tags": [
+          "identity"
+        ]
+      },
+      "delete": {
+        "description": "Ends access without deleting the account or the member’s attributed history: their contributions remain attributed in the change history, and the membership record is retained showing when access was granted and withdrawn. Their sessions are not ended — the next request they make is simply refused, and they keep access to any other organization they belong to.",
+        "operationId": "MembersController_remove",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Access was withdrawn."
+          },
+          "404": {
+            "description": "No active member of this organization has that membership id.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "Removing this member would leave the organization with no Organization Administrator (problem type last-administrator). Promote another member first.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Remove a member’s access to the organization",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -1095,6 +1222,112 @@
           "codeVerifier",
           "redirectUri",
           "intent"
+        ]
+      },
+      "ResultListDto": {
+        "type": "object",
+        "properties": {
+          "htmlcode": {
+            "type": "number",
+            "example": 200
+          },
+          "objects": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 137
+          },
+          "totalpages": {
+            "type": "number",
+            "example": 6
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageDto"
+            }
+          }
+        },
+        "required": [
+          "htmlcode",
+          "objects",
+          "total",
+          "totalpages",
+          "messages"
+        ]
+      },
+      "MemberResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifies this membership for a role change or a removal."
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account holding the membership."
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "editor",
+              "viewer",
+              "organization_administrator"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "removed"
+            ],
+            "description": "Always active in this list: a removed membership is history rather than access. Pending invitations are a separate resource and are not members."
+          },
+          "lastActiveAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds of the last request this member made against the organization, or null if they have not returned since being granted access."
+          },
+          "joinedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when access was granted."
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "email",
+          "role",
+          "status",
+          "lastActiveAt",
+          "joinedAt"
+        ]
+      },
+      "ChangeMemberRoleRequestDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "editor",
+              "viewer",
+              "organization_administrator"
+            ],
+            "description": "The role to grant. Setting the role a member already holds is permitted and changes nothing. Granting organization_administrator is how a second administrator is created."
+          }
+        },
+        "required": [
+          "role"
         ]
       },
       "AdminChallengeResponseDto": {

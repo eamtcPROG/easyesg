@@ -55,6 +55,19 @@
     },
     "social-redirect-rejected": {
       "title": "Invalid sign-in request"
+    },
+    "not-found": {
+      "title": "Not found"
+    },
+    "membership-required": {
+      "title": "No active organisation"
+    },
+    "insufficient-role": {
+      "title": "Not permitted for your role"
+    },
+    "last-administrator": {
+      "title": "Last administrator",
+      "detail": "The organisation would be left with no administrator, so the change was not applied. Give another member the administrator role first, then try again."
     }
   },
   "validation": {},
@@ -80,6 +93,13 @@
     },
     "password_reset": {
       "token_invalid": "This reset link is no longer valid, so the password has not been changed. Links last 60 minutes and work only once — request a new one from the sign-in page."
+    },
+    "membership": {
+      "authentication_required": "The request arrived without a valid session, so it was not processed. Sign in and try again.",
+      "membership_required": "Your account has access to no organisation, so this page cannot be shown. Create an organisation, or accept the invitation sent to your email address.",
+      "insufficient_role": "Your role in this organisation does not cover managing users, so the action was not carried out. Ask an administrator of the organisation to do it.",
+      "member_not_found": "That member no longer belongs to this organisation, so the change could not be applied. Refresh the list to see where things stand.",
+      "last_administrator": "This is the organisation’s only administrator, so taking away the role or the access would lock everyone out of its settings. Promote another member to administrator first, then repeat the action."
     }
   },
   "notification": {

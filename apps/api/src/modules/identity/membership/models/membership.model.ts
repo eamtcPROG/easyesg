@@ -73,3 +73,32 @@ export interface Membership {
   readonly lastActiveAt: Date | null;
   readonly createdAt: Date;
 }
+
+/**
+ * A member as UC-59 lists them (FR-56) — the membership joined to the account it grants access to.
+ *
+ * **The account is joined, not referenced**, because "who can see our ESG data" is unanswerable
+ * from a column of identifiers: S-16 exists to be read by a person deciding whether the list is
+ * right, and an OA cannot recognise a colleague from a UUID.
+ *
+ * Two of FR-56's four fields are honest gaps rather than omissions, and both close in a named task:
+ *
+ *  - **`status` is never `pending` here.** FR-56 asks for "active or pending invitation" and S-16
+ *    renders one list, but a pending invitation is an `identity.invitation` row (task 26.1) and not
+ *    a member of anything. The union happens in the read model when the other half exists.
+ *  - **`lastActiveAt` is null until task 28.** Nothing writes `last_active_at` before `AuthGuard`
+ *    resolves a request against the membership row. Serving null is the truthful answer; defaulting
+ *    it to `createdAt` would report a fact about the invitation as a fact about the person.
+ *
+ * There is no display name, and that is FR-9's profile rather than this list's gap — registration
+ * collects an address and a password and nothing else (UC-01).
+ */
+export interface OrganizationMember {
+  readonly membershipId: string;
+  readonly accountId: string;
+  readonly email: string;
+  readonly role: MembershipRole;
+  readonly status: MembershipStatus;
+  readonly lastActiveAt: Date | null;
+  readonly joinedAt: Date;
+}

@@ -208,6 +208,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List everyone with access to the active organization
+         * @description Answers "who can see our ESG data": every active member with their role, status and last activity. Unpaginated by design — the collection is bounded by the plan’s seat entitlement. Pending invitations are a separate resource and do not appear here.
+         */
+        get: operations["MembersController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/{membershipId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a member’s access to the organization
+         * @description Ends access without deleting the account or the member’s attributed history: their contributions remain attributed in the change history, and the membership record is retained showing when access was granted and withdrawn. Their sessions are not ended — the next request they make is simply refused, and they keep access to any other organization they belong to.
+         */
+        delete: operations["MembersController_remove"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a member’s role, or promote them to Organization Administrator
+         * @description Takes effect on that member’s next request rather than at their next login, because the role is read from the membership record per request and is never carried in a token. Granting organization_administrator is how a second administrator is created, which is what makes demoting or removing the first one permissible.
+         */
+        patch: operations["MembersController_changeRole"];
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -429,6 +473,48 @@ export interface components {
              * @enum {string}
              */
             intent: "sign-in" | "register";
+        };
+        ResultListDto: {
+            /** @example 200 */
+            htmlcode: number;
+            objects: unknown[][];
+            /** @example 137 */
+            total: number;
+            /** @example 6 */
+            totalpages: number;
+            messages: components["schemas"]["MessageDto"][];
+        };
+        MemberResponseDto: {
+            /**
+             * Format: uuid
+             * @description Identifies this membership for a role change or a removal.
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description The account holding the membership.
+             */
+            accountId: string;
+            /** Format: email */
+            email: string;
+            /** @enum {string} */
+            role: "editor" | "viewer" | "organization_administrator";
+            /**
+             * @description Always active in this list: a removed membership is history rather than access. Pending invitations are a separate resource and are not members.
+             * @enum {string}
+             */
+            status: "active" | "removed";
+            /** @description Unix epoch milliseconds of the last request this member made against the organization, or null if they have not returned since being granted access. */
+            lastActiveAt: number | null;
+            /** @description Unix epoch milliseconds when access was granted. */
+            joinedAt: number;
+        };
+        ChangeMemberRoleRequestDto: {
+            /**
+             * @description The role to grant. Setting the role a member already holds is permitted and changes nothing. Granting organization_administrator is how a second administrator is created.
+             * @enum {string}
+             */
+            role: "editor" | "viewer" | "organization_administrator";
         };
         AdminChallengeResponseDto: {
             /**
@@ -915,6 +1001,117 @@ export interface operations {
             };
             /** @description Too many completion attempts from this address in the window. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    MembersController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The organization’s members. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["MemberResponseDto"][];
+                    };
+                };
+            };
+            /** @description The caller holds no membership in an active organization (problem type membership-required), or holds one in a role that is not organization_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    MembersController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Access was withdrawn. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No active member of this organization has that membership id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Removing this member would leave the organization with no Organization Administrator (problem type last-administrator). Promote another member first. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    MembersController_changeRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeMemberRoleRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The role was changed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No active member of this organization has that membership id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The change would leave the organization with no Organization Administrator (problem type last-administrator). Promote another member first. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

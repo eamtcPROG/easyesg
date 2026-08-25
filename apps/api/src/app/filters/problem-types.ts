@@ -49,6 +49,11 @@ export const ProblemType = {
   MfaRequired: 'mfa-required',
   MembershipRequired: 'membership-required',
   InsufficientRole: 'insufficient-role',
+  /** FR-60's single-admin lockout, refused rather than permitted: demoting or removing the last
+   *  Organization Administrator would leave nobody able to reach the organization's settings. Its
+   *  own slug rather than the generic `conflict`, because S-16 has to name the specific way out —
+   *  promote someone else first — and a front end cannot branch on wording (task 25.2). */
+  LastAdministrator: 'last-administrator',
   EntitlementDenied: 'entitlement-denied',
   EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
   TenantContextMissing: 'tenant-context-missing',

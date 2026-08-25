@@ -1,5 +1,6 @@
 import { applyDecorators, type Type } from '@nestjs/common';
 import { ApiExtraModels, ApiResponse, getSchemaPath } from '@nestjs/swagger';
+import { ResultListDto } from '../dto/result-list.dto';
 import { ResultObjectDto } from '../dto/result-object.dto';
 
 /**
@@ -32,6 +33,33 @@ export const ApiObjectResponse = <T extends Type<unknown>>(
         allOf: [
           { $ref: getSchemaPath(ResultObjectDto) },
           { properties: { object: { $ref: getSchemaPath(model) } } },
+        ],
+      },
+    }),
+  );
+
+/**
+ * The list half of the same argument, for a handler returning an array.
+ *
+ * `GlobalResponseInterceptor` wraps a bare array in `ResultListDto` as "one page containing all
+ * of it", so a handler annotated `@ApiOkResponse({ type: [MemberDto] })` would publish a contract
+ * saying the body IS an array — and `@easyesg/contracts` would generate a client that reads
+ * `response[0]` where `response.objects[0]` arrives. Same drift as the object case, one level
+ * further out, and equally invisible until a front end consumes it.
+ */
+export const ApiListResponse = <T extends Type<unknown>>(
+  model: T,
+  options: { status: number; description: string },
+) =>
+  applyDecorators(
+    ApiExtraModels(ResultListDto, model),
+    ApiResponse({
+      status: options.status,
+      description: options.description,
+      schema: {
+        allOf: [
+          { $ref: getSchemaPath(ResultListDto) },
+          { properties: { objects: { type: 'array', items: { $ref: getSchemaPath(model) } } } },
         ],
       },
     }),

@@ -2,7 +2,6 @@ import { Controller, Get, Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { getDataSourceToken } from '@nestjs/typeorm';
-import type { NextFunction, Request, Response } from 'express';
 import request from 'supertest';
 import type { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
@@ -11,6 +10,7 @@ import { configureHttpApp } from '../src/main.http';
 import { CORE_DATA_SOURCE } from '../src/infrastructure/persistence/data-source';
 import { requestContext } from '../src/infrastructure/persistence/request-context';
 import { TenantRepository } from '../src/infrastructure/persistence/tenant-repository';
+import { requestIdentityFixture } from './support/request-identity.fixture';
 
 /**
  * T-11's mitigation, exercised through a real request rather than asserted in prose.
@@ -20,12 +20,10 @@ import { TenantRepository } from '../src/infrastructure/persistence/tenant-repos
  * `app.current_org` is unset, so a query that missed the transaction succeeds and returns nothing.
  * That reads downstream as "this customer has no data" and survives review, staging and a demo.
  *
- * **The organization is supplied by a fixture, and that is deliberate.** `AuthGuard` is task 28 and
- * the membership table is task 25, so nothing resolves an active organization yet. The fixture
- * lives here in `test/` rather than as a header or query seam in production code: an organization
- * arriving from a request header is exactly what AD-2 and UX-2 forbid, and a seam that exists in
- * shipped code is one deploy away from being a tenancy bypass. It is installed as middleware
- * because middleware is guaranteed to run before every guard, where `AuthGuard` will sit.
+ * **The organization is supplied by a fixture, and that is deliberate.** `AuthGuard` is task 28, so
+ * nothing resolves an active organization yet. The fixture moved to `test/support/` with task 25.2,
+ * which needed the same stand-in to reach a role-gated route; its header carries the reasoning for
+ * why it lives in `test/` and never in shipped code.
  */
 
 const ORGANIZATION = '01920000-0000-7000-8000-000000000001';
@@ -68,7 +66,7 @@ class ProbeAppModule {}
 describe('tenant context propagation (AD-2, T-11)', () => {
   let app: NestExpressApplication;
   let dataSource: DataSource;
-  let organizationIsBound = false;
+  const identity = requestIdentityFixture();
 
   beforeAll(async () => {
     await initialiseCatalogue();
@@ -82,16 +80,7 @@ describe('tenant context propagation (AD-2, T-11)', () => {
     // The fixture standing in for AuthGuard, added after configureHttpApp so it runs after the
     // correlation middleware that opens the context it writes into, and before every guard, which
     // is where the real resolution will land.
-    app.use((_req: Request, _res: Response, next: NextFunction) => {
-      if (organizationIsBound) {
-        const ctx = requestContext();
-        if (ctx) {
-          ctx.organizationId = ORGANIZATION;
-          ctx.actorId = ACTOR;
-        }
-      }
-      next();
-    });
+    app.use(identity.middleware);
 
     await app.init();
     dataSource = app.get<DataSource>(getDataSourceToken(CORE_DATA_SOURCE));
@@ -117,7 +106,7 @@ describe('tenant context propagation (AD-2, T-11)', () => {
 
   describe('with an organization bound', () => {
     beforeAll(() => {
-      organizationIsBound = true;
+      identity.actAs({ organizationId: ORGANIZATION, actorId: ACTOR });
     });
 
     it('carries it into the database session setting', async () => {
@@ -134,7 +123,7 @@ describe('tenant context propagation (AD-2, T-11)', () => {
 
   describe('with no organization bound', () => {
     beforeAll(() => {
-      organizationIsBound = false;
+      identity.actAs(null);
     });
 
     // No transaction is opened at all, so nothing is bound and no connection is taken. This is what

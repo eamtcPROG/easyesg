@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { QueryRunner } from 'typeorm';
 import type { Locale } from '@easyesg/i18n';
+import type { MembershipRole } from '@api/modules/identity/membership/models/membership.model';
 
 /**
  * The one AsyncLocalStorage in the process.
@@ -30,6 +31,17 @@ export interface RequestContext {
   actorId?: string;
   /** Resolved by the server-side membership lookup, which is what AD-2 grounds RLS on. */
   organizationId?: string;
+  /**
+   * The actor's role **in `organizationId`**, from the same membership lookup — never from a token
+   * claim (AD-12 carries identity only). Resolved per request rather than per session, which is
+   * exactly what makes FR-58's "next request, not next login" true by construction: a demotion
+   * committed at 10:00 binds at 10:00:01 without the member re-authenticating.
+   *
+   * Read by `RequiresRoleGuard` (task 25.2). Written by `AuthGuard` (task 28); until then only the
+   * e2e identity fixture writes it, and the guard refuses when it is absent — so a route carrying
+   * `@RequiresRole` is closed rather than open while the resolver does not exist.
+   */
+  role?: MembershipRole;
   /** Opened by TenantTransactionGuard. Every tenant query runs on this (AD-14). */
   queryRunner?: QueryRunner;
 }

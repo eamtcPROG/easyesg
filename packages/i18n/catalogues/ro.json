@@ -55,6 +55,19 @@
     },
     "social-redirect-rejected": {
       "title": "Cerere de autentificare invalidă"
+    },
+    "not-found": {
+      "title": "Element inexistent"
+    },
+    "membership-required": {
+      "title": "Nicio organizație activă"
+    },
+    "insufficient-role": {
+      "title": "Permisiuni insuficiente"
+    },
+    "last-administrator": {
+      "title": "Ultimul administrator",
+      "detail": "Organizația ar rămâne fără administrator, așa că modificarea nu a fost aplicată. Acordați mai întâi rolul de administrator altui membru, apoi reluați."
     }
   },
   "validation": {},
@@ -80,6 +93,13 @@
     },
     "password_reset": {
       "token_invalid": "Linkul de resetare nu mai este valabil, așa că parola nu a fost schimbată. Linkurile expiră după 60 de minute și pot fi folosite o singură dată — cereți unul nou de pe pagina de autentificare."
+    },
+    "membership": {
+      "authentication_required": "Cererea a fost făcută fără o sesiune validă, așa că nu a fost procesată. Autentificați-vă și încercați din nou.",
+      "membership_required": "Contul dumneavoastră nu are acces la nicio organizație, așa că această pagină nu poate fi afișată. Creați o organizație sau acceptați invitația primită prin e-mail.",
+      "insufficient_role": "Rolul pe care îl aveți în această organizație nu permite administrarea utilizatorilor, așa că acțiunea nu a fost efectuată. Cereți-i unui administrator al organizației să o facă.",
+      "member_not_found": "Membrul indicat nu mai face parte din această organizație, așa că nu am putut aplica modificarea. Reîmprospătați lista pentru a vedea situația curentă.",
+      "last_administrator": "Acesta este singurul administrator al organizației, așa că retragerea rolului sau a accesului ar bloca accesul la setări. Promovați întâi un alt membru ca administrator, apoi reluați acțiunea."
     }
   },
   "notification": {

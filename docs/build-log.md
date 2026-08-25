@@ -1889,3 +1889,100 @@ sides (an account sees its own rows in an organization it is not acting for, and
 it never sees that organization's *other* members). The capture trigger was exercised directly:
 a `viewer → editor` role change and an `active → removed` removal both record with the acting
 administrator attributed, and a `last_active_at` touch between them produces no row at all.
+
+## Task 25.2 — the members API, and a gate that cannot be half-applied · 2026-08-25
+
+UC-59, UC-62, UC-63 and UC-64 behind `GET`, `PATCH` and `DELETE` on `/api/v1/members` — the first
+non-public routes in the API, and the first tenant-scoped repository that actually extends
+`TenantRepository` rather than being one of the exemptions its header lists.
+
+**Four use cases became three, and the arithmetic is the decision.** `use_cases.md` lists UC-62 and
+UC-64 separately because their *business rules* differ, not their mechanism: both are a role change,
+one carrying "effect on next request rather than next login" and the other the single-admin lockout.
+A `GrantOrganizationAdministrator` class calling `ChangeMemberRole` with the role fixed would be the
+pass-through `CLAUDE.md` warns against — and worse, it would put the lockout rule in the one path
+that cannot cause a lockout. The rule went where it bites instead: `wouldLeaveNoAdministrator` is a
+domain predicate with two callers, because **demotion and removal are the same lockout**, and FR-60
+is unmet by a promotion path alone.
+
+**The gate is a guard, decided in the unknowns batch against the recommendation.** The
+recommendation was to put the check in the use case — framework-free, unbypassable by a route that
+forgets a decorator. The guard was chosen, and the forgotten-decorator risk was then answered
+structurally rather than accepted: `@RequiresRole` composes `SetMetadata` **and** `UseGuards`, so
+metadata and enforcement cannot separate. The conventional shape — global `APP_GUARD` plus per-route
+metadata — has exactly that hole, and the `nestjs-best-practices` skill's own `RolesGuard` example
+demonstrates it: it returns `true` when no metadata is present, so a route that forgets `@Roles` is
+open and looks gated. `no-circular` charged for the composition immediately (decorator → guard →
+decorator); the metadata key moved to `constants/`, which is where a contract between two files
+belongs.
+
+Two further departures from that skill, both architecture-over-skill and both recorded on the guard:
+it reads `RequestContext`, not `request.user` from a JWT — AD-12 leaves the token empty of
+authorization consequence, so there is no claim to read — and it throws `DomainError` subclasses
+rather than `ForbiddenException`, because the caller is a signed-in colleague who needs NFR-79's
+"what now" and a front end that can branch. Three refusals, three resolutions: `401
+authentication-required` (sign in), `403 membership-required` (join or create an organization), `403
+insufficient-role` (ask an administrator). `AdminOriginGuard`'s deliberately bare `403` is the
+opposite case and stays as it is — a cross-origin forger gets nothing to calibrate against.
+
+**The task-11 fixture moved to `test/support/request-identity.fixture.ts`**, as task 28.1's row
+already promised it would be replaced. It now carries `role` alongside the actor and the
+organization, because all three come from one membership lookup in the real guard and a fixture
+supplying two of them would model a state that cannot occur. It stays in `test/` for the reason its
+header gives: a seam that exists in shipped code is one deploy away from being a tenancy bypass.
+
+**These routes answer 401 in production and will until task 28**, and that is the fail-closed
+direction rather than a gap — `AuthGuard` is what resolves actor, organization and role, and the
+guard refuses all three absences. It is also why they could ship ahead of their resolver instead of
+waiting for it. The e2e asserts that state explicitly, as one row of the matrix.
+
+**The role matrix is a matrix.** Five actors × three actions, driven over real HTTP: administrator,
+editor, viewer, an administrator *of another organization* — the case a matrix written in role names
+alone would miss, since the role is a property of the pair and not of the person — and an anonymous
+caller. `requires-role.guard.spec.ts` proves the decision with no HTTP, no database and no
+container; `members.e2e-spec.ts` proves it reaches the routes, which is a different claim, because a
+guard that is right and unapplied looks identical in a unit test.
+
+**RLS caught the test twice, from both sides, and both are recorded in the spec.** `unseed`'s
+`DELETE FROM core.organization` with no tenant bound removed nothing and did not fail, so the next
+`seed()` hit a duplicate key and blamed the insert. Then the verification `SELECT` returned an empty
+result and the assertion read as "the row is not there" when the row was there and the reader was
+not. Both are the "reads as no data rather than as an error" failure AD-2 describes — one from the
+writing side, one from the reading side — and between them they are the whole argument for
+`TenantRepository` throwing rather than returning zero rows.
+
+Decisions and costs worth having in one place:
+
+- **`/members`, not `/memberships`.** The active organization is never in the URL (AD-2, UX-2), so
+  the collection is flatly "the active organization's". That deliberately leaves `/memberships` for
+  task 25.3, which answers the genuinely different question of which organizations the *caller*
+  belongs to. A member is addressed by the membership's own id — it is what is being changed, it is
+  what the list returns, and it keeps account identifiers out of URLs.
+- **Unpaginated, by decision.** `GlobalResponseInterceptor` already treats a bare array as "one page
+  containing all of it", and the collection is bounded by the plan's seat entitlement. Publishing
+  query grammar with no reader would be speculative; S-16's Index filter and sort work client-side
+  over a set this size. `ApiListResponse` was needed regardless — it is the list half of
+  `ApiObjectResponse`, and without it the contract would claim the body *is* an array while
+  `ResultListDto` arrives.
+- **A new problem type**, `last-administrator`, over the generic `conflict`: S-16 must name the way
+  out (UX-70, NFR-79) and a front end cannot branch on wording. Wording is in all three catalogues,
+  separately authored.
+- **FR-56's list has two honest gaps**, both asserted rather than left to be discovered on S-16.
+  `lastActiveAt` is null until task 28 writes it, and `status` is never `pending` — a pending
+  invitation is an `identity.invitation` row (task 26.1), so S-16's single list is a union the read
+  model will make when its other half exists.
+- **A removed member's sessions are not revoked**, and it reads like an omission. AD-12 re-reads the
+  role and organization per request, so their next request is refused anyway; revoking would also
+  sign them out of *other* organizations they belong to (FR-12), which this administrator holds no
+  authority over.
+- **FR-58 needed no code.** "Next request, not next login" is true because nothing caches the role
+  into a session or a token — so there is nothing to invalidate.
+- **The lockout count is read inside the request transaction.** Two administrators demoting each
+  other concurrently would both succeed against a count read outside it, and land in the state FR-60
+  exists to prevent by the one path nobody tests.
+
+Verified: `pnpm gates` — 224 unit tests (32 suites), the 24-case members e2e, and the contract
+regenerated with two new paths and three new schemas, additive only. Three lint findings were real
+and are worth the line: `EntityManager.query` is generic and unoverloaded where `QueryRunner.query`
+carries a `useStructuredResult` overload, so the two take a type argument and an assertion
+respectively — same call, two spellings, each forced.

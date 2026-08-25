@@ -585,6 +585,7 @@ This is the only way those obligations stay true across 173 requirements.
 |---|---|---|
 | `AuthGuard` | Server-side evaluation on every request; the interface layer is untrusted. Resolves session → user → membership → active organization | FR-4 … FR-8, NFR-62 |
 | `TenantTransactionGuard` | Opens the transaction and sets `app.current_org` / `app.current_user` transaction-locally (AD-2). A handler reaching the database outside this transaction gets no tenant context and therefore no rows — a fail-closed default | NFR-63 |
+| `RequiresRoleGuard` | `@RequiresRole(MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR)`, reading the role `AuthGuard` resolved onto the request context — never a token claim, which AD-12 leaves empty of authorization consequence. Added 25 Aug 2026 with task 25.2 | FR-158, NFR-62 |
 | `EntitlementGuard` | `@RequiresEntitlement('report.export.pdf')` decorator, so the gated capability contains no gating logic | FR-100, NFR-17 |
 | `AuditInterceptor` | Attributes every state-changing action to an actor with a timestamp, across reporting, administration and billing alike | FR-159 |
 
@@ -595,6 +596,20 @@ before any interceptor**, and `EntitlementGuard` reads per-organization subscrip
 needs `app.current_org` already bound. An interceptor cannot open a transaction that a guard
 running earlier depends on. It is therefore a **guard**, `TenantTransactionGuard`, and the naming
 is corrected here rather than left to a working-notes file.
+
+**`@RequiresRole` applies its own guard, and that is the row's point rather than an implementation
+note. Decided 25 Aug 2026 (task 25.2).** The conventional shape registers the guard globally and
+sets metadata per route, which leaves the guard ubiquitous and the *gate* opt-in: a route carrying
+the metadata and not the guard is open, and a route carrying neither is open, and both read as gated
+in review. The decorator therefore composes `SetMetadata` with `UseGuards`, so the two cannot
+separate. What that does not solve — a route declaring neither — is `AuthGuard`'s, because
+"authenticated by default" is a property of the chain and not of any decorator.
+
+It refuses in three distinguishable ways, and the distinction is required rather than decorative:
+no resolved actor is `401 authentication-required`, an actor with no active organization is
+`403 membership-required`, and a member in the wrong role is `403 insufficient-role`. NFR-79 makes
+each a different "what now" — sign in, join or create an organization, ask an administrator — and a
+front end cannot branch on wording.
 
 Two consequences follow and are worth stating, because both are easy to get wrong once:
 
@@ -1154,7 +1169,7 @@ The port is where the external model is translated into the platform's own: an `
 | Verification, reset, invitation | Single-use, high-entropy, time-limited tokens; uniform responses regardless of account existence | FR-3, FR-6, FR-11, NFR-64 |
 | Session | ≤ 15-min JWT carrying `session_id` only + server-side revocable refresh (AD-12) | FR-5 … FR-8 |
 | Active organization | Session-scoped — `identity.session.active_organization_id`, resolved server-side per request, never from a claim or a path segment (§6.5, task 25.1) | FR-12 |
-| Authorization | Server-side per request, role in active org + per-report rights | FR-158, NFR-62 |
+| Authorization | Server-side per request, role in active org + per-report rights. `RequiresRoleGuard` reads the role from the request context, which `AuthGuard`'s membership lookup wrote — so a role change binds on the member's next request rather than at their next sign-in (§6.2, task 25.2) | FR-158, NFR-62 |
 | Tenant isolation | RLS (AD-2) | NFR-63 |
 | Tenant MFA | **Opt-in TOTP**, available to any user, recommended to Organization Administrators (amended — §17.1) | — |
 | Admin surface | Separate host, IP allowlist, mandatory MFA, separate cookie scope and credential store | FR-75, NFR-65 |
