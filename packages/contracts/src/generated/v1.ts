@@ -252,6 +252,26 @@ export interface paths {
         patch: operations["MembersController_changeRole"];
         trace?: never;
     };
+    "/api/v1/memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the organizations the signed-in account belongs to
+         * @description Every organization the caller is an active member of, with the role held in each and the organization’s name for display. An empty list is a normal answer — a verified account holds no membership until it creates an organization or accepts an invitation — and it is what sends a new user to create their first one.
+         */
+        get: operations["MembershipsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -515,6 +535,27 @@ export interface components {
              * @enum {string}
              */
             role: "editor" | "viewer" | "organization_administrator";
+        };
+        AccountMembershipResponseDto: {
+            /**
+             * Format: uuid
+             * @description Identifies this membership.
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description The organization the caller belongs to.
+             */
+            organizationId: string;
+            /** @description Shown in the organization switcher and on the home screen. */
+            organizationName: string;
+            /**
+             * @description The role held in THIS organization. It may differ in each of them.
+             * @enum {string}
+             */
+            role: "editor" | "viewer" | "organization_administrator";
+            /** @description Unix epoch milliseconds when access was granted. */
+            joinedAt: number;
         };
         AdminChallengeResponseDto: {
             /**
@@ -1112,6 +1153,37 @@ export interface operations {
             };
             /** @description The change would leave the organization with no Organization Administrator (problem type last-administrator). Promote another member first. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    MembershipsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller’s memberships, ordered by organization name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["AccountMembershipResponseDto"][];
+                    };
+                };
+            };
+            /** @description No signed-in account (problem type authentication-required). */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

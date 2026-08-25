@@ -1986,3 +1986,91 @@ regenerated with two new paths and three new schemas, additive only. Three lint 
 and are worth the line: `EntityManager.query` is generic and unoverloaded where `QueryRunner.query`
 carries a `useStructuredResult` overload, so the two take a type argument and an assertion
 respectively — same call, two spellings, each forced.
+
+## Task 25.3 — the membership read, and a policy that is inert when it matters · 2026-08-25
+
+UC-16's *view memberships* half (FR-12) behind `GET /api/v1/memberships`, plus the pure function
+task 28's guard will resolve an active organization with.
+
+**A recommendation was wrong on a load-bearing premise, and the correction is the interesting part
+of this task.** The unknowns batch asked how organization *names* become reachable across
+memberships — `core.organization` is readable only as the bound tenant, so a member of three
+organizations read three membership rows and zero names, and the switcher would have been a list of
+UUIDs. Three options went up and the batch chose the one recommended: a parameterless
+`SECURITY DEFINER` function returning exactly the columns the switcher needs, on the argument that a
+permissive policy would widen the tenant root for every future reader just as task 29 puts IDNO,
+registered address and contact details on that row.
+
+**It returns nothing.** `SECURITY DEFINER` runs as the function's owner, `esg_migrator` owns
+`core.organization`, and §7.6's `FORCE ROW LEVEL SECURITY` subjects an owner to its own policies —
+task 25.1's guarantee working exactly as written, against the thing that was meant to escape it.
+Measured before building on it, which is the only reason it cost a probe rather than a day. Making
+it work needs a fifth cluster role holding `BYPASSRLS`, and `CREATE ROLE` is cluster-level: it lives
+in `infra/postgres/init/init.sh` outside the migration ledger, so the migration creating the
+function would depend on a bootstrap step nothing tracks, and §7.6's four-role table would need
+amending.
+
+Probing that turned up a shape better than either option originally offered: **a policy conditioned
+on no organization being bound.**
+
+```sql
+FOR SELECT USING (<no organization bound> AND EXISTS (<active membership for the bound account>))
+```
+
+The first conjunct is the whole design. That state is not incidental — it is precisely the moment
+`AuthGuard` and the switcher read in, and it cannot occur during a request that has already resolved
+a tenant. So the pre-tenant read gets its names, and every ordinary request sees exactly what it saw
+yesterday: one row. Nothing widens for task 29, and the isolation suite's central assertion — *"no
+`WHERE` clause anywhere. That absence is the assertion"* — survives intact. The correction went back
+to the project owner rather than being taken silently, because the mechanism was theirs to choose
+and the premise they chose it on had turned out to be false.
+
+**The conjunct is proven load-bearing, not assumed.** Recreating the policy without it, in a
+rolled-back transaction: a request bound to Alpha, by a member of Alpha and Beta, sees **two**
+organizations. With it, one. `tenant-isolation.e2e-spec.ts` asserts all four states — pre-tenant
+read, bound read, unbound-actor read, and an organization dropping out after FR-59 removal — as both
+roles, and the second of those is the only test in the repository that would fail if the conjunct
+were dropped.
+
+**The selector is a function, not a guard, and that is 25.3's stated deliverable.**
+`selectActiveMembership({ memberships, preferredOrganizationId })` turns the session's
+`active_organization_id` (task 25.1's column) plus the list into the one membership to bind. Inside
+a guard those rules would be reachable only through a full session-plus-database-plus-HTTP test, so
+two of the four cases would never have been written. As a function they are seven lines of spec.
+The rule worth naming: **a stale preference degrades to "unchosen", never to `memberships[0]`.** The
+session names an organization the account was removed from; `?? memberships[0]` is the shorter line
+and silently lands someone in a different tenant while their screen still says the old one, which is
+how a report gets edited in the wrong organization. With several memberships they are asked to
+choose again; with one there is nothing to be ambiguous about.
+
+**Two stores, not one method added to the first**, and the reason is a Liskov violation with a very
+quiet failure. `MembershipStore` reads on the request's tenant transaction; `AccountMembershipStore`
+opens its own and binds only `app.current_user`, because it runs before a tenant exists. An adapter
+that sometimes borrowed the request transaction would find `app.current_org` bound — and the
+directory policy's first conjunct would then be false, so the organization names would silently
+disappear for exactly the callers that already had a tenant.
+
+**`@RequiresAccount` exists because `@RequiresRole` cannot express this route.** That guard refuses a
+caller with no active organization as `membership-required`, correctly, for a route about an
+organization's members. But UC-16's list is how an account *discovers* it belongs to nothing, and
+25.4's §4.3 branch reads that emptiness to send them to S-04 — so a gate refusing the
+member-of-nothing would refuse the one caller the route exists to answer. Composed like
+`@RequiresRole`, and redundant once task 28 makes routes authenticated by default with `@Public()`
+marking exceptions.
+
+Smaller decisions, recorded:
+
+- **`/memberships` beside `/members`**, the name task 25.2 left free. Not two views of one resource:
+  one is read with a tenant bound and one before any tenant exists, so they have different stores,
+  different gates and different shapes.
+- **No `isActive` flag on the response.** Which organization is active is session state resolved
+  server-side per request (AD-12, AD-2); a flag would be a second place that answer lives.
+- **The account is bound, never compared.** No `WHERE m.account_id = $1` — the policies scope the
+  read, exactly as no statement in the sibling repository names an organization. The e2e asserts
+  that an `?accountId=` query cannot change whose memberships come back.
+- **An empty list is a real answer**, asserted rather than treated as a 404: a verified account holds
+  no membership until it creates an organization or accepts an invitation.
+- **Removed memberships are omitted**, though FR-59 kept the row — the list is access, not history.
+
+Verified: `pnpm gates` — 237 unit tests (34 suites), the 5-case memberships e2e, 41 isolation tests,
+and the contract regenerated with one new path, additive.

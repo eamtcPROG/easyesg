@@ -11,3 +11,9 @@
  * process and a bare `'roles'` is a collision waiting for the second one.
  */
 export const REQUIRED_ROLES = 'easyesg:required-roles';
+
+/**
+ * The `@RequiresAccount` marker, here for the same reason as the key above: the decorator applies
+ * the guard and the guard reads the key, so a constant shared by both belongs to neither.
+ */
+export const REQUIRES_ACCOUNT = 'easyesg:requires-account';

@@ -334,6 +334,100 @@ describe.each([
 });
 
 /**
+ * `organization_directory_select` — the pre-tenant read, and the proof that it stays pre-tenant
+ * (task 25.3, FR-12).
+ *
+ * The switcher and `AuthGuard` need the *names* of every organization an account belongs to, and
+ * `core.organization` was readable only as the bound tenant — so the join returned nothing. The
+ * policy that fixes it is conditioned on `app.current_org` being unset, and the whole safety of the
+ * design is in that conjunct: a request that has resolved a tenant sees exactly what it saw before,
+ * which matters because task 29 is about to put IDNO, registered address and contact details on
+ * this row.
+ *
+ * A policy is only as good as the state it is *not* active in, so all three are asserted here —
+ * including the one that would be silently wrong. Without the first conjunct the second case below
+ * would return two organizations and no other test in the repository would notice.
+ */
+describe('the organization directory is readable only before a tenant is bound (task 25.3)', () => {
+  const ACCOUNT = '01920000-0000-7000-8000-0000000000d1';
+
+  describe.each([
+    ['esg_app — the runtime role', 'DB_USER', 'DB_PASSWORD', 'easyesg-directory-app'],
+    ['esg_migrator — the owner', 'DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-directory-owner'],
+  ])('as %s', (_label, userKey, passwordKey, applicationName) => {
+    let dataSource: DataSource;
+    let runner: QueryRunner;
+
+    beforeAll(async () => {
+      dataSource = await connect(required(userKey), required(passwordKey), applicationName);
+    }, 30_000);
+
+    afterAll(async () => {
+      if (dataSource?.isInitialized) await dataSource.destroy();
+    });
+
+    beforeEach(async () => {
+      runner = dataSource.createQueryRunner();
+      await runner.connect();
+      await runner.startTransaction();
+      await bind(runner, {});
+      await runner.query(
+        `INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha SRL'), ($2, 'Beta SRL')`,
+        [ORG_A, ORG_B],
+      );
+      await runner.query(`INSERT INTO identity.account (id, email, locale) VALUES ($1,'ana@x.md','ro')`, [
+        ACCOUNT,
+      ]);
+      for (const organization of [ORG_A, ORG_B]) {
+        await bind(runner, { organizationId: organization });
+        await runner.query(
+          `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1,$2,'editor')`,
+          [ACCOUNT, organization],
+        );
+      }
+    });
+
+    afterEach(async () => {
+      await runner.rollbackTransaction();
+      await runner.release();
+    });
+
+    it('shows an account every organization it belongs to, by name, before a tenant is bound', async () => {
+      await bind(runner, { accountId: ACCOUNT });
+      expect(await visibleIds(runner)).toEqual([ORG_A, ORG_B]);
+    });
+
+    /**
+     * The conjunct doing the work. Same account, same memberships — but a tenant is bound, so the
+     * tenant policy alone applies and the directory adds nothing. Remove
+     * `app.current_org IS NULL` from the policy and this test is the only thing that fails.
+     */
+    it('adds nothing once a tenant is bound, which is every ordinary request', async () => {
+      await bind(runner, { organizationId: ORG_A, accountId: ACCOUNT });
+      expect(await visibleIds(runner)).toEqual([ORG_A]);
+    });
+
+    it('shows nothing to an account bound with no memberships at all', async () => {
+      await bind(runner, { accountId: '01920000-0000-7000-8000-0000000000d9' });
+      expect(await visibleIds(runner)).toEqual([]);
+    });
+
+    // Removing access (FR-59) removes the organization from the directory, though the row stays.
+    it('drops an organization the account was removed from', async () => {
+      await bind(runner, { organizationId: ORG_B });
+      await runner.query(
+        `UPDATE identity.membership SET status = 'removed', removed_at = now()
+          WHERE account_id = $1`,
+        [ACCOUNT],
+      );
+
+      await bind(runner, { accountId: ACCOUNT });
+      expect(await visibleIds(runner)).toEqual([ORG_A]);
+    });
+  });
+});
+
+/**
  * FR-59 made structural rather than remembered (task 25.1).
  *
  * Removing a member is a `status` change, so that the membership's own history — when the role was

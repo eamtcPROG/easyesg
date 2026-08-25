@@ -102,3 +102,24 @@ export interface OrganizationMember {
   readonly lastActiveAt: Date | null;
   readonly joinedAt: Date;
 }
+
+/**
+ * One of the caller's own memberships, as UC-16's *view memberships* half sees it (FR-12).
+ *
+ * **The mirror image of `OrganizationMember`, and the pairing is the point.** That one answers
+ * "who is in this organization" and is read with a tenant bound; this one answers "which
+ * organizations am I in" and is read *before* any tenant is bound — which is why it carries the
+ * organization's name rather than the account's email. The two never appear in one query, and a
+ * single type serving both would be a shape whose half the reader has to work out from context.
+ *
+ * `organizationName` is reachable at all because of `organization_directory_select` (task 25.3):
+ * the tenant root is readable across memberships **only** while no organization is bound. S-05
+ * lists these and the global-tier switcher chooses among them (`design_spec.md` OQ-6).
+ */
+export interface AccountMembership {
+  readonly membershipId: string;
+  readonly organizationId: string;
+  readonly organizationName: string;
+  readonly role: MembershipRole;
+  readonly joinedAt: Date;
+}

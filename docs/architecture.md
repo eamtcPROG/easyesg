@@ -583,7 +583,7 @@ This is the only way those obligations stay true across 173 requirements.
 
 | Component | Responsibility | Requirement |
 |---|---|---|
-| `AuthGuard` | Server-side evaluation on every request; the interface layer is untrusted. Resolves session → user → membership → active organization | FR-4 … FR-8, NFR-62 |
+| `AuthGuard` | Server-side evaluation on every request; the interface layer is untrusted. Resolves session → user → membership → active organization, the last step by `selectActiveMembership` — a pure function whose rules task 25.3 fixed outside the guard, so a stale or revoked preference is seven lines of spec rather than an integration test nobody writes | FR-4 … FR-8, NFR-62 |
 | `TenantTransactionGuard` | Opens the transaction and sets `app.current_org` / `app.current_user` transaction-locally (AD-2). A handler reaching the database outside this transaction gets no tenant context and therefore no rows — a fail-closed default | NFR-63 |
 | `RequiresRoleGuard` | `@RequiresRole(MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR)`, reading the role `AuthGuard` resolved onto the request context — never a token claim, which AD-12 leaves empty of authorization consequence. Added 25 Aug 2026 with task 25.2 | FR-158, NFR-62 |
 | `EntitlementGuard` | `@RequiresEntitlement('report.export.pdf')` decorator, so the gated capability contains no gating logic | FR-100, NFR-17 |
@@ -1019,6 +1019,22 @@ CREATE POLICY membership_self_select ON identity.membership     -- UC-16, and th
 ```
 
 The second grants **read and nothing else** — `INSERT` and `UPDATE` stay scoped to `app.current_org` alone — so an account sees where it belongs from anywhere and can alter a membership only in the organization whose context it actually holds. The general rule this is the first instance of: *a table the tenant binding is derived from cannot be scoped solely by that binding*, and the escape is the second setting, which is already bound and already trusted to the same degree.
+
+**The tenant root needs the mirror of that, and it is narrower than the obvious version. Decided 25 Aug 2026 (task 25.3).** Knowing *where* you belong is useless without knowing what those organizations are called: FR-12's switcher and S-05's membership list render names, and `core.organization` is readable only as the bound tenant — so a member of three organizations read three membership rows and zero names. The fix is a third policy, on the tenant root:
+
+```sql
+CREATE POLICY organization_directory_select ON core.organization
+  FOR SELECT USING (
+    <no organization bound>
+    AND EXISTS (SELECT 1 FROM identity.membership m
+                 WHERE m.organization_id = core.organization.id
+                   AND m.account_id = <bound account> AND m.status = 'active'));
+```
+
+**The first conjunct is the decision.** Without it the tenant root would be readable beyond the active organization *on every request*, and §7.2's profile fields — IDNO, registered address, contact details — ride on that row; every later reader would then need an explicit `WHERE id = <active org>` to stay correct, which is the filtering-at-call-sites AD-2 rejects, on the one table where it matters most. Conditioned on the pre-tenant state, the policy is active exactly when `AuthGuard` and the switcher read, and inert for every request that has resolved a tenant. Measured rather than argued: without the conjunct, a request bound to Alpha by a member of Alpha and Beta sees **two** organizations.
+
+**A `SECURITY DEFINER` function was the first answer and does not work here**, recorded so it is not retried. It runs as the function's owner; `esg_migrator` owns `core.organization`; and `FORCE ROW LEVEL SECURITY` subjects an owner to its own policies — so it returns nothing. Making it work needs a fifth cluster role holding `BYPASSRLS`, and `CREATE ROLE` is cluster-level, lives in `infra/postgres/init/init.sh` outside the migration ledger, and would amend the four-role table above.
+
 
 ### 7.7 Append-only enforcement at privilege level
 

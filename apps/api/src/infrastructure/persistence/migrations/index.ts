@@ -10,6 +10,7 @@ import { IdentitySession1787443200000 } from './1787443200000-identity-session';
 import { AdminRealm1787529600000 } from './1787529600000-admin-realm';
 import { ProviderIdentity1787616000000 } from './1787616000000-provider-identity';
 import { IdentityMembership1787702400000 } from './1787702400000-identity-membership';
+import { MembershipDirectory1787788800000 } from './1787788800000-membership-directory';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -38,4 +39,5 @@ export const migrations = [
   AdminRealm1787529600000,
   ProviderIdentity1787616000000,
   IdentityMembership1787702400000,
+  MembershipDirectory1787788800000,
 ];

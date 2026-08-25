@@ -97,6 +97,14 @@ resolutions: 401 `authentication-required`, 403 `membership-required`, 403 `insu
 of `AuthGuard` rather than wait for it. The task-11 identity fixture moved to
 `test/support/request-identity.fixture.ts` and now carries `role`.
 
+Task 25.3 adds UC-16's view half: `GET /api/v1/memberships` behind `@RequiresAccount` (which
+`@RequiresRole` cannot express — it refuses the member-of-nothing, who is exactly this route's
+caller), a **second** store `AccountMembershipStore` that opens its own transaction and binds only
+`app.current_user`, and `selectActiveMembership` — the pure function task 28's guard resolves an
+active organization with, so a stale or revoked preference is a unit spec rather than an integration
+test. `organization_directory_select` makes the tenant root readable across memberships **only while
+no organization is bound**; see the tenancy note below before touching it.
+
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
 other than health, `/auth` and `/auth/admin`, and almost every module body — 33 of the 35
@@ -265,6 +273,22 @@ anywhere and can change a membership only where it holds the context.
 **A backfill run by `esg_migrator` sees zero rows** unless it sets `app.current_org` per
 organization — `FORCE` applies to the owner too. A data migration that appears to update nothing is
 this, not an empty table.
+
+**`SECURITY DEFINER` does NOT escape RLS here, and it looks like it should** (task 25.3). The
+function runs as its owner, `esg_migrator` owns every table, and `FORCE` subjects an owner to its
+own policies — so a definer function reading a tenant table returns **nothing**. `SET row_security =
+off` does not help either: for a forced-RLS owner it raises rather than bypassing. Escaping needs a
+role holding `BYPASSRLS`, and `CREATE ROLE` is cluster-level — it lives in `infra/postgres/init/
+init.sh`, outside the migration ledger. `core.capture_field_change` is definer for a different
+reason entirely: it *writes* as the owner so the application needs no INSERT grant, and its target
+carries a permissive `WITH CHECK (true)`.
+
+**`core.organization` carries a third policy, active only before a tenant is bound** (task 25.3).
+It is what lets the switcher read the names of every organization an account belongs to. The
+`app.current_org IS NULL` conjunct is load-bearing and measured: without it, a request bound to one
+organization sees every organization its actor belongs to, which would put task 29's IDNO and
+registered address outside the active tenant on every request. `tenant-isolation.e2e-spec.ts` has
+the only test that would catch its removal.
 
 ### Adding an append-only table
 

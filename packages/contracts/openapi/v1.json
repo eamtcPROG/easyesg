@@ -662,6 +662,49 @@
         ]
       }
     },
+    "/api/v1/memberships": {
+      "get": {
+        "description": "Every organization the caller is an active member of, with the role held in each and the organization’s name for display. An empty list is a normal answer — a verified account holds no membership until it creates an organization or accepts an invitation — and it is what sends a new user to create their first one.",
+        "operationId": "MembershipsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller’s memberships, ordered by organization name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AccountMembershipResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No signed-in account (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "List the organizations the signed-in account belongs to",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -1328,6 +1371,45 @@
         },
         "required": [
           "role"
+        ]
+      },
+      "AccountMembershipResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifies this membership."
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The organization the caller belongs to."
+          },
+          "organizationName": {
+            "type": "string",
+            "description": "Shown in the organization switcher and on the home screen."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "editor",
+              "viewer",
+              "organization_administrator"
+            ],
+            "description": "The role held in THIS organization. It may differ in each of them."
+          },
+          "joinedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when access was granted."
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "organizationName",
+          "role",
+          "joinedAt"
         ]
       },
       "AdminChallengeResponseDto": {
