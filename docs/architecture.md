@@ -668,6 +668,32 @@ grant exists — which is why the cheap option is also the reversible one. Relat
 OQ-26, how scoped permissions are evaluated across an organization relationship, which is what an
 Advisor acting for a client organization would need.
 
+**The role vocabulary, and what removal does to a row. Decided 25 Aug 2026 (task 25.1).** The three
+roles above are §3's data-model row — *edit / view-only / Organization Administrator* — carried into
+the schema as `editor`, `viewer` and `organization_administrator`, one per membership per
+organization (FR-12). **CA is not among them**: actors.md is explicit that Common Access is "not a
+role and not a permission level" but the capabilities every authenticated user holds regardless of
+role, so admitting it would make *no role* representable as a role and force every authorization
+check to special-case the one value granting nothing.
+
+**FR-59's removal is a status change, not a delete, and no runtime role holds `DELETE` on the
+table.** `core.field_change` already keeps a removed member's field-level attribution — its
+`actor_id` carries no foreign key precisely so it survives (FR-55) — but a deleted membership row
+still erases the *membership's own* history: when the role was granted, by whom, and when access was
+withdrawn, which is what an assurance reviewer asking who could see this data in March is asking.
+Withholding the privilege rather than relying on the application to remember follows P-4: the row
+leaves only on the cascade from its account (NFR-28's erasure) or its organization, and
+referential-integrity actions bypass row security by design, so those still work.
+
+**The active organization is a column on the session record.** AD-12 requires role and active
+organization to be "read server-side on every request from the session and membership records";
+`identity.session.active_organization_id` is that record, written by the post-sign-in branch and the
+global-tier switcher (`design_spec.md` OQ-6) and read by `AuthGuard`. It is deliberately *not* named
+`organization_id`: the schema-invariant gate treats that name as the mark of a tenant-scoped table
+and would require RLS on `identity.session`, where a policy scoped to the bound organization would
+break the pre-authentication lookup for the same reason §7.6 gives for membership. A session is an
+account's and merely points at a tenant.
+
 ### 6.6 Platform-service components
 
 | Component | Responsibility | Owned data | Notes |
@@ -968,6 +994,17 @@ TypeORM: all tenant queries run on the request's `QueryRunner`, resolved from `A
 
 **What is expensive to retrofit is the plumbing, not the policies.** The costly parts are `organization_id` on every tenant table, the `AsyncLocalStorage` wiring and the repository discipline; the `CREATE POLICY` statements are a migration. Policies are nonetheless enabled in **every** environment from the first sprint, because the entire value of RLS is that a missing tenant context breaks loudly and early rather than leaking quietly later.
 
+**`identity.membership` needs a second SELECT policy, and the reason generalises. Decided 25 Aug 2026 (task 25.1).** The binding above is annotated *"from AuthGuard membership lookup"*, and that annotation contains a circularity this section had not stated: the lookup that produces `app.current_org` necessarily runs **before** `app.current_org` exists. A membership table scoped only to the bound organization would therefore answer that lookup with zero rows for every account, forever — and fail as *"this account belongs to no organization"* rather than as an error, which is the quiet-leak failure mode inverted. The membership table carries two permissive `SELECT` policies:
+
+```sql
+CREATE POLICY membership_tenant_select ON identity.membership   -- UC-59: this organization's members
+  FOR SELECT USING (organization_id = <bound org>);
+CREATE POLICY membership_self_select ON identity.membership     -- UC-16, and the bootstrap above
+  FOR SELECT USING (account_id = <bound account>);
+```
+
+The second grants **read and nothing else** — `INSERT` and `UPDATE` stay scoped to `app.current_org` alone — so an account sees where it belongs from anywhere and can alter a membership only in the organization whose context it actually holds. The general rule this is the first instance of: *a table the tenant binding is derived from cannot be scoped solely by that binding*, and the escape is the second setting, which is already bound and already trusted to the same degree.
+
 ### 7.7 Append-only enforcement at privilege level
 
 NFR-33 requires append-only storage of audit and ledger records **enforced at database privilege level**, with the stated verification that attempted mutation fails at the store, not in application code.
@@ -1116,7 +1153,7 @@ The port is where the external model is translated into the platform's own: an `
 | Provider registration | Config-driven; disabling stops new registrations, existing accounts keep other credentials | FR-82 |
 | Verification, reset, invitation | Single-use, high-entropy, time-limited tokens; uniform responses regardless of account existence | FR-3, FR-6, FR-11, NFR-64 |
 | Session | ≤ 15-min JWT carrying `session_id` only + server-side revocable refresh (AD-12) | FR-5 … FR-8 |
-| Active organization | Session-scoped; every read and write scoped to it | FR-12 |
+| Active organization | Session-scoped — `identity.session.active_organization_id`, resolved server-side per request, never from a claim or a path segment (§6.5, task 25.1) | FR-12 |
 | Authorization | Server-side per request, role in active org + per-report rights | FR-158, NFR-62 |
 | Tenant isolation | RLS (AD-2) | NFR-63 |
 | Tenant MFA | **Opt-in TOTP**, available to any user, recommended to Organization Administrators (amended — §17.1) | — |

@@ -78,6 +78,14 @@ minimal Authorization Server both e2e suites (and the browser suite, by relative
 real code flow against; `AUTH_SOCIAL_ALLOW_INSECURE=true` is what lets discovery hit its http
 issuer, and is never set in production.
 
+Task 25.1 adds `identity.membership` — the first tenant-scoped table outside `core` (FR-12,
+FR-56 … FR-60). `MEMBERSHIP_ROLE` is `editor` / `viewer` / `organization_administrator` (CA is not a
+role — actors.md); FR-59's removal is a `status` change and **no runtime role holds `DELETE`**, so
+the row leaves only on the cascade from its account or its organization. Two `SELECT` policies, for
+the bootstrap reason above; `core.capture_field_change` attached with `last_active_at` ignored;
+`identity.session.active_organization_id` added as the expand half task 21 recorded. Nothing writes
+either new column until tasks 28 and 25.4.
+
 **Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
 `EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
 other than health, `/auth` and `/auth/admin`, and almost every module body — 33 of the 35
@@ -235,6 +243,14 @@ Four things in the **same** migration, or `pnpm migrations:check` fails the buil
 4. `WITH CHECK` on writes. `core.organization`'s permissive `INSERT` is a named exception for FR-13
    and the only one; copying it elsewhere lets a tenant write another tenant's rows.
 
+**A table the binding is derived from cannot be scoped solely by that binding** (task 25.1, §7.6).
+`identity.membership` is the case: `AuthGuard` reads it to *produce* `app.current_org`, so a policy
+scoped to `app.current_org` answers that read with zero rows for every account, forever — and
+presents as "this account belongs to no organization" rather than as an error. It carries a second
+permissive `SELECT` policy on `app.current_user`, which `setTenantContext` already binds. Read only:
+`INSERT` and `UPDATE` stay on the organization alone, so an account sees where it belongs from
+anywhere and can change a membership only where it holds the context.
+
 **A backfill run by `esg_migrator` sees zero rows** unless it sets `app.current_org` per
 organization — `FORCE` applies to the owner too. A data migration that appears to update nothing is
 this, not an empty table.
@@ -319,14 +335,29 @@ No table and no code. Add a `config/seed/<kind>.<scope>.json` file and read it w
 ### Adding an audited table
 
 Attach the capture trigger in the same migration and add the table to
-`FIELD_AUDITED_TABLES` in `test/schema-invariants.e2e-spec.ts` — or to `UNAUDITED_CORE_TABLES` with
-a reason. The gate fails a `core` table that is in neither, because an unaudited table produces no
-error, just a gap nobody can see later.
+`FIELD_AUDITED_TABLES` in `test/schema-invariants.e2e-spec.ts` — or to `UNAUDITED_TABLES` with a
+reason. The gate fails a table that is in neither, because an unaudited table produces no error,
+just a gap nobody can see later.
+
+**"A table" means a tenant table anywhere, not a `core` table** (corrected 25 Aug 2026, task 25.1).
+The rule read `nspname = 'core'` until `identity.membership` became the first tenant-scoped table
+outside that schema and would have shipped unaudited in silence. It now uses the same two clauses
+the RLS rule does: in `core`, **or** carrying `organization_id`.
 
 ```sql
 CREATE TRIGGER capture_field_change AFTER INSERT OR UPDATE OR DELETE ON core.<table>
   FOR EACH ROW EXECUTE FUNCTION core.capture_field_change('organization_id', 'updated_at');
 ```
+
+**The table needs an `id uuid` column, and nothing tells you so.** The function resolves the record
+it is describing with `coalesce(after ->> 'id', before ->> 'id')::uuid`, so a composite primary key
+with no `id` attaches cleanly, migrates cleanly and fails on the first write — a plpgsql body is not
+validated at creation. §7.9's `uuidv7()` convention is load-bearing here, not merely conventional.
+
+**Ignore a column the request path touches on every request.** `identity.membership.last_active_at`
+is in the ignore list because task 28's guard writes it per request, and capturing that would make
+the system's highest-volume writer a writer of its highest-volume audit table — to record that
+somebody was present. FR-54 is about who changed a *value*.
 
 `TG_ARGV[0]` names the tenant column — `id` for the tenant root, `organization_id` everywhere else.
 `TG_ARGV[1..]` are columns to ignore. The comparison is over `jsonb` row images, so no table needs

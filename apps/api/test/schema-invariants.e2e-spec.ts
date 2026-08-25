@@ -255,10 +255,21 @@ const unclassifiedAuditTables = (x: Executor) =>
  * or 34 must either carry the capture trigger or say why it does not. Silence is the failure: an
  * unaudited table produces no error, just a trail with a gap nobody can see afterwards.
  */
-const FIELD_AUDITED_TABLES = ['core.organization'];
+const FIELD_AUDITED_TABLES = ['core.organization', 'identity.membership'];
 
-/** The trail itself. Auditing it would recurse, and it is append-only by other means. */
-const UNAUDITED_CORE_TABLES = ['core.field_change'];
+/**
+ * Tenant-scoped tables that are deliberately **not** field-audited, each with its reason.
+ *
+ * `core.field_change` is the trail itself: auditing it would recurse, and it is append-only by
+ * other means. The two `audit` tables are the same argument in a different schema — a system audit
+ * row and an outbox row are already immutable records of something that happened (§7.7), so
+ * capturing per-field changes to them would record the writing of a record.
+ */
+const UNAUDITED_TABLES = [
+  'core.field_change',
+  'audit.system_audit_log',
+  'audit.outbox_event',
+];
 
 const auditedTablesMissingCapture = (x: Executor) =>
   x.query<{ location: string }[]>(
@@ -273,18 +284,33 @@ const auditedTablesMissingCapture = (x: Executor) =>
     [FIELD_AUDITED_TABLES],
   );
 
-const unclassifiedCoreTables = (x: Executor) =>
+/**
+ * The classification sweep, scoped by **what a table is** rather than by which schema it sits in.
+ *
+ * It read `nspname = 'core'` until task 25.1, when `identity.membership` became the first
+ * tenant-scoped table outside `core` and would have shipped unaudited without a word from any gate.
+ * The two clauses are now the same pair `tablesMissingRowLevelSecurity` already uses, and for the
+ * same reason: tenant data is what FR-54 is about, and `core` is where most but no longer all of it
+ * lives. Task 26.1's `identity.invitation` is the next case, and it will be caught rather than
+ * remembered.
+ */
+const unclassifiedTenantTables = (x: Executor) =>
   x.query<{ location: string }[]>(
     `SELECT n.nspname || '.' || c.relname AS location
        FROM pg_class     c
        JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'core'
-        AND c.relkind IN ('r', 'p')
+      WHERE c.relkind IN ('r', 'p')
+        AND n.nspname = ANY($3)
         AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
+        AND (n.nspname = 'core'
+             OR EXISTS (SELECT 1 FROM pg_attribute a
+                         WHERE a.attrelid = c.oid
+                           AND a.attname = 'organization_id'
+                           AND NOT a.attisdropped))
         AND NOT (n.nspname || '.' || c.relname = ANY($1))
         AND NOT (n.nspname || '.' || c.relname = ANY($2))
       ORDER BY 1`,
-    [FIELD_AUDITED_TABLES, UNAUDITED_CORE_TABLES],
+    [FIELD_AUDITED_TABLES, UNAUDITED_TABLES, DOMAIN_SCHEMAS],
   );
 
 /**
@@ -527,8 +553,8 @@ describe('schema invariants (§7)', () => {
       expect(await auditedTablesMissingCapture(db)).toEqual([]);
     });
 
-    it('holds — every core table is classified as audited or explicitly not', async () => {
-      expect(await unclassifiedCoreTables(db)).toEqual([]);
+    it('holds — every tenant table is classified as audited or explicitly not', async () => {
+      expect(await unclassifiedTenantTables(db)).toEqual([]);
     });
 
     it('catches an audited table whose trigger was dropped', async () => {
@@ -539,13 +565,44 @@ describe('schema invariants (§7)', () => {
       expect(caught.map((r) => r.location)).toEqual(['core.organization']);
     });
 
+    // The membership table is task 25.1's, and it is the reason the rule below is no longer
+    // scoped to `core`: a role change has to be attributable from its first write (FR-55), and
+    // FR-59's removal is a status change whose whole evidential value is that it was recorded.
+    it('catches the membership table losing its capture trigger', async () => {
+      const caught = await provingViolation(
+        `DROP TRIGGER capture_field_change ON identity.membership`,
+        auditedTablesMissingCapture,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['identity.membership']);
+    });
+
     // Tasks 29, 31 and 34 all add core tables. This is what stops one of them shipping unaudited.
     it('catches a new core table that declared neither', async () => {
       const caught = await provingViolation(
         `CREATE TABLE core.__probe_entity (id uuid PRIMARY KEY, organization_id uuid NOT NULL)`,
-        unclassifiedCoreTables,
+        unclassifiedTenantTables,
       );
       expect(caught.map((r) => r.location)).toEqual(['core.__probe_entity']);
+    });
+
+    // The clause added with task 25.1. Before it, a tenant table outside `core` — this shape, and
+    // task 26.1's `identity.invitation` — could ship unaudited and no gate would say a word.
+    it('catches a tenant table outside core that declared neither', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE identity.__probe_invitation (id uuid PRIMARY KEY, organization_id uuid NOT NULL)`,
+        unclassifiedTenantTables,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['identity.__probe_invitation']);
+    });
+
+    // Satisfiable, not merely strict: a table with no tenant column is nobody's audit obligation,
+    // which is what keeps the rule off `identity.account` and every `config` table.
+    it('ignores a table that carries no tenant column at all', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE identity.__probe_untenanted (id uuid PRIMARY KEY)`,
+        unclassifiedTenantTables,
+      );
+      expect(caught).toEqual([]);
     });
   });
 

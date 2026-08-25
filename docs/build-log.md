@@ -1799,3 +1799,93 @@ belongs in the module that owns the vocabulary. The smell is a helper whose body
 imported vocabulary and nothing else local; that is a missing export, not a local helper. Recorded
 because the previous wording covered `as const` objects and their generated surfaces, and every one
 of these six copies satisfied it.
+
+## Task 25.1 — the membership table, and the policy a bootstrap needs · 2026-08-25
+
+The first sub-step under the split `task.md` announced the same day, and the first table that
+made two long-standing rules come apart.
+
+**The row said `core.membership`; the schema is `identity`.** `architecture.md` §7.1 lists
+memberships under `identity` and names the one permitted cross-schema foreign key as "to
+`core.organization` only (**membership target**)" — an allowance `schema-invariants.e2e-spec.ts`
+has encoded since task 9 and task 19's migration header already anticipated in terms. Under the
+precedence rule the document governs and the tracking row was what was wrong; the row is corrected
+in place rather than quietly worked around, because a row nobody fixes is a row the next reader
+believes.
+
+**The decision this task actually turned on was not in its row at all.** AD-2's binding is
+annotated *"from AuthGuard membership lookup"*, and that annotation carries a circularity §7.6 had
+never stated: the lookup producing `app.current_org` runs **before** `app.current_org` exists. A
+membership table scoped only to the bound organization answers it with zero rows for every account,
+forever — and RLS returns zero rows rather than raising, so it would have shipped as *"this account
+belongs to no organization"* on every sign-in, in a system where that sentence is a legitimate
+answer (FR-13 creates the first organization from an account holding no membership). The table
+carries two permissive `SELECT` policies — the bound organization's members, and **your own rows
+anywhere** — with `INSERT` and `UPDATE` still scoped to `app.current_org` alone, so the second
+grants read and never write. `setTenantContext` already bound `app.current_user` for task 14's
+audit capture, so the escape needed no new machinery, only noticing it was there. §7.6 now states
+the general form: a table the tenant binding is *derived from* cannot be scoped solely by that
+binding.
+
+Proven rather than asserted: dropping `membership_self_select` inside a rolled-back transaction
+takes the pre-tenant lookup from one row to zero. Without that check the two policies are
+indistinguishable from one policy and a redundant one.
+
+**Four decisions came from the unknowns batch**, all four settled against the recommendation, which
+is the batch working rather than failing:
+
+- **Roles are `editor` / `viewer` / `organization_administrator`** — §3's data-model row as role
+  nouns. CA is deliberately not among them (actors.md: "not a role and not a permission level"),
+  since admitting it makes *no role* representable as a role.
+- **FR-59's removal is a `status` change**, not a delete — and, going beyond the decision as put,
+  **no runtime role holds `DELETE` on the table**. `core.field_change` already keeps a removed
+  member's field-level attribution; what a deleted row still erases is the membership's *own*
+  history, which is what "who could see this data in March" asks for. P-4's argument applies
+  unchanged: a rule the application is trusted to remember is one task 26.2 forgets. The row
+  leaves only on the cascade from its account or its organization, and referential-integrity
+  actions bypass row security by design, so NFR-28's erasure path is untouched.
+- **`last_active_at` lands now**, ignored by the capture trigger. The ignore-list is the whole
+  reason it can: task 28's guard will touch it on every request, and capturing that would make the
+  system's highest-volume writer a writer of its highest-volume audit table, to record that
+  somebody was present. FR-54 is about who changed a *value*.
+- **`identity.session.active_organization_id` lands now**, honouring the note task 21's migration
+  left. It is not named `organization_id`, and that is load-bearing: the invariant gate treats that
+  name as the mark of a tenant table and would demand RLS on `identity.session`, where a
+  tenant-scoped policy breaks every pre-authentication lookup — the same trap as above, reached
+  from the other direction.
+
+**The gate's field-audit sweep was scoped to `core` and would have said nothing.** Its rule read
+`nspname = 'core'`, so `identity.membership` — the first tenant-scoped table outside that schema —
+could have shipped unaudited in silence, which is precisely the failure the rule exists to prevent.
+It now uses the same two clauses `tablesMissingRowLevelSecurity` already used (`core.*`, or carries
+`organization_id`), with `audit.system_audit_log` and `audit.outbox_event` classified as
+deliberately unaudited for the reason `core.field_change` already was. Task 26.1's
+`identity.invitation` will now be caught rather than remembered. Two new proving violations, plus
+one asserting the rule ignores a table with no tenant column — otherwise "generalised" could mean
+"fires on everything and gets switched off".
+
+Costs recorded rather than discovered later:
+
+- **Nothing writes either new column yet.** `last_active_at` is null until task 28's guard;
+  `active_organization_id` until 25.4's branch and 30.1's switcher. Both are the expand half of
+  expand→migrate.
+- **The unique constraint is over the whole `(account_id, organization_id)` pair, not partial on
+  `status = 'active'`** — one row per pair *ever*. Task 26.2's re-invitation therefore reactivates
+  the existing row, which is what makes the change history read as one arc rather than as unrelated
+  rows nothing joins. If 26.2 wants a second row it has to change this, deliberately.
+- **`core.organization` is still readable only when bound.** A member holding three memberships can
+  read all three membership rows and none of the three organizations' *names*, which S-05's list
+  and the switcher both need. That is 25.3's to settle — either a membership-derived SELECT policy
+  on the tenant root or a read that binds per organization — and it is named here so it is a
+  decision there rather than a surprise.
+- **Founding an organization (task 29) needs a re-bind, not an exemption.** `membership_tenant_insert`
+  is a real `WITH CHECK`, unlike the tenant root's permissive `INSERT`: the organization exists by
+  the time anyone can be a member of it, so the founding membership is written after
+  `set_config('app.current_org', <new id>, true)` inside the same transaction.
+
+Verified: `pnpm gates` — including `migrations:check`'s apply → revert → apply → invariants, 30
+invariant tests and 33 isolation tests, the latter now covering both membership policies from both
+sides (an account sees its own rows in an organization it is not acting for, and cannot edit them;
+it never sees that organization's *other* members). The capture trigger was exercised directly:
+a `viewer → editor` role change and an `active → removed` removal both record with the acting
+administrator attributed, and a `last_active_at` touch between them produces no row at all.
