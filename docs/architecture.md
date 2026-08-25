@@ -597,6 +597,30 @@ needs `app.current_org` already bound. An interceptor cannot open a transaction 
 running earlier depends on. It is therefore a **guard**, `TenantTransactionGuard`, and the naming
 is corrected here rather than left to a working-notes file.
 
+**The surface is closed by default, and `@Public()` is the whole of the exception. Task 28.1,
+25 Aug 2026.** `AuthGuard` is an `APP_GUARD`, so a route added later is closed by omission rather
+than open by it — the reverse of the state it replaced, in which nothing was authenticated at all.
+There are exactly three kinds of exemption and each carries its reason at the route: the routes that
+make a session exist (`/auth/*`, including sign-out, which AD-12 has authenticate by refresh token
+so it still works in UC-07's state), liveness (`/health`, which must not depend on the database),
+and **the admin realm** — `/auth/admin/*` is public to the *tenant* guard and not public at all,
+carrying no bearer because NFR-65 gives it a separate credential store and a sealed cookie its own
+handler verifies. Swagger needs no marker: `SwaggerModule.setup` mounts express middleware rather
+than a Nest route, so no `APP_GUARD` runs for it.
+
+**What the guard closed that was open.** §12.5.6 recorded a deferral against this task: a revoked
+session's last access token was honoured for up to 15 minutes, because nothing re-read the session.
+The per-request lookup is what makes AD-12's "the lookup, not the lifetime, bounds staleness" true,
+and it is the same mechanism FR-58 rests on — the role is read from the membership record on every
+request, so a demotion binds on the member's next request with the token they are already holding.
+
+**Two refusals, and the distinction is for the client rather than the user.**
+`authentication-required` means there is nothing to work with — no token, a token this API did not
+issue, a session that does not exist. `session-expired` means the token was ours and the session
+behind it is over, which is the signal to refresh or to re-authenticate in place with work preserved
+(UC-07, UX-38). A resolved actor with **no** organization is a success, not a refusal: it is the
+state UC-16's list exists to report and task 25.4's branch reads.
+
 **`@RequiresRole` applies its own guard, and that is the row's point rather than an implementation
 note. Decided 25 Aug 2026 (task 25.2).** The conventional shape registers the guard globally and
 sets metadata per route, which leaves the guard ubiquitous and the *gate* opt-in: a route carrying

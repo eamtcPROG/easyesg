@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '@api/app/decorators/public.decorator';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { AccountResponseDto } from '../dto/account.response.dto';
 import { RegisterAccountRequestDto } from '../dto/register-account.request.dto';
@@ -29,12 +30,13 @@ import { AccountService } from '../services/account.service';
  *    makes the edge rate limit (§12.5.6) the control on them — and on `register` specifically that
  *    limit is load-bearing, because OQ-53 chose a truthful `409` over a uniform response.
  *
- * These routes stay public when `AuthGuard` arrives in task 28. They will need its `@Public()`
- * marker; there is nothing to mark them with yet, and inventing the decorator ahead of the guard
- * would be a marker nothing reads.
+ * These routes stay public now that `AuthGuard` has arrived (task 28.1), which this header
+ * anticipated: registration, verification and password reset are how an account and its session
+ * come to exist, so requiring a token to obtain one is the circularity. `@Public()` is that marker.
  */
 @ApiTags('identity')
 @Controller('auth')
+@Public()
 export class AuthController {
   constructor(private readonly accountService: AccountService) {}
 

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
+import { AuthGuard } from '@api/modules/identity/session/guards/auth.guard';
 import { TenantTransactionGuard } from './app/guards/tenant-transaction.guard';
 import { GlobalResponseInterceptor } from './app/interceptors/global-response.interceptor';
 import { TransactionInterceptor } from './app/interceptors/transaction.interceptor';
@@ -58,6 +59,18 @@ import { PlatformModule } from './modules/platform/platform.module';
   ],
   controllers: [HealthController],
   providers: [
+    /**
+     * **Order is the contract here, not a preference** (§6.2). `APP_GUARD` runs in registration
+     * order, and `AuthGuard` is what writes the organization into the request context that
+     * `TenantTransactionGuard` binds `app.current_org` from. Registered the other way round it
+     * would bind nothing, and every tenant read would return zero rows rather than fail — the
+     * silent failure AD-2 and `TenantRepository` both exist to prevent.
+     *
+     * `useExisting` because `SessionModule` constructs it: the guard needs the JWT secret and the
+     * request-identity store, and a `useClass` here would ask Nest to build it from this module's
+     * (empty) provider scope. Task 28.2's `EntitlementGuard` and `AdminRealmGuard` join below it.
+     */
+    { provide: APP_GUARD, useExisting: AuthGuard },
     { provide: APP_GUARD, useClass: TenantTransactionGuard },
     { provide: APP_INTERCEPTOR, useClass: TransactionInterceptor },
     { provide: APP_INTERCEPTOR, useClass: GlobalResponseInterceptor },

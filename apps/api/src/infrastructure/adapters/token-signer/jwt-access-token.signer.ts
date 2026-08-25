@@ -1,5 +1,8 @@
 import { JwtService } from '@nestjs/jwt';
-import type { AccessTokenSigner } from '@api/modules/identity/session/interfaces/access-token-signer.interface';
+import type {
+  AccessTokenSigner,
+  AccessTokenVerifier,
+} from '@api/modules/identity/session/interfaces/access-token-signer.interface';
 
 /**
  * The access token, as AD-12 specifies it, behind `AccessTokenSigner` (§12.1's `@nestjs/jwt`,
@@ -19,7 +22,7 @@ import type { AccessTokenSigner } from '@api/modules/identity/session/interfaces
  * `exp` is stamped from the instant the use case computed — the same value the DTO reports —
  * rather than re-derived here from a TTL, so the claim and the stated expiry cannot disagree.
  */
-export class JwtAccessTokenSigner implements AccessTokenSigner {
+export class JwtAccessTokenSigner implements AccessTokenSigner, AccessTokenVerifier {
   private readonly jwt: JwtService;
 
   constructor(secret: string | undefined) {
@@ -37,5 +40,24 @@ export class JwtAccessTokenSigner implements AccessTokenSigner {
     // `exp` is seconds since the epoch (RFC 7519), floored — never a millisecond value, which
     // every verifier would read as a date thousands of years out.
     return this.jwt.signAsync({ sub: sessionId, exp: Math.floor(expiresAt.getTime() / 1000) });
+  }
+
+  /**
+   * Every failure is `null` (see the port). `verifyAsync` throws on a bad signature, a wrong
+   * algorithm, a malformed token and an expired `exp` alike, so the catch is not swallowing an
+   * unexpected error — it is the port's contract, and the alternative is five branches producing
+   * one outcome.
+   *
+   * The `sub` check is not defensive padding: `verifyAsync` resolves to whatever was signed, and a
+   * token minted elsewhere with this secret and no `sub` would otherwise resolve to `undefined` and
+   * be looked up as a session id.
+   */
+  async verify(accessToken: string): Promise<string | null> {
+    try {
+      const claims = await this.jwt.verifyAsync<{ sub?: unknown }>(accessToken);
+      return typeof claims.sub === 'string' && claims.sub.length > 0 ? claims.sub : null;
+    } catch {
+      return null;
+    }
   }
 }

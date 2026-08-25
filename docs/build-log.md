@@ -2074,3 +2074,94 @@ Smaller decisions, recorded:
 
 Verified: `pnpm gates` — 237 unit tests (34 suites), the 5-case memberships e2e, 41 isolation tests,
 and the contract regenerated with one new path, additive.
+
+## Task 28.1 — `AuthGuard`, done out of order because 25.4 could not exist without it · 2026-08-25
+
+**This entry begins with a plan correction.** The session started on 25.4, S-01's post-sign-in
+branch, and its unknowns batch found the branch unbuildable: it reads the caller's memberships, and
+**nothing in `apps/api/src` resolved a bearer token into an actor**. Tasks 25.2 and 25.3 had shipped
+routes that answered `401` to everyone by design, and 25.4 is the first task that needed one of them
+to actually answer. The two ways round it were both worse than the reordering — building the guard
+under 25.4's number would falsify 28.1's row and the build-log entry it will never now get, and
+putting memberships on the sign-in response contradicts a decision recorded on `SessionResponseDto`
+in terms ("What is deliberately NOT here: any role, organization or entitlement"). So 28.1 was done
+first, `task.md` records the inversion on both rows, and 25.4 is `TODO` again rather than `BLOCKED`.
+
+That the plan had 25.4 before 28 is not a defect anyone could have seen at slicing time; it is what
+"task *n+1* assumes task *n*" cannot express when a dependency runs backwards.
+
+**One resolution port, one transaction, three statements — and the third fact is forced.** The guard
+runs before `TenantTransactionGuard`, so it has no request transaction and opens its own.
+`RequestIdentityStore.resolve` was chosen over composing `SessionStore` and `AccountMembershipStore`
+because this is the hottest path in the system: two ports would mean two transactions and two
+connections from a pool of ten at the §1 envelope's 150 concurrent. It cannot be a *single
+statement*, though, and the reason is the tenancy model rather than an optimisation declined —
+reading the memberships with their organization names needs `app.current_user` bound, and the
+account is not known until the session has been read. So: read session, bind account, read
+directory. `app.current_org` is deliberately left unset throughout, because task 25.3's
+`organization_directory_select` is conditioned on exactly that; binding a tenant there would look
+like diligence and would make the organization names silently vanish.
+
+**Verification became its own port, which task 21 asked for in writing.** `AccessTokenSigner`'s
+header said the verifying side "will state its own requirements rather than inherit a method nobody
+calls". `AccessTokenVerifier` is a sibling interface implemented by the same adapter and registered
+with `useExisting`: ISP is satisfied — `SignIn` and `RefreshSession` never verify, `AuthGuard` never
+signs — while one object holds the one symmetric secret. Every verification failure collapses to
+`null`: bad signature, wrong algorithm, expired `exp`, malformed, missing `sub`. The distinctions
+describe our verification to whoever is probing it and none changes what the caller should do.
+
+**A forged `sub` would have been a 500.** `identity.session.id` is a `uuid` column, so a token
+carrying `sub: "hello"` reaches the query and raises `invalid input syntax for type uuid` — a 500
+where a 401 belongs, and a signal handed to the prober. Shaped in the adapter rather than the guard,
+because the column type is the adapter's knowledge.
+
+**The boot failure was the right one to get.** `AppModule` registers the guard with `useExisting`,
+which resolves in the *registering* module's scope — so until `IdentityModule` re-exported
+`SessionModule`, the application refused to start. That is the correct failure: a guard the
+composition root cannot resolve must not silently become no guard. `useClass` there would have asked
+Nest to build a second guard from an empty provider scope.
+
+**The fixture is deleted, not disabled** — the row's own words — and its replacement is
+`test/support/signed-in-account.ts`: register, read the verification token out of the outbox as
+`sessions.e2e-spec` already did, verify, sign in, return a bearer. Three suites moved onto it. It
+costs an Argon2 hash per actor, deliberately expensive, and `members.e2e-spec` drives five; the
+alternative — seeding rows and minting tokens — would have exercised none of the path it now proves.
+Keeping the fixture was never really an option: it wrote the context by hand, so a suite using it
+would assert against a state the guard never produces, and the two could disagree without a single
+failure.
+
+**Two tests exist now that could not before, and both are the point of the task:**
+
+- A **still-valid access token whose session was signed out** answers `401 session-expired`. That
+  window was up to 15 minutes wide, recorded in §12.5.6 as a deferral against this task.
+- **FR-58 as a lived sequence.** A viewer is refused, is promoted by the administrator, and their
+  *very next request* is admitted — with the same unexpired token they were already holding.
+  Nothing was re-issued and nothing cached, which is precisely why "next request, not next login" is
+  true by construction rather than by a cache-invalidation step.
+
+**The rework taught this suite two of task 25.1's own decisions.** `DELETE FROM identity.membership`
+between tests removed nothing and did not fail — no role holds `DELETE`, the owner is subject to
+`FORCE`, and there is no `DELETE` policy — and the re-`INSERT` then hit
+`membership_account_organization_key`, the unique constraint over the whole pair rather than a
+partial one. Both are the design working. The fix is an `UPDATE` back to the intended state, which
+is exactly what task 26.2's re-invitation will do with the same row.
+
+`tenant-context.e2e-spec` came out stronger for the change. Its "no organization bound" case used to
+mean "the fixture is switched off"; it now means **an account that belongs to nothing**, which is a
+state the product really produces and the one 25.4 sends to S-04. And the whole chain is under test
+rather than half of it: the probe reads what the *database* has bound, and every step from bearer
+token to `set_config` is now real.
+
+Costs and boundaries, recorded:
+
+- **Two round trips per authenticated request** — the guard's transaction, then the request's. The
+  guard's is a read on its own connection; combining them is impossible, since the tenant
+  transaction cannot be opened before the tenant is known.
+- **`@Public()` on the admin realm reads alarmingly**, so the decorator says why at the route:
+  public to the *tenant* guard, guarded by its own sealed cookie until 28.2's `AdminRealmGuard`.
+- **28.2 and 28.3 are untouched.** This establishes closed-by-default; stating a permission for
+  every route, and the error-body conformance test, remain theirs.
+
+Verified: `pnpm gates` — 34 unit suites, 26 members e2e, 7 memberships, 6 tenant-context, and both
+browser suites, which is what says `@Public()` landed on the right controllers: `apps/web`'s sign-in
+and reset flows and `apps/admin`'s cross-origin realm journey all still pass with the guard in place.

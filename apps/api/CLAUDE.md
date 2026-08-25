@@ -105,8 +105,16 @@ active organization with, so a stale or revoked preference is a unit spec rather
 test. `organization_directory_select` makes the tenant root readable across memberships **only while
 no organization is bound**; see the tenancy note below before touching it.
 
-**Not built yet, and do not assume otherwise:** three of the four edge guards (`AuthGuard`,
-`EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
+Task 28.1 adds **`AuthGuard`**, done ahead of 25.4 because that task could not branch on
+memberships while nothing resolved a bearer token (the reordering is recorded on both `task.md`
+rows). The surface is now **closed by default**: an `APP_GUARD` registered before
+`TenantTransactionGuard`, resolving token → session → memberships → `selectActiveMembership` into
+the request context, with `@Public()` the only exception and each use carrying its reason.
+`AccessTokenVerifier` is a sibling port on the same adapter. **The e2e identity fixture is deleted**;
+`test/support/signed-in-account.ts` signs actors in for real.
+
+**Not built yet, and do not assume otherwise:** two of the four edge guards
+(`EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
 other than health, `/auth` and `/auth/admin`, and almost every module body — 33 of the 35
 `*.module.ts` files are registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
 only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by
@@ -209,6 +217,23 @@ before that this file claimed the amendment existed when it did not.
 **`AuthGuard` must be registered BEFORE `TenantTransactionGuard`.** `APP_GUARD` order follows
 registration order, and `AuthGuard` is what puts the organization in the context the transaction
 guard reads. Registered after, it would bind nothing and every tenant read would throw.
+
+**It is registered with `useExisting`, and `IdentityModule` re-exports `SessionModule` so it
+resolves** (task 28.1). `SessionModule` is what can construct the guard — it needs the JWT secret
+and the request-identity store — and `useExisting` resolves in the *registering* module's scope, so
+without the re-export the application does not boot at all. That is the right failure: a guard the
+composition root cannot resolve must not silently become no guard. `useClass` would ask Nest to
+build a second one from `AppModule`'s empty provider scope.
+
+**A route with no `@Public()` needs a session.** The three kinds of exemption are enumerated on the
+decorator, and the one to know about is the admin realm: `/auth/admin/*` is public to the *tenant*
+guard and not public at all. Swagger's `/docs` needs no marker — `SwaggerModule.setup` mounts
+express middleware, not a Nest route, so no `APP_GUARD` runs for it.
+
+**The guard opens its own transaction, and leaves `app.current_org` unset.** It runs before the
+request transaction exists, and task 25.3's `organization_directory_select` is conditioned on no
+organization being bound — so binding a tenant there would look like diligence and silently drop the
+organization names it needs.
 
 Traps, each of which has cost someone a day:
 

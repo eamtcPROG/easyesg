@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '@api/app/decorators/public.decorator';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { RefreshSessionRequestDto } from '../dto/refresh-session.request.dto';
 import { SessionResponseDto } from '../dto/session.response.dto';
@@ -23,9 +24,14 @@ import { SessionService } from '../services/session.service';
  *  - **All three routes stay public when `AuthGuard` arrives** (task 28) — they are how a
  *    bearer token comes to exist, and sign-out deliberately authenticates by refresh token so it
  *    works after the access token has expired (UC-07's state).
+ *
+ * Every route here is `@Public()`: two of them mint the token everything else presents, and
+ * sign-out authenticates by refresh token on purpose (AD-12), so it still works in UC-07's state
+ * with the access token already expired — which is exactly when someone wants it.
  */
 @ApiTags('identity')
 @Controller('auth')
+@Public()
 export class SessionController {
   constructor(private readonly sessionService: SessionService) {}
 

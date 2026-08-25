@@ -1,157 +1,116 @@
 import { Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { getDataSourceToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import type { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
-import { CORE_DATA_SOURCE } from '../src/infrastructure/persistence/data-source';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
-import { requestIdentityFixture } from './support/request-identity.fixture';
+import { asOrganization, connectAs } from './support/database';
+import { signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
- * S-16's API half, end to end against a real migrated database (UC-59, UC-62, UC-63, UC-64).
+ * S-16's API half, end to end (UC-59, UC-62, UC-63, UC-64) — **against real sessions** since
+ * task 28.1 deleted the identity fixture.
  *
  * **The role matrix is the point, and it is a matrix rather than a list of cases.** FR-158 requires
- * authorization "scoped per organization" and NFR-62 requires the interface layer to be untrusted;
- * what that means concretely is that every one of the three actions, plus the list, refuses every
- * role but Organization Administrator — twelve refusals that a spec asserting one of them would
- * imply and not establish. `requires-role.guard.spec.ts` proves the decision with no HTTP; this
- * proves it reaches the routes, which is a different claim: a guard that is right and unapplied
- * looks identical in a unit test.
+ * authorization scoped per organization and NFR-62 requires the interface layer to be untrusted;
+ * concretely, every action refuses every role but Organization Administrator — refusals a spec
+ * asserting one of them would imply and not establish. `requires-role.guard.spec.ts` proves the
+ * decision with no HTTP; this proves it reaches the routes through a real bearer token, which is a
+ * different claim.
  *
- * The identity is supplied by the task-11 fixture, because `AuthGuard` is task 28. Two consequences
- * worth stating: the anonymous case below is what these routes really answer in production today,
- * and the fixture is the only thing writing `role` — nothing in `src/` can.
- *
- * Rows are seeded through the API's own DataSource with the tenant bound by hand, because there is
- * no route that creates a membership yet (task 26.2 accepts an invitation, task 29 founds an
- * organization). Everything is removed afterwards rather than rolled back: the requests under test
- * run their own transactions on their own connections, so a suite-level transaction would be
- * invisible to them.
+ * Every actor here signed in the way a person does: registered, verified through the outbox, and
+ * exchanged a password for a token. That costs an Argon2 hash apiece — deliberately expensive — and
+ * buys the thing the fixture could not: these tests exercise the path that ships.
  */
 
 const ORG = '01920000-0000-7000-8000-0000000000e1';
 const OTHER_ORG = '01920000-0000-7000-8000-0000000000e2';
 
-const ADMIN = { account: '01920000-0000-7000-8000-0000000000f1', membership: '01920000-0000-7000-8000-00000000ff01' };
-const EDITOR = { account: '01920000-0000-7000-8000-0000000000f2', membership: '01920000-0000-7000-8000-00000000ff02' };
-const VIEWER = { account: '01920000-0000-7000-8000-0000000000f3', membership: '01920000-0000-7000-8000-00000000ff03' };
-const OUTSIDER = { account: '01920000-0000-7000-8000-0000000000f4', membership: '01920000-0000-7000-8000-00000000ff04' };
+const EMAILS = {
+  admin: 'oa@members.test',
+  editor: 'editor@members.test',
+  viewer: 'viewer@members.test',
+  outsider: 'outsider@members.test',
+  stranger: 'stranger@members.test',
+};
 
-const problem = (body: unknown) => (body as { type: string; status: number });
+interface Actor extends SignedInAccount {
+  membershipId: string;
+}
 
 describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
   let app: NestExpressApplication;
-  let dataSource: DataSource;
-  const identity = requestIdentityFixture();
+  let owner: DataSource;
+  let worker: DataSource;
 
-  /** Seeds and re-seeds, binding each organization in turn — the INSERT policy is a real WITH CHECK. */
-  const seed = async () => {
-    const runner = dataSource.createQueryRunner();
-    await runner.connect();
-    await runner.startTransaction();
-    try {
-      await runner.query(`SELECT set_config('app.current_org', '', true)`);
-      await runner.query(
-        `INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha SRL'), ($2, 'Beta SRL')`,
-        [ORG, OTHER_ORG],
-      );
-      await runner.query(
-        `INSERT INTO identity.account (id, email, locale) VALUES
-           ($1, 'oa@alpha.md', 'ro'), ($2, 'editor@alpha.md', 'ro'),
-           ($3, 'viewer@alpha.md', 'ro'), ($4, 'outsider@beta.md', 'ro')`,
-        [ADMIN.account, EDITOR.account, VIEWER.account, OUTSIDER.account],
-      );
-      await runner.query(`SELECT set_config('app.current_org', $1, true)`, [ORG]);
-      await runner.query(
-        `INSERT INTO identity.membership (id, account_id, organization_id, role) VALUES
-           ($1, $2, $9, $6), ($3, $4, $9, $7), ($5, $8, $9, $10)`,
-        [
-          ADMIN.membership, ADMIN.account,
-          EDITOR.membership, EDITOR.account,
-          VIEWER.membership,
-          MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR, MEMBERSHIP_ROLE.EDITOR,
-          VIEWER.account, ORG, MEMBERSHIP_ROLE.VIEWER,
-        ],
-      );
-      await runner.query(`SELECT set_config('app.current_org', $1, true)`, [OTHER_ORG]);
-      await runner.query(
-        `INSERT INTO identity.membership (id, account_id, organization_id, role)
-              VALUES ($1, $2, $3, $4)`,
-        [OUTSIDER.membership, OUTSIDER.account, OTHER_ORG, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR],
-      );
-      await runner.commitTransaction();
-    } catch (error) {
-      if (runner.isTransactionActive) await runner.rollbackTransaction();
-      throw error;
-    } finally {
-      await runner.release();
-    }
+  let admin: Actor;
+  let editor: Actor;
+  let viewer: Actor;
+  /** An administrator — of a DIFFERENT organization. The role is a property of the pair. */
+  let outsider: Actor;
+  /** Signed in, member of nothing: the state `membership-required` exists for. */
+  let stranger: SignedInAccount;
+
+  const http = () => request(app.getHttpServer());
+
+  const grant = async (
+    account: SignedInAccount,
+    organization: string,
+    role: string,
+  ): Promise<Actor> => {
+    const rows = await asOrganization(owner, organization, (run) =>
+      run(
+        `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1,$2,$3)
+         RETURNING id`,
+        [account.accountId, organization, role],
+      ),
+    );
+    return { ...account, membershipId: (rows as { id: string }[])[0].id };
   };
 
-  /**
-   * **Each organization is bound before its own row is deleted**, and forgetting that cost a run.
-   * `DELETE FROM core.organization` with no tenant bound matches the RLS policy zero times and
-   * removes nothing — it does not fail — so the next `seed()` hit a duplicate key and reported the
-   * problem as being in the insert. This is the "reads as no data rather than as an error" failure
-   * mode AD-2 describes, met from the writing side.
-   *
-   * Deleting an organization cascades its memberships; the accounts are separate, because a
-   * membership's account outlives it by design (FR-55).
-   */
   const unseed = async () => {
-    const runner = dataSource.createQueryRunner();
-    await runner.connect();
-    await runner.startTransaction();
-    try {
-      for (const organization of [ORG, OTHER_ORG]) {
-        await runner.query(`SELECT set_config('app.current_org', $1, true)`, [organization]);
-        await runner.query(`DELETE FROM core.organization WHERE id = $1`, [organization]);
-      }
-      await runner.query(`DELETE FROM identity.account WHERE id = ANY($1)`, [
-        [ADMIN.account, EDITOR.account, VIEWER.account, OUTSIDER.account],
-      ]);
-      await runner.commitTransaction();
-    } catch (error) {
-      if (runner.isTransactionActive) await runner.rollbackTransaction();
-      throw error;
-    } finally {
-      await runner.release();
+    for (const organization of [ORG, OTHER_ORG]) {
+      await asOrganization(owner, organization, (run) =>
+        run(`DELETE FROM core.organization WHERE id = $1`, [organization]),
+      );
     }
+    await owner.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [
+      Object.values(EMAILS),
+    ]);
   };
 
   /**
-   * Reads the database as the organization, because reading it any other way reads nothing.
+   * Between tests the memberships are **reset, not recreated**, and the first attempt to recreate
+   * them is what taught this suite two of task 25.1's decisions at once.
    *
-   * Both verification queries below are over RLS-scoped tables, so `dataSource.query` on a pooled
-   * connection with no `app.current_org` returns an empty result rather than an error — an
-   * assertion written that way fails saying "the row is not there" when the row is there and the
-   * reader is not. The same shape caught this suite twice, once writing and once reading, which is
-   * the whole argument for `TenantRepository` throwing instead.
+   * `DELETE FROM identity.membership` removes nothing: no runtime role holds `DELETE`, the owner is
+   * subject to `FORCE ROW LEVEL SECURITY`, and there is no `DELETE` policy — so the statement
+   * matches zero rows and does not fail. Then the re-`INSERT` hit
+   * `membership_account_organization_key`, which is the unique constraint over the whole pair
+   * rather than a partial one: **one row per (account, organization) ever**. Both are the design
+   * rather than obstacles to it, and an `UPDATE` back to the intended state is what the product's
+   * own re-invitation path (task 26.2) will do with the same row.
    */
-  const readAsOrganization = async <T>(sql: string, parameters: unknown[]): Promise<T[]> => {
-    const runner = dataSource.createQueryRunner();
-    await runner.connect();
-    await runner.startTransaction();
-    try {
-      await runner.query(`SELECT set_config('app.current_org', $1, true)`, [ORG]);
-      return (await runner.query(sql, parameters)) as T[];
-    } finally {
-      await runner.rollbackTransaction();
-      await runner.release();
-    }
+  const resetMemberships = async () => {
+    const restore = async (actor: Actor, organization: string, role: string) => {
+      await asOrganization(owner, organization, (run) =>
+        run(
+          `UPDATE identity.membership
+              SET role = $3, status = 'active', removed_at = NULL, updated_at = now()
+            WHERE account_id = $1 AND organization_id = $2`,
+          [actor.accountId, organization, role],
+        ),
+      );
+    };
+    await restore(admin, ORG, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR);
+    await restore(editor, ORG, MEMBERSHIP_ROLE.EDITOR);
+    await restore(viewer, ORG, MEMBERSHIP_ROLE.VIEWER);
+    await restore(outsider, OTHER_ORG, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR);
   };
-
-  const asAdmin = () =>
-    identity.actAs({
-      actorId: ADMIN.account,
-      organizationId: ORG,
-      role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
-    });
 
   beforeAll(async () => {
     await initialiseCatalogue();
@@ -159,131 +118,165 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
     class TestAppModule {}
     app = await NestFactory.create<NestExpressApplication>(TestAppModule, { logger: false });
     configureHttpApp(app);
-    app.use(identity.middleware);
     await app.init();
-    dataSource = app.get<DataSource>(getDataSourceToken(CORE_DATA_SOURCE));
-  }, 60_000);
+
+    owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-members-owner');
+    worker = await connectAs('DB_WORKER_USER', 'DB_WORKER_PASSWORD', 'easyesg-members-worker');
+    await unseed();
+
+    await asOrganization(owner, null, (run) =>
+      run(`INSERT INTO core.organization (id, name) VALUES ($1,'Alpha SRL'), ($2,'Beta SRL')`, [
+        ORG,
+        OTHER_ORG,
+      ]),
+    );
+
+    const server = app.getHttpServer();
+    const sign = (email: string) => signInFreshAccount({ server, worker, email });
+    admin = await grant(await sign(EMAILS.admin), ORG, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR);
+    editor = await grant(await sign(EMAILS.editor), ORG, MEMBERSHIP_ROLE.EDITOR);
+    viewer = await grant(await sign(EMAILS.viewer), ORG, MEMBERSHIP_ROLE.VIEWER);
+    outsider = await grant(
+      await sign(EMAILS.outsider),
+      OTHER_ORG,
+      MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+    );
+    stranger = await sign(EMAILS.stranger);
+  }, 180_000);
 
   afterAll(async () => {
     await unseed();
+    if (owner?.isInitialized) await owner.destroy();
+    if (worker?.isInitialized) await worker.destroy();
     await app?.close();
   });
 
-  beforeEach(async () => {
-    await unseed();
-    await seed();
-  });
+  beforeEach(resetMemberships);
 
   // ── The matrix ────────────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Each action against each actor. `outsider` is an administrator — of another organization — which
-   * is the case a matrix written in role names alone would miss: the role is not a property of the
-   * person, it is a property of the pair.
-   */
   const ACTIONS = [
-    { name: 'list members', call: (agent: request.Agent) => agent.get('/api/v1/members') },
-    {
-      name: 'change a role',
-      call: (agent: request.Agent) =>
-        agent.patch(`/api/v1/members/${EDITOR.membership}`).send({ role: MEMBERSHIP_ROLE.VIEWER }),
-    },
-    {
-      name: 'remove a member',
-      call: (agent: request.Agent) => agent.delete(`/api/v1/members/${EDITOR.membership}`),
-    },
-  ];
-
-  const ACTORS = [
-    {
-      name: 'an administrator of this organization',
-      identity: () => ({ actorId: ADMIN.account, organizationId: ORG, role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
-      admitted: true,
-    },
-    {
-      name: 'an editor',
-      identity: () => ({ actorId: EDITOR.account, organizationId: ORG, role: MEMBERSHIP_ROLE.EDITOR }),
-      refusal: 'insufficient-role',
-    },
-    {
-      name: 'a viewer',
-      identity: () => ({ actorId: VIEWER.account, organizationId: ORG, role: MEMBERSHIP_ROLE.VIEWER }),
-      refusal: 'insufficient-role',
-    },
-    {
-      name: 'someone with no active organization',
-      identity: () => ({ actorId: OUTSIDER.account }),
-      refusal: 'membership-required',
-    },
-    {
-      name: 'an anonymous caller — what these routes answer until task 28',
-      identity: () => null,
-      refusal: 'authentication-required',
-    },
+    { name: 'list members', call: (r: request.Test) => r },
+    { name: 'change a role', call: (r: request.Test) => r.send({ role: MEMBERSHIP_ROLE.VIEWER }) },
+    { name: 'remove a member', call: (r: request.Test) => r },
   ] as const;
 
-  describe.each(ACTORS)('$name', (actor) => {
-    it.each(ACTIONS)('$name', async (action) => {
-      identity.actAs(actor.identity());
-      const res = await action.call(request(app.getHttpServer()));
+  const requestFor = (action: string) => {
+    if (action === 'list members') return http().get('/api/v1/members');
+    if (action === 'change a role') return http().patch(`/api/v1/members/${editor.membershipId}`);
+    return http().delete(`/api/v1/members/${editor.membershipId}`);
+  };
 
-      if ('admitted' in actor) {
-        expect(res.status).toBeLessThan(300);
-        return;
-      }
+  const REFUSED = [
+    { name: 'an editor', actor: () => editor, refusal: 'insufficient-role', status: 403 },
+    { name: 'a viewer', actor: () => viewer, refusal: 'insufficient-role', status: 403 },
+    {
+      name: 'someone signed in who belongs to no organization',
+      actor: () => stranger,
+      refusal: 'membership-required',
+      status: 403,
+    },
+    { name: 'an anonymous caller', actor: () => null, refusal: 'authentication-required', status: 401 },
+  ] as const;
+
+  describe.each(REFUSED)('$name is refused', (actor) => {
+    it.each(ACTIONS)('$name', async (action) => {
+      const identity = actor.actor();
+      const call = requestFor(action.name);
+      const res = await action.call(identity === null ? call : call.set(identity.authorization));
+
+      expect(res.status).toBe(actor.status);
       expect(res.headers['content-type']).toContain('application/problem+json');
-      expect(problem(res.body).type).toBe(`${PROBLEM_BASE_URI}/${actor.refusal}`);
-      expect(problem(res.body).status).toBe(actor.refusal === 'authentication-required' ? 401 : 403);
+      expect((res.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/${actor.refusal}`);
     });
+  });
+
+  describe('an administrator of this organization is admitted', () => {
+    it.each(ACTIONS)('$name', async (action) => {
+      const res = await action.call(requestFor(action.name).set(admin.authorization));
+      expect(res.status).toBeLessThan(300);
+    });
+  });
+
+  /**
+   * The case a matrix written in role names alone would miss. This actor holds exactly the role the
+   * routes require — in another organization — so the role gate admits them, and RLS is what makes
+   * the request harmless: their active organization is Beta, so they list Beta's members and cannot
+   * see, let alone change, Alpha's.
+   */
+  it('admits an administrator of another organization, scoped to their own', async () => {
+    const res = await http().get('/api/v1/members').set(outsider.authorization).expect(200);
+    const emails = (res.body as { objects: { email: string }[] }).objects.map((m) => m.email);
+
+    expect(emails).toEqual([EMAILS.outsider]);
+    expect(emails).not.toContain(EMAILS.admin);
+  });
+
+  it('answers 404 when they reach for a membership in the organization they do not hold', async () => {
+    const res = await http()
+      .delete(`/api/v1/members/${editor.membershipId}`)
+      .set(outsider.authorization)
+      .expect(404);
+    expect((res.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/not-found`);
   });
 
   // ── UC-59 ─────────────────────────────────────────────────────────────────────────────────────
 
   it('lists every member with their role, and nobody else’s', async () => {
-    asAdmin();
-    const res = await request(app.getHttpServer()).get('/api/v1/members').expect(200);
-    const body = res.body as { objects: { id: string; email: string; role: string; lastActiveAt: number | null }[] };
+    const res = await http().get('/api/v1/members').set(admin.authorization).expect(200);
+    const { objects } = res.body as {
+      objects: { email: string; role: string; lastActiveAt: number | null }[];
+    };
 
-    expect(body.objects.map((m) => [m.email, m.role])).toEqual([
-      ['oa@alpha.md', MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR],
-      ['editor@alpha.md', MEMBERSHIP_ROLE.EDITOR],
-      ['viewer@alpha.md', MEMBERSHIP_ROLE.VIEWER],
-    ]);
-    // The other organization's administrator is absent, and no WHERE clause in the repository put
-    // them there — RLS did.
-    expect(body.objects.map((m) => m.email)).not.toContain('outsider@beta.md');
-    // FR-56's last activity, honestly absent until task 28 writes it.
-    expect(body.objects.every((m) => m.lastActiveAt === null)).toBe(true);
+    expect(objects.map((m) => [m.email, m.role]).sort()).toEqual(
+      [
+        [EMAILS.admin, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR],
+        [EMAILS.editor, MEMBERSHIP_ROLE.EDITOR],
+        [EMAILS.viewer, MEMBERSHIP_ROLE.VIEWER],
+      ].sort(),
+    );
+    expect(objects.map((m) => m.email)).not.toContain(EMAILS.outsider);
+    // FR-56's last activity, honestly absent until something writes it.
+    expect(objects.every((m) => m.lastActiveAt === null)).toBe(true);
   });
 
-  // ── UC-62 and UC-64 ───────────────────────────────────────────────────────────────────────────
+  // ── UC-62, UC-64 ──────────────────────────────────────────────────────────────────────────────
 
-  it('changes a role, and the change is visible on the next read (FR-58)', async () => {
-    asAdmin();
-    await request(app.getHttpServer())
-      .patch(`/api/v1/members/${EDITOR.membership}`)
+  it('changes a role, visible on the next read (FR-58)', async () => {
+    await http()
+      .patch(`/api/v1/members/${editor.membershipId}`)
+      .set(admin.authorization)
       .send({ role: MEMBERSHIP_ROLE.VIEWER })
       .expect(204);
 
-    const res = await request(app.getHttpServer()).get('/api/v1/members').expect(200);
+    const res = await http().get('/api/v1/members').set(admin.authorization).expect(200);
     const changed = (res.body as { objects: { id: string; role: string }[] }).objects.find(
-      (m) => m.id === EDITOR.membership,
+      (m) => m.id === editor.membershipId,
     );
     expect(changed?.role).toBe(MEMBERSHIP_ROLE.VIEWER);
   });
 
-  it('promotes a member to administrator (UC-64)', async () => {
-    asAdmin();
-    await request(app.getHttpServer())
-      .patch(`/api/v1/members/${VIEWER.membership}`)
+  /**
+   * FR-58 as a *lived* sequence rather than a stored value, which only a real session can show: the
+   * demoted administrator's very next request is evaluated under the new role, with the same
+   * unexpired access token they were already holding. Nothing was re-issued and nothing cached.
+   */
+  it('takes effect on the demoted member’s next request, not at their next sign-in', async () => {
+    await http().get('/api/v1/members').set(viewer.authorization).expect(403);
+
+    await http()
+      .patch(`/api/v1/members/${viewer.membershipId}`)
+      .set(admin.authorization)
       .send({ role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR })
       .expect(204);
+
+    await http().get('/api/v1/members').set(viewer.authorization).expect(200);
   });
 
   it('refuses a role outside the vocabulary before it reaches the database', async () => {
-    asAdmin();
-    await request(app.getHttpServer())
-      .patch(`/api/v1/members/${EDITOR.membership}`)
+    await http()
+      .patch(`/api/v1/members/${editor.membershipId}`)
+      .set(admin.authorization)
       .send({ role: 'owner' })
       .expect(400);
   });
@@ -291,85 +284,89 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
   // ── FR-60 ─────────────────────────────────────────────────────────────────────────────────────
 
   it('refuses to demote the last administrator, naming the way out', async () => {
-    asAdmin();
-    const res = await request(app.getHttpServer())
-      .patch(`/api/v1/members/${ADMIN.membership}`)
+    const res = await http()
+      .patch(`/api/v1/members/${admin.membershipId}`)
+      .set(admin.authorization)
       .send({ role: MEMBERSHIP_ROLE.EDITOR })
       .expect(409);
 
-    expect(problem(res.body).type).toBe(`${PROBLEM_BASE_URI}/last-administrator`);
-    // Resolved wording, not a slug — CLAUDE.md forbids an internal identifier on a read surface.
+    expect((res.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/last-administrator`);
     expect((res.body as { detail: string }).detail).toContain('administrator');
   });
 
   it('refuses to remove the last administrator', async () => {
-    asAdmin();
-    const res = await request(app.getHttpServer())
-      .delete(`/api/v1/members/${ADMIN.membership}`)
+    const res = await http()
+      .delete(`/api/v1/members/${admin.membershipId}`)
+      .set(admin.authorization)
       .expect(409);
-    expect(problem(res.body).type).toBe(`${PROBLEM_BASE_URI}/last-administrator`);
+    expect((res.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/last-administrator`);
   });
 
   it('permits it once a second administrator has been promoted (UC-64 → UC-63)', async () => {
-    asAdmin();
-    const http = request(app.getHttpServer());
-    await http
-      .patch(`/api/v1/members/${VIEWER.membership}`)
+    await http()
+      .patch(`/api/v1/members/${viewer.membershipId}`)
+      .set(admin.authorization)
       .send({ role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR })
       .expect(204);
 
-    await request(app.getHttpServer()).delete(`/api/v1/members/${ADMIN.membership}`).expect(204);
+    await http()
+      .delete(`/api/v1/members/${admin.membershipId}`)
+      .set(admin.authorization)
+      .expect(204);
   });
 
   // ── UC-63 ─────────────────────────────────────────────────────────────────────────────────────
 
-  it('removes access without deleting the row, and the audit trail records it (FR-59, FR-55)', async () => {
-    asAdmin();
-    // `core.field_change` is append-only and every test in this suite re-seeds the same ids, so
-    // this record already carries the grant-and-cascade rows of every case before it. A marker
-    // scopes the assertion to what THIS request wrote — the alternative, unique ids per test, would
-    // hide that the trail genuinely accumulates, which is the property DR-6 is for.
+  it('removes access without deleting the row, and attributes it (FR-59, FR-55)', async () => {
     const since = new Date();
-    await request(app.getHttpServer()).delete(`/api/v1/members/${EDITOR.membership}`).expect(204);
+    await http()
+      .delete(`/api/v1/members/${editor.membershipId}`)
+      .set(admin.authorization)
+      .expect(204);
 
-    const rows = await readAsOrganization<{ status: string; removed_at: Date | null }>(
-      `SELECT status, removed_at FROM identity.membership WHERE id = $1`,
-      [EDITOR.membership],
-    );
+    const rows = (await asOrganization(owner, ORG, (run) =>
+      run(`SELECT status, removed_at FROM identity.membership WHERE id = $1`, [
+        editor.membershipId,
+      ]),
+    )) as { status: string; removed_at: Date | null }[];
+
+    // The row survives, which is the requirement. Asserting only that the list no longer shows them
+    // would pass identically against a delete, and would therefore prove the wrong thing.
     expect(rows).toHaveLength(1);
     expect(rows[0].status).toBe('removed');
     expect(rows[0].removed_at).not.toBeNull();
 
     /**
-     * The membership's own arc, which is what the soft delete buys over a row that is simply gone:
-     * granted, then withdrawn, with the withdrawal attributed to the administrator who did it.
-     *
-     * `actor_id` comes from `app.current_user`, bound by `setTenantContext` from the request's
-     * resolved actor. No application code passes an actor anywhere — not the controller, not the
-     * service, not the use case, not the repository — and the attribution FR-55 requires arrives
-     * anyway, because the trigger reads it from the transaction. That is why the capture is a
-     * trigger rather than a function someone has to remember to call.
+     * Attributed to the administrator who did it, from `app.current_user` — which `AuthGuard`
+     * resolved from the bearer token and `setTenantContext` bound. No application code passes an
+     * actor anywhere: not the controller, not the service, not the use case, not the repository.
      */
-    const changes = await readAsOrganization<{ old_value: string; new_value: string; actor_id: string | null }>(
-      `SELECT old_value, new_value, actor_id FROM core.field_change
-        WHERE table_name = 'identity.membership' AND record_id = $1
-          AND field_name = 'status' AND occurred_at >= $2
-        ORDER BY occurred_at`,
-      [EDITOR.membership, since],
+    const changes = await asOrganization(owner, ORG, (run) =>
+      run(
+        `SELECT old_value, new_value, actor_id FROM core.field_change
+          WHERE table_name = 'identity.membership' AND record_id = $1
+            AND field_name = 'status' AND occurred_at >= $2`,
+        [editor.membershipId, since],
+      ),
     );
     expect(changes).toEqual([
-      { old_value: 'active', new_value: 'removed', actor_id: ADMIN.account },
+      { old_value: 'active', new_value: 'removed', actor_id: admin.accountId },
     ]);
-
-    const res = await request(app.getHttpServer()).get('/api/v1/members').expect(200);
-    expect((res.body as { objects: unknown[] }).objects).toHaveLength(2);
   });
 
-  it('answers 404 for another organization’s membership id, not 403', async () => {
-    asAdmin();
-    const res = await request(app.getHttpServer())
-      .delete(`/api/v1/members/${OUTSIDER.membership}`)
-      .expect(404);
-    expect(problem(res.body).type).toBe(`${PROBLEM_BASE_URI}/not-found`);
+  /** The removed member's own next request is refused — no session revocation involved (AD-12). */
+  it('refuses the removed member’s next request without ending their session', async () => {
+    await http().get('/api/v1/memberships').set(editor.authorization).expect(200);
+
+    await http()
+      .delete(`/api/v1/members/${editor.membershipId}`)
+      .set(admin.authorization)
+      .expect(204);
+
+    const res = await http().get('/api/v1/members').set(editor.authorization).expect(403);
+    expect((res.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/membership-required`);
+    // Their session is untouched: they still reach a route that needs no membership, and would
+    // still hold access to any other organization they belonged to (FR-12).
+    await http().get('/api/v1/memberships').set(editor.authorization).expect(200);
   });
 });

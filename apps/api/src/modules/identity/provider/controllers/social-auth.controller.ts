@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '@api/app/decorators/public.decorator';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { SOCIAL_PROVIDER } from '@api/contracts/identity-provider.port';
 import { SessionResponseDto } from '@api/modules/identity/session/dto/session.response.dto';
@@ -19,9 +20,13 @@ import { SocialAuthService } from '../services/social-auth.service';
  * are how a session comes to exist. `{provider}` is a path parameter rather than a body field
  * because the two providers are two resources of one shape (and the OpenAPI enum keeps the set
  * closed on the wire).
+ *
+ * `@Public()` for the same reason as the rest of `/auth`: this is the other way a session is
+ * created (UC-02, UC-05), and the caller has no token until it succeeds.
  */
 @ApiTags('identity')
 @Controller('auth/social')
+@Public()
 export class SocialAuthController {
   constructor(private readonly socialAuthService: SocialAuthService) {}
 

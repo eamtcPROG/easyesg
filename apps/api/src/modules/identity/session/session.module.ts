@@ -1,4 +1,5 @@
 import { Module, type Provider } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
 import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
@@ -10,9 +11,17 @@ import {
 } from '@api/modules/identity/account/interfaces/password-hasher.interface';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { SessionController } from './controllers/session.controller';
+import { AuthGuard } from './guards/auth.guard';
+import {
+  REQUEST_IDENTITY_STORE,
+  type RequestIdentityStore,
+} from './interfaces/request-identity-store.interface';
+import { RequestIdentityStoreRepository } from '@api/infrastructure/persistence/identity/request-identity-store.repository';
 import {
   ACCESS_TOKEN_SIGNER,
+  ACCESS_TOKEN_VERIFIER,
   type AccessTokenSigner,
+  type AccessTokenVerifier,
 } from './interfaces/access-token-signer.interface';
 import { SESSION_STORE, type SessionStore } from './interfaces/session-store.interface';
 import { SessionService } from './services/session.service';
@@ -60,6 +69,25 @@ const httpProviders: Provider[] = [
       // mode (`emit-openapi.ts`) instantiates no provider, so the hermetic gates need no secret.
       new JwtAccessTokenSigner(config.get('auth.jwtSecret', { infer: true })),
   },
+  /**
+   * **One adapter instance behind two tokens** (task 28.1). `JwtAccessTokenSigner` implements both
+   * ports, and they are registered separately so a consumer depends only on the half it uses:
+   * `SignIn` and `RefreshSession` inject the signer, `AuthGuard` injects the verifier. `useExisting`
+   * rather than a second `useFactory` — two instances would each construct a `JwtService` from the
+   * same secret, which is one object too many holding it.
+   */
+  { provide: ACCESS_TOKEN_VERIFIER, useExisting: ACCESS_TOKEN_SIGNER },
+  { provide: REQUEST_IDENTITY_STORE, useClass: RequestIdentityStoreRepository },
+  {
+    provide: AuthGuard,
+    inject: [Reflector, ACCESS_TOKEN_VERIFIER, REQUEST_IDENTITY_STORE, CLOCK],
+    useFactory: (
+      reflector: Reflector,
+      verifier: AccessTokenVerifier,
+      store: RequestIdentityStore,
+      now: Clock,
+    ) => new AuthGuard(reflector, verifier, store, now),
+  },
   {
     provide: SignIn,
     inject: [SESSION_STORE, PASSWORD_HASHER, ACCESS_TOKEN_SIGNER, CLOCK],
@@ -87,5 +115,6 @@ const httpProviders: Provider[] = [
 @Module({
   controllers: mode === APP_MODE.WORKER ? [] : [SessionController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
+  exports: mode === APP_MODE.WORKER ? [] : [AuthGuard],
 })
 export class SessionModule {}

@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '@api/app/decorators/public.decorator';
 import type { Request, Response } from 'express';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import {
@@ -43,10 +44,17 @@ const SET_COOKIE = 'set-cookie';
  * api holds both ends of the exchange. And every route here stays public when task 28's guard
  * chain arrives — they are how an admin session comes to exist, and `GET` is the probe the
  * console's router asks "am I signed in" through.
+ *
+ * **`@Public()` here means public to the TENANT guard and nothing more.** This realm carries no
+ * bearer: NFR-65 gives it a separate credential store and a sealed `SameSite=Strict` cookie which
+ * this controller's own handler verifies, and 28.2's `AdminRealmGuard` is what turns that into a
+ * chain. Without the marker the tenant guard would 401 the more privileged surface for not
+ * presenting the less privileged surface's token.
  */
 @ApiTags('platform')
 @UseGuards(AdminOriginGuard)
 @Controller('auth/admin')
+@Public()
 export class AdminSessionController {
   constructor(private readonly adminSessionService: AdminSessionService) {}
 
