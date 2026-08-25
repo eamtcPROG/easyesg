@@ -255,7 +255,7 @@ const unclassifiedAuditTables = (x: Executor) =>
  * or 34 must either carry the capture trigger or say why it does not. Silence is the failure: an
  * unaudited table produces no error, just a trail with a gap nobody can see afterwards.
  */
-const FIELD_AUDITED_TABLES = ['core.organization', 'identity.membership'];
+const FIELD_AUDITED_TABLES = ['core.organization', 'identity.membership', 'identity.invitation'];
 
 /**
  * Tenant-scoped tables that are deliberately **not** field-audited, each with its reason.
@@ -291,8 +291,8 @@ const auditedTablesMissingCapture = (x: Executor) =>
  * tenant-scoped table outside `core` and would have shipped unaudited without a word from any gate.
  * The two clauses are now the same pair `tablesMissingRowLevelSecurity` already uses, and for the
  * same reason: tenant data is what FR-54 is about, and `core` is where most but no longer all of it
- * lives. Task 26.1's `identity.invitation` is the next case, and it will be caught rather than
- * remembered.
+ * lives. Task 26.1's `identity.invitation` was the next case, and it was caught by this sweep
+ * rather than remembered — the classification list above names it.
  */
 const unclassifiedTenantTables = (x: Executor) =>
   x.query<{ location: string }[]>(

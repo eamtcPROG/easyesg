@@ -272,6 +272,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the active organization’s outstanding invitations
+         * @description The other half of "who can see our ESG data": people invited but not yet joined. Unpaginated by design — the collection is bounded by the plan’s seat entitlement. An invitation whose link has lapsed still appears, because it is what holds the invited address; resending it restores a working link.
+         */
+        get: operations["InvitationsController_list"];
+        put?: never;
+        /**
+         * Invite someone to the organization with an edit or view-only role
+         * @description Issues a single-use invitation bound to the address and emails it. The link lasts seven days and can be reissued or withdrawn at any time before it is accepted.
+         */
+        post: operations["InvitationsController_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{invitationId}/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send the invitation again
+         * @description Reissues the link and restarts the seven days on the same invitation, so the person keeps their place in the list and their assigned role. The previously sent link stops working immediately — there is never more than one live link per invitation. An invitation whose link has already lapsed can be resent, which is what makes a forgotten one recoverable.
+         */
+        post: operations["InvitationsController_resend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{invitationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Withdraw an outstanding invitation
+         * @description The link stops working immediately, and the invited address is free to be invited again — at a different role, which is the usual reason. The record of the invitation is kept, so the history of who was offered access to the organization stays complete.
+         */
+        delete: operations["InvitationsController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -556,6 +620,36 @@ export interface components {
             role: "editor" | "viewer" | "organization_administrator";
             /** @description Unix epoch milliseconds when access was granted. */
             joinedAt: number;
+        };
+        InvitationResponseDto: {
+            /**
+             * Format: uuid
+             * @description Identifies this invitation for a resend or a revocation.
+             */
+            id: string;
+            /**
+             * Format: email
+             * @description The address the invitation is bound to.
+             */
+            email: string;
+            /** @enum {string} */
+            role: "editor" | "viewer";
+            /** @description Unix epoch milliseconds of the most recent issue or resend. A resend moves this, because it reissues the link rather than re-delivering it. */
+            issuedAt: number;
+            /** @description Unix epoch milliseconds after which the link no longer works. A lapsed invitation still appears here — it is what holds the address, and resending it restores a working link. */
+            expiresAt: number;
+        };
+        IssueInvitationRequestDto: {
+            /**
+             * Format: email
+             * @description The address to invite. The invitation binds to it: acceptance is refused for any other address, including one a social provider asserts.
+             */
+            email: string;
+            /**
+             * @description The role acceptance grants. Organization Administrator is not invitable — it is granted to an existing member instead.
+             * @enum {string}
+             */
+            role: "editor" | "viewer";
         };
         AdminChallengeResponseDto: {
             /**
@@ -1184,6 +1278,139 @@ export interface operations {
             };
             /** @description No signed-in account (problem type authentication-required). */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    InvitationsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The outstanding invitations. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["InvitationResponseDto"][];
+                    };
+                };
+            };
+            /** @description The caller holds no membership in an active organization (problem type membership-required), or holds one in a role that is not organization_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    InvitationsController_issue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueInvitationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The invitation was issued and its email was queued. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["InvitationResponseDto"];
+                    };
+                };
+            };
+            /** @description The address is malformed, or the role is not one that can be invited. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The address already belongs to a member of this organization (problem type already-member), or an invitation to it is already outstanding (problem type invitation-outstanding) — resend or revoke that one instead. Two problem types rather than one, because the two have different resolutions and a client should not have to read the wording to tell them apart. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    InvitationsController_resend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A fresh link was issued and its email was queued. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No outstanding invitation of this organization has that id — it was accepted or revoked. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    InvitationsController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invitation was withdrawn. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No outstanding invitation of this organization has that id. An invitation that has already been accepted is a membership; end that person’s access from the members collection. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

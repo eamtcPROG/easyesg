@@ -54,6 +54,15 @@ export const ProblemType = {
    *  own slug rather than the generic `conflict`, because S-16 has to name the specific way out —
    *  promote someone else first — and a front end cannot branch on wording (task 25.2). */
   LastAdministrator: 'last-administrator',
+  /** UC-60 refused: the invited address already belongs to an active member. Its own slug rather
+   *  than the generic `conflict`, for `last-administrator`'s reason — S-16 has to name the specific
+   *  way out (open the user list and change their role), and a front end cannot branch on
+   *  wording (task 26.1). */
+  AlreadyMember: 'already-member',
+  /** UC-60 refused: an invitation to that address is already outstanding in this organization.
+   *  A different slug from the one above because the resolution is different — resend it or revoke
+   *  it — and the two arrive at the same route from the same form. */
+  InvitationOutstanding: 'invitation-outstanding',
   EntitlementDenied: 'entitlement-denied',
   EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
   TenantContextMissing: 'tenant-context-missing',

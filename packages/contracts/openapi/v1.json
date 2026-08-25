@@ -705,6 +705,167 @@
         ]
       }
     },
+    "/api/v1/invitations": {
+      "get": {
+        "description": "The other half of \"who can see our ESG data\": people invited but not yet joined. Unpaginated by design — the collection is bounded by the plan’s seat entitlement. An invitation whose link has lapsed still appears, because it is what holds the invited address; resending it restores a working link.",
+        "operationId": "InvitationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The outstanding invitations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/InvitationResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller holds no membership in an active organization (problem type membership-required), or holds one in a role that is not organization_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "List the active organization’s outstanding invitations",
+        "tags": [
+          "identity"
+        ]
+      },
+      "post": {
+        "description": "Issues a single-use invitation bound to the address and emails it. The link lasts seven days and can be reissued or withdrawn at any time before it is accepted.",
+        "operationId": "InvitationsController_issue",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueInvitationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The invitation was issued and its email was queued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/InvitationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The address is malformed, or the role is not one that can be invited.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The address already belongs to a member of this organization (problem type already-member), or an invitation to it is already outstanding (problem type invitation-outstanding) — resend or revoke that one instead. Two problem types rather than one, because the two have different resolutions and a client should not have to read the wording to tell them apart.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Invite someone to the organization with an edit or view-only role",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/invitations/{invitationId}/email": {
+      "post": {
+        "description": "Reissues the link and restarts the seven days on the same invitation, so the person keeps their place in the list and their assigned role. The previously sent link stops working immediately — there is never more than one live link per invitation. An invitation whose link has already lapsed can be resent, which is what makes a forgotten one recoverable.",
+        "operationId": "InvitationsController_resend",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "A fresh link was issued and its email was queued."
+          },
+          "404": {
+            "description": "No outstanding invitation of this organization has that id — it was accepted or revoked.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Send the invitation again",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/invitations/{invitationId}": {
+      "delete": {
+        "description": "The link stops working immediately, and the invited address is free to be invited again — at a different role, which is the usual reason. The record of the invitation is kept, so the history of who was offered access to the organization stays complete.",
+        "operationId": "InvitationsController_revoke",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The invitation was withdrawn."
+          },
+          "404": {
+            "description": "No outstanding invitation of this organization has that id. An invitation that has already been accepted is a membership; end that person’s access from the members collection.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Withdraw an outstanding invitation",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -1410,6 +1571,66 @@
           "organizationName",
           "role",
           "joinedAt"
+        ]
+      },
+      "InvitationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifies this invitation for a resend or a revocation."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "The address the invitation is bound to."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "editor",
+              "viewer"
+            ]
+          },
+          "issuedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds of the most recent issue or resend. A resend moves this, because it reissues the link rather than re-delivering it."
+          },
+          "expiresAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds after which the link no longer works. A lapsed invitation still appears here — it is what holds the address, and resending it restores a working link."
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "issuedAt",
+          "expiresAt"
+        ]
+      },
+      "IssueInvitationRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320,
+            "description": "The address to invite. The invitation binds to it: acceptance is refused for any other address, including one a social provider asserts."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "editor",
+              "viewer"
+            ],
+            "description": "The role acceptance grants. Organization Administrator is not invitable — it is granted to an existing member instead."
+          }
+        },
+        "required": [
+          "email",
+          "role"
         ]
       },
       "AdminChallengeResponseDto": {

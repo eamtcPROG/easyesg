@@ -2260,3 +2260,119 @@ language; the page now says so where someone would otherwise "fix" it. **`async-
 worth streaming ahead of it. **`bundle-barrel-imports`** — the repo's standing house convention,
 declined on task 24 for the same reason. `vercel-composition-patterns` was not loaded: no component
 API was added and no boolean prop grew.
+
+## Task 26.1 — invitations, and a cleanup routine that could not delete · 2026-08-25
+
+`identity.invitation` with its RLS, and `GET/POST /api/v1/invitations`,
+`POST /api/v1/invitations/{id}/email`, `DELETE /api/v1/invitations/{id}` behind
+`@RequiresRole(organization_administrator)` — UC-60 and UC-61 (FR-11, FR-57), with the email leaving
+through task 15's outbox and task 19's `EmailPort`. The second tenant-scoped table outside `core`,
+and it follows `identity.membership`'s pattern rather than inventing one.
+
+**The schema is `identity`, not `core`** — the same correction task 25.1 made to its own row, for the
+same reason and caught the same way. §7.1 lists invitations under `identity` and names the one
+permitted cross-schema foreign key, "to `core.organization` only (membership target)", which is
+exactly what this table's reference is. The document governs; the tracking row was what was wrong.
+
+**Three unknowns were raised as a batch before the first file, and all three are in §12.5.6.**
+
+- **A resend rotates the token and restarts the seven days, on the same row.** FR-57's acceptance —
+  "a resend delivers the same invitation" — is satisfied by the *record*: the row keeps its id, its
+  role and its history, so S-16 shows one line per invited person. What does not survive is the
+  previous link, so there is exactly one live link per invitation, ever. That is OQ-55's verification
+  precedent applied to the third token kind. Declined: re-delivering the link unchanged, which leaves
+  "it expired before they got round to it" unfixable except by revoke-and-reinvite; and re-delivering
+  it with the expiry extended, which lets repeated resends make a link's lifetime unbounded.
+- **The email language is the invitee's own where they have an account, the inviter's otherwise**,
+  resolved once at issue and stored on the row. FR-169 resolves language per recipient and a worker
+  has no `Accept-Language` to negotiate; for an invitee with no account there is no preference to
+  honour. The e2e test proves the *difference* rather than one case — one invitation goes out `ru`
+  and another `ro` from the same administrator in the same request shape, which a single-invitation
+  assertion could not distinguish from "the inviter's locale happens to be right".
+- **Both collisions are refused, each naming its way out**, and the pending one is refused by a
+  partial unique index rather than by a read — `RegisterAccount`'s reasoning, that two simultaneous
+  attempts both pass a read-then-write check and one of them is wrong.
+
+**One sentence of the collision decision was amended before any code was written, and the amendment
+is the protocol working.** The register said "a **live** pending invitation". A partial index cannot
+reference `now()` — it is not immutable — so the rule the database can actually hold includes an
+expired-but-unrevoked invitation. Rather than ship the wider rule quietly, §12.5.6 now says so, and
+says why the message is still right: the resolution it names is *resend*, which is exactly what an
+expired invitation needs.
+
+**That decision has a consequence in the read model, and missing it would have built a dead end.**
+`GET /invitations` lists every `pending` row, lapsed ones included, because the collection must
+publish exactly what the index constrains. Filter by the clock and an administrator gets a `409` for
+an invitation they cannot see, cannot resend and cannot revoke — a dead end assembled from two
+individually reasonable decisions. It is stated on the port, on the use case and on the repository,
+because it is the kind of thing a later reader "tidies".
+
+**`invitation-expiry.ts` was written and deleted within the hour.** Nothing in 26.1 consults the
+clock: issue, resend, revoke and list all branch on `status`. Resending a lapsed invitation is the
+*point* of the rotation decision, and revoking one is ordinary tidy-up. A predicate whose only
+consumer is the next task is widening a question by coding around it; 26.2 writes it where it bites,
+with the spec that states its semantics.
+
+**The idempotency key is derived from the invitation's expiry, and the resend spec exists to protect
+that.** Emitting the row as it was *read* rather than as it now stands would reuse the issuing row's
+key, and BullMQ would discard the resend as a duplicate — a `204` to the administrator, nothing to
+the invitee, and no test that merely checked "an event was emitted" would notice. Both the unit spec
+and the e2e assert two distinct keys.
+
+**What the first e2e run taught, which is the entry's title.** `DELETE FROM identity.invitation` as
+the table's **owner** succeeds, reports `DELETE 0`, and removes nothing — twelve tests then failed
+with `409`s on invitations nobody could see. Task 25.2's suite recorded a version of this for
+memberships; this is the stronger form, and the comment written *before* the run had the cause
+wrong. It is not that a tenant needs binding: there is **no `DELETE` policy on the table at all**, so
+under `FORCE ROW LEVEL SECURITY` even `esg_migrator` matches zero rows and a bound organization is
+not the missing part. That is FR-55's trail enforced by the database rather than by anyone
+remembering. The suite now cleans up the way the product does — by revoking — which incidentally
+proves revocation really does free the invited address. The rows do go eventually: `afterAll` drops
+`core.organization`, and the cascade bypasses row security the way referential actions are defined
+to.
+
+**`TenantRepository` gained a `protected get runner()`.** `writeOutboxEvent` takes a `QueryRunner`
+because P-8's whole guarantee is that the outbox row commits on *this* transaction; an
+`EntityManager` cannot express that. It stays `protected` deliberately — handing a runner outward
+would let a caller commit or roll back the request's transaction from outside the two components
+that own its lifecycle.
+
+**Deliberately absent, so nobody completes them in passing:** no `invited_by_account_id`
+(`core.capture_field_change` already attributes the INSERT, and a column would be the copy that goes
+stale); no `expired` status (derived at the point of use, as AD-12's session lifetimes are — a stored
+one needs a sweep and is wrong between sweeps while *looking* authoritative); no acceptance policy
+(UC-15's acceptor reads by token before they are a member, so `app.current_org` is unbound — that is
+26.2's problem and gets 26.2's policy). `token_hash` is in the capture trigger's ignore list: a
+resend necessarily moves `expires_at`, which *is* captured with its actor, so the trail answers "who
+resent this, and when" without holding anything derived from the secret. Measured rather than
+assumed — an insert-then-revoke in a rolled-back transaction produces fourteen `core.field_change`
+rows for the insert and exactly two for the revocation (`status` pending → revoked, and
+`revoked_at`), with `token_hash` absent from both even though the probe changed it.
+
+**Recorded deferral — no entitlement gate.** UC-60's precondition is available seat entitlement and
+UX-50 draws the quota path, but `EntitlementPort` has no implementation until task 54 and
+`EntitlementGuard` does not exist, so an invitation beyond the plan's allowance is issued. Closing it
+is one `@RequiresEntitlement('org.seats.max')` on the issue route.
+
+**`nestjs-best-practices`, read against the diff, found one real gap.** `security-rate-limiting`
+names "can be abused to spam users with emails", and both write routes send mail to a third party
+while §12.5.6's auth-path row covers invitation *accept* and not issue or resend. Recorded in
+§12.5.6 with what holds meanwhile — the routes are authenticated, OA-only, tenant-scoped and
+attributed in `core.field_change`, so this is an accountable abuse path rather than an anonymous one
+— and what closes it: task 21's throttle machinery keyed per invitation, since the harm is to one
+mailbox. Declined with reasons: **`error-throw-http-exceptions`** — the architecture wins, and
+`apps/api/CLAUDE.md` forbids `HttpException` from domain or use-case code in terms; a `DomainError`
+with a registered problem type is the house shape. **`perf-optimize-database`** — the collision check
+and the locale lookup are both keyed on `lower(email)` and could be one round trip, declined because
+they answer two independent questions with two owners on a route issued a handful of times per
+organization per year, and merging them would cost the port its ISP shape. Index usage was measured
+rather than assumed: `listPending` uses `invitation_pending_address_key`, and `account_email_key`
+serves the `lower(email)` lookups (confirmed under `enable_seqscan=off` — at these table sizes the
+planner correctly prefers a sequential scan).
+
+Verified: `pnpm gates`, then `pnpm gates:clean`. 27 new e2e tests against real sessions, real RLS and
+the real outbox — the payload is read as `esg_worker`, because `esg_app` holds `INSERT` on
+`audit.outbox_event` and deliberately not `SELECT`, so "the invitation email leaves through the
+outbox" is only expressible from a connection the request tier does not have. Plus 21 unit tests
+across the three use cases and the token domain, and the schema-invariant gate, which had named
+`identity.invitation` as its next case since task 25.1 and caught it as designed.

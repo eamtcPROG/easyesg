@@ -113,10 +113,38 @@ the request context, with `@Public()` the only exception and each use carrying i
 `AccessTokenVerifier` is a sibling port on the same adapter. **The e2e identity fixture is deleted**;
 `test/support/signed-in-account.ts` signs actors in for real.
 
+Task 26.1 adds invitations (UC-60, UC-61; FR-11, FR-57): `identity.invitation` — the second
+tenant-scoped table outside `core`, under 25.1's pattern — and `GET/POST /api/v1/invitations`,
+`POST /api/v1/invitations/{id}/email`, `DELETE /api/v1/invitations/{id}`, all
+`@RequiresRole(organization_administrator)`. Three §12.5.6 decisions shape it: a **resend rotates the
+token and restarts the seven days on the same row** (one live link per invitation, ever — OQ-55's
+precedent for the third token kind, which is why the resend endpoint is `POST .../email` rather than
+`.../resend`); the **email language** is the invitee's account locale where one exists and the
+inviter's negotiated locale otherwise, resolved at issue and stored; and **both collisions are
+refused** — an active member, or a pending invitation, the latter by the partial unique index
+`invitation_pending_address_key` over `(organization_id, lower(invited_email)) WHERE status =
+'pending'`. Two things follow from that index and are stated at three call sites each because they
+read as tidyable: **`GET /invitations` lists lapsed invitations too**, since the collection must
+publish exactly what the index constrains or an administrator gets a 409 on a row they cannot see;
+and **nothing in 26.1 consults the clock** — expiry is derived at the point of use and lands with
+26.2's acceptance. `TenantRepository` gained a `protected get runner()`, because `writeOutboxEvent`
+needs the request's `QueryRunner` and an `EntityManager` cannot express P-8. Recorded deferrals: no
+entitlement gate (task 54), and the two write routes are an authenticated mail amplifier bounded
+only by task 71's edge limit (§12.5.6's task-26.1 amplification row).
+
+**A cleanup that deletes from a table with no `DELETE` policy removes nothing and says so quietly**
+(task 26.1, and the stronger form of the memberships note above). `DELETE FROM identity.invitation`
+as **`esg_migrator`** reports `DELETE 0`: `FORCE ROW LEVEL SECURITY` subjects the owner to its own
+policies and there is no `DELETE` policy at all, so binding a tenant does not help — a bound
+organization is not the missing part. It cost twelve e2e failures, all presenting as unexplained
+`409`s two tests later. Clean up the way the product does (revoke), or drop the parent row and let
+the cascade do it — referential actions bypass row security by design.
+
 **Not built yet, and do not assume otherwise:** two of the four edge guards
 (`EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
-other than health, `/auth` and `/auth/admin`, and almost every module body — 33 of the 35
-`*.module.ts` files are registered but empty. `core.organization` holds `id`/`name`/`created_at`/`updated_at`
+other than health, `/auth`, `/auth/admin`, `/members`, `/memberships` and `/invitations`, and
+almost every module body — 29 of the 35 leaf `*.module.ts` files are registered but empty (counted
+25 Aug 2026: six carry a body, all in `identity/*` plus `platform/admin`). `core.organization` holds `id`/`name`/`created_at`/`updated_at`
 only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by
 expand→migrate→contract. `test/` holds the schema-invariant probe; the RLS cross-tenant probe and
 the `BILLING_ENABLED=false` suite land beside it.
@@ -591,6 +619,29 @@ every context depends on, so anything it reaches for becomes a transitive depend
   committed contract so the two cannot drift. Outside `/api/v1` like `health`, so it is an NFR-16
   allowlist entry; whether the production edge exposes it is task 71's routing decision, taken
   there rather than behind a config flag here.
+
+## Before you call it done
+
+The root `CLAUDE.md` says each app's file carries this checklist. This one did not until task 26.1,
+which is the kind of omission the rule exists to catch: `apps/web` and `apps/admin` have had a React
+pass baked into finishing a task since 24 Aug 2026, and `apps/api` — the workspace
+`nestjs-best-practices` is named for — had nothing.
+
+- **Load `nestjs-best-practices` and read it against the diff.** Not recalled — opened. The gates
+  prove code runs; they say nothing about whether it belongs, and every finding a review has raised
+  here was invisible to all nine of them.
+- **A rule considered and declined with a reason is a decision. A rule never opened is an omission
+  wearing the same clothes.** Record both in the build-log entry, with the rule's own id, so the next
+  reader can tell which happened.
+- **Where the skill and this project's architecture disagree, the architecture wins** — the skill is
+  a general-purpose guide, not written against `architecture.md`. `error-throw-http-exceptions` is
+  the standing example: it asks for `HttpException`, and this codebase forbids one from domain or
+  use-case code in terms. Decline it by name rather than silently.
+- **Measure the database claims, do not reason about them.** `EXPLAIN` the queries a task adds; at
+  these table sizes the planner prefers a sequential scan, so confirm an index is *usable* with
+  `SET enable_seqscan = off` rather than concluding it is missing.
+- **Then `pnpm gates`, then `pnpm gates:clean`, then the build-log entry** — the root file's rule,
+  and the entry is half of what "finished" means.
 
 ## Boundary rules
 

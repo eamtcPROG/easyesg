@@ -1,4 +1,4 @@
-import { EntityManager, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
+import { EntityManager, EntityTarget, ObjectLiteral, QueryRunner, Repository } from 'typeorm';
 import { DomainError } from '@api/app/filters/domain.error';
 import { ProblemType, ProblemTypeSlug } from '@api/app/filters/problem-types';
 import { requestContext } from './request-context';
@@ -49,11 +49,25 @@ export abstract class TenantRepository<T extends ObjectLiteral> {
   }
 
   protected get manager(): EntityManager {
+    return this.runner.manager;
+  }
+
+  /**
+   * The request's own `QueryRunner`, for the one thing an `EntityManager` cannot express:
+   * `writeOutboxEvent` takes a runner, because P-8's whole guarantee is that the outbox row commits
+   * on *this* transaction and not on a second one it opened for itself.
+   *
+   * Added with task 26.1, the first tenant-scoped write that also has to emit. It is `protected`
+   * and it stays that way — handing a runner outward would let a caller open, commit or roll back
+   * the request's transaction from outside the two components that own its lifecycle
+   * (`TenantTransactionGuard` and `ProblemDetailsFilter`).
+   */
+  protected get runner(): QueryRunner {
     const ctx = requestContext();
     if (!ctx?.queryRunner) {
       throw new TenantContextMissingError(this.entityName);
     }
-    return ctx.queryRunner.manager;
+    return ctx.queryRunner;
   }
 
   protected get repository(): Repository<T> {

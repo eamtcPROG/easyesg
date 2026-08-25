@@ -68,6 +68,12 @@
     "last-administrator": {
       "title": "Last administrator",
       "detail": "The organisation would be left with no administrator, so the change was not applied. Give another member the administrator role first, then try again."
+    },
+    "already-member": {
+      "title": "Already has access"
+    },
+    "invitation-outstanding": {
+      "title": "Invitation already sent"
     }
   },
   "validation": {},
@@ -100,6 +106,11 @@
       "insufficient_role": "Your role in this organisation does not cover managing users, so the action was not carried out. Ask an administrator of the organisation to do it.",
       "member_not_found": "That member no longer belongs to this organisation, so the change could not be applied. Refresh the list to see where things stand.",
       "last_administrator": "This is the organisation’s only administrator, so taking away the role or the access would lock everyone out of its settings. Promote another member to administrator first, then repeat the action."
+    },
+    "invitation": {
+      "already_member": "The person at this address already has access to the organisation, so no invitation was sent. Open the user list if you want to change their role.",
+      "already_pending": "An invitation to this address is already outstanding, so a second one was not created. Send it again from the invitation list to issue a fresh link, or withdraw it if you want to invite the person at a different role.",
+      "not_found": "That invitation is no longer outstanding — it was accepted or withdrawn — so the action was not carried out. Refresh the list to see where things stand."
     }
   },
   "notification": {
@@ -111,6 +122,10 @@
       "password_reset": {
         "subject": "Reset your password",
         "body": "Hello,\n\nWe received a request to reset the password for the easyesg account with this email address. Open the link below to choose a new password:\n\n{resetUrl}\n\nThe link is valid for 60 minutes and works only once. After the password changes, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for a reset, ignore this message: your current password stays unchanged."
+      },
+      "invitation": {
+        "subject": "You have been invited to {organizationName}",
+        "body": "Hello,\n\nYou have been invited to join {organizationName} on easyesg, the sustainability reporting platform. Open the link below to accept the invitation:\n\n{invitationUrl}\n\nThe link is valid for 7 days, works only once, and works only for this email address.\n\nIf you were not expecting this invitation, ignore this message: no access is created unless you accept it."
       }
     }
   }

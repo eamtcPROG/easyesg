@@ -68,6 +68,12 @@
     "last-administrator": {
       "title": "Ultimul administrator",
       "detail": "Organizația ar rămâne fără administrator, așa că modificarea nu a fost aplicată. Acordați mai întâi rolul de administrator altui membru, apoi reluați."
+    },
+    "already-member": {
+      "title": "Are deja acces"
+    },
+    "invitation-outstanding": {
+      "title": "Invitație în așteptare"
     }
   },
   "validation": {},
@@ -100,6 +106,11 @@
       "insufficient_role": "Rolul pe care îl aveți în această organizație nu permite administrarea utilizatorilor, așa că acțiunea nu a fost efectuată. Cereți-i unui administrator al organizației să o facă.",
       "member_not_found": "Membrul indicat nu mai face parte din această organizație, așa că nu am putut aplica modificarea. Reîmprospătați lista pentru a vedea situația curentă.",
       "last_administrator": "Acesta este singurul administrator al organizației, așa că retragerea rolului sau a accesului ar bloca accesul la setări. Promovați întâi un alt membru ca administrator, apoi reluați acțiunea."
+    },
+    "invitation": {
+      "already_member": "Persoana cu această adresă are deja acces la organizație, așa că invitația nu a fost trimisă. Deschideți lista utilizatorilor dacă doriți să îi schimbați rolul.",
+      "already_pending": "Există deja o invitație în așteptare pentru această adresă, așa că nu am creat una nouă. Retrimiteți-o din lista de invitații pentru un link nou sau anulați-o, dacă vreți să invitați persoana cu alt rol.",
+      "not_found": "Invitația indicată nu mai este în așteptare — a fost acceptată sau anulată — așa că acțiunea nu a fost efectuată. Reîmprospătați lista pentru a vedea situația curentă."
     }
   },
   "notification": {
@@ -111,6 +122,10 @@
       "password_reset": {
         "subject": "Resetați-vă parola",
         "body": "Bună ziua,\n\nAm primit o cerere de resetare a parolei pentru contul easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a alege o parolă nouă:\n\n{resetUrl}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După schimbarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut resetarea, ignorați acest mesaj: parola actuală rămâne neschimbată."
+      },
+      "invitation": {
+        "subject": "Ați fost invitat în organizația {organizationName}",
+        "body": "Bună ziua,\n\nAți fost invitat să vă alăturați organizației {organizationName} pe easyesg, platforma de raportare privind durabilitatea. Deschideți linkul de mai jos pentru a accepta invitația:\n\n{invitationUrl}\n\nLinkul este valabil 7 zile, poate fi folosit o singură dată și funcționează numai pentru această adresă de e-mail.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun acces."
       }
     }
   }
