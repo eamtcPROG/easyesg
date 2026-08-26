@@ -91,6 +91,21 @@ export interface AppConfig {
       microsoft: { clientSecret: string | undefined };
     };
   };
+  secrets: {
+    /**
+     * The key recoverable secrets are encrypted at rest under (task 27.1, NFR-61; §12.5.6's
+     * secrets-at-rest row). HKDF-derived to 256 bits under a version-stamped label, and
+     * undefaulted for the pepper's reason — a value encrypted under a default is
+     * indistinguishable from one encrypted under a real key until someone tries to rotate it.
+     *
+     * Deliberately NOT a third label on `auth.adminSecret`, which is the shape it otherwise
+     * copies: rotating a session secret costs one forced refresh and no data, while rotating
+     * this one requires re-encrypting every sealed column. One variable for both would make the
+     * cheap rotation silently perform the expensive one. HTTP tier only — the worker holds no
+     * secret it has a caller for, which is the split `AccountModule` already makes on the pepper.
+     */
+    encryptionKey: string | undefined;
+  };
   admin: {
     /**
      * The console's exact origin — what CORS allows with credentials and what the Origin proof
@@ -157,6 +172,7 @@ export default (): AppConfig => ({
       microsoft: { clientSecret: process.env.AUTH_SOCIAL_MICROSOFT_CLIENT_SECRET },
     },
   },
+  secrets: { encryptionKey: process.env.SECRET_ENCRYPTION_KEY },
   // 3200 is `apps/admin`'s dev port, so a host run works with no .env entry (same convention
   // as `web.publicUrl` below).
   admin: { origin: process.env.ADMIN_ORIGIN ?? 'http://localhost:3200' },

@@ -2969,3 +2969,179 @@ pager derives its own from `matched` and `pageSize`.
 
 `access-list.tsx` went from 87 lines to 73, which understates it: what left was the part the next
 ten screens would each have rewritten, and what stayed is the part they cannot share.
+
+## Task 27.1 — encryption at rest, and the claim that had to become a type · 2026-08-26
+
+Task 23 shipped `identity.admin_account.totp_secret` in plaintext and wrote the gap down in three
+places that agreed — §12.5.6's task-23 MFA row ("**recorded as task 27's hardening debt**, not a
+decision that it is fine"), the migration's own header, and `apps/api/CLAUDE.md`. This is that debt
+paid, and it ran **before** 27.2 for one reason: 27.2 creates the tenant's TOTP table, and a second
+secret store that ships plaintext would have to be migrated twice.
+
+### Three unknowns, raised before the first file
+
+All three went to the project owner in one batch and all three took the recommendation.
+
+**The key is its own `SECRET_ENCRYPTION_KEY`.** The cheap answer was a third HKDF label on
+`AUTH_ADMIN_SECRET`, which is the shape this adapter otherwise copies wholesale — same `hkdfSync`,
+same distinct-label discipline. It was rejected on **lifetime**, and `.env.example` had already
+written the argument down without noticing it applied here: rotating `AUTH_JWT_SECRET` "costs one
+forced refresh, not any data". Rotating an at-rest key costs every row. One variable for both would
+make the cheap rotation silently perform the expensive one, and the failure would arrive as
+operators unable to sign in with a correct code, weeks after whoever rotated it had moved on. It
+would also have hung 27.2's *tenant* secrets off the admin realm's credential, which NFR-65 keeps
+disjoint from the tenant surface on purpose.
+
+**The envelope carries a key version, and exactly one key is live.** NFR-61 requires rotation at
+least annually, so the *format* admits it from the first row written — three bytes now against a
+flag day later. What is deliberately absent is a second key: no previous-key variable, no
+decrypt-under-either precedence. That would ship a mechanism for a rotation nobody has scheduled and
+make OQ-13's OpenBao decision more expensive rather than less. §12.5.6's at-rest key-rotation row
+records what a rotation before OpenBao actually costs, so the deferral is a decision and not a gap.
+
+The version travels in **two** places, which is the mechanism rather than belt and braces: it is
+stamped into the stored envelope *and* into the HKDF label, so `v1` and `v2` are different keys
+derived from different secrets. A value written under one is refused by the other with the mismatch
+named. Without that, a half-finished rotation surfaces as a GCM tag failure — indistinguishable
+from a corrupt row.
+
+### The claim in the deliverable is about types, so the mechanism is a type
+
+"A plaintext secret is unrepresentable" was the row's own wording, and a per-column `CHECK` would
+have made it *nearly* true. `identity.encrypted_secret` is a domain over `text` whose constraint
+pins `v<n>.<base64url>`, and `totp_secret` is a column of that type. Three things follow that the
+column constraint would not have given:
+
+- It binds **every** writer — the api, `admin:provision`, a later task's code, and an operator at a
+  `psql` prompt. P-4 puts the guarantees that matter below the application deliberately, and this is
+  one of them. Proven by asking: an `INSERT` of base32 as `esg_app` answers `value for domain
+  identity.encrypted_secret violates check constraint "encrypted_secret_is_sealed"`.
+- Task 27.2's column declares the same type and **cannot drift** on what "sealed" means.
+- The schema invariant asks a mechanical question — *is this column's type the domain?* — instead of
+  parsing constraint expressions.
+
+The two populations are separated by **alphabet**, not by length or luck. A TOTP secret is RFC 4648
+base32: `A-Z`, `2-7`, `=`. The envelope's lowercase `v` and its `.` are outside that set, so no
+plaintext secret can accidentally satisfy the constraint and no sealed value can be mistaken for one.
+
+### Where the encryption happens, and why not one layer up
+
+At the **persistence boundary** — `admin-session-store.repository.ts` seals nothing and opens
+`totp_secret` on the way out; `admin:provision` and the migration seal on the way in. This is OQ-50's
+rule about the `timestamptz` → epoch-ms conversion applied to a second representation question:
+`AdminAccount.totpSecret` is the secret, and no use case, domain function or DTO learns the column is
+encrypted. Handing the cipher to `CompleteAdminSignIn` instead would have made every future reader of
+a secret responsible for remembering to open it.
+
+**`open` throws where the cookie codec answers `null`, and that asymmetry is the decision.**
+`sealed-payload.ts` documents its own `null` carefully: a sealed value arrives on every request, so
+none of its failure modes may throw. A secret that will not open is the opposite kind of event — a
+wrong key, a wrong generation, a corrupt row — and degrading it to a falsy value would present an
+operator misconfiguration as a mistyped code on A-01's factor step, sending someone to re-enrol their
+authenticator against a database that is fine. So the GCM wrapper now exists twice in `apps/api` on
+purpose: same algorithm, opposite answers to "what does a value I cannot open mean".
+
+**One cost is recorded rather than paid.** `findAdminAccountById` also serves the resolve path,
+which reads only the identity fields — so every `GET /auth/admin/session` opens a secret it will not
+use. Both alternatives were rejected and the reasons are the same family: returning it sealed from
+one finder and open from the other makes `AdminAccount.totpSecret` a type that lies about what it
+holds, and a lazily-opening getter is a property that throws at an arbitrary later point. Twenty
+bytes of AES-GCM is cheaper than either. If the plaintext window ever needs narrowing, the honest
+change is a second model without the field.
+
+### The migration collides two lint rules, and the collision is real
+
+Migrations are banned from `@api/*` (the TypeORM CLI registers no path aliases, so it fails at run
+time in whichever environment migrates first) **and** from `../../` climbs (the alias is the house
+answer to a climb). A migration that must reuse application code satisfies neither, and this one
+must: it seals existing plaintext before the `ALTER` validates the table. The config's own escape —
+"move the shared code" — is the worse trade in both directions: restating AES-256-GCM inline would
+put a second copy of a cryptographic primitive into frozen history, and filing the cipher under
+`persistence/` would put an adapter three consumers share inside one of them. One
+`eslint-disable-next-line` with the reasoning above it, visible in review, weakening the rule for
+nothing else.
+
+The key is required **only where rows exist**. A fresh database has no operator accounts and needs
+none, which is why CI's migrate step passes none and still migrates cleanly.
+
+### What running it found that reading it would not
+
+**The conversion pass was about to go unexercised.** The dev database held zero operator rows, so
+`migrations:check` would have applied a migration whose interesting half — sealing existing plaintext
+— never executed, and reported green. Seeding one plaintext row first turned it into a real proof:
+plaintext → `v1.MQE7rQ2Y…` typed `identity.encrypted_secret`, then `down` restoring the original
+base32 **byte-for-byte** with the column back to `text`, then re-applying.
+
+That reversibility is not politeness. `migrations:check` runs migrate → revert → migrate, so a `down`
+that dropped the domain and left ciphertext behind would leave the second `up` sealing an
+already-sealed value. The domain would accept it — `v1.<base64url of a v1 envelope>` matches the
+pattern perfectly — and no operator could ever sign in again, with every gate green.
+
+**The invariant's first draft asserted something §7.6 forbids.** It proved the column was still
+writable by the application role with `SET LOCAL ROLE esg_app`, and got `permission denied to set
+role` — because `esg_migrator` is no member of `esg_app`, which is the role separation working
+exactly as §7.6 designed it. The claim was not dropped, it was moved to where `esg_app` actually
+connects: `admin-session.e2e-spec.ts` seeds through it with a sealed value, and the browser suite
+seeds through the real CLI. The invariant now proves the narrower thing it can prove — that the
+domain accepts what the adapter actually writes, which cross-checks the two copies of the envelope
+pattern against each other.
+
+### The gate that makes 27.2 inherit this
+
+`test/schema-invariants.e2e-spec.ts` gains five tests in the house pair-shape: every column claimed
+as encrypted carries the domain type; every secret-named column is classified as encrypted or
+explicitly plaintext-by-design; plaintext is refused at the store; a sealed value is accepted; and
+two probes proving the rules catch a real violation — a new `totp_secret text` column, and the
+existing one widened back to `text`.
+
+The candidate patterns are `secret` and `password`, **not** `token` or `_key`, and the limit is
+stated in the file rather than left to be found. Those two words name a secret unambiguously; the
+others do not — `idempotency_key`, `attempt_key` and every `token_hash` would be swept in, each
+needing a row saying "not a secret", and a rule producing more noise than signal is one that gets
+switched off rather than satisfied. The two `password_hash` columns are classified plaintext-by-design
+with the reason that carries the whole distinction: encrypting a one-way digest protects nothing an
+attacker holding the row could not already do, while adding a key whose loss destroys every password
+in the system.
+
+### The `nestjs-best-practices` pass
+
+**Declined by name: `arch-module-sharing` (CRITICAL).** It asks for a dedicated module exporting the
+shared provider, since registering in two modules yields two instances — and 27.2 will register
+`SECRET_CIPHER` again in `identity`. The codebase already answered this rule for `PASSWORD_HASHER` in
+`session.module.ts`: "two providers of one adapter, not two adapters". Both are built from the same
+config value, so they are interchangeable by construction, and exporting the token would make one
+module's wiring an import of another's. Same argument, same conclusion.
+
+**Applied:** `di-use-interfaces-tokens` (a symbol beside the interface and a `useFactory` — the
+rule's own Option 1), `db-use-migrations`, `arch-use-repository-pattern`, `devops-use-config-module`
+(the two `process.env` reads are the CLI and the migration, both outside Nest under the exception
+`migration.data-source.ts` already records), `di-scope-awareness` (a stateless singleton) and
+`error-handle-async-errors` (`open`'s throw rejects the awaited promise and reaches the problem
+filter; nothing is fire-and-forget).
+
+### One finding that was not this task's, recorded rather than swept up
+
+The first `gates:clean` run went red on `apps/web`'s `access-board.spec.tsx` — "leaves the other rows
+usable while one row acts", `Test timed out in 15000ms`. Nothing in this task touches `apps/web`, and
+the suite passes 134/134 when run alone, so the cause is contention: `pnpm -r test` runs apps/web's
+vitest concurrently with apps/admin's and the api's jest, and on a cold tree that run's own numbers
+were `environment 146.48s, import 56.59s, transform 36.12s` against 15 s of test budget. The test is
+structurally exposed to it — its action promise is deliberately never settled, so every assertion is
+a `findBy*` wait with no fast path.
+
+It is left unfixed here on purpose. A timeout bump on task 26.4's test inside task 27.1's commit
+would put an unrelated change in a diff about encryption, and the fix wants a reason written next to
+it rather than a bare number. It is spun off as its own task. The second `gates:clean` ran green,
+which is what makes it a flake rather than a defect — and exactly the kind only the clean run sees.
+
+### Two things a reader should know
+
+`AppConfig` gaining a `secrets` block broke two files at compile time — `data-source.spec.ts`'s
+fixture and `persistence.module.ts`'s `configFrom` — which is the fixture's stated job: "AppConfig is
+one shape and this fixture is the whole of it, so a key added for one subsystem cannot quietly become
+a connection option for another."
+
+And `SECRET_ENCRYPTION_KEY` is now needed in four places beyond `.env.example`: the CI api container,
+`e2e/playwright.config.ts`, `e2e/admin/support/provision.ts`, and every developer's local
+`apps/api/.env`. The last is not in the repository, so a colleague pulling this change meets a boot
+failure naming the variable — which is the designed behaviour and the reason it is undefaulted.

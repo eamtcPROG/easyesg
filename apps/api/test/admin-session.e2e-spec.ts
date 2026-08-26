@@ -6,6 +6,7 @@ import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { configureHttpApp } from '../src/main.http';
 import { Argon2PasswordHasher } from '../src/infrastructure/adapters/password-hasher/argon2-password.hasher';
+import { AesGcmSecretCipher } from '../src/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import { JwtAdminTokens } from '../src/infrastructure/adapters/token-signer/jwt-admin-tokens';
 import {
   ADMIN_CHALLENGE_COOKIE,
@@ -141,12 +142,20 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
 
   const http = () => request(app.getHttpServer());
 
+  /**
+   * Seeded as `esg_app`, so the grants the provisioning CLI runs under are exercised too — and
+   * since task 27.1 the secret is **sealed** on the way in, which is not optional politeness:
+   * `totp_secret` is `identity.encrypted_secret` and the database refuses plaintext outright.
+   * The suite therefore proves the round trip end to end — this cipher writes, the api's own
+   * store adapter opens, and a code generated from the plaintext validates.
+   */
   const provision = async (email: string): Promise<void> => {
     const hasher = new Argon2PasswordHasher(required('AUTH_PASSWORD_PEPPER'));
+    const secrets = new AesGcmSecretCipher(required('SECRET_ENCRYPTION_KEY'));
     await db.query(
       `INSERT INTO identity.admin_account (email, role, password_hash, totp_secret)
        VALUES ($1, 'platform_administrator', $2, $3)`,
-      [email, await hasher.hash(PASSWORD), TOTP_SECRET],
+      [email, await hasher.hash(PASSWORD), secrets.seal(TOTP_SECRET)],
     );
   };
 

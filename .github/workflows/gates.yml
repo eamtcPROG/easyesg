@@ -285,7 +285,8 @@ jobs:
             -e DB_HOST=postgres -e DB_USER=esg_app -e DB_PASSWORD=devonly-app -e DB_NAME=esg \
             -e REDIS_HOST=redis -e AUTH_PASSWORD_PEPPER=devonly-pepper \
             -e AUTH_JWT_SECRET=devonly-jwt-secret \
-            -e AUTH_ADMIN_SECRET=devonly-admin-secret easyesg-api:ci
+            -e AUTH_ADMIN_SECRET=devonly-admin-secret \
+            -e SECRET_ENCRYPTION_KEY=devonly-secret-encryption-key easyesg-api:ci
           docker run -d --name worker --network easyesg_easyesg-net -e MODE=worker \
             -e DB_HOST=postgres -e DB_WORKER_USER=esg_worker -e DB_WORKER_PASSWORD=devonly-worker \
             -e DB_NAME=esg -e REDIS_HOST=redis -e EMAIL_PROVIDER=log \

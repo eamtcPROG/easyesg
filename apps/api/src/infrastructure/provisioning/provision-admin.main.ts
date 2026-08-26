@@ -1,6 +1,7 @@
 import { parseArgs } from 'node:util';
 import { DataSource } from 'typeorm';
 import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
+import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import {
   mintTotpSecret,
   totpEnrolmentUri,
@@ -25,6 +26,12 @@ import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.mod
  * exists so a rehearsal or e2e can pin a known one. The password travels as an argument, which
  * is fine for the synthetic dev/staging credentials this serves before task 67 — a production
  * operator rotates it at first PA-managed opportunity.
+ *
+ * Since task 27.1 the secret is **sealed before it is written**, with the same adapter the api
+ * reads it back through. That is not politeness toward the column's type: `identity.admin_account
+ * .totp_secret` is `identity.encrypted_secret`, so an INSERT of plaintext is refused by the
+ * database. The URI still prints the plaintext, because an authenticator app is what it is for
+ * and it exists only in this process's memory and the operator's terminal.
  */
 const USAGE =
   'admin:provision --email <address> --password <password> [--role platform_administrator|billing_operator] ' +
@@ -84,11 +91,12 @@ async function main(): Promise<void> {
     const hasher = new Argon2PasswordHasher(process.env.AUTH_PASSWORD_PEPPER);
     const passwordHash = await hasher.hash(values.password);
     const totpSecret = values['totp-secret'] ?? mintTotpSecret();
+    const secrets = new AesGcmSecretCipher(process.env.SECRET_ENCRYPTION_KEY);
 
     await dataSource.query(
       `INSERT INTO identity.admin_account (email, role, password_hash, totp_secret)
        VALUES ($1, $2, $3, $4)`,
-      [email, role, passwordHash, totpSecret],
+      [email, role, passwordHash, secrets.seal(totpSecret)],
     );
 
     process.stdout.write(`${email}: provisioned as ${role}\n`);

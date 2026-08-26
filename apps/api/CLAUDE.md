@@ -57,7 +57,10 @@ and rotates (keys HKDF-derived from `AUTH_ADMIN_SECRET` under distinct labels), 
 `admin:provision` CLI (runs from `dist/` so `tsc-alias` has resolved `@api/*` — the alias ban on
 ts-node-loaded CLI graphs does not bite it). §12.5.6's task-23 rows carry the decisions; the
 recorded costs: a revoked admin session's last access token is honoured ≤15 min until task 28's
-guard adds a lookup, and `totp_secret` is unencrypted at rest — task 27's hardening debt.
+guard adds a lookup. `totp_secret` is **encrypted at rest since task 27.1**: the column's type is
+`identity.encrypted_secret`, a domain whose constraint refuses anything but `v<n>.<base64url>`, so
+plaintext is unrepresentable rather than discouraged. The store adapter opens it on the way out and
+`admin:provision` seals it on the way in — see "Adding a column that holds a secret" below.
 
 Task 24 adds social sign-in (FR-2, FR-4, FR-82; D-6): `identity.provider_identity` — matched on
 `(provider, subject)`, never email (§9.1 calls the email-match variant an account-takeover path) —
@@ -468,6 +471,28 @@ No table and no code. Add a `config/seed/<kind>.<scope>.json` file and read it w
 - Dates are **calendar dates** (NFR-34). Which factor set applies on 1 January must not change with
   the reader's timezone.
 
+### Adding a column that holds a secret
+
+Since task 27.1 there is one mechanism and the database enforces it (§12.5.6's secrets-at-rest row).
+
+- **Is it recoverable?** If the application only ever *compares* the value, it is a hash and none of
+  this applies — `password_hash` and every `token_hash` are deliberately plaintext-by-design, and
+  encrypting a one-way digest protects nothing while adding a key whose loss is catastrophic. If the
+  application must *read it back* — a TOTP secret, a provider credential — it is a secret at rest.
+- **Declare the column as `identity.encrypted_secret`**, never `text`. The domain's constraint is
+  what makes plaintext unrepresentable for every writer, `psql` included; a `CHECK` you write
+  yourself is a fourth copy of a pattern that must not drift.
+- **Seal and open at the persistence boundary**, through `SECRET_CIPHER` — never in a use case. The
+  domain type is the secret; that it is stored encrypted is the store's business, exactly as OQ-50's
+  epoch-ms conversion is.
+- **Classify it** in `test/schema-invariants.e2e-spec.ts` (`ENCRYPTED_SECRET_COLUMNS`, or
+  `PLAINTEXT_BY_DESIGN_SECRET_COLUMNS` with the reason). A column named `%secret%` or `%password%`
+  that is in neither fails the gate — which is the point, and the reason the gate exists rather than
+  a review note.
+- **`open` throws.** Do not catch it into a falsy value: a secret that will not open is a wrong
+  `SECRET_ENCRYPTION_KEY` or a corrupt row, and answering "no secret" turns an operator
+  misconfiguration into what looks like a mistyped code.
+
 ### Adding an audited table
 
 Attach the capture trigger in the same migration and add the table to
@@ -577,6 +602,14 @@ and each throws at boot when its own is missing. That is least privilege rather 
 api hashes passwords and never sends mail, the worker sends mail and never hashes, and neither
 should hold a secret it has no caller for. `AccountModule` splits its providers on `MODE` to make
 it so, the way `OutboxModule` already splits the dispatcher.
+
+`SECRET_ENCRYPTION_KEY` (task 27.1) joins the HTTP tier's list, and it is the one secret that is
+**also** read outside the tier: `admin:provision` seals with it, and `db:migrate` needs it only when
+rows already hold a plaintext secret to convert — a fresh database needs none, which is why CI's
+migrate step passes none. It is deliberately not derived from `AUTH_ADMIN_SECRET`: rotating a session
+secret costs one forced refresh and no data, while rotating this one makes every sealed column
+unreadable until re-encrypted, so one variable for both would make the cheap rotation silently
+perform the expensive one.
 
 Neither has a default, and `EMAIL_PROVIDER`'s absence is deliberate: the `log` adapter writes a
 recipient address and a verification link into the application log, which NFR-30 forbids of a

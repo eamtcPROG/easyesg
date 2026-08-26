@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
+import { SECRET_CIPHER, type SecretCipher } from '@api/contracts/secret-cipher.port';
 import type {
   AdminSessionStore,
   AdminSessionTransaction,
@@ -21,10 +22,29 @@ import { countRecentAuthAttempts, recordAuthAttempt } from '../identity/auth-att
  * (task 23). Same exemption: the admin realm exists before and outside any tenant, so nothing
  * here extends `TenantRepository`; same discipline: every mutation is a conditional statement
  * deciding a race exactly once.
+ *
+ * **This is where encryption at rest happens, and nowhere else** (task 27.1; §12.5.6's
+ * secrets-at-rest row). `identity.admin_account.totp_secret` is stored sealed, and it is opened
+ * here on the way out, exactly as OQ-50 puts the `timestamptz` → epoch-ms conversion at this
+ * same boundary: `AdminAccount.totpSecret` is the secret, and no use case, domain function or
+ * DTO learns that the column is encrypted. The alternative — handing the cipher to
+ * `CompleteAdminSignIn` — would have made every future reader of a secret responsible for
+ * remembering to open it, which is the failure mode the store exists to remove.
+ *
+ * **A recorded cost:** `findAdminAccountById` serves the resolve path, which reads only the
+ * identity fields — so every `GET /auth/admin/session` opens a secret it will not use. Returning
+ * it sealed from one finder and open from the other was rejected outright: `AdminAccount
+ * .totpSecret` would then be a type that lies about what it holds, which is a worse defect class
+ * than one AES-GCM over twenty bytes. A lazily-opening getter was rejected for the same family of
+ * reason — a property that throws at an arbitrary later point. If the plaintext window ever needs
+ * narrowing, the honest change is a second model without the field, not a field that varies.
  */
 @Injectable()
 export class AdminSessionStoreRepository implements AdminSessionStore {
-  constructor(@InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource,
+    @Inject(SECRET_CIPHER) private readonly secrets: SecretCipher,
+  ) {}
 
   async run<T>(work: (tx: AdminSessionTransaction) => Promise<T>): Promise<T> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -32,7 +52,7 @@ export class AdminSessionStoreRepository implements AdminSessionStore {
     await queryRunner.startTransaction();
 
     try {
-      const result = await work(new AdminSessionTransactionAdapter(queryRunner));
+      const result = await work(new AdminSessionTransactionAdapter(queryRunner, this.secrets));
       await queryRunner.commitTransaction();
       return result;
     } catch (error) {
@@ -77,13 +97,19 @@ interface PresentedAdminRefreshTokenRow {
 const toRole = (value: string): AdminRole =>
   Object.values(ADMIN_ROLE).find((role) => role === value) ?? ADMIN_ROLE.PLATFORM_ADMINISTRATOR;
 
-const toAdminAccount = (row: AdminAccountRow): AdminAccount => ({
+/**
+ * The row is the storage representation; `AdminAccount` is the domain's. `totp_secret` arrives
+ * sealed and is opened here — a throw if it cannot be, because a secret that will not open is a
+ * wrong `SECRET_ENCRYPTION_KEY` or a corrupt row, and answering "no secret" would present an
+ * operator misconfiguration as a mistyped code on the factor step.
+ */
+const toAdminAccount = (row: AdminAccountRow, secrets: SecretCipher): AdminAccount => ({
   id: row.id,
   email: row.email,
   role: toRole(row.role),
   active: row.active,
   passwordHash: row.password_hash,
-  totpSecret: row.totp_secret,
+  totpSecret: secrets.open(row.totp_secret),
   failedAttempts: row.failed_attempts,
   lockedAt: row.locked_at,
   createdAt: row.created_at,
@@ -97,7 +123,10 @@ const returnedRows = <T>(result: unknown): T[] =>
   Array.isArray(result) && Array.isArray(result[0]) ? (result[0] as T[]) : (result as T[]);
 
 class AdminSessionTransactionAdapter implements AdminSessionTransaction {
-  constructor(private readonly queryRunner: QueryRunner) {}
+  constructor(
+    private readonly queryRunner: QueryRunner,
+    private readonly secrets: SecretCipher,
+  ) {}
 
   countRecentAuthAttempts(key: string, since: Date): Promise<number> {
     return countRecentAuthAttempts(this.queryRunner, key, since);
@@ -115,7 +144,7 @@ class AdminSessionTransactionAdapter implements AdminSessionTransaction {
         [email],
       ),
     );
-    return rows.length === 0 ? null : toAdminAccount(rows[0]);
+    return rows.length === 0 ? null : toAdminAccount(rows[0], this.secrets);
   }
 
   async findAdminAccountById(accountId: string): Promise<AdminAccount | null> {
@@ -126,7 +155,7 @@ class AdminSessionTransactionAdapter implements AdminSessionTransaction {
         [accountId],
       ),
     );
-    return rows.length === 0 ? null : toAdminAccount(rows[0]);
+    return rows.length === 0 ? null : toAdminAccount(rows[0], this.secrets);
   }
 
   async registerFailedSignIn(accountId: string, threshold: number, at: Date): Promise<void> {

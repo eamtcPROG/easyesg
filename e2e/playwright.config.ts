@@ -111,6 +111,10 @@ export default defineConfig({
         // Task 23: the admin realm's secret and the console origin the api's CORS and Origin
         // proof are configured for — the admin project's preview server below.
         AUTH_ADMIN_SECRET: process.env.AUTH_ADMIN_SECRET ?? 'devonly-admin-secret',
+        // Task 27.1 — the admin store opens `totp_secret` on every sign-in, and
+        // `provisionOperator` seals it on the way in. Both are this one key.
+        SECRET_ENCRYPTION_KEY:
+          process.env.SECRET_ENCRYPTION_KEY ?? 'devonly-secret-encryption-key',
         ADMIN_ORIGIN: `http://localhost:${ADMIN_PORT}`,
         BILLING_ENABLED: process.env.BILLING_ENABLED ?? 'true',
       },

@@ -26,6 +26,7 @@ const config: AppConfig = {
       microsoft: { clientSecret: 'not-a-real-secret' },
     },
   },
+  secrets: { encryptionKey: 'not-a-real-encryption-key' },
   admin: { origin: 'http://localhost:3200' },
   email: { provider: 'log' },
   web: { publicUrl: 'http://localhost:3100' },

@@ -25,6 +25,11 @@ export function provisionOperator(email: string, password: string, totpSecret: s
       DB_USER: process.env.DB_USER ?? 'esg_app',
       DB_PASSWORD: process.env.DB_PASSWORD ?? 'devonly-app',
       AUTH_PASSWORD_PEPPER: process.env.AUTH_PASSWORD_PEPPER ?? 'devonly-pepper',
+      // Task 27.1 — the CLI seals the secret before writing it, because
+      // `identity.admin_account.totp_secret` is `identity.encrypted_secret` and the database
+      // refuses plaintext. Must be the key the api under test opens it with.
+      SECRET_ENCRYPTION_KEY:
+        process.env.SECRET_ENCRYPTION_KEY ?? 'devonly-secret-encryption-key',
     },
     stdio: 'pipe',
   });

@@ -5,6 +5,8 @@ import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hash
 import { JwtAdminTokens } from '@api/infrastructure/adapters/token-signer/jwt-admin-tokens';
 import { AdminSessionStoreRepository } from '@api/infrastructure/persistence/platform/admin-session-store.repository';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
+import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
+import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import type { PasswordHasher } from '@api/modules/identity/account/interfaces/password-hasher.interface';
 import { AdminSessionController } from './controllers/admin-session.controller';
 import { AdminOriginGuard } from './guards/admin-origin.guard';
@@ -49,6 +51,15 @@ const httpProviders: Provider[] = [
   AdminOriginGuard,
   { provide: CLOCK, useValue: (() => new Date()) as Clock },
   { provide: ADMIN_SESSION_STORE, useClass: AdminSessionStoreRepository },
+  {
+    // The store opens `totp_secret` on the way out (task 27.1). Registered here rather than
+    // globally because this is the only module holding a sealed column today; task 27.2's
+    // tenant secrets register the same adapter in `identity`, under the same one key.
+    provide: SECRET_CIPHER,
+    inject: [ConfigService],
+    useFactory: (config: ConfigService<AppConfig, true>) =>
+      new AesGcmSecretCipher(config.get('secrets.encryptionKey', { infer: true })),
+  },
   {
     provide: ADMIN_PASSWORD_HASHER,
     inject: [ConfigService],

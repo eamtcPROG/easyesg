@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 
 /**
  * The structural invariants of §7, asserted against a real migrated database.
@@ -314,6 +315,79 @@ const unclassifiedTenantTables = (x: Executor) =>
   );
 
 /**
+ * NFR-61 made structural, and the reason this task (27.1) ran before 27.2 rather than after.
+ *
+ * `identity.encrypted_secret` is a domain over `text` whose constraint pins the sealed envelope
+ * `v<n>.<base64url>`, so a column of that type CANNOT hold plaintext — not from the api, not from
+ * the provisioning CLI, not from a `psql` prompt. The claim in task 27.1's deliverable is "a
+ * plaintext secret is unrepresentable", and a type is the only thing that makes it literally true.
+ */
+const ENCRYPTED_SECRET_DOMAIN = 'identity.encrypted_secret';
+
+/** Columns holding a **recoverable** secret. Each must be of the domain above. */
+const ENCRYPTED_SECRET_COLUMNS = ['identity.admin_account.totp_secret'];
+
+/**
+ * Columns whose name says "secret" but which are deliberately stored as they are, each with its
+ * reason. Both entries are **one-way hashes**, and that distinction is the whole of this rule:
+ * encrypting an Argon2id digest would protect nothing an attacker holding the row could not
+ * already do, while it would add a key whose loss destroys every password in the system.
+ *
+ * `token_hash` columns are not listed because the sweep below does not look for them — see its
+ * own note on why the candidate patterns are `secret` and `password` and not `token` or `key`.
+ */
+const PLAINTEXT_BY_DESIGN_SECRET_COLUMNS = [
+  'identity.credential.password_hash',
+  'identity.admin_account.password_hash',
+];
+
+/** A column claimed as encrypted whose type is not the domain — the claim without the guarantee. */
+const encryptedColumnsNotTyped = (x: Executor) =>
+  x.query<{ location: string; type: string }[]>(
+    `SELECT n.nspname || '.' || c.relname || '.' || a.attname AS location,
+            format_type(a.atttypid, a.atttypmod) AS type
+       FROM pg_attribute a
+       JOIN pg_class     c ON c.oid = a.attrelid
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE a.attnum > 0 AND NOT a.attisdropped
+        AND n.nspname || '.' || c.relname || '.' || a.attname = ANY($1)
+        AND format_type(a.atttypid, a.atttypmod) <> $2
+      ORDER BY 1`,
+    [ENCRYPTED_SECRET_COLUMNS, ENCRYPTED_SECRET_DOMAIN],
+  );
+
+/**
+ * The classification sweep — the half that makes task 27.2 inherit this decision rather than
+ * remember it. Same shape as `unclassifiedTenantTables` above and for the same reason: a new
+ * secret column added by a later task must either be sealed or say why it is not, because silence
+ * is indistinguishable from a considered exemption.
+ *
+ * **The candidate patterns are `secret` and `password`, deliberately not `token` or `_key`.** Those
+ * two words name a secret unambiguously; the other two do not — `idempotency_key`, `attempt_key`
+ * and every `token_hash` would be swept in, each needing a classification row that says "not a
+ * secret", and a rule producing more noise than signal is one that gets switched off rather than
+ * satisfied (the same judgement `tablesMissingRowLevelSecurity` makes about `config` and the plan
+ * catalogue). A future secret named neither is caught by review, not by this query, and that
+ * limit is stated here rather than left to be discovered.
+ */
+const unclassifiedSecretColumns = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT n.nspname || '.' || c.relname || '.' || a.attname AS location
+       FROM pg_attribute a
+       JOIN pg_class     c ON c.oid = a.attrelid
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relkind IN ('r', 'p')
+        AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid)
+        AND a.attnum > 0 AND NOT a.attisdropped
+        AND n.nspname = ANY($3)
+        AND (a.attname LIKE '%secret%' OR a.attname LIKE '%password%')
+        AND NOT (n.nspname || '.' || c.relname || '.' || a.attname = ANY($1))
+        AND NOT (n.nspname || '.' || c.relname || '.' || a.attname = ANY($2))
+      ORDER BY 1`,
+    [ENCRYPTED_SECRET_COLUMNS, PLAINTEXT_BY_DESIGN_SECRET_COLUMNS, DOMAIN_SCHEMAS],
+  );
+
+/**
  * What makes the RLS exemption above safe, asserted rather than assumed.
  *
  * `audit.outbox_event` has no policy because the application tier cannot read it — that is the
@@ -340,7 +414,10 @@ describe('schema invariants (§7)', () => {
   beforeAll(async () => {
     // Without this the symptom is `SASL: client password must be a string`, which sends the reader
     // to pg_hba.conf instead of to their environment.
-    for (const key of ['DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD']) {
+    // `SECRET_ENCRYPTION_KEY` joins the list because the encryption-at-rest invariant seals a
+    // probe value with the real adapter — asserting the domain accepts what the application
+    // actually writes, rather than a literal hand-shaped to match the constraint.
+    for (const key of ['DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'SECRET_ENCRYPTION_KEY']) {
       if (!process.env[key]) {
         throw new Error(
           `${key} is not set. This check connects as the migration owner (§7.6); ` +
@@ -603,6 +680,92 @@ describe('schema invariants (§7)', () => {
         unclassifiedTenantTables,
       );
       expect(caught).toEqual([]);
+    });
+  });
+
+  describe('a recoverable secret is unrepresentable in plaintext (NFR-61, task 27.1)', () => {
+    it('holds — every column claimed as encrypted carries the domain type', async () => {
+      expect(await encryptedColumnsNotTyped(db)).toEqual([]);
+    });
+
+    it('holds — every secret-named column is classified as encrypted or explicitly not', async () => {
+      expect(await unclassifiedSecretColumns(db)).toEqual([]);
+    });
+
+    // The claim itself, asserted against the database rather than against the adapter: the
+    // constraint must reject the base32 a TOTP secret is spelled in. This is the one test that
+    // would have failed on 21 Aug 2026, when `totp_secret` shipped as plain `text`.
+    it('refuses plaintext at the store, whatever wrote it', async () => {
+      const runner = db.createQueryRunner();
+      await runner.connect();
+      await runner.startTransaction();
+      try {
+        await expect(
+          runner.query(
+            `INSERT INTO identity.admin_account (email, role, password_hash, totp_secret)
+             VALUES ('probe-plaintext@example.test', 'platform_administrator', 'x',
+                     'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ')`,
+          ),
+        ).rejects.toThrow(/encrypted_secret_is_sealed/u);
+      } finally {
+        await runner.rollbackTransaction();
+        await runner.release();
+      }
+    });
+
+    // Satisfiable, not merely strict — the pair that stops the rule above from passing by
+    // rejecting everything, and it seals with the REAL adapter rather than with a literal
+    // hand-shaped to match the constraint, so the two copies of the envelope pattern (the
+    // adapter's `ENVELOPE` and the domain's `CHECK`) are checked against each other here.
+    //
+    // It runs as the migration owner, and deliberately does not `SET ROLE esg_app` to prove the
+    // application role can write it: §7.6 makes `esg_migrator` no member of `esg_app`, so the
+    // attempt fails with `permission denied to set role` — which is the role separation working.
+    // That half is proven where the application role actually connects: `admin-session.e2e-spec`
+    // seeds through `esg_app` with a sealed value, and the browser suite through the CLI.
+    it('accepts what the application actually writes', async () => {
+      const sealed = new AesGcmSecretCipher(process.env.SECRET_ENCRYPTION_KEY).seal(
+        'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
+      );
+      const runner = db.createQueryRunner();
+      await runner.connect();
+      await runner.startTransaction();
+      try {
+        await runner.query(
+          `INSERT INTO identity.admin_account (email, role, password_hash, totp_secret)
+           VALUES ('probe-sealed@example.test', 'platform_administrator', 'x', $1)`,
+          [sealed],
+        );
+        // `QueryRunner.query` has a `useStructuredResult` overload, so a type ARGUMENT selects
+        // the wrong signature (TS2558) and the assertion is the only spelling — apps/api/CLAUDE.md
+        // records this alongside its `EntityManager.query` twin, which is the opposite.
+        const stored = (await runner.query(
+          `SELECT totp_secret FROM identity.admin_account
+            WHERE email = 'probe-sealed@example.test'`,
+        )) as { totp_secret: string }[];
+        expect(stored).toEqual([{ totp_secret: sealed }]);
+      } finally {
+        await runner.rollbackTransaction();
+        await runner.release();
+      }
+    });
+
+    it('catches a new secret column added as plain text — task 27.2 lands here', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE identity.__probe_totp (account_id uuid PRIMARY KEY, totp_secret text NOT NULL)`,
+        unclassifiedSecretColumns,
+      );
+      expect(caught).toEqual([{ location: 'identity.__probe_totp.totp_secret' }]);
+    });
+
+    it('catches a classified column whose type was widened back to text', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE identity.admin_account ALTER COLUMN totp_secret TYPE text`,
+        encryptedColumnsNotTyped,
+      );
+      expect(caught).toEqual([
+        { location: 'identity.admin_account.totp_secret', type: 'text' },
+      ]);
     });
   });
 
