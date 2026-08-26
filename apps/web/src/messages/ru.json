@@ -20,6 +20,19 @@
     "workspaceNav": {
       "label": "Разделы организации",
       "users": "Пользователи и доступ"
+    },
+    "index": {
+      "sort": {
+        "sortBy": "Сортировать по: {column}",
+        "ascending": "по возрастанию",
+        "descending": "по убыванию"
+      },
+      "pagination": {
+        "region": "Постраничная навигация",
+        "previous": "Предыдущая страница",
+        "next": "Следующая страница",
+        "position": "{from}–{to} из {total}"
+      }
     }
   },
   "identity": {
@@ -265,17 +278,6 @@
         "never": "Ещё не входил",
         "invited": "Приглашён {date}",
         "expiredOn": "Ссылка истекла {date}"
-      },
-      "sort": {
-        "sortBy": "Сортировать по: {column}",
-        "ascending": "по возрастанию",
-        "descending": "по убыванию"
-      },
-      "pagination": {
-        "region": "Постраничная навигация",
-        "previous": "Предыдущая страница",
-        "next": "Следующая страница",
-        "position": "{from}–{to} из {total}"
       },
       "empty": {
         "firstUse": {

@@ -1,25 +1,25 @@
 'use client';
 
-import { Button, DataTable, EmptyState, Pagination } from '@easyesg/ui';
+import { Button, EmptyState } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
+import { IndexView } from '@/shared/index-view';
 import { useAccess } from './access-context';
 import { useAccessColumns, type AccessColumnKey } from './access-columns';
-import {
-  ACCESS_FILTER_ANY,
-  ACCESS_PAGE_SIZE,
-  accessRowKey,
-  type AccessRow,
-  type AccessSort,
-} from '../access';
+import { ACCESS_FILTER_ANY, accessRowKey, type AccessRow, type AccessSort } from '../access';
 
 /**
- * The list itself: both empty states, the table and the pager.
+ * S-16's list, as an instance of the Index archetype (§4.6).
  *
- * **`matched` and `total` are two numbers because they are two screens.** `total === 0` is first
- * use — nobody has been invited yet, and the one action is to invite someone. `matched === 0` with
- * rows behind it is a filter that found nothing, and the one action is to clear it. Collapsing them
- * would tell an administrator with nine colleagues that they are alone.
+ * Everything that is not about *this* screen moved into `IndexShell` and the app's `IndexView`
+ * binding: the empty-state choice and its rule, the table-and-pager composition, and the seven
+ * chrome strings every Index needs. What is left is what only S-16 knows — its columns, its
+ * caption, and two empty states that teach something specific.
+ *
+ * **The two empty states are still written here, and that is the point of them.** §4.6 requires an
+ * Index to have "an empty state that teaches", which means naming the actual object: someone with
+ * no colleagues yet is told to invite one, and someone whose filter matched nobody is told to clear
+ * it. A shared component could only have offered a shrug.
  */
 export function AccessList() {
   const t = useTranslations('organization.access');
@@ -31,57 +31,43 @@ export function AccessList() {
     [setView],
   );
 
-  if (page.matched === 0) {
-    const firstUse = page.total === 0;
-    return (
-      <EmptyState
-        title={firstUse ? t('empty.firstUse.title') : t('empty.filtered.title')}
-        action={
-          firstUse ? (
-            <Button asChild>
-              <a href={`#${inviteAnchorId}`}>{t('empty.firstUse.action')}</a>
-            </Button>
-          ) : (
-            <Button variant="subtle" onClick={clearFilters}>
-              {t('empty.filtered.action')}
-            </Button>
-          )
-        }
-      >
-        {firstUse ? t('empty.firstUse.body') : t('empty.filtered.body')}
-      </EmptyState>
-    );
-  }
-
   return (
-    <>
-      <DataTable<AccessRow, AccessColumnKey>
-        caption={t('caption')}
-        columns={columns}
-        rows={page.rows}
-        rowKey={accessRowKey}
-        sort={{ column: view.sort, direction: view.direction }}
-        onSortChange={(sort) =>
-          setView({ sort: sort.column as AccessSort, direction: sort.direction })
-        }
-        sortLabels={{
-          sortBy: (columnHeader) => t('sort.sortBy', { column: columnHeader }),
-          ascending: t('sort.ascending'),
-          descending: t('sort.descending'),
-        }}
-      />
-      <Pagination
-        page={page.page}
-        pageSize={ACCESS_PAGE_SIZE}
-        total={page.matched}
-        onPageChange={(next) => setView({ page: next })}
-        labels={{
-          region: t('pagination.region'),
-          previous: t('pagination.previous'),
-          next: t('pagination.next'),
-          position: (of) => t('pagination.position', of),
-        }}
-      />
-    </>
+    <IndexView<AccessRow, AccessColumnKey>
+      page={page}
+      caption={t('caption')}
+      columns={columns}
+      rowKey={accessRowKey}
+      sort={{ column: view.sort, direction: view.direction }}
+      onSortChange={(sort) =>
+        setView({ sort: sort.column as AccessSort, direction: sort.direction })
+      }
+      onPageChange={(next) => setView({ page: next })}
+      empty={{
+        firstUse: (
+          <EmptyState
+            title={t('empty.firstUse.title')}
+            action={
+              <Button asChild>
+                <a href={`#${inviteAnchorId}`}>{t('empty.firstUse.action')}</a>
+              </Button>
+            }
+          >
+            {t('empty.firstUse.body')}
+          </EmptyState>
+        ),
+        filtered: (
+          <EmptyState
+            title={t('empty.filtered.title')}
+            action={
+              <Button variant="subtle" onClick={clearFilters}>
+                {t('empty.filtered.action')}
+              </Button>
+            }
+          >
+            {t('empty.filtered.body')}
+          </EmptyState>
+        ),
+      }}
+    />
   );
 }

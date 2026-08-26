@@ -20,6 +20,19 @@
     "workspaceNav": {
       "label": "Secțiunile organizației",
       "users": "Utilizatori și acces"
+    },
+    "index": {
+      "sort": {
+        "sortBy": "Sortați după {column}",
+        "ascending": "crescător",
+        "descending": "descrescător"
+      },
+      "pagination": {
+        "region": "Paginare",
+        "previous": "Pagina anterioară",
+        "next": "Pagina următoare",
+        "position": "{from}–{to} din {total}"
+      }
     }
   },
   "identity": {
@@ -265,17 +278,6 @@
         "never": "Încă nu a intrat",
         "invited": "Invitat la {date}",
         "expiredOn": "Link expirat la {date}"
-      },
-      "sort": {
-        "sortBy": "Sortați după {column}",
-        "ascending": "crescător",
-        "descending": "descrescător"
-      },
-      "pagination": {
-        "region": "Paginare",
-        "previous": "Pagina anterioară",
-        "next": "Pagina următoare",
-        "position": "{from}–{to} din {total}"
       },
       "empty": {
         "firstUse": {

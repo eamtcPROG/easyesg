@@ -20,6 +20,19 @@
     "workspaceNav": {
       "label": "Organisation sections",
       "users": "Users & access"
+    },
+    "index": {
+      "sort": {
+        "sortBy": "Sort by {column}",
+        "ascending": "ascending",
+        "descending": "descending"
+      },
+      "pagination": {
+        "region": "Pagination",
+        "previous": "Previous page",
+        "next": "Next page",
+        "position": "{from}–{to} of {total}"
+      }
     }
   },
   "identity": {
@@ -265,17 +278,6 @@
         "never": "Not signed in yet",
         "invited": "Invited {date}",
         "expiredOn": "Link expired {date}"
-      },
-      "sort": {
-        "sortBy": "Sort by {column}",
-        "ascending": "ascending",
-        "descending": "descending"
-      },
-      "pagination": {
-        "region": "Pagination",
-        "previous": "Previous page",
-        "next": "Next page",
-        "position": "{from}–{to} of {total}"
       },
       "empty": {
         "firstUse": {

@@ -1,3 +1,4 @@
+import type { IndexPage } from '@easyesg/ui';
 import {
   INVITED_ROLE,
   MEMBERSHIP_ROLE,
@@ -243,13 +244,15 @@ const STANDING_RANK: Record<AccessStanding, number> = {
   [ACCESS_STANDING.ACTIVE]: 2,
 };
 
-export interface AccessPage {
-  readonly rows: readonly AccessRow[];
-  /** Rows surviving the filter — what the pager counts, and what "no matches" is measured against. */
-  readonly matched: number;
-  /** Rows before the filter. A zero here is first use; a zero above it is a filter with no hits. */
-  readonly total: number;
-  readonly page: number;
+/**
+ * What one page of the list is — **`IndexPage` from `packages/ui`, plus the page count.**
+ *
+ * The five members the shell reads are its contract rather than this module's invention, so the
+ * read model produces them by name instead of the screen translating between two shapes. Adopted
+ * 26 Aug 2026 with the Index archetype; `pageCount` stays local because only the clamp below uses
+ * it — the pager derives its own from `matched` and `pageSize`.
+ */
+export interface AccessPage extends IndexPage<AccessRow> {
   readonly pageCount: number;
 }
 
@@ -296,6 +299,7 @@ export const applyAccessView = (input: {
     total: rows.length,
     page,
     pageCount,
+    pageSize: ACCESS_PAGE_SIZE,
   };
 };
 

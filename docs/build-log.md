@@ -2920,3 +2920,52 @@ nothing else, so the flow lives in the reducer and the wire handling stays in th
 
 **It ships with no violations left.** A sweep of all three React workspaces for two distinct setters
 in one handler returns nothing, which is the state a rule has to start in to mean anything.
+
+---
+
+## The Index archetype, extracted at the first screen rather than the fourth · 2026-08-26
+
+Raised by the project owner against `access-list.tsx`: the table composition will repeat, so it
+should be a generic component simple enough to use without much configuration. It will —
+`design_spec.md` §5 has **eleven** Index screens (S-06, S-13, S-14, S-16, S-21, S-22, S-26, S-32 and
+three more) plus four admin Exception queues, and S-16 was the first to write it.
+
+**What went into the archetype is the rule, not the markup.** `DataTable`, `Pagination` and
+`EmptyState` are inventory components and compose by hand in a dozen lines; that is not what fails
+when written eleven times. What fails is the evidence for *which* empty state:
+
+> `total` is rows before the filter, `matched` is rows after it, and a zero in each means a
+> different screen. `total === 0` is first use; `matched === 0` over rows is a filter that found
+> nothing. Collapsing them tells an administrator with nine colleagues that they are alone.
+
+That is easy to get right once and easy to lose on the fourth screen, which is the test for whether
+something belongs in an archetype. `IndexShell` sits beside `FocusShell` in
+`packages/ui/src/archetypes/`, where §13.5's "page archetype templates" deliverable already had a
+precedent, and `index-shell.spec.tsx` pins the choice.
+
+**Two elements of §4.6's list are deliberately not in it.** The filter is made of the screen's own
+facets over the screen's own vocabulary — S-16 filters by role and standing, S-22 by document kind
+and period — so a filter slot would be a `ReactNode` passed through untouched, which is what a
+caller's own markup already is. The row action is absent for that reason and one more: it is a
+column, and columns are the caller's.
+
+**The part that actually made it cheap to use is not in `packages/ui` at all.** The shell needs seven
+strings — the sort control's name and its two directions, the pager's region, its two ends and its
+position sentence — and they are identical on every Index. Written per screen they would be seven
+keys duplicated into eleven namespaces, and eleven chances for one screen to say *"Pagina
+următoare"* while another says *"Înainte"*. They moved to `chrome.index` and are read once by
+`apps/web/src/shared/index-view.tsx`, which is the app-side binding; the package cannot hold them,
+because it holds no text.
+
+So a screen now passes eight props, all of them things only it knows: rows, columns, caption, sort,
+the two handlers, and two empty states. **The empty states stay per-screen on purpose** — §4.6 asks
+for one that *teaches*, which means naming the actual object, and a shared component could only have
+offered a shrug.
+
+One shape change fell out and is worth knowing: `applyAccessView` now returns `IndexPage<AccessRow>`
+plus its own `pageCount`, so the read model produces the shell's contract by name rather than the
+screen translating between two shapes. `pageCount` stays local because only the clamp uses it — the
+pager derives its own from `matched` and `pageSize`.
+
+`access-list.tsx` went from 87 lines to 73, which understates it: what left was the part the next
+ten screens would each have rewritten, and what stayed is the part they cannot share.

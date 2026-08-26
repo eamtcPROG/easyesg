@@ -6,6 +6,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import ro from '@/messages/ro.json';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import {
+  ACCESS_PAGE_SIZE,
   applyAccessView,
   DEFAULT_ACCESS_VIEW,
   toAccessRows,
@@ -168,7 +169,14 @@ describe('AccessBoard · the two empty states', () => {
         messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
       >
         <AccessBoard
-          page={{ rows: [], matched: 0, total: given.length, page: 1, pageCount: 1 }}
+          page={{
+            rows: [],
+            matched: 0,
+            total: given.length,
+            page: 1,
+            pageCount: 1,
+            pageSize: ACCESS_PAGE_SIZE,
+          }}
           view={DEFAULT_ACCESS_VIEW}
           now={NOW}
           inviteAnchorId="invite"

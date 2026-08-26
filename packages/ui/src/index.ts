@@ -79,3 +79,8 @@ export {
 
 // archetypes
 export { FocusShell, type FocusShellProps } from './archetypes/focus-shell';
+export {
+  IndexShell,
+  type IndexPage,
+  type IndexShellProps,
+} from './archetypes/index-shell';
