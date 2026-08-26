@@ -7,6 +7,7 @@ import styles from '@/features/organization/components/access.module.css';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-16 — Users & access · OA · UC-59 … UC-64 · Index
@@ -86,7 +87,7 @@ async function AccessScreenBody({
         title={t('error.permission.title')}
         action={
           <TextLink asChild>
-            <Link href="/home">{t('error.permission.action')}</Link>
+            <Link href={ROUTES.HOME}>{t('error.permission.action')}</Link>
           </TextLink>
         }
       >

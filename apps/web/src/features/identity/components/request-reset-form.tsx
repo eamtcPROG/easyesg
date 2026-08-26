@@ -10,6 +10,7 @@ import { Link } from '@/i18n/navigation';
 import { requestPasswordResetAction } from '../actions';
 import type { RequestResetResult } from '../types/action-results';
 import styles from './identity-screens.module.css';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-02 · Request a password reset (FR-6, UC-08) — the reset-request route from S-01.
@@ -49,7 +50,7 @@ export function RequestResetForm() {
         title={t('sentTitle')}
         action={
           <TextLink asChild>
-            <Link href="/sign-in">{t('sentAction')}</Link>
+            <Link href={ROUTES.SIGN_IN}>{t('sentAction')}</Link>
           </TextLink>
         }
       >
@@ -106,7 +107,7 @@ export function RequestResetForm() {
 
       <p className={styles.altAction}>
         <TextLink asChild>
-          <Link href="/sign-in">{t('backToSignIn')}</Link>
+          <Link href={ROUTES.SIGN_IN}>{t('backToSignIn')}</Link>
         </TextLink>
       </p>
     </form>

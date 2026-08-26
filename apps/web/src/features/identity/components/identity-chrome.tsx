@@ -5,6 +5,7 @@ import { LanguageSwitcher } from '@easyesg/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * The Focus header's actions (IMPLEMENTATION_PLAN Phase 2: the language switcher lands here
@@ -31,7 +32,7 @@ export function IdentityHeaderActions() {
 
   return (
     <>
-      <Link href="/help">{t('helpCentre')}</Link>
+      <Link href={ROUTES.HELP_CENTRE}>{t('helpCentre')}</Link>
       <LanguageSwitcher
         tone="header"
         label={t('language')}

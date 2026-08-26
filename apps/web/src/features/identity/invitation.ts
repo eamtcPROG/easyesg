@@ -1,4 +1,5 @@
 import { INVITATION_STANDING, type InvitationPreview } from '@easyesg/contracts';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-03's branch (UC-15, FR-11) — task 26.3.
@@ -148,13 +149,15 @@ export const invitationHandOff = (token: string) => {
   const returnPath = `${INVITATION_PATH}/${encodeURIComponent(token)}`;
   return {
     /** S-01's sign-in surface: come back here once a session exists. */
-    signIn: `/sign-in?return=${encodeURIComponent(returnPath)}`,
+    signIn: `${ROUTES.SIGN_IN}?return=${encodeURIComponent(returnPath)}`,
     /** S-01's registration surface, carrying the invitation as well as the way back. */
-    register: `/register?invitation=${encodeURIComponent(token)}&return=${encodeURIComponent(returnPath)}`,
+    register: `${ROUTES.REGISTER}?invitation=${encodeURIComponent(token)}&return=${encodeURIComponent(returnPath)}`,
     /** What `SocialProviders` threads through the OAuth transaction (task 24). */
     returnPath,
   };
 };
 
-/** The route `apps/web` has carried since task 4; the worker builds the email link against it. */
+/** The route `apps/web` has carried since task 4; the worker builds the email link against it.
+ *  Not a `ROUTES` member because it takes the token — `invitationRoute` is the builder there, and
+ *  this is the prefix that builder and this hand-off share. */
 const INVITATION_PATH = '/invitation';

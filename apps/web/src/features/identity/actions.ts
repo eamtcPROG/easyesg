@@ -33,6 +33,7 @@ import type {
   SignInFailure,
   VerifyResult,
 } from './types/action-results';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * Server Actions for S-01/S-02 — the decided transport for unauthenticated identity calls
@@ -136,7 +137,9 @@ export async function signOutAction(returnTo?: string): Promise<void> {
   // because it reaches this action through the browser and an unchecked one turns sign-out into an
   // open redirect — `proxy.ts` writes its own and this is the second writer.
   const back = sanitizeReturnPath(returnTo);
-  const href = back ? `/sign-in?return=${encodeURIComponent(back.href)}` : '/sign-in';
+  const href = back
+    ? `${ROUTES.SIGN_IN}?return=${encodeURIComponent(back.href)}`
+    : ROUTES.SIGN_IN;
   redirect({ href, locale: back?.locale ?? (await getLocale()) });
 }
 

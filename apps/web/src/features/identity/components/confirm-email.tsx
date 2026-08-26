@@ -9,6 +9,7 @@ import { verifyEmailAction } from '../actions';
 import { forgetPendingVerification } from '../pending-verification-store';
 import type { VerifyResult } from '../types/action-results';
 import styles from './identity-screens.module.css';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-02 · the verification link's landing surface (UC-03) — `/verify?token=…`.
@@ -51,7 +52,7 @@ export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: st
         title={t('successTitle')}
         action={
           <TextLink asChild>
-            <Link href={returnTo ? `/sign-in?return=${encodeURIComponent(returnTo)}` : '/sign-in'}>
+            <Link href={returnTo ? `${ROUTES.SIGN_IN}?return=${encodeURIComponent(returnTo)}` : '/sign-in'}>
               {t('successAction')}
             </Link>
           </TextLink>
@@ -70,7 +71,7 @@ export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: st
           title={result.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
-              <Link href="/verify">{t('problemAction')}</Link>
+              <Link href={ROUTES.VERIFY}>{t('problemAction')}</Link>
             </TextLink>
           }
         >

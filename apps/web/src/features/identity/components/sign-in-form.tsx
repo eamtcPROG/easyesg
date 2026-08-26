@@ -12,6 +12,7 @@ import { signInAction } from '../actions';
 import { rememberPendingVerification } from '../pending-verification-store';
 import type { SignInFailure } from '../types/action-results';
 import styles from './identity-screens.module.css';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-01 · Sign in (FR-4, UC-04) — email + password. Provider sign-in shares this surface per
@@ -83,11 +84,11 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
           action={
             isUnverified ? (
               <TextLink asChild>
-                <Link href="/verify">{t('unverifiedAction')}</Link>
+                <Link href={ROUTES.VERIFY}>{t('unverifiedAction')}</Link>
               </TextLink>
             ) : isLocked ? (
               <TextLink asChild>
-                <Link href="/reset">{t('lockedAction')}</Link>
+                <Link href={ROUTES.RESET}>{t('lockedAction')}</Link>
               </TextLink>
             ) : (
               t('problemAction')
@@ -141,14 +142,14 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
 
       <p className={styles.altAction}>
         <TextLink asChild>
-          <Link href="/reset">{t('forgot')}</Link>
+          <Link href={ROUTES.RESET}>{t('forgot')}</Link>
         </TextLink>
       </p>
 
       <p className={styles.altAction}>
         {t('noAccount')}{' '}
         <TextLink asChild>
-          <Link href="/register">{t('register')}</Link>
+          <Link href={ROUTES.REGISTER}>{t('register')}</Link>
         </TextLink>
       </p>
     </form>

@@ -11,6 +11,7 @@ import { Link } from '@/i18n/navigation';
 import { resetPasswordAction } from '../actions';
 import type { ResetPasswordResult } from '../types/action-results';
 import styles from './identity-screens.module.css';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-02 · Set a new password from a reset link (FR-6, UC-09) — `/set-password?token=…`.
@@ -73,7 +74,7 @@ export function SetPasswordForm({ token }: { token: string }) {
         title={t('successTitle')}
         action={
           <TextLink asChild>
-            <Link href="/sign-in">{t('successAction')}</Link>
+            <Link href={ROUTES.SIGN_IN}>{t('successAction')}</Link>
           </TextLink>
         }
       >
@@ -92,7 +93,7 @@ export function SetPasswordForm({ token }: { token: string }) {
           title={result.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
-              <Link href="/reset">{t('requestNew')}</Link>
+              <Link href={ROUTES.RESET}>{t('requestNew')}</Link>
             </TextLink>
           }
         >

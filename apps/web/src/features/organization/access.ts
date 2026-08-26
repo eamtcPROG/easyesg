@@ -85,6 +85,15 @@ export interface InvitationRow extends AccessRowShared {
  */
 export type AccessRow = MemberRow | InvitationRow;
 
+/**
+ * A row's identity across the union.
+ *
+ * The two halves come from different tables, so an id alone is only unique within its own — and
+ * qualifying it is what lets one key serve the table's `rowKey`, the per-row pending state and any
+ * later selection without three functions that must agree.
+ */
+export const accessRowKey = (row: AccessRow): string => `${row.kind}:${row.id}`;
+
 export const accessStanding = (row: AccessRow, now: number): AccessStanding => {
   if (row.kind === ACCESS_ROW_KIND.MEMBER) return ACCESS_STANDING.ACTIVE;
   return row.expiresAt <= now ? ACCESS_STANDING.INVITATION_EXPIRED : ACCESS_STANDING.INVITED;

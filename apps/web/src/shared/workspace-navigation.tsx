@@ -3,6 +3,7 @@
 import { WorkspaceNav } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * §4.2's **workspace** tier, wired (task 26.4).
@@ -22,7 +23,7 @@ import { Link, usePathname } from '@/i18n/navigation';
  * whole navigational job, and the alternative — every page passing its own key down through the
  * layout — is a prop that one screen eventually forgets to pass, with no way to notice.
  */
-const SECTIONS = [{ key: 'users', href: '/organization/users' }] as const;
+const SECTIONS = [{ key: 'users', href: ROUTES.ORGANIZATION_USERS }] as const;
 
 export function WorkspaceNavigation() {
   const t = useTranslations('chrome.workspaceNav');

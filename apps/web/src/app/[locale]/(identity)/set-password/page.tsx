@@ -4,6 +4,7 @@ import { SetPasswordForm } from '@/features/identity/components/set-password-for
 import styles from '@/features/identity/components/identity-screens.module.css';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-02 — Set password · CA · UC-09 · Focus
@@ -37,7 +38,7 @@ export default async function SetPasswordPage({ params, searchParams }: Props) {
           title={t('missingTitle')}
           action={
             <TextLink asChild>
-              <Link href="/reset">{t('missingAction')}</Link>
+              <Link href={ROUTES.RESET}>{t('missingAction')}</Link>
             </TextLink>
           }
         >

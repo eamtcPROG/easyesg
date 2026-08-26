@@ -9,6 +9,7 @@ import { acceptInvitationAction } from '../actions';
 import type { UsableInvitation } from '../invitation';
 import type { AcceptInvitationFailure } from '../types/action-results';
 import styles from './identity-screens.module.css';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-03's primary action (UC-15, FR-11) — the one arm of the branch that changes anything.
@@ -56,7 +57,7 @@ export function AcceptInvitation({
           title={failure.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
-              <Link href="/sign-in">{t('problemAction')}</Link>
+              <Link href={ROUTES.SIGN_IN}>{t('problemAction')}</Link>
             </TextLink>
           }
         >

@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { Callout, TextLink, type CalloutProps } from '@easyesg/ui';
 import { Link } from '@/i18n/navigation';
 import { SOCIAL_NOTICE, isSocialNotice, type SocialNotice } from '../social';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * The callback's `?notice=` rendered as S-01's callout (task 24) — NFR-79's three parts, all
@@ -43,7 +44,7 @@ export async function SocialNoticeCallout({ notice }: SocialNoticeCalloutProps) 
     notice === SOCIAL_NOTICE.VERIFY_SENT ? (
       // The one notice whose "what now" is a navigation: S-02's resend surface.
       <TextLink asChild>
-        <Link href="/verify">{t(`${key}.action`)}</Link>
+        <Link href={ROUTES.VERIFY}>{t(`${key}.action`)}</Link>
       </TextLink>
     ) : (
       t(`${key}.action`)

@@ -12,6 +12,7 @@ import {
   type SessionCookie,
   type SessionJar,
 } from '@/server/session';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * One proxy module, two responsibilities.
@@ -115,7 +116,7 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   if (response.headers.has('location')) return response;
 
   if (requiresSession(pathname) && !request.cookies.has(REFRESH_COOKIE)) {
-    const signIn = new URL(localePath(localeOf(pathname), '/sign-in'), request.url);
+    const signIn = new URL(localePath(localeOf(pathname), ROUTES.SIGN_IN), request.url);
     // UX-38: session expiry returns the user to the exact screen they were on, with queued
     // changes submitted — never to a blank sign-in that loses their place.
     signIn.searchParams.set('return', pathname + request.nextUrl.search);

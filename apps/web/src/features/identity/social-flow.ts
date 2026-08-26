@@ -25,6 +25,7 @@ import {
   persistSocialTransaction,
 } from '@/server/social-transaction';
 import { SOCIAL_NOTICE, type SocialNotice } from './social';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * The web tier's half of the provider flow (task 24, §12.5.6's task-24 flow row) — the two
@@ -44,8 +45,8 @@ function requestLocale(request: NextRequest): Locale {
 }
 
 const SCREEN = {
-  SIGN_IN: '/sign-in',
-  REGISTER: '/register',
+  SIGN_IN: ROUTES.SIGN_IN,
+  REGISTER: ROUTES.REGISTER,
 } as const;
 
 type Screen = (typeof SCREEN)[keyof typeof SCREEN];

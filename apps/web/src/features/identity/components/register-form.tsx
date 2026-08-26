@@ -12,6 +12,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import { registerAction } from '../actions';
 import { rememberPendingVerification } from '../pending-verification-store';
 import styles from './identity-screens.module.css';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-01 · Register (UC-01) — email + password per the S-01 content list and the task-19 API.
@@ -88,7 +89,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
         if (result.value.status === ACCOUNT_STATUS.ACTIVE) {
           // Verified by the invitation itself, so there is no challenge to wait for: straight on to
           // sign in, and `?return=` brings them back to the invitation to accept it.
-          router.push(returnTo ? `/sign-in?return=${encodeURIComponent(returnTo)}` : '/sign-in');
+          router.push(returnTo ? `${ROUTES.SIGN_IN}?return=${encodeURIComponent(returnTo)}` : '/sign-in');
           return;
         }
         // The S-02 challenge screen states the address it was sent to. Session storage, not the
@@ -99,7 +100,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
         // ignores it and issues an ordinary challenge — and dropping the return path there stranded
         // the invitee: they verified, signed in with nowhere to go, and landed on "create your first
         // organization" with no sign the invitation existed. S-02 threads it on to sign-in.
-        router.push(returnTo ? `/verify?return=${encodeURIComponent(returnTo)}` : '/verify');
+        router.push(returnTo ? `${ROUTES.VERIFY}?return=${encodeURIComponent(returnTo)}` : '/verify');
         return;
       }
       setFailure(result);
@@ -119,7 +120,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
           action={
             isConflict ? (
               <TextLink asChild>
-                <Link href="/sign-in">{t('signIn')}</Link>
+                <Link href={ROUTES.SIGN_IN}>{t('signIn')}</Link>
               </TextLink>
             ) : (
               t('problemAction')
@@ -190,7 +191,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
       <p className={styles.altAction}>
         {t('alreadyHave')}{' '}
         <TextLink asChild>
-          <Link href="/sign-in">{t('signIn')}</Link>
+          <Link href={ROUTES.SIGN_IN}>{t('signIn')}</Link>
         </TextLink>
       </p>
     </form>

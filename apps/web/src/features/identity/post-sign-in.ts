@@ -2,6 +2,7 @@ import type { AccountMembership } from '@easyesg/contracts';
 import type { LocalizedPath } from '@/lib/locale-path';
 import { isReturnableAfterSignIn } from '@/lib/route-access';
 import type { Locale } from '@easyesg/i18n';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * §4.3's post-sign-in branch (FR-12, UC-16) — task 25.4.
@@ -41,13 +42,20 @@ import type { Locale } from '@easyesg/i18n';
  * three that are not the happy path would not have been exercised at all. `server/post-sign-in.ts`
  * is the seam that fetches; this is the rule that decides.
  */
+/**
+ * The three destinations, spelled by `ROUTES` and named by what the branch means.
+ *
+ * Both objects, deliberately: `ROUTES` owns how an address is written, and this owns which arm of
+ * §4.3 it answers — "the account belongs to nothing", not "the create-organization page". Folding
+ * them together would lose the second, and duplicating the strings would let the two disagree.
+ */
 export const POST_SIGN_IN = {
   /** S-04 (UC-49) — a verified account that belongs to nothing. Task 30.2 builds it. */
-  CREATE_ORGANIZATION: '/create-organization',
+  CREATE_ORGANIZATION: ROUTES.CREATE_ORGANIZATION,
   /** S-05. Both the "one" and "several" branches land here. Task 30.5 builds it. */
-  HOME: '/home',
+  HOME: ROUTES.HOME,
   /** S-35 — the membership read failed, so the branch could not be taken at all. */
-  ORGANIZATION_UNAVAILABLE: '/organization-unavailable',
+  ORGANIZATION_UNAVAILABLE: ROUTES.ORGANIZATION_UNAVAILABLE,
 } as const;
 
 export type PostSignInPath = (typeof POST_SIGN_IN)[keyof typeof POST_SIGN_IN];

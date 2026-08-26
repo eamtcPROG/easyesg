@@ -1,6 +1,7 @@
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import styles from './site-footer.module.css';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * The legal footer — the copyright note and the three legal documents.
@@ -37,9 +38,9 @@ export async function SiteFooter() {
     <>
       <span className={styles.note}>{t('legalNote', { year })}</span>
       <nav className={styles.links} aria-label={t('legalNav')}>
-        <Link href="/legal/terms">{t('terms')}</Link>
-        <Link href="/legal/privacy">{t('privacy')}</Link>
-        <Link href="/legal/cookies">{t('cookies')}</Link>
+        <Link href={ROUTES.LEGAL_TERMS}>{t('terms')}</Link>
+        <Link href={ROUTES.LEGAL_PRIVACY}>{t('privacy')}</Link>
+        <Link href={ROUTES.LEGAL_COOKIES}>{t('cookies')}</Link>
       </nav>
     </>
   );

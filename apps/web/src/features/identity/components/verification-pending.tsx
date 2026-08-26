@@ -17,6 +17,7 @@ import {
   subscribeResendCooldown,
 } from '../pending-verification-store';
 import styles from './identity-screens.module.css';
+import { ROUTES } from '@/lib/routes';
 
 /**
  * S-02 · the verification challenge, waiting side — entered from S-01 after registration (the
@@ -114,7 +115,7 @@ export function VerificationPending() {
             <p className={styles.divided}>
               {t('wrongAddress')}{' '}
               <TextLink asChild>
-                <Link href="/register">{t('changeIt')}</Link>
+                <Link href={ROUTES.REGISTER}>{t('changeIt')}</Link>
               </TextLink>
             </p>
           </>

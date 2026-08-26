@@ -19,6 +19,7 @@ import styles from '@/features/identity/components/identity-screens.module.css';
 import { readSession } from '@/server/session';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
+import { ROUTES } from '@/lib/routes';
 
 /** One namespace, five readers — named because `sonarjs/no-duplicate-string` is right about it. */
 const MESSAGES = 'identity.invitation';
@@ -209,7 +210,7 @@ async function Unusable({ standing }: { standing: UnusableStanding }) {
       title={t(`standing.${standing}.title`)}
       action={
         <TextLink asChild>
-          <Link href="/sign-in">{t('standingAction')}</Link>
+          <Link href={ROUTES.SIGN_IN}>{t('standingAction')}</Link>
         </TextLink>
       }
     >
