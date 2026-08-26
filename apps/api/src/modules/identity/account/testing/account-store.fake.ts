@@ -16,6 +16,18 @@ import {
 } from '../models/account.model';
 import { EmailAlreadyRegisteredError } from '../errors/account.errors';
 import { emailIdentityKey } from '../domain/email-address';
+import {
+  RECOVERY_CODE_OUTCOME,
+  type RecoveryCodeOutcome,
+  type TotpEnrolment,
+} from '../models/totp.model';
+
+/** A recovery code as UC-195 sees it: a hash, and whether it has been spent. */
+interface StoredRecoveryCode {
+  accountId: string;
+  codeHash: Buffer;
+  spentAt: Date | null;
+}
 
 /**
  * An in-memory `AccountStore` for the use-case specs.
@@ -48,6 +60,8 @@ export interface FakeSession {
 interface Snapshot {
   accounts: Account[];
   credentials: [string, Credential][];
+  totp: [string, TotpEnrolment][];
+  recoveryCodes: StoredRecoveryCode[];
   tokens: StoredToken[];
   resetTokens: StoredToken[];
   sessions: FakeSession[];
@@ -58,6 +72,8 @@ interface Snapshot {
 export class FakeAccountStore implements AccountStore {
   accounts: Account[] = [];
   credentials = new Map<string, Credential>();
+  totp = new Map<string, TotpEnrolment>();
+  recoveryCodes: StoredRecoveryCode[] = [];
   tokens: StoredToken[] = [];
   resetTokens: StoredToken[] = [];
   sessions: FakeSession[] = [];
@@ -101,6 +117,8 @@ export class FakeAccountStore implements AccountStore {
   private snapshot(): Snapshot {
     return {
       accounts: [...this.accounts],
+      totp: [...this.totp.entries()].map(([id, e]) => [id, { ...e }] as [string, TotpEnrolment]),
+      recoveryCodes: this.recoveryCodes.map((c) => ({ ...c })),
       credentials: [...this.credentials.entries()].map(
         ([id, credential]): [string, Credential] => [id, { ...credential }],
       ),
@@ -115,6 +133,8 @@ export class FakeAccountStore implements AccountStore {
   private restore(snapshot: Snapshot): void {
     this.accounts = snapshot.accounts;
     this.credentials = new Map(snapshot.credentials);
+    this.totp = new Map(snapshot.totp);
+    this.recoveryCodes = snapshot.recoveryCodes;
     this.tokens = snapshot.tokens;
     this.resetTokens = snapshot.resetTokens;
     this.sessions = snapshot.sessions;
@@ -127,6 +147,70 @@ export class FakeAccountStore implements AccountStore {
     const store = this;
 
     return {
+      findCredential(accountId: string): Promise<Credential | null> {
+        return Promise.resolve(store.credentials.get(accountId) ?? null);
+      },
+
+      findTotpEnrolment(accountId: string): Promise<TotpEnrolment | null> {
+        const found = store.totp.get(accountId);
+        return Promise.resolve(found === undefined ? null : { ...found });
+      },
+
+      beginTotpEnrolment(
+        enrolment: { readonly accountId: string; readonly secret: string },
+      ): Promise<boolean> {
+        // The adapter's `WHERE confirmed_at IS NULL`, modelled: a confirmed factor refuses, an
+        // unconfirmed one is replaced. A fake that always inserted would let a spec prove the
+        // use case guards this, when it is the statement that does.
+        const existing = store.totp.get(enrolment.accountId);
+        if (existing !== undefined && existing.confirmedAt !== null) return Promise.resolve(false);
+        store.totp.set(enrolment.accountId, {
+          accountId: enrolment.accountId,
+          secret: enrolment.secret,
+          confirmedAt: null,
+        });
+        return Promise.resolve(true);
+      },
+
+      confirmTotpEnrolment(accountId: string, at: Date): Promise<boolean> {
+        const existing = store.totp.get(accountId);
+        if (existing === undefined || existing.confirmedAt !== null) return Promise.resolve(false);
+        store.totp.set(accountId, { ...existing, confirmedAt: at });
+        return Promise.resolve(true);
+      },
+
+      deleteTotpEnrolment(accountId: string): Promise<void> {
+        store.totp.delete(accountId);
+        return Promise.resolve();
+      },
+
+      replaceRecoveryCodes(accountId: string, hashes: readonly Buffer[]): Promise<void> {
+        store.recoveryCodes = store.recoveryCodes.filter((c) => c.accountId !== accountId);
+        store.recoveryCodes.push(
+          ...hashes.map((codeHash) => ({ accountId, codeHash, spentAt: null })),
+        );
+        return Promise.resolve();
+      },
+
+      countUnspentRecoveryCodes(accountId: string): Promise<number> {
+        return Promise.resolve(
+          store.recoveryCodes.filter((c) => c.accountId === accountId && c.spentAt === null).length,
+        );
+      },
+
+      spendRecoveryCode(
+        presented: { readonly accountId: string; readonly codeHash: Buffer },
+        at: Date,
+      ): Promise<RecoveryCodeOutcome> {
+        const found = store.recoveryCodes.find(
+          (c) => c.accountId === presented.accountId && c.codeHash.equals(presented.codeHash),
+        );
+        if (found === undefined) return Promise.resolve(RECOVERY_CODE_OUTCOME.UNKNOWN);
+        if (found.spentAt !== null) return Promise.resolve(RECOVERY_CODE_OUTCOME.ALREADY_SPENT);
+        found.spentAt = at;
+        return Promise.resolve(RECOVERY_CODE_OUTCOME.SPENT);
+      },
+
       insertUnverifiedAccount(account: NewAccount): Promise<Account> {
         // The unique index, modelled. The use case's pre-read is for expiry, not for this.
         if (store.accounts.some((a) => emailIdentityKey(a.email) === emailIdentityKey(account.email))) {

@@ -4,17 +4,22 @@ import configuration, { APP_MODE, type AppConfig } from '@api/config/configurati
 import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
 import { AccountStoreRepository } from '@api/infrastructure/persistence/identity/account-store.repository';
+import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
+import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
 import { AuthController } from './controllers/auth.controller';
+import { TotpController } from './controllers/totp.controller';
 import { PasswordResetEmailHandler } from './consumers/password-reset-email.handler';
 import { VerificationEmailHandler } from './consumers/verification-email.handler';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { ACCOUNT_STORE, type AccountStore } from './interfaces/account-store.interface';
 import { AccountService } from './services/account.service';
+import { TotpService } from './services/totp.service';
 import { PASSWORD_HASHER, type PasswordHasher } from './interfaces/password-hasher.interface';
 import { RegisterAccount } from './use-cases/register-account.use-case';
 import { RequestPasswordReset } from './use-cases/request-password-reset.use-case';
 import { ResendVerificationEmail } from './use-cases/resend-verification-email.use-case';
 import { ResetPassword } from './use-cases/reset-password.use-case';
+import { ConsumeRecoveryCode, ManageTotp } from './use-cases/manage-totp.use-case';
 import { VerifyEmail } from './use-cases/verify-email.use-case';
 
 /**
@@ -53,7 +58,21 @@ const { mode } = configuration();
  */
 const httpProviders: Provider[] = [
   AccountService,
+  TotpService,
   { provide: ACCOUNT_STORE, useClass: AccountStoreRepository },
+  {
+    /**
+     * The store seals `identity.totp_credential.secret` (task 27.1's `SecretCipher`), so the
+     * repository needs it wherever it is constructed. Registered here as well as in `AdminModule`
+     * — two providers of one adapter, not two adapters, both built from the same
+     * `SECRET_ENCRYPTION_KEY`, which is `session.module.ts`'s standing answer for
+     * `PASSWORD_HASHER`. Ciphertext from either is readable by the other by construction.
+     */
+    provide: SECRET_CIPHER,
+    inject: [ConfigService],
+    useFactory: (config: ConfigService<AppConfig, true>) =>
+      new AesGcmSecretCipher(config.get('secrets.encryptionKey', { infer: true })),
+  },
   {
     provide: PASSWORD_HASHER,
     inject: [ConfigService],
@@ -69,6 +88,23 @@ const httpProviders: Provider[] = [
    * the module as a whole without re-wiring every use case individually.
    */
   { provide: CLOCK, useValue: () => new Date() },
+  {
+    provide: ManageTotp,
+    inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AccountStore, hasher: PasswordHasher, now: Clock) =>
+      new ManageTotp(store, hasher, now),
+  },
+  {
+    /**
+     * Registered here although its only caller is task 27.3's sign-in, in `identity/session`.
+     * The recovery codes are this module's data and this module's hashing rule; exporting the
+     * narrow use case is what lets the session module answer a challenge without reaching for
+     * `ManageTotp`'s four password-gated management methods (ISP).
+     */
+    provide: ConsumeRecoveryCode,
+    inject: [ACCOUNT_STORE, CLOCK],
+    useFactory: (store: AccountStore, now: Clock) => new ConsumeRecoveryCode(store, now),
+  },
   {
     provide: RegisterAccount,
     inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
@@ -106,7 +142,7 @@ const workerProviders: Provider[] = [VerificationEmailHandler, PasswordResetEmai
 
 @Module({
   imports: mode === APP_MODE.WORKER ? [EmailModule] : [],
-  controllers: mode === APP_MODE.WORKER ? [] : [AuthController],
+  controllers: mode === APP_MODE.WORKER ? [] : [AuthController, TotpController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
 })
 export class AccountModule {}

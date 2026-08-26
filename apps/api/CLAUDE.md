@@ -471,6 +471,19 @@ No table and no code. Add a `config/seed/<kind>.<scope>.json` file and read it w
 - Dates are **calendar dates** (NFR-34). Which factor set applies on 1 January must not change with
   the reader's timezone.
 
+Task 27.2 adds the tenant second factor (NFR-95, UC-193 … UC-195): `identity.totp_credential` —
+`account_id` as the primary key, the secret typed `identity.encrypted_secret`, and `confirmed_at`
+which is what makes enrolment two steps — plus `identity.recovery_code`, ten single-use SHA-256
+hashes per account. `GET /api/v1/account/totp` and `POST /api/v1/account/totp/{enrolment,
+confirmation,removal,recovery-codes}` behind `@RequiresAccount()`, in `identity/account` because it
+owns credentials. **"Enrolled" is `confirmed_at IS NOT NULL`, never "a row exists"** — a secret an
+authenticator failed to capture must leave the account unchallenged. Enrol and disenrol require the
+current password (§12.5.6); a provider-only account has no credential row and its session stands as
+one. The **challenge** is not here: answering a factor happens during sign-in and is task 27.3's,
+in `identity/session`. Action-noun routes rather than `DELETE` with a body, following
+`POST /invitations/{preview,acceptance}` — `DELETE` with a body is unevenly supported through
+proxies, which is not a thing to find out on the route that turns a security control off.
+
 ### Adding a column that holds a secret
 
 Since task 27.1 there is one mechanism and the database enforces it (§12.5.6's secrets-at-rest row).

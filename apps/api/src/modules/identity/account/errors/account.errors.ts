@@ -98,3 +98,64 @@ export class AuthRateLimitedError extends DomainError {
     super('identity.auth.rate_limited');
   }
 }
+
+/**
+ * The opt-in second factor's refusals (NFR-95, UC-193; task 27.2).
+ *
+ * `FactorInvalid` and `MfaRequired` already exist in the problem vocabulary — task 23 created them
+ * for the admin realm — and are reused rather than duplicated. NFR-65's separation is about DATA,
+ * not about the words a refusal is spelled with, and inventing `tenant-factor-invalid` beside
+ * `factor-invalid` would give a reader two slugs for one meaning.
+ */
+
+/**
+ * The current password did not match, on a route that requires re-authentication.
+ *
+ * Distinct from a sign-in failure in one way that matters: it does **not** count toward FR-4's
+ * lockout. The caller already holds a valid session, so a mistyped password on S-28 must not be
+ * able to sign them out of every device — see `findCredential`'s note.
+ */
+export class ReauthenticationFailedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.CredentialInvalid;
+  readonly status = 403;
+
+  constructor() {
+    super('identity.totp.reauthentication_failed');
+  }
+}
+
+/** A code that is not current for the enrolment's secret, at either step. */
+export class TotpCodeInvalidError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.FactorInvalid;
+  readonly status = 403;
+
+  constructor() {
+    super('identity.totp.code_invalid');
+  }
+}
+
+/**
+ * Enrolment attempted on an account that already has a confirmed factor.
+ *
+ * A refusal rather than a silent re-issue, and the reason is the attack the re-authentication rule
+ * exists to stop: re-issuing here would let a caller replace a working factor with their own. The
+ * way to a new secret is to turn the factor off and enrol again, which costs the password twice.
+ */
+export class TotpAlreadyEnrolledError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('identity.totp.already_enrolled');
+  }
+}
+
+/** Confirming, disenrolling or re-issuing codes against an enrolment that is not there. */
+export class TotpNotEnrolledError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('identity.totp.not_enrolled');
+  }
+}

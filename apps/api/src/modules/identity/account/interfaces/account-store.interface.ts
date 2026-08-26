@@ -1,5 +1,10 @@
 import type {
+  RecoveryCodeOutcome,
+  TotpEnrolment,
+} from '../models/totp.model';
+import type {
   Account,
+  Credential,
   ClaimedPasswordResetToken,
   ClaimedVerificationToken,
   NewAccount,
@@ -124,6 +129,83 @@ export interface AccountTransaction {
 
   /** OQ-52's expiry. `ON DELETE CASCADE` takes the credential and any outstanding tokens with it. */
   deleteAccount(accountId: string): Promise<void>;
+
+  // ── The opt-in second factor (NFR-95, UC-193 … UC-195; task 27.2) ────────────────────────────
+  //
+  // The secret crosses this boundary in PLAINTEXT and the adapter seals it, per §12.5.6's
+  // secrets-at-rest row — the same placement OQ-50 gives the epoch-ms conversion. A port carrying
+  // ciphertext would have made every caller responsible for remembering to open it.
+
+  /**
+   * The account's password credential, for the **re-authentication** every second-factor change
+   * requires (§12.5.6's task-27.2 row; FR-8's rule applied to the same screen).
+   *
+   * Null for a provider-only account (FR-2), which has no credential row at all — and that null is
+   * a decision rather than a gap: there the session stands as the credential, because requiring a
+   * fresh OIDC assertion would pull task 24's redirect machinery into a settings screen. Recorded
+   * as an assumption in §12.5.6; what changes if it is wrong is one step in the use cases below.
+   *
+   * It deliberately does **not** touch the lockout counters. FR-4's threshold is sign-in's, and a
+   * user fumbling their own password inside an authenticated settings screen has already proved
+   * possession of the session — counting it toward a lockout would let a mistyped password on
+   * S-28 sign the user out of every device.
+   */
+  findCredential(accountId: string): Promise<Credential | null>;
+
+  /** The enrolment, confirmed or not. Null when the account has never begun one. */
+  findTotpEnrolment(accountId: string): Promise<TotpEnrolment | null>;
+
+  /**
+   * Issues or replaces the **unconfirmed** enrolment, and refuses to touch a confirmed one.
+   *
+   * False when a confirmed factor already exists, which the caller reports as "already enrolled"
+   * rather than silently re-issuing — re-issuing there would let a stolen session replace a
+   * working factor with its own, which is the attack the re-authentication rule exists to stop and
+   * which a second door here would reopen. Replacing an *unconfirmed* row is the ordinary case: a
+   * user who abandons enrolment and starts again gets a fresh secret, and a single upsert decides
+   * the race the database rather than a read-then-write.
+   */
+  beginTotpEnrolment(
+    enrolment: { readonly accountId: string; readonly secret: string },
+    at: Date,
+  ): Promise<boolean>;
+
+  /**
+   * Marks the enrolment confirmed, atomically and once.
+   *
+   * False when there was no unconfirmed row to confirm — already confirmed, or never begun. It is a
+   * conditional UPDATE for `claimVerificationToken`'s reason exactly: two requests carrying the
+   * same first code must not both activate, and only the database can decide that once.
+   */
+  confirmTotpEnrolment(accountId: string, at: Date): Promise<boolean>;
+
+  /** Disenrolment (UC-193's reverse). Takes the recovery codes with it — see `replaceRecoveryCodes`. */
+  deleteTotpEnrolment(accountId: string): Promise<void>;
+
+  /**
+   * Replaces the account's whole recovery-code set (§12.5.6: re-issuing replaces the set).
+   *
+   * Whole-set rather than additive, so a set half-spent leaves no residue: a user who re-issues
+   * because they think a code leaked would otherwise still have the leaked one live. Passing an
+   * empty list is how disenrolment clears them.
+   */
+  replaceRecoveryCodes(accountId: string, hashes: readonly Buffer[]): Promise<void>;
+
+  countUnspentRecoveryCodes(accountId: string): Promise<number>;
+
+  /**
+   * Spends one code, atomically — single-use is this method's responsibility and cannot be the
+   * caller's, for the reason `claimVerificationToken` states.
+   *
+   * It distinguishes an unrecognised hash from one already spent because the two are different
+   * events to a defender: the second means someone is replaying a code that worked once. The
+   * distinction stops here — §12.5.6's uniform-response rule means the caller answers both the
+   * same way (NFR-64).
+   */
+  spendRecoveryCode(
+    presented: { readonly accountId: string; readonly codeHash: Buffer },
+    at: Date,
+  ): Promise<RecoveryCodeOutcome>;
 
   /**
    * Writes an outbox row on **this** transaction's runner (AD-6, P-8). It is on the transaction

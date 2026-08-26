@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
 import { toLocale } from '@easyesg/i18n';
+import { SECRET_CIPHER, type SecretCipher } from '@api/contracts/secret-cipher.port';
 import { EmailAlreadyRegisteredError } from '@api/modules/identity/account/errors/account.errors';
 import { hashInvitationToken } from '@api/modules/identity/invitation/domain/invitation-token';
 import type { InvitationStatus } from '@api/modules/identity/invitation/models/invitation.model';
@@ -14,12 +15,18 @@ import type {
 import {
   ACCOUNT_STATUS,
   type Account,
+  type Credential,
   type ClaimedPasswordResetToken,
   type ClaimedVerificationToken,
   type NewAccount,
   type NewPasswordResetToken,
   type NewVerificationToken,
 } from '@api/modules/identity/account/models/account.model';
+import {
+  RECOVERY_CODE_OUTCOME,
+  type RecoveryCodeOutcome,
+  type TotpEnrolment,
+} from '@api/modules/identity/account/models/totp.model';
 import { SESSION_REVOKED_REASON } from '@api/modules/identity/session/models/session.model';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
@@ -42,7 +49,12 @@ import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queri
  */
 @Injectable()
 export class AccountStoreRepository implements AccountStore {
-  constructor(@InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource,
+    // Task 27.2's second factor: `identity.totp_credential.secret` is sealed here and opened
+    // here, and nowhere else (§12.5.6's secrets-at-rest row, task 27.1).
+    @Inject(SECRET_CIPHER) private readonly secrets: SecretCipher,
+  ) {}
 
   async run<T>(work: (tx: AccountTransaction) => Promise<T>): Promise<T> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -50,7 +62,7 @@ export class AccountStoreRepository implements AccountStore {
     await queryRunner.startTransaction();
 
     try {
-      const result = await work(new AccountTransactionAdapter(queryRunner));
+      const result = await work(new AccountTransactionAdapter(queryRunner, this.secrets));
       await queryRunner.commitTransaction();
       return result;
     } catch (error) {
@@ -141,7 +153,10 @@ const returnedRows = <T>(result: unknown): T[] =>
   Array.isArray(result) && Array.isArray(result[0]) ? (result[0] as T[]) : (result as T[]);
 
 class AccountTransactionAdapter implements AccountTransaction {
-  constructor(private readonly queryRunner: QueryRunner) {}
+  constructor(
+    private readonly queryRunner: QueryRunner,
+    private readonly secrets: SecretCipher,
+  ) {}
 
   async insertUnverifiedAccount(account: NewAccount): Promise<Account> {
     try {
@@ -366,6 +381,148 @@ class AccountTransactionAdapter implements AccountTransaction {
     // makes OQ-52's "the record is deleted" a single statement rather than a sequence someone can
     // get half-right.
     await this.queryRunner.query(`DELETE FROM identity.account WHERE id = $1`, [accountId]);
+  }
+
+  // ── The opt-in second factor (task 27.2) ────────────────────────────────────────────────────
+
+  async findCredential(accountId: string): Promise<Credential | null> {
+    const rows = returnedRows<{
+      account_id: string;
+      password_hash: string;
+      failed_attempts: number;
+      locked_at: Date | null;
+    }>(
+      await this.queryRunner.query(
+        `SELECT account_id, password_hash, failed_attempts, locked_at
+           FROM identity.credential WHERE account_id = $1`,
+        [accountId],
+      ),
+    );
+    // Null is the provider-only account (FR-2), which holds no credential row at all — see the
+    // port's note on why that is a decision and not a gap.
+    return rows.length === 0
+      ? null
+      : {
+          accountId: rows[0].account_id,
+          passwordHash: rows[0].password_hash,
+          failedAttempts: rows[0].failed_attempts,
+          lockedAt: rows[0].locked_at,
+        };
+  }
+
+  async findTotpEnrolment(accountId: string): Promise<TotpEnrolment | null> {
+    const rows = returnedRows<{ account_id: string; secret: string; confirmed_at: Date | null }>(
+      await this.queryRunner.query(
+        `SELECT account_id, secret, confirmed_at FROM identity.totp_credential
+          WHERE account_id = $1`,
+        [accountId],
+      ),
+    );
+    return rows.length === 0
+      ? null
+      : {
+          accountId: rows[0].account_id,
+          // Opened here, so the domain type holds the secret and not its storage form. A throw
+          // means a wrong SECRET_ENCRYPTION_KEY or a corrupt row, never "no factor".
+          secret: this.secrets.open(rows[0].secret),
+          confirmedAt: rows[0].confirmed_at,
+        };
+  }
+
+  async beginTotpEnrolment(
+    enrolment: { readonly accountId: string; readonly secret: string },
+    at: Date,
+  ): Promise<boolean> {
+    // One conditional statement deciding the race once, the house discipline. `WHERE confirmed_at
+    // IS NULL` on the DO UPDATE is what refuses to overwrite a working factor — a read-then-write
+    // would let two requests both see "unconfirmed" and the second replace a secret the first had
+    // just confirmed.
+    const rows = returnedRows<{ account_id: string }>(
+      await this.queryRunner.query(
+        `INSERT INTO identity.totp_credential (account_id, secret, created_at, updated_at)
+         VALUES ($1, $2, $3, $3)
+         ON CONFLICT (account_id) DO UPDATE
+            SET secret = EXCLUDED.secret, updated_at = $3
+          WHERE identity.totp_credential.confirmed_at IS NULL
+         RETURNING account_id`,
+        [enrolment.accountId, this.secrets.seal(enrolment.secret), at],
+      ),
+    );
+    return rows.length > 0;
+  }
+
+  async confirmTotpEnrolment(accountId: string, at: Date): Promise<boolean> {
+    const result: unknown = await this.queryRunner.query(
+      `UPDATE identity.totp_credential SET confirmed_at = $2, updated_at = $2
+        WHERE account_id = $1 AND confirmed_at IS NULL
+       RETURNING account_id`,
+      [accountId, at],
+    );
+    // UPDATE … RETURNING arrives as [rows, count] — see `returnedRows`.
+    return returnedRows<{ account_id: string }>(result).length > 0;
+  }
+
+  async deleteTotpEnrolment(accountId: string): Promise<void> {
+    await this.queryRunner.query(
+      `DELETE FROM identity.totp_credential WHERE account_id = $1`,
+      [accountId],
+    );
+  }
+
+  async replaceRecoveryCodes(accountId: string, hashes: readonly Buffer[]): Promise<void> {
+    await this.queryRunner.query(
+      `DELETE FROM identity.recovery_code WHERE account_id = $1`,
+      [accountId],
+    );
+    if (hashes.length === 0) return;
+    // One statement rather than a loop: ten round trips inside a transaction hold a pooled
+    // connection for no reason, and `unnest` keeps the parameter count at two whatever the count
+    // becomes.
+    await this.queryRunner.query(
+      `INSERT INTO identity.recovery_code (account_id, code_hash)
+       SELECT $1, h FROM unnest($2::bytea[]) AS h`,
+      [accountId, hashes],
+    );
+  }
+
+  async countUnspentRecoveryCodes(accountId: string): Promise<number> {
+    const rows = returnedRows<{ remaining: string }>(
+      await this.queryRunner.query(
+        `SELECT count(*)::text AS remaining FROM identity.recovery_code
+          WHERE account_id = $1 AND spent_at IS NULL`,
+        [accountId],
+      ),
+    );
+    // `count(*)` is bigint, which `pg` hands back as a STRING to avoid losing precision past 2^53.
+    // Parsing it here is the conversion the port's `number` promises; letting it through would
+    // make `remaining === 0` false for the string '0'.
+    return Number.parseInt(rows[0].remaining, 10);
+  }
+
+  async spendRecoveryCode(
+    presented: { readonly accountId: string; readonly codeHash: Buffer },
+    at: Date,
+  ): Promise<RecoveryCodeOutcome> {
+    const spent: unknown = await this.queryRunner.query(
+      `UPDATE identity.recovery_code SET spent_at = $3
+        WHERE account_id = $1 AND code_hash = $2 AND spent_at IS NULL
+       RETURNING id`,
+      [presented.accountId, presented.codeHash, at],
+    );
+    if (returnedRows<{ id: string }>(spent).length > 0) return RECOVERY_CODE_OUTCOME.SPENT;
+
+    // Nothing was spent. Whether the code is unknown or already used is a difference a DEFENDER
+    // wants — a replay of a code that once worked is evidence someone holds a copy — so the store
+    // answers it. The use case then collapses both into one refusal (NFR-64).
+    const known = returnedRows<{ id: string }>(
+      await this.queryRunner.query(
+        `SELECT id FROM identity.recovery_code WHERE account_id = $1 AND code_hash = $2`,
+        [presented.accountId, presented.codeHash],
+      ),
+    );
+    return known.length > 0
+      ? RECOVERY_CODE_OUTCOME.ALREADY_SPENT
+      : RECOVERY_CODE_OUTCOME.UNKNOWN;
   }
 
   async emit(effect: AccountEffect): Promise<void> {

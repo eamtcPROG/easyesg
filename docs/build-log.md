@@ -3266,3 +3266,128 @@ than a flake fix. `pnpm -r --workspace-concurrency=1` was measured as the narrow
 is not obviously better either — 33.7 s against 29.6 s wall, buying a 35% cut in peak pressure for a
 14% slower gate. Both numbers are recorded so that a future decision about gate speed starts from
 data rather than from a fresh afternoon.
+
+## Task 27.2 — the second factor, and a requirement that had been ratified into silence · 2026-08-26
+
+NFR-95 made opt-in TOTP for tenant users MVP scope on **18 Aug 2026**, closing `actors.md` OQ-8.
+Eight days of work then passed with nothing carrying it: no use case, no MVP requirement row, and
+S-28 — the only screen where a user manages their own credentials — still listing "password state;
+linked provider identities". The requirement existed as an *availability* statement with nothing
+saying what it does.
+
+That is the failure the open-question rule exists to prevent, arriving from the direction the rule
+does not usually look: not an unknown nobody had answered, but a decision **taken in one register
+and never propagated**. Had 27.2 been built against the NFR alone, every choice in 27.2 … 27.7 —
+two-step enrolment, re-authentication, recovery-code shape, where the challenge lives — would have
+been an undocumented decision, invisible as a decision and load-bearing by the time it surfaced.
+
+So the batch produced a commit with **no code in it**: `UC-193 … UC-195` appended (enrol, be
+challenged, recover), `design_spec.md` S-28 amended with the management half and S-01 with the
+staged challenge, and two decisions written into §12.5.6. The split between the two screens is the
+part worth keeping: **the challenge is answered on S-01 and the factor is managed on S-28**, because
+the challenge happens during sign-in. Amending S-28 forced amending S-01 in the same edit — S-28's
+new text says where the challenge lives, and leaving S-01 silent would have made that a dangling
+claim in a document that is meant to be authoritative.
+
+### Two steps, and why activation belongs to the second
+
+`identity.totp_credential.confirmed_at` is the whole design. A row exists from the moment a secret
+is issued and the factor is **inert** until a current code proves the authenticator captured it.
+Activating on issue would hand a locked-out account to every user whose scan silently failed: they
+would hold a factor no device can answer, and the recovery codes that would rescue them are not
+issued until confirmation either. "Enrolled" therefore means `confirmed_at IS NOT NULL` everywhere,
+never "a row exists", and the e2e asserts the intermediate state directly — a `GET` between the two
+steps must answer `enrolled: false`.
+
+### Re-authentication, and the account that has no password
+
+Enrolling and disenrolling both require the current password. This is not a new rule but **FR-8's
+rule for linking a provider**, applied to the same screen for its own reason: a second factor is the
+control that survives a compromised session, so a compromised session must not be able to install
+one — or strip one. Without it, a stolen session enrols its own authenticator and the owner is
+locked out permanently.
+
+FR-2's **provider-only account holds no credential row at all**, and there the session stands as the
+credential. That is recorded as an assumption rather than an equivalence: requiring a fresh OIDC
+assertion would pull task 24's redirect machinery into a settings screen, and what changes if the
+assumption is wrong is one step in one use case. The check is written against the **absence of a
+credential**, not the absence of the request field — otherwise an account that has a password could
+skip re-authentication by omitting it, which is the same hole with better manners.
+
+The refusal deliberately does **not** count toward FR-4's lockout. The caller already holds a valid
+session, so a mistyped password on a settings screen must not be able to sign them out of every
+device.
+
+### Recovery codes: where §12.5.6's existing rule stops applying
+
+The token row specifies ≥ 256 bits, base64url, SHA-256, single-use. Three of those four carry over
+and the entropy cannot: those tokens ride a link a machine copies, while a recovery code is
+**transcribed by a person** — bounded by what someone will retype correctly while locked out on a
+phone they have just replaced.
+
+Sixteen Crockford base32 characters (~80 bits) is what the batch settled, and the figure is doing
+one specific job: making an **offline** attack on a stolen database dump pointless. Ten characters
+(~50 bits) is friendlier and is what many products issue; it is also within reach of an attacker
+holding a dump, and a recovery code is precisely the credential that sits unused and valid longest.
+Online guessing is bounded by the throttle and lockout at either length, so the extra six characters
+buy protection against the dump and nothing else.
+
+**SHA-256 rather than Argon2id, and it is the same reasoning §12.5.6 already applies rather than an
+exception to it.** A slow hash makes *low*-entropy inputs expensive to guess; 80 random bits are not
+low-entropy. Argon2id would also cost on the wrong path — codes are indistinguishable until matched,
+so verification tries each of the ten in turn, and ten deliberately-expensive hashes per attempt is a
+denial-of-service lever on a sign-in step.
+
+Crockford's alphabet is the transcription decision: `I`, `L`, `O` and `U` are excluded, and
+`normaliseRecoveryCode` folds the confusables back in, so someone who types the letter O where a zero
+was printed is admitted. A refusal there looks to the reader exactly like a spent code, which is the
+worst possible message at the worst possible moment.
+
+### What the schema gate did, which is the point of having built it
+
+Creating `identity.totp_credential` **failed the build**, on the test task 27.1 had named for this
+moment — *"catches a new secret column added as plain text — task 27.2 lands here"*, written a day
+earlier against exactly this table. Nobody had to remember that a new secret column needs
+classifying; `pnpm migrations:check` stopped and said so, and the column was already
+`identity.encrypted_secret` because the ordering of 27.1 before 27.2 was chosen for that.
+
+### Two things the tests found
+
+**The e2e was fighting a real control.** Registering a fresh account per test tripped §12.5.6's auth
+throttle on the sixth: the key is per (IP, account) and `identity.auth_attempt` **outlives the
+account row**, so deleting and recreating the same address does not reset the counter. Draining the
+table in `beforeEach` was the tempting fix and would have been switching off a security control to
+test something unrelated to it — and the suite would then never notice if the throttle broke. One
+account for the suite, resetting only the factor between tests, is both honest and eight Argon2
+hashes cheaper.
+
+**The database claims were measured, not reasoned about.** `recovery_code_unspent_idx` is an Index
+Only Scan for the remaining-count read and an Index Scan for the spend, both confirmed under `SET
+enable_seqscan = off` — which is what distinguishes "the planner preferred a seq scan at ten rows"
+from "the index is unusable".
+
+### The e2e that is not a route, deliberately
+
+The row's deliverable is "enrol and consume a recovery code e2e", and the *challenge* — the only
+place a code is presented — is task 27.3's, folded into task 21's sign-in. A throwaway route here to
+satisfy the wording would ship a second door onto a credential and delete it a task later. The suite
+resolves `ConsumeRecoveryCode` from the booted application instead: same use case, same store, same
+database that 27.3 will call. That use case is split from `ManageTotp` for the same reason it is
+reachable this way — sign-in must reach one narrow operation, not a class carrying four
+password-gated management methods it has no business calling (ISP, at the point it costs something).
+
+### The `nestjs-best-practices` pass
+
+**Declined by name: `api-use-dto-serialization`'s means, not its end.** The rule asks for
+class-transformer's `@Exclude()`/`@Expose()`; this codebase maps in the DTO constructor
+(`new AccountResponseDto(account)`) and nothing is spread, so no field can reach a client by
+accident — the same guarantee, by the convention already in place. `error-throw-http-exceptions`
+stays declined as the standing example.
+
+**Applied:** `security-validate-all-input` (both request DTOs carry class-validator rules under the
+global `ValidationPipe`; the code's *shape* is validated there and its *currency* in the use case,
+because a malformed code and an expired one must not be distinguishable by which refusal arrives),
+`db-use-transactions` (confirmation verifies, activates and issues codes in one transaction;
+disenrolment removes codes before the factor, since the reverse order leaves a window where a
+credential outlives what it authenticates), `arch-single-responsibility`, `di-use-interfaces-tokens`
+and `arch-use-repository-pattern`.

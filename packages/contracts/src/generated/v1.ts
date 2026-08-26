@@ -104,6 +104,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/totp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether this account has a second factor, and how many recovery codes remain
+         * @description What S-28 reads. It carries neither the secret nor the codes: both exist outside the user’s own keeping only at the moment they are issued.
+         */
+        get: operations["TotpController_state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/totp/enrolment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Begin enrolling a second factor
+         * @description Issues a secret for the authenticator to capture. **The factor is not yet in force** — it activates only when a current code confirms the capture, because a secret an authenticator failed to record would otherwise leave the account demanding a code no device can produce. Requires the current password, since a second factor is the control that survives a compromised session and a compromised session must not be able to install one.
+         */
+        post: operations["TotpController_begin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/totp/confirmation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm the enrolment with a current code, and receive the recovery codes
+         * @description Activates the factor and issues the recovery codes, which are shown exactly once. No password here: the enrolment step took it moments ago, and a current code from the secret just issued is stronger evidence than a password for the thing being proved.
+         */
+        post: operations["TotpController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/totp/removal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turn the second factor off
+         * @description Removes the factor and its recovery codes together — a code left behind would sign in against a factor that no longer exists. Requires the current password. NFR-95 is opt-in, and an opt-in that cannot be reversed is not one.
+         */
+        post: operations["TotpController_remove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/totp/recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Replace the recovery codes with a fresh set
+         * @description Replaces the whole set rather than topping it up, so a user who re-issues because they believe a code leaked does not leave the leaked one live. Requires the current password.
+         */
+        post: operations["TotpController_reissue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/session": {
         parameters: {
             query?: never;
@@ -507,6 +607,44 @@ export interface components {
              * @description The replacement password, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.
              */
             password: string;
+        };
+        TotpStateResponseDto: {
+            /** @description Whether a confirmed second factor is in force on this account. */
+            enrolled: boolean;
+            /** @description Unspent recovery codes. Zero with an enrolled factor is a real state, not an error — the user has spent them all and should re-issue before they need one. */
+            recoveryCodesRemaining: number;
+        };
+        TotpEnrolmentResponseDto: {
+            /** @description The base32 secret, for an authenticator that is being configured by hand rather than by scanning. Shown once and never returned again. */
+            secret: string;
+            /**
+             * @description The same secret in the Key Uri Format an authenticator’s QR scanner consumes, emitted by the same object that verifies the code, so a client cannot configure parameters the server will not accept.
+             * @example otpauth://totp/EasyESG:ana@example.md?secret=...&issuer=EasyESG
+             */
+            enrolmentUri: string;
+        };
+        TotpReauthenticationRequestDto: {
+            /**
+             * Format: password
+             * @description The account’s current password. Required for every account that has one; omitted only by an account that signs in through a provider and holds no password.
+             */
+            password?: string;
+        };
+        RecoveryCodesResponseDto: {
+            /**
+             * @description Single-use codes, shown exactly once. Re-issuing replaces the whole set, so any code from a previous set stops working the moment a new one is issued.
+             * @example [
+             *       "0123-4567-89AB-CDEF"
+             *     ]
+             */
+            recoveryCodes: string[];
+        };
+        ConfirmTotpRequestDto: {
+            /**
+             * @description The current code shown by the authenticator app, which is what proves the secret was captured. Enrolment activates on this and not before.
+             * @example 123456
+             */
+            code: string;
         };
         SessionAccountDto: {
             /** Format: uuid */
@@ -969,6 +1107,200 @@ export interface operations {
             };
             /** @description The password does not meet the policy, or the link is not valid — never issued, already used, expired, or superseded by a newer request. The four are deliberately indistinguishable. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    TotpController_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account’s second-factor state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["TotpStateResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    TotpController_begin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TotpReauthenticationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The secret and its enrolment URI, returned exactly once. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["TotpEnrolmentResponseDto"];
+                    };
+                };
+            };
+            /** @description The current password did not match (problem type credential-invalid). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A confirmed factor already exists; turn it off before enrolling another. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    TotpController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmTotpRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The factor is in force, and these are its recovery codes. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["RecoveryCodesResponseDto"];
+                    };
+                };
+            };
+            /** @description The code is not current for the issued secret (problem type factor-invalid). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description There is no enrolment awaiting confirmation. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    TotpController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TotpReauthenticationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The factor and its recovery codes are gone. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The current password did not match (problem type credential-invalid). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account has no second factor. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    TotpController_reissue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TotpReauthenticationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The new set. Every previous code is now dead. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["RecoveryCodesResponseDto"];
+                    };
+                };
+            };
+            /** @description The current password did not match (problem type credential-invalid). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account has no confirmed second factor. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

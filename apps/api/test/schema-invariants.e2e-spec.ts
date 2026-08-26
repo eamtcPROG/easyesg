@@ -324,8 +324,18 @@ const unclassifiedTenantTables = (x: Executor) =>
  */
 const ENCRYPTED_SECRET_DOMAIN = 'identity.encrypted_secret';
 
-/** Columns holding a **recoverable** secret. Each must be of the domain above. */
-const ENCRYPTED_SECRET_COLUMNS = ['identity.admin_account.totp_secret'];
+/**
+ * Columns holding a **recoverable** secret. Each must be of the domain above.
+ *
+ * `identity.totp_credential.secret` joined the list on 26 Aug 2026 **because this gate stopped the
+ * build**, which is the whole reason it exists: task 27.2 created the tenant factor's table and the
+ * sweep below refused it before any code read the column. The probe test named *"task 27.2 lands
+ * here"* was written a day earlier against exactly this table and tripped on it.
+ */
+const ENCRYPTED_SECRET_COLUMNS = [
+  'identity.admin_account.totp_secret',
+  'identity.totp_credential.secret',
+];
 
 /**
  * Columns whose name says "secret" but which are deliberately stored as they are, each with its
@@ -750,7 +760,11 @@ describe('schema invariants (§7)', () => {
       }
     });
 
-    it('catches a new secret column added as plain text — task 27.2 lands here', async () => {
+    // Task 27.2 landed here on 26 Aug 2026 and this is what stopped it: `identity.totp_credential
+    // .secret` was created as `identity.encrypted_secret` but unclassified, and the sweep refused
+    // the build until the list above named it. The probe keeps the rule honest now that the real
+    // case is classified — an unclassified column must still be caught.
+    it('catches a new secret column added as plain text — task 27.2 landed here', async () => {
       const caught = await provingViolation(
         `CREATE TABLE identity.__probe_totp (account_id uuid PRIMARY KEY, totp_secret text NOT NULL)`,
         unclassifiedSecretColumns,
