@@ -151,6 +151,18 @@ conditional render, which is how it ends up half-suppressed on one screen.
 
 ## The traps
 
+- **A spec that renders `NextIntlClientProvider` itself inherits nothing, and the gap is silent.**
+  `NextIntlClientProviderServer` fills `formats`, `timeZone` and `now` from `getRequestConfig`
+  whenever the prop is `undefined` — which is why no layout in this app passes any of them. A jsdom
+  test renders the *client* provider directly, so it gets none of that: `format.dateTime(x,
+  'short')` answers next-intl's fallback and logs `IntlError: MISSING_FORMAT`, once per formatted
+  value per render. Found 26 Aug 2026 on `access-board.spec.tsx`, where it was twenty-four caught
+  errors and 366 lines of stderr per run, and the table under assertion was rendering dates the
+  product never produces. Pass `formats` from `@/i18n/formats` and `timeZone` explicitly in any spec
+  whose subject formats a date, a number or a list. The three identity specs omit both and are fine
+  **today** only because none of their components calls a formatter — which is a latent version of
+  the same trap, not an exemption from it.
+
 - **`proxy.ts` has two jobs and only one file.** Next accepts one proxy module; AD-9 needs the
   session tier there and next-intl needs locale negotiation there. They compose in one exported
   `proxy` function, locale first. The matcher excludes `api` — `src/app/api/[...path]` is the

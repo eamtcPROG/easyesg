@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import ro from '@/messages/ro.json';
+import { formats } from '@/i18n/formats';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import {
   ACCESS_PAGE_SIZE,
@@ -47,6 +48,18 @@ beforeAll(() => {
 });
 
 const resend = vi.mocked(resendInvitationAction);
+
+/**
+ * One retry, and only when the runner ran out of time — see the note on the suite below.
+ *
+ * `condition` takes a RegExp matched against the error message (Vitest 4.1.10). It must stay a
+ * RegExp rather than a predicate if this is ever lifted into `vitest.config.ts`: the config is
+ * serialised to the worker threads, so a function there is silently unusable.
+ */
+const RETRY_ON_STALL = { count: 1, condition: /timed out/u } as const;
+
+/** What `i18n/request.ts` sets, and what NFR-34 makes load-bearing rather than incidental. */
+const TIME_ZONE = 'Europe/Chisinau';
 const NOW = 1_780_000_000_000;
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -69,9 +82,28 @@ const rows = (): AccessRow[] =>
     ],
   });
 
+/**
+ * The provider the app actually gives this island, restated because a jsdom test cannot inherit it.
+ *
+ * `NextIntlClientProviderServer` fills `formats`, `timeZone` and `now` from `getRequestConfig`
+ * whenever the prop is `undefined` — so every Client Component in `apps/web` renders with
+ * `i18n/formats.ts` and `Europe/Chisinau` in scope, and no layout passes either explicitly. A spec
+ * that renders `NextIntlClientProvider` **directly** gets none of that inheritance, and the
+ * consequence is not cosmetic: `format.dateTime(x, 'short')` threw `MISSING_FORMAT` on every date
+ * cell of every row on every render, twenty-four times per run of this file, each one a caught
+ * error with a full stack serialised to the reporter. The dates the table rendered were next-intl's
+ * fallback rather than the format the product ships.
+ *
+ * So the test was passing against a configuration the application never produces. Naming the two
+ * values here is what makes the rendered row the row a user sees — `timeZone` included, because
+ * NFR-34 makes the zone the thing that decides which day an instant falls on, and a spec that
+ * inherits the runner's zone asserts something that changes with the machine.
+ */
 const board = (given: readonly AccessRow[] = rows()) => (
   <NextIntlClientProvider
     locale="ro"
+    formats={formats}
+    timeZone={TIME_ZONE}
     messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
   >
     <AccessBoard
@@ -101,10 +133,34 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+/**
+ * Retried **only** on a timeout, and only here (26 Aug 2026).
+ *
+ * This test timed out once at 15 s during a `pnpm gates:clean` run and could not be reproduced in
+ * six attempts. What the attempts measured is why the retry is shaped this way rather than as a
+ * larger budget: alone the test costs ~470 ms, with all eight threads saturated 1771 ms, and in the
+ * heaviest concurrent run that could be produced — `environment 177 s`, worse than the failing
+ * run's 146 s — 3246 ms, still passing. The failure needed better than 32×, where the worst
+ * reproducible contention gives 7×. It is a tail stall on a shared machine, not a budget that is
+ * too small, and raising `testTimeout` a second time would be picking a number no measurement
+ * supports.
+ *
+ * **The condition is what makes this safe.** A retry that fired on any error could hide a real
+ * defect in the board; matched against the timeout message it cannot, because an assertion failure
+ * does not match and fails on the first attempt. Nothing under test here is non-deterministic —
+ * a pure reducer and a render, no timers, no network, no randomness — so a stall is the only thing
+ * a second attempt can absorb.
+ *
+ * **What would make this the wrong answer:** a retry that starts passing on the second attempt
+ * *regularly*, which would mean the test has become genuinely flaky rather than occasionally
+ * starved. `retry` reports attempts, so that is visible rather than silent.
+ */
 describe('AccessBoard · per-row pending', () => {
-  it('leaves the other rows usable while one row acts', async () => {
+  it('leaves the other rows usable while one row acts', { retry: RETRY_ON_STALL }, async () => {
     const user = userEvent.setup();
-    // Never settles: the action stays in flight for the duration of the assertion.
+    // Never settles: the action stays in flight for the duration of the assertion. Measured at
+    // zero cost — across 25 instrumented runs the click took 25 ms and the wait 2 ms — so the
+    // shape is not what makes this test slow, and replacing it would buy nothing.
     resend.mockReturnValue(new Promise(() => undefined));
     render(board());
 
@@ -166,6 +222,8 @@ describe('AccessBoard · the two empty states', () => {
     render(
       <NextIntlClientProvider
         locale="ro"
+        formats={formats}
+        timeZone={TIME_ZONE}
         messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
       >
         <AccessBoard

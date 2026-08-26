@@ -3145,3 +3145,124 @@ And `SECRET_ENCRYPTION_KEY` is now needed in four places beyond `.env.example`: 
 `e2e/playwright.config.ts`, `e2e/admin/support/provision.ts`, and every developer's local
 `apps/api/.env`. The last is not in the repository, so a colleague pulling this change meets a boot
 failure naming the variable — which is the designed behaviour and the reason it is undefaulted.
+
+## The flake that was not slowness, and what six failed reproductions established · 2026-08-26
+
+Task 27.1's first `pnpm gates:clean` went red on `apps/web`'s `access-board.spec.tsx` —
+*"leaves the other rows usable while one row acts"*, `Test timed out in 15000ms` — in a task that
+touched no file in `apps/web`. It is recorded here because it is precisely the category this file
+exists for: a finding no green local run could see, and one where **the obvious diagnosis was wrong
+and measuring is what showed it.**
+
+### The stated diagnosis, and why it did not survive
+
+The working theory was that 15 s is not enough under `pnpm -r test` contention, because the test's
+action promise is deliberately never settled and "the assertion path is entirely `userEvent` +
+`findBy*` waiting, with no fast path". Instrumenting the three steps over 25 consecutive runs
+answered that directly:
+
+    render=50ms  query=35ms  click=25ms  waitFor=2ms
+
+**The never-settling promise costs essentially nothing.** `waitFor` returns in one to three
+milliseconds because the button is already disabled when it first looks. There was nothing to
+restructure — the whole cost is jsdom rendering and `userEvent`, which every test in the file pays,
+and the two that were *not* failing pay most of it too.
+
+### Six reproductions, none of which reproduced it
+
+| Condition | The test's duration | Factor |
+| --- | --- | --- |
+| Alone | 428–523 ms | 1× |
+| Eight busy loops on eight logical cores | 1771 ms | 4.1× |
+| Real concurrent cold run, `environment 106 s` | 2464 ms | 5.8× |
+| Heaviest producible, `environment 177 s` | 3246 ms | 6.9× |
+| **The failure**, `environment 146 s` | **> 15 000 ms** | **> 32×** |
+
+The fourth row is the one that settles it. That run put the machine under *more* environment
+pressure than the run that failed — 177 s against 146 s — and the test passed in 3.2 s. A
+contention model predicts the opposite. Three further cold `pnpm -r test` runs passed with
+`environment` between 60 s and 74 s, and the same command produced totals from 46 s to 177 s across
+runs on one machine, which is a 3.8× spread in load for identical work.
+
+So this is a **tail stall** — a one-off starvation of that worker, plausibly a GC pause, a swap
+storm, or Spotlight reindexing a tree `pnpm clean` had just deleted and the build was recreating —
+and not a budget that is too small for steady-state load.
+
+### Why a conditional retry rather than a bigger number
+
+`testTimeout` is already 15 s, raised from Vitest's 5 s default on 24 Aug 2026 **for this same
+class** — the config comment says so, and names ten timeouts in one gates run. Raising it a second
+time would be the same remedy that has already been outgrown once, at a number no measurement
+supports: the stall's size is unknown, so 30 s, 45 s and 60 s are equally arbitrary, and each of
+them is paid by all 134 tests whenever one genuinely hangs.
+
+    it('…', { retry: { count: 1, condition: /timed out/u } }, async () => { … })
+
+**The condition is the whole of what makes this safe**, and Vitest 4.1.10 supports it — verified in
+`@vitest/runner`'s own type, which also records that a predicate works only in a test file, never in
+`vitest.config.ts`, because the config is serialised to the workers. A retry that fired on any error
+could hide a real defect in the board; matched against the timeout message it cannot. Proven rather
+than asserted, with a throwaway spec carrying both halves:
+
+    ✓ a timeout retries 306ms (retry x1)
+    × an assertion failure does NOT retry  →  expected 1 to be 99
+
+The second line is the load-bearing one: the attempt counter reached 1, not 2. And the first shows
+the retry is **reported**, so a test that starts needing its second attempt regularly is visible
+rather than silent — which is the signal that would make this the wrong answer.
+
+Nothing under test here is non-deterministic: a pure reducer and a render, no timers, no network, no
+randomness. A stall is the only thing a second attempt can absorb.
+
+### The separate defect the investigation turned up
+
+The failing test was logging **twenty-four caught `IntlError: MISSING_FORMAT` exceptions and 366
+lines of stderr per run** — one per date cell, per row, per render. `NextIntlClientProviderServer`
+fills `formats`, `timeZone` and `now` from `getRequestConfig` whenever the prop is `undefined`
+(confirmed against next-intl's own source), which is why no layout in `apps/web` passes any of them.
+A jsdom spec renders the **client** provider directly and inherits none of it.
+
+So the spec was asserting against a configuration the application never produces, and the dates in
+the table under test were next-intl's fallback rather than `i18n/formats.ts`. Passing `formats` and
+`timeZone` explicitly fixes it — 24 errors to 0, 366 stderr lines to 14.
+
+**It is not the cause of the flake**, and saying so is the point: with the errors gone the test still
+takes 470 ms. It is a correctness fix that happened to be found underneath a performance question,
+and conflating the two would have closed the flake on a false explanation.
+
+The three identity specs omit the same two props and are fine **today** only because none of their
+components calls a formatter. That is a latent form of the same trap, not an exemption, and it is
+recorded in `apps/web/CLAUDE.md` rather than fixed here — three unrelated specs are wider than this
+change should be.
+
+### The `vercel-react-best-practices` pass
+
+Opened against the diff, per `apps/web/CLAUDE.md`'s "no exceptions" rule for a task that edits a
+`.tsx` file here — even though the file is a spec, because a rule never opened is an omission
+wearing the same clothes.
+
+**Two rules bite and both are satisfied.** `js-hoist-regexp` — the retry's `condition` is a RegExp,
+and it lives in a module-scope constant rather than inline in the `it()` options. `rerender-memo-
+with-default-value` — the two values added to the provider are an imported module-scope object and
+a string constant, so neither creates a fresh non-primitive per render.
+
+**Six of the eight categories are declined by kind, not skipped.** `async-`, `bundle-`, `server-`,
+`client-`, `rendering-` and `advanced-` describe a product rendering path: a bundle, a server tier,
+a hydration boundary, a waterfall. A `.spec.tsx` has none of those, and its re-renders are the
+subject of the assertion rather than a cost to eliminate.
+
+### Two things left on the table, deliberately
+
+**The never-settles shape is unique.** A sweep for `new Promise(() => …)` across every spec in
+`apps/` and `packages/` returns exactly one hit, this one, so no sibling suite carries the same
+exposure.
+
+**The cause is oversubscription, and it was measured but not fixed.** Six workspaces each spawn a
+pool sized to the CPU count on a 4-core / 8-thread machine. Capping them measured
+`environment` 177 s → 25 s, the web suite 54 s → 20 s, and this test 3246 ms → 1953 ms. It was not
+taken: a config cap slows an *isolated* run as well (a lone `pnpm --filter @easyesg/web test` would
+get three workers instead of eight), and it edits four workspaces' runner configs, which is wider
+than a flake fix. `pnpm -r --workspace-concurrency=1` was measured as the narrower alternative and
+is not obviously better either — 33.7 s against 29.6 s wall, buying a 35% cut in peak pressure for a
+14% slower gate. Both numbers are recorded so that a future decision about gate speed starts from
+data rather than from a fresh afternoon.
