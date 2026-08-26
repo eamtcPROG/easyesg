@@ -1735,7 +1735,13 @@ Five additions the delivered set makes to this inventory, each recorded because 
 
 **Primitives** — Button (primary · secondary · subtle · destructive) · Link · Icon · Badge · Tag · Avatar · Divider · Skeleton · Spinner · Progress · Tooltip · Popover.
 
-**Form controls** — Text · Textarea · Number-with-unit · Select · Combobox · Multi-select · Radio group · Checkbox · Switch · Date · Date range · Currency · File upload · Fieldset · Form-level error summary.
+**Form controls** — Text · Textarea · Number-with-unit · Select · Combobox · Multi-select · Radio group · Checkbox · Switch · Date · Date range · Currency · File upload · Fieldset · Form-level error summary · **One-time code**.
+
+**One-time code was added 26 Aug 2026** (task 27.4), and it is the first true addition to this enumeration rather than a variant of something already in it — which is what UX-89 means by *an addition to the inventory, reviewed once and reused*. The A-01 artboard draws it as six cells; S-01's second-factor step (UC-194) is its second consumer, and a one-off in either screen would be the defect UX-89 names.
+
+**It is one input painted to look like several, and that is UX-108 rather than a preference.** Accessible Authentication requires paste and password managers to work everywhere, and the platform's own autofill — the code an authenticator sheet offers, and what a browser fills from an SMS — targets a *single* field carrying `autocomplete="one-time-code"`. Six inputs, which is how this control is usually built, defeat all of it: autofill has no single target, a paste lands in one cell, and a screen reader announces six unlabelled fields where there is one question. The cells are presentation, hidden from assistive technology, painted from the value.
+
+**The code-window countdown the artboard draws beside the label is a slot, not part of the control.** Its two consumers time different things — a 30-second TOTP step on A-01, and the five-minute challenge of `architecture.md` §12.5.6's task-27.3 row on S-01 — so a timer inside the component would count a window it cannot know, and every consumer would inherit a per-second re-render of a shared control.
 
 **Feedback** — Inline field message · Callout (info · attention · warning · error · success) · Banner (persistent, page-level) · Toast (UX-67) · Empty state · Error state · Confirmation dialogue · Consequence dialogue (§6.14).
 

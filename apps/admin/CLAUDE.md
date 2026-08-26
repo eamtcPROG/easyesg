@@ -24,10 +24,14 @@ factor step names the server-verified address, mutations ride `useMutation` with
 as the resolved value. It is three files on the cohesion line — `sign-in-screen.tsx` owns the
 flow and the card (step, mutations, failure), `credential-step.tsx` and `factor-step.tsx` own
 one form each, since a step's `useForm`, field ids and field-level messages are read by nothing
-else. The screen carries the artboard's card anatomy and realm statement; its
-docblock lists what is deliberately deferred (segmented code input → task 27's inventory
-addition, recovery routes → task 27, the LOGGED audit note → task 28) and the one recorded
-divergence (the artboard's full-dark ground). `_realm.tsx`'s `beforeLoad` is the
+else. The screen carries the artboard's card anatomy and realm statement. **The segmented six-cell
+code input arrived with task 27.4** as `packages/ui`'s `CodeField` — one real input painted to
+look like six, because UX-108's paste and `one-time-code` autofill both need a single field —
+and `factor-step.tsx` renders `FormCodeField`. Its docblock still lists what is deferred (the
+code-window countdown, which `CodeField` exposes a `hint` slot for; the recovery-code route,
+which has **no implementation to point at** since task 27.2 built recovery codes for the tenant
+realm only; the LOGGED audit note → task 28.4) and the one recorded divergence (the artboard's
+full-dark ground). `_realm.tsx`'s `beforeLoad` is the
 closed-by-default guard: no session → A-01 with `?redirect=` carried, sanitized on return.
 `e2e/admin/` drives the journey in a real browser against the built bundle on its own origin,
 so CORS, the `SameSite=Strict` cookie and the Origin proof are exercised for real.

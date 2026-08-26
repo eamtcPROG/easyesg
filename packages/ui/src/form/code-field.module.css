@@ -1,0 +1,132 @@
+/*
+ * The one-time code field. Every value is a token — nothing here is a literal colour, and the
+ * cells are drawn from the same `--field-border-*` set every other control uses, so the field
+ * reads as a field rather than as six unrelated boxes (UX-127: re-skinning edits tier 1 only).
+ */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Label and the artboard's countdown share a baseline; the hint sits at the far end. */
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.label {
+  font: 600 14px/20px var(--font-text);
+  color: var(--text-default);
+}
+
+.hint {
+  font: 400 12px/18px var(--font-mono);
+  color: var(--text-muted);
+  /* Tabular figures so a ticking countdown does not shift the label row every second. */
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The control is a positioning context and nothing else: the cells paint inside it and the real
+ * input covers it. It carries NO border of its own — six cells with a border round them reads as
+ * a field inside a field.
+ */
+.control {
+  position: relative;
+  display: block;
+}
+
+.cells {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.cell {
+  flex: 1;
+  /* A minimum rather than a fixed width, so six cells fit 390 px and stretch to the form's width
+     at 1440 (UX-73's three widths). The +40% expansion harness needs the height to grow too,
+     which is why it is line-height driven rather than a fixed px height. */
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--field-border-rest);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  /* Mono so 0/O and 1/I are distinguishable while transcribing, and tabular so a cell does not
+     resize as its character changes. */
+  font: 400 22px/44px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-default);
+  transition:
+    border-color var(--motion-instant) var(--motion-ease),
+    box-shadow var(--motion-instant) var(--motion-ease);
+}
+
+/*
+ * Focus is drawn on the CELLS, because the input that has focus is transparent. `:focus-visible`
+ * on the input rather than `:focus`, so a pointer user who clicks does not get a ring they did
+ * not ask for — the same rule the rest of the cascade follows.
+ */
+.control:has(.input:focus-visible) .cell {
+  border-color: var(--field-border-focus);
+}
+
+/* Where the next character lands. The affordance six real inputs get free from the caret. */
+.control:has(.input:focus-visible) .next {
+  box-shadow: 0 0 0 1px var(--field-border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.invalid .cell {
+  border-color: var(--field-border-invalid);
+}
+
+.disabled .cell {
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+/*
+ * The real input, covering the cells.
+ *
+ * `color: transparent` rather than `opacity: 0` or `visibility: hidden`: an opacity-zero input is
+ * still a paintable box that some engines will not give a caret to, and hidden removes it from
+ * the accessibility tree entirely — which would delete the only labelled control here. Transparent
+ * text keeps the element fully real to the platform and merely unpainted.
+ *
+ * `caret-color: transparent` because the cells draw their own position marker; a caret floating
+ * between two cells at the letter-spacing the value happens to have is worse than none.
+ */
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: transparent;
+  caret-color: transparent;
+  font: 400 22px/44px var(--font-mono);
+  /* Centred so a selection highlight, which IS painted, lands over the cells rather than beside
+     them — the one piece of the input the user can still see. */
+  text-align: center;
+  letter-spacing: 1em;
+}
+
+.input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.help {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
+
+.error {
+  font: 400 13px/19px var(--font-text);
+  color: var(--state-error);
+}

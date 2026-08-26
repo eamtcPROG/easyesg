@@ -14,6 +14,7 @@
  * second copy resolved for this package would give a field a different `Control` type than the
  * form that created it.
  */
+export { FormCodeField, type FormCodeFieldProps } from './form-code-field';
 export { FormTextField, type FormTextFieldProps } from './form-text-field';
 export { FormPasswordField, type FormPasswordFieldProps } from './form-password-field';
 export { FormSelect, type FormSelectProps } from './form-select';

@@ -3527,3 +3527,104 @@ fresh afternoon.
 `packages/ui` code input and 27.7 is S-28, a Record screen for FR-7 and FR-8. `27.8` is appended for
 it rather than widening 27.7 — a Focus screen mid-sign-in, for an actor with no session yet, is
 different work from a settings record, and 27.7's stated deliverable names one screen.
+
+## Task 27.4 — one input painted to look like six · 2026-08-26
+
+A §11.5 inventory addition (UX-89), consumed by both realms: A-01's factor step, retrofitted here,
+and S-01's tenant challenge at 27.8. The A-01 artboard draws six cells; the interesting decision is
+what sits underneath them.
+
+### It is one `<input>`, and that is UX-108 rather than a preference
+
+Six inputs is how this control is usually built, and it defeats every property WCAG 2.2's Accessible
+Authentication requires. The platform's own autofill — the code an authenticator sheet offers on iOS
+and Android, and what a browser fills from an SMS — targets a **single** field carrying
+`autocomplete="one-time-code"`. With six, autofill has no target, a paste lands in one cell, and a
+screen reader announces six unlabelled fields where there is one question.
+
+So a real input spans the control and the cells beneath it are `aria-hidden` presentation painted
+from the value. Selection, paste, undo, dictation and every keyboard convention stay the platform's,
+untouched — and there is **no focus-management code in the file at all**, which is the second thing
+the single-input form buys: the per-cell focus dance is where the usual implementation's bugs live.
+
+`factor-step.tsx` had already written the reasoning down when it shipped a plain field meanwhile —
+"`one-time-code` is what surfaces the platform's own autofill … the reason this is a plain text
+field". The retrofit keeps that property and adds the cells, which is why **A-01's seven tests pass
+unchanged**: the control was designed so the replacement changes nothing about behaviour.
+
+Three CSS choices carry it and each has a wrong-looking alternative. `color: transparent` rather
+than `opacity: 0` or `visibility: hidden` — an opacity-zero input is a paintable box some engines
+will not give a caret to, and hidden removes the element from the accessibility tree, which would
+delete the only labelled control on the screen. `caret-color: transparent` because the cells draw
+their own position marker, and a caret floating between two cells is worse than none. And the input
+is centred with `letter-spacing: 1em` so the one thing still painted — a selection highlight — lands
+over the cells rather than beside them.
+
+### The countdown is a slot, not a timer
+
+The artboard draws "valid for 21 s" beside the label, and it would have been natural to put a clock
+in the component. It is a `hint` slot instead, because **the two consumers time different windows**:
+a 30-second TOTP step on A-01, and §12.5.6's five-minute challenge on S-01. A timer inside would
+count a window it cannot know, and every consumer would inherit a per-second re-render of a shared
+control.
+
+That is also the `architecture-avoid-boolean-props` answer in practice. `CodeField` has **zero**
+boolean props of its own — `disabled` is the native attribute, `length` is a number, and `hint`,
+`help` and `error` are `ReactNode` slots. A `showCountdown` boolean would have been the version of
+this component that cannot serve both screens.
+
+### The states pass (UX-90)
+
+Applicable: rest (on `--field-border-rest`, so it looks enterable — §11.5), focus, filled, invalid,
+disabled. **Deliberately not applicable, and saying so is the pass rather than an omission:** empty,
+loading, partial, offline, pending and success describe a *region that fetches*, and this is a
+control that does not. The submit that follows carries `Button`'s `busy`.
+
+Focus needed one thing six inputs get free: **where the next character lands**. The caret is
+invisible here, so the next empty cell is marked instead — `:focus-visible` on the input, drawn on
+the cell, so a pointer user who clicks does not get a ring they did not ask for.
+
+### What the spec pins, and why each line is there
+
+Twelve tests, and every one asserts a property **six inputs cannot have**: exactly one control
+reachable by label (`getAllByRole('textbox')` has length one — six inputs would pass a `getAllBy`
+and fail this), the three UX-108 attributes as literals, a paste arriving whole and painting every
+cell, the cells hidden from assistive technology so a code is not read back character by character,
+and `maxLength` wired to `length` so the value and the cells cannot disagree.
+
+The paste test needed a **controlled harness**, and the first version was wrong in a way worth
+recording: asserted against a fixed `value=""`, it read the empty string back, because React reverts
+a controlled input whose value did not change before the assertion runs. That is React working, not
+the component failing — and the harness is what makes the test ask the real question.
+
+### Amending the inventory, which prior additions did not need
+
+`design_spec.md` §11.5's Form controls line gains **One-time code**, and this is the first true
+addition to that enumeration. Earlier UX-89 additions did not need it: `ProviderButton` is an anchor
+in the secondary button's clothes, and Workspace nav was already a named entry. A one-time code
+field is none of the fifteen controls listed, so the list is what was wrong.
+
+### The two skill passes
+
+**`vercel-composition-patterns`.** `architecture-avoid-boolean-props` applied (above).
+`react19-no-forwardref` applied — `ComponentPropsWithRef<'input'>` and `ref` as an ordinary prop,
+no `forwardRef`. `patterns-children-over-render-props` followed in spirit and **deviated from in
+letter**, with the reason: the control has four text slots (label, help, error, hint) and `children`
+can only be one, so they are named `ReactNode` props — which is the shape `TextField` already uses,
+and the rule's actual target is `renderX` callbacks, of which there are none.
+`architecture-compound-components` and the `state-` rules do not apply to a leaf control with no
+shared state and no siblings needing access.
+
+**`vercel-react-best-practices`.** `rendering-conditional-render` applied — every conditional is a
+ternary, never `&&`, which matters here because `length` is a number and `{length && …}` would
+render a literal `0`. `rerender-simple-expression-in-memo` is the rule that governs the absence of
+memoization: building six cells per keystroke is a trivial expression, and with `reactCompiler:
+false` a `useMemo` would cost more in dependency comparison than it saves. Recorded because
+`apps/admin/CLAUDE.md` carries "nothing is memoized" as a standing finding — this is the case where
+not memoizing is the rule rather than the oversight.
+
+### Left where it was, with its owner named
+
+A-01's artboard also draws a **recovery-code route**, and it still has nothing to point at: task
+27.2 built recovery codes for the **tenant** realm only, and the admin realm has none. That is now
+stated in `factor-step.tsx` rather than left as a deferral that reads as merely unbuilt.
