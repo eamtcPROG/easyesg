@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { LOCALE_COOKIE, REFRESH_COOKIE } from '@/lib/session-cookie';
 import { env } from '@/lib/env';
-import { api } from './api-client';
+import { detachedApi } from './api-client';
 import { sealSession, unsealSession, type SessionPayload } from './session-codec';
 
 /**
@@ -27,10 +27,15 @@ import { sealSession, unsealSession, type SessionPayload } from './session-codec
  * rotation: a refresh CONSUMES the single-use token (task 21), so refreshing anywhere the
  * successor cannot be persisted would leave the cookie holding a consumed value, and its next
  * presentation past the 30 s race grace reads as theft and revokes the session. Callers that
- * render must therefore read only; refresh happens in the `/api/[...path]` pass-through and in
- * actions. When Server Components start calling the API (task 29+), the rotation point for
- * page loads becomes `proxy.ts`, which may set response cookies — recorded here so that task
- * inherits a note instead of a surprise.
+ * render must therefore read only; refresh happens in the `/api/[...path]` pass-through, in
+ * actions, and — since task 26.4 — in `proxy.ts`, which is the **page-load** rotation point
+ * (architecture.md §12.5.6). That last one was recorded here as a note for "task 29+" and arrived
+ * early, because S-16 is the first Server Component to read the API on load and nothing else
+ * rotates before a render.
+ *
+ * Next's two cookie-writing surfaces share no API — `next/headers` in actions and route handlers,
+ * `NextResponse.cookies` in the proxy — so the write is a `SessionJar` and everything around it
+ * (the staleness rule, the single flight, what each failure means) is written once, below.
  */
 
 /**
@@ -50,16 +55,64 @@ const toPayload = (session: SessionResponse): SessionPayload => ({
   account: session.account,
 });
 
-/** Sets the sealed cookie with OQ-33's attributes. Server Action / Route Handler only. */
-async function persistSession(payload: SessionPayload): Promise<void> {
-  const store = await cookies();
-  store.set(REFRESH_COOKIE, sealSession(payload, env.sessionSecret), {
+/** A sealed session and the OQ-33 attributes it must carry, ready for whichever jar places it. */
+export interface SessionCookie {
+  readonly name: string;
+  readonly value: string;
+  readonly httpOnly: true;
+  readonly secure: true;
+  readonly sameSite: 'lax';
+  readonly path: '/';
+  readonly maxAge: number;
+}
+
+/**
+ * Where a rotated session is written. Two implementations because Next has two cookie-writing
+ * surfaces with no common API, and neither is a superset of the other: `next/headers` reaches the
+ * store Server Actions and Route Handlers own, `NextResponse.cookies` reaches the response the
+ * proxy is building. The jar is the *only* thing that differs between them — deciding whether to
+ * refresh, spending the single-use token exactly once, and reading a failure correctly are one
+ * implementation, which is what stops the proxy growing a second, subtly different session tier.
+ */
+export interface SessionJar {
+  write(cookie: SessionCookie): void | Promise<void>;
+  clear(): void | Promise<void>;
+}
+
+/** The seal plus OQ-33's attributes — the `what`, leaving the jar only the `where`. */
+export function sessionCookie(payload: SessionPayload): SessionCookie {
+  return {
+    name: REFRESH_COOKIE,
+    value: sealSession(payload, env.sessionSecret),
     httpOnly: true,
     secure: true,
     sameSite: 'lax',
     path: '/',
     maxAge: Math.max(0, Math.floor((payload.refreshTokenExpiresAt - Date.now()) / 1000)),
-  });
+  };
+}
+
+/** The jar backed by `next/headers` — legal in a Server Action or a Route Handler, and nowhere
+ *  else: a write during Server Component rendering throws. */
+export const headerJar: SessionJar = {
+  async write(cookie) {
+    const { name, value, ...attributes } = cookie;
+    (await cookies()).set(name, value, attributes);
+  },
+  async clear() {
+    (await cookies()).delete(REFRESH_COOKIE);
+  },
+};
+
+/**
+ * Whether the access token is close enough to its stated expiry to be worth rotating.
+ *
+ * Exported because the proxy asks it before doing anything at all: the answer is false on all but
+ * roughly one request in fifteen minutes, and on that answer the proxy does no work beyond
+ * unsealing a cookie it had to read anyway.
+ */
+export function accessTokenIsStale(payload: SessionPayload): boolean {
+  return payload.accessTokenExpiresAt <= Date.now() + ACCESS_TOKEN_REFRESH_SKEW_MS;
 }
 
 /**
@@ -84,7 +137,7 @@ export async function readSession(): Promise<SessionPayload | null> {
  */
 export async function establishSession(session: SessionResponse): Promise<SessionPayload> {
   const payload = toPayload(session);
-  await persistSession(payload);
+  await headerJar.write(sessionCookie(payload));
   const store = await cookies();
   store.set(LOCALE_COOKIE, session.account.locale, {
     sameSite: 'lax',
@@ -97,8 +150,7 @@ export async function establishSession(session: SessionResponse): Promise<Sessio
 /** Sign-out's local half: the cookie is gone whatever the API answered (FR-5's server-side
  *  termination is the action's half; a failed attempt leaves a row its lifetimes still bound). */
 export async function destroySession(): Promise<void> {
-  const store = await cookies();
-  store.delete(REFRESH_COOKIE);
+  await headerJar.clear();
 }
 
 export type RefreshResult = { session: SessionPayload } | { failure: ApiFailure };
@@ -112,14 +164,25 @@ export type RefreshResult = { session: SessionPayload } | { failure: ApiFailure 
  */
 const inflightRefreshes = new Map<string, Promise<RefreshResult>>();
 
-async function exchangeRefreshToken(current: SessionPayload): Promise<RefreshResult> {
-  const outcome = await api.post<RefreshSessionRequest, SessionResponse>(
+/**
+ * `detachedApi`, not `api`: the refresh authenticates by the token in its body, so attaching the
+ * expiring bearer this call exists to replace adds nothing, and the proxy — one of the three
+ * callers — has no request scope for `cookies()` or `getLocale()` to read. Uniform across all
+ * three rather than branching, since a second code path here is a second thing to get wrong about
+ * a single-use token. Nothing renders this call's problem document, so the withheld
+ * `Accept-Language` costs no one a sentence.
+ */
+async function exchangeRefreshToken(
+  current: SessionPayload,
+  jar: SessionJar,
+): Promise<RefreshResult> {
+  const outcome = await detachedApi.post<RefreshSessionRequest, SessionResponse>(
     '/auth/session/refresh',
     { refreshToken: current.refreshToken },
   );
   if (outcome.status === API_OUTCOME.Ok) {
     const payload = toPayload(outcome.value);
-    await persistSession(payload);
+    await jar.write(sessionCookie(payload));
     return { session: payload };
   }
   if (outcome.status === API_OUTCOME.Problem) {
@@ -127,22 +190,33 @@ async function exchangeRefreshToken(current: SessionPayload): Promise<RefreshRes
     // is now worthless: drop it so the next navigation redirects to sign-in instead of
     // presenting a dead token forever. `unreachable` deliberately keeps the cookie — a network
     // blip must not sign anyone out.
-    await destroySession();
+    await jar.clear();
   }
   return { failure: outcome };
 }
 
-/** Refresh-on-expiry seam for Route Handlers and Server Actions. Returns the live session —
- *  rotated only when needed — or the failure that says why there is none. */
-export async function withFreshAccessToken(current: SessionPayload): Promise<RefreshResult> {
-  if (current.accessTokenExpiresAt > Date.now() + ACCESS_TOKEN_REFRESH_SKEW_MS) {
-    return { session: current };
-  }
-  const existing = inflightRefreshes.get(current.refreshToken);
+/**
+ * Rotate if the access token is stale, writing the successor into `jar`. The single flight is
+ * keyed on the token being spent, so concurrent callers — a page issuing several parallel reads,
+ * or a proxy pass racing an action — await one exchange rather than each spending it.
+ */
+export async function refreshSession(input: {
+  readonly current: SessionPayload;
+  readonly jar: SessionJar;
+}): Promise<RefreshResult> {
+  if (!accessTokenIsStale(input.current)) return { session: input.current };
+
+  const existing = inflightRefreshes.get(input.current.refreshToken);
   if (existing) return existing;
-  const flight = exchangeRefreshToken(current).finally(() => {
-    inflightRefreshes.delete(current.refreshToken);
+  const flight = exchangeRefreshToken(input.current, input.jar).finally(() => {
+    inflightRefreshes.delete(input.current.refreshToken);
   });
-  inflightRefreshes.set(current.refreshToken, flight);
+  inflightRefreshes.set(input.current.refreshToken, flight);
   return flight;
+}
+
+/** Refresh-on-expiry seam for Route Handlers and Server Actions — `refreshSession` with the jar
+ *  those two surfaces own. Returns the live session, or the failure that says why there is none. */
+export function withFreshAccessToken(current: SessionPayload): Promise<RefreshResult> {
+  return refreshSession({ current, jar: headerJar });
 }

@@ -32,6 +32,17 @@ export default defineConfig({
     // hang still fails, three times slower.
     testTimeout: 15_000,
     include: ['src/**/*.spec.{ts,tsx}'],
+    server: {
+      deps: {
+        // `next-intl/middleware` is the one dependency a spec loads for real rather than mocking:
+        // `proxy.spec.ts` tests the COMPOSITION of locale routing with session rotation, and a
+        // stand-in would pin that ordering against a fiction. Left external, Node's own ESM
+        // resolver handles next-intl's `import 'next/server'` — and `next` ships no `exports` map
+        // and is not `type: module`, so bare-subpath resolution fails with "did you mean
+        // next/server.js". Inlining hands it to Vite, which resolves the extension.
+        inline: ['next-intl'],
+      },
+    },
     // Project-wide floor is 80% (§12.5.6). None of the five named components with higher
     // floors is front-end; those live in apps/api and packages/validation.
     coverage: { provider: 'v8', reportsDirectory: './coverage' },

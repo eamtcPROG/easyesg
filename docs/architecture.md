@@ -2010,6 +2010,26 @@ rejected: it adds plumbing to every client island and the autosave queue for a v
 Lax-plus-origin-proof pair already closes, and it is revisitable without migration if a later
 surface (an embedded widget, a cross-site POST target) changes the premise.
 
+**Where the access token is rotated on a page load — task 26.4 (26 Aug 2026, project owner).**
+The seal above holds a refresh token good for 7 days idle, wrapped around an access token good for
+≤15 minutes. `proxy.ts` gated `(app)` on the *cookie's presence* and nothing more, and
+`src/server/api-client.ts` attaches whatever access token the seal holds without rotating —
+correctly, since it serves Server Components and a cookie write throws during render. Both were
+right in isolation and jointly wrong the moment a Server Component read the API on page load, which
+S-16 is the first screen to do: a member returning after twenty minutes would receive a 401 and an
+error screen while holding a session with six days left on it.
+
+**`proxy.ts` is therefore the page-load rotation point**, alongside `src/app/api/[...path]` which
+already rotates for client-island traffic. It is one of the two places Next permits a cookie write,
+it already runs on every `(app)` request, and it runs *before* render — so the token the Server
+Component reads from the cookie is the rotated one. `session.ts` single-flights refreshes per
+token, which is what keeps a page issuing several parallel reads from spending the single-use
+refresh token more than once; spending it twice past the race grace reads as theft and revokes the
+session, which is the random-sign-out failure task 22 recorded and did not want to meet again.
+Rotation is attempted only when the access token is within the refresh window and the request is
+one the gate already admits: an anonymous route pays nothing, and a failed refresh falls through to
+the existing redirect rather than erroring, since an unrotatable session is one that has ended.
+
 **The admin realm's session — task 23 (21 Aug 2026, project owner, from the task's open-question
 batch; sign-in reshaped to A-01's two-step handshake in the 24 Aug 2026 review — the drawn flow's
 "Signed in as …" is a server-established fact, per the challenge row above).** OQ-17 put the token

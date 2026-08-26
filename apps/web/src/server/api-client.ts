@@ -75,6 +75,28 @@ const METHOD = {
 type Method = (typeof METHOD)[keyof typeof METHOD];
 
 /**
+ * Whether a call may assemble ambient request context — the active locale and the session's
+ * bearer token.
+ *
+ * The seam's rule is that context is assembled here and never at call sites, and `Detached` does
+ * not weaken it: it names the one caller for which the context does not exist. `proxy.ts` runs
+ * before Next establishes a request scope, so `cookies()` and `getLocale()` have nothing to read
+ * there — and the single call it makes, the refresh exchange, wants neither. It authenticates by
+ * the token in its own body (task 21: possession is the proof, and it works after the access token
+ * has expired), and its answer is read by machinery rather than rendered to a person, so no
+ * `Accept-Language` changes what happens.
+ *
+ * Anything else reaching for `Detached` is a call that has quietly dropped the caller's language
+ * and identity, which is exactly the drift the seam exists to prevent.
+ */
+const REQUEST_CONTEXT = {
+  Ambient: 'ambient',
+  Detached: 'detached',
+} as const;
+
+type RequestContext = (typeof REQUEST_CONTEXT)[keyof typeof REQUEST_CONTEXT];
+
+/**
  * The body READERS live in `@easyesg/contracts` since task 23 (`outcome.ts` there carries the
  * validate-never-cast argument in full) — this seam keeps what is its own: turning a reader's
  * throw into `unreachable`, and logging the reason for a developer without the body (NFR-30).
@@ -119,16 +141,18 @@ async function send(
   method: Method,
   path: string,
   body?: unknown,
+  context: RequestContext = REQUEST_CONTEXT.Ambient,
 ): Promise<{ response: Response } | ApiFailure> {
-  const locale = await getLocale();
-  const authorization = await sessionAuthorization();
+  const ambient = context === REQUEST_CONTEXT.Ambient;
+  const locale = ambient ? await getLocale() : null;
+  const authorization = ambient ? await sessionAuthorization() : {};
 
   let response: Response;
   try {
     response = await fetch(`${env.apiBaseUrl}${path}`, {
       method,
       headers: {
-        'accept-language': locale,
+        ...(locale ? { 'accept-language': locale } : {}),
         ...authorization,
         ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
       },
@@ -165,8 +189,9 @@ async function requestObject<TObject>(
   method: Method,
   path: string,
   body?: unknown,
+  context?: RequestContext,
 ): Promise<ApiOutcome<TObject>> {
-  const sent = await send(method, path, body);
+  const sent = await send(method, path, body, context);
   if (!('response' in sent)) return sent;
 
   // 202/204 leave with no body by design (§6.8's bypasses).
@@ -226,4 +251,16 @@ export const api = {
     path: string,
     body?: TBody,
   ): Promise<ApiOutcome<TObject>> => requestObject<TObject>(METHOD.Delete, path, body),
+} as const;
+
+/**
+ * The same client with the ambient context withheld — see `REQUEST_CONTEXT`.
+ *
+ * One caller, and it is named rather than general on purpose: `proxy.ts`'s page-load rotation
+ * (architecture.md §12.5.6, task 26.4). `post` is the only verb because refresh is the only call
+ * that can honestly be made this way; a `get` here would be a read whose tenant nobody bound.
+ */
+export const detachedApi = {
+  post: <TBody, TObject>(path: string, body: TBody): Promise<ApiOutcome<TObject>> =>
+    requestObject<TObject>(METHOD.Post, path, body, REQUEST_CONTEXT.Detached),
 } as const;

@@ -163,10 +163,28 @@ conditional render, which is how it ends up half-suppressed on one screen.
   (task 21), so a refresh whose successor is not persisted leaves the browser holding a
   consumed token, and its next presentation past the 30 s grace reads as theft and revokes the
   session — a random sign-out with no error anywhere. `session.ts` single-flights refreshes
-  per token for the same reason. When Server Components start calling the API (task 29+), the
-  page-load rotation point becomes `proxy.ts`, which may set response cookies — planned there,
-  not rediscovered. And rotating a `SESSION_SECRET` signs everyone out by design: unsealable
-  is indistinguishable from absent, and that is the correct failure.
+  per token for the same reason. And rotating a `SESSION_SECRET` signs everyone out by design:
+  unsealable is indistinguishable from absent, and that is the correct failure.
+
+  **The page-load rotation point is `proxy.ts`, and it is built (task 26.4).** This paragraph used
+  to end "planned there, not rediscovered" and name task 29+; S-16 is the first Server Component to
+  read the API during render, so it arrived early. The gate here checks the sealed cookie *exists* —
+  the 7-day idle bound — which says nothing about the ≤15-minute access token inside it, so without
+  rotation a member returning after twenty minutes met a 401 holding a session with six days left.
+  Three things to know before touching `rotateIfDue`:
+
+  - **The `request.cookies.set` must happen BEFORE `handleI18nRouting`.** A cookie on the response
+    reaches the browser and nothing else; the render of *this* request would still read the stale
+    token. next-intl clones `request.headers` into `NextResponse.next({ request: { headers } })`
+    (read from its source, not assumed), so mutating the request first is what forwards it.
+    `proxy.spec.ts` fails on exactly this reordering and on nothing else — verified by doing it.
+  - **`detachedApi`, not `api`.** The proxy runs before Next establishes a request scope, so
+    `cookies()` and `getLocale()` have nothing to read. `REQUEST_CONTEXT.Detached` names that one
+    caller; anything else reaching for it is a call that has silently dropped the user's language
+    and identity.
+  - **The write is a `SessionJar`** because Next's two cookie-writing surfaces share no API. Only
+    the jar differs between the proxy and an action — deciding whether to refresh, spending the
+    single-use token exactly once, and reading a failure are one implementation in `session.ts`.
 
 - **Never import `next/link` or `next/navigation`'s locale-aware members.** Use
   `@/i18n/navigation`. A raw `next/link` renders a working-looking anchor that drops the locale
