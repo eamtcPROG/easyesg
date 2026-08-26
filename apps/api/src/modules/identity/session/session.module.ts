@@ -27,6 +27,17 @@ import { SESSION_STORE, type SessionStore } from './interfaces/session-store.int
 import { SessionService } from './services/session.service';
 import { RefreshSession } from './use-cases/refresh-session.use-case';
 import { SignIn } from './use-cases/sign-in.use-case';
+import { CompleteFactorChallenge } from './use-cases/complete-factor-challenge.use-case';
+import { AccountModule } from '@api/modules/identity/account/account.module';
+import {
+  SECOND_FACTOR,
+  type SecondFactor,
+} from '@api/modules/identity/account/interfaces/second-factor.interface';
+import { SealedFactorChallenge } from '@api/infrastructure/adapters/token-signer/sealed-factor-challenge';
+import {
+  FACTOR_CHALLENGE_SEALER,
+  type FactorChallengeSealer,
+} from './interfaces/factor-challenge.interface';
 import { SignOut } from './use-cases/sign-out.use-case';
 
 /**
@@ -89,14 +100,39 @@ const httpProviders: Provider[] = [
     ) => new AuthGuard(reflector, verifier, store, now),
   },
   {
+    /**
+     * The tenant factor challenge's sealing key, HKDF-derived from the same `AUTH_JWT_SECRET` the
+     * access token is signed with, under its own label (§12.5.6's task-27.3 row). No new
+     * environment variable for a value that lives five minutes, and the derivation is what keeps
+     * the two uses of that secret independent.
+     */
+    provide: FACTOR_CHALLENGE_SEALER,
+    inject: [ConfigService],
+    useFactory: (config: ConfigService<AppConfig, true>) =>
+      new SealedFactorChallenge(config.get('auth.jwtSecret', { infer: true })),
+  },
+  {
     provide: SignIn,
-    inject: [SESSION_STORE, PASSWORD_HASHER, ACCESS_TOKEN_SIGNER, CLOCK],
+    inject: [SESSION_STORE, PASSWORD_HASHER, ACCESS_TOKEN_SIGNER, SECOND_FACTOR, FACTOR_CHALLENGE_SEALER, CLOCK],
     useFactory: (
       store: SessionStore,
       hasher: PasswordHasher,
       signer: AccessTokenSigner,
+      secondFactor: SecondFactor,
+      challenges: FactorChallengeSealer,
       now: Clock,
-    ) => new SignIn(store, hasher, signer, now),
+    ) => new SignIn(store, hasher, signer, secondFactor, challenges, now),
+  },
+  {
+    provide: CompleteFactorChallenge,
+    inject: [SESSION_STORE, FACTOR_CHALLENGE_SEALER, SECOND_FACTOR, SignIn, CLOCK],
+    useFactory: (
+      store: SessionStore,
+      challenges: FactorChallengeSealer,
+      secondFactor: SecondFactor,
+      signIn: SignIn,
+      now: Clock,
+    ) => new CompleteFactorChallenge(store, challenges, secondFactor, signIn, now),
   },
   {
     provide: RefreshSession,
@@ -113,6 +149,11 @@ const httpProviders: Provider[] = [
 ];
 
 @Module({
+  // `SECOND_FACTOR` comes from `AccountModule`, which owns credentials and exports exactly that
+  // one token (task 27.3). Importing the module states the dependency the port already describes;
+  // rebuilding the implementation here would copy a store, a cipher and a use case into a module
+  // that owns none of them.
+  imports: mode === APP_MODE.WORKER ? [] : [AccountModule],
   controllers: mode === APP_MODE.WORKER ? [] : [SessionController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
   exports: mode === APP_MODE.WORKER ? [] : [AuthGuard],

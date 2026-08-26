@@ -22,8 +22,15 @@ import {
 } from '../errors/session.errors';
 import type { AccessTokenSigner } from '../interfaces/access-token-signer.interface';
 import type { SessionStore, SessionTransaction } from '../interfaces/session-store.interface';
-import type { IssuedSession } from '../models/session.model';
+import {
+  SIGN_IN_OUTCOME,
+  type IssuedSession,
+  type SignInOutcome,
+} from '../models/session.model';
 import type { Clock } from '@api/contracts/clock.port';
+import type { SecondFactor } from '@api/modules/identity/account/interfaces/second-factor.interface';
+import type { FactorChallengeSealer } from '../interfaces/factor-challenge.interface';
+import { FACTOR_CHALLENGE_TTL_MS } from '../domain/factor-challenge';
 
 export interface SignInCommand {
   readonly email: string;
@@ -59,6 +66,16 @@ export interface SignInCommand {
  * The lockout check precedes password verification on purpose: a locked credential is not
  * verified at all, so the lock also ends the oracle — ten failures buy an attacker a state where
  * further guesses return `AccountLockedError` regardless of correctness, which teaches nothing.
+ *
+ * **Task 27.3 adds a third outcome and changes nothing about the two above.** An account with a
+ * confirmed second factor gets a sealed challenge instead of a session (UC-194); an account
+ * without one — the overwhelming majority, since NFR-95 is opt-in — takes the identical path it
+ * took before, which is what the task row means by *without changing its unchallenged path*. The
+ * branch sits **after** the password, the lockout and the verification checks and **before** the
+ * session is minted, so a challenge is only ever issued to someone who has already earned a
+ * session on every other ground. Failure counters are cleared at the same point they were before:
+ * a correct password ends a consecutive run whether or not a factor follows, because FR-4 counts
+ * password failures and the factor step keeps its own tally in `CompleteFactorChallenge`.
  */
 export class SignIn {
   private dummyHash?: string;
@@ -67,10 +84,12 @@ export class SignIn {
     private readonly store: SessionStore,
     private readonly hasher: PasswordHasher,
     private readonly signer: AccessTokenSigner,
+    private readonly secondFactor: SecondFactor,
+    private readonly challenges: FactorChallengeSealer,
     private readonly now: Clock,
   ) {}
 
-  async execute(command: SignInCommand): Promise<IssuedSession> {
+  async execute(command: SignInCommand): Promise<SignInOutcome> {
     const email = normaliseEmail(command.email);
     const now = this.now();
 
@@ -105,11 +124,30 @@ export class SignIn {
       throw new EmailUnverifiedError();
     }
 
+    await this.store.run((tx) => tx.clearFailedSignIns(account.id));
+
+    // UC-194. The read is by account id and happens only for a caller who has already presented
+    // the correct password, so it discloses nothing a correct password did not already establish.
+    if (await this.secondFactor.isEnrolled(account.id)) {
+      return {
+        kind: SIGN_IN_OUTCOME.CHALLENGED,
+        challenge: this.challenges.seal({ accountId: account.id, issuedAt: now.getTime() }),
+        expiresAt: new Date(now.getTime() + FACTOR_CHALLENGE_TTL_MS),
+      };
+    }
+
+    return { kind: SIGN_IN_OUTCOME.SIGNED_IN, session: await this.issue(account, now) };
+  }
+
+  /**
+   * Minting the session, shared with `CompleteFactorChallenge` so the challenged and unchallenged
+   * paths cannot issue different things. `AD-12`'s pair is assembled in exactly one place.
+   */
+  async issue(account: Account, now: Date): Promise<IssuedSession> {
     const minted = mintRefreshToken();
-    const session = await this.store.run(async (tx) => {
-      await tx.clearFailedSignIns(account.id);
-      return tx.createSession(account.id, minted.hash, now);
-    });
+    const session = await this.store.run((tx) =>
+      tx.createSession(account.id, minted.hash, now),
+    );
 
     return finaliseIssuedSession(
       { account, session, refreshTokenValue: minted.value, now },

@@ -19,7 +19,9 @@ import { RegisterAccount } from './use-cases/register-account.use-case';
 import { RequestPasswordReset } from './use-cases/request-password-reset.use-case';
 import { ResendVerificationEmail } from './use-cases/resend-verification-email.use-case';
 import { ResetPassword } from './use-cases/reset-password.use-case';
+import { AccountSecondFactor } from './use-cases/account-second-factor';
 import { ConsumeRecoveryCode, ManageTotp } from './use-cases/manage-totp.use-case';
+import { SECOND_FACTOR } from './interfaces/second-factor.interface';
 import { VerifyEmail } from './use-cases/verify-email.use-case';
 
 /**
@@ -106,6 +108,24 @@ const httpProviders: Provider[] = [
     useFactory: (store: AccountStore, now: Clock) => new ConsumeRecoveryCode(store, now),
   },
   {
+    /**
+     * `SecondFactor` for `identity/session`'s sign-in (task 27.3), **exported** rather than
+     * rebuilt there.
+     *
+     * This is deliberately not the `PASSWORD_HASHER` treatment. That token is duplicated across
+     * both modules because a hasher is a shared *mechanism* that neither module owns, built from
+     * one config value — two providers of one adapter. A second factor is not that: it is this
+     * module's capability over this module's tables and this module's hashing rule, and the port
+     * says so. Rebuilding it in `SessionModule` would mean copying the store, the cipher and the
+     * recovery-code use case into a module that owns none of them, and the two copies could then
+     * disagree about what "enrolled" means.
+     */
+    provide: SECOND_FACTOR,
+    inject: [ACCOUNT_STORE, ConsumeRecoveryCode, CLOCK],
+    useFactory: (store: AccountStore, consume: ConsumeRecoveryCode, now: Clock) =>
+      new AccountSecondFactor(store, consume, now),
+  },
+  {
     provide: RegisterAccount,
     inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
     useFactory: (store: AccountStore, hasher: PasswordHasher, now: Clock) =>
@@ -142,6 +162,10 @@ const workerProviders: Provider[] = [VerificationEmailHandler, PasswordResetEmai
 
 @Module({
   imports: mode === APP_MODE.WORKER ? [EmailModule] : [],
+  // `SECOND_FACTOR` only — the sign-in path asks two questions and gets exactly two methods
+  // (ISP). Nothing else here is exported, so `ManageTotp`'s password-gated methods stay
+  // unreachable from an unauthenticated route.
+  exports: mode === APP_MODE.WORKER ? [] : [SECOND_FACTOR],
   controllers: mode === APP_MODE.WORKER ? [] : [AuthController, TotpController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
 })

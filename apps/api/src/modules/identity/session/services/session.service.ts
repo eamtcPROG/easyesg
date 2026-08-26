@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
-import type { IssuedSession } from '../models/session.model';
+import type { IssuedSession, SignInOutcome } from '../models/session.model';
 import { RefreshSession, type RefreshSessionCommand } from '../use-cases/refresh-session.use-case';
 import { SignIn, type SignInCommand } from '../use-cases/sign-in.use-case';
+import {
+  CompleteFactorChallenge,
+  type CompleteFactorChallengeCommand,
+} from '../use-cases/complete-factor-challenge.use-case';
 import { SignOut, type SignOutCommand } from '../use-cases/sign-out.use-case';
 
 /**
@@ -26,12 +30,29 @@ type SessionServiceInput<C> = Omit<C, 'clientIp'>;
 export class SessionService {
   constructor(
     private readonly signInUseCase: SignIn,
+    private readonly completeFactorUseCase: CompleteFactorChallenge,
     private readonly refreshSessionUseCase: RefreshSession,
     private readonly signOutUseCase: SignOut,
   ) {}
 
-  signIn(input: SessionServiceInput<SignInCommand>): Promise<IssuedSession> {
+  /**
+   * Two shapes since task 27.3 — a session, or a factor challenge (UC-194). The service passes the
+   * outcome through untouched: deciding which of them a route answers is the controller's, and
+   * collapsing them here would put a wire concern in the layer that exists to keep wire concerns
+   * out of the use case.
+   */
+  signIn(input: SessionServiceInput<SignInCommand>): Promise<SignInOutcome> {
     return this.signInUseCase.execute({
+      ...input,
+      clientIp: requestContext()?.clientIp,
+    });
+  }
+
+  /** The second step. Resolves the client IP exactly as `signIn` does — both spend one window. */
+  completeFactor(
+    input: SessionServiceInput<CompleteFactorChallengeCommand>,
+  ): Promise<IssuedSession> {
+    return this.completeFactorUseCase.execute({
       ...input,
       clientIp: requestContext()?.clientIp,
     });

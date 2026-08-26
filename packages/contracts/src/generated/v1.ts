@@ -228,6 +228,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/session/factor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete a sign-in that requires a second factor
+         * @description The second step for an account with a second factor enrolled (UC-194, UC-195). Present the challenge from the first step together with a current code from the authenticator — or one of the account’s recovery codes, in the same field, since the two formats cannot be confused. The challenge lives five minutes and is deliberately **not** single-use: a mistyped code leaves the caller on this step to retype, rather than back at the password.
+         */
+        post: operations["SessionController_completeFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/session/refresh": {
         parameters: {
             query?: never;
@@ -646,6 +666,17 @@ export interface components {
              */
             code: string;
         };
+        FactorChallengeResponseDto: {
+            /**
+             * @description The discriminator. `signed_in` carries a session; this one carries a challenge, and a client must branch on it rather than probing for a field.
+             * @enum {string}
+             */
+            kind: "challenged";
+            /** @description Opaque and sealed — it proves only that this API verified this account’s password just now, and it is not a session and cannot become one. Present it back with the code. The client stores it; where is the client’s decision (the web tier keeps it in a short-lived httpOnly cookie, as it does the OAuth transaction). */
+            challenge: string;
+            /** @description When the challenge stops being accepted — epoch milliseconds, UTC (OQ-50). Stated rather than left for the client to infer, so a screen can say how long is left without knowing the policy. */
+            expiresAt: number;
+        };
         SessionAccountDto: {
             /** Format: uuid */
             id: string;
@@ -661,6 +692,11 @@ export interface components {
             locale: "ro" | "en" | "ru";
         };
         SessionResponseDto: {
+            /**
+             * @description The discriminator sign-in answers with. `challenged` is the other member, and carries a factor challenge instead of a session (UC-194).
+             * @enum {string}
+             */
+            kind: "signed_in";
             /** @description Bearer token for the Authorization header. Signed, short-lived; carries the session identity and no authorization data. */
             accessToken: string;
             /**
@@ -688,6 +724,15 @@ export interface components {
              * @description Verified against the stored credential; failures are uniform and rate-limited.
              */
             password: string;
+        };
+        CompleteFactorRequestDto: {
+            /** @description The opaque challenge returned by the first step. Sealed; the API is the only thing that can read it. */
+            challenge: string;
+            /**
+             * @description A current code from the authenticator, or one of the account’s recovery codes. The two are distinguishable by shape, so one field serves both.
+             * @example 123456
+             */
+            code: string;
         };
         RefreshSessionRequestDto: {
             /** @description The refresh token exactly as issued. Single-use: a successful refresh replaces it, and the replaced value is rejected from then on. */
@@ -1323,7 +1368,11 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The session was issued. */
+            /**
+             * @description The credential was correct and the account has a second factor, so a challenge is returned instead of a session (UC-194). Branch on `kind`, never on the presence of a field. Complete it at `POST /auth/session/factor`.
+             *
+             *     The session was issued — the answer for an account with no second factor, which is most of them (NFR-95 is opt-in).
+             */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -1382,6 +1431,50 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    SessionController_completeFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteFactorRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The factor was answered and the session issued. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SessionResponseDto"];
+                    };
+                };
+            };
+            /** @description The code is not right, or the challenge has expired or was not issued by this API (problem type factor-invalid). Deliberately one answer for all three: the distinctions describe our verification to whoever is probing it and none changes what to do next. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many attempts for this account in the window. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
             };
         };
     };

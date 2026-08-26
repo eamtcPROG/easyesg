@@ -484,6 +484,18 @@ in `identity/session`. Action-noun routes rather than `DELETE` with a body, foll
 `POST /invitations/{preview,acceptance}` — `DELETE` with a body is unevenly supported through
 proxies, which is not a thing to find out on the route that turns a security control off.
 
+Task 27.3 folds the challenge into sign-in (UC-194, UC-195). `POST /api/v1/auth/session` now
+answers **one of two shapes**, discriminated by `kind`: a session for an account with no factor —
+unchanged, and most of them — or a sealed challenge for one that has it, completed at
+`POST /auth/session/factor`. **The challenge is returned in the BODY, not a cookie**, because
+OQ-33 gives the tenant session cookie to `apps/web` and AD-9 makes this api a back channel; the
+admin realm's cookie-borne challenge is not copyable here. It carries `{accountId, issuedAt, kind}`
+sealed under an HKDF key from `AUTH_JWT_SECRET`, lives five minutes, and is deliberately **not**
+single-use so a mistype keeps the caller on the step. Factor failures count toward the **same**
+`failed_attempts` as the password step (a separate budget would give 10^6 free guesses), and the
+throttle key is `factor-challenge:<ip>:<accountId>` — keyed on the **account**, unlike sign-in's,
+which carries the email. A test draining `auth_attempt` by address alone will miss it.
+
 ### Adding a column that holds a secret
 
 Since task 27.1 there is one mechanism and the database enforces it (§12.5.6's secrets-at-rest row).

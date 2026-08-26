@@ -3391,3 +3391,139 @@ because a malformed code and an expired one must not be distinguishable by which
 disenrolment removes codes before the factor, since the reverse order leaves a window where a
 credential outlives what it authenticates), `arch-single-responsibility`, `di-use-interfaces-tokens`
 and `arch-use-repository-pattern`.
+
+## Task 27.3 — the challenge, and the one thing that could not be copied · 2026-08-26
+
+The task row said this follows a decided pattern rather than inventing one: the admin realm's
+two-step handshake already exists. It does, and exactly one part of it does not transfer.
+
+**The admin challenge rides a cookie the api itself sets** — OQ-17 made this api that realm's token
+handler, so it may. The tenant realm has no such cookie: OQ-33 gives `easyesg_session` to
+`apps/web` and AD-9 makes the api an ordinary back channel. So the sealed challenge is **returned in
+the response body** and the client decides where to keep it; `apps/web` will hold it in a
+short-lived httpOnly cookie exactly as it holds task 24's OAuth transaction, and the api never
+learns where it went. Everything else is §12.5.6's admin factor row unchanged — five minutes, no
+table, TTL at the point of use, and **deliberately not single-use** so a mistyped code leaves the
+reader on the step rather than back at their password.
+
+**What makes returning it safe is what it contains.** `{ accountId, issuedAt, kind }` and nothing
+else: it proves this api verified this account's password just now, it carries no token, and
+presenting it without a valid code yields nothing. Two tests assert the negative directly — the
+challenged response must not contain `accessToken`, in the unit spec and again over HTTP.
+
+It is sealed rather than signed, which is the one place `security-auth-jwt` was considered and
+declined: a JWT would have been cheaper (the adapter already holds one) and would have made the
+account id readable by anything holding the challenge. AES-256-GCM under an HKDF-derived key costs
+nothing extra and discloses nothing. The key derives from `AUTH_JWT_SECRET` under its own label —
+`JwtAdminTokens`' one-secret-two-keys split applied here, adding no environment variable for a value
+that lives five minutes. The access token uses that same secret directly as an HMAC key and the two
+do not interfere: HKDF-SHA256 under a distinct `info` yields an independent key, and no algorithm is
+applied to both.
+
+### One route, two answers — and why not the admin's two calls
+
+`POST /api/v1/auth/session` still answers a session for an account with no factor and answers a
+challenge for one that has it; `POST /auth/session/factor` completes it. Splitting the tenant flow
+into `challenge` → `session` the way UC-68 splits the admin one would impose a second round trip on
+**every** user to serve the minority who opted in — which is what the row means by *without changing
+its unchallenged path*.
+
+The challenged answer is a **200-class response, not a problem document**. Nothing failed; the
+credential was correct and there is one more step, and NFR-79's three-part refusal shape has nothing
+to say about a step proceeding normally. Both shapes carry a `kind` discriminator so a client
+branches on the contract rather than probing for `accessToken`, and they are two DTOs rather than one
+with optional halves — "a challenge with an access token in it" is now unrepresentable in the
+generated client as well as in the domain.
+
+### The property that would have failed silently
+
+*An account without a factor is not challenged* is the claim a regression would take away without
+breaking anything visible: every existing "signs in" assertion would still pass, because those
+accounts would simply receive a challenge nobody asserted the absence of. So the sign-in spec's new
+`signedIn()` helper **asserts the outcome kind before returning the session**, and every one of the
+suite's existing reads runs through it. Twelve tests now say so where none did.
+
+### Failure counting, and the arithmetic behind it
+
+Factor failures count toward the **same** `failed_attempts` the password step counts, not a second
+tally. A factor step with its own untracked budget would hand an attacker who already has the
+password an unlimited supply of guesses at six digits — 10^6, which falls in an afternoon. The
+throttle key is its own path segment (`factor-challenge:`) for `adminSignInThrottleKey`'s reason:
+the two steps of one sign-in should not exhaust each other's window, since a user who mistypes a
+code has not been probing passwords.
+
+**And the key is on the account, not the address** — §12.5.6's specified per-(IP, account) key,
+buildable here because the account came out of a sealed challenge this api issued. That is the same
+position `invitationAcceptThrottleKey` is in, and the opposite of the social path's recorded
+degradation.
+
+That asymmetry then bit the e2e, informatively. Its cleanup drained `attempt_key LIKE '%factor.test%'`
+— which matches sign-in's key, since that one carries the *email* — and left every factor attempt
+behind, so the five-attempt window was exhausted three tests in and a correct code answered `429`.
+The fix matches the account id as a **suffix** rather than rebuilding the key, because the middle
+segment is the client IP (`::ffff:127.0.0.1` under supertest, and something else again after task
+71's trust-proxy work): a test that reconstructed it would break on that change while saying nothing
+about the behaviour it guards.
+
+### `arch-module-sharing`, applied here and declined twice before
+
+Tasks 27.1 and 27.2 both declined this rule, citing `session.module.ts`'s standing answer for
+`PASSWORD_HASHER` — "two providers of one adapter, not two adapters". This task **applies** it:
+`AccountModule` exports `SECOND_FACTOR` and `SessionModule` imports the module.
+
+The distinction is worth keeping because it is not a change of mind. A hasher and a cipher are
+shared *mechanisms* that neither module owns, built from one config value, and interchangeable by
+construction. A second factor is `identity/account`'s own **capability**, over its own tables and its
+own hashing rule. Rebuilding it in `SessionModule` would have meant copying a store, a cipher and a
+use case into a module that owns none of them — and the two copies could then disagree about what
+"enrolled" means.
+
+Exactly one token is exported. `SecondFactor` is two methods — *is this account enrolled* and *is
+this answer valid* — so `ManageTotp`'s four password-gated management methods stay unreachable from
+an unauthenticated route (`di-interface-segregation`, at the point it costs something). The session
+is minted by `SignIn.issue`, shared with the completing use case, so the challenged and unchallenged
+paths cannot issue different things.
+
+### Intermittent e2e failures, characterised and not claimed as fixed
+
+Across six full-gate runs this task went green four times and red twice, and **not one of the
+failures was in a test this task wrote** — the sixteen new ones passed in every run, including the
+red ones. What failed instead, in suites this task does not touch:
+
+| Run | Suite | Symptom |
+| --- | --- | --- |
+| `gates` #1 | `sessions` | `POST /auth/verify-email` → `404` for a token read moments earlier |
+| `gates:clean` #1 | `password-reset` | a `400` whose body carried no problem `type` at all |
+| `gates:clean` #1 | `password-reset` | **`socket hang up`** |
+| `gates:clean` #1 | `invitation-acceptance` | `401` on a bearer token minted seconds before |
+
+The e2e suite passed **273/273 standalone four times**, including immediately after
+`migrations:check`, which is the ordering `gates:clean` uses. Two hypotheses were tested and
+eliminated: connection exhaustion (sampled `pg_stat_activity` during a run — five of a hundred) and
+access-token expiry (the whole suite runs in 32 s against a 15-minute lifetime).
+
+**`socket hang up` is what reframes it.** Four different symptoms — a missing route, a rejected
+valid token, a malformed error body, a dead socket — are not four data problems; they are one
+process-level one, in a serial in-process run that creates and closes nineteen Nest applications.
+This task added the eighteenth and nineteenth, which is the only thing about that run it
+demonstrably changed.
+
+One latent hazard turned up while searching and is **not** offered as the explanation:
+`outbox.e2e-spec.ts` cleans with an unscoped `DELETE FROM audit.outbox_event` in `beforeEach` where
+every sibling scopes to its own rows, and that table is the one durable place a raw verification
+token exists (OQ-54). The argument against it is `--runInBand`: suites do not interleave, so the
+delete should never land between another suite's register and its read. It is spun off with the
+evidence and an explicit instruction not to imply the fix explains anything unless a mechanism is
+found.
+
+Not fixed here, and the reason is the same one the AccessBoard flake earlier today established:
+**a fix applied to an unreproduced failure looks exactly like a fix that worked.** The failures are
+recorded with their symptoms so the next occurrence starts from four data points rather than from a
+fresh afternoon.
+
+### A gap this task found and did not close
+
+`design_spec.md` now puts the challenge on S-01, and **no task built that screen**: 27.4 is the
+`packages/ui` code input and 27.7 is S-28, a Record screen for FR-7 and FR-8. `27.8` is appended for
+it rather than widening 27.7 — a Focus screen mid-sign-in, for an actor with no session yet, is
+different work from a settings record, and 27.7's stated deliverable names one screen.

@@ -10,8 +10,33 @@ import {
   CredentialInvalidError,
   EmailUnverifiedError,
 } from '../errors/session.errors';
-import { FakeAccessTokenSigner, FakeSessionStore } from '../testing/session-store.fake';
+import {
+  FakeAccessTokenSigner,
+  FakeChallengeSealer,
+  FakeSecondFactor,
+  FakeSessionStore,
+} from '../testing/session-store.fake';
+import {
+  SIGN_IN_OUTCOME,
+  type IssuedSession,
+  type SignInOutcome,
+} from '../models/session.model';
 import { SignIn } from './sign-in.use-case';
+
+/**
+ * Narrows the outcome to a session **and asserts it is one** (task 27.3).
+ *
+ * Every existing assertion in this file runs through it, which makes the whole suite a standing
+ * proof of the property the task row cares about most: an account with no second factor takes the
+ * unchallenged path. Before this task these reads were unconditional; if a later change ever
+ * challenged by default, twelve tests would say so rather than none.
+ */
+const signedIn = (outcome: SignInOutcome): IssuedSession => {
+  expect(outcome.kind).toBe(SIGN_IN_OUTCOME.SIGNED_IN);
+  if (outcome.kind !== SIGN_IN_OUTCOME.SIGNED_IN) throw new Error('not a session');
+  return outcome.session;
+};
+
 
 describe('SignIn (UC-04, FR-4)', () => {
   const now = new Date('2026-08-21T10:00:00Z');
@@ -20,6 +45,7 @@ describe('SignIn (UC-04, FR-4)', () => {
   let store: FakeSessionStore;
   let hasher: FakePasswordHasher;
   let signer: FakeAccessTokenSigner;
+  let secondFactor: FakeSecondFactor;
   let signIn: SignIn;
 
   const account = (overrides: Partial<Account> = {}): Account => ({
@@ -44,14 +70,15 @@ describe('SignIn (UC-04, FR-4)', () => {
     store = new FakeSessionStore();
     hasher = new FakePasswordHasher();
     signer = new FakeAccessTokenSigner();
-    signIn = new SignIn(store, hasher, signer, () => now);
+    secondFactor = new FakeSecondFactor();
+    signIn = new SignIn(store, hasher, signer, secondFactor, new FakeChallengeSealer(), () => now);
   });
 
   describe('the main success scenario', () => {
     it('issues a session scoped to the account, with honest expiries', async () => {
       store.seedAccount(account(), credential());
 
-      const issued = await signIn.execute({ email, password: 'Parola123!' });
+      const issued = signedIn(await signIn.execute({ email, password: 'Parola123!' }));
 
       expect(issued.account.id).toBe('account-1');
       expect(issued.sessionId).toBe(store.sessions[0].id);
@@ -200,7 +227,9 @@ describe('SignIn (UC-04, FR-4)', () => {
         );
       }
 
-      const issued = await signIn.execute({ email: 'ion.rusu@example.md', password: 'Parola123!' });
+      const issued = signedIn(
+        await signIn.execute({ email: 'ion.rusu@example.md', password: 'Parola123!' }),
+      );
       expect(issued.account.id).toBe('account-2');
     });
   });

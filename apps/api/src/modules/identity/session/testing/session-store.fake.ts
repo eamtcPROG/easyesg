@@ -9,6 +9,11 @@ import type {
   Session,
   SessionRevokedReason,
 } from '../models/session.model';
+import {
+  FACTOR_CHALLENGE_KIND,
+  readFactorChallenge,
+  type FactorChallengePayload,
+} from '../domain/factor-challenge';
 
 /**
  * An in-memory `SessionStore` for the use-case specs — `FakeAccountStore`'s design, including
@@ -223,5 +228,55 @@ export class FakeAccessTokenSigner {
   sign(sessionId: string, expiresAt: Date): Promise<string> {
     this.signed.push({ sessionId, expiresAt });
     return Promise.resolve(`signed:${sessionId}:${expiresAt.getTime()}`);
+  }
+}
+
+/**
+ * A `SecondFactor` the sign-in specs can steer (task 27.3).
+ *
+ * It models the two things sign-in asks and nothing else, which is the point of the port being
+ * two methods: a fake standing in for `ManageTotp` would have had to model enrolment, confirmation
+ * and re-issue to answer one question.
+ */
+export class FakeSecondFactor {
+  /** Account ids with a **confirmed** factor. An unconfirmed enrolment is not in this set. */
+  readonly enrolled = new Set<string>();
+
+  /** Answers `verify` accepts. Spent on use, so a spec can assert single-use (UC-195). */
+  readonly answers = new Map<string, string[]>();
+
+  isEnrolled(accountId: string): Promise<boolean> {
+    return Promise.resolve(this.enrolled.has(accountId));
+  }
+
+  verify(answer: { readonly accountId: string; readonly code: string }): Promise<boolean> {
+    const remaining = this.answers.get(answer.accountId) ?? [];
+    const index = remaining.indexOf(answer.code);
+    if (index === -1) return Promise.resolve(false);
+    // Modelled as spent, because the real one spends a recovery code on success and a spec that
+    // could replay an answer would prove the opposite of UC-195.
+    remaining.splice(index, 1);
+    return Promise.resolve(true);
+  }
+}
+
+/**
+ * A `FactorChallengeSealer` with no crypto — the payload travels as JSON.
+ *
+ * Deliberately readable: these specs are about the *branch*, and a real seal would only prove that
+ * `node:crypto` works. What must stay honest is the `null` on anything unrecognised, since that is
+ * the path a forged or stale challenge takes.
+ */
+export class FakeChallengeSealer {
+  seal(challenge: { readonly accountId: string; readonly issuedAt: number }): string {
+    return JSON.stringify({ ...challenge, kind: FACTOR_CHALLENGE_KIND });
+  }
+
+  open(sealed: string): FactorChallengePayload | null {
+    try {
+      return readFactorChallenge(JSON.parse(sealed));
+    } catch {
+      return null;
+    }
   }
 }

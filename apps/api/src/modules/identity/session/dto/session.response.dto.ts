@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { LOCALES, type Locale } from '@easyesg/i18n';
 import type { EpochMillis } from '@api/contracts/types/time';
-import type { IssuedSession } from '../models/session.model';
+import { SIGN_IN_OUTCOME, type IssuedSession } from '../models/session.model';
 
 /**
  * The identity block a session response carries — deliberately three fields, each with a caller
@@ -44,6 +44,20 @@ export class SessionAccountDto {
  * request, not next login" true.
  */
 export class SessionResponseDto {
+  /**
+   * Added by task 27.3, and it changes nothing for an existing consumer: the field is additive,
+   * every response that carried a session before carries one still, and `refresh` answers this
+   * same shape. What it buys is that a client branches on a discriminator rather than probing for
+   * `accessToken` — which is the difference between reading the contract and guessing at it.
+   */
+  @ApiProperty({
+    enum: [SIGN_IN_OUTCOME.SIGNED_IN],
+    description:
+      'The discriminator sign-in answers with. `challenged` is the other member, and carries a ' +
+      'factor challenge instead of a session (UC-194).',
+  })
+  readonly kind = SIGN_IN_OUTCOME.SIGNED_IN;
+
   @ApiProperty({
     description:
       'Bearer token for the Authorization header. Signed, short-lived; carries the session ' +
@@ -83,5 +97,52 @@ export class SessionResponseDto {
     this.refreshToken = issued.refreshToken;
     this.refreshTokenExpiresAt = issued.refreshTokenExpiresAt.getTime();
     this.account = new SessionAccountDto(issued.account);
+  }
+}
+
+/**
+ * What sign-in answers when the account has a second factor (UC-194; task 27.3).
+ *
+ * **A 200-class answer rather than a problem document**, because nothing failed: the credential
+ * was correct and there is one more step. NFR-79's three-part refusal shape has nothing to say
+ * about a step proceeding normally, and a `403` here would make every client treat a successful
+ * first step as an error.
+ *
+ * **A separate DTO rather than optional fields on `SessionResponseDto`.** One shape carrying both
+ * would make "a challenge with an access token in it" representable in the contract, and the
+ * generated client would hand every consumer six optional properties to narrow by hand. Two
+ * shapes with a discriminator make the impossible one unrepresentable — the same reason
+ * `SignInOutcome` is a union rather than a record with optional halves.
+ */
+export class FactorChallengeResponseDto {
+  @ApiProperty({
+    enum: [SIGN_IN_OUTCOME.CHALLENGED],
+    description:
+      'The discriminator. `signed_in` carries a session; this one carries a challenge, and a ' +
+      'client must branch on it rather than probing for a field.',
+  })
+  readonly kind = SIGN_IN_OUTCOME.CHALLENGED;
+
+  @ApiProperty({
+    description:
+      'Opaque and sealed — it proves only that this API verified this account’s password just ' +
+      'now, and it is not a session and cannot become one. Present it back with the code. The ' +
+      'client stores it; where is the client’s decision (the web tier keeps it in a short-lived ' +
+      'httpOnly cookie, as it does the OAuth transaction).',
+  })
+  readonly challenge: string;
+
+  @ApiProperty({
+    type: Number,
+    description:
+      'When the challenge stops being accepted — epoch milliseconds, UTC (OQ-50). Stated rather ' +
+      'than left for the client to infer, so a screen can say how long is left without knowing ' +
+      'the policy.',
+  })
+  readonly expiresAt: EpochMillis;
+
+  constructor(challenged: { readonly challenge: string; readonly expiresAt: Date }) {
+    this.challenge = challenged.challenge;
+    this.expiresAt = challenged.expiresAt.getTime();
   }
 }

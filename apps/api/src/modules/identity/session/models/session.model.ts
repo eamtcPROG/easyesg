@@ -61,3 +61,33 @@ export interface IssuedSession {
   readonly refreshToken: string;
   readonly refreshTokenExpiresAt: Date;
 }
+
+/**
+ * What sign-in answers (UC-04, UC-194; task 27.3) — an `as const` with the union derived, like
+ * every closed vocabulary here, because a literal compared at two sites does not error when it is
+ * typo'd, it simply takes the wrong branch.
+ *
+ * Two members and not three: a *refusal* is a thrown `DomainError` mapped by the problem filter,
+ * as it was before this task. These are the two ways sign-in **succeeds** — with a session, or
+ * with one more step to take — and modelling a refusal here would give the controller two ways to
+ * express failure and the reader no way to know which one a route uses.
+ */
+export const SIGN_IN_OUTCOME = {
+  SIGNED_IN: 'signed_in',
+  CHALLENGED: 'challenged',
+} as const;
+
+export type SignInOutcomeKind = (typeof SIGN_IN_OUTCOME)[keyof typeof SIGN_IN_OUTCOME];
+
+/**
+ * A discriminated union rather than one shape with optional halves, so "a challenge with a session
+ * in it" is unrepresentable rather than merely never written.
+ */
+export type SignInOutcome =
+  | { readonly kind: typeof SIGN_IN_OUTCOME.SIGNED_IN; readonly session: IssuedSession }
+  | {
+      readonly kind: typeof SIGN_IN_OUTCOME.CHALLENGED;
+      /** Sealed and opaque; the client stores it and presents it back (§12.5.6, task 27.3). */
+      readonly challenge: string;
+      readonly expiresAt: Date;
+    };

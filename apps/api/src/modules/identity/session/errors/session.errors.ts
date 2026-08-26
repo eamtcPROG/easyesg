@@ -83,3 +83,25 @@ export class SessionExpiredError extends DomainError {
     super('identity.session.expired');
   }
 }
+
+/**
+ * The second-factor step's single refusal (UC-194, UC-195; task 27.3).
+ *
+ * **Every way that step can fail arrives here**: a wrong code, a spent recovery code, an expired
+ * challenge, a challenge this API never sealed, one naming an account whose factor has since been
+ * turned off, and a malformed value. Collapsing them is NFR-64's argument one step later than
+ * sign-in makes it — the distinctions describe our verification to whoever is probing it, and not
+ * one of them changes what the caller should do, which is to try the code again or use a recovery
+ * code.
+ *
+ * It reuses `factor-invalid`, the problem type task 23 created for the admin realm. NFR-65's
+ * separation is about data, not about the words a refusal is spelled with.
+ */
+export class FactorInvalidError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.FactorInvalid;
+  readonly status = 403;
+
+  constructor() {
+    super('identity.session.factor_invalid');
+  }
+}

@@ -2,8 +2,13 @@ import { Body, Controller, Delete, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '@api/app/decorators/public.decorator';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
+import { CompleteFactorRequestDto } from '../dto/complete-factor.request.dto';
 import { RefreshSessionRequestDto } from '../dto/refresh-session.request.dto';
-import { SessionResponseDto } from '../dto/session.response.dto';
+import {
+  FactorChallengeResponseDto,
+  SessionResponseDto,
+} from '../dto/session.response.dto';
+import { SIGN_IN_OUTCOME } from '../models/session.model';
 import { SignInRequestDto } from '../dto/sign-in.request.dto';
 import { SignOutRequestDto } from '../dto/sign-out.request.dto';
 import { SessionService } from '../services/session.service';
@@ -46,7 +51,16 @@ export class SessionController {
   })
   @ApiObjectResponse(SessionResponseDto, {
     status: 201,
-    description: 'The session was issued.',
+    description:
+      'The session was issued — the answer for an account with no second factor, which is most ' +
+      'of them (NFR-95 is opt-in).',
+  })
+  @ApiObjectResponse(FactorChallengeResponseDto, {
+    status: 201,
+    description:
+      'The credential was correct and the account has a second factor, so a challenge is ' +
+      'returned instead of a session (UC-194). Branch on `kind`, never on the presence of a ' +
+      'field. Complete it at `POST /auth/session/factor`.',
   })
   @ApiResponse({
     status: 401,
@@ -68,8 +82,45 @@ export class SessionController {
     description: 'Too many attempts for this address in the window. Identical either way.',
     content: { 'application/problem+json': {} },
   })
-  async signIn(@Body() body: SignInRequestDto): Promise<SessionResponseDto> {
-    return new SessionResponseDto(await this.sessionService.signIn(body));
+  async signIn(
+    @Body() body: SignInRequestDto,
+  ): Promise<SessionResponseDto | FactorChallengeResponseDto> {
+    const outcome = await this.sessionService.signIn(body);
+    return outcome.kind === SIGN_IN_OUTCOME.CHALLENGED
+      ? new FactorChallengeResponseDto(outcome)
+      : new SessionResponseDto(outcome.session);
+  }
+
+  @Post('session/factor')
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Complete a sign-in that requires a second factor',
+    description:
+      'The second step for an account with a second factor enrolled (UC-194, UC-195). Present ' +
+      'the challenge from the first step together with a current code from the authenticator — ' +
+      'or one of the account’s recovery codes, in the same field, since the two formats cannot ' +
+      'be confused. The challenge lives five minutes and is deliberately **not** single-use: a ' +
+      'mistyped code leaves the caller on this step to retype, rather than back at the password.',
+  })
+  @ApiObjectResponse(SessionResponseDto, {
+    status: 201,
+    description: 'The factor was answered and the session issued.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'The code is not right, or the challenge has expired or was not issued by this API ' +
+      '(problem type factor-invalid). Deliberately one answer for all three: the distinctions ' +
+      'describe our verification to whoever is probing it and none changes what to do next.',
+    content: { 'application/problem+json': {} },
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many attempts for this account in the window.',
+    content: { 'application/problem+json': {} },
+  })
+  async completeFactor(@Body() body: CompleteFactorRequestDto): Promise<SessionResponseDto> {
+    return new SessionResponseDto(await this.sessionService.completeFactor(body));
   }
 
   @Post('session/refresh')

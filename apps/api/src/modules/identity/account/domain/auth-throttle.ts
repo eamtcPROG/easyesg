@@ -74,3 +74,18 @@ export const invitationAcceptThrottleKey = (
   clientIp: string | undefined,
   accountId: string,
 ): string => throttleKey('invitation-accept', clientIp, accountId);
+
+/**
+ * The tenant second-factor step (UC-194, task 27.3).
+ *
+ * **Its own path segment, keyed on the ACCOUNT rather than the address**, and both halves are
+ * deliberate. Its own segment for `adminSignInThrottleKey`'s reason — the two steps of one sign-in
+ * should not exhaust each other's budget, since a user who mistypes a code has not been probing
+ * passwords. Keyed on the account because at this point the account is *known*: it came out of a
+ * sealed challenge this API issued, which is the same reason `invitationAcceptThrottleKey` gets
+ * §12.5.6's specified key where the social path could only degrade to one.
+ */
+export const factorChallengeThrottleKey = (
+  clientIp: string | undefined,
+  accountId: string,
+): string => throttleKey('factor-challenge', clientIp, accountId);
