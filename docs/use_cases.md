@@ -255,8 +255,11 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-190 | Complete C8 — Revenues from certain sectors and benchmark exclusion | RC | Answer the sector-exclusion question a bank's benchmark screening asks | MVP | FR-177, FR-24, FR-27 |
 | UC-191 | Complete C9 — Gender diversity ratio in the governance body | RC | Report the governance-body gender ratio | MVP | FR-177, FR-24, FR-27 |
 | UC-192 | Add the Comprehensive Module to a report in progress | RC | Extend a report already under way when a bank or large customer asks for Comprehensive scope | MVP | FR-177 |
+| UC-193 | Enrol a second factor | CA | Add time-based one-time codes to an account already held, and be given recovery codes for the day the authenticator is lost | MVP | NFR-95 |
+| UC-194 | Answer the second-factor challenge at sign-in | CA | Complete sign-in on an enrolled account by presenting a current code | MVP | NFR-95 |
+| UC-195 | Recover access without the authenticator | CA | Sign in using one of the issued recovery codes when the device holding the secret is unavailable | MVP | NFR-95 |
 
-**Count:** 192 use cases — 20 CA, 42 RC, 49 OA, 22 PA, 27 BO, 26 SYS, 6 VI, across 39 modules. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7.
+**Count:** 195 use cases — 23 CA, 42 RC, 49 OA, 22 PA, 27 BO, 26 SYS, 6 VI, across 40 modules. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. **UC-193 … UC-195 added 26 Aug 2026** (task 27.2's open-question batch), and they are the register catching up with a decision taken eight days earlier: `non_functional_requirements.md` C-3 promoted **opt-in TOTP for tenant users** into MVP as NFR-95 on 18 Aug 2026, closing `actors.md` OQ-8 — and no use case, no MVP requirement row and no screen content was written for it, so the behaviour existed as an availability statement with nothing saying what it does. They are CA use cases and belong beside UC-10 … UC-12 in the identity group despite their numbers; **their requirement column cites NFR-95 rather than an FR**, because the promotion put the obligation in the non-functional register and FR-181 remains the *deferred* enforced-MFA row. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7.
 
 ---
 
@@ -539,6 +542,84 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
 - **Business rules:** An account with no usable credential is unrecoverable and takes its organization memberships down with it.
 - **Related FRs:** FR-8
 - **Related UCs:** UC-09, UC-11
+
+### UC-193 — Enrol a second factor
+
+**Added 26 Aug 2026** (task 27.2's open-question batch). NFR-95 made opt-in TOTP MVP scope on
+18 Aug 2026 and nothing was written to say what it does; these three use cases are that omission
+closed. Numbered 193 because identifiers are appended, never inserted — the module is
+`Credential management` and the actor is CA, so they belong beside UC-10 … UC-12 and not where
+their numbers put them.
+
+- **Primary actor:** CA
+- **Module:** Credential management
+- **Stakeholders and interests:** User — wants the account to survive a stolen password, and wants a
+  way back in when the phone holding the secret is lost; platform — must not let a compromised
+  session install a factor its owner cannot answer.
+- **Preconditions:** The user is authenticated and has no second factor enrolled.
+- **Trigger:** The user chooses to add a second factor. An Organization Administrator is
+  additionally prompted to, since the role can authorise payments and export the organization's
+  full regulatory record (NFR-95).
+- **Main success scenario:**
+  1. The user re-authenticates with their current password.
+  2. The system issues a secret and presents it for the authenticator to capture.
+  3. The user returns a current code from the authenticator, which proves the secret was captured.
+  4. The system activates the factor and issues a set of single-use recovery codes, shown once.
+- **Postconditions:** Sign-in on this account requires a code (UC-194). The recovery codes are the
+  only copy the user will be given.
+- **Exception flows:** A code that does not match leaves enrolment incomplete and the secret unused
+  — nothing is activated on an unproven secret. Abandoning enrolment leaves the account as it was.
+- **Business rules:** Re-authentication is required, for the reason FR-8 already gives for linking a
+  provider — a second factor is the control that survives a compromised session, so a compromised
+  session must not be able to install one. **Enrolment is not complete until a code is returned**:
+  activating on issue alone would lock out any user whose authenticator failed to capture the
+  secret. Turning the factor off is the same use case in reverse and carries the same
+  re-authentication, because opt-in that cannot be reversed is not opt-in.
+- **Related requirements:** NFR-95
+- **Related UCs:** UC-10, UC-11, UC-194, UC-195
+
+### UC-194 — Answer the second-factor challenge at sign-in
+
+- **Primary actor:** CA
+- **Module:** Credential management
+- **Preconditions:** The account has an active second factor and the correct password has just been
+  presented.
+- **Trigger:** Sign-in reaches the second step.
+- **Main success scenario:**
+  1. The system states that a code is required, without issuing a session.
+  2. The user supplies a current code.
+  3. The system issues the session.
+- **Exception flows:** A wrong code leaves the user on the challenge, able to retype it. Failures
+  count toward the account lockout FR-4 requires, so guessing is bounded exactly as password
+  guessing is.
+- **Business rules:** **An account with no factor enrolled is not challenged** — NFR-95 is opt-in,
+  and a challenge shown to everyone would be enforcement. The first step must not disclose whether
+  an account exists or whether it has a factor beyond what a correct password already reveals
+  (NFR-64).
+- **Related requirements:** NFR-95, FR-4
+- **Related UCs:** UC-04, UC-193, UC-195
+
+### UC-195 — Recover access without the authenticator
+
+- **Primary actor:** CA
+- **Module:** Credential management
+- **Stakeholders and interests:** Locked-out user — has the password and not the device; organization
+  — would lose the user's memberships if the account became unrecoverable (the argument UC-12 makes
+  for the last credential).
+- **Preconditions:** The account has an active second factor and unspent recovery codes.
+- **Trigger:** At the challenge, the user states they cannot produce a code.
+- **Main success scenario:**
+  1. The user supplies one of the recovery codes issued at enrolment.
+  2. The system spends that code and issues the session.
+  3. The user is told how many codes remain.
+- **Exception flows:** A spent or unrecognised code refuses like a wrong factor code and counts the
+  same way. **Exhausting the codes is a designed state, not an error** — the user is told what it
+  means before it happens.
+- **Business rules:** Each code is single-use and stored so that a database dump does not yield it.
+  Recovery does not remove the factor: it grants one session, and the user may then disenrol or
+  re-issue codes under UC-193.
+- **Related requirements:** NFR-95
+- **Related UCs:** UC-193, UC-194, UC-08
 
 ### UC-13 — View and edit own user profile
 

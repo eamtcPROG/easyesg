@@ -197,7 +197,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 
 | # | Screen | Actor | Serves | Archetype |
 |---|---|---|---|---|
-| S-01 | Sign in / register / provider choice | CA | UC-01 … 05 | Focus |
+| S-01 | Sign in / register / provider choice | CA | UC-01 … 05, UC-194, UC-195 | Focus |
 | S-02 | Verify email · reset password · set password | CA | UC-03, 08, 09 | Focus |
 | S-03 | Accept invitation | CA | UC-15 | Focus |
 | S-04 | Create organization | OA | UC-49 | Focus |
@@ -224,7 +224,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-25 | Enterprise request | OA | UC-153 | Focus |
 | S-26 | Notification centre | CA | UC-165 … 167 | Index |
 | S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | Record |
-| S-28 | Credentials and linked identities | CA | UC-10 … 12 | Record |
+| S-28 | Credentials and linked identities | CA | UC-10 … 12, UC-193 | Record |
 | S-29 | Marketing home | VI | UC-177 | *escalated — OQ-17* |
 | S-30 | Legal documents (terms · privacy · cookies) | VI, all | UC-178 | *escalated — OQ-17* |
 | S-31 | Cookie choice | VI | UC-179 | Focus |
@@ -316,12 +316,21 @@ Three limits on what follows must be stated plainly, because the alternative is 
 - **Entry points:** unauthenticated arrival at the tenant application; an expired invitation or reset link that requires a fresh sign-in; **a live invitation handed off from S-03** (added 25 Aug 2026, task 26.3) — which carries `?return=` back to S-03 and, on the registration route, the invitation itself, so the account created there is already verified and the invitee returns able to accept. The screen states which organization is inviting them, because a credential form arrived at from an email link is otherwise unexplained.
 - **Layout and regions:** single column, centred, one primary action (Focus fixed elements). Email/password entry and the enabled social provider choices are presented on the same surface. No further per-screen layout is specified in the source.
 - **Content and data shown:** email address and password inputs; the set of currently enabled identity providers (Google and Microsoft at MVP, per FR-2, enabled or disabled through A-18 / FR-82); route to registration; route to password reset.
-- **Controls and actions:** sign in with password; sign in with a provider; register; request a password reset.
-- **States:** loading — initial; error — recoverable (failed credential, rate-limited, locked out after threshold, per FR-4); error — recoverable (verification pending — the account is unverified and the presented password was **correct**; the answer names verification as the blocker and routes to S-02's resend. Added 21 Aug 2026, `architecture.md` OQ-57 — a wrong password on an unverified account stays inside the uniform failed-credential state); error — permission (an identity presented that is linked to no account is offered registration rather than silently signed in, UC-05).
+- **Controls and actions:** sign in with password; sign in with a provider; register; request a password reset; **supply a second-factor code, or a recovery code instead, where the account has one enrolled**.
+- **States:** loading — initial; **second factor required** — a staged step reached only after a correct password on an *enrolled* account, offering the code field and the route to a recovery code (UC-194, UC-195; added 26 Aug 2026); error — recoverable (failed credential, rate-limited, locked out after threshold, per FR-4); error — recoverable (a wrong or spent second-factor code, which leaves the user on the staged step to retype it and counts toward the same FR-4 threshold); error — recoverable (verification pending — the account is unverified and the presented password was **correct**; the answer names verification as the blocker and routes to S-02's resend. Added 21 Aug 2026, `architecture.md` OQ-57 — a wrong password on an unverified account stays inside the uniform failed-credential state); error — permission (an identity presented that is linked to no account is offered registration rather than silently signed in, UC-05).
 - **Validation behaviour:** credential failures are rate-limited and locked out after a threshold. **UX-108** applies with force here: no cognitive function test shall be required to sign in, and password managers and paste shall work everywhere.
 - **Exits:** per §4.3 — no memberships → S-04; exactly one membership → S-05; more than one → organization choice then S-05. Registration by password exits to the verification challenge (S-02).
-- **Use cases:** UC-01, UC-02, UC-03 (provider-asserted case), UC-04, UC-05.
-- **FRs:** FR-1, FR-2, FR-4, FR-82.
+- **Use cases:** UC-01, UC-02, UC-03 (provider-asserted case), UC-04, UC-05, **UC-194, UC-195**.
+- **FRs:** FR-1, FR-2, FR-4, FR-82. **Requirements:** NFR-95.
+
+**The second-factor step was added 26 Aug 2026** (task 27.2's open-question batch), with UC-194 and
+UC-195. It is the same two-step shape A-01 already stages for the admin realm and it is deliberately
+**not** the same screen: NFR-65 keeps the two realms disjoint, so the tenant step is built here over
+task 21's sign-in rather than reached from the console's. Two properties the artboard must hold.
+**An account with no factor is never challenged** — NFR-95 is opt-in, and a step everyone sees is
+enforcement. And the step must not say more than a correct password already says: reaching it
+discloses that this account has a factor, which is why nothing before the password may hint at one
+(NFR-64).
 
 ### S-02 — Verify email · reset password · set password
 
@@ -742,13 +751,21 @@ Three limits on what follows must be stated plainly, because the alternative is 
 - **Archetype:** Record.
 - **Entry points:** the global tier user menu; S-27.
 - **Layout and regions:** identity header, grouped fields, save/cancel affordance.
-- **Content and data shown:** password state; linked provider identities.
-- **Controls and actions:** change password; link a provider; unlink a provider.
+- **Content and data shown:** password state; linked provider identities; **second-factor state, and how many recovery codes remain unspent**.
+- **Controls and actions:** change password; link a provider; unlink a provider; **enrol a second factor; turn it off; re-issue recovery codes**.
 - **States:** loading — initial; error — recoverable; error — permission; success.
-- **Validation behaviour:** changing a password requires the current one (FR-7). A link is established only after authentication by an existing credential — a provider assertion alone is never sufficient (UC-11, FR-8). The system refuses to remove the last remaining credential and prompts the user to set a password first, with the consequence stated: an account with no usable credential is unrecoverable and takes its organization memberships down with it (UC-12, UX-70).
+- **Validation behaviour:** changing a password requires the current one (FR-7). A link is established only after authentication by an existing credential — a provider assertion alone is never sufficient (UC-11, FR-8). The system refuses to remove the last remaining credential and prompts the user to set a password first, with the consequence stated: an account with no usable credential is unrecoverable and takes its organization memberships down with it (UC-12, UX-70). **Enrolling or turning off a second factor requires the current password**, for the reason the link rule already gives — a second factor is the control that survives a compromised session, so a compromised session must not be able to install or strip one (UC-193). **Enrolment is not complete until a current code is returned**, and the recovery codes are shown exactly once, which the screen must say before it shows them rather than after.
 - **Exits:** S-27.
-- **Use cases:** UC-10, UC-11, UC-12.
-- **FRs:** FR-7, FR-8.
+- **Use cases:** UC-10, UC-11, UC-12, **UC-193**.
+- **FRs:** FR-7, FR-8. **Requirements:** NFR-95.
+
+**The three TOTP rows above were added 26 Aug 2026** (task 27.2's open-question batch), and the
+addition is the screen catching up with `non_functional_requirements.md` C-3: NFR-95 promoted
+opt-in TOTP for tenant users into MVP on 18 Aug 2026, and this entry — the only screen where a
+user manages their own credentials — went on listing a password and a provider list. UC-193 …
+UC-195 were appended in the same batch. **The challenge and recovery paths belong to S-01, not
+here** (UC-194, UC-195): they happen during sign-in, on the artboard that already stages a
+credential step, and S-28 is where the factor is *managed* rather than answered.
 
 ### S-35 — Organization unavailable
 
@@ -1879,7 +1896,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 
 | Screen | Name | Actors | Use cases | Functional requirements |
 |---|---|---|---|---|
-| S-01 | Sign in / register / provider choice | CA | UC-01 … 05 | FR-1, FR-2, FR-4, FR-82 |
+| S-01 | Sign in / register / provider choice | CA | UC-01 … 05, UC-194, UC-195 | FR-1, FR-2, FR-4, FR-82, NFR-95 |
 | S-02 | Verify email · reset password · set password | CA | UC-03, 08, 09 | FR-3, FR-6 |
 | S-03 | Accept invitation | CA | UC-15 | FR-11 |
 | S-04 | Create organization | OA | UC-49 | FR-13, FR-14 |
@@ -1906,7 +1923,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-25 | Enterprise request | OA | UC-153 | FR-142 |
 | S-26 | Notification centre | CA | UC-165 … 167 | FR-160, FR-161, FR-162 |
 | S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | FR-9, FR-10, FR-163 |
-| S-28 | Credentials and linked identities | CA | UC-10 … 12 | FR-7, FR-8 |
+| S-28 | Credentials and linked identities | CA | UC-10 … 12, UC-193 | FR-7, FR-8, NFR-95 |
 | S-29 | Marketing home | VI | UC-177 | — (G-9) |
 | S-30 | Legal documents (terms · privacy · cookies) | VI, all | UC-178 | — (G-9); NFR-5 is the obligation this screen discharges |
 | S-31 | Cookie choice | VI | UC-179 | — (G-9) |
