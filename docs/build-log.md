@@ -2859,8 +2859,16 @@ member DTO carries an address and no name; it states that *"two administrators i
 enforces"* where FR-60 sets the minimum at one; and its invite is a modal where this screen uses a
 panel below the list.
 
-This is not resolved here. §5's row and the API agree with each other and are what shipped; the
-prototype is ahead of both, and OQ-10 records that the prototypes' *values* are authoritative while
-their markup is not — which does not settle whose **content** wins. It is left for the project owner
-because per-entity access is a data-model decision, and modelling both "to be safe" is precisely what
-the open-question protocol forbids.
+**Closed the same day (project owner): the requirement set governs.** §5's row and the API agree with
+each other and are what shipped. What was decided is the general rule rather than this instance —
+OQ-10 recorded that the prototypes' *values* are authoritative and their markup is not, and it now
+also records that **their authority does not extend to content or scope**: a prototype owns neither
+the scope boundary nor what the system does, so a drawn affordance that no `FR` requires is ahead of
+scope rather than a missing feature. S-16's row carries all five divergences as the worked example.
+
+Per-entity access becomes a live question only if someone writes the requirement — and it is worth
+knowing what it would cost, which is why it is written down here: an entity dimension on the
+membership record, and a **second tenancy binding in every RLS policy** written since task 11, where
+`app.current_org` is the only one today. That is the argument for deciding it deliberately rather
+than discovering it, not an argument for building it now. Modelling both "to be safe" is precisely
+what the open-question protocol forbids.
