@@ -282,6 +282,20 @@ conditional render, which is how it ends up half-suppressed on one screen.
   and a store holding the active organization is the second source of tenancy UX-2 forbids from
   the URL, wearing a different hat.
 
+- **Two `setX` calls in one handler mean one `useReducer`.** The rule is in the root `CLAUDE.md`
+  ("State has four homes"); what is local is where it bites here. `features/organization/`'s
+  `access-state.ts` is the worked example — S-16's `pendingRowKey`, `notice` and `confirming` were
+  three `useState`s that every handler wrote two or three of, and writing the transitions out found
+  a stale notice sitting above a row that was still changing. The reducer lives beside the feature
+  rather than inside the provider so its transitions are a unit spec; the provider is wiring.
+
+  Two things specific to this app. `dispatch`'s stability matters more here than it would with a
+  compiler: `reactCompiler` is off (see the memoization note above), so a `useCallback` with an
+  empty dependency list is one fewer list to keep honest. And a Server Action's result reaches the
+  reducer as **one event carrying the outcome** — `ACTION_SETTLED` with the notice already built —
+  rather than as a branch that dispatches two different actions, which puts the outcome-reading in
+  the component where the rest of the wire handling lives.
+
 - **A form field is `@easyesg/ui/forms`, not `TextField` + `register`.** Since 24 Aug 2026 the
   bound controls take `control` and `name` and derive the rest: `<FormTextField control={control}
   name="email" label={…} rules={{ required: … }} />`, with `<FormSummary control={control}

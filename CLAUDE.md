@@ -823,6 +823,67 @@ is what Query removes, and a store holding the active organization is the second
 tenancy UX-2 forbids from the URL, in a different container — where an org-switch race reads as
 a cross-tenant render above the RLS boundary, and AD-2's probes never see it.
 
+### Values that change together are one `useReducer`, not several `useState`s
+
+**Added 26 Aug 2026** (project owner), and it binds `apps/web`, `apps/admin` and `packages/ui`
+alike. The tell is mechanical and easy to see in a diff: **two _different_ setters called in one
+handler**. When one thing happening writes two pieces of state, they were one piece of state
+described twice.
+
+Two calls to the *same* setter are not this — `setFailure(null)` on submit and `setFailure(result)`
+on the answer is one value with a lifecycle, and `sign-in-form.tsx` and `register-form.tsx` are
+correct as they stand. The rule counts distinct state, not statements.
+
+```ts
+// The shape the rule is about — one event, three writes, spelled out at each call site.
+setPendingRowKey(null);
+setConfirming(null);
+setNotice(outcome.status === API_OUTCOME.Ok ? success : refusal);
+```
+
+The reason is not batching. React 18 already batches those, so nothing renders twice and no
+profiler shows the difference. The reason is that **a reducer branch has to name the whole next
+state, and separate setters never ask what the fields you did not write should be.** Both live
+examples were carrying a stale field nobody had decided on, and both surfaced the moment the
+transitions were written out:
+
+- S-16 kept the previous action's success notice on screen while the next action ran, so *"the
+  invitation has been sent"* sat above a removal in flight.
+- A-01 cleared its refusal in two `onSubmit` handlers and nowhere else, which worked — and left
+  the *why* implicit until the event was named `SUBMITTED` and the reducer stated it once.
+
+**Two remedies, and picking the wrong one is its own mess.** Ask whether the values can ever be
+true at once:
+
+- **Mutually exclusive → one value, a discriminated union.** `sent` and `failure` on an invite form
+  cannot both hold; as two `useState`s the impossible pair is representable and every reader has to
+  know not to write it. One `useState<Outcome | null>` over `{ kind: 'sent' … } | { kind: 'failed'
+  … }` makes it unrepresentable, and a reducer here would be ceremony over a value that has no
+  transitions worth naming.
+- **Several fields moving on several named events → `useReducer`.** S-16's screen state is three
+  fields and four events, and no two of them collapse: a row can be pending while a dialogue is open
+  and a notice is showing.
+
+Three properties follow from the reducer form, and the third is the one that compounds:
+
+- **Events are named for what happened, never for the field they write.** `ACTION_SETTLED`, not
+  `SET_NOTICE`. A setter-shaped action type is the `useState`s again wearing a reducer's clothes,
+  and it re-scatters the decision it was meant to gather. The action type is a closed vocabulary
+  like any other — an `as const` with the union derived, per the rule above.
+- **`dispatch` is stable by React's own guarantee**, so a `useCallback` around it needs no
+  dependency list. With `reactCompiler` off (AD-9), that is a real saving rather than a tidiness
+  one: it is a list that cannot fall behind its body.
+- **The reducer is a pure function and belongs in its own module**, beside the feature rather than
+  inside the component — which makes every transition a unit spec, including the ones a browser
+  journey cannot reach without contriving the timing (`access-state.ts` and its spec are the
+  worked example).
+
+**Where a single `useState` is still right:** one value that nothing else moves with it — a
+disclosure's open flag, a copy-to-clipboard confirmation, an input's own draft. The rule is about
+values that share a lifetime, not about counting hooks. A screen with three genuinely independent
+booleans is three `useState`s and should stay that way; forcing them into one reducer would invent
+a state machine nothing in the product corresponds to.
+
 ## Looking things up
 
 When you need documentation for anything external — a library, framework, CLI, ORM,

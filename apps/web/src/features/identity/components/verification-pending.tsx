@@ -34,6 +34,18 @@ import { ROUTES } from '@/lib/routes';
  * countdown subscription notifies once a second, which is exactly as often as the state it
  * reflects changes (UX-116).
  */
+/**
+ * What the last resend did — **one value, because the two cannot both be true.**
+ *
+ * They were `sentConfirmed` and `unreachable`, two booleans set in the same handler, which made
+ * "sent AND unreachable" representable and left the clearing of one to be remembered when the
+ * other was set (root `CLAUDE.md`, "Values that change together"). Three states, one of which is
+ * "nothing has been tried yet" — which is what `null` says and a false boolean does not.
+ */
+const RESEND_OUTCOME = { SENT: 'sent', UNREACHABLE: 'unreachable' } as const;
+
+type ResendOutcome = (typeof RESEND_OUTCOME)[keyof typeof RESEND_OUTCOME];
+
 export function VerificationPending() {
   const t = useTranslations('identity.verify');
   const tCommon = useTranslations('identity');
@@ -50,8 +62,7 @@ export function VerificationPending() {
     getServerResendCooldownRemaining,
   );
 
-  const [sentConfirmed, setSentConfirmed] = useState(false);
-  const [unreachable, setUnreachable] = useState(false);
+  const [outcome, setOutcome] = useState<ResendOutcome | null>(null);
 
   const {
     register,
@@ -60,18 +71,18 @@ export function VerificationPending() {
   } = useForm<{ email: string }>({ mode: 'onTouched' });
 
   const send = (address: string) => {
-    setUnreachable(false);
+    setOutcome(null);
     startTransition(async () => {
       const result = await resendVerificationAction({ email: address });
       if (result.status === API_OUTCOME.Unreachable) {
-        setUnreachable(true);
+        setOutcome(RESEND_OUTCOME.UNREACHABLE);
         return;
       }
       // Problems and the 202 read the same to the user: the screen may not reveal more than
       // the uniform response does (OQ-55). A malformed address is the one 400 this route
       // emits, and the form's own validation already covers it.
       rememberPendingVerification(address);
-      setSentConfirmed(true);
+      setOutcome(RESEND_OUTCOME.SENT);
     });
   };
 
@@ -79,7 +90,7 @@ export function VerificationPending() {
 
   return (
     <div className={styles.stack}>
-      {unreachable ? (
+      {outcome === RESEND_OUTCOME.UNREACHABLE ? (
         <Callout
           intent="error"
           title={tCommon('unreachable.title')}
@@ -89,7 +100,7 @@ export function VerificationPending() {
         </Callout>
       ) : null}
 
-      {sentConfirmed ? (
+      {outcome === RESEND_OUTCOME.SENT ? (
         <Callout intent="info" title={t('sentTitle')} action={t('sentAction')}>
           {t('sentBody')}
         </Callout>

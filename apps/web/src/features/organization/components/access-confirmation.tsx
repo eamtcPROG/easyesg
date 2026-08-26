@@ -2,7 +2,8 @@
 
 import { ConsequenceDialogue } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { CONFIRMATION, useAccess } from './access-context';
+import { useAccess } from './access-context';
+import { CONFIRMATION } from '../access-state';
 import { removeMemberAction, revokeInvitationAction } from '../actions';
 
 /**

@@ -36,16 +36,32 @@ interface InviteFields {
   role: InvitedRole;
 }
 
+/**
+ * What the last attempt did — **one value, because the two cannot both be true.**
+ *
+ * They were `sent: string | null` and `failure: {…} | null`, written in pairs at both branches, and
+ * the pair made an impossible state representable: sent AND failed. As a union nobody has to
+ * remember to clear the other one, which is the whole of what those paired setters were doing
+ * (root `CLAUDE.md`, "Values that change together"). A reducer would be ceremony here — there is
+ * one transition and it has no name worth giving it.
+ */
+const INVITE_OUTCOME = { SENT: 'sent', FAILED: 'failed' } as const;
+
+type InviteOutcome =
+  | { readonly kind: typeof INVITE_OUTCOME.SENT; readonly email: string }
+  | {
+      readonly kind: typeof INVITE_OUTCOME.FAILED;
+      readonly title: string;
+      readonly body: string;
+    };
+
 export function InviteMember({ id }: { id: string }) {
   const t = useTranslations('organization.access.invite');
   const tRoles = useTranslations('organization.access.roles');
   const tRoleHelp = useTranslations('organization.access.roleDescriptions');
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
-  const [sent, setSent] = useState<string | null>(null);
-  const [failure, setFailure] = useState<
-    { readonly title: string; readonly body: string } | null
-  >(null);
+  const [outcome, setOutcome] = useState<InviteOutcome | null>(null);
 
   const { control, handleSubmit, reset } = useForm<InviteFields>({
     defaultValues: { email: '' },
@@ -53,23 +69,26 @@ export function InviteMember({ id }: { id: string }) {
 
   const submit = handleSubmit((fields) => {
     startTransition(async () => {
-      const outcome = await inviteMemberAction(fields);
+      const result = await inviteMemberAction(fields);
 
-      if (outcome.status === API_OUTCOME.Ok) {
-        setFailure(null);
-        setSent(fields.email);
+      if (result.status === API_OUTCOME.Ok) {
+        setOutcome({ kind: INVITE_OUTCOME.SENT, email: fields.email });
         reset();
         return;
       }
-      setSent(null);
-      setFailure(
-        outcome.status === API_OUTCOME.Problem
-          ? {
-              title: outcome.problem.title ?? tCommon('unreachable.title'),
-              body: outcome.problem.detail ?? tCommon('unreachable.body'),
-            }
-          : { title: tCommon('unreachable.title'), body: tCommon('unreachable.body') },
-      );
+      setOutcome({
+        kind: INVITE_OUTCOME.FAILED,
+        // The API's own three-part text, as received — this screen keeps no second copy of
+        // "they already have access" or "an invitation is outstanding".
+        title:
+          result.status === API_OUTCOME.Problem
+            ? (result.problem.title ?? tCommon('unreachable.title'))
+            : tCommon('unreachable.title'),
+        body:
+          result.status === API_OUTCOME.Problem
+            ? (result.problem.detail ?? tCommon('unreachable.body'))
+            : tCommon('unreachable.body'),
+      });
     });
   });
 
@@ -80,14 +99,18 @@ export function InviteMember({ id }: { id: string }) {
       </h2>
       <p className={`t-body ${styles.lede}`}>{t('intro')}</p>
 
-      {sent ? (
-        <Callout intent="success" title={t('sent', { email: sent })} action={t('sentAction')}>
+      {outcome?.kind === INVITE_OUTCOME.SENT ? (
+        <Callout
+          intent="success"
+          title={t('sent', { email: outcome.email })}
+          action={t('sentAction')}
+        >
           {t('sentBody')}
         </Callout>
       ) : null}
-      {failure ? (
-        <Callout intent="error" title={failure.title} action={t('failedAction')}>
-          {failure.body}
+      {outcome?.kind === INVITE_OUTCOME.FAILED ? (
+        <Callout intent="error" title={outcome.title} action={t('failedAction')}>
+          {outcome.body}
         </Callout>
       ) : null}
 

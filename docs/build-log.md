@@ -2872,3 +2872,51 @@ membership record, and a **second tenancy binding in every RLS policy** written 
 `app.current_org` is the only one today. That is the argument for deciding it deliberately rather
 than discovering it, not an argument for building it now. Modelling both "to be safe" is precisely
 what the open-question protocol forbids.
+
+---
+
+## Two `setState`s that were one state, and the rule that came out of it · 2026-08-26
+
+Raised by the project owner against `access-context.tsx`: the way it held state suited a
+`useReducer`, because one event was updating several pieces at once. It did — `perform` ended with
+three setter calls — and following the observation turned up more than a tidier file.
+
+**The reason is not batching.** React 18 already batches those three writes; nothing rendered twice
+and no profiler would have shown a difference. The reason is that **a reducer branch has to name the
+whole next state, and separate setters never ask what the fields you did not write should be.** Both
+front ends were carrying a stale field nobody had decided on, and neither was visible while each
+`setX` was read on its own:
+
+- S-16 kept the previous action's success notice on screen while the next action ran, so *"the
+  invitation has been sent"* sat above a removal still in flight. Two lines in the reducer now, and
+  they exist because every branch had to say what `notice` becomes.
+- A-01's sign-in cleared its refusal in two `onSubmit` handlers and nowhere else. That was correct
+  and stayed implicit until the event was named `SUBMITTED` and the reducer said it once. Its
+  lapsed-challenge branch also became legible: it returns to the credential step **and keeps the
+  refusal**, where as `setStep` inside an `if` followed by an unconditional `setFailure` it read
+  like a fall-through.
+
+**Writing the rule found that the rule was wrong.** The first draft made the tell "two or more
+`setX` calls in one handler", and the sweep it prescribed flagged `sign-in-form.tsx` and
+`register-form.tsx` — both of which are correct: `setFailure(null)` on submit and
+`setFailure(result)` on the answer is *one* value with a lifecycle. The tell is **two different
+setters**, and the rule now counts distinct state rather than statements. A rule that matches the
+wrong thing is the shape this repository keeps meeting; catching it before it was enforced is the
+cheapest that has ever gone.
+
+**And the remedy is not always a reducer**, which the sweep's two genuine violations showed. Both
+were mutually exclusive pairs — `sent`/`failure` on the invite form, `sentConfirmed`/`unreachable`
+on the resend screen — where two `useState`s make an impossible state representable (sent *and*
+failed) and leave the clearing of one to be remembered when the other is set. Those collapse to a
+single discriminated union, not to a reducer; a reducer over a value with one nameless transition is
+ceremony. The rule carries both remedies and the question that picks between them: can the values
+ever be true at once?
+
+The rule is in the root `CLAUDE.md` under "State has four homes", since it binds `apps/web`,
+`apps/admin` and `packages/ui` alike; each front end's own file carries the part that is local — for
+`apps/web`, that `reactCompiler` being off makes `dispatch`'s stability a real saving rather than a
+tidiness one; for `apps/admin`, that a Query mutation's `onSuccess` dispatches one event and decides
+nothing else, so the flow lives in the reducer and the wire handling stays in the mutation.
+
+**It ships with no violations left.** A sweep of all three React workspaces for two distinct setters
+in one handler returns nothing, which is the state a rule has to start in to mean anything.

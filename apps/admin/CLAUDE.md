@@ -206,6 +206,21 @@ else; treat it as an incident, not a refactor.
   A-01 has none of them, which is why the absence has cost nothing yet; A-02…A-18 are tables and
   queues, and they are where it starts.
 
+- **Two `setX` calls in one handler mean one `useReducer`.** The rule is in the root `CLAUDE.md`
+  ("State has four homes"); `realm/components/sign-in-screen.tsx` is this app's worked example. Its
+  `step` and `failure` were two `useState`s and are one state: advancing cleared the failure and set
+  the step, a lapsed challenge set the step and then set the failure, restarting set both. Writing
+  the transitions out is what made the lapsed-challenge branch legible — it returns to the
+  credential step **and keeps the refusal**, so the api's own explanation is what greets the reader
+  there, where as two setters it read like a fall-through.
+
+  The console-specific part is where the reducer sits relative to Query. A mutation's `onSuccess`
+  **dispatches one event and decides nothing else**: it maps the `ApiOutcome` to an event and hands
+  it over, so the flow lives in the reducer and the wire handling stays in the mutation. Query owns
+  `isPending` and the request; the reducer owns what the screen is. Reaching for a third
+  `useState` to bridge them is the shape this rule exists to stop.
+
+
 ## Before you add a screen
 
 - It has an `A-nn` in `design_spec.md` §4.4. All eighteen already exist as routes — you are filling
