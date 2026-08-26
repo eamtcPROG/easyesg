@@ -16,6 +16,7 @@ import { InvitationAcceptance1787961600000 } from './1787961600000-invitation-ac
 import { InvitationPolicyNarrowing1788048000000 } from './1788048000000-invitation-policy-narrowing';
 import { SecretEncryptionAtRest1788134400000 } from './1788134400000-secret-encryption-at-rest';
 import { TenantTotp1788220800000 } from './1788220800000-tenant-totp';
+import { PasswordChangedRevocation1788307200000 } from './1788307200000-password-changed-revocation';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -50,4 +51,5 @@ export const migrations = [
   InvitationPolicyNarrowing1788048000000,
   SecretEncryptionAtRest1788134400000,
   TenantTotp1788220800000,
+  PasswordChangedRevocation1788307200000,
 ];

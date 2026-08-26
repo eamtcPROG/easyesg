@@ -1,6 +1,12 @@
 import { mintTotpSecret, totpEnrolmentUri, verifyTotp } from '@api/modules/platform/admin/domain/totp';
 import type { Clock } from '@api/contracts/clock.port';
 import {
+  AUTH_ATTEMPT_LIMIT,
+  AUTH_ATTEMPT_WINDOW_MS,
+  reauthenticationThrottleKey,
+} from '../domain/auth-throttle';
+import { AuthRateLimitedError } from '../errors/account.errors';
+import {
   hashRecoveryCode,
   mintRecoveryCodes,
 } from '../domain/recovery-code';
@@ -10,7 +16,7 @@ import {
   TotpCodeInvalidError,
   TotpNotEnrolledError,
 } from '../errors/account.errors';
-import type { AccountStore, AccountTransaction } from '../interfaces/account-store.interface';
+import type { AccountStore } from '../interfaces/account-store.interface';
 import type { PasswordHasher } from '../interfaces/password-hasher.interface';
 import { RECOVERY_CODE_OUTCOME, type TotpState } from '../models/totp.model';
 
@@ -44,6 +50,8 @@ interface ActorCommand {
   readonly accountId: string;
   /** Absent for a provider-only account — see `reauthenticate`. */
   readonly password?: string;
+  /** For §12.5.6's re-authentication window. Absent until task 71 configures trust-proxy. */
+  readonly clientIp?: string;
 }
 
 export type BeginTotpEnrolmentCommand = ActorCommand;
@@ -70,20 +78,39 @@ export class ManageTotp {
   ) {}
 
   /**
-   * §12.5.6's re-authentication rule, in one place.
+   * §12.5.6's re-authentication rule, in one place — and it runs **outside** the caller's
+   * transaction, which is the shape rather than an accident.
+   *
+   * Three reasons, and `SignIn` states all of them for its own path. A refusal must durably cost
+   * the caller an attempt, and a throw inside the work's transaction would roll back the very row
+   * the window rests on. Argon2id is tens of milliseconds by design (§9.1) and a pooled connection
+   * must not idle through it. And a nested `run` would hold two connections against one request
+   * for no reason at all.
    *
    * A provider-only account (FR-2) has no credential row, and there the session stands as the
    * credential — the recorded assumption, taken because requiring a fresh OIDC assertion would
    * pull task 24's redirect flow into a settings screen. It is checked by the ABSENCE of a
    * credential rather than by a flag on the request, so an account that has a password cannot skip
    * the step by omitting the field.
+   *
+   * **Throttled since task 27.5**, which is a correction rather than an addition: these three
+   * routes shipped on 26 Aug 2026 as password oracles reachable with only a stolen session, bounded
+   * by nothing but the edge's 300 req/min. §12.5.6's re-authentication row names the path, and
+   * `ChangePassword` spends the same key — a settings screen has one budget, not one per control.
    */
-  private async reauthenticate(
-    tx: AccountTransaction,
-    command: ActorCommand,
-  ): Promise<void> {
-    const credential = await tx.findCredential(command.accountId);
+  private async reauthenticate(command: ActorCommand): Promise<void> {
+    const credential = await this.store.run((tx) => tx.findCredential(command.accountId));
     if (credential === null) return;
+
+    const key = reauthenticationThrottleKey(command.clientIp, command.accountId);
+    const limited = await this.store.run(async (tx) => {
+      const now = this.now();
+      const recent = await tx.countRecentAuthAttempts(key, new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS));
+      await tx.recordAuthAttempt(key, now);
+      return recent >= AUTH_ATTEMPT_LIMIT;
+    });
+    if (limited) throw new AuthRateLimitedError();
+
     if (command.password === undefined) throw new ReauthenticationFailedError();
     // One object, not two strings: `verify(hash, password)` compiles perfectly with the
     // arguments swapped and answers a plausible `false` (CLAUDE.md's rule, and the port's shape).
@@ -101,9 +128,9 @@ export class ManageTotp {
   async begin(command: BeginTotpEnrolmentCommand): Promise<TotpEnrolmentOffer> {
     const secret = mintTotpSecret();
 
-    return this.store.run(async (tx) => {
-      await this.reauthenticate(tx, command);
+    await this.reauthenticate(command);
 
+    return this.store.run(async (tx) => {
       const account = await tx.findAccountById(command.accountId);
       // The account is the caller's own — AuthGuard resolved it — so absence here is a deleted
       // account racing its own session, not an input to validate.
@@ -150,9 +177,9 @@ export class ManageTotp {
 
   /** UC-193 in reverse. Opt-in that cannot be reversed is not opt-in (NFR-95). */
   async disable(command: DisableTotpCommand): Promise<void> {
-    await this.store.run(async (tx) => {
-      await this.reauthenticate(tx, command);
+    await this.reauthenticate(command);
 
+    await this.store.run(async (tx) => {
       const enrolment = await tx.findTotpEnrolment(command.accountId);
       if (enrolment === null) throw new TotpNotEnrolledError();
 
@@ -167,9 +194,9 @@ export class ManageTotp {
   async reissueRecoveryCodes(command: ReissueRecoveryCodesCommand): Promise<readonly string[]> {
     const minted = mintRecoveryCodes();
 
-    return this.store.run(async (tx) => {
-      await this.reauthenticate(tx, command);
+    await this.reauthenticate(command);
 
+    return this.store.run(async (tx) => {
       const enrolment = await tx.findTotpEnrolment(command.accountId);
       if (enrolment === null || enrolment.confirmedAt === null) throw new TotpNotEnrolledError();
 

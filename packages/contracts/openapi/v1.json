@@ -449,6 +449,68 @@
         ]
       }
     },
+    "/api/v1/account/password": {
+      "post": {
+        "description": "Requires the current password (FR-7). Optionally ends the account’s **other** active sessions — the one making the request is spared, so the device the change was made from keeps working. A provider-only account has no password to change and is refused; setting a first password for one is FR-8’s path.",
+        "operationId": "PasswordController_change",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The password was replaced, with a count of the other sessions ended.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/PasswordChangedResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The new password does not meet the policy.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The current password is not right, or the account holds none (problem type credential-invalid). Deliberately one answer for both.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many re-authentication attempts for this account in the window (§12.5.6). It bounds the route without touching FR-4’s lockout, so a mistype here cannot sign the user out.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Change the signed-in account’s password",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/auth/session": {
       "post": {
         "description": "Verifies the credential and issues a session: a short-lived access token and a single-use refresh token. Failures are uniform for unknown addresses and wrong passwords alike, rate-limited per address, and locked out after repeated failure.",
@@ -1699,6 +1761,42 @@
         },
         "required": [
           "code"
+        ]
+      },
+      "PasswordChangedResponseDto": {
+        "type": "object",
+        "properties": {
+          "otherSessionsTerminated": {
+            "type": "number",
+            "description": "How many other sessions were ended. Always 0 when the election was not made, and 0 is a normal answer when it was — the account simply had no other device signed in."
+          }
+        },
+        "required": [
+          "otherSessionsTerminated"
+        ]
+      },
+      "ChangePasswordRequestDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "The password in force now. A change without the correct one is refused (FR-7)."
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "The replacement, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character."
+          },
+          "terminateOtherSessions": {
+            "type": "boolean",
+            "default": false,
+            "description": "End the account’s **other** active sessions. Opt-in, because FR-7 says *where the user elects it* — and the session making this request is never one of them, so the device the change was made from keeps working."
+          }
+        },
+        "required": [
+          "currentPassword",
+          "password"
         ]
       },
       "FactorChallengeResponseDto": {

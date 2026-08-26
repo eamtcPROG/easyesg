@@ -204,6 +204,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the signed-in account’s password
+         * @description Requires the current password (FR-7). Optionally ends the account’s **other** active sessions — the one making the request is spared, so the device the change was made from keeps working. A provider-only account has no password to change and is refused; setting a first password for one is FR-8’s path.
+         */
+        post: operations["PasswordController_change"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/session": {
         parameters: {
             query?: never;
@@ -665,6 +685,27 @@ export interface components {
              * @example 123456
              */
             code: string;
+        };
+        PasswordChangedResponseDto: {
+            /** @description How many other sessions were ended. Always 0 when the election was not made, and 0 is a normal answer when it was — the account simply had no other device signed in. */
+            otherSessionsTerminated: number;
+        };
+        ChangePasswordRequestDto: {
+            /**
+             * Format: password
+             * @description The password in force now. A change without the correct one is refused (FR-7).
+             */
+            currentPassword: string;
+            /**
+             * Format: password
+             * @description The replacement, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.
+             */
+            password: string;
+            /**
+             * @description End the account’s **other** active sessions. Opt-in, because FR-7 says *where the user elects it* — and the session making this request is never one of them, so the device the change was made from keeps working.
+             * @default false
+             */
+            terminateOtherSessions: boolean;
         };
         FactorChallengeResponseDto: {
             /**
@@ -1346,6 +1387,59 @@ export interface operations {
             };
             /** @description The account has no confirmed second factor. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    PasswordController_change: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The password was replaced, with a count of the other sessions ended. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["PasswordChangedResponseDto"];
+                    };
+                };
+            };
+            /** @description The new password does not meet the policy. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The current password is not right, or the account holds none (problem type credential-invalid). Deliberately one answer for both. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many re-authentication attempts for this account in the window (§12.5.6). It bounds the route without touching FR-4’s lockout, so a mistype here cannot sign the user out. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

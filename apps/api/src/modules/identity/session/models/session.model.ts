@@ -18,6 +18,13 @@ export const SESSION_REVOKED_REASON = {
   REFRESH_REUSED: 'refresh_reused',
   /** FR-6 — a consumed reset link invalidates every session for the account. */
   PASSWORD_RESET: 'password_reset',
+  /**
+   * FR-7 — the user changed their password from a settings screen and elected to end their other
+   * sessions. Distinct from `PASSWORD_RESET` because the events differ in every way that matters
+   * to whoever answers the support call: this user was signed in, chose it, and keeps the session
+   * they chose it from.
+   */
+  PASSWORD_CHANGED: 'password_changed',
 } as const;
 
 export type SessionRevokedReason =

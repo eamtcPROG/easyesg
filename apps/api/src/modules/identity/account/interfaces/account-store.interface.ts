@@ -127,6 +127,25 @@ export interface AccountTransaction {
    */
   revokeAllSessionsForPasswordReset(accountId: string, at: Date): Promise<void>;
 
+  /**
+   * FR-7's optional termination: every live session for the account **except one** (task 27.5).
+   *
+   * The exception is the point. "Other active sessions" means the user keeps the device they are
+   * standing on — revoking it would sign them out of the screen they just changed their password
+   * from, which reads as the change having failed. `revokeAllSessionsForPasswordReset` above is
+   * the FR-6 case and spares nothing, because there the actor is by definition not holding a
+   * session.
+   *
+   * The reason is baked in as `password_changed` rather than passed, for that method's reason —
+   * one caller, and a reason parameter here would hand the account module the freedom to write a
+   * vocabulary it does not own. It answers how many were revoked, because FR-7's success message
+   * has to say what happened and "signed out of your other devices" is a lie if there were none.
+   */
+  revokeOtherSessionsForPasswordChange(
+    scope: { readonly accountId: string; readonly exceptSessionId: string },
+    at: Date,
+  ): Promise<number>;
+
   /** OQ-52's expiry. `ON DELETE CASCADE` takes the credential and any outstanding tokens with it. */
   deleteAccount(accountId: string): Promise<void>;
 

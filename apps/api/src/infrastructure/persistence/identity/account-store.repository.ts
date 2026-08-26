@@ -367,6 +367,23 @@ class AccountTransactionAdapter implements AccountTransaction {
     return rows.length > 0;
   }
 
+  async revokeOtherSessionsForPasswordChange(
+    scope: { readonly accountId: string; readonly exceptSessionId: string },
+    at: Date,
+  ): Promise<number> {
+    // `id <> $2` is FR-7's word "other", in SQL. One statement, so a session opened between a
+    // read and a write cannot slip through the gap a read-then-write would leave.
+    const result: unknown = await this.queryRunner.query(
+      `UPDATE identity.session
+          SET revoked_at = $3, revoked_reason = $4
+        WHERE account_id = $1 AND id <> $2 AND revoked_at IS NULL
+       RETURNING id`,
+      [scope.accountId, scope.exceptSessionId, at, SESSION_REVOKED_REASON.PASSWORD_CHANGED],
+    );
+    // UPDATE … RETURNING arrives as [rows, count] — see `returnedRows`.
+    return returnedRows<{ id: string }>(result).length;
+  }
+
   async revokeAllSessionsForPasswordReset(accountId: string, at: Date): Promise<void> {
     await this.queryRunner.query(
       `UPDATE identity.session

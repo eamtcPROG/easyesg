@@ -82,14 +82,25 @@ describe('second factor (UC-193, UC-195, NFR-95)', () => {
     await app?.close();
   });
 
-  // Only the factor is reset between tests, not the account: the subject here is enrolment, and
-  // every test starts from "signed in, no second factor".
+  /**
+   * Only the factor is reset between tests, not the account: the subject here is enrolment, and
+   * every test starts from "signed in, no second factor".
+   *
+   * The re-authentication window goes too, **since task 27.5**. Every password-gated route here
+   * now spends §12.5.6's five-attempt budget, and it is keyed on the account id rather than the
+   * address — so the drain matches the id as a suffix, the way `factor-challenge.e2e-spec.ts`
+   * learned to. Without it the suite exhausts its own window four tests in, which is the throttle
+   * working rather than a defect, and is exactly what happened when the retro-fit landed.
+   */
   beforeEach(async () => {
     await owner.query(`DELETE FROM identity.recovery_code WHERE account_id = $1`, [
       account.accountId,
     ]);
     await owner.query(`DELETE FROM identity.totp_credential WHERE account_id = $1`, [
       account.accountId,
+    ]);
+    await owner.query(`DELETE FROM identity.auth_attempt WHERE attempt_key LIKE $1`, [
+      `%:${account.accountId}`,
     ]);
   });
 
@@ -256,6 +267,26 @@ describe('second factor (UC-193, UC-195, NFR-95)', () => {
         code: objectOf<{ recoveryCodes: string[] }>(reissued).recoveryCodes[0],
       }),
     ).toBe(true);
+  }, 60_000);
+
+  // Task 27.5's correction, asserted on the routes it corrected. These shipped on 26 Aug 2026 as
+  // password oracles reachable with only a stolen session, bounded by nothing but the edge.
+  it('throttles re-authentication across the password-gated routes, sharing one budget', async () => {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await http()
+        .post('/api/v1/account/totp/enrolment')
+        .set(auth())
+        .send({ password: 'not-the-password' })
+        .expect(403);
+    }
+
+    // A DIFFERENT route, refused by the attempts the first one spent: a settings screen has one
+    // budget, not one per control — otherwise three routes would mean three times the guesses.
+    await http()
+      .post('/api/v1/account/totp/removal')
+      .set(auth())
+      .send({ password: PASSWORD })
+      .expect(429);
   }, 60_000);
 
   it('closes the surface to an anonymous caller', async () => {

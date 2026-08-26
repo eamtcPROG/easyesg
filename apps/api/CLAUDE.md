@@ -496,6 +496,22 @@ single-use so a mistype keeps the caller on the step. Factor failures count towa
 throttle key is `factor-challenge:<ip>:<accountId>` — keyed on the **account**, unlike sign-in's,
 which carries the email. A test draining `auth_attempt` by address alone will miss it.
 
+Task 27.5 adds FR-7 (UC-10): `POST /api/v1/account/password` behind `@RequiresAccount()`, with
+`terminateOtherSessions` **opt-in** because the requirement says *where the user elects it*. Two
+things it does not share with FR-6's reset. It spares the **current** session — "other" is the
+word, and the session id comes from the request context, never the body, or a caller could
+nominate which session to keep. And it revokes with a fourth `revoked_reason`, `password_changed`,
+added by migration rather than borrowing `password_reset`: the column exists so support can tell
+the causes apart.
+
+**Every route that asks for the current password behind a session shares one throttle key**
+(`reauthentication:<ip>:<accountId>`, §12.5.6) — this route and task 27.2's three password-gated
+TOTP routes, which shipped without one. A settings screen has one budget, not one per control. It
+is **not** wired to FR-4's lockout: the caller already holds a session, and a mistype must not sign
+them out of every device. Two consequences for tests: the key carries the **account id**, so a
+drain matching an email address misses it; and a suite touching these routes more than four times
+must drain between tests, which is how the retro-fit announced itself.
+
 ### Adding a column that holds a secret
 
 Since task 27.1 there is one mechanism and the database enforces it (§12.5.6's secrets-at-rest row).

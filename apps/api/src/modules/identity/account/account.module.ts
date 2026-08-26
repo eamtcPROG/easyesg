@@ -7,12 +7,14 @@ import { AccountStoreRepository } from '@api/infrastructure/persistence/identity
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
 import { AuthController } from './controllers/auth.controller';
+import { PasswordController } from './controllers/password.controller';
 import { TotpController } from './controllers/totp.controller';
 import { PasswordResetEmailHandler } from './consumers/password-reset-email.handler';
 import { VerificationEmailHandler } from './consumers/verification-email.handler';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { ACCOUNT_STORE, type AccountStore } from './interfaces/account-store.interface';
 import { AccountService } from './services/account.service';
+import { PasswordService } from './services/password.service';
 import { TotpService } from './services/totp.service';
 import { PASSWORD_HASHER, type PasswordHasher } from './interfaces/password-hasher.interface';
 import { RegisterAccount } from './use-cases/register-account.use-case';
@@ -20,6 +22,7 @@ import { RequestPasswordReset } from './use-cases/request-password-reset.use-cas
 import { ResendVerificationEmail } from './use-cases/resend-verification-email.use-case';
 import { ResetPassword } from './use-cases/reset-password.use-case';
 import { AccountSecondFactor } from './use-cases/account-second-factor';
+import { ChangePassword } from './use-cases/change-password.use-case';
 import { ConsumeRecoveryCode, ManageTotp } from './use-cases/manage-totp.use-case';
 import { SECOND_FACTOR } from './interfaces/second-factor.interface';
 import { VerifyEmail } from './use-cases/verify-email.use-case';
@@ -61,6 +64,7 @@ const { mode } = configuration();
 const httpProviders: Provider[] = [
   AccountService,
   TotpService,
+  PasswordService,
   { provide: ACCOUNT_STORE, useClass: AccountStoreRepository },
   {
     /**
@@ -90,6 +94,12 @@ const httpProviders: Provider[] = [
    * the module as a whole without re-wiring every use case individually.
    */
   { provide: CLOCK, useValue: () => new Date() },
+  {
+    provide: ChangePassword,
+    inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AccountStore, hasher: PasswordHasher, now: Clock) =>
+      new ChangePassword(store, hasher, now),
+  },
   {
     provide: ManageTotp,
     inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
@@ -166,7 +176,7 @@ const workerProviders: Provider[] = [VerificationEmailHandler, PasswordResetEmai
   // (ISP). Nothing else here is exported, so `ManageTotp`'s password-gated methods stay
   // unreachable from an unauthenticated route.
   exports: mode === APP_MODE.WORKER ? [] : [SECOND_FACTOR],
-  controllers: mode === APP_MODE.WORKER ? [] : [AuthController, TotpController],
+  controllers: mode === APP_MODE.WORKER ? [] : [AuthController, TotpController, PasswordController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
 })
 export class AccountModule {}

@@ -350,6 +350,29 @@ export class FakeAccountStore implements AccountStore {
         return Promise.resolve(true);
       },
 
+      revokeOtherSessionsForPasswordChange(
+        scope: { readonly accountId: string; readonly exceptSessionId: string },
+        at: Date,
+      ): Promise<number> {
+        let terminated = 0;
+        for (const session of store.sessions) {
+          // `!== exceptSessionId` is FR-7's "other", modelled — a fake that revoked everything
+          // would let a spec prove the current session survives when the adapter does not.
+          if (
+            session.accountId === scope.accountId &&
+            session.id !== scope.exceptSessionId &&
+            !session.revokedAt
+          ) {
+            session.revokedAt = at;
+            // Literal for the sibling method's stated reason: this fake stands in for the
+            // database, whose own copy of the vocabulary is the CHECK constraint.
+            session.revokedReason = 'password_changed';
+            terminated += 1;
+          }
+        }
+        return Promise.resolve(terminated);
+      },
+
       revokeAllSessionsForPasswordReset(accountId: string, at: Date): Promise<void> {
         for (const session of store.sessions) {
           if (session.accountId === accountId && !session.revokedAt) {

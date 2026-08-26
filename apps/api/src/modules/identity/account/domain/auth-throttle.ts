@@ -89,3 +89,28 @@ export const factorChallengeThrottleKey = (
   clientIp: string | undefined,
   accountId: string,
 ): string => throttleKey('factor-challenge', clientIp, accountId);
+
+/**
+ * **Re-authentication** — every route that asks for the current password *behind an existing
+ * session* (§12.5.6's task-27.5 row): FR-7's password change, and task 27.2's three
+ * password-gated TOTP routes, which shipped without one.
+ *
+ * **Such a route is a password oracle reachable with only a stolen session.** The edge's
+ * authenticated budget is 300 req/min per organization, so an unbounded route yields eighteen
+ * thousand guesses an hour against a value people reuse across services — and the attacker already
+ * holds the session, so nothing else stops them.
+ *
+ * **Its own path segment**, for `adminSignInThrottleKey`'s reason: someone fumbling their password
+ * on a settings screen has not been probing the sign-in page, and neither budget should exhaust the
+ * other. **Keyed on the account** rather than the address, which is buildable here for
+ * `invitationAcceptThrottleKey`'s reason — the route requires a session, so the account is known
+ * before the password is looked at, and this is §12.5.6's specified key rather than a degradation.
+ *
+ * What it deliberately does **not** do is feed FR-4's lockout, unlike sign-in and the factor step.
+ * The caller has already proved possession of a session; a mistyped password on a settings screen
+ * must not be able to sign them out of every device. Rate without lockout is the whole of it.
+ */
+export const reauthenticationThrottleKey = (
+  clientIp: string | undefined,
+  accountId: string,
+): string => throttleKey('reauthentication', clientIp, accountId);

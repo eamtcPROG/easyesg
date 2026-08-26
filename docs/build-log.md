@@ -3628,3 +3628,121 @@ not memoizing is the rule rather than the oversight.
 A-01's artboard also draws a **recovery-code route**, and it still has nothing to point at: task
 27.2 built recovery codes for the **tenant** realm only, and the admin realm has none. That is now
 stated in `factor-step.tsx` rather than left as a deferral that reads as merely unbuilt.
+
+## Task 27.5 — FR-7, and a hole this task was asked to close in its own predecessor · 2026-08-27
+
+UC-10 is a small requirement with two clauses, and both turned out to be load-bearing: *"a change
+without the correct current password is refused"*, and *"**where the user elects it**, other active
+sessions are terminated"*.
+
+### Two words decided most of the design
+
+**"Where"** makes the election **opt-in**. Not defaulted on, which would make a routine password
+change sign someone out of their phone without their having asked for it.
+
+**"Other"** means the session making the change survives. That is the difference from FR-6's reset,
+which spares nothing — and it can afford to, because there the actor by definition holds no session.
+Here revoking the current session would sign the user out of the screen they had just used, which
+reads as the change having failed. It is why `ChangePassword` takes a `sessionId` at all, why the
+store method is `revokeOtherSessionsForPasswordChange(…, exceptSessionId)` rather than a reuse of
+the reset one, and why the e2e's most important assertion is a **negative**: the session that made
+the change still authenticates a guarded route.
+
+The session id is resolved from the request context and never from the body. A session id arriving
+from the wire would let a caller nominate which session to spare — the same class of defect as an
+account id in a path, and considerably worse, because it would let someone keep a session they do
+not hold.
+
+### A fourth revocation reason, by migration
+
+`identity.session.revoked_reason` allowed three values and a password change is none of them. Task
+21's migration says exactly what the column is for — *"when a pilot user reports being signed out,
+the difference between their own sign-out, a password reset and a reuse-detection trip is the whole
+diagnosis"* — so borrowing `password_reset` would have cost nothing today and made the trail state
+something untrue about an account the user never lost. `password_changed` is added by an additive
+`CHECK` widening; the `down` narrows it back and will **fail loudly** on a database where someone
+has changed a password, which is the correct failure rather than a schema that claims three values
+while the data holds four.
+
+### The hole in 27.2, closed here rather than noted
+
+FR-7 makes this route a password **oracle behind a session** — and 27.2's three password-gated TOTP
+routes, shipped the day before, are exactly the same thing with nothing in front of them. The edge's
+authenticated budget is 300 req/min per organization: eighteen thousand guesses an hour at a value
+people reuse across services, available to someone who stole only a session cookie.
+
+So §12.5.6 gains a **re-authentication** row and all four routes share one key. Three properties,
+each chosen against an alternative:
+
+- **Its own path segment**, not sign-in's, for `adminSignInThrottleKey`'s reason — someone fumbling
+  a password on a settings screen has not been probing the sign-in page.
+- **Keyed on the account**, not the address, which is buildable here because the route requires a
+  session. That is §12.5.6's specified key rather than the degradation the social path had to take.
+- **Deliberately not wired to FR-4's lockout**, unlike sign-in and the factor step. The caller has
+  already proved possession of a session, and a mistyped password on a settings screen must not be
+  able to sign them out of every device. Rate without lockout is the whole of what this buys.
+
+**The retro-fit proved itself by breaking 27.2's own suite.** Adding the bound immediately failed
+four of its tests on a five-attempt window — which is the strongest evidence the throttle is real.
+The fix was the lesson `factor-challenge.e2e-spec.ts` learned the day before: the re-authentication
+key carries the **account id**, so a drain matching the email address misses it entirely. A new
+cross-route test now pins the property that matters most — five failures on `/totp/enrolment` refuse
+a later call to `/totp/removal`, because **a settings screen has one budget, not one per control**.
+
+Restructuring `reauthenticate` was the other half. It had verified the password *inside* the
+caller's transaction; adding a throttle there would have meant a nested `run` — two connections held
+for one request, with the attempt row rolling back on every refusal, which is the failure it exists
+to prevent. It now runs entirely outside, in `SignIn`'s several-short-transactions shape, which also
+takes two Argon2id verifications off a pooled connection.
+
+### What the use case refuses, and one thing it deliberately does not do
+
+A **provider-only account** (FR-2) holds no credential row and is refused rather than allowed to set
+a first password. FR-7 is a *change*; creating a first password for a provider account is FR-8's
+path, at 27.6, where the rule that makes it safe — never remove the last credential — actually
+lives. Both refusals answer `credential-invalid`, so a caller cannot learn from the refusal whether
+the account has a password at all.
+
+The policy check runs **before** the throttle is touched, so a rejected new password costs the user
+their typing rather than an attempt against their own window — the ordering `ResetPassword` already
+takes, for the same reason.
+
+The response carries a **count** rather than an acknowledgement, and that is UX-92's third part
+arriving as data: a screen that says "signed out of your other devices" when there were none is
+telling the user something that did not happen.
+
+### The intermittent e2e failure recurred, and the table grows a fifth row
+
+`gates:clean` went red once more, in the same shape task 27.3 recorded: `POST /api/v1/invitations`
+answering **404** inside `invitation-acceptance.e2e-spec.ts` — an untouched suite, a route that
+exists, and a failure that did not reproduce. The suite passes 16/16 standalone and the full e2e
+passes 281/281 immediately afterwards, as it did four times for 27.3.
+
+That makes **five** occurrences across two tasks: a 404 on `/auth/verify-email`, a `400` with no
+problem `type`, a `socket hang up`, a `401` on a token minted seconds earlier, and now a 404 on
+`/invitations`. Different suites, different symptoms, one serial in-process run that creates and
+closes twenty Nest applications. Two of the five are a **404 on a route that exists**, which is the
+pair most likely to share a cause.
+
+It is still not fixed here, for the reason it was not fixed there: nothing has established a
+mechanism, and a fix applied to an unreproduced failure looks exactly like one that worked. The
+spun-off task already carries the evidence and the standing instruction not to claim an explanation
+it has not earned; this occurrence is added to it.
+
+### The `nestjs-best-practices` pass
+
+**`security-rate-limiting` (HIGH) — the rule applied, its means declined by name.** The skill asks
+for `@nestjs/throttler`; this codebase throttles through `identity.auth_attempt` and one shared
+implementation, because §12.5.6 specifies a per-(IP, account) key that must be durable and shared
+across instances, and an in-memory per-instance counter is neither. Four auth paths already use it;
+a fifth mechanism would be the drift the shared implementation exists to prevent.
+
+**`di-scope-awareness` — applied, and worth stating because the skill warns about the opposite.**
+Nothing here is request-scoped: the ambient actor and session come from `AsyncLocalStorage` through
+`requestContext()`, so every provider stays a singleton and nothing bubbles request scope up the
+dependency tree.
+
+**Applied:** `arch-single-responsibility` (one use case, one service method), `db-use-transactions`
+(the credential replacement and the revocation commit together — a crash between them would leave
+the new password live and the old sessions alive, which is the state the election exists to
+prevent), `security-validate-all-input`, `api-use-dto-serialization`, `arch-use-repository-pattern`.
