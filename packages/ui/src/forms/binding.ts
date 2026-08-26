@@ -75,9 +75,24 @@ export type BoundRules<TValues extends FieldValues, TName extends FieldPath<TVal
 };
 
 /**
- * One field's subscription. `useController` rather than `register` on purpose: it subscribes to
- * this field alone, where `register` plus a read of `formState.errors` re-renders the whole form
- * on any field's error — the more fields a screen has, the more that matters.
+ * One field's subscription, in the two shapes a control can take.
+ *
+ * `useController` rather than `register` on purpose: it subscribes to this field alone, where
+ * `register` plus a read of `formState.errors` re-renders the whole form on any field's error —
+ * the more fields a screen has, the more that matters.
+ *
+ * **Why two shapes rather than one.** A native input reports a change as an *event* (`onChange`);
+ * a Radix control reports the *value* (`onValueChange`), because there is no event to read it
+ * from. The adaptation between them lives here, once, rather than in each bound control — the
+ * same reason `isLocale`/`toLocale` sit beside `LOCALES` instead of being retyped per caller. It
+ * was added for `FormSelect` (26 Aug 2026) and is what `FormCombobox`, `FormMultiSelect`,
+ * `FormSwitch` and `FormDate` will each read instead of re-deriving.
+ *
+ * **Both are spread, never picked apart at the call site.** `field` carries a `ref`, and the
+ * React Compiler's refs rule correctly refuses `input.ref` in a render body; more to the point, a
+ * JSX spread does not check excess properties, so a control wired field-by-field can silently
+ * drop the one it does not accept — a select that opens, renders and never reports a choice.
+ * Handing the caller a complete, correctly-shaped object removes the chance to wire it wrong.
  */
 export function useBoundField<TValues extends FieldValues, TName extends FieldPath<TValues>>({
   control,
@@ -90,13 +105,22 @@ export function useBoundField<TValues extends FieldValues, TName extends FieldPa
 }) {
   const { field, fieldState } = useController({ control, name, rules });
   const scope = useFieldScope(control);
+  const { onChange, ...rest } = field;
+
+  // `?? ''` is load-bearing twice over. For a native input: with no `defaultValues` the first
+  // render hands back `undefined`, and React then logs "changing an uncontrolled input to be
+  // controlled" the moment someone types — an empty string is what an empty text input holds.
+  // For a Radix control it is the same value by coincidence and by design: `''` is precisely what
+  // that library reserves for "nothing chosen, show the placeholder", which is also why no
+  // `SelectOption` may take it as a value.
+  const value = field.value ?? '';
 
   return {
     id: fieldElementId({ scope, name }),
     error: fieldState.error?.message,
-    // `?? ''` is load-bearing: with no `defaultValues` the first render hands back `undefined`,
-    // and React then logs "changing an uncontrolled input to be controlled" the moment someone
-    // types. An empty string is what an empty text input holds.
-    input: { ...field, value: field.value ?? '' },
+    /** A native input: `value` plus an event-shaped `onChange`. */
+    input: { ...rest, onChange, value },
+    /** A control that reports its own value — Radix `Select`, and its successors. */
+    choice: { ...rest, onValueChange: onChange, value },
   };
 }

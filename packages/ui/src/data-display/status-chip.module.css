@@ -1,0 +1,38 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  /* The pill radius the token set reserves for this component and nothing else. */
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid;
+  font: 500 12px/18px var(--font-text);
+  white-space: nowrap;
+}
+
+/* Every tone carries a border as well as a fill, following Callout's arrangement: at the contrast
+   floor a tint alone can vanish against a sunken surface, and the chip must stay a chip when it
+   does. The semantic state tokens are tier 2 — the tier Callout reads for the same reason, since
+   these are the product's state colours rather than this component's own. */
+.neutral {
+  background: var(--state-neutral-tint);
+  border-color: var(--border-default);
+  color: var(--state-neutral);
+}
+
+.pending {
+  background: var(--state-pending-tint);
+  border-color: var(--state-pending);
+  color: var(--state-pending);
+}
+
+.positive {
+  background: var(--state-ok-tint);
+  border-color: var(--state-ok);
+  color: var(--state-ok);
+}
+
+.attention {
+  background: var(--state-attention-tint);
+  border-color: var(--state-attention);
+  color: var(--state-attention);
+}

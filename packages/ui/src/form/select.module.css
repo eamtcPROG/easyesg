@@ -1,0 +1,158 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  color: var(--text-default);
+}
+
+/* Present for assistive technology, absent for the eye — the standard clip, never `display: none`,
+   which would take it out of the accessibility tree along with the pixels. */
+.labelHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The trigger is the field. It carries the same box as `TextField`'s `.control` — that parity is
+   what the sheet's MUD note means by "keep MUD's field metrics so a themed build needs no layout
+   change", and it is the reason this is one button rather than a wrapper around a control. */
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  /* 40px, the target size everything a first-time user must hit carries (NFR-75). */
+  min-block-size: 40px;
+  inline-size: 100%;
+  padding-inline: var(--space-4);
+  /* `--field-border-rest` resolves to `border-strong`: a field must look enterable (§11.5's second
+     recorded addition). */
+  border: 1px solid var(--field-border-rest);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  color: var(--text-default);
+  font: 400 15px/24px var(--font-text);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color var(--motion-instant) var(--motion-ease);
+}
+
+/* The two-layer ring §11.3 specifies for `--border-focus` (pine.600 + pine.200), matching
+   `TextField`. The native draft drew border-colour alone and was the odd one out. */
+.trigger:focus-visible {
+  outline: none;
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 1px var(--field-border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.trigger[data-placeholder] {
+  color: var(--text-muted);
+}
+
+.trigger:disabled {
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  cursor: default;
+}
+
+.invalid {
+  border-color: var(--field-border-invalid);
+}
+
+.chevron {
+  display: flex;
+  inline-size: 16px;
+  block-size: 16px;
+  color: var(--text-muted);
+}
+
+.chevron svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* `menu.surface` — the same three tokens `LanguageSwitcher`'s Radix menu already uses, so one
+   tier-2 edit restyles every floating surface in the product rather than each one separately. */
+.menu {
+  inline-size: var(--radix-select-trigger-width);
+  max-block-size: var(--radix-select-content-available-height);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  box-shadow: var(--elevation-1);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.viewport {
+  padding: var(--space-2);
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-1);
+  color: var(--text-default);
+  font: 400 14px/20px var(--font-text);
+  cursor: pointer;
+  outline: none;
+}
+
+/* `menu.item.active` — keyboard and pointer highlight are one state in Radix, which is correct:
+   the arrow keys and the mouse are moving the same cursor. */
+.item[data-highlighted] {
+  background: var(--accent-tint);
+}
+
+.item[data-disabled] {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.itemBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.itemDescription {
+  color: var(--text-muted);
+}
+
+/* `menu.item.selected` — a mark, not a tint. See the component's note on §6.4. */
+.itemIndicator {
+  display: flex;
+  flex: none;
+  inline-size: 16px;
+  block-size: 16px;
+  margin-block-start: var(--space-1);
+  color: var(--accent);
+}
+
+.itemIndicator svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.help {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.error {
+  margin: 0;
+  color: var(--state-error);
+}

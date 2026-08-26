@@ -1,0 +1,50 @@
+.nav {
+  border-block-end: 1px solid var(--border-default);
+  background: var(--surface-default);
+}
+
+.list {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0 var(--space-6);
+  list-style: none;
+  /* The tier scrolls rather than wrapping: a second row of sections reads as a second tier, and
+     §4.2 says there are three. */
+  overflow-x: auto;
+}
+
+.item,
+.current {
+  display: inline-block;
+  padding: var(--space-4) var(--space-2);
+  border-block-end: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.item :is(a),
+.current :is(a) {
+  display: inline-block;
+  /* 40px total with the padding above — the target size everything a first-time user must hit
+     carries (WCAG 2.2, NFR-75). */
+  padding: var(--space-1) var(--space-3);
+  color: var(--text-body);
+  font: 500 15px/24px var(--font-text);
+  text-decoration: none;
+  border-radius: var(--radius-1);
+}
+
+.item:hover :is(a) {
+  color: var(--text-default);
+  background: var(--surface-sunken);
+}
+
+/* The current section is marked by an underline AND a colour: colour is never the sole carrier
+   (UX-102), and `aria-current` carries it to assistive technology besides. */
+.current {
+  border-block-end-color: var(--accent);
+}
+
+.current :is(a) {
+  color: var(--accent);
+}

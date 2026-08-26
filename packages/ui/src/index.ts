@@ -31,14 +31,45 @@ export { TextLink, type TextLinkProps } from './primitives/text-link';
 // form controls
 export { FormErrorSummary, type FormErrorSummaryItem, type FormErrorSummaryProps } from './form/form-error-summary';
 export { PasswordField, type PasswordFieldProps } from './form/password-field';
+export { Select, type SelectOption, type SelectProps } from './form/select';
 export { RequirementList, type RequirementItem, type RequirementListProps } from './form/requirement-list';
 export { TextField, type TextFieldProps } from './form/text-field';
 
 // feedback
 export { Callout, type CalloutProps } from './feedback/callout';
+export {
+  ConsequenceDialogue,
+  type ConsequenceDialogueProps,
+} from './feedback/consequence-dialogue';
+export { EmptyState, type EmptyStateProps } from './feedback/empty-state';
 
 // navigation
 export { LanguageSwitcher, type LanguageSwitcherProps, type SwitcherLocale } from './navigation/language-switcher';
+export { Pagination, type PaginationProps } from './navigation/pagination';
+export {
+  WorkspaceNav,
+  type WorkspaceNavItem,
+  type WorkspaceNavProps,
+} from './navigation/workspace-nav';
+
+// Data display — §11.5
+export {
+  COLUMN_ALIGN,
+  DataTable,
+  SORT_DIRECTION,
+  nextSort,
+  type DataTableColumn,
+  type DataTableProps,
+  type ColumnAlign,
+  type DataTableSort,
+  type SortDirection,
+} from './data-display/data-table';
+export {
+  STATUS_TONE,
+  StatusChip,
+  type StatusChipProps,
+  type StatusTone,
+} from './data-display/status-chip';
 
 // archetypes
 export { FocusShell, type FocusShellProps } from './archetypes/focus-shell';

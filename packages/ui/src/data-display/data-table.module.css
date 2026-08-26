@@ -1,0 +1,90 @@
+/* The table scrolls inside its own container rather than the page: a workspace screen must never
+   scroll horizontally as a whole, and a role column plus an action column overflows 390px. */
+.scroller {
+  overflow-x: auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  /* Below this the columns crush rather than scroll, and the scroller above takes over. */
+  min-inline-size: 34rem;
+}
+
+.caption {
+  text-align: start;
+  padding: var(--space-4) var(--space-5);
+  color: var(--text-muted);
+  border-block-end: 1px solid var(--border-default);
+}
+
+.table th,
+.table td {
+  text-align: start;
+  padding: var(--space-4) var(--space-5);
+  border-block-end: 1px solid var(--border-default);
+  vertical-align: middle;
+}
+
+.table th {
+  font: 600 14px/20px var(--font-text);
+  color: var(--text-body);
+  background: var(--surface-sunken);
+  white-space: nowrap;
+}
+
+.table td {
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-default);
+}
+
+/* The last row's rule would double the container's own border. */
+.table tbody tr:last-child td {
+  border-block-end: none;
+}
+
+.end {
+  text-align: end;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* Fills the header cell so the whole cell is the target, not just the words (NFR-75). */
+  margin: calc(var(--space-4) * -1) calc(var(--space-5) * -1);
+  padding: var(--space-4) var(--space-5);
+  inline-size: calc(100% + var(--space-5) * 2);
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.sortButton:hover {
+  color: var(--text-default);
+  background: var(--state-neutral-tint);
+}
+
+.sortGlyph,
+.sortGlyphIdle {
+  inline-size: 14px;
+  block-size: 14px;
+  flex-shrink: 0;
+}
+
+/* The idle glyph is present but quiet: it says the column CAN be sorted without competing with
+   the one that is. Removing it entirely would leave sortability discoverable only by hovering. */
+.sortGlyphIdle {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.sortGlyph {
+  color: var(--accent);
+}

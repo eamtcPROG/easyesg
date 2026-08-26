@@ -16,5 +16,6 @@
  */
 export { FormTextField, type FormTextFieldProps } from './form-text-field';
 export { FormPasswordField, type FormPasswordFieldProps } from './form-password-field';
+export { FormSelect, type FormSelectProps } from './form-select';
 export { FormSummary } from './form-summary';
 export { fieldElementId, useBoundField, useFieldScope, type BoundRules } from './binding';
