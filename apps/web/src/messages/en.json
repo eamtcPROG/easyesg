@@ -16,7 +16,11 @@
       "cookies": "Cookie policy"
     },
     "signedInAs": "Signed in as",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "workspaceNav": {
+      "label": "Organisation sections",
+      "users": "Users & access"
+    }
   },
   "identity": {
     "unreachable": {
@@ -221,6 +225,125 @@
           "title": "Link not recognised",
           "body": "This link does not match any invitation, so you have not been added to an organisation. Check that you copied all of it from the email, or ask for a new invitation."
         }
+      }
+    }
+  },
+  "organization": {
+    "access": {
+      "title": "Users & access",
+      "lede": "Who can see your organisation's ESG data, and what each person may do.",
+      "caption": "People with access to this organisation",
+      "roles": {
+        "editor": "Edit",
+        "viewer": "View only",
+        "organization_administrator": "Organisation administrator"
+      },
+      "roleDescriptions": {
+        "editor": "Fills in and changes the report data.",
+        "viewer": "Reads everything, changes nothing."
+      },
+      "standings": {
+        "active": "Active",
+        "invited": "Invited",
+        "invitation_expired": "Invitation expired"
+      },
+      "filters": {
+        "role": "Role",
+        "anyRole": "All roles",
+        "standing": "Standing",
+        "anyStanding": "All standings"
+      },
+      "columns": {
+        "person": "Person",
+        "role": "Role",
+        "standing": "Standing",
+        "activity": "Last activity",
+        "actions": "Actions"
+      },
+      "activity": {
+        "lastActive": "{date}",
+        "never": "Not signed in yet",
+        "invited": "Invited {date}",
+        "expiredOn": "Link expired {date}"
+      },
+      "sort": {
+        "sortBy": "Sort by {column}",
+        "ascending": "ascending",
+        "descending": "descending"
+      },
+      "pagination": {
+        "region": "Pagination",
+        "previous": "Previous page",
+        "next": "Next page",
+        "position": "{from}–{to} of {total}"
+      },
+      "empty": {
+        "firstUse": {
+          "title": "You are the only one with access so far",
+          "body": "Invite a colleague to fill the report in with you, or just to read it.",
+          "action": "Go to the invitation form"
+        },
+        "filtered": {
+          "title": "Nobody matches these filters",
+          "body": "The filters you chose match nobody on the list. Clear them to see everyone again.",
+          "action": "Clear the filters"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "This page is for organisation administrators",
+          "body": "Your account does not administer this organisation, so the list of people with access is not shown to you. Ask an administrator to make the change you need.",
+          "action": "Back to the home page"
+        },
+        "unreachable": {
+          "title": "The list could not be loaded",
+          "body": "We could not fetch the list of people with access. Nothing has changed in the meantime. Reload the page in a few moments.",
+          "action": "Reload the page"
+        }
+      },
+      "invite": {
+        "heading": "Invite a colleague",
+        "intro": "We send a link that works for seven days. They choose their own password.",
+        "email": "Email address",
+        "emailRequired": "Enter the email address of the person you are inviting, or the invitation cannot be sent.",
+        "role": "Role granted",
+        "rolePlaceholder": "Choose a role",
+        "roleRequired": "Choose the role this person receives, so they know what they may do once they accept.",
+        "submit": "Send the invitation",
+        "sent": "The invitation has been sent to {email}.",
+        "sentBody": "They receive an email with a link that works for seven days. Until they accept, they appear on the list as invited.",
+        "sentAction": "You can send it again or withdraw it from the list above.",
+        "failedAction": "Find the person on the list above and choose what to do next."
+      },
+      "actions": {
+        "changeRole": "Role for {email}",
+        "remove": "Withdraw access",
+        "resend": "Send the invitation again",
+        "revoke": "Withdraw the invitation",
+        "lastAdministrator": "This is the organisation's only administrator."
+      },
+      "remove": {
+        "title": "Withdraw this person's access?",
+        "consequence": "They lose access to every report in this organisation immediately, on every device.",
+        "retained": "What they entered stays in the change history, attributed to them.",
+        "confirm": "Withdraw access",
+        "cancel": "Keep access",
+        "done": "{email} no longer has access."
+      },
+      "revoke": {
+        "title": "Withdraw this invitation?",
+        "consequence": "The link they were sent stops working from this moment.",
+        "confirm": "Withdraw the invitation",
+        "cancel": "Keep the invitation",
+        "done": "The invitation for {email} has been withdrawn."
+      },
+      "resent": "We have sent the invitation to {email} again. The earlier link no longer works.",
+      "roleChanged": "{email} now has the role “{role}”.",
+      "loading": "Loading the list of people with access…",
+      "notice": {
+        "body": "The list above already shows the new situation.",
+        "action": "There is nothing further to do.",
+        "failedAction": "Try again, or reload the page."
       }
     }
   }

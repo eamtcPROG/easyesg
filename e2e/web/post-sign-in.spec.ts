@@ -62,7 +62,7 @@ test('a member of nothing is sent to create an organization', async ({ page }) =
 test('a member of one organization is sent to home', async ({ page }) => {
   const email = addressFor('one');
   await registerAndVerify(page, email);
-  organizations.push(await grantMembership(email, `${RUN_PREFIX} Alpha`));
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} Alpha` }));
   await signIn(page, email);
 
   await page.waitForURL('**/home');
@@ -75,7 +75,7 @@ test('a member of one organization is sent to home', async ({ page }) => {
 test('a deep link is honoured when one organization resolves', async ({ page }) => {
   const email = addressFor('return-honoured');
   await registerAndVerify(page, email);
-  organizations.push(await grantMembership(email, `${RUN_PREFIX} Beta`));
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} Beta` }));
   await signIn(page, email, '/reports');
 
   await page.waitForURL('**/reports');

@@ -100,8 +100,23 @@ export async function cleanupAccounts(prefix: string): Promise<void> {
  * `identity.membership`'s INSERT policy is a real `WITH CHECK`, so an unbound insert is refused
  * rather than mis-scoped. The organization row itself goes in unbound, through the permissive
  * INSERT policy the tenant root carries for FR-13.
+ *
+ * **One named object, not three positional arguments** (CLAUDE.md, "Conventions"). It took two
+ * `string`s and gained a third when S-16 needed a non-administrator; swapped, the address becomes
+ * the organization's name and the membership matches no account, so the helper commits an
+ * organization nobody belongs to and reports success. Named fields make that unrepresentable.
  */
-export async function grantMembership(email: string, organizationName: string): Promise<string> {
+export async function grantMembership(input: {
+  readonly email: string;
+  readonly organizationName: string;
+  /**
+   * Defaults to Organization Administrator, which is what every caller before task 26.4 wanted.
+   * S-16 needs the other two as well: its permission state is what an editor or a viewer sees, and
+   * seeding one is the only way to reach it — no route demotes the account you are signed in as.
+   */
+  readonly role?: 'editor' | 'viewer' | 'organization_administrator';
+}): Promise<string> {
+  const { email, organizationName, role = 'organization_administrator' } = input;
   const client = new Client(asOwner());
   await client.connect();
   try {
@@ -119,9 +134,9 @@ export async function grantMembership(email: string, organizationName: string): 
     await client.query(`SELECT set_config('app.current_org', $1, true)`, [organizationId]);
     await client.query(
       `INSERT INTO identity.membership (account_id, organization_id, role)
-       SELECT a.id, $2, 'organization_administrator' FROM identity.account a
+       SELECT a.id, $2, $3 FROM identity.account a
         WHERE lower(a.email) = lower($1)`,
-      [email, organizationId],
+      [email, organizationId, role],
     );
     await client.query('COMMIT');
     return organizationId;

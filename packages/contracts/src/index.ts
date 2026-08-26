@@ -59,6 +59,14 @@ export type ResetPasswordRequest = components['schemas']['ResetPasswordRequestDt
 // identity — memberships and members (FR-12, FR-56 … FR-60; tasks 25.2, 25.3). Two shapes and not
 // one: `Member` is a person in THIS organization, read with a tenant bound; `AccountMembership` is
 // an organization the CALLER belongs to, read before any tenant exists. They never appear together.
+export {
+  INVITED_ROLE,
+  MEMBERSHIP_ROLE,
+  MEMBERSHIP_STATUS,
+  type InvitedRole,
+  type MembershipRole,
+  type MembershipStatus,
+} from './membership';
 export type Member = components['schemas']['MemberResponseDto'];
 export type ChangeMemberRoleRequest = components['schemas']['ChangeMemberRoleRequestDto'];
 export type AccountMembership = components['schemas']['AccountMembershipResponseDto'];

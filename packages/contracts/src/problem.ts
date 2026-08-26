@@ -51,6 +51,13 @@ export const PROBLEM_TYPE = {
   SocialIdentityUnknown: 'https://easyesg.md/problems/social-identity-unknown',
   /** BR-ID-3's collision — the callback routes to password sign-in (linking is task 27). */
   SocialEmailInUse: 'https://easyesg.md/problems/social-email-in-use',
+  /** A signed-in account with no membership in the organization it asked about — S-16 and every
+   *  other `(app)` read treat this as "this workspace is not yours", not as an error (task 26.4). */
+  MembershipRequired: 'https://easyesg.md/problems/membership-required',
+  /** A member whose role does not admit the route. S-16 is OA-only at the controller, so this is
+   *  what an editor or a viewer receives, and the screen renders its permission state rather than
+   *  an error — the branch is to a DIFFERENT SCREEN STATE, which is the bar this registry sets. */
+  InsufficientRole: 'https://easyesg.md/problems/insufficient-role',
 } as const;
 
 export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

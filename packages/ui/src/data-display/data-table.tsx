@@ -50,19 +50,43 @@ export interface DataTableSort<TColumnKey extends string> {
   readonly direction: SortDirection;
 }
 
-export interface DataTableColumn<TRow, TColumnKey extends string> {
+interface DataTableColumnShared<TRow, TColumnKey extends string> {
   readonly key: TColumnKey;
-  /** The header, localized by the caller. */
-  readonly header: ReactNode;
   readonly cell: (row: TRow) => ReactNode;
-  /**
-   * Omit for a column that cannot be ordered — a row-action column, or one whose values have no
-   * order a reader would recognise. A header with no sort is a plain header, not a dead button.
-   */
-  readonly sortable?: boolean;
   /** End-align a numeric column so digits line up; `t-numeric` carries tabular figures. */
   readonly align?: ColumnAlign;
 }
+
+/**
+ * A column, in two shapes — and the split exists because of one defect.
+ *
+ * **A sortable column's `header` must be plain text, because it IS the sort control's accessible
+ * name.** The first version took `sortBy(String(column.key))`, so a screen reader announced the
+ * *column key*: "Sortați după activity" — a Romanian verb and an English enum member, which is
+ * exactly what CLAUDE.md's "user-facing text carries no internal identifiers" forbids, on the one
+ * surface nobody looks at. A sighted reader sees the localized header and never notices.
+ *
+ * Narrowing `header` rather than adding a `name` field keeps the common case honest: a header is
+ * almost always a string, and asking for it twice invites the two copies to disagree. The cost is
+ * real and small — a column with a rich header (an icon, a unit chip) cannot be sortable. That is
+ * a reasonable thing to be unable to do: a control nobody can name is a control nobody can use.
+ */
+export type DataTableColumn<TRow, TColumnKey extends string> =
+  | (DataTableColumnShared<TRow, TColumnKey> & {
+      /** Any node. This column has no sort control, so nothing has to speak it. */
+      readonly header: ReactNode;
+      /**
+       * Omit for a column that cannot be ordered — a row-action column, or one whose values have
+       * no order a reader would recognise. A header with no sort is a plain header, not a dead
+       * button.
+       */
+      readonly sortable?: false;
+    })
+  | (DataTableColumnShared<TRow, TColumnKey> & {
+      /** Plain text, localized by the caller — it is also what the sort control is called. */
+      readonly header: string;
+      readonly sortable: true;
+    });
 
 export interface DataTableProps<TRow, TColumnKey extends string> {
   readonly caption: ReactNode;
@@ -72,9 +96,14 @@ export interface DataTableProps<TRow, TColumnKey extends string> {
   /** Present together, or the table renders as unsorted and its headers as plain. */
   readonly sort?: DataTableSort<TColumnKey>;
   readonly onSortChange?: (sort: DataTableSort<TColumnKey>) => void;
-  /** Accessible names for the sort control, localized by the caller. */
+  /**
+   * Accessible names for the sort control, localized by the caller.
+   *
+   * `sortBy` receives the column's **header**, not its key — see `DataTableColumn` for the defect
+   * that distinction was written for.
+   */
   readonly sortLabels?: {
-    readonly sortBy: (column: string) => string;
+    readonly sortBy: (columnHeader: string) => string;
     readonly ascending: string;
     readonly descending: string;
   };
@@ -114,7 +143,7 @@ export function DataTable<TRow, TColumnKey extends string>({
                     type="button"
                     className={styles.sortButton}
                     onClick={() => onSortChange(nextSort(sort, column.key))}
-                    aria-label={sortLabels.sortBy(String(column.key))}
+                    aria-label={sortLabels.sortBy(column.header)}
                   >
                     {column.header}
                     <SortGlyph sort={sort} column={column.key} />

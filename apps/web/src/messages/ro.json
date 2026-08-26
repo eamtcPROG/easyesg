@@ -16,7 +16,11 @@
       "cookies": "Politica de cookie-uri"
     },
     "signedInAs": "Contul activ:",
-    "signOut": "Ieși din cont"
+    "signOut": "Ieși din cont",
+    "workspaceNav": {
+      "label": "Secțiunile organizației",
+      "users": "Utilizatori și acces"
+    }
   },
   "identity": {
     "unreachable": {
@@ -221,6 +225,125 @@
           "title": "Link nerecunoscut",
           "body": "Linkul acesta nu corespunde niciunei invitații, așa că nu ați fost adăugat în nicio organizație. Verificați dacă l-ați copiat complet din e-mail sau cereți o invitație nouă."
         }
+      }
+    }
+  },
+  "organization": {
+    "access": {
+      "title": "Utilizatori și acces",
+      "lede": "Cine poate vedea datele ESG ale organizației și ce poate face fiecare.",
+      "caption": "Persoanele cu acces la organizație",
+      "roles": {
+        "editor": "Editare",
+        "viewer": "Doar vizualizare",
+        "organization_administrator": "Administrator al organizației"
+      },
+      "roleDescriptions": {
+        "editor": "Completează și modifică datele raportului.",
+        "viewer": "Citește tot, nu modifică nimic."
+      },
+      "standings": {
+        "active": "Activ",
+        "invited": "Invitat",
+        "invitation_expired": "Invitație expirată"
+      },
+      "filters": {
+        "role": "Rolul",
+        "anyRole": "Toate rolurile",
+        "standing": "Situația",
+        "anyStanding": "Toate situațiile"
+      },
+      "columns": {
+        "person": "Persoană",
+        "role": "Rol",
+        "standing": "Situație",
+        "activity": "Ultima activitate",
+        "actions": "Acțiuni"
+      },
+      "activity": {
+        "lastActive": "{date}",
+        "never": "Încă nu a intrat",
+        "invited": "Invitat la {date}",
+        "expiredOn": "Link expirat la {date}"
+      },
+      "sort": {
+        "sortBy": "Sortați după {column}",
+        "ascending": "crescător",
+        "descending": "descrescător"
+      },
+      "pagination": {
+        "region": "Paginare",
+        "previous": "Pagina anterioară",
+        "next": "Pagina următoare",
+        "position": "{from}–{to} din {total}"
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Deocamdată sunteți singurul cu acces",
+          "body": "Invitați un coleg ca să completeze raportul împreună cu dumneavoastră sau doar să îl citească.",
+          "action": "Mergeți la formularul de invitație"
+        },
+        "filtered": {
+          "title": "Nicio persoană nu corespunde filtrelor",
+          "body": "Filtrele alese nu se potrivesc cu nimeni din listă. Ștergeți-le ca să vedeți din nou toate persoanele.",
+          "action": "Ștergeți filtrele"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "Această pagină este pentru administratorii organizației",
+          "body": "Contul dumneavoastră nu administrează această organizație, așa că lista persoanelor cu acces nu vă este afișată. Cereți unui administrator modificarea de care aveți nevoie.",
+          "action": "Înapoi la pagina principală"
+        },
+        "unreachable": {
+          "title": "Lista nu a putut fi încărcată",
+          "body": "Nu am reușit să obținem lista persoanelor cu acces. Nimic nu s-a schimbat între timp. Reîncărcați pagina peste câteva momente.",
+          "action": "Reîncărcați pagina"
+        }
+      },
+      "invite": {
+        "heading": "Invitați un coleg",
+        "intro": "Trimitem un link valabil șapte zile. Persoana își alege singură parola.",
+        "email": "Adresa de e-mail",
+        "emailRequired": "Scrieți adresa de e-mail a persoanei pe care o invitați, altfel invitația nu poate fi trimisă.",
+        "role": "Rolul acordat",
+        "rolePlaceholder": "Alegeți rolul",
+        "roleRequired": "Alegeți rolul pe care îl primește persoana, ca să știe ce poate face după ce acceptă.",
+        "submit": "Trimiteți invitația",
+        "sent": "Invitația a fost trimisă la {email}.",
+        "sentBody": "Primește un e-mail cu un link valabil șapte zile. Până acceptă, apare în listă ca invitat.",
+        "sentAction": "Puteți retrimite sau anula invitația din lista de mai sus.",
+        "failedAction": "Găsiți persoana în lista de mai sus și alegeți ce faceți mai departe."
+      },
+      "actions": {
+        "changeRole": "Rolul lui {email}",
+        "remove": "Retrageți accesul",
+        "resend": "Retrimiteți invitația",
+        "revoke": "Anulați invitația",
+        "lastAdministrator": "Este singurul administrator al organizației."
+      },
+      "remove": {
+        "title": "Retrageți accesul acestei persoane?",
+        "consequence": "Pierde imediat accesul la toate rapoartele organizației, pe orice dispozitiv.",
+        "retained": "Ce a completat rămâne în istoricul modificărilor, pe numele său.",
+        "confirm": "Retrageți accesul",
+        "cancel": "Păstrați accesul",
+        "done": "{email} nu mai are acces."
+      },
+      "revoke": {
+        "title": "Anulați această invitație?",
+        "consequence": "Linkul trimis nu mai funcționează din acest moment.",
+        "confirm": "Anulați invitația",
+        "cancel": "Păstrați invitația",
+        "done": "Invitația pentru {email} a fost anulată."
+      },
+      "resent": "Am trimis din nou invitația la {email}. Linkul anterior nu mai funcționează.",
+      "roleChanged": "{email} are acum rolul „{role}”.",
+      "loading": "Se încarcă lista persoanelor cu acces…",
+      "notice": {
+        "body": "Lista de mai sus arată deja situația nouă.",
+        "action": "Nu mai aveți nimic de făcut.",
+        "failedAction": "Încercați din nou sau reîncărcați pagina."
       }
     }
   }

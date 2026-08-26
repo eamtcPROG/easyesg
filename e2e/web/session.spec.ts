@@ -84,7 +84,7 @@ test('a user signs in, holds an httpOnly session, and signs out (UC-04, UC-06)',
 test('a guarded route redirects to sign-in and returns after it (UX-38)', async ({ page }) => {
   const email = addressFor('return');
   await registerAndVerify(page, email);
-  organizations.push(await grantMembership(email, `${RUN_PREFIX} Return`));
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} Return` }));
 
   await page.goto('/reports');
   await page.waitForURL('**/sign-in?return=%2Freports');

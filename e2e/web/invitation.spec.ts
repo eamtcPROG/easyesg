@@ -34,7 +34,7 @@ test.afterAll(async () => {
 /** An organization with an administrator, so an invitation has somewhere to point. */
 async function anOrganization(label: string): Promise<{ id: string; name: string }> {
   const name = `${RUN_PREFIX}-${label}`;
-  const id = await grantMembership(addressFor(`${label}-oa`), name);
+  const id = await grantMembership({ email: addressFor(`${label}-oa`), organizationName: name });
   organizations.push(id);
   return { id, name };
 }

@@ -1,0 +1,59 @@
+/* S-16 · Index archetype (§4.6): filter, sort, table, row action, pagination — in one column,
+   because the screen answers one question and the reader reads it top to bottom. */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  max-inline-size: 72rem;
+  margin: 0 auto;
+  padding: var(--space-7) var(--grid-gutter-narrow);
+}
+
+@media (min-width: 64rem) {
+  .screen {
+    padding-inline: var(--grid-gutter);
+  }
+}
+
+.title {
+  margin: 0 0 var(--space-3);
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-body);
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* The two facets sit side by side where there is room and stack where there is not; each keeps a
+   readable minimum rather than shrinking to a strip of chevron. */
+.filters {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  max-inline-size: 34rem;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.invitePanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.inviteForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-inline-size: 32rem;
+}

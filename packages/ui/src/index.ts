@@ -22,7 +22,7 @@
 
 // primitives
 export { BrandMark } from './primitives/brand-mark';
-export { Button, type ButtonProps } from './primitives/button';
+export { BUTTON_VARIANT, Button, type ButtonProps, type ButtonVariant } from './primitives/button';
 export { Panel } from './primitives/panel';
 export { ProviderButton, type ProviderButtonProps } from './primitives/provider-button';
 export { Spinner } from './primitives/spinner';
@@ -36,7 +36,7 @@ export { RequirementList, type RequirementItem, type RequirementListProps } from
 export { TextField, type TextFieldProps } from './form/text-field';
 
 // feedback
-export { Callout, type CalloutProps } from './feedback/callout';
+export { CALLOUT_INTENT, Callout, type CalloutIntent, type CalloutProps } from './feedback/callout';
 export {
   ConsequenceDialogue,
   type ConsequenceDialogueProps,
@@ -44,7 +44,13 @@ export {
 export { EmptyState, type EmptyStateProps } from './feedback/empty-state';
 
 // navigation
-export { LanguageSwitcher, type LanguageSwitcherProps, type SwitcherLocale } from './navigation/language-switcher';
+export {
+  SWITCHER_TONE,
+  LanguageSwitcher,
+  type LanguageSwitcherProps,
+  type SwitcherLocale,
+  type SwitcherTone,
+} from './navigation/language-switcher';
 export { Pagination, type PaginationProps } from './navigation/pagination';
 export {
   WorkspaceNav,

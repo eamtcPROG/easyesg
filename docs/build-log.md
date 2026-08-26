@@ -2723,3 +2723,144 @@ broke, and it discriminates.
 **What this does not fix.** The Images job's `web` and `admin` container checks never ran, because
 the api step failed first, so they are unverified by this push rather than proven. Both images
 *built* clean, which is the step that would have caught a bundling change.
+
+---
+
+## Task 26.4 — S-16, and the two decisions the screen forced before it could be built · 2026-08-26
+
+The Index the whole of task 26 was for: `/members` and `/invitations` as one list, with UC-59 … UC-64
+reachable from it. What the diff shows is a screen. What it does not show is that S-16 could not be
+built until two things were decided and one component family was rebuilt, and that three defects
+surfaced only because a browser drove it.
+
+### The inventory was built on the wrong primitive, and an artefact had already said so
+
+Seven §11.5 additions landed first — DataTable, StatusChip, EmptyState, ConsequenceDialogue,
+Pagination, WorkspaceNav, Select. Two were wrong, and the correction is the useful part.
+
+`Select` was a native `<select>`, with a header comment arguing that a custom listbox reimplements
+keyboard behaviour, type-ahead and the screen-reader contract. `design/screens/EasyESG
+Components.dc.html` — which §11.5 makes "the reference for anything ambiguous" — had already answered
+that in its own words: *"the library supplies behaviour, focus management and ARIA; the values here
+supply the identity."* It names `ui/select.tsx (Radix Select)` under the entry.
+
+The argument that settled it was not the library column, which this repository does not otherwise
+follow — there is no shadcn/ui, no `cva`, no TanStack Table. It was **three token names**. The Select
+specimen calls out `menu.surface`, `menu.item.active` and `menu.item.selected`, and an OS-drawn popup
+gives those three tier-3 tokens no consumer at all — which also makes **UX-79** unsatisfiable for the
+component, since a whole-identity swap "shall be verified by producing a second, deliberately
+different theme" and no tier reaches a native popup. `select.tsx` is also the base of four inventory
+entries, not one: Select, Combobox, Multi-select, and the unit slot of Number-with-unit, which lives
+in the disclosure field.
+
+So §11.5 gained a **fifth recorded addition**: the sheet binds anatomy, states and tokens; its library
+column binds only where the library is already pinned. Radix is. That rule then applied to
+`ConsequenceDialogue`, which moved off the native `<dialog>` — losing the browser's own top layer,
+`inert` and `::backdrop`, knowingly. The reason is not fidelity: **every floating surface must live in
+one stacking world.** A Radix menu portals to `body` and the top layer sits above `body` entirely, so
+a `Select` inside a native dialogue would render behind its own backdrop. UX-47's export dialogue —
+format and language, both chosen inside a dialogue — is the first screen that composes the two, and
+would have found it as a bug. One stacking world removes the class rather than the instance.
+
+Three things the specs pin that no rendering shows. `AlertDialog.Action` closes the dialogue itself,
+firing `onOpenChange(false)` while `busy` is still false — so every confirm would have arrived at the
+screen as a confirm **and** a cancel. Radix renders its hidden form control only when the trigger has
+a `closest` form, so a `name` outside a form is silently inert. And a JSX spread does not check excess
+properties, so wiring `FormSelect` with the native-input shape yields a select that renders, opens,
+highlights and links its error summary correctly while never reporting a choice — verified by
+breaking it, where exactly one of three tests goes red. That last one moved the shape adaptation into
+`useBoundField`, which now returns `input` and `choice` from one subscription, so `FormCombobox`,
+`FormMultiSelect`, `FormSwitch` and `FormDate` read it rather than each re-deriving it. The React
+Compiler's refs rule is what forced that factoring; disabling it would have kept the careful version
+instead of the one that cannot be wired wrong.
+
+### Nothing rotated before a render, because nothing had read the API before one
+
+S-16 is the first Server Component in this codebase to call the API during render, and that turned
+two correct decisions into a defect. `proxy.ts` gated `(app)` on the sealed cookie **existing** — the
+7-day idle bound — which says nothing about the ≤15-minute access token inside it. `api-client.ts`
+attaches whatever token the seal holds and never rotates, correctly, because a cookie write throws
+during render. Together: a member returning after twenty minutes met a 401 and an error screen while
+holding a session with six days left.
+
+`apps/web/CLAUDE.md` predicted this exactly, named the fix and filed it under "task 29+". It arrived
+early. `architecture.md` §12.5.6 carries the decision; three pieces carry the work.
+
+**The ordering is the load-bearing half.** `request.cookies.set` must run *before*
+`handleI18nRouting`, because a cookie on the response reaches the browser and nothing else — the
+render of this request would still read the stale token and still be answered 401, so the fix would
+look right and still cost one error screen per rotation. next-intl clones `request.headers` into
+`NextResponse.next({ request: { headers } })`, which was read from its source rather than assumed.
+`proxy.spec.ts` runs the real next-intl for that reason: a faithful mock would pin this ordering
+against a fiction and go green the day next-intl stopped cloning. Moving the rotation after routing
+fails exactly one of its six tests — the one named for it — while "also sets the successor on the
+response" stays green, which is the shape of the defect.
+
+Two incidental findings from writing that spec rather than from reading: `next` ships no `exports` map
+and is not `type: module`, so Node's ESM resolver cannot take next-intl's bare `import 'next/server'`
+— hence `deps.inline`. And the `'cleared'` sentinel first reached for was refused by the
+closed-vocabulary lint rule, correctly.
+
+### What the browser found that nine gates could not
+
+The screen typechecked, linted and unit-tested clean before it had ever been rendered. Then:
+
+- **`MISSING_MESSAGE`, from every client component below `(workspace)`.** The root layout mounts
+  `NextIntlClientProvider messages={null}` so the full catalogue never reaches the browser (NFR-43),
+  and each route group supplies a namespace-scoped provider. `(workspace)` had none, because it had
+  never had a client component under it. Not a subtle failure — every one of them throws at render.
+- **A sort control announcing an enum member.** `DataTable` passed the column *key* to
+  `sortLabels.sortBy`, so a screen reader heard "Sortați după activity" — a Romanian verb and an
+  English identifier, on the one surface nobody looks at. It is fixed at the type: a sortable column's
+  `header` is now `string` rather than `ReactNode`, because it **is** the sort control's accessible
+  name. Narrowing beat adding a `name` field — a header is almost always a string, and asking for it
+  twice invites the two copies to disagree. The cost is that a column with a rich header cannot be
+  sortable, which is a reasonable thing to be unable to do.
+- **Three-part copy with the third part filled by a button label.** `Callout.action` is required by
+  design — NFR-79's "what now" — and both success notices had it set to `t('submit')` and
+  `t('columns.actions')`. The screenshot is what showed it. On a success the honest "what now" is
+  *nothing*; saying so is not the same as omitting it.
+
+`grantMembership` gained a role and became one named object in the same pass. It took two adjacent
+`string`s; swapped, the address becomes the organization's name, the membership matches no account,
+and the helper commits an organization nobody belongs to and reports success.
+
+### What was decided, deferred and found
+
+**Two decisions, both taken by the project owner before code.** The page-load rotation point, above.
+And **UC-175's manual reminder is omitted** — `design_spec.md` lists it in S-16's controls and names
+FR-173 in its FR list, and neither identifier appeared anywhere in `task.md`. An orphaned requirement,
+discovered because someone built the screen that was supposed to carry it. Task 50 now owns it: a
+reminder is 49.3's dispatch path with a person pressing the button instead of a schedule.
+
+**Task 82 was appended** for UX-80's dark scheme, which is not an open question but an unmet
+requirement — and it turned out `design_spec.md` **OQ-14** has carried it since 18 Aug 2026. The two
+are now cross-logged. What was decided was *when*: its own task, because it is tier 1/2 work across
+every token and the §10.2 contrast verification is the deliverable a component task would bury.
+
+**The seat region stays deferred to 54.2**, as 26.4's first batch decided.
+
+### Raised and not closed: the artboard grants access per entity, and nothing else does
+
+Re-reading `EasyESG Organization Admin.dc.html` against the finished screen — the checklist step that
+exists because "I read it before starting" is how A-01 shipped without its staged flow — found the
+prototype drawing an **Entities** column ("All four", "Lina Logistic SRL") and an "Entities · at least
+one" field in its invite dialogue, over the sentence *"Access is granted per entity."*
+
+Nothing normative says that. FR-56 … FR-60 are organization-scoped throughout; `design_spec.md` §5's
+S-16 row lists role, status and last activity and no entities; `architecture.md` §6.5 states that a
+member holds exactly one role per organization and closes per-report rights as computed rather than
+granted. `identity.membership` has no entity dimension, and adding one is a schema change.
+
+Four smaller divergences sit beside it: the prototype lists **removed** members with a "Restore"
+action (`GET /members` returns active rows only, and no UC names a restore verb — 26.2's
+`reactivated` grant kind is the nearest thing); it shows **display names and initials** where the
+member DTO carries an address and no name; it states that *"two administrators is the minimum the plan
+enforces"* where FR-60 sets the minimum at one; and its invite is a modal where this screen uses a
+panel below the list.
+
+This is not resolved here. §5's row and the API agree with each other and are what shipped; the
+prototype is ahead of both, and OQ-10 records that the prototypes' *values* are authoritative while
+their markup is not — which does not settle whose **content** wins. It is left for the project owner
+because per-entity access is a data-model decision, and modelling both "to be safe" is precisely what
+the open-question protocol forbids.
