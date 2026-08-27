@@ -208,3 +208,27 @@ class FakeAdminSessionTransaction implements AdminSessionTransaction {
     return Promise.resolve();
   }
 }
+
+/**
+ * A `SystemAuditLog` the admin specs can read back (task 28.4).
+ *
+ * It records rather than asserts, because what the specs need to check differs per case — that a
+ * refusal produced a row at all, that the action is the right member, that `actorId` is null for an
+ * unknown address. A fake that asserted would have to know all three.
+ *
+ * **It never throws**, mirroring the real adapter: a failed audit write must not turn a refusal
+ * into a 500, and a fake that could throw would let a spec pass for the wrong reason.
+ */
+export class FakeSystemAuditLog {
+  readonly recorded: { action: string; actorId?: string | null; subject?: Buffer | null }[] = [];
+
+  record(event: { action: string; actorId?: string | null; subject?: Buffer | null }): Promise<void> {
+    this.recorded.push(event);
+    return Promise.resolve();
+  }
+
+  /** The actions in order, which is what most assertions are actually about. */
+  get actions(): string[] {
+    return this.recorded.map((event) => event.action);
+  }
+}

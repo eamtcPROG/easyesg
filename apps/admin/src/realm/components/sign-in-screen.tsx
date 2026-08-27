@@ -236,6 +236,23 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccoun
       {/* Footer section — the realm statement (the artboard's grey band). */}
       <div className="border-t border-[var(--border-default)] bg-[var(--surface-sunken)] px-[var(--space-7)] py-[var(--space-4)]">
         <p className="t-caption text-[var(--text-body)]">{t('realmNote')}</p>
+        {/*
+          A-01's LOGGED disclosure, and it ships **now** because task 28.4 made it true: every
+          attempt reaches `audit.system_audit_log` before the refusal that produced it. Task 23
+          omitted it rather than state something the code did not do, which is why this is an
+          addition rather than a correction.
+
+          **The artboard says "time, account and address" and this says a fingerprint of the
+          address**, because that is what is stored: §12.5.6's row records a SHA-256 digest so the
+          table — append-only and retained 24 months — holds nothing it could not later remove.
+          Shipping the artboard's wording verbatim would have repeated exactly the mistake task 23
+          declined to make.
+
+          `--text-body`, not `--text-muted`: task 23's rebuild measured muted-on-sunken at 4.47:1
+          and the axe gate caught it — the muted role's 5.1:1 rating is against white, not against
+          this band. The sibling line above is body ink for the same reason.
+        */}
+        <p className="t-caption mt-[var(--space-2)] text-[var(--text-body)]">{t('auditNote')}</p>
       </div>
     </Panel>
   );

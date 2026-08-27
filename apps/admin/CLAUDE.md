@@ -30,8 +30,15 @@ look like six, because UX-108's paste and `one-time-code` autofill both need a s
 and `factor-step.tsx` renders `FormCodeField`. Its docblock still lists what is deferred (the
 code-window countdown, which `CodeField` exposes a `hint` slot for; the recovery-code route,
 which has **no implementation to point at** since task 27.2 built recovery codes for the tenant
-realm only; the LOGGED audit note → task 28.4) and the one recorded divergence (the artboard's
-full-dark ground). `_realm.tsx`'s `beforeLoad` is the
+realm only; and the one recorded divergence (the artboard's
+full-dark ground). **The LOGGED audit note shipped with task 28.4**, once admin sign-in attempts
+actually reached `audit.system_audit_log` — task 23 omitted it rather than state something untrue,
+so this was an addition and not a correction. Its wording deliberately **diverges from the
+artboard**, which promises "time, account and address": what is stored is a SHA-256 digest of the
+address (§12.5.6), so the note says *o amprentă a adresei — nu adresa în sine*. Shipping the
+artboard's sentence verbatim would have repeated exactly the mistake task 23 declined to make.
+`--text-body` and not `--text-muted` on that band: muted-on-sunken measures 4.47:1 and the axe gate
+caught it once already. `_realm.tsx`'s `beforeLoad` is the
 closed-by-default guard: no session → A-01 with `?redirect=` carried, sanitized on return.
 `e2e/admin/` drives the journey in a real browser against the built bundle on its own origin,
 so CORS, the `SameSite=Strict` cookie and the Origin proof are exercised for real.

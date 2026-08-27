@@ -10,7 +10,13 @@ import {
 } from '../errors/admin-session.errors';
 import type { AdminTokens } from '../interfaces/admin-token.interface';
 import { ADMIN_ROLE, type AdminAccount } from '../models/admin-session.model';
-import { FakeAdminSessionStore } from '../testing/admin-session-store.fake';
+import { FakeAdminSessionStore ,
+  FakeSystemAuditLog,
+} from '../testing/admin-session-store.fake';
+import {
+  AUDIT_ACTION,
+  auditSubject,
+} from '@api/modules/platform/audit/models/audit-action.model';
 import { CompleteAdminSignIn } from './complete-admin-sign-in.use-case';
 
 /**
@@ -52,8 +58,12 @@ const challenge = (overrides: Partial<AdminChallengePayload> = {}): AdminChallen
   ...overrides,
 });
 
-const build = (store: FakeAdminSessionStore, now: Date = RFC_NOW) =>
-  new CompleteAdminSignIn(store, fakeTokens, () => now);
+/** The audit sink defaults, so only the tests that read the log have to build one. */
+const build = (
+  store: FakeAdminSessionStore,
+  audit = new FakeSystemAuditLog(),
+  now: Date = RFC_NOW,
+) => new CompleteAdminSignIn(store, fakeTokens, audit, () => now);
 
 describe('CompleteAdminSignIn (UC-68 step two, FR-75)', () => {
   it('issues the session for the current code against an open challenge', async () => {
@@ -128,5 +138,63 @@ describe('CompleteAdminSignIn (UC-68 step two, FR-75)', () => {
       complete.execute({ challenge: challenge(), totpCode: RFC_CODE }),
     ).rejects.toBeInstanceOf(AuthRateLimitedError);
     expect(store.attempts).toHaveLength(5);
+  });
+
+  /**
+   * The other half of FR-81's coverage: the events only the second step can produce. Task 23
+   * deferred all of this, and A-01's LOGGED disclosure ships with it (task 28.4).
+   */
+  describe('the system audit log (FR-81, task 28.4)', () => {
+    it('records the completed sign-in, attributed to the operator', async () => {
+      const store = new FakeAdminSessionStore();
+      store.accounts.push(operator());
+      const audit = new FakeSystemAuditLog();
+
+      await build(store, audit).execute({
+        challenge: challenge(),
+        totpCode: RFC_CODE,
+      });
+
+      expect(audit.recorded).toEqual([
+        {
+          action: AUDIT_ACTION.ADMIN_SIGN_IN_SUCCEEDED,
+          actorId: operator().id,
+          subject: auditSubject('operator@easyesg.md'),
+        },
+      ]);
+    });
+
+    it('records a refused factor, and the session is not issued', async () => {
+      const store = new FakeAdminSessionStore();
+      store.accounts.push(operator());
+      const audit = new FakeSystemAuditLog();
+
+      await expect(
+        build(store, audit).execute({ challenge: challenge(), totpCode: '000000' }),
+      ).rejects.toBeInstanceOf(AdminFactorInvalidError);
+
+      expect(audit.actions).toEqual([AUDIT_ACTION.ADMIN_SIGN_IN_FACTOR_REFUSED]);
+      expect(store.sessions).toHaveLength(0);
+    });
+
+    /**
+     * **Both steps of one sign-in carry the same subject**, which is what makes the pair one thread
+     * for an operator reading the log. The digest is over the normalised address in both, so this
+     * holds without either step knowing what the other recorded.
+     */
+    it('uses the same subject the credential step recorded', async () => {
+      const store = new FakeAdminSessionStore();
+      store.accounts.push(operator());
+      const audit = new FakeSystemAuditLog();
+
+      await expect(
+        build(store, audit).execute({
+          challenge: challenge({ email: 'Operator@EasyESG.md' }),
+          totpCode: '000000',
+        }),
+      ).rejects.toBeInstanceOf(AdminFactorInvalidError);
+
+      expect(audit.recorded[0].subject).toEqual(auditSubject('operator@easyesg.md'));
+    });
   });
 });

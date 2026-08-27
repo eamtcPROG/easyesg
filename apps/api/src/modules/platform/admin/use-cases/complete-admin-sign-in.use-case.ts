@@ -1,8 +1,7 @@
 import {
-  AUTH_ATTEMPT_LIMIT,
-  AUTH_ATTEMPT_WINDOW_MS,
   LOCKOUT_THRESHOLD,
   adminSignInThrottleKey,
+  admitAuthAttempt,
 } from '@api/modules/identity/account/domain/auth-throttle';
 import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
 import { mintRefreshToken } from '@api/modules/identity/session/domain/refresh-token';
@@ -22,6 +21,8 @@ import type { AdminSessionStore } from '../interfaces/admin-session-store.interf
 import type { AdminTokens } from '../interfaces/admin-token.interface';
 import type { IssuedAdminSession } from '../models/admin-session.model';
 import type { Clock } from '@api/contracts/clock.port';
+import type { SystemAuditLog } from '@api/contracts/system-audit-log.port';
+import { AUDIT_ACTION, auditSubject } from '@api/modules/platform/audit/models/audit-action.model';
 
 export interface CompleteAdminSignInCommand {
   readonly challenge: AdminChallengePayload;
@@ -52,6 +53,7 @@ export class CompleteAdminSignIn {
   constructor(
     private readonly store: AdminSessionStore,
     private readonly tokens: AdminTokens,
+    private readonly audit: SystemAuditLog,
     private readonly now: Clock,
   ) {}
 
@@ -62,24 +64,41 @@ export class CompleteAdminSignIn {
       throw new AdminSessionInvalidError();
     }
 
+    // The same digest the credential step recorded, so both halves of one sign-in group together.
+    const subject = auditSubject(command.challenge.email);
+
     const key = adminSignInThrottleKey(command.clientIp, command.challenge.email);
-    const since = new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS);
     const gate = await this.store.run(async (tx) => {
-      if ((await tx.countRecentAuthAttempts(key, since)) >= AUTH_ATTEMPT_LIMIT) {
-        return { limited: true as const };
-      }
-      await tx.recordAuthAttempt(key, now);
-      return { limited: false as const, account: await tx.findAdminAccountById(command.challenge.accountId) };
+      if (!(await admitAuthAttempt(tx, { key, now }))) return { limited: true as const };
+      return {
+        limited: false as const,
+        account: await tx.findAdminAccountById(command.challenge.accountId),
+      };
     });
-    if (gate.limited) throw new AuthRateLimitedError();
+    if (gate.limited) {
+      await this.audit.record({ action: AUDIT_ACTION.ADMIN_SIGN_IN_THROTTLED, subject });
+      throw new AuthRateLimitedError();
+    }
 
     // Re-read, never trusted from the payload: deactivated answers null (the challenge is
     // dead), and a lock that landed since step one refuses before any code is judged.
     const account = gate.account;
     if (account === null) throw new AdminSessionInvalidError();
-    if (account.lockedAt) throw new AdminAccountLockedError();
+    if (account.lockedAt) {
+      await this.audit.record({
+        action: AUDIT_ACTION.ADMIN_SIGN_IN_BLOCKED,
+        actorId: account.id,
+        subject,
+      });
+      throw new AdminAccountLockedError();
+    }
 
     if (!verifyTotp({ secret: account.totpSecret, code: command.totpCode }, now)) {
+      await this.audit.record({
+        action: AUDIT_ACTION.ADMIN_SIGN_IN_FACTOR_REFUSED,
+        actorId: account.id,
+        subject,
+      });
       await this.store.run((tx) => tx.registerFailedSignIn(account.id, LOCKOUT_THRESHOLD, now));
       throw new AdminFactorInvalidError();
     }
@@ -88,6 +107,15 @@ export class CompleteAdminSignIn {
     const session = await this.store.run(async (tx) => {
       await tx.clearFailedSignIns(account.id);
       return tx.createSession(account.id, minted.hash, now);
+    });
+
+    // **The success event is recorded here and not at the credential step**, because a sign-in is
+    // the pair: FR-75 makes the second factor mandatory, so a correct password alone admits nobody
+    // and a row saying otherwise would overstate what happened. The log records outcomes, not steps.
+    await this.audit.record({
+      action: AUDIT_ACTION.ADMIN_SIGN_IN_SUCCEEDED,
+      actorId: account.id,
+      subject,
     });
 
     const accessTokenExpiresAt = new Date(now.getTime() + ADMIN_ACCESS_TOKEN_TTL_MS);

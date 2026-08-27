@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
@@ -87,6 +88,14 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
   let app: NestExpressApplication;
   let db: DataSource;
   let owner: DataSource;
+  /**
+   * `esg_admin_ro` — the only role holding BYPASSRLS, and the **only** way to read a platform audit
+   * row (task 28.4). `audit.system_audit_log`'s SELECT policy compares `organization_id` for
+   * equality, so a platform row's NULL matches nothing: invisible to `esg_app`, and invisible to
+   * the owner too, since FORCE ROW LEVEL SECURITY subjects it to its own policies. This is the
+   * route the administrative console uses, so it is the route the assertions use.
+   */
+  let analyst: DataSource;
   let tokens: JwtAdminTokens;
 
   const addressFor = (label: string) =>
@@ -127,6 +136,19 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
       applicationName: 'easyesg-admin-e2e-owner',
     });
     await owner.initialize();
+    analyst = new DataSource({
+      type: 'postgres',
+      host: process.env.DB_HOST ?? 'localhost',
+      port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
+      database: process.env.DB_NAME ?? 'esg',
+      username: required('DB_ADMIN_RO_USER'),
+      password: required('DB_ADMIN_RO_PASSWORD'),
+      synchronize: false,
+      entities: [],
+      applicationName: 'easyesg-admin-e2e-analyst',
+    });
+    await analyst.initialize();
+
     tokens = new JwtAdminTokens(required('AUTH_ADMIN_SECRET'));
   }, 60_000);
 
@@ -135,6 +157,10 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
       `DELETE FROM identity.auth_attempt WHERE attempt_key LIKE '%task23-%'`,
     );
     await owner?.query(`DELETE FROM identity.admin_account WHERE email LIKE 'task23-%'`);
+    // `audit.system_audit_log` is append-only: no runtime role holds DELETE and the owner is
+    // subject to its own triggers. Rows written here therefore STAY, which is the guarantee — the
+    // suite scopes its reads by subject rather than pretending it can clean up after itself.
+    await analyst?.destroy();
     await owner?.destroy();
     await db?.destroy();
     await app?.close();
@@ -367,5 +393,104 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
     // test drains its own rows before proving the released account signs in.
     await owner.query(`DELETE FROM identity.auth_attempt WHERE attempt_key LIKE '%task23-%'`);
     await signIn(email);
+  });
+
+  /**
+   * **FR-81 and task 23's deferral, paid** (task 28.4): A-01's artboard carries a LOGGED
+   * disclosure, task 23 omitted it rather than shipping a screen that stated something untrue, and
+   * these rows are what make it true.
+   *
+   * Asserted against the real table rather than a fake, because two of the guarantees only exist
+   * there: the write commits **independently** of the refusal that produced it — every interesting
+   * event is a failure, and a failure throws — and `system_audit_log_platform_insert` accepts the
+   * row only when no organization is bound, which is what stops a tenant request forging one.
+   */
+  describe('the system audit log (FR-81, task 28.4)', () => {
+    const subjectOf = (email: string) =>
+      createHash('sha256').update(email.trim().toLowerCase(), 'utf8').digest();
+
+    const eventsFor = (email: string): Promise<{ action: string; actor_id: string | null }[]> =>
+      analyst.query(
+        `SELECT action, actor_id FROM audit.system_audit_log
+          WHERE subject = $1 ORDER BY occurred_at`,
+        [subjectOf(email)],
+      );
+
+    it('records a completed sign-in, attributed and with no organization', async () => {
+      const email = addressFor('audit-ok');
+      await provision(email);
+
+      await signIn(email);
+
+      const rows = await analyst.query<
+        { action: string; actor_id: string | null; organization_id: string | null }[]
+      >(`SELECT action, actor_id, organization_id FROM audit.system_audit_log WHERE subject = $1`, [
+        subjectOf(email),
+      ]);
+
+      expect(rows.map((r) => r.action)).toEqual(['admin.sign_in.succeeded']);
+      expect(rows[0].actor_id).not.toBeNull();
+      // A platform event belongs to no tenant, which is what task 14 made the column nullable for.
+      expect(rows[0].organization_id).toBeNull();
+    });
+
+    /**
+     * The row that would not exist if the write were enlisted in the caller's transaction: the
+     * request answers 401 and the record survives it.
+     */
+    it('records a refused credential even though the request fails', async () => {
+      const email = addressFor('audit-refused');
+      await provision(email);
+
+      await beginSignIn(email, { password: 'wrong-password' }).expect(401);
+
+      expect((await eventsFor(email)).map((r) => r.action)).toEqual([
+        'admin.sign_in.credential_refused',
+      ]);
+    });
+
+    /**
+     * The case the pseudonymous `subject` column was added for: nothing to attribute to, so without
+     * it the row would say only that *a* failed admin sign-in happened.
+     */
+    it('records an attempt against an unknown address, grouped by subject and attributed to nobody', async () => {
+      const email = addressFor('audit-nobody');
+
+      await beginSignIn(email, { password: 'whatever' }).expect(401);
+
+      const rows = await eventsFor(email);
+      expect(rows.map((r) => r.action)).toEqual(['admin.sign_in.credential_refused']);
+      expect(rows[0].actor_id).toBeNull();
+    });
+
+    it('holds the digest and never the address', async () => {
+      const email = addressFor('audit-nopii');
+      await beginSignIn(email, { password: 'whatever' }).expect(401);
+
+      // §12.5.7 retains this table for 24 months and §7.7 makes it unerasable, so the absence is
+      // the guarantee rather than a preference. Asked of the whole row, not of the column we wrote.
+      const rows = await analyst.query<{ row: unknown }[]>(
+        `SELECT to_jsonb(t) AS row FROM audit.system_audit_log t WHERE subject = $1`,
+        [subjectOf(email)],
+      );
+
+      expect(rows).toHaveLength(1);
+      expect(JSON.stringify(rows[0].row)).not.toContain(email);
+    });
+
+    it('records both steps of one sign-in under the same subject', async () => {
+      const email = addressFor('audit-thread');
+      await provision(email);
+
+      const opened = await beginSignIn(email).expect(201);
+      await completeSignIn(sealedCookieOf(opened, ADMIN_CHALLENGE_COOKIE), '000000').expect(401);
+      await signIn(email);
+
+      // One thread for an operator to read: the failure and the success that followed it.
+      expect((await eventsFor(email)).map((r) => r.action)).toEqual([
+        'admin.sign_in.factor_refused',
+        'admin.sign_in.succeeded',
+      ]);
+    });
   });
 });

@@ -39,7 +39,8 @@
       "problemTitle": "Autentificarea nu a reușit",
       "problemBody": "Nu te-am putut autentifica din cauza unei erori la procesarea cererii.",
       "problemAction": "Verifică datele introduse și încearcă din nou.",
-      "realmNote": "Conturile de platformă sunt create de un alt administrator — aici nu există înregistrare. Conturile companiilor se autentifică în aplicația pentru companii și nu pot fi folosite pe această consolă."
+      "realmNote": "Conturile de platformă sunt create de un alt administrator — aici nu există înregistrare. Conturile companiilor se autentifică în aplicația pentru companii și nu pot fi folosite pe această consolă.",
+      "auditNote": "Fiecare încercare este înregistrată în jurnalul de sistem, indiferent dacă reușește: momentul, contul și o amprentă a adresei introduse — nu adresa în sine."
     },
     "strip": {
       "signedInAs": "Operator:",

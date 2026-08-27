@@ -5,7 +5,13 @@ import {
   AdminCredentialInvalidError,
 } from '../errors/admin-session.errors';
 import { ADMIN_ROLE, type AdminAccount } from '../models/admin-session.model';
-import { FakeAdminSessionStore } from '../testing/admin-session-store.fake';
+import { FakeAdminSessionStore ,
+  FakeSystemAuditLog,
+} from '../testing/admin-session-store.fake';
+import {
+  AUDIT_ACTION,
+  auditSubject,
+} from '@api/modules/platform/audit/models/audit-action.model';
 import { BeginAdminSignIn } from './begin-admin-sign-in.use-case';
 
 /** UC-68 step one — the credential half of the retired one-shot matrix, semantics unchanged. */
@@ -35,7 +41,9 @@ const command = (overrides: Partial<{ email: string; password: string }> = {}) =
   ...overrides,
 });
 
-const build = (store: FakeAdminSessionStore) => new BeginAdminSignIn(store, fakeHasher, () => NOW);
+/** The audit sink defaults, so only the tests that read the log have to build one. */
+const build = (store: FakeAdminSessionStore, audit = new FakeSystemAuditLog()) =>
+  new BeginAdminSignIn(store, fakeHasher, audit, () => NOW);
 
 describe('BeginAdminSignIn (UC-68 step one, FR-75)', () => {
   it('opens the challenge for a correct credential — and issues NOTHING else', async () => {
@@ -127,5 +135,106 @@ describe('BeginAdminSignIn (UC-68 step one, FR-75)', () => {
     );
     expect(store.accounts[0].failedAttempts).toBe(1);
     expect(store.rollbacks).toBe(0);
+  });
+
+  /**
+   * FR-81 and task 23's deferral: A-01's LOGGED disclosure is only true if these rows exist.
+   *
+   * **The refusals are the point.** A log holding only successes answers *who got in* and not *who
+   * tried*, which is the question an operator opens it for — and every refusal here throws, so a
+   * write enlisted in the caller's transaction would be rolled back by the very event it records.
+   */
+  describe('the system audit log (FR-81, task 28.4)', () => {
+    it('records a credential refusal against an account that exists, attributed', async () => {
+      const store = new FakeAdminSessionStore();
+      store.accounts.push(operator());
+      const audit = new FakeSystemAuditLog();
+
+      await expect(
+        build(store, audit).execute(command({ password: 'wrong' })),
+      ).rejects.toBeInstanceOf(AdminCredentialInvalidError);
+
+      expect(audit.recorded).toEqual([
+        {
+          action: AUDIT_ACTION.ADMIN_SIGN_IN_CREDENTIAL_REFUSED,
+          actorId: operator().id,
+          subject: auditSubject('operator@easyesg.md'),
+        },
+      ]);
+    });
+
+    /**
+     * The case the `subject` column exists for. There is no actor to attribute to, so without it
+     * the row would say only that *a* failed admin sign-in happened — with nothing to group
+     * repeated probing of one address by.
+     */
+    it('records an unknown address with a subject and no actor', async () => {
+      const store = new FakeAdminSessionStore();
+      const audit = new FakeSystemAuditLog();
+
+      await expect(
+        build(store, audit).execute(command({ email: 'nobody@easyesg.md' })),
+      ).rejects.toBeInstanceOf(AdminCredentialInvalidError);
+
+      expect(audit.recorded).toEqual([
+        {
+          action: AUDIT_ACTION.ADMIN_SIGN_IN_CREDENTIAL_REFUSED,
+          actorId: null,
+          subject: auditSubject('nobody@easyesg.md'),
+        },
+      ]);
+    });
+
+    /** The subject is a digest of the NORMALISED address, so casing does not split the grouping. */
+    it('groups attempts against one address whatever the casing', async () => {
+      const store = new FakeAdminSessionStore();
+      const audit = new FakeSystemAuditLog();
+
+      await expect(
+        build(store, audit).execute(command({ email: 'Operator@EasyESG.md' })),
+      ).rejects.toBeInstanceOf(AdminCredentialInvalidError);
+
+      expect(audit.recorded[0].subject).toEqual(auditSubject('operator@easyesg.md'));
+    });
+
+    it('holds no address, only its digest', async () => {
+      const store = new FakeAdminSessionStore();
+      const audit = new FakeSystemAuditLog();
+
+      await expect(
+        build(store, audit).execute(command({ email: 'nobody@easyesg.md' })),
+      ).rejects.toBeInstanceOf(AdminCredentialInvalidError);
+
+      // The table is append-only and retained 24 months (§12.5.7), so anything written here cannot
+      // be taken back. Asserted on the recorded event rather than trusted to the hashing helper.
+      expect(JSON.stringify(audit.recorded)).not.toContain('nobody@easyesg.md');
+    });
+
+    it('records a locked account before verifying anything', async () => {
+      const store = new FakeAdminSessionStore();
+      store.accounts.push(operator({ lockedAt: NOW }));
+      const audit = new FakeSystemAuditLog();
+
+      await expect(build(store, audit).execute(command())).rejects.toBeInstanceOf(
+        AdminAccountLockedError,
+      );
+
+      expect(audit.actions).toEqual([AUDIT_ACTION.ADMIN_SIGN_IN_BLOCKED]);
+    });
+
+    /**
+     * **A correct credential records nothing here**, because a sign-in is the pair: FR-75 makes the
+     * factor mandatory, so a password alone admits nobody and a row saying otherwise would
+     * overstate what happened. `CompleteAdminSignIn` owns the success event.
+     */
+    it('records nothing when the credential is correct — the sign-in has not happened yet', async () => {
+      const store = new FakeAdminSessionStore();
+      store.accounts.push(operator());
+      const audit = new FakeSystemAuditLog();
+
+      await build(store, audit).execute(command());
+
+      expect(audit.recorded).toEqual([]);
+    });
   });
 });

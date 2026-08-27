@@ -4,6 +4,8 @@ import configuration, { APP_MODE, type AppConfig } from '@api/config/configurati
 import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
 import { JwtAdminTokens } from '@api/infrastructure/adapters/token-signer/jwt-admin-tokens';
 import { AdminSessionStoreRepository } from '@api/infrastructure/persistence/platform/admin-session-store.repository';
+import { SYSTEM_AUDIT_LOG, type SystemAuditLog } from '@api/contracts/system-audit-log.port';
+import { SystemAuditLogRepository } from '@api/infrastructure/persistence/platform/system-audit-log.repository';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
@@ -51,6 +53,10 @@ const httpProviders: Provider[] = [
   AdminOriginGuard,
   { provide: CLOCK, useValue: (() => new Date()) as Clock },
   { provide: ADMIN_SESSION_STORE, useClass: AdminSessionStoreRepository },
+  // FR-81's log, written from this realm's sign-in path (task 28.4). Registered here rather than
+  // exported from `AuditModule`, which owns the vocabulary and no wiring yet — task 67.4 gives it
+  // a module body when `AuditInterceptor` and A-08 arrive.
+  { provide: SYSTEM_AUDIT_LOG, useClass: SystemAuditLogRepository },
   {
     // The store opens `totp_secret` on the way out (task 27.1). Registered here rather than
     // globally because this is the only module holding a sealed column today; task 27.2's
@@ -76,15 +82,25 @@ const httpProviders: Provider[] = [
   },
   {
     provide: BeginAdminSignIn,
-    inject: [ADMIN_SESSION_STORE, ADMIN_PASSWORD_HASHER, CLOCK],
-    useFactory: (store: AdminSessionStore, hasher: PasswordHasher, now: Clock) =>
-      new BeginAdminSignIn(store, hasher, now),
+    inject: [ADMIN_SESSION_STORE, ADMIN_PASSWORD_HASHER, SYSTEM_AUDIT_LOG, CLOCK],
+    useFactory: (
+      store: AdminSessionStore,
+      hasher: PasswordHasher,
+      audit: SystemAuditLog,
+      now: Clock,
+    ) =>
+      new BeginAdminSignIn(store, hasher, audit, now),
   },
   {
     provide: CompleteAdminSignIn,
-    inject: [ADMIN_SESSION_STORE, ADMIN_TOKENS, CLOCK],
-    useFactory: (store: AdminSessionStore, tokens: AdminTokens, now: Clock) =>
-      new CompleteAdminSignIn(store, tokens, now),
+    inject: [ADMIN_SESSION_STORE, ADMIN_TOKENS, SYSTEM_AUDIT_LOG, CLOCK],
+    useFactory: (
+      store: AdminSessionStore,
+      tokens: AdminTokens,
+      audit: SystemAuditLog,
+      now: Clock,
+    ) =>
+      new CompleteAdminSignIn(store, tokens, audit, now),
   },
   {
     provide: ResolveAdminSession,

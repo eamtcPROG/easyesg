@@ -320,7 +320,11 @@ Traps, each of which has cost someone a day:
 
 - **The catch-all filter registers first.** Nest scans filters backwards from the last registered
   for the first matching `@Catch`, so a catch-all added last swallows every specific one.
-- **`AuditInterceptor` registers last.** Last-registered is *innermost*, and only the innermost
+- **`AuditInterceptor` registers last** — when it exists. It is **task 67.4's** (assigned 27 Aug
+  2026, closing the same kind of plan gap `AdminRealmGuard` had): §6.2 puts it fourth in the
+  pipeline, but per-field tenant mutations are already captured by task 14's trigger, so what it
+  must add is answerable only once A-08 can read the result. Task 28.4 writes the admin sign-in
+  events directly rather than waiting for it. Last-registered is *innermost*, and only the innermost
   interceptor sees the handler's raw return value — which is how it records a created row's id.
 - **A guard that throws never reaches an interceptor.** `TenantTransactionGuard` opens a
   transaction, so the rollback cannot live only in a transaction interceptor —
@@ -395,6 +399,37 @@ It is what lets the switcher read the names of every organization an account bel
 organization sees every organization its actor belongs to, which would put task 29's IDNO and
 registered address outside the active tenant on every request. `tenant-isolation.e2e-spec.ts` has
 the only test that would catch its removal.
+
+Task 28.4 pays task 23's audit deferral: **every admin sign-in attempt is a row in
+`audit.system_audit_log`** — the completed pair, and each way it fails (credential, factor, locked,
+throttled). `SYSTEM_AUDIT_LOG` is the port (`contracts/`, because FR-159's writers are everywhere
+and the log's owner is one module), `SystemAuditLogRepository` the adapter, and `AUDIT_ACTION` the
+closed vocabulary written into `action` — which carries no `CHECK`, so that object is the only place
+the spelling is true.
+
+**The write takes its own connection, and that is the port's contract rather than the adapter's
+preference.** Every interesting event is a *failure*, and a failure throws — so a write enlisted in
+the caller's transaction would be rolled back by the very refusal it records, while every test
+asserting a *successful* sign-in stayed green. It is `SignIn`'s throttle-counter shape, stated on the
+port so a later "tidy" onto the request runner has to argue with it.
+
+**A failed audit write is logged, never rethrown.** The caller is usually already throwing, and
+turning a 401 into a 500 would tell the caller something false and hand a prober a way to
+distinguish states by breaking the log. The opposite belongs to a *ledger* (DR-6), and conflating
+the two is how a sign-in page starts 500-ing because a partition is missing.
+
+**`subject` is a SHA-256 of the normalised address, never the address** (§12.5.6, project owner).
+`actor_id` cannot answer for an attempt against an address matching no account, so without it the
+row said only *a failed admin sign-in happened*. Build it with `auditSubject` — a second hashing
+would be locally correct and globally useless, since the grouping is the whole point.
+
+**A platform audit row is invisible to `esg_app` AND to the owner**, which cost an hour to
+rediscover. The SELECT policy compares `organization_id` for equality and a platform row's is NULL,
+so nothing matches — and `FORCE ROW LEVEL SECURITY` subjects `esg_migrator` to its own policies, so
+being the owner does not help. **`esg_admin_ro`'s BYPASSRLS is the documented route**, which is why
+`DB_ADMIN_RO_USER`/`DB_ADMIN_RO_PASSWORD` now exist in `.env.example`: the e2e reads these rows the
+way the console will, rather than through a path the product does not use. An insert that reports
+`INSERT 0 1` followed by a `SELECT` returning nothing is this, not a failed write.
 
 ### Adding an append-only table
 

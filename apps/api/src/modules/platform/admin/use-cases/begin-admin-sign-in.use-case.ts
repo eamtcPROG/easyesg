@@ -1,8 +1,7 @@
 import {
-  AUTH_ATTEMPT_LIMIT,
-  AUTH_ATTEMPT_WINDOW_MS,
   LOCKOUT_THRESHOLD,
   adminSignInThrottleKey,
+  admitAuthAttempt,
 } from '@api/modules/identity/account/domain/auth-throttle';
 import { normaliseEmail } from '@api/modules/identity/account/domain/email-address';
 import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
@@ -18,6 +17,8 @@ import type {
 } from '../interfaces/admin-session-store.interface';
 import type { AdminAccount, AdminIdentity } from '../models/admin-session.model';
 import type { Clock } from '@api/contracts/clock.port';
+import type { SystemAuditLog } from '@api/contracts/system-audit-log.port';
+import { AUDIT_ACTION, auditSubject } from '@api/modules/platform/audit/models/audit-action.model';
 
 export interface BeginAdminSignInCommand {
   readonly email: string;
@@ -54,6 +55,7 @@ export class BeginAdminSignIn {
   constructor(
     private readonly store: AdminSessionStore,
     private readonly hasher: PasswordHasher,
+    private readonly audit: SystemAuditLog,
     private readonly now: Clock,
   ) {}
 
@@ -61,11 +63,27 @@ export class BeginAdminSignIn {
     const email = normaliseEmail(command.email);
     const now = this.now();
 
+    // The subject for every event below: a digest of what was presented, so repeated attempts
+    // against one address group whether or not it names an account (§12.5.6, task 28.4).
+    const subject = auditSubject(email);
+
     const gate = await this.store.run((tx) => this.admitAttempt(tx, command.clientIp, email, now));
-    if (gate.limited) throw new AuthRateLimitedError();
+    if (gate.limited) {
+      // Recorded before the throw and on its own connection — the port's contract. A refusal IS
+      // the event, so a write inside the caller's transaction would be rolled back by it.
+      await this.audit.record({ action: AUDIT_ACTION.ADMIN_SIGN_IN_THROTTLED, subject });
+      throw new AuthRateLimitedError();
+    }
     const account = gate.account;
 
-    if (account?.lockedAt) throw new AdminAccountLockedError();
+    if (account?.lockedAt) {
+      await this.audit.record({
+        action: AUDIT_ACTION.ADMIN_SIGN_IN_BLOCKED,
+        actorId: account.id,
+        subject,
+      });
+      throw new AdminAccountLockedError();
+    }
 
     const passwordMatches =
       account !== null
@@ -76,6 +94,16 @@ export class BeginAdminSignIn {
       if (account !== null) {
         await this.store.run((tx) => tx.registerFailedSignIn(account.id, LOCKOUT_THRESHOLD, now));
       }
+      // **One action for both**, mirroring the single `AdminCredentialInvalidError`: an unknown
+      // address and a wrong password are indistinguishable on the wire (NFR-64), and a log that
+      // told them apart would be the oracle the uniform response exists to prevent. `actorId`
+      // still separates them for an operator who is entitled to the difference — it resolves only
+      // where an account did.
+      await this.audit.record({
+        action: AUDIT_ACTION.ADMIN_SIGN_IN_CREDENTIAL_REFUSED,
+        actorId: account?.id ?? null,
+        subject,
+      });
       throw new AdminCredentialInvalidError();
     }
 
@@ -92,11 +120,7 @@ export class BeginAdminSignIn {
     now: Date,
   ): Promise<{ limited: true; account?: never } | { limited: false; account: AdminAccount | null }> {
     const key = adminSignInThrottleKey(clientIp, email);
-    const since = new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS);
-    if ((await tx.countRecentAuthAttempts(key, since)) >= AUTH_ATTEMPT_LIMIT) {
-      return { limited: true };
-    }
-    await tx.recordAuthAttempt(key, now);
+    if (!(await admitAuthAttempt(tx, { key, now }))) return { limited: true };
     return { limited: false, account: await tx.findAdminAccountByEmail(email) };
   }
 

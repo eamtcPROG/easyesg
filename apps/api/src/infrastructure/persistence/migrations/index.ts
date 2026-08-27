@@ -17,6 +17,7 @@ import { InvitationPolicyNarrowing1788048000000 } from './1788048000000-invitati
 import { SecretEncryptionAtRest1788134400000 } from './1788134400000-secret-encryption-at-rest';
 import { TenantTotp1788220800000 } from './1788220800000-tenant-totp';
 import { PasswordChangedRevocation1788307200000 } from './1788307200000-password-changed-revocation';
+import { AuditSubject1788480000000 } from './1788480000000-audit-subject';
 import { ProviderIdentityUnlink1788393600000 } from './1788393600000-provider-identity-unlink';
 
 /**
@@ -54,4 +55,5 @@ export const migrations = [
   TenantTotp1788220800000,
   PasswordChangedRevocation1788307200000,
   ProviderIdentityUnlink1788393600000,
+  AuditSubject1788480000000,
 ];

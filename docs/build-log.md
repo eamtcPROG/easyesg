@@ -4355,3 +4355,88 @@ surfaces do not exist yet and should each pick it up as they land.
 `pnpm gates:clean` — EXIT=0. Both content gates proven to bite on a planted identifier; the detector
 carries its own positive and negative cases, since a content rule over a clean corpus is otherwise
 indistinguishable from a broken regex.
+
+---
+
+## Task 28.4 — Request-tier audit capture · 2026-08-27
+
+Task 23's audit deferral, paid. A-01's artboard carries a LOGGED disclosure and task 23 **omitted**
+it rather than ship a screen stating something the code did not do — so nothing inaccurate was live,
+and this task's job was to make it true and then say it.
+
+### Five outcomes, and the refusals are the point
+
+`admin.sign_in.{succeeded, credential_refused, factor_refused, blocked, throttled}`. A log holding
+only successes answers *who got in* and not *who tried*, which is the question an operator opens it
+for.
+
+That shapes the whole design, because **every interesting event is a failure and a failure throws**.
+A write enlisted in the caller's transaction would be rolled back by the very refusal it records —
+and every test asserting a *successful* sign-in would stay green while it happened. So
+`SystemAuditLog.record` commits on its own connection, and the guarantee is stated on the **port**
+rather than left in the adapter, so a later tidy onto the request runner has to argue with it. It is
+`SignIn`'s throttle-counter shape, one layer up.
+
+The inverse judgement is made in the adapter: **a failed audit write is logged, never rethrown.**
+The caller is usually already throwing, and turning a 401 into a 500 would tell the caller something
+false about their own request and hand a prober a way to distinguish states by breaking the log. A
+*ledger* is the opposite case — DR-6 makes the billing ledger's write part of the transaction it
+records — and conflating the two is how a sign-in page starts 500-ing because a partition is missing.
+
+### The subject column, and why it is a digest
+
+**Decision: a pseudonymous `subject`** (project owner; §12.5.6). The table carried `actor_id` and no
+free-text column, so an attempt against an address matching no account was unattributable — the row
+said only *a failed admin sign-in happened*, with nothing to group repeated probing by.
+
+`subject` is the **SHA-256 of the normalised address**, never the address. The table is append-only
+by privilege and trigger and retained 24 months, so anything written cannot be taken back, and a
+security log is exactly where a personal identifier accumulates without anyone deciding it should.
+Normalised through the same `emailIdentityKey` the credential lookup uses, so the grouping survives
+casing and the log agrees with the account table about what one address is. Recorded on **every**
+attempt including successes, because `subject` is what was *presented* and `actor_id` is what
+*resolved* — two different facts, and recording it only on failures would make the grouping stop at
+the outcome boundary, which is the boundary an investigation most wants to cross.
+
+### The hour this cost: a row that inserts and cannot be read
+
+The e2e reported no rows. The adapter swallows and logs, and the test app runs with logging off, so
+the first suspicion was a failed write. It was not: `INSERT 0 1` followed by a `SELECT` in the *same
+session* returned zero.
+
+**A platform audit row is invisible to `esg_app` and to the owner alike.** The SELECT policy compares
+`organization_id` for equality and a platform row's is NULL, so nothing matches — and `FORCE ROW
+LEVEL SECURITY` subjects `esg_migrator` to its own policies, so being the owner does not help. Task
+14's migration says exactly this and names the route: `esg_admin_ro`'s BYPASSRLS, which is what the
+administrative console uses.
+
+So the fix was not a workaround but the *documented path*: `DB_ADMIN_RO_USER`/`DB_ADMIN_RO_PASSWORD`
+now exist in `.env.example` (which CI's database job copies), and the suite reads these rows the way
+A-08 will. A test reading them any other way would have been testing a route the product does not
+have.
+
+### The note diverges from the artboard, deliberately
+
+The artboard's disclosure reads *"This attempt is recorded with time, account and address… in the
+system audit log, whether or not it succeeds."* Two of those three are now true and one is not: what
+is stored is a digest. Shipping the sentence verbatim would have repeated exactly the mistake task 23
+declined to make, so A-01 says *momentul, contul și o amprentă a adresei introduse — nu adresa în
+sine*.
+
+One near-miss worth recording: the note first went in as `--text-muted` on `--surface-sunken`, which
+the task-23 entry in this file documents as measuring 4.47:1 and failing the axe gate. Caught by
+reading that entry rather than by the gate, which is the cheaper of the two.
+
+### Also
+
+`AuditInterceptor` was ownerless — in `architecture.md` §6.2's pipeline and carrying FR-159, claimed
+by no `task.md` row, the same gap `AdminRealmGuard` had. Assigned to **67.4** (project owner): what
+it must contain is answerable only once A-08 can read the result, and per-field tenant mutations are
+already captured by task 14's trigger, so an interceptor built earlier would mostly duplicate
+`core.field_change` with less detail. The last two hand-rolled throttle blocks — both admin sign-in
+steps, both already correct — were converted to `admitAuthAttempt`, so the window now has one
+implementation across all six callers.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0.
