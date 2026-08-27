@@ -12,6 +12,8 @@ import {
   type SocialSignInIntent,
 } from '@easyesg/contracts';
 import { toLocale, type Locale } from '@easyesg/i18n';
+import { holdPendingLink } from '@/server/pending-link';
+import { readSession } from '@/server/session';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
 import { sanitizeReturnPath } from '@/lib/locale-path';
@@ -47,6 +49,8 @@ function requestLocale(request: NextRequest): Locale {
 const SCREEN = {
   SIGN_IN: ROUTES.SIGN_IN,
   REGISTER: ROUTES.REGISTER,
+  /** Where a link flow starts and returns (task 27.7). */
+  ACCOUNT_CREDENTIALS: ROUTES.ACCOUNT_CREDENTIALS,
 } as const;
 
 type Screen = (typeof SCREEN)[keyof typeof SCREEN];
@@ -60,9 +64,19 @@ function noticeRedirect(locale: Locale, screen: Screen, notice: SocialNotice): N
   return NextResponse.redirect(new URL(`${pathname}?notice=${notice}`, env.publicOrigin), 302);
 }
 
-/** The screen a failed flow returns to — where the user started, per the recorded intent. */
+/**
+ * The screen a failed flow returns to — where the user started, per the recorded intent.
+ *
+ * A **link** started on S-28 and returns there (task 27.7): sending a signed-in user to the
+ * sign-in page because their provider refused would be telling them their session had ended,
+ * which it has not.
+ */
 const originScreen = (intent: SocialSignInIntent): Screen =>
-  intent === SOCIAL_SIGN_IN_INTENT.REGISTER ? SCREEN.REGISTER : SCREEN.SIGN_IN;
+  intent === SOCIAL_SIGN_IN_INTENT.LINK
+    ? SCREEN.ACCOUNT_CREDENTIALS
+    : intent === SOCIAL_SIGN_IN_INTENT.REGISTER
+      ? SCREEN.REGISTER
+      : SCREEN.SIGN_IN;
 
 export async function beginSocialFlow(
   request: NextRequest,
@@ -74,7 +88,17 @@ export async function beginSocialFlow(
   }
 
   const intentParam = request.nextUrl.searchParams.get('intent') ?? '';
-  const intent = isSocialSignInIntent(intentParam) ? intentParam : SOCIAL_SIGN_IN_INTENT.SIGN_IN;
+  const requested = isSocialSignInIntent(intentParam) ? intentParam : SOCIAL_SIGN_IN_INTENT.SIGN_IN;
+
+  // **A link is claimed by a parameter and granted by a session** (§12.5.6's task-27.7 row). The
+  // intent decides which completion route the callback returns to, so a caller who could assert
+  // `link` without one would send an anonymous browser to an authenticated completion — refused
+  // there, but only after a provider round trip nobody could act on. Downgrading to sign-in here
+  // is the honest answer: with no session, a link is exactly what a sign-in is.
+  const intent =
+    requested === SOCIAL_SIGN_IN_INTENT.LINK && (await readSession()) === null
+      ? SOCIAL_SIGN_IN_INTENT.SIGN_IN
+      : requested;
   const returnCandidate = request.nextUrl.searchParams.get('return') ?? undefined;
   const returnPath = sanitizeReturnPath(returnCandidate) ? (returnCandidate ?? null) : null;
   const redirectUri = `${env.publicOrigin}/auth/social/${providerParam}/callback`;
@@ -128,6 +152,25 @@ export async function completeSocialFlow(
   const state = query.get('state');
   if (!code || !state || state !== transaction.state) {
     return noticeRedirect(locale, SCREEN.SIGN_IN, SOCIAL_NOTICE.RESTART);
+  }
+
+  // **A link does not complete here** (task 27.7). FR-8 needs the current password, and it is asked
+  // for after the provider returns rather than carried across the redirect — so the callback holds
+  // the redeemed values and hands the reader back to S-28's pending state. Nothing is attached
+  // until the password is supplied there; abandoning the screen leaves the account exactly as it was.
+  if (transaction.intent === SOCIAL_SIGN_IN_INTENT.LINK) {
+    await holdPendingLink({
+      provider: providerParam,
+      code,
+      state,
+      nonce: transaction.nonce,
+      codeVerifier: transaction.codeVerifier,
+      redirectUri: transaction.redirectUri,
+    });
+    return NextResponse.redirect(
+      new URL(getPathname({ locale, href: SCREEN.ACCOUNT_CREDENTIALS }), env.publicOrigin),
+      302,
+    );
   }
 
   const outcome = await api.post<CompleteSocialSignInRequest, SessionResponse>(

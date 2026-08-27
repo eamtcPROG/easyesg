@@ -19,7 +19,8 @@
     "signOut": "Sign out",
     "workspaceNav": {
       "label": "Organisation sections",
-      "users": "Users & access"
+      "users": "Users & access",
+      "credentials": "Sign-in details"
     },
     "index": {
       "sort": {
@@ -115,6 +116,29 @@
       "problemAction": "Check the details you entered and try again.",
       "unverifiedAction": "Go to address confirmation",
       "lockedAction": "Reset your password"
+    },
+    "factor": {
+      "title": "Confirm it's you",
+      "subtitle": "Your password was correct. One code more and we'll open your account.",
+      "codeLabel": "Code from your authenticator app",
+      "codeHelp": "Six digits, which change every thirty seconds.",
+      "codeMissing": "The code is missing, so we can't confirm it's you. Open your authenticator app and enter the code showing now.",
+      "expiresIn": "{minutes, plural, one {One minute left} other {# minutes left}}",
+      "recoveryLabel": "Recovery code",
+      "recoveryHelp": "One of the ten codes you were given when you turned on the extra step. Each one works once.",
+      "recoveryMissing": "The recovery code is missing, so we can't confirm it's you. Enter one of the codes you saved when you turned the extra step on.",
+      "submit": "Confirm and sign in",
+      "summaryTitle": "The field below needs attention before you can continue",
+      "problemTitle": "That code wasn't accepted",
+      "problemBody": "We couldn't confirm the code, so your account stays closed.",
+      "problemAction": "Check the clock on your device, then try again with the code showing now.",
+      "lockedAction": "Reset your password",
+      "useRecovery": "No access to the app? Use a recovery code",
+      "useAuthenticator": "Back to the code from the app",
+      "startOver": "Cancel and sign in again",
+      "lapsedTitle": "This step has expired",
+      "lapsedBody": "More than five minutes have passed since you entered your password, so this confirmation is no longer valid and your account stays closed.",
+      "lapsedAction": "Sign in again"
     },
     "resetRequest": {
       "title": "Reset your password",
@@ -239,6 +263,71 @@
           "body": "This link does not match any invitation, so you have not been added to an organisation. Check that you copied all of it from the email, or ask for a new invitation."
         }
       }
+    },
+    "credentials": {
+      "title": "Sign-in details",
+      "lede": "How you get into your account, and which ways you have. Keep at least one working.",
+      "password": {
+        "heading": "Password",
+        "description": "Changing your password requires the one in force now.",
+        "current": "Current password",
+        "next": "New password",
+        "terminate": "Sign out of your other devices",
+        "terminateHelp": "The device you are making the change on stays signed in.",
+        "submit": "Change password",
+        "currentMissing": "Enter your current password, or the change cannot be made.",
+        "nextMissing": "Enter the new password, or the change cannot be made.",
+        "doneTitle": "Your password was changed",
+        "doneBody": "Use the new password the next time you sign in.",
+        "doneWithSessions": "Your password was changed and your other sessions were ended."
+      },
+      "factor": {
+        "heading": "Two-step verification",
+        "description": "A code from your authenticator app, asked for every time you sign in.",
+        "off": "Not turned on.",
+        "on": "Turned on. Recovery codes left: {remaining}.",
+        "noCodes": "Turned on, but you have no recovery codes left. Generate new ones now, while you still have access.",
+        "enable": "Turn on two-step verification",
+        "disable": "Turn off",
+        "reissue": "Generate new codes",
+        "secretHeading": "Scan or enter this code",
+        "secretHelp": "Add it to your authenticator app, then enter the code the app shows below.",
+        "codeLabel": "Code from the app",
+        "codeMissing": "Enter the code from the app, or setting this up cannot be completed.",
+        "confirm": "Finish turning it on",
+        "abandon": "Cancel",
+        "enabledTitle": "Two-step verification is on",
+        "enabledBody": "You will be asked for a code every time you sign in from now on.",
+        "disabledTitle": "Two-step verification is off",
+        "disabledBody": "Signing in needs your password only again.",
+        "codesHeading": "Your recovery codes",
+        "codesHelp": "We show these once. Keep them somewhere safe — each one works once, for when you do not have your phone.",
+        "codesDone": "I have saved them",
+        "codesTitle": "New recovery codes",
+        "codesBody": "Your previous codes no longer work."
+      },
+      "providers": {
+        "heading": "Linked accounts",
+        "description": "You can sign in with one of these as well as with your password.",
+        "none": "Nothing linked.",
+        "link": "Link {provider}",
+        "unlink": "Unlink",
+        "confirmHeading": "Finish linking your {provider} account",
+        "confirmHelp": "Enter your current password to confirm. Without it, the account is not linked.",
+        "confirm": "Confirm the link",
+        "linkedTitle": "The account was linked",
+        "linkedBody": "You can use it to sign in from now on.",
+        "unlinkedTitle": "The account was unlinked",
+        "unlinkedBody": "You can no longer use it to sign in."
+      },
+      "unreachable": {
+        "title": "This section could not be loaded",
+        "body": "The details could not be read, so this section cannot be used right now. Reload the page to try again."
+      },
+      "failedTitle": "That could not be completed",
+      "unreachableBody": "No answer came back, so nothing was changed. Try again.",
+      "doneAction": "Nothing more to do.",
+      "failedAction": "Try again."
     }
   },
   "organization": {

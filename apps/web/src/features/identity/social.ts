@@ -1,3 +1,4 @@
+import { isSocialProvider, type SocialProvider } from '@easyesg/contracts';
 /**
  * The social-flow notices (task 24): every way the OAuth round trip can end somewhere other
  * than a session, as a closed vocabulary (CLAUDE.md, "Conventions") — the callback Route
@@ -26,3 +27,17 @@ export type SocialNotice = (typeof SOCIAL_NOTICE)[keyof typeof SOCIAL_NOTICE];
 
 export const isSocialNotice = (value: string): value is SocialNotice =>
   (Object.values(SOCIAL_NOTICE) as string[]).includes(value);
+
+/**
+ * The provider's brand name — a locale-invariant proper noun, not copy; the sentence around it is.
+ *
+ * Moved here from a private map in `social-providers.tsx` when S-28 became its second consumer
+ * (task 27.7): an operation over a vocabulary belongs with the vocabulary, not copied per caller.
+ */
+const DISPLAY_NAME: Record<SocialProvider, string> = {
+  google: 'Google',
+  microsoft: 'Microsoft',
+};
+
+export const providerLabel = (provider: string): string =>
+  isSocialProvider(provider) ? DISPLAY_NAME[provider] : provider;

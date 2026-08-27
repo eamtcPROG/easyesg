@@ -99,6 +99,20 @@ would strip the cookie from. S-01's provider buttons (`SocialProviders`, a Serve
 streamed behind the form) and the `?notice=` callout (`SocialNoticeCallout`, closed vocabulary in
 `features/identity/social.ts`) are the screen surface; FR-8 link/unlink is task 27's, on S-28.
 
+**S-28 and S-01's staged factor step are live (tasks 27.7, 27.8).** `features/credentials/` holds
+the Record screen over `RecordShell` — extracted to `packages/ui` at this first instance, not
+deferred — and `features/identity/`'s `factor.ts` / `factor-state.ts` / `components/factor-form.tsx`
+hold `/sign-in/factor`. Three things to know before touching either. **The factor challenge lives
+in `server/factor-challenge.ts`'s sealed httpOnly cookie and only `expiresAt` reaches the browser**
+— `peekFactorChallenge` reads without clearing because a render cannot write cookies, and
+`consumeFactorChallenge`'s caller puts it back on a refusal, since the API's challenge is
+deliberately not single-use. **`signInAction` branches on `kind`, never on the presence of
+`accessToken`** — probing for a field is writing the discriminator a second time, and the absence of
+that branch is what made enrolling a factor crash the next sign-in for four tasks (build-log,
+27 Aug 2026). And **`FACTOR_LAPSED` is a fourth `status` beside `API_OUTCOME`'s three**, declared in
+`features/identity/factor.ts` and deliberately not a member of the wire vocabulary: no server can
+send it.
+
 **The message catalogues have their first content.** `src/messages/{ro,en,ru}.json` carry
 `chrome` and `identity`; all three separately authored, RO the source. Adding a string is a JSON
 edit — and adding it to `ro.json` alone fails `src/messages/messages.parity.spec.ts`, which is

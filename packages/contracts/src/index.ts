@@ -56,6 +56,12 @@ export type RequestPasswordResetRequest =
   components['schemas']['RequestPasswordResetRequestDto'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequestDto'];
 
+// identity — the second factor at sign-in (UC-194, UC-195; task 27.3). `POST /auth/session` answers
+// one of TWO shapes, discriminated by `kind` — see `SIGN_IN_OUTCOME` in `social.ts`; a client that
+// probes for `accessToken` instead has written the discriminator twice.
+export type FactorChallengeResponse = components['schemas']['FactorChallengeResponseDto'];
+export type CompleteFactorRequest = components['schemas']['CompleteFactorRequestDto'];
+
 // identity — memberships and members (FR-12, FR-56 … FR-60; tasks 25.2, 25.3). Two shapes and not
 // one: `Member` is a person in THIS organization, read with a tenant bound; `AccountMembership` is
 // an organization the CALLER belongs to, read before any tenant exists. They never appear together.
@@ -93,6 +99,7 @@ export type AcceptedInvitation = components['schemas']['AcceptedInvitationRespon
 // browser; these shapes are the back-channel surface between the web tier and the api.
 export {
   SOCIAL_PROVIDER,
+  SIGN_IN_OUTCOME,
   SOCIAL_SIGN_IN_INTENT,
   isSocialProvider,
   isSocialSignInIntent,

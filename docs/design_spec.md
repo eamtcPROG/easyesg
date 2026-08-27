@@ -332,6 +332,17 @@ enforcement. And the step must not say more than a correct password already says
 discloses that this account has a factor, which is why nothing before the password may hint at one
 (NFR-64).
 
+**It is a staged step with its own address** (`/sign-in/factor`, built 27 Aug 2026). That is not a
+contradiction: S-02 is already one `S-nn` over three routes, and UX-4 requires an addressable state
+to be addressable. What makes the step *staged* is its precondition — it renders only while the
+sign-in challenge is held, and opened directly it returns the reader to the password. Two
+affordances share it, per the controls list above: the authenticator code, and the recovery code
+offered on the same surface rather than behind a support request, because UX-108's point is that a
+person without their authenticator must not need a second device to get in. The step carries its
+own **expired** state, since the challenge is time-bounded and the reader may be reading it from a
+phone screen: the form is replaced by what happened, what it means and the way back to S-01
+(NFR-79), not by a refusal that invites a retype the server would reject.
+
 ### S-02 — Verify email · reset password · set password
 
 - **Purpose:** prove control of an email address, and set or replace a password from a link.
@@ -753,11 +764,21 @@ discloses that this account has a factor, which is why nothing before the passwo
 - **Layout and regions:** identity header, grouped fields, save/cancel affordance.
 - **Content and data shown:** password state; linked provider identities; **second-factor state, and how many recovery codes remain unspent**.
 - **Controls and actions:** change password; link a provider; unlink a provider; **enrol a second factor; turn it off; re-issue recovery codes**.
-- **States:** loading — initial; error — recoverable; error — permission; success.
+- **States:** loading — initial; **pending confirmation** (returned from a provider with a link awaiting the password); error — recoverable; error — permission; success.
 - **Validation behaviour:** changing a password requires the current one (FR-7). A link is established only after authentication by an existing credential — a provider assertion alone is never sufficient (UC-11, FR-8). The system refuses to remove the last remaining credential and prompts the user to set a password first, with the consequence stated: an account with no usable credential is unrecoverable and takes its organization memberships down with it (UC-12, UX-70). **Enrolling or turning off a second factor requires the current password**, for the reason the link rule already gives — a second factor is the control that survives a compromised session, so a compromised session must not be able to install or strip one (UC-193). **Enrolment is not complete until a current code is returned**, and the recovery codes are shown exactly once, which the screen must say before it shows them rather than after.
 - **Exits:** S-27.
 - **Use cases:** UC-10, UC-11, UC-12, **UC-193**.
 - **FRs:** FR-7, FR-8. **Requirements:** NFR-95.
+
+**Linking asks for the password *after* the provider round trip, not before** (27 Aug 2026, task
+27.7's batch). FR-8 requires an existing credential before a link is established, and the OAuth
+redirect sits in the middle of the flow — so the screen returns from the provider with the link
+pending and asks then, in one state that says what it is for. The alternative, sealing the password
+into the short-lived transaction cookie before leaving, would put a live password into browser
+storage for the duration of a provider round trip, which nothing else in this product does with
+one. The consequence for this entry's **States** row is a further designed state — *pending
+confirmation*, reached only by returning from a provider — and it is a state rather than a modal
+because a user who abandons it must be able to leave the screen with nothing half-done.
 
 **The three TOTP rows above were added 26 Aug 2026** (task 27.2's open-question batch), and the
 addition is the screen catching up with `non_functional_requirements.md` C-3: NFR-95 promoted

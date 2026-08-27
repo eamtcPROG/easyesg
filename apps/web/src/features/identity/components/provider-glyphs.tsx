@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import { isSocialProvider, type SocialProvider } from '@easyesg/contracts';
 /**
  * The provider marks S-01's `ProviderButton`s carry (task 24). Content, not components: no
  * state, no text, sized by the button's glyph slot. Both are the providers' own sign-in marks
@@ -37,3 +39,22 @@ export function MicrosoftGlyph() {
     </svg>
   );
 }
+
+/**
+ * The provider's mark, by provider (task 27.7).
+ *
+ * It lived as a private `GLYPHS` map inside `social-providers.tsx` until S-28 became a second
+ * consumer — which is the smell CLAUDE.md names: a helper whose body mentions an imported
+ * vocabulary and nothing else local is a missing export from the vocabulary's own module. Here
+ * that module is this one, because the glyphs are what it holds.
+ *
+ * `Record<SocialProvider, …>` so adding a provider to the vocabulary without a mark is a compile
+ * error rather than a blank square at render.
+ */
+const GLYPHS: Record<SocialProvider, ReactNode> = {
+  google: <GoogleGlyph />,
+  microsoft: <MicrosoftGlyph />,
+};
+
+export const providerGlyph = (provider: string): ReactNode =>
+  isSocialProvider(provider) ? GLYPHS[provider] : null;

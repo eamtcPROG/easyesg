@@ -34,6 +34,10 @@ export const ROUTES = {
   SIGN_IN: '/sign-in',
   /** S-01 — register. */
   REGISTER: '/register',
+  /** S-01's second step — the factor challenge (UC-194, UC-195; task 27.8, built with 27.7
+   *  because enrolment without it is a lockout). Its own address, so a reader who reloads is
+   *  still on the step rather than back at the password. */
+  SIGN_IN_FACTOR: '/sign-in/factor',
   /** S-02 — the verification landing, which also hosts the resend challenge. */
   VERIFY: '/verify',
   /** S-02 — request a reset link. */
@@ -49,6 +53,9 @@ export const ROUTES = {
   ORGANIZATION_UNAVAILABLE: '/organization-unavailable',
   /** S-16 — users and access (task 26.4). */
   ORGANIZATION_USERS: '/organization/users',
+  /** S-28 — credentials and linked identities (task 27.7). The destination S-01's
+   *  provider-collision refusal names, which is why it is a route constant and not a literal. */
+  ACCOUNT_CREDENTIALS: '/account/credentials',
   /** S-06 — the report list. */
   REPORTS: '/reports',
 } as const;

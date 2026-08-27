@@ -70,3 +70,98 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Utilizatori și acces', level: 1 })).toBeVisible();
   await scan(page);
 });
+
+test('axe finds no violations on the credentials screen', async ({ page }) => {
+  const email = `${RUN_PREFIX}-credentials@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+
+  organizations.push(
+    await grantMembership({ email, organizationName: `${RUN_PREFIX}-cred-org` }),
+  );
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.waitForURL('**/home');
+
+  await page.goto('/account/credentials');
+  // Three labelled regions and one h1 — the Record archetype's structure is most of what axe
+  // has to judge here, and it is the part a screen gets wrong invisibly.
+  await expect(page.getByRole('heading', { name: 'Date de autentificare', level: 1 })).toBeVisible();
+  await scan(page);
+});
+
+/**
+ * S-01's staged factor step (task 27.8) — scanned because `CodeField` is a shape axe has something
+ * to say about and no other screen presents at rest.
+ *
+ * The control is **one** `<input>` behind `aria-hidden` painted cells (task 27.4, UX-108): six
+ * separate boxes would each need a name, would fight every password manager, and would fail
+ * 3.3.8's "no cognitive function test" the moment a reader had to track which box they were in.
+ * That decision is only sound if the single input is properly labelled and described, which is
+ * precisely what this scan judges — and it costs an enrolment to reach, which is why it is here
+ * and not in the loop at the top.
+ */
+test('axe finds no violations on the second-factor step', async ({ page }) => {
+  const email = `${RUN_PREFIX}-factor@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+
+  organizations.push(
+    await grantMembership({ email, organizationName: `${RUN_PREFIX}-factor-org` }),
+  );
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.waitForURL('**/home');
+
+  await page.goto('/account/credentials');
+  const section = page.getByRole('region', { name: 'Verificare în doi pași' });
+  await page.getByLabel('Parola actuală').last().fill(PASSWORD);
+  await section.getByRole('button', { name: 'Activați verificarea în doi pași' }).click();
+  const secret = (await section.locator('.t-code').first().textContent()) ?? '';
+
+  const { TOTP, Secret } = await import('otpauth');
+  const generator = new TOTP({
+    issuer: 'EasyESG Admin',
+    label: email,
+    algorithm: 'SHA1',
+    digits: 6,
+    period: 30,
+    secret: Secret.fromBase32(secret),
+  });
+  await section.getByLabel('Codul din aplicație').fill(generator.generate());
+  await section.getByRole('button', { name: 'Finalizați activarea' }).click();
+  await section.getByRole('button', { name: 'Le-am notat' }).click();
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.waitForURL('**/sign-in/factor');
+
+  await expect(page.getByRole('heading', { name: 'Confirmă că ești tu', level: 1 })).toBeVisible();
+  await scan(page);
+
+  // The other affordance is a different control entirely — a plain sixteen-character field — and
+  // switching to it is the only way axe sees it.
+  await page.getByRole('button', { name: /Folosește un cod de recuperare/ }).click();
+  await expect(page.getByLabel('Cod de recuperare')).toBeVisible();
+  await scan(page);
+});

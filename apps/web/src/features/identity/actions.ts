@@ -9,6 +9,8 @@ import type {
   RequestPasswordResetRequest,
   ResendVerificationEmailRequest,
   ResetPasswordRequest,
+  CompleteFactorRequest,
+  FactorChallengeResponse,
   SessionResponse,
   SignInRequest,
   SignOutRequest,
@@ -34,6 +36,9 @@ import type {
   VerifyResult,
 } from './types/action-results';
 import { ROUTES } from '@/lib/routes';
+import { SIGN_IN_OUTCOME } from '@easyesg/contracts';
+import { FACTOR_LAPSED, type CompleteFactorFailure } from './factor';
+import { consumeFactorChallenge, holdFactorChallenge } from '@/server/factor-challenge';
 
 /**
  * Server Actions for S-01/S-02 — the decided transport for unauthenticated identity calls
@@ -82,6 +87,39 @@ export async function resendVerificationAction(
 
 /** `returnTo` is `proxy.ts`'s `?return=` value, carried through the screen — sanitized here
  *  because it round-trips through the browser and is therefore attacker-shapeable. */
+/**
+ * UC-194's second step, and UC-195's recovery-code route through the same field.
+ *
+ * The challenge itself never reaches the browser: it is read from the sealed cookie the first step
+ * wrote, which is what keeps a value proving "this password was just verified" out of a form.
+ */
+export async function completeFactorAction(command: {
+  code: string;
+}): Promise<CompleteFactorFailure> {
+  const held = await consumeFactorChallenge();
+  // Lapsed, never issued, or cleared: the challenge proves the password was verified *just now*,
+  // so nothing here revives it and the only way on is S-01. Reported as its own standing rather
+  // than as `unreachable` — nothing failed to reach the API, and "try again" would be the wrong
+  // sentence for a step that cannot be tried again (`factor.ts`).
+  if (!held) return { status: FACTOR_LAPSED };
+
+  const outcome = await api.post<CompleteFactorRequest, SessionResponse>(
+    '/auth/session/factor',
+    { challenge: held.challenge, code: command.code },
+  );
+  if (outcome.status !== API_OUTCOME.Ok) {
+    // **The challenge is put back on a refusal.** §12.5.6 makes it deliberately not single-use so
+    // a mistyped code leaves the reader on the step rather than back at their password; consuming
+    // it here would take that away.
+    await holdFactorChallenge(held);
+    return outcome;
+  }
+
+  const session = await establishSession(outcome.value);
+  const target = await resolvePostSignIn(held.returnTo ?? undefined);
+  redirect({ href: target.href, locale: target.locale ?? session.account.locale });
+}
+
 export interface SignInCommand {
   email: string;
   password: string;
@@ -101,13 +139,32 @@ export interface SignInCommand {
  * includes every case where the branch overrode the return path.
  */
 export async function signInAction(command: SignInCommand): Promise<SignInFailure> {
-  const outcome = await api.post<SignInRequest, SessionResponse>('/auth/session', {
-    email: command.email,
-    password: command.password,
-  });
+  const outcome = await api.post<SignInRequest, SessionResponse | FactorChallengeResponse>(
+    '/auth/session',
+    { email: command.email, password: command.password },
+  );
   if (outcome.status !== API_OUTCOME.Ok) return outcome;
 
-  const session = await establishSession(outcome.value);
+  // **Two shapes since task 27.3**, discriminated by `kind` and never by probing for a field. An
+  // account with a second factor gets a challenge instead of a session (UC-194) — held server-side
+  // in its own sealed cookie, exactly as task 24's OAuth transaction is, because it proves this
+  // API verified the password just now and must not be readable by the browser.
+  const answered = outcome.value;
+  if (answered.kind !== SIGN_IN_OUTCOME.SIGNED_IN) {
+    await holdFactorChallenge({
+      challenge: answered.challenge,
+      expiresAt: answered.expiresAt,
+      returnTo: command.returnTo,
+    });
+    // The reader's CURRENT locale, not the profile's: they are still on S-01 and the sign-in has
+    // not completed, so OQ-32's preference has nothing to apply to yet.
+    redirect({ href: ROUTES.SIGN_IN_FACTOR, locale: await getLocale() });
+    // `redirect` throws, so this is unreachable — it is here because next-intl's does not declare
+    // `never`, and without it the union below is not narrowed.
+    return undefined;
+  }
+
+  const session = await establishSession(answered);
   // §4.3's branch, over the memberships the session can now read (task 25.4). It replaces the
   // recorded interim that landed every sign-in on `/home`, and it decides the `?return=` question
   // too: a deep link is honoured only where an organization resolves.

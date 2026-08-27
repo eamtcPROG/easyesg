@@ -3845,3 +3845,140 @@ because there was nowhere to link afterwards. It now names the destination: sign
 your security settings. Three source comments pointing at "task 27" are updated to say what shipped.
 
 **A password account that cannot link a provider.** That is simply built.
+
+## Tasks 27.7 and 27.8 — the archetype's first instance, and a button that was a lockout · 2026-08-27
+
+S-28 is the Record archetype's first screen and 27.8's staged step is S-01's second half. They are
+one entry because they became one task, and the reason is the finding below.
+
+### The finding: 27.7 alone would have shipped a lockout
+
+S-28's enrolment control is the point of the screen. Driving it in a browser — enrol a factor, then
+sign in again — produced a crash, and the cause was three tasks old. **Task 27.3 changed
+`POST /auth/session` to answer one of two shapes discriminated by `kind`, and nothing in `apps/web`
+was ever taught the second one.** `signInAction` read `accessToken` off a body that no longer
+carried it, `establishSession` sealed `undefined`, and the next request had a cookie it could not
+open.
+
+Every gate was green, and each for its own honest reason. `openapi:check` compares the spec to the
+source and both were correct. The api's own e2e suite drives the challenge and passes. The web unit
+suites never call the API. And the browser suite had no enrolled account in it, because until this
+task there was no way to enrol one — the only surface that could reach that state was the screen
+being built.
+
+So the choice was to ship S-28 with the enrolment button (a control that locks a user out of their
+own account: enrol, then the next sign-in is a 500), ship it with the button disabled (a screen that
+does not do the thing it exists to do), or build 27.8 here. The project owner chose the third, and
+that is why the rows on both tasks now say so.
+
+**What the class of defect is, stated so the next one is expected.** An API change is only half a
+change when a front end consumes it, and *nothing in this repository's gate set crosses that seam*.
+`packages/contracts` makes the types agree — the wire contract did its job perfectly here, because
+`SessionResponse | FactorChallengeResponse` was never written down on the web side to be checked
+against. The only thing that sees the seam is a browser journey through the state the change
+introduced, and such a journey cannot exist until something can *reach* that state. Between 27.3 and
+27.7 there was a four-task window in which no test in the repository could have been written to
+catch this.
+
+### 27.7 — S-28
+
+**`RecordShell` was extracted to `packages/ui` now, at the first instance.** I recommended deferring
+until a second Record screen showed which parts were shared; the project owner overruled it, and the
+reasoning is worth recording because it is the general case of UX-89: a shell built inside a screen
+has no state set, no dark map, no expansion coverage and no accessibility review, and the second
+screen copies all four omissions rather than paying for them once. Deferring extraction is deferring
+the review, not the work.
+
+`RecordShell` is the h1 plus sections with optional `actions` and `attribution` slots; `RecordSection`
+is a `<section aria-labelledby>` with its own h2 and an optional per-section action. Composition
+rather than props: `architecture-avoid-boolean-props` is the rule, and a Record screen is exactly
+where a `showAttribution` flag would have appeared first.
+
+**Three fetches, one screen, `Promise.all`.** `server/data/credentials.ts` reads `/account/totp` and
+`/account/providers` in parallel (`async-parallel`); sequencing them would have made the screen wait
+twice for two independent facts.
+
+**A vocabulary split out of a `server-only` module.** `SECTION_READ` is a *value*, so importing it
+from a client component dragged `server-only` into the client bundle and failed the build. The
+vocabulary moved to `features/credentials/credentials.ts`; the fetching stayed behind `server-only`.
+Worth knowing before the next screen does the same thing: a type-only import from a `server-only`
+module is fine, and a value import is not, and the two look identical in a diff.
+
+**The link flow collects the password after the callback, never across it.** Recorded in
+`architecture.md` §12.5.6 with the two alternatives that were declined — sealing a live password
+into the transaction cookie for the duration of a provider round trip, and inventing a fourth
+credential kind to save one prompt.
+
+### 27.8 — the staged step
+
+**Its own route, `/sign-in/factor`.** `design_spec.md` calls it a staged step of S-01 and it is one
+route regardless: S-02 is already one `S-nn` over three routes, UX-4 wants an addressable state
+addressable, and the alternative — a two-mode `/sign-in` — would have to conditionally suppress the
+provider buttons, the register link and the reset link. What makes it staged is the precondition,
+which is the sealed challenge, not the URL.
+
+**The challenge is held in a cookie and only `expiresAt` reaches the browser.** Task 24's
+OAuth-transaction shape, for its reason: the value proves the API verified this password moments
+ago, and a page whose DOM carried it would put that proof exactly where the sealed cookie exists to
+keep it from. Not single-use, matching the API — a mistyped code puts it back, so a wrong answer
+costs a retype rather than the password. `?return=` rides inside it, so UX-38's deep link survives a
+step the reader may spend a minute on.
+
+**A lapsed challenge is its own outcome, not `unreachable`.** The first cut returned
+`{ status: API_OUTCOME.Unreachable }` and that was a lie with a user-visible consequence: nothing
+failed to reach the API, and "try again" is the wrong sentence for a step that cannot be tried
+again. `FACTOR_LAPSED` is a fourth `status` beside `API_OUTCOME`'s three and deliberately not a
+member of it — adding it to the wire vocabulary would claim a server can send it, which no server
+can. Extending the union locally keeps the screen's one `switch (result.status)` intact.
+
+**The reducer earned itself, and the rule caught a real defect prospectively.** Switching from the
+authenticator to a recovery code writes the affordance *and* clears the last refusal — two different
+setters in one handler, which is the tell. Left as two `useState`s, a *"that code wasn't accepted"*
+callout would have sat above a control the reader had just switched to and never used. Refused and
+lapsed are a discriminated union rather than two fields, because they cannot both hold: a lapse
+replaces the form and a refusal leaves it standing.
+
+Two transitions in `factor-state.spec.ts` are there because a browser cannot reach them without
+waiting five minutes or racing two tabs: the lapse arriving from the server rather than the clock
+(same standing, because it is the same fact), and `WINDOW_CLOSED` being idempotent — the interval
+outlives the form it replaced, so a fresh object per tick would repaint the callout every fifteen
+seconds for as long as the tab stays open.
+
+**Both affordances are offered, not one hidden behind support.** UX-108's point is that a person
+without their authenticator must not need a second device to get in. The API takes one `code` field
+for both and tells them apart by shape, so the switch changes the control and nothing else.
+
+### The convention pass, including what was declined
+
+- **`rerender-derived-state-no-effect` — declined, with the reason.** The rule is about values
+  computable from props and state; `minutesLeft` is computed from the clock, and deriving it during
+  render is a hydration mismatch by construction — the server renders at one instant and the browser
+  hydrates at another. The effect is a *subscription*, not a state sync.
+- **`rendering-hydration-no-flicker` — declined.** Its remedy is an inline script painting before
+  hydration, for values that affect layout or theme. This is a hint; a script fighting reconciliation
+  to save a reader from noticing nothing is a worse trade.
+- **`rerender-use-ref-transient-values` — declined.** The value is rendered, so a ref would never
+  repaint it. What the rule's concern actually bought was the tick interval: fifteen seconds, because
+  the hint is worded in whole minutes and a per-second timer would re-render sixty times to change
+  nothing.
+- **`useCallback` on the affordance switch — removed after the pass.** It reaches a plain DOM
+  `onClick`, whose identity nothing observes; `rerender-memo`'s companion rule calls that noise. The
+  first draft had it, which is the honest version of this note.
+- **`async-defer-await` — applied.** The page peeks the challenge, redirects if it is absent, and
+  only then resolves translations. A `Promise.all` over the two would have been the "parallel is
+  faster" reflex buying nothing, since the redirect path needs no translations at all.
+
+### The gap this task found and did not close
+
+**The Romanian catalogue speaks in two registers.** Informal (*tu*) on `register`, `verify`,
+`signIn`, `factor`, `resetRequest` and `setPassword`; formal (*dumneavoastră*) on `credentials`,
+`invitation`, `organizationUnavailable` and all of `organization.access` — roughly 36 strings each
+way. The sharp case is S-03 against S-01: task 26.3 has the reader hand off between them twice
+inside one minute, and the voice changes each way.
+
+There may be an intended rule ("informal in the credential funnel, formal inside the product"), but
+it is not written anywhere, S-03 and `identity.social` sit on the wrong side of it either way, and
+Romanian is the **source** locale, so the choice governs how RU is authored too. `identity.factor`
+was written informal to match `identity.signIn`, whose second step it is — consistent locally, which
+is the most this task could settle on its own. Raised as its own unit of work rather than closed in
+passing, per the open-question rule.

@@ -31,6 +31,12 @@ export { TextLink, type TextLinkProps } from './primitives/text-link';
 // form controls
 export { FormErrorSummary, type FormErrorSummaryItem, type FormErrorSummaryProps } from './form/form-error-summary';
 export { CodeField, type CodeFieldProps } from './form/code-field';
+export {
+  RecordSection,
+  RecordShell,
+  type RecordSectionProps,
+  type RecordShellProps,
+} from './archetypes/record-shell';
 export { PasswordField, type PasswordFieldProps } from './form/password-field';
 export { Select, type SelectOption, type SelectProps } from './form/select';
 export { RequirementList, type RequirementItem, type RequirementListProps } from './form/requirement-list';

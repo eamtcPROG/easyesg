@@ -32,7 +32,21 @@ export default async function WorkspaceLayout({ children }: { children: ReactNod
       messages={{
         chrome: messages.chrome,
         organization: messages.organization,
-        identity: { unreachable: messages.identity.unreachable },
+        identity: {
+          unreachable: messages.identity.unreachable,
+          // S-28's own namespace (task 27.7) — its board is a Client Component, and the root
+          // layout ships `messages={null}` on purpose, so a namespace reaches the browser only
+          // by being named here.
+          credentials: messages.identity.credentials,
+          // Two words, not a namespace: the password field's reveal toggle needs an accessible
+          // name, and `identity.register` holds the pair every password field in the product
+          // already uses. Shipping the whole registration namespace to a settings screen would
+          // send a dozen unused sentences for `Show` and `Hide`.
+          register: {
+            show: messages.identity.register.show,
+            hide: messages.identity.register.hide,
+          },
+        },
       }}
     >
       {/* The tier itself is `packages/ui`'s WorkspaceNav, wired in `shared/` — task 26.4 built it

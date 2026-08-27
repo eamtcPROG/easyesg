@@ -1,0 +1,91 @@
+/*
+ * The Record archetype's frame. Every value is a token (UX-127), and the measure is bounded so a
+ * settings screen does not stretch a form to 1440 px — §4.6's Record is one object, not a table.
+ */
+.record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  /* `ch` rather than px: the +40% expansion harness grows the font, and a measure in characters
+     grows with it, where a pixel width would clip. */
+  max-width: 78ch;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.title {
+  font: 600 28px/34px var(--font-text);
+  letter-spacing: -0.015em;
+  color: var(--text-default);
+  margin: 0;
+}
+
+.summary {
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+  padding: var(--space-5);
+}
+
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sectionHeading {
+  font: 600 17px/22px var(--font-text);
+  color: var(--text-default);
+  margin: 0;
+}
+
+.sectionDescription {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* The section's own commit sits at its end, aligned to the start so it reads as belonging to the
+   group above rather than floating at the card's edge. */
+.sectionAction {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.attribution {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+  margin: 0;
+}

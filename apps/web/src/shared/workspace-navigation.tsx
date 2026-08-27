@@ -23,7 +23,14 @@ import { ROUTES } from '@/lib/routes';
  * whole navigational job, and the alternative — every page passing its own key down through the
  * layout — is a prop that one screen eventually forgets to pass, with no way to notice.
  */
-const SECTIONS = [{ key: 'users', href: ROUTES.ORGANIZATION_USERS }] as const;
+const SECTIONS = [
+  { key: 'users', href: ROUTES.ORGANIZATION_USERS },
+  // S-28, added with task 27.7 — the second screen in this group that renders. §4.2's full set
+  // puts it under the account corner rather than the workspace tier, which is task 30.1's; until
+  // that tier exists this is the only way to reach it, and an unreachable screen is worse than a
+  // temporarily misplaced link.
+  { key: 'credentials', href: ROUTES.ACCOUNT_CREDENTIALS },
+] as const;
 
 export function WorkspaceNavigation() {
   const t = useTranslations('chrome.workspaceNav');

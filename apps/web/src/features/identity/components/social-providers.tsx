@@ -1,14 +1,13 @@
 import { getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import { providerGlyph } from './provider-glyphs';
+import { providerLabel } from '../social';
 import { ProviderButton } from '@easyesg/ui';
 import type {
-  SocialProvider,
   SocialProvidersResponse,
   SocialSignInIntent,
 } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '@/server/api-client';
-import { GoogleGlyph, MicrosoftGlyph } from './provider-glyphs';
 import styles from './identity-screens.module.css';
 
 /**
@@ -22,17 +21,6 @@ import styles from './identity-screens.module.css';
  * degradation path either way, and a broken provider list must not take password sign-in down
  * with it.
  */
-const GLYPHS: Record<SocialProvider, ReactNode> = {
-  google: <GoogleGlyph />,
-  microsoft: <MicrosoftGlyph />,
-};
-
-/** Brand names — locale-invariant proper nouns, not copy; the sentence around them is. */
-const DISPLAY_NAME: Record<SocialProvider, string> = {
-  google: 'Google',
-  microsoft: 'Microsoft',
-};
-
 export interface SocialProvidersProps {
   intent: SocialSignInIntent;
   /** Task 22's `?return=` hand-off, threaded through the flow so UX-38 survives the redirect. */
@@ -56,9 +44,9 @@ export async function SocialProviders({ intent, returnTo }: SocialProvidersProps
           <ProviderButton
             key={provider}
             href={`/auth/social/${provider}/start?${query.toString()}`}
-            glyph={GLYPHS[provider]}
+            glyph={providerGlyph(provider)}
           >
-            {t('continueWith', { provider: DISPLAY_NAME[provider] })}
+            {t('continueWith', { provider: providerLabel(provider) })}
           </ProviderButton>
         );
       })}

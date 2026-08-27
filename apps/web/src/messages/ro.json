@@ -19,7 +19,8 @@
     "signOut": "Ieși din cont",
     "workspaceNav": {
       "label": "Secțiunile organizației",
-      "users": "Utilizatori și acces"
+      "users": "Utilizatori și acces",
+      "credentials": "Date de autentificare"
     },
     "index": {
       "sort": {
@@ -115,6 +116,29 @@
       "problemAction": "Verifică datele introduse și încearcă din nou.",
       "unverifiedAction": "Mergi la confirmarea adresei",
       "lockedAction": "Resetează-ți parola"
+    },
+    "factor": {
+      "title": "Confirmă că ești tu",
+      "subtitle": "Parola a fost corectă. Mai avem nevoie de un cod ca să deschidem contul.",
+      "codeLabel": "Codul din aplicația de autentificare",
+      "codeHelp": "Șase cifre, care se schimbă la fiecare treizeci de secunde.",
+      "codeMissing": "Codul lipsește, deci nu putem confirma că ești tu. Deschide aplicația de autentificare și introdu codul afișat acum.",
+      "expiresIn": "{minutes, plural, one {Mai ai un minut} few {Mai ai # minute} other {Mai ai # de minute}}",
+      "recoveryLabel": "Cod de recuperare",
+      "recoveryHelp": "Unul dintre cele zece coduri primite când ai activat pasul suplimentar. Fiecare poate fi folosit o singură dată.",
+      "recoveryMissing": "Codul de recuperare lipsește, deci nu putem confirma că ești tu. Introdu unul dintre codurile salvate la activare.",
+      "submit": "Confirmă și intră în cont",
+      "summaryTitle": "Câmpul de mai jos are nevoie de atenție înainte de a putea continua",
+      "problemTitle": "Codul nu a fost acceptat",
+      "problemBody": "Nu am putut confirma codul, deci contul rămâne închis.",
+      "problemAction": "Verifică ora de pe dispozitiv, apoi încearcă din nou cu codul afișat acum.",
+      "lockedAction": "Resetează-ți parola",
+      "useRecovery": "Nu ai acces la aplicație? Folosește un cod de recuperare",
+      "useAuthenticator": "Înapoi la codul din aplicație",
+      "startOver": "Renunță și autentifică-te din nou",
+      "lapsedTitle": "Pasul a expirat",
+      "lapsedBody": "Au trecut mai mult de cinci minute de la introducerea parolei, deci confirmarea nu mai este valabilă și contul rămâne închis.",
+      "lapsedAction": "Autentifică-te din nou"
     },
     "resetRequest": {
       "title": "Resetează-ți parola",
@@ -239,6 +263,71 @@
           "body": "Linkul acesta nu corespunde niciunei invitații, așa că nu ați fost adăugat în nicio organizație. Verificați dacă l-ați copiat complet din e-mail sau cereți o invitație nouă."
         }
       }
+    },
+    "credentials": {
+      "title": "Date de autentificare",
+      "lede": "Cum intrați în cont și ce modalități aveți. Păstrați cel puțin una funcțională.",
+      "password": {
+        "heading": "Parolă",
+        "description": "Schimbarea parolei cere parola actuală.",
+        "current": "Parola actuală",
+        "next": "Parola nouă",
+        "terminate": "Închideți sesiunile de pe celelalte dispozitive",
+        "terminateHelp": "Dispozitivul de pe care faceți schimbarea rămâne conectat.",
+        "submit": "Schimbați parola",
+        "currentMissing": "Introduceți parola actuală, altfel schimbarea nu poate fi făcută.",
+        "nextMissing": "Introduceți parola nouă, altfel schimbarea nu poate fi făcută.",
+        "doneTitle": "Parola a fost schimbată",
+        "doneBody": "Folosiți parola nouă data viitoare când vă autentificați.",
+        "doneWithSessions": "Parola a fost schimbată și celelalte sesiuni au fost închise."
+      },
+      "factor": {
+        "heading": "Verificare în doi pași",
+        "description": "Un cod din aplicația de autentificare, cerut la fiecare autentificare.",
+        "off": "Nu este activată.",
+        "on": "Activată. Coduri de recuperare rămase: {remaining}.",
+        "noCodes": "Activată, dar nu mai aveți coduri de recuperare. Generați altele acum, cât timp aveți acces.",
+        "enable": "Activați verificarea în doi pași",
+        "disable": "Dezactivați",
+        "reissue": "Generați coduri noi",
+        "secretHeading": "Scanați sau introduceți acest cod",
+        "secretHelp": "Adăugați-l în aplicația de autentificare, apoi introduceți mai jos codul afișat de aplicație.",
+        "codeLabel": "Codul din aplicație",
+        "codeMissing": "Introduceți codul din aplicație, altfel activarea nu poate fi finalizată.",
+        "confirm": "Finalizați activarea",
+        "abandon": "Renunțați",
+        "enabledTitle": "Verificarea în doi pași este activă",
+        "enabledBody": "De acum vi se va cere un cod la fiecare autentificare.",
+        "disabledTitle": "Verificarea în doi pași a fost dezactivată",
+        "disabledBody": "Autentificarea se face din nou doar cu parola.",
+        "codesHeading": "Codurile de recuperare",
+        "codesHelp": "Vi le arătăm o singură dată. Păstrați-le undeva sigur — fiecare poate fi folosit o dată, dacă nu aveți telefonul la îndemână.",
+        "codesDone": "Le-am notat",
+        "codesTitle": "Coduri noi de recuperare",
+        "codesBody": "Codurile anterioare nu mai funcționează."
+      },
+      "providers": {
+        "heading": "Conturi legate",
+        "description": "Puteți intra și cu unul dintre aceste conturi, pe lângă parolă.",
+        "none": "Niciun cont legat.",
+        "link": "Legați {provider}",
+        "unlink": "Deconectați",
+        "confirmHeading": "Finalizați legarea contului {provider}",
+        "confirmHelp": "Introduceți parola actuală pentru a confirma. Fără ea, contul nu se leagă.",
+        "confirm": "Confirmați legarea",
+        "linkedTitle": "Contul a fost legat",
+        "linkedBody": "Puteți folosi de acum și acest cont pentru autentificare.",
+        "unlinkedTitle": "Contul a fost deconectat",
+        "unlinkedBody": "Nu îl mai puteți folosi pentru autentificare."
+      },
+      "unreachable": {
+        "title": "Nu am putut încărca această secțiune",
+        "body": "Datele nu au putut fi citite, așa că secțiunea nu poate fi folosită acum. Reîncărcați pagina pentru a încerca din nou."
+      },
+      "failedTitle": "Acțiunea nu a putut fi finalizată",
+      "unreachableBody": "Nu am primit un răspuns, așa că nimic nu a fost modificat. Încercați din nou.",
+      "doneAction": "Nu mai aveți nimic de făcut.",
+      "failedAction": "Încercați din nou."
     }
   },
   "organization": {

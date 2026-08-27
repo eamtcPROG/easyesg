@@ -32,3 +32,19 @@ export type SocialSignInIntent = (typeof SOCIAL_SIGN_IN_INTENT)[keyof typeof SOC
 
 export const isSocialSignInIntent = (value: string): value is SocialSignInIntent =>
   (Object.values(SOCIAL_SIGN_IN_INTENT) as string[]).includes(value);
+
+/**
+ * What `POST /auth/session` answers (UC-04, UC-194; task 27.3) — the consumer-side mirror of the
+ * api's own `SIGN_IN_OUTCOME`, kept here for `PROBLEM_TYPE`'s stated reason: the api produces this
+ * package and must never import it, so this is a copy changed together with its source by hand,
+ * and the OpenAPI enums generated from the api's declaration are what the diff gate holds both
+ * against.
+ *
+ * A client **branches on this**, never on the presence of `accessToken`.
+ */
+export const SIGN_IN_OUTCOME = {
+  SIGNED_IN: 'signed_in',
+  CHALLENGED: 'challenged',
+} as const;
+
+export type SignInOutcomeKind = (typeof SIGN_IN_OUTCOME)[keyof typeof SIGN_IN_OUTCOME];
