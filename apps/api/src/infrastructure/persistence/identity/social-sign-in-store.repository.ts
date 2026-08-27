@@ -153,6 +153,97 @@ class SocialSignInTransactionAdapter implements SocialSignInTransaction {
     return rows.length > 0 ? toProviderIdentity(rows[0]) : null;
   }
 
+  // ── FR-8's link and unlink (task 27.6) ───────────────────────────────────────────────────────
+
+  async findProviderIdentitiesFor(accountId: string): Promise<ProviderIdentity[]> {
+    const rows = returnedRows<ProviderIdentityRow>(
+      await this.queryRunner.query(
+        `SELECT ${PROVIDER_IDENTITY_COLUMNS}
+           FROM identity.provider_identity
+          WHERE account_id = $1
+          ORDER BY provider`,
+        [accountId],
+      ),
+    );
+    return rows.map(toProviderIdentity);
+  }
+
+  async hasPasswordCredential(accountId: string): Promise<boolean> {
+    // `SELECT 1` and not the hash: BR-ID-4 needs a count, and a query that fetched the digest
+    // would put a credential in the hands of a caller that has no use for it (§9.1).
+    const rows = returnedRows<{ present: number }>(
+      await this.queryRunner.query(
+        `SELECT 1 AS present FROM identity.credential WHERE account_id = $1`,
+        [accountId],
+      ),
+    );
+    return rows.length > 0;
+  }
+
+  async findPasswordDigest(accountId: string): Promise<string | null> {
+    const rows = returnedRows<{ password_hash: string }>(
+      await this.queryRunner.query(
+        `SELECT password_hash FROM identity.credential WHERE account_id = $1`,
+        [accountId],
+      ),
+    );
+    return rows.length > 0 ? rows[0].password_hash : null;
+  }
+
+  async linkProviderIdentity(
+    identity: {
+      readonly accountId: string;
+      readonly provider: SocialProvider;
+      readonly subject: string;
+      readonly assertedEmail: string;
+      readonly emailVerifiedAsserted: boolean;
+    },
+    at: Date,
+  ): Promise<boolean> {
+    // Bare `ON CONFLICT DO NOTHING` because **two** unique constraints can refuse this and both
+    // are meaningful: `provider_identity_subject_key` (provider, subject) is the takeover guard —
+    // one Google account cannot attach to two easyesg accounts — and
+    // `provider_identity_one_per_provider` (account_id, provider) is the shape rule, one identity
+    // per provider per account. Naming a single conflict target would let the other raise instead
+    // of refusing cleanly. Either way the caller gets `false` and answers the same refusal, which
+    // is deliberate: distinguishing them would tell the asker something about a stranger's account.
+    //
+    // The index decides the race exactly once. A prior SELECT would let two simultaneous links of
+    // one Google account to two easyesg accounts both pass, and one of them would be a takeover.
+    const rows = returnedRows<{ id: string }>(
+      await this.queryRunner.query(
+        `INSERT INTO identity.provider_identity
+           (account_id, provider, subject, asserted_email, email_verified_asserted,
+            created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $6)
+         ON CONFLICT DO NOTHING
+         RETURNING id`,
+        [
+          identity.accountId,
+          identity.provider,
+          identity.subject,
+          identity.assertedEmail,
+          identity.emailVerifiedAsserted,
+          at,
+        ],
+      ),
+    );
+    return rows.length > 0;
+  }
+
+  async unlinkProviderIdentity(
+    identity: { readonly accountId: string; readonly provider: SocialProvider },
+  ): Promise<boolean> {
+    const result: unknown = await this.queryRunner.query(
+      `DELETE FROM identity.provider_identity
+        WHERE account_id = $1 AND provider = $2
+       RETURNING id`,
+      [identity.accountId, identity.provider],
+    );
+    // DELETE … RETURNING arrives as [rows, count] — see `returnedRows`.
+    return returnedRows<{ id: string }>(result).length > 0;
+  }
+
   async findAccountById(accountId: string): Promise<Account | null> {
     const rows = returnedRows<AccountRow>(
       await this.queryRunner.query(

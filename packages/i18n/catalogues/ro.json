@@ -101,7 +101,8 @@
     },
     "session": {
       "invalid": "Sesiunea nu mai este valabilă, așa că cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
-      "expired": "Sesiunea a expirat după o perioadă de inactivitate, dar lucrul în curs a fost păstrat. Autentificați-vă din nou pentru a continua exact de unde ați rămas."
+      "expired": "Sesiunea a expirat după o perioadă de inactivitate, dar lucrul în curs a fost păstrat. Autentificați-vă din nou pentru a continua exact de unde ați rămas.",
+      "factor_invalid": "Codul nu este valabil sau pasul a expirat, așa că autentificarea nu s-a finalizat. Introduceți codul afișat acum de aplicație sau folosiți un cod de recuperare."
     },
     "password_reset": {
       "token_invalid": "Linkul de resetare nu mai este valabil, așa că parola nu a fost schimbată. Linkurile expiră după 60 de minute și pot fi folosite o singură dată — cereți unul nou de pe pagina de autentificare."
@@ -124,6 +125,24 @@
         "revoked": "Această invitație a fost anulată de administratorul organizației, așa că nu ați fost adăugat. Dacă este o greșeală, cereți-i să vă invite din nou.",
         "unknown": "Linkul acesta nu corespunde niciunei invitații, așa că nu ați fost adăugat în nicio organizație. Verificați dacă l-ați copiat complet din e-mail sau cereți o invitație nouă."
       }
+    },
+    "totp": {
+      "reauthentication_failed": "Parola actuală nu este corectă, așa că schimbarea nu a fost făcută. Introduceți parola cu care vă autentificați acum și încercați din nou.",
+      "code_invalid": "Codul introdus nu este valabil în acest moment, deci pasul nu a fost finalizat. Codurile se schimbă la 30 de secunde — deschideți aplicația de autentificare și introduceți codul afișat acum.",
+      "code_shape": "Codul trebuie să aibă șase cifre, deci nu a putut fi verificat. Introduceți cele șase cifre afișate de aplicația de autentificare.",
+      "already_enrolled": "Contul are deja un al doilea factor activ, așa că nu putem adăuga încă unul. Dezactivați-l mai întâi, dacă vreți să folosiți altă aplicație de autentificare.",
+      "not_enrolled": "Contul nu are un al doilea factor activ, deci nu este nimic de modificat. Activați-l din setările contului, dacă vreți această protecție."
+    },
+    "social": {
+      "identity_taken": "Acest cont de la furnizor este deja legat de un cont EasyESG, așa că nu poate fi legat din nou. Folosiți alt cont la furnizor sau deconectați-l de unde este legat acum.",
+      "not_linked": "Contul nu are niciun cont legat la acest furnizor, deci nu este nimic de deconectat. Verificați lista de conturi legate din setări.",
+      "last_credential": "Aceasta este singura modalitate prin care vă puteți autentifica, așa că nu o putem elimina — un cont fără nicio credențială nu mai poate fi recuperat și pierde accesul la organizațiile din care faceți parte. Setați mai întâi o parolă, apoi reveniți aici.",
+      "email_in_use": "Există deja un cont EasyESG pentru această adresă, așa că nu putem crea încă unul. Autentificați-vă cu parola contului, apoi legați acest cont de furnizor din setările de securitate — după aceea veți putea folosi oricare dintre ele.",
+      "exchange_failed": "Conectarea prin furnizorul ales nu a putut fi finalizată. Reluați autentificarea de la început.",
+      "identity_unknown": "Contul de la furnizor nu este asociat niciunui cont de pe platformă. Puteți crea un cont nou.",
+      "provider_unavailable": "Acest mod de autentificare nu este disponibil momentan. Folosiți adresa de e-mail și parola, sau încercați mai târziu.",
+      "email_unverified": "Adresa contului nu este încă verificată, așa că sesiunea nu a fost creată. Deschideți linkul din e-mailul de verificare sau cereți retrimiterea lui.",
+      "redirect_rejected": "Cererea de autentificare nu a pornit de la o adresă permisă, deci a fost respinsă. Reveniți la pagina de autentificare și începeți din nou de acolo."
     }
   },
   "notification": {
@@ -140,6 +159,15 @@
         "subject": "Ați fost invitat în organizația {organizationName}",
         "body": "Bună ziua,\n\nAți fost invitat să vă alăturați organizației {organizationName} pe easyesg, platforma de raportare privind durabilitatea. Deschideți linkul de mai jos pentru a accepta invitația:\n\n{invitationUrl}\n\nLinkul este valabil 7 zile, poate fi folosit o singură dată și funcționează numai pentru această adresă de e-mail.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun acces."
       }
+    }
+  },
+  "platform": {
+    "admin": {
+      "credential_invalid": "Adresa sau parola nu sunt corecte, așa că sesiunea nu a fost creată. Verificați-le și încercați din nou.",
+      "account_locked": "Contul a fost blocat după prea multe încercări eșuate, deci autentificarea nu este posibilă acum. Cereți altui administrator de platformă să îl deblocheze.",
+      "factor_invalid": "Codul introdus nu este valabil în acest moment, așa că autentificarea nu s-a finalizat. Deschideți aplicația de autentificare și introduceți codul afișat acum.",
+      "session_expired": "Sesiunea de administrare a expirat, deci cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
+      "session_invalid": "Sesiunea de administrare nu mai este valabilă, așa că cererea nu a fost procesată. Autentificați-vă din nou pentru a continua."
     }
   }
 }

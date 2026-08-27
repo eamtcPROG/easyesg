@@ -63,6 +63,55 @@ export interface SocialSignInTransaction {
   issueVerificationToken(token: NewVerificationToken): Promise<void>;
 
   /** The outbox on THIS transaction's runner (AD-6, P-8) — see `AccountTransaction.emit`. */
+  // ── FR-8's link and unlink (UC-11, UC-12; task 27.6) ────────────────────────────────────────
+
+  /** Every provider identity on an account, for S-28's list and for BR-ID-4's count. */
+  findProviderIdentitiesFor(accountId: string): Promise<ProviderIdentity[]>;
+
+  /**
+   * Whether the account holds a password row — BR-ID-4's other credential kind.
+   *
+   * **Deliberately separate from `findPasswordDigest` below, and not derived from it.** The rule
+   * needs a count, not a secret; a boolean caller that received a hash would be handling a
+   * credential it has no use for, and the two methods keep that impossible rather than merely
+   * unwise (ISP, and §9.1's stance that a hash has no reader outside authentication).
+   */
+  hasPasswordCredential(accountId: string): Promise<boolean>;
+
+  /** The Argon2id digest, for re-authentication only. `null` is a provider-only account (FR-2). */
+  findPasswordDigest(accountId: string): Promise<string | null>;
+
+  /**
+   * Attaches an asserted identity to an existing account (UC-11).
+   *
+   * **False when the `(provider, subject)` pair is already taken**, by this account or another —
+   * the unique index decides it, not a prior read, for `insertUnverifiedAccount`'s reason: two
+   * simultaneous links of one Google account to two easyesg accounts both pass a read-then-write
+   * check and one of them is wrong. The caller reports the refusal without saying which case it
+   * was, since "that Google account is already linked to somebody" names a stranger's account.
+   */
+  linkProviderIdentity(
+    identity: {
+      readonly accountId: string;
+      readonly provider: SocialProvider;
+      readonly subject: string;
+      readonly assertedEmail: string;
+      readonly emailVerifiedAsserted: boolean;
+    },
+    at: Date,
+  ): Promise<boolean>;
+
+  /**
+   * Removes the account's identity for one provider (UC-12), answering whether there was one.
+   *
+   * BR-ID-4 is **not** checked here: the count and the delete must be one decision, and the caller
+   * makes it inside this transaction. A store method that refused on its own would be a second
+   * place the rule lives.
+   */
+  unlinkProviderIdentity(
+    identity: { readonly accountId: string; readonly provider: SocialProvider },
+  ): Promise<boolean>;
+
   emit(effect: AccountEffect): Promise<void>;
 }
 

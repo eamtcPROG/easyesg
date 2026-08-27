@@ -24,6 +24,8 @@ export const isSocialProvider = (value: string): value is SocialProvider =>
 export const SOCIAL_SIGN_IN_INTENT = {
   SIGN_IN: 'sign-in',
   REGISTER: 'register',
+  /** UC-11 (task 27.6) — the flow begins signed in on S-28 and completes at a different route. */
+  LINK: 'link',
 } as const;
 
 export type SocialSignInIntent = (typeof SOCIAL_SIGN_IN_INTENT)[keyof typeof SOCIAL_SIGN_IN_INTENT];

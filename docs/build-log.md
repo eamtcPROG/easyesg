@@ -3746,3 +3746,102 @@ dependency tree.
 (the credential replacement and the revocation commit together — a crash between them would leave
 the new password live and the old sessions alive, which is the state the election exists to
 prevent), `security-validate-all-input`, `api-use-dto-serialization`, `arch-use-repository-pattern`.
+
+## Task 27.6 — FR-8, and fourteen refusals that had been saying nothing · 2026-08-27
+
+UC-11 and UC-12, closing task 24's two recorded interims. The link half turned out smaller than
+planned and the task turned out larger than planned, for unrelated reasons.
+
+### The authorization half is task 24's, reused unchanged
+
+The first design put new authenticated challenge routes under `/account/providers`, reasoning that
+`@Public()` short-circuits `AuthGuard` so a public route cannot know the actor. That reasoning is
+right about the **completion** and irrelevant to the **challenge**: `POST /auth/social/{provider}/
+challenge` builds an authorization URL from a provider and a redirect URI and knows nothing about
+who is asking — no actor, no intent, no secret. A link therefore *begins* on exactly the route a
+sign-in begins on, and only the redemption is new.
+
+So one new authenticated route redeems the code and attaches the assertion to the caller's account,
+`SOCIAL_SIGN_IN_INTENT` gains `LINK` so the web tier's sealed transaction knows where to come back
+to, and the state, nonce and PKCE are the values task 24 already carries. §12.5.6's row was written
+before this was checked and **corrected in the same change** to describe what ships.
+
+### Two rules, and what each is actually about
+
+**BR-ID-3 is structural here rather than asserted.** *A provider assertion alone never attaches to
+an existing account* — and the use case cannot be reached without an `accountId` that `AuthGuard`
+resolved from a session, so an assertion cannot attach by claiming an address. What that leaves is
+the half a stolen session would exploit, and it is guarded by re-authentication: a link **adds a way
+in**, and an attacker who could attach their own provider would survive the very remedy the owner
+reaches for. Unlink takes the password for the mirror reason — stripping the owner's *other*
+provider narrows them to a credential the attacker may also hold.
+
+**It deliberately does not require the asserted email to match the account's.** A personal Google
+address is routinely not a work address, and demanding a match would make linking impossible for
+exactly the users who want it. Matching on an email is the account-takeover path §9.1 names in
+terms; the re-authentication is what satisfies BR-ID-3.
+
+**BR-ID-4 is one predicate over both credential kinds** — `isLastCredential`, with a four-row truth
+table as its spec. It is *not* "refuse to unlink the only provider": an account with a password and
+one provider may unlink it, and a provider-only account with two may unlink one. The count and the
+delete happen in one transaction, because two concurrent unlinks each seeing two credentials would
+both proceed and leave an account with none — UC-12's unrecoverable state, reached by a race.
+
+Task 24's migration predicted the grant this needed, by name: *"DELETE arrives with task 27's unlink
+surface"*. Default-deny meant no code path could remove a provider identity even by mistake until
+today. The delete is hard rather than a status flag, and the unique indexes decide that: a retained
+"unlinked" row would hold `(provider, subject)` and `(account_id, provider)` occupied forever, so
+the user could never re-link that same Google account and **neither could anyone else**.
+
+### A slip in my own process, worth recording because the symptom was green
+
+A batch of `s.replace` edits **silently no-opped**, and `pnpm typecheck` came back clean — because
+nothing had changed. Thirty tests passed, "proving" a flow that did not exist. Verifying the file
+rather than the exit code caught it; the redo asserts `count(old)==1` on every replacement and
+failed loudly on the two patterns that had drifted. It is the repository's own lesson arriving from
+a new direction: **a rule that matches nothing looks exactly like a rule that passes**, and so does
+an edit that changed nothing.
+
+### Fourteen refusals with no `detail`, found by a gate written for nine
+
+Adding three errors meant adding three catalogue keys, which is when the keys already missing turned
+up. `ProblemDetailsFilter` resolves `detail` from **`exception.messageKey`** for a `DomainError` and
+from `problem.<slug>.detail` for a framework exception. Fourteen domain message keys had no
+catalogue entry in any locale — six from task 24, five from task 23, and the rest mine from
+27.2 … 27.6.
+
+`translate` answers `undefined` for a missing key and the filter then **omits** `detail`, which is
+the right failure: an internal identifier must never reach a reader. It is also a silent one. Every
+one of those refusals shipped with a correct status, a correct `type`, a `title` from its slug — and
+no second or third part at all. NFR-79 requires *what happened · what the consequence is · what
+resolves it*, and fourteen refusals were giving the first only.
+
+**Four of them had properly-authored text in all three locales, filed under `problem.<slug>.detail`
+where nothing reads it for a domain error.** A decoy that looks exactly like coverage. Those were
+promoted to their message keys; the other ten were authored, RO as the source per NFR-23.
+
+**Nothing could have seen it.** `packages/i18n`'s parity harness compares the three catalogues *to
+each other*, so fourteen keys missing from all three are perfectly consistent — consistency was
+never the property that mattered. And every e2e assertion on these paths checks `type` and status,
+which is exactly what remained correct.
+
+So the deliverable this task actually leaves behind is `message-keys.spec.ts`: it scans every
+`*.errors.ts` under `modules/` for `super('…')` and asserts each key resolves in all three
+catalogues. It reads the **source** rather than importing it, deliberately — importing would boot
+half the module graph into a hermetic test and would still only see classes something happened to
+import, where a regex sees a file nothing imports yet. It carries its own not-empty assertion, for
+the reason `boundaries:prove` exists.
+
+**Scope, stated rather than smuggled.** Ten of the fourteen belong to tasks 23 and 24. Fixing only
+mine would have meant shipping a gate with an exemption list for *defects* — and this repository's
+classification lists (`UNAUDITED_TABLES`, `PLAINTEXT_BY_DESIGN_SECRET_COLUMNS`) hold *decisions*.
+The alternative was leaving ten known-wordless refusals in production to preserve a task boundary.
+
+### The interims, closed
+
+**BR-ID-3's guidance.** The refusal itself is permanent — an assertion never attaches — and what
+task 24 recorded as interim was the *dead end*: the message could only route to password sign-in,
+because there was nowhere to link afterwards. It now names the destination: sign in, then link from
+your security settings. Three source comments pointing at "task 27" are updated to say what shipped.
+
+**A password account that cannot link a provider.** That is simply built.

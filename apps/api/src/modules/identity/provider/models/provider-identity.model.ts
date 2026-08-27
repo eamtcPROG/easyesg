@@ -21,6 +21,29 @@ export interface ProviderIdentity {
 }
 
 /**
+ * BR-ID-4's inputs, counted rather than assumed (task 27.6).
+ *
+ * The rule is *the last remaining credential cannot be removed*, and a credential is either kind:
+ * the password row, or a provider identity. Refusing to unlink "the only provider" would be a
+ * different and wrong rule — an account with a password and one provider may unlink it, and a
+ * provider-only account with two may unlink one.
+ *
+ * UC-12 states what the refusal prevents, and it is worse than a locked-out user: an account with
+ * no usable credential is unrecoverable **and takes its organization memberships down with it**.
+ */
+export interface CredentialInventory {
+  readonly hasPassword: boolean;
+  readonly providers: readonly SocialProvider[];
+}
+
+/** True when removing `provider` would leave the account with no way back in (BR-ID-4). */
+export const isLastCredential = (
+  inventory: CredentialInventory,
+  provider: SocialProvider,
+): boolean =>
+  !inventory.hasPassword && inventory.providers.filter((held) => held !== provider).length === 0;
+
+/**
  * What the browser was doing when the flow began — S-01 has a sign-in surface and a register
  * surface over the same buttons, and UC-05's alternate flow turns on the difference: a
  * sign-in-intent arrival with no matching account is OFFERED registration, never silently given
@@ -30,6 +53,13 @@ export interface ProviderIdentity {
 export const SOCIAL_SIGN_IN_INTENT = {
   SIGN_IN: 'sign-in',
   REGISTER: 'register',
+  /**
+   * UC-11, added by task 27.6. The flow begins on S-28 rather than S-01 and completes at
+   * `/account/providers/{provider}` instead of `/auth/social/{provider}/session` — so the web
+   * tier's sealed transaction has to carry which of the two it was, and this is what it carries.
+   * The *authorization* half is identical; only the completion differs.
+   */
+  LINK: 'link',
 } as const;
 
 export type SocialSignInIntent = (typeof SOCIAL_SIGN_IN_INTENT)[keyof typeof SOCIAL_SIGN_IN_INTENT];

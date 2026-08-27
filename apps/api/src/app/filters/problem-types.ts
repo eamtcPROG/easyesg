@@ -39,7 +39,9 @@ export const ProblemType = {
    *  provider for that identity, so no NFR-64 enumeration surface opens. */
   SocialIdentityUnknown: 'social-identity-unknown',
   /** UC-02's alternate / BR-ID-3: the asserted address already has an account, and a provider
-   *  assertion alone never attaches to one. Routed to password sign-in (linking is FR-8, task 27). */
+   *  assertion alone never attaches to one — the rule is permanent (BR-ID-3). Since task 27.6 the
+   *  guidance routes onward rather than stopping: sign in with the password, then link the
+   *  provider from S-28's security settings. */
   SocialEmailInUse: 'social-email-in-use',
   /** The presented redirect_uri is not in the provider's configured allowlist (A-18's redirect
    *  configuration) — a misconfigured or hostile caller, never a user-recoverable state. */

@@ -101,7 +101,8 @@
     },
     "session": {
       "invalid": "The session is no longer valid, so the request was not processed. Sign in again to continue.",
-      "expired": "The session expired after a period of inactivity, but your work in progress has been kept. Sign in again to continue exactly where you left off."
+      "expired": "The session expired after a period of inactivity, but your work in progress has been kept. Sign in again to continue exactly where you left off.",
+      "factor_invalid": "The code is not valid, or the step has expired, so sign-in did not complete. Enter the code your app is showing now, or use one of your recovery codes."
     },
     "password_reset": {
       "token_invalid": "This reset link is no longer valid, so the password has not been changed. Links last 60 minutes and work only once — request a new one from the sign-in page."
@@ -124,6 +125,24 @@
         "revoked": "An administrator of the organisation withdrew this invitation, so you have not been added. If that was a mistake, ask them to invite you again.",
         "unknown": "This link does not match any invitation, so you have not been added to an organisation. Check that you copied all of it from the email, or ask for a new invitation."
       }
+    },
+    "totp": {
+      "reauthentication_failed": "The current password is not right, so the change was not made. Enter the password you sign in with now and try again.",
+      "code_invalid": "That code is not valid right now, so the step was not completed. Codes change every 30 seconds — open your authenticator app and enter the one shown now.",
+      "code_shape": "The code must be six digits, so it could not be checked. Enter the six digits your authenticator app is showing.",
+      "already_enrolled": "This account already has a second factor in force, so another cannot be added. Turn the current one off first if you want to use a different authenticator app.",
+      "not_enrolled": "This account has no second factor in force, so there is nothing to change. Turn it on from your account settings if you want that protection."
+    },
+    "social": {
+      "identity_taken": "That provider account is already linked to an EasyESG account, so it cannot be linked again. Use a different account at the provider, or unlink it where it is linked now.",
+      "not_linked": "This account has nothing linked at that provider, so there is nothing to unlink. Check the linked accounts listed in your settings.",
+      "last_credential": "This is the only way you can sign in, so it cannot be removed — an account with no credential at all cannot be recovered and loses access to the organizations you belong to. Set a password first, then come back here.",
+      "email_in_use": "An EasyESG account already exists for this address, so a second one cannot be created. Sign in with the account’s password, then link this provider account from your security settings — after that either one will sign you in.",
+      "exchange_failed": "Signing in with the chosen provider could not be completed. Start the sign-in again from the beginning.",
+      "identity_unknown": "The provider account is not linked to any account on the platform. You can create a new account.",
+      "provider_unavailable": "This way of signing in is not available right now. Use your email address and password, or try again later.",
+      "email_unverified": "The account’s address is not verified yet, so no session was created. Open the link in the verification email, or ask for it to be sent again.",
+      "redirect_rejected": "The sign-in request did not start from an allowed address, so it was refused. Go back to the sign-in page and start again from there."
     }
   },
   "notification": {
@@ -140,6 +159,15 @@
         "subject": "You have been invited to {organizationName}",
         "body": "Hello,\n\nYou have been invited to join {organizationName} on easyesg, the sustainability reporting platform. Open the link below to accept the invitation:\n\n{invitationUrl}\n\nThe link is valid for 7 days, works only once, and works only for this email address.\n\nIf you were not expecting this invitation, ignore this message: no access is created unless you accept it."
       }
+    }
+  },
+  "platform": {
+    "admin": {
+      "credential_invalid": "The address or the password is not right, so no session was created. Check both and try again.",
+      "account_locked": "This account is locked after too many failed attempts, so signing in is not possible right now. Ask another platform administrator to unlock it.",
+      "factor_invalid": "That code is not valid right now, so sign-in did not complete. Open your authenticator app and enter the code it is showing now.",
+      "session_expired": "The administration session has expired, so the request was not processed. Sign in again to continue.",
+      "session_invalid": "The administration session is no longer valid, so the request was not processed. Sign in again to continue."
     }
   }
 }

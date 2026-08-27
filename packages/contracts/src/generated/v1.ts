@@ -348,6 +348,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The providers linked to the signed-in account
+         * @description What S-28 lists. The provider’s subject identifier is deliberately not included: it is the provider’s own identifier for a person and no screen has a use for it.
+         */
+        get: operations["ProviderLinkController_linked"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/providers/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link a provider identity to the signed-in account
+         * @description Redeems the authorization code and attaches what the provider asserts (UC-11). Requires the current password: a link adds a way in, so a stolen session must not be able to attach one and outlive the password change its owner would reach for. **The asserted address need not match the account’s** — a personal provider account is routinely not a work address, and BR-ID-3 is satisfied by the re-authentication, never by comparing emails.
+         */
+        post: operations["ProviderLinkController_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/providers/{provider}/removal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unlink a provider identity
+         * @description Removes the identity (UC-12), unless it is the account’s **last remaining credential** — BR-ID-4, counted across the password and every linked provider rather than assumed. An account with no usable credential is unrecoverable and takes its organization memberships with it, so the refusal names the way out: set a password first.
+         */
+        post: operations["ProviderLinkController_unlink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/members": {
         parameters: {
             query?: never;
@@ -822,7 +882,7 @@ export interface components {
              * @description What the user was doing when the flow began. A sign-in that matches no account is offered registration rather than silently given one; a registration that matches an existing address is refused rather than linked.
              * @enum {string}
              */
-            intent: "sign-in" | "register";
+            intent: "sign-in" | "register" | "link";
         };
         ResultListDto: {
             /** @example 200 */
@@ -833,6 +893,42 @@ export interface components {
             /** @example 6 */
             totalpages: number;
             messages: components["schemas"]["MessageDto"][];
+        };
+        LinkedProviderResponseDto: {
+            /** @enum {string} */
+            provider: "google" | "microsoft";
+            /**
+             * Format: email
+             * @description The address the provider asserted at the last sign-in. Deliberately allowed to differ from the account’s own — it is a recorded fact, not an identity — and it is what tells a user which of their provider accounts this is.
+             */
+            assertedEmail: string;
+        };
+        LinkProviderRequestDto: {
+            /** @description The authorization code returned by the provider. */
+            code: string;
+            /** @description The `state` from the sealed transaction, echoed by the provider. */
+            state: string;
+            /** @description The `nonce` from the sealed transaction, checked in the ID token. */
+            nonce: string;
+            /** @description The PKCE verifier from the sealed transaction. */
+            codeVerifier: string;
+            /**
+             * @description The redirect URI the code was issued against — checked against the allowlist.
+             * @example http://localhost:3100/auth/social/google/callback
+             */
+            redirectUri: string;
+            /**
+             * Format: password
+             * @description The account’s current password. Required for every account that has one — a link adds a way in, so a stolen session must not be able to attach a provider (§12.5.6). Omitted only by an account that signs in through a provider and holds no password.
+             */
+            password?: string;
+        };
+        UnlinkProviderRequestDto: {
+            /**
+             * Format: password
+             * @description The account’s current password, on the same rule as linking: an attacker on a stolen session must not be able to strip the owner’s other provider.
+             */
+            password?: string;
         };
         MemberResponseDto: {
             /**
@@ -1739,6 +1835,121 @@ export interface operations {
             };
             /** @description Too many completion attempts from this address in the window. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ProviderLinkController_linked: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The linked providers, ordered by provider. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["LinkedProviderResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    ProviderLinkController_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "google" | "microsoft";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkProviderRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The provider is linked. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The current password did not match (problem type credential-invalid). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description That provider identity is already attached to an account, or this account already holds one for this provider. Deliberately one answer for both — the other would name a stranger’s account. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many re-authentication attempts for this account in the window (§12.5.6). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ProviderLinkController_unlink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "google" | "microsoft";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnlinkProviderRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The provider is no longer linked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The current password did not match (problem type credential-invalid). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account holds no identity for that provider, or removing it would leave no credential at all (BR-ID-4). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

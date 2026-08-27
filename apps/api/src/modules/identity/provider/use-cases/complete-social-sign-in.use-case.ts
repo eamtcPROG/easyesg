@@ -185,7 +185,8 @@ export class CompleteSocialSignIn {
         await tx.deleteAccount(existing.id);
       } else {
         // UC-02's alternate flow, BR-ID-3: no duplicate, no silent link. The route to linking is
-        // proving control of the account first — password sign-in, then S-28 (FR-8, task 27).
+        // proving control of the account first — password sign-in, then linking from S-28, which
+        // task 27.6 built: `POST /account/providers/{provider}`, behind the current password.
         throw new SocialEmailInUseError();
       }
     }

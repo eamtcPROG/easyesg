@@ -14,6 +14,7 @@ import {
   type IdentityProviderPort,
 } from '@api/contracts/identity-provider.port';
 import { SocialAuthController } from './controllers/social-auth.controller';
+import { ProviderLinkController } from './controllers/provider-link.controller';
 import {
   SOCIAL_PROVIDER_CATALOG,
   type SocialProviderCatalog,
@@ -24,6 +25,13 @@ import {
 } from './interfaces/social-sign-in-store.interface';
 import { SocialProviderCatalogService } from './services/social-provider-catalog.service';
 import { SocialAuthService } from './services/social-auth.service';
+import { ProviderLinkService } from './services/provider-link.service';
+import { ManageProviderLinks } from './use-cases/manage-provider-links.use-case';
+import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
+import {
+  PASSWORD_HASHER,
+  type PasswordHasher,
+} from '@api/modules/identity/account/interfaces/password-hasher.interface';
 import { BeginSocialSignIn } from './use-cases/begin-social-sign-in.use-case';
 import { CompleteSocialSignIn } from './use-cases/complete-social-sign-in.use-case';
 
@@ -44,6 +52,7 @@ const { mode } = configuration();
 
 const httpProviders: Provider[] = [
   SocialAuthService,
+  ProviderLinkService,
   { provide: SOCIAL_PROVIDER_CATALOG, useClass: SocialProviderCatalogService },
   { provide: SOCIAL_SIGN_IN_STORE, useClass: SocialSignInStoreRepository },
   { provide: CLOCK, useValue: () => new Date() },
@@ -60,6 +69,30 @@ const httpProviders: Provider[] = [
     inject: [ConfigService],
     useFactory: (config: ConfigService<AppConfig, true>) =>
       new JwtAccessTokenSigner(config.get('auth.jwtSecret', { infer: true })),
+  },
+  {
+    /**
+     * FR-8's link and unlink (task 27.6). It takes the SAME catalog and port `CompleteSocialSignIn`
+     * takes — a link redeems a code exactly as a sign-in does; only what happens to the assertion
+     * differs — plus the hasher, for §12.5.6's re-authentication.
+     */
+    provide: ManageProviderLinks,
+    inject: [SOCIAL_SIGN_IN_STORE, SOCIAL_PROVIDER_CATALOG, IDENTITY_PROVIDER_PORT, PASSWORD_HASHER, CLOCK],
+    useFactory: (
+      store: SocialSignInStore,
+      catalog: SocialProviderCatalog,
+      port: IdentityProviderPort,
+      hasher: PasswordHasher,
+      now: Clock,
+    ) => new ManageProviderLinks(store, catalog, port, hasher, now),
+  },
+  {
+    /** §9.1's Argon2id, for the re-authentication above. Two providers of one adapter, not two
+     *  adapters — `session.module.ts`'s standing answer, built from the same pepper. */
+    provide: PASSWORD_HASHER,
+    inject: [ConfigService],
+    useFactory: (config: ConfigService<AppConfig, true>) =>
+      new Argon2PasswordHasher(config.get('auth.passwordPepper', { infer: true })),
   },
   {
     provide: BeginSocialSignIn,
@@ -87,7 +120,7 @@ const httpProviders: Provider[] = [
 ];
 
 @Module({
-  controllers: mode === APP_MODE.WORKER ? [] : [SocialAuthController],
+  controllers: mode === APP_MODE.WORKER ? [] : [SocialAuthController, ProviderLinkController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
 })
 export class ProviderModule {}

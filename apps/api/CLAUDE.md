@@ -512,6 +512,23 @@ them out of every device. Two consequences for tests: the key carries the **acco
 drain matching an email address misses it; and a suite touching these routes more than four times
 must drain between tests, which is how the retro-fit announced itself.
 
+Task 27.6 adds FR-8 (UC-11, UC-12): `GET /api/v1/account/providers`,
+`POST /api/v1/account/providers/{provider}` and `.../removal`, behind `@RequiresAccount()`.
+**A link BEGINS on task 24's public challenge route, unchanged** — that route builds an
+authorization URL and needs no actor — and only the redemption is new and authenticated.
+`SOCIAL_SIGN_IN_INTENT.LINK` tells the web tier which completion to return to. Both operations take
+the current password on 27.5's key. **BR-ID-4 is `isLastCredential`**, one predicate over the
+password row *and* the provider identities, counted inside the same transaction as the delete.
+
+**A message key without a catalogue entry is invisible, and `message-keys.spec.ts` is why that is
+now a gate.** `ProblemDetailsFilter` reads `detail` from `exception.messageKey` for a `DomainError`
+and from `problem.<slug>.detail` for a framework exception — so text authored under the slug is
+**dead** for a domain error, which is how four properly-translated social messages looked like
+coverage while contributing nothing. A missing key makes `translate` answer `undefined` and the
+filter omit `detail`: right failure, silent failure, and NFR-79's second and third parts gone. The
+i18n parity harness cannot see it, because it compares the three catalogues to each other. **Adding
+a `DomainError` means adding its key to all three catalogues in the same change.**
+
 ### Adding a column that holds a secret
 
 Since task 27.1 there is one mechanism and the database enforces it (§12.5.6's secrets-at-rest row).

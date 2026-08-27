@@ -28,6 +28,7 @@ import { SocialEmailInUseError } from '../errors/social.errors';
 interface Snapshot {
   accounts: Account[];
   identities: ProviderIdentity[];
+  passwords: [string, string][];
   sessions: FakeStoredSession[];
   refreshTokens: FakeRefreshToken[];
   attempts: { key: string; at: Date }[];
@@ -38,6 +39,9 @@ interface Snapshot {
 export class FakeSocialSignInStore implements SocialSignInStore {
   accounts: Account[] = [];
   identities: ProviderIdentity[] = [];
+
+  /** Account ids holding a password row, and its digest — BR-ID-4's other credential kind. */
+  passwords = new Map<string, string>();
   sessions: FakeStoredSession[] = [];
   refreshTokens: FakeRefreshToken[] = [];
   attempts: { key: string; at: Date }[] = [];
@@ -71,6 +75,7 @@ export class FakeSocialSignInStore implements SocialSignInStore {
     return {
       accounts: [...this.accounts],
       identities: this.identities.map((identity) => ({ ...identity })),
+      passwords: [...this.passwords.entries()],
       sessions: this.sessions.map((session) => ({ ...session })),
       refreshTokens: this.refreshTokens.map((token) => ({ ...token })),
       attempts: this.attempts.map((attempt) => ({ ...attempt })),
@@ -82,6 +87,7 @@ export class FakeSocialSignInStore implements SocialSignInStore {
   private restore(snapshot: Snapshot): void {
     this.accounts = snapshot.accounts;
     this.identities = snapshot.identities;
+    this.passwords = new Map(snapshot.passwords);
     this.sessions = snapshot.sessions;
     this.refreshTokens = snapshot.refreshTokens;
     this.attempts = snapshot.attempts;
@@ -219,6 +225,55 @@ export class FakeSocialSignInStore implements SocialSignInStore {
       issueVerificationToken(token: NewVerificationToken): Promise<void> {
         store.verificationTokens.push(token);
         return Promise.resolve();
+      },
+
+      findProviderIdentitiesFor(accountId: string): Promise<ProviderIdentity[]> {
+        return Promise.resolve(
+          store.identities
+            .filter((identity) => identity.accountId === accountId)
+            .map((identity) => ({ ...identity })),
+        );
+      },
+
+      hasPasswordCredential(accountId: string): Promise<boolean> {
+        return Promise.resolve(store.passwords.has(accountId));
+      },
+
+      findPasswordDigest(accountId: string): Promise<string | null> {
+        return Promise.resolve(store.passwords.get(accountId) ?? null);
+      },
+
+      linkProviderIdentity(
+        identity: {
+          readonly accountId: string;
+          readonly provider: SocialProvider;
+          readonly subject: string;
+          readonly assertedEmail: string;
+          readonly emailVerifiedAsserted: boolean;
+        },
+      ): Promise<boolean> {
+        // BOTH unique constraints, modelled: `(provider, subject)` is the takeover guard and
+        // `(account_id, provider)` is the one-per-provider shape rule. A fake enforcing only the
+        // first would let a spec prove the use case guards the second when the database does.
+        const taken = store.identities.some(
+          (existing) =>
+            (existing.provider === identity.provider && existing.subject === identity.subject) ||
+            (existing.accountId === identity.accountId && existing.provider === identity.provider),
+        );
+        if (taken) return Promise.resolve(false);
+        store.identities.push({ id: `identity-${store.identities.length + 1}`, ...identity });
+        return Promise.resolve(true);
+      },
+
+      unlinkProviderIdentity(
+        identity: { readonly accountId: string; readonly provider: SocialProvider },
+      ): Promise<boolean> {
+        const before = store.identities.length;
+        store.identities = store.identities.filter(
+          (existing) =>
+            !(existing.accountId === identity.accountId && existing.provider === identity.provider),
+        );
+        return Promise.resolve(store.identities.length < before);
       },
 
       emit(effect: AccountEffect): Promise<void> {
