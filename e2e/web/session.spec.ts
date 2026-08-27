@@ -34,11 +34,11 @@ async function registerAndVerify(page: Page, email: string): Promise<void> {
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   const token = await verificationTokenFor(email);
   await page.goto(`/verify?token=${token}`);
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
   await expect(page.getByText('Adresa este confirmată')).toBeVisible();
 }
 
@@ -46,7 +46,7 @@ async function signIn(page: Page, email: string, password: string): Promise<void
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
 }
 
 test('a user signs in, holds an httpOnly session, and signs out (UC-04, UC-06)', async ({
@@ -91,7 +91,7 @@ test('a guarded route redirects to sign-in and returns after it (UX-38)', async 
 
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
 
   await page.waitForURL('**/reports');
 });
@@ -113,13 +113,13 @@ test('a correct password on an unverified account names verification as the bloc
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
 
   await signIn(page, email, PASSWORD);
 
   await expect(page.getByText('Adresă neconfirmată')).toBeVisible();
-  await page.getByRole('link', { name: 'Mergi la confirmarea adresei' }).click();
+  await page.getByRole('link', { name: 'Mergeți la confirmarea adresei' }).click();
   await page.waitForURL('**/verify');
   // The address rode the same hand-off registration uses; the challenge states it.
   await expect(page.getByText(email)).toBeVisible();
@@ -133,7 +133,7 @@ test('the reset flow: uniform request, stated consequence, new password signs in
 
   await page.goto('/reset');
   await page.getByLabel('Adresa de e-mail').fill(email);
-  await page.getByRole('button', { name: 'Trimite linkul' }).click();
+  await page.getByRole('button', { name: 'Trimiteți linkul' }).click();
   // Uniform: the confirmation asserts only the conditional fact (NFR-64).
   await expect(page.getByText('Cererea a fost înregistrată')).toBeVisible();
 
@@ -144,10 +144,10 @@ test('the reset flow: uniform request, stated consequence, new password signs in
   await expect(page.getByText('Toate sesiunile existente vor fi închise')).toBeVisible();
 
   await page.getByLabel('Parola nouă').fill(NEW_PASSWORD);
-  await page.getByRole('button', { name: 'Salvează parola nouă' }).click();
+  await page.getByRole('button', { name: 'Salvați parola nouă' }).click();
   await expect(page.getByText('Parola a fost schimbată')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Mergi la autentificare' }).click();
+  await page.getByRole('link', { name: 'Mergeți la autentificare' }).click();
   await page.waitForURL('**/sign-in');
   await signIn(page, email, NEW_PASSWORD);
   // No membership, so §4.3 sends them to S-04 — the new password worked, which is the claim.
@@ -159,6 +159,6 @@ test('a bare set-password arrival explains itself and offers the request route',
 }) => {
   await page.goto('/set-password');
   await expect(page.getByText('Linkul este incomplet')).toBeVisible();
-  await page.getByRole('link', { name: 'Cere un link nou' }).click();
+  await page.getByRole('link', { name: 'Cereți un link nou' }).click();
   await page.waitForURL('**/reset');
 });

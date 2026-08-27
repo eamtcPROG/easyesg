@@ -83,15 +83,68 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
     if (app?.isInitialized) await app.destroy();
   });
 
+  /**
+   * **Scoped to this suite's own organization** (27 Aug 2026, review).
+   *
+   * It was an unscoped `DELETE FROM audit.outbox_event`, which today is harmless only because
+   * `test:e2e` runs `--runInBand` and `pnpm gates` runs the browser suite after this one — so no
+   * two writers of this table are ever live at once. That is a property of the runner, not of the
+   * test, and the day someone parallelises the e2e suites (the obvious optimisation as they grow)
+   * this would silently delete another suite's pending rows and the failures would surface over
+   * there. Every sibling suite already scopes its own cleanup; this was the one that did not.
+   *
+   * `ORGANIZATION` is this file's own constant and everything it writes goes through `seed`, so the
+   * scope is exact rather than a prefix convention.
+   */
   beforeEach(async () => {
-    await owner.query(`DELETE FROM audit.outbox_event`);
+    await owner.query(`DELETE FROM audit.outbox_event WHERE organization_id = $1`, [ORGANIZATION]);
     await queue.obliterate({ force: true });
+    await expectNoStrayRows();
   });
 
+  /**
+   * **The precondition this file cannot scope away, checked before every test rather than assumed.**
+   *
+   * `dispatchBatch` polls every pending row regardless of tenant — the dispatcher is global by
+   * design (§6.7's single producer) — so three tests below count what a global sweep did and are
+   * wrong by exactly the number of rows somebody else left behind.
+   *
+   * Deliberately **not** manufactured with `DELETE … WHERE dispatched_at IS NULL`: that is the
+   * cross-suite destruction this file was corrected for, moved one hook lower, and it is what hid
+   * `signInFreshAccount`'s leak for seven suites. Asserted here, at the top, so a stray row fails
+   * with its own count and a sentence naming the cause instead of surfacing three tests later as
+   * `expected 1, received 21`. On CI the database is fresh; locally this is what tells you a
+   * previous partial run is still in the table.
+   */
+  const expectNoStrayRows = async (): Promise<void> => {
+    // Names the rows rather than counting them: "1 stray row" sends the next reader hunting, while
+    // `identity.email_verification.requested / ana@…` names the suite that owes a cleanup.
+    const rows: { event_type: string; subject: string | null }[] = await owner.query(
+      `SELECT event_type, payload->>'email' AS subject FROM audit.outbox_event
+        WHERE dispatched_at IS NULL AND organization_id IS DISTINCT FROM $1
+        ORDER BY occurred_at`,
+      [ORGANIZATION],
+    );
+    expect({
+      hint: 'a suite that signs actors in must call cleanupSignedInAccounts({ owner }) in afterAll',
+      strays: rows.map((r) => `${r.event_type}${r.subject ? ` / ${r.subject}` : ''}`),
+    }).toEqual({
+      hint: 'a suite that signs actors in must call cleanupSignedInAccounts({ owner }) in afterAll',
+      strays: [],
+    });
+  };
+
+  /**
+   * Also scoped, and for a sharper reason than the cleanup: `dispatchBatch` polls **every** pending
+   * row, because the dispatcher is global by design (AD-6). A read that was not scoped would make
+   * "nothing is pending" an assertion about the whole database — see the `dispatch` describe, where
+   * that is stated as a precondition rather than left implicit.
+   */
   const pending = async (): Promise<{ idempotency_key: string; attempts: number }[]> =>
     owner.query(
       `SELECT idempotency_key, attempts FROM audit.outbox_event
-        WHERE dispatched_at IS NULL ORDER BY occurred_at`,
+        WHERE dispatched_at IS NULL AND organization_id = $1 ORDER BY occurred_at`,
+      [ORGANIZATION],
     );
 
   const seed = async (key: string, eventType = 'report.export.requested') => {
@@ -140,9 +193,12 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
       expect(await pending()).toEqual([]);
     });
 
+    /** Scoped like `pending()` above, and for the same reason — see its note. */
     const pendingOn = async (runner: QueryRunner): Promise<string[]> => {
       const rows = (await runner.query(
-        `SELECT idempotency_key FROM audit.outbox_event ORDER BY occurred_at`,
+        `SELECT idempotency_key FROM audit.outbox_event
+          WHERE organization_id = $1 ORDER BY occurred_at`,
+        [ORGANIZATION],
       )) as { idempotency_key: string }[];
       return rows.map((r) => r.idempotency_key);
     };
@@ -164,6 +220,16 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
       expect(await pending()).toEqual([]);
     });
 
+    /**
+     * **The one assertion in this file that is about the whole table**, and it has to be: the
+     * dispatcher polls every pending row regardless of tenant, which is AD-6's design and the point
+     * of §6.7's single producer. So this test cannot be scoped the way the cleanup above is — it is
+     * asserting that a global sweep finds nothing.
+     *
+     * It therefore depends on no other suite holding an undispatched row, which `--runInBand` plus
+     * `gates`' sequencing currently guarantees. Stated here rather than left implicit, so that a
+     * later move to parallel e2e has one place telling it what breaks and why.
+     */
     it('does nothing, and takes no transaction, when there is nothing to do', async () => {
       const dispatcher = new OutboxDispatcher(owner, recordingQueue([]));
       expect(await dispatcher.dispatchBatch()).toBe(0);

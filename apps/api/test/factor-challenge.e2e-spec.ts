@@ -9,7 +9,7 @@ import { configureHttpApp } from '../src/main.http';
 import { totpCodeAt } from '../src/modules/platform/admin/domain/totp';
 import { SIGN_IN_OUTCOME } from '../src/modules/identity/session/models/session.model';
 import { connectAs } from './support/database';
-import { PASSWORD, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
  * UC-194 and UC-195 over real HTTP (NFR-95; task 27.3).
@@ -90,6 +90,7 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
   }, 120_000);
 
   afterAll(async () => {
+    await cleanupSignedInAccounts({ owner });
     await owner?.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [[ENROLLED, PLAIN]]);
     await drain();
     await owner?.destroy();

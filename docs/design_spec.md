@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-134`, `S-01` … `S-28`, `A-01` … `A-18` |
+| `design_spec.md` (this file) | `UX-1` … `UX-135`, `S-01` … `S-28`, `A-01` … `A-18` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -132,6 +132,18 @@ Four named breakpoints, defined by capability rather than device. Values live in
 ### 3.4 Language context
 
 Interface language, export language and email language are selected independently (UC-14, UC-48; source cites FR-169). Russian VSME labels are platform-authored and carry no official EFRAG standing; the interface says so at the point of export selection, not in a help centre. Three locales are live at MVP — Romanian as source, English and Russian each separately authored — resolved 18 Aug 2026; see §9.1 and OQ-1.
+
+**UX-135** Every locale that distinguishes them shall address the reader in the **formal register**, on every surface, without exception — Romanian *dumneavoastră*, Russian *вы*. English has no T-V distinction and is unaffected. **Set 27 Aug 2026, project owner**, closing a question the set had never asked.
+
+It is one rule and not a per-surface judgement, because the surfaces do not partition the way an intuition about "onboarding versus product" suggests. Measured on 27 Aug 2026, Romanian was split almost evenly — informal across the credential funnel (`register`, `verify`, `signIn`, `factor`, `resetRequest`, `setPassword`) and formal across `social`, `invitation`, `credentials` and `organizationUnavailable` — and the two met **inside a single viewport**: S-01 rendered *"Intră în contul tău"* directly beside *"Continuați cu Google"*, because the provider buttons belong to a different namespace from the form they sit under. A rule drawn at the screen boundary would not have caught that, since it is not a screen boundary.
+
+Three things decided it, and the first is the one that makes it cheap:
+
+- **Russian had already chosen.** All eleven namespaces were formal, authored that way independently. Choosing formal changes one file; choosing informal would have meant rewriting Romanian *and* overriding a consistent choice already made in Russian.
+- **The register is a property of the product, not of the moment.** This is a statutory-filing tool whose reader is an SME owner, an accountant or a bookkeeper producing a document with legal force. The identity funnel is six namespaces of what will be roughly fifty; the in-product surfaces were already formal, and every screen still to be written — reports, the calculator, exports, invoices, dunning — is closer to them than to a sign-up form.
+- **A split register is not a style preference, it is an inconsistency the reader can see.** Task 26.3 already has a reader crossing between S-03 and S-01 twice inside a minute, and the pronoun changed each way.
+
+Accepted cost: formal Romanian is wordier, so the UX-73 +40 % expansion budget is measured against a longer source. That is a layout constraint to meet, not a reason to address the reader inconsistently.
 
 ---
 

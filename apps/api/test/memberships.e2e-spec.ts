@@ -9,7 +9,7 @@ import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { asOrganization, connectAs } from './support/database';
-import { signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
  * UC-16's *view memberships* half, end to end (FR-12; task 25.3), **through a real session**
@@ -103,6 +103,7 @@ describe('memberships (UC-16, FR-12)', () => {
   }, 120_000);
 
   afterAll(async () => {
+    await cleanupSignedInAccounts({ owner });
     await unseed();
     if (owner?.isInitialized) await owner.destroy();
     if (worker?.isInitialized) await worker.destroy();

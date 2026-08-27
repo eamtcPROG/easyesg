@@ -106,5 +106,5 @@ export async function presentPassword(
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
 }

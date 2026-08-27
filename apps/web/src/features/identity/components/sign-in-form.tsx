@@ -81,6 +81,11 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
         <Callout
           intent={isUnverified ? 'warning' : 'error'}
           title={problem.title ?? t('problemTitle')}
+          /* NFR-79's "what now" belongs to the API's `detail`, which always states its own remedy.
+              The slot carries something only where this screen owns one the detail cannot express —
+              a remedy that NAVIGATES. Until 27 Aug 2026 it fell back to a fixed sentence for every
+              other problem, so the throttle refusal arrived with the API's "wait a few minutes"
+              directly above this screen's "try again now". (factor-form.tsx made the same fix.) */
           action={
             isUnverified ? (
               <TextLink asChild>
@@ -90,9 +95,7 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
               <TextLink asChild>
                 <Link href={ROUTES.RESET}>{t('lockedAction')}</Link>
               </TextLink>
-            ) : (
-              t('problemAction')
-            )
+            ) : null
           }
         >
           {problem.detail ?? t('problemBody')}

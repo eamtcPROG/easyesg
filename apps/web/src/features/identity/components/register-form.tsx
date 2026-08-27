@@ -117,14 +117,17 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
         <Callout
           intent="error"
           title={failure.problem.title ?? t('problemTitle')}
+          /* NFR-79's "what now" belongs to the API's `detail`, which always states its own remedy.
+              The slot carries something only where this screen owns one the detail cannot express —
+              a remedy that NAVIGATES. Until 27 Aug 2026 it fell back to a fixed sentence for every
+              other problem, so the throttle refusal arrived with the API's "wait a few minutes"
+              directly above this screen's "try again now". (factor-form.tsx made the same fix.) */
           action={
             isConflict ? (
               <TextLink asChild>
                 <Link href={ROUTES.SIGN_IN}>{t('signIn')}</Link>
               </TextLink>
-            ) : (
-              t('problemAction')
-            )
+            ) : null
           }
         >
           {failure.problem.detail ?? t('problemBody')}

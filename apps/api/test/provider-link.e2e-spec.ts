@@ -13,7 +13,7 @@ import { ConfigurationStore } from '../src/infrastructure/configuration/configur
 import { IDENTITY_PROVIDER_CONFIG_KIND } from '../src/modules/identity/provider/constants/provider.constants';
 import { OidcProviderStub } from './support/oidc-provider-stub';
 import { connectAs } from './support/database';
-import { PASSWORD, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
  * UC-11 and UC-12 over real HTTP, against a real code flow (FR-8; task 27.6).
@@ -79,6 +79,7 @@ describe('link and unlink provider identities (UC-11, UC-12, FR-8)', () => {
   }, 120_000);
 
   afterAll(async () => {
+    await cleanupSignedInAccounts({ owner });
     // Restore the committed seed, so the next `config:seed` compares equal — social-auth's rule.
     const seed = JSON.parse(
       readFileSync(resolve(__dirname, '../../../config/seed/identity-provider.google.json'), 'utf8'),

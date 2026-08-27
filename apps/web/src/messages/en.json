@@ -68,8 +68,7 @@
       "signIn": "Sign in",
       "summaryTitle": "A few fields need attention before you can continue",
       "problemTitle": "The request could not be processed",
-      "problemBody": "The account was not created because the request could not be processed.",
-      "problemAction": "Correct the details indicated and try again."
+      "problemBody": "The account was not created because the request could not be processed."
     },
     "verify": {
       "title": "Confirm your email address",
@@ -113,7 +112,6 @@
       "summaryTitle": "A few fields need attention before you can continue",
       "problemTitle": "Sign-in did not succeed",
       "problemBody": "We could not sign you in because of an error while processing the request.",
-      "problemAction": "Check the details you entered and try again.",
       "unverifiedAction": "Go to address confirmation",
       "lockedAction": "Reset your password"
     },
@@ -153,7 +151,6 @@
       "summaryTitle": "A few fields need attention before you can continue",
       "problemTitle": "The request could not be processed",
       "problemBody": "The reset link was not sent because of an error while processing the request.",
-      "problemAction": "Wait a few minutes and try again.",
       "backToSignIn": "Back to sign-in"
     },
     "setPassword": {

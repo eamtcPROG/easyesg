@@ -70,7 +70,7 @@ describe('S-01 · register form', () => {
 
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), 'parola123!'); // no uppercase
-    await user.click(screen.getByRole('button', { name: 'Creează contul' }));
+    await user.click(screen.getByRole('button', { name: 'Creați contul' }));
 
     expect(action).not.toHaveBeenCalled();
     // The three-part message inline, and the UX-111 summary linking to the field.
@@ -94,7 +94,7 @@ describe('S-01 · register form', () => {
 
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
-    await user.click(screen.getByRole('button', { name: 'Creează contul' }));
+    await user.click(screen.getByRole('button', { name: 'Creați contul' }));
 
     await waitFor(() =>
       expect(action).toHaveBeenCalledWith({ email: VALID_EMAIL, password: VALID_PASSWORD }),
@@ -118,13 +118,13 @@ describe('S-01 · register form', () => {
 
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
-    await user.click(screen.getByRole('button', { name: 'Creează contul' }));
+    await user.click(screen.getByRole('button', { name: 'Creați contul' }));
 
     const callout = await screen.findByRole('alert');
     // The API's resolved wording verbatim — the screen never re-derives it from a slug.
     expect(callout).toHaveTextContent('Intră în conflict cu datele existente');
     expect(callout).toHaveTextContent('Există deja un cont pentru această adresă…');
-    expect(screen.getAllByRole('link', { name: 'Autentifică-te' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: 'Autentificați-vă' }).length).toBeGreaterThan(0);
     expect(push).not.toHaveBeenCalled();
   });
 
@@ -135,10 +135,10 @@ describe('S-01 · register form', () => {
 
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
-    await user.click(screen.getByRole('button', { name: 'Creează contul' }));
+    await user.click(screen.getByRole('button', { name: 'Creați contul' }));
 
     const callout = await screen.findByRole('alert');
     expect(callout).toHaveTextContent('Serverul nu poate fi contactat');
-    expect(callout).toHaveTextContent('Verifică-ți conexiunea la internet');
+    expect(callout).toHaveTextContent('Verificați-vă conexiunea la internet');
   });
 });

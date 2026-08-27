@@ -54,13 +54,13 @@ describe('S-02 · confirm surface (?token=…)', () => {
     // Rendering alone must not spend the single use — a mail scanner opened this URL.
     expect(verify).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole('button', { name: 'Confirmă adresa' }));
+    await user.click(screen.getByRole('button', { name: 'Confirmați adresa' }));
     await waitFor(() => expect(verify).toHaveBeenCalledWith({ token: TOKEN }));
 
     // Success confirms what happened and offers the next step (§8.1: never a bare toast).
     const status = await screen.findByRole('status');
     expect(status).toHaveTextContent('Adresa este confirmată');
-    expect(screen.getByRole('link', { name: 'Mergi la autentificare' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Mergeți la autentificare' })).toHaveAttribute(
       'href',
       '/sign-in',
     );
@@ -79,16 +79,16 @@ describe('S-02 · confirm surface (?token=…)', () => {
     });
     render(withIntl(<ConfirmEmail token={TOKEN} />));
 
-    await user.click(screen.getByRole('button', { name: 'Confirmă adresa' }));
+    await user.click(screen.getByRole('button', { name: 'Confirmați adresa' }));
 
     const callout = await screen.findByRole('alert');
     expect(callout).toHaveTextContent('Linkul de confirmare nu este valid');
-    expect(screen.getByRole('link', { name: 'Cere un link nou' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Cereți un link nou' })).toHaveAttribute(
       'href',
       '/verify',
     );
     // The failed link's surface still offers the button — the user may retry.
-    expect(screen.getByRole('button', { name: 'Confirmă adresa' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Confirmați adresa' })).toBeEnabled();
   });
 });
 
@@ -99,8 +99,8 @@ describe('S-02 · waiting/resend surface', () => {
     render(withIntl(<VerificationPending />));
 
     expect(screen.getByText(EMAIL)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Retrimite linkul' })).toBeDisabled();
-    expect(screen.getByText(/Poți retrimite peste/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retrimiteți linkul' })).toBeDisabled();
+    expect(screen.getByText(/Puteți retrimite peste/)).toBeInTheDocument();
   });
 
   it('resends once the cooldown has passed, and confirms uniformly (OQ-55)', async () => {
@@ -111,7 +111,7 @@ describe('S-02 · waiting/resend surface', () => {
     sessionStorage.setItem(RESEND_SENT_AT_STORAGE_KEY, '0');
     render(withIntl(<VerificationPending />));
 
-    await user.click(screen.getByRole('button', { name: 'Retrimite linkul' }));
+    await user.click(screen.getByRole('button', { name: 'Retrimiteți linkul' }));
 
     await waitFor(() => expect(resend).toHaveBeenCalledWith({ email: EMAIL }));
     // The confirmation reveals nothing the uniform 202 does not.
@@ -126,7 +126,7 @@ describe('S-02 · waiting/resend surface', () => {
 
     const field = screen.getByLabelText('Adresa de e-mail');
     await user.type(field, EMAIL);
-    await user.click(screen.getByRole('button', { name: 'Trimite linkul' }));
+    await user.click(screen.getByRole('button', { name: 'Trimiteți linkul' }));
 
     await waitFor(() => expect(resend).toHaveBeenCalledWith({ email: EMAIL }));
     // The address is remembered, so the screen converges to the waiting state.

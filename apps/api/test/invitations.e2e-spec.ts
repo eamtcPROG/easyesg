@@ -12,7 +12,7 @@ import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/
 import { INVITED_ROLE } from '../src/modules/identity/invitation/models/invitation.model';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { asOrganization, connectAs } from './support/database';
-import { PASSWORD, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { cleanupSignedInAccounts, registerFreshAccount, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
  * S-16's invitation half, end to end (UC-60, UC-61; FR-11, FR-57) — against real sessions, real
@@ -190,6 +190,7 @@ describe('invitations (UC-60, UC-61)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    await cleanupSignedInAccounts({ owner });
     await unseed();
     if (owner?.isInitialized) await owner.destroy();
     if (worker?.isInitialized) await worker.destroy();
@@ -328,11 +329,7 @@ describe('invitations (UC-60, UC-61)', () => {
    * single-invitation assertion could not tell it from "the inviter's locale happens to be right".
    */
   it('writes the email in the invitee’s language, falling back to the inviter’s', async () => {
-    await http()
-      .post('/api/v1/auth/register')
-      .set('Accept-Language', 'ru')
-      .send({ email: RUSSIAN_SPEAKER, password: PASSWORD })
-      .expect(201);
+    await registerFreshAccount({ server: app.getHttpServer(), email: RUSSIAN_SPEAKER, acceptLanguage: 'ru' });
 
     await invite(admin, { email: RUSSIAN_SPEAKER }).expect(201);
     await invite(admin, { email: INVITEE }).expect(201);

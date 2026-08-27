@@ -11,7 +11,7 @@ import { CORE_DATA_SOURCE } from '../src/infrastructure/persistence/data-source'
 import { requestContext } from '../src/infrastructure/persistence/request-context';
 import { TenantRepository } from '../src/infrastructure/persistence/tenant-repository';
 import { asOrganization, connectAs } from './support/database';
-import { signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 
 /**
@@ -119,6 +119,7 @@ describe('tenant context propagation (AD-2, T-11)', () => {
   }, 120_000);
 
   afterAll(async () => {
+    await cleanupSignedInAccounts({ owner });
     await unseed();
     if (owner?.isInitialized) await owner.destroy();
     if (worker?.isInitialized) await worker.destroy();

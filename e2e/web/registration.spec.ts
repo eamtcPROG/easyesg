@@ -23,7 +23,7 @@ test('a user registers and verifies from the browser (UC-01, UC-03)', async ({ p
   const email = addressFor('happy');
 
   await page.goto('/register');
-  await expect(page.getByRole('heading', { name: 'Creează-ți contul' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Creați-vă contul' })).toBeVisible();
 
   // The policy is displayed before entry (S-02 §5) and answers itself while typing.
   await expect(page.getByText('încă neîndeplinit —').or(page.getByText('Între 8 și 128 de caractere'))).toBeVisible();
@@ -32,22 +32,22 @@ test('a user registers and verifies from the browser (UC-01, UC-03)', async ({ p
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await expect(page.getByText('— îndeplinit').first()).toBeAttached();
 
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
 
   // S-01 exits to the S-02 challenge, which states the address the link went to.
   await page.waitForURL('**/verify');
   await expect(page.getByText(email)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Retrimite linkul' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Retrimiteți linkul' })).toBeDisabled();
 
   // The link the email would carry (built by the worker as /{locale}/verify?token=…).
   const token = await verificationTokenFor(email);
   await page.goto(`/verify?token=${token}`);
 
   // Arrival must not consume the token; the explicit action does.
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
 
   await expect(page.getByText('Adresa este confirmată')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Mergi la autentificare' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Mergeți la autentificare' })).toHaveAttribute(
     'href',
     /\/sign-in$/,
   );
@@ -61,19 +61,19 @@ test('a spent link explains itself and offers the resend route (S-02 error state
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
 
   const token = await verificationTokenFor(email);
   await page.goto(`/verify?token=${token}`);
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
   await expect(page.getByText('Adresa este confirmată')).toBeVisible();
 
   // Second use of a single-use link: the api's resolved three-part wording, as received.
   await page.goto(`/verify?token=${token}`);
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
   await expect(page.getByText('Linkul de confirmare nu mai este valabil', { exact: false })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Cere un link nou' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Cereți un link nou' })).toBeVisible();
 });
 
 test('a duplicate registration surfaces the 409 with sign-in as the way out (OQ-53)', async ({
@@ -84,17 +84,17 @@ test('a duplicate registration surfaces the 409 with sign-in as the way out (OQ-
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
 
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
 
   // The api's resolved wording, rendered as received — never re-derived from the slug.
   await expect(page.getByText('Există deja un cont pentru această adresă', { exact: false })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Autentifică-te' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Autentificați-vă' }).first()).toBeVisible();
 });
 
 test('the language switcher reaches the same screen in all three locales (UX-4)', async ({
@@ -117,5 +117,5 @@ test('the language switcher reaches the same screen in all three locales (UX-4)'
   await page.getByRole('button', { name: /Interface language/ }).click();
   await page.getByRole('menuitem', { name: 'Română' }).click();
   await page.waitForURL((url) => url.pathname === '/register');
-  await expect(page.getByRole('heading', { name: 'Creează-ți contul' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Creați-vă contul' })).toBeVisible();
 });

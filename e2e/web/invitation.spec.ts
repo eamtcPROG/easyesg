@@ -43,17 +43,17 @@ async function registerAndVerify(page: Page, email: string): Promise<void> {
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
   await expect(page.getByText('Adresa este confirmată')).toBeVisible();
 }
 
 async function signIn(page: Page, email: string): Promise<void> {
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
 }
 
 // ── The two entries S-03 has ────────────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ test('a signed-out invitee registers and joins with one email (FR-3, UC-15)', as
 
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
 
   // Straight to sign-in — NOT to the S-02 challenge, because there is no challenge to answer.
   await page.waitForURL('**/sign-in**');

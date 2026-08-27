@@ -14,7 +14,7 @@ import { INVITED_ROLE } from '../src/modules/identity/invitation/models/invitati
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { EMAIL_VERIFICATION_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
 import { asOrganization, connectAs } from './support/database';
-import { PASSWORD, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
  * UC-15 end to end (FR-11) — against real sessions, the real bearer policy and the real outbox.
@@ -209,6 +209,7 @@ describe('invitation acceptance (UC-15)', () => {
   }, 240_000);
 
   afterAll(async () => {
+    await cleanupSignedInAccounts({ owner });
     await unseed();
     if (owner?.isInitialized) await owner.destroy();
     if (worker?.isInitialized) await worker.destroy();

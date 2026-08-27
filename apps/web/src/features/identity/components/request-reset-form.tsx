@@ -67,7 +67,12 @@ export function RequestResetForm() {
         <Callout
           intent="error"
           title={result.problem.title ?? t('problemTitle')}
-          action={t('problemAction')}
+          /* NFR-79's "what now" belongs to the API's `detail`, which always states its own remedy.
+              The slot carries something only where this screen owns one the detail cannot express —
+              a remedy that NAVIGATES. Until 27 Aug 2026 it fell back to a fixed sentence for every
+              other problem, so the throttle refusal arrived with the API's "wait a few minutes"
+              directly above this screen's "try again now". (factor-form.tsx made the same fix.) */
+          action={null}
         >
           {result.problem.detail ?? t('problemBody')}
         </Callout>

@@ -122,13 +122,20 @@ signs in next is offered a confirmation that would attach someone else's Google 
 `readPendingLink` and `completePendingLink` both require it to match. **The two must agree**: a
 pending state the reader can see but never complete is worse than none at all.
 
-**A refusal's "what now" comes from the API, not from the screen** (same review). `factor-form.tsx`
-rendered one hardcoded remedy — *check your device clock and try again* — for every problem, so the
-throttle refusal arrived with the API's "wait a few minutes" directly above it. The `action` slot
-now carries something only where this screen owns a remedy the `detail` cannot express, which is the
-lockout: its way out is a different **screen**, and no sentence can navigate. **Four sibling screens
-still have the old shape** (`sign-in-form`, `register-form`, `request-reset-form`, `confirm-email`,
-`accept-invitation`) — they were outside that review's diff and are worth the same pass.
+**A refusal's "what now" comes from the API, not from the screen** (same review, extended 27 Aug
+2026). `Callout`'s `action` is required by §11.5 — feedback ships with three parts — so every screen
+was passing *something*, and four passed a catalogue sentence that duplicated a clause already
+inside `problem.detail`: `identity.sign_in.credential_invalid` ends *"Verificați datele introduse și
+încercați din nou"*, and `signIn.problemAction` said the same thing again underneath it. On a
+throttle refusal the duplicate became a contradiction — the API's "wait a few minutes" above the
+screen's "try again now".
+
+**`action={null}` is now how a screen says the next step is already in the message.** The slot stays
+required so it cannot be forgotten; `null` is a visible decision where a fixed sentence was one
+nobody had taken. Pass a node only where this screen owns a remedy the detail cannot express —
+in practice one that **navigates**, like the lockout's reset link. `confirm-email` and
+`accept-invitation` are the correct shape and were left alone: they use `problemAction` as the
+*label of a link*, which is the legitimate case, not the defect.
 
 **Read a provider through the contract's enum, never as a `string`.** `providerLabel` and
 `providerGlyph` take `SocialProvider`, so an unnamed provider is a compile error at their `Record`
@@ -136,6 +143,15 @@ rather than a raw slug rendered into a sentence. `features/credentials/credentia
 `LinkedProvider` and `TotpState` from `@easyesg/contracts` rather than restating them: the
 hand-written copy had widened `provider` to `string`, which is exactly the drift that package exists
 to prevent, and it is what let the slug through.
+
+**Romanian addresses the reader formally, everywhere — UX-135** (27 Aug 2026, project owner).
+*Dumneavoastră*, no exceptions; Russian was already uniformly *вы* and English has no T-V
+distinction. Before this, RO was split almost evenly and the two registers met **inside one
+viewport**: S-01 rendered *"Intră în contul tău"* beside *"Continuați cu Google"*, because the
+provider buttons are a different namespace from the form they sit under. Seventy strings across
+seven `identity` namespaces were rewritten, and seventy test selectors with them — the e2e specs
+match on Romanian labels, which is the intended coupling and is why a catalogue edit is never
+just a catalogue edit here. `design_spec.md` §3.4 carries the rule and the reasoning.
 
 **The message catalogues have their first content.** `src/messages/{ro,en,ru}.json` carry
 `chrome` and `identity`; all three separately authored, RO the source. Adding a string is a JSON

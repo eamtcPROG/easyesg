@@ -52,10 +52,10 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
 
   organizations.push(
     await grantMembership({ email, organizationName: `${RUN_PREFIX}-org` }),
@@ -64,7 +64,7 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
   await page.waitForURL('**/home');
 
   await page.goto('/organization/users');
@@ -78,10 +78,10 @@ test('axe finds no violations on the credentials screen', async ({ page }) => {
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
 
   organizations.push(
     await grantMembership({ email, organizationName: `${RUN_PREFIX}-cred-org` }),
@@ -90,7 +90,7 @@ test('axe finds no violations on the credentials screen', async ({ page }) => {
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
   await page.waitForURL('**/home');
 
   await page.goto('/account/credentials');
@@ -117,10 +117,10 @@ test('axe finds no violations on the second-factor step', async ({ page }) => {
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
 
   organizations.push(
     await grantMembership({ email, organizationName: `${RUN_PREFIX}-factor-org` }),
@@ -129,7 +129,7 @@ test('axe finds no violations on the second-factor step', async ({ page }) => {
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
   await page.waitForURL('**/home');
 
   // Enrolled and re-presented through `credentials.spec.ts`'s own helpers — the journey is that
@@ -138,12 +138,12 @@ test('axe finds no violations on the second-factor step', async ({ page }) => {
   await presentPassword(page, { email, password: PASSWORD });
   await page.waitForURL('**/sign-in/factor');
 
-  await expect(page.getByRole('heading', { name: 'Confirmă că ești tu', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Confirmați că sunteți dumneavoastră', level: 1 })).toBeVisible();
   await scan(page);
 
   // The other affordance is a different control entirely — a plain sixteen-character field — and
   // switching to it is the only way axe sees it.
-  await page.getByRole('button', { name: /Folosește un cod de recuperare/ }).click();
+  await page.getByRole('button', { name: /Folosiți un cod de recuperare/ }).click();
   await expect(page.getByLabel('Cod de recuperare')).toBeVisible();
   await scan(page);
 });

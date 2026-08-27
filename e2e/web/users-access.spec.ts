@@ -37,11 +37,11 @@ async function registerAndVerify(page: Page, email: string): Promise<void> {
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   const token = await verificationTokenFor(email);
   await page.goto(`/verify?token=${token}`);
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
   await expect(page.getByText('Adresa este confirmată')).toBeVisible();
 }
 
@@ -57,7 +57,7 @@ async function signIn(page: Page, email: string): Promise<void> {
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
   await page.waitForURL('**/home');
 }
 

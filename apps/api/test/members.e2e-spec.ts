@@ -9,7 +9,7 @@ import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { asOrganization, connectAs } from './support/database';
-import { signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
  * S-16's API half, end to end (UC-59, UC-62, UC-63, UC-64) — **against real sessions** since
@@ -145,6 +145,7 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    await cleanupSignedInAccounts({ owner });
     await unseed();
     if (owner?.isInitialized) await owner.destroy();
     if (worker?.isInitialized) await worker.destroy();

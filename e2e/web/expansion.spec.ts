@@ -17,8 +17,8 @@ const FRAMES = [
 ];
 
 const SCREENS = [
-  { path: '/register', action: 'Creează contul' },
-  { path: '/verify', action: 'Trimite linkul' },
+  { path: '/register', action: 'Creați contul' },
+  { path: '/verify', action: 'Trimiteți linkul' },
 ];
 
 for (const screen of SCREENS) {

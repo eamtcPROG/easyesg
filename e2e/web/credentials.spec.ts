@@ -38,17 +38,17 @@ async function signedIn(page: Page, label: string): Promise<string> {
   await page.goto('/register');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Creează contul' }).click();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
-  await page.getByRole('button', { name: 'Confirmă adresa' }).click();
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
 
   organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX}-${label}` }));
 
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
   await page.waitForURL('**/home');
   return email;
 }
@@ -82,7 +82,7 @@ test('changing the password works, and the old one stops working (FR-7)', async 
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(NEXT_PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
   await page.waitForURL('**/home');
 });
 
@@ -111,10 +111,10 @@ test('turning on the second factor makes sign-in ask for a code (UC-193 → UC-1
   // the second shape, enrolling a factor turned the next sign-in into a crash.
   await presentPassword(page, { email, password: PASSWORD });
   await page.waitForURL('**/sign-in/factor');
-  await expect(page.getByRole('heading', { name: 'Confirmă că ești tu', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Confirmați că sunteți dumneavoastră', level: 1 })).toBeVisible();
 
   await page.getByLabel('Codul din aplicația de autentificare').fill(await totp(secret, email));
-  await page.getByRole('button', { name: 'Confirmă și intră în cont' }).click();
+  await page.getByRole('button', { name: 'Confirmați și intrați în cont' }).click();
   await page.waitForURL('**/home');
 });
 
@@ -129,17 +129,17 @@ test('a recovery code answers the same step, and is spent by doing so (UC-195)',
 
   // The other affordance, offered rather than hidden: UX-108's point is that a person without
   // their authenticator must not need a second device to get in.
-  await page.getByRole('button', { name: /Folosește un cod de recuperare/ }).click();
+  await page.getByRole('button', { name: /Folosiți un cod de recuperare/ }).click();
   await page.getByLabel('Cod de recuperare').fill(recovery[0]);
-  await page.getByRole('button', { name: 'Confirmă și intră în cont' }).click();
+  await page.getByRole('button', { name: 'Confirmați și intrați în cont' }).click();
   await page.waitForURL('**/home');
 
   // Single-use, proven by presenting it again rather than by reading the table.
   await presentPassword(page, { email, password: PASSWORD });
   await page.waitForURL('**/sign-in/factor');
-  await page.getByRole('button', { name: /Folosește un cod de recuperare/ }).click();
+  await page.getByRole('button', { name: /Folosiți un cod de recuperare/ }).click();
   await page.getByLabel('Cod de recuperare').fill(recovery[0]);
-  await page.getByRole('button', { name: 'Confirmă și intră în cont' }).click();
+  await page.getByRole('button', { name: 'Confirmați și intrați în cont' }).click();
 
   // Refused in the API's own three-part words, and the reader stays on the step to try another —
   // the challenge is deliberately not single-use, so a wrong answer does not cost them the password.
@@ -160,7 +160,7 @@ test('the staged step is live in all three locales', async ({ page }) => {
   await page.waitForURL('**/sign-in/factor');
 
   for (const [path, title] of [
-    ['/sign-in/factor', 'Confirmă că ești tu'],
+    ['/sign-in/factor', 'Confirmați că sunteți dumneavoastră'],
     ['/en/sign-in/factor', "Confirm it's you"],
     ['/ru/sign-in/factor', 'Подтвердите, что это вы'],
   ]) {

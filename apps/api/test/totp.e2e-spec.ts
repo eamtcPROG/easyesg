@@ -10,7 +10,7 @@ import { totpCodeAt } from '../src/modules/platform/admin/domain/totp';
 import { RECOVERY_CODE_COUNT } from '../src/modules/identity/account/domain/recovery-code';
 import { ConsumeRecoveryCode } from '../src/modules/identity/account/use-cases/manage-totp.use-case';
 import { connectAs } from './support/database';
-import { PASSWORD, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
  * UC-193 and UC-195 over real HTTP and a real database (NFR-95; task 27.2).
@@ -73,6 +73,7 @@ describe('second factor (UC-193, UC-195, NFR-95)', () => {
   }, 90_000);
 
   afterAll(async () => {
+    await cleanupSignedInAccounts({ owner });
     await owner?.query(`DELETE FROM identity.account WHERE email = $1`, [EMAIL]);
     await owner?.query(`DELETE FROM identity.auth_attempt WHERE attempt_key LIKE $1`, [
       '%enrolment.test%',

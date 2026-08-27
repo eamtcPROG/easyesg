@@ -39,7 +39,7 @@ const PASSWORD = 'Parola123!';
 const fillAndSubmit = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.type(screen.getByLabelText('Adresa de e-mail'), EMAIL);
   await user.type(screen.getByLabelText('Parolă'), PASSWORD);
-  await user.click(screen.getByRole('button', { name: 'Intră în cont' }));
+  await user.click(screen.getByRole('button', { name: 'Intrați în cont' }));
 };
 
 beforeEach(() => {
@@ -68,7 +68,7 @@ describe('S-01 · sign-in form', () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.click(screen.getByRole('button', { name: 'Intră în cont' }));
+    await user.click(screen.getByRole('button', { name: 'Intrați în cont' }));
 
     expect(action).not.toHaveBeenCalled();
     const summary = await screen.findByRole('alert');

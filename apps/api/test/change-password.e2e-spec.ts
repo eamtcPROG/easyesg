@@ -7,7 +7,7 @@ import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { connectAs } from './support/database';
-import { PASSWORD, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
  * UC-10 — change own password (FR-7), over real HTTP.
@@ -69,6 +69,7 @@ describe('change own password (UC-10, FR-7)', () => {
   }, 120_000);
 
   afterAll(async () => {
+    await cleanupSignedInAccounts({ owner });
     await owner?.query(`DELETE FROM identity.account WHERE email = $1`, [EMAIL]);
     await drain();
     await owner?.destroy();

@@ -161,7 +161,7 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
               <TextLink asChild>
                 <Link href={ROUTES.RESET}>{t('lockedAction')}</Link>
               </TextLink>
-            ) : undefined
+            ) : null
           }
         >
           {problem.detail ?? t('problemBody')}

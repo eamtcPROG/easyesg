@@ -433,6 +433,33 @@ Three things about it that are load-bearing:
   locally; production containers just supply their own `DB_USER`. Running the worker as `esg_app`
   fails on the first poll, because `esg_app` may only INSERT into the outbox.
 
+**A suite that signs an actor in leaks an outbox row, and one unscoped DELETE was hiding all of
+them** (27 Aug 2026, review). `signInFreshAccount` registers an account, which emits an
+`identity.email_verification.requested` row — and deleting the account does **not** take it, because
+`audit.outbox_event` carries no FK to `identity.account` on purpose: an effect must outlive the state
+change that caused it (AD-6). Seven suites never cleaned those rows, and nobody noticed because
+`outbox.e2e-spec.ts` ran `DELETE FROM audit.outbox_event` unscoped, silently tidying up after every
+suite that had run before it under `--runInBand`. Scoping that DELETE is what surfaced it: four of
+the seven run alphabetically ahead of it, and their twenty stray rows made `dispatchBatch()` answer
+21 where the test expects 1.
+
+**`cleanupSignedInAccounts({ owner })` in an `afterAll` is the fix, and it takes no email list** —
+the helper records what it registered in a module-level set, which is per-file because jest gives
+each test file its own module registry. A suite therefore cannot pass the wrong addresses or forget
+an actor added later. Call it from any suite using `signInFreshAccount`.
+
+**Re-running `pnpm e2e` exhausts the sign-in window, and it does not look like a throttle
+problem.** These suites use fixed addresses, so three runs inside fifteen minutes spend §12.5.6's
+five-attempt budget for each of them and the fourth reports `expected 201 "Created", got 429` from
+inside `signInFreshAccount` — 66 failures across four suites that read like a regression in whatever
+you just changed. `DELETE FROM identity.auth_attempt` as `esg_migrator` between runs is the fix. CI
+never sees it, because its database is fresh.
+
+**`outbox.e2e-spec.ts` still needs the table globally quiet for two of its tests**, and that is not
+something scoping can fix: `dispatchBatch` polls every pending row regardless of tenant, because the
+dispatcher is global by design (§6.7's single producer). Those tests assert the precondition rather
+than manufacture it — a stray row fails them loudly and names the count, instead of being swept.
+
 ### Consuming from the queue
 
 **There is exactly one `@Processor(OUTBOX_QUEUE)` in this application and there must stay one.** A

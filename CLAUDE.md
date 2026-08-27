@@ -120,7 +120,7 @@ changing anything — `gh run view <id> --log-failed` — and fix the cause rath
 | [functional_requirements.md](docs/functional_requirements.md) | What it does | FR-1…173 |
 | [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93 (+94…105 deferred) |
 | [architecture.md](docs/architecture.md) | How it's built | AD-1…14, DR-1…11 |
-| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…134, S-01…28, A-01…18 |
+| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…135, S-01…28, A-01…18 |
 
 **Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
 column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.

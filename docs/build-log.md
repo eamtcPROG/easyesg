@@ -4122,3 +4122,100 @@ tests, 68 browser tests across three projects). `auth-throttle.spec.ts` was addi
 **fail** against the pre-fix implementation, since a throttle spec that passes either way is the
 thing this whole section is about. The index tree was extracted with `git archive` and the S-28
 import chain confirmed to resolve inside it — the check that a green local run cannot make.
+
+---
+
+## The three deferred findings · 2026-08-27
+
+The follow-ups the review pass above declined in the moment, taken together. One needed a decision
+from the project owner; the other two turned out to be misdiagnosed in instructive ways.
+
+### UX-135 — Romanian addresses the reader formally
+
+**Decision: formal (*dumneavoastră*) everywhere, project owner, 27 Aug 2026.** `design_spec.md` §3.4
+carries the rule and the argument; this is what it cost and what measuring it found.
+
+The split was almost even — 53 informal markers across the credential funnel against 48 formal ones
+across `social`, `invitation`, `credentials` and `organizationUnavailable`. What settled the *shape*
+of the rule was that the two registers met **inside a single viewport**: S-01 renders
+*"Intră în contul tău"* directly beside *"Continuați cu Google"*, because the provider buttons are a
+different namespace from the form they sit under. A rule drawn at the screen boundary would not have
+caught that, because it is not a screen boundary — which is why UX-135 is one rule with no
+exceptions rather than a per-surface judgement.
+
+Two measurements made the choice cheap, and neither was obvious before taking them. **Russian was
+already uniformly formal** in all eleven namespaces, authored that way independently — so formal
+changes one file where informal would have meant rewriting Romanian *and* overriding a consistent
+choice already made. And **the API's own catalogue was already formal**: `identity.sign_in.*` reads
+*"nu v-am putut autentifica"*. Only the web tier's identity funnel was informal.
+
+Seventy strings, seven namespaces — and **seventy test selectors with them**, because the e2e specs
+match on Romanian labels. That coupling is intended (a catalogue change that breaks a label is meant
+to break the journey), so a catalogue edit is never only a catalogue edit here. Applied as explicit
+per-key replacements with the old value asserted, so a string that had drifted would fail loudly
+rather than be skipped; two regex selectors matching *fragments* survived that and were caught by
+the suite.
+
+### The hardcoded remedies were a component contract, not five careless screens
+
+The chip said five screens; it was three, and the cause was upstream of all of them.
+
+`Callout`'s `action` prop is **required by design** — §11.5's rule that feedback ships with three
+parts, enforced at the type level. So every screen had to pass something. What the review had read as
+carelessness was screens obeying a rule that had never met the case NFR-79 creates: **the API's
+`detail` already carries all three parts in one sentence.**
+`identity.sign_in.credential_invalid` ends *"Verificați datele introduse și încercați din nou"* — and
+`identity.signIn.problemAction` said the same thing again directly underneath. A duplicate on the
+common path, and on a throttle refusal a contradiction: the API's *wait a few minutes* above the
+screen's *try again now*.
+
+So the fix is at the component. `action` is now **required but nullable**: `action={null}` is how a
+caller states that the next step is inside `children`. The slot cannot be forgotten, and `null` is a
+decision a reader of the code can see, where a fixed sentence was one nobody had taken. Two of the
+five screens were already correct and were left alone — `confirm-email` and `accept-invitation` use
+`problemAction` as the **label of a link**, a remedy that navigates, which is exactly the case the
+slot exists for.
+
+### Scoping one DELETE surfaced the leak it had been hiding
+
+`outbox.e2e-spec.ts` ran `DELETE FROM audit.outbox_event` unscoped. Scoping it to the suite's own
+organization made three tests fail immediately, with twenty stray
+`identity.email_verification.requested` rows in the diff — which is the finding the chip could not
+have known it was pointing at.
+
+**`signInFreshAccount` registers an account, and that emits an outbox row that deleting the account
+does not take.** `audit.outbox_event` carries no foreign key to `identity.account`, deliberately: an
+effect must outlive the state change that caused it (AD-6). Seven suites used the helper and none
+cleaned those rows — and nobody could see it, because the unscoped wipe was tidying up after every
+suite that ran before it under `--runInBand`.
+
+The cleanup belongs to the helper that creates the rows, so `cleanupSignedInAccounts({ owner })`
+takes **no email list**: the helper records what it registered in a module-level set, which is
+per-file because jest gives each test file its own module registry. A suite cannot pass the wrong
+addresses or forget an actor added later.
+
+**What could not be scoped was left global and made loud.** Two tests need the whole table quiet,
+because `dispatchBatch` polls every pending row regardless of tenant — that is the single-producer
+design (§6.7), not an oversight in the test. The precondition is asserted in `beforeEach`, so it
+fails before any test can produce a confusing number, and it **names the rows rather than counting
+them**: `1 stray row` sends the next reader hunting, where
+`identity.email_verification.requested / coleg@invitations.test` names the suite that owes a
+cleanup. It found the last one on the first run after being written.
+
+That last one was instructive on its own. `invitations.e2e-spec.ts` registers an invitee with
+`Accept-Language: ru` — proving the invitation email takes the *invitee's* locale, not the
+inviter's — and needed no session, so it called `POST /auth/register` directly and sat outside the
+helper's record. **Registration is what emits the row, so registration is what must record it**:
+`registerFreshAccount` is now exported beside `signInFreshAccount`, which itself calls it. A suite
+that registers an account any other way is the shape to look for if this ever regresses.
+
+Worth knowing for the next person: **running `pnpm e2e` three times inside fifteen minutes exhausts
+§12.5.6's sign-in window** for the fixed addresses these suites use, and the result is 66 failures
+that look nothing like a throttle problem — `expected 201, got 429` deep inside
+`signInFreshAccount`. `DELETE FROM identity.auth_attempt` between runs is the fix; two iterations
+here were spent diagnosing it as a regression.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0. The API e2e suite went from 3 failures to 290 passing once the leak was
+fixed rather than masked, which is the difference between the two ways of "scoping a DELETE".

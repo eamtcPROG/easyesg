@@ -23,6 +23,16 @@ import { EMAIL_VERIFICATION_REQUESTED } from '@api/modules/identity/account/cons
  */
 export const PASSWORD = 'Str0ng-Passphrase!';
 
+/**
+ * Every address this module has registered in THIS test file.
+ *
+ * Module-level and mutable, which is normally a smell and is right here: jest gives each test file
+ * its own module registry, so this set is per-suite by construction — it records exactly what this
+ * suite created and nothing another suite did. It is what lets `cleanupSignedInAccounts` take no
+ * email list, so a suite cannot pass the wrong one or forget an actor it added later.
+ */
+const registered = new Set<string>();
+
 export interface SignedInAccount {
   readonly accountId: string;
   readonly email: string;
@@ -31,6 +41,30 @@ export interface SignedInAccount {
   /** `Authorization: Bearer …`, ready to spread into a supertest call. */
   readonly authorization: { Authorization: string };
 }
+
+/**
+ * Register an account and nothing more — the half of `signInFreshAccount` a suite sometimes needs
+ * alone, and the reason this is exported rather than inlined at the call site.
+ *
+ * `invitations.e2e-spec.ts` registers an invitee with `Accept-Language: ru` to prove the invitation
+ * email takes the *invitee's* locale; it needs no session, so it was calling `POST /auth/register`
+ * directly — and its outbox row was therefore outside the set below, which is how one stray row
+ * survived after seven suites had been fixed. Registration is what emits the row, so registration is
+ * what has to record it: any test registering an account should come through here.
+ */
+export const registerFreshAccount = async (input: {
+  readonly server: Parameters<typeof request>[0];
+  readonly email: string;
+  /** Negotiated into `account.locale` (OQ-46), which some suites are specifically asserting. */
+  readonly acceptLanguage?: string;
+}): Promise<{ accountId: string }> => {
+  const call = request(input.server).post('/api/v1/auth/register');
+  if (input.acceptLanguage !== undefined) call.set('Accept-Language', input.acceptLanguage);
+
+  const created = await call.send({ email: input.email, password: PASSWORD }).expect(201);
+  registered.add(input.email);
+  return { accountId: (created.body as { object: { id: string } }).object.id };
+};
 
 export const signInFreshAccount = async (input: {
   /** `app.getHttpServer()` — typed loosely because supertest accepts what Nest returns. */
@@ -41,10 +75,7 @@ export const signInFreshAccount = async (input: {
 }): Promise<SignedInAccount> => {
   const http = () => request(input.server);
 
-  const registered = await http()
-    .post('/api/v1/auth/register')
-    .send({ email: input.email, password: PASSWORD })
-    .expect(201);
+  const { accountId } = await registerFreshAccount({ server: input.server, email: input.email });
 
   const queued = await input.worker.query<{ payload: { token: string } }[]>(
     `SELECT payload FROM audit.outbox_event
@@ -64,10 +95,42 @@ export const signInFreshAccount = async (input: {
 
   const issued = (session.body as { object: { accessToken: string; refreshToken: string } }).object;
   return {
-    accountId: (registered.body as { object: { id: string } }).object.id,
+    accountId,
     email: input.email,
     accessToken: issued.accessToken,
     refreshToken: issued.refreshToken,
     authorization: { Authorization: `Bearer ${issued.accessToken}` },
   };
 };
+
+/**
+ * The rows this helper leaves behind, removed by the suite that asked for them (27 Aug 2026).
+ *
+ * **Registering an account emits an `identity.email_verification.requested` outbox row**, and
+ * deleting the account does not take it: `audit.outbox_event` carries no foreign key to
+ * `identity.account` on purpose — an effect must outlive the state change that caused it, which is
+ * the whole of AD-6. So every suite that signs an actor in was leaking one undispatched row per
+ * actor, and seven of them never cleaned it.
+ *
+ * **Nobody noticed because `outbox.e2e-spec.ts` was wiping the table unscoped**, which under
+ * `--runInBand` meant it silently cleaned up after every suite that had run before it. Scoping that
+ * DELETE to its own organization is what surfaced this: four suites run alphabetically ahead of it,
+ * and their twenty stray rows made `dispatchBatch()` return 21 where the test expects 1.
+ *
+ * Owned here rather than copied into seven `afterAll`s, because the helper is what creates the row —
+ * the missing export from the module that owns the operation, exactly as CLAUDE.md frames it. It
+ * takes the **worker** connection for the same reason the read above does: `esg_app` may INSERT into
+ * the outbox and not SELECT it, and the owner is the only role that may DELETE.
+ */
+export const cleanupSignedInAccounts = async (input: {
+  /** A connection as `esg_migrator` — the only role holding DELETE on `audit.outbox_event`. */
+  readonly owner: DataSource;
+}): Promise<void> => {
+  if (registered.size === 0) return;
+  await input.owner.query(
+    `DELETE FROM audit.outbox_event WHERE event_type = $1 AND payload->>'email' = ANY($2)`,
+    [EMAIL_VERIFICATION_REQUESTED, [...registered]],
+  );
+  registered.clear();
+};
+
