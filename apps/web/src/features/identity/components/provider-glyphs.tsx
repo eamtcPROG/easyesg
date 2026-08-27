@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { isSocialProvider, type SocialProvider } from '@easyesg/contracts';
+import type { SocialProvider } from '@easyesg/contracts';
 /**
  * The provider marks S-01's `ProviderButton`s carry (task 24). Content, not components: no
  * state, no text, sized by the button's glyph slot. Both are the providers' own sign-in marks
@@ -50,11 +50,16 @@ export function MicrosoftGlyph() {
  *
  * `Record<SocialProvider, …>` so adding a provider to the vocabulary without a mark is a compile
  * error rather than a blank square at render.
+ *
+ * **The parameter is `SocialProvider`, not `string`** (tightened 27 Aug 2026). It took a `string`
+ * and narrowed with `isSocialProvider`, which quietly defeated the sentence above: a provider added
+ * to the vocabulary with no mark here would have compiled and answered `null` at render, exactly
+ * the blank square the `Record` was chosen to prevent. Every caller reads from the contract's own
+ * enum, so nothing was buying the widening.
  */
 const GLYPHS: Record<SocialProvider, ReactNode> = {
   google: <GoogleGlyph />,
   microsoft: <MicrosoftGlyph />,
 };
 
-export const providerGlyph = (provider: string): ReactNode =>
-  isSocialProvider(provider) ? GLYPHS[provider] : null;
+export const providerGlyph = (provider: SocialProvider): ReactNode => GLYPHS[provider];

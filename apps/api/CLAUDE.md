@@ -496,6 +496,15 @@ single-use so a mistype keeps the caller on the step. Factor failures count towa
 throttle key is `factor-challenge:<ip>:<accountId>` — keyed on the **account**, unlike sign-in's,
 which carries the email. A test draining `auth_attempt` by address alone will miss it.
 
+**The lock is read here as well as written** (27 Aug 2026, review). It shipped incrementing
+`failed_attempts` and never checking `locked_at`, so `AccountLockedError` was unreachable on this
+route and S-01's lockout state was dead code on the screen. Two things a reader should know before
+editing it: the counter enters this step at **zero**, because the password success that produced the
+challenge cleared it, and the window admits five attempts against a five-minute challenge — so **ten
+failures is not a state this step can reach on its own**, and the throttle, not the lockout, is what
+makes 10^6 unwalkable. The use case's original header claimed the opposite of both, and also claimed
+the factor step spends sign-in's key; it spends its own.
+
 Task 27.5 adds FR-7 (UC-10): `POST /api/v1/account/password` behind `@RequiresAccount()`, with
 `terminateOtherSessions` **opt-in** because the requirement says *where the user elects it*. Two
 things it does not share with FR-6's reset. It spares the **current** session — "other" is the
@@ -511,6 +520,25 @@ is **not** wired to FR-4's lockout: the caller already holds a session, and a mi
 them out of every device. Two consequences for tests: the key carries the **account id**, so a
 drain matching an email address misses it; and a suite touching these routes more than four times
 must drain between tests, which is how the retro-fit announced itself.
+
+**`admitAuthAttempt` is the window, and there is one of it** (27 Aug 2026, review). Spend a window
+with `admitAuthAttempt(tx, { key, now })` — never by hand. The count-record-compare shape had been
+written out four times and **all four recorded the attempt before deciding**, which inverts
+§12.5.6's rule that a refused attempt is not recorded: recording it re-arms the window on every
+request, so a hammering client's block never drains — and the client hammering an auth route is
+usually its owner, retrying after a mistype. `SignIn` was the one correct copy. `auth-throttle.spec.ts`
+pins the property, and it is the only test in the file that can tell the two versions apart: a
+refused attempt still throttles, so "the sixth is refused" passes either way.
+
+**A fourth TOTP route needed its own key.** `POST /account/totp/confirmation` takes a *code*, not a
+password, and was read as needing no window — leaving the one route that mints ten recovery codes
+unbounded. It is now `totp-confirmation:<ip>:<accountId>`, its own segment so a fumbled enrolment
+does not spend what the password change needs.
+
+**A service that resolves ambient context must forward ALL of it.** `TotpService` resolved
+`accountId` and dropped `clientIp`, so its routes threw away the per-IP half of the key while
+`PasswordService` on the same screen kept it — two different keys, and the paragraph above claiming
+they share one was false in the shipped code. Nothing failed: a coarser key still throttles.
 
 Task 27.6 adds FR-8 (UC-11, UC-12): `GET /api/v1/account/providers`,
 `POST /api/v1/account/providers/{provider}` and `.../removal`, behind `@RequiresAccount()`.

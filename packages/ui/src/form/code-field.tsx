@@ -39,8 +39,27 @@ import styles from './code-field.module.css';
  * so a timer inside this component would tick for a window it cannot know, and every consumer
  * would inherit a per-second re-render of a shared control.
  */
+/**
+ * The omitted keys are the attributes this control **fixes** and a caller may not set.
+ *
+ * `autoComplete`, `inputMode`, `autoCorrect` and `spellCheck` are what UX-108 actually turns on —
+ * the platform's one-time-code autofill, the numeric keypad, and the two corrections that fight a
+ * transcribed code — so switching one off would defeat the reason this component exists rather than
+ * customise it. They were already written *after* the prop spread below, which silently discarded a
+ * caller's value; omitting them here is what makes that a compile error instead (27 Aug 2026), the
+ * way `id`, `value` and `type` already are. A control that needs a different keypad is a different
+ * control, not this one with a flag — the recovery-code field is the live example, and it is a
+ * `TextField`.
+ *
+ * Written inline rather than as a named alias: an `Omit` key union selects property names and is
+ * exempt from the closed-vocabulary rule (root CLAUDE.md), and extracting it moves it out of the
+ * exempted shape — which the lint rule catches, correctly.
+ */
 export interface CodeFieldProps
-  extends Omit<ComponentPropsWithRef<'input'>, 'id' | 'value' | 'type'> {
+  extends Omit<
+    ComponentPropsWithRef<'input'>,
+    'id' | 'value' | 'type' | 'autoComplete' | 'inputMode' | 'autoCorrect' | 'spellCheck'
+  > {
   label: ReactNode;
   /**
    * Painted into the cells, so the control is **always** controlled. An uncontrolled variant

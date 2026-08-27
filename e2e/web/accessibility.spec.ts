@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { cleanupAccounts, cleanupOrganizations, grantMembership, verificationTokenFor } from './support/db';
+import { enrolFactor, presentPassword } from './support/second-factor';
 
 /**
  * The automated half of NFR-75's verification (architecture.md §12.1 pins @axe-core/playwright
@@ -131,29 +132,10 @@ test('axe finds no violations on the second-factor step', async ({ page }) => {
   await page.getByRole('button', { name: 'Intră în cont' }).click();
   await page.waitForURL('**/home');
 
-  await page.goto('/account/credentials');
-  const section = page.getByRole('region', { name: 'Verificare în doi pași' });
-  await page.getByLabel('Parola actuală').last().fill(PASSWORD);
-  await section.getByRole('button', { name: 'Activați verificarea în doi pași' }).click();
-  const secret = (await section.locator('.t-code').first().textContent()) ?? '';
-
-  const { TOTP, Secret } = await import('otpauth');
-  const generator = new TOTP({
-    issuer: 'EasyESG Admin',
-    label: email,
-    algorithm: 'SHA1',
-    digits: 6,
-    period: 30,
-    secret: Secret.fromBase32(secret),
-  });
-  await section.getByLabel('Codul din aplicație').fill(generator.generate());
-  await section.getByRole('button', { name: 'Finalizați activarea' }).click();
-  await section.getByRole('button', { name: 'Le-am notat' }).click();
-
-  await page.goto('/sign-in');
-  await page.getByLabel('Adresa de e-mail').fill(email);
-  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
+  // Enrolled and re-presented through `credentials.spec.ts`'s own helpers — the journey is that
+  // suite's subject, and a second copy of it here was what made this scan a maintenance liability.
+  await enrolFactor(page, { email, password: PASSWORD });
+  await presentPassword(page, { email, password: PASSWORD });
   await page.waitForURL('**/sign-in/factor');
 
   await expect(page.getByRole('heading', { name: 'Confirmă că ești tu', level: 1 })).toBeVisible();

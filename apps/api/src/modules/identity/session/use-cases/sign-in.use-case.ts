@@ -1,8 +1,7 @@
 import { unverifiedAccountHasExpired } from '@api/modules/identity/account/domain/account-expiry';
 import {
-  AUTH_ATTEMPT_LIMIT,
-  AUTH_ATTEMPT_WINDOW_MS,
   LOCKOUT_THRESHOLD,
+  admitAuthAttempt,
   signInThrottleKey,
 } from '@api/modules/identity/account/domain/auth-throttle';
 import { normaliseEmail } from '@api/modules/identity/account/domain/email-address';
@@ -159,6 +158,10 @@ export class SignIn {
    * The throttle decision and the lookups, in one committed transaction: refuse beyond the
    * window's limit without recording (a refused attempt must not extend the block), record and
    * fetch otherwise.
+   *
+   * The window itself is `admitAuthAttempt`'s since 27 Aug 2026. This use case was the only one of
+   * five that had the rule right, and being right in one copy is not a property that survives —
+   * the other four were written from the same paragraph and all four recorded before refusing.
    */
   private async admitAttempt(
     tx: SessionTransaction,
@@ -170,11 +173,7 @@ export class SignIn {
     | { limited: false; account: Account | null; credential: Credential | null }
   > {
     const key = signInThrottleKey(clientIp, email);
-    const since = new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS);
-    if ((await tx.countRecentAuthAttempts(key, since)) >= AUTH_ATTEMPT_LIMIT) {
-      return { limited: true };
-    }
-    await tx.recordAuthAttempt(key, now);
+    if (!(await admitAuthAttempt(tx, { key, now }))) return { limited: true };
 
     const account = await tx.findAccountByEmail(email);
     const credential = account === null ? null : await tx.findCredential(account.id);

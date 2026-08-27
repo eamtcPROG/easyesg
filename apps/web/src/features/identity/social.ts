@@ -1,4 +1,4 @@
-import { isSocialProvider, type SocialProvider } from '@easyesg/contracts';
+import type { SocialProvider } from '@easyesg/contracts';
 /**
  * The social-flow notices (task 24): every way the OAuth round trip can end somewhere other
  * than a session, as a closed vocabulary (CLAUDE.md, "Conventions") — the callback Route
@@ -33,11 +33,18 @@ export const isSocialNotice = (value: string): value is SocialNotice =>
  *
  * Moved here from a private map in `social-providers.tsx` when S-28 became its second consumer
  * (task 27.7): an operation over a vocabulary belongs with the vocabulary, not copied per caller.
+ *
+ * **The parameter is `SocialProvider`, so there is no unnamed case to fall back from** (corrected
+ * 27 Aug 2026). The move out of `social-providers.tsx` widened it to `string` and fell back to
+ * returning that string, which publishes an identifier like `google_workspace` into a sentence a
+ * person reads — the rule root CLAUDE.md states in terms. Narrowing beats handling: every caller
+ * reads a provider from the wire contract's own enum or from a cookie this tier validates against
+ * it (`pending-link.ts`), so an unnamed provider is now a compile error at the `Record` above
+ * rather than a slug at render.
  */
 const DISPLAY_NAME: Record<SocialProvider, string> = {
   google: 'Google',
   microsoft: 'Microsoft',
 };
 
-export const providerLabel = (provider: string): string =>
-  isSocialProvider(provider) ? DISPLAY_NAME[provider] : provider;
+export const providerLabel = (provider: SocialProvider): string => DISPLAY_NAME[provider];

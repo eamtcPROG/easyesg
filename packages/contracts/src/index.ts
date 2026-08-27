@@ -62,6 +62,14 @@ export type ResetPasswordRequest = components['schemas']['ResetPasswordRequestDt
 export type FactorChallengeResponse = components['schemas']['FactorChallengeResponseDto'];
 export type CompleteFactorRequest = components['schemas']['CompleteFactorRequestDto'];
 
+// identity — managing the second factor and the linked providers, S-28's reads (UC-11 … UC-12,
+// UC-193; tasks 27.2, 27.6). Added 27 Aug 2026: `apps/web` was restating both of these by hand,
+// and the copy of `LinkedProviderResponseDto` had widened `provider` from the contract's own
+// two-member enum to `string` — which is the drift this package exists to make impossible, and it
+// let an unrecognised provider slug reach a rendered sentence.
+export type TotpState = components['schemas']['TotpStateResponseDto'];
+export type LinkedProvider = components['schemas']['LinkedProviderResponseDto'];
+
 // identity — memberships and members (FR-12, FR-56 … FR-60; tasks 25.2, 25.3). Two shapes and not
 // one: `Member` is a person in THIS organization, read with a tenant bound; `AccountMembership` is
 // an organization the CALLER belongs to, read before any tenant exists. They never appear together.

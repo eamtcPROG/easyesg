@@ -131,7 +131,6 @@
       "summaryTitle": "The field below needs attention before you can continue",
       "problemTitle": "That code wasn't accepted",
       "problemBody": "We couldn't confirm the code, so your account stays closed.",
-      "problemAction": "Check the clock on your device, then try again with the code showing now.",
       "lockedAction": "Reset your password",
       "useRecovery": "No access to the app? Use a recovery code",
       "useAuthenticator": "Back to the code from the app",

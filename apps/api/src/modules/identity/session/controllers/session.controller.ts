@@ -1,7 +1,10 @@
 import { Body, Controller, Delete, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '@api/app/decorators/public.decorator';
-import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
+import {
+  ApiObjectResponse,
+  ApiObjectUnionResponse,
+} from '@api/app/decorators/api-envelope.decorator';
 import { CompleteFactorRequestDto } from '../dto/complete-factor.request.dto';
 import { RefreshSessionRequestDto } from '../dto/refresh-session.request.dto';
 import {
@@ -49,19 +52,22 @@ export class SessionController {
       'single-use refresh token. Failures are uniform for unknown addresses and wrong ' +
       'passwords alike, rate-limited per address, and locked out after repeated failure.',
   })
-  @ApiObjectResponse(SessionResponseDto, {
-    status: 201,
-    description:
-      'The session was issued — the answer for an account with no second factor, which is most ' +
-      'of them (NFR-95 is opt-in).',
-  })
-  @ApiObjectResponse(FactorChallengeResponseDto, {
-    status: 201,
-    description:
-      'The credential was correct and the account has a second factor, so a challenge is ' +
-      'returned instead of a session (UC-194). Branch on `kind`, never on the presence of a ' +
-      'field. Complete it at `POST /auth/session/factor`.',
-  })
+  @ApiObjectUnionResponse(
+    {
+      [SIGN_IN_OUTCOME.SIGNED_IN]: SessionResponseDto,
+      [SIGN_IN_OUTCOME.CHALLENGED]: FactorChallengeResponseDto,
+    },
+    {
+      status: 201,
+      discriminator: 'kind',
+      description:
+        'Two shapes, discriminated by `kind`. `signed_in` carries the session — the answer for ' +
+        'an account with no second factor, which is most of them (NFR-95 is opt-in). ' +
+        '`challenged` means the credential was correct and the account has a second factor, so a ' +
+        'challenge is returned instead of a session (UC-194); complete it at ' +
+        '`POST /auth/session/factor`. Branch on `kind`, never on the presence of a field.',
+    },
+  )
   @ApiResponse({
     status: 401,
     description:
@@ -111,7 +117,11 @@ export class SessionController {
     description:
       'The code is not right, or the challenge has expired or was not issued by this API ' +
       '(problem type factor-invalid). Deliberately one answer for all three: the distinctions ' +
-      'describe our verification to whoever is probing it and none changes what to do next.',
+      'describe our verification to whoever is probing it and none changes what to do next. ' +
+      'Also the account being locked after repeated failures (problem type account-locked) — ' +
+      'distinct because reaching it takes ten consecutive failures against a real credential, ' +
+      'so it discloses nothing to anyone who has not already done that, and the way out is the ' +
+      'reset link rather than another code.',
     content: { 'application/problem+json': {} },
   })
   @ApiResponse({

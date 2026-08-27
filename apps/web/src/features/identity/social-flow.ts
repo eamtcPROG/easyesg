@@ -159,6 +159,17 @@ export async function completeSocialFlow(
   // the redeemed values and hands the reader back to S-28's pending state. Nothing is attached
   // until the password is supplied there; abandoning the screen leaves the account exactly as it was.
   if (transaction.intent === SOCIAL_SIGN_IN_INTENT.LINK) {
+    // **The session is re-read here, not assumed from the intent** (27 Aug 2026). `beginSocialFlow`
+    // proved one existed before it let the intent be `link`, but that was a provider round trip
+    // ago: it can have expired, been signed out, or been replaced by a different account's. Held
+    // with the pending link so the confirmation can insist on the same account, and refused
+    // outright when there is none — an anonymous callback has no account to attach anything to,
+    // and sending it to S-28 would bounce it to sign-in holding a cookie for nobody.
+    const session = await readSession();
+    if (!session) {
+      return noticeRedirect(locale, SCREEN.SIGN_IN, SOCIAL_NOTICE.RESTART);
+    }
+
     await holdPendingLink({
       provider: providerParam,
       code,
@@ -166,6 +177,7 @@ export async function completeSocialFlow(
       nonce: transaction.nonce,
       codeVerifier: transaction.codeVerifier,
       redirectUri: transaction.redirectUri,
+      accountId: session.account.id,
     });
     return NextResponse.redirect(
       new URL(getPathname({ locale, href: SCREEN.ACCOUNT_CREDENTIALS }), env.publicOrigin),

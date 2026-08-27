@@ -3982,3 +3982,143 @@ Romanian is the **source** locale, so the choice governs how RU is authored too.
 was written informal to match `identity.signIn`, whose second step it is — consistent locally, which
 is the most this task could settle on its own. Raised as its own unit of work rather than closed in
 passing, per the open-question rule.
+
+---
+
+## Review pass on the task-27 arc · 2026-08-27
+
+No task number: this is the fix-up for a review of `origin/dev..HEAD` — tasks 27.1 through 27.8 —
+run at extra-high recall. Fourteen findings were reported and two more surfaced while fixing them.
+`architecture.md` §12.5.6 carries the decisions; this entry carries what the review *taught*, which
+is a different list from what it found.
+
+### The commit that shipped no screen
+
+**`.gitignore` carried a bare `credentials/`, and it matched `apps/web/src/features/credentials/`.**
+Twelve files — S-28's page, its board, three sections, its reducer and spec — were never committed.
+`git status` was clean throughout, `pnpm gates:clean` was green, and the branch could not typecheck
+from a fresh clone, because the tracked `server/data/credentials.ts` imports the untracked
+`features/credentials/credentials.ts`.
+
+Three things make this worth more than a one-line fix, and the root `CLAUDE.md` now carries them:
+
+- **An ignored file is not an untracked file.** `git status` says nothing about it and
+  `git add <dir>` on an ignored path adds nothing and exits 0. Both habits that would normally catch
+  a missing file report success.
+- **`gates:clean` exists to remove state a previous command left behind, and the index is state it
+  cannot reach.** The rule it enforces — *a gate must not depend on state a previous command left
+  behind* — has a sibling it never covered: a gate cannot depend on a file that is not in the
+  repository, and no local run can tell, because the file is on the disk it runs against.
+- **A directory rule needs a leading slash unless the name is genuinely global.** Extension rules
+  (`*.pem`, `*.key`) carry the real protection and are correctly unanchored; a *name* is a word this
+  product also uses for a domain concept.
+
+The twelve files were also invisible to the review itself, which reads a diff. They have had no
+review pass of any kind and are worth one.
+
+### Written and not read
+
+**`CompleteFactorChallenge` incremented FR-4's lockout and never checked it**, so
+`AccountLockedError` was unreachable on `/auth/session/factor`: a challenge issued moments before a
+lock still minted a session, and `factor-form.tsx`'s lockout branch and `isLockout` were dead code
+with an unreachable catalogue string behind them. Nothing failed — the branch simply never ran,
+which is why nine gates and a browser suite all stayed green.
+
+Fixing it corrected two claims the use case's own header made, and both were load-bearing:
+
+- It said the factor step spends **sign-in's** throttle key. It does not, and `auth-throttle.ts`
+  says so in the opposite direction two files away. Two security comments contradicting each other
+  on the question a reader consults them to answer.
+- It said ten failures across both steps lock the account. **The factor step cannot reach ten.** The
+  password success that produces a challenge calls `clearFailedSignIns`, so the counter enters at
+  zero, and the window admits five attempts against a five-minute challenge. What bounds guessing
+  here is the throttle; the lockout is a tally it contributes to and now honours.
+
+### One rule, four wrong copies
+
+Fixing the above meant reading the throttle block, and the block was wrong in **four** places — the
+factor step, both `reauthenticate` implementations and `ChangePassword`. All four recorded the
+attempt *before* deciding, inverting §12.5.6's own rule that a refused attempt is not recorded. The
+consequence is not academic: recording a refusal re-arms the window on every request, so the block
+never drains, and the client hammering an auth route is usually the account's owner retrying after a
+mistype.
+
+`SignIn` was the one correct copy. That is the whole lesson — **being right in one copy of five is
+not a property that survives**, and no test could see the difference because each copy was
+internally consistent and each throttled *something*. The window is now `admitAuthAttempt`, one
+function beside the keys it spends, and `auth-throttle.spec.ts` pins the property; the module had
+never had a spec. The spec was verified to reject the old shape before being kept.
+
+Two more found in the same block:
+
+- **`POST /account/totp/confirmation` had no window at all** — the one route that verifies a
+  six-digit code and answers a hit with ten recovery codes. Task 27.5 threw a budget at the three
+  TOTP routes that take a *password* and passed over the one that takes a *code*; the asymmetry is
+  backwards, and `begin` storing the secret inert makes an abandoned enrolment an ordinary state to
+  guess against.
+- **`TotpService` dropped `clientIp`** while `PasswordService` forwarded it, so the two halves of one
+  settings screen built different keys — making §12.5.6's own claim that the screen has one budget
+  false in the shipped code. Nothing failed, because a coarser key still throttles.
+
+### A contract that under-described its own route
+
+**Two `@ApiObjectResponse` decorators at the same status do not describe two shapes — they
+collapse.** `POST /auth/session` published a 201 naming `SessionResponseDto` alone, with a
+description telling readers to branch on `kind`, while `FactorChallengeResponseDto` sat in
+`components/schemas` referenced by nothing. `openapi:check` could not see it: it diffs the emitted
+spec against its source and both were consistent.
+
+This is the *same blind window* that let task 27.3's change stay invisible to `apps/web` for four
+tasks, left half-closed by the task that closed it — which is why `apps/web` had to hand-assemble
+`SessionResponse | FactorChallengeResponse` and hand-mirror `SIGN_IN_OUTCOME`. `ApiObjectUnionResponse`
+emits `oneOf` with a discriminator whose `mapping` is derived from the vocabulary, and
+`openapi-typescript` now generates the union, so the consumer's `switch` is a contract rather than a
+guess.
+
+### The question asked at the start and not at the end
+
+**A pending provider link was bound to no account.** `beginSocialFlow` refuses to start a link
+without a session and reasons about it explicitly; nothing checked the session *confirming* the link
+five minutes later. On a shared machine that attaches one person's Google account to another's. The
+cookie now carries the account id, the callback refuses when no session remains, and the screen's
+pending state and the completing action both require it to match — the two must agree, since a
+pending state a reader can see but never complete is worse than none.
+
+### Smaller, and one declined
+
+- **`factor-form.tsx` wrote its own "what now" over the API's.** One hardcoded remedy — *check your
+  device clock and try again* — rendered for every problem, so the throttle refusal arrived with the
+  API's "wait a few minutes" directly above it: two contradictory instructions, with the wrong one
+  in the position NFR-79 reserves. The slot now carries something only where the screen owns a
+  remedy the `detail` cannot express, which is the lockout, because its way out is a different
+  *screen*.
+- **`providerLabel` echoed an unrecognised provider slug into a sentence.** Root cause was upstream:
+  `apps/web` hand-wrote `LinkedProvider` with `provider: string` where the contract publishes a
+  two-member enum — the drift `packages/contracts` exists to prevent. Both it and `TotpState` are
+  now re-exported from the contract, and `providerLabel`/`providerGlyph` take `SocialProvider`, so
+  the unnamed case is a compile error rather than a handled one.
+- **`CodeField` advertised four props it silently discarded.** `autoComplete`, `inputMode`,
+  `autoCorrect` and `spellCheck` are written after the prop spread on purpose — they are what UX-108
+  turns on — but the type offered them. Added to the `Omit`, **inline**: an `Omit` key union is
+  exempt from the closed-vocabulary rule, and extracting it to a named alias moves it out of the
+  exemption, which the lint rule caught correctly.
+- **The enrolment journey was copy-pasted between two e2e files**, TOTP generator included. Extracted
+  to `e2e/web/support/second-factor.ts`. It takes `{ email, password }` rather than two positional
+  strings, because the two suites had chosen different passwords and adjacent same-typed parameters
+  transpose without a compile error.
+- **A stranded JSDoc** claimed `completeFactorAction` sanitizes a return path it does not receive —
+  `signInAction`'s comment, orphaned when the new function was inserted above it. The sanitization is
+  real and lives in `resolvePostSignIn`; the comment pointed away from the one place that matters.
+
+**Declined, with the reason recorded:** four sibling screens (`sign-in-form`, `register-form`,
+`request-reset-form`, `confirm-email`, `accept-invitation`) carry the same hardcoded-remedy shape
+`factor-form` had. They were outside the reviewed diff and fixing them would widen a review pass into
+a redesign of five screens' error surfaces. Noted in `apps/web/CLAUDE.md` as worth the same pass.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0, all ten gates plus both e2e suites (389 API unit tests, 149 web unit
+tests, 68 browser tests across three projects). `auth-throttle.spec.ts` was additionally checked to
+**fail** against the pre-fix implementation, since a throttle spec that passes either way is the
+thing this whole section is about. The index tree was extracted with `git archive` and the S-28
+import chain confirmed to resolve inside it — the check that a green local run cannot make.

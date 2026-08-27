@@ -86,6 +86,26 @@ Two things follow, and both are cheap:
 - **Reproduce a CI failure locally before fixing it.** Deleting `packages/i18n/dist` reproduced that
   one in seconds and proved the fix, rather than pushing a guess and waiting two minutes to find out.
 
+**`gates:clean` removes build outputs. It cannot see the index — check that separately.**
+Added 27 Aug 2026, after a review found that the S-28 commit shipped **no S-28**: `.gitignore`
+carried a bare `credentials/`, which matches a directory of that name *at any depth*, so
+`apps/web/src/features/credentials/` and the screen's page — twelve files — were silently excluded.
+Every gate passed, `pnpm gates:clean` included, because the files were on disk; a fresh clone could
+not typecheck, since a tracked module imported an untracked one.
+
+The trap is that an **ignored** file is not an **untracked** file. `git status` says nothing about
+it, and `git add <dir>` on an ignored path adds nothing and exits 0 — so both of the habits that
+would normally catch a missing file report success. Two cheap checks, and the first is the one to
+build the habit around:
+
+- **Read `git status` against what you just built.** A task that added a screen and shows no new
+  files under it did not add the screen. `git status --porcelain --untracked-files=all` and
+  `git check-ignore -v <path>` name the offending rule in one line.
+- **A `.gitignore` directory pattern needs a leading slash unless it is genuinely global.**
+  `/credentials/` matches the repo root; `credentials/` matches `src/features/credentials/` too.
+  Ask of any new directory rule: *could this name mean something in `src/`?* Extension rules
+  (`*.pem`, `*.key`) are the ones that carry the real protection and are correctly global.
+
 **A red pipeline is a finding, not an interruption.** It caught something no local run could,
 because job isolation is a property a single working directory cannot model. Read the failure before
 changing anything — `gh run view <id> --log-failed` — and fix the cause rather than the symptom.

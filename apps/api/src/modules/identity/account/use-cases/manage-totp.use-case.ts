@@ -1,9 +1,9 @@
 import { mintTotpSecret, totpEnrolmentUri, verifyTotp } from '@api/modules/platform/admin/domain/totp';
 import type { Clock } from '@api/contracts/clock.port';
 import {
-  AUTH_ATTEMPT_LIMIT,
-  AUTH_ATTEMPT_WINDOW_MS,
+  admitAuthAttempt,
   reauthenticationThrottleKey,
+  totpConfirmationThrottleKey,
 } from '../domain/auth-throttle';
 import { AuthRateLimitedError } from '../errors/account.errors';
 import {
@@ -61,6 +61,8 @@ export type ReissueRecoveryCodesCommand = ActorCommand;
 export interface ConfirmTotpEnrolmentCommand {
   readonly accountId: string;
   readonly code: string;
+  /** For §12.5.6's confirmation window. Absent until task 71 configures trust-proxy. */
+  readonly clientIp?: string;
 }
 
 /** What the authenticator needs, and the only time the secret leaves the server. */
@@ -103,13 +105,10 @@ export class ManageTotp {
     if (credential === null) return;
 
     const key = reauthenticationThrottleKey(command.clientIp, command.accountId);
-    const limited = await this.store.run(async (tx) => {
-      const now = this.now();
-      const recent = await tx.countRecentAuthAttempts(key, new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS));
-      await tx.recordAuthAttempt(key, now);
-      return recent >= AUTH_ATTEMPT_LIMIT;
-    });
-    if (limited) throw new AuthRateLimitedError();
+    const admitted = await this.store.run((tx) =>
+      admitAuthAttempt(tx, { key, now: this.now() }),
+    );
+    if (!admitted) throw new AuthRateLimitedError();
 
     if (command.password === undefined) throw new ReauthenticationFailedError();
     // One object, not two strings: `verify(hash, password)` compiles perfectly with the
@@ -151,9 +150,26 @@ export class ManageTotp {
    * took the password moments ago, and this step's own evidence — a current code from the secret
    * just issued — is stronger than a password for the thing being proved. Asking twice would make
    * the enrolment screen ask for a password between two fields of one form.
+   *
+   * **It is throttled all the same, since 27 Aug 2026**, and "no password here" was exactly the
+   * reasoning that left it unbounded: task 27.5 threw a window at the three routes that *take* a
+   * password and passed over the one that takes a code. The asymmetry is backwards — a password is
+   * a secret the caller either knows or does not, while six digits is a space of 10^6 that an
+   * unbounded caller walks, and this is the route that answers a hit with ten recovery codes.
+   * `totpConfirmationThrottleKey`'s note carries the reachable case.
+   *
+   * The window is spent **outside** the work's transaction, for `reauthenticate`'s first reason: a
+   * refusal must durably cost the caller an attempt, and a throw inside `run` would roll back the
+   * row the window rests on.
    */
   async confirm(command: ConfirmTotpEnrolmentCommand): Promise<readonly string[]> {
     const minted = mintRecoveryCodes();
+
+    const key = totpConfirmationThrottleKey(command.clientIp, command.accountId);
+    const admitted = await this.store.run((tx) =>
+      admitAuthAttempt(tx, { key, now: this.now() }),
+    );
+    if (!admitted) throw new AuthRateLimitedError();
 
     return this.store.run(async (tx) => {
       const enrolment = await tx.findTotpEnrolment(command.accountId);

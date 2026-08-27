@@ -133,11 +133,16 @@ export class FactorChallengeResponseDto {
   readonly challenge: string;
 
   @ApiProperty({
-    type: Number,
+    // `'integer'`, not `Number` — the house spelling for every instant on the wire, and it was
+    // `Number` until 27 Aug 2026. `Number` emits `"type": "number"`, which publishes a contract
+    // saying a fractional millisecond is a legal instant; CLAUDE.md's rule is explicit that
+    // OpenAPI can only describe an epoch instant as `integer`, "so nothing else will".
+    type: 'integer',
     description:
       'When the challenge stops being accepted — epoch milliseconds, UTC (OQ-50). Stated rather ' +
       'than left for the client to infer, so a screen can say how long is left without knowing ' +
       'the policy.',
+    example: 1_787_444_400_000,
   })
   readonly expiresAt: EpochMillis;
 

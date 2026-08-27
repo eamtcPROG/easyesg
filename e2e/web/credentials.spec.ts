@@ -5,6 +5,7 @@ import {
   grantMembership,
   verificationTokenFor,
 } from './support/db';
+import { PASSWORD, enrolFactor, presentPassword, totp } from './support/second-factor';
 
 /**
  * S-28 — credentials and linked identities (task 27.7), from the browser.
@@ -21,7 +22,6 @@ import {
  * be reached is the failure mode a green API suite cannot see.
  */
 const RUN_PREFIX = `task27-${process.pid}-${Date.now()}`;
-const PASSWORD = 'Str0ng-Passphrase!';
 const NEXT_PASSWORD = 'Alt-Str0ng-Passphrase!';
 
 const organizations: string[] = [];
@@ -100,66 +100,16 @@ test('a wrong current password is refused in the API’s own words', async ({ pa
   await expect(page.getByText(/Parola actuală nu este corectă/)).toBeVisible();
 });
 
-/** RFC 6238 against the secret the screen just showed — the same generator an app would run. */
-function totp(secret: string, email: string): Promise<string> {
-  return import('otpauth').then(({ TOTP, Secret }) =>
-    new TOTP({
-      issuer: 'EasyESG Admin',
-      label: email,
-      algorithm: 'SHA1',
-      digits: 6,
-      period: 30,
-      secret: Secret.fromBase32(secret),
-    }).generate(),
-  );
-}
-
-/**
- * Enrols a second factor on a signed-in account through S-28's own controls, and answers with what
- * the screen showed: the secret an authenticator would have captured, and the ten recovery codes.
- */
-async function enrolFactor(page: Page, email: string): Promise<{ secret: string; recovery: string[] }> {
-  await page.goto('/account/credentials');
-
-  const section = page.getByRole('region', { name: 'Verificare în doi pași' });
-  await page.getByLabel('Parola actuală').last().fill(PASSWORD);
-  await section.getByRole('button', { name: 'Activați verificarea în doi pași' }).click();
-
-  await expect(section.getByText('Scanați sau introduceți acest cod')).toBeVisible();
-  const secret = (await section.locator('.t-code').first().textContent()) ?? '';
-  expect(secret).toMatch(/^[A-Z2-7]{32}$/);
-
-  await section.getByLabel('Codul din aplicație').fill(await totp(secret, email));
-  await section.getByRole('button', { name: 'Finalizați activarea' }).click();
-
-  // The recovery codes, shown exactly once — with the warning BEFORE them (P5).
-  await expect(section.getByText(/Vi le arătăm o singură dată/)).toBeVisible();
-  const codes = section.locator('li.t-code');
-  await expect(codes).toHaveCount(10);
-  const recovery = await codes.allInnerTexts();
-  await section.getByRole('button', { name: 'Le-am notat' }).click();
-
-  return { secret, recovery };
-}
-
-/** The password half of S-01, which for an enrolled account ends on the staged step. */
-async function presentPassword(page: Page, email: string): Promise<void> {
-  await page.goto('/sign-in');
-  await page.getByLabel('Adresa de e-mail').fill(email);
-  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Intră în cont' }).click();
-}
-
 test('turning on the second factor makes sign-in ask for a code (UC-193 → UC-194)', async ({
   page,
 }) => {
   const email = await signedIn(page, 'factor');
-  const { secret } = await enrolFactor(page, email);
+  const { secret } = await enrolFactor(page, { email, password: PASSWORD });
 
   // And the point of all of it. **This is the journey task 27.3 broke and nobody could see**: the
   // API started answering a challenge where a session used to be, and until the web tier learned
   // the second shape, enrolling a factor turned the next sign-in into a crash.
-  await presentPassword(page, email);
+  await presentPassword(page, { email, password: PASSWORD });
   await page.waitForURL('**/sign-in/factor');
   await expect(page.getByRole('heading', { name: 'Confirmă că ești tu', level: 1 })).toBeVisible();
 
@@ -172,9 +122,9 @@ test('a recovery code answers the same step, and is spent by doing so (UC-195)',
   page,
 }) => {
   const email = await signedIn(page, 'recovery');
-  const { recovery } = await enrolFactor(page, email);
+  const { recovery } = await enrolFactor(page, { email, password: PASSWORD });
 
-  await presentPassword(page, email);
+  await presentPassword(page, { email, password: PASSWORD });
   await page.waitForURL('**/sign-in/factor');
 
   // The other affordance, offered rather than hidden: UX-108's point is that a person without
@@ -185,7 +135,7 @@ test('a recovery code answers the same step, and is spent by doing so (UC-195)',
   await page.waitForURL('**/home');
 
   // Single-use, proven by presenting it again rather than by reading the table.
-  await presentPassword(page, email);
+  await presentPassword(page, { email, password: PASSWORD });
   await page.waitForURL('**/sign-in/factor');
   await page.getByRole('button', { name: /Folosește un cod de recuperare/ }).click();
   await page.getByLabel('Cod de recuperare').fill(recovery[0]);
@@ -200,13 +150,13 @@ test('a recovery code answers the same step, and is spent by doing so (UC-195)',
 
 test('the staged step is live in all three locales', async ({ page }) => {
   const email = await signedIn(page, 'factor-locales');
-  await enrolFactor(page, email);
+  await enrolFactor(page, { email, password: PASSWORD });
 
   // One password presentation, three renders: the challenge cookie is path-wide and carries no
   // language, so the step is reachable in every locale from the same held challenge — which is
   // also the cheapest way to assert this without spending three sign-in attempts against
   // §12.5.6's five-per-fifteen-minutes budget for one account.
-  await presentPassword(page, email);
+  await presentPassword(page, { email, password: PASSWORD });
   await page.waitForURL('**/sign-in/factor');
 
   for (const [path, title] of [

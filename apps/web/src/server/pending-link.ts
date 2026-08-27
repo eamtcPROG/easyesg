@@ -1,9 +1,10 @@
 import 'server-only';
 import { cookies } from 'next/headers';
-import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
-import { mapOutcome } from '@/lib/api-outcome';
+import { isSocialProvider, type SocialProvider } from '@easyesg/contracts';
+import { API_OUTCOME, mapOutcome, type ApiOutcome } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
 import { api } from './api-client';
+import { readSession } from './session';
 import { sealJson, unsealJson } from './session-codec';
 
 /**
@@ -34,12 +35,29 @@ const PENDING_LINK_COOKIE = 'easyesg_pending_link';
 const PENDING_LINK_TTL_SECONDS = 5 * 60;
 
 export interface PendingLink {
-  readonly provider: string;
+  /**
+   * Narrowed at this boundary rather than at the render, so no screen holds a provider it cannot
+   * name. A foreign value reads as "nothing pending", which is the same answer this module already
+   * gives every other unrecognisable shape.
+   */
+  readonly provider: SocialProvider;
   readonly code: string;
   readonly state: string;
   readonly nonce: string;
   readonly codeVerifier: string;
   readonly redirectUri: string;
+  /**
+   * **Which account began this link** (added 27 Aug 2026).
+   *
+   * `beginSocialFlow` already refuses to start a link without a session — it downgrades the intent
+   * to sign-in — but nothing checked that the session confirming the link is the *same* one. The
+   * cookie is `path: '/'` and lives five minutes, so a session that ends in between (expiry,
+   * sign-out, a shared machine) leaves it standing: `/account/credentials` bounces to sign-in, and
+   * whoever signs in next is offered a confirmation that would attach someone else's provider
+   * identity to their account. Held here and compared in `completePendingLink`, which is the same
+   * question asked at the end that `beginSocialFlow` asks at the start.
+   */
+  readonly accountId: string;
 }
 
 /** Called by the callback, which has just consumed the outbound transaction. */
@@ -63,32 +81,41 @@ export async function holdPendingLink(pending: PendingLink): Promise<void> {
 /** Validated, never cast — a stale or foreign shape must read as "nothing pending". */
 function readPending(parsed: unknown): PendingLink | null {
   if (typeof parsed !== 'object' || parsed === null) return null;
-  const { provider, code, state, nonce, codeVerifier, redirectUri, issuedAt } = parsed as Record<
-    string,
-    unknown
-  >;
+  const { provider, code, state, nonce, codeVerifier, redirectUri, accountId, issuedAt } =
+    parsed as Record<string, unknown>;
   if (
     typeof provider !== 'string' ||
+    !isSocialProvider(provider) ||
     typeof code !== 'string' ||
     typeof state !== 'string' ||
     typeof nonce !== 'string' ||
     typeof codeVerifier !== 'string' ||
     typeof redirectUri !== 'string' ||
+    typeof accountId !== 'string' ||
     typeof issuedAt !== 'number' ||
     issuedAt + PENDING_LINK_TTL_SECONDS * 1000 <= Date.now()
   ) {
     return null;
   }
-  return { provider, code, state, nonce, codeVerifier, redirectUri };
+  return { provider, code, state, nonce, codeVerifier, redirectUri, accountId };
 }
 
-/** What S-28 renders its pending state from — the provider's name and nothing else. */
-export async function readPendingLink(): Promise<{ provider: string } | null> {
+/**
+ * What S-28 renders its pending state from — the provider's name and nothing else.
+ *
+ * **Answers `null` for a link another account began**, so the screen simply does not offer a
+ * confirmation the action below would refuse anyway. The two must agree: a pending state the reader
+ * can see but never complete is worse than none at all.
+ */
+export async function readPendingLink(): Promise<{ provider: SocialProvider } | null> {
   const jar = await cookies();
   const sealed = jar.get(PENDING_LINK_COOKIE)?.value;
   if (!sealed) return null;
   const pending = readPending(unsealJson(sealed, env.sessionSecret));
-  return pending ? { provider: pending.provider } : null;
+  if (!pending) return null;
+
+  const session = await readSession();
+  return session?.account.id === pending.accountId ? { provider: pending.provider } : null;
 }
 
 /**
@@ -110,10 +137,21 @@ export async function completePendingLink(input: {
 
   jar.delete(PENDING_LINK_COOKIE);
 
-  if (!pending || pending.provider !== input.provider) {
-    // Nothing to complete: the cookie lapsed, was never set, or names another provider. Treated as
-    // unreachable rather than invented into a problem document — the screen's recoverable state
-    // tells the reader to start the link again, which is the only thing that works.
+  const session = await readSession();
+  if (
+    !pending ||
+    pending.provider !== input.provider ||
+    session?.account.id !== pending.accountId
+  ) {
+    // Nothing to complete: the cookie lapsed, was never set, names another provider, or — the
+    // condition added 27 Aug 2026 — belongs to an account other than the one now signed in. The
+    // account check is the one that is not merely hygiene: without it a link begun under one
+    // session is attachable by whichever session happens to be live five minutes later, which on a
+    // shared machine is a different person's account.
+    //
+    // Treated as unreachable rather than invented into a problem document — the screen's
+    // recoverable state tells the reader to start the link again, which is the only thing that
+    // works, and is the honest answer for every one of these.
     return { status: API_OUTCOME.Unreachable };
   }
 

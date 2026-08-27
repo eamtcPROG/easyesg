@@ -4,8 +4,7 @@ import type {
   SocialProvider,
 } from '@api/contracts/identity-provider.port';
 import {
-  AUTH_ATTEMPT_LIMIT,
-  AUTH_ATTEMPT_WINDOW_MS,
+  admitAuthAttempt,
   reauthenticationThrottleKey,
 } from '@api/modules/identity/account/domain/auth-throttle';
 import {
@@ -89,16 +88,10 @@ export class ManageProviderLinks {
     if (digest === null) return;
 
     const key = reauthenticationThrottleKey(command.clientIp, command.accountId);
-    const limited = await this.store.run(async (tx) => {
-      const now = this.now();
-      const recent = await tx.countRecentAuthAttempts(
-        key,
-        new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS),
-      );
-      await tx.recordAuthAttempt(key, now);
-      return recent >= AUTH_ATTEMPT_LIMIT;
-    });
-    if (limited) throw new AuthRateLimitedError();
+    const admitted = await this.store.run((tx) =>
+      admitAuthAttempt(tx, { key, now: this.now() }),
+    );
+    if (!admitted) throw new AuthRateLimitedError();
 
     if (command.password === undefined) throw new ReauthenticationFailedError();
     if (!(await this.hasher.verify({ digest, password: command.password }))) {

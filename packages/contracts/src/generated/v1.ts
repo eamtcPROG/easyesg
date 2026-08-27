@@ -767,17 +767,6 @@ export interface components {
              */
             terminateOtherSessions: boolean;
         };
-        FactorChallengeResponseDto: {
-            /**
-             * @description The discriminator. `signed_in` carries a session; this one carries a challenge, and a client must branch on it rather than probing for a field.
-             * @enum {string}
-             */
-            kind: "challenged";
-            /** @description Opaque and sealed — it proves only that this API verified this account’s password just now, and it is not a session and cannot become one. Present it back with the code. The client stores it; where is the client’s decision (the web tier keeps it in a short-lived httpOnly cookie, as it does the OAuth transaction). */
-            challenge: string;
-            /** @description When the challenge stops being accepted — epoch milliseconds, UTC (OQ-50). Stated rather than left for the client to infer, so a screen can say how long is left without knowing the policy. */
-            expiresAt: number;
-        };
         SessionAccountDto: {
             /** Format: uuid */
             id: string;
@@ -794,7 +783,7 @@ export interface components {
         };
         SessionResponseDto: {
             /**
-             * @description The discriminator sign-in answers with. `challenged` is the other member, and carries a factor challenge instead of a session (UC-194).
+             * @description The discriminator sign-in answers with. `challenged` is the other member, and carries a factor challenge instead of a session (UC-194). (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             kind: "signed_in";
@@ -813,6 +802,20 @@ export interface components {
              */
             refreshTokenExpiresAt: number;
             account: components["schemas"]["SessionAccountDto"];
+        };
+        FactorChallengeResponseDto: {
+            /**
+             * @description The discriminator. `signed_in` carries a session; this one carries a challenge, and a client must branch on it rather than probing for a field. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            kind: "challenged";
+            /** @description Opaque and sealed — it proves only that this API verified this account’s password just now, and it is not a session and cannot become one. Present it back with the code. The client stores it; where is the client’s decision (the web tier keeps it in a short-lived httpOnly cookie, as it does the OAuth transaction). */
+            challenge: string;
+            /**
+             * @description When the challenge stops being accepted — epoch milliseconds, UTC (OQ-50). Stated rather than left for the client to infer, so a screen can say how long is left without knowing the policy.
+             * @example 1787444400000
+             */
+            expiresAt: number;
         };
         SignInRequestDto: {
             /**
@@ -1558,18 +1561,14 @@ export interface operations {
             };
         };
         responses: {
-            /**
-             * @description The credential was correct and the account has a second factor, so a challenge is returned instead of a session (UC-194). Branch on `kind`, never on the presence of a field. Complete it at `POST /auth/session/factor`.
-             *
-             *     The session was issued — the answer for an account with no second factor, which is most of them (NFR-95 is opt-in).
-             */
+            /** @description Two shapes, discriminated by `kind`. `signed_in` carries the session — the answer for an account with no second factor, which is most of them (NFR-95 is opt-in). `challenged` means the credential was correct and the account has a second factor, so a challenge is returned instead of a session (UC-194); complete it at `POST /auth/session/factor`. Branch on `kind`, never on the presence of a field. */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ResultObjectDto"] & {
-                        object?: components["schemas"]["SessionResponseDto"];
+                        object?: components["schemas"]["SessionResponseDto"] | components["schemas"]["FactorChallengeResponseDto"];
                     };
                 };
             };
@@ -1648,7 +1647,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description The code is not right, or the challenge has expired or was not issued by this API (problem type factor-invalid). Deliberately one answer for all three: the distinctions describe our verification to whoever is probing it and none changes what to do next. */
+            /** @description The code is not right, or the challenge has expired or was not issued by this API (problem type factor-invalid). Deliberately one answer for all three: the distinctions describe our verification to whoever is probing it and none changes what to do next. Also the account being locked after repeated failures (problem type account-locked) — distinct because reaching it takes ten consecutive failures against a real credential, so it discloses nothing to anyone who has not already done that, and the way out is the reset link rather than another code. */
             403: {
                 headers: {
                     [name: string]: unknown;

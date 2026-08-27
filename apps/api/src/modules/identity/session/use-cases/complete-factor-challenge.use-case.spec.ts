@@ -2,7 +2,7 @@ import { AuthRateLimitedError } from '@api/modules/identity/account/errors/accou
 import { FakePasswordHasher } from '@api/modules/identity/account/testing/account-store.fake';
 import { ACCOUNT_STATUS, type Account } from '@api/modules/identity/account/models/account.model';
 import { FACTOR_CHALLENGE_TTL_MS } from '../domain/factor-challenge';
-import { FactorInvalidError } from '../errors/session.errors';
+import { AccountLockedError, FactorInvalidError } from '../errors/session.errors';
 import {
   FakeAccessTokenSigner,
   FakeChallengeSealer,
@@ -174,6 +174,54 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
       // A second budget here would give an attacker holding the password unlimited guesses at six
       // digits, which is 10^6 and falls in an afternoon.
       expect(store.credentials.get('account-1')?.failedAttempts).toBe(1);
+    });
+
+    /**
+     * The other half of that sentence, and it was missing until 27 Aug 2026.
+     *
+     * The use case *wrote* the lockout and never *read* it, so `AccountLockedError` was unreachable
+     * on this route: a challenge issued moments before a lock still minted a session, and S-01's
+     * lockout state was dead code on the screen. Written and not read is the one shape a security
+     * control must never have — and the only thing that keeps it read is a test that fails when the
+     * check is deleted.
+     */
+    it('refuses a challenge whose account was locked after it was issued (FR-4)', async () => {
+      const { challenge } = await signInAndChallenge();
+
+      // Locked by the password step in another tab, or by an attacker hammering it — either way
+      // between the two halves of this sign-in. `SignIn` refuses a locked credential before it
+      // would issue a challenge, so this is the only way the state is reachable.
+      const credential = store.credentials.get('account-1');
+      store.credentials.set('account-1', { ...credential!, failedAttempts: 10, lockedAt: now });
+
+      // The CORRECT code, so nothing but the lock can be doing the refusing.
+      await expect(complete.execute({ challenge, code: CODE })).rejects.toBeInstanceOf(
+        AccountLockedError,
+      );
+      expect(store.sessions).toHaveLength(0);
+    });
+
+    it('honours the lock its own failures produced, rather than only writing it', async () => {
+      const { challenge } = await signInAndChallenge();
+
+      // **Seeded AFTER the challenge, and that is the interesting fact rather than test plumbing.**
+      // The password success that produced this challenge called `clearFailedSignIns`, so the
+      // counter enters the factor step at zero — and the throttle caps one five-minute challenge at
+      // five attempts. The factor step therefore CANNOT reach ten on its own, whatever an older
+      // comment on the use case claimed; what it can do is add to a tally and honour the lock that
+      // tally reaches. One short of the threshold is the state where the next wrong code trips it.
+      const seeded = store.credentials.get('account-1');
+      store.credentials.set('account-1', { ...seeded!, failedAttempts: 9 });
+
+      await expect(complete.execute({ challenge, code: '000000' })).rejects.toBeInstanceOf(
+        FactorInvalidError,
+      );
+      expect(store.credentials.get('account-1')?.lockedAt).toEqual(now);
+
+      // And now the correct code does not help, which is what a lockout means.
+      await expect(complete.execute({ challenge, code: CODE })).rejects.toBeInstanceOf(
+        AccountLockedError,
+      );
     });
 
     it('throttles the factor step, and refuses beyond the window', async () => {

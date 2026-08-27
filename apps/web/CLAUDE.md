@@ -113,6 +113,30 @@ that branch is what made enrolling a factor crash the next sign-in for four task
 `features/identity/factor.ts` and deliberately not a member of the wire vocabulary: no server can
 send it.
 
+**A pending provider link is bound to the account that began it** (27 Aug 2026, review).
+`beginSocialFlow` refuses to start a link without a session, and that proves nothing about the
+session five minutes later at the *confirmation* — the re-sealed cookie is path-wide, so a session
+that ends in between leaves it standing, `/account/credentials` bounces to sign-in, and whoever
+signs in next is offered a confirmation that would attach someone else's Google account to theirs.
+`PendingLink` therefore carries `accountId`, the callback refuses when no session remains, and
+`readPendingLink` and `completePendingLink` both require it to match. **The two must agree**: a
+pending state the reader can see but never complete is worse than none at all.
+
+**A refusal's "what now" comes from the API, not from the screen** (same review). `factor-form.tsx`
+rendered one hardcoded remedy — *check your device clock and try again* — for every problem, so the
+throttle refusal arrived with the API's "wait a few minutes" directly above it. The `action` slot
+now carries something only where this screen owns a remedy the `detail` cannot express, which is the
+lockout: its way out is a different **screen**, and no sentence can navigate. **Four sibling screens
+still have the old shape** (`sign-in-form`, `register-form`, `request-reset-form`, `confirm-email`,
+`accept-invitation`) — they were outside that review's diff and are worth the same pass.
+
+**Read a provider through the contract's enum, never as a `string`.** `providerLabel` and
+`providerGlyph` take `SocialProvider`, so an unnamed provider is a compile error at their `Record`
+rather than a raw slug rendered into a sentence. `features/credentials/credentials.ts` **re-exports**
+`LinkedProvider` and `TotpState` from `@easyesg/contracts` rather than restating them: the
+hand-written copy had widened `provider` to `string`, which is exactly the drift that package exists
+to prevent, and it is what let the slug through.
+
 **The message catalogues have their first content.** `src/messages/{ro,en,ru}.json` carry
 `chrome` and `identity`; all three separately authored, RO the source. Adding a string is a JSON
 edit — and adding it to `ro.json` alone fails `src/messages/messages.parity.spec.ts`, which is

@@ -85,8 +85,6 @@ export async function resendVerificationAction(
   return mapOutcome(outcome, () => null);
 }
 
-/** `returnTo` is `proxy.ts`'s `?return=` value, carried through the screen — sanitized here
- *  because it round-trips through the browser and is therefore attacker-shapeable. */
 /**
  * UC-194's second step, and UC-195's recovery-code route through the same field.
  *
@@ -123,6 +121,16 @@ export async function completeFactorAction(command: {
 export interface SignInCommand {
   email: string;
   password: string;
+  /**
+   * `proxy.ts`'s `?return=` value, carried through the screen — and **sanitized downstream**, in
+   * `resolvePostSignIn`, because it round-trips through the browser and is therefore
+   * attacker-shapeable.
+   *
+   * Sanitizing there rather than here is deliberate: `postSignInTarget` decides whether a deep link
+   * is honoured at all, and a path it must not honour and a path that is not a path are one
+   * question with one answer. Task 27.8 carries this value across the factor step in the sealed
+   * challenge cookie, and that path lands in the same function.
+   */
   returnTo?: string;
 }
 

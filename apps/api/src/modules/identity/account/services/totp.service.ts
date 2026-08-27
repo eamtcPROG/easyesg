@@ -38,20 +38,51 @@ export class TotpService {
     return accountId;
   }
 
+  /**
+   * The other ambient field, and it was missing until 27 Aug 2026.
+   *
+   * All four routes below resolved the actor and dropped the client IP, so their throttle keys were
+   * built with `undefined` and degraded to one bucket per account across every address — while
+   * `PasswordService` and `ProviderLinkService` passed it and got §12.5.6's specified per-(IP,
+   * account) key. `ManageTotp`'s own comment claims "`ChangePassword` spends the same key — a
+   * settings screen has one budget, not one per control", and that was simply not true of the
+   * shipped code: two different keys, because one caller forwarded this and the other did not.
+   * Nothing failed, because a coarser key still throttles.
+   */
+  private clientIp(): string | undefined {
+    return requestContext()?.clientIp;
+  }
+
   begin(input: { readonly password?: string }): Promise<TotpEnrolmentOffer> {
-    return this.manageTotp.begin({ ...input, accountId: this.actorId() });
+    return this.manageTotp.begin({
+      ...input,
+      accountId: this.actorId(),
+      clientIp: this.clientIp(),
+    });
   }
 
   confirm(input: { readonly code: string }): Promise<readonly string[]> {
-    return this.manageTotp.confirm({ ...input, accountId: this.actorId() });
+    return this.manageTotp.confirm({
+      ...input,
+      accountId: this.actorId(),
+      clientIp: this.clientIp(),
+    });
   }
 
   disable(input: { readonly password?: string }): Promise<void> {
-    return this.manageTotp.disable({ ...input, accountId: this.actorId() });
+    return this.manageTotp.disable({
+      ...input,
+      accountId: this.actorId(),
+      clientIp: this.clientIp(),
+    });
   }
 
   reissueRecoveryCodes(input: { readonly password?: string }): Promise<readonly string[]> {
-    return this.manageTotp.reissueRecoveryCodes({ ...input, accountId: this.actorId() });
+    return this.manageTotp.reissueRecoveryCodes({
+      ...input,
+      accountId: this.actorId(),
+      clientIp: this.clientIp(),
+    });
   }
 
   state(): Promise<TotpState> {

@@ -528,7 +528,7 @@
         },
         "responses": {
           "201": {
-            "description": "The credential was correct and the account has a second factor, so a challenge is returned instead of a session (UC-194). Branch on `kind`, never on the presence of a field. Complete it at `POST /auth/session/factor`.\n\nThe session was issued — the answer for an account with no second factor, which is most of them (NFR-95 is opt-in).",
+            "description": "Two shapes, discriminated by `kind`. `signed_in` carries the session — the answer for an account with no second factor, which is most of them (NFR-95 is opt-in). `challenged` means the credential was correct and the account has a second factor, so a challenge is returned instead of a session (UC-194); complete it at `POST /auth/session/factor`. Branch on `kind`, never on the presence of a field.",
             "content": {
               "application/json": {
                 "schema": {
@@ -539,7 +539,21 @@
                     {
                       "properties": {
                         "object": {
-                          "$ref": "#/components/schemas/SessionResponseDto"
+                          "oneOf": [
+                            {
+                              "$ref": "#/components/schemas/SessionResponseDto"
+                            },
+                            {
+                              "$ref": "#/components/schemas/FactorChallengeResponseDto"
+                            }
+                          ],
+                          "discriminator": {
+                            "propertyName": "kind",
+                            "mapping": {
+                              "signed_in": "#/components/schemas/SessionResponseDto",
+                              "challenged": "#/components/schemas/FactorChallengeResponseDto"
+                            }
+                          }
                         }
                       }
                     }
@@ -635,7 +649,7 @@
             }
           },
           "403": {
-            "description": "The code is not right, or the challenge has expired or was not issued by this API (problem type factor-invalid). Deliberately one answer for all three: the distinctions describe our verification to whoever is probing it and none changes what to do next.",
+            "description": "The code is not right, or the challenge has expired or was not issued by this API (problem type factor-invalid). Deliberately one answer for all three: the distinctions describe our verification to whoever is probing it and none changes what to do next. Also the account being locked after repeated failures (problem type account-locked) — distinct because reaching it takes ten consecutive failures against a real credential, so it discloses nothing to anyone who has not already done that, and the way out is the reset link rather than another code.",
             "content": {
               "application/problem+json": {}
             }
@@ -1944,31 +1958,6 @@
           "password"
         ]
       },
-      "FactorChallengeResponseDto": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "challenged"
-            ],
-            "description": "The discriminator. `signed_in` carries a session; this one carries a challenge, and a client must branch on it rather than probing for a field."
-          },
-          "challenge": {
-            "type": "string",
-            "description": "Opaque and sealed — it proves only that this API verified this account’s password just now, and it is not a session and cannot become one. Present it back with the code. The client stores it; where is the client’s decision (the web tier keeps it in a short-lived httpOnly cookie, as it does the OAuth transaction)."
-          },
-          "expiresAt": {
-            "type": "number",
-            "description": "When the challenge stops being accepted — epoch milliseconds, UTC (OQ-50). Stated rather than left for the client to infer, so a screen can say how long is left without knowing the policy."
-          }
-        },
-        "required": [
-          "kind",
-          "challenge",
-          "expiresAt"
-        ]
-      },
       "SessionAccountDto": {
         "type": "object",
         "properties": {
@@ -2036,6 +2025,32 @@
           "refreshToken",
           "refreshTokenExpiresAt",
           "account"
+        ]
+      },
+      "FactorChallengeResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "challenged"
+            ],
+            "description": "The discriminator. `signed_in` carries a session; this one carries a challenge, and a client must branch on it rather than probing for a field."
+          },
+          "challenge": {
+            "type": "string",
+            "description": "Opaque and sealed — it proves only that this API verified this account’s password just now, and it is not a session and cannot become one. Present it back with the code. The client stores it; where is the client’s decision (the web tier keeps it in a short-lived httpOnly cookie, as it does the OAuth transaction)."
+          },
+          "expiresAt": {
+            "type": "integer",
+            "description": "When the challenge stops being accepted — epoch milliseconds, UTC (OQ-50). Stated rather than left for the client to infer, so a screen can say how long is left without knowing the policy.",
+            "example": 1787444400000
+          }
+        },
+        "required": [
+          "kind",
+          "challenge",
+          "expiresAt"
         ]
       },
       "SignInRequestDto": {

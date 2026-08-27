@@ -143,14 +143,25 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
         <Callout
           intent="error"
           title={problem.title ?? t('problemTitle')}
+          /*
+            **The action slot carries a remedy only where this screen owns one** (corrected
+            27 Aug 2026). It used to render `problemAction` — "check the clock on your device, then
+            try again with the code showing now" — for every problem, so the throttle refusal
+            arrived as the API's "wait a few minutes" sitting directly above our "try again now".
+            Two instructions, contradicting each other, with the wrong one in the position NFR-79
+            reserves for what to do next.
+
+            The API's `detail` is already the three-part message and always states its own remedy,
+            so the default is to say nothing further. The lockout is the one exception, and it earns
+            it by being the refusal whose way out is a different SCREEN: the reset link is the only
+            release before Phase 8, and no `detail` can navigate.
+          */
           action={
             locked ? (
               <TextLink asChild>
                 <Link href={ROUTES.RESET}>{t('lockedAction')}</Link>
               </TextLink>
-            ) : (
-              t('problemAction')
-            )
+            ) : undefined
           }
         >
           {problem.detail ?? t('problemBody')}

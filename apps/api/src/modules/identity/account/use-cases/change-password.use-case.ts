@@ -1,9 +1,5 @@
 import type { Clock } from '@api/contracts/clock.port';
-import {
-  AUTH_ATTEMPT_LIMIT,
-  AUTH_ATTEMPT_WINDOW_MS,
-  reauthenticationThrottleKey,
-} from '../domain/auth-throttle';
+import { admitAuthAttempt, reauthenticationThrottleKey } from '../domain/auth-throttle';
 import { passwordMeetsPolicy } from '../domain/password-policy';
 import {
   AuthRateLimitedError,
@@ -72,16 +68,10 @@ export class ChangePassword {
     if (!passwordMeetsPolicy(command.password)) throw new PasswordPolicyViolationError();
 
     const key = reauthenticationThrottleKey(command.clientIp, command.accountId);
-    const limited = await this.store.run(async (tx) => {
-      const now = this.now();
-      const recent = await tx.countRecentAuthAttempts(
-        key,
-        new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS),
-      );
-      await tx.recordAuthAttempt(key, now);
-      return recent >= AUTH_ATTEMPT_LIMIT;
-    });
-    if (limited) throw new AuthRateLimitedError();
+    const admitted = await this.store.run((tx) =>
+      admitAuthAttempt(tx, { key, now: this.now() }),
+    );
+    if (!admitted) throw new AuthRateLimitedError();
 
     const credential = await this.store.run((tx) => tx.findCredential(command.accountId));
     // A provider-only account (FR-2) holds no credential row and so has no current password to

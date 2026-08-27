@@ -27,8 +27,20 @@ playwright/.cache/
 apps/*/env/*
 !apps/*/env/.env.example
 
-# Keys and service-account credentials never belong in the repo
-credentials/
+# Keys and service-account credentials never belong in the repo.
+#
+# `/credentials/` is ANCHORED, and that leading slash is load-bearing (27 Aug 2026). Written bare
+# it matched any directory of that name at any depth, and on 26 Aug 2026 it silently swallowed all
+# of `apps/web/src/features/credentials/` and S-28's page — eleven source files, committed as
+# absent, with `git status` clean the whole time because an ignored file is not untracked. The
+# branch could not build from a fresh clone; nothing local could see it, since the files were
+# present on the machine that wrote them.
+#
+# The extension rules below are what actually protect key material, and they stay unanchored on
+# purpose: a `.pem` is a secret wherever it lands, whereas a *directory name* is a word this
+# product also uses for a domain concept. Any new directory rule here needs the same question
+# asked of it — could this name mean something in `src/`?
+/credentials/
 *.pem
 *.p12
 *.key

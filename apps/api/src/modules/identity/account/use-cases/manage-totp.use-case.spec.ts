@@ -1,5 +1,7 @@
 import { totpCodeAt } from '@api/modules/platform/admin/domain/totp';
+import { AUTH_ATTEMPT_LIMIT } from '../domain/auth-throttle';
 import {
+  AuthRateLimitedError,
   ReauthenticationFailedError,
   TotpAlreadyEnrolledError,
   TotpCodeInvalidError,
@@ -187,6 +189,52 @@ describe('ManageTotp (UC-193, NFR-95)', () => {
       await expect(
         totp.reissueRecoveryCodes({ accountId: 'account-1', password: PASSWORD }),
       ).rejects.toThrow(TotpNotEnrolledError);
+    });
+  });
+
+  /**
+   * The confirmation window (added 27 Aug 2026).
+   *
+   * `confirm` takes no password, and that was read as a reason to leave it unbounded — so the one
+   * route that verifies a six-digit code and answers a hit with **ten recovery codes** was the one
+   * route with no window at all, while the three that take a password all had one.
+   *
+   * The reachable case is not contrived: `begin` stores the secret inert, so an abandoned enrolment
+   * is an ordinary state, and a caller on a stolen session who finds one could guess against it at
+   * the edge's full rate. A hit hands them a credential set that outlives the owner's password
+   * change.
+   */
+  describe('confirmation is throttled (§12.5.6)', () => {
+    it('refuses past the window, and the refusal is not the code being wrong', async () => {
+      await totp.begin({ accountId: 'account-1', password: PASSWORD });
+
+      // `begin` spends the re-authentication key; this route has its own segment, so the budget
+      // below starts full — a fumbled enrolment must not spend what the password change needs.
+      for (let attempt = 0; attempt < AUTH_ATTEMPT_LIMIT; attempt += 1) {
+        await expect(
+          totp.confirm({ accountId: 'account-1', code: '000000' }),
+        ).rejects.toThrow(TotpCodeInvalidError);
+      }
+
+      await expect(totp.confirm({ accountId: 'account-1', code: '000000' })).rejects.toThrow(
+        AuthRateLimitedError,
+      );
+    });
+
+    it('still refuses a correct code once the window is spent', async () => {
+      const offer = await totp.begin({ accountId: 'account-1', password: PASSWORD });
+
+      for (let attempt = 0; attempt < AUTH_ATTEMPT_LIMIT; attempt += 1) {
+        await expect(
+          totp.confirm({ accountId: 'account-1', code: '000000' }),
+        ).rejects.toThrow(TotpCodeInvalidError);
+      }
+
+      // The window is about the rate, not about the answer — a guesser who happens to land on the
+      // right code on the sixth attempt gains nothing.
+      await expect(
+        totp.confirm({ accountId: 'account-1', code: totpCodeAt(offer.secret, now) ?? '' }),
+      ).rejects.toThrow(AuthRateLimitedError);
     });
   });
 });

@@ -39,6 +39,62 @@ export const ApiObjectResponse = <T extends Type<unknown>>(
   );
 
 /**
+ * One status, **several possible shapes**, discriminated — added 27 Aug 2026 for `POST /auth/session`.
+ *
+ * **Two `@ApiObjectResponse` decorators at the same status do not describe two shapes.** They
+ * collapse: Swagger concatenates the descriptions and the second schema is silently dropped, so
+ * `POST /auth/session` published a 201 that named `SessionResponseDto` alone while the route had
+ * answered a factor challenge as well since task 27.3. The description even told readers to "branch
+ * on `kind`" — on a schema carrying only one `kind`. `openapi:check` could not see it: it diffs the
+ * emitted spec against its source and both were consistent, which is the same blind window that let
+ * 27.3's change stay invisible to `apps/web` for four tasks.
+ *
+ * `oneOf` with a `discriminator` is how OpenAPI says this, and `openapi-typescript` turns it into a
+ * genuine TypeScript union — which is what makes the consumer's `switch (body.kind)` a contract
+ * rather than a hand-assembled guess.
+ *
+ * **The variants arrive keyed by their discriminator value**, so the `mapping` is derived from the
+ * vocabulary rather than restated beside it (CLAUDE.md). Passing an array instead would leave the
+ * mapping to schema names — `SessionResponseDto`, not `signed_in` — which is not what the wire
+ * carries, and an implicit mapping would then be wrong in a way nothing reads.
+ */
+export const ApiObjectUnionResponse = <T extends Type<unknown>>(
+  variants: Record<string, T>,
+  options: { status: number; description: string; discriminator: string },
+) => {
+  const models = Object.values(variants);
+
+  return applyDecorators(
+    ApiExtraModels(ResultObjectDto, ...models),
+    ApiResponse({
+      status: options.status,
+      description: options.description,
+      schema: {
+        allOf: [
+          { $ref: getSchemaPath(ResultObjectDto) },
+          {
+            properties: {
+              object: {
+                oneOf: models.map((model) => ({ $ref: getSchemaPath(model) })),
+                discriminator: {
+                  propertyName: options.discriminator,
+                  mapping: Object.fromEntries(
+                    Object.entries(variants).map(([value, model]) => [
+                      value,
+                      getSchemaPath(model),
+                    ]),
+                  ),
+                },
+              },
+            },
+          },
+        ],
+      },
+    }),
+  );
+};
+
+/**
  * The list half of the same argument, for a handler returning an array.
  *
  * `GlobalResponseInterceptor` wraps a bare array in `ResultListDto` as "one page containing all
