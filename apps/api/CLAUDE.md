@@ -170,8 +170,10 @@ member — is true on every ordinary request. `invitation_bearer_select`'s is *k
 which no ordinary request does; adding the conjunct buys nothing and breaks the bookkeeper accepting
 their second client's invitation with a tenant already bound.
 
-**Not built yet, and do not assume otherwise:** two of the four edge guards
-(`EntitlementGuard`, `AdminRealmGuard`), any `core` table beyond `core.organization`, any controller
+**Not built yet, and do not assume otherwise:** two of the four edge guards — `EntitlementGuard`
+(task 54) and `AdminRealmGuard` (**task 67.3**, assigned 27 Aug 2026: it guards nothing until A-02
+exists, since the only admin routes today are task 23's sign-in handshake and that is already behind
+a sealed cookie, an Origin proof and mandatory TOTP) — any `core` table beyond `core.organization`, any controller
 other than health, `/auth`, `/auth/admin`, `/members`, `/memberships` and `/invitations` (the
 administrator's three plus the bearer's two), and
 almost every module body — 29 of the 35 leaf `*.module.ts` files are registered but empty (counted
@@ -584,6 +586,34 @@ filter omit `detail`: right failure, silent failure, and NFR-79's second and thi
 i18n parity harness cannot see it, because it compares the three catalogues to each other. **Adding
 a `DomainError` means adding its key to all three catalogues in the same change.**
 
+Task 28.2 makes the permission model **checkable rather than conventional**, in two halves that
+prove different things and are worth keeping apart:
+
+- **`src/testing/route-permissions.ts`** holds one table: every route on the surface and the
+  permission it declares. `route-permissions.spec.ts` walks `@Module`/`@Controller` metadata from
+  `AppModule` — no container, no provider, no database — and compares the whole computed surface
+  with `toEqual`. That shape catches three mistakes with one assertion: a **new** route with no
+  declaration, a route whose permission **changed** (`GET /members` moving from OA to any
+  authenticated account is a privilege escalation that compiles and passes every other test), and a
+  route **deleted** while its row stayed, which is how such a table normally rots into fiction.
+- **`test/route-matrix.e2e-spec.ts`** drives every tenant route × five actors over real HTTP and
+  **derives** the expected outcome from that same table. One table, two claims: a declaration
+  nothing enforces is a comment, and enforcement nobody wrote down is the surface someone
+  remembered. Both were verified to bite — the hermetic one on a changed and on a missing
+  declaration, the matrix on a simulated `RequiresRoleGuard` regression that the hermetic gate
+  cannot see (declarations unchanged, 4/4 green, matrix 21 red).
+
+**Adding a route means adding a line to that table**, and there is no default: `@Public()`,
+`@RequiresAccount()` or `@RequiresRole(...)`, at class or method level. The entitlement axis is
+deliberately not checked here — `@RequiresEntitlement` has no guard until task 54, and annotations
+nothing can verify decay before their reader arrives.
+
+**The matrix asserts authorization and nothing else**, which is what makes it affordable: a refused
+caller is refused before the body is read, so every request goes out with `{}`. It distinguishes on
+the **problem type**, never the status — `401` means both "no session" and "wrong password", and the
+first version of that reader sliced the base URI without its separator, read every refusal as
+`admitted`, and briefly looked like the guards had stopped refusing.
+
 ### Adding a column that holds a secret
 
 Since task 27.1 there is one mechanism and the database enforces it (§12.5.6's secrets-at-rest row).
@@ -857,9 +887,12 @@ because dependency-cruiser matches npm dependencies by *resolved* path, so `^@ne
   An `{id}` in a tenant path is a second, contradictory source of tenancy.
 - Nothing long-running in the request tier (AD-10). Long work is `202` + job id, enqueued **through
   the outbox** — `api` never enqueues directly.
-- Gate it with `@RequiresRole(...)` or record why it is public. The decorator applies its own
-  guard, so there is no second thing to remember — but a route that declares neither is open, and
-  no decorator can catch that. Until task 28's chain, "closed by default" is a review property.
+- Gate it with `@RequiresRole(...)`, `@RequiresAccount()` or `@Public()` — one of the three, at
+  class or method level, and **add its line to `src/testing/route-permissions.ts`**. The decorator
+  applies its own guard, so there is no second thing to remember; the table is what makes the
+  *choice* reviewable in one place instead of inferred from a decorator three directories away.
+  Since task 28.2 a route declaring none fails `route-permissions.spec.ts`, so "closed by default"
+  is a gate rather than a review property.
 - Gate it with `@RequiresEntitlement(key)` or record why it needs no key.
 - A list handler returns a bare array and is annotated `@ApiListResponse(Dto, …)`. Annotating it
   `@ApiOkResponse({ type: [Dto] })` publishes a contract saying the body IS an array, while

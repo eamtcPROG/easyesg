@@ -4219,3 +4219,72 @@ here were spent diagnosing it as a regression.
 
 `pnpm gates:clean` — EXIT=0. The API e2e suite went from 3 failures to 290 passing once the leak was
 fixed rather than masked, which is the difference between the two ways of "scoping a DELETE".
+
+---
+
+## Task 28.2 — Permissions across the surface · 2026-08-27
+
+The task row asks for permissions *"applied to every route rather than to the ones someone
+remembered"*, with a role-matrix test per actor. The surface is 31 route+method pairs across 12
+controllers, and every one already carried `@Public()`, `@RequiresAccount()` or `@RequiresRole(...)`
+— so the interesting question was never "which route is ungated" but **what makes that stay true**.
+
+### Two gates, because "declared" and "enforced" are different claims
+
+`src/testing/route-permissions.ts` holds one table: every route and the permission it declares. Two
+gates read it and neither is sufficient alone.
+
+**The hermetic one** walks `@Module`/`@Controller` metadata from `AppModule` — no container, no
+provider instantiated, no database — and compares the *whole computed surface* with `toEqual` rather
+than checking each route has something. That shape was chosen for the two mistakes a presence check
+waves through: a route whose permission **changed** (`GET /members` moving from OA to any
+authenticated account is a privilege escalation that compiles and passes every other test) and a
+route **deleted** while its row stayed, which is how a table like this rots into fiction.
+
+**The matrix** drives every tenant route × five actors over real HTTP — 161 cells — and **derives**
+each expectation from that same table. That derivation is the design: a second table of expectations
+would be the list of routes someone remembered, and it could disagree with the first without either
+being obviously wrong. `expectedFor` is four lines because actors.md §5's rows collapse onto the
+three declarations; adding a role-gated capability later is one branch, not a new table.
+
+Both were proven to bite before being kept. The hermetic gate on a changed declaration and on a
+missing one; the matrix on a **simulated `RequiresRoleGuard` regression** — declarations untouched,
+so the hermetic gate stayed 4/4 green while the matrix went 21 red. That is exactly the gap the
+second gate exists for.
+
+### The matrix asserts authorization and nothing else
+
+Which is what makes 161 cells affordable: a refused caller is refused *before* the body is read, so
+every request goes out with `{}` and no route needs a valid payload. It distinguishes on the
+**problem type**, never the status.
+
+That last point cost an iteration and is worth recording. `401` means both "no session" and "wrong
+password", so a status-reading matrix would call `POST /auth/session` with an empty body a refusal
+and pass while proving nothing. The first version read the type but sliced `PROBLEM_BASE_URI` off
+the front **without its separator** — every refusal came back as `admitted`, 39 cells failed, and for
+a moment it read as though the guards had stopped refusing. Comparing through `problemTypeUri`, the
+module's own builder, is both the fix and the rule: an operation over a vocabulary belongs with the
+vocabulary.
+
+### Two decisions taken rather than absorbed
+
+- **`AdminRealmGuard` had no owner.** `apps/api/CLAUDE.md` listed it among the edge guards not built
+  and no `task.md` row claimed it — the OQ-56 failure mode, a thing everyone assumes is somebody's.
+  Assigned to **67.3** (project owner): it guards nothing until A-02 exists, since the only admin
+  routes today are task 23's sign-in handshake, already behind a sealed cookie, an Origin proof and
+  mandatory TOTP. Building it now would be a guard with no unguarded route to protect.
+- **The entitlement axis stays out.** `@RequiresEntitlement` has no guard until task 54, and
+  requiring the annotation first would put 31 assertions on the surface that nothing can verify —
+  mostly exemptions — which decay before their reader arrives.
+
+### What the boundary rules caught
+
+The table was written under `src/app/testing/` first, and `cross-cutting-not-to-modules` rejected it:
+`app/` may not import `modules/**`, and a table describing every module's routes names every module
+by definition. It moved to `src/testing/`, for exactly the reason `app.module.ts` sits at `src/`
+rather than in `app/`. The rule working, on a placement that would otherwise have compiled fine.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0. The e2e suite is 290 → 451 tests; `route-permissions.spec.ts` runs in
+the hermetic job, so nine of the eleven gates still need no Docker.
