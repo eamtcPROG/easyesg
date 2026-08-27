@@ -577,6 +577,27 @@ authorization URL and needs no actor — and only the redemption is new and auth
 the current password on 27.5's key. **BR-ID-4 is `isLastCredential`**, one predicate over the
 password row *and* the provider identities, counted inside the same transaction as the delete.
 
+**Task 28.3 makes the user-facing-text rule a gate too, and the split between the two halves is
+the point.** `message-content.spec.ts` checks the **corpus** — every string in
+`packages/i18n/catalogues` that can become a `title` or a `detail`, in all three locales,
+hermetically. That is what establishes *every error body passes the rule*, because every body the
+filter can emit is one of those strings on one of its three paths. `test/problem-documents.e2e-spec.ts`
+checks the **envelope on the wire**, which no static check sees: the content type, the `type` URI,
+NFR-90's correlation id in the body agreeing with the `x-correlation-id` header, its derivation from
+an inbound W3C `traceparent`, and the negotiated `content-language`. Verified by planting
+`(FR-12; see identity.membership)` in a real message — the corpus gate failed and the e2e stayed
+green, because that string is a 403 and the e2e raises 401, 400 and 404. Neither is the other's
+substitute.
+
+**The detector is `findInternalIdentifiers` in `@easyesg/i18n`, and its shape is a lesson.** The
+first draft matched kebab-case as a proxy for a problem-type slug and flagged `sign-in`, `e-mail` and
+the Romanian clitics `s-a`, `v-o`, `acceptat-o` — nineteen hits in `ro.json`, none a defect. **Match
+the actual vocabulary where one exists and a shape only where none does**: slugs are handed in from
+`Object.values(ProblemType)`, and the surviving shapes (spec identifier, `SCREAMING_SNAKE`,
+`schema.table`, `snake_case`, stack frame) each scored zero false positives against all three
+catalogues. A term that is a single lowercase word is skipped — `ProblemType` contains `conflict` and
+`internal`, and matching those flagged the English `problem.conflict.title`, which reads "Conflict".
+
 **A message key without a catalogue entry is invisible, and `message-keys.spec.ts` is why that is
 now a gate.** `ProblemDetailsFilter` reads `detail` from `exception.messageKey` for a `DomainError`
 and from `problem.<slug>.detail` for a framework exception — so text authored under the slug is

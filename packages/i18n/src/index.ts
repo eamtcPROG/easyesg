@@ -29,3 +29,5 @@ export {
   expandString,
   expandCatalogue,
 } from './expansion-harness.js';
+export { findInternalIdentifiers } from './internal-identifiers.js';
+export type { IdentifierFinding } from './internal-identifiers.js';

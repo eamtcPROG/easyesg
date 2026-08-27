@@ -4288,3 +4288,70 @@ rather than in `app/`. The rule working, on a placement that would otherwise hav
 
 `pnpm gates:clean` — EXIT=0. The e2e suite is 290 → 451 tests; `route-permissions.spec.ts` runs in
 the hermetic job, so nine of the eleven gates still need no Docker.
+
+---
+
+## Task 28.3 — Error bodies conform · 2026-08-27
+
+Half of this row was already built. The correlation id has been derived from an inbound W3C
+`traceparent`, set on `x-correlation-id`, and included in every problem document since the
+observability middleware landed; `ProblemDetailsFilter` has resolved `title` and `detail` from the
+catalogue rather than the slug since OQ-43. What was missing is the thing the row actually asks for:
+*"Every error body passes the rule as a test, not as a review note."*
+
+### The corpus is the surface, so the corpus is what to check
+
+Every `title` and every `detail` the filter can emit is a catalogue string resolved by `translate`,
+on all three of its paths — a `DomainError`'s `messageKey`, a framework exception's
+`problem.<slug>.detail`, and the internal fallback. So checking
+`packages/i18n/catalogues/*.json` checks every error body **that can exist**, including the ones no
+test provokes. An HTTP-driven version checks the ones somebody remembered to reach.
+
+Two facts make that reasoning hold, and both are gated elsewhere rather than assumed:
+`message-keys.spec.ts` proves every declared key resolves, so a missing one omits `detail` instead of
+falling back to the slug; and the only `DomainError` carrying params passes two integers, so nothing
+dynamic reaches a rendered sentence.
+
+The division was verified rather than asserted. Planting `(FR-12; see identity.membership)` in a real
+message failed the corpus gate and left the e2e **green** — that string is a 403 and the e2e raises
+401, 400 and 404. So the e2e is not the proof of the content rule; it is the proof of the envelope,
+and the docstring now says so instead of implying otherwise.
+
+### The detector's shape is the interesting part
+
+`findInternalIdentifiers` lives in `@easyesg/i18n` because both front ends and the api already depend
+on it. Its first draft matched **kebab-case** as a proxy for a problem-type slug, and over the real
+corpus that flagged `sign-in`, `e-mail`, and the Romanian clitics `s-a`, `v-o`, `a-l` and
+`acceptat-o` — nineteen hits in `ro.json`, not one a defect. A detector with that signal-to-noise is
+one somebody switches off, which is worse than not having it.
+
+So the rule became: **match the actual vocabulary where one exists, and a shape only where none
+does.** Problem-type slugs are handed in from `Object.values(ProblemType)` and matched exactly. The
+surviving shapes — spec identifier, `SCREAMING_SNAKE`, `schema.table`, `snake_case`, stack frame —
+were each measured against all three catalogues and each scored zero false positives.
+
+Then the vocabulary bit back one level down. Matching the slug list exactly flagged
+`problem.conflict.title`, which in English reads "Conflict": `ProblemType` contains `conflict` and
+`internal`, and both are ordinary words. A term that is a single lowercase word is now skipped, on
+the principle that **an internal identifier is recognisable by being un-word-like** — hyphenated,
+snake_cased or mixed-case. `EnergyConsumptionFromRenewableSources` is still caught. The cost is
+stated in the code rather than hidden: a message saying only "conflict" would pass, and it would fail
+NFR-79's three-part shape long before this rule.
+
+Both false-positive classes are kept as tests, because the pressure to "just match kebab-case" will
+recur.
+
+### A stated step past the row
+
+`apps/web` now gates its own catalogue with the same detector. The row is api-scoped and screen
+strings are not error bodies, so this is a widening — taken because `CLAUDE.md` binds *"every surface
+a person sees"* and names seven, the api's problem documents being the smallest of them. Gating the
+smallest while the largest went unchecked, with the detector already shared, would have been the
+wrong way round. The corpus was clean, so it cost one file and found nothing; the remaining five
+surfaces do not exist yet and should each pick it up as they land.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0. Both content gates proven to bite on a planted identifier; the detector
+carries its own positive and negative cases, since a content rule over a clean corpus is otherwise
+indistinguishable from a broken regex.
