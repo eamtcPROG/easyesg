@@ -92,3 +92,47 @@ export class AmbiguousBoundOrganizationError extends DomainError {
     );
   }
 }
+
+/**
+ * FR-16's identifier refusals. **Two problem types across three errors**, because a front end
+ * branches on the *resolution* and there are two of those — retype a malformed value, or go back
+ * to the source for one whose check digits disagree. Which identifier failed is carried by the
+ * message, since S-15 knows which fields it submitted and the reader needs the sentence, not a slug.
+ */
+
+/** The IDNO is not thirteen digits (Government Decision 272/2002, point 5). */
+export class IdnoMalformedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierMalformed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.organization.idno_malformed');
+  }
+}
+
+/** The LEI is not twenty characters of the classes ISO 17442 permits. */
+export class LeiMalformedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierMalformed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.organization.lei_malformed');
+  }
+}
+
+/**
+ * The LEI is well-formed and its ISO 7064 MOD 97-10 check digits do not agree with it.
+ *
+ * **This is the failure the checksum exists to catch and a shape check cannot**: a transposition of
+ * two adjacent characters, or a single altered one, leaves the value looking perfectly valid. There
+ * is no IDNO counterpart yet — its algorithm is unknown (§7.2), and a guessed one would refuse real
+ * registrations rather than catch mistyped ones.
+ */
+export class LeiCheckDigitsError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierCheckDigits;
+  readonly status = 400;
+
+  constructor() {
+    super('core.organization.lei_check_digits');
+  }
+}

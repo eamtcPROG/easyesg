@@ -1,10 +1,14 @@
+import { validateIdno, validateLei } from '@easyesg/validation';
 import type { Clock } from '@api/contracts/clock.port';
 import type { Organization, OrganizationProfilePatch } from '../models/organization.model';
 import type { OrganizationStore } from '../interfaces/organization-store.interface';
 import type { OrganizationVocabulary } from '../interfaces/organization-vocabulary.interface';
 import {
   CountryNotSupportedError,
+  IdnoMalformedError,
   LegalFormUnknownError,
+  LeiCheckDigitsError,
+  LeiMalformedError,
   OrganizationNotFoundError,
 } from '../errors/organization.errors';
 
@@ -51,6 +55,26 @@ export class UpdateOrganizationProfile {
       command.patch.legalForm !== undefined ? command.patch.legalForm : current.legalForm;
     if (legalForm !== null && !registeredForms.includes(legalForm)) {
       throw new LegalFormUnknownError();
+    }
+
+    // ── FR-16's identifiers ────────────────────────────────────────────────────────────────
+    //
+    // **Validated here rather than by a `@Matches` on the DTO**, so the shared rule in
+    // `packages/validation` is the only implementation: S-15 shows the same verdict inline as the
+    // Administrator types (§9.8), and a second copy in a decorator would be the drift that package
+    // exists to prevent. It also lets the refusal distinguish a malformed value from one whose
+    // check digits disagree, which a single `@Matches` cannot — and NFR-79 needs those apart,
+    // because one says retype it and the other says go back to the register.
+    //
+    // `null` clears an identifier and is always permitted; `undefined` leaves it alone.
+    if (command.patch.idno !== undefined && command.patch.idno !== null) {
+      if (!validateIdno(command.patch.idno).shape) throw new IdnoMalformedError();
+    }
+    if (command.patch.lei !== undefined && command.patch.lei !== null) {
+      const verdict = validateLei(command.patch.lei);
+      if (!verdict.shape) throw new LeiMalformedError();
+      // `checkDigits` is `false` only when the shape passed, so the two refusals cannot overlap.
+      if (verdict.checkDigits === false) throw new LeiCheckDigitsError();
     }
 
     // The normalised country goes back into the patch, so the stored value is what was validated

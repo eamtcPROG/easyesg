@@ -13,6 +13,8 @@ interface OrganizationRow {
   name: string;
   country_code: string;
   legal_form: string | null;
+  idno: string | null;
+  lei: string | null;
   registered_address_line1: string | null;
   registered_address_line2: string | null;
   registered_locality: string | null;
@@ -28,6 +30,8 @@ const PATCHABLE = {
   name: 'name',
   countryCode: 'country_code',
   legalForm: 'legal_form',
+  idno: 'idno',
+  lei: 'lei',
   registeredAddressLine1: 'registered_address_line1',
   registeredAddressLine2: 'registered_address_line2',
   registeredLocality: 'registered_locality',
@@ -36,7 +40,7 @@ const PATCHABLE = {
   contactPhone: 'contact_phone',
 } as const satisfies Record<keyof OrganizationProfilePatch, string>;
 
-const SELECTED_COLUMNS = `id, name, country_code, legal_form,
+const SELECTED_COLUMNS = `id, name, country_code, legal_form, idno, lei,
         registered_address_line1, registered_address_line2, registered_locality,
         registered_postal_code, contact_email, contact_phone, created_at, updated_at`;
 
@@ -45,6 +49,8 @@ const toOrganization = (row: OrganizationRow): Organization => ({
   name: row.name,
   countryCode: row.country_code,
   legalForm: row.legal_form,
+  idno: row.idno,
+  lei: row.lei,
   registeredAddressLine1: row.registered_address_line1,
   registeredAddressLine2: row.registered_address_line2,
   registeredLocality: row.registered_locality,

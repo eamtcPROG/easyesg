@@ -28,3 +28,16 @@ export {
   type PasswordPolicyVerdict,
 } from './password-policy.js';
 
+/**
+ * And FR-16's entity identifiers (task 29.2) — for the same reason again: S-15 validates inline as
+ * the Administrator types, the API re-validates in the request that persists, and FR-107's billing
+ * fiscal code will be a third caller in a context that shares no code with `core`.
+ */
+export {
+  validateIdno,
+  validateLei,
+  idnoIsValid,
+  leiIsValid,
+  type IdentifierVerdict,
+} from './entity-identifier.js';
+

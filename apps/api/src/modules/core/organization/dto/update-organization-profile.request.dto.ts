@@ -49,6 +49,38 @@ export class UpdateOrganizationProfileRequestDto {
   @Length(1, 40)
   legalForm?: string | null;
 
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '1003600158022',
+    description:
+      'FR-16’s primary identifier — Moldova’s thirteen-digit state identification number. Its ' +
+      'shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not ' +
+      'published in the defining instrument, so it is not yet verified. Null clears it.',
+  })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 13)
+  idno?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '7LTWFZYICNSX8D621K86',
+    description:
+      'FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper ' +
+      'case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two ' +
+      'refuse with different problem types because they have different resolutions. Null clears it.',
+  })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 20)
+  lei?: string | null;
+
   @ApiPropertyOptional({ type: String, nullable: true, maxLength: 200 })
   @Trim()
   @IsOptional()

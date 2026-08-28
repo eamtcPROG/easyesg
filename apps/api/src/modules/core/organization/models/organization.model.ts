@@ -51,6 +51,18 @@ export interface Organization {
   readonly countryCode: string;
   /** A configuration key, admitted against the vocabulary registered for `countryCode`. */
   readonly legalForm: string | null;
+  /**
+   * FR-16's **primary** entity identifier (OQ-18) — Moldova's thirteen-digit state identification
+   * number. Null until S-15 records it: S-04 collects no identifiers, and what makes it required is
+   * that B1 cannot be filed without it (task 40), not a constraint on this record.
+   */
+  readonly idno: string | null;
+  /**
+   * FR-16's optional additional identifier — the Legal Entity Identifier (ISO 17442), kept so B1
+   * stays conformant for the banks and EU buyers who require one. Held by very few Moldovan SMEs,
+   * which is precisely why OQ-18 declined to make it primary.
+   */
+  readonly lei: string | null;
   readonly registeredAddressLine1: string | null;
   readonly registeredAddressLine2: string | null;
   readonly registeredLocality: string | null;
@@ -82,6 +94,8 @@ export type OrganizationProfilePatch = Partial<{
   readonly name: string;
   readonly countryCode: string;
   readonly legalForm: string | null;
+  readonly idno: string | null;
+  readonly lei: string | null;
   readonly registeredAddressLine1: string | null;
   readonly registeredAddressLine2: string | null;
   readonly registeredLocality: string | null;

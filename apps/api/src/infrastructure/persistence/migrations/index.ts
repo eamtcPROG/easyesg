@@ -20,6 +20,7 @@ import { PasswordChangedRevocation1788307200000 } from './1788307200000-password
 import { AuditSubject1788480000000 } from './1788480000000-audit-subject';
 import { OrganizationProfile1788566400000 } from './1788566400000-organization-profile';
 import { OrgRelationshipIndex1788652800000 } from './1788652800000-org-relationship-index';
+import { EntityIdentifiers1788739200000 } from './1788739200000-entity-identifiers';
 import { ProviderIdentityUnlink1788393600000 } from './1788393600000-provider-identity-unlink';
 
 /**
@@ -60,4 +61,5 @@ export const migrations = [
   AuditSubject1788480000000,
   OrganizationProfile1788566400000,
   OrgRelationshipIndex1788652800000,
+  EntityIdentifiers1788739200000,
 ];

@@ -1134,6 +1134,16 @@ export interface components {
             countryCode: string;
             /** @description A key from the vocabulary registered for countryCode, or null where none is recorded yet — S-04 does not collect it. Resolve it to a label through the message catalogue; it is never a sentence. */
             legalForm: string | null;
+            /**
+             * @description FR-16’s primary identifier, or null until S-15 records it — S-04 collects none.
+             * @example 1003600158022
+             */
+            idno: string | null;
+            /**
+             * @description The Legal Entity Identifier, or null. Optional by OQ-18: few Moldovan SMEs hold one, and it is kept so B1 stays conformant for the readers who require it.
+             * @example 7LTWFZYICNSX8D621K86
+             */
+            lei: string | null;
             registeredAddressLine1: string | null;
             registeredAddressLine2: string | null;
             registeredLocality: string | null;
@@ -1181,6 +1191,16 @@ export interface components {
             countryCode?: string;
             /** @description A key from the vocabulary registered for the organization’s country — see GET /organizations/legal-forms. Null clears it, which is always permitted: an organization that has not decided is a state S-15 must be able to return to. */
             legalForm?: string | null;
+            /**
+             * @description FR-16’s primary identifier — Moldova’s thirteen-digit state identification number. Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it.
+             * @example 1003600158022
+             */
+            idno?: string | null;
+            /**
+             * @description FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it.
+             * @example 7LTWFZYICNSX8D621K86
+             */
+            lei?: string | null;
             registeredAddressLine1?: string | null;
             registeredAddressLine2?: string | null;
             /** @description City, town or village. */

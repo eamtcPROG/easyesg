@@ -86,6 +86,12 @@
     },
     "legal-form-unknown": {
       "title": "Formă juridică nerecunoscută"
+    },
+    "identifier-malformed": {
+      "title": "Identificator incorect"
+    },
+    "identifier-check-digits": {
+      "title": "Identificator neconfirmat"
     }
   },
   "validation": {},
@@ -155,7 +161,10 @@
     "organization": {
       "country_not_supported": "Platforma nu funcționează încă în țara pe care ați ales-o, așa că organizația nu a fost creată. Alegeți una dintre țările propuse în listă sau scrieți-ne dacă aveți nevoie de alta.",
       "legal_form_unknown": "Forma juridică indicată nu figurează printre cele înregistrate pentru țara organizației, așa că modificarea nu a fost salvată. Alegeți una dintre formele propuse în listă.",
-      "not_found": "Organizația activă nu a putut fi găsită, așa că datele ei nu au fost afișate. Reîmprospătați pagina, iar dacă situația se repetă alegeți altă organizație din comutator."
+      "not_found": "Organizația activă nu a putut fi găsită, așa că datele ei nu au fost afișate. Reîmprospătați pagina, iar dacă situația se repetă alegeți altă organizație din comutator.",
+      "idno_malformed": "IDNO-ul trebuie să conțină exact treisprezece cifre, iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Verificați numărul pe certificatul de înregistrare și introduceți-l din nou.",
+      "lei_malformed": "Codul LEI se compune din douăzeci de caractere — litere mari și cifre — iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Copiați-l din registrul global și încercați din nou.",
+      "lei_check_digits": "Codul LEI are forma potrivită, însă cifrele sale de verificare nu corespund restului valorii, ceea ce înseamnă de obicei o cifră schimbată sau două inversate. Modificarea nu a fost salvată. Comparați codul cu sursa din care l-ați preluat."
     }
   },
   "notification": {

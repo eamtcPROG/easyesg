@@ -2780,6 +2780,18 @@
             "nullable": true,
             "description": "A key from the vocabulary registered for countryCode, or null where none is recorded yet — S-04 does not collect it. Resolve it to a label through the message catalogue; it is never a sentence."
           },
+          "idno": {
+            "type": "string",
+            "nullable": true,
+            "example": "1003600158022",
+            "description": "FR-16’s primary identifier, or null until S-15 records it — S-04 collects none."
+          },
+          "lei": {
+            "type": "string",
+            "nullable": true,
+            "example": "7LTWFZYICNSX8D621K86",
+            "description": "The Legal Entity Identifier, or null. Optional by OQ-18: few Moldovan SMEs hold one, and it is kept so B1 stays conformant for the readers who require it."
+          },
           "registeredAddressLine1": {
             "type": "string",
             "nullable": true
@@ -2819,6 +2831,8 @@
           "name",
           "countryCode",
           "legalForm",
+          "idno",
+          "lei",
           "registeredAddressLine1",
           "registeredAddressLine2",
           "registeredLocality",
@@ -2897,6 +2911,18 @@
             "type": "string",
             "nullable": true,
             "description": "A key from the vocabulary registered for the organization’s country — see GET /organizations/legal-forms. Null clears it, which is always permitted: an organization that has not decided is a state S-15 must be able to return to."
+          },
+          "idno": {
+            "type": "string",
+            "nullable": true,
+            "example": "1003600158022",
+            "description": "FR-16’s primary identifier — Moldova’s thirteen-digit state identification number. Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it."
+          },
+          "lei": {
+            "type": "string",
+            "nullable": true,
+            "example": "7LTWFZYICNSX8D621K86",
+            "description": "FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it."
           },
           "registeredAddressLine1": {
             "type": "string",

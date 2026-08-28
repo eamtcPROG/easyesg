@@ -36,6 +36,24 @@ export class OrganizationResponseDto {
   })
   legalForm: string | null;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '1003600158022',
+    description: 'FR-16’s primary identifier, or null until S-15 records it — S-04 collects none.',
+  })
+  idno: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '7LTWFZYICNSX8D621K86',
+    description:
+      'The Legal Entity Identifier, or null. Optional by OQ-18: few Moldovan SMEs hold one, and ' +
+      'it is kept so B1 stays conformant for the readers who require it.',
+  })
+  lei: string | null;
+
   @ApiProperty({ type: String, nullable: true })
   registeredAddressLine1: string | null;
 
@@ -65,6 +83,8 @@ export class OrganizationResponseDto {
     this.name = organization.name;
     this.countryCode = organization.countryCode;
     this.legalForm = organization.legalForm;
+    this.idno = organization.idno;
+    this.lei = organization.lei;
     this.registeredAddressLine1 = organization.registeredAddressLine1;
     this.registeredAddressLine2 = organization.registeredAddressLine2;
     this.registeredLocality = organization.registeredLocality;

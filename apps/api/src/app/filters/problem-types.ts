@@ -82,6 +82,14 @@ export const ProblemType = {
    *  Distinct from the above for `last-administrator`'s reason — S-15 has to name the specific way
    *  out, which here is choosing from the list the vocabulary endpoint returns. */
   LegalFormUnknown: 'legal-form-unknown',
+  /** FR-16: an entity identifier whose *shape* is wrong — wrong length, wrong character classes.
+   *  Separate from the slug below because the resolutions differ: this one is "retype it", and a
+   *  check-digit failure is "verify you copied the right one from the source" (task 29.2). */
+  IdentifierMalformed: 'identifier-malformed',
+  /** FR-16: the shape is right and the check digits disagree with the rest of the value — so the
+   *  value was mistyped or transposed somewhere, and re-entering it from the register is the way
+   *  out. Reachable for the LEI today; the IDNO's algorithm is an open question (§7.2). */
+  IdentifierCheckDigits: 'identifier-check-digits',
   EntitlementDenied: 'entitlement-denied',
   EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
   TenantContextMissing: 'tenant-context-missing',

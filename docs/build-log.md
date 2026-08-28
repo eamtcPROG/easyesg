@@ -4707,3 +4707,75 @@ counts, and it is recorded here rather than paid for with churn.
 ### Verified
 
 `pnpm gates:clean` — EXIT=0.
+
+---
+
+## Task 29.2 — Entity identifiers · 2026-08-28
+
+FR-16's IDNO and optional LEI on the tenant root, validated on entry (UC-51). The task row called
+the check digits "the work", and they were — one of the two is finished and the other is a recorded
+open question with a proof attached.
+
+### LEI is complete, and the fixtures are why it is right
+
+ISO 17442's shape plus ISO 7064 MOD 97-10, in `packages/validation` so the API, S-15 and FR-107's
+billing fiscal code share one implementation (§9.8).
+
+**The corpus is published register values — Deutsche Bank, Barclays, JPMorgan, BNP Paribas — and
+that choice caught a defect on the first run.** The initial draft required characters 5–6 to be
+`00`, from a half-remembered reading of the issuance scheme, and **rejected all four**. Invented
+fixtures would have agreed with the invented rule and shipped a validator that refuses every real
+LEI. The checksum itself was verified independently before being written into the code: all four
+give `mod 97 == 1`, a transposition gives 50, a single altered character 2. A test now pins that the
+reserved-positions constraint cannot come back.
+
+### The IDNO check digit: refuted, not deferred
+
+Government Decision 272/2002 point 5 fixes the structure — thirteen digits as index · year · office
+· sequence · check digit — and the project owner supplied **two consolidated versions** of it.
+Neither carries the algorithm; *algoritm* does not occur in either, and every *calcul* in the longer
+one is `reţele de calcul`. So the widely repeated claim that Annex 2 defines it is wrong, which is
+worth recording precisely so nobody checks there again.
+
+A candidate algorithm was then supplied — weights `1,2,…,10,1,2` mod 11 with a shifted second pass —
+and tested against **twelve real IDNOs**, ten from the project owner and two from a public register.
+It reproduced **2 of 12**, which is chance for a one-in-eleven guess.
+
+**The refutation generalises, and that is the durable part.** Treating the check digit as any
+weighted sum modulo 11 over the first twelve digits gives twelve linear equations over GF(11), and
+**that system is inconsistent** with or without a constant term — so no weight vector satisfies it
+and the entire family is excluded, not one member of it. Luhn scored 2–4, Verhoeff and Damm 1,
+ISO 7064 MOD 11-10 zero.
+
+**More IDNOs of the same kind would not help, and the sample says why.** Four positions never vary
+across all twelve — `d1` always `1`, `d2` always `0`, `d5`/`d6` always `6`/`0` — so their weights are
+unidentifiable by construction, and the digit matrix has rank 9 of the 12 needed. What a further
+sample must carry is variety in the **year** and the **registering office**. Failing that, the
+algorithm is a technical norm of the registering authority and reading it beats inferring it.
+
+So `validateIdno` reports `checkDigits: null` — *not evaluated*, which a caller must be able to tell
+from *failed*. A guessed modulus would **reject real IDNOs**, turning a validator meant to catch a
+filing-time error into one that stops correct registrations at signup. A unit test asserts that a
+structurally valid IDNO with an almost-certainly-wrong thirteenth digit is **accepted**, which is
+what makes this a decision on record rather than an omission — and the one test to change when the
+norm is found.
+
+### Smaller decisions
+
+**Two problem types across three errors**, keyed on the *resolution* rather than on the identifier:
+`identifier-malformed` means retype it, `identifier-check-digits` means go back to the register.
+S-15 knows which fields it submitted; what it cannot derive is which of those two sentences to show.
+
+**Validation lives in the use case, not in a `@Matches` on the DTO.** A decorator would be a second
+copy of a rule `packages/validation` exists to keep single, and it could not distinguish the two
+failures — a regex either matches or does not.
+
+**No unique index on `idno`** (§7.2): a platform-wide constraint would be an existence oracle over
+the Moldovan company register crossed with our customer list, and would need a cross-tenant read no
+policy grants. **Nullable**, because S-04 collects no identifiers and what makes the IDNO required is
+that B1 cannot be filed without it — task 40's validation rule, where every other B1 field's
+enforcement lives.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0.

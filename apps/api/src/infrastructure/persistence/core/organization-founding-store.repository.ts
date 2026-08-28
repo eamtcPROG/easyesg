@@ -14,6 +14,8 @@ interface OrganizationRow {
   name: string;
   country_code: string;
   legal_form: string | null;
+  idno: string | null;
+  lei: string | null;
   registered_address_line1: string | null;
   registered_address_line2: string | null;
   registered_locality: string | null;
@@ -24,7 +26,7 @@ interface OrganizationRow {
   updated_at: Date;
 }
 
-const RETURNED_COLUMNS = `id, name, country_code, legal_form,
+const RETURNED_COLUMNS = `id, name, country_code, legal_form, idno, lei,
         registered_address_line1, registered_address_line2, registered_locality,
         registered_postal_code, contact_email, contact_phone, created_at, updated_at`;
 
@@ -141,6 +143,8 @@ export class OrganizationFoundingStoreRepository implements OrganizationFounding
         name: row.name,
         countryCode: row.country_code,
         legalForm: row.legal_form,
+        idno: row.idno,
+        lei: row.lei,
         registeredAddressLine1: row.registered_address_line1,
         registeredAddressLine2: row.registered_address_line2,
         registeredLocality: row.registered_locality,

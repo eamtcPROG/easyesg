@@ -105,19 +105,26 @@ describe('per-field audit capture (FR-54, FR-55, P-11)', () => {
         // would double the volume of the highest-volume table in the system to say nothing.
         //
         // **Everything else is here, including the columns that are NULL** — this test's name is
-        // the rule, and task 29.1 widened the table rather than changing it. A created row's
-        // complete initial state is what an INSERT records, so an organization founded through
-        // S-04 writes eleven rows, eight of them saying a field was left empty. That is the
-        // decision task 14 took; the place it will be worth revisiting is task 34, where
-        // `core.report_disclosure_value` carries four mutually exclusive value columns and would
-        // record three empty fields for every disclosure written.
+        // the rule. A created row's complete initial state is what an INSERT records, which is task
+        // 14's decision and not something a later task should reverse in passing.
+        //
+        // **This list has now grown twice in two tasks**, and the growth is the point worth noting
+        // rather than the list. Task 29.1 took it from three entries to eleven, 29.2 to thirteen —
+        // and an organization founded through S-04 supplies four of them, so ten of the thirteen
+        // rows record that a field was left empty. The cost is one audit row per column per insert,
+        // paid by every future column on every audited table. Task 34 is where it stops being
+        // academic: `core.report_disclosure_value` carries four mutually exclusive value columns,
+        // so every disclosure written would record three empty fields on the highest-volume table
+        // in the system. That task should weigh it with the volumes in hand.
         expect(rows.map((r) => r.field_name)).toEqual([
           'contact_email',
           'contact_phone',
           'country_code',
           'created_at',
           'id',
+          'idno',
           'legal_form',
+          'lei',
           'name',
           'registered_address_line1',
           'registered_address_line2',
