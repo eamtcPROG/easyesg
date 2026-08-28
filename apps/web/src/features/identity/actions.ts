@@ -242,11 +242,11 @@ export async function resetPasswordAction(input: ResetPasswordRequest): Promise<
 export async function previewInvitationAction(
   input: InvitationTokenRequest,
 ): Promise<InvitationPreviewResult> {
-  const outcome = await api.post<InvitationTokenRequest, InvitationPreview>(
-    '/invitations/preview',
-    input,
-  );
-  return mapOutcome(outcome, (preview) => preview);
+  // Returned as it arrives: `InvitationPreviewResult` IS `ApiOutcome<InvitationPreview>`, so
+  // there is nothing to project. This read `mapOutcome(outcome, (preview) => preview)`, which is
+  // the identity function wearing the projection helper's clothes — it reads as though a mapping
+  // happens and costs a reader the moment it takes to confirm none does.
+  return api.post<InvitationTokenRequest, InvitationPreview>('/invitations/preview', input);
 }
 
 /**

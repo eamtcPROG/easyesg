@@ -5442,3 +5442,43 @@ the second. `summaryTitle` was deliberately left duplicated an hour earlier and 
 out — a candidate for `forms` on the same argument, and cheap to move. `unreachable` is a different
 question with a different answer already written down: the workspace layout says its honest home is
 `chrome`, not `forms`, because it is not a form string.
+
+## The identity function in the projection helper's clothes, and the sweep's ledger · 2026-08-28
+
+`previewInvitationAction` ended `return mapOutcome(outcome, (preview) => preview)`. The helper
+projects a successful outcome's value and passes failures through untouched — and this projection
+was the identity function, so the whole call did nothing that returning the outcome does not.
+`InvitationPreviewResult` **is** `ApiOutcome<InvitationPreview>`; there was never anything to map.
+
+It costs a reader the moment it takes to confirm that. `mapOutcome(outcome, () => null)` five lines
+above it is doing real work — discarding a body the screen must not read — so the eye does not skip
+`mapOutcome` in this file, it stops and checks. The two credentials actions with the same shape went
+in the S-28 refactor; this was the last one, and a repository-wide search for the pattern now
+returns nothing.
+
+### What the sweep found, in full
+
+The seventh and last mechanical item. The whole sweep, for the next person deciding whether one is
+worth running:
+
+| | Outcome |
+| --- | --- |
+| A third copy of the outcome-to-notice rule | Fixed — it was inside a bespoke union, invisible to a side-by-side read of the two known copies |
+| The invite panel's notice, outside the reducer that clears it | Fixed — the defect was described verbatim in a comment on the branch that prevents it |
+| 39 bare vocabulary literals in JSX | Fixed, and a fourth `no-restricted-syntax` selector now holds the line |
+| 9 inline RFC 9457 fallbacks | **Declined**, with the reason: six of them pass a navigating node, which `Notice.action: string \| null` deliberately cannot hold |
+| An error summary titled with the name of its form | Fixed in three forms |
+| `show`/`hide` duplicated across two screen namespaces | Fixed by the `forms` namespace, which also deleted two misnamed aliases and a layout's hand-assembled fragment |
+| One identity projection | Fixed — this entry |
+
+Two findings were raised and left for the project owner: `register-form.tsx` renders two
+identically-named links to the same destination when its conflict callout shows, and
+`factor-section.tsx` uses `t('heading')` three times including as a `Callout` title where "what
+happened" belongs. Both are design calls rather than defects.
+
+**What the sweep is actually worth, stated honestly.** Two of the seven were real user-visible
+defects and neither was reachable by any gate. Four were conventions the repository had already
+closed and applied incompletely — every one of them stopping at the boundary of whatever file,
+feature or app the original review happened to be reading. One was not a finding at all. That ratio
+is the argument for asking "are there others" as a separate question from "is this one right":
+the second question was answered correctly six times, and it never once implied the first.
