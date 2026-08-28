@@ -5196,3 +5196,52 @@ disagree and §5 governs, so this is not a defect to fix in passing. What is gen
 *last changed* attribution, which no API read returns, and the artboard's closing callout, which
 tells a reader why the last credential cannot be removed **before** they try rather than as a refusal
 afterwards.
+
+## The notice that was fixed everywhere except where its example came from · 2026-08-28
+
+The second finding from the sweep, and the more interesting one, because the defect is described
+verbatim in the codebase — in a comment explaining the branch that prevents it.
+
+`access-state.ts`'s `ACTION_STARTED` reads:
+
+> a stale *"the invitation has been sent"* sitting above an unlink that is still running reads as
+> though the two are the same event
+
+That sentence is `InviteMember`'s success callout. And `InviteMember` was the one surface the
+reducer did not own: it held its outcome in a `useState` of its own, set only by its own submit and
+cleared by nothing else, because `AccessProvider` was rendered *inside* `AccessBoard` and the invite
+panel is `AccessBoard`'s sibling. So the fix reached the list's notice and stopped one component
+short of the case its own comment cites.
+
+Two symptoms, one cause. A settled invite notice survived a row action starting — the documented
+case. And **two settled outcomes could be on screen at once**, from two different actions, because
+neither surface cleared the other. `users-access.spec.ts` had been living with the second for as
+long as it existed, as `getByRole('alert').first()`.
+
+### Why not one notice at the top of the screen
+
+The obvious fix — fold the panel into `AccessNotice` and report everything at the list's head — is
+wrong, and the catalogue says so. `organization.access.invite.failedAction` is *"Găsiți persoana în
+lista de mai sus și alegeți ce faceți mai departe"* — **find the person in the list above**. That
+sentence is only true rendered below the list. Moving the invite panel's outcome to the top of the
+screen would have made a piece of shipped copy factually wrong, and nothing in the type system or
+the gates would have said so.
+
+So the region is not interchangeable, and the state had to carry it: `NOTICE_REGION`, and a
+`PlacedNotice` that is a `Notice` plus where it renders. **One value, so two settled outcomes are
+unrepresentable**, and `ACTION_STARTED` clears whichever is showing regardless of which region
+started the next action. Each region renders the notice only when it is its own.
+
+`AccessProvider` moved up to the page, wrapping both regions, which is where it should have been:
+a provider that wraps one region of a screen is an invitation for the other region to keep state of
+its own. `AccessBoard` lost its props and its provider and is now the list half, nothing more.
+
+### What proves it
+
+Two reducer transitions, both directions, neither reachable from a browser journey without
+contriving the timing — a row action clearing an invite notice, and an invite submission clearing
+the list's. And the browser suite's locator was **tightened rather than left alone**: `.first()` is
+gone, so a second simultaneous alert now fails the journey. That is the same lesson the duplicate
+password field taught six hours earlier, applied deliberately this time — a test that accommodates a
+defect stops being able to report it, and the accommodation is usually the only written record that
+the defect exists.

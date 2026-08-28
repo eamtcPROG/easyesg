@@ -15,6 +15,7 @@ import {
 } from '../access';
 import { resendInvitationAction } from '../actions';
 import { AccessBoard } from './access-board';
+import { AccessProvider } from './access-context';
 
 /**
  * S-16's board, against stubbed actions.
@@ -106,12 +107,14 @@ const board = (given: readonly AccessRow[] = rows()) => (
     timeZone={TIME_ZONE}
     messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
   >
-    <AccessBoard
+    <AccessProvider
       page={applyAccessView({ rows: given, view: DEFAULT_ACCESS_VIEW, now: NOW })}
       view={DEFAULT_ACCESS_VIEW}
       now={NOW}
       inviteAnchorId="invite"
-    />
+    >
+      <AccessBoard />
+    </AccessProvider>
   </NextIntlClientProvider>
 );
 
@@ -226,7 +229,7 @@ describe('AccessBoard · the two empty states', () => {
         timeZone={TIME_ZONE}
         messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
       >
-        <AccessBoard
+        <AccessProvider
           page={{
             rows: [],
             matched: 0,
@@ -238,7 +241,9 @@ describe('AccessBoard · the two empty states', () => {
           view={DEFAULT_ACCESS_VIEW}
           now={NOW}
           inviteAnchorId="invite"
-        />
+        >
+          <AccessBoard />
+        </AccessProvider>
       </NextIntlClientProvider>,
     );
 

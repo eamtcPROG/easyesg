@@ -135,7 +135,13 @@ test('a second invitation to the same address is refused, in words the reader ca
   await invite();
 
   // The API's own sentence, rendered as received — the screen keeps no second copy of it.
-  await expect(page.getByRole('alert').first()).toBeVisible();
+  //
+  // **Unscoped, and `.first()` is gone** (28 Aug 2026). The screen holds one notice, so a second
+  // alert means two settled outcomes are on screen at once — which is what this locator had been
+  // tolerating while the invite panel kept an outcome outside the reducer. `FormSummary` is the
+  // only other `role="alert"` here and renders only on a validation error, of which this journey
+  // has none.
+  await expect(page.getByRole('alert')).toBeVisible();
   await expect(personCell(page, invited)).toHaveCount(1);
 });
 

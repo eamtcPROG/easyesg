@@ -57,9 +57,36 @@ export interface Confirmation {
  */
 export type { Notice };
 
+/**
+ * Which region of S-16 shows the notice (28 Aug 2026).
+ *
+ * **The screen has two places an outcome can be reported, and only ever one outcome.** The list
+ * reports row actions at its head; the invite panel reports its own submission beside the form,
+ * and it must — `invite.failedAction` reads *"find the person in the list above"*, a sentence that
+ * is only true rendered below the list. So the position is not interchangeable and one shared
+ * surface at the top of the screen would make that copy wrong.
+ *
+ * Holding the region **in the notice** is what lets both be true at once: one value, so two
+ * settled outcomes can never be on screen together, and `ACTION_STARTED` clears whichever is
+ * showing no matter which region started the new action.
+ */
+export const NOTICE_REGION = {
+  /** The members and invitations list, at its head. */
+  LIST: 'list',
+  /** The invite panel, beside the form that was submitted. */
+  INVITE: 'invite',
+} as const;
+
+export type NoticeRegion = (typeof NOTICE_REGION)[keyof typeof NOTICE_REGION];
+
+/** A notice and the region that renders it. */
+export interface PlacedNotice extends Notice {
+  readonly region: NoticeRegion;
+}
+
 export interface AccessState {
   /** What the last completed action said, or nothing since the last thing the reader started. */
-  readonly notice: Notice | null;
+  readonly notice: PlacedNotice | null;
   /** The decision currently being asked for, or nothing. */
   readonly confirming: Confirmation | null;
   /**
@@ -87,7 +114,7 @@ export const ACCESS_EVENT = {
   CONFIRMATION_REQUESTED: 'confirmation_requested',
   /** The reader backed out of it. */
   CONFIRMATION_DISMISSED: 'confirmation_dismissed',
-  /** A row's action left for the server. */
+  /** An action left for the server — a row's, or the invite panel's. */
   ACTION_STARTED: 'action_started',
   /** It came back — with what it said, whether that is a success or a refusal. */
   ACTION_SETTLED: 'action_settled',
@@ -98,8 +125,9 @@ export type AccessEventType = (typeof ACCESS_EVENT)[keyof typeof ACCESS_EVENT];
 export type AccessEvent =
   | { readonly type: typeof ACCESS_EVENT.CONFIRMATION_REQUESTED; readonly confirmation: Confirmation }
   | { readonly type: typeof ACCESS_EVENT.CONFIRMATION_DISMISSED }
-  | { readonly type: typeof ACCESS_EVENT.ACTION_STARTED; readonly rowKey: string }
-  | { readonly type: typeof ACCESS_EVENT.ACTION_SETTLED; readonly notice: Notice };
+  /** `rowKey` is null for an action no row owns — the invite form's submission. */
+  | { readonly type: typeof ACCESS_EVENT.ACTION_STARTED; readonly rowKey: string | null }
+  | { readonly type: typeof ACCESS_EVENT.ACTION_SETTLED; readonly notice: PlacedNotice };
 
 export function accessReducer(state: AccessState, event: AccessEvent): AccessState {
   switch (event.type) {
@@ -113,7 +141,10 @@ export function accessReducer(state: AccessState, event: AccessEvent): AccessSta
 
     case ACCESS_EVENT.ACTION_STARTED:
       // Same reason, and the more visible one: the previous action's outcome must not sit above a
-      // row that is currently changing.
+      // row that is currently changing. **Regardless of which region either belongs to** — the
+      // invite panel's "the invitation has been sent" surviving a removal in flight is the exact
+      // defect this branch was written for, and it survived until 28 Aug 2026 only because that
+      // panel held its outcome in a `useState` of its own, outside this reducer's reach.
       return { ...state, pendingRowKey: event.rowKey, notice: null };
 
     default:

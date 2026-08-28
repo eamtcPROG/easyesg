@@ -23,9 +23,11 @@ import {
 import {
   ACCESS_EVENT,
   INITIAL_ACCESS_STATE,
+  NOTICE_REGION,
   accessReducer,
   type AccessState,
   type Confirmation,
+  type PlacedNotice,
 } from '../access-state';
 import type { AccessActionResult } from '../types/action-results';
 
@@ -85,6 +87,16 @@ interface AccessContextValue extends AccessState {
   }) => void;
   readonly ask: (confirmation: Confirmation) => void;
   readonly dismiss: () => void;
+  /**
+   * An action left for the server from a region that owns no row — the invite form.
+   *
+   * Separate from `perform` because that panel runs its own transition and owns its own copy;
+   * what it needs from here is only that the screen holds **one** notice, so its submission
+   * clears whatever the list was showing and vice versa.
+   */
+  readonly starting: () => void;
+  /** Report a settled outcome, in the region that ran it. */
+  readonly report: (notice: PlacedNotice) => void;
 }
 
 const AccessContext = createContext<AccessContextValue | null>(null);
@@ -149,13 +161,19 @@ export function AccessProvider({
           // screen can decide: the copy, and whether a refusal owns a "what now" of its own. It
           // does — "or reload the page" is a step the API's `detail` cannot know about, which is
           // the narrow case the slot exists for.
-          notice: noticeFromOutcome({
-            outcome,
-            success: { title: success, body: t('notice.body') },
-            unreachable: { title: tCommon('unreachable.title'), body: tCommon('unreachable.body') },
-            successAction: t('notice.action'),
-            failureAction: t('notice.failedAction'),
-          }),
+          notice: {
+            region: NOTICE_REGION.LIST,
+            ...noticeFromOutcome({
+              outcome,
+              success: { title: success, body: t('notice.body') },
+              unreachable: {
+                title: tCommon('unreachable.title'),
+                body: tCommon('unreachable.body'),
+              },
+              successAction: t('notice.action'),
+              failureAction: t('notice.failedAction'),
+            }),
+          },
         });
       });
     },
@@ -171,6 +189,14 @@ export function AccessProvider({
     [],
   );
   const dismiss = useCallback(() => dispatch({ type: ACCESS_EVENT.CONFIRMATION_DISMISSED }), []);
+  const starting = useCallback(
+    () => dispatch({ type: ACCESS_EVENT.ACTION_STARTED, rowKey: null }),
+    [],
+  );
+  const report = useCallback(
+    (notice: PlacedNotice) => dispatch({ type: ACCESS_EVENT.ACTION_SETTLED, notice }),
+    [],
+  );
 
   const value = useMemo<AccessContextValue>(
     () => ({
@@ -184,8 +210,23 @@ export function AccessProvider({
       perform,
       ask,
       dismiss,
+      starting,
+      report,
     }),
-    [state, page, view, now, inviteAnchorId, navigating, setView, perform, ask, dismiss],
+    [
+      state,
+      page,
+      view,
+      now,
+      inviteAnchorId,
+      navigating,
+      setView,
+      perform,
+      ask,
+      dismiss,
+      starting,
+      report,
+    ],
   );
 
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;

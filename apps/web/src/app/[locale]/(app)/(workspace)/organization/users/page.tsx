@@ -1,6 +1,7 @@
 import { Callout, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { AccessBoard } from '@/features/organization/components/access-board';
+import { AccessProvider } from '@/features/organization/components/access-context';
 import { InviteMember } from '@/features/organization/components/invite-member';
 import { applyAccessView, readAccessView } from '@/features/organization/access';
 import styles from '@/features/organization/components/access.module.css';
@@ -116,8 +117,14 @@ async function AccessScreenBody({
 
   return (
     <>
-      <AccessBoard page={page} view={view} now={read.readAt} inviteAnchorId={INVITE_ANCHOR} />
-      <InviteMember id={INVITE_ANCHOR} />
+      {/* One provider over BOTH regions (28 Aug 2026). It used to sit inside `AccessBoard`, which
+          left the invite panel holding an outcome of its own that nothing else could clear — so a
+          settled invite notice survived a row action starting, and two callouts could show at
+          once. The screen holds one notice; each region renders it only when it is theirs. */}
+      <AccessProvider page={page} view={view} now={read.readAt} inviteAnchorId={INVITE_ANCHOR}>
+        <AccessBoard />
+        <InviteMember id={INVITE_ANCHOR} />
+      </AccessProvider>
     </>
   );
 }

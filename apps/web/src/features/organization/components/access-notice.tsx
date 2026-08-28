@@ -1,6 +1,7 @@
 'use client';
 
 import { Callout } from '@easyesg/ui';
+import { NOTICE_REGION } from '../access-state';
 import { useAccess } from './access-context';
 
 /**
@@ -13,7 +14,10 @@ import { useAccess } from './access-context';
  */
 export function AccessNotice() {
   const { notice } = useAccess();
-  if (!notice) return null;
+  // One notice for the screen, rendered by the region that ran the action. The invite panel shows
+  // its own beside the form, because its refusal points at "the list above" and only reads
+  // correctly below it — see `NOTICE_REGION`.
+  if (notice?.region !== NOTICE_REGION.LIST) return null;
 
   return (
     <Callout intent={notice.intent} title={notice.title} action={notice.action}>

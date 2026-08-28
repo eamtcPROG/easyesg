@@ -3,13 +3,15 @@
 import { Button, Callout, Panel } from '@easyesg/ui';
 import { FormSelect, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import type { InvitedRole } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
-import { failureNotice, successNotice, type Notice } from '@/lib/notice';
+import { failureNotice, successNotice } from '@/lib/notice';
 import { inviteMemberAction } from '../actions';
 import { INVITABLE_ROLES } from '../access';
+import { NOTICE_REGION } from '../access-state';
+import { useAccess } from './access-context';
 import styles from './access.module.css';
 
 /**
@@ -43,43 +45,44 @@ export function InviteMember({ id }: { id: string }) {
   const tRoleHelp = useTranslations('organization.access.roleDescriptions');
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
-  // What the last attempt did — **one value, because the two cannot both be true.**
+  // What the last attempt did — **the screen's one notice, not this panel's own** (28 Aug 2026).
   //
-  // They were `sent: string | null` and `failure: {…} | null`, written in pairs at both branches, and
-  // the pair made an impossible state representable: sent AND failed. As a union nobody has to
-  // remember to clear the other one, which is the whole of what those paired setters were doing
-  // (root `CLAUDE.md`, "Values that change together"). A reducer would be ceremony here — there is
-  // one transition and it has no name worth giving it.
+  // It was a `useState` here, set only by this form's submit and cleared by nothing else. That is
+  // the defect `access-state.ts`'s ACTION_STARTED branch was written for, described there in the
+  // exact words this panel produces: a stale "the invitation has been sent" sitting above a
+  // removal still in flight. The fix reached the list's notice and not this one, because this
+  // component sat outside the provider — so the two surfaces could also show two settled outcomes
+  // at once, which `users-access.spec.ts` had been tolerating with `getByRole('alert').first()`.
   //
-  // **It is now `Notice | null` rather than a union of this component's own** (28 Aug 2026). The
-  // bespoke `InviteOutcome` existed to carry a `title` and a `body` that were computed here, by a
-  // **third copy** of the outcome-to-notice rule — the same four-branch fallback S-16's own context
-  // and S-28's board each carried, missed when the other two were extracted to `@/lib/notice`. With
-  // the rule shared, the union has nothing left to hold that `Notice` does not, and `intent` is
-  // already the discriminator `kind` was duplicating. The property the original docblock argued for
-  // survives intact: one value, and the impossible pair still unrepresentable.
-  const [notice, setNotice] = useState<Notice | null>(null);
+  // It still renders here rather than at the list's head: its refusal points at "the list above",
+  // a sentence only true below the list — see `NOTICE_REGION`.
+  const { notice, starting, report } = useAccess();
 
   const { control, handleSubmit, reset } = useForm<InviteFields>({
     defaultValues: { email: '' },
   });
 
   const submit = handleSubmit((fields) => {
+    // Clears whatever the screen was showing, the list's notice included — one outcome on screen
+    // at a time, whichever region produced it.
+    starting();
     startTransition(async () => {
       const result = await inviteMemberAction(fields);
 
       if (result.status === API_OUTCOME.Ok) {
-        setNotice(
-          successNotice({
+        report({
+          region: NOTICE_REGION.INVITE,
+          ...successNotice({
             copy: { title: t('sent', { email: fields.email }), body: t('sentBody') },
             action: t('sentAction'),
           }),
-        );
+        });
         reset();
         return;
       }
-      setNotice(
-        failureNotice({
+      report({
+        region: NOTICE_REGION.INVITE,
+        ...failureNotice({
           outcome: result,
           // The API's own three-part text, as received — this screen keeps no second copy of
           // "they already have access" or "an invitation is outstanding".
@@ -89,7 +92,7 @@ export function InviteMember({ id }: { id: string }) {
           // points at something rendered beside this panel.
           action: t('failedAction'),
         }),
-      );
+      });
     });
   });
 
@@ -100,7 +103,7 @@ export function InviteMember({ id }: { id: string }) {
       </h2>
       <p className={`t-body ${styles.lede}`}>{t('intro')}</p>
 
-      {notice ? (
+      {notice?.region === NOTICE_REGION.INVITE ? (
         <Callout intent={notice.intent} title={notice.title} action={notice.action}>
           {notice.body}
         </Callout>

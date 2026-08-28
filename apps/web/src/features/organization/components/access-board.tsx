@@ -4,8 +4,7 @@ import { AccessConfirmation } from './access-confirmation';
 import { AccessFilters } from './access-filters';
 import { AccessList } from './access-list';
 import { AccessNotice } from './access-notice';
-import { AccessProvider, useAccess } from './access-context';
-import type { AccessPage, AccessView } from '../access';
+import { useAccess } from './access-context';
 import styles from './access.module.css';
 
 /**
@@ -20,27 +19,13 @@ import styles from './access.module.css';
  * The file is a composition and nothing else. Each region owns one question and reads what it needs
  * from `useAccess()`; the alternative, which this replaced, was one component holding every piece of
  * state and threading callbacks down through a table's column definitions into its cells.
- */
-export function AccessBoard(props: {
-  readonly page: AccessPage;
-  readonly view: AccessView;
-  readonly now: number;
-  readonly inviteAnchorId: string;
-}) {
-  return (
-    <AccessProvider {...props}>
-      <AccessRegions />
-    </AccessProvider>
-  );
-}
-
-/**
- * Inside the provider, so `aria-busy` can read it.
  *
- * A separate component rather than a hook call in `AccessBoard`: the provider is rendered *by*
- * `AccessBoard`, so its own body is above the context and `useAccess()` there would throw.
+ * **It is the list half only, and it no longer owns the provider** (28 Aug 2026). `AccessProvider`
+ * wraps both this and the invite panel, from the page, because the panel joined the same single
+ * notice. A provider that wrapped only this region is precisely what let that panel keep an
+ * outcome of its own, outside the reducer that clears one when the next action starts.
  */
-function AccessRegions() {
+export function AccessBoard() {
   const { navigating } = useAccess();
 
   return (

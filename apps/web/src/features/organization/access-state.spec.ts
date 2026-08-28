@@ -8,7 +8,8 @@ import {
   INITIAL_ACCESS_STATE,
   accessReducer,
   type AccessState,
-  type Notice,
+  NOTICE_REGION,
+  type PlacedNotice,
 } from './access-state';
 
 /**
@@ -27,7 +28,11 @@ const ROW: AccessRow = {
   expiresAt: 1_780_500_000_000,
 };
 
-const NOTICE: Notice = {
+const NOTICE: PlacedNotice = {
+  // The screen holds ONE notice and it carries where it renders: the list reports row actions at
+  // its head, the invite panel reports its own beside the form. Two settled outcomes on screen at
+  // once is unrepresentable, which is what this field bought (28 Aug 2026).
+  region: NOTICE_REGION.LIST,
   intent: CALLOUT_INTENT.SUCCESS,
   title: 'Invitația a fost trimisă.',
   body: 'Lista de mai sus arată deja situația nouă.',
@@ -38,6 +43,33 @@ const settled = (state: AccessState) =>
   accessReducer(state, { type: ACCESS_EVENT.ACTION_SETTLED, notice: NOTICE });
 
 describe('accessReducer', () => {
+  it('clears the invite panel\'s notice when a row action starts', () => {
+    // The defect this field was added for (28 Aug 2026). The panel used to hold its outcome in a
+    // `useState` of its own, outside this reducer, so "the invitation has been sent" survived a
+    // removal starting — which is the exact case ACTION_STARTED was written to prevent, described
+    // in those words, and prevented only for the list's own notice.
+    const showing: AccessState = {
+      ...INITIAL_ACCESS_STATE,
+      notice: { ...NOTICE, region: NOTICE_REGION.INVITE },
+    };
+
+    expect(
+      accessReducer(showing, { type: ACCESS_EVENT.ACTION_STARTED, rowKey: 'm-1' }).notice,
+    ).toBeNull();
+  });
+
+  it('clears the list\'s notice when the invite form submits', () => {
+    // The other direction, and the one the browser suite had been tolerating with
+    // `getByRole(\'alert\').first()`: two settled outcomes on screen at once, from two actions.
+    const next = accessReducer(
+      { ...INITIAL_ACCESS_STATE, notice: NOTICE },
+      { type: ACCESS_EVENT.ACTION_STARTED, rowKey: null },
+    );
+
+    expect(next.notice).toBeNull();
+    expect(next.pendingRowKey).toBeNull();
+  });
+
   it('starts with nothing running, nothing asked and nothing said', () => {
     expect(INITIAL_ACCESS_STATE).toEqual({
       notice: null,
