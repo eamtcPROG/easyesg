@@ -5106,7 +5106,7 @@ imports `API_OUTCOME` any more.
 **One prop survived on purpose.** `FactorBody` and `ProvidersBody` take the narrowed read. That is
 data, not state plumbing, and it is the one thing the hook cannot hand over already narrowed.
 
-### One rule in two copies, and the drift it had already produced
+### One rule in three copies, and the drift it had already produced
 
 The outcome-to-notice block in `credentials-board.tsx` was a near-verbatim copy of the one in
 `access-context.tsx`: title from `problem.title` or a fallback, body from `problem.detail` or the
@@ -5122,6 +5122,22 @@ few minutes. The screen was printing "try again" underneath "wait a few minutes"
 defaults `action` to `null` and the key is deleted from all three catalogues; S-16 keeps its own,
 because *"or reload the page"* is a step the API's `detail` genuinely cannot know about, which is the
 narrow case `Callout`'s slot was reopened for on 27 Aug.
+
+**There was a third copy, and it took a sweep to find it.** Asked to check the codebase for more of
+the same, `invite-member.tsx` turned out to carry the same four-branch fallback — built into a
+bespoke `InviteOutcome` union rather than rendered inline, which is why reading the two obvious
+copies side by side did not surface it. Worth stating plainly: the extraction was done from the two
+instances that were already known, and "are there others" is a different question from "do these two
+agree", asked separately or not at all.
+
+Collapsing it was the interesting part. `InviteOutcome` existed **only** to carry the `title` and
+`body` that copy computed; with `failureNotice` supplying them it holds nothing `Notice` does not,
+and `intent` was already the discriminator `kind` duplicated. The state is now `Notice | null`, which
+keeps the property the original docblock argued for — one value, the impossible sent-AND-failed pair
+still unrepresentable — while removing a vocabulary that existed to describe a shape rather than a
+decision. Its `action` stays non-null and is one of the few places that is right: *"find the person
+in the list above"* points at something rendered beside the panel, which the API's `detail` cannot do.
+
 
 ### The narrowing that stopped one module short
 
