@@ -73,6 +73,15 @@ export const ProblemType = {
    *  to the invited address, which is what stops a social sign-in for a different one consuming it.
    *  Its own slug because the resolution is to sign in as someone else, not to ask for a resend. */
   InvitationAddressMismatch: 'invitation-address-mismatch',
+  /** UC-49 refused: legal forms are configuration scoped by country (§7.2), and the submitted
+   *  country registers none — so the platform does not operate there yet. Its own slug because the
+   *  resolution is not an edit to the form: nothing the caller can type will change the answer,
+   *  and the reversal is a configuration entry on our side (task 29.1). */
+  CountryNotSupported: 'country-not-supported',
+  /** UC-50 refused: the submitted legal form is not registered for the organization's country.
+   *  Distinct from the above for `last-administrator`'s reason — S-15 has to name the specific way
+   *  out, which here is choosing from the list the vocabulary endpoint returns. */
+  LegalFormUnknown: 'legal-form-unknown',
   EntitlementDenied: 'entitlement-denied',
   EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
   TenantContextMissing: 'tenant-context-missing',

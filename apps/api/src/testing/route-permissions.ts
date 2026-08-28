@@ -152,6 +152,21 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /invitations': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'POST /invitations/:invitationId/email': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'DELETE /invitations/:invitationId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── Founding an organization, and the vocabulary the founding form is built from (UC-49).
+  // `account`, not `role`, for `GET /memberships`' reason exactly: S-04's caller is a verified
+  // account with **no** memberships, and `@RequiresRole` refuses the member-of-nothing this route
+  // exists for. The legal-form list is behind the same gate rather than public — nothing here is
+  // secret, but closed-by-default costs nothing on a route whose only readers are signed in.
+  'POST /organizations': PERMISSION.ACCOUNT,
+  'GET /organizations/legal-forms': PERMISSION.ACCOUNT,
+
+  // ── The organization profile (UC-50). OA for the **read** as well as the write: actors.md gives
+  // RC "explicitly no access to organization settings", and D-2 makes master data OA-owned while
+  // the disclosure content is the Contributor's. Seeing the registered address is not a lesser
+  // privilege than editing it.
+  'GET /organization': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'PATCH /organization': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
 };
 
 type Constructor = new (...args: never[]) => object;

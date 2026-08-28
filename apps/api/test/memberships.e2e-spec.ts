@@ -66,7 +66,8 @@ describe('memberships (UC-16, FR-12)', () => {
     await unseed();
 
     await asOrganization(owner, null, (run) =>
-      run(`INSERT INTO core.organization (id, name) VALUES ($1,'Alpha SRL'), ($2,'Beta SRL'), ($3,'Gamma SRL')`, [
+      run(`INSERT INTO core.organization (id, name, country_code)
+           VALUES ($1,'Alpha SRL','MD'), ($2,'Beta SRL','MD'), ($3,'Gamma SRL','MD')`, [
         ALPHA,
         BETA,
         GAMMA,

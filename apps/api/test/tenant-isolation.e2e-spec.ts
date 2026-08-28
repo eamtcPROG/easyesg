@@ -128,7 +128,8 @@ describe.each([
     // row you then own is not a cross-tenant act; reading or altering someone else's is.
     await bind(runner, {});
     await runner.query(
-      `INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha SRL'), ($2, 'Beta SRL')`,
+      `INSERT INTO core.organization (id, name, country_code)
+         VALUES ($1, 'Alpha SRL', 'MD'), ($2, 'Beta SRL', 'MD')`,
       [ORG_A, ORG_B],
     );
     // `identity.account` carries no RLS by design — an account exists before any organization does.
@@ -372,7 +373,8 @@ describe('the organization directory is readable only before a tenant is bound (
       await runner.startTransaction();
       await bind(runner, {});
       await runner.query(
-        `INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha SRL'), ($2, 'Beta SRL')`,
+        `INSERT INTO core.organization (id, name, country_code)
+         VALUES ($1, 'Alpha SRL', 'MD'), ($2, 'Beta SRL', 'MD')`,
         [ORG_A, ORG_B],
       );
       await runner.query(`INSERT INTO identity.account (id, email, locale) VALUES ($1,'ana@x.md','ro')`, [
@@ -498,7 +500,8 @@ describe('FORCE ROW LEVEL SECURITY is what subjects the owner (§7.6)', () => {
     try {
       await bind(runner, {});
       await runner.query(
-        `INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha SRL'), ($2, 'Beta SRL')`,
+        `INSERT INTO core.organization (id, name, country_code)
+         VALUES ($1, 'Alpha SRL', 'MD'), ($2, 'Beta SRL', 'MD')`,
         [ORG_A, ORG_B],
       );
       await bind(runner, { organizationId: ORG_A });

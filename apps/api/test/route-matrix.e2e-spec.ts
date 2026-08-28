@@ -134,7 +134,7 @@ describe('the permission matrix reaches every route (task 28.2, actors.md §5)',
     owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-matrix-owner');
     worker = await connectAs('DB_WORKER_USER', 'DB_WORKER_PASSWORD', 'easyesg-matrix-worker');
 
-    await owner.query(`INSERT INTO core.organization (id, name) VALUES ($1, $2)`, [
+    await owner.query(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, $2, 'MD')`, [
       ORG,
       'Matrix SRL',
     ]);

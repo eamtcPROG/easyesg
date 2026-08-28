@@ -576,6 +576,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an organization and become its Organization Administrator
+         * @description FR-13 and D-1: the creating user is granted the organization_administrator role by the act of creating, in the same transaction — an organization committed without its founding membership would be unreachable by everyone including its creator. The caller keeps every membership they already held; founding a second organization is an ordinary use of this route. The new organization does not become the session’s active one, so the caller chooses when to switch.
+         */
+        post: operations["OrganizationsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/legal-forms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The countries an organization may be created in, and each one’s legal forms
+         * @description Configuration, not code (AD-4): the set moves without a redeploy and propagates within five seconds. S-04 builds its country field from the entries and S-15 its legal-form field from the matching one, which is why both are answered in a single request. The values are keys — resolve them to labels through the message catalogue.
+         */
+        get: operations["OrganizationsController_listLegalForms"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The active organization’s profile
+         * @description FR-15’s legal identity, which propagates into every report the organization produces. Distinct from the billing account (FR-106): the invoiced legal person is not always the reporting entity, particularly in a group structure.
+         */
+        get: operations["OrganizationController_view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit the organization profile
+         * @description A patch: a field absent from the body is unchanged, and an explicit null clears it. Every change is attributed and timestamped by the database itself (FR-15), so the change history names the acting user and the field that moved without this route recording anything.
+         */
+        patch: operations["OrganizationController_update"];
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -1057,6 +1121,74 @@ export interface components {
              * @enum {string}
              */
             grant: "created" | "reactivated" | "already_member";
+        };
+        OrganizationResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description The registered legal name. */
+            name: string;
+            /**
+             * @description ISO 3166-1 alpha-2, upper case.
+             * @example MD
+             */
+            countryCode: string;
+            /** @description A key from the vocabulary registered for countryCode, or null where none is recorded yet — S-04 does not collect it. Resolve it to a label through the message catalogue; it is never a sentence. */
+            legalForm: string | null;
+            registeredAddressLine1: string | null;
+            registeredAddressLine2: string | null;
+            registeredLocality: string | null;
+            registeredPostalCode: string | null;
+            /** Format: email */
+            contactEmail: string | null;
+            contactPhone: string | null;
+            /** @description Unix epoch milliseconds when the organization was created. */
+            createdAt: number;
+            /** @description Unix epoch milliseconds of the last profile change. */
+            updatedAt: number;
+        };
+        CreateOrganizationRequestDto: {
+            /** @description The registered legal name (FR-15). Propagates into every report the organization produces. */
+            name: string;
+            /**
+             * @description ISO 3166-1 alpha-2, case-insensitive and stored upper case. It is not merely an address line: it selects the legal-form vocabulary, so a country the platform does not yet register one for is refused with problem type country-not-supported. GET /organizations/legal-forms is the list of countries this accepts.
+             * @example MD
+             */
+            countryCode: string;
+            /**
+             * Format: email
+             * @description Where the platform writes to about this organization. Distinct from the billing contact (FR-106).
+             */
+            contactEmail?: string;
+            /** @description Free-form, deliberately unvalidated beyond its length — there is no international format this could enforce without refusing real numbers. */
+            contactPhone?: string;
+        };
+        CountryLegalFormsResponseDto: {
+            /**
+             * @description ISO 3166-1 alpha-2, upper case. An organization may be created in this country.
+             * @example MD
+             */
+            countryCode: string;
+            /** @description Legal-form keys, in the order they are registered. Each resolves to a label through the message catalogue (OQ-43), so a form registered ahead of its wording renders its key. */
+            legalForms: string[];
+        };
+        UpdateOrganizationProfileRequestDto: {
+            /** @description The registered legal name (FR-15). */
+            name?: string;
+            /**
+             * @description ISO 3166-1 alpha-2. Changing it re-checks the stored legal form against the new country’s vocabulary, so a move that would strand the form is refused with problem type legal-form-unknown rather than silently leaving a value no list contains.
+             * @example MD
+             */
+            countryCode?: string;
+            /** @description A key from the vocabulary registered for the organization’s country — see GET /organizations/legal-forms. Null clears it, which is always permitted: an organization that has not decided is a state S-15 must be able to return to. */
+            legalForm?: string | null;
+            registeredAddressLine1?: string | null;
+            registeredAddressLine2?: string | null;
+            /** @description City, town or village. */
+            registeredLocality?: string | null;
+            registeredPostalCode?: string | null;
+            /** Format: email */
+            contactEmail?: string | null;
+            contactPhone?: string | null;
         };
         AdminChallengeResponseDto: {
             /**
@@ -2294,6 +2426,129 @@ export interface operations {
             };
             /** @description The link cannot be used (problem type invitation-not-acceptable). The document carries a standing member saying which: expired, consumed, revoked, or unknown. None is retryable — ask an administrator for a new invitation. */
             410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    OrganizationsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrganizationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The organization as created. Profile fields S-04 does not collect are null. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["OrganizationResponseDto"];
+                    };
+                };
+            };
+            /** @description The country registers no legal-form vocabulary, so the platform does not operate there yet (problem type country-not-supported). No edit to the request will change the answer — GET /organizations/legal-forms lists the countries this route accepts. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    OrganizationsController_listLegalForms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One entry per country the platform operates in. A list of one at MVP. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["CountryLegalFormsResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    OrganizationController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The bound organization. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["OrganizationResponseDto"];
+                    };
+                };
+            };
+            /** @description The caller holds no membership in an active organization (problem type membership-required), or holds one in a role that is not organization_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    OrganizationController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrganizationProfileRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The organization as it stands after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["OrganizationResponseDto"];
+                    };
+                };
+            };
+            /** @description The submitted legal form is not registered for the organization’s country (problem type legal-form-unknown) — reachable by changing the country as well as by changing the form — or the submitted country registers no vocabulary at all (problem type country-not-supported). */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

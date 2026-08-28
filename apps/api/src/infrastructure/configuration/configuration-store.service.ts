@@ -88,6 +88,32 @@ export class ConfigurationStore implements OnModuleInit, OnApplicationShutdown {
     };
   }
 
+  /**
+   * Every scope in force for `kind` on a given day.
+   *
+   * **The counterpart to `get`, for a kind whose *set of scopes* is itself the answer.** Task 29.1
+   * is the first such case: legal forms are registered per country (§7.2), so "which countries does
+   * the platform operate in" is not a lookup — it is the list of scopes that exist, and a caller
+   * cannot ask `get` a question whose subject is what to pass it.
+   *
+   * Same day-filtering as `get`, and a calendar date for the same NFR-34 reason.
+   */
+  list<T = Record<string, unknown>>(kind: string, on: string = today()): ConfigEntry<T>[] {
+    return this.entries
+      .filter(
+        (entry) =>
+          entry.kind === kind &&
+          (entry.validFrom === null || entry.validFrom <= on) &&
+          (entry.validTo === null || on < entry.validTo),
+      )
+      .map((entry) => ({
+        kind: entry.kind,
+        scope: entry.scope,
+        revision: entry.revision,
+        payload: entry.payload as T,
+      }));
+  }
+
   async poll(): Promise<void> {
     try {
       await this.refreshIfStale();

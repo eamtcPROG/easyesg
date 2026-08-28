@@ -18,6 +18,7 @@ import { SecretEncryptionAtRest1788134400000 } from './1788134400000-secret-encr
 import { TenantTotp1788220800000 } from './1788220800000-tenant-totp';
 import { PasswordChangedRevocation1788307200000 } from './1788307200000-password-changed-revocation';
 import { AuditSubject1788480000000 } from './1788480000000-audit-subject';
+import { OrganizationProfile1788566400000 } from './1788566400000-organization-profile';
 import { ProviderIdentityUnlink1788393600000 } from './1788393600000-provider-identity-unlink';
 
 /**
@@ -56,4 +57,5 @@ export const migrations = [
   PasswordChangedRevocation1788307200000,
   ProviderIdentityUnlink1788393600000,
   AuditSubject1788480000000,
+  OrganizationProfile1788566400000,
 ];

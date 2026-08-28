@@ -103,7 +103,7 @@ describe('tenant context propagation (AD-2, T-11)', () => {
     await unseed();
 
     await asOrganization(owner, null, (run) =>
-      run(`INSERT INTO core.organization (id, name) VALUES ($1, 'Probe SRL')`, [ORGANIZATION]),
+      run(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Probe SRL', 'MD')`, [ORGANIZATION]),
     );
 
     const server = app.getHttpServer();

@@ -4440,3 +4440,177 @@ implementation across all six callers.
 ### Verified
 
 `pnpm gates:clean` — EXIT=0.
+
+---
+
+## Task 29.1 — Organization creation and profile · 2026-08-28
+
+The first `core` table beyond the tenant root, and the first task where a *use case* creates the
+tenant it will then be scoped by. Task 12's `core.organization` migration named FR-15's profile and
+FR-16's identifiers as deliberately absent and named this task as their owner; this is the expand
+step it anticipated.
+
+### Three decisions, taken before any code
+
+All three were raised as one batch and written into `architecture.md` §7.2 and AD-4's artefact table
+before the first file was written, per the open-question protocol.
+
+**FR-14's relationship model carries two typed axes, not one.** The requirement names *typed parent,
+child and peer relationships* and *only the direct SME organization type active*, and those two move
+at different rates. `kind` — parent/child/peer — is the shape of a graph, does not move with the
+commercial model, and is a `CHECK` mirrored by an `as const`. `organization_type` is NFR-9's axis,
+where a fourth value must arrive **with zero schema migrations**, so it carries no membership
+constraint at all and is admitted against a configuration vocabulary. Merged into one column the two
+would share a release cadence, and registering `advisor` would either need DDL — defeating NFR-9 —
+or leave parent/child/peer unconstrained, defeating the reason a fixed set is a constraint.
+
+**No MVP flow writes a row into that table**, and the entry says so rather than leaving it to be
+discovered. Every MVP tenant is one direct SME with no relationship to another organization. The
+table is built now because §7.5's expand → migrate → contract would otherwise make it a migration
+against a live filing window, which NFR-48 forbids in April and May. What CI can hold is the half
+that is code, and it is held in two directions: a fourth type inserted with no DDL is **accepted**,
+an unknown `kind` is **refused by name**. Without the second assertion the first would only be saying
+that the column is `text`.
+
+**Legal form is a configuration vocabulary scoped by country — taken against the recommendation on
+record.** The recommendation was free text with the question deferred to task 33, on the grounds that
+no document in the set enumerates the values and `config/efrag/` is not started, so whether B1's
+taxonomy element carries an enumerated domain is not yet knowable. The project owner chose
+configuration now. The list was therefore **looked up rather than written from memory** — Law
+220/2007 and the Civil Code's register: `srl`, `sa`, `snc`, `sc`, `ii`, `cp`, `ci`, `is`, `im`, `gt`.
+
+The **country scope** is what keeps that honest rather than clever. One global list would admit a
+Romanian *SRL* because Moldova spells it the same way, and refuse a Romanian *PFA* with a message
+about Moldova — answering a question it was not asked. The consequence is stated rather than
+discovered: an organization whose country registers no vocabulary **cannot be created at MVP**, and
+the reversal is one configuration entry, no code and no redeploy. That is the property AD-4 exists to
+provide, so it is the right shape for the limit to take.
+
+**IDNO stays 29.2's.** FR-16 calls it "the only candidate populated for every organization at
+signup", which reads like a creation field — but UC-49 and S-04 both enumerate the creation fields as
+legal name, country and contact details, and S-04 says in terms that "the deeper fiscal and
+identifier validation belongs to S-15 and S-23". Requiring it here would either duplicate 29.2's
+check-digit validator or accept an unvalidated primary identifier.
+
+### One route beyond the row's wording
+
+`GET /organizations/legal-forms` is not in the task row. It is there because the decision above makes
+`POST /organizations` refuse a country, and without it task 30.2 has no way to know which countries
+it accepts — a founding screen offering all 249 ISO codes to a rule admitting one is a form designed
+to be failed. It answers the registered pairs, so S-04 builds its country field and S-15 its
+legal-form field from one request. `ConfigurationStore` gained `list(kind)` for it: this is the first
+artefact whose *set of scopes* is itself the answer, and a caller cannot ask `get` a question whose
+subject is what to pass it.
+
+### `INSERT … RETURNING` is two operations to RLS, and the error names the wrong policy
+
+The founding store mints the organization's id with `SELECT uuidv7()` **before** inserting it. That
+looks like ceremony and is forced.
+
+PostgreSQL applies the `WITH CHECK` clause to the row an `INSERT` writes **and** the `SELECT`
+policy's `USING` clause to the row a `RETURNING` gives back. Task 12 made this table's insert policy
+`WITH CHECK (true)` precisely so FR-13 could create an organization before any tenant context exists
+— but `organization_tenant_select` still reads `id = app.current_org`, so adding `RETURNING`
+silently re-imposes the very gate that exception removed.
+
+Measured rather than reasoned about: the same insert **without** `RETURNING` and with nothing bound
+succeeds (`INSERT 0 1`), while with `RETURNING` it raises `new row violates row-level security
+policy`. That message describes a `WITH CHECK` failure. Anyone debugging it is sent to audit a policy
+behaving exactly as designed, while the clause that actually refused is a `SELECT` policy they had no
+reason to suspect.
+
+**The observation was already on record and this task did not discover it** —
+`e2e/web/support/db.ts` carries the same measurement in a comment, from the browser suite's own
+fixture, which sidesteps it by generating the id in JavaScript. What is new here is that the *product
+path* now needs it, and that the id must still come from PostgreSQL so §7.9's time-ordered key holds:
+`SELECT uuidv7()` rather than `randomUUID()`. Two independent measurements agreeing is worth more
+than one, and worth saying rather than quietly claiming the first.
+
+Minting the key first inverts the dependency: `app.current_org` binds to a row that does not exist
+yet, after which the `RETURNING` and the membership insert are ordinary scoped statements needing no
+exception. `app.current_user` binds **before both writes**, which is FR-15's *attributed* half —
+bound afterwards, the founding rows would be attributed to nobody in `core.field_change`,
+permanently, with no way to tell later whether the null meant *unknown* or *the system*.
+
+### The cascade the test found
+
+`core.org_relationship`'s two foreign keys shipped as the default `NO ACTION`, and the suite's own
+cleanup could not delete either organization it had created. That is not a test problem. Task 12
+grants `esg_app` `DELETE` on the tenant root for NFR-28's thirty-day erasure, and `NO ACTION` lets
+*another* organization's edge refuse that deletion — an erasure request blocked by a third party's
+data, which is not a state the requirement admits. Both sides now cascade; the far side is the
+interesting one, and the alternative there is a dangling reference, since there is no third answer.
+
+### Smaller things that are decisions
+
+**The registered address is columns, not `jsonb`, and per-field audit is the reason.**
+`core.capture_field_change` compares row images key by key, so an address held as one document would
+record every correction as a single change to a field called `registered_address` with the whole
+document as its before and after. FR-54 asks who changed what; *the address* is not what. The wire
+shape follows the columns for the same reason — nesting would give one organization two vocabularies,
+the one an administrator reads in the history and the one their client sends.
+
+**`country_code` arrives `NOT NULL DEFAULT 'MD'` and immediately drops the default**, which is not a
+shortcut around a backfill but the only shape that works: `core.organization` carries `FORCE ROW
+LEVEL SECURITY`, so an `UPDATE … WHERE country_code IS NULL` run by `esg_migrator` is filtered by
+`organization_tenant_update` and matches **zero rows** — after which `SET NOT NULL` fails on the rows
+it never reached. `ADD COLUMN` is DDL and no policy applies. Dropping the default is what keeps `MD`
+a backfill value for pre-launch rows rather than a standing guess about every future one.
+
+**Fourteen fixture inserts across nine e2e suites** now supply `country_code`. Weakening the
+constraint to spare them was the alternative and would have made the default correct only by
+coincidence of the current configuration — the day `ro` is registered, it becomes a silent wrong
+answer.
+
+**Two refusals, two slugs.** `country-not-supported` and `legal-form-unknown` rather than the generic
+`validation-failed`, on `last-administrator`'s argument: the resolutions differ and a front end
+cannot branch on wording. One is *pick another form from the list*; the other is *nothing you type
+will change this answer*.
+
+### The skill pass
+
+`nestjs-best-practices`, read against the diff. `arch-use-repository-pattern`, `di-use-interfaces-tokens`,
+`security-validate-all-input`, `api-use-dto-serialization` and `db-use-transactions` are all followed
+— the last of them is the requirement itself, since FR-13's grant must commit with the row or the
+organization is unreachable by everyone including its creator.
+
+**`error-throw-http-exceptions` declined by name**, as the standing example in `apps/api/CLAUDE.md`:
+it asks for `HttpException` from services, and this codebase forbids one from domain or use-case code
+in terms. `DomainError` with a registered problem type is the house rule and the architecture wins.
+
+`perf-optimize-database` produced a measurement worth keeping. Both statements on `core.organization`
+plan as a **sequential scan, structurally rather than by table size**: the tenant root carries three
+permissive `SELECT` policies — the bound tenant, task 26.2's invitation bearer, task 25.3's directory
+— permissive policies are OR'd, and the resulting disjunction with two subplans cannot be answered
+from the primary key however many rows there are. It is the right cost at ≤2,000 organizations, and
+it is recorded because the obvious reaction — adding an index — would buy nothing. With
+`enable_seqscan = off`, `core.org_relationship`'s index **is** usable, which is the check that rule
+actually asks for.
+
+### A gate that pinned a column list, and what it settled
+
+`field-change-audit.e2e-spec.ts` failed on the widened table: creating an organization now writes
+eleven `core.field_change` rows, eight of them recording that a field was left empty. The instinct
+was to treat that as amplification and skip a null-to-null field on `INSERT` — until the test's own
+name answered it. *"Records every field of a created row"* is task 14's decision: an insert records
+the row's complete initial state, and a column that is NULL is still a field of it. Reversing that in
+passing, from a task that merely widened the table, would have been an undocumented decision of
+exactly the kind the protocol exists to prevent.
+
+So the expectation was updated and the concern **named where it will actually bite**: task 34's
+`core.report_disclosure_value` carries four mutually exclusive value columns, so every disclosure
+written would record three empty fields — on the highest-volume table in the system. That is the task
+that should weigh it, with the volumes in hand.
+
+### Found while working, and left for 29.2
+
+Three documents still carry FR-16's **pre-amendment** scheme, which OQ-18 closed on 18 Aug 2026:
+`design_spec.md` S-15's content line and `use_cases.md` UC-51's main success scenario both read "LEI
+as primary, with DUNS, EU ID or PermID as fallback", and FR-16's own **acceptance-criteria column**
+says the same while its requirement text says the opposite — a row contradicting itself. `task.md`'s
+29.2 row inherits the error. They belong to the task that ships the identifiers and are named here so
+that task does not have to rediscover them.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0.

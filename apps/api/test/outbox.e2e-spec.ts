@@ -177,7 +177,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
     it('loses the effect when the state change it belongs to rolls back', async () => {
       await inRolledBackTransaction(async (runner) => {
         await runner.query('SELECT set_config($1, $2, true)', ['app.current_org', ORGANIZATION]);
-        await runner.query(`INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha SRL')`, [
+        await runner.query(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Alpha SRL', 'MD')`, [
           ORGANIZATION,
         ]);
         await writeOutboxEvent(runner, {

@@ -80,6 +80,12 @@
     },
     "invitation-address-mismatch": {
       "title": "Invitație pentru altă adresă"
+    },
+    "country-not-supported": {
+      "title": "Țară indisponibilă"
+    },
+    "legal-form-unknown": {
+      "title": "Formă juridică nerecunoscută"
     }
   },
   "validation": {},
@@ -143,6 +149,13 @@
       "provider_unavailable": "Acest mod de autentificare nu este disponibil momentan. Folosiți adresa de e-mail și parola, sau încercați mai târziu.",
       "email_unverified": "Adresa contului nu este încă verificată, așa că sesiunea nu a fost creată. Deschideți linkul din e-mailul de verificare sau cereți retrimiterea lui.",
       "redirect_rejected": "Cererea de autentificare nu a pornit de la o adresă permisă, deci a fost respinsă. Reveniți la pagina de autentificare și începeți din nou de acolo."
+    }
+  },
+  "core": {
+    "organization": {
+      "country_not_supported": "Platforma nu funcționează încă în țara pe care ați ales-o, așa că organizația nu a fost creată. Alegeți una dintre țările propuse în listă sau scrieți-ne dacă aveți nevoie de alta.",
+      "legal_form_unknown": "Forma juridică indicată nu figurează printre cele înregistrate pentru țara organizației, așa că modificarea nu a fost salvată. Alegeți una dintre formele propuse în listă.",
+      "not_found": "Organizația activă nu a putut fi găsită, așa că datele ei nu au fost afișate. Reîmprospătați pagina, iar dacă situația se repetă alegeți altă organizație din comutator."
     }
   },
   "notification": {

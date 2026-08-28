@@ -80,6 +80,12 @@
     },
     "invitation-address-mismatch": {
       "title": "Invitation is for another address"
+    },
+    "country-not-supported": {
+      "title": "Country not available"
+    },
+    "legal-form-unknown": {
+      "title": "Unrecognised legal form"
     }
   },
   "validation": {},
@@ -143,6 +149,13 @@
       "provider_unavailable": "This way of signing in is not available right now. Use your email address and password, or try again later.",
       "email_unverified": "The account’s address is not verified yet, so no session was created. Open the link in the verification email, or ask for it to be sent again.",
       "redirect_rejected": "The sign-in request did not start from an allowed address, so it was refused. Go back to the sign-in page and start again from there."
+    }
+  },
+  "core": {
+    "organization": {
+      "country_not_supported": "The platform does not operate in the country you chose yet, so the organization was not created. Choose one of the countries offered, or write to us if you need another one.",
+      "legal_form_unknown": "The legal form you gave is not among those registered for the organization’s country, so the change was not saved. Choose one of the forms offered in the list.",
+      "not_found": "The active organization could not be found, so its details were not shown. Refresh the page, and if it happens again choose another organization from the switcher."
     }
   },
   "notification": {

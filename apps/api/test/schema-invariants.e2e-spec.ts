@@ -256,7 +256,12 @@ const unclassifiedAuditTables = (x: Executor) =>
  * or 34 must either carry the capture trigger or say why it does not. Silence is the failure: an
  * unaudited table produces no error, just a trail with a gap nobody can see afterwards.
  */
-const FIELD_AUDITED_TABLES = ['core.organization', 'identity.membership', 'identity.invitation'];
+const FIELD_AUDITED_TABLES = [
+  'core.organization',
+  'core.org_relationship',
+  'identity.membership',
+  'identity.invitation',
+];
 
 /**
  * Tenant-scoped tables that are deliberately **not** field-audited, each with its reason.

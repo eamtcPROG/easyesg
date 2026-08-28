@@ -127,10 +127,10 @@ export async function grantMembership(input: {
     const organizationId = randomUUID();
     await client.query('BEGIN');
     await client.query(`SELECT set_config('app.current_org', '', true)`);
-    await client.query(`INSERT INTO core.organization (id, name) VALUES ($1, $2)`, [
-      organizationId,
-      organizationName,
-    ]);
+    await client.query(
+      `INSERT INTO core.organization (id, name, country_code) VALUES ($1, $2, 'MD')`,
+      [organizationId, organizationName],
+    );
     await client.query(`SELECT set_config('app.current_org', $1, true)`, [organizationId]);
     await client.query(
       `INSERT INTO identity.membership (account_id, organization_id, role)

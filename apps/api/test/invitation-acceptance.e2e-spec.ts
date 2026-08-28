@@ -189,7 +189,8 @@ describe('invitation acceptance (UC-15)', () => {
     await unseed();
 
     await asOrganization(owner, null, (run) =>
-      run(`INSERT INTO core.organization (id, name) VALUES ($1,'Alpha SRL'), ($2,'Beta SRL')`, [
+      run(`INSERT INTO core.organization (id, name, country_code)
+           VALUES ($1,'Alpha SRL','MD'), ($2,'Beta SRL','MD')`, [
         ALPHA,
         BETA,
       ]),

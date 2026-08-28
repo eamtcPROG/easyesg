@@ -96,14 +96,34 @@ describe('per-field audit capture (FR-54, FR-55, P-11)', () => {
     it('records every field of a created row, and attributes it', async () => {
       await inTransaction(app, async (runner) => {
         await bind(runner, ORG_A, ACTOR);
-        await runner.query(`INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha SRL')`, [
+        await runner.query(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Alpha SRL', 'MD')`, [
           ORG_A,
         ]);
 
         const rows = await changes(runner);
         // `updated_at` is excluded by trigger argument: it changes on every write and recording it
         // would double the volume of the highest-volume table in the system to say nothing.
-        expect(rows.map((r) => r.field_name)).toEqual(['created_at', 'id', 'name']);
+        //
+        // **Everything else is here, including the columns that are NULL** — this test's name is
+        // the rule, and task 29.1 widened the table rather than changing it. A created row's
+        // complete initial state is what an INSERT records, so an organization founded through
+        // S-04 writes eleven rows, eight of them saying a field was left empty. That is the
+        // decision task 14 took; the place it will be worth revisiting is task 34, where
+        // `core.report_disclosure_value` carries four mutually exclusive value columns and would
+        // record three empty fields for every disclosure written.
+        expect(rows.map((r) => r.field_name)).toEqual([
+          'contact_email',
+          'contact_phone',
+          'country_code',
+          'created_at',
+          'id',
+          'legal_form',
+          'name',
+          'registered_address_line1',
+          'registered_address_line2',
+          'registered_locality',
+          'registered_postal_code',
+        ]);
         expect(rows.every((r) => r.operation === 'INSERT')).toBe(true);
         expect(rows.every((r) => r.old_value === null)).toBe(true);
         expect(rows.every((r) => r.actor_id === ACTOR)).toBe(true);
@@ -113,7 +133,7 @@ describe('per-field audit capture (FR-54, FR-55, P-11)', () => {
     it('records only what changed, with the previous value FR-54 requires', async () => {
       await inTransaction(app, async (runner) => {
         await bind(runner, ORG_A, ACTOR);
-        await runner.query(`INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha SRL')`, [
+        await runner.query(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Alpha SRL', 'MD')`, [
           ORG_A,
         ]);
         await runner.query(`DELETE FROM core.organization WHERE FALSE`); // no-op, no rows captured
@@ -137,7 +157,7 @@ describe('per-field audit capture (FR-54, FR-55, P-11)', () => {
       // anyway.
       await inTransaction(app, async (runner) => {
         await bind(runner, ORG_A, ACTOR);
-        await runner.query(`INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha')`, [ORG_A]);
+        await runner.query(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Alpha', 'MD')`, [ORG_A]);
         await runner.query(`UPDATE core.organization SET name = name || ' SRL'`);
         const updates = (await changes(runner)).filter((r) => r.operation === 'UPDATE');
         expect(updates.map((r) => r.new_value)).toEqual(['Alpha SRL']);
@@ -166,7 +186,7 @@ describe('per-field audit capture (FR-54, FR-55, P-11)', () => {
     it('is readable by the tenant it belongs to, and by no other', async () => {
       await inTransaction(app, async (runner) => {
         await bind(runner, ORG_A, ACTOR);
-        await runner.query(`INSERT INTO core.organization (id, name) VALUES ($1, 'Alpha SRL')`, [
+        await runner.query(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Alpha SRL', 'MD')`, [
           ORG_A,
         ]);
         expect(await changes(runner)).not.toHaveLength(0);
