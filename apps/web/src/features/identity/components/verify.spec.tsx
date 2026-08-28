@@ -88,7 +88,17 @@ describe('S-02 · confirm surface (?token=…)', () => {
       '/verify',
     );
     // The failed link's surface still offers the button — the user may retry.
-    expect(screen.getByRole('button', { name: 'Confirmați adresa' })).toBeEnabled();
+    //
+    // **`waitFor`, because `isPending` and the state the transition sets do not have to commit
+    // together.** `findByRole('alert')` above resolves as soon as `setResult` lands, and React may
+    // flip `useTransition`'s pending flag in a *later* commit — so a bare assertion here reads the
+    // button mid-transition and finds it `disabled` with `aria-busy="true"`. Flaky rather than
+    // wrong: it passed six local runs and both CI jobs that ran `pnpm test` on the commit before
+    // this one, then failed in one of the two jobs running the identical command on the next.
+    // `access-board.spec.tsx` already waits for exactly this reason.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Confirmați adresa' })).toBeEnabled(),
+    );
   });
 });
 

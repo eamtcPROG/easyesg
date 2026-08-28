@@ -403,6 +403,21 @@ conditional render, which is how it ends up half-suppressed on one screen.
   RHF's `watch()` in two forms today) — advisory while the compiler is off, and worth reading as
   the signal it is.
 
+- **A `useTransition` pending flag and the state the transition sets do not commit together, so
+  never assert on one right after awaiting the other** (28 Aug 2026, found by CI). `verify.spec.tsx`
+  clicked, awaited `findByRole('alert')` — which resolves the moment `setResult` lands — and then
+  asserted the button `toBeEnabled()`. React may flip `isPending` in a *later* commit, so that
+  assertion sampled the button mid-transition and found it `disabled` with `aria-busy="true"`.
+  Asserting on **content** after an await is safe; asserting on anything derived from `pending`
+  needs `waitFor`, as `access-board.spec.tsx` already does.
+
+  **What makes this worth a trap entry is how it failed.** It passed six local runs, and it passed
+  in the *same CI run* that failed it: `pnpm test` executes in both the hermetic job and the
+  `BILLING_ENABLED=false` job, and on one commit the two disagreed — same command, same tree,
+  opposite outcomes. A flake that only appears under a scheduler you do not control is invisible to
+  every local repetition, so treat a red job whose diff cannot explain it as a timing assertion
+  before you go looking for a regression.
+
 ## Before you add a screen
 
 - It has an `S-nn` in `design_spec.md` §4.4, or it is one of the public/legal/help surfaces that
