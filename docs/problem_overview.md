@@ -202,7 +202,7 @@ Registered but **inactive** at MVP: the merchant-of-record path.
 | **D-E** | **Free core, monetize around it; launch on freemium (Model 1)** with the entitlement and tenancy layers built correctly from day one | The compliance content is a commodity the EU gives away; the market has already converged on almost exactly this free/paid boundary. Retrofitting a multi-tenant hierarchy or a metering layer later is among the most expensive re-architectures available |
 | **D-F** | **Taxonomy-version discipline and configuration-driven rules** — store the taxonomy version against every report, author version-to-version mappings deliberately, keep thresholds and validation rules as published configuration | The taxonomy and the "necessary data points" classification are both still moving; a compatible rollout must not require a code release |
 | **D-G** | **The platform owns validation logic** | The taxonomy carries no formula/business-rule validation; delegating to it would leave reports unchecked |
-| **D-H** | **LEI as primary entity identifier**, DUNS / EU ID / PermID as fallbacks | The standard's own preference; LEI supports digital signatures and keeps the platform interoperable with EU registries and eventually ESAP |
+| **D-H** | ~~**LEI as primary entity identifier**, DUNS / EU ID / PermID as fallbacks~~ — **superseded 18 Aug 2026 by `architecture.md` OQ-18: IDNO is primary, LEI is an optional additional identifier, and DUNS / EU ID / PermID are not modelled at MVP** | The original reason stands as far as it goes — the standard's own preference; LEI supports digital signatures and keeps the platform interoperable with EU registries and eventually ESAP. It was reversed on **population** grounds, which this decision did not weigh: LEI carries an annual fee and is held by very few Moldovan SMEs, so as the primary key it would be empty for the large majority, while IDNO is universal, free and already the `billing` context's identifier. LEI is retained as an optional field so B1 stays VSME-conformant for the banks and EU buyers who need one. **This row is the source every stale downstream mention was derived from** (FR-16's acceptance column, UC-51, S-15, actors.md's OA row), all corrected 28 Aug 2026 |
 | **D-I** | **Success metrics defined before build, and used to gate Phase 3** | None were specified in the original ToR. Adoption is voluntary near-term; the expensive later features should be justified by demand data, not by assumption |
 | **D-J** | **Quarterly regulatory watch as a funded ongoing function** | Not a one-time "we researched this at kickoff" assumption |
 
@@ -337,23 +337,24 @@ Phase 2 and Phase 3 are a **separately scoped engagement** informed by MVP usage
 | **CBAM** | Carbon Border Adjustment Mechanism — named only in competitor framework coverage |
 | **CSDDD** | Corporate Sustainability Due Diligence Directive |
 | **CSRD** | Corporate Sustainability Reporting Directive — the EU directive obliging large companies to disclose sustainability data, including value-chain data |
-| **DUNS** | Dun & Bradstreet entity identifier; VSME fallback identifier |
+| **DUNS** | Dun & Bradstreet entity identifier; VSME fallback identifier. **Not modelled at MVP** (OQ-18) |
 | **e-Factura** | Moldova's national B2B electronic invoicing system; mandatory from 1 October 2026 |
 | **EFRAG** | European Financial Reporting Advisory Group — author of ESRS and VSME, publisher of the Digital Template, XBRL taxonomy and converter |
 | **Entitlement** | A decision on whether a given organization may perform a given action now, derived from its plan version plus any subscription-level override |
 | **ESAP** | European Single Access Point — EU-wide machine-readable registry of financial and sustainability disclosures |
 | **ESRS** | European Sustainability Reporting Standards — the CSRD reporting standards |
-| **EU ID** | European unique identifier for companies; VSME fallback identifier |
+| **EU ID** | European unique identifier for companies; VSME fallback identifier. **Not modelled at MVP** (OQ-18) |
 | **FTE** | Full-time equivalent |
 | **GHG** | Greenhouse gas |
+| **IDNO** | Numărul de identificare de stat — Moldova's state registry number for a legal person, assigned at registration. Free, universal across the tenant population, and already the `billing` context's identifier; the **primary** entity identifier per OQ-18 |
 | **iXBRL** | Inline XBRL — human-readable document with embedded machine-readable tagging |
-| **LEI** | Legal Entity Identifier — VSME's preferred entity identifier; supports digital signatures |
+| **LEI** | Legal Entity Identifier — VSME's preferred entity identifier; supports digital signatures. **Optional here, not primary** (OQ-18): IDNO is the primary identifier, and few Moldovan SMEs hold an LEI. **Not the currency** — the Moldovan leu is written `MDL`, and its minor unit `bani`, everywhere in this set |
 | **MALENA** | IFC's "Machine Learning ESG Analyst" — a free World Bank Group AI/NLP tool that scores unstructured ESG documents against ESG risk terms and IFC's E&S Performance Standards. Identified as the "Malena" of the original ToR |
 | **MDED** | Moldova's Ministry of Economic Development (and Digitalization) — author of the original ToR; a Model 6 prospect |
 | **MIA** | Moldova's instant payment system, operated under the National Bank, subject to a per-transaction ceiling |
 | **NACE** | EU statistical classification of economic activities; a B1 field |
 | **Omnibus** | The EU simplification package that narrowed CSRD scope and introduced the value chain cap |
-| **PermID** | Refinitiv permanent identifier; VSME fallback identifier |
+| **PermID** | Refinitiv permanent identifier; VSME fallback identifier. **Not modelled at MVP** (OQ-18) |
 | **Scope 1** | Direct GHG emissions from sources the undertaking owns or controls |
 | **Scope 2 (location-based)** | Indirect GHG emissions from purchased energy, calculated using grid average emission factors |
 | **SME** | Small and medium-sized enterprise; here specifically non-listed micro, small and medium undertakings |

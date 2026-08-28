@@ -113,7 +113,7 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-48 | Select the language of an exported report | RC | Choose export language independently of interface language | MVP | FR-52 |
 | UC-49 | Create an organization | OA | Establish the organization record and become its administrator | MVP | FR-13, FR-14 |
 | UC-50 | View and edit the organization profile | OA | Maintain legal form, name, address and contact details | MVP | FR-15 |
-| UC-51 | Maintain entity identifiers | OA | Record and validate LEI, DUNS, EU ID or PermID | MVP | FR-16 |
+| UC-51 | Maintain entity identifiers | OA | Record and validate the IDNO, and an LEI where the organization holds one | MVP | FR-16 |
 | UC-52 | Create a reporting entity | OA | Establish a legal entity that will be reported on | MVP | FR-17 |
 | UC-53 | Edit reporting entity master data | OA | Keep entity master data current without altering filed reports | MVP | FR-17, FR-18 |
 | UC-54 | Define the consolidation scope of an entity | OA | Set the individual or consolidated reporting boundary | MVP | FR-19 |
@@ -1134,9 +1134,9 @@ their numbers put them.
 - **Preconditions:** The organization exists.
 - **Trigger:** The Administrator records or updates an identifier.
 - **Main success scenario:**
-  1. The Administrator records the LEI as primary identifier, or a DUNS number, EU ID or PermID where no LEI exists.
+  1. The Administrator records the IDNO as the primary identifier, and an LEI alongside it where the organization holds one.
   2. The system validates format and checksum on entry.
-- **Business rules:** An identifier that fails validation downstream in EFRAG's own tooling is expensive to discover at filing time.
+- **Business rules:** An identifier that fails validation downstream in EFRAG's own tooling is expensive to discover at filing time. **Amended 28 Aug 2026** — this use case previously read "LEI as primary identifier, or a DUNS number, EU ID or PermID where no LEI exists", the scheme `architecture.md` OQ-18 reversed on 18 Aug 2026. IDNO is universal and free across the tenant population; LEI carries an annual fee and is held by very few Moldovan SMEs, so it is optional and kept for the banks and EU buyers whose reading of B1 requires one. DUNS, EU ID and PermID are not modelled at MVP.
 - **Related FRs:** FR-16
 - **Related UCs:** UC-50
 
