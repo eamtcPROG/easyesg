@@ -55,15 +55,18 @@ const SECRET_BYTES = 20;
 const ISSUER = 'EasyESG Admin';
 
 /** The parameters, in one place: the verifier, the code generator and the enrolment URI are all
- *  built from this, so a client that reads them agrees with the verifier. */
-const totpFor = (secret: string, label: string): TOTP =>
+ *  built from this, so a client that reads them agrees with the verifier. One named input —
+ *  `secret` and `label` are both strings, and swapped positionally `Secret.fromBase32` would read
+ *  the label, refusing every code as "wrong" with nothing in any log (CLAUDE.md's
+ *  adjacent-same-type rule). */
+const totpFor = (input: { readonly secret: string; readonly label: string }): TOTP =>
   new TOTP({
     issuer: ISSUER,
-    label,
+    label: input.label,
     algorithm: 'SHA1',
     digits: TOTP_DIGITS,
     period: TOTP_STEP_SECONDS,
-    secret: Secret.fromBase32(secret),
+    secret: Secret.fromBase32(input.secret),
   });
 
 export function mintTotpSecret(): string {
@@ -85,7 +88,7 @@ export interface TotpVerification {
 export function verifyTotp(input: TotpVerification, now: Date): boolean {
   if (!/^\d{6}$/u.test(input.code)) return false;
   try {
-    const delta = totpFor(input.secret, ISSUER).validate({
+    const delta = totpFor({ secret: input.secret, label: ISSUER }).validate({
       token: input.code,
       timestamp: now.getTime(),
       window: VERIFICATION_WINDOW_STEPS,
@@ -103,7 +106,7 @@ export function verifyTotp(input: TotpVerification, now: Date): boolean {
  */
 export function totpCodeAt(secret: string, now: Date): string | null {
   try {
-    return totpFor(secret, ISSUER).generate({ timestamp: now.getTime() });
+    return totpFor({ secret, label: ISSUER }).generate({ timestamp: now.getTime() });
   } catch {
     return null;
   }
@@ -114,6 +117,9 @@ export function totpCodeAt(secret: string, now: Date): string | null {
  * authenticator app's QR scanner or manual entry consumes, in the Key Uri Format, emitted by
  * the same object that verifies so the two cannot disagree on parameters.
  */
-export function totpEnrolmentUri(email: string, secret: string): string {
-  return totpFor(secret, email).toString();
+export function totpEnrolmentUri(enrolment: {
+  readonly email: string;
+  readonly secret: string;
+}): string {
+  return totpFor({ secret: enrolment.secret, label: enrolment.email }).toString();
 }

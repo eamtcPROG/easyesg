@@ -18,9 +18,10 @@ describe('OrganizationVocabularyService (FR-14, FR-15, NFR-9)', () => {
   const build = (entries: { kind: string; scope: string; payload: Record<string, unknown> }[]) => {
     const withRevision = entries.map((entry) => ({ ...entry, revision: 1 }));
     const store = {
-      get: (kind: string, scope: string) =>
-        withRevision.find((entry) => entry.kind === kind && entry.scope === scope),
-      list: (kind: string) => withRevision.filter((entry) => entry.kind === kind),
+      get: (query: { kind: string; scope: string }) =>
+        withRevision.find((entry) => entry.kind === query.kind && entry.scope === query.scope),
+      list: (query: { kind: string }) =>
+        withRevision.filter((entry) => entry.kind === query.kind),
     } as unknown as ConfigurationStore;
     return new OrganizationVocabularyService(store);
   };

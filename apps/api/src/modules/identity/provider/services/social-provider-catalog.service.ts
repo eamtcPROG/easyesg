@@ -68,7 +68,7 @@ export class SocialProviderCatalogService implements SocialProviderCatalog {
   ) {}
 
   resolve(provider: SocialProvider): SocialProviderSettings | null {
-    const entry = this.configurationStore.get(IDENTITY_PROVIDER_CONFIG_KIND, provider);
+    const entry = this.configurationStore.get({ kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: provider });
     if (!entry) return null;
 
     const payload = readPayload(entry.payload);

@@ -14,6 +14,13 @@ export interface PublishRequest {
   actorId?: string | null;
 }
 
+export interface RevertRequest {
+  kind: string;
+  scope: string;
+  /** The revision to move back to. Every slot holding a later one flips to it. */
+  toRevision: number;
+}
+
 /**
  * Publication and revert (AD-4, FR-61, FR-62, NFR-85).
  *
@@ -39,7 +46,7 @@ export class ConfigurationPublisher {
    */
   async publish(request: PublishRequest): Promise<number> {
     return this.inTransaction(async (runner) => {
-      const nextRevision = await this.nextRevision(runner, request.kind, request.scope);
+      const nextRevision = await this.nextRevision(runner, request);
       const validity = range(request.validFrom ?? null, request.validTo ?? null);
 
       const inserted = (await runner.query(
@@ -102,15 +109,17 @@ export class ConfigurationPublisher {
    * altered — which is why revert is safe to run under pressure and why AD-4 rejected
    * effective-dating without immutability: an edited "published" version has nothing to revert to.
    */
-  async revert(kind: string, scope: string, toRevision: number): Promise<void> {
+  async revert(request: RevertRequest): Promise<void> {
     await this.inTransaction(async (runner) => {
       const target = (await runner.query(
         `SELECT id FROM config.entry_version WHERE kind = $1 AND scope = $2 AND revision = $3`,
-        [kind, scope, toRevision],
+        [request.kind, request.scope, request.toRevision],
       )) as { id: string }[];
 
       if (target.length === 0) {
-        throw new Error(`No revision ${toRevision} of ${kind}/${scope} to revert to`);
+        throw new Error(
+          `No revision ${request.toRevision} of ${request.kind}/${request.scope} to revert to`,
+        );
       }
 
       // Every slot currently holding a later revision moves back to this one. The later versions
@@ -122,16 +131,19 @@ export class ConfigurationPublisher {
           FROM config.entry_version v
          WHERE v.id = s.version_id
            AND s.kind = $1 AND s.scope = $2 AND v.revision > $3`,
-        [kind, scope, toRevision, target[0].id],
+        [request.kind, request.scope, request.toRevision, target[0].id],
       );
     });
   }
 
-  private async nextRevision(runner: QueryRunner, kind: string, scope: string): Promise<number> {
+  private async nextRevision(
+    runner: QueryRunner,
+    slot: Pick<PublishRequest, 'kind' | 'scope'>,
+  ): Promise<number> {
     const rows = (await runner.query(
       `SELECT coalesce(max(revision), 0) + 1 AS next FROM config.entry_version
         WHERE kind = $1 AND scope = $2`,
-      [kind, scope],
+      [slot.kind, slot.scope],
     )) as { next: number }[];
     return Number(rows[0].next);
   }

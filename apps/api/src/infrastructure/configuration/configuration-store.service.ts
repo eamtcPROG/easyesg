@@ -66,16 +66,22 @@ export class ConfigurationStore implements OnModuleInit, OnApplicationShutdown {
    * The date is a **calendar date**, not an instant, and that is NFR-34 rather than convenience:
    * which factor set applies on 1 January is a local-calendar fact, and an answer that changed with
    * the reader's timezone would restate a reported figure (NFR-87).
+   *
+   * One named input, because `kind` and `scope` are both free-form strings: swapped positionally
+   * the lookup compiles and answers `undefined`, which every caller reads as "nothing registered"
+   * (CLAUDE.md, "An application-boundary call takes one object").
    */
-  get<T = Record<string, unknown>>(
-    kind: string,
-    scope: string,
-    on: string = today(),
-  ): ConfigEntry<T> | undefined {
+  get<T = Record<string, unknown>>(query: {
+    readonly kind: string;
+    readonly scope: string;
+    /** Calendar date, `YYYY-MM-DD`. Defaults to today. */
+    readonly on?: string;
+  }): ConfigEntry<T> | undefined {
+    const on = query.on ?? today();
     const found = this.entries.find(
       (entry) =>
-        entry.kind === kind &&
-        entry.scope === scope &&
+        entry.kind === query.kind &&
+        entry.scope === query.scope &&
         (entry.validFrom === null || entry.validFrom <= on) &&
         (entry.validTo === null || on < entry.validTo),
     );
@@ -98,11 +104,16 @@ export class ConfigurationStore implements OnModuleInit, OnApplicationShutdown {
    *
    * Same day-filtering as `get`, and a calendar date for the same NFR-34 reason.
    */
-  list<T = Record<string, unknown>>(kind: string, on: string = today()): ConfigEntry<T>[] {
+  list<T = Record<string, unknown>>(query: {
+    readonly kind: string;
+    /** Calendar date, `YYYY-MM-DD`. Defaults to today. */
+    readonly on?: string;
+  }): ConfigEntry<T>[] {
+    const on = query.on ?? today();
     return this.entries
       .filter(
         (entry) =>
-          entry.kind === kind &&
+          entry.kind === query.kind &&
           (entry.validFrom === null || entry.validFrom <= on) &&
           (entry.validTo === null || on < entry.validTo),
       )

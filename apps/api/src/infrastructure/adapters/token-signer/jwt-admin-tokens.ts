@@ -16,8 +16,11 @@ import type { AdminTokens } from '@api/modules/platform/admin/interfaces/admin-t
  */
 const KEY_LENGTH_BYTES = 32;
 
-const deriveKey = (secret: string, label: string): Buffer =>
-  Buffer.from(hkdfSync('sha256', secret, '', label, KEY_LENGTH_BYTES));
+// One named input: both fields are strings, and a positional swap would derive the signing key
+// from the public label — a call that compiles and verifies its own output (CLAUDE.md's
+// adjacent-same-type rule).
+const deriveKey = (input: { readonly secret: string; readonly label: string }): Buffer =>
+  Buffer.from(hkdfSync('sha256', input.secret, '', input.label, KEY_LENGTH_BYTES));
 
 export class JwtAdminTokens implements AdminTokens {
   private readonly jwt: JwtService;
@@ -31,8 +34,8 @@ export class JwtAdminTokens implements AdminTokens {
           'rather than issue admin sessions nothing can trust.',
       );
     }
-    this.jwt = new JwtService({ secret: deriveKey(secret, 'easyesg-admin-jwt') });
-    this.sealingKey = deriveKey(secret, 'easyesg-admin-cookie');
+    this.jwt = new JwtService({ secret: deriveKey({ secret, label: 'easyesg-admin-jwt' }) });
+    this.sealingKey = deriveKey({ secret, label: 'easyesg-admin-cookie' });
   }
 
   sign(sessionId: string, expiresAt: Date): Promise<string> {

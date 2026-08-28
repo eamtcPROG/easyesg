@@ -4924,3 +4924,82 @@ that wrong would restate every quantitative figure at once.
 ### Verified
 
 `pnpm gates:clean` — EXIT=0.
+
+---
+
+## API conventions audit · 2026-08-28
+
+A full sweep of `apps/api` against the conventions the two CLAUDE.md files carry, plus a dedicated
+statelessness pass. One convention was found applied unevenly and is now applied everywhere; the
+statelessness verdict is clean, with the near-misses recorded so the next auditor does not re-derive
+them.
+
+### Statelessness — clean, and what was checked
+
+No per-request or per-session state lives in process memory. Sessions, refresh tokens, throttle
+windows, lockouts and invitations are PostgreSQL rows; the three challenge shapes (admin sign-in,
+tenant second factor, the OAuth transaction) are sealed AES-256-GCM values held by the client; all
+request-scoped state travels in the one `AsyncLocalStorage` context, entered by middleware and
+never written to a service field. No `Scope.REQUEST` providers, no module-level mutable state, no
+sticky-replica assumption — refresh rotation's 30 s race grace is what makes concurrent rotation on
+two replicas safe, and it is a database condition, not a memory one.
+
+Four things look like state and are not, each bounded and derived rather than request-carrying:
+the configuration store's polled cache (AD-4's design, ≤5 s stale, version-keyed), the OIDC
+discovery cache (keyed per issuer/client/secret, failed discovery evicted), `naceCache` (revision-
+keyed, only scopes the store actually holds), and the two lazily-memoised `dummyHash` timing
+equalisers. `BearerTransaction.resolved` reads as singleton state and is not: the object lives
+exactly one transaction, constructed inside `run`.
+
+### Applied — one rule, six signatures it had missed
+
+CLAUDE.md's one-object rule ("adjacent parameters sharing a type are a silent bug", extended to
+every layer on 21 Aug) was applied by that day's sweep of eleven but had missed six sites, all
+sharing the fail-quiet shape the rule names — a swap that compiles and answers something plausible:
+
+- **`ConfigurationStore.get(kind, scope, on?)` and `.list(kind, on?)`** — swapped, the lookup
+  answers `undefined`/`[]`, which every caller reads as "nothing registered for this country /
+  provider". Now `get({ kind, scope, on? })` / `list({ kind, on? })`; the CLAUDE.md line that
+  documented the positional shape is amended in the same change.
+- **`ConfigurationPublisher.revert(kind, scope, toRevision)`** — the same class's `publish` already
+  took a request object; `revert` now takes `RevertRequest`, and the private `nextRevision` takes
+  the `Pick<PublishRequest, 'kind' | 'scope'>` slot rather than the loose pair.
+- **`deriveKey(secret, label)`** (`jwt-admin-tokens.ts`) — swapped, the admin signing key derives
+  from the public label string and the adapter happily verifies its own output.
+- **`totpFor(secret, label)` and `totpEnrolmentUri(email, secret)`** — swapped, `Secret.fromBase32`
+  reads the label and every code refuses as "wrong code" with nothing in any log.
+
+One casualty surfaced the lesson worth keeping: `organization-vocabulary.service.spec.ts` stubs the
+store `as unknown as ConfigurationStore`, so the signature change type-checked clean while four
+tests failed at runtime. **A double cast severs exactly the link that makes a signature change
+propagate** — the fake now restates the object shape, and it is the only such cast in the package
+(`src/` proper has none).
+
+### Considered and declined, with the reasons
+
+- **`tenantPolicies(table, name)`** in migration `1788825600000` has the same adjacent pair and
+  stays: a migration is frozen history (CLAUDE.md's own exception), and it has been applied.
+- **The throttle-key family** (`signInThrottleKey(clientIp, email)` and siblings) reads as the same
+  hazard and is not: `clientIp` is `string | undefined`, so a swap fails to compile in one
+  direction, which is enough — a swap needs both. Recorded so the next sweep does not churn it.
+- **`helmet` / security headers** (skill: `security-rate-limiting`, `security-sanitize-output`
+  neighbourhood) — not added: the header set is architecture.md **OQ-34, open**, and closing it in
+  passing from a general-purpose skill is the silent default the open-question protocol forbids.
+- **`error-throw-http-exceptions`** — declined by name, the standing example: this codebase forbids
+  `HttpException` from domain and use-case code in terms (`DomainError` + registered problem type).
+- **Rate limiting at the framework** (`@nestjs/throttler`) — not added: §12.5.6 places the
+  application-level windows in `auth-throttle.ts` (per-(IP, account), database-backed — which the
+  statelessness requirement itself demands; an in-memory throttler would reset per replica) and the
+  volumetric budgets at the edge (task 71).
+
+Checked and found already conformant, so stated once rather than re-litigated per file: layering
+(controllers → services → use cases; no controller imports `use-cases/`), framework-free domain and
+use cases, `process.env` confined to `config/` and the migration datasource's recorded exception,
+closed vocabularies with derived contract surfaces, epoch-ms at the DTO boundary with `timestamptz`
+in storage, DI tokens beside interfaces in the port surface, message keys with no user-facing
+identifiers, and the §6.2 pipeline order in the composition root.
+
+### Verified
+
+`pnpm gates` — EXIT=0 (all ten gates plus both e2e suites and the browser run, 68/68).
+

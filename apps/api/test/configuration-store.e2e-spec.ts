@@ -96,11 +96,11 @@ describe('configuration store (DR-3, AD-4)', () => {
       const replica = new ConfigurationStore(app);
       await replica.refreshIfStale();
 
-      const listed = replica.list(KIND);
+      const listed = replica.list({ kind: KIND });
       expect(listed.map((entry) => entry.scope).sort()).toEqual(['md', 'ro']);
       expect(listed.every((entry) => entry.kind === KIND)).toBe(true);
       // A kind nobody registered is an empty list, not undefined — the caller maps over it.
-      expect(replica.list('no-such-kind')).toEqual([]);
+      expect(replica.list({ kind: 'no-such-kind' })).toEqual([]);
     });
 
     it('honours the effective date at both bounds, which are half-open', async () => {
@@ -117,10 +117,10 @@ describe('configuration store (DR-3, AD-4)', () => {
 
       // `validFrom` is inclusive and `validTo` exclusive — PostgreSQL canonicalises a daterange to
       // `[)`, and the filter has to agree with it or a factor set applies for one day too many.
-      expect(replica.list(KIND, '2025-12-31')).toEqual([]);
-      expect(replica.list(KIND, '2026-01-01')).toHaveLength(1);
-      expect(replica.list(KIND, '2026-12-31')).toHaveLength(1);
-      expect(replica.list(KIND, '2027-01-01')).toEqual([]);
+      expect(replica.list({ kind: KIND, on: '2025-12-31' })).toEqual([]);
+      expect(replica.list({ kind: KIND, on: '2026-01-01' })).toHaveLength(1);
+      expect(replica.list({ kind: KIND, on: '2026-12-31' })).toHaveLength(1);
+      expect(replica.list({ kind: KIND, on: '2027-01-01' })).toEqual([]);
     });
 
     it('agrees with `get` on the same day, since one is the other’s plural', async () => {
@@ -138,7 +138,7 @@ describe('configuration store (DR-3, AD-4)', () => {
       // The two filters are written out separately, so this is the assertion that keeps them the
       // same rule rather than two rules that happen to match today.
       for (const day of ['2025-12-31', '2026-01-01', '2026-06-15', '2027-01-01']) {
-        expect(replica.list(KIND, day).length).toBe(replica.get(KIND, SCOPE, day) ? 1 : 0);
+        expect(replica.list({ kind: KIND, on: day }).length).toBe(replica.get({ kind: KIND, scope: SCOPE, on: day }) ? 1 : 0);
       }
     });
   });
@@ -148,14 +148,14 @@ describe('configuration store (DR-3, AD-4)', () => {
       const replica = new ConfigurationStore(app);
       await replica.refreshIfStale();
       const before = replica.cachedVersion;
-      expect(replica.get(KIND, SCOPE)).toBeUndefined();
+      expect(replica.get({ kind: KIND, scope: SCOPE })).toBeUndefined();
 
       await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
 
       // The replica is deliberately not told. It finds out the same way a real one does.
       expect(await replica.refreshIfStale()).toBe(true);
       expect(replica.cachedVersion).toBeGreaterThan(before);
-      expect(replica.get(KIND, SCOPE)?.payload).toEqual({ turnover: 50 });
+      expect(replica.get({ kind: KIND, scope: SCOPE })?.payload).toEqual({ turnover: 50 });
     });
 
     it('does not rebuild the cache when nothing changed', async () => {
@@ -174,14 +174,14 @@ describe('configuration store (DR-3, AD-4)', () => {
 
       const replica = new ConfigurationStore(app);
       await replica.refreshIfStale();
-      expect(replica.get(KIND, SCOPE)).toMatchObject({ revision: 2, payload: { turnover: 75 } });
+      expect(replica.get({ kind: KIND, scope: SCOPE })).toMatchObject({ revision: 2, payload: { turnover: 75 } });
 
-      await publisher.revert(KIND, SCOPE, 1);
+      await publisher.revert({ kind: KIND, scope: SCOPE, toRevision: 1 });
 
       await replica.refreshIfStale();
       // Revision 1, not a revision 3 carrying the old payload. NFR-19 needs the version a stored
       // calculation used to still be the version it used.
-      expect(replica.get(KIND, SCOPE)).toMatchObject({ revision: 1, payload: { turnover: 50 } });
+      expect(replica.get({ kind: KIND, scope: SCOPE })).toMatchObject({ revision: 1, payload: { turnover: 50 } });
     });
 
     it('supersedes the previous version rather than deleting it', async () => {
@@ -278,9 +278,9 @@ describe('configuration store (DR-3, AD-4)', () => {
       await replica.refreshIfStale();
       // The date decides, and it is a calendar date: which threshold applies on 1 January is a
       // local-calendar fact (NFR-34), not something an instant can settle.
-      expect(replica.get(KIND, SCOPE, '2026-06-01')?.payload).toEqual({ turnover: 50 });
-      expect(replica.get(KIND, SCOPE, '2027-06-01')?.payload).toEqual({ turnover: 75 });
-      expect(replica.get(KIND, SCOPE, '2025-06-01')).toBeUndefined();
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2026-06-01' })?.payload).toEqual({ turnover: 50 });
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2027-06-01' })?.payload).toEqual({ turnover: 75 });
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2025-06-01' })).toBeUndefined();
     });
   });
 
@@ -300,10 +300,10 @@ describe('configuration store (DR-3, AD-4)', () => {
       const replica = new ConfigurationStore(app);
       await replica.refreshIfStale();
 
-      const registration = replica.get<{ locales: { code: string }[] }>(
-        'locale_registration',
-        'global',
-      );
+      const registration = replica.get<{ locales: { code: string }[] }>({
+        kind: 'locale_registration',
+        scope: 'global',
+      });
       expect(registration?.payload.locales.map((l) => l.code)).toEqual(['ro', 'en', 'ru']);
     });
   });

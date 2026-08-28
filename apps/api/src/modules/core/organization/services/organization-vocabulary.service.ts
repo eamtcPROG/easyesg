@@ -37,10 +37,10 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
     // Lower case, because the scope is the seed file's own segment and `organization-legal-form.
     // MD.json` is not a filename anybody writes. The column holds the code upper case (ISO's own
     // rendering), so exactly one of the two has to convert and this is the boundary where it does.
-    const entry = this.configurationStore.get(
-      ORGANIZATION_LEGAL_FORM_CONFIG_KIND,
-      countryCode.toLowerCase(),
-    );
+    const entry = this.configurationStore.get({
+      kind: ORGANIZATION_LEGAL_FORM_CONFIG_KIND,
+      scope: countryCode.toLowerCase(),
+    });
     if (!entry) return null;
 
     const forms = entry.payload.forms;
@@ -63,7 +63,7 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
     // its revision when somebody asks for that country directly. Offering S-04 a country whose
     // vocabulary cannot be read would be a choice that refuses on submit.
     return this.configurationStore
-      .list(ORGANIZATION_LEGAL_FORM_CONFIG_KIND)
+      .list({ kind: ORGANIZATION_LEGAL_FORM_CONFIG_KIND })
       .flatMap((entry) =>
         isStringArray(entry.payload.forms)
           ? [{ countryCode: entry.scope, legalForms: entry.payload.forms }]
@@ -81,7 +81,7 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
 
   naceCodesFor(countryCode: string): ReadonlySet<string> | null {
     const scope = countryCode.toLowerCase();
-    const entry = this.configurationStore.get(NACE_CODE_CONFIG_KIND, scope);
+    const entry = this.configurationStore.get({ kind: NACE_CODE_CONFIG_KIND, scope });
     if (!entry) return null;
 
     const cached = this.naceCache.get(scope);
@@ -102,10 +102,10 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
   }
 
   relationshipTypes(): readonly string[] {
-    const entry = this.configurationStore.get(
-      ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_KIND,
-      ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_SCOPE,
-    );
+    const entry = this.configurationStore.get({
+      kind: ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_KIND,
+      scope: ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_SCOPE,
+    });
     if (!entry) return [];
 
     const types = entry.payload.types;

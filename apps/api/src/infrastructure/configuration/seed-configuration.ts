@@ -52,7 +52,7 @@ export async function seedConfiguration(dataSource: DataSource): Promise<SeedOut
       readFileSync(resolve(SEED_DIRECTORY, fileName), 'utf8'),
     ) as Record<string, unknown>;
 
-    const current = store.get(parsed.kind, parsed.scope);
+    const current = store.get({ kind: parsed.kind, scope: parsed.scope });
     // Compared as canonical JSON so key order in the file cannot register as a change.
     const unchanged = current !== undefined && stableStringify(current.payload) === stableStringify(payload);
 

@@ -101,7 +101,7 @@ async function main(): Promise<void> {
 
     process.stdout.write(`${email}: provisioned as ${role}\n`);
     process.stdout.write(`Enrol the second factor from this URI (FR-75):\n`);
-    process.stdout.write(`${totpEnrolmentUri(email, totpSecret)}\n`);
+    process.stdout.write(`${totpEnrolmentUri({ email, secret: totpSecret })}\n`);
   } finally {
     await dataSource.destroy();
   }

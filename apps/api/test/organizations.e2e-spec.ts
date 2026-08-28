@@ -78,7 +78,7 @@ describe('organizations (UC-49, UC-50)', () => {
     // model for a change that changes nothing.
     const store = app.get(ConfigurationStore);
     await store.refreshIfStale();
-    const current = store.get(ORGANIZATION_LEGAL_FORM_CONFIG_KIND, 'md');
+    const current = store.get({ kind: ORGANIZATION_LEGAL_FORM_CONFIG_KIND, scope: 'md' });
     if (JSON.stringify(current?.payload) !== JSON.stringify(payload)) {
       await app.get(ConfigurationPublisher).publish({
         kind: ORGANIZATION_LEGAL_FORM_CONFIG_KIND,

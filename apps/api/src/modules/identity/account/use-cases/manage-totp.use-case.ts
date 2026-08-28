@@ -139,7 +139,7 @@ export class ManageTotp {
         throw new TotpAlreadyEnrolledError();
       }
 
-      return { secret, enrolmentUri: totpEnrolmentUri(account.email, secret) };
+      return { secret, enrolmentUri: totpEnrolmentUri({ email: account.email, secret }) };
     });
   }
 

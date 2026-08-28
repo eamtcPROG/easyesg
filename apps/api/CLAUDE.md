@@ -518,7 +518,9 @@ claims a job name by marking a provider `@HandlesJob('<event_type>')`, and it is
 ### Adding a configuration artefact
 
 No table and no code. Add a `config/seed/<kind>.<scope>.json` file and read it with
-`ConfigurationStore.get(kind, scope, onDate)` — that is what DR-3 and Open/Closed mean here.
+`ConfigurationStore.get({ kind, scope, on? })` — that is what DR-3 and Open/Closed mean here.
+(One named input since 28 Aug 2026 — `kind` and `scope` are both free-form strings, and the
+positional form let a swap compile and answer "nothing registered".)
 
 - **Two tables, and the split matters.** `config.entry_version` keeps every version, immutable once
   published; `config.entry_schedule` keeps only what is in force and carries

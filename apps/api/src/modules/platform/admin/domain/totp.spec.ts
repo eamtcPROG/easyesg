@@ -80,7 +80,7 @@ describe('TOTP (RFC 6238, SHA-1, 6 digits, 30 s step)', () => {
   });
 
   it('emits the enrolment URI in the Key Uri Format an authenticator scans', () => {
-    const uri = totpEnrolmentUri('ana@easyesg.md', RFC_SECRET_BASE32);
+    const uri = totpEnrolmentUri({ email: 'ana@easyesg.md', secret: RFC_SECRET_BASE32 });
     expect(uri).toBe(
       'otpauth://totp/EasyESG%20Admin:ana%40easyesg.md' +
         `?issuer=EasyESG%20Admin&secret=${RFC_SECRET_BASE32}&algorithm=SHA1&digits=6&period=30`,
