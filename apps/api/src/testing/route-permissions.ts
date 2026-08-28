@@ -57,6 +57,10 @@ import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
  * definition. Written under `app/` first; the rule rejected it, which is the rule working.
  */
 
+/**
+ * Every role, as `computeSurface` renders a multi-role declaration: sorted and joined, so the
+ * table's spelling cannot depend on the order the decorator happened to list them in.
+ */
 /** The three ways a route may state who reaches it. There is no fourth, and no default. */
 export const PERMISSION = {
   /**
@@ -78,6 +82,18 @@ type Permission =
   | typeof PERMISSION.PUBLIC
   | typeof PERMISSION.ACCOUNT
   | `${typeof PERMISSION.ROLE}:${string}`;
+
+/**
+ * Every role, as `computeSurface` renders a multi-role declaration: sorted and joined, so the
+ * table's spelling cannot depend on the order the decorator happened to list them in.
+ */
+const ALL_MEMBERS: Permission = `${PERMISSION.ROLE}:${[
+  MEMBERSHIP_ROLE.EDITOR,
+  MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+  MEMBERSHIP_ROLE.VIEWER,
+]
+  .sort()
+  .join('+')}`;
 
 /**
  * **The committed surface.** Sorted by route, so a diff reads as a diff.
@@ -167,6 +183,16 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // privilege than editing it.
   'GET /organization': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'PATCH /organization': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── Reporting entities (UC-52, UC-53, UC-55). **The reads are the interesting rows**: D-2 makes
+  // master data OA-*owned*, which is about who maintains it, and UC-19 has the Contributor
+  // completing B1 from values that pre-populate from this record. Refusing an RC the read would put
+  // the wizard's own source out of reach of the person filling it in. Writes stay OA.
+  'GET /entities': ALL_MEMBERS,
+  'GET /entities/:entityId': ALL_MEMBERS,
+  'POST /entities': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'PATCH /entities/:entityId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /entities/:entityId/archive': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
 };
 
 type Constructor = new (...args: never[]) => object;

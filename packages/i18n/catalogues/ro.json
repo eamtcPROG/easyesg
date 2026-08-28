@@ -92,6 +92,12 @@
     },
     "identifier-check-digits": {
       "title": "Identificator neconfirmat"
+    },
+    "nace-code-unknown": {
+      "title": "Cod de activitate nerecunoscut"
+    },
+    "entity-archived": {
+      "title": "Entitate arhivată"
     }
   },
   "validation": {},
@@ -165,6 +171,11 @@
       "idno_malformed": "IDNO-ul trebuie să conțină exact treisprezece cifre, iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Verificați numărul pe certificatul de înregistrare și introduceți-l din nou.",
       "lei_malformed": "Codul LEI se compune din douăzeci de caractere — litere mari și cifre — iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Copiați-l din registrul global și încercați din nou.",
       "lei_check_digits": "Codul LEI are forma potrivită, însă cifrele sale de verificare nu corespund restului valorii, ceea ce înseamnă de obicei o cifră schimbată sau două inversate. Modificarea nu a fost salvată. Comparați codul cu sursa din care l-ați preluat."
+    },
+    "entity": {
+      "not_found": "Entitatea indicată nu există în această organizație, așa că nu a putut fi afișată. Reîmprospătați lista pentru a vedea entitățile curente.",
+      "nace_code_unknown": "Unul dintre codurile de activitate introduse nu figurează în clasificatorul țării organizației, așa că modificarea nu a fost salvată. Alegeți codurile din lista propusă.",
+      "archived": "Entitatea este arhivată, iar datele ei de bază nu mai pot fi modificate. Rapoartele și exporturile ei rămân disponibile. Creați o entitate nouă dacă activitatea continuă sub altă formă."
     }
   },
   "notification": {

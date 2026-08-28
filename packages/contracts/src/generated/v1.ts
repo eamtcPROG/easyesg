@@ -640,6 +640,71 @@ export interface paths {
         patch: operations["OrganizationController_update"];
         trace?: never;
     };
+    "/api/v1/entities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The organization’s reporting entities
+         * @description Archived entities are included and carry their status — S-13 filters them out of active selection, and the collection publishes what exists so a reader can find one deliberately.
+         */
+        get: operations["EntitiesController_list"];
+        put?: never;
+        /**
+         * Create a reporting entity
+         * @description An organization may hold several: most SMEs hold exactly one and the model does not assume it (FR-17). Sites may be supplied now or added later.
+         */
+        post: operations["EntitiesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/entities/{entityId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One reporting entity, with its sites */
+        get: operations["EntitiesController_view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit a reporting entity’s master data
+         * @description A patch: a field absent is unchanged. Sending `sites` saves the whole collection. A report for a closed period keeps the values in force when it was prepared (FR-18), so an edit here is not retroactive — S-13 states that consequence before the save.
+         */
+        patch: operations["EntitiesController_update"];
+        trace?: never;
+    };
+    "/api/v1/entities/{entityId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive a reporting entity
+         * @description Removes it from active selection and retains its historical reports and exports intact (FR-20, UC-55) — the entity is sold, merged or dissolved, and prior filings must stay retrievable. An action-noun route rather than DELETE, because nothing is deleted.
+         */
+        post: operations["EntitiesController_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -1209,6 +1274,88 @@ export interface components {
             /** Format: email */
             contactEmail?: string | null;
             contactPhone?: string | null;
+        };
+        SiteResponseDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            addressLine1: string | null;
+            locality: string | null;
+            postalCode: string | null;
+            countryCode: string | null;
+            /** @description Decimal degrees as a string (NFR-58). */
+            latitude: string | null;
+            longitude: string | null;
+        };
+        ReportingEntityResponseDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            legalForm: string | null;
+            naceCodes: string[];
+            /**
+             * @description Archived entities leave active selection and keep their reports and exports (FR-20). They remain readable here; their master data is read-only.
+             * @enum {string}
+             */
+            status: "active" | "archived";
+            /** @description Unix epoch milliseconds, or null while active. */
+            archivedAt: number | null;
+            sites: components["schemas"]["SiteResponseDto"][];
+            /** @description Unix epoch milliseconds. */
+            createdAt: number;
+            /** @description Unix epoch milliseconds. */
+            updatedAt: number;
+        };
+        SiteRequestDto: {
+            /**
+             * Format: uuid
+             * @description Omit to add a site; supply an existing id to edit that one. A site the array omits is removed, which is what makes this collection a save rather than an append.
+             */
+            id?: string;
+            name: string;
+            addressLine1?: string | null;
+            locality?: string | null;
+            postalCode?: string | null;
+            /** @example MD */
+            countryCode?: string | null;
+            /**
+             * @description Decimal degrees as a string, not a number. B5’s biodiversity applicability is evaluated from these coordinates (BR-APP-3), so a value that drifts in the last places is a determination that changes — which is why neither the column nor the wire uses a float.
+             * @example 47.024512
+             */
+            latitude?: string | null;
+            /** @example 28.832363 */
+            longitude?: string | null;
+        };
+        CreateReportingEntityRequestDto: {
+            /** @description A key from the country’s legal-form vocabulary. */
+            legalForm?: string | null;
+            /**
+             * @description CAEM Rev.2 codes — 1:1 with NACE Rev.2 to four characters, which is what B1 exports. Each is admitted against the classifier registered for the organization’s country; an empty array means the entity is not classified yet, which FR-17 permits.
+             * @example [
+             *       "10.71",
+             *       "56.10"
+             *     ]
+             */
+            naceCodes?: string[];
+            /** @description The entity’s sites, as a whole collection. Omit to leave them alone; send an array to save them — members with an id are edited, members without are added, and stored sites the array omits are removed. */
+            sites?: components["schemas"]["SiteRequestDto"][];
+            /** @description The entity’s name, as it is reported on. */
+            name: string;
+        };
+        UpdateReportingEntityRequestDto: {
+            /** @description A key from the country’s legal-form vocabulary. */
+            legalForm?: string | null;
+            /**
+             * @description CAEM Rev.2 codes — 1:1 with NACE Rev.2 to four characters, which is what B1 exports. Each is admitted against the classifier registered for the organization’s country; an empty array means the entity is not classified yet, which FR-17 permits.
+             * @example [
+             *       "10.71",
+             *       "56.10"
+             *     ]
+             */
+            naceCodes?: string[];
+            /** @description The entity’s sites, as a whole collection. Omit to leave them alone; send an array to save them — members with an id are edited, members without are added, and stored sites the array omits are removed. */
+            sites?: components["schemas"]["SiteRequestDto"][];
+            name?: string;
         };
         AdminChallengeResponseDto: {
             /**
@@ -2569,6 +2716,162 @@ export interface operations {
             };
             /** @description The submitted legal form is not registered for the organization’s country (problem type legal-form-unknown) — reachable by changing the country as well as by changing the form — or the submitted country registers no vocabulary at all (problem type country-not-supported). */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    EntitiesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every entity, with its sites. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["ReportingEntityResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    EntitiesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReportingEntityRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The entity as created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportingEntityResponseDto"];
+                    };
+                };
+            };
+            /** @description An activity code the organization’s country does not register (problem type nace-code-unknown). The classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    EntitiesController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entityId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The entity. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportingEntityResponseDto"];
+                    };
+                };
+            };
+            /** @description No entity of the active organization has that id — including when it is another tenant’s. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    EntitiesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entityId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReportingEntityRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The entity after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportingEntityResponseDto"];
+                    };
+                };
+            };
+            /** @description The entity is archived, so its master data is read-only (problem type entity-archived). It stays readable — its historical reports and exports must remain retrievable. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    EntitiesController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entityId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The entity was archived. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The entity is already archived (problem type entity-archived). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -35,6 +35,18 @@ export interface OrganizationVocabulary {
   registeredLegalForms(): readonly { readonly countryCode: string; readonly legalForms: readonly string[] }[];
 
   /**
+   * The activity codes registered for a country — CAEM Rev.2 for Moldova (FR-17).
+   *
+   * **A set rather than a list, because the only question asked of it is membership.** S-13 renders
+   * a picker from the same configuration entry, but validation asks "is this one of them" 996 times
+   * over an entity's codes, and a linear scan per code is the shape that reads as fine and is not.
+   *
+   * Null when the country registers no classifier, matching `legalFormsFor` — the platform does not
+   * operate there, rather than operating there with nothing permitted.
+   */
+  naceCodesFor(countryCode: string): ReadonlySet<string> | null;
+
+  /**
    * FR-14's organization types, `direct_sme` alone at MVP.
    *
    * NFR-9's obligation lands precisely here: a fourth type must be admitted by **registering data**,

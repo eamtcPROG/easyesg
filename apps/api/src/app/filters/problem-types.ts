@@ -90,6 +90,12 @@ export const ProblemType = {
    *  value was mistyped or transposed somewhere, and re-entering it from the register is the way
    *  out. Reachable for the LEI today; the IDNO's algorithm is an open question (§7.2). */
   IdentifierCheckDigits: 'identifier-check-digits',
+  /** FR-17: an activity code the country's classifier does not register. Its own slug because
+   *  S-13 must name the way out — choose from the classifier — which `validation-failed` cannot. */
+  NaceCodeUnknown: 'nace-code-unknown',
+  /** FR-20/UC-55: the entity is archived, so its master data is read-only. Its reports and exports
+   *  stay retrievable, which is why this is a state refusal (409) and not a 404. */
+  EntityArchived: 'entity-archived',
   EntitlementDenied: 'entitlement-denied',
   EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
   TenantContextMissing: 'tenant-context-missing',

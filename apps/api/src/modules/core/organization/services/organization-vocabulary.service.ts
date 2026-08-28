@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import {
+  NACE_CODE_CONFIG_KIND,
   ORGANIZATION_LEGAL_FORM_CONFIG_KIND,
   ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_KIND,
   ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_SCOPE,
@@ -69,6 +70,35 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
           : [],
       )
       .sort((a, b) => (a.countryCode < b.countryCode ? -1 : a.countryCode > b.countryCode ? 1 : 0));
+  }
+
+  /**
+   * **Cached per configuration revision**, because the payload is 996 entries and a request that
+   * validates several codes would otherwise rebuild the set for each one. Keyed on the revision, so
+   * a publication invalidates it without any invalidation logic: a new revision is a new key.
+   */
+  private naceCache = new Map<string, { revision: number; codes: ReadonlySet<string> }>();
+
+  naceCodesFor(countryCode: string): ReadonlySet<string> | null {
+    const scope = countryCode.toLowerCase();
+    const entry = this.configurationStore.get(NACE_CODE_CONFIG_KIND, scope);
+    if (!entry) return null;
+
+    const cached = this.naceCache.get(scope);
+    if (cached?.revision === entry.revision) return cached.codes;
+
+    const codes = entry.payload.codes;
+    if (typeof codes !== 'object' || codes === null || Array.isArray(codes)) {
+      this.logger.error(
+        `Configuration entry ${NACE_CODE_CONFIG_KIND}/${scope} (revision ${entry.revision}) is ` +
+          `malformed; no activity code will be admitted for this country`,
+      );
+      return null;
+    }
+
+    const set: ReadonlySet<string> = new Set(Object.keys(codes));
+    this.naceCache.set(scope, { revision: entry.revision, codes: set });
+    return set;
   }
 
   relationshipTypes(): readonly string[] {

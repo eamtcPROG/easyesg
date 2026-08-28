@@ -259,6 +259,8 @@ const unclassifiedAuditTables = (x: Executor) =>
 const FIELD_AUDITED_TABLES = [
   'core.organization',
   'core.org_relationship',
+  'core.reporting_entity',
+  'core.site',
   'identity.membership',
   'identity.invitation',
 ];
@@ -275,6 +277,13 @@ const UNAUDITED_TABLES = [
   'core.field_change',
   'audit.system_audit_log',
   'audit.outbox_event',
+  /**
+   * `core.entity_snapshot` is immutable by grant — no runtime role holds UPDATE or DELETE, and it
+   * carries no policy for either — so capturing per-field changes to it would record the writing of
+   * a record rather than the changing of a value. That is `audit.system_audit_log`'s argument in a
+   * different schema, and FR-18's guarantee rests on the immutability rather than on a trail of it.
+   */
+  'core.entity_snapshot',
 ];
 
 const auditedTablesMissingCapture = (x: Executor) =>

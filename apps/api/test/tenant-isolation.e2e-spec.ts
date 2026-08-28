@@ -529,3 +529,165 @@ describe('FORCE ROW LEVEL SECURITY is what subjects the owner (§7.6)', () => {
     expect(rows[0]).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
   });
 });
+
+/**
+ * The `core` tables task 29.3 added, probed the same way (FR-17, FR-20).
+ *
+ * **These are the first tenant tables with a parent-child pair**, so the isolation question has a
+ * second half the organization and membership suites above could not ask: a site's tenant is not
+ * merely *declared* by its own `organization_id`, it is **tied** to its entity's by the composite
+ * foreign key §7.3 specifies. The last test is that tie — a site claiming one tenant while its
+ * entity belongs to another is refused by the database, not by a policy that would happily enforce
+ * whatever the column said.
+ */
+describe.each([
+  ['esg_app — the runtime role', 'DB_USER', 'DB_PASSWORD', 'easyesg-isolation-entity-app'],
+  [
+    'esg_migrator — the table owner, which only FORCE subjects to policy',
+    'DB_MIGRATOR_USER',
+    'DB_MIGRATOR_PASSWORD',
+    'easyesg-isolation-entity-owner',
+  ],
+])('reporting entities are isolated as %s (AD-2, NFR-63)', (_label, userKey, passwordKey, applicationName) => {
+  let dataSource: DataSource;
+  let runner: QueryRunner;
+
+  const ENTITY_A = '01930000-0000-7000-8000-00000000ea01';
+  const ENTITY_B = '01930000-0000-7000-8000-00000000eb01';
+
+  beforeAll(async () => {
+    dataSource = await connect(required(userKey), required(passwordKey), applicationName);
+  }, 30_000);
+
+  afterAll(async () => {
+    if (dataSource?.isInitialized) await dataSource.destroy();
+  });
+
+  beforeEach(async () => {
+    runner = dataSource.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    await runner.query(
+      `INSERT INTO core.organization (id, name, country_code)
+         VALUES ($1, 'Alpha SRL', 'MD'), ($2, 'Beta SRL', 'MD')`,
+      [ORG_A, ORG_B],
+    );
+    // Seeded with each tenant bound, because these carry a real `WITH CHECK` — unlike the tenant
+    // root's permissive exception, seeding them any other way is refused, which is half the point.
+    for (const [organizationId, entityId, name] of [
+      [ORG_A, ENTITY_A, 'Brutăria Alpha'],
+      [ORG_B, ENTITY_B, 'Brutăria Beta'],
+    ] as const) {
+      await bind(runner, { organizationId });
+      await runner.query(
+        `INSERT INTO core.reporting_entity (id, organization_id, name) VALUES ($1, $2, $3)`,
+        [entityId, organizationId, name],
+      );
+      await runner.query(
+        `INSERT INTO core.site (organization_id, reporting_entity_id, name)
+              VALUES ($1, $2, 'Sediu')`,
+        [organizationId, entityId],
+      );
+    }
+  });
+
+  afterEach(async () => {
+    await runner.rollbackTransaction();
+    await runner.release();
+  });
+
+  const visible = async (table: string): Promise<number> => {
+    // No WHERE clause. That absence is the assertion.
+    const rows = (await runner.query(`SELECT id FROM ${table}`)) as unknown[];
+    return rows.length;
+  };
+
+  it('shows a tenant only its own entities and sites', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    expect(await visible('core.reporting_entity')).toBe(1);
+    expect(await visible('core.site')).toBe(1);
+
+    await bind(runner, { organizationId: ORG_B });
+    expect(await visible('core.reporting_entity')).toBe(1);
+  });
+
+  it('returns nothing for another tenant’s entity asked for by id', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const rows = (await runner.query(`SELECT id FROM core.reporting_entity WHERE id = $1`, [
+      ENTITY_B,
+    ])) as unknown[];
+    // Not an error — zero rows. "Not yours" and "not there" are one answer, which is what stops the
+    // route becoming a cross-tenant existence oracle.
+    expect(rows).toHaveLength(0);
+  });
+
+  it('sees nothing with no tenant bound, and does not raise', async () => {
+    await bind(runner, {});
+    expect(await visible('core.reporting_entity')).toBe(0);
+    expect(await visible('core.site')).toBe(0);
+  });
+
+  it('cannot rename another tenant’s entity', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const result = (await runner.query(
+      `UPDATE core.reporting_entity SET name = 'Taken' WHERE id = $1 RETURNING id`,
+      [ENTITY_B],
+    )) as [unknown[], number];
+    expect(result[0]).toHaveLength(0);
+  });
+
+  it('cannot archive another tenant’s entity', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const result = (await runner.query(
+      `UPDATE core.reporting_entity SET status = 'archived', archived_at = now()
+        WHERE id = $1 RETURNING id`,
+      [ENTITY_B],
+    )) as [unknown[], number];
+    expect(result[0]).toHaveLength(0);
+  });
+
+  it('cannot move its own entity to another tenant (WITH CHECK)', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    await expect(
+      runner.query(`UPDATE core.reporting_entity SET organization_id = $2 WHERE id = $1`, [
+        ENTITY_A,
+        ORG_B,
+      ]),
+    ).rejects.toThrow(/row-level security/i);
+  });
+
+  it('cannot attach a site to another tenant’s entity, by foreign key as well as by policy', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    // The tenant column says ORG_A, which the INSERT policy admits — and the composite foreign key
+    // refuses it anyway, because the pair (entity, tenant) does not exist. That is §7.3's tie
+    // doing the work a policy alone cannot: RLS enforces whatever the column claims, and this is
+    // what stops the column claiming something false.
+    await expect(
+      runner.query(
+        `INSERT INTO core.site (organization_id, reporting_entity_id, name)
+              VALUES ($1, $2, 'Smuggled')`,
+        [ORG_A, ENTITY_B],
+      ),
+    ).rejects.toThrow(/foreign key|violates/i);
+  });
+
+  it('cannot write a snapshot for another tenant, and cannot rewrite one at all', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    await runner.query(
+      `INSERT INTO core.entity_snapshot (organization_id, reporting_entity_id, payload)
+            VALUES ($1, $2, '{"name":"Brutăria Alpha"}'::jsonb)`,
+      [ORG_A, ENTITY_A],
+    );
+
+    // FR-18 rests on the snapshot being immutable: a closed period keeps the values in force when
+    // it was prepared. Two layers refuse it — `esg_app` holds no UPDATE grant, and no role has an
+    // UPDATE policy — and the two fail differently: a missing grant raises, a missing policy matches
+    // zero rows. The assertion is "nothing was rewritten", which both satisfy, so it holds for the
+    // runtime role and the owner alike without either being asserted as the mechanism.
+    const updated = (await runner.query(
+      `UPDATE core.entity_snapshot SET payload = '{}'::jsonb WHERE reporting_entity_id = $1 RETURNING id`,
+      [ENTITY_A],
+    ).catch(() => [[], 0])) as [unknown[], number];
+    expect(updated[0]).toHaveLength(0);
+  });
+});

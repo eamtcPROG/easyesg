@@ -1658,6 +1658,230 @@
         ]
       }
     },
+    "/api/v1/entities": {
+      "get": {
+        "description": "Archived entities are included and carry their status — S-13 filters them out of active selection, and the collection publishes what exists so a reader can find one deliberately.",
+        "operationId": "EntitiesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Every entity, with its sites.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ReportingEntityResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "The organization’s reporting entities",
+        "tags": [
+          "entity"
+        ]
+      },
+      "post": {
+        "description": "An organization may hold several: most SMEs hold exactly one and the model does not assume it (FR-17). Sites may be supplied now or added later.",
+        "operationId": "EntitiesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportingEntityRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The entity as created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportingEntityResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An activity code the organization’s country does not register (problem type nace-code-unknown). The classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Create a reporting entity",
+        "tags": [
+          "entity"
+        ]
+      }
+    },
+    "/api/v1/entities/{entityId}": {
+      "get": {
+        "operationId": "EntitiesController_view",
+        "parameters": [
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The entity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportingEntityResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No entity of the active organization has that id — including when it is another tenant’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "One reporting entity, with its sites",
+        "tags": [
+          "entity"
+        ]
+      },
+      "patch": {
+        "description": "A patch: a field absent is unchanged. Sending `sites` saves the whole collection. A report for a closed period keeps the values in force when it was prepared (FR-18), so an edit here is not retroactive — S-13 states that consequence before the save.",
+        "operationId": "EntitiesController_update",
+        "parameters": [
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReportingEntityRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The entity after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportingEntityResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The entity is archived, so its master data is read-only (problem type entity-archived). It stays readable — its historical reports and exports must remain retrievable.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Edit a reporting entity’s master data",
+        "tags": [
+          "entity"
+        ]
+      }
+    },
+    "/api/v1/entities/{entityId}/archive": {
+      "post": {
+        "description": "Removes it from active selection and retains its historical reports and exports intact (FR-20, UC-55) — the entity is sold, merged or dissolved, and prior filings must stay retrievable. An action-noun route rather than DELETE, because nothing is deleted.",
+        "operationId": "EntitiesController_archive",
+        "parameters": [
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The entity was archived."
+          },
+          "409": {
+            "description": "The entity is already archived (problem type entity-archived).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Archive a reporting entity",
+        "tags": [
+          "entity"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -2955,6 +3179,229 @@
             "type": "string",
             "nullable": true,
             "maxLength": 40
+          }
+        }
+      },
+      "SiteResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "addressLine1": {
+            "type": "string",
+            "nullable": true
+          },
+          "locality": {
+            "type": "string",
+            "nullable": true
+          },
+          "postalCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "latitude": {
+            "type": "string",
+            "nullable": true,
+            "description": "Decimal degrees as a string (NFR-58)."
+          },
+          "longitude": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "addressLine1",
+          "locality",
+          "postalCode",
+          "countryCode",
+          "latitude",
+          "longitude"
+        ]
+      },
+      "ReportingEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "legalForm": {
+            "type": "string",
+            "nullable": true
+          },
+          "naceCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "archived"
+            ],
+            "description": "Archived entities leave active selection and keep their reports and exports (FR-20). They remain readable here; their master data is read-only."
+          },
+          "archivedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds, or null while active."
+          },
+          "sites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds."
+          },
+          "updatedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "legalForm",
+          "naceCodes",
+          "status",
+          "archivedAt",
+          "sites",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SiteRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Omit to add a site; supply an existing id to edit that one. A site the array omits is removed, which is what makes this collection a save rather than an append."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "addressLine1": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200
+          },
+          "locality": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 120
+          },
+          "postalCode": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 20
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "MD"
+          },
+          "latitude": {
+            "type": "string",
+            "nullable": true,
+            "example": "47.024512",
+            "description": "Decimal degrees as a string, not a number. B5’s biodiversity applicability is evaluated from these coordinates (BR-APP-3), so a value that drifts in the last places is a determination that changes — which is why neither the column nor the wire uses a float."
+          },
+          "longitude": {
+            "type": "string",
+            "nullable": true,
+            "example": "28.832363"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateReportingEntityRequestDto": {
+        "type": "object",
+        "properties": {
+          "legalForm": {
+            "type": "string",
+            "nullable": true,
+            "description": "A key from the country’s legal-form vocabulary."
+          },
+          "naceCodes": {
+            "example": [
+              "10.71",
+              "56.10"
+            ],
+            "description": "CAEM Rev.2 codes — 1:1 with NACE Rev.2 to four characters, which is what B1 exports. Each is admitted against the classifier registered for the organization’s country; an empty array means the entity is not classified yet, which FR-17 permits.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sites": {
+            "description": "The entity’s sites, as a whole collection. Omit to leave them alone; send an array to save them — members with an id are edited, members without are added, and stored sites the array omits are removed.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteRequestDto"
+            }
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "The entity’s name, as it is reported on."
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateReportingEntityRequestDto": {
+        "type": "object",
+        "properties": {
+          "legalForm": {
+            "type": "string",
+            "nullable": true,
+            "description": "A key from the country’s legal-form vocabulary."
+          },
+          "naceCodes": {
+            "example": [
+              "10.71",
+              "56.10"
+            ],
+            "description": "CAEM Rev.2 codes — 1:1 with NACE Rev.2 to four characters, which is what B1 exports. Each is admitted against the classifier registered for the organization’s country; an empty array means the entity is not classified yet, which FR-17 permits.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sites": {
+            "description": "The entity’s sites, as a whole collection. Omit to leave them alone; send an array to save them — members with an id are edited, members without are added, and stored sites the array omits are removed.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteRequestDto"
+            }
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
           }
         }
       },

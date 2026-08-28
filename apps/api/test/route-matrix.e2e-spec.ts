@@ -73,14 +73,29 @@ type ActorName = (typeof ACTOR)[keyof typeof ACTOR];
 /**
  * What an actor should meet at a route, derived from the route's declaration.
  *
- * This function **is** actors.md §5 as far as today's surface goes, and it is four lines because
- * the matrix's rows collapse: "own account, credentials, identity links" and "accept invitation;
- * view memberships" are `Y` for CA and `Y (via CA)` for every other human actor, which is exactly
- * `account`; "organization users: invite, re-role, remove" is `Y` for OA alone, which is exactly
- * `role:organization_administrator`. Adding a role-gated capability later means one more branch
- * here, not a new table.
+ * This function **is** actors.md §5 as far as today's surface goes: "own account, credentials,
+ * identity links" and "accept invitation; view memberships" are `Y` for CA and `Y (via CA)` for
+ * every other human actor, which is exactly `account`; "organization users: invite, re-role,
+ * remove" is `Y` for OA alone, which is exactly `role:organization_administrator`.
+ *
+ * **It reads the declared roles rather than assuming `role` means OA** — corrected 28 Aug 2026,
+ * when task 29.3 added the first route admitting more than one. `GET /entities` is open to every
+ * member because UC-19 has the Contributor completing B1 from values that pre-populate from the
+ * entity record, so an assumption that any role gate is the administrator's would have expected a
+ * refusal the guard correctly admits, and the matrix would have gone red on working code. The
+ * actor's role is looked up rather than assumed to be its own name: `viewer` and `editor` happen to
+ * coincide with the role vocabulary and `administrator` does not, so comparing the strings directly
+ * would have admitted the two that match and refused the one that does not — passing most of the
+ * matrix while being wrong about the actor the whole gate exists for.
  */
 const ADMITTED = 'admitted';
+
+/** Which membership role each actor was granted in `beforeAll`. `stranger` holds none. */
+const ROLE_OF: Partial<Record<ActorName, string>> = {
+  [ACTOR.VIEWER]: MEMBERSHIP_ROLE.VIEWER,
+  [ACTOR.EDITOR]: MEMBERSHIP_ROLE.EDITOR,
+  [ACTOR.ADMINISTRATOR]: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+};
 
 function expectedFor(permission: Permission, actor: ActorName): string {
   if (permission === PERMISSION.PUBLIC) return ADMITTED;
@@ -88,8 +103,11 @@ function expectedFor(permission: Permission, actor: ActorName): string {
   if (actor === ACTOR.ANONYMOUS) return ProblemType.AuthenticationRequired;
   if (permission === PERMISSION.ACCOUNT) return ADMITTED;
 
-  // `role:…` — the only role-gated capability on today's surface is OA's.
-  if (actor === ACTOR.ADMINISTRATOR) return ADMITTED;
+  // `role:a+b+c` — the roles the declaration actually names, not the ones this file assumes.
+  const admitted = permission.slice(`${PERMISSION.ROLE}:`.length).split('+');
+  const role = ROLE_OF[actor];
+  if (role !== undefined && admitted.includes(role)) return ADMITTED;
+
   // A member of the organization holding the wrong role, versus somebody holding no membership at
   // all: two different refusals, and the guard distinguishes them so support can.
   return actor === ACTOR.STRANGER ? ProblemType.MembershipRequired : ProblemType.InsufficientRole;

@@ -15,3 +15,11 @@ export const ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_KIND = 'organization_relation
 
 /** The one scope the relationship-type vocabulary is published under. */
 export const ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_SCOPE = 'global';
+
+/**
+ * FR-17's activity classification. **Scope is the country code**, like legal forms: the classifier
+ * is national. Moldova's is CAEM Rev.2, which the National Bureau of Statistics harmonises 1:1 with
+ * NACE Rev.2 up to four characters — so a code recorded here is a NACE code, which is what B1
+ * exports.
+ */
+export const NACE_CODE_CONFIG_KIND = 'nace_code';

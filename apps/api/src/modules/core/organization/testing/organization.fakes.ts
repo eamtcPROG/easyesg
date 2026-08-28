@@ -96,6 +96,10 @@ export class FakeOrganizationVocabulary implements OrganizationVocabulary {
   constructor(
     private readonly legalForms: Record<string, readonly string[]> = { md: ['srl', 'sa', 'ii'] },
     private readonly types: readonly string[] = ['direct_sme'],
+    /** A handful of real CAEM codes, enough to tell membership from its absence. */
+    private readonly naceCodes: Record<string, readonly string[]> = {
+      md: ['A', '01', '01.1', '01.11', '10.11', '62.01'],
+    },
   ) {}
 
   legalFormsFor(countryCode: string): readonly string[] | null {
@@ -106,6 +110,11 @@ export class FakeOrganizationVocabulary implements OrganizationVocabulary {
     return Object.keys(this.legalForms)
       .sort()
       .map((countryCode) => ({ countryCode, legalForms: this.legalForms[countryCode] }));
+  }
+
+  naceCodesFor(countryCode: string): ReadonlySet<string> | null {
+    const codes = this.naceCodes[countryCode.toLowerCase()];
+    return codes ? new Set(codes) : null;
   }
 
   relationshipTypes(): readonly string[] {

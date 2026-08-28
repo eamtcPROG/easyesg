@@ -4779,3 +4779,88 @@ enforcement lives.
 ### Verified
 
 `pnpm gates:clean` — EXIT=0.
+
+---
+
+## Task 29.3 — Reporting entities · 2026-08-28
+
+`core.reporting_entity`, `core.site` and `core.entity_snapshot` with S-13's API half (UC-52, UC-53,
+UC-55). The first `core` tables that are not the tenant root, and the first with a parent-child pair.
+
+### The CAEM list was sourced, and the sourcing is the story
+
+The project owner chose a configuration vocabulary for NACE over the recommended shape-only check,
+which meant the list had to be real — the failure mode task 29.2 had just demonstrated at length.
+
+The Bureau of Statistics' own `caem_rev2.zip` was downloaded with permission. It holds two Word
+documents, Romanian and Russian, independently typeset. **Both parse to 996 entries with identical
+code sets**, and the totals match NACE Rev.2 exactly at every level: 21 sections, 88 divisions, 272
+groups, 615 classes, with all 88 canonical divisions present and none missing. A first parse
+over-counted by catching the rev.1 correspondence column, and a stray `48` turned out to be a page
+number — NACE jumps 47 to 49. Three independent agreements — two documents and an external standard
+— are what make the seed trustworthy.
+
+**This seed carries names, which is an apparent OQ-43 exception and is argued in §7.2 rather than
+taken quietly.** OQ-43 keeps *authored* wording in committed catalogues; a classifier's published
+names are an external authority's text, which is the case NFR-24 already covers for EFRAG's taxonomy
+labels. The alternative settles it: 996 codes across three locales is 2,988 catalogue entries that
+must never be machine-translated, for text the state publishes in two of the three. English is owed
+and arrives as a configuration revision with no redeploy.
+
+### Reads are open, writes are not
+
+D-2 says entity master data is OA-*owned*, and the instinct is to read that as OA-only. UC-19 says
+otherwise: the Contributor completes B1 from values that **pre-populate from this record**, so
+refusing an RC the read would put the wizard's own source out of reach of the person filling it in.
+Ownership is about who maintains, not about who may see.
+
+That made `GET /entities` the first route on the surface admitting more than one role — and it
+**broke an assumption baked into the route matrix**. `expectedFor` collapsed `role:…` to "the
+administrator, everyone else refused", which was true of every route until now; against a
+multi-role declaration it would have expected a refusal the guard correctly admits, turning working
+code red. It now reads the roles the declaration names.
+
+Fixing it surfaced a second, quieter thing: the actor names and the role vocabulary are *not* the
+same strings. `viewer` and `editor` coincide; `administrator` is `organization_administrator`. A
+direct comparison would have admitted the two that match and refused the one that does not — passing
+most of the matrix while being wrong about the actor the whole gate exists for. The mapping is now
+explicit.
+
+### Smaller decisions
+
+**`sites` is a whole-collection save, not an append.** S-13 is a Record archetype with explicit save,
+so the array *is* the collection: members with an id are edited, members without are added, and a
+stored site the array omits is removed. Omitting the key entirely leaves the sites alone — absent is
+not empty, and a client that forgot to send them must not lose them. Updating rather than replacing
+is what keeps FR-54's trail useful: a corrected postcode records one changed field, where a
+delete-and-reinsert would record a site vanishing and an unrelated one appearing.
+
+**Coordinates are `numeric(9,6)` in the column and **strings** everywhere above it** (NFR-58, AD-14
+constraint 4). A `numeric` crosses the driver boundary as a string, and parsing it into a double at
+the DTO would reintroduce exactly the representation the column exists to avoid. BR-APP-3 makes
+biodiversity applicability site-driven from these values, so drift in the last places is a
+determination that changes.
+
+**The snapshot is immutable by grant** — `SELECT, INSERT` only, no UPDATE or DELETE policy for any
+role. FR-18's guarantee is that a closed period keeps the values in force when it was prepared, and
+a snapshot the application could rewrite would defeat precisely that. It is classified as unaudited
+for `audit.system_audit_log`'s reason: capturing per-field changes to an immutable record would
+record the writing of it.
+
+**Archiving is a status change with no inverse.** No use case describes restoring an entity and no
+screen offers it, so `archived` is terminal until something asks otherwise — inventing the
+transition would be inventing a flow. Editing an archived entity is a `409`, not a `404`: it stays
+readable because its reports must stay retrievable, and what refuses the write is its state.
+
+### The second empty table in three tasks
+
+`core.entity_snapshot` ships with no writer, as `core.org_relationship` did in 29.1. Each is
+justified — §7.2 takes the snapshot at period open, which is task 31.1, and NFR-48 forbids schema
+changes in the April–May filing window — but the pattern is named in the migration rather than left
+to accumulate unremarked. **FR-18's point-in-time clause is therefore structural only in this task:**
+the table, its immutability and its isolation are proven; nothing writes a snapshot until a period
+can be opened.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0.
