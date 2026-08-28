@@ -94,7 +94,9 @@ test('a duplicate registration surfaces the 409 with sign-in as the way out (OQ-
 
   // The api's resolved wording, rendered as received — never re-derived from the slug.
   await expect(page.getByText('Există deja un cont pentru această adresă', { exact: false })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Autentificați-vă' }).first()).toBeVisible();
+  // Unscoped, and `.first()` is gone: the conflict callout carries the only sign-in link on the
+  // screen, because the standing footer prompt steps aside while it is showing.
+  await expect(page.getByRole('link', { name: 'Autentificați-vă' })).toBeVisible();
 });
 
 test('the language switcher reaches the same screen in all three locales (UX-4)', async ({

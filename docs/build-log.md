@@ -5482,3 +5482,41 @@ closed and applied incompletely — every one of them stopping at the boundary o
 feature or app the original review happened to be reading. One was not a finding at all. That ratio
 is the argument for asking "are there others" as a separate question from "is this one right":
 the second question was answered correctly six times, and it never once implied the first.
+
+## Two links, one destination, one name — and the two tests that had adapted · 2026-08-28
+
+S-01's register screen carries a standing *"Aveți deja un cont? **Autentificați-vă**"* prompt at the
+foot. On a 409 it also renders the conflict callout's remedy, which is a link to the same route
+under the same label — because the 27 Aug rule is that a refusal's `action` slot carries a node only
+where the screen owns a remedy that *navigates*, and "this address already has an account" is the
+textbook case for one.
+
+So on exactly the one refusal where the remedy matters, the screen offered it twice: same accessible
+name, same `href`, a screen's height apart.
+
+**Both tests had been written around it rather than reporting it**, which is now the third instance
+of that pattern in a day and the reason it is worth naming as a class:
+
+- `e2e/web/registration.spec.ts` asserted `getByRole('link', …).first()`.
+- `register-form.spec.tsx` asserted `getAllByRole('link', …).length).toBeGreaterThan(0)` — a count
+  assertion that deliberately declines to say the count.
+
+Neither is a bad test in isolation. Both are what a test looks like when the author met an
+ambiguity, resolved it locally, and moved on; and between them they made the duplicate permanently
+invisible, because the suite could no longer fail on it.
+
+**The standing prompt now steps aside while the callout is showing.** That direction was chosen over
+renaming one of the links: two links to one destination with *different* names is not better, it is
+the same redundancy with the evidence removed. The reader who has just been told their address has
+an account does not also need to be asked whether they have one.
+
+### The assertion is the count, in both directions
+
+`toHaveLength(1)` before the refusal and after it, plus `within(callout)` to say which one survives.
+The first of those is the load-bearing one and it did not exist before: nothing covered the footer
+link on a clean render, so a change that suppressed it *always* would have passed the whole suite.
+Proved by making the suppression unconditional and watching that assertion — and only that one —
+fail.
+
+The e2e locator lost its `.first()` for the same reason it did on S-16 earlier today: a suite that
+tolerates two of something can never report three.

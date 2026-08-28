@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -116,6 +116,9 @@ describe('S-01 · register form', () => {
     });
     renderForm();
 
+    // Before the refusal: the standing footer prompt is the screen's one sign-in link.
+    expect(screen.getAllByRole('link', { name: 'Autentificați-vă' })).toHaveLength(1);
+
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
     await user.click(screen.getByRole('button', { name: 'Creați contul' }));
@@ -124,7 +127,12 @@ describe('S-01 · register form', () => {
     // The API's resolved wording verbatim — the screen never re-derives it from a slug.
     expect(callout).toHaveTextContent('Intră în conflict cu datele existente');
     expect(callout).toHaveTextContent('Există deja un cont pentru această adresă…');
-    expect(screen.getAllByRole('link', { name: 'Autentificați-vă' }).length).toBeGreaterThan(0);
+    // And after it: still exactly one, now the callout's. The count is the assertion in both
+    // directions — the standing prompt offers the same destination under the same name, so it
+    // steps aside rather than doubling it, and a change that suppressed it always would fail the
+    // check above.
+    expect(screen.getAllByRole('link', { name: 'Autentificați-vă' })).toHaveLength(1);
+    expect(within(callout).getByRole('link', { name: 'Autentificați-vă' })).toBeVisible();
     expect(push).not.toHaveBeenCalled();
   });
 

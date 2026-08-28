@@ -195,12 +195,20 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
         </div>
       </Panel>
 
-      <p className={styles.altAction}>
-        {t('alreadyHave')}{' '}
-        <TextLink asChild>
-          <Link href={ROUTES.SIGN_IN}>{t('signIn')}</Link>
-        </TextLink>
-      </p>
+      {/* The standing "already have an account?" prompt — **suppressed while the conflict callout
+          is offering the same destination** (28 Aug 2026). On a 409 the API has just said this
+          address has an account and the callout carries the remedy, so this repeats it: a second
+          link, same accessible name, same href, a screen apart. Two tests had been written around
+          that ambiguity rather than reporting it — an e2e `.first()` and a unit assertion of
+          `length > 0` — which is the shape a defect takes when only the tests meet it. */}
+      {isConflict ? null : (
+        <p className={styles.altAction}>
+          {t('alreadyHave')}{' '}
+          <TextLink asChild>
+            <Link href={ROUTES.SIGN_IN}>{t('signIn')}</Link>
+          </TextLink>
+        </p>
+      )}
     </form>
   );
 }
