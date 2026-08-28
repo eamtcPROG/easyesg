@@ -16,7 +16,7 @@ import { Link } from '@/i18n/navigation';
  * The client provider is namespace-scoped on purpose: the root layout mounts
  * `NextIntlClientProvider messages={null}` so the full catalogue never reaches the browser
  * (NFR-43); these screens' client components need exactly `identity` and `chrome`, so exactly
- * those ship.
+ * those ship — plus `forms`, the two reveal-toggle labels that belong to no screen.
  */
 export default async function IdentityLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations('chrome');
@@ -24,7 +24,7 @@ export default async function IdentityLayout({ children }: { children: ReactNode
 
   return (
     <NextIntlClientProvider
-      messages={{ identity: messages.identity, chrome: messages.chrome }}
+      messages={{ identity: messages.identity, chrome: messages.chrome, forms: messages.forms }}
     >
       <FocusShell
         brand={

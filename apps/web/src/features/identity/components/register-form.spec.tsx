@@ -36,7 +36,7 @@ const renderForm = () =>
   render(
     <NextIntlClientProvider
       locale="ro"
-      messages={{ identity: ro.identity, chrome: ro.chrome }}
+      messages={{ identity: ro.identity, chrome: ro.chrome, forms: ro.forms }}
     >
       <RegisterForm />
     </NextIntlClientProvider>,

@@ -25,10 +25,10 @@ import { useCredentials } from './credentials-context';
 export function ReauthGate() {
   const t = useTranslations('identity.credentials.confirm');
   const tPassword = useTranslations('identity.credentials.password');
-  // The reveal toggle's accessible names, borrowed from `identity.register` rather than copied:
-  // `packages/ui` owns no text, and two catalogues saying "Show" is two places a wording change
-  // has to reach. `set-password-form.tsx` does the same.
-  const tPolicy = useTranslations('identity.register');
+  // The reveal toggle's accessible names. `packages/ui` owns no text (UX-79), so the app supplies
+  // them — and they belong to no feature, which is why they are `forms` rather than borrowed from
+  // whichever screen happened to declare them first.
+  const tForms = useTranslations('forms');
   const { control } = useCredentials();
 
   return (
@@ -38,8 +38,8 @@ export function ReauthGate() {
         name="password"
         label={tPassword('current')}
         autoComplete="current-password"
-        revealLabel={tPolicy('show')}
-        concealLabel={tPolicy('hide')}
+        revealLabel={tForms('show')}
+        concealLabel={tForms('hide')}
       />
     </RecordSection>
   );

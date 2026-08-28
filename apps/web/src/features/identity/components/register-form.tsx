@@ -49,6 +49,10 @@ export interface RegisterFormProps {
 
 export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
   const t = useTranslations('identity.register');
+  // The reveal toggle's accessible names. `packages/ui` owns no text (UX-79), so the app supplies
+  // them — and they belong to no feature, which is why they are `forms` rather than borrowed from
+  // whichever screen happened to declare them first.
+  const tForms = useTranslations('forms');
   const tCommon = useTranslations('identity');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -167,8 +171,8 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
               label={t('passwordLabel')}
               help={t('pasteHint')}
               autoComplete="new-password"
-              revealLabel={t('show')}
-              concealLabel={t('hide')}
+              revealLabel={tForms('show')}
+              concealLabel={tForms('hide')}
               rules={{
                 validate: (value) =>
                   evaluatePasswordPolicy(value ?? '').satisfied ||

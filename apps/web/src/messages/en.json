@@ -36,6 +36,10 @@
       }
     }
   },
+  "forms": {
+    "show": "Show",
+    "hide": "Hide"
+  },
   "identity": {
     "unreachable": {
       "title": "The server cannot be reached",
@@ -51,8 +55,6 @@
       "emailInvalid": "What you entered is not shaped like an email address, so the confirmation link would go nowhere. Check the address and correct it.",
       "passwordLabel": "Password",
       "pasteHint": "A password manager and pasting from the clipboard both work here.",
-      "show": "Show",
-      "hide": "Hide",
       "requirements": {
         "length": "Between {minimum} and {maximum} characters",
         "lowercase": "At least one lowercase letter",
@@ -103,8 +105,6 @@
       "emailInvalid": "The text entered is not shaped like an email address, so sign-in cannot start. Check the address and correct it.",
       "passwordLabel": "Password",
       "passwordMissing": "The password is missing, so we cannot verify your identity. Fill in the password before continuing.",
-      "show": "Show",
-      "hide": "Hide",
       "submit": "Sign in",
       "forgot": "Forgot your password?",
       "noAccount": "Don't have an account yet?",

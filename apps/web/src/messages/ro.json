@@ -36,6 +36,10 @@
       }
     }
   },
+  "forms": {
+    "show": "Arătați",
+    "hide": "Ascundeți"
+  },
   "identity": {
     "unreachable": {
       "title": "Serverul nu poate fi contactat",
@@ -51,8 +55,6 @@
       "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci linkul de confirmare nu ar ajunge nicăieri. Verificați adresa și corectați-o.",
       "passwordLabel": "Parolă",
       "pasteHint": "Managerul de parole și lipirea din clipboard funcționează aici.",
-      "show": "Arătați",
-      "hide": "Ascundeți",
       "requirements": {
         "length": "Între {minimum} și {maximum} de caractere",
         "lowercase": "Cel puțin o literă mică",
@@ -103,8 +105,6 @@
       "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci autentificarea nu poate începe. Verificați adresa și corectați-o.",
       "passwordLabel": "Parolă",
       "passwordMissing": "Parola lipsește, deci nu vă putem verifica identitatea. Completați parola înainte de a continua.",
-      "show": "Arătați",
-      "hide": "Ascundeți",
       "submit": "Intrați în cont",
       "forgot": "V-ați uitat parola?",
       "noAccount": "Nu aveți încă un cont?",

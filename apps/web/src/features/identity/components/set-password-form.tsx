@@ -34,7 +34,13 @@ interface SetPasswordInput {
 
 export function SetPasswordForm({ token }: { token: string }) {
   const t = useTranslations('identity.setPassword');
+  // The password POLICY strings (OQ-51), genuinely shared with the register screen that
+  // declares them — this borrow is what its name says it is.
   const tPolicy = useTranslations('identity.register');
+  // The reveal toggle's accessible names. `packages/ui` owns no text (UX-79), so the app supplies
+  // them — and they belong to no feature, which is why they are `forms` rather than borrowed from
+  // whichever screen happened to declare them first.
+  const tForms = useTranslations('forms');
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<ResetPasswordResult | null>(null);
@@ -124,8 +130,8 @@ export function SetPasswordForm({ token }: { token: string }) {
               label={t('passwordLabel')}
               help={tPolicy('pasteHint')}
               autoComplete="new-password"
-              revealLabel={tPolicy('show')}
-              concealLabel={tPolicy('hide')}
+              revealLabel={tForms('show')}
+              concealLabel={tForms('hide')}
               rules={{
                 validate: (value) =>
                   evaluatePasswordPolicy(value ?? '').satisfied ||

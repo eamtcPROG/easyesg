@@ -33,10 +33,10 @@ interface PasswordForm {
 
 export function PasswordSection() {
   const t = useTranslations('identity.credentials.password');
-  // The reveal toggle's accessible names. Borrowed from `identity.register` rather than copied
-  // into this namespace: `packages/ui` owns no text, and two catalogues saying "Show" is two
-  // places a wording change has to reach. `set-password-form.tsx` already does the same.
-  const tPolicy = useTranslations('identity.register');
+  // The reveal toggle's accessible names. `packages/ui` owns no text (UX-79), so the app supplies
+  // them — and they belong to no feature, which is why they are `forms` rather than borrowed from
+  // whichever screen happened to declare them first.
+  const tForms = useTranslations('forms');
   const { perform, succeeded, password } = useCredentials();
   const busy = useSectionBusy(CREDENTIALS_SECTION.PASSWORD);
   const { control, handleSubmit, register, reset } = useForm<PasswordForm>({
@@ -80,8 +80,8 @@ export function PasswordSection() {
           name="password"
           label={t('next')}
           autoComplete="new-password"
-          revealLabel={tPolicy('show')}
-          concealLabel={tPolicy('hide')}
+          revealLabel={tForms('show')}
+          concealLabel={tForms('hide')}
           rules={{ required: t('nextMissing') }}
         />
 

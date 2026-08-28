@@ -28,7 +28,7 @@ const action = vi.mocked(signInAction);
 
 const renderForm = (returnTo?: string) =>
   render(
-    <NextIntlClientProvider locale="ro" messages={{ identity: ro.identity, chrome: ro.chrome }}>
+    <NextIntlClientProvider locale="ro" messages={{ identity: ro.identity, chrome: ro.chrome, forms: ro.forms }}>
       <SignInForm returnTo={returnTo} />
     </NextIntlClientProvider>,
   );

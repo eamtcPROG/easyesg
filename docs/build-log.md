@@ -5392,3 +5392,53 @@ reaching into another feature's namespace for a string that belongs to neither. 
 locally by borrowing, and borrowing from a sibling feature is the hacky form of the shared namespace
 nobody has created. That is one change with a clear shape, and it is a better change than three
 opportunistic ones.
+
+## Two words that belonged to no screen, and the four places that proved it · 2026-08-28
+
+`show` and `hide` — the reveal toggle's accessible names — were declared in `identity.register`
+**and** `identity.signIn`, identically, in all three locales. That was the sweep's sixth finding,
+and the obvious fix is to delete one pair and have sign-in borrow the other. It was not taken,
+because reading the four readers showed the duplicate was the symptom rather than the defect.
+
+**What the borrowing actually looked like**, once collected:
+
+- `set-password-form.tsx` reads `identity.register` as `tPolicy` — legitimate, for the OQ-51
+  password-policy strings that screen genuinely shares. The name is honest.
+- `password-section.tsx` and `reauth-gate.tsx` declare the same `tPolicy` alias and use it for
+  **nothing but `show`/`hide`**. They are in `features/credentials`; the alias names a policy they
+  never read, and the namespace belongs to a screen they have nothing to do with. Copy-pasted.
+- `(app)/(workspace)/layout.tsx` hand-assembled a **two-key fragment** of `identity.register` into
+  its client provider, with a comment explaining that shipping the whole registration namespace to
+  a settings screen would send a dozen unused sentences for two words.
+
+That last one is the tell. When a layout is synthesising a partial namespace out of another
+screen's, the string does not live where it belongs. `packages/ui` owns no text (UX-79), so the app
+must supply these two words, and every password field in the product needs the same pair — that is
+the definition of a string no feature owns.
+
+**`forms` is now a top-level namespace** carrying exactly `show` and `hide`. It deletes the
+duplicate pair, both misnamed aliases, and the layout fragment; `set-password-form.tsx` keeps
+`tPolicy` for the strings that name is actually about. Five call sites, and no test selector
+depended on the labels.
+
+### The part that would have failed in production and not in a unit test
+
+The root layout mounts `messages={null}` on purpose (NFR-43), so **a namespace reaches the browser
+only by being named in a scoped provider**. A new top-level namespace is therefore not a catalogue
+edit — it is an edit to every provider whose subtree reads it, and there is no type that says so.
+Both layouts were updated (`(identity)` and `(app)/(workspace)`), which between them cover all five
+components with a password field, and the two component specs that mount their own provider needed
+`forms: ro.forms` for the same reason.
+
+The workspace layout's own docblock already warned about this in the general case — *"Omitting this
+is not a subtle failure: every client component below throws `MISSING_MESSAGE` at render, which is
+how this one was found."* Worth reading before adding a namespace, not after.
+
+### The third witness is now the only one left
+
+The build-log entry two above listed three pulls toward a form-layer namespace: `summaryTitle` in
+eight places, `show`/`hide` in two, and `identity.unreachable.*` read across features. This closes
+the second. `summaryTitle` was deliberately left duplicated an hour earlier and is now the odd one
+out — a candidate for `forms` on the same argument, and cheap to move. `unreachable` is a different
+question with a different answer already written down: the workspace layout says its honest home is
+`chrome`, not `forms`, because it is not a form string.

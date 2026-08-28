@@ -45,6 +45,10 @@ const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function SignInForm({ returnTo }: { returnTo?: string }) {
   const t = useTranslations('identity.signIn');
+  // The reveal toggle's accessible names. `packages/ui` owns no text (UX-79), so the app supplies
+  // them — and they belong to no feature, which is why they are `forms` rather than borrowed from
+  // whichever screen happened to declare them first.
+  const tForms = useTranslations('forms');
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<SignInFailure>(undefined);
@@ -132,8 +136,8 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
             name="password"
             label={t('passwordLabel')}
             autoComplete="current-password"
-            revealLabel={t('show')}
-            concealLabel={t('hide')}
+            revealLabel={tForms('show')}
+            concealLabel={tForms('hide')}
             rules={{ required: t('passwordMissing') }}
           />
 
