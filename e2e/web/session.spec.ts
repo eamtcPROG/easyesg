@@ -67,7 +67,7 @@ test('a user signs in, holds an httpOnly session, and signs out (UC-04, UC-06)',
   const readable = await page.evaluate(() => document.cookie);
   expect(readable).not.toContain('easyesg_session');
 
-  await page.getByRole('button', { name: 'Ieși din cont' }).click();
+  await page.getByRole('button', { name: 'Ieșiți din cont' }).click();
   await page.waitForURL('**/sign-in');
 
   // The session is gone server-side too: the guarded route bounces straight back.

@@ -197,7 +197,15 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccoun
           <Callout
             intent={CALLOUT_INTENT.ERROR}
             title={failure.problem.title ?? t('problemTitle')}
-            action={t('problemAction')}
+            /* NFR-79's "what now" belongs to the API's `detail`, which states its own remedy. The
+                slot carries something only where this screen owns one the detail cannot express —
+                in practice a remedy that NAVIGATES, and this screen has nowhere to send anyone.
+                `problemAction` said "Verifică datele introduse și încearcă din nou", which is the
+                closing clause of `identity.sign_in.credential_invalid` verbatim and contradicts a
+                throttle refusal outright. The tenant screens made this fix on 27 Aug 2026; the
+                console was a sixth site nobody looked at, because that review scoped itself to
+                `apps/web`. */
+            action={null}
           >
             {failure.problem.detail ?? t('problemBody')}
           </Callout>

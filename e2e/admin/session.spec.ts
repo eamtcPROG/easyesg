@@ -28,16 +28,16 @@ test.afterAll(async () => {
 async function beginSignIn(page: Page, email: string) {
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Continuă' }).click();
+  await page.getByRole('button', { name: 'Continuați' }).click();
   // The factor step names the address the SERVER verified — the handshake's point.
-  await expect(page.getByRole('heading', { name: 'Confirmă al doilea factor' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Confirmați al doilea factor' })).toBeVisible();
   await expect(page.getByText(email)).toBeVisible();
 }
 
 async function signIn(page: Page, email: string, code = currentTotpCode(TOTP_SECRET)) {
   await beginSignIn(page, email);
   await page.getByLabel('Cod de verificare').fill(code);
-  await page.getByRole('button', { name: 'Continuă în consolă' }).click();
+  await page.getByRole('button', { name: 'Continuați în consolă' }).click();
 }
 
 test('the realm is closed by default, admits credential + code, and signs out (UC-68)', async ({
@@ -61,7 +61,7 @@ test('the realm is closed by default, admits credential + code, and signs out (U
   const readable = await page.evaluate(() => document.cookie);
   expect(readable).not.toContain('easyesg_admin_session');
 
-  await page.getByRole('button', { name: 'Ieși din consolă' }).click();
+  await page.getByRole('button', { name: 'Ieșiți din consolă' }).click();
   await page.waitForURL('**/sign-in');
 
   // The session ended server-side too: the realm is closed again.
@@ -82,7 +82,7 @@ test('a wrong code refuses distinctly and the challenge survives for the retype'
   // "failed factor" is recoverable, so the retyped code completes the same challenge.
   await expect(page.getByText('Cod de verificare incorect')).toBeVisible();
   await page.getByLabel('Cod de verificare').fill(currentTotpCode(TOTP_SECRET));
-  await page.getByRole('button', { name: 'Continuă în consolă' }).click();
+  await page.getByRole('button', { name: 'Continuați în consolă' }).click();
   await page.waitForURL('**/organizations');
 });
 

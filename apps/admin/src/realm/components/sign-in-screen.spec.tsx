@@ -51,8 +51,8 @@ const openChallenge = async (user: ReturnType<typeof userEvent.setup>) => {
   });
   await user.type(screen.getByLabelText('Adresa de e-mail'), EMAIL);
   await user.type(screen.getByLabelText('Parolă'), 'Parola123!');
-  await user.click(screen.getByRole('button', { name: 'Continuă' }));
-  await screen.findByRole('heading', { name: 'Confirmă al doilea factor' });
+  await user.click(screen.getByRole('button', { name: 'Continuați' }));
+  await screen.findByRole('heading', { name: 'Confirmați al doilea factor' });
 };
 
 beforeEach(() => {
@@ -86,7 +86,7 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
     await openChallenge(user);
 
     await user.type(screen.getByLabelText('Cod de verificare'), '287082');
-    await user.click(screen.getByRole('button', { name: 'Continuă în consolă' }));
+    await user.click(screen.getByRole('button', { name: 'Continuați în consolă' }));
 
     await waitFor(() => expect(onSignedIn).toHaveBeenCalledWith(account));
     expect(completeMock.mock.calls[0][0]).toEqual({ totpCode: '287082' });
@@ -106,7 +106,7 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
     await openChallenge(user);
 
     await user.type(screen.getByLabelText('Cod de verificare'), '000000');
-    await user.click(screen.getByRole('button', { name: 'Continuă în consolă' }));
+    await user.click(screen.getByRole('button', { name: 'Continuați în consolă' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Cod de verificare incorect');
@@ -128,7 +128,7 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
     await openChallenge(user);
 
     await user.type(screen.getByLabelText('Cod de verificare'), '287082');
-    await user.click(screen.getByRole('button', { name: 'Continuă în consolă' }));
+    await user.click(screen.getByRole('button', { name: 'Continuați în consolă' }));
 
     await screen.findByRole('heading', { name: 'Autentificare operator' });
     expect(screen.getByRole('alert')).toHaveTextContent('Autentificare necesară');
@@ -138,7 +138,7 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
     const user = userEvent.setup();
     renderScreen();
 
-    await user.click(screen.getByRole('button', { name: 'Continuă' }));
+    await user.click(screen.getByRole('button', { name: 'Continuați' }));
 
     expect(beginMock).not.toHaveBeenCalled();
     const summary = await screen.findByRole('alert');
@@ -157,7 +157,7 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
     renderScreen();
     await openChallenge(user);
 
-    await user.click(screen.getByRole('button', { name: 'Folosește alt cont' }));
+    await user.click(screen.getByRole('button', { name: 'Folosiți alt cont' }));
 
     expect(screen.getByRole('heading', { name: 'Autentificare operator' })).toBeInTheDocument();
     // …with nothing prefilled. "Use a different account" means the previous address is exactly
@@ -175,7 +175,7 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
 
     await user.type(screen.getByLabelText('Adresa de e-mail'), EMAIL);
     await user.type(screen.getByLabelText('Parolă'), 'Parola123!');
-    await user.click(screen.getByRole('button', { name: 'Continuă' }));
+    await user.click(screen.getByRole('button', { name: 'Continuați' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Serverul nu poate fi contactat');

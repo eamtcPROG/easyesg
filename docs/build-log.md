@@ -5297,3 +5297,66 @@ A mechanical sweep does not know that a code-shaped string inside a comment is a
 than an instance, and the two are indistinguishable to a regex. Both were reverted; the check that
 found them was reading the diff for changes on comment lines, which is now the thing to do after any
 codemod: `git diff -U0 | grep -E '^\+\s*(\*|//)'` and look at what it caught.
+
+## A finding that was not one, and the two the sweep found looking for it · 2026-08-28
+
+### The finding that was declined
+
+The sweep's fourth item was "nine sites express the RFC 9457 per-member fallback inline, now that
+`lib/notice.ts` owns the rule". Read closely, it is not a defect and the extraction would make the
+code worse.
+
+`Notice.action` is `string | null` **by design** — `lib/notice.ts` imports no React, and a reducer
+holding JSX is a state shape nobody wants. Six of the eight sites pass a `<TextLink>` as their
+action: a remedy that *navigates*, which is precisely the narrow case `Callout`'s slot stays
+non-null for. `failureNotice` structurally cannot serve them, and converting the two that could
+would leave two idioms for one rendering, which is worse than one idiom applied uniformly.
+
+What remains genuinely shared is two `??` expressions in two JSX attributes. Extracting those saves
+no lines, adds an import, and the `unreachable` parameter would misname what these sites pass — they
+fall back to a *problem* fallback, with a separate Callout for the unreachable case beside it.
+Recorded as declined rather than silently skipped: the sweep proposed it, and a proposal answered
+with a reason is a decision.
+
+### What was found instead: the console was outside both reviews
+
+Looking at all eight sites turned up two things in `apps/admin`, and they share a cause — **two
+reviews scoped themselves to `apps/web` and the rules they were applying did not.**
+
+**A sixth `action=` duplicate.** `realm.signIn.problemAction` read *"Verifică datele introduse și
+încearcă din nou."* — the closing clause of `identity.sign_in.credential_invalid` **verbatim**, and
+the exact string `callout.tsx`'s docblock cites when explaining why `action={null}` exists. The
+27 Aug 2026 review found five of these and fixed them; the console was a sixth, and nobody looked,
+because that review was reading `apps/web`. Now `null`, with the same reasoning recorded at the site.
+
+**UX-135 stops at the app boundary, and the rule does not.** *"Every locale that distinguishes them
+shall address the reader in the formal register, on every surface, without exception."* The console
+had **sixteen** informal strings against one formal — *"Continuă"*, *"Introdu codul"*, *"Ieși din
+consolă"*, *"ai cinci minute"*, *"Nu te-am putut autentifica"*. The 27 Aug sweep rewrote seventy
+strings across seven `identity` namespaces and never crossed into `apps/admin`.
+
+It is the same split UX-135 was written to end, one app over: `apps/admin`'s `chrome` namespace was
+already formal, its `realm` namespace was not — so the console rendered *"Verificați adresa"* on its
+not-found screen and *"Verifică datele introduse"* on its sign-in.
+
+And one survivor in `apps/web`: `chrome.signOut` was *"Ieși din cont"*. Seven `identity` namespaces
+were swept; `chrome` was not one of them.
+
+### What the measurement cost, twice
+
+The first regex reported six informal strings in the console. Reading the file found sixteen — it
+had missed *"Completează"*, *"Arată"*, *"Ascunde"*, *"Confirmă"*, *"Folosește"*, *"Ieși"*, *"îți"*,
+*"te-am"* and *"ai cinci"*. A register is not a word list, and a pattern built from the examples in
+front of you finds the examples in front of you.
+
+Run against `apps/web` the same pattern reported nine, of which **eight were false positives** —
+*"unde trimite linkul"* is an infinitive, *"Lista de mai sus arată"* is third-person, *"Se verifică
+invitația"* is reflexive, and *"Completează și modifică datele raportului"* describes what an editor
+role *does* rather than instructing anyone. Only `chrome.signOut` was real. Both directions of error
+in one scan, which is the argument for reading the catalogue rather than trusting the grep.
+
+Seventeen strings, twelve test selectors — and the twelfth was found by a script that diffed every
+changed value against every suite file, after the eleven that were changed by hand left one behind
+(`"Folosește alt cont"`) and the admin suite failed on it. That check is worth keeping: **a catalogue
+edit here is never just a catalogue edit**, because the browser suites match on Romanian labels by
+design.

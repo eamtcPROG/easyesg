@@ -18,38 +18,37 @@
         "title": "Autentificare operator",
         "lede": "Consola cere parola și, la fiecare intrare, codul din aplicația de autentificare.",
         "emailLabel": "Adresa de e-mail",
-        "emailMissing": "Adresa de e-mail lipsește, deci nu știm ce cont de operator să deschidem. Completează adresa înainte de a continua.",
-        "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci autentificarea nu poate începe. Verifică adresa și corecteaz-o.",
+        "emailMissing": "Adresa de e-mail lipsește, deci nu știm ce cont de operator să deschidem. Completați adresa înainte de a continua.",
+        "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci autentificarea nu poate începe. Verificați adresa și corectați-o.",
         "passwordLabel": "Parolă",
-        "passwordMissing": "Parola lipsește, deci nu îți putem verifica identitatea. Completează parola înainte de a continua.",
-        "show": "Arată",
-        "hide": "Ascunde",
-        "submit": "Continuă"
+        "passwordMissing": "Parola lipsește, deci nu vă putem verifica identitatea. Completați parola înainte de a continua.",
+        "show": "Arătați",
+        "hide": "Ascundeți",
+        "submit": "Continuați"
       },
       "factor": {
-        "title": "Confirmă al doilea factor",
-        "lede": "Conectat ca <email></email>. Introdu codul de șase cifre din aplicația de autentificare.",
+        "title": "Confirmați al doilea factor",
+        "lede": "Conectat ca <email></email>. Introduceți codul de șase cifre din aplicația de autentificare.",
         "totpLabel": "Cod de verificare",
-        "totpHelp": "Codul se schimbă la 30 de secunde; ai cinci minute pentru acest pas, apoi autentificarea reîncepe.",
-        "totpMissing": "Codul de verificare lipsește, iar al doilea factor este obligatoriu pe această suprafață. Completează codul înainte de a continua.",
-        "submit": "Continuă în consolă",
-        "changeAccount": "Folosește alt cont"
+        "totpHelp": "Codul se schimbă la 30 de secunde; aveți cinci minute pentru acest pas, apoi autentificarea reîncepe.",
+        "totpMissing": "Codul de verificare lipsește, iar al doilea factor este obligatoriu pe această suprafață. Completați codul înainte de a continua.",
+        "submit": "Continuați în consolă",
+        "changeAccount": "Folosiți alt cont"
       },
       "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
       "problemTitle": "Autentificarea nu a reușit",
-      "problemBody": "Nu te-am putut autentifica din cauza unei erori la procesarea cererii.",
-      "problemAction": "Verifică datele introduse și încearcă din nou.",
+      "problemBody": "Nu v-am putut autentifica din cauza unei erori la procesarea cererii.",
       "realmNote": "Conturile de platformă sunt create de un alt administrator — aici nu există înregistrare. Conturile companiilor se autentifică în aplicația pentru companii și nu pot fi folosite pe această consolă.",
       "auditNote": "Fiecare încercare este înregistrată în jurnalul de sistem, indiferent dacă reușește: momentul, contul și o amprentă a adresei introduse — nu adresa în sine."
     },
     "strip": {
       "signedInAs": "Operator:",
-      "signOut": "Ieși din consolă"
+      "signOut": "Ieșiți din consolă"
     },
     "unreachable": {
       "title": "Serverul nu poate fi contactat",
       "body": "Cererea nu a ajuns la server, așa că nimic nu s-a trimis și nimic nu s-a schimbat.",
-      "action": "Verifică-ți conexiunea la internet și încearcă din nou peste câteva momente."
+      "action": "Verificați-vă conexiunea la internet și încercați din nou peste câteva momente."
     }
   }
 }
