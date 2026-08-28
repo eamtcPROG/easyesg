@@ -271,7 +271,6 @@
         "terminate": "Închideți sesiunile de pe celelalte dispozitive",
         "terminateHelp": "Dispozitivul de pe care faceți schimbarea rămâne conectat.",
         "submit": "Schimbați parola",
-        "currentMissing": "Introduceți parola actuală, altfel schimbarea nu poate fi făcută.",
         "nextMissing": "Introduceți parola nouă, altfel schimbarea nu poate fi făcută.",
         "doneTitle": "Parola a fost schimbată",
         "doneBody": "Folosiți parola nouă data viitoare când vă autentificați.",
@@ -316,14 +315,17 @@
         "unlinkedTitle": "Contul a fost deconectat",
         "unlinkedBody": "Nu îl mai puteți folosi pentru autentificare."
       },
+      "confirm": {
+        "heading": "Confirmarea modificărilor",
+        "help": "Modificările de mai sus cer parola dumneavoastră actuală. Dacă intrați în cont doar printr-un cont legat, lăsați câmpul gol."
+      },
       "unreachable": {
         "title": "Nu am putut încărca această secțiune",
         "body": "Datele nu au putut fi citite, așa că secțiunea nu poate fi folosită acum. Reîncărcați pagina pentru a încerca din nou."
       },
       "failedTitle": "Acțiunea nu a putut fi finalizată",
       "unreachableBody": "Nu am primit un răspuns, așa că nimic nu a fost modificat. Încercați din nou.",
-      "doneAction": "Nu mai aveți nimic de făcut.",
-      "failedAction": "Încercați din nou."
+      "doneAction": "Nu mai aveți nimic de făcut."
     }
   },
   "organization": {

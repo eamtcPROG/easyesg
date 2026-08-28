@@ -1,5 +1,5 @@
 import 'server-only';
-import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
+import { API_OUTCOME, mapOutcome, type ApiOutcome } from '@/lib/api-outcome';
 import {
   SECTION_READ,
   type CredentialsRead,
@@ -35,9 +35,9 @@ export async function readCredentials(): Promise<CredentialsRead> {
 
   return {
     factor: section(factor),
-    providers:
-      providers.status === API_OUTCOME.Ok && providers.value !== null
-        ? { status: SECTION_READ.READY, value: providers.value.items }
-        : { status: SECTION_READ.UNREACHABLE },
+    // Projected, then classified by the same helper the other half uses. The list's `.items` was
+    // the whole reason this branch was hand-inlined, and `mapOutcome` is what that projection is
+    // for — a second copy of "ok and non-null means ready" is one that can drift from the first.
+    providers: section(mapOutcome(providers, (page) => page.items)),
   };
 }

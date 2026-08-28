@@ -1,8 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { mapOutcome } from '@/lib/api-outcome';
+import type { SocialProvider } from '@easyesg/contracts';
+import { mapOutcome, type ApiOutcome } from '@/lib/api-outcome';
 import { api } from '@/server/api-client';
+import { completePendingLink } from '@/server/pending-link';
 import { ROUTES } from '@/lib/routes';
 import type {
   CredentialActionResult,
@@ -21,6 +23,11 @@ import type {
  * **The password never reaches a log or a URL.** These are POST bodies to the server tier, which
  * forwards them once; nothing here retains, caches or revalidates on a value carrying one, and no
  * action takes a password in a query parameter.
+ *
+ * **A provider is `SocialProvider`, never `string`** (28 Aug 2026). The 27 Aug review narrowed
+ * `credentials.ts` and stopped there, so the widening survived in this module — where it is worse
+ * than a mislabelled row, because `unlinkProviderAction` interpolates the value into a request
+ * path. The contract publishes the enum; nothing here has cause to accept anything else.
  *
  * Every write that changes what the screen shows revalidates the screen's own path, so the Server
  * Component re-runs — the two reads are what draw the factor's state and the linked list.
@@ -45,24 +52,20 @@ export async function changePasswordAction(input: {
 /** Step one of UC-193. The secret exists only in this response — see the result type. */
 export async function beginTotpEnrolmentAction(input: {
   password?: string;
-}): Promise<ReturnType<typeof mapOutcome<TotpEnrolmentOffer, TotpEnrolmentOffer>>> {
-  const outcome = await api.post<typeof input, TotpEnrolmentOffer>(
-    '/account/totp/enrolment',
-    input,
-  );
-  return mapOutcome(outcome, (offer) => offer);
+}): Promise<ApiOutcome<TotpEnrolmentOffer>> {
+  return api.post<typeof input, TotpEnrolmentOffer>('/account/totp/enrolment', input);
 }
 
 /** Step two. Activates the factor and answers the recovery codes, shown exactly once. */
 export async function confirmTotpEnrolmentAction(input: {
   code: string;
-}): Promise<ReturnType<typeof mapOutcome<RecoveryCodes, RecoveryCodes>>> {
+}): Promise<ApiOutcome<RecoveryCodes>> {
   const outcome = await api.post<typeof input, RecoveryCodes>(
     '/account/totp/confirmation',
     input,
   );
   revalidate();
-  return mapOutcome(outcome, (codes) => codes);
+  return outcome;
 }
 
 export async function disableTotpAction(input: {
@@ -75,32 +78,35 @@ export async function disableTotpAction(input: {
 
 export async function reissueRecoveryCodesAction(input: {
   password?: string;
-}): Promise<ReturnType<typeof mapOutcome<RecoveryCodes, RecoveryCodes>>> {
+}): Promise<ApiOutcome<RecoveryCodes>> {
   const outcome = await api.post<typeof input, RecoveryCodes>(
     '/account/totp/recovery-codes',
     input,
   );
   revalidate();
-  return mapOutcome(outcome, (codes) => codes);
+  return outcome;
 }
 
 /**
  * UC-11's completion — the password is supplied **here**, after the provider round trip, because
  * §12.5.6's task-27.7 row keeps it out of the transaction cookie. The OAuth values come from the
  * re-sealed transaction the callback left behind, read server-side and never from the form.
+ *
+ * `provider` is the caller's claim about which link it is confirming, and `completePendingLink`
+ * refuses when it disagrees with the sealed cookie — the screen's stage and the server's held
+ * transaction must name the same provider, or there is nothing to complete.
  */
 export async function linkProviderAction(input: {
-  provider: string;
+  provider: SocialProvider;
   password?: string;
 }): Promise<CredentialActionResult> {
-  const { completePendingLink } = await import('@/server/pending-link');
   const outcome = await completePendingLink(input);
   revalidate();
   return outcome;
 }
 
 export async function unlinkProviderAction(input: {
-  provider: string;
+  provider: SocialProvider;
   password?: string;
 }): Promise<CredentialActionResult> {
   const outcome = await api.post<{ password?: string }, unknown>(

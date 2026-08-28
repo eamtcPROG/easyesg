@@ -128,7 +128,7 @@ export async function readPendingLink(): Promise<{ provider: SocialProvider } | 
  * costs the round trip — which is the honest cost, and what the screen must say.
  */
 export async function completePendingLink(input: {
-  provider: string;
+  provider: SocialProvider;
   password?: string;
 }): Promise<ApiOutcome<null>> {
   const jar = await cookies();

@@ -1,14 +1,15 @@
 'use client';
 
-import { BUTTON_VARIANT, Button, ProviderButton } from '@easyesg/ui';
+import { BUTTON_VARIANT, Button, ProviderButton, RecordSection } from '@easyesg/ui';
 import { SOCIAL_PROVIDER, type SocialProvider } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { providerGlyph } from '@/features/identity/components/provider-glyphs';
 import { providerLabel } from '@/features/identity/social';
 import { linkProviderAction, unlinkProviderAction } from '../actions';
-import { CREDENTIALS_STAGE, type CredentialsStageValue } from '../credentials-state';
-import type { LinkedProvider } from '../credentials';
-import type { CredentialsSectionProps } from './section-props';
+import { SECTION_READ, type LinkedProvider } from '../credentials';
+import { CREDENTIALS_SECTION, CREDENTIALS_STAGE } from '../credentials-state';
+import { useCredentials, useSectionBusy } from './credentials-context';
+import { SectionUnavailable } from './section-unavailable';
 import styles from './credentials.module.css';
 
 /**
@@ -28,49 +29,54 @@ import styles from './credentials.module.css';
  * API's refusal when removing one would leave no credential — between a render and a click, a
  * password may have been set or removed, so the server's answer is the only authoritative one.
  */
-export interface ProvidersSectionProps extends CredentialsSectionProps {
-  readonly linked: readonly LinkedProvider[];
-  readonly stage: CredentialsStageValue;
-  /** Reads the record's shared password AT THE MOMENT of the action — see the board. */
-  readonly getPassword: () => string | undefined;
+export function ProvidersSection() {
+  const t = useTranslations('identity.credentials.providers');
+  const { read } = useCredentials();
+
+  return (
+    <RecordSection
+      id={CREDENTIALS_SECTION.PROVIDERS}
+      heading={t('heading')}
+      description={t('description')}
+    >
+      {read.providers.status === SECTION_READ.READY ? (
+        <ProvidersBody linked={read.providers.value} />
+      ) : (
+        <SectionUnavailable />
+      )}
+    </RecordSection>
+  );
 }
 
-export function ProvidersSection({
-  busy,
-  linked,
-  stage,
-  getPassword,
-  onStart,
-  onSettled,
-}: ProvidersSectionProps) {
+/** Module-level for the reason `FactorBody` is; its one prop is the narrowed read. */
+function ProvidersBody({ linked }: { readonly linked: readonly LinkedProvider[] }) {
   const t = useTranslations('identity.credentials.providers');
+  const { stage, perform, succeeded, password } = useCredentials();
+  const busy = useSectionBusy(CREDENTIALS_SECTION.PROVIDERS);
+
   const held = new Set(linked.map((identity) => identity.provider));
   const linkable = Object.values(SOCIAL_PROVIDER).filter((provider) => !held.has(provider));
 
-  const confirmLink = async (provider: string) => {
-    onStart();
-    onSettled(await linkProviderAction({ provider, password: getPassword() }), {
-      title: t('linkedTitle'),
-      body: t('linkedBody'),
+  const confirmLink = (provider: SocialProvider) =>
+    perform({
+      section: CREDENTIALS_SECTION.PROVIDERS,
+      action: () => linkProviderAction({ provider, password: password() }),
+      onSuccess: () => succeeded({ title: t('linkedTitle'), body: t('linkedBody') }),
     });
-  };
 
-  const unlink = async (provider: SocialProvider) => {
-    onStart();
-    onSettled(await unlinkProviderAction({ provider, password: getPassword() }), {
-      title: t('unlinkedTitle'),
-      body: t('unlinkedBody'),
+  const unlink = (provider: SocialProvider) =>
+    perform({
+      section: CREDENTIALS_SECTION.PROVIDERS,
+      action: () => unlinkProviderAction({ provider, password: password() }),
+      onSuccess: () => succeeded({ title: t('unlinkedTitle'), body: t('unlinkedBody') }),
     });
-  };
 
   if (stage.kind === CREDENTIALS_STAGE.CONFIRMING_LINK) {
     return (
       <div className={styles.form}>
-        <p className="t-label">
-          {t('confirmHeading', { provider: providerLabel(stage.provider) })}
-        </p>
+        <p className="t-label">{t('confirmHeading', { provider: providerLabel(stage.provider) })}</p>
         <p className="t-caption">{t('confirmHelp')}</p>
-        <Button type="button" busy={busy} onClick={() => void confirmLink(stage.provider)}>
+        <Button type="button" busy={busy} onClick={() => confirmLink(stage.provider)}>
           {t('confirm')}
         </Button>
       </div>
@@ -95,7 +101,7 @@ export function ProvidersSection({
               type="button"
               variant={BUTTON_VARIANT.SUBTLE}
               busy={busy}
-              onClick={() => void unlink(identity.provider)}
+              onClick={() => unlink(identity.provider)}
             >
               {t('unlink')}
             </Button>

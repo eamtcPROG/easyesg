@@ -1,6 +1,6 @@
 'use client';
 
-import { BUTTON_VARIANT, Button, Callout, CALLOUT_INTENT } from '@easyesg/ui';
+import { BUTTON_VARIANT, Button, Callout, CALLOUT_INTENT, RecordSection } from '@easyesg/ui';
 import { FormCodeField, FormSummary } from '@easyesg/ui/forms';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
@@ -10,9 +10,10 @@ import {
   disableTotpAction,
   reissueRecoveryCodesAction,
 } from '../actions';
-import { API_OUTCOME } from '@/lib/api-outcome';
-import { CREDENTIALS_STAGE, type CredentialsStageValue } from '../credentials-state';
-import type { CredentialsSectionProps } from './section-props';
+import { SECTION_READ, type TotpState } from '../credentials';
+import { CREDENTIALS_EVENT, CREDENTIALS_SECTION, CREDENTIALS_STAGE } from '../credentials-state';
+import { useCredentials, useSectionBusy } from './credentials-context';
+import { SectionUnavailable } from './section-unavailable';
 import styles from './credentials.module.css';
 
 /**
@@ -26,79 +27,95 @@ import styles from './credentials.module.css';
  * The password is required to begin, to turn off and to re-issue (§12.5.6's re-authentication
  * row) — but **not** to confirm: `begin` took it moments ago, and a current code from the secret
  * just issued is stronger evidence than a password for the thing being proved. The API decides
- * that; this section simply asks for the password on the routes that carry one.
+ * that; this section simply supplies the record's gate on the routes that carry one.
+ *
+ * **No outcome is read here** (28 Aug 2026). Each action says what to run and what a success
+ * *means*; `perform` owns the refusal. The handlers below used to end by passing success copy to
+ * `onSettled` on a branch where the outcome was provably a failure — three dead arguments, which
+ * is what a signature conflating "the outcome" with "what success says" produces.
  */
+export function FactorSection() {
+  const t = useTranslations('identity.credentials.factor');
+  const { read } = useCredentials();
+
+  return (
+    <RecordSection
+      id={CREDENTIALS_SECTION.FACTOR}
+      heading={t('heading')}
+      description={t('description')}
+    >
+      {read.factor.status === SECTION_READ.READY ? (
+        <FactorBody factor={read.factor.value} />
+      ) : (
+        <SectionUnavailable />
+      )}
+    </RecordSection>
+  );
+}
+
 interface FactorForm {
   code: string;
 }
 
-export interface FactorSectionProps extends CredentialsSectionProps {
-  readonly enrolled: boolean;
-  readonly recoveryCodesRemaining: number;
-  readonly stage: CredentialsStageValue;
-  readonly onEnrolmentOffered: (offer: { secret: string; enrolmentUri: string }) => void;
-  readonly onCodesIssued: (codes: readonly string[], title: string, body: string) => void;
-  readonly onDismiss: () => void;
-  /** Reads the record's shared password AT THE MOMENT of the action — see the board. */
-  readonly getPassword: () => string | undefined;
-}
-
-export function FactorSection({
-  busy,
-  enrolled,
-  recoveryCodesRemaining,
-  stage,
-  getPassword,
-  onStart,
-  onSettled,
-  onEnrolmentOffered,
-  onCodesIssued,
-  onDismiss,
-}: FactorSectionProps) {
+/**
+ * The section's three stages and its resting form.
+ *
+ * **A module-level component, not one declared inside `FactorSection`.** A component defined in
+ * another's body is a new function on every render, so React unmounts and remounts the whole
+ * subtree — which would take the focus and the caret out of the code field mid-typing. Its one
+ * prop is the narrowed read; everything else it needs it takes from the hook, which is the prop
+ * surface this file was rewritten to remove.
+ */
+function FactorBody({ factor }: { readonly factor: TotpState }) {
   const t = useTranslations('identity.credentials.factor');
+  const { stage, perform, succeeded, successNotice, password, dismiss } = useCredentials();
+  const busy = useSectionBusy(CREDENTIALS_SECTION.FACTOR);
   const { control, handleSubmit, reset } = useForm<FactorForm>({
     mode: 'onTouched',
     defaultValues: { code: '' },
   });
 
-  const begin = async () => {
-    onStart();
-    const outcome = await beginTotpEnrolmentAction({ password: getPassword() });
-    if (outcome.status === API_OUTCOME.Ok && outcome.value) {
-      onEnrolmentOffered(outcome.value);
-      return;
-    }
-    onSettled(outcome, { title: t('enabledTitle'), body: t('enabledBody') });
-  };
-
-  const confirm = handleSubmit(async (values) => {
-    onStart();
-    const outcome = await confirmTotpEnrolmentAction({ code: values.code });
-    if (outcome.status === API_OUTCOME.Ok && outcome.value) {
-      onCodesIssued(outcome.value.recoveryCodes, t('enabledTitle'), t('enabledBody'));
-      reset();
-      return;
-    }
-    onSettled(outcome, { title: t('enabledTitle'), body: t('enabledBody') });
-  });
-
-  const disable = async () => {
-    onStart();
-    onSettled(await disableTotpAction({ password: getPassword() }), {
-      title: t('disabledTitle'),
-      body: t('disabledBody'),
+  const begin = () =>
+    perform({
+      section: CREDENTIALS_SECTION.FACTOR,
+      action: () => beginTotpEnrolmentAction({ password: password() }),
+      // A stage change IS the feedback here: the secret goes on screen and the next step is
+      // visible. A success notice beside it would narrate what the reader can already see.
+      onSuccess: (offer) => ({ type: CREDENTIALS_EVENT.ENROLMENT_OFFERED, ...offer }),
     });
-  };
 
-  const reissue = async () => {
-    onStart();
-    const outcome = await reissueRecoveryCodesAction({ password: getPassword() });
-    if (outcome.status === API_OUTCOME.Ok && outcome.value) {
-      onCodesIssued(outcome.value.recoveryCodes, t('codesTitle'), t('codesBody'));
-      return;
-    }
-    onSettled(outcome, { title: t('codesTitle'), body: t('codesBody') });
-  };
+  const confirm = handleSubmit((values) =>
+    perform({
+      section: CREDENTIALS_SECTION.FACTOR,
+      action: () => confirmTotpEnrolmentAction({ code: values.code }),
+      onSuccess: (issued) => ({
+        type: CREDENTIALS_EVENT.CODES_ISSUED,
+        codes: issued.recoveryCodes,
+        notice: successNotice({ title: t('enabledTitle'), body: t('enabledBody') }),
+      }),
+      // Cleared on a refusal too: a TOTP code rotates, so a rejected one can never be retried and
+      // leaving it in the field invites exactly that.
+      clear: reset,
+    }),
+  );
+
+  const disable = () =>
+    perform({
+      section: CREDENTIALS_SECTION.FACTOR,
+      action: () => disableTotpAction({ password: password() }),
+      onSuccess: () => succeeded({ title: t('disabledTitle'), body: t('disabledBody') }),
+    });
+
+  const reissue = () =>
+    perform({
+      section: CREDENTIALS_SECTION.FACTOR,
+      action: () => reissueRecoveryCodesAction({ password: password() }),
+      onSuccess: (issued) => ({
+        type: CREDENTIALS_EVENT.CODES_ISSUED,
+        codes: issued.recoveryCodes,
+        notice: successNotice({ title: t('codesTitle'), body: t('codesBody') }),
+      }),
+    });
 
   if (stage.kind === CREDENTIALS_STAGE.SHOWING_CODES) {
     return (
@@ -114,7 +131,7 @@ export function FactorSection({
             </li>
           ))}
         </ul>
-        <Button type="button" onClick={onDismiss}>
+        <Button type="button" onClick={dismiss}>
           {t('codesDone')}
         </Button>
       </div>
@@ -140,7 +157,7 @@ export function FactorSection({
           <Button type="submit" busy={busy}>
             {t('confirm')}
           </Button>
-          <Button type="button" variant={BUTTON_VARIANT.SUBTLE} onClick={onDismiss}>
+          <Button type="button" variant={BUTTON_VARIANT.SUBTLE} onClick={dismiss}>
             {t('abandon')}
           </Button>
         </div>
@@ -149,12 +166,12 @@ export function FactorSection({
   }
 
   // Enrolled with nothing left to recover with: the one state that needs an action attached.
-  const exhausted = enrolled && recoveryCodesRemaining === 0;
+  const exhausted = factor.enrolled && factor.recoveryCodesRemaining === 0;
 
   return (
     <div className={styles.form}>
       <p className="t-body">
-        {enrolled ? t('on', { remaining: recoveryCodesRemaining }) : t('off')}
+        {factor.enrolled ? t('on', { remaining: factor.recoveryCodesRemaining }) : t('off')}
       </p>
 
       {/* Zero codes on an enrolled account is a real, designed state (UC-195) and the one moment
@@ -166,7 +183,7 @@ export function FactorSection({
           intent={CALLOUT_INTENT.ATTENTION}
           title={t('heading')}
           action={
-            <Button type="button" busy={busy} onClick={() => void reissue()}>
+            <Button type="button" busy={busy} onClick={reissue}>
               {t('reissue')}
             </Button>
           }
@@ -176,14 +193,14 @@ export function FactorSection({
       ) : null}
 
       <div className={styles.actions}>
-        {enrolled ? (
+        {factor.enrolled ? (
           <>
             {exhausted ? null : (
               <Button
                 type="button"
                 variant={BUTTON_VARIANT.SECONDARY}
                 busy={busy}
-                onClick={() => void reissue()}
+                onClick={reissue}
               >
                 {t('reissue')}
               </Button>
@@ -192,13 +209,13 @@ export function FactorSection({
               type="button"
               variant={BUTTON_VARIANT.DESTRUCTIVE}
               busy={busy}
-              onClick={() => void disable()}
+              onClick={disable}
             >
               {t('disable')}
             </Button>
           </>
         ) : (
-          <Button type="button" busy={busy} onClick={() => void begin()}>
+          <Button type="button" busy={busy} onClick={begin}>
             {t('enable')}
           </Button>
         )}

@@ -70,7 +70,10 @@ test('changing the password works, and the old one stops working (FR-7)', async 
   await page.goto('/account/credentials');
 
   const section = page.getByRole('region', { name: 'Parolă' });
-  await section.getByLabel('Parola actuală').fill(PASSWORD);
+  // The current password is the RECORD's field, not this section's — one gate authorises all six
+  // actions (§12.5.6). Unscoped on purpose: were a second field with this label to reappear
+  // inside a section, this fills nothing and the test says so.
+  await page.getByLabel('Parola actuală').fill(PASSWORD);
   await section.getByLabel('Parola nouă').fill(NEXT_PASSWORD);
   await section.getByRole('button', { name: 'Schimbați parola' }).click();
 
@@ -91,7 +94,7 @@ test('a wrong current password is refused in the API’s own words', async ({ pa
   await page.goto('/account/credentials');
 
   const section = page.getByRole('region', { name: 'Parolă' });
-  await section.getByLabel('Parola actuală').fill('Gresita123!');
+  await page.getByLabel('Parola actuală').fill('Gresita123!');
   await section.getByLabel('Parola nouă').fill(NEXT_PASSWORD);
   await section.getByRole('button', { name: 'Schimbați parola' }).click();
 

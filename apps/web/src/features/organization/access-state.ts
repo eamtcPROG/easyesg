@@ -1,4 +1,4 @@
-import type { CalloutIntent } from '@easyesg/ui';
+import type { Notice } from '@/lib/notice';
 import type { AccessRow } from './access';
 
 /**
@@ -45,17 +45,17 @@ export interface Confirmation {
 /**
  * A completed action, reported beside the list.
  *
- * All three parts NFR-79 requires, `action` included — the slot is required by `Callout` for
- * exactly the reason this screen first got wrong: filled with a control's label ("Actions") it
- * reads as decoration, and the reader is left without the sentence saying what to do next. On a
- * success that sentence is honestly "nothing"; saying so is not the same as omitting it.
+ * **The shape moved to `@/lib/notice` on 28 Aug 2026** and is re-exported here so this module
+ * stays the one place to ask what S-16's state is. It moved because S-28 had grown an identical
+ * copy of the same four-branch outcome-to-notice translation, and two copies of an NFR-79 rule is
+ * how one of them ends up saying "try again" over a throttle refusal.
+ *
+ * The `action` slot is required by `Callout` for exactly the reason this screen first got wrong:
+ * filled with a control's label ("Actions") it reads as decoration, and the reader is left without
+ * the sentence saying what to do next. On a success that sentence is honestly "nothing", and
+ * saying so is not the same as omitting it — which is why this screen still passes one.
  */
-export interface Notice {
-  readonly intent: CalloutIntent;
-  readonly title: string;
-  readonly body: string;
-  readonly action: string;
-}
+export type { Notice };
 
 export interface AccessState {
   /** What the last completed action said, or nothing since the last thing the reader started. */

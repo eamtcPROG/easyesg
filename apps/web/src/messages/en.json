@@ -271,7 +271,6 @@
         "terminate": "Sign out of your other devices",
         "terminateHelp": "The device you are making the change on stays signed in.",
         "submit": "Change password",
-        "currentMissing": "Enter your current password, or the change cannot be made.",
         "nextMissing": "Enter the new password, or the change cannot be made.",
         "doneTitle": "Your password was changed",
         "doneBody": "Use the new password the next time you sign in.",
@@ -316,14 +315,17 @@
         "unlinkedTitle": "The account was unlinked",
         "unlinkedBody": "You can no longer use it to sign in."
       },
+      "confirm": {
+        "heading": "Confirm these changes",
+        "help": "The changes above require your current password. If you only sign in through a linked account, leave this empty."
+      },
       "unreachable": {
         "title": "This section could not be loaded",
         "body": "The details could not be read, so this section cannot be used right now. Reload the page to try again."
       },
       "failedTitle": "That could not be completed",
       "unreachableBody": "No answer came back, so nothing was changed. Try again.",
-      "doneAction": "Nothing more to do.",
-      "failedAction": "Try again."
+      "doneAction": "Nothing more to do."
     }
   },
   "organization": {

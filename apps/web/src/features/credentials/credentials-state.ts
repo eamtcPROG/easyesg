@@ -1,5 +1,5 @@
 import type { SocialProvider } from '@easyesg/contracts';
-import type { CalloutIntent } from '@easyesg/ui';
+import type { Notice } from '@/lib/notice';
 
 /**
  * S-28's interaction state, as one value and the events that move it (task 27.7).
@@ -22,6 +22,32 @@ import type { CalloutIntent } from '@easyesg/ui';
  * confirmation dialogue is open.
  */
 
+/**
+ * The record's three sections, as the closed vocabulary they always were (28 Aug 2026).
+ *
+ * It lived as an `as const` inside `credentials-board.tsx` while the field it feeds was typed
+ * `string`, so the derived union was thrown away one module after being declared and any string
+ * at all satisfied `pendingSection`. Declared here because this is the module that consumes it:
+ * a section identifier is interaction state, not a fact about a credential.
+ */
+export const CREDENTIALS_SECTION = {
+  PASSWORD: 'password',
+  FACTOR: 'factor',
+  PROVIDERS: 'providers',
+} as const;
+
+export type CredentialsSection =
+  (typeof CREDENTIALS_SECTION)[keyof typeof CREDENTIALS_SECTION];
+
+/**
+ * What this screen says after an action settled.
+ *
+ * **Re-exported from `@/lib/notice`, not declared** (28 Aug 2026): the shape and the
+ * outcome-to-notice rule were duplicated here and in S-16, and the copies had drifted — this one
+ * put *"Încercați din nou."* under refusals whose `detail` already ends with that sentence.
+ */
+export type { Notice };
+
 /** What the screen is currently showing beyond its resting form. Exclusive by construction. */
 export const CREDENTIALS_STAGE = {
   /** Nothing in flight and nothing to show. */
@@ -40,17 +66,6 @@ export const CREDENTIALS_STAGE = {
 
 export type CredentialsStage = (typeof CREDENTIALS_STAGE)[keyof typeof CREDENTIALS_STAGE];
 
-/** A message the screen shows after something settled — NFR-79's three parts, from the caller. */
-export interface CredentialsNotice {
-  readonly intent: CalloutIntent;
-  /** What happened. */
-  readonly title: string;
-  /** So what — the consequence. */
-  readonly body: string;
-  /** What now. Required by `Callout`'s own design (§11.5: nothing in Feedback ships with two). */
-  readonly action: string;
-}
-
 export type CredentialsStageValue =
   | { readonly kind: typeof CREDENTIALS_STAGE.IDLE }
   | {
@@ -66,8 +81,8 @@ export type CredentialsStageValue =
 export interface CredentialsState {
   readonly stage: CredentialsStageValue;
   /** Which section is acting, so only its own controls go inert (S-16's per-row lesson). */
-  readonly pendingSection: string | null;
-  readonly notice: CredentialsNotice | null;
+  readonly pendingSection: CredentialsSection | null;
+  readonly notice: Notice | null;
 }
 
 export const CREDENTIALS_EVENT = {
@@ -79,16 +94,15 @@ export const CREDENTIALS_EVENT = {
   DISMISSED: 'dismissed',
 } as const;
 
-export type CredentialsEventKind =
-  (typeof CREDENTIALS_EVENT)[keyof typeof CREDENTIALS_EVENT];
+export type CredentialsEventKind = (typeof CREDENTIALS_EVENT)[keyof typeof CREDENTIALS_EVENT];
 
 export type CredentialsEvent =
-  | { readonly type: typeof CREDENTIALS_EVENT.ACTION_STARTED; readonly section: string }
-  | { readonly type: typeof CREDENTIALS_EVENT.ACTION_FAILED; readonly notice: CredentialsNotice }
   | {
-      readonly type: typeof CREDENTIALS_EVENT.ACTION_SUCCEEDED;
-      readonly notice: CredentialsNotice;
+      readonly type: typeof CREDENTIALS_EVENT.ACTION_STARTED;
+      readonly section: CredentialsSection;
     }
+  | { readonly type: typeof CREDENTIALS_EVENT.ACTION_FAILED; readonly notice: Notice }
+  | { readonly type: typeof CREDENTIALS_EVENT.ACTION_SUCCEEDED; readonly notice: Notice }
   | {
       readonly type: typeof CREDENTIALS_EVENT.ENROLMENT_OFFERED;
       readonly secret: string;
@@ -97,7 +111,7 @@ export type CredentialsEvent =
   | {
       readonly type: typeof CREDENTIALS_EVENT.CODES_ISSUED;
       readonly codes: readonly string[];
-      readonly notice: CredentialsNotice;
+      readonly notice: Notice;
     }
   | { readonly type: typeof CREDENTIALS_EVENT.DISMISSED };
 

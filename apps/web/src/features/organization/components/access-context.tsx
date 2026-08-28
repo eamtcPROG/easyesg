@@ -1,6 +1,5 @@
 'use client';
 
-import { CALLOUT_INTENT } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import {
   createContext,
@@ -11,7 +10,7 @@ import {
   useTransition,
 } from 'react';
 import type { ReactNode } from 'react';
-import { API_OUTCOME } from '@/lib/api-outcome';
+import { noticeFromOutcome } from '@/lib/notice';
 import { ROUTES, withQuery } from '@/lib/routes';
 import { useRouter } from '@/i18n/navigation';
 import {
@@ -145,28 +144,18 @@ export function AccessProvider({
         const outcome = await action();
         dispatch({
           type: ACCESS_EVENT.ACTION_SETTLED,
-          notice:
-            outcome.status === API_OUTCOME.Ok
-              ? {
-                  intent: CALLOUT_INTENT.SUCCESS,
-                  title: success,
-                  body: t('notice.body'),
-                  action: t('notice.action'),
-                }
-              : {
-                  intent: CALLOUT_INTENT.ERROR,
-                  // The API's own three-part text, as received — the screen keeps no second copy of
-                  // "they already have access" or "an invitation is outstanding".
-                  title:
-                    outcome.status === API_OUTCOME.Problem
-                      ? (outcome.problem.title ?? tCommon('unreachable.title'))
-                      : tCommon('unreachable.title'),
-                  body:
-                    outcome.status === API_OUTCOME.Problem
-                      ? (outcome.problem.detail ?? tCommon('unreachable.body'))
-                      : tCommon('unreachable.body'),
-                  action: t('notice.failedAction'),
-                },
+          // The outcome-to-notice rule is `@/lib/notice`'s, not this screen's — S-28 had grown a
+          // second copy of it, and the two had already drifted. What stays here is what only this
+          // screen can decide: the copy, and whether a refusal owns a "what now" of its own. It
+          // does — "or reload the page" is a step the API's `detail` cannot know about, which is
+          // the narrow case the slot exists for.
+          notice: noticeFromOutcome({
+            outcome,
+            success: { title: success, body: t('notice.body') },
+            unreachable: { title: tCommon('unreachable.title'), body: tCommon('unreachable.body') },
+            successAction: t('notice.action'),
+            failureAction: t('notice.failedAction'),
+          }),
         });
       });
     },

@@ -5047,3 +5047,136 @@ locale.
 
 `pnpm lint` — EXIT=0. Comment and documentation only; no code path changed, and the remaining
 gates cannot observe the diff.
+
+## S-28's state as a provider, and the field the screen asked for twice · 2026-08-28
+
+A review of `apps/web/src/app/[locale]/(app)/(workspace)/account/credentials/page.tsx`, which turned
+out to be the one file in the feature with nothing wrong with it. The page is four lines — the
+locale ritual, two parallel reads, one island. Everything below is what the review found underneath
+it, and the project owner's instruction was to fix all of it and to reach for hooks and a provider
+rather than props.
+
+### The finding a gate cannot see, and a test had already accommodated
+
+**The screen rendered one message key as two separate inputs.** `identity.credentials.password.current`
+— *"Parola actuală"* — appeared once inside `PasswordSection` and once as the record's
+re-authentication gate, so a reader met the same prompt twice in one viewport, under a docblock
+arguing at length that there was one field for the whole record. The comment and the code had been
+in contradiction since the screen shipped.
+
+What makes it worth recording is where the evidence was sitting. `e2e/web/support/second-factor.ts`
+read:
+
+```ts
+// `.last()` because the password field is the record's, shared by all three sections, and the
+// password section renders one above this.
+await page.getByLabel('Parola actuală').last().fill(password);
+```
+
+The duplicate was **known, written down, and worked around** — as a locator detail rather than as a
+defect. A suite that adapts to what it finds stops being able to report it. The helper now fills an
+unscoped `getByLabel`, which fails if a second field with that label ever returns, and
+`credentials-board.spec.tsx` asserts `getAllByLabelText(/Parola actuală/u)` has length exactly one.
+
+The fix was put to the project owner as a decision, because three shapes were defensible and the
+artboard suggested a fourth. Chosen: **one record-level gate**, with `PasswordSection` reading it
+like every other action. Its section heading is now *"Confirmarea modificărilor"* rather than the
+field's own label — naming the section after the field is what reproduced the duplicate one level up.
+
+### The prop surface was the state's API, restated at every child
+
+`CredentialsBoard` held the reducer, the form and the outcome-to-notice translation, and threaded
+`busy`, `onStart` and `onSettled` into three sections, plus `getPassword`, plus three more callbacks
+into the factor — nine props on one component, five of them callbacks whose only purpose was to
+reach a reducer two levels up. This is the move `access-context.tsx` made on S-16 and the reasoning
+is the same, so the file now reads like its sibling.
+
+**`onSettled(outcome, success)` was the specific defect, and it had a measurable symptom.** It
+conflated *"here is what came back"* with *"here is what success says"*, so every section imported
+`API_OUTCOME`, read the discriminator itself, and then supplied success copy on branches where the
+outcome was **provably a failure** — three call sites in `factor-section.tsx` passed
+`enabledTitle`/`enabledBody` to a refusal. Dead arguments are what a signature produces when it asks
+callers for something only one of its branches uses.
+
+`perform({ section, action, onSuccess })` inverts it: the section says what to run and what a
+success *means*, and never sees a failure. Four call sites answer `succeeded({ title, body })`; the
+two that produce something shown exactly once return a stage-changing event instead. No section
+imports `API_OUTCOME` any more.
+
+**One prop survived on purpose.** `FactorBody` and `ProvidersBody` take the narrowed read. That is
+data, not state plumbing, and it is the one thing the hook cannot hand over already narrowed.
+
+### One rule in two copies, and the drift it had already produced
+
+The outcome-to-notice block in `credentials-board.tsx` was a near-verbatim copy of the one in
+`access-context.tsx`: title from `problem.title` or a fallback, body from `problem.detail` or the
+same fallback, each re-testing `status === Problem` a second time. `@/lib/notice` now owns it, split
+into `successNotice` and `failureNotice` with `noticeFromOutcome` composed from the two — the split
+exists because S-28 dispatches its two sides as **different events**, and a combined builder would
+have forced the same dead-argument shape the refactor was removing.
+
+The copies had already drifted, and in the direction that reaches a user. S-28 passed
+`t('failedAction')` — *"Încercați din nou."* — as the `Callout` action on every refusal, while
+`unreachableBody` **ends with that same sentence**, and a throttle refusal's `detail` says to wait a
+few minutes. The screen was printing "try again" underneath "wait a few minutes". `failureNotice`
+defaults `action` to `null` and the key is deleted from all three catalogues; S-16 keeps its own,
+because *"or reload the page"* is a step the API's `detail` genuinely cannot know about, which is the
+narrow case `Callout`'s slot was reopened for on 27 Aug.
+
+### The narrowing that stopped one module short
+
+The 27 Aug review corrected `LinkedProvider` in `credentials.ts` to re-export the contract's enum
+rather than restate it with `provider: string`. The widening survived in `actions.ts` and
+`providers-section.tsx`, where it was worse: `unlinkProviderAction` interpolated the value into a
+request path. Narrowed to `SocialProvider`, and the compiler found the remaining call site
+immediately — a nice demonstration that the type change bites rather than merely documenting.
+
+Also folded back: `server/data/credentials.ts` defined a `section()` classifier and then hand-inlined
+the same logic for the providers half to reach `.items`. `section(mapOutcome(providers, (page) =>
+page.items))` is what the projection helper is for.
+
+### A React Compiler failure that reports somewhere other than its cause
+
+`perform` was first written as `useCallback(<T,>({ section, action, onSuccess, clear }: { … }) => …)`.
+`pnpm lint` failed with `react-hooks/preserve-manual-memoization` — **pointing at the `useMemo`
+building the context value**, twenty lines below, because `perform` sits in its dependency list and a
+value the compiler declined to memoize makes the memoization downstream of it unpreservable too.
+
+Six bisection rounds landed on the cause: the **inline destructured generic parameter**. Not the
+generic, not the destructuring, not `useForm`, not any statement in the body — the combination. Typed
+by lookup as `useCallback<CredentialsContextValue['perform']>((input) => …)` and reading `input.x`,
+it compiles, and call sites keep full generic inference. That is the idiom `access-context.tsx`
+already used, which is why the sibling never hit this. A comment on the callback says so, because the
+obvious tidy-up is to destructure it back.
+
+Two smaller notes from the same pass. A first draft declared `FactorBody` **inside** `FactorSection`
+— `rerender-no-inline-components`, and here it would have remounted the subtree on every parent
+render, taking focus and caret out of the code field mid-typing. And the specs needed `type` and
+`status` on their `ProblemDocument` fixtures: `vitest` was green before `tsc` was, which is the usual
+order for a fixture that is structurally incomplete rather than wrong.
+
+### The convention pass, including what was declined
+
+- **`rerender-defer-reads` — declined, with the reason.** Every section subscribes to the whole
+  context, so `PasswordSection` re-renders when the factor's stage changes even though it reads only
+  callbacks. The rule's own remedy is reading on demand, which context has no equivalent of; the real
+  remedy is splitting stable API from volatile state into two providers. S-16 did not do it either,
+  and three consumers on a settings screen does not earn a second provider — revisit if the record
+  grows. The rule *is* applied where it bites: the shared password is read with `getValues`, not
+  `watch`, so no section re-renders per keystroke.
+- **`bundle-barrel-imports` — declined.** `@easyesg/ui` is imported through its barrel everywhere in
+  both front ends; changing that here would make one file inconsistent with fifty.
+- **`rendering-conditional-render`, `rerender-transitions`, `async-parallel`** — already satisfied
+  (ternaries throughout, `useTransition` in `perform`, the page's `Promise.all` untouched).
+
+### What was raised rather than closed
+
+**OQ-19 in `design_spec.md` §14.** The artboard draws S-28 resting as summary rows with one trigger
+each — *"Last changed 12 February 2026 from Chișinău"* beside **Change password** — and the built
+screen renders grouped fields. The register row carries the precedence reasoning, which does not run
+the way it first appears: OQ-10 makes a prototype authoritative over *values*, not content or scope,
+and §5's own Layout row for S-28 says "grouped fields, save/cancel affordance". The two sources
+disagree and §5 governs, so this is not a defect to fix in passing. What is genuinely open is the
+*last changed* attribution, which no API read returns, and the artboard's closing callout, which
+tells a reader why the last credential cannot be removed **before** they try rather than as a refusal
+afterwards.
