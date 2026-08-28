@@ -59,11 +59,16 @@ export class FakeOrganizationStore implements OrganizationStore {
 }
 
 export class FakeOrganizationFoundingStore implements OrganizationFoundingStore {
-  readonly founded: { organization: NewOrganization; founderAccountId: string }[] = [];
+  readonly founded: {
+    organization: NewOrganization;
+    founderAccountId: string;
+    sessionId: string;
+  }[] = [];
 
   createWithFoundingAdministrator(input: {
     organization: NewOrganization;
     founderAccountId: string;
+    sessionId: string;
   }): Promise<Organization> {
     this.founded.push(input);
     return Promise.resolve(
@@ -95,8 +100,10 @@ export class FakeOrganizationVocabulary implements OrganizationVocabulary {
     return this.legalForms[countryCode.toLowerCase()] ?? null;
   }
 
-  registeredCountries(): readonly string[] {
-    return Object.keys(this.legalForms).sort();
+  registeredLegalForms(): readonly { countryCode: string; legalForms: readonly string[] }[] {
+    return Object.keys(this.legalForms)
+      .sort()
+      .map((countryCode) => ({ countryCode, legalForms: this.legalForms[countryCode] }));
   }
 
   relationshipTypes(): readonly string[] {

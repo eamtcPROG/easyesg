@@ -23,9 +23,11 @@ export class ListLegalForms {
   constructor(private readonly vocabulary: OrganizationVocabulary) {}
 
   execute(): CountryLegalForms[] {
-    return this.vocabulary.registeredCountries().map((countryCode) => ({
-      countryCode: countryCode.toUpperCase(),
-      legalForms: this.vocabulary.legalFormsFor(countryCode) ?? [],
+    return this.vocabulary.registeredLegalForms().map((entry) => ({
+      // The scope is lower case because a seed filename is; ISO renders alpha-2 upper case, and the
+      // wire follows ISO. This is the one place that conversion happens.
+      countryCode: entry.countryCode.toUpperCase(),
+      legalForms: entry.legalForms,
     }));
   }
 }

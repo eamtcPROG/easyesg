@@ -13,6 +13,7 @@ import { ConfigurationPublisher } from '../src/infrastructure/configuration/conf
 import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
 import { ORGANIZATION_LEGAL_FORM_CONFIG_KIND } from '../src/modules/core/organization/constants/organization.constants';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
+import { ORG_RELATIONSHIP_KIND } from '../src/modules/core/organization/models/organization.model';
 import { asOrganization, connectAs } from './support/database';
 import {
   cleanupSignedInAccounts,
@@ -70,12 +71,22 @@ describe('organizations (UC-49, UC-50)', () => {
     const payload = JSON.parse(
       readFileSync(resolve(__dirname, '../../../config/seed/organization-legal-form.md.json'), 'utf8'),
     ) as Record<string, unknown>;
-    await app.get(ConfigurationPublisher).publish({
-      kind: ORGANIZATION_LEGAL_FORM_CONFIG_KIND,
-      scope: 'md',
-      payload,
-    });
-    await app.get(ConfigurationStore).refreshIfStale();
+    // Compared before publishing, because `ConfigurationPublisher.publish` always writes a new
+    // immutable revision — the idempotent-by-comparison behaviour lives in the seed *loader*, not
+    // the publisher. Publishing unconditionally would append a `config.entry_version` row and bump
+    // `config.store_version` on every run of this suite, invalidating every replica's cached read
+    // model for a change that changes nothing.
+    const store = app.get(ConfigurationStore);
+    await store.refreshIfStale();
+    const current = store.get(ORGANIZATION_LEGAL_FORM_CONFIG_KIND, 'md');
+    if (JSON.stringify(current?.payload) !== JSON.stringify(payload)) {
+      await app.get(ConfigurationPublisher).publish({
+        kind: ORGANIZATION_LEGAL_FORM_CONFIG_KIND,
+        scope: 'md',
+        payload,
+      });
+      await store.refreshIfStale();
+    }
   };
 
   /**
@@ -207,6 +218,18 @@ describe('organizations (UC-49, UC-50)', () => {
       expect(problem.title).toBeDefined();
     });
 
+    it('refuses a name that is only whitespace, rather than storing an empty one', async () => {
+      // `@Length(1, 200)` measures whatever reaches it, so before `@Trim()` ran first this passed
+      // validation and a `.trim()` in the use case then stored `''` — which `core.organization.name`
+      // accepts, being `text NOT NULL`. The result was an organization nobody could identify in a
+      // list. Trimming before validation is what makes the length check mean what it says.
+      await http()
+        .post('/api/v1/organizations')
+        .set(editor.authorization)
+        .send({ name: '   ', countryCode: 'MD' })
+        .expect(400);
+    });
+
     it('refuses an unauthenticated caller', async () => {
       await http()
         .post('/api/v1/organizations')
@@ -305,10 +328,15 @@ describe('organizations (UC-49, UC-50)', () => {
   });
 
   /**
-   * FR-14 and NFR-9 — **and this block runs last on purpose.** It founds a second organization,
-   * after which `selectActiveMembership` resolves *nothing* for the founder: two memberships and no
-   * stated preference is the "several" branch, which answers null by design. Every test above needs
-   * the founder to have exactly one.
+   * FR-14 and NFR-9 — **and this block runs last because it moves the founder's active
+   * organization**, which every test above needs pointed at the first one.
+   *
+   * It used to run last for a worse reason, and the first version of this comment recorded the
+   * defect as though it were a design: founding a second organization left the founder with two
+   * memberships and no stated preference, which `selectActiveMembership` answers with **null** — no
+   * active organization at all, for the organization they were already using. The founding store
+   * now points the session at what it just created, as invitation acceptance does, and the first
+   * test below is that assertion.
    *
    * No MVP flow writes a relationship row (§7.2), so these statements are the only writer there is.
    * That is the point of the pair: what the schema must accept and what it must refuse are the two
@@ -340,21 +368,37 @@ describe('organizations (UC-49, UC-50)', () => {
         ),
       );
 
+    it('points the founder’s session at the organization they just created', async () => {
+      // The lock-out this suite previously worked around by ordering. Two memberships with no
+      // stated preference resolve to nothing, so without the session write the next request would
+      // answer 403 for *both* organizations — and task 30.1's switcher, the only way to state a
+      // preference, does not exist yet.
+      const response = await http()
+        .get('/api/v1/organization')
+        .set(founder.authorization)
+        .expect(200);
+
+      expect((response.body as { object: { id: string } }).object.id).toBe(secondId);
+    });
+
     it('accepts an edge of the type registered at MVP', async () => {
-      expect(await edge('parent', 'direct_sme')).toHaveLength(1);
+      expect(await edge(ORG_RELATIONSHIP_KIND.PARENT, 'direct_sme')).toHaveLength(1);
     });
 
     it('accepts a FOURTH organization type with no schema change — NFR-9', async () => {
       // The whole requirement, as a statement rather than a comment: `advisor` is not in the
       // migration, not in an `as const`, and not in any CHECK. Adding it is registering data.
       // A membership constraint on this column would fail this line, which is why there is none.
-      expect(await edge('child', 'advisor')).toHaveLength(1);
+      expect(await edge(ORG_RELATIONSHIP_KIND.CHILD, 'advisor')).toHaveLength(1);
     });
 
     it('refuses an unknown edge KIND, which is the axis the database does own', async () => {
       // The other half, and what makes the test above mean something. Parent/child/peer is the
       // shape of a graph and does not move with the commercial model, so it is a CHECK — without
       // this assertion, "a fourth type is accepted" would only be saying the column is `text`.
+      // A literal on purpose, and the one place in this block that must be one: the whole claim is
+      // that a value outside the vocabulary is refused, which a member of the vocabulary cannot
+      // express. CLAUDE.md's test exception covers exactly this.
       await expect(edge('sibling', 'direct_sme')).rejects.toThrow(/org_relationship_kind_known/u);
     });
 
@@ -364,8 +408,8 @@ describe('organizations (UC-49, UC-50)', () => {
           run(
             `INSERT INTO core.org_relationship
                (organization_id, related_organization_id, kind, organization_type)
-             VALUES ($1, $1, 'peer', 'direct_sme')`,
-            [foundedId],
+             VALUES ($1, $1, $2, 'direct_sme')`,
+            [foundedId, ORG_RELATIONSHIP_KIND.PEER],
           ),
         ),
       ).rejects.toThrow(/org_relationship_not_self/u);

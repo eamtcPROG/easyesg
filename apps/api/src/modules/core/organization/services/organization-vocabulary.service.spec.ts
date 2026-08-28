@@ -87,7 +87,7 @@ describe('OrganizationVocabularyService (FR-14, FR-15, NFR-9)', () => {
       expect(build([legalForms('md', { srl: true })]).legalFormsFor('MD')).toBeNull();
     });
 
-    it('lists every country that registers a readable vocabulary', () => {
+    it('lists every country that registers a readable vocabulary, with its forms', () => {
       const service = build([
         legalForms('ro', ['sa']),
         legalForms('md', ['srl']),
@@ -97,7 +97,13 @@ describe('OrganizationVocabularyService (FR-14, FR-15, NFR-9)', () => {
       // Sorted, so the order S-04 renders its country field in does not depend on the order rows
       // came back in. The malformed one is excluded rather than logged again — offering a country
       // whose vocabulary cannot be read would be a choice that refuses on submit.
-      expect(service.registeredCountries()).toEqual(['md', 'ro']);
+      //
+      // The forms travel with the scope: returning bare codes sent the caller back through
+      // `legalFormsFor` to re-read payloads this filter had already parsed.
+      expect(service.registeredLegalForms()).toEqual([
+        { countryCode: 'md', legalForms: ['srl'] },
+        { countryCode: 'ro', legalForms: ['sa'] },
+      ]);
     });
   });
 });

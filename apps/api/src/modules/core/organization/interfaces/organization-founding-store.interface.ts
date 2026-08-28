@@ -25,6 +25,22 @@ export interface OrganizationFoundingStore {
   createWithFoundingAdministrator(input: {
     readonly organization: NewOrganization;
     readonly founderAccountId: string;
+    /**
+     * The session to point at the organization just created — the third write, and it is not a
+     * convenience.
+     *
+     * `selectActiveMembership` answers **null** for an account holding two memberships with no
+     * stated preference, and nothing but this write and invitation acceptance ever states one. So a
+     * member of one organization who founds a second would, without this, have no active
+     * organization on their very next request: every `@RequiresRole` route answers
+     * `membership-required`, including for the organization they were using a moment ago, and the
+     * switcher that would let them choose is task 30.1's.
+     *
+     * Pointing it here is also what S-04's stated exit requires — the founder lands on S-05, which
+     * renders *an* organization — and it is exactly what UC-15's acceptance does with the same
+     * column, for the same reason.
+     */
+    readonly sessionId: string;
   }): Promise<Organization>;
 }
 

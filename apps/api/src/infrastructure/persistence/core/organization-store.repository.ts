@@ -5,6 +5,7 @@ import type {
   OrganizationProfilePatch,
 } from '@api/modules/core/organization/models/organization.model';
 import { TenantRepository } from '../tenant-repository';
+import { AmbiguousBoundOrganizationError } from '@api/modules/core/organization/errors/organization.errors';
 
 /** Rows as PostgreSQL returns them: snake_case, `timestamptz` already parsed to `Date` by `pg`. */
 interface OrganizationRow {
@@ -89,6 +90,25 @@ export class OrganizationStoreRepository
     const rows = await this.manager.query<OrganizationRow[]>(
       `SELECT ${SELECTED_COLUMNS} FROM core.organization`,
     );
+
+    // **More than one row is a bug, not a case to pick from** — and today it is unreachable, which
+    // is exactly why the check is here rather than a comment saying so.
+    //
+    // Three permissive `SELECT` policies stand on this table and permissive policies are OR'd: the
+    // bound tenant (`id = app.current_org`), task 25.3's directory (gated on `app.current_org IS
+    // NULL`, so inert here) and task 26.2's invitation bearer (gated on `app.current_invitation`,
+    // which only that store binds, on a transaction of its own). Singularity is therefore a
+    // property of *other tasks' policies*, not of this statement — and the first flow that binds an
+    // invitation on the request transaction, which is what a signed-in user previewing an
+    // invitation is, would hand an administrator of one organization the profile of another.
+    //
+    // Taking `rows[0]` would make that a silent cross-tenant read with RLS behaving exactly as
+    // instructed, invisible to AD-2's probes. Throwing makes it a loud failure instead, in the same
+    // spirit as `TenantRepository`'s throw on a missing context: a wrong answer nobody can see is
+    // worse than an error somebody must fix.
+    if (rows.length > 1) {
+      throw new AmbiguousBoundOrganizationError(rows.length);
+    }
     return rows.length > 0 ? toOrganization(rows[0]) : null;
   }
 

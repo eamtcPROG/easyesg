@@ -42,10 +42,18 @@ export class OrganizationService {
    * an organization founded with `undefined` as its administrator, which no policy would refuse
    * because `identity.membership.account_id` is a plain column.
    */
-  create(input: Omit<CreateOrganizationCommand, 'founderAccountId'>): Promise<Organization> {
-    const founderAccountId = requestContext()?.actorId;
-    if (!founderAccountId) throw new AuthenticationRequiredError();
-    return this.createOrganization.execute({ ...input, founderAccountId });
+  create(
+    input: Omit<CreateOrganizationCommand, 'founderAccountId' | 'sessionId'>,
+  ): Promise<Organization> {
+    const context = requestContext();
+    const founderAccountId = context?.actorId;
+    const sessionId = context?.sessionId;
+    // Both or neither: `AuthGuard` writes them from the same resolved session, so one present
+    // without the other is not a state a request can be in — and creating the organization while
+    // failing to point the session would leave the founder with the very lock-out the third write
+    // exists to prevent.
+    if (!founderAccountId || !sessionId) throw new AuthenticationRequiredError();
+    return this.createOrganization.execute({ ...input, founderAccountId, sessionId });
   }
 
   view(): Promise<Organization> {

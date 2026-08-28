@@ -18,6 +18,7 @@ describe('CreateOrganization (UC-49)', () => {
     contactEmail: null,
     contactPhone: null,
     founderAccountId: '00000000-0000-0000-0000-0000000000f1',
+    sessionId: '00000000-0000-0000-0000-0000000000e1',
   };
 
   it('founds the organization and names the caller as its administrator', async () => {
@@ -37,6 +38,9 @@ describe('CreateOrganization (UC-49)', () => {
           contactPhone: null,
         },
         founderAccountId: '00000000-0000-0000-0000-0000000000f1',
+        // The session is carried too, and it is what stops a founder who already had one
+        // membership from ending the request with no active organization at all.
+        sessionId: '00000000-0000-0000-0000-0000000000e1',
       },
     ]);
   });
@@ -52,11 +56,15 @@ describe('CreateOrganization (UC-49)', () => {
     expect(store.founded[0].organization.countryCode).toBe('MD');
   });
 
-  it('trims the name, so a trailing space is not a different organization', async () => {
+  it('does not normalise the name, because the DTO already has', async () => {
     const { store, useCase } = build();
 
-    await useCase.execute({ ...command, name: '  Fabrica de Cașcaval  ' });
+    await useCase.execute({ ...command, name: 'Fabrica de Cașcaval' });
 
+    // Trimming lives in `@Trim()` on the request DTO, and it has to: `@Length(1, 200)` measures
+    // whatever reaches it, so a name of three spaces passed validation and a `.trim()` here then
+    // stored the empty string the length check existed to refuse. Normalising in both places would
+    // leave two answers to one question; `organizations.e2e-spec.ts` asserts the wire behaviour.
     expect(store.founded[0].organization.name).toBe('Fabrica de Cașcaval');
   });
 

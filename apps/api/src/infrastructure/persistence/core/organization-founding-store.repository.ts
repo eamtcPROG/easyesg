@@ -55,6 +55,11 @@ const RETURNED_COLUMNS = `id, name, country_code, legal_form,
  * measurement and sidesteps it by generating the id in JavaScript; this path cannot, because §7.9's
  * key must stay time-ordered and `randomUUID()` is a v4.
  *
+ * **There are three writes, not two.** The organization, the founding membership, and the session
+ * pointed at what was just created. The third is easy to read as a nicety and is not: two
+ * memberships with no stated preference resolve to *no* active organization, so omitting it locks
+ * an existing member out of the organization they were already using — see the port's header.
+ *
  * **`app.current_user` is bound before either write**, and that is FR-15's "attributed" half:
  * `core.capture_field_change` reads the actor from that setting, so binding it afterwards would
  * leave the founding rows attributed to nobody — in the audit trail, permanently, with no way to
@@ -72,6 +77,7 @@ export class OrganizationFoundingStoreRepository implements OrganizationFounding
       readonly contactPhone: string | null;
     };
     readonly founderAccountId: string;
+    readonly sessionId: string;
   }): Promise<Organization> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -109,6 +115,22 @@ export class OrganizationFoundingStoreRepository implements OrganizationFounding
         `INSERT INTO identity.membership (account_id, organization_id, role, status)
               VALUES ($1, $2, $3, $4)`,
         [input.founderAccountId, id, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR, MEMBERSHIP_STATUS.ACTIVE],
+      );
+
+      // The third write, and it belongs in this transaction rather than after it: without it a
+      // member of one organization who founds a second is left with two memberships and no stated
+      // preference, which `selectActiveMembership` answers with **null** — no active organization
+      // at all, on the next request, for the one they were already using.
+      //
+      // `identity.session` carries no RLS (it belongs to an account, not a tenant), so `account_id`
+      // in the predicate is the only thing scoping this write — without it a mistaken session id
+      // moves a stranger's active organization and no policy would object. That is
+      // `InvitationBearerStoreRepository.setActiveOrganization`'s reasoning, and this is the same
+      // column written for the same reason by the other flow that grants a membership.
+      await queryRunner.query(
+        `UPDATE identity.session SET active_organization_id = $3
+          WHERE id = $1 AND account_id = $2`,
+        [input.sessionId, input.founderAccountId, id],
       );
 
       await queryRunner.commitTransaction();

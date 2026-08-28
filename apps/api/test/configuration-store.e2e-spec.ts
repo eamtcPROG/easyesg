@@ -77,6 +77,72 @@ describe('configuration store (DR-3, AD-4)', () => {
     await owner.query(`ALTER TABLE config.entry_version ENABLE TRIGGER reject_published_edit`);
   });
 
+  /**
+   * `list(kind)` — every scope in force for one kind, added by task 29.1 for a vocabulary whose
+   * *set of scopes* is the answer (legal forms are registered per country).
+   *
+   * **It is tested here because the only unit spec that reaches it stubs it out.**
+   * `organization-vocabulary.service.spec.ts` hands the service a fake store whose `list` filters on
+   * `kind` and nothing else, so the real method's date-filtering never ran in any test — and an
+   * off-by-one on the half-open bound would have shipped green, surfacing as a vocabulary appearing
+   * a day early or lingering a day late. Effective dating is what AD-4 exists to get right, so the
+   * bounds are asserted against real rows.
+   */
+  describe('listing every scope of one kind', () => {
+    it('answers each scope in force, and omits a kind that is not asked for', async () => {
+      await publisher.publish({ kind: KIND, scope: 'md', payload: { forms: ['srl'] } });
+      await publisher.publish({ kind: KIND, scope: 'ro', payload: { forms: ['sa'] } });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+
+      const listed = replica.list(KIND);
+      expect(listed.map((entry) => entry.scope).sort()).toEqual(['md', 'ro']);
+      expect(listed.every((entry) => entry.kind === KIND)).toBe(true);
+      // A kind nobody registered is an empty list, not undefined — the caller maps over it.
+      expect(replica.list('no-such-kind')).toEqual([]);
+    });
+
+    it('honours the effective date at both bounds, which are half-open', async () => {
+      await publisher.publish({
+        kind: KIND,
+        scope: SCOPE,
+        payload: { turnover: 50 },
+        validFrom: '2026-01-01',
+        validTo: '2027-01-01',
+      });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+
+      // `validFrom` is inclusive and `validTo` exclusive — PostgreSQL canonicalises a daterange to
+      // `[)`, and the filter has to agree with it or a factor set applies for one day too many.
+      expect(replica.list(KIND, '2025-12-31')).toEqual([]);
+      expect(replica.list(KIND, '2026-01-01')).toHaveLength(1);
+      expect(replica.list(KIND, '2026-12-31')).toHaveLength(1);
+      expect(replica.list(KIND, '2027-01-01')).toEqual([]);
+    });
+
+    it('agrees with `get` on the same day, since one is the other’s plural', async () => {
+      await publisher.publish({
+        kind: KIND,
+        scope: SCOPE,
+        payload: { turnover: 50 },
+        validFrom: '2026-01-01',
+        validTo: '2027-01-01',
+      });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+
+      // The two filters are written out separately, so this is the assertion that keeps them the
+      // same rule rather than two rules that happen to match today.
+      for (const day of ['2025-12-31', '2026-01-01', '2026-06-15', '2027-01-01']) {
+        expect(replica.list(KIND, day).length).toBe(replica.get(KIND, SCOPE, day) ? 1 : 0);
+      }
+    });
+  });
+
   describe('a change takes effect with no redeploy', () => {
     it('moves the store version, and a replica notices on its next poll', async () => {
       const replica = new ConfigurationStore(app);

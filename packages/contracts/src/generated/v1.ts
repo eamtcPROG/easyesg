@@ -587,7 +587,7 @@ export interface paths {
         put?: never;
         /**
          * Create an organization and become its Organization Administrator
-         * @description FR-13 and D-1: the creating user is granted the organization_administrator role by the act of creating, in the same transaction — an organization committed without its founding membership would be unreachable by everyone including its creator. The caller keeps every membership they already held; founding a second organization is an ordinary use of this route. The new organization does not become the session’s active one, so the caller chooses when to switch.
+         * @description FR-13 and D-1: the creating user is granted the organization_administrator role by the act of creating, in the same transaction — an organization committed without its founding membership would be unreachable by everyone including its creator. The caller keeps every membership they already held, and the new organization becomes the calling session’s active one, so the response is the organization the next request will be scoped to. That is not a convenience: an account holding two memberships with no stated preference has no active organization at all, so founding a second without pointing the session would refuse the caller access to the one they were already using.
          */
         post: operations["OrganizationsController_create"];
         delete?: never;

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, Length, Matches } from 'class-validator';
+import { Trim } from '@api/app/decorators/trim.decorator';
 
 /**
  * UC-49's body — S-04's three fields (FR-13).
@@ -23,6 +24,7 @@ export class CreateOrganizationRequestDto {
     maxLength: 200,
     description: 'The registered legal name (FR-15). Propagates into every report the organization produces.',
   })
+  @Trim()
   @IsString()
   @Length(1, 200)
   name!: string;
@@ -44,6 +46,7 @@ export class CreateOrganizationRequestDto {
     maxLength: 320,
     description: 'Where the platform writes to about this organization. Distinct from the billing contact (FR-106).',
   })
+  @Trim()
   @IsOptional()
   @IsEmail()
   @Length(1, 320)
@@ -53,6 +56,7 @@ export class CreateOrganizationRequestDto {
     maxLength: 40,
     description: 'Free-form, deliberately unvalidated beyond its length — there is no international format this could enforce without refusing real numbers.',
   })
+  @Trim()
   @IsOptional()
   @IsString()
   @Length(1, 40)

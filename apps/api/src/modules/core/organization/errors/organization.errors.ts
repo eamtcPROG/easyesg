@@ -66,3 +66,29 @@ export class OrganizationNotFoundError extends DomainError {
     super('core.organization.not_found');
   }
 }
+
+/**
+ * The tenant read matched more than one organization.
+ *
+ * **Unreachable today, and that is the reason to raise rather than to choose.** `core.organization`
+ * carries three permissive `SELECT` policies, OR'd; only one can match inside a request transaction
+ * because the other two are gated on settings nothing binds there. The day a flow binds
+ * `app.current_invitation` on the request transaction — a signed-in user previewing an invitation
+ * — the read would return two rows, and picking the first would disclose another tenant's profile
+ * while RLS did exactly what it was told.
+ *
+ * `500`, because no caller can act on it: the request was well-formed, the actor was entitled, and
+ * what failed is an invariant of ours. It carries no message key for the same reason `TenantContextMissingError`
+ * carries none — the reader is an operator reading a log, not a person reading a screen.
+ */
+export class AmbiguousBoundOrganizationError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Internal;
+  readonly status = 500;
+
+  constructor(matched: number) {
+    super(
+      `A tenant read on core.organization matched ${matched} rows where at most one is possible. ` +
+        'Some policy or binding now admits a second organization to a bound request.',
+    );
+  }
+}

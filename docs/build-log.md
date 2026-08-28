@@ -4614,3 +4614,96 @@ that task does not have to rediscover them.
 ### Verified
 
 `pnpm gates:clean` — EXIT=0.
+
+---
+
+## Task 29.1 — review fixes · 2026-08-28
+
+Twelve findings from an extra-high-recall review of `17e3c4a..HEAD`. Eleven applied, one declined
+with its reason. The three worth reading are below; the rest are recorded in the code they touch.
+
+### The one the task's own test saw and misread
+
+**Founding a second organization stranded the founder.** `selectActiveMembership` answers **null**
+for an account holding two memberships with no stated preference, and the only writer of
+`identity.session.active_organization_id` was invitation acceptance — sign-in never sets it. So a
+member of one organization who founded a second had, on their very next request, no active
+organization at all: every `@RequiresRole` route answered `membership-required`, including for the
+organization they had been using a moment earlier, with task 30.1's switcher — the only way to state
+a preference — still TODO. The route's own OpenAPI text asserted the opposite reassurance.
+
+**This suite observed the behaviour and encoded it as a constraint.** `organizations.e2e-spec.ts`
+carried the comment *"this block runs last on purpose … `selectActiveMembership` resolves nothing for
+the founder"*, which describes the defect accurately and calls it a design. That is the failure mode
+worth naming: a test that works around a symptom documents it convincingly enough that the next
+reader stops looking. The block still runs last, for the honest reason — it moves the active
+organization — and its first assertion is now that the founder is not locked out.
+
+The fix is the third write in the founding transaction, pointing the session at what was just
+created, exactly as UC-15's acceptance does with the same column. It is also what S-04's stated exit
+requires, since S-05 renders *an* organization.
+
+### `@Length(1, 200)` does not mean what it appears to
+
+`POST /organizations` with `name: "   "` passed validation — the validator measures the raw string,
+length 3 — and the use case's `.trim()` then stored `''`, which `core.organization.name` accepts,
+being `text NOT NULL`. Verified against the live schema before the fix. The result was an
+organization nobody could identify in a switcher or a membership list.
+
+**The order was the bug, not the trim.** Normalising after validation lets a validator pass a value
+that no longer exists by the time it is stored. `@Trim()` now runs in `plainToInstance`, before the
+validators, so the length check measures what will actually be written — and the use case's own
+`.trim()` is gone, because two places normalising is two answers to one question. It also closed a
+second finding for free: create trimmed and patch did not, so the same submitted name produced two
+different stored values depending on the route.
+
+### An index that could never be chosen
+
+`org_relationship_related_idx` on `(organization_id, related_organization_id)` is a strict prefix of
+the index PostgreSQL builds for `UNIQUE (organization_id, related_organization_id, kind)`. A B-tree
+serves any leading-column prefix of itself, so it could not answer a query the unique index could
+not. Confirmed by dropping it and re-running the plan: same index scan, identical cost estimate.
+
+The original comment justified it with §7.3's "lead with `organization_id`" — sound reasoning, and
+the unique constraint already satisfied it. Dropped by a corrective migration rather than an edit,
+following `1788048000000-invitation-policy-narrowing.ts`: the first migration has been applied on
+developer machines and in CI, so rewriting it would leave those schemas divergent from the ledger.
+
+### Also fixed
+
+- **`findBoundOrganization` took `rows[0]` of an unordered, unlimited read** on a table carrying
+  three OR'd permissive `SELECT` policies. Only one can match today, because the other two are gated
+  on settings nothing binds inside a request transaction — so singularity was a property of *other
+  tasks' policies*. It now raises rather than choosing: the first flow that binds an invitation on a
+  request transaction gets a loud failure instead of another tenant's profile with RLS behaving
+  exactly as instructed.
+- **`registeredCountries()` returned bare codes**, sending `ListLegalForms` back through
+  `legalFormsFor` per country to rescan and re-validate payloads the same call had already parsed —
+  and leaving a `?? []` branch that could never fire. One method returns the pairs.
+- **`ConfigurationStore.list()` had no test**; the only spec reaching it replaced it with a stub that
+  did no date filtering at all. Its half-open bounds are now asserted at both ends, plus an
+  agreement check against `get()` so the two hand-written filters stay one rule.
+- **`ORG_RELATIONSHIP_KIND` had no reader** — exported, never imported. The e2e now uses it for the
+  valid kinds and keeps a literal for the invalid one, which is the one value the constant cannot
+  express.
+- **`architecture.md` §7.2 overclaimed.** It said "the function that admits a type against it is
+  specified in both directions"; there is no admitter, only a reader of the vocabulary. The record
+  was corrected rather than dead code written to match it.
+- **The entitlement deferral was unrecorded**, which `apps/api/CLAUDE.md` requires per route. Now on
+  the controller, with what it leaves open: organization creation is unbounded per account until
+  task 54, and *how many* an account may found is that task's question, not a constant to invent.
+- **The e2e published a configuration revision on every run.** `ConfigurationPublisher.publish`
+  always writes a new immutable version — idempotence-by-comparison belongs to the seed *loader* —
+  so each run bumped `config.store_version` and invalidated every replica's cache for no change.
+
+### Declined, with the reason
+
+**The two new CHECK constraints were added without `NOT VALID`**, against the expand→migrate→contract
+note task 12's migration wrote down. Not fixed: they are already applied and validated, so a
+migration to re-add them as `NOT VALID` then `VALIDATE` would take the same lock again to reach the
+state the table is already in. The convention protects the *next* CHECK on a table with real row
+counts, and it is recorded here rather than paid for with churn.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0.

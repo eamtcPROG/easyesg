@@ -19,13 +19,20 @@ export interface OrganizationVocabulary {
   legalFormsFor(countryCode: string): readonly string[] | null;
 
   /**
-   * The countries that register a legal-form vocabulary — which is exactly the set of countries an
-   * organization may be created in (§7.2), so S-04's country select is built from this and not from
-   * ISO's 249.
+   * Every country that registers a legal-form vocabulary, **with its forms** — which is exactly the
+   * set of countries an organization may be created in (§7.2), so S-04's country select is built
+   * from this and not from ISO's 249, and S-15's form select from the matching entry.
    *
-   * Lower case, as the configuration scope spells it; the caller renders it however ISO does.
+   * **The pairs come back together rather than as a list of codes to look up one by one.** The
+   * store already read every payload to answer this; returning only the scopes made the caller
+   * re-enter `legalFormsFor` per country, rescanning the same entries and re-validating the same
+   * payloads — and left a `?? null` branch that could never fire, because the country list was
+   * filtered to readable vocabularies before it was returned.
+   *
+   * `countryCode` is lower case, as the configuration scope spells it; the caller renders it
+   * however ISO does.
    */
-  registeredCountries(): readonly string[];
+  registeredLegalForms(): readonly { readonly countryCode: string; readonly legalForms: readonly string[] }[];
 
   /**
    * FR-14's organization types, `direct_sme` alone at MVP.

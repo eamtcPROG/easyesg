@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, Length, Matches, ValidateIf } from 'class-validator';
+import { Trim } from '@api/app/decorators/trim.decorator';
 
 /**
  * UC-50's body — FR-15's profile, as a **patch** (S-15).
@@ -15,6 +16,7 @@ import { IsEmail, IsOptional, IsString, Length, Matches, ValidateIf } from 'clas
  */
 export class UpdateOrganizationProfileRequestDto {
   @ApiPropertyOptional({ maxLength: 200, description: 'The registered legal name (FR-15).' })
+  @Trim()
   @IsOptional()
   @IsString()
   @Length(1, 200)
@@ -40,6 +42,7 @@ export class UpdateOrganizationProfileRequestDto {
       '/organizations/legal-forms. Null clears it, which is always permitted: an organization ' +
       'that has not decided is a state S-15 must be able to return to.',
   })
+  @Trim()
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @IsString()
@@ -47,6 +50,7 @@ export class UpdateOrganizationProfileRequestDto {
   legalForm?: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true, maxLength: 200 })
+  @Trim()
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @IsString()
@@ -54,6 +58,7 @@ export class UpdateOrganizationProfileRequestDto {
   registeredAddressLine1?: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true, maxLength: 200 })
+  @Trim()
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @IsString()
@@ -61,6 +66,7 @@ export class UpdateOrganizationProfileRequestDto {
   registeredAddressLine2?: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true, maxLength: 120, description: 'City, town or village.' })
+  @Trim()
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @IsString()
@@ -68,6 +74,7 @@ export class UpdateOrganizationProfileRequestDto {
   registeredLocality?: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true, maxLength: 20 })
+  @Trim()
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @IsString()
@@ -75,6 +82,7 @@ export class UpdateOrganizationProfileRequestDto {
   registeredPostalCode?: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true, format: 'email', maxLength: 320 })
+  @Trim()
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @IsEmail()
@@ -82,6 +90,7 @@ export class UpdateOrganizationProfileRequestDto {
   contactEmail?: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true, maxLength: 40 })
+  @Trim()
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @IsString()

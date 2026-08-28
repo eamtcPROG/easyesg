@@ -53,15 +53,22 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
     return forms;
   }
 
-  registeredCountries(): readonly string[] {
-    // A malformed payload is excluded rather than logged again: `legalFormsFor` is what every
-    // caller then asks, and it logs the entry once with its revision. Listing a country whose
-    // vocabulary cannot be read would offer S-04 a choice that refuses on submit.
+  registeredLegalForms(): readonly { countryCode: string; legalForms: readonly string[] }[] {
+    // One pass: the payloads are already in hand here, so the forms travel with the scope rather
+    // than sending the caller back through `legalFormsFor` to rescan and re-validate what this
+    // filter just read.
+    //
+    // A malformed payload is excluded rather than logged again — `legalFormsFor` logs it once with
+    // its revision when somebody asks for that country directly. Offering S-04 a country whose
+    // vocabulary cannot be read would be a choice that refuses on submit.
     return this.configurationStore
       .list(ORGANIZATION_LEGAL_FORM_CONFIG_KIND)
-      .filter((entry) => isStringArray(entry.payload.forms))
-      .map((entry) => entry.scope)
-      .sort();
+      .flatMap((entry) =>
+        isStringArray(entry.payload.forms)
+          ? [{ countryCode: entry.scope, legalForms: entry.payload.forms }]
+          : [],
+      )
+      .sort((a, b) => (a.countryCode < b.countryCode ? -1 : a.countryCode > b.countryCode ? 1 : 0));
   }
 
   relationshipTypes(): readonly string[] {

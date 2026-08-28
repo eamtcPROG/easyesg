@@ -20,6 +20,18 @@ import { OrganizationService } from '../services/organization.service';
  *
  * **The plural is a collection with no `GET`**, and that is not an omission: "every organization"
  * is not a question this API answers to a tenant, and the caller's own list is `/memberships`.
+ *
+ * **Recorded deferral: no entitlement gate, and creation is unbounded per account until task 54.**
+ * `apps/api/CLAUDE.md` requires every route to carry `@RequiresEntitlement(key)` or to record why
+ * it needs none, and this is the record — task 26.1 made the same note for the invitation routes.
+ * `EntitlementPort` has no implementation before task 54, so a key here would be an annotation
+ * nothing reads, which is the decay task 28.2 declined to accept for this axis.
+ *
+ * What that leaves open, stated rather than implied: any verified account may call `POST` in a loop,
+ * each call committing a `core.organization` row and an `identity.membership` row against a
+ * ≤2,000-organization envelope, bounded only by task 71's edge rate limit. **How many organizations
+ * one account may found is an open question for task 54**, not a value to invent here — and if the
+ * answer is "one, unless invited", it is an entitlement key rather than a constant in this file.
  */
 @ApiTags('organization')
 @Controller('organizations')
@@ -35,9 +47,11 @@ export class OrganizationsController {
       'FR-13 and D-1: the creating user is granted the organization_administrator role by the act ' +
       'of creating, in the same transaction — an organization committed without its founding ' +
       'membership would be unreachable by everyone including its creator. The caller keeps every ' +
-      'membership they already held; founding a second organization is an ordinary use of this ' +
-      'route. The new organization does not become the session’s active one, so the caller ' +
-      'chooses when to switch.',
+      'membership they already held, and the new organization becomes the calling session’s ' +
+      'active one, so the response is the organization the next request will be scoped to. That ' +
+      'is not a convenience: an account holding two memberships with no stated preference has no ' +
+      'active organization at all, so founding a second without pointing the session would refuse ' +
+      'the caller access to the one they were already using.',
   })
   @ApiObjectResponse(OrganizationResponseDto, {
     status: 201,

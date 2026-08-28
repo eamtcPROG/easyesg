@@ -16,6 +16,12 @@ export interface CreateOrganizationCommand {
   readonly contactPhone: string | null;
   /** Resolved from the session by the service — never from the body (D-1: the *creator* is the OA). */
   readonly founderAccountId: string;
+  /**
+   * The session to point at the new organization. Ambient context like `founderAccountId`, and
+   * never from the body: a caller who could name a session id would move somebody else's active
+   * organization.
+   */
+  readonly sessionId: string;
 }
 
 /**
@@ -51,12 +57,13 @@ export class CreateOrganization {
 
     return this.store.createWithFoundingAdministrator({
       organization: {
-        name: command.name.trim(),
+        name: command.name,
         countryCode,
         contactEmail: command.contactEmail,
         contactPhone: command.contactPhone,
       },
       founderAccountId: command.founderAccountId,
+      sessionId: command.sessionId,
     });
   }
 }
