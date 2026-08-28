@@ -141,7 +141,7 @@ function FactorBody({ factor }: { readonly factor: TotpState }) {
   if (stage.kind === CREDENTIALS_STAGE.ENROLLING) {
     return (
       <form onSubmit={(event) => void confirm(event)} noValidate className={styles.form}>
-        <FormSummary control={control} title={t('heading')} />
+        <FormSummary control={control} title={t('summaryTitle')} />
         <p className="t-label">{t('secretHeading')}</p>
         <p className={`t-code ${styles.secret}`}>{stage.secret}</p>
         <p className="t-caption">{t('secretHelp')}</p>

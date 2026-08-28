@@ -5360,3 +5360,35 @@ changed value against every suite file, after the eleven that were changed by ha
 (`"Folosește alt cont"`) and the admin suite failed on it. That check is worth keeping: **a catalogue
 edit here is never just a catalogue edit**, because the browser suites match on Romanian labels by
 design.
+
+## An error summary titled with the name of the form · 2026-08-28
+
+`FormErrorSummary`'s `title` is documented as *"Localized heading — what happened at form level"*,
+and three of the eight forms were passing their own section heading into it: *"Parolă"*,
+*"Verificare în doi pași"*, and the invite panel's *"Invitați o persoană"*. So a reader who
+submitted with an empty field met an alert whose first line was a noun naming the form they were
+already looking at, above links to the fields that need attention.
+
+The five other forms — four in `apps/web`, two in the console — pass a dedicated `summaryTitle`:
+*"Câteva câmpuri au nevoie de atenție înainte de a putea continua"*. That is what NFR-79's first
+part is for, and it is the sentence the three were missing.
+
+**The fix follows the existing structure rather than improving on it**, and that was the decision
+worth taking deliberately. Five namespaces each carry their own copy of that sentence; adding three
+more makes eight copies of one string, which is duplication the repo elsewhere argues against — the
+`show`/`hide` borrow in `set-password-form.tsx` carries a comment saying exactly that. The
+alternative is a shared `forms` namespace that all eight read from.
+
+It was not taken here, for two reasons. Following the nearest existing code is the rule when a task
+leaves a detail open, and five namespaces already answer this one the same way; and a shared
+namespace is a catalogue-structure change that should be taken on its own terms rather than as a
+side effect of fixing three titles.
+
+**What it surfaces, recorded rather than acted on.** There is now a visible pull toward a
+form-layer namespace, and it has three witnesses, not one: `summaryTitle` in eight places,
+`show`/`hide` declared in both `identity.register` and `identity.signIn` while three components
+borrow the former, and `identity.unreachable.*` read by `organization/invite-member.tsx` — a feature
+reaching into another feature's namespace for a string that belongs to neither. Each was solved
+locally by borrowing, and borrowing from a sibling feature is the hacky form of the shared namespace
+nobody has created. That is one change with a clear shape, and it is a better change than three
+opportunistic ones.

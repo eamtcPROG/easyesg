@@ -266,6 +266,7 @@
       "password": {
         "heading": "Password",
         "description": "Changing your password requires the one in force now.",
+        "summaryTitle": "A few fields need attention before you can continue",
         "current": "Current password",
         "next": "New password",
         "terminate": "Sign out of your other devices",
@@ -279,6 +280,7 @@
       "factor": {
         "heading": "Two-step verification",
         "description": "A code from your authenticator app, asked for every time you sign in.",
+        "summaryTitle": "A few fields need attention before you can continue",
         "off": "Not turned on.",
         "on": "Turned on. Recovery codes left: {remaining}.",
         "noCodes": "Turned on, but you have no recovery codes left. Generate new ones now, while you still have access.",
@@ -393,6 +395,7 @@
       "invite": {
         "heading": "Invite a colleague",
         "intro": "We send a link that works for seven days. They choose their own password.",
+        "summaryTitle": "A few fields need attention before you can continue",
         "email": "Email address",
         "emailRequired": "Enter the email address of the person you are inviting, or the invitation cannot be sent.",
         "role": "Role granted",

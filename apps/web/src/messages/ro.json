@@ -266,6 +266,7 @@
       "password": {
         "heading": "Parolă",
         "description": "Schimbarea parolei cere parola actuală.",
+        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
         "current": "Parola actuală",
         "next": "Parola nouă",
         "terminate": "Închideți sesiunile de pe celelalte dispozitive",
@@ -279,6 +280,7 @@
       "factor": {
         "heading": "Verificare în doi pași",
         "description": "Un cod din aplicația de autentificare, cerut la fiecare autentificare.",
+        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
         "off": "Nu este activată.",
         "on": "Activată. Coduri de recuperare rămase: {remaining}.",
         "noCodes": "Activată, dar nu mai aveți coduri de recuperare. Generați altele acum, cât timp aveți acces.",
@@ -393,6 +395,7 @@
       "invite": {
         "heading": "Invitați un coleg",
         "intro": "Trimitem un link valabil șapte zile. Persoana își alege singură parola.",
+        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
         "email": "Adresa de e-mail",
         "emailRequired": "Scrieți adresa de e-mail a persoanei pe care o invitați, altfel invitația nu poate fi trimisă.",
         "role": "Rolul acordat",

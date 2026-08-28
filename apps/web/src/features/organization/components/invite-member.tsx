@@ -110,7 +110,7 @@ export function InviteMember({ id }: { id: string }) {
       ) : null}
 
       <form onSubmit={(event) => void submit(event)} noValidate className={styles.inviteForm}>
-        <FormSummary control={control} title={t('heading')} />
+        <FormSummary control={control} title={t('summaryTitle')} />
         <FormTextField
           control={control}
           name="email"
