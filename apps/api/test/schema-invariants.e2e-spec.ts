@@ -261,6 +261,7 @@ const FIELD_AUDITED_TABLES = [
   'core.org_relationship',
   'core.reporting_entity',
   'core.site',
+  'core.consolidation_member',
   'identity.membership',
   'identity.invitation',
 ];

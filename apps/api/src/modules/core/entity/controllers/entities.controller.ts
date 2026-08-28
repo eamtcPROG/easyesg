@@ -126,6 +126,13 @@ export class EntitiesController {
   @ApiParam({ name: 'entityId', format: 'uuid' })
   @ApiObjectResponse(ReportingEntityResponseDto, { status: 200, description: 'The entity after the change.' })
   @ApiResponse({
+    status: 400,
+    description:
+      'A consolidated basis with nothing inside the boundary (problem type ' +
+      'consolidation-boundary-empty), or an unregistered activity code (nace-code-unknown).',
+    content: { 'application/problem+json': {} },
+  })
+  @ApiResponse({
     status: 409,
     description:
       'The entity is archived, so its master data is read-only (problem type entity-archived). It ' +
@@ -142,6 +149,20 @@ export class EntitiesController {
         ...(body.name !== undefined ? { name: body.name } : {}),
         ...(body.legalForm !== undefined ? { legalForm: body.legalForm } : {}),
         ...(body.naceCodes !== undefined ? { naceCodes: body.naceCodes } : {}),
+        ...(body.consolidationBasis !== undefined
+          ? { consolidationBasis: body.consolidationBasis }
+          : {}),
+        ...(body.consolidationMembers !== undefined
+          ? {
+              consolidationMembers: body.consolidationMembers.map((member) => ({
+                id: member.id,
+                name: member.name,
+                idno: member.idno ?? null,
+                lei: member.lei ?? null,
+                countryCode: member.countryCode?.toUpperCase() ?? null,
+              })),
+            }
+          : {}),
         ...(body.sites !== undefined
           ? {
               sites: body.sites.map((site) => ({

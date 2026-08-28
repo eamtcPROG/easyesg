@@ -98,6 +98,9 @@
     },
     "entity-archived": {
       "title": "Entitate arhivată"
+    },
+    "consolidation-boundary-empty": {
+      "title": "Perimetru de consolidare gol"
     }
   },
   "validation": {},
@@ -175,7 +178,8 @@
     "entity": {
       "not_found": "Entitatea indicată nu există în această organizație, așa că nu a putut fi afișată. Reîmprospătați lista pentru a vedea entitățile curente.",
       "nace_code_unknown": "Unul dintre codurile de activitate introduse nu figurează în clasificatorul țării organizației, așa că modificarea nu a fost salvată. Alegeți codurile din lista propusă.",
-      "archived": "Entitatea este arhivată, iar datele ei de bază nu mai pot fi modificate. Rapoartele și exporturile ei rămân disponibile. Creați o entitate nouă dacă activitatea continuă sub altă formă."
+      "archived": "Entitatea este arhivată, iar datele ei de bază nu mai pot fi modificate. Rapoartele și exporturile ei rămân disponibile. Creați o entitate nouă dacă activitatea continuă sub altă formă.",
+      "consolidation_boundary_empty": "Ați ales raportarea consolidată, dar nu ați indicat nicio filială în perimetrul de raportare, așa că modificarea nu a fost salvată. Adăugați filialele incluse sau alegeți raportarea individuală."
     }
   },
   "notification": {

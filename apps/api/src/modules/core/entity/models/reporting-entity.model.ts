@@ -23,6 +23,43 @@ export const ENTITY_STATUS = {
 export type EntityStatus = (typeof ENTITY_STATUS)[keyof typeof ENTITY_STATUS];
 
 /**
+ * FR-19's reporting boundary — the `reporting_entity_consolidation_basis_known` CHECK's vocabulary.
+ *
+ * **It bounds every quantitative figure in the report**, which is why it is a first-class fact about
+ * the entity rather than a B1 field: the calculator aggregates over it (task 38), and B1 discloses
+ * it. Null until an Administrator states it — VSME asks the question explicitly, and a default would
+ * answer it on the company's behalf.
+ */
+export const CONSOLIDATION_BASIS = {
+  /** The undertaking reports on itself alone. */
+  INDIVIDUAL: 'individual',
+  /** The undertaking reports on itself and the subsidiaries listed inside the boundary. */
+  CONSOLIDATED: 'consolidated',
+} as const;
+
+export type ConsolidationBasis =
+  (typeof CONSOLIDATION_BASIS)[keyof typeof CONSOLIDATION_BASIS];
+
+/**
+ * One subsidiary inside the reporting boundary (UC-54).
+ *
+ * **A named third party, not a pointer to another reporting entity** (28 Aug 2026): a Moldovan
+ * SME's subsidiaries are generally not themselves on the platform, and what UC-54 asks the
+ * Administrator for is the *list B1 publishes*. Identified to the same standard the organization
+ * itself is — an IDNO, optionally an LEI — because a subsidiary named in a filing is identified the
+ * way the undertaking naming it is.
+ */
+export interface ConsolidationMember {
+  readonly id: string;
+  readonly name: string;
+  readonly idno: string | null;
+  readonly lei: string | null;
+  readonly countryCode: string | null;
+}
+
+export type NewConsolidationMember = Omit<ConsolidationMember, 'id'> & { readonly id?: string };
+
+/**
  * One site an entity operates from — B1 discloses these and B5's applicability is evaluated from
  * their geolocations (BR-APP-3).
  *
@@ -58,6 +95,14 @@ export interface ReportingEntity {
   readonly status: EntityStatus;
   /** Non-null exactly when `status` is `archived` — the `..._archived_at_matches_status` CHECK. */
   readonly archivedAt: Date | null;
+  /** Null until stated. What makes it required is that a report cannot be filed without it (task 40). */
+  readonly consolidationBasis: ConsolidationBasis | null;
+  /**
+   * **Recorded whatever the basis says.** Switching to `individual` does not remove them: nothing in
+   * UC-54 asks for a destructive switch, and B1 reads the basis first and this list only when it
+   * says `consolidated` — so an inert list costs nothing where a deleted one cannot be got back.
+   */
+  readonly consolidationMembers: readonly ConsolidationMember[];
   readonly sites: readonly Site[];
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -87,4 +132,7 @@ export type ReportingEntityPatch = Partial<{
   readonly legalForm: string | null;
   readonly naceCodes: readonly string[];
   readonly sites: readonly NewSite[];
+  readonly consolidationBasis: ConsolidationBasis | null;
+  /** A whole-collection save, exactly as `sites` is, and for the same audit-trail reason. */
+  readonly consolidationMembers: readonly NewConsolidationMember[];
 }>;

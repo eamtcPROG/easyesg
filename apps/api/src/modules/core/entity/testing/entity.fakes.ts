@@ -18,6 +18,8 @@ export const anEntity = (overrides: Partial<ReportingEntity> = {}): ReportingEnt
   legalForm: 'srl',
   naceCodes: ['10.71'],
   status: ENTITY_STATUS.ACTIVE,
+  consolidationBasis: null,
+  consolidationMembers: [],
   archivedAt: null,
   sites: [],
   createdAt: new Date('2026-08-01T00:00:00.000Z'),
@@ -61,11 +63,19 @@ export class FakeReportingEntityStore implements ReportingEntityStore {
   }): Promise<ReportingEntity | null> {
     const index = this.rows.findIndex((row) => row.id === input.entityId);
     if (index === -1) return Promise.resolve(null);
-    const { sites, ...fields } = input.patch;
+    const { sites, consolidationMembers, ...fields } = input.patch;
     this.rows[index] = {
       ...this.rows[index],
       ...fields,
       ...(sites ? { sites: sites.map((s, i) => ({ ...s, id: s.id ?? `site-${i}` })) } : {}),
+      ...(consolidationMembers
+        ? {
+            consolidationMembers: consolidationMembers.map((m, i) => ({
+              ...m,
+              id: m.id ?? `member-${i}`,
+            })),
+          }
+        : {}),
       updatedAt: input.at,
     };
     return Promise.resolve(this.rows[index]);

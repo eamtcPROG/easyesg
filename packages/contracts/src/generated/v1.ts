@@ -1275,6 +1275,14 @@ export interface components {
             contactEmail?: string | null;
             contactPhone?: string | null;
         };
+        ConsolidationMemberResponseDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            idno: string | null;
+            lei: string | null;
+            countryCode: string | null;
+        };
         SiteResponseDto: {
             /** Format: uuid */
             id: string;
@@ -1300,6 +1308,13 @@ export interface components {
             status: "active" | "archived";
             /** @description Unix epoch milliseconds, or null while active. */
             archivedAt: number | null;
+            /**
+             * @description Null until stated. B1 discloses it and task 38’s calculator aggregates over it.
+             * @enum {string|null}
+             */
+            consolidationBasis: "individual" | "consolidated" | null;
+            /** @description The boundary’s subsidiaries. Meaningful when the basis is `consolidated`; kept regardless. */
+            consolidationMembers: components["schemas"]["ConsolidationMemberResponseDto"][];
             sites: components["schemas"]["SiteResponseDto"][];
             /** @description Unix epoch milliseconds. */
             createdAt: number;
@@ -1326,6 +1341,21 @@ export interface components {
             /** @example 28.832363 */
             longitude?: string | null;
         };
+        ConsolidationMemberRequestDto: {
+            /**
+             * Format: uuid
+             * @description Omit to add; supply an id to edit that member.
+             */
+            id?: string;
+            /** @description The subsidiary’s legal name, as B1 publishes it. */
+            name: string;
+            /** @example 1003600158022 */
+            idno?: string | null;
+            /** @example 7LTWFZYICNSX8D621K86 */
+            lei?: string | null;
+            /** @example MD */
+            countryCode?: string | null;
+        };
         CreateReportingEntityRequestDto: {
             /** @description A key from the country’s legal-form vocabulary. */
             legalForm?: string | null;
@@ -1339,6 +1369,13 @@ export interface components {
             naceCodes?: string[];
             /** @description The entity’s sites, as a whole collection. Omit to leave them alone; send an array to save them — members with an id are edited, members without are added, and stored sites the array omits are removed. */
             sites?: components["schemas"]["SiteRequestDto"][];
+            /**
+             * @description FR-19’s reporting boundary, which bounds every quantitative figure in the report and which B1 discloses. Null until stated — VSME asks the question explicitly, so there is no default answering it on the undertaking’s behalf. Setting `consolidated` requires at least one subsidiary inside the boundary.
+             * @enum {string|null}
+             */
+            consolidationBasis?: "individual" | "consolidated" | null;
+            /** @description The subsidiaries inside the boundary, as a whole collection — the same save semantics as `sites`. Recorded whatever the basis says: switching to `individual` leaves the list standing, and B1 reads it only when the basis is `consolidated`. */
+            consolidationMembers?: components["schemas"]["ConsolidationMemberRequestDto"][];
             /** @description The entity’s name, as it is reported on. */
             name: string;
         };
@@ -1355,6 +1392,13 @@ export interface components {
             naceCodes?: string[];
             /** @description The entity’s sites, as a whole collection. Omit to leave them alone; send an array to save them — members with an id are edited, members without are added, and stored sites the array omits are removed. */
             sites?: components["schemas"]["SiteRequestDto"][];
+            /**
+             * @description FR-19’s reporting boundary, which bounds every quantitative figure in the report and which B1 discloses. Null until stated — VSME asks the question explicitly, so there is no default answering it on the undertaking’s behalf. Setting `consolidated` requires at least one subsidiary inside the boundary.
+             * @enum {string|null}
+             */
+            consolidationBasis?: "individual" | "consolidated" | null;
+            /** @description The subsidiaries inside the boundary, as a whole collection — the same save semantics as `sites`. Recorded whatever the basis says: switching to `individual` leaves the list standing, and B1 reads it only when the basis is `consolidated`. */
+            consolidationMembers?: components["schemas"]["ConsolidationMemberRequestDto"][];
             name?: string;
         };
         AdminChallengeResponseDto: {
@@ -2839,6 +2883,15 @@ export interface operations {
                     "application/json": components["schemas"]["ResultObjectDto"] & {
                         object?: components["schemas"]["ReportingEntityResponseDto"];
                     };
+                };
+            };
+            /** @description A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), or an unregistered activity code (nace-code-unknown). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
                 };
             };
             /** @description The entity is archived, so its master data is read-only (problem type entity-archived). It stays readable — its historical reports and exports must remain retrievable. */

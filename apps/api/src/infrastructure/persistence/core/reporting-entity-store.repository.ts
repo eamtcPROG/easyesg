@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import type { ReportingEntityStore } from '@api/modules/core/entity/interfaces/reporting-entity-store.interface';
 import {
   ENTITY_STATUS,
+  type ConsolidationBasis,
+  type ConsolidationMember,
   type EntityStatus,
+  type NewConsolidationMember,
   type NewReportingEntity,
   type NewSite,
   type ReportingEntity,
@@ -17,6 +20,7 @@ interface EntityRow {
   legal_form: string | null;
   nace_codes: string[];
   status: EntityStatus;
+  consolidation_basis: ConsolidationBasis | null;
   archived_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -34,7 +38,9 @@ interface SiteRow {
   longitude: string | null;
 }
 
-const ENTITY_COLUMNS = `id, name, legal_form, nace_codes, status, archived_at, created_at, updated_at`;
+const ENTITY_COLUMNS = `id, name, legal_form, nace_codes, status, consolidation_basis,
+        archived_at, created_at, updated_at`;
+const MEMBER_COLUMNS = `id, reporting_entity_id, name, idno, lei, country_code`;
 const SITE_COLUMNS = `id, reporting_entity_id, name, address_line1, locality, postal_code,
         country_code, latitude, longitude`;
 
@@ -43,7 +49,11 @@ const PATCHABLE = {
   name: 'name',
   legalForm: 'legal_form',
   naceCodes: 'nace_codes',
-} as const satisfies Record<keyof Omit<ReportingEntityPatch, 'sites'>, string>;
+  consolidationBasis: 'consolidation_basis',
+} as const satisfies Record<
+  keyof Omit<ReportingEntityPatch, 'sites' | 'consolidationMembers'>,
+  string
+>;
 
 const toSite = (row: SiteRow): Site => ({
   id: row.id,
@@ -58,12 +68,35 @@ const toSite = (row: SiteRow): Site => ({
   longitude: row.longitude,
 });
 
-const toEntity = (row: EntityRow, sites: Site[]): ReportingEntity => ({
+interface MemberRow {
+  id: string;
+  reporting_entity_id: string;
+  name: string;
+  idno: string | null;
+  lei: string | null;
+  country_code: string | null;
+}
+
+const toMember = (row: MemberRow): ConsolidationMember => ({
+  id: row.id,
+  name: row.name,
+  idno: row.idno,
+  lei: row.lei,
+  countryCode: row.country_code,
+});
+
+const toEntity = (
+  row: EntityRow,
+  sites: Site[],
+  consolidationMembers: ConsolidationMember[],
+): ReportingEntity => ({
   id: row.id,
   name: row.name,
   legalForm: row.legal_form,
   naceCodes: row.nace_codes,
   status: row.status,
+  consolidationBasis: row.consolidation_basis,
+  consolidationMembers,
   archivedAt: row.archived_at,
   sites,
   createdAt: row.created_at,
@@ -108,12 +141,27 @@ export class ReportingEntityStoreRepository
     return grouped;
   }
 
+  private async membersFor(entityIds: string[]): Promise<Map<string, ConsolidationMember[]>> {
+    const grouped = new Map<string, ConsolidationMember[]>(entityIds.map((id) => [id, []]));
+    if (entityIds.length === 0) return grouped;
+
+    const rows = await this.manager.query<MemberRow[]>(
+      `SELECT ${MEMBER_COLUMNS} FROM core.consolidation_member
+        WHERE reporting_entity_id = ANY($1)
+        ORDER BY name, id`,
+      [entityIds],
+    );
+    for (const row of rows) grouped.get(row.reporting_entity_id)?.push(toMember(row));
+    return grouped;
+  }
+
   async listEntities(): Promise<ReportingEntity[]> {
     const rows = await this.manager.query<EntityRow[]>(
       `SELECT ${ENTITY_COLUMNS} FROM core.reporting_entity ORDER BY name, id`,
     );
-    const sites = await this.sitesFor(rows.map((row) => row.id));
-    return rows.map((row) => toEntity(row, sites.get(row.id) ?? []));
+    const ids = rows.map((row) => row.id);
+    const [sites, members] = await Promise.all([this.sitesFor(ids), this.membersFor(ids)]);
+    return rows.map((row) => toEntity(row, sites.get(row.id) ?? [], members.get(row.id) ?? []));
   }
 
   async findEntity(entityId: string): Promise<ReportingEntity | null> {
@@ -122,8 +170,11 @@ export class ReportingEntityStoreRepository
       [entityId],
     );
     if (rows.length === 0) return null;
-    const sites = await this.sitesFor([entityId]);
-    return toEntity(rows[0], sites.get(entityId) ?? []);
+    const [sites, members] = await Promise.all([
+      this.sitesFor([entityId]),
+      this.membersFor([entityId]),
+    ]);
+    return toEntity(rows[0], sites.get(entityId) ?? [], members.get(entityId) ?? []);
   }
 
   async create(input: { entity: NewReportingEntity; at: Date }): Promise<ReportingEntity> {
@@ -139,7 +190,7 @@ export class ReportingEntityStoreRepository
     const created = rows[0];
     await this.syncSites(created.id, input.entity.sites, input.at);
     const sites = await this.sitesFor([created.id]);
-    return toEntity(created, sites.get(created.id) ?? []);
+    return toEntity(created, sites.get(created.id) ?? [], []);
   }
 
   async update(input: {
@@ -173,8 +224,14 @@ export class ReportingEntityStoreRepository
     if (input.patch.sites !== undefined) {
       await this.syncSites(input.entityId, input.patch.sites, input.at);
     }
-    const sites = await this.sitesFor([input.entityId]);
-    return toEntity(rows[0], sites.get(input.entityId) ?? []);
+    if (input.patch.consolidationMembers !== undefined) {
+      await this.syncMembers(input.entityId, input.patch.consolidationMembers, input.at);
+    }
+    const [sites, members] = await Promise.all([
+      this.sitesFor([input.entityId]),
+      this.membersFor([input.entityId]),
+    ]);
+    return toEntity(rows[0], sites.get(input.entityId) ?? [], members.get(input.entityId) ?? []);
   }
 
   async archive(input: { entityId: string; at: Date }): Promise<boolean> {
@@ -204,6 +261,45 @@ export class ReportingEntityStoreRepository
    * record a site vanishing and an unrelated one appearing. A submitted `id` that is not this
    * entity's simply updates nothing — the `WHERE` pins the parent and RLS pins the tenant.
    */
+  /**
+   * The boundary's members, synced exactly as the sites are (UC-54).
+   *
+   * **Not conditional on the basis.** Switching to `individual` leaves the list standing; B1 reads
+   * the basis first and this only when it says `consolidated`, so an inert list costs nothing and a
+   * deleted one cannot be got back.
+   */
+  private async syncMembers(
+    entityId: string,
+    members: readonly NewConsolidationMember[],
+    at: Date,
+  ): Promise<void> {
+    const keep = members.map((m) => m.id).filter((id): id is string => id !== undefined);
+    await this.manager.query(
+      `DELETE FROM core.consolidation_member
+        WHERE reporting_entity_id = $1 AND NOT (id = ANY($2))`,
+      [entityId, keep],
+    );
+
+    for (const member of members) {
+      const values = [member.name, member.idno, member.lei, member.countryCode];
+      if (member.id === undefined) {
+        await this.manager.query(
+          `INSERT INTO core.consolidation_member
+             (organization_id, reporting_entity_id, name, idno, lei, country_code, created_at, updated_at)
+           VALUES (${this.boundOrganization}, $1, $2, $3, $4, $5, $6, $6)`,
+          [entityId, ...values, at],
+        );
+      } else {
+        await this.manager.query(
+          `UPDATE core.consolidation_member
+              SET name = $3, idno = $4, lei = $5, country_code = $6, updated_at = $7
+            WHERE id = $1 AND reporting_entity_id = $2`,
+          [member.id, entityId, ...values, at],
+        );
+      }
+    }
+  }
+
   private async syncSites(entityId: string, sites: readonly NewSite[], at: Date): Promise<void> {
     const keep = sites.map((site) => site.id).filter((id): id is string => id !== undefined);
 

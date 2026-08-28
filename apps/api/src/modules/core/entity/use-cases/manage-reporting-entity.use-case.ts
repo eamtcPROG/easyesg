@@ -2,6 +2,7 @@ import type { Clock } from '@api/contracts/clock.port';
 import type { OrganizationVocabulary } from '@api/modules/core/organization/interfaces/organization-vocabulary.interface';
 import type { OrganizationStore } from '@api/modules/core/organization/interfaces/organization-store.interface';
 import {
+  CONSOLIDATION_BASIS,
   ENTITY_STATUS,
   type NewReportingEntity,
   type ReportingEntity,
@@ -9,6 +10,7 @@ import {
 } from '../models/reporting-entity.model';
 import type { ReportingEntityStore } from '../interfaces/reporting-entity-store.interface';
 import {
+  ConsolidationBoundaryEmptyError,
   EntityArchivedError,
   EntityNotFoundError,
   NaceCodeUnknownError,
@@ -59,6 +61,22 @@ export class ManageReportingEntity {
     if (existing.status === ENTITY_STATUS.ARCHIVED) throw new EntityArchivedError();
 
     if (command.patch.naceCodes !== undefined) await this.admitNaceCodes(command.patch.naceCodes);
+
+    // FR-19, against the state the patch *results in* rather than the state it arrived at — the
+    // same rule shape as the organization's legal form against its resulting country. Three
+    // requests reach this refusal: setting the basis with no members stored, clearing the members
+    // while the basis stands, and doing both at once.
+    const basis =
+      command.patch.consolidationBasis !== undefined
+        ? command.patch.consolidationBasis
+        : existing.consolidationBasis;
+    const members =
+      command.patch.consolidationMembers !== undefined
+        ? command.patch.consolidationMembers
+        : existing.consolidationMembers;
+    if (basis === CONSOLIDATION_BASIS.CONSOLIDATED && members.length === 0) {
+      throw new ConsolidationBoundaryEmptyError();
+    }
 
     const updated = await this.store.update({
       entityId: command.entityId,

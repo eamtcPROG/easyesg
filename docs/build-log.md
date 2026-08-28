@@ -4864,3 +4864,63 @@ can be opened.
 ### Verified
 
 `pnpm gates:clean` — EXIT=0.
+
+---
+
+## Task 29.4 — Consolidation scope · 2026-08-28
+
+FR-19's reporting boundary (UC-54), and the last row of task 29.
+
+### Two decisions, and both were about refusing to invent
+
+**A member is a named subsidiary, not a pointer to another reporting entity.** Nothing in the
+document set says which; §7.2 only hangs `CONSOLIDATION_MEMBER` off `REPORTING_ENTITY`. A Moldovan
+SME's subsidiaries are generally not themselves on the platform, and what UC-54 asks the
+Administrator for is the list B1 publishes — so a member carries a legal name, an optional IDNO and
+LEI, and a country, identified to the same standard the undertaking naming it is. A pointer can be
+added later as a nullable column; modelling both now would have been the "to be safe" abstraction
+CLAUDE.md names, and every later reader would have had to work out which half was authoritative.
+
+**The basis is nullable with no default.** `individual` is the common case and would have been a
+defensible default — which is exactly why it is worth stating the argument against it. VSME asks the
+question explicitly, so a default answers it on the undertaking's behalf; and answering it wrongly is
+not cosmetic, because FR-19 makes the boundary bound *every quantitative figure in the report*. A
+group that should have consolidated files individually and every number in it is scoped wrong,
+silently. What makes the basis required is that a report cannot be filed without one — FR-73's
+validation rule in task 40, where 29.2 put the IDNO's requiredness for the same reason.
+
+### One rule kept at the record rather than deferred
+
+`consolidated` with an empty boundary is refused here, not in task 40. The distinction is between a
+**structural contradiction** and a **completeness question**: FR-19 reads "where consolidated, the
+subsidiaries inside the reporting boundary", so a consolidated basis names a boundary and an empty
+boundary names nothing, while every figure in the report is gathered against it. Whether a report
+may be *filed* with no basis at all is the ordinary completeness question and stays task 40's.
+
+It is checked against the state the patch **results in** rather than the state it arrived at — the
+same shape as the organization's legal form against its resulting country (29.1). Three requests
+reach it: setting the basis with nothing stored, clearing the members while the basis stands, and
+doing both at once. Only the first is obvious, which is why the other two have tests.
+
+### Switching back does not destroy the group
+
+Moving the basis to `individual` leaves the subsidiaries standing. Nothing in UC-54 asks for a
+destructive switch, and this codebase's settled answer to "the state changed" is a status change
+rather than a delete — membership removal, entity archiving, the snapshot's immutability. B1 reads
+the basis first and the members only when it says `consolidated`, so an inert list costs nothing
+where a deleted one cannot be got back.
+
+### The deliverable's other half
+
+*"…with its effect on B1 stated"* is a documentation obligation, because B1 is task 36.2 and the
+calculator is 38. §7.2 now carries it: B1 **discloses** the basis and its members, pre-populating
+from the entity per D-2 while staying editable because B1 is a disclosure rather than master data;
+every quantitative disclosure is **gathered against** the boundary, which is what the numbers mean
+rather than a rule about them; and task 38 aggregates over it. Which basis a *filed* report reflects
+is settled by FR-18's snapshot, not by the entity's current value — an entity that consolidates from
+2027 does not retroactively re-scope its 2026 filing, and the boundary is the field where getting
+that wrong would restate every quantitative figure at once.
+
+### Verified
+
+`pnpm gates:clean` — EXIT=0.

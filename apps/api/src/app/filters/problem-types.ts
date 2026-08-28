@@ -96,6 +96,9 @@ export const ProblemType = {
   /** FR-20/UC-55: the entity is archived, so its master data is read-only. Its reports and exports
    *  stay retrievable, which is why this is a state refusal (409) and not a 404. */
   EntityArchived: 'entity-archived',
+  /** FR-19/UC-54: `consolidated` with nothing inside the boundary. Its own slug because S-13 must
+   *  name the way out — list the subsidiaries, or report on an individual basis. */
+  ConsolidationBoundaryEmpty: 'consolidation-boundary-empty',
   EntitlementDenied: 'entitlement-denied',
   EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
   TenantContextMissing: 'tenant-context-missing',

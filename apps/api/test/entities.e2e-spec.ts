@@ -7,7 +7,10 @@ import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
-import { ENTITY_STATUS } from '../src/modules/core/entity/models/reporting-entity.model';
+import {
+  CONSOLIDATION_BASIS,
+  ENTITY_STATUS,
+} from '../src/modules/core/entity/models/reporting-entity.model';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { asOrganization, connectAs } from './support/database';
 import {
@@ -57,6 +60,8 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
     naceCodes: string[];
     status: string;
     archivedAt: number | null;
+    consolidationBasis: string | null;
+    consolidationMembers: { id: string; name: string; idno: string | null }[];
     sites: { id: string; name: string; latitude: string | null }[];
   }
 
@@ -223,6 +228,75 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
     ])('is refused when it tries to %s', async (_label, call) => {
       const refused = await call().set(editor.authorization).expect(403);
       expect((refused.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/insufficient-role`);
+    });
+  });
+
+  /**
+   * FR-19 (UC-54) — the boundary every quantitative figure in the report is gathered against, and
+   * which B1 discloses.
+   */
+  describe('the reporting boundary (UC-54, FR-19)', () => {
+    it('starts unstated, because VSME asks the question explicitly', async () => {
+      const response = await http()
+        .get(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .expect(200);
+
+      // No default. A default would answer on the undertaking's behalf, and answering wrongly
+      // scopes every figure in the report to the wrong boundary.
+      expect((response.body as { object: EntityBody }).object.consolidationBasis).toBeNull();
+    });
+
+    it('refuses a consolidated basis with nothing inside the boundary', async () => {
+      const refused = await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .send({ consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED })
+        .expect(400);
+
+      expect((refused.body as Problem).type).toBe(
+        `${PROBLEM_BASE_URI}/consolidation-boundary-empty`,
+      );
+    });
+
+    it('records the basis and its subsidiaries together, and reads them back', async () => {
+      const updated = await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .send({
+          consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
+          consolidationMembers: [
+            { name: 'Lina Distribuție SRL', idno: '1003600158022', countryCode: 'md' },
+          ],
+        })
+        .expect(200);
+
+      const entity = (updated.body as { object: EntityBody }).object;
+      expect(entity.consolidationBasis).toBe(CONSOLIDATION_BASIS.CONSOLIDATED);
+      expect(entity.consolidationMembers).toHaveLength(1);
+      expect(entity.consolidationMembers[0].idno).toBe('1003600158022');
+    });
+
+    it('keeps the subsidiaries when the basis moves back to individual', async () => {
+      const updated = await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .send({ consolidationBasis: CONSOLIDATION_BASIS.INDIVIDUAL })
+        .expect(200);
+
+      const entity = (updated.body as { object: EntityBody }).object;
+      expect(entity.consolidationBasis).toBe(CONSOLIDATION_BASIS.INDIVIDUAL);
+      // Inert rather than gone: B1 reads the basis first, and switching back must not mean
+      // retyping the group.
+      expect(entity.consolidationMembers).toHaveLength(1);
+    });
+
+    it('is refused to a Reporting Contributor, like every other write', async () => {
+      await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(editor.authorization)
+        .send({ consolidationBasis: CONSOLIDATION_BASIS.INDIVIDUAL })
+        .expect(403);
     });
   });
 

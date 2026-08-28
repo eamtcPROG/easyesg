@@ -1,6 +1,7 @@
 import { ManageReportingEntity } from './manage-reporting-entity.use-case';
-import { ENTITY_STATUS } from '../models/reporting-entity.model';
+import { CONSOLIDATION_BASIS, ENTITY_STATUS } from '../models/reporting-entity.model';
 import {
+  ConsolidationBoundaryEmptyError,
   EntityArchivedError,
   EntityNotFoundError,
   NaceCodeUnknownError,
@@ -101,6 +102,88 @@ describe('ManageReportingEntity', () => {
         useCase.update({ entityId: store.all[0].id, patch: { name: 'Renamed' } }),
       ).rejects.toBeInstanceOf(EntityArchivedError);
       expect(store.all[0].name).toBe('Brutăria Lina');
+    });
+  });
+
+  describe('the reporting boundary (FR-19, UC-54)', () => {
+    const SUBSIDIARY = { name: 'Lina Distribuție SRL', idno: null, lei: null, countryCode: 'MD' };
+
+    it('records an individual basis with no subsidiaries', async () => {
+      const { store, useCase } = build();
+
+      const updated = await useCase.update({
+        entityId: store.all[0].id,
+        patch: { consolidationBasis: CONSOLIDATION_BASIS.INDIVIDUAL },
+      });
+
+      expect(updated.consolidationBasis).toBe(CONSOLIDATION_BASIS.INDIVIDUAL);
+    });
+
+    it('records a consolidated basis with the subsidiaries inside it', async () => {
+      const { store, useCase } = build();
+
+      const updated = await useCase.update({
+        entityId: store.all[0].id,
+        patch: {
+          consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
+          consolidationMembers: [SUBSIDIARY],
+        },
+      });
+
+      expect(updated.consolidationBasis).toBe(CONSOLIDATION_BASIS.CONSOLIDATED);
+      expect(updated.consolidationMembers).toHaveLength(1);
+    });
+
+    it('refuses a consolidated basis with nothing inside the boundary', async () => {
+      const { store, useCase } = build();
+
+      // FR-19 reads "where consolidated, the subsidiaries inside the reporting boundary": a
+      // consolidated basis names a boundary, and an empty boundary names nothing — while every
+      // quantitative figure in the report is gathered against it.
+      await expect(
+        useCase.update({
+          entityId: store.all[0].id,
+          patch: { consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED },
+        }),
+      ).rejects.toBeInstanceOf(ConsolidationBoundaryEmptyError);
+    });
+
+    it('refuses emptying the boundary while the basis still says consolidated', async () => {
+      const { store, useCase } = build();
+      await useCase.update({
+        entityId: store.all[0].id,
+        patch: {
+          consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
+          consolidationMembers: [SUBSIDIARY],
+        },
+      });
+
+      // The rule is checked against the state the patch *results in*, so it is reachable by
+      // changing either half — not only by setting the basis.
+      await expect(
+        useCase.update({ entityId: store.all[0].id, patch: { consolidationMembers: [] } }),
+      ).rejects.toBeInstanceOf(ConsolidationBoundaryEmptyError);
+    });
+
+    it('keeps the subsidiaries when the basis moves back to individual', async () => {
+      const { store, useCase } = build();
+      await useCase.update({
+        entityId: store.all[0].id,
+        patch: {
+          consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
+          consolidationMembers: [SUBSIDIARY],
+        },
+      });
+
+      const updated = await useCase.update({
+        entityId: store.all[0].id,
+        patch: { consolidationBasis: CONSOLIDATION_BASIS.INDIVIDUAL },
+      });
+
+      // Nothing in UC-54 asks for a destructive switch, and B1 reads the basis first — so the list
+      // is inert rather than gone, and switching back does not mean retyping the group.
+      expect(updated.consolidationBasis).toBe(CONSOLIDATION_BASIS.INDIVIDUAL);
+      expect(updated.consolidationMembers).toHaveLength(1);
     });
   });
 

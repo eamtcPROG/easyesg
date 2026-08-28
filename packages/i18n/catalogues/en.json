@@ -98,6 +98,9 @@
     },
     "entity-archived": {
       "title": "Entity archived"
+    },
+    "consolidation-boundary-empty": {
+      "title": "Consolidation boundary is empty"
     }
   },
   "validation": {},
@@ -175,7 +178,8 @@
     "entity": {
       "not_found": "That entity does not exist in this organization, so it could not be shown. Refresh the list to see the entities that do.",
       "nace_code_unknown": "One of the activity codes you entered is not in the classifier for the organization’s country, so the change was not saved. Choose the codes from the list offered.",
-      "archived": "The entity is archived, so its master data can no longer be changed. Its reports and exports remain available. Create a new entity if the activity continues in another form."
+      "archived": "The entity is archived, so its master data can no longer be changed. Its reports and exports remain available. Create a new entity if the activity continues in another form.",
+      "consolidation_boundary_empty": "You chose consolidated reporting but named no subsidiary inside the boundary, so the change was not saved. Add the subsidiaries included, or report on an individual basis."
     }
   },
   "notification": {
