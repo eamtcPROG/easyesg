@@ -324,10 +324,13 @@ conditional render, which is how it ends up half-suppressed on one screen.
   NFR-34's test on a small case — a Moldovan company's legal statement must not change answer
   with the reader's timezone.
 
-- **`requestLocale`, not `next/root-params`.** next-intl marks the former deprecated, but root
+- **`requestLocale` and `setRequestLocale`, not `next/root-params`.** next-intl marks both
+  deprecated — the strikethrough in `[locale]/layout.tsx` is expected, not an oversight — but root
   params throw inside a Route Handler (Next E1043) and the module is a compiler-replaced
-  placeholder that throws on plain import, breaking unit tests that reach `request.ts`. Migrate
-  when Route Handlers are supported. Logged in `architecture.md` §18.
+  placeholder that throws on plain import, breaking unit tests that reach `request.ts`. next-intl
+  also states they are unsupported in **Server Actions**, which is how this app reaches the API, so
+  Route Handler support alone does not unblock it. Migrate when both are supported. Logged as
+  OQ-39 in `architecture.md` §18.
 
 - **Nothing pushes.** Order state, export jobs and the notification unread count all poll (§11.2).
   SSE and WebSockets exist nowhere in §5.4, §10.4 or the edge config; adding one is an amendment

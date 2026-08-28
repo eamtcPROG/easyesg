@@ -5002,4 +5002,48 @@ identifiers, and the §6.2 pipeline order in the composition root.
 ### Verified
 
 `pnpm gates` — EXIT=0 (all ten gates plus both e2e suites and the browser run, 68/68).
+## Two expired premises, found from an editor's strikethrough · 2026-08-28
 
+A deprecation warning on `setRequestLocale` in `[locale]/layout.tsx` was raised as a question. The
+API is deprecated and deliberately still called — that part was already decided — but checking it
+found two recorded rationales that had outlived the facts under them. No behaviour changed; the
+whole diff is one comment and two register entries.
+
+### OQ-39's revisit condition would not have unblocked anything
+
+The register deferred the `next/root-params` migration "until Route Handlers are supported",
+recorded 18 Aug 2026 from Next's own E1043 error text. next-intl's migration note states root
+params are unsupported in Route Handlers **and Server Actions** — and Server Actions are how
+`apps/web` reaches the API (task 20). Meeting the condition as written would have started a
+migration that still could not land. The row now names both environments, both deprecated
+functions (it named only `requestLocale`, while the deprecation a developer actually meets is on
+`setRequestLocale`), and the documented bind-at-call-site workaround as considered and declined:
+it threads a parameter through every action to buy nothing, since next-intl keeps the old API
+supported for backwards compatibility. The deferral itself is unchanged.
+
+`[locale]/layout.tsx` was the one of four sites of this decision carrying no note, which is why it
+read as an oversight. It has one now.
+
+### `force-dynamic` was left standing, on a different reason than the one written
+
+The root layout justified `force-dynamic` with NFR-85: wording is versioned configuration, so a
+prerendered page would need a redeploy to change a sentence. OQ-43 narrowed config-as-data to
+behaviour rather than wording on 19 Aug 2026, and `src/server/messages.ts` implements that by
+importing the catalogues as JSON — so labels are bundled at build time regardless, and
+prerendering costs nothing in freshness. The stated reason had expired.
+
+Deleting the line was declined anyway, for the reason that does hold: un-forcing `(public)` and
+`(identity)` is §14.2's undecided carve-out, and the surfaces that genuinely need runtime text —
+help-centre articles, plan presentation copy — are the public tier, tasks 74 … 77, unbuilt. The
+question cannot be settled against code that does not exist. `(app)` is unaffected either way; it
+declares its own `force-dynamic` on the tenancy argument.
+
+The comment now also records a coupling that lives between two files and no gate spans:
+`setRequestLocale` is the precondition for static rendering, so deleting `force-dynamic` and those
+calls together is the one combination that breaks — silently, as every reader served the source
+locale.
+
+### Verified
+
+`pnpm lint` — EXIT=0. Comment and documentation only; no code path changed, and the remaining
+gates cannot observe the diff.

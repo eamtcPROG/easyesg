@@ -16,18 +16,30 @@ type Props = {
 };
 
 /**
- * No page under this layout bakes its copy into the build artefact.
+ * No page under this layout is prerendered — and this is an OPEN decision held open, not a
+ * closed one. Whether `(public)` and `(identity)` may be un-forced is §14.2's own carve-out
+ * question, which permits static rendering for "the marketing shell, the legal pages, the locale
+ * bundles" and has never been applied to a specific route group.
  *
- * NFR-85 requires a content-only change — labels, help text, validation messages — to reach
- * production within one working day of approval and to be revertible in a single step. Wording
- * is versioned configuration published from the admin console (FR-61, FR-62), so a page
- * prerendered with its strings would need a REDEPLOY to change a sentence. That is the
- * requirement inverted, and it would have been invisible: the build succeeds and the copy is
- * simply stale.
+ * **The justification here was rewritten 28 Aug 2026, because the one it carried had expired.**
+ * It argued NFR-85: wording is versioned configuration (FR-61, FR-62), so prerendering a page
+ * with its strings would need a redeploy to change a sentence — the requirement inverted, and
+ * invisibly so. That stopped being true when OQ-43 (19 Aug 2026) narrowed config-as-data to
+ * behaviour rather than wording, and `src/server/messages.ts` implements the narrowing by
+ * importing the catalogues as JSON. Labels are bundled at build time already; prerendering costs
+ * nothing in freshness. Only help-centre articles and plan presentation copy stayed in the store,
+ * and those surfaces are the public tier — tasks 74 … 77, unbuilt — which is the real reason the
+ * question cannot be settled today rather than a reason to force dynamic rendering forever.
  *
- * §14.2's carve-out permits caching "the marketing shell, the legal pages, the locale bundles" —
- * a cache with revalidation, not a permanent bake at build time. `(app)` additionally declares
- * this for the stronger, tenancy reason.
+ * What is NOT in question, and does not rest on this line: `(app)` declares its own
+ * `force-dynamic` on §14.2's tenancy argument, the third leg of a rule whose other two are
+ * `cacheComponents: false` and the ESLint ban on `"use cache"`. Deleting this changes nothing
+ * there.
+ *
+ * One coupling to know before touching either: `setRequestLocale` is the PRECONDITION for static
+ * rendering, and `src/i18n/page.ts` keeps those calls alive so this option stays open. With this
+ * line present they are redundant; without it they are load-bearing. Deleting both is the one
+ * combination that breaks, and it breaks quietly — every reader served the source locale.
  *
  * `generateStaticParams` still earns its place: it is how next-intl knows the locale set for
  * routing and alternate links.
@@ -45,6 +57,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   // than a reason to guess a language.
   if (!hasLocale(routing.locales, locale)) notFound();
 
+  // Deprecated in favour of `next/root-params`, and called anyway: OQ-39 defers that migration
+  // because root params are unsupported in Route Handlers AND Server Actions, which is how this
+  // app reaches the API. next-intl keeps this API supported for exactly that reason. The call is
+  // per-layout and per-page (`src/i18n/page.ts` says why it cannot be hoisted, and why
+  // `force-dynamic` making it redundant today is not a licence to delete it).
   setRequestLocale(locale);
 
   return (
