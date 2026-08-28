@@ -140,6 +140,26 @@ const restrictedSyntaxVocabulary = [
       "`MODE === 'worker'` split provider sets across five files. Compare against the member of " +
       'an `as const` object instead. A `typeof` check is not this and is already excluded.',
   },
+  {
+    // Added 28 Aug 2026, after a sweep found 38 of these against a green gate. The two selectors
+    // above match a vocabulary's DECLARATION and a comparison; neither sees a JSX attribute, so
+    // `intent="error"` passed while `CALLOUT_INTENT` sat exported beside it — the very object the
+    // convention exists to route call sites through. `sonarjs/no-duplicate-string` cannot see them
+    // either: its NO_SEPARATOR_REGEXP treats a single word of word-characters as invisible at any
+    // repetition count, which is precisely the shape of every member here.
+    //
+    // **The attribute names are an allowlist, deliberately.** A prop is only in it when this
+    // design system exports the vocabulary it takes. `align` is the counter-example that shaped
+    // the rule: `COLUMN_ALIGN` exists, but `language-switcher.tsx` passes `align="end"` to Radix's
+    // `DropdownMenu.Content`, whose values are Radix's and not ours — flagging it would demand a
+    // member of an object that does not describe it.
+    selector: 'JSXAttribute[name.name=/^(intent|variant|tone)$/] > Literal[raw=/^[\'"]/]',
+    message:
+      'A closed vocabulary is referenced through its `as const` object at EVERY site ' +
+      '(CLAUDE.md, "Conventions"), and a JSX attribute is a site. Use CALLOUT_INTENT.ERROR, ' +
+      'BUTTON_VARIANT.SUBTLE or SWITCHER_TONE.HEADER — the literal still type-checks, which is ' +
+      'why nothing else catches it, and that is the reason to write the member instead.',
+  },
 ];
 
 export default tseslint.config(

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, EmptyState } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT, EmptyState } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { IndexView } from '@/shared/index-view';
@@ -59,7 +59,7 @@ export function AccessList() {
           <EmptyState
             title={t('empty.filtered.title')}
             action={
-              <Button variant="subtle" onClick={clearFilters}>
+              <Button variant={BUTTON_VARIANT.SUBTLE} onClick={clearFilters}>
                 {t('empty.filtered.action')}
               </Button>
             }

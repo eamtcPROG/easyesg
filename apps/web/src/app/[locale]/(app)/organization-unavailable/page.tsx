@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { Callout, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { redirect } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { POST_SIGN_IN } from '@/features/identity/post-sign-in';
@@ -49,7 +49,7 @@ export default async function OrganizationUnavailablePage({ params }: { params: 
 
   return (
     <Callout
-      intent="error"
+      intent={CALLOUT_INTENT.ERROR}
       title={t('title')}
       action={
         <TextLink href={POST_SIGN_IN.ORGANIZATION_UNAVAILABLE}>{t('retry')}</TextLink>

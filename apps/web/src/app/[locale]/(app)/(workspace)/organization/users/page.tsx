@@ -1,4 +1,4 @@
-import { Callout, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { AccessBoard } from '@/features/organization/components/access-board';
 import { AccessProvider } from '@/features/organization/components/access-context';
@@ -84,7 +84,7 @@ async function AccessScreenBody({
   if (read.status === ACCESS_READ.FORBIDDEN) {
     return (
       <Callout
-        intent="warning"
+        intent={CALLOUT_INTENT.WARNING}
         title={t('error.permission.title')}
         action={
           <TextLink asChild>
@@ -100,7 +100,7 @@ async function AccessScreenBody({
   if (read.status === ACCESS_READ.UNREACHABLE) {
     return (
       <Callout
-        intent="error"
+        intent={CALLOUT_INTENT.ERROR}
         title={t('error.unreachable.title')}
         action={t('error.unreachable.action')}
       >

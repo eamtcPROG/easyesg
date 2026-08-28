@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { Callout, Panel } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, Panel } from '@easyesg/ui';
 import { useReducer } from 'react';
 import { useTranslations } from 'use-intl';
 import {
@@ -195,7 +195,7 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccoun
       <div className="flex flex-col gap-[var(--space-4)] px-[var(--space-7)] py-[var(--space-5)]">
         {failure?.status === API_OUTCOME.Problem ? (
           <Callout
-            intent="error"
+            intent={CALLOUT_INTENT.ERROR}
             title={failure.problem.title ?? t('problemTitle')}
             action={t('problemAction')}
           >
@@ -205,7 +205,7 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccoun
 
         {failure?.status === API_OUTCOME.Unreachable ? (
           <Callout
-            intent="error"
+            intent={CALLOUT_INTENT.ERROR}
             title={tCommon('unreachable.title')}
             action={tCommon('unreachable.action')}
           >

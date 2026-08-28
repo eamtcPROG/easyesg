@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Select } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT, Select } from '@easyesg/ui';
 import { MEMBERSHIP_ROLE, type MembershipRole } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
@@ -101,10 +101,10 @@ export function RowActions({ row }: { readonly row: AccessRow }) {
   if (row.kind === ACCESS_ROW_KIND.INVITATION) {
     return (
       <div className={styles.rowActions}>
-        <Button variant="subtle" disabled={busy} onClick={resend}>
+        <Button variant={BUTTON_VARIANT.SUBTLE} disabled={busy} onClick={resend}>
           {t('resend')}
         </Button>
-        <Button variant="subtle" disabled={busy} onClick={confirmRevoke}>
+        <Button variant={BUTTON_VARIANT.SUBTLE} disabled={busy} onClick={confirmRevoke}>
           {t('revoke')}
         </Button>
       </div>
@@ -114,7 +114,7 @@ export function RowActions({ row }: { readonly row: AccessRow }) {
   return (
     <div className={styles.rowActions}>
       <Button
-        variant="destructive"
+        variant={BUTTON_VARIANT.DESTRUCTIVE}
         disabled={busy || isLastAdministrator({ rows: page.rows, row })}
         onClick={confirmRemove}
       >

@@ -1,7 +1,7 @@
 'use client';
 
 import { PROBLEM_TYPE } from '@easyesg/contracts';
-import { Button, Callout, Panel, TextLink } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -104,7 +104,7 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
 
       {failure?.status === API_OUTCOME.Unreachable ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >

@@ -2,7 +2,7 @@
 
 import { AlertDialog } from 'radix-ui';
 import type { ReactNode } from 'react';
-import { Button } from '../primitives/button';
+import { Button, BUTTON_VARIANT } from '../primitives/button';
 import styles from './consequence-dialogue.module.css';
 
 /**
@@ -105,14 +105,14 @@ export function ConsequenceDialogue({
                 under the pointer, on a dialogue whose other button is destructive. Closing is left
                 to `onOpenChange` above. */}
             <AlertDialog.Cancel asChild>
-              <Button variant="subtle" disabled={busy}>
+              <Button variant={BUTTON_VARIANT.SUBTLE} disabled={busy}>
                 {cancelLabel}
               </Button>
             </AlertDialog.Cancel>
             {/* Deliberately NOT `AlertDialog.Action`: that part closes the dialogue itself, which
                 fires `onOpenChange(false)` while `busy` is still false — so a confirmation would
                 report a cancellation on its way out. The caller closes by setting `open`. */}
-            <Button variant="destructive" busy={busy} onClick={onConfirm}>
+            <Button variant={BUTTON_VARIANT.DESTRUCTIVE} busy={busy} onClick={onConfirm}>
               {confirmLabel}
             </Button>
           </div>

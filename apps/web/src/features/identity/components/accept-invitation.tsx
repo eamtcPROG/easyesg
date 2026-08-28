@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, Panel, TextLink } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { API_OUTCOME } from '@/lib/api-outcome';
@@ -53,7 +53,7 @@ export function AcceptInvitation({
         // it — a 410 here means the link was spent or withdrawn between the render and the press,
         // which is rare and is exactly what the detail explains.
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={failure.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
@@ -67,7 +67,7 @@ export function AcceptInvitation({
 
       {failure?.status === API_OUTCOME.Unreachable ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, Panel, TextField, TextLink } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT, Callout, CALLOUT_INTENT, Panel, TextField, TextLink } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useSyncExternalStore, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
@@ -92,7 +92,7 @@ export function VerificationPending() {
     <div className={styles.stack}>
       {outcome === RESEND_OUTCOME.UNREACHABLE ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >
@@ -101,7 +101,7 @@ export function VerificationPending() {
       ) : null}
 
       {outcome === RESEND_OUTCOME.SENT ? (
-        <Callout intent="info" title={t('sentTitle')} action={t('sentAction')}>
+        <Callout intent={CALLOUT_INTENT.INFO} title={t('sentTitle')} action={t('sentAction')}>
           {t('sentBody')}
         </Callout>
       ) : null}
@@ -113,7 +113,7 @@ export function VerificationPending() {
             <p className={styles.address}>{email}</p>
             <p className={styles.bodyText}>{t('instructions')}</p>
             <Button
-              variant="secondary"
+              variant={BUTTON_VARIANT.SECONDARY}
               busy={pending}
               disabled={remaining > 0}
               onClick={() => send(email)}

@@ -1,4 +1,4 @@
-import { Button } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT } from '@easyesg/ui';
 import { useTranslations } from 'use-intl';
 
 /**
@@ -26,7 +26,7 @@ export function SessionStrip({
       <span className="t-body">
         {t('signedInAs')} <strong>{email}</strong>
       </span>
-      <Button type="button" variant="subtle" busy={busy} onClick={onSignOut}>
+      <Button type="button" variant={BUTTON_VARIANT.SUBTLE} busy={busy} onClick={onSignOut}>
         {t('signOut')}
       </Button>
     </header>

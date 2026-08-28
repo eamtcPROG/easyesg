@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, Panel, TextLink } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { API_OUTCOME } from '@/lib/api-outcome';
@@ -48,7 +48,7 @@ export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: st
   if (result?.status === API_OUTCOME.Ok) {
     return (
       <Callout
-        intent="success"
+        intent={CALLOUT_INTENT.SUCCESS}
         title={t('successTitle')}
         action={
           <TextLink asChild>
@@ -67,7 +67,7 @@ export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: st
     <div className={styles.stack}>
       {result?.status === API_OUTCOME.Problem ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={result.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
@@ -81,7 +81,7 @@ export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: st
 
       {result?.status === API_OUTCOME.Unreachable ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >

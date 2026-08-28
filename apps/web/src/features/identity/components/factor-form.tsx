@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, Panel, TextLink } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { FormCodeField, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useEffect, useReducer, useState, useTransition } from 'react';
@@ -116,7 +116,7 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
   if (standing.kind === FACTOR_STANDING.LAPSED) {
     return (
       <Callout
-        intent="warning"
+        intent={CALLOUT_INTENT.WARNING}
         title={t('lapsedTitle')}
         action={
           <TextLink asChild>
@@ -141,7 +141,7 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
 
       {problem ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={problem.title ?? t('problemTitle')}
           /*
             **The action slot carries a remedy only where this screen owns one** (corrected
@@ -171,7 +171,7 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
       {standing.kind === FACTOR_STANDING.REFUSED &&
       standing.failure.status === API_OUTCOME.Unreachable ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >

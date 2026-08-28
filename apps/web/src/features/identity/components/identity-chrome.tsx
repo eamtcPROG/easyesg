@@ -1,7 +1,7 @@
 'use client';
 
 import { LOCALES } from '@easyesg/i18n';
-import { LanguageSwitcher } from '@easyesg/ui';
+import { LanguageSwitcher, SWITCHER_TONE } from '@easyesg/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
@@ -34,7 +34,7 @@ export function IdentityHeaderActions() {
     <>
       <Link href={ROUTES.HELP_CENTRE}>{t('helpCentre')}</Link>
       <LanguageSwitcher
-        tone="header"
+        tone={SWITCHER_TONE.HEADER}
         label={t('language')}
         current={current}
         locales={locales}

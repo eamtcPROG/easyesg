@@ -1,4 +1,4 @@
-import { Button } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { signOutAction } from '@/features/identity/actions';
 import { readSession } from '@/server/session';
@@ -35,7 +35,7 @@ export async function SessionStrip() {
           come back as somebody else" (task 26.3 gave the action that parameter). Binding is what
           keeps the signature a form action, since React would otherwise pass FormData into it. */}
       <form action={signOutAction.bind(null, undefined)}>
-        <Button type="submit" variant="subtle">
+        <Button type="submit" variant={BUTTON_VARIANT.SUBTLE}>
           {t('signOut')}
         </Button>
       </form>

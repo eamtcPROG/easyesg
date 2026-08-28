@@ -5245,3 +5245,55 @@ gone, so a second simultaneous alert now fails the journey. That is the same les
 password field taught six hours earlier, applied deliberately this time — a test that accommodates a
 defect stops being able to report it, and the accommodation is usually the only written record that
 the defect exists.
+
+## Thirty-nine call sites the vocabulary rule never reached, and the selector that now does · 2026-08-28
+
+The third finding from the sweep, and the one that is purely mechanical — which is what makes it
+worth an entry, because it had been mechanical and invisible for eight days.
+
+`intent="error"` appeared at 29 sites, `variant="subtle"` at 8, `tone="header"` at 1 — while
+`CALLOUT_INTENT`, `BUTTON_VARIANT` and `SWITCHER_TONE` sat exported beside them, each with a
+docblock explaining that deriving the union "changes no caller". That sentence is true and was
+being read as permission: the literal still type-checks, so nothing objected.
+
+### Why every existing gate was blind to it
+
+Three checks could plausibly have caught this and none of them can, for three different reasons
+worth writing down together:
+
+- **`sonarjs/no-duplicate-string`** carries `NO_SEPARATOR_REGEXP = /^\w*$/`, and `\w` includes the
+  underscore — so a literal that is one word of word-characters is invisible at any repetition
+  count. `'error'` × 29 is exactly that shape. `CLAUDE.md` already records this as the rule's
+  "partial" coverage; here is the bill.
+- **The two `no-restricted-syntax` vocabulary selectors** match a union *declaration* and a
+  *comparison*. A JSX attribute is neither. They were written for the `MODE === 'worker'` defect
+  and they close it; nobody asked what a third shape of the same mistake would look like.
+- **TypeScript** is doing its job perfectly: `intent="error"` is assignable to `CalloutIntent`
+  because the derived type *is* the union of literals. The convention is about where the spelling
+  of a member is decided, which is not a question a type system asks.
+
+### The rule, and the one prop deliberately left out
+
+A fourth selector now matches `JSXAttribute[name.name=/^(intent|variant|tone)$/] > Literal`. The
+attribute names are an **allowlist**, and `align` is the counter-example that shaped it:
+`COLUMN_ALIGN` exists in this design system, but `language-switcher.tsx` passes `align="end"` to
+Radix's `DropdownMenu.Content`, whose values belong to Radix. A selector keyed on the prop name
+alone would have demanded a member of an object that does not describe it — so a prop earns its
+place only when this package exports the vocabulary it takes.
+
+Fixed first, rule second, and the rule proved by reintroducing one literal and watching it fail —
+the `boundaries:prove` habit applied to a lint selector. Thirty-nine sites, zero behaviour change:
+`CALLOUT_INTENT.ERROR` *is* `'error'`.
+
+### What the automation got wrong, and it is the interesting part
+
+The first pass was a regex over `*.tsx` and it rewrote **prose**. `callout.tsx`'s docblock reads
+"Deriving changes no caller — `intent="warning"` still compiles", and the script turned it into
+"`intent={CALLOUT_INTENT.WARNING}` still compiles", which destroys the sentence: the whole point is
+that the *literal* keeps compiling, which is why the convention needs a rule rather than a type.
+`button.tsx` lost the same sentence the same way.
+
+A mechanical sweep does not know that a code-shaped string inside a comment is an example rather
+than an instance, and the two are indistinguishable to a regex. Both were reverted; the check that
+found them was reading the diff for changes on comment lines, which is now the thing to do after any
+codemod: `git diff -U0 | grep -E '^\+\s*(\*|//)'` and look at what it caught.

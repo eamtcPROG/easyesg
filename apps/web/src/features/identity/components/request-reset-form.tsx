@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, Panel, TextLink } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -46,7 +46,7 @@ export function RequestResetForm() {
   if (result?.status === API_OUTCOME.Ok) {
     return (
       <Callout
-        intent="success"
+        intent={CALLOUT_INTENT.SUCCESS}
         title={t('sentTitle')}
         action={
           <TextLink asChild>
@@ -65,7 +65,7 @@ export function RequestResetForm() {
 
       {result?.status === API_OUTCOME.Problem ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={result.problem.title ?? t('problemTitle')}
           /* NFR-79's "what now" belongs to the API's `detail`, which always states its own remedy.
               The slot carries something only where this screen owns one the detail cannot express —
@@ -80,7 +80,7 @@ export function RequestResetForm() {
 
       {result?.status === API_OUTCOME.Unreachable ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >

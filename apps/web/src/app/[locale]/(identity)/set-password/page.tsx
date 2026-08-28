@@ -1,4 +1,4 @@
-import { Callout, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { SetPasswordForm } from '@/features/identity/components/set-password-form';
 import styles from '@/features/identity/components/identity-screens.module.css';
@@ -34,7 +34,7 @@ export default async function SetPasswordPage({ params, searchParams }: Props) {
         <SetPasswordForm token={token} />
       ) : (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={t('missingTitle')}
           action={
             <TextLink asChild>

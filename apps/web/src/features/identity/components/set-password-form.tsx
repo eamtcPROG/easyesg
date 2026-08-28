@@ -1,7 +1,7 @@
 'use client';
 
 import { evaluatePasswordPolicy, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@easyesg/validation';
-import { Button, Callout, Panel, RequirementList, TextLink } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, Panel, RequirementList, TextLink } from '@easyesg/ui';
 import { FormPasswordField, FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -70,7 +70,7 @@ export function SetPasswordForm({ token }: { token: string }) {
   if (result?.status === API_OUTCOME.Ok) {
     return (
       <Callout
-        intent="success"
+        intent={CALLOUT_INTENT.SUCCESS}
         title={t('successTitle')}
         action={
           <TextLink asChild>
@@ -89,7 +89,7 @@ export function SetPasswordForm({ token }: { token: string }) {
 
       {result?.status === API_OUTCOME.Problem ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={result.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
@@ -103,7 +103,7 @@ export function SetPasswordForm({ token }: { token: string }) {
 
       {result?.status === API_OUTCOME.Unreachable ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >
@@ -111,7 +111,7 @@ export function SetPasswordForm({ token }: { token: string }) {
         </Callout>
       ) : null}
 
-      <Callout intent="info" title={t('consequenceTitle')} action={t('consequenceAction')}>
+      <Callout intent={CALLOUT_INTENT.INFO} title={t('consequenceTitle')} action={t('consequenceAction')}>
         {t('consequenceBody')}
       </Callout>
 

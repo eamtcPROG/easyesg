@@ -1,7 +1,7 @@
 'use client';
 
 import { evaluatePasswordPolicy, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@easyesg/validation';
-import { Button, Callout, Panel, RequirementList, TextLink } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, Panel, RequirementList, TextLink } from '@easyesg/ui';
 import { FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -115,7 +115,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
 
       {failure?.status === API_OUTCOME.Problem ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={failure.problem.title ?? t('problemTitle')}
           /* NFR-79's "what now" belongs to the API's `detail`, which always states its own remedy.
               The slot carries something only where this screen owns one the detail cannot express —
@@ -136,7 +136,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
 
       {failure?.status === API_OUTCOME.Unreachable ? (
         <Callout
-          intent="error"
+          intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >

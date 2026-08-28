@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
-import { Button, Callout, Panel, TextLink } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { SOCIAL_SIGN_IN_INTENT } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { AcceptInvitation } from '@/features/identity/components/accept-invitation';
@@ -179,7 +179,7 @@ async function WrongAccount({
           action redirects to `/sign-in` on its own; the bound return path is what brings them back
           to THIS invitation, the same `?return=` contract the proxy writes on expiry. */}
       <Callout
-        intent="warning"
+        intent={CALLOUT_INTENT.WARNING}
         title={t('wrongAccountTitle')}
         action={
           <form action={signOutAction.bind(null, links.returnPath)}>
@@ -206,7 +206,7 @@ async function Unusable({ standing }: { standing: UnusableStanding }) {
 
   return (
     <Callout
-      intent="error"
+      intent={CALLOUT_INTENT.ERROR}
       title={t(`standing.${standing}.title`)}
       action={
         <TextLink asChild>
@@ -224,7 +224,7 @@ async function Unreachable() {
   const t = await getTranslations('identity');
 
   return (
-    <Callout intent="error" title={t('unreachable.title')} action={t('unreachable.action')}>
+    <Callout intent={CALLOUT_INTENT.ERROR} title={t('unreachable.title')} action={t('unreachable.action')}>
       {t('unreachable.body')}
     </Callout>
   );
