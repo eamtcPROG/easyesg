@@ -81,6 +81,39 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   await scan(page);
 });
 
+/**
+ * S-04 (task 30.2) — the first Focus screen **inside** the authenticated shell, which is the
+ * reason it is scanned separately from the four at the top.
+ *
+ * Those are `(identity)` screens: `FocusShell` supplies their banner, main and contentinfo, and
+ * they have no other chrome. This one takes `FocusColumn` under the global tier, so it is the
+ * composition that has to be judged — one banner from the tier, one main from the column — and it
+ * is exactly the pairing task 30.1 got wrong once already, silently, between `RecordShell` and the
+ * bar. It also carries the product's first `Select` outside a table.
+ */
+test('axe finds no violations on the create-organization screen', async ({ page }) => {
+  const email = `${RUN_PREFIX}-found@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  // No membership seeded, deliberately: §4.3's *none* arm is this screen's only entry point, and
+  // granting one would land the sign-in on `/home` instead.
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/create-organization');
+
+  await expect(page.getByRole('heading', { name: 'Configurați-vă organizația', level: 1 })).toBeVisible();
+  await scan(page);
+});
+
 test('axe finds no violations on the credentials screen', async ({ page }) => {
   const email = `${RUN_PREFIX}-credentials@example.md`;
 

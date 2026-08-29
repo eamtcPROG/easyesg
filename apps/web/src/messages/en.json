@@ -333,6 +333,32 @@
     }
   },
   "organization": {
+    "create": {
+      "title": "Set up your organisation",
+      "subtitle": "This is the company the report is filed for. You become its administrator and can invite colleagues as soon as it exists.",
+      "nameLabel": "Legal name",
+      "nameHelp": "Exactly as it appears in the state register. It prints on the report.",
+      "nameRequired": "Enter the company’s legal name, or the organisation cannot be created.",
+      "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it to the name in the state register.",
+      "countryLabel": "Country of registration",
+      "countryHelp": "It decides which legal forms are available, and it appears on the report.",
+      "countryPlaceholder": "Choose a country",
+      "countryRequired": "Choose the country the company is registered in, so we know which legal forms to offer you.",
+      "contactEmailLabel": "Contact email — optional",
+      "contactEmailHelp": "Where we write to you about this organisation. You can add it later under Organisation.",
+      "contactEmailInvalid": "That is not the shape of an email address, so we could not write to it. Check the spelling — for example contact@company.md.",
+      "contactPhoneLabel": "Contact phone — optional",
+      "contactPhoneHelp": "Any format. You can add it later under Organisation.",
+      "contactPhoneTooLong": "The number is longer than 40 characters and cannot be saved. Leave only the phone number.",
+      "oneIsEnough": "One organisation is enough to start. You add entities under it afterwards.",
+      "submit": "Create organisation",
+      "waitingForInvitation": "Waiting for an invitation instead? Ask your administrator to invite this address.",
+      "problemTitle": "The organisation could not be created",
+      "problemBody": "The organisation was not created because the request could not be processed."
+    },
+    "countries": {
+      "MD": "Republic of Moldova"
+    },
     "access": {
       "title": "Users & access",
       "lede": "Who can see your organisation's ESG data, and what each person may do.",

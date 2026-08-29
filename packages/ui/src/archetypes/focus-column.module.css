@@ -1,0 +1,21 @@
+/* Values extracted from EasyESG Identity.dc.html and EasyESG Workspace.dc.html (OQ-10).
+   Breakpoint pixel values stay an OPEN question (design_spec OQ-13), so nothing here encodes
+   one: both columns are fluid below their measure and the padding rides the gutter tokens. */
+
+.main {
+  /* `flex: 1` matters inside FocusShell's flex column and is harmless standalone, where the
+     column simply fills what the global tier leaves. */
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-9) var(--grid-gutter-narrow);
+}
+
+.narrow,
+.wide {
+  width: min(440px, 100%);
+}
+
+.wide {
+  width: min(560px, 100%);
+}

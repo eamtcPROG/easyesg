@@ -53,17 +53,6 @@
   text-decoration: underline;
 }
 
-.main {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  padding: var(--space-9) var(--grid-gutter-narrow);
-}
-
-.column {
-  width: min(440px, 100%);
-}
-
 .footer {
   min-height: 56px;
   padding: var(--space-4) var(--space-8);

@@ -28,6 +28,13 @@ export { ProviderButton, type ProviderButtonProps } from './primitives/provider-
 export { Spinner } from './primitives/spinner';
 export { TextLink, type TextLinkProps } from './primitives/text-link';
 
+export {
+  FOCUS_MEASURE,
+  FocusColumn,
+  type FocusColumnProps,
+  type FocusMeasure,
+} from './archetypes/focus-column';
+
 // form controls
 export { FormErrorSummary, type FormErrorSummaryItem, type FormErrorSummaryProps } from './form/form-error-summary';
 export { CodeField, type CodeFieldProps } from './form/code-field';

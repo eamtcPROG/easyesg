@@ -234,6 +234,49 @@ export async function revokeInvitations(organizationId: string, email: string): 
   }
 }
 
+/**
+ * The organizations an account is a member of, by id — for cleaning up what a *journey* created
+ * rather than what the suite seeded (task 30.2, S-04).
+ *
+ * **It binds `app.current_user` and reads `identity.membership`, and neither half is incidental.**
+ * `cleanupOrganizations`'s own docblock records that a `SELECT ... WHERE name LIKE` on
+ * `core.organization` returns nothing here: the table is readable as the bound tenant, or to a
+ * bound account through task 25.3's directory policy, and a cleanup routine holding neither is not
+ * an exception — `FORCE ROW LEVEL SECURITY` applies to the owner too. So this asks the question the
+ * product asks before any tenant exists, through the policy that answers it
+ * (`membership_self_select`), and gets ids the caller can then delete one at a time with each
+ * bound.
+ *
+ * No organization is bound while it runs, which is required rather than tidy: the directory policy
+ * is conditioned on exactly that state.
+ */
+export async function organizationIdsForAccount(email: string): Promise<string[]> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    const account = await client.query<{ id: string }>(
+      `SELECT id FROM identity.account WHERE lower(email) = lower($1)`,
+      [email],
+    );
+    if (account.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return [];
+    }
+    await client.query(`SELECT set_config('app.current_user', $1, true)`, [account.rows[0].id]);
+    const rows = await client.query<{ organization_id: string }>(
+      `SELECT organization_id FROM identity.membership WHERE status = 'active'`,
+    );
+    await client.query('COMMIT');
+    return rows.rows.map((row) => row.organization_id);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
 export async function cleanupOrganizations(organizationIds: readonly string[]): Promise<void> {
   if (organizationIds.length === 0) return;
   const client = new Client(asOwner());

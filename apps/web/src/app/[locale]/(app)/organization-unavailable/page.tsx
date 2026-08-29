@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, FocusColumn, TextLink } from '@easyesg/ui';
 import { redirect } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { POST_SIGN_IN } from '@/features/identity/post-sign-in';
@@ -47,12 +47,13 @@ export default async function OrganizationUnavailablePage({ params }: { params: 
   // work nobody reads (`async-defer-await`).
   const t = await getTranslations('identity.organizationUnavailable');
 
-  // `<main>` since task 30.1. This screen is outside `(workspace)`, so it does not inherit that
-  // layout's landmark — and once the global tier put a `banner` above it, a page with chrome and
-  // no main is one a screen-reader user cannot skip into. Two lines here rather than a wrapper in
-  // the `(app)` layout, which would have swallowed the workspace nav.
+  // `FocusColumn` since task 30.2, replacing the bare `<main>` task 30.1 added here. §4.4 lists
+  // S-35 as a Focus screen and §4.6 makes the centred column the archetype's fixed element; the
+  // landmark comes with it, which is what this screen actually needed once the global tier put a
+  // `banner` above it. `FocusShell` would have been wrong for the same reason it is wrong on S-04:
+  // its header is `(identity)`'s chrome and this screen already has the tier's.
   return (
-    <main>
+    <FocusColumn>
       <Callout
         intent={CALLOUT_INTENT.ERROR}
         title={t('title')}
@@ -62,6 +63,6 @@ export default async function OrganizationUnavailablePage({ params }: { params: 
       >
         {t('body')}
       </Callout>
-    </main>
+    </FocusColumn>
   );
 }

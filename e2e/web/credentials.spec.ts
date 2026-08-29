@@ -192,35 +192,3 @@ test('the screen is live in all three locales', async ({ page }) => {
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
   }
 });
-
-/**
- * The +40% expansion check, here rather than in `expansion.spec.ts` (task 27.7).
- *
- * That suite is its own Playwright project and every screen in it is unauthenticated, so its loop
- * is a `goto` per frame. S-28 needs a session, and threading sign-in into that project would make
- * every screen pay for it. The assertion is the same one, applied at UX-73's three widths: the
- * padded catalogue actually arrived, the document does not scroll sideways, and the primary action
- * survived.
- */
-const FRAMES = [
-  { width: 1440, height: 900 },
-  { width: 834, height: 1112 },
-  { width: 390, height: 844 },
-];
-
-for (const frame of FRAMES) {
-  test(`tolerates +40% at ${frame.width}`, async ({ page }) => {
-    await signedIn(page, `expand-${frame.width}`);
-    await page.setViewportSize(frame);
-    await page.goto('/account/credentials');
-
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(0);
-
-    await expect(page.getByRole('button', { name: 'Schimbați parola' })).toBeVisible();
-  });
-}

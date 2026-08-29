@@ -83,7 +83,13 @@ export default defineConfig({
     },
     {
       name: 'expansion',
-      testMatch: /web\/expansion.*\.spec\.ts/,
+      // **Every `*expansion*` spec, not only `expansion.spec.ts`** (widened 29 Aug 2026, task
+      // 30.2). An authenticated screen's +40% check has to run against the PADDED server, and the
+      // only way to reach that server is to be in this project — a check living in the `identity`
+      // project asserts no horizontal overflow with ordinary Romanian, which is not the same
+      // claim and cannot fail on the thing it names. `identity`'s `testIgnore: /expansion/`
+      // already keeps these files out of it, so the two sets stay disjoint by construction.
+      testMatch: /web\/.*expansion.*\.spec\.ts/,
       use: { baseURL: `http://localhost:${EXPANSION_PORT}` },
     },
     {

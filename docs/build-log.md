@@ -5810,3 +5810,144 @@ screen is `(identity)` and shares nothing with this task's diff. Re-running the 
 61/61, and the clean run passed 70/70. Recorded rather than deleted because the failure mode is
 worth knowing: under `workers: 1` with the api, both web servers and `vite preview` competing, a
 default expect timeout on a submitting button is the thinnest margin in the suite.
+
+## Task 30.2 — S-04, and a harness that could not fail on what it claimed · 2026-08-29
+
+The Focus screen §4.3's *none* arm lands on: legal name, country, contact email, contact phone,
+and the organization founded from the browser in three locales. **The row was held for half a day
+before any of it was written**, which is the part worth reading.
+
+### The escalation, and why it was not a screen question
+
+Four sources describe S-04's fields and three agree. UC-49's main success scenario step 1 reads
+*"legal name, country, contact details"*; §5's Content row says the same three;
+`CreateOrganizationRequestDto` accepts `name`, `countryCode`, `contactEmail`, `contactPhone`. The
+Workspace artboard draws **Legal name · IDNO · VAT code · Primary activity (CAEM-2) · Reporting
+currency** — and carries **country on none of its three artboards**, though country is what selects
+the legal-form vocabulary and what `POST /organizations` refuses a request without.
+
+OQ-10 already settles precedence, so the screen could have been built against §5 immediately. The
+project owner held it instead, and the reason that was right is that two of the extra fields are
+not a prototype being generous — they are requirements nobody wrote down.
+
+Tracing all four separated them cleanly:
+
+- **VAT registration code** is FR-106's, on the **billing account**, which that requirement makes
+  *"distinct from the organization profile"* in as many words. S-23's, and never this screen's.
+- **IDNO** is FR-16's, deferred to S-15 by §5's own S-04 Validation row. `architecture.md` OQ-18's
+  rationale looked like a contradiction — *"the only candidate that is actually populated for every
+  organization **at signup**"* — but in context it is arguing that IDNO is universally *available*
+  where an LEI is not, which is a population claim and not a screen assignment. No conflict.
+- **Primary activity** has a sound premise and the wrong owner. Sector-driven applicability is real
+  — `problem_overview.md` states *"water sector-driven"* — but FR-17 puts NACE on the **reporting
+  entity**, and task 29.3 registered CAEM Rev.2 as country-scoped configuration for entities. The
+  artboard is drawing the one-entity shortcut most SMEs will live in; collecting it on the
+  organization as well would give applicability two sources that can disagree, and for a
+  multi-entity organization the entity's code is the correct one.
+- **Reporting currency** appears in **no document in the set**. Every currency in the requirements
+  is billing's — FR-86 prices, FR-110 order totals, FR-129 the BNM rate, FR-150 MDL equivalents —
+  and no Basic-module disclosure carries a monetary amount: UC-28's B10 is minimum-wage
+  *compliance*, bargaining coverage and training hours, with the pay gap a percentage.
+
+Both open ones went back with their evidence. **Currency is deferred with its assumption written
+down** — the platform serves Moldova-resident SMEs, BR-INV-5 already makes MDL the ledger currency,
+so a per-organization *choice* is an abstraction with one member; what must change if that is wrong
+is C8, revenues from certain sectors (UC-190), and task 79.8 is where the standard's own shape
+becomes knowable. **Activity stays on the entity.** Both are `architecture.md` §12.5.6 rows;
+`design_spec.md` OQ-20 carries the whole analysis and is closed.
+
+**The deadline was real, which is why this was worth a day rather than a note.** `problem_overview.md`
+OQ-12 brought C1–C9 into MVP scope, and P-11 puts what is expensive to retrofit on day one — a
+currency added after task 31 is a column on a table that has live reports pinned to it.
+
+### The archetype was three-quarters of a component that already existed
+
+S-04 is a Focus screen **inside** the authenticated shell, and that is new. §4.6 lists the
+archetype's fixed elements as *"single column, centred, one primary action"* — a header and a
+footer are not among them. `FocusShell` grew both because `(identity)` is where Focus first landed
+and a signed-out screen has no other chrome. Reusing it here would have put a second `banner` on
+the page: the exact landmark duplication task 30.1 had to unpick between `RecordShell` and the
+global bar, one task earlier.
+
+So `FocusColumn` is extracted, `FocusShell` composes it, and the measure is defined once. It renders
+the `<main>` landmark, which is the other half of that lesson. **S-35 moved onto it too**, deleting
+the bare `<main>` task 30.1 had added there as a stopgap — §4.4 lists S-35 as Focus, and it now says
+so in code. Two measures, both extracted values (OQ-10): `narrow` 440 for the identity screens,
+`wide` 560 for S-04's four fields with help text under each.
+
+### Two defects a browser found, and both were about caches
+
+**The band did not name the organization anyone had just founded.** Create, land on `/home`, and
+the global tier above it is still empty. `(app)` is `force-dynamic`, so there is no server cache to
+blame — it is the **client router cache**, which holds the RSC payload of a layout it has already
+visited and cannot know that a POST changed what that layout reads. `revalidatePath` on the
+**layout** rather than a page is the fix, and the distinction is the whole point: the four S-16
+writes revalidate the page they were invoked from, while this one changes what every authenticated
+screen renders. A `router.refresh()` in the component was the first attempt and is wrong for a
+reason worth stating — it refreshes the screen being *left*, not the layout above the one being
+*entered*.
+
+**A bare `pnpm --filter @easyesg/web build` leaves the e2e bundle inconsistent**, and it cost half
+an hour of chasing a phantom. `pree2e:web` runs `tools/assemble-web-standalone.sh` after the build;
+a direct build regenerates `.next` and skips the assembly, so the standalone server keeps serving
+a mismatched tree and every screen fails in ways that look like the code under test. This is the
+"a gate must not depend on state a previous command left behind" rule seen from the other side: the
+script is correct, and reaching past it is what breaks.
+
+### The +40% harness was in the wrong project, and had been since task 27.7
+
+S-28's frames live in `credentials.spec.ts`, whose docblock says the assertion is *"the padded
+catalogue actually arrived, the document does not scroll sideways, and the primary action
+survived"*. Only one instance of the web server runs with `EASYESG_PSEUDOLOCALE=1`, and the
+`identity` project points at the other one — so the padded catalogue never arrived, that clause was
+never asserted, and the three tests were checking that ordinary Romanian does not overflow. True,
+useful, and not the claim their names make.
+
+Found by asking where to put S-04's own frames rather than by reading them, which is the sweep
+rule working: *search for a rule's shape before you close it*. The `expansion` project's
+`testMatch` now takes every `*expansion*` spec rather than only the file named for it, S-28's
+frames moved into `credentials.expansion.spec.ts` unchanged in substance, and both files assert the
+padding arrived — the clause that could not have been true before.
+
+**`{ exact: true }` cannot match a padded label, and dropping it is the wrong repair.**
+`expandString` appends `·`, so `getByLabel('Parolă', { exact: true })` stops matching while
+substring matching survives. Loosening the locator would have hidden the thing `exact` was there
+for — two labels sharing a prefix — so `support/expansion.ts` keeps both anchors and admits only
+the padding: `^Parolă·*$` matches `Parolă···` and still refuses `Parolă nouă`.
+
+### Smaller things, recorded
+
+- **The country is a select even though the vocabulary holds one entry**, preselected. It is
+  configuration that moves without a redeploy (AD-4), it selects the legal-form set, and it prints
+  on the report — so hiding it while there is one would make the form silently grow a required
+  field the day a second country registers.
+- **A country label is looked up in the catalogue *object*, not through `t(code)`**, and that is
+  forced rather than chosen: the app's `IntlMessages` augmentation narrows the namespace's keys to
+  the ones authored, so a translator call typed to `'MD'` cannot take a value the API supplies.
+  Casting would assert that the API only answers what this catalogue happens to hold, which is the
+  opposite of what AD-4 makes true. Indexing a `Record<string, string>` states the real
+  relationship — an open set of keys against a closed set of words — and falls back to the key,
+  which is OQ-43's own stated behaviour for a value registered ahead of its wording.
+- **The client provider is mounted on the PAGE**, a first. The two `(app)` screens outside
+  `(workspace)` share no layout that could hold one, and putting it in `(app)/layout.tsx` would ship
+  a catalogue to every authenticated screen to serve two of them (NFR-43).
+- **`organizationIdsForAccount` is the first cleanup helper that finds what a journey created**
+  rather than deleting what the suite seeded — through `membership_self_select` with
+  `app.current_user` bound and no organization bound, which is the question the product itself asks
+  before a tenant exists. `cleanupOrganizations`'s docblock explains why the obvious
+  `WHERE name LIKE` returns nothing.
+- **`action={null}` on the problem Callout.** The one refusal this route has — country-not-supported
+  — states its own remedy in `detail`, and no step here navigates anywhere that text cannot
+  describe.
+
+### Skills, read against the diff
+
+`vercel-react-best-practices` and `vercel-composition-patterns`. What they changed: the page's four
+reads are one `Promise.all` (`async-parallel`), the catalogue is namespace-scoped rather than whole
+(`bundle-`), and the form is the only client component on the screen. Declined with reasons:
+memoization inside `CreateOrganizationForm`, which renders on its own field changes over a
+four-element array — `useMemo` there is a dependency list that can fall behind its body for no
+measurable gain; and a compound-component API for the form, which has one consumer and no
+composition to expose.
+
+Verified: `pnpm gates:clean`.

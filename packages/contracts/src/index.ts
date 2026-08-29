@@ -120,6 +120,21 @@ export type CompleteSocialSignInRequest =
   components['schemas']['CompleteSocialSignInRequestDto'];
 export type SocialProvidersResponse = components['schemas']['SocialProvidersResponseDto'];
 
+// core — the organization (FR-13 … FR-16; task 29). `Organization` is the whole profile; S-04
+// creates it with four of those fields and S-15 fills in the rest, so the create request is its
+// own shape rather than a `Partial<Organization>` — the fields a founding screen may set are a
+// decision (UC-49), not the ones that happen to be nullable.
+//
+// `CountryLegalForms` answers both screens in one read: S-04 builds its country field from the
+// entries, S-15 its legal-form field from the matching one. Every value is a KEY resolved through
+// the message catalogue (OQ-43) — a form or a country rendered raw is an internal identifier on a
+// screen, which CLAUDE.md's user-facing-text rule forbids in terms.
+export type Organization = components['schemas']['OrganizationResponseDto'];
+export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequestDto'];
+export type UpdateOrganizationRequest =
+  components['schemas']['UpdateOrganizationProfileRequestDto'];
+export type CountryLegalForms = components['schemas']['CountryLegalFormsResponseDto'];
+
 // platform — /api/v1/auth/admin (FR-75; task 23, the two-step handshake since 24 Aug 2026).
 // The challenge and the session travel as sealed httpOnly cookies the api sets — these shapes
 // are the BODY surface only; tokens and the challenge deliberately absent.

@@ -333,6 +333,32 @@
     }
   },
   "organization": {
+    "create": {
+      "title": "Configurați-vă organizația",
+      "subtitle": "Aceasta este compania pentru care se depune raportul. Deveniți administratorul ei și puteți invita colegi imediat ce există.",
+      "nameLabel": "Denumirea juridică",
+      "nameHelp": "Exact cum apare în registrul de stat. Se tipărește pe raport.",
+      "nameRequired": "Scrieți denumirea juridică a companiei, altfel organizația nu poate fi creată.",
+      "nameTooLong": "Denumirea depășește 200 de caractere și nu poate fi salvată. Scurtați-o până la denumirea din registrul de stat.",
+      "countryLabel": "Țara de înregistrare",
+      "countryHelp": "Stabilește formele juridice disponibile și apare pe raport.",
+      "countryPlaceholder": "Alegeți țara",
+      "countryRequired": "Alegeți țara în care este înregistrată compania, ca să știm ce forme juridice vă putem oferi.",
+      "contactEmailLabel": "E-mail de contact — opțional",
+      "contactEmailHelp": "Aici scriem despre această organizație. Îl puteți completa mai târziu în Organizație.",
+      "contactEmailInvalid": "Adresa nu are forma unei adrese de e-mail, așa că nu putem scrie la ea. Verificați dacă ați scris corect, de exemplu contact@companie.md.",
+      "contactPhoneLabel": "Telefon de contact — opțional",
+      "contactPhoneHelp": "În orice format. Îl puteți completa mai târziu în Organizație.",
+      "contactPhoneTooLong": "Numărul depășește 40 de caractere și nu poate fi salvat. Lăsați doar numărul de telefon.",
+      "oneIsEnough": "O singură organizație este de ajuns la început. Entitățile le adăugați sub ea după aceea.",
+      "submit": "Creați organizația",
+      "waitingForInvitation": "Așteptați o invitație? Rugați-vă administratorul să invite această adresă.",
+      "problemTitle": "Organizația nu a putut fi creată",
+      "problemBody": "Organizația nu a fost creată din cauza unei erori la procesarea cererii."
+    },
+    "countries": {
+      "MD": "Republica Moldova"
+    },
     "access": {
       "title": "Utilizatori și acces",
       "lede": "Cine poate vedea datele ESG ale organizației și ce poate face fiecare.",
