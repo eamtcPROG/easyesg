@@ -1,23 +1,29 @@
-'use client';
+"use client";
 
-import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
-import { FormCodeField, FormSummary, FormTextField } from '@easyesg/ui/forms';
-import { useTranslations } from 'next-intl';
-import { useEffect, useReducer, useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { API_OUTCOME } from '@/lib/api-outcome';
-import { Link } from '@/i18n/navigation';
-import { ROUTES } from '@/lib/routes';
-import { completeFactorAction } from '../actions';
-import { ANSWER_LENGTH, FACTOR_ANSWER, type FactorAnswerKind } from '../factor';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from "@easyesg/ui";
+import { FormCodeField, FormSummary, FormTextField } from "@easyesg/ui/forms";
+import { useTranslations } from "next-intl";
+import {
+  useEffect,
+  useReducer,
+  useState,
+  useTransition,
+  useCallback,
+} from "react";
+import { useForm } from "react-hook-form";
+import { API_OUTCOME } from "@/lib/api-outcome";
+import { Link } from "@/i18n/navigation";
+import { ROUTES } from "@/lib/routes";
+import { completeFactorAction } from "../actions";
+import { ANSWER_LENGTH, FACTOR_ANSWER, type FactorAnswerKind } from "../factor";
 import {
   FACTOR_EVENT,
   FACTOR_STANDING,
   INITIAL_FACTOR_STATE,
   factorReducer,
   isLockout,
-} from '../factor-state';
-import styles from './identity-screens.module.css';
+} from "../factor-state";
+import styles from "./identity-screens.module.css";
 
 /**
  * S-01's staged second-factor step (UC-194, UC-195).
@@ -51,12 +57,14 @@ const TICK_MS = 15_000;
 const MS_PER_MINUTE = 60_000;
 
 export function FactorForm({ expiresAt }: { expiresAt: number }) {
-  const t = useTranslations('identity.factor');
-  const tCommon = useTranslations('identity');
+  const t = useTranslations("identity.factor");
+  const tCommon = useTranslations("identity");
   const [pending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(factorReducer, INITIAL_FACTOR_STATE);
 
-  const { control, handleSubmit, reset } = useForm<FactorInput>({ mode: 'onSubmit' });
+  const { control, handleSubmit, reset } = useForm<FactorInput>({
+    mode: "onSubmit",
+  });
 
   /**
    * Minutes left, or `null` until the first tick — its own `useState` because nothing moves with
@@ -95,10 +103,13 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
    * Unmemoized on purpose: it reaches a plain DOM `onClick`, whose identity nothing observes, and
    * `rerender-memo`'s own companion rule says wrapping that is noise rather than optimisation.
    */
-  const chooseAnswer = (answer: FactorAnswerKind) => {
-    reset({ code: '' });
-    dispatch({ type: FACTOR_EVENT.ANSWER_CHOSEN, answer });
-  };
+  const chooseAnswer = useCallback(
+    (answer: FactorAnswerKind) => {
+      reset({ code: "" });
+      dispatch({ type: FACTOR_EVENT.ANSWER_CHOSEN, answer });
+    },
+    [reset],
+  );
 
   const submit = handleSubmit((input) => {
     dispatch({ type: FACTOR_EVENT.SUBMITTED });
@@ -117,37 +128,42 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
     return (
       <Callout
         intent={CALLOUT_INTENT.WARNING}
-        title={t('lapsedTitle')}
+        title={t("lapsedTitle")}
         action={
           <TextLink asChild>
-            <Link href={ROUTES.SIGN_IN}>{t('lapsedAction')}</Link>
+            <Link href={ROUTES.SIGN_IN}>{t("lapsedAction")}</Link>
           </TextLink>
         }
       >
-        {t('lapsedBody')}
+        {t("lapsedBody")}
       </Callout>
     );
   }
 
   const problem =
-    standing.kind === FACTOR_STANDING.REFUSED && standing.failure.status === API_OUTCOME.Problem
+    standing.kind === FACTOR_STANDING.REFUSED &&
+    standing.failure.status === API_OUTCOME.Problem
       ? standing.failure.problem
       : null;
   const locked = isLockout(standing);
 
   return (
-    <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+    <form
+      onSubmit={(event) => void submit(event)}
+      noValidate
+      className={styles.stack}
+    >
       {/* **Not `forms.summaryTitle`**, and the exception is the point: this step has exactly one
           field, so its heading is singular — "the field below needs attention" — where the shared
           one is plural. Authored that way in all three locales when the step was built (task 27.8),
           and folding it into the shared key would have told a reader with one input that a few
           fields need their attention. */}
-      <FormSummary control={control} title={t('summaryTitle')} />
+      <FormSummary control={control} title={t("summaryTitle")} />
 
       {problem ? (
         <Callout
           intent={CALLOUT_INTENT.ERROR}
-          title={problem.title ?? t('problemTitle')}
+          title={problem.title ?? t("problemTitle")}
           /*
             **The action slot carries a remedy only where this screen owns one** (corrected
             27 Aug 2026). It used to render `problemAction` — "check the clock on your device, then
@@ -164,12 +180,12 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
           action={
             locked ? (
               <TextLink asChild>
-                <Link href={ROUTES.RESET}>{t('lockedAction')}</Link>
+                <Link href={ROUTES.RESET}>{t("lockedAction")}</Link>
               </TextLink>
             ) : null
           }
         >
-          {problem.detail ?? t('problemBody')}
+          {problem.detail ?? t("problemBody")}
         </Callout>
       ) : null}
 
@@ -177,10 +193,10 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
       standing.failure.status === API_OUTCOME.Unreachable ? (
         <Callout
           intent={CALLOUT_INTENT.ERROR}
-          title={tCommon('unreachable.title')}
-          action={tCommon('unreachable.action')}
+          title={tCommon("unreachable.title")}
+          action={tCommon("unreachable.action")}
         >
-          {tCommon('unreachable.body')}
+          {tCommon("unreachable.body")}
         </Callout>
       ) : null}
 
@@ -190,27 +206,31 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
             <FormTextField
               control={control}
               name="code"
-              label={t('recoveryLabel')}
-              help={t('recoveryHelp')}
+              label={t("recoveryLabel")}
+              help={t("recoveryHelp")}
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
-              rules={{ required: t('recoveryMissing') }}
+              rules={{ required: t("recoveryMissing") }}
             />
           ) : (
             <FormCodeField
               control={control}
               name="code"
-              label={t('codeLabel')}
-              help={t('codeHelp')}
+              label={t("codeLabel")}
+              help={t("codeHelp")}
               length={ANSWER_LENGTH[FACTOR_ANSWER.AUTHENTICATOR]}
-              hint={minutesLeft === null ? null : t('expiresIn', { minutes: minutesLeft })}
-              rules={{ required: t('codeMissing') }}
+              hint={
+                minutesLeft === null
+                  ? null
+                  : t("expiresIn", { minutes: minutesLeft })
+              }
+              rules={{ required: t("codeMissing") }}
             />
           )}
 
           <Button type="submit" busy={pending}>
-            {t('submit')}
+            {t("submit")}
           </Button>
         </div>
       </Panel>
@@ -224,17 +244,21 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
           <button
             type="button"
             onClick={() =>
-              chooseAnswer(isRecovery ? FACTOR_ANSWER.AUTHENTICATOR : FACTOR_ANSWER.RECOVERY)
+              chooseAnswer(
+                isRecovery
+                  ? FACTOR_ANSWER.AUTHENTICATOR
+                  : FACTOR_ANSWER.RECOVERY,
+              )
             }
           >
-            {isRecovery ? t('useAuthenticator') : t('useRecovery')}
+            {isRecovery ? t("useAuthenticator") : t("useRecovery")}
           </button>
         </TextLink>
       </p>
 
       <p className={styles.altAction}>
         <TextLink asChild>
-          <Link href={ROUTES.SIGN_IN}>{t('startOver')}</Link>
+          <Link href={ROUTES.SIGN_IN}>{t("startOver")}</Link>
         </TextLink>
       </p>
     </form>
