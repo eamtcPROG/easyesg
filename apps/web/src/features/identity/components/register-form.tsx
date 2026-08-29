@@ -115,7 +115,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
 
   return (
     <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
-      <FormSummary control={control} title={t('summaryTitle')} />
+      <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {failure?.status === API_OUTCOME.Problem ? (
         <Callout

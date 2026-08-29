@@ -137,6 +137,11 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
 
   return (
     <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+      {/* **Not `forms.summaryTitle`**, and the exception is the point: this step has exactly one
+          field, so its heading is singular — "the field below needs attention" — where the shared
+          one is plural. Authored that way in all three locales when the step was built (task 27.8),
+          and folding it into the shared key would have told a reader with one input that a few
+          fields need their attention. */}
       <FormSummary control={control} title={t('summaryTitle')} />
 
       {problem ? (

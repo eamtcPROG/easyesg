@@ -32,6 +32,9 @@ const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function RequestResetForm() {
   const t = useTranslations('identity.resetRequest');
   const tCommon = useTranslations('identity');
+  // The form-level error summary's heading — `forms`, because it says what happened to a
+  // FORM and no screen owns it. See `factor-form.tsx` for the one that is not shared.
+  const tForms = useTranslations('forms');
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<RequestResetResult | null>(null);
 
@@ -61,7 +64,7 @@ export function RequestResetForm() {
 
   return (
     <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
-      <FormSummary control={control} title={t('summaryTitle')} />
+      <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {result?.status === API_OUTCOME.Problem ? (
         <Callout

@@ -38,7 +38,8 @@
   },
   "forms": {
     "show": "Show",
-    "hide": "Hide"
+    "hide": "Hide",
+    "summaryTitle": "A few fields need attention before you can continue"
   },
   "identity": {
     "unreachable": {
@@ -68,7 +69,6 @@
       "submit": "Create account",
       "alreadyHave": "Already have an account?",
       "signIn": "Sign in",
-      "summaryTitle": "A few fields need attention before you can continue",
       "problemTitle": "The request could not be processed",
       "problemBody": "The account was not created because the request could not be processed."
     },
@@ -109,7 +109,6 @@
       "forgot": "Forgot your password?",
       "noAccount": "Don't have an account yet?",
       "register": "Create one",
-      "summaryTitle": "A few fields need attention before you can continue",
       "problemTitle": "Sign-in did not succeed",
       "problemBody": "We could not sign you in because of an error while processing the request.",
       "unverifiedAction": "Go to address confirmation",
@@ -148,7 +147,6 @@
       "sentTitle": "Your request has been recorded",
       "sentBody": "If the address has an account, a reset link is on its way. It works once and expires after 60 minutes.",
       "sentAction": "Check your inbox, including the spam folder.",
-      "summaryTitle": "A few fields need attention before you can continue",
       "problemTitle": "The request could not be processed",
       "problemBody": "The reset link was not sent because of an error while processing the request.",
       "backToSignIn": "Back to sign-in"
@@ -164,7 +162,6 @@
       "successTitle": "Your password has been changed",
       "successBody": "All existing sessions have been signed out. From here you can sign in with the new password.",
       "successAction": "Go to sign-in",
-      "summaryTitle": "A few fields need attention before you can continue",
       "problemTitle": "The link could not be used",
       "problemBody": "The password was not changed because of an error while processing the request.",
       "requestNew": "Request a new link",
@@ -266,7 +263,6 @@
       "password": {
         "heading": "Password",
         "description": "Changing your password requires the one in force now.",
-        "summaryTitle": "A few fields need attention before you can continue",
         "current": "Current password",
         "next": "New password",
         "terminate": "Sign out of your other devices",
@@ -280,7 +276,6 @@
       "factor": {
         "heading": "Two-step verification",
         "description": "A code from your authenticator app, asked for every time you sign in.",
-        "summaryTitle": "A few fields need attention before you can continue",
         "off": "Not turned on.",
         "on": "Turned on. Recovery codes left: {remaining}.",
         "noCodesTitle": "You have no recovery codes left",
@@ -396,7 +391,6 @@
       "invite": {
         "heading": "Invite a colleague",
         "intro": "We send a link that works for seven days. They choose their own password.",
-        "summaryTitle": "A few fields need attention before you can continue",
         "email": "Email address",
         "emailRequired": "Enter the email address of the person you are inviting, or the invitation cannot be sent.",
         "role": "Role granted",

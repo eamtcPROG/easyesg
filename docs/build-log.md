@@ -5556,3 +5556,47 @@ choosing between two identical buttons. `ATTENTION` announces politely, so the q
 rather than `alert`.
 
 That closes the last of the two design calls raised by the sweep.
+
+## The eighth copy that was not a copy · 2026-08-29
+
+`forms` gained `summaryTitle`, folding what the entry three above called the last of the three
+witnesses. Seven namespaces had declared the same sentence; they now read one key.
+
+**The fold is seven, not eight, and finding that out was the whole of the work.** A count of the
+copies said eight; a count of the *distinct values* said two. `identity.factor` — the staged
+second-factor step at `/sign-in/factor` — carries a **singular** heading:
+
+> *"Câmpul de mai jos are nevoie de atenție înainte de a putea continua"* — the field below needs
+> attention, where the shared sentence says a few fields do.
+
+That form has exactly one input, the code, and the copy was authored to match in all three locales
+when task 27.8 built the step. Folding it would have told a reader looking at a single field that
+several needed their attention — a regression with no failing test, since nothing asserts a summary
+heading and the summary only renders on a validation error anyway. It keeps its own key, with the
+reason written at the call site rather than left to be rediscovered.
+
+The general lesson is cheap to state and was nearly missed: **before merging N copies of a string,
+count the distinct values, not the occurrences.** `grep -c` answers the wrong question.
+
+### What this did not fix, recorded
+
+Three of the seven now reading the plural sentence are single-field forms: `resetRequest` (an
+address), `credentials.factor` (a code) and, since the S-28 refactor moved the current password out
+to the record's gate, `credentials.password` (a new password). `identity.factor` is the only place
+anyone has drawn the singular/plural distinction. Either it is worth drawing in four places or in
+none — a copy question for whoever owns the wording, and not one to settle while moving keys
+between namespaces.
+
+### The namespace as it stands
+
+`forms` now holds three strings — `show`, `hide`, `summaryTitle` — and the rule for what belongs is
+the one the two entries above established: a string the **form layer** needs, that `packages/ui`
+cannot own because it owns no text (UX-79), and that no screen owns because every screen with a
+form needs the same words. `identity.unreachable` is deliberately not among them: the workspace
+layout's docblock already records that its honest home is `chrome`, because "we could not reach the
+service" is not a form string. That move still has readers to update and is still not something to
+do in passing.
+
+`apps/admin` keeps `realm.signIn.summaryTitle` where it is. Two components read it, both inside that
+namespace, so there is no duplication to remove — the console's catalogue has one copy and one
+owner, which is the state this change was trying to reach, not one to change for symmetry.

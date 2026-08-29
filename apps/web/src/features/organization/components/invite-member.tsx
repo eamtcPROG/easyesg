@@ -44,6 +44,9 @@ export function InviteMember({ id }: { id: string }) {
   const tRoles = useTranslations('organization.access.roles');
   const tRoleHelp = useTranslations('organization.access.roleDescriptions');
   const tCommon = useTranslations('identity');
+  // The form-level error summary's heading — `forms`, because it says what happened to a
+  // FORM and no screen owns it. See `factor-form.tsx` for the one that is not shared.
+  const tForms = useTranslations('forms');
   const [pending, startTransition] = useTransition();
   // What the last attempt did — **the screen's one notice, not this panel's own** (28 Aug 2026).
   //
@@ -110,7 +113,7 @@ export function InviteMember({ id }: { id: string }) {
       ) : null}
 
       <form onSubmit={(event) => void submit(event)} noValidate className={styles.inviteForm}>
-        <FormSummary control={control} title={t('summaryTitle')} />
+        <FormSummary control={control} title={tForms('summaryTitle')} />
         <FormTextField
           control={control}
           name="email"

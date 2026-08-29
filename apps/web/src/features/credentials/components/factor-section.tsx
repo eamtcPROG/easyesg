@@ -68,6 +68,9 @@ interface FactorForm {
  */
 function FactorBody({ factor }: { readonly factor: TotpState }) {
   const t = useTranslations('identity.credentials.factor');
+  // The form-level error summary's heading — `forms`, because it says what happened to a
+  // FORM and no screen owns it. See `factor-form.tsx` for the one that is not shared.
+  const tForms = useTranslations('forms');
   const { stage, perform, succeeded, successNotice, password, dismiss } = useCredentials();
   const busy = useSectionBusy(CREDENTIALS_SECTION.FACTOR);
   const { control, handleSubmit, reset } = useForm<FactorForm>({
@@ -141,7 +144,7 @@ function FactorBody({ factor }: { readonly factor: TotpState }) {
   if (stage.kind === CREDENTIALS_STAGE.ENROLLING) {
     return (
       <form onSubmit={(event) => void confirm(event)} noValidate className={styles.form}>
-        <FormSummary control={control} title={t('summaryTitle')} />
+        <FormSummary control={control} title={tForms('summaryTitle')} />
         <p className="t-label">{t('secretHeading')}</p>
         <p className={`t-code ${styles.secret}`}>{stage.secret}</p>
         <p className="t-caption">{t('secretHelp')}</p>

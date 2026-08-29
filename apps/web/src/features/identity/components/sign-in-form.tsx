@@ -79,7 +79,7 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
 
   return (
     <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
-      <FormSummary control={control} title={t('summaryTitle')} />
+      <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {problem ? (
         <Callout

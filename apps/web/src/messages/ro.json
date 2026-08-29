@@ -38,7 +38,8 @@
   },
   "forms": {
     "show": "Arătați",
-    "hide": "Ascundeți"
+    "hide": "Ascundeți",
+    "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua"
   },
   "identity": {
     "unreachable": {
@@ -68,7 +69,6 @@
       "submit": "Creați contul",
       "alreadyHave": "Aveți deja un cont?",
       "signIn": "Autentificați-vă",
-      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
       "problemTitle": "Cererea nu a putut fi procesată",
       "problemBody": "Contul nu a fost creat din cauza unei erori la procesarea cererii."
     },
@@ -109,7 +109,6 @@
       "forgot": "V-ați uitat parola?",
       "noAccount": "Nu aveți încă un cont?",
       "register": "Creați unul",
-      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
       "problemTitle": "Autentificarea nu a reușit",
       "problemBody": "Nu v-am putut autentifica din cauza unei erori la procesarea cererii.",
       "unverifiedAction": "Mergeți la confirmarea adresei",
@@ -148,7 +147,6 @@
       "sentTitle": "Cererea a fost înregistrată",
       "sentBody": "Dacă adresa are un cont, un link de resetare este pe drum. Funcționează o singură dată și expiră după 60 de minute.",
       "sentAction": "Verificați-vă căsuța de e-mail, inclusiv dosarul de spam.",
-      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
       "problemTitle": "Cererea nu a putut fi procesată",
       "problemBody": "Linkul de resetare nu a fost trimis din cauza unei erori la procesarea cererii.",
       "backToSignIn": "Înapoi la autentificare"
@@ -164,7 +162,6 @@
       "successTitle": "Parola a fost schimbată",
       "successBody": "Toate sesiunile existente au fost închise. De aici vă puteți autentifica cu parola nouă.",
       "successAction": "Mergeți la autentificare",
-      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
       "problemTitle": "Linkul nu a putut fi folosit",
       "problemBody": "Parola nu a fost schimbată din cauza unei erori la procesarea cererii.",
       "requestNew": "Cereți un link nou",
@@ -266,7 +263,6 @@
       "password": {
         "heading": "Parolă",
         "description": "Schimbarea parolei cere parola actuală.",
-        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
         "current": "Parola actuală",
         "next": "Parola nouă",
         "terminate": "Închideți sesiunile de pe celelalte dispozitive",
@@ -280,7 +276,6 @@
       "factor": {
         "heading": "Verificare în doi pași",
         "description": "Un cod din aplicația de autentificare, cerut la fiecare autentificare.",
-        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
         "off": "Nu este activată.",
         "on": "Activată. Coduri de recuperare rămase: {remaining}.",
         "noCodesTitle": "Nu mai aveți coduri de recuperare",
@@ -396,7 +391,6 @@
       "invite": {
         "heading": "Invitați un coleg",
         "intro": "Trimitem un link valabil șapte zile. Persoana își alege singură parola.",
-        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
         "email": "Adresa de e-mail",
         "emailRequired": "Scrieți adresa de e-mail a persoanei pe care o invitați, altfel invitația nu poate fi trimisă.",
         "role": "Rolul acordat",
