@@ -170,6 +170,37 @@ member — is true on every ordinary request. `invitation_bearer_select`'s is *k
 which no ordinary request does; adding the conjunct buys nothing and breaks the bookkeeper accepting
 their second client's invitation with a tenant already bound.
 
+Task 33.1 adds **the taxonomy registry** (FR-65, FR-66; AD-3, AD-4): three `config/seed` artefacts
+and `TAXONOMY_REGISTRY` in the port surface — no table, no migration, no code per artefact, which is
+what task 16's store being generic is for. `vsme-taxonomy.2026-05-01.json` carries 143 reportable
+elements over B1–B11 and C1–C9 with their kinds, period types, presentation order and dimensions;
+`vsme-waste-classification.2026-05-01.json` is the EU List of Waste (973 members) that B7's axis
+draws its domain from; `reporting-taxonomy.vsme.json` says which version a new report pins.
+**OQ-45 closed here** — a version is EFRAG's own `YYYY-MM-DD`, and the config scope for
+`vsme_taxonomy` *is* that version, so registered versions coexist forever as DR-4 requires.
+
+Four things about it that are load-bearing:
+
+- **The artefacts are extracted, never authored.** `tools/extract-vsme-taxonomy.mjs` regenerates
+  them from EFRAG's published package; a hand edit is discarded by the next release. A correction
+  belongs in the extractor. It **asserts rather than defaults** — an unmapped XBRL item type, a
+  concrete element reaching no presentation role, or an explicit axis resolving no members each fail
+  the run — and all three assertions exist because each caught a real defect on first use.
+- **`pinFor()`, never `max(registeredVersions())`.** The date EFRAG publishes a release and the date
+  this platform adopts it are different facts, so adoption is a separate effective-dated entry. It
+  answers `null` rather than guessing, because a report pinned to a version invented at a call site
+  is what DR-4 exists to prevent.
+- **Every method takes the version it is asking about.** Two registered versions coexist by design
+  (task 33.3) and a report pinned to the older one must resolve *its* elements years later; a
+  convenience overload answering "the current elements" is the shape that silently re-reads an
+  archived report against a taxonomy it was never authored under.
+- **A malformed element is dropped; a malformed version fails whole**, which is the opposite split
+  from the NACE classifier's and deliberately so. There, one bad row must not remove 995 good ones
+  from a picker. Here, a partial taxonomy would let a report be authored against one shape and
+  re-read against another. Both paths log at `error`, and
+  `modules/platform/taxonomy/taxonomy-artefact.spec.ts` asserts the shipped artefacts produce no such
+  line — a fail-soft design is only safe when a gate reads the log.
+
 **Not built yet, and do not assume otherwise:** two of the four edge guards — `EntitlementGuard`
 (task 54) and `AdminRealmGuard` (**task 67.3**, assigned 27 Aug 2026: it guards nothing until A-02
 exists, since the only admin routes today are task 23's sign-in handshake and that is already behind

@@ -193,7 +193,15 @@ export default tseslint.config(
   {
     languageOptions: {
       globals: { ...globals.node, ...globals.jest },
-      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+      parserOptions: {
+        // `allowDefaultProject` rather than an ignore entry for `tools/*.mjs`. The ignores block
+        // above lists config files individually on the stated principle that *a source file that
+        // ends up unlinted is the failure this rule set exists to prevent* — and the taxonomy
+        // extractor is 300 lines of real logic generating a shipped artefact, not config. It
+        // belongs to no tsconfig, which is exactly the case this option exists for.
+        projectService: { allowDefaultProject: ['tools/*.mjs'] },
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     rules: {
       // Surfaces a forgotten await on a repository call, which under RLS would otherwise
@@ -488,5 +496,24 @@ export default tseslint.config(
   {
     files: ['apps/web/src/i18n/navigation.ts'],
     rules: { 'no-restricted-imports': 'off' },
+  },
+
+  /**
+   * Build-time Node scripts, linted **without** the type-checked rule set.
+   *
+   * `tools/extract-vsme-taxonomy.mjs` is plain JavaScript on purpose — it parses four XML
+   * attributes to generate `config/seed`'s taxonomy artefacts and runs quarterly, so a TypeScript
+   * build step and a parser dependency would both cost more than they return. Type-aware rules on
+   * an untyped file produce nothing but `no-unsafe-*`: 286 of them, every one saying "this value
+   * has no type", which is true and is not a finding.
+   *
+   * What is left still bites — undeclared variables, unused bindings, unreachable code, the
+   * `no-restricted-syntax` vocabulary selectors — which is the half worth having here. Ignoring the
+   * file was the alternative, and the ignores block above rejects it in terms: a source file that
+   * ends up unlinted is the failure this rule set exists to prevent.
+   */
+  {
+    files: ['tools/*.mjs'],
+    extends: [tseslint.configs.disableTypeChecked],
   },
 );

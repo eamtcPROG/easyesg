@@ -81,7 +81,7 @@ const SHAPES: readonly { readonly rule: string; readonly pattern: RegExp }[] = [
  *   matching them flagged the English `problem.conflict.title` — which reads "Conflict" — as a
  *   defect. An internal identifier is recognisable by being *un-word-like*: hyphenated, snake_cased
  *   or mixed-case. A lowercase single word carries no evidence of being an identifier at all, so a
- *   match on one is a coincidence of spelling. `EnergyConsumptionFromRenewableSources` is still
+ *   match on one is a coincidence of spelling. `EnergyConsumptionFromFuels` is still
  *   caught, because it is not lowercase.
  *
  *   The cost is stated rather than hidden: a message that said only "conflict" would pass. That

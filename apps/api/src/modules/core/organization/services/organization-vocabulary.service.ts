@@ -98,7 +98,12 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
     if (!entry) return null;
 
     const cached = this.naceCache.get(scope);
-    if (cached?.revision === entry.revision) return cached;
+    // `cached !== undefined` rather than `cached?.revision === entry.revision`: optional chaining
+    // makes a cache *miss* compare `undefined === undefined`, so an entry carrying no revision
+    // would return the miss as though it were a hit — here, as "this country registers no
+    // classifier". Corrected 29 Aug 2026 with the same shape in `TaxonomyRegistryService`, which
+    // was copied from this method and where a spec caught it.
+    if (cached !== undefined && cached.revision === entry.revision) return cached;
 
     const codes = entry.payload.codes;
     if (typeof codes !== 'object' || codes === null || Array.isArray(codes)) {

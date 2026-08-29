@@ -6453,3 +6453,158 @@ table now fills within a single day's work rather than over three runs as `apps/
 describes. The remedy is unchanged and takes a second; what has changed is how often it is needed.
 
 Verified: `pnpm gates:clean`, exit 0 — 591 api e2e, 469 api unit, 103/103 browser tests.
+
+---
+
+## Task 33.1 — The taxonomy artefact in the config store · 2026-08-29
+
+Pulled ahead of 31.1 and 31.3, which both pin a taxonomy version and had none to pin.
+
+**The whole task is a sourcing exercise, and everything below follows from that.** EFRAG publishes
+the VSME XBRL taxonomy; this repository's job was to read it, not to model it. What makes that worth
+an entry is how much of the existing specification turned out to be a plausible reading of the
+standard's *prose* rather than of the standard.
+
+### OQ-45 closed where its own row said it should be
+
+*How is a taxonomy version written?* — open since 19 Aug 2026, with the row stating that the answer
+belonged to `platform/taxonomy` "which will have the actual EFRAG releases in front of it". This was
+that moment, and the answer needed no options round because it is **a reading, not a choice**: EFRAG
+stamps the release into the namespace URI, the package's directory layout, and the hrefs one
+linkbase uses to reach another. `2026-05-01`, verbatim. A platform-assigned sequence would be a
+second identifier for something that already has one, and the mapping table translating between them
+is exactly what FR-67's version-pair mappings must not be confused with.
+
+Two consequences worth stating separately, because only the first is obvious. The config-store scope
+for `vsme_taxonomy` **is** the version, so every registered version stays readable by name forever —
+which is what a DR-4 pin resolves through and what 33.3 needs. And ISO 8601 sorts chronologically as
+text, so "the later version" needs no parsing anywhere.
+
+### Three invented element keys, wrong in two opposite directions
+
+`architecture.md` §7.3 and AD-3 carried `EnergyConsumptionFromRenewableSources` and
+`NumberOfEmployeesByGender` as example element keys, and `dimension_key`'s comment listed *gender*
+and *contract* among the axes. **None of the three exists.** The record is in §7.3 now; what belongs
+here is why it is more than a typo:
+
+- Renewable energy is a **dimension member**, not an element — `EnergyConsumptionFromFuels` along
+  `BreakdownOfEnergyConsumptionAxis`. An element was assumed where the standard uses a dimension.
+- Gender is **four separate elements**, not one dimensioned element. A dimension was assumed where
+  the standard uses elements.
+
+The two errors point in opposite directions, which rules out a systematic misunderstanding and
+leaves the actual cause: *"energy from renewable sources"* and *"employees by gender"* are correct
+readings of the standard's text and yield the wrong model both times. The taxonomy's shape is not
+inferable from the disclosure's prose. That is the argument AD-3 already rests on, now with evidence,
+and it is why the artefact is extracted by a committed script and asserted rather than transcribed.
+
+The same invented key was also a specimen in `packages/i18n`'s identifier detector and in the root
+`CLAUDE.md`. Searched for the shape before closing it, per the rule: five sites, four corrected, the
+`build-log` occurrence left alone as frozen history.
+
+### The dimensions half, which the first draft did not have at all
+
+The first artefact carried elements only and would have satisfied a reading of the row's deliverable.
+It was wrong: §7.3 keys a disclosure on `(report_id, element_key, dimension_key, ordinal)`, so an
+element-only registry leaves task 34 unable to say what a row means. Getting it took three attempts,
+and **each failure produced an artefact that parsed, validated and was quietly missing a dimension**:
+
+1. Asking "which hypercubes name this element" answered nothing for all 143, because the `all` arc
+   starts at an *abstract*, never at a reportable element. Zero dimensioned elements.
+2. Scoping every axis fact to the link that first mentioned it left four of eight axes with no
+   domain and all eight with no default — `dimension-default` lives in its own `defaults-99000`
+   link, and two axes are drawn across several roles. Element→axis attachment must be per-link;
+   every other axis fact must be collected across all of them. Opposite scopes, one file.
+3. Splitting hrefs on `#vsme_` silently dropped B7's domain, which is published in the sibling
+   `waste` taxonomy — the EU List of Waste, 973 members, the standard's largest classification.
+
+The fix that matters is not the walk; it is the **assertion**. An explicit axis with no members is
+now a failed run that names the axis. All three failures were invisible because an empty list and an
+absent source are indistinguishable without one — the same reason the element-count assertion exists,
+which had already caught three dropped pillar-level disclosures on the first run.
+
+### Two artefacts, not one, and labels in exactly one of them
+
+The waste list is its own seed file. Folding it in would have made a waste-list revision
+indistinguishable from a VSME release, against DR-4's "version is a data dimension" — EFRAG versions
+the two separately and the hrefs say so. The store is generic, so the second artefact costs a JSON
+file and no code.
+
+**It carries labels and the VSME artefact deliberately does not**, which looks inconsistent and is
+the line OQ-43 draws. A VSME element's label is product UI text — the wording on a form field — so it
+ships in `packages/i18n` with the release. A waste category's name is the *value's own name*, part of
+the datum like a country's. `nace-code.md.json` had already set that precedent and §7.2 records the
+reason; this is the same case, citing NFR-24. EFRAG publishes **English only** for the waste
+taxonomy, so `ro` and `ru` are outstanding and platform-authored — T-14's standing for Russian VSME
+labels, reaching one taxonomy further. Asserted as a test rather than left as a comment.
+
+EFRAG's labels are the *concept's* label, not the value's: `20 03 01 - Non-Hazardous - Mixed
+municipal waste [member]`. Three of those four parts are scaffolding, and `[member]` is an internal
+notion the user-facing-text rule forbids outright. Stripped by **proving** each part against that
+member's own parsed code and hazard word, so a label EFRAG formats differently survives untouched
+rather than being silently truncated.
+
+One distinction is load-bearing and easy to lose: `hazardous` is **absent** on a chapter and `false`
+on a six-digit entry. *Not stated at this level* and *classified non-hazardous* are different
+answers, and B7 reports on the second; folding them would make all 131 chapters read as
+non-hazardous. It has its own test.
+
+### Which version a new report pins is not `max(registered)`
+
+`reporting-taxonomy.vsme.json` is a third artefact, and the temptation was to derive the answer from
+the newest registered version instead. That would be wrong in a way that only surfaces later: **the
+date EFRAG publishes a release and the date this platform adopts it are different facts.** A registry
+that adopts automatically would move every new report onto a release nobody had reviewed, the moment
+it was registered — and 33.3 registers a second version in staging deliberately. Adoption is
+effective-dated store data, so scheduling one is a publish rather than a release. `pinFor()` returns
+`null` when nothing is registered, refusing to guess, because a report pinned to a version invented
+at a call site is precisely what DR-4 exists to prevent.
+
+### A latent cache bug, and the search that found its sibling
+
+`taxonomy-registry.service.spec.ts` failed on `cached?.revision === entry.revision`: a cache *miss*
+compares `undefined === undefined`, which is true, and the hit path then reads a property off
+nothing. Searched for the shape rather than fixing the instance — the rule about applying a rule
+where it holds — and found one other site, `OrganizationVocabularyService`, which the taxonomy
+service had been modelled on. It is *accidentally* safe there because it returns the cache entry
+itself, so the bug would surface as "this country registers no activity classifier" rather than as a
+crash: a wrong answer instead of a loud one, which is worse. Both fixed. Neither could fire today,
+because the real store always sets a revision.
+
+### Verification
+
+- `pnpm gates` green, then the artefacts actually seeded: `vsme_taxonomy/2026-05-01` (51 kB, 20
+  modules), `vsme_waste_classification/2026-05-01` (265 kB), `reporting_taxonomy/vsme`, all readable
+  as `esg_app`. The hermetic spec proves the reader; only this proves the store takes a 265 kB
+  payload.
+- **Two specs making different claims, and the distinction is the point.** The unit spec proves the
+  reader handles *a* payload; `taxonomy-artefact.spec.ts` proves it handles *ours* — which is the one
+  that can fail when the extractor is re-run at the next release, on output nobody reviews line by
+  line. Its sharpest assertion is `expect(errors).not.toHaveBeenCalled()`: every partial-failure path
+  in the registry is a log line plus a quietly smaller answer, and a fail-soft design is only safe
+  when something reads the log.
+- Data checked against the published classifications rather than eyeballed: 20 chapters + 111
+  sub-chapters + 842 six-digit entries = 973, and 408 hazardous, both matching the EU List of Waste;
+  `20 03 01` Mixed municipal waste non-hazardous, `13 02 05` waste oils hazardous.
+
+### `nestjs-best-practices`, read against the diff
+
+Applied: ports behind DI symbols with the token beside the interface; the adapter validates and
+never casts; `useClass` rather than `useFactory`, because there is no framework-free use case here
+yet — the registry is an adapter over an infrastructure service, and task 67.7's migration run is
+where a use case appears and takes this port.
+
+Declined with a reason: `module-feature-modules` would put the port inside `platform/taxonomy`. It is
+in `src/contracts/` instead, because `core/period` and `core/disclosure` are its consumers and the
+port surface is this codebase's only cross-context surface (P-7, DR-1) — `entitlement.port.ts` is the
+same shape in the other direction.
+
+### One tooling change
+
+`tools/extract-vsme-taxonomy.mjs` was unlintable — in no tsconfig, so ESLint's project service
+refused it. Type-aware rules on an untyped file produced 286 `no-unsafe-*` errors, every one saying
+"this value has no type", which is true and is not a finding. It now lints under
+`disableTypeChecked`, keeping the half that bites: undeclared variables, unused bindings, the
+vocabulary selectors. Ignoring it was the alternative, and the ignores block rejects it in terms — *a
+source file that ends up unlinted is the failure this rule set exists to prevent* — which is the
+right rule for 300 lines of logic that generate a shipped artefact.

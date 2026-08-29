@@ -70,8 +70,8 @@ describe('findInternalIdentifiers', () => {
 
     it('still catches a mixed-case term, which no prose produces', () => {
       expect(
-        findInternalIdentifiers('Missing EnergyConsumptionFromRenewableSources', [
-          'EnergyConsumptionFromRenewableSources',
+        findInternalIdentifiers('Missing EnergyConsumptionFromFuels', [
+          'EnergyConsumptionFromFuels',
         ]),
       ).not.toEqual([]);
     });
