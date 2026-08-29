@@ -361,6 +361,42 @@
     "countries": {
       "MD": "Republic of Moldova"
     },
+    "home": {
+      "title": "Home",
+      "lede": "Your organisation’s report status will appear here.",
+      "reports": {
+        "heading": "Report status",
+        "empty": {
+          "title": "No reporting period yet",
+          "body": "This is where each report’s status will appear — what needs attention, where you left off, and how everything stands. The region fills once you open the first reporting period for an entity."
+        }
+      },
+      "memberships": {
+        "heading": "Your organisations",
+        "lede": "The organisations you have access to, and the role you hold in each.",
+        "active": "Active now",
+        "switchNote": "You view and edit the active organisation’s details under <organization>Organisation</organization>.",
+        "unreachable": {
+          "title": "We could not load your organisations",
+          "body": "The rest of the page works; only this list could not be read.",
+          "action": "Reload the page in a few moments."
+        }
+      },
+      "arrival": {
+        "created": {
+          "title": "You now have access",
+          "body": "You are working in this organisation from now on. The role you were given decides what you can do."
+        },
+        "reactivated": {
+          "title": "Your access has been restored",
+          "body": "You had access to this organisation before and have it again, at the role in the invitation."
+        },
+        "already_member": {
+          "title": "You already had access",
+          "body": "The invitation changed nothing: your role in this organisation is the one you already held."
+        }
+      }
+    },
     "legalForms": {
       "srl": "Limited liability company (SRL)",
       "sa": "Joint-stock company (SA)",

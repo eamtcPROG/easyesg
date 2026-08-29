@@ -77,8 +77,13 @@ test('a member of nothing founds an organization and lands in it (UC-49, D-1)', 
 
   // D-1 and FR-13, from the outside: the founder is its administrator, so the OA-only screen
   // renders for them — and the global tier names the organization they just created, which is
-  // the assertion `router.refresh()` exists to make true.
-  await expect(page.getByText(name)).toBeVisible();
+  // the assertion the action's layout revalidation exists to make true.
+  //
+  // **Scoped to the banner since task 30.5.** S-05 now names the same organization three times —
+  // the band, its own heading and the membership list — and all three are correct, so an unscoped
+  // locator is ambiguous by design rather than by accident. `invitation.spec.ts` made the same
+  // move for the same reason on S-03.
+  await expect(page.getByRole('banner').getByText(name)).toBeVisible();
   await page.goto('/organization/users');
   await expect(page.getByRole('heading', { name: 'Utilizatori și acces', level: 1 })).toBeVisible();
 });

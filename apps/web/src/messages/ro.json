@@ -361,6 +361,42 @@
     "countries": {
       "MD": "Republica Moldova"
     },
+    "home": {
+      "title": "Prima pagină",
+      "lede": "Aici veți vedea starea rapoartelor organizației dumneavoastră.",
+      "reports": {
+        "heading": "Starea rapoartelor",
+        "empty": {
+          "title": "Nu există încă nicio perioadă de raportare",
+          "body": "Aici va apărea starea fiecărui raport — ce cere atenție, unde ați rămas și cum stau lucrurile în ansamblu. Regiunea se completează după ce deschideți prima perioadă de raportare pentru o entitate."
+        }
+      },
+      "memberships": {
+        "heading": "Organizațiile dumneavoastră",
+        "lede": "Organizațiile la care aveți acces și rolul pe care îl aveți în fiecare.",
+        "active": "Activă acum",
+        "switchNote": "Datele organizației active le vedeți și le modificați în <organization>Organizație</organization>.",
+        "unreachable": {
+          "title": "Nu am putut încărca lista organizațiilor",
+          "body": "Restul paginii funcționează; doar această listă nu a putut fi citită.",
+          "action": "Reîncărcați pagina peste câteva momente."
+        }
+      },
+      "arrival": {
+        "created": {
+          "title": "Ați primit acces",
+          "body": "De acum lucrați în această organizație. Rolul primit stabilește ce puteți face."
+        },
+        "reactivated": {
+          "title": "Accesul dumneavoastră a fost restabilit",
+          "body": "Ați mai avut acces la această organizație și acum îl aveți din nou, cu rolul din invitație."
+        },
+        "already_member": {
+          "title": "Aveați deja acces",
+          "body": "Invitația nu a schimbat nimic: rolul dumneavoastră în această organizație a rămas cel dinainte."
+        }
+      }
+    },
     "legalForms": {
       "srl": "Societate cu răspundere limitată (SRL)",
       "sa": "Societate pe acțiuni (SA)",

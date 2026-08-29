@@ -190,6 +190,34 @@ test('axe finds no violations on the entity record', async ({ page }) => {
   await scan(page);
 });
 
+/**
+ * S-05 (task 30.5) — the screen every sign-in lands on, and the one composition axe has not yet
+ * judged: a `banner`, a `navigation`, a `main` and two `Panel` regions with their own headings,
+ * over an `EmptyState` that is present rather than absent.
+ */
+test('axe finds no violations on the home screen', async ({ page }) => {
+  const email = `${RUN_PREFIX}-home@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX}-home-org` }));
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/home');
+
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await scan(page);
+});
+
 test('axe finds no violations on the credentials screen', async ({ page }) => {
   const email = `${RUN_PREFIX}-credentials@example.md`;
 

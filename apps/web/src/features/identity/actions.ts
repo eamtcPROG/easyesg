@@ -35,7 +35,7 @@ import type {
   SignInFailure,
   VerifyResult,
 } from './types/action-results';
-import { ROUTES } from '@/lib/routes';
+import { ROUTES, withQuery } from '@/lib/routes';
 import { SIGN_IN_OUTCOME } from '@easyesg/contracts';
 import { FACTOR_LAPSED, type CompleteFactorFailure } from './factor';
 import { consumeFactorChallenge, holdFactorChallenge } from '@/server/factor-challenge';
@@ -271,5 +271,13 @@ export async function acceptInvitationAction(
   );
   if (outcome.status !== API_OUTCOME.Ok) return outcome;
 
-  redirect({ href: POST_SIGN_IN.HOME, locale: await getLocale() });
+  // **The grant travels to S-05 in the address** (task 30.5, closing a review note of 26 Aug 2026).
+  // Without it the three grants are indistinguishable and somebody who *already had access* sees
+  // exactly the landing a new member sees — having clicked a link that told them nothing. Its own
+  // parameter rather than task 24's `?notice=`: two vocabularies on two screens, and one name over
+  // both is how a value from one starts rendering on the other.
+  redirect({
+    href: withQuery(POST_SIGN_IN.HOME, `joined=${outcome.value.grant}`),
+    locale: await getLocale(),
+  });
 }

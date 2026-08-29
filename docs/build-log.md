@@ -6367,3 +6367,89 @@ Worth one correction to that note: it describes the symptom as arriving *"from i
 cause is the same window; the note's example is narrower than its scope.
 
 Verified: `pnpm gates:clean`.
+
+## Task 30.5 — S-05, and a screen mostly defined by what it refuses to say · 2026-08-29
+
+The home §4.3's *one* and *several* branches land on, closing task 30. Its content is small and
+almost every part of it is a decision about restraint.
+
+### UX-6's three regions ship as one
+
+*What needs my attention*, *where did I leave off*, *what is the state of everything* — three
+questions about **reports**, and reports arrive with task 31. The row said "the report-status region
+present and explicitly empty", singular; the artboard draws three. The project owner took the row's
+reading, and the reason is what §4.6 asks of an empty state: three "nothing yet" boxes above the
+fold teach a reader that two thirds of their home is broken, where one region **named for what it
+will hold** says the product is unfinished here — which is true. Task 32.4 splits it into UX-6's
+order once there is data to order.
+
+Declined: drawing none until 32.4, which would leave FR-23's overview with no placeholder at all and
+make the next task introduce the concept cold.
+
+### The heading names the organization, not the reader
+
+The artboard's *"Good afternoon, Ana"* needs two things this product does not have. A **display
+name** — registration collects an address and a password (UC-01), which is `design_spec.md` OQ-16
+and still open. And the reader's **time of day**, which a Server Component cannot know; the server's
+clock is not theirs.
+
+So the `h1` is the active organization's name with the caller's role beneath it — what UX-2 already
+requires to be visible, and the more useful thing on a screen whose whole job is orientation.
+Declined: greeting by email address, which greets somebody by an identifier; and a client-side
+clock, which buys a nameless greeting for a Client Component on the most-visited screen in the
+product.
+
+### The arrival sentence, which a review left open on 26 Aug
+
+`POST /invitations/acceptance` answers a `grant` of `created` / `reactivated` / `already_member`, and
+S-03's exit discarded it — so all three landed identically and somebody who **already had access**
+learned nothing from having clicked. It now travels as `?joined=`, following task 24's `?notice=`
+shape on S-01 and for its reason: an outcome the next screen must state, carried where it is
+inspectable rather than in a second sealed cookie. Its own parameter name rather than `notice`,
+because two vocabularies on two screens under one name is how a value from one starts rendering on
+the other.
+
+**An unrecognised value announces nothing.** The parameter arrives through the address bar, so a
+home that said *"you now have access"* to somebody who typed it would be stating something the
+product never decided. Absent and edited are one fact here, and `readArrival` is a five-line unit
+spec rather than a browser journey.
+
+### What it does not say
+
+- **The membership list does not switch.** OQ-6 splits UC-16: this screen owns *viewing*, the global
+  tier owns *switching* (task 83). So the list states where the reader belongs and what role they
+  hold, and the active one is marked in words as well as by a chip — colour is never the sole
+  carrier (UX-102), and until 83 there is nothing else to distinguish them by. That is information,
+  not a control that cannot act.
+- **S-35's wording is not repeated.** Task 25.4 recorded the obligation when it invented S-35, and
+  it is discharged by the two states saying *different* things: there, sign-in resolved nothing and
+  the reader has nowhere to be; here they are already inside an organization and one region did not
+  load.
+- **`Home` is not added to the workspace tier.** §4.2's table lists five sections and Home is not
+  among them, though the artboard's nav shows it first. The brand mark in the global tier links
+  there already (task 30.1), so the screen is reachable without contradicting the tier's own
+  definition.
+
+### Three locator failures, and only one was mine
+
+S-05 renders the organization's name three times — the band, its own heading, the membership list —
+and all three are correct. That broke `create-organization.spec.ts` and `global-tier.spec.ts`, whose
+`getByText(name)` had been unambiguous only because nothing else on `/home` rendered. Both now scope
+to `getByRole('banner')`, which is what they were actually asserting; `invitation.spec.ts` had
+already made the same move on S-03 with the reasoning written out, so this is that precedent applied
+rather than a new judgement.
+
+The third was the **documented sign-in race**: my helper returned before §4.3's branch settled, so a
+`goto` raced the session cookie and the closed-by-default gate correctly bounced it.
+`users-access.spec.ts` records the trap in as many words, and the fix is its fix — wait for the
+landing.
+
+### The `auth_attempt` drain is now a per-run ritual, and that is worth naming
+
+Two gate runs in this task failed the api e2e on a fixed-address `register`, and both times the
+cause was §12.5.6's window rather than the code — the second drain removed **365** rows. The browser
+suite registers and signs in dozens of actors per run, and this task's own suites added more, so the
+table now fills within a single day's work rather than over three runs as `apps/api/CLAUDE.md`
+describes. The remedy is unchanged and takes a second; what has changed is how often it is needed.
+
+Verified: `pnpm gates:clean`, exit 0 — 591 api e2e, 469 api unit, 103/103 browser tests.

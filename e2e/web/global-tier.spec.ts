@@ -68,13 +68,16 @@ test('the tier names the active organization and carries the account corner (UX-
 
   // UX-2: visible at all times, and resolved from the session rather than from the address —
   // `/home` carries no organization segment and never will (AD-2).
-  await expect(page.getByText(organizationName)).toBeVisible();
+  //
+  // Scoped to the banner since task 30.5: S-05 names the same organization in its heading and its
+  // membership list too, and this test is about the *tier*.
+  await expect(page.getByRole('banner').getByText(organizationName)).toBeVisible();
   await expect(accountTrigger(page, email)).toBeVisible();
 
   // The same band on a screen in the other route group, which is what "every authenticated
   // screen" means: `(workspace)` and the two `(app)` screens outside it share one layout.
   await page.goto('/organization/users');
-  await expect(page.getByText(organizationName)).toBeVisible();
+  await expect(page.getByRole('banner').getByText(organizationName)).toBeVisible();
 
   // **Exactly one of each, and the count is the assertion.** `<header>` maps to `banner` unless it
   // descends from `article`/`aside`/`main`/`nav`/`section`, and `RecordShell` renders one — so

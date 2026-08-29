@@ -89,7 +89,13 @@ test('an invited user with an account joins from the browser (UC-15)', async ({ 
 
   // The exit S-03 promises: S-05 in the newly joined organization. The api pointed the session at
   // it inside the acceptance transaction, so there is nothing for the browser to switch.
-  await page.waitForURL('**/home');
+  await page.waitForURL('**/home?joined=created');
+
+  // **And the home says which grant happened** (task 30.5, closing a review note of 26 Aug 2026).
+  // Before this, all three grants landed identically and someone who already had access learned
+  // nothing from clicking; the `?joined=` parameter is what lets the landing differ.
+  await expect(page.getByText('Ați primit acces')).toBeVisible();
+  await expect(page.getByRole('heading', { name: organization.name, level: 1 })).toBeVisible();
 });
 
 /**
@@ -130,7 +136,7 @@ test('a signed-out invitee registers and joins with one email (FR-3, UC-15)', as
   // `?return=` brought them back to the invitation rather than to a generic home.
   await page.waitForURL(`**/invitation/${token}`);
   await page.getByRole('button', { name: 'Acceptați invitația' }).click();
-  await page.waitForURL('**/home');
+  await page.waitForURL('**/home?joined=created');
 });
 
 // ── The states that are designed, not error pages ───────────────────────────────────────────────
