@@ -184,6 +184,45 @@ How to do it:
 Resolving a question by citing this file is not resolving it. Where `CLAUDE.md` and a document
 disagree, the document wins and this file is what is wrong.
 
+## A rule is applied where it holds, not where it was found
+
+Added 29 Aug 2026, from a sweep run after one screen's refactor. Of seven findings, **six were
+conventions this file had already closed and applied incompletely** — each stopping at the boundary
+of whatever file, feature or app the original review happened to be reading:
+
+- The `action={null}` rule reached five screens in `apps/web` and not the console's sixth, because
+  that review was reading `apps/web`.
+- UX-135's formal register reached seven `identity` namespaces and neither `chrome` nor
+  `apps/admin`, which was still addressing operators as *tu* on every screen.
+- The outcome-to-notice rule was extracted from the two copies someone had noticed, and left in a
+  third that had it hidden inside a bespoke union.
+
+So when you fix an instance of a rule, **search for its shape before you close it**, and say in the
+build-log entry what you searched. *"Is this one right?"* and *"are there others?"* are different
+questions; answering the first correctly six times never once implied the second.
+
+Three habits make that search cheap, and each caught something the sweep would otherwise have missed:
+
+- **A test that works around an ambiguity is that ambiguity's only record.** `.first()`, `.last()`
+  and `getAllBy(…).length > 0` are findings, not locator style. Each was written by someone who met
+  a duplicate, resolved it locally and moved on — and between them they made the defect permanently
+  invisible, because the suite could no longer fail on it. Three separate cases surfaced in one day:
+  a password field rendered twice, two simultaneous alerts, two identically-named links. When you
+  fix the cause, tighten the locator to an exact count; when you *write* one, ask what it is
+  disambiguating and whether that thing should exist.
+- **Before merging N copies of a string, count the distinct values, not the occurrences.** Eight
+  namespaces declared `summaryTitle`; there were two values. The odd one is singular because its
+  form has one field, and folding it would have regressed that screen's copy with nothing failing.
+- **After a codemod, read the diff for comment lines** — `git diff -U0 | grep -E '^\+\s*(\*|//)'`.
+  A regex cannot tell a code-shaped example inside a docblock from an instance: a sweep over
+  `intent="…"` rewrote the sentence in `callout.tsx` that explains the literal still compiles,
+  destroying the point it was making.
+
+**Fix the sites first, then turn the gate on.** Every rule this repository enforces mechanically was
+added that way — the boundary rules, the two vocabulary selectors, and the third — so the gate
+starts green and every later finding is new code rather than a backlog nobody can distinguish from
+a regression.
+
 ## Architectural invariants (violating these is expensive to undo)
 
 - **Billing and compliance core are separate bounded contexts** — separate PG schemas, no cross-schema
@@ -688,20 +727,33 @@ while `'a sentence with separators'` × 3 is caught. So it covers message keys, 
 prose — and misses precisely the bare `'unverified'`/`'worker'`/`'expired'` tokens most of this
 convention is about. Do not read its green gate as coverage of the convention.
 
-**Two `no-restricted-syntax` selectors cover that gap** (same date, `eslint.config.mjs`), by
-matching the *shape* a vocabulary takes rather than how often a value repeats — which is what the
+**Three `no-restricted-syntax` selectors cover that gap** (`eslint.config.mjs`), by matching the
+*shape* a vocabulary takes rather than how often a value repeats — which is what the
 `MODE === 'worker'` case needed, being one comparison per file across five files:
 
 - **a union of string literals**, as a type alias or a property's type → declare the `as const`
-  object and derive. Deriving changes no caller: the derived type is the same union, so
-  `variant="primary"` keeps compiling, and the set gains a runtime value to iterate.
+  object and derive. Deriving changes no caller: the derived type is the same union, so a bare
+  literal still type-checks everywhere it did, and the set gains a runtime value to iterate.
 - **a comparison against a string literal** → compare against a member instead.
+- **a JSX attribute whose value is a string literal** — `intent`, `variant`, `tone` → write the
+  member. **Added 29 Aug 2026, after a sweep found 39 of these against a green gate.** The first
+  two selectors match a *declaration* and a *comparison*, and a JSX attribute is neither, so
+  `intent="error"` passed while `CALLOUT_INTENT` sat exported beside it. Nothing else could see
+  them either: TypeScript is right — the derived type **is** the union of literals — and
+  `sonarjs` is blind to a single word of word-characters at any repetition count.
 
-Three things are deliberately *not* matched, each because it is not a vocabulary: a `typeof`
-check, `x === ''` (a length test — the `alt` rule takes the same view), and the key unions in
-`Pick<T, 'a' | 'b'>` / `Omit<T, 'a'>`, which select property names and have no `as const` form.
-Turning the pair on flagged 17 sites and all 17 are now fixed, so the gate starts green and any
-new finding is new code. Tests are exempt, per the exception above.
+**The attribute names are an allowlist, and extending it is a decision.** A prop belongs there only
+where this design system exports the vocabulary it takes. `align` is the counter-example that
+shaped the rule: `COLUMN_ALIGN` exists, but `language-switcher.tsx` passes `align="end"` to Radix's
+`DropdownMenu.Content`, whose values are Radix's — flagging it would demand a member of an object
+that does not describe it.
+
+Four things are deliberately *not* matched, each because it is not a vocabulary: a `typeof` check,
+`x === ''` (a length test — the `alt` rule takes the same view), the key unions in
+`Pick<T, 'a' | 'b'>` / `Omit<T, 'a'>`, which select property names and have no `as const` form, and
+any JSX attribute outside that allowlist. **Each selector was turned on only after its own sites
+were fixed** — 17 for the first two, 39 for the third — so the gate starts green and any new
+finding is new code. Tests are exempt, per the exception above.
 
 ### An application-boundary call takes one object, never positional parameters
 

@@ -137,6 +137,21 @@ in practice one that **navigates**, like the lockout's reset link. `confirm-emai
 `accept-invitation` are the correct shape and were left alone: they use `problemAction` as the
 *label of a link*, which is the legitimate case, not the defect.
 
+**The rule binds both front ends, and this file's scope is why that had to be discovered twice.**
+A sweep on 29 Aug 2026 found a sixth site in `apps/admin` — `realm.signIn.problemAction` was
+*"Verifică datele introduse și încearcă din nou"*, the same clause verbatim — untouched because the
+27 Aug review was reading `apps/web`. The same sweep found the console had never had UX-135's
+formal register applied either. When a rule here is about `Callout`, `ApiOutcome` or catalogue copy,
+it is a rule about the console too; the root `CLAUDE.md`'s "A rule is applied where it holds"
+carries the general form.
+
+**The outcome-to-notice translation itself lives in `src/lib/notice.ts`** — `successNotice`,
+`failureNotice` and `noticeFromOutcome`, pure and copy-free. It exists because three screens had
+grown their own copy of the same per-member RFC 9457 fallback and two had already drifted. Reach
+for it whenever a screen holds an outcome in state; render `problem.title ?? …` inline only where
+the "what now" is a **node** that navigates, which `Notice.action: string | null` deliberately
+cannot hold.
+
 **Read a provider through the contract's enum, never as a `string`.** `providerLabel` and
 `providerGlyph` take `SocialProvider`, so an unnamed provider is a compile error at their `Record`
 rather than a raw slug rendered into a sentence. `features/credentials/credentials.ts` **re-exports**
@@ -186,7 +201,7 @@ src/
 ├─ shared/         chrome owned by no single feature (SiteFooter) — mirrors apps/admin/src/shared
 ├─ server/         server-only: session, api-client, data/
 ├─ client/         browser-only: autosave (IndexedDB queue), polling
-└─ lib/            env, pagination, session-cookie
+└─ lib/            env, pagination, session-cookie, routes, route-access, notice
 ```
 
 Route groups carry no URL segment, which is the whole reason there are four:
@@ -308,6 +323,18 @@ conditional render, which is how it ends up half-suppressed on one screen.
   catalogues are bundled: they are reachable from any import, so the only thing keeping them out
   of the client bundle is this deliberate `null` plus scoped providers below it.
 
+  **So adding a top-level namespace is not a catalogue edit — it is an edit to every scoped
+  provider whose subtree reads it** (29 Aug 2026). Nothing types that relationship; the failure is
+  a runtime `MISSING_MESSAGE` in every client component below, and a unit spec that mounts its own
+  provider needs the same addition. `forms` — `show`, `hide`, `summaryTitle` — is the namespace for
+  strings the **form layer** needs that `packages/ui` cannot own (UX-79: it owns no text) and no
+  screen owns either, because every screen with a form needs the same words. Before it existed, its
+  three strings were declared per feature and reached by borrowing: an alias named `tPolicy` that
+  read no policy, and this app's workspace layout hand-assembling a two-key fragment of
+  `identity.register`. **A layout synthesising part of another screen's namespace is the tell** that
+  a string does not live where it belongs. `identity.unreachable` is the outstanding case and is
+  *not* a `forms` string — the workspace layout records that its honest home is `chrome`.
+
 - **Formatting has one home.** `src/i18n/formats.ts` declares named formats; components reach
   them by name through `useFormatter()`. `toFixed`, `toLocaleString` and `new Intl.*Format` are
   lint errors, because NFR-26's stated verification is a static analysis rule.
@@ -364,6 +391,28 @@ conditional render, which is how it ends up half-suppressed on one screen.
   reducer as **one event carrying the outcome** — `ACTION_SETTLED` with the notice already built —
   rather than as a branch that dispatches two different actions, which puts the outcome-reading in
   the component where the rest of the wire handling lives.
+
+- **A context provider wraps the screen, not one region of it** (29 Aug 2026). `AccessProvider`
+  was rendered inside `AccessBoard`, so S-16's invite panel — `AccessBoard`'s sibling — kept its own
+  `useState` for the same thing the reducer already held. Two consequences, and the first is
+  described verbatim in the comment on the branch that prevents it: a settled invite notice survived
+  an unrelated row action starting, and two settled outcomes could show at once. **A provider around
+  part of a screen will invite the rest of the screen to keep state of its own**, and the sibling's
+  copy is invisible to every test the provider's own region has.
+
+  Where two regions genuinely must render the outcome in different places, put the *place* in the
+  state — `NOTICE_REGION` and a `PlacedNotice` — rather than giving each region its own value. One
+  value keeps "two outcomes at once" unrepresentable; the region keeps the copy honest, and here it
+  had to: the invite refusal reads *"find the person in the list above"*, which is only true
+  rendered below the list.
+
+- **A callback that takes both an outcome and what-success-says makes every caller supply a dead
+  argument** (29 Aug 2026). S-28's sections were handed `onSettled(outcome, success)`, so each
+  imported `API_OUTCOME`, read the discriminator itself, and then passed success copy on branches
+  where the outcome was provably a failure — three such call sites in one file. Invert it: the
+  section says what to run and what a success *means* (`perform({ section, action, onSuccess })`),
+  and the container owns the refusal. No section imports the outcome vocabulary now. The smell is a
+  parameter only one branch of the callee reads.
 
 - **A form field is `@easyesg/ui/forms`, not `TextField` + `register`.** Since 24 Aug 2026 the
   bound controls take `control` and `name` and derive the rest: `<FormTextField control={control}
