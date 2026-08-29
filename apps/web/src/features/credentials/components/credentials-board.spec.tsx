@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
@@ -93,6 +93,31 @@ describe('CredentialsBoard', () => {
     // The defect: the screen used to add "Încercați din nou." underneath, which on a throttle
     // refusal contradicts the sentence above it outright.
     expect(alert).not.toHaveTextContent(/Încercați din nou/u);
+  });
+
+  it('names what happened when the recovery codes run out, and offers the fix once', () => {
+    draw({
+      ...READY,
+      factor: {
+        status: SECTION_READ.READY,
+        value: { enrolled: true, recoveryCodesRemaining: 0 },
+      },
+    });
+
+    // UC-195's failure mode, and a designed state rather than a count of nought: recovery codes
+    // are the way in when the authenticator is unavailable, so zero of them means no way in.
+    // `ATTENTION` announces politely, hence `status` rather than `alert`.
+    const notice = screen.getByRole('status');
+    // The title said "Verificare în doi pași" until 29 Aug 2026 — NFR-79's "what happened" filled
+    // with the name of the region the reader was already looking at.
+    expect(notice).toHaveTextContent(ro.identity.credentials.factor.noCodesTitle);
+    expect(notice).toHaveTextContent(ro.identity.credentials.factor.noCodesBody);
+
+    // The re-issue control lives INSIDE the callout and nowhere else: §11.5 requires the third
+    // part, and a second button beside it would ask the reader which one to trust.
+    const reissue = ro.identity.credentials.factor.reissue;
+    expect(screen.getAllByRole('button', { name: reissue })).toHaveLength(1);
+    expect(within(notice).getByRole('button', { name: reissue })).toBeVisible();
   });
 
   it('makes only the acting section inert', async () => {

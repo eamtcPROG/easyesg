@@ -5520,3 +5520,39 @@ fail.
 
 The e2e locator lost its `.first()` for the same reason it did on S-16 earlier today: a suite that
 tolerates two of something can never report three.
+
+## The warning that named the region instead of the news · 2026-08-29
+
+S-28's factor section draws a designed state when an enrolled account has spent every recovery
+code: a callout with the re-issue button inside it, deliberately, so §11.5's third part and the
+control are the same thing rather than two competing offers. Its title was `t('heading')` —
+*"Verificare în doi pași"* — which is the name of the section the reader is already inside.
+
+So NFR-79's three parts read: **what happened** = the name of this region; **so what** = *"Activată,
+dar nu mai aveți coduri de recuperare. Generați altele acum, cât timp aveți acces"*, which was
+carrying the news, the consequence and a duplicate of the button's own instruction; **what now** =
+the button.
+
+The body was doing three jobs because the title was doing none. Split into `noCodesTitle` and
+`noCodesBody`, matching the convention the rest of that namespace already follows
+(`enabledTitle`/`enabledBody`, `codesTitle`/`codesBody`) — `noCodes` had been the one entry not
+paired.
+
+**The consequence is now stated, and it comes from UC-195.** Recovery codes are how a person signs
+in *when the device holding the secret is unavailable*, so zero of them does not mean "a count is
+low", it means the second factor has become a single point of failure on one device. The body says
+that: two-step verification stays on, and if you lose the authenticator there is no way back into
+the account. The old wording implied it with *"cât timp aveți acces"* — while you still have
+access — which is the consequence as a subordinate clause in the sentence telling you what to do.
+
+### The state had no test
+
+Enrolled with zero codes is reachable only by spending ten recovery codes, so no browser journey
+goes there, and nothing covered it. `credentials-board.spec.tsx` now renders it from a fixture and
+pins two things: the title says what happened, and there is **exactly one** re-issue button. The
+second is the assertion that guards the design — the component deliberately suppresses the ordinary
+re-issue control while the callout carries it, and a change that showed both would leave a reader
+choosing between two identical buttons. `ATTENTION` announces politely, so the query is `status`
+rather than `alert`.
+
+That closes the last of the two design calls raised by the sweep.

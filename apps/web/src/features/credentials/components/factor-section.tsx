@@ -181,14 +181,17 @@ function FactorBody({ factor }: { readonly factor: TotpState }) {
       {exhausted ? (
         <Callout
           intent={CALLOUT_INTENT.ATTENTION}
-          title={t('heading')}
+          // What HAPPENED, not what section this is. It read `t('heading')` — "Verificare în doi
+          // pași" — so NFR-79's first part named the region the reader was already looking at,
+          // and the consequence had to carry the news as well as the news's meaning.
+          title={t('noCodesTitle')}
           action={
             <Button type="button" busy={busy} onClick={reissue}>
               {t('reissue')}
             </Button>
           }
         >
-          {t('noCodes')}
+          {t('noCodesBody')}
         </Callout>
       ) : null}
 
