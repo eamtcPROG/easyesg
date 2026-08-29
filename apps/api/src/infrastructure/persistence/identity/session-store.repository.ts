@@ -16,6 +16,7 @@ import type {
   SessionRevokedReason,
 } from '@api/modules/identity/session/models/session.model';
 import { CORE_DATA_SOURCE } from '../data-source';
+import { returnedRows } from '../returned-rows';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
 /**
@@ -97,9 +98,6 @@ const toAccount = (row: AccountRow): Account => ({
 
 const ACCOUNT_COLUMNS = 'id, email, status, locale, verified_at, created_at, updated_at';
 
-/** See `AccountStoreRepository.returnedRows` — TypeORM shapes `query()` results per SQL command. */
-const returnedRows = <T>(result: unknown): T[] =>
-  Array.isArray(result) && Array.isArray(result[0]) ? (result[0] as T[]) : (result as T[]);
 
 class SessionTransactionAdapter implements SessionTransaction {
   constructor(private readonly queryRunner: QueryRunner) {}

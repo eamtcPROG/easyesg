@@ -102,6 +102,16 @@ export const ProblemType = {
   EntitlementDenied: 'entitlement-denied',
   EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
   TenantContextMissing: 'tenant-context-missing',
+  /** UC-56 refused: another reporting period for the same entity already covers part of these
+   *  dates. Its own slug because S-14 must name the way out — adjust the dates, or edit the period
+   *  that already covers them — which the generic `conflict` cannot, and because overlapping
+   *  periods would make FR-45's "immediately preceding period" ambiguous (task 31.1). */
+  PeriodOverlaps: 'period-overlaps',
+  /** UC-56's precondition unmet: no taxonomy version is registered, so there is nothing to pin and
+   *  FR-66 cannot be satisfied. Refused rather than defaulted — a period pinned to a version
+   *  invented at the call site is exactly what DR-4 exists to prevent. Its own slug because it is
+   *  the one refusal on this route the caller cannot resolve themselves (task 31.1). */
+  TaxonomyVersionUnavailable: 'taxonomy-version-unavailable',
   PeriodLocked: 'period-locked',
   ReportNotEditable: 'report-not-editable',
   TaxonomyVersionSuperseded: 'taxonomy-version-superseded',

@@ -1949,6 +1949,211 @@
         ]
       }
     },
+    "/api/v1/periods": {
+      "get": {
+        "description": "Scoped to one entity because a period only means anything against one (FR-21). The active organization comes from the session, never from a parameter.",
+        "operationId": "PeriodsController_list",
+        "parameters": [
+          {
+            "name": "reportingEntityId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The entity’s periods.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ReportingPeriodResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "List the reporting periods of one entity, newest first",
+        "tags": [
+          "period"
+        ]
+      },
+      "post": {
+        "description": "The template and taxonomy versions are pinned by the system from the registered adoption (FR-66, DR-4) and the preceding period is linked automatically (FR-45) — neither is a field on this request, deliberately.",
+        "operationId": "PeriodsController_open",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenReportingPeriodRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The period opened.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportingPeriodResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The dates do not describe a period."
+          },
+          "404": {
+            "description": "No such entity in the active organization."
+          },
+          "409": {
+            "description": "The entity is archived, another period overlaps these dates, or no taxonomy version is registered to pin."
+          }
+        },
+        "summary": "Open a reporting period (UC-56)",
+        "tags": [
+          "period"
+        ]
+      }
+    },
+    "/api/v1/periods/{id}": {
+      "get": {
+        "operationId": "PeriodsController_view",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The period.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportingPeriodResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such period in the active organization."
+          }
+        },
+        "summary": "One reporting period, with its pinned versions",
+        "tags": [
+          "period"
+        ]
+      },
+      "patch": {
+        "description": "The pinned versions are not editable: DR-4 moves them only by an explicit migration run (FR-69), so no field on this request can name one.",
+        "operationId": "PeriodsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReportingPeriodRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The period as it now stands.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportingPeriodResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The dates do not describe a period."
+          },
+          "404": {
+            "description": "No such period in the active organization."
+          },
+          "409": {
+            "description": "Another period overlaps these dates."
+          }
+        },
+        "summary": "Edit the period shell",
+        "tags": [
+          "period"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -3669,6 +3874,168 @@
           "name": {
             "type": "string",
             "maxLength": 200
+          }
+        }
+      },
+      "LegalDateDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-01-01",
+            "description": "ISO 8601 calendar date. No time, no offset."
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Europe/Chisinau",
+            "description": "IANA zone that determines the date. Admitted against the runtime tz database."
+          }
+        },
+        "required": [
+          "date",
+          "timezone"
+        ]
+      },
+      "ReportingPeriodResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reportingEntityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fiscalYear": {
+            "type": "number",
+            "example": 2026
+          },
+          "periodStart": {
+            "$ref": "#/components/schemas/LegalDateDto"
+          },
+          "periodEnd": {
+            "$ref": "#/components/schemas/LegalDateDto"
+          },
+          "dueDate": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDateDto"
+              }
+            ]
+          },
+          "templateVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The EFRAG Digital Template release this period is pinned to (DR-4, FR-66)."
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The VSME taxonomy release this period is pinned to (DR-4, FR-66)."
+          },
+          "priorPeriodId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The immediately preceding period for the same entity, from which comparatives resolve (FR-45). Null for an entity’s first period."
+          },
+          "entitySnapshotId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The entity master data as it stood when this period was opened (FR-18)."
+          },
+          "createdAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC."
+          },
+          "updatedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC."
+          }
+        },
+        "required": [
+          "id",
+          "reportingEntityId",
+          "fiscalYear",
+          "periodStart",
+          "periodEnd",
+          "dueDate",
+          "templateVersion",
+          "taxonomyVersion",
+          "priorPeriodId",
+          "entitySnapshotId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "OpenReportingPeriodRequestDto": {
+        "type": "object",
+        "properties": {
+          "reportingEntityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fiscalYear": {
+            "type": "number",
+            "minimum": 1900,
+            "maximum": 2200,
+            "example": 2026
+          },
+          "periodStart": {
+            "$ref": "#/components/schemas/LegalDateDto"
+          },
+          "periodEnd": {
+            "description": "The last day IN the period, not the day after.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDateDto"
+              }
+            ]
+          },
+          "dueDate": {
+            "nullable": true,
+            "description": "When the report must be complete — a different fact from when the period ends, and what deadline notices count down to.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDateDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reportingEntityId",
+          "fiscalYear",
+          "periodStart",
+          "periodEnd"
+        ]
+      },
+      "UpdateReportingPeriodRequestDto": {
+        "type": "object",
+        "properties": {
+          "fiscalYear": {
+            "type": "number",
+            "minimum": 1900,
+            "maximum": 2200
+          },
+          "periodStart": {
+            "$ref": "#/components/schemas/LegalDateDto"
+          },
+          "periodEnd": {
+            "$ref": "#/components/schemas/LegalDateDto"
+          },
+          "dueDate": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDateDto"
+              }
+            ]
           }
         }
       },

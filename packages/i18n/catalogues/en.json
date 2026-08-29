@@ -99,6 +99,12 @@
     "entity-archived": {
       "title": "Entity archived"
     },
+    "period-overlaps": {
+      "title": "Overlapping periods"
+    },
+    "taxonomy-version-unavailable": {
+      "title": "Standard version unavailable"
+    },
     "consolidation-boundary-empty": {
       "title": "Consolidation boundary is empty"
     }
@@ -180,6 +186,12 @@
       "nace_code_unknown": "One of the activity codes you entered is not in the classifier for the organization’s country, so the change was not saved. Choose the codes from the list offered.",
       "archived": "The entity is archived, so its master data can no longer be changed. Its reports and exports remain available. Create a new entity if the activity continues in another form.",
       "consolidation_boundary_empty": "You chose consolidated reporting but named no subsidiary inside the boundary, so the change was not saved. Add the subsidiaries included, or report on an individual basis."
+    },
+    "period": {
+      "not_found": "That reporting period does not exist in this organization, so it could not be shown. Refresh the list to see the periods that do.",
+      "overlaps": "Another reporting period for this entity already covers part of the dates chosen, and two periods cannot overlap. Adjust the start and end dates, or edit the period that already covers them.",
+      "dates_invalid": "The dates given do not describe a period: the end falls before the start, or one of them is not a real calendar day. Check the days chosen and the timezone, then try again.",
+      "taxonomy_version_unavailable": "No version of the standard is registered on the platform, so the period cannot be opened — every report has to be tied to a specific version. Contact support; this is resolved on our side."
     }
   },
   "notification": {

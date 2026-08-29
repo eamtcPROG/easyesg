@@ -30,6 +30,7 @@ import {
 import { SESSION_REVOKED_REASON } from '@api/modules/identity/session/models/session.model';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
+import { returnedRows } from '../returned-rows';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
 /**
@@ -134,23 +135,6 @@ const isEmailUniqueViolation = (error: unknown): boolean => {
 };
 
 const ACCOUNT_COLUMNS = 'id, email, status, locale, verified_at, created_at, updated_at';
-
-/**
- * Normalises what `queryRunner.query()` returns, because **TypeORM shapes it differently per SQL
- * command** and the difference is invisible until it bites.
- *
- * `SELECT` and `INSERT ... RETURNING` yield the rows. `UPDATE ... RETURNING` and
- * `DELETE ... RETURNING` yield `[rows, rowCount]` — the driver builds `raw` with a switch on
- * `command`. So the same `RETURNING` clause reads as `rows[0].token_hash` after an INSERT and as
- * `undefined` after an UPDATE, with no error at the call site: the failure surfaces further down
- * as a `TypeError` on a property of something that was supposed to be a row.
- *
- * It cost one debugging cycle here, on `claimVerificationToken`, and would have cost another on
- * `markAccountVerified` immediately after. Every row-returning statement in this file goes through
- * this, so the next `UPDATE ... RETURNING` written here cannot reintroduce it.
- */
-const returnedRows = <T>(result: unknown): T[] =>
-  Array.isArray(result) && Array.isArray(result[0]) ? (result[0] as T[]) : (result as T[]);
 
 class AccountTransactionAdapter implements AccountTransaction {
   constructor(

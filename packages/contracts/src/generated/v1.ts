@@ -725,6 +725,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the reporting periods of one entity, newest first
+         * @description Scoped to one entity because a period only means anything against one (FR-21). The active organization comes from the session, never from a parameter.
+         */
+        get: operations["PeriodsController_list"];
+        put?: never;
+        /**
+         * Open a reporting period (UC-56)
+         * @description The template and taxonomy versions are pinned by the system from the registered adoption (FR-66, DR-4) and the preceding period is linked automatically (FR-45) — neither is a field on this request, deliberately.
+         */
+        post: operations["PeriodsController_open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/periods/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One reporting period, with its pinned versions */
+        get: operations["PeriodsController_view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit the period shell
+         * @description The pinned versions are not editable: DR-4 moves them only by an explicit migration run (FR-69), so no field on this request can name one.
+         */
+        patch: operations["PeriodsController_update"];
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -1461,6 +1506,70 @@ export interface components {
             /** @description The subsidiaries inside the boundary, as a whole collection — the same save semantics as `sites`. Recorded whatever the basis says: switching to `individual` leaves the list standing, and B1 reads it only when the basis is `consolidated`. */
             consolidationMembers?: components["schemas"]["ConsolidationMemberRequestDto"][];
             name?: string;
+        };
+        LegalDateDto: {
+            /**
+             * @description ISO 8601 calendar date. No time, no offset.
+             * @example 2026-01-01
+             */
+            date: string;
+            /**
+             * @description IANA zone that determines the date. Admitted against the runtime tz database.
+             * @example Europe/Chisinau
+             */
+            timezone: string;
+        };
+        ReportingPeriodResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            reportingEntityId: string;
+            /** @example 2026 */
+            fiscalYear: number;
+            periodStart: components["schemas"]["LegalDateDto"];
+            periodEnd: components["schemas"]["LegalDateDto"];
+            dueDate: components["schemas"]["LegalDateDto"] | null;
+            /**
+             * @description The EFRAG Digital Template release this period is pinned to (DR-4, FR-66).
+             * @example 2026-05-01
+             */
+            templateVersion: string;
+            /**
+             * @description The VSME taxonomy release this period is pinned to (DR-4, FR-66).
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+            /**
+             * Format: uuid
+             * @description The immediately preceding period for the same entity, from which comparatives resolve (FR-45). Null for an entity’s first period.
+             */
+            priorPeriodId: Record<string, never> | null;
+            /**
+             * Format: uuid
+             * @description The entity master data as it stood when this period was opened (FR-18).
+             */
+            entitySnapshotId: Record<string, never> | null;
+            /** @description Unix epoch milliseconds, UTC. */
+            createdAt: number;
+            /** @description Unix epoch milliseconds, UTC. */
+            updatedAt: number;
+        };
+        OpenReportingPeriodRequestDto: {
+            /** Format: uuid */
+            reportingEntityId: string;
+            /** @example 2026 */
+            fiscalYear: number;
+            periodStart: components["schemas"]["LegalDateDto"];
+            /** @description The last day IN the period, not the day after. */
+            periodEnd: components["schemas"]["LegalDateDto"];
+            /** @description When the report must be complete — a different fact from when the period ends, and what deadline notices count down to. */
+            dueDate?: components["schemas"]["LegalDateDto"] | null;
+        };
+        UpdateReportingPeriodRequestDto: {
+            fiscalYear?: number;
+            periodStart?: components["schemas"]["LegalDateDto"];
+            periodEnd?: components["schemas"]["LegalDateDto"];
+            dueDate?: components["schemas"]["LegalDateDto"] | null;
         };
         AdminChallengeResponseDto: {
             /**
@@ -3021,6 +3130,157 @@ export interface operations {
                 content: {
                     "application/problem+json": unknown;
                 };
+            };
+        };
+    };
+    PeriodsController_list: {
+        parameters: {
+            query: {
+                reportingEntityId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The entity’s periods. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["ReportingPeriodResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    PeriodsController_open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenReportingPeriodRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The period opened. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportingPeriodResponseDto"];
+                    };
+                };
+            };
+            /** @description The dates do not describe a period. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such entity in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The entity is archived, another period overlaps these dates, or no taxonomy version is registered to pin. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PeriodsController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The period. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportingPeriodResponseDto"];
+                    };
+                };
+            };
+            /** @description No such period in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PeriodsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReportingPeriodRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The period as it now stands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportingPeriodResponseDto"];
+                    };
+                };
+            };
+            /** @description The dates do not describe a period. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such period in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another period overlaps these dates. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

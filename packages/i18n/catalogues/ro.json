@@ -99,6 +99,12 @@
     "entity-archived": {
       "title": "Entitate arhivată"
     },
+    "period-overlaps": {
+      "title": "Perioade suprapuse"
+    },
+    "taxonomy-version-unavailable": {
+      "title": "Versiune a standardului indisponibilă"
+    },
     "consolidation-boundary-empty": {
       "title": "Perimetru de consolidare gol"
     }
@@ -180,6 +186,12 @@
       "nace_code_unknown": "Unul dintre codurile de activitate introduse nu figurează în clasificatorul țării organizației, așa că modificarea nu a fost salvată. Alegeți codurile din lista propusă.",
       "archived": "Entitatea este arhivată, iar datele ei de bază nu mai pot fi modificate. Rapoartele și exporturile ei rămân disponibile. Creați o entitate nouă dacă activitatea continuă sub altă formă.",
       "consolidation_boundary_empty": "Ați ales raportarea consolidată, dar nu ați indicat nicio filială în perimetrul de raportare, așa că modificarea nu a fost salvată. Adăugați filialele incluse sau alegeți raportarea individuală."
+    },
+    "period": {
+      "not_found": "Perioada de raportare indicată nu există în această organizație, așa că nu a putut fi afișată. Reîmprospătați lista pentru a vedea perioadele curente.",
+      "overlaps": "O altă perioadă de raportare a acestei entități acoperă deja o parte din intervalul ales, iar două perioade nu se pot suprapune. Ajustați data de început și data de sfârșit sau modificați perioada care le acoperă deja.",
+      "dates_invalid": "Datele introduse nu descriu o perioadă: sfârșitul cade înaintea începutului sau una dintre ele nu este o zi reală din calendar. Verificați zilele alese și fusul orar, apoi încercați din nou.",
+      "taxonomy_version_unavailable": "Nicio versiune a standardului nu este înregistrată în platformă, așa că perioada nu poate fi deschisă — fiecare raport trebuie legat de o versiune anume. Contactați echipa de asistență; se rezolvă de partea noastră."
     }
   },
   "notification": {

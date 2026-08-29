@@ -6,6 +6,7 @@ import {
   mintTotpSecret,
   totpEnrolmentUri,
 } from '@api/modules/platform/admin/domain/totp';
+import { returnedRows } from '@api/infrastructure/persistence/returned-rows';
 import { normaliseEmail } from '@api/modules/identity/account/domain/email-address';
 import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.model';
 
@@ -73,9 +74,8 @@ async function main(): Promise<void> {
           RETURNING email`,
         [email],
       );
-      // UPDATE … RETURNING arrives as [rows, count] (the store's returnedRows note).
-      const unlocked =
-        Array.isArray(result) && Array.isArray(result[0]) && result[0].length > 0;
+      // UPDATE … RETURNING arrives as [rows, count] — see `returnedRows`' own header.
+      const unlocked = returnedRows<{ email: string }>(result).length > 0;
       process.stdout.write(
         unlocked ? `${email}: unlocked\n` : `${email}: no such operator account\n`,
       );

@@ -56,9 +56,19 @@ export class FakeOrganizationStore implements OrganizationStore {
 
   updateProfile(patch: OrganizationProfilePatch, at: Date): Promise<Organization | null> {
     if (!this.row) return Promise.resolve(null);
-    // Spread, so a key absent from the patch is untouched and a key holding `null` overwrites —
-    // which is exactly the distinction the real `UPDATE` builds its assignment list from.
-    this.row = { ...this.row, ...patch, updatedAt: at };
+    // A key absent from the patch is untouched and a key holding `null` overwrites — exactly the
+    // distinction the real `UPDATE` builds its assignment list from.
+    //
+    // **Written as a filtered merge rather than a spread**, and the difference is not stylistic: a
+    // DTO class field declared `foo?: T` is an own property set to `undefined` under
+    // `useDefineForClassFields`, so `{ ...row, ...patch }` *erases* a stored value the patch never
+    // meant to name. `OrganizationStoreRepository.updateProfile` skips `undefined` explicitly, so a
+    // spread here would have modelled behaviour the real store does not have. Aligned with task
+    // 31.1, which hit that defect in code nothing modelled.
+    const defined = Object.fromEntries(
+      Object.entries(patch).filter(([, value]) => value !== undefined),
+    ) as Partial<Organization>;
+    this.row = { ...this.row, ...defined, updatedAt: at };
     return Promise.resolve(this.row);
   }
 }

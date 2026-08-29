@@ -34,3 +34,42 @@ export interface LegalDate {
   /** IANA zone that determined it, e.g. `Europe/Chisinau`. */
   timezone: string;
 }
+
+/**
+ * Whether a string names a zone the IANA database carries.
+ *
+ * **Beside `LegalDate` rather than in whichever module first needed one**, which is the rule
+ * CLAUDE.md states for operations over a shared vocabulary and the failure it describes for
+ * `toLocale`: retyped per caller, each copy locally correct, and no test able to see them diverge.
+ * Task 31.1 is the first consumer (reporting period boundaries) and task 57 is the second (invoice
+ * and credit-note dates), so the second copy was already scheduled.
+ *
+ * `Intl` is the check because it *is* the database the runtime carries — a hand-kept list would be
+ * a fourth copy of tzdata that ages against the two Node ships and Postgres holds. It throws a
+ * `RangeError` on an unknown zone, which is the only way to ask.
+ */
+export const isIanaTimeZone = (value: string): boolean => {
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Whether a value is a well-formed `LegalDate`: an ISO calendar date that **is the day it spells**,
+ * paired with a real zone.
+ *
+ * The round-trip is what makes it more than a regex. `2026-02-30` matches the shape and `Date`
+ * accepts it, rolling forward to 2 March — so a period boundary the user never typed would be
+ * stored, and a fiscal year would be settled by a silent correction. Comparing the parsed date's
+ * own ISO rendering back to the input is what refuses it.
+ */
+export const isLegalDate = (value: LegalDate): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value.date)) return false;
+  const parsed = new Date(`${value.date}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  if (parsed.toISOString().slice(0, 10) !== value.date) return false;
+  return isIanaTimeZone(value.timezone);
+};

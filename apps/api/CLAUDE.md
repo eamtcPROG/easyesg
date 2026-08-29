@@ -201,6 +201,36 @@ Four things about it that are load-bearing:
   `modules/platform/taxonomy/taxonomy-artefact.spec.ts` asserts the shipped artefacts produce no such
   line — a fail-soft design is only safe when a gate reads the log.
 
+Task 31.1 adds **the reporting period** (UC-56; FR-21, FR-45, FR-66): `core.reporting_period` with
+`GET/POST /api/v1/periods` and `GET/PATCH /periods/{id}`, reads open to every member and writes
+`@RequiresRole(OA)`. Four things about it are load-bearing:
+
+- **It is the first table carrying a legal date**, so §7.9's `<field>`/`<field>_tz` pairing is real
+  and the invariant gate's rule finally fires. **`::text` on every date column in the repository**:
+  the driver maps `date` to a JavaScript `Date`, so `2026-12-31` read in a zone behind UTC comes back
+  as the 30th — NFR-34's exact failure, reintroduced at the boundary meant to uphold it.
+- **The pin is `TAXONOMY_REGISTRY.pinFor({ on: periodStart.date })`** — never `max(registeredVersions)`,
+  and never *today*. A backfilled 2025 period must pin what was in force then, and every assertion
+  about the pin passes either way, which is why the fake registry records what it was asked.
+- **Two periods for one entity may not overlap** (`EXCLUDE USING gist`, `'[]'` bounds because
+  `period_end` is a day *inside* the period), and the **prior-period link is maintained**: creating a
+  period repoints the neighbour that should now follow it, or a backfilled year leaves its successor
+  with a null prior forever and FR-45's comparatives are silently absent.
+- **The entity snapshot is taken here and referenced by the period**, not by the report (§7.2 as
+  amended, §12.5.6). Its payload is assembled in SQL with `to_jsonb`, so it is a consistent read of
+  the same transaction.
+
+**Never `{ ...stored, ...patch }` with a DTO** (task 31.1). A class field declared `foo?: T` is an own
+property set to `undefined` under `useDefineForClassFields`, so the spread *erases* fields the patch
+never named rather than leaving them. Merge field by field, and compare an optional-nullable to
+`undefined` rather than coalescing — `null` usually means *clear this*, which `??` would silently
+undo. The repositories' `if (value === undefined) continue` loops were always right; the fakes
+modelling them were not, until this task.
+
+**`returnedRows` is one module now, in `persistence/`.** `UPDATE`/`DELETE ... RETURNING` answer
+`[rows, count]` where `SELECT`/`INSERT` answer rows. It had been written four times — twice as a
+declaration, twice hand-rolled inline — before task 31.1 needed a fifth.
+
 **Not built yet, and do not assume otherwise:** two of the four edge guards — `EntitlementGuard`
 (task 54) and `AdminRealmGuard` (**task 67.3**, assigned 27 Aug 2026: it guards nothing until A-02
 exists, since the only admin routes today are task 23's sign-in handshake and that is already behind

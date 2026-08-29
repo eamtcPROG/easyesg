@@ -197,6 +197,15 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /entities': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'PATCH /entities/:entityId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'POST /entities/:entityId/archive': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── Reporting periods (UC-56). The same split as the entity rows above and for the same reason:
+  // UC-56 names the OA as the actor who *opens* a period, and a Contributor works inside one — the
+  // wizard has to name which period it is filling in, so refusing them the read would put their own
+  // workspace out of reach.
+  'GET /periods': ALL_MEMBERS,
+  'GET /periods/:id': ALL_MEMBERS,
+  'POST /periods': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'PATCH /periods/:id': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
 };
 
 type Constructor = new (...args: never[]) => object;

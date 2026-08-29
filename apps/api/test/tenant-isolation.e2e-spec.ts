@@ -588,6 +588,14 @@ describe.each([
               VALUES ($1, $2, 'Sediu')`,
         [organizationId, entityId],
       );
+      await runner.query(
+        `INSERT INTO core.reporting_period (organization_id, reporting_entity_id, fiscal_year,
+                                            period_start, period_start_tz, period_end, period_end_tz,
+                                            template_version, taxonomy_version)
+              VALUES ($1, $2, 2026, '2026-01-01', 'Europe/Chisinau', '2026-12-31', 'Europe/Chisinau',
+                      '2026-05-01', '2026-05-01')`,
+        [organizationId, entityId],
+      );
     }
   });
 
@@ -602,13 +610,38 @@ describe.each([
     return rows.length;
   };
 
-  it('shows a tenant only its own entities and sites', async () => {
+  it('shows a tenant only its own entities, sites and periods', async () => {
     await bind(runner, { organizationId: ORG_A });
     expect(await visible('core.reporting_entity')).toBe(1);
     expect(await visible('core.site')).toBe(1);
+    expect(await visible('core.reporting_period')).toBe(1);
 
     await bind(runner, { organizationId: ORG_B });
     expect(await visible('core.reporting_entity')).toBe(1);
+    expect(await visible('core.reporting_period')).toBe(1);
+  });
+
+  /**
+   * The exclusion constraint sees every row, RLS or not — constraints are enforced below row
+   * security by design. What makes that safe rather than a cross-tenant leak is the composite
+   * foreign key: a period's entity is tied to its own tenant, so two tenants can hold identically
+   * dated periods and never collide. Asserted because the alternative — an overlap refusal that
+   * revealed another tenant's filing calendar — is exactly the kind of thing nobody would notice.
+   */
+  it('lets two tenants hold identically dated periods, which the exclusion constraint does not confuse', async () => {
+    await bind(runner, { organizationId: ORG_A });
+    const rows = (await runner.query(
+      `SELECT period_start::text AS period_start FROM core.reporting_period`,
+    )) as { period_start: string }[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].period_start).toBe('2026-01-01');
+
+    await bind(runner, { organizationId: ORG_B });
+    const others = (await runner.query(
+      `SELECT period_start::text AS period_start FROM core.reporting_period`,
+    )) as { period_start: string }[];
+    expect(others).toHaveLength(1);
+    expect(others[0].period_start).toBe('2026-01-01');
   });
 
   it('returns nothing for another tenant’s entity asked for by id', async () => {

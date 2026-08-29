@@ -24,6 +24,7 @@ import { EntityIdentifiers1788739200000 } from './1788739200000-entity-identifie
 import { ReportingEntity1788825600000 } from './1788825600000-reporting-entity';
 import { ConsolidationScope1788912000000 } from './1788912000000-consolidation-scope';
 import { ReportContact1788998400000 } from './1788998400000-report-contact';
+import { ReportingPeriod1789084800000 } from './1789084800000-reporting-period';
 import { ProviderIdentityUnlink1788393600000 } from './1788393600000-provider-identity-unlink';
 
 /**
@@ -68,4 +69,5 @@ export const migrations = [
   ReportingEntity1788825600000,
   ConsolidationScope1788912000000,
   ReportContact1788998400000,
+  ReportingPeriod1789084800000,
 ];

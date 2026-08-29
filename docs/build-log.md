@@ -6608,3 +6608,118 @@ refused it. Type-aware rules on an untyped file produced 286 `no-unsafe-*` error
 vocabulary selectors. Ignoring it was the alternative, and the ignores block rejects it in terms — *a
 source file that ends up unlinted is the failure this rule set exists to prevent* — which is the
 right rule for 300 lines of logic that generate a shipped artefact.
+
+---
+
+## Task 31.1 — Reporting periods · 2026-08-29
+
+`core.reporting_period`, `GET/POST /api/v1/periods`, `GET/PATCH /periods/{id}`. The first table in
+the schema to carry a legal date, which fires a schema-invariant rule that has been sitting unfired
+since task 11 with a comment saying it "first bites in task 31".
+
+### Three decisions taken before any code, all on §12.5.6's task-31.1 rows
+
+Raised as one batch, because each changed the work and none was settled by the document set.
+
+**The entity snapshot is referenced by the period.** §7.2 said *"taken at period open and referenced
+by the report"* — two halves owned by different tasks, since 31.3 creates `core.report`. Read
+literally, 31.1 writes a row nothing points at for two tasks. The determining event is period open,
+so the period is what the snapshot belongs to; §7.2 amended to say so.
+
+**The prior-period link is maintained, not merely set.** Set-once is the literal reading of UC-56
+step 4 and has a failure worth naming: open FY2026 first, backfill FY2025 afterwards, and FY2026
+keeps a null prior **forever** — so D-3's comparatives are silently absent in the second reporting
+year with nothing failing anywhere. Creating a period now repoints the neighbour that should follow
+it. One `UPDATE`.
+
+**Periods may not overlap, and fiscal year is deliberately not unique.** An `EXCLUDE USING gist`
+over `(reporting_entity_id, daterange(period_start, period_end, '[]'))`; `btree_gist` has been
+installed since task 11 for exactly this. The reason is the row above — overlapping periods make
+*"the immediately preceding period"* ambiguous, so a report's comparative would depend on insertion
+order. The `'[]'` bound is load-bearing: `period_end` is the last day *in* the period, so the
+default half-open `'[)'` would let a second period start on 31 December. Uniqueness on
+`(entity, fiscal_year)` was declined — a fiscal-year change produces a stub period and a new full
+one that can share a year label without overlapping.
+
+### `::text` on every date column, which is the whole of NFR-34 in one line
+
+The driver maps a `date` column to a JavaScript `Date` — an instant. Read back in a zone behind UTC,
+`2026-12-31` becomes the 30th: the exact failure NFR-34 exists to prevent, reintroduced at the
+boundary meant to uphold it. Selecting the text keeps a calendar day a calendar day the whole way
+out, and `periods.e2e-spec.ts` reads the same period under three `process.env.TZ` values to hold it.
+
+The same distinction is visible inside one DTO and worth pointing at: `createdAt` is converted to
+epoch milliseconds and `periodStart` is not. That is OQ-50 and NFR-34 side by side.
+
+### The pin asks about the period's start date, not about today
+
+`pinFor({ on: periodStart.date })`. A period backfilled for 2025 must pin what was in force *then*;
+asking about today would pin a 2025 filing to a taxonomy adopted in 2027, and **every assertion about
+the pin would still pass** — which is why the fake registry records what it was asked and the spec
+asserts on that rather than on the answer.
+
+### Two defects the specs found, and the searches that followed
+
+**A DTO spread erases rather than merges.** `admitDates({ ...current, ...patch })` crashed on a
+patch naming only the due date. A class field declared `foo?: T` is an *own property set to
+`undefined`* under `useDefineForClassFields`, so the spread overwrote the stored start and end with
+nothing. Merged field by field instead — and `dueDate` is compared to `undefined` rather than
+coalesced, because `null` is a meaningful patch value that clears it.
+
+Searched for the shape: three other sites, all `{ ...row, ...patch }` in **test fakes**. Both real
+stores skip `undefined` explicitly, so the fakes were modelling behaviour the thing they stand in
+for does not have — the divergence CLAUDE.md names for a fake that is worth writing. Both aligned.
+
+**`returnedRows` was already written four times.** Needing it for the period's `UPDATE ... RETURNING`
+is what surfaced it: `account-store` and `session-store` each declared the function — the second with
+a comment pointing at the first — while `organization-store` and `admin:provision` hand-rolled the
+same test inline. Extracted to `persistence/returned-rows.ts` and all five sites routed through it,
+rather than writing a fifth copy.
+
+### Measured, not reasoned — and it corrected a comment
+
+`EXPLAIN` with `enable_seqscan = off`, per the checklist:
+
+- The period list uses `reporting_period_entity_idx` with an incremental sort for the `id` tiebreak.
+- **The prior-period lookup does not use it**, and needs nothing of its own: it orders by
+  `period_end` where that index orders by `period_start`, so the planner reaches the entity's rows
+  through the **exclusion constraint's own GiST index** — which indexes `reporting_entity_id` for the
+  `WITH =` operand — and sorts the handful it finds. A constraint doubling as an access path was not
+  something I expected to find.
+- `reporting_period_prior_idx` shipped with a comment naming the wrong reader. Nothing in the
+  application selects on `prior_period_id`; what needs it is PostgreSQL's own `ON DELETE SET NULL`,
+  which must find every referencing row when an entity cascade removes its periods one by one. The
+  comment now says that.
+
+### Verification
+
+- `pnpm gates` and `pnpm gates:clean` green. 16 e2e tests over real HTTP and real SQL, 14 unit tests
+  with no database.
+- **The split between the two is deliberate.** The unit spec holds the rules that are the
+  application's — which date the registry is asked about, what counts as a real calendar day, what a
+  partial patch validates against. The overlap refusal, the linkage maintenance and the snapshot are
+  the *database's*, asserted only in the e2e suite, because a fake asserting them would be asserting
+  the fake.
+- `tenant-isolation.e2e-spec.ts` extended, including a test that two tenants may hold identically
+  dated periods — the exclusion constraint sees every row regardless of RLS, and what keeps that
+  from being a cross-tenant oracle is the composite foreign key tying a period's entity to its own
+  tenant.
+
+### `nestjs-best-practices`, read against the diff
+
+Applied: `db-use-transactions` (the snapshot, insert and relink are one transaction by P-8),
+`api-use-dto-serialization`, `security-validate-all-input`, `di-use-interfaces-tokens`,
+`perf-optimize-database` (measured above).
+
+**`arch-module-sharing` (CRITICAL) is applied and declined in the same file, which is the
+interesting part.** `PeriodModule` *imports* `TaxonomyModule` rather than re-providing the registry,
+because that provider holds a cache keyed on the configuration revision and a second instance would
+warm a second copy over 143 elements and 973 waste members. It *does* re-provide
+`REPORTING_ENTITY_STORE`, following `EntityModule`'s precedent, because a repository over the request
+`QueryRunner` holds no state — a second registration is a second reference to the same behaviour, and
+importing `EntityModule` would give this one a dependency on routes it never calls. Same rule, two
+answers, and the discriminator is whether the provider is stateful.
+
+Declined by name: `error-throw-http-exceptions`, as standing policy — this codebase forbids an
+`HttpException` from domain or use-case code, and `PeriodOverlapsError` and its siblings are
+`DomainError`s carrying message keys.

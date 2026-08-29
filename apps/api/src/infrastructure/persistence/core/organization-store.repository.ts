@@ -4,6 +4,7 @@ import type {
   Organization,
   OrganizationProfilePatch,
 } from '@api/modules/core/organization/models/organization.model';
+import { returnedRows } from '../returned-rows';
 import { TenantRepository } from '../tenant-repository';
 import { AmbiguousBoundOrganizationError } from '@api/modules/core/organization/errors/organization.errors';
 
@@ -189,14 +190,14 @@ export class OrganizationStoreRepository
     parameters.push(at);
     assignments.push(`updated_at = $${parameters.length}`);
 
-    // `UPDATE ... RETURNING` gives `[rows, rowCount]` rather than the rows — TypeORM builds `raw`
-    // with a switch on the driver's `command`, so the identical clause reads differently after an
-    // INSERT. Normalised here rather than remembered; see `returnedRows` in the identity stores.
-    const result = await this.manager.query<[{ id: string }[], number]>(
-      `UPDATE core.organization SET ${assignments.join(', ')} RETURNING id`,
-      parameters,
+    // `UPDATE ... RETURNING` gives `[rows, rowCount]` rather than the rows, so it goes through
+    // `returnedRows` like every other row-returning statement (see that module's header).
+    const rows = returnedRows<{ id: string }>(
+      await this.manager.query(
+        `UPDATE core.organization SET ${assignments.join(', ')} RETURNING id`,
+        parameters,
+      ),
     );
-    const [rows] = result;
     if (rows.length === 0) return null;
 
     // **Re-read rather than `RETURNING` the whole row**, because the attribution this write just
