@@ -1,3 +1,11 @@
+/** One activity code and its wording, as the classifier registers them (FR-17, §9.6). */
+export interface NaceCode {
+  /** CAEM Rev.2, 1:1 with NACE Rev.2 to four characters — `A`, `01`, `01.1`, `01.11`. */
+  readonly code: string;
+  /** Locale tag → the name in that language. Not every locale need be present. */
+  readonly labels: Readonly<Record<string, string>>;
+}
+
 /**
  * The two configuration vocabularies the organization aggregate is validated against (AD-4, §7.2).
  *
@@ -45,6 +53,21 @@ export interface OrganizationVocabulary {
    * operate there, rather than operating there with nothing permitted.
    */
   naceCodesFor(countryCode: string): ReadonlySet<string> | null;
+
+  /**
+   * The same classifier **with its wording**, for the picker S-13 offers (task 30.4.1).
+   *
+   * **Two methods over one payload, and the split is the access pattern rather than tidiness.**
+   * `naceCodesFor` answers membership and is asked it once per code on every entity write, which is
+   * why it is a `Set`. This is asked once per search and needs to be *scanned*, so it is a list —
+   * and returning a Set of codes here would send the caller back to the payload for every label.
+   *
+   * Labels are keyed by locale. **A locale the entry does not carry is not an error**: OQ-43's
+   * stated trade is that a value registered ahead of its wording renders what there is, so the
+   * caller falls back rather than hiding the code. Null when the country registers no classifier,
+   * matching the two methods above.
+   */
+  naceClassifierFor(countryCode: string): readonly NaceCode[] | null;
 
   /**
    * FR-14's organization types, `direct_sme` alone at MVP.

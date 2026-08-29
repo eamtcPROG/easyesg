@@ -6,7 +6,7 @@ import {
   ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_KIND,
   ORGANIZATION_RELATIONSHIP_TYPE_CONFIG_SCOPE,
 } from '../constants/organization.constants';
-import type { OrganizationVocabulary } from '../interfaces/organization-vocabulary.interface';
+import type { NaceCode, OrganizationVocabulary } from '../interfaces/organization-vocabulary.interface';
 
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
@@ -77,15 +77,28 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
    * validates several codes would otherwise rebuild the set for each one. Keyed on the revision, so
    * a publication invalidates it without any invalidation logic: a new revision is a new key.
    */
-  private naceCache = new Map<string, { revision: number; codes: ReadonlySet<string> }>();
+  private naceCache = new Map<
+    string,
+    { revision: number; codes: ReadonlySet<string>; classifier: readonly NaceCode[] }
+  >();
 
-  naceCodesFor(countryCode: string): ReadonlySet<string> | null {
-    const scope = countryCode.toLowerCase();
+  /**
+   * Reads and validates the classifier payload once, for both readers below.
+   *
+   * **A malformed payload fails closed and logs once**, as the legal-form vocabulary does — an
+   * entity write would then admit no code for the country, which is loud rather than silent. The
+   * per-entry check is `Record<string, string>` because a label that is not a string would reach a
+   * screen as `[object Object]`, and an entry whose labels are unreadable is dropped rather than
+   * failing the whole classifier: one bad row must not remove 995 good ones from the picker.
+   */
+  private readNaceEntry(
+    scope: string,
+  ): { codes: ReadonlySet<string>; classifier: readonly NaceCode[] } | null {
     const entry = this.configurationStore.get({ kind: NACE_CODE_CONFIG_KIND, scope });
     if (!entry) return null;
 
     const cached = this.naceCache.get(scope);
-    if (cached?.revision === entry.revision) return cached.codes;
+    if (cached?.revision === entry.revision) return cached;
 
     const codes = entry.payload.codes;
     if (typeof codes !== 'object' || codes === null || Array.isArray(codes)) {
@@ -96,9 +109,34 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
       return null;
     }
 
-    const set: ReadonlySet<string> = new Set(Object.keys(codes));
-    this.naceCache.set(scope, { revision: entry.revision, codes: set });
-    return set;
+    const classifier: NaceCode[] = [];
+    // Narrowed before it is walked: `payload.codes` is `unknown` by the store's contract, and the
+    // shape check above proves only that it is a non-array object. Entering it as `Record<string,
+    // unknown>` is what keeps every value below a thing to test rather than an `any` to trust.
+    for (const [code, labels] of Object.entries(codes as Record<string, unknown>)) {
+      if (typeof labels !== 'object' || labels === null || Array.isArray(labels)) continue;
+      const readable = Object.entries(labels).filter(
+        (pair): pair is [string, string] => typeof pair[1] === 'string',
+      );
+      if (readable.length === 0) continue;
+      classifier.push({ code, labels: Object.fromEntries(readable) });
+    }
+
+    // Code order, once, here — so neither reader sorts and the picker's ordering is the
+    // classifier's own hierarchy rather than whatever `Object.entries` happened to yield.
+    classifier.sort((a, b) => (a.code < b.code ? -1 : a.code > b.code ? 1 : 0));
+
+    const value = { codes: new Set(Object.keys(codes)) as ReadonlySet<string>, classifier };
+    this.naceCache.set(scope, { revision: entry.revision, ...value });
+    return value;
+  }
+
+  naceCodesFor(countryCode: string): ReadonlySet<string> | null {
+    return this.readNaceEntry(countryCode.toLowerCase())?.codes ?? null;
+  }
+
+  naceClassifierFor(countryCode: string): readonly NaceCode[] | null {
+    return this.readNaceEntry(countryCode.toLowerCase())?.classifier ?? null;
   }
 
   relationshipTypes(): readonly string[] {

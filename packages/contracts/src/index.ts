@@ -134,6 +134,9 @@ export type CreateOrganizationRequest = components['schemas']['CreateOrganizatio
 export type UpdateOrganizationRequest =
   components['schemas']['UpdateOrganizationProfileRequestDto'];
 export type CountryLegalForms = components['schemas']['CountryLegalFormsResponseDto'];
+/** One activity code the S-13 picker offers — the key stored and the words it was chosen by
+ *  (FR-17, task 30.4.1). Searched server-side: the classifier is 996 entries in three languages. */
+export type NaceCodeMatch = components['schemas']['NaceCodeResponseDto'];
 /** FR-15's attribution line on S-15 — who last changed the profile, and when (task 30.3). */
 export type OrganizationChangeAttribution =
   components['schemas']['OrganizationChangeAttributionDto'];

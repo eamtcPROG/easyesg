@@ -189,6 +189,10 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // completing B1 from values that pre-populate from this record. Refusing an RC the read would put
   // the wizard's own source out of reach of the person filling it in. Writes stay OA.
   'GET /entities': ALL_MEMBERS,
+  // The activity picker (task 30.4.1). Every member, like the entity reads beside it and for the
+  // controller's stated reason: an RC completing B1 sees the entity, so refusing them the
+  // vocabulary it is classified by would make the wizard's own source unreadable to its author.
+  'GET /entities/nace-codes': ALL_MEMBERS,
   'GET /entities/:entityId': ALL_MEMBERS,
   'POST /entities': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'PATCH /entities/:entityId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,

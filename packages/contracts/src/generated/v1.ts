@@ -664,6 +664,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/entities/nace-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search the activity classifier registered for the organization’s country
+         * @description FR-17’s NACE code(s), offered rather than only validated. The classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2, and it is configuration (AD-4) — so the set moves without a redeploy. **This searches server-side and answers a bounded page**: the classifier is 996 entries across three languages, and shipping it to a browser to filter there is a payload no screen budget admits. The query matches a code by its digits — 10.71, 1071 and 10 71 are one query — and a label without regard to case or diacritics, because a reader types brutarie for brutărie. An empty query answers an empty list rather than an arbitrary slice of the classifier. Labels arrive in the request’s negotiated language.
+         */
+        get: operations["EntitiesController_searchNaceCodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/entities/{entityId}": {
         parameters: {
             query?: never;
@@ -1349,6 +1369,18 @@ export interface components {
             createdAt: number;
             /** @description Unix epoch milliseconds. */
             updatedAt: number;
+        };
+        NaceCodeResponseDto: {
+            /**
+             * @description CAEM Rev.2, 1:1 with NACE Rev.2 to four characters. Sections are one character, divisions two, groups four and classes five including the dot.
+             * @example 10.71
+             */
+            code: string;
+            /**
+             * @description The activity’s name in the request’s negotiated language, falling back to a language the classifier does carry rather than hiding the entry.
+             * @example Fabricarea pâinii; fabricarea prăjiturilor
+             */
+            label: string;
         };
         SiteRequestDto: {
             /**
@@ -2851,6 +2883,33 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    EntitiesController_searchNaceCodes: {
+        parameters: {
+            query?: {
+                /** @description At most 50; values outside the range are clamped rather than refused. */
+                limit?: number;
+                /** @description What the reader typed. Empty answers nothing. */
+                q?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matching codes, code matches before label matches, each in classifier order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["NaceCodeResponseDto"][];
+                    };
                 };
             };
         };

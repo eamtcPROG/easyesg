@@ -209,6 +209,64 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
     });
   });
 
+  describe('the activity classifier, searched (FR-17, task 30.4.1)', () => {
+    const search = (actor: typeof admin, query: string, locale = 'ro') =>
+      http()
+        .get(`/api/v1/entities/nace-codes?q=${encodeURIComponent(query)}`)
+        .set(actor.authorization)
+        .set('Accept-Language', locale)
+        .expect(200);
+
+    const codes = (body: unknown): string[] =>
+      (body as { objects: { code: string }[] }).objects.map((match) => match.code);
+
+    it('finds a code by its digits, however the reader punctuated it', async () => {
+      // The three spellings of one query, over the real 996-entry seed rather than a fixture.
+      for (const typed of ['10.71', '1071', '10 71']) {
+        const response = await search(admin, typed);
+        expect(codes(response.body)).toContain('10.71');
+      }
+    });
+
+    it('finds a label without its diacritics, which is how the reader types', async () => {
+      const response = await search(admin, 'brutarie');
+      // `brutărie` in the Bureau's own typesetting; the fold is what makes the picker usable.
+      expect(codes(response.body).length).toBeGreaterThan(0);
+    });
+
+    it('answers in the negotiated language, which is the whole reason the labels are here', async () => {
+      const ro = await search(admin, '10.71', 'ro');
+      const en = await search(admin, '10.71', 'en');
+      const ru = await search(admin, '10.71', 'ru');
+
+      const label = (body: unknown) => (body as { objects: { label: string }[] }).objects[0].label;
+      // Three locales, three different sentences, and none of them the code — the English half
+      // being sourced from NACE Rev. 2 itself rather than composed (§12.5.6's task-30.4.1 row).
+      expect(label(en.body)).toBe('Manufacture of bread; manufacture of fresh pastry goods and cakes');
+      expect(new Set([label(ro.body), label(en.body), label(ru.body)]).size).toBe(3);
+      expect(label(ro.body)).not.toBe('10.71');
+    });
+
+    it('bounds the answer and refuses nothing for an empty query', async () => {
+      const empty = await search(admin, '');
+      expect(codes(empty.body)).toEqual([]);
+
+      // A one-character query matches broadly; the page is what keeps 996 rows off the wire.
+      const broad = await http()
+        .get('/api/v1/entities/nace-codes?q=a&limit=5')
+        .set(admin.authorization)
+        .expect(200);
+      expect(codes(broad.body).length).toBeLessThanOrEqual(5);
+    });
+
+    it('is readable by a Reporting Contributor, like the entity reads beside it', async () => {
+      // D-2 makes master data OA-owned; the vocabulary an entity is classified by is not a
+      // setting, and refusing it would make the wizard's own source unreadable to its author.
+      const response = await search(editor, 'brutarie');
+      expect(response.status).toBe(200);
+    });
+  });
+
   describe('a Reporting Contributor reads and does not write (D-2, UC-19)', () => {
     it('lists the organization’s entities', async () => {
       const listed = await http().get('/api/v1/entities').set(editor.authorization).expect(200);

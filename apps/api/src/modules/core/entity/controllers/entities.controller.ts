@@ -1,14 +1,28 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { NO_CONTENT_RESPONSE } from '@api/app/interceptors/global-response.interceptor';
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import {
   CreateReportingEntityRequestDto,
+  NaceCodeResponseDto,
   ReportingEntityResponseDto,
   UpdateReportingEntityRequestDto,
 } from '../dto/reporting-entity.dto';
+import { NACE_SEARCH_DEFAULT_LIMIT } from '../constants/nace-search.constants';
 import { EntityService } from '../services/entity.service';
 
 /**
@@ -52,6 +66,48 @@ export class EntitiesController {
   @ApiListResponse(ReportingEntityResponseDto, { status: 200, description: 'Every entity, with its sites.' })
   async list(): Promise<ReportingEntityResponseDto[]> {
     return (await this.entityService.list()).map((entity) => new ReportingEntityResponseDto(entity));
+  }
+
+  /**
+   * **Before `:entityId`, and the order is load-bearing.** Express matches in declaration order, so
+   * a literal segment declared after a parameter never runs — `nace-codes` would bind as an entity
+   * id, fail `ParseUUIDPipe` and answer 400 for a route that exists.
+   */
+  @Get('nace-codes')
+  @RequiresRole(
+    MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+    MEMBERSHIP_ROLE.EDITOR,
+    MEMBERSHIP_ROLE.VIEWER,
+  )
+  @ApiOperation({
+    summary: 'Search the activity classifier registered for the organization’s country',
+    description:
+      'FR-17’s NACE code(s), offered rather than only validated. The classifier is CAEM Rev.2 for ' +
+      'Moldova, 1:1 with NACE Rev.2, and it is configuration (AD-4) — so the set moves without a ' +
+      'redeploy. **This searches server-side and answers a bounded page**: the classifier is 996 ' +
+      'entries across three languages, and shipping it to a browser to filter there is a payload ' +
+      'no screen budget admits. The query matches a code by its digits — 10.71, 1071 and 10 71 ' +
+      'are one query — and a label without regard to case or diacritics, because a reader types ' +
+      'brutarie for brutărie. An empty query answers an empty list rather than an arbitrary slice ' +
+      'of the classifier. Labels arrive in the request’s negotiated language.',
+  })
+  @ApiQuery({ name: 'q', required: false, description: 'What the reader typed. Empty answers nothing.' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'At most 50; values outside the range are clamped rather than refused.',
+  })
+  @ApiListResponse(NaceCodeResponseDto, {
+    status: 200,
+    description: 'Matching codes, code matches before label matches, each in classifier order.',
+  })
+  async searchNaceCodes(
+    @Query('q') query = '',
+    @Query('limit', new DefaultValuePipe(NACE_SEARCH_DEFAULT_LIMIT), ParseIntPipe) limit: number,
+  ): Promise<NaceCodeResponseDto[]> {
+    return (await this.entityService.searchActivityCodes({ query, limit })).map(
+      (match) => new NaceCodeResponseDto(match),
+    );
   }
 
   @Get(':entityId')

@@ -38,6 +38,7 @@ export {
 // form controls
 export { FormErrorSummary, type FormErrorSummaryItem, type FormErrorSummaryProps } from './form/form-error-summary';
 export { CodeField, type CodeFieldProps } from './form/code-field';
+export { Combobox, type ComboboxOption, type ComboboxProps } from './form/combobox';
 export {
   RecordSection,
   RecordShell,

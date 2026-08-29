@@ -6094,3 +6094,132 @@ column list grew for the third time in three tasks, which is that test doing its
 comment about the cost now reads eleven empty rows of fifteen per founding insert.
 
 Verified: `pnpm gates:clean`.
+
+## Task 30.4.1 — the classifier offered, and 996 English names that had to be fetched · 2026-08-29
+
+S-13 cannot classify an entity without a way to *offer* CAEM's codes, and three things were missing
+at once: no read route, no English labels, and no Combobox. Task 30.4 was split into three
+sub-steps for that reason (project owner); this is the first.
+
+### The gap, and how it stayed invisible
+
+§9.6 registered CAEM Rev.2 as configuration and `ManageReportingEntity` admits a code against it,
+so the write path has been complete since task 29.3. Nothing was wrong with it. What nobody had
+asked was where a *screen* gets the list — and the answer was nowhere: `GET /organizations/legal-
+forms` has no NACE counterpart, so S-13's only buildable shape was a free-text field that refuses
+what it does not recognise, for a classifier no SME owner has memorised, showing a raw code the
+user-facing-text rule forbids.
+
+**`GET /entities/nace-codes?q=` searches server-side and answers a bounded page.** Not
+`/organizations/legal-forms`'s shape, and the difference is size rather than taste: that vocabulary
+is ten keys and ships whole, this is 996 entries and 260 KB across three languages. Shipping it to
+the browser to filter there is precisely what the root layout's `messages={null}` exists to prevent
+(NFR-43).
+
+Three properties of the match, each of which would be a defect if absent:
+
+- **A code matches on its digits**, so `10.71`, `1071` and `10 71` are one query. Asking somebody to
+  type the dot is asking them to know the notation.
+- **A label matches without diacritics**, because a Moldovan reader types `brutarie` for *brutărie*
+  and `Chisinau` for *Chișinău*. Romanian's comma-below `ș`/`ț` decompose under NFD exactly as the
+  cedilla forms do, so one fold covers both spellings; Cyrillic passes through untouched.
+- **Code matches come before label matches**, in two passes rather than one scored sort. Somebody
+  who typed a code wants that code first; a single pass scoring "does this look like a code" guesses
+  at intent, and two passes guess at nothing.
+
+**An empty query answers an empty list, and the alternatives are the interesting part.** The first
+*n* codes in order is an arbitrary slice of agriculture. The 21 sections read like a navigational
+starting point — and would invite storing a **section** where B1 exports a four-character code, so
+the picker's most convenient answer would be the one that leaves FR-17 unsatisfied. The control
+prompts instead.
+
+### The English labels were fetched, and the verification is the point
+
+The seed carried Romanian and Russian only: task 29.3 sourced it from the Bureau's own
+`caem_rev2.zip`, which is typeset in those two. Writing 996 English names would have been exactly
+the failure that entry names — *"a list from memory would have been the IDNO mistake with a thousand
+opportunities to make it"*.
+
+CAEM Rev.2 is harmonised 1:1 with NACE Rev.2 to four characters, so the English is a **published
+list to match on code** rather than a translation to author. Eurostat's RAMON is retired (its
+documented CSV endpoint answers 404), and the current route is the EU Publications Office SPARQL
+endpoint over `http://data.europa.eu/ux2/nace2/`.
+
+What makes the merged seed trustworthy is not that it was downloaded but that it agrees:
+
+| | Seed | Fetched |
+|---|---|---|
+| Codes | 996 | 996 |
+| Sections · divisions · groups · classes | 21 · 88 · 272 · 615 | 21 · 88 · 272 · 615 |
+| In one and not the other | 0 | 0 |
+
+Two independent documents and an external standard, matching exactly — the same three-way agreement
+task 29.3 relied on. **Section names arrive upper-cased** because NACE typesets them so; they are
+kept verbatim, since editing sourced data is what the discipline exists to prevent, and the picker
+deals overwhelmingly in classes.
+
+The e2e pins the English of `10.71` as a literal. My first draft of that assertion was wrong from
+memory — *"Manufacture of bread and fresh pastry goods"* against the real *"Manufacture of bread;
+manufacture of fresh pastry goods and cakes"* — which is a small demonstration of why the list was
+fetched rather than written.
+
+### Combobox enters the inventory
+
+§11.5 has listed it under Form controls all along and nothing had built it; `Select`'s own docblock
+already named it as one of the four entries sharing that file's field metrics, and already carried
+the sheet's NACE anatomy (`10.71` · *Manufacture of bread*) as its `description` slot.
+
+**Radix publishes no combobox**, so it composes `Popover` — §11.5's rule is that the reference
+sheet's library column binds only where Radix is named, and here it names none. What Popover
+supplies is worth not rewriting: portalling out of a scrolling ancestor, collision handling and
+outside-dismiss. `onOpenAutoFocus` is prevented, because a combobox whose popup steals focus cannot
+be typed into.
+
+**It never filters the options it is handed**, which is the difference from `Select` and the reason
+a separate entry exists. A version that filtered would work beautifully for twenty options and be
+unusable for the one screen it was built for.
+
+**It is the single-select control, and Multi-select stays unbuilt.** FR-17's *NACE code(s)* is a
+list, and S-13 (task 30.4.3) composes it by adding one code at a time to a set it renders — a
+screen's arrangement of a control, not a second control. Building both now would ship an inventory
+entry with no consumer.
+
+Two defects the spec found that nothing else could:
+
+- **Clicking an already-focused combobox did not reopen the list.** After choosing, focus is still
+  in the input, so `onFocus` never fires again and a reader changing their mind clicks a control
+  that ignores them. `onClick` as well, and the comment says why it is not redundant.
+- **`aria-activedescendant` had to be asserted, not assumed.** Radix supplies none of this — the
+  roles, the arrow handling and the pointer-not-focus contract are this file's, and a browser
+  journey cannot see any of them. The spec pins that arrowing moves the attribute *and* leaves
+  focus in the input; drop the first and a screen reader goes silent while the highlight travels.
+
+### Two things the gates caught that review would not have
+
+**A type-only import erased a DI token.** `entity.service.ts` imported `SearchNaceCodes` with
+`import type`, so TypeScript emitted no value and `design:paramtypes` carried `Function` — Nest
+failed at boot with *"dependency at index 1"*, nowhere near the import. `openapi:check` is what
+found it, because it boots `AppModule`. Worth noting against this package's own claim that preview
+mode "instantiates no provider": it clearly instantiates enough to resolve this graph, and that is
+the gate earning its place rather than a reason to relax it.
+
+**The boundary rule caught a constant crossing a layer.** `entities.controller.ts` imported
+`NACE_SEARCH_DEFAULT_LIMIT` from the use case to declare its query parameter's default, and
+`controllers-not-to-use-cases` refused it — correctly, and for more than tidiness: a transport file
+had taken a dependency on an application one for a number. The bounds moved to `constants/` and
+`NaceCodeMatch` to `models/`, which is where a value two layers share belongs. The module gained its
+first `constants/` directory in the same change.
+
+**`event.key === 'ArrowDown'` tripped the closed-vocabulary selector**, correctly. A keyboard key is
+a closed vocabulary for the rule's own reason rather than by analogy: a typo'd `'ArowDown'` does not
+error, the comparison is simply false, and the arrow key silently stops working. Declared as `KEY`,
+unexported, because no other file compares against them.
+
+### Coverage
+
+Nine unit arms on the search rule — the diacritic fold, the three spellings of a code, the ordering,
+the locale fallback, the clamp, and the unregistered-country case — all reachable without a
+database. Seven component specs on the Combobox. Five API e2e tests over the **real 996-entry seed**
+rather than a fixture, including the three locales answering three different sentences.
+
+Verified: `pnpm gates:clean`.

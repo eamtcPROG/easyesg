@@ -1743,6 +1743,60 @@
         ]
       }
     },
+    "/api/v1/entities/nace-codes": {
+      "get": {
+        "description": "FR-17’s NACE code(s), offered rather than only validated. The classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2, and it is configuration (AD-4) — so the set moves without a redeploy. **This searches server-side and answers a bounded page**: the classifier is 996 entries across three languages, and shipping it to a browser to filter there is a payload no screen budget admits. The query matches a code by its digits — 10.71, 1071 and 10 71 are one query — and a label without regard to case or diacritics, because a reader types brutarie for brutărie. An empty query answers an empty list rather than an arbitrary slice of the classifier. Labels arrive in the request’s negotiated language.",
+        "operationId": "EntitiesController_searchNaceCodes",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "At most 50; values outside the range are clamped rather than refused.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "What the reader typed. Empty answers nothing.",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching codes, code matches before label matches, each in classifier order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/NaceCodeResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Search the activity classifier registered for the organization’s country",
+        "tags": [
+          "entity"
+        ]
+      }
+    },
     "/api/v1/entities/{entityId}": {
       "get": {
         "operationId": "EntitiesController_view",
@@ -3409,6 +3463,25 @@
           "sites",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "NaceCodeResponseDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "10.71",
+            "description": "CAEM Rev.2, 1:1 with NACE Rev.2 to four characters. Sections are one character, divisions two, groups four and classes five including the dot."
+          },
+          "label": {
+            "type": "string",
+            "example": "Fabricarea pâinii; fabricarea prăjiturilor",
+            "description": "The activity’s name in the request’s negotiated language, falling back to a language the classifier does carry rather than hiding the entry."
+          }
+        },
+        "required": [
+          "code",
+          "label"
         ]
       },
       "SiteRequestDto": {

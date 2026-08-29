@@ -1,3 +1,4 @@
+import type { NaceCodeMatch } from '../models/reporting-entity.model';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -304,5 +305,36 @@ export class ReportingEntityResponseDto {
     this.sites = entity.sites.map((site) => new SiteResponseDto(site));
     this.createdAt = entity.createdAt.getTime();
     this.updatedAt = entity.updatedAt.getTime();
+  }
+}
+
+/**
+ * One activity code the picker offers (FR-17, task 30.4.1).
+ *
+ * **Both members, and the code is not decoration.** The label is what the reader recognises and the
+ * code is what B1 exports, so the picker shows the pair and stores the key — a screen that showed
+ * only the label would leave nobody able to check the code that reaches the report, and one that
+ * showed only the code would ask an SME owner to know a classifier they have never opened.
+ */
+export class NaceCodeResponseDto {
+  @ApiProperty({
+    example: '10.71',
+    description:
+      'CAEM Rev.2, 1:1 with NACE Rev.2 to four characters. Sections are one character, divisions ' +
+      'two, groups four and classes five including the dot.',
+  })
+  code: string;
+
+  @ApiProperty({
+    example: 'Fabricarea pâinii; fabricarea prăjiturilor',
+    description:
+      'The activity’s name in the request’s negotiated language, falling back to a language the ' +
+      'classifier does carry rather than hiding the entry.',
+  })
+  label: string;
+
+  constructor(match: NaceCodeMatch) {
+    this.code = match.code;
+    this.label = match.label;
   }
 }

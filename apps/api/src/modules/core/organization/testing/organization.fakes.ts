@@ -1,6 +1,6 @@
 import type { OrganizationFoundingStore } from '../interfaces/organization-founding-store.interface';
 import type { OrganizationStore } from '../interfaces/organization-store.interface';
-import type { OrganizationVocabulary } from '../interfaces/organization-vocabulary.interface';
+import type { NaceCode, OrganizationVocabulary } from '../interfaces/organization-vocabulary.interface';
 import type {
   NewOrganization,
   Organization,
@@ -118,6 +118,18 @@ export class FakeOrganizationVocabulary implements OrganizationVocabulary {
   naceCodesFor(countryCode: string): ReadonlySet<string> | null {
     const codes = this.naceCodes[countryCode.toLowerCase()];
     return codes ? new Set(codes) : null;
+  }
+
+  /**
+   * Labels are synthesised from the code, which is deliberate: a spec asserting *which* label came
+   * back would be asserting the fixture, and the rule worth pinning is the locale FALLBACK — so the
+   * fake carries `ro` always and `en` only for codes that ask for it, letting a spec exercise the
+   * missing-locale path without a 996-entry payload.
+   */
+  naceClassifierFor(countryCode: string): readonly NaceCode[] | null {
+    const codes = this.naceCodes[countryCode.toLowerCase()];
+    if (!codes) return null;
+    return codes.map((code) => ({ code, labels: { ro: `${code} activitate`, en: `${code} activity` } }));
   }
 
   relationshipTypes(): readonly string[] {

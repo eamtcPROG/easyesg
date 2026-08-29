@@ -136,3 +136,17 @@ export type ReportingEntityPatch = Partial<{
   /** A whole-collection save, exactly as `sites` is, and for the same audit-trail reason. */
   readonly consolidationMembers: readonly NewConsolidationMember[];
 }>;
+
+/**
+ * One match from the activity classifier (FR-17, task 30.4.1) — the key that gets stored and the
+ * words the reader chose it by.
+ *
+ * In `models/` rather than beside the use case that produces it, for the reason the constants moved
+ * too: the DTO renders it and the use case answers it, so it belongs to the module rather than to
+ * either layer.
+ */
+export interface NaceCodeMatch {
+  readonly code: string;
+  readonly label: string;
+}
+
