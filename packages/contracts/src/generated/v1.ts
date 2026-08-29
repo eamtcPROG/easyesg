@@ -461,7 +461,7 @@ export interface paths {
         };
         /**
          * List the organizations the signed-in account belongs to
-         * @description Every organization the caller is an active member of, with the role held in each and the organization’s name for display. An empty list is a normal answer — a verified account holds no membership until it creates an organization or accepts an invitation — and it is what sends a new user to create their first one.
+         * @description Every organization the caller is an active member of, with the role held in each, the organization’s name for display, and which one this request is acting for. An empty list is a normal answer — a verified account holds no membership until it creates an organization or accepts an invitation — and it is what sends a new user to create their first one. A list in which no entry is active is also normal: it is an account holding several memberships that has stated no preference, and it is what the organization switcher exists to resolve.
          */
         get: operations["MembershipsController_list"];
         put?: never;
@@ -1114,6 +1114,8 @@ export interface components {
             role: "editor" | "viewer" | "organization_administrator";
             /** @description Unix epoch milliseconds when access was granted. */
             joinedAt: number;
+            /** @description Whether this request is acting for this organization. Exactly one membership carries it once a preference is settled; **none does** while the caller holds several and has stated no preference, which is a normal state and the one the organization switcher resolves. It is resolved per request from the session and is never a property of the membership row. */
+            active: boolean;
         };
         InvitationResponseDto: {
             /**

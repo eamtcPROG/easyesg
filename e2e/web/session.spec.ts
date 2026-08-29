@@ -60,14 +60,22 @@ test('a user signs in, holds an httpOnly session, and signs out (UC-04, UC-06)',
   // §4.3's branch, real since task 25.4: this account belongs to nothing, so it lands on S-04
   // rather than on the home it has no organization to fill.
   await page.waitForURL('**/create-organization');
-  await expect(page.getByText(email)).toBeVisible();
+  // The global tier's account corner names the signed-in address (task 30.1, replacing task 22's
+  // interim strip). The band carries no organization region here, which is S-04's own artboard
+  // state and `global-tier.spec.ts`'s subject.
+  await expect(page.getByRole('button', { name: `Contul dumneavoastră: ${email}` })).toBeVisible();
 
   // AD-9's whole point, asserted from inside the browser: the session cookie is httpOnly and
   // carries no readable token — browser JavaScript sees nothing of it.
   const readable = await page.evaluate(() => document.cookie);
   expect(readable).not.toContain('easyesg_session');
 
-  await page.getByRole('button', { name: 'Ieșiți din cont' }).click();
+  // Sign-out lives in the user menu since task 30.1 (§4.2). Two clicks rather than one, and the
+  // extra one is the deliverable: §4.2 puts sign-out behind the account corner on every
+  // authenticated screen, so a journey that could still reach it directly would mean the interim
+  // strip was left behind rather than replaced.
+  await page.getByRole('button', { name: `Contul dumneavoastră: ${email}` }).click();
+  await page.getByRole('menuitem', { name: 'Ieșiți din cont' }).click();
   await page.waitForURL('**/sign-in');
 
   // The session is gone server-side too: the guarded route bounces straight back.

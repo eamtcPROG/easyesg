@@ -104,7 +104,9 @@ test('the administrator sees themself, and invites a colleague who appears as in
 
   // The union's first half: the seeded membership, rendered from `GET /members`.
   await expect(personCell(page, administrator)).toBeVisible();
-  // `exact`, because the interim session strip says "Contul activ:" a few pixels above.
+  // `exact`: the member's status chip, not the word inside a longer sentence elsewhere on the
+  // screen. It used to disambiguate against the interim session strip's "Contul activ:", which
+  // task 30.1 deleted — the reason changed, the need did not.
   await expect(page.getByText('Activ', { exact: true })).toBeVisible();
 
   const invited = addressFor('invite-guest');

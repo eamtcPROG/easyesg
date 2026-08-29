@@ -127,6 +127,23 @@
   --focus-header-border: var(--pine-200);
   --focus-footer-surface: var(--slate-0);
   --focus-footer-border: var(--slate-100);
+
+  /* Global tier (§4.2) — the dark band present on every authenticated screen, added with the
+     first workspace chrome (task 30.1). Values extracted from `EasyESG Workspace.dc.html`'s
+     "The chrome, once" artboard per OQ-10: extracted through tokens, never copied as markup.
+
+     The three translucent rules are white-over-brand rather than a pine step, and deliberately:
+     an alpha overlay composites correctly against ANY tier 1 brand colour, so UX-79's "re-skinning
+     edits tier 1 only" stays true for the band without a second set of hand-picked greens. The
+     elevation tokens above already hold literal rgba for the same reason. */
+  --globalbar-surface: var(--pine-800);
+  --globalbar-text: var(--slate-0);
+  --globalbar-text-muted: var(--pine-200);
+  --globalbar-divider: rgba(255, 255, 255, 0.18);
+  --globalbar-plate-border: rgba(255, 255, 255, 0.32);
+  --globalbar-plate-hover: rgba(255, 255, 255, 0.10);
+  --globalbar-avatar-surface: var(--pine-100);
+  --globalbar-avatar-text: var(--pine-800);
 }
 
 /* ── Type roles (§11.6 — the ten-role scale; UX-82, UX-83) ─────────────

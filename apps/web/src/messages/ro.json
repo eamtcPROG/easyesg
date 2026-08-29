@@ -15,12 +15,18 @@
       "privacy": "Politica de confidențialitate",
       "cookies": "Politica de cookie-uri"
     },
-    "signedInAs": "Contul activ:",
-    "signOut": "Ieșiți din cont",
+    "globalBar": {
+      "label": "Antetul aplicației",
+      "organization": "Organizația activă"
+    },
+    "accountMenu": {
+      "label": "Contul dumneavoastră",
+      "credentials": "Date de autentificare",
+      "signOut": "Ieșiți din cont"
+    },
     "workspaceNav": {
       "label": "Secțiunile organizației",
-      "users": "Utilizatori și acces",
-      "credentials": "Date de autentificare"
+      "users": "Utilizatori și acces"
     },
     "index": {
       "sort": {

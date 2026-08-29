@@ -8,29 +8,29 @@ import { ROUTES } from '@/lib/routes';
 /**
  * §4.2's **workspace** tier, wired (task 26.4).
  *
- * Built here rather than with the global tier because S-16 is the first `(app)/(workspace)` screen
- * and had no way to be reached. The presentational half is `packages/ui`'s `WorkspaceNav` — an
- * inventory addition, per UX-89 — and this is the part that cannot live there: the routes, the
- * localized labels, and the locale-aware `Link` that `next/link` would silently break.
+ * Built with task 26.4 rather than with the global tier because S-16 was the first
+ * `(app)/(workspace)` screen and had no way to be reached. The presentational half is
+ * `packages/ui`'s `WorkspaceNav` — an inventory addition, per UX-89 — and this is the part that
+ * cannot live there: the routes, the localized labels, and the locale-aware `Link` that
+ * `next/link` would silently break.
  *
  * **The set holds the sections that render.** Today that is one, because every other
  * `(workspace)` screen still returns `null`, and a nav item leading to a blank page is worse than
- * an absent one — it teaches the reader that the product is broken rather than unfinished.
- * Task 30.1 builds the global tier above this and extends this array as its screens land; §4.2's
- * full set is Reports, Entities & periods, Organization, Users & access, and Plan & billing.
+ * an absent one — it teaches the reader that the product is broken rather than unfinished. §4.2's
+ * full set is Reports, Entities & periods, Organization, Users & access, and Plan & billing, and
+ * tasks 30.3, 30.4 and 30.5 are what add them here.
+ *
+ * **S-28 left this set in task 30.1**, which is the correction that task promised rather than a
+ * change of mind. Task 27.7 put credentials here with its reason stated — §4.2 puts it under the
+ * account corner, no account corner existed, and an unreachable screen is worse than a temporarily
+ * misplaced link. The corner exists now, so the link is where §4.2 says it belongs and this tier is
+ * organization sections only, which is what its own accessible name has claimed all along.
  *
  * A Client Component for one reason: `usePathname`. Marking the current section is the tier's
  * whole navigational job, and the alternative — every page passing its own key down through the
  * layout — is a prop that one screen eventually forgets to pass, with no way to notice.
  */
-const SECTIONS = [
-  { key: 'users', href: ROUTES.ORGANIZATION_USERS },
-  // S-28, added with task 27.7 — the second screen in this group that renders. §4.2's full set
-  // puts it under the account corner rather than the workspace tier, which is task 30.1's; until
-  // that tier exists this is the only way to reach it, and an unreachable screen is worse than a
-  // temporarily misplaced link.
-  { key: 'credentials', href: ROUTES.ACCOUNT_CREDENTIALS },
-] as const;
+const SECTIONS = [{ key: 'users', href: ROUTES.ORGANIZATION_USERS }] as const;
 
 export function WorkspaceNavigation() {
   const t = useTranslations('chrome.workspaceNav');

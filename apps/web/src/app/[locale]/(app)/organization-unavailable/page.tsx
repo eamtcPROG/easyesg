@@ -47,15 +47,21 @@ export default async function OrganizationUnavailablePage({ params }: { params: 
   // work nobody reads (`async-defer-await`).
   const t = await getTranslations('identity.organizationUnavailable');
 
+  // `<main>` since task 30.1. This screen is outside `(workspace)`, so it does not inherit that
+  // layout's landmark — and once the global tier put a `banner` above it, a page with chrome and
+  // no main is one a screen-reader user cannot skip into. Two lines here rather than a wrapper in
+  // the `(app)` layout, which would have swallowed the workspace nav.
   return (
-    <Callout
-      intent={CALLOUT_INTENT.ERROR}
-      title={t('title')}
-      action={
-        <TextLink href={POST_SIGN_IN.ORGANIZATION_UNAVAILABLE}>{t('retry')}</TextLink>
-      }
-    >
-      {t('body')}
-    </Callout>
+    <main>
+      <Callout
+        intent={CALLOUT_INTENT.ERROR}
+        title={t('title')}
+        action={
+          <TextLink href={POST_SIGN_IN.ORGANIZATION_UNAVAILABLE}>{t('retry')}</TextLink>
+        }
+      >
+        {t('body')}
+      </Callout>
+    </main>
   );
 }

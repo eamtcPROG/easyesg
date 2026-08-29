@@ -123,3 +123,33 @@ export interface AccountMembership {
   readonly role: MembershipRole;
   readonly joinedAt: Date;
 }
+
+/**
+ * One of the caller's own memberships, plus **which of them the current request is acting for**
+ * (task 30.1).
+ *
+ * `AccountMembership` is what the store reads; this is what UC-16's view half answers, and the
+ * extra bit is not a property of the membership at all — it is a property of the *session*, so it
+ * cannot come from the row and must not be stored on one.
+ *
+ * **This reverses a sentence task 25.3 wrote on `AccountMembershipResponseDto`** — "No `isActive`
+ * flag, deliberately … the switcher's own state comes from the same resolution that scoped the page
+ * around it, not from a list item". The principle in that sentence is right and is kept; its
+ * premise was that a caller could learn the resolution some other way, and no such read exists.
+ * `GET /organization` is `@RequiresRole(ORGANIZATION_ADMINISTRATOR)`, so a viewer or an editor
+ * cannot use it, and UX-2 requires the active organization to be visible **on every authenticated
+ * screen** for every actor. So the flag is not a second answer: it is `AuthGuard`'s own resolution
+ * — `selectActiveMembership`, already computed for this request and already on the request context
+ * — projected onto the read that has the names. Nothing else may compute it, and nothing persists
+ * it. **Reversed 29 Aug 2026, project owner**, against the alternative of a new `GET /session`
+ * route, which is the API work task 83 owns.
+ *
+ * **`active` is false on every row when the account holds several memberships and has chosen
+ * none** — `selectActiveMembership` answers null there by design (UX-2 makes the choice
+ * deliberate), so the honest projection is a list with nothing marked. That is the state the
+ * switcher exists to resolve.
+ */
+export interface AccountMembershipView extends AccountMembership {
+  /** Whether THIS request resolved to this organization — the guard's answer, not the row's. */
+  readonly active: boolean;
+}

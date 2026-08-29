@@ -5,7 +5,7 @@ import { ListOwnMemberships } from '../use-cases/list-own-memberships.use-case';
 import { RemoveMember, type RemoveMemberCommand } from '../use-cases/remove-member.use-case';
 import { AuthenticationRequiredError } from '../errors/membership.errors';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
-import type { AccountMembership, OrganizationMember } from '../models/membership.model';
+import type { AccountMembershipView, OrganizationMember } from '../models/membership.model';
 
 /**
  * The Nest-aware seam between `MembersController` and the use cases (house rule, 20 Aug 2026:
@@ -46,11 +46,23 @@ export class MembershipService {
    * is a route that forgot `@RequiresAccount`. It throws rather than trusting that — the guard is a
    * declaration and this is the layer that would otherwise ask the database for the memberships of
    * `undefined`, which RLS answers with an empty list rather than an error.
+   *
+   * **`organizationId` is resolved here for the same reason `actorId` is** (task 30.1): it is
+   * ambient request context, and this is the layer that owns resolving it. It is `AuthGuard`'s
+   * `selectActiveMembership` answer, already computed for this request — so the `active` marker the
+   * switcher and the global bar read is that one resolution projected, never a second one. It is
+   * `undefined` on a session that has chosen nothing, and `?? null` is the only place that becomes
+   * a value: the use case's contract is `string | null`, because "not chosen" is an answer and
+   * `undefined` is the absence of one.
    */
-  listOwn(): Promise<AccountMembership[]> {
-    const accountId = requestContext()?.actorId;
+  listOwn(): Promise<AccountMembershipView[]> {
+    const context = requestContext();
+    const accountId = context?.actorId;
     if (!accountId) throw new AuthenticationRequiredError();
-    return this.listOwnMemberships.execute({ accountId });
+    return this.listOwnMemberships.execute({
+      accountId,
+      activeOrganizationId: context?.organizationId ?? null,
+    });
   }
 
   changeRole(command: ChangeMemberRoleCommand): Promise<void> {

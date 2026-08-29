@@ -1,0 +1,102 @@
+/* §4.2's global tier. Tier 3 tokens only — the band's own contrast pairing lives in
+   `tokens.css` under `--globalbar-*`, so re-skinning edits tier 1 (UX-79). */
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  /* 68px at the 1440 frame, from the artboard; the padding is what changes at 390, not the height,
+     because a shorter band would put the account corner below the 40px target size (NFR-75). */
+  min-block-size: 68px;
+  padding: 0 var(--space-8);
+  background: var(--globalbar-surface);
+  color: var(--globalbar-text);
+}
+
+.identity,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-inline-size: 0;
+}
+
+/* The brand anchor is the caller's, so its colour is inherited rather than set: `BrandMark`
+   resolves from `currentColor` by design, which is why it needs no dark variant. */
+.identity :is(a) {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-1);
+}
+
+.divider {
+  inline-size: 1px;
+  block-size: 28px;
+  flex-shrink: 0;
+  background: var(--globalbar-divider);
+}
+
+.organization {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 38px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--globalbar-plate-border);
+  border-radius: var(--radius-1);
+}
+
+/* Read, never seen. `clip-path: inset(50%)` rather than `display: none`, which removes it from the
+   accessibility tree along with the layout — the same technique `select.module.css` uses. */
+.organizationLabel {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.organizationName {
+  overflow: hidden;
+  font: 400 14px/1.4 var(--font-text);
+  color: var(--globalbar-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* UX-73's three frames. Only the horizontal rhythm changes: the band is one row at every width,
+   because a wrapping global tier reads as two tiers and §4.2 says there are three. */
+@media (max-width: 1023px) {
+  .bar {
+    gap: var(--space-5);
+    padding: 0 var(--space-6);
+  }
+
+  .identity,
+  .actions {
+    gap: var(--space-5);
+  }
+}
+
+@media (max-width: 639px) {
+  .bar {
+    min-block-size: 56px;
+    padding: 0 var(--space-5);
+  }
+
+  .identity,
+  .actions {
+    gap: var(--space-4);
+  }
+
+  /* The divider earns its place at 1440 and costs 17px of a 390 frame that the organization's own
+     name needs. The plate's border already separates the two regions. */
+  .divider {
+    display: none;
+  }
+}

@@ -52,6 +52,17 @@ export { EmptyState, type EmptyStateProps } from './feedback/empty-state';
 
 // navigation
 export {
+  AccountMenu,
+  type AccountMenuItem,
+  type AccountMenuLanguage,
+  type AccountMenuProps,
+} from './navigation/account-menu';
+export {
+  GlobalBar,
+  type GlobalBarOrganization,
+  type GlobalBarProps,
+} from './navigation/global-bar';
+export {
   SWITCHER_TONE,
   LanguageSwitcher,
   type LanguageSwitcherProps,

@@ -66,8 +66,31 @@ tokens, expiries, the identity block — into ONE httpOnly `easyesg_session` coo
 request-scoped tier (read, establish, destroy, single-flighted refresh);
 `src/app/api/[...path]` is the real pass-through — same-origin proof on writes, 401 without a
 session, rotate-if-expiring, then forward with the bearer and stream both bodies untouched.
-One interim surface remains, recorded on its owning task row in `docs/task.md`: the `(app)`
-layout's `SessionStrip` carries sign-out until task 30's real global tier.
+The one interim this left — the `(app)` layout's `SessionStrip`, carrying sign-out until the real
+global tier existed — is **gone since task 30.1**, deleted rather than left dead.
+
+**§4.2's global tier is live (task 30.1).** `shared/global-tier.tsx` is a Server Component in the
+`(app)` layout — so it is on every authenticated screen including the two outside `(workspace)`,
+S-04 and S-35, where it renders its designed empty state and names no organization. It resolves
+every string with `getTranslations` and hands them down, because `shared/account-corner.tsx` is a
+Client Component only for `usePathname`/`useSearchParams` (a language choice is a link to this
+address in another locale) and giving it `useTranslations` would put the `chrome` catalogue in the
+bundle. `server/memberships.ts` is the read, wrapped in React `cache()` — the band and S-05 read the
+same collection in one render pass.
+
+Three things to know before touching it:
+
+- **The organization region is a plate, not a switcher.** Switching writes the session and its route
+  is **task 83**'s; the band names what `GET /memberships` marks `active`, which is `AuthGuard`'s own
+  `selectActiveMembership` answer projected onto the read. Never derive it here — "the only
+  membership" is right until someone holds two.
+- **Sign-out submits explicitly.** The menu item is a `type="submit"` button associated by `form=`
+  with a form outside the Radix portal, and its `onClick` cancels the default and calls
+  `requestSubmit()`. Without that the menu's close unmounts the button before the click's default
+  action runs, and sign-out silently does nothing. `e2e/web/global-tier.spec.ts` is what holds it.
+- **`AccountMenu` is `modal={false}`.** A modal Radix root puts `pointer-events: none` on `body`, and
+  `SubContent` portals as a sibling of the layer that gets `auto` back — so the language submenu is
+  unclickable. It is also the right semantics for chrome hanging off a header.
 
 **§4.3's post-sign-in branch is live (task 25.4).** `features/identity/post-sign-in.ts` holds the
 rule — none → S-04, one → S-05, several → S-05 where the switcher chooses (OQ-6) — and
@@ -198,7 +221,7 @@ src/
 ├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
 ├─ features/       10 domains, mirroring apps/api/src/modules names
-├─ shared/         chrome owned by no single feature (SiteFooter) — mirrors apps/admin/src/shared
+├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter)
 ├─ server/         server-only: session, api-client, data/
 ├─ client/         browser-only: autosave (IndexedDB queue), polling
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice

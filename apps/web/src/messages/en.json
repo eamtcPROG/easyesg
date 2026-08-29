@@ -15,12 +15,18 @@
       "privacy": "Privacy notice",
       "cookies": "Cookie policy"
     },
-    "signedInAs": "Signed in as",
-    "signOut": "Sign out",
+    "globalBar": {
+      "label": "Application header",
+      "organization": "Active organisation"
+    },
+    "accountMenu": {
+      "label": "Your account",
+      "credentials": "Sign-in details",
+      "signOut": "Sign out"
+    },
     "workspaceNav": {
       "label": "Organisation sections",
-      "users": "Users & access",
-      "credentials": "Sign-in details"
+      "users": "Users & access"
     },
     "index": {
       "sort": {

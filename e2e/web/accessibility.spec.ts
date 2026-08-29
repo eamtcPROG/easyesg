@@ -70,6 +70,15 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   await page.goto('/organization/users');
   await expect(page.getByRole('heading', { name: 'Utilizatori și acces', level: 1 })).toBeVisible();
   await scan(page);
+
+  // Twice, on one sign-in, because the second scan is a different surface (task 30.1). The pass
+  // above judges §4.2's global tier at rest — the band is on every authenticated screen, so every
+  // scan below this line already includes it. This one judges it **open**: a menu, a submenu, an
+  // expanded trigger and the roles that hold them together, none of which exist in the DOM until
+  // somebody clicks. A component spec pins the roles; only axe judges them in a real page.
+  await page.getByRole('button', { name: `Contul dumneavoastră: ${email}` }).click();
+  await expect(page.getByRole('menuitem', { name: 'Date de autentificare' })).toBeVisible();
+  await scan(page);
 });
 
 test('axe finds no violations on the credentials screen', async ({ page }) => {

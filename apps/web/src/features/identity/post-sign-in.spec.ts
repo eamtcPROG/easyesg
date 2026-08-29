@@ -8,6 +8,11 @@ const membership = (organizationId: string): AccountMembership => ({
   organizationName: `Org ${organizationId}`,
   role: 'editor',
   joinedAt: 1_787_000_000_000,
+  // `false` is not a filler: this branch runs on a session that has just been created and has
+  // therefore resolved no organization, which is the one state in which every row is unmarked.
+  // `postSignInTarget` branches on the COUNT — §4.3 is navigation — so marking one would suggest
+  // an input it does not read.
+  active: false,
 });
 
 const RETURN_TO = { href: '/reports/42', locale: undefined };

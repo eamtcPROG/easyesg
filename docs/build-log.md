@@ -2370,7 +2370,16 @@ rather than assumed: `listPending` uses `invitation_pending_address_key`, and `a
 serves the `lower(email)` lookups (confirmed under `enable_seqscan=off` — at these table sizes the
 planner correctly prefers a sequential scan).
 
-Verified: `pnpm gates`, then `pnpm gates:clean`. 27 new e2e tests against real sessions, real RLS and
+Verified: `pnpm gates:clean` green end to end — 10 root scripts, 461 api unit tests across 59
+suites, 36 vitest files, and all 70 browser tests in the three Playwright projects.
+
+**One flake seen and chased rather than retried.** An earlier full run failed `session.spec.ts`'s
+reset flow inside `registerAndVerify`; the page snapshot showed the verify screen with *Confirmați
+adresa* **disabled**, i.e. the submission still in flight when the 5 s `toBeVisible` expired. That
+screen is `(identity)` and shares nothing with this task's diff. Re-running the project alone passed
+61/61, and the clean run passed 70/70. Recorded rather than deleted because the failure mode is
+worth knowing: under `workers: 1` with the api, both web servers and `vite preview` competing, a
+default expect timeout on a submitting button is the thinnest margin in the suite. 27 new e2e tests against real sessions, real RLS and
 the real outbox — the payload is read as `esg_worker`, because `esg_app` holds `INSERT` on
 `audit.outbox_event` and deliberately not `SELECT`, so "the invitation email leaves through the
 outbox" is only expressible from a connection the request tier does not have. Plus 21 unit tests
@@ -2466,7 +2475,16 @@ fifteen minutes, so a budget spent by one run survives into the next. CI never s
 database is fresh — and the drain is now by address rather than by key prefix so it covers both
 paths.
 
-Verified: `pnpm gates`, then `pnpm gates:clean`. 16 e2e tests against real sessions, the real
+Verified: `pnpm gates:clean` green end to end — 10 root scripts, 461 api unit tests across 59
+suites, 36 vitest files, and all 70 browser tests in the three Playwright projects.
+
+**One flake seen and chased rather than retried.** An earlier full run failed `session.spec.ts`'s
+reset flow inside `registerAndVerify`; the page snapshot showed the verify screen with *Confirmați
+adresa* **disabled**, i.e. the submission still in flight when the 5 s `toBeVisible` expired. That
+screen is `(identity)` and shares nothing with this task's diff. Re-running the project alone passed
+61/61, and the clean run passed 70/70. Recorded rather than deleted because the failure mode is
+worth knowing: under `workers: 1` with the api, both web servers and `vite preview` competing, a
+default expect timeout on a submitting button is the thinnest margin in the suite. 16 e2e tests against real sessions, the real
 policies and the real outbox, including the two that could not exist without this task's decisions —
 accepting a second organization's invitation while active in the first, and registering an invitee
 who then signs in immediately with no verification email ever queued. Plus 21 unit tests across the
@@ -2571,7 +2589,16 @@ from that broken state be **reused** by a subsequent proper run — 19 pre-exist
 against a stale artefact and none of it was the code. Run the script, not the tool; and kill
 anything on 3000/3100/3101/3200 before concluding anything about a failure.
 
-Verified: `pnpm gates`, then `pnpm gates:clean`. 48 browser tests across three projects, six of them
+Verified: `pnpm gates:clean` green end to end — 10 root scripts, 461 api unit tests across 59
+suites, 36 vitest files, and all 70 browser tests in the three Playwright projects.
+
+**One flake seen and chased rather than retried.** An earlier full run failed `session.spec.ts`'s
+reset flow inside `registerAndVerify`; the page snapshot showed the verify screen with *Confirmați
+adresa* **disabled**, i.e. the submission still in flight when the 5 s `toBeVisible` expired. That
+screen is `(identity)` and shares nothing with this task's diff. Re-running the project alone passed
+61/61, and the clean run passed 70/70. Recorded rather than deleted because the failure mode is
+worth knowing: under `workers: 1` with the api, both web servers and `vite preview` competing, a
+default expect timeout on a submitting button is the thinnest margin in the suite. 48 browser tests across three projects, six of them
 new; 89 web unit tests including the branch's eight arms and the four new post-sign-in cases; 298
 api unit tests. Both amended documents are cross-logged: `design_spec.md` S-03 and S-01,
 `architecture.md` §12.5.6's task-26.3 rows, and `apps/web/CLAUDE.md`'s two affected traps.
@@ -5600,3 +5627,186 @@ do in passing.
 `apps/admin` keeps `realm.signIn.summaryTitle` where it is. Two components read it, both inside that
 namespace, so there is no duplication to remove — the console's catalogue has one copy and one
 owner, which is the state this change was trying to reach, not one to change for symmetry.
+
+## Task 30.1 — §4.2's global tier, and the switch it does not carry · 2026-08-29
+
+The first workspace chrome: a dark band on every authenticated screen naming the active
+organization, with the account corner carrying S-28, the language choice and sign-out. Task 22's
+interim `SessionStrip` is **deleted**, not left dead — it named this task as its owner in its own
+comment, and the comment went with it.
+
+The row read `web`. It shipped `api+web`, and the two reasons are the interesting part.
+
+### The switcher is a write, and the write did not exist
+
+`identity.session.active_organization_id` had three writers — 25.4's post-sign-in branch, 26.2's
+acceptance, 29.1's founding — and **no route a user can call**. Task 29.1's own build-log entry had
+already said so in passing, describing a founder stranded "with task 30.1's switcher — the only way
+to state a preference — still TODO", and `architecture.md` §12.5.6's task-26.2 row had declined an
+alternative *because* it "is task 30.1".
+
+Three options went to the project owner; **appending the API half as task 83** was chosen, against a
+recommendation to widen this row. So the band names the organization and does not switch it, and the
+region is a **plate rather than a trigger** — no caret, because a control that cannot act is worse
+than an absent one, which is the same judgement the tier's link set already makes. Task 83 turns the
+plate into the trigger when `PUT /api/v1/session/organization` exists.
+
+### The answer surfaced a second gap, and that one had to be closed here
+
+UX-2 is closed and normative: *the active organization shall be visible at all times on every
+authenticated screen*. Nothing could tell a caller which one that was. `GET /organization` is
+`@RequiresRole(ORGANIZATION_ADMINISTRATOR)` at the class, so a viewer or an editor cannot read it;
+`GET /memberships` returned names and roles and nothing about which row the request had resolved to.
+Deriving it in `apps/web` — "the only membership" — is right until someone holds two and wrong
+invisibly after that.
+
+So `GET /memberships` answers **`active`** per row. **This reverses a sentence task 25.3 wrote**, and
+the reversal is worth reading rather than skipping:
+
+> **No `isActive` flag, deliberately.** Which organization is active is session state… A flag here
+> would be a second place that answer lives, and the switcher's own state — which one is current —
+> comes from the same resolution that scoped the page around it, not from a list item.
+
+Its **principle** is right and is kept: only the server may resolve the active organization, once
+per request, from the session. Its **premise** — that a caller can learn that resolution some other
+way — was never true. The field is computed from `requestContext().organizationId`, which is
+`AuthGuard`'s own `selectActiveMembership` answer for this request, so it is that one resolution
+projected onto the read that happens to carry the names, not a second one. `ListOwnMemberships`
+deliberately does **not** call `selectActiveMembership` itself; a second caller of that function is
+a second place the rule can drift.
+
+Declined: a new `GET /session` returning the resolved context. It is the shape the sentence above
+would have preferred, and it is a route rather than a field — which is exactly the work the same
+batch had just decided belongs in task 83.
+
+`active` is false on **every** row when the caller holds several memberships and has stated no
+preference. That is `selectActiveMembership`'s designed answer (UX-2 makes the choice deliberate),
+and the honest projection is a list with nothing marked — the state the switcher exists to resolve,
+and the state that leaves such an account with no active organization at all until task 83 lands.
+Recorded here so it is a known cost rather than a bug report.
+
+### What the tier carries, and what it does not
+
+§4.2 names four things in the global tier; two have no screen. Notifications are S-26 (task 50.2),
+and the help centre's placement across both chromes is **task 77.5's**, which its row claims in
+terms — so neither is a link this task could have added honestly. `WorkspaceNavigation` had already
+settled the rule for the tier below ("a nav item leading to a blank page is worse than an absent
+one"), and this is that rule applied where it holds rather than where it was found.
+
+The same decision moves **S-28 out of the workspace tier**. Task 27.7 put credentials there and said
+why in its own comment — §4.2 puts it under the account corner, no account corner existed, and an
+unreachable screen is worse than a temporarily misplaced link. The corner exists now, so this row
+*removes* an entry from the tier it was scheduled to extend. `design_spec.md`'s S-16 entry-point note
+is amended to say so; it claimed the opposite.
+
+Two artboard divergences, both stated rather than discovered later:
+
+- **The switcher's draft-safety note is deferred with autosave.** *"Switching keeps this draft saved
+  and returns you to it when you come back"* is a guarantee nothing implements until task 35.2. Task
+  23 set the precedent by omitting A-01's LOGGED note rather than shipping it untrue.
+- **The avatar carries no initials.** The artboard draws `AR` beside *Ana Rusu*; registration
+  collects an address and a password and nothing else (UC-01), which is `design_spec.md` **OQ-16**,
+  open. Initials cut from an email address are an identity the product never captured, shown to the
+  person they are wrong about. A glyph keeps the anatomy and invents nothing.
+
+### Three things only a browser could have found
+
+**Sign-out silently did nothing, and nothing errored.** The menu item is a `type="submit"` button
+associated by `form=` with a form outside the portal. A click submits as the click's *default
+action*, after the handlers — and selecting a Radix menu item closes the menu in one of those
+handlers, so React unmounted the button before the default action ran. The menu closed and the person
+stayed signed in, which is the worst shape a sign-out defect can take. The handler now cancels the
+default and calls `requestSubmit()` on the form, which dispatches synchronously while the button is
+still attached. `e2e/web/global-tier.spec.ts` exists for this; no unit test and no type could have
+seen it.
+
+**The language submenu was unreachable, and `modal` was the cause.** Radix's `DropdownMenu` is modal
+by default: `body` gets `pointer-events: none` and the content layer gets `auto`. `SubContent`
+portals as a **sibling** of that layer, so it inherits the `none`. `modal={false}` is the fix and it
+is also the right semantics — this is chrome hanging off a header, not a dialogue, so the page
+behind it should stay scrollable and stay visible to a screen reader.
+
+**The remaining failure was the test harness, and it was measured rather than assumed.** After
+`modal={false}` the submenu still refused a Playwright click: `<html> intercepts pointer events`. A
+throwaway probe showed the element hit-testable and geometrically stable from `t=0`, with
+`document.elementFromPoint` returning it — so nothing about the menu was wrong. Playwright's mouse
+*teleports*: one `mousemove` at the destination, no path. Radix decides whether to keep a submenu
+open from the pointer's direction of travel, and a single point has no direction, so it closed the
+sub and the click landed on the page behind it. The spec drives that step by keyboard, which is
+deterministic, is what WCAG 2.2 AA requires anyway (NFR-75), and is covered nowhere else in the
+suite. The reason is written into the spec so the next reader does not "fix" it back to a click.
+
+### The banner that made two other landmarks wrong
+
+Introducing §4.2's tier means introducing the product's first authenticated `banner`, and that
+changed the meaning of markup already on disk. `<header>` maps to `banner` **unless** it descends
+from `article`, `aside`, `main`, `nav` or `section` — and `RecordShell` renders a `<header>` inside a
+plain `<div>`, so S-28 would have shipped with **two** banners the moment a real one appeared above
+it. The same change left every workspace screen with chrome and no `main`, which is where a
+screen-reader user has nothing to skip *to*.
+
+Both are landmark-structure faults that axe's WCAG tag set does not raise — `landmark-no-duplicate-banner`
+and `landmark-one-main` are best-practice rules — so the new scan was green through all of it.
+
+One fix answers both: `<main>` around `{children}` in the `(workspace)` layout, which is the nesting
+the HTML specification itself names. It lands there rather than in `(app)` because the workspace nav
+must stay outside `main`, and a layout cannot wrap part of a nested layout's output. S-35 is outside
+that group and got its own two lines for the same reason.
+
+**Changing `RecordShell` would have treated the symptom.** Its `<header>` is correct markup for a
+record's identity block; what was wrong was that nothing wrapped the page. The browser spec now
+asserts `toHaveCount(1)` for both landmarks on two screens — an exact count, because the failure is
+*two* of something, which every lenient locator in the suite would have read as success.
+
+### Coverage, and what was declined
+
+- **Two `packages/ui` specs** for the band's two §8.1 states and the menu's roles — the states an
+  end-to-end journey would have to contrive.
+- **One use-case spec** for `active`'s three states, two of which (several-with-no-preference, a
+  preference naming an organization the account was removed from) are only reachable over HTTP by
+  manufacturing a session.
+- **The axe scan gained a second pass on one sign-in**: §4.2's band is now inside every existing
+  authenticated scan at rest, and the new pass judges the menu **open** — a menu, a submenu and an
+  expanded trigger, none of which are in the DOM until somebody clicks.
+- **The +40% expansion harness was not extended**, and that is a deferral rather than an omission:
+  its project runs a second server with no session, so reaching an `(app)` screen means driving
+  register → verify → sign-in against it. Task 26.4 made the same call for S-16 and this row does not
+  change it; task 30.4's row is where "expansion harness passes" is actually asked for.
+- **`LanguageSwitcher` was checked for the `modal` finding and left alone.** The sweep rule says
+  search for a rule's shape before closing it, and this one does not hold there: the stranding is a
+  `SubContent` portalling outside its parent layer, and that component has no `Sub`. Changing a
+  shipped component's overlay semantics with no demonstrated defect is churn.
+
+### Skills, read against the diff
+
+`vercel-react-best-practices` and `vercel-composition-patterns`, per `apps/web/CLAUDE.md`'s
+checklist. Three things it changed:
+
+- **`readMemberships` is wrapped in React `cache()`** — the first use of it in this app. The band
+  reads the collection on every authenticated screen and S-05 (task 30.5) will read the same one as
+  its content; a layout and a page render in the same pass, so without it the product's
+  most-rendered read goes out twice per navigation.
+- **The tier's four reads are one `Promise.all`.** None feeds another, and `server-` waterfalls are
+  the skill's CRITICAL category.
+- **Every string is resolved on the server and passed as a prop.** `AccountCorner` needs the browser
+  for the current address and nothing else, so giving it `useTranslations` would have put the
+  `chrome` catalogue into the bundle — the cost the `(workspace)` layout's namespace-scoped provider
+  exists to avoid (NFR-43).
+
+Declined with reasons: `rerender-` memoization in `AccountCorner`, which renders once per navigation
+and holds two derived values over a three-element array — `useMemo` there is ceremony with a
+dependency list that can fall behind its body. And the compound-component shape from
+`vercel-composition-patterns` for `AccountMenu`: it would be the better API for a component with
+several consumers, and this one has exactly one forever, so `items` plus a `language` slot is the
+smaller surface that still keeps every menu row the caller's own element.
+
+Verified: `pnpm gates:clean` green end to end — 10 root scripts, 461 api unit tests across 59
+suites, 36 vitest files, and all 70 browser tests in the three Playwright projects.
+
+**One flake seen and chased rather than retried.** An earlier full run failed `session.spec.ts`'s
+reset flow inside `registerAndVerify`; the page snapshot showed the verify screen with *Confirmați
+adresa* **disabled**, i.e. the submission still in flight when the 5 s `toBeVisible` expired. That
+screen is `(identity)` and shares nothing with this task's diff. Re-running the project alone passed
+61/61, and the clean run passed 70/70. Recorded rather than deleted because the failure mode is
+worth knowing: under `workers: 1` with the api, both web servers and `vite preview` competing, a
+default expect timeout on a submitting button is the thinnest margin in the suite.

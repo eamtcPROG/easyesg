@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { SessionStrip } from '@/shared/session-strip';
+import { GlobalTier } from '@/shared/global-tier';
 
 /**
  * The authenticated shell. `proxy.ts` guarantees a session above this point.
@@ -34,12 +34,16 @@ import { SessionStrip } from '@/shared/session-strip';
 export const dynamic = 'force-dynamic';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  // The strip is task 22's interim rendering of the global tier's account corner — email and
-  // sign-out, inventory components only. Task 30 replaces it with the real §4.2 chrome; the
-  // deferral is recorded on its row in docs/task.md.
+  // The real §4.2 global tier since task 30.1. Task 22's interim `SessionStrip` is deleted, not
+  // left dead — it named this task as its owner in its own comment, and the comment went with it.
+  //
+  // It is rendered here rather than in `(workspace)` because "present on every authenticated
+  // screen" includes the two `(app)` screens that are NOT in that group: S-04, where there is no
+  // organization to name yet, and S-35, where the read that would name it has just failed. Both
+  // are the band's designed empty state rather than a second layout.
   return (
     <>
-      <SessionStrip />
+      <GlobalTier />
       {children}
     </>
   );

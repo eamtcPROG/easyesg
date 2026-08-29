@@ -95,7 +95,9 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     // (UC-05), so a brand-new account belonging to nothing lands on S-04 exactly as a password
     // sign-in does — which is the point of routing both through one decision.
     await expect(page).toHaveURL(/\/create-organization$/);
-    await expect(page.getByText(email)).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: `Contul dumneavoastră: ${email}` }),
+    ).toBeVisible();
   });
 
   test('a sign-in that matches no account is offered registration (UC-05 alternate)', async ({

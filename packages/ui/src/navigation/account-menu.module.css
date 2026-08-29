@@ -1,0 +1,118 @@
+/* The global tier's user menu. The trigger sits on the dark band and reads `--globalbar-*`;
+   the surface it opens is an ordinary raised one, so it reads the same tokens every other menu
+   does — a popover is not part of the band and must not inherit its contrast pairing. */
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  /* 40px, the target size everything a first-time user must hit carries (WCAG 2.2, NFR-75). */
+  min-block-size: 40px;
+  max-inline-size: 100%;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-1);
+  background: transparent;
+  color: var(--globalbar-text);
+  font: 400 14.5px/1 var(--font-text);
+  cursor: pointer;
+}
+
+.trigger:hover {
+  background: var(--globalbar-plate-hover);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--globalbar-avatar-surface);
+  color: var(--globalbar-avatar-text);
+}
+
+.avatarGlyph {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+/* The address is longer than a name and the band is one row at every width, so it truncates
+   rather than wrapping. The full value stays in the trigger's accessible name and in the
+   menu's own identity block, so nothing is only available by hovering. */
+.triggerEmail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  inline-size: 14px;
+  block-size: 14px;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.menu {
+  min-inline-size: 240px;
+  max-inline-size: 320px;
+  padding: var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-raised);
+  box-shadow: var(--elevation-1);
+  z-index: 10;
+}
+
+.identity {
+  display: block;
+  overflow: hidden;
+  padding: var(--space-3) var(--space-4);
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+}
+
+.separator {
+  block-size: 1px;
+  margin: var(--space-2) 0;
+  background: var(--border-default);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  inline-size: 100%;
+  min-block-size: 40px;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-1);
+  background: transparent;
+  font: 400 14px/20px var(--font-text);
+  color: var(--text-default);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-highlighted],
+.item[data-state='open'] {
+  background: var(--accent-tint);
+}
+
+.item[data-current] {
+  font-weight: 600;
+  color: var(--accent-hover);
+}
+
+.itemValue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+}
