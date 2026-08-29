@@ -2994,6 +2994,32 @@
           "grant"
         ]
       },
+      "OrganizationChangeAttributionDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The acting account, or null where the change was not made by one."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "The acting account’s address, for display. Null where that account no longer exists — the trail deliberately carries no foreign key, so an attribution outlives the account it names (NFR-28). There is no display name to show instead: registration collects none."
+          },
+          "at": {
+            "type": "number",
+            "description": "Unix epoch milliseconds of the change."
+          }
+        },
+        "required": [
+          "accountId",
+          "email",
+          "at"
+        ]
+      },
       "OrganizationResponseDto": {
         "type": "object",
         "properties": {
@@ -3046,11 +3072,32 @@
           "contactEmail": {
             "type": "string",
             "nullable": true,
-            "format": "email"
+            "format": "email",
+            "description": "How the PLATFORM reaches this organization. Distinct from reportContactEmail, which is printed on the report cover for its readers."
           },
           "contactPhone": {
             "type": "string",
             "nullable": true
+          },
+          "reportContactName": {
+            "type": "string",
+            "nullable": true,
+            "description": "FR-15’s report-cover contact — the person a reader of the published report contacts about its content. A second contact rather than a rename of contactEmail: in an SME the account administrator and the person who answers a question about a figure in B3 are routinely different people. Collected on S-15 only; S-04 sets neither."
+          },
+          "reportContactEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email"
+          },
+          "lastChange": {
+            "nullable": true,
+            "description": "Who last changed any field of this record, and when (FR-15). Read from the per-field audit trail the database writes, not from a column the application maintains. Null where the trail holds nothing for this record — an unusual state, and a real answer rather than an error.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrganizationChangeAttributionDto"
+              }
+            ]
           },
           "createdAt": {
             "type": "number",
@@ -3074,6 +3121,9 @@
           "registeredPostalCode",
           "contactEmail",
           "contactPhone",
+          "reportContactName",
+          "reportContactEmail",
+          "lastChange",
           "createdAt",
           "updatedAt"
         ]
@@ -3190,6 +3240,18 @@
             "type": "string",
             "nullable": true,
             "maxLength": 40
+          },
+          "reportContactName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "FR-15’s report-cover contact — the person a reader of the published report contacts about its content, printed on the cover. A second contact rather than a rename of contactEmail, which is how the platform reaches the organization. Null clears it."
+          },
+          "reportContactEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "maxLength": 320
           }
         }
       },

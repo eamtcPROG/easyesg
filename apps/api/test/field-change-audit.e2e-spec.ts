@@ -108,10 +108,10 @@ describe('per-field audit capture (FR-54, FR-55, P-11)', () => {
         // the rule. A created row's complete initial state is what an INSERT records, which is task
         // 14's decision and not something a later task should reverse in passing.
         //
-        // **This list has now grown twice in two tasks**, and the growth is the point worth noting
-        // rather than the list. Task 29.1 took it from three entries to eleven, 29.2 to thirteen —
-        // and an organization founded through S-04 supplies four of them, so ten of the thirteen
-        // rows record that a field was left empty. The cost is one audit row per column per insert,
+        // **This list has now grown three times in three tasks**, and the growth is the point worth
+        // noting rather than the list. Task 29.1 took it from three entries to eleven, 29.2 to
+        // thirteen, 30.3 to fifteen — and an organization founded through S-04 supplies four of
+        // them, so eleven of the fifteen rows record that a field was left empty. The cost is one audit row per column per insert,
         // paid by every future column on every audited table. Task 34 is where it stops being
         // academic: `core.report_disclosure_value` carries four mutually exclusive value columns,
         // so every disclosure written would record three empty fields on the highest-volume table
@@ -130,6 +130,8 @@ describe('per-field audit capture (FR-54, FR-55, P-11)', () => {
           'registered_address_line2',
           'registered_locality',
           'registered_postal_code',
+          'report_contact_email',
+          'report_contact_name',
         ]);
         expect(rows.every((r) => r.operation === 'INSERT')).toBe(true);
         expect(rows.every((r) => r.old_value === null)).toBe(true);

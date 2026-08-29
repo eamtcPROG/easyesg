@@ -128,4 +128,28 @@ export class UpdateOrganizationProfileRequestDto {
   @IsString()
   @Length(1, 40)
   contactPhone?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    maxLength: 200,
+    description:
+      'FR-15’s report-cover contact — the person a reader of the published report contacts about ' +
+      'its content, printed on the cover. A second contact rather than a rename of contactEmail, ' +
+      'which is how the platform reaches the organization. Null clears it.',
+  })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 200)
+  reportContactName?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'email', maxLength: 320 })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsEmail()
+  @Length(1, 320)
+  reportContactEmail?: string | null;
 }

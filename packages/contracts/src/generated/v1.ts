@@ -1189,6 +1189,20 @@ export interface components {
              */
             grant: "created" | "reactivated" | "already_member";
         };
+        OrganizationChangeAttributionDto: {
+            /**
+             * Format: uuid
+             * @description The acting account, or null where the change was not made by one.
+             */
+            accountId: string | null;
+            /**
+             * Format: email
+             * @description The acting account’s address, for display. Null where that account no longer exists — the trail deliberately carries no foreign key, so an attribution outlives the account it names (NFR-28). There is no display name to show instead: registration collects none.
+             */
+            email: string | null;
+            /** @description Unix epoch milliseconds of the change. */
+            at: number;
+        };
         OrganizationResponseDto: {
             /** Format: uuid */
             id: string;
@@ -1215,9 +1229,18 @@ export interface components {
             registeredAddressLine2: string | null;
             registeredLocality: string | null;
             registeredPostalCode: string | null;
-            /** Format: email */
+            /**
+             * Format: email
+             * @description How the PLATFORM reaches this organization. Distinct from reportContactEmail, which is printed on the report cover for its readers.
+             */
             contactEmail: string | null;
             contactPhone: string | null;
+            /** @description FR-15’s report-cover contact — the person a reader of the published report contacts about its content. A second contact rather than a rename of contactEmail: in an SME the account administrator and the person who answers a question about a figure in B3 are routinely different people. Collected on S-15 only; S-04 sets neither. */
+            reportContactName: string | null;
+            /** Format: email */
+            reportContactEmail: string | null;
+            /** @description Who last changed any field of this record, and when (FR-15). Read from the per-field audit trail the database writes, not from a column the application maintains. Null where the trail holds nothing for this record — an unusual state, and a real answer rather than an error. */
+            lastChange: components["schemas"]["OrganizationChangeAttributionDto"] | null;
             /** @description Unix epoch milliseconds when the organization was created. */
             createdAt: number;
             /** @description Unix epoch milliseconds of the last profile change. */
@@ -1276,6 +1299,10 @@ export interface components {
             /** Format: email */
             contactEmail?: string | null;
             contactPhone?: string | null;
+            /** @description FR-15’s report-cover contact — the person a reader of the published report contacts about its content, printed on the cover. A second contact rather than a rename of contactEmail, which is how the platform reaches the organization. Null clears it. */
+            reportContactName?: string | null;
+            /** Format: email */
+            reportContactEmail?: string | null;
         };
         ConsolidationMemberResponseDto: {
             /** Format: uuid */

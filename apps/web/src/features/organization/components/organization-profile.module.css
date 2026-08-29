@@ -1,0 +1,32 @@
+/* S-15. Values from EasyESG Organization Admin.dc.html (OQ-10); the Record archetype's own
+   spacing is `RecordShell`'s and is not restated here. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--grid-gutter-narrow);
+  max-inline-size: var(--content-max);
+  margin-inline: auto;
+}
+
+/* The save/discard pair, with the dirty-state line beside them. It wraps rather than compressing:
+   at 390 the sentence is longer than the two buttons together, and a +40% catalogue makes that
+   true at every width. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.dirtyHint {
+  flex: 1 1 22ch;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.footnote {
+  margin: 0;
+  color: var(--text-muted);
+}

@@ -21,8 +21,14 @@ interface OrganizationRow {
   registered_postal_code: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  report_contact_name: string | null;
+  report_contact_email: string | null;
   created_at: Date;
   updated_at: Date;
+  /** From the lateral join below, not from `core.organization`. Null on a record with no trail. */
+  last_changed_at: Date | null;
+  last_actor_id: string | null;
+  last_actor_email: string | null;
 }
 
 /** The columns a patch may name, paired with the model field each maps from. One list, two uses. */
@@ -38,11 +44,45 @@ const PATCHABLE = {
   registeredPostalCode: 'registered_postal_code',
   contactEmail: 'contact_email',
   contactPhone: 'contact_phone',
+  reportContactName: 'report_contact_name',
+  reportContactEmail: 'report_contact_email',
 } as const satisfies Record<keyof OrganizationProfilePatch, string>;
 
-const SELECTED_COLUMNS = `id, name, country_code, legal_form, idno, lei,
-        registered_address_line1, registered_address_line2, registered_locality,
-        registered_postal_code, contact_email, contact_phone, created_at, updated_at`;
+const SELECTED_COLUMNS = `o.id, o.name, o.country_code, o.legal_form, o.idno, o.lei,
+        o.registered_address_line1, o.registered_address_line2, o.registered_locality,
+        o.registered_postal_code, o.contact_email, o.contact_phone,
+        o.report_contact_name, o.report_contact_email, o.created_at, o.updated_at`;
+
+/**
+ * FR-15's attribution, answered from the trail that already records it (task 30.3).
+ *
+ * **A lateral join rather than a second round trip**, and the ordering is not a guess: task 14's
+ * `field_change_record_idx` is `(organization_id, table_name, record_id, occurred_at DESC)`, so
+ * this reads one row from an index whose leading column RLS supplies. That is also why no `WHERE`
+ * here names an organization — the policy is `organization_id = app.current_org`.
+ *
+ * **`table_name` is schema-qualified** because the trigger writes `TG_TABLE_SCHEMA || '.' ||
+ * TG_TABLE_NAME`. A bare `'organization'` matches nothing and would silently answer "never
+ * changed", which is the shape of wrong answer an RLS-scoped read keeps producing here.
+ *
+ * **The join to `identity.account` is LEFT and reads no wider than the trail.**
+ * `core.field_change.actor_id` carries no foreign key by design (task 14 — an attribution must
+ * outlive the account it names), so a since-erased actor yields a null address rather than dropping
+ * the row. `identity.account` carries no RLS, which sounds like a widening and is not: the trail is
+ * already scoped to the bound organization, so the only accounts reachable through it are the ones
+ * that changed *this* organization — its own members, whose addresses S-16 shows the same reader.
+ */
+const LAST_CHANGE_JOIN = `LEFT JOIN LATERAL (
+          SELECT fc.occurred_at, fc.actor_id, a.email
+            FROM core.field_change fc
+            LEFT JOIN identity.account a ON a.id = fc.actor_id
+           WHERE fc.table_name = 'core.organization' AND fc.record_id = o.id
+           ORDER BY fc.occurred_at DESC
+           LIMIT 1
+        ) lc ON true`;
+
+const LAST_CHANGE_COLUMNS = `lc.occurred_at AS last_changed_at,
+        lc.actor_id AS last_actor_id, lc.email AS last_actor_email`;
 
 const toOrganization = (row: OrganizationRow): Organization => ({
   id: row.id,
@@ -57,8 +97,16 @@ const toOrganization = (row: OrganizationRow): Organization => ({
   registeredPostalCode: row.registered_postal_code,
   contactEmail: row.contact_email,
   contactPhone: row.contact_phone,
+  reportContactName: row.report_contact_name,
+  reportContactEmail: row.report_contact_email,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  // The moment is what makes an attribution one: an actor with no time answers nothing, so the
+  // whole object is absent rather than half filled. A *named* actor is the optional half.
+  lastChange:
+    row.last_changed_at === null
+      ? null
+      : { accountId: row.last_actor_id, email: row.last_actor_email, at: row.last_changed_at },
 });
 
 /**
@@ -94,7 +142,9 @@ export class OrganizationStoreRepository
 
   async findBoundOrganization(): Promise<Organization | null> {
     const rows = await this.manager.query<OrganizationRow[]>(
-      `SELECT ${SELECTED_COLUMNS} FROM core.organization`,
+      `SELECT ${SELECTED_COLUMNS}, ${LAST_CHANGE_COLUMNS}
+         FROM core.organization o
+         ${LAST_CHANGE_JOIN}`,
     );
 
     // **More than one row is a bug, not a case to pick from** — and today it is unreachable, which
@@ -142,11 +192,19 @@ export class OrganizationStoreRepository
     // `UPDATE ... RETURNING` gives `[rows, rowCount]` rather than the rows — TypeORM builds `raw`
     // with a switch on the driver's `command`, so the identical clause reads differently after an
     // INSERT. Normalised here rather than remembered; see `returnedRows` in the identity stores.
-    const result = await this.manager.query<[OrganizationRow[], number]>(
-      `UPDATE core.organization SET ${assignments.join(', ')} RETURNING ${SELECTED_COLUMNS}`,
+    const result = await this.manager.query<[{ id: string }[], number]>(
+      `UPDATE core.organization SET ${assignments.join(', ')} RETURNING id`,
       parameters,
     );
     const [rows] = result;
-    return rows.length > 0 ? toOrganization(rows[0]) : null;
+    if (rows.length === 0) return null;
+
+    // **Re-read rather than `RETURNING` the whole row**, because the attribution this write just
+    // produced is the answer the screen needs. `core.capture_field_change` is an `AFTER` trigger,
+    // so its rows exist by the time this statement returns and are visible on the same transaction
+    // — but they cannot appear in a `RETURNING` clause, which sees the updated row and nothing
+    // else. One extra round trip on a write, rather than rendering "last changed" as the state
+    // before the change the reader has just made.
+    return this.findBoundOrganization();
   }
 }

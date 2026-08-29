@@ -151,8 +151,16 @@ export class OrganizationFoundingStoreRepository implements OrganizationFounding
         registeredPostalCode: row.registered_postal_code,
         contactEmail: row.contact_email,
         contactPhone: row.contact_phone,
+        // S-04 collects neither (task 30.3): a founding screen has no report to put a cover on.
+        reportContactName: null,
+        reportContactEmail: null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        // **Null on the founding read, and not because it is unknown.** The capture trigger has
+        // written a creation row by now, but reading it back would cost this transaction a second
+        // query to answer "changed by you, a moment ago" on a response the founder is not shown as
+        // a profile. S-15's read is where the attribution is asked for and where it is resolved.
+        lastChange: null,
       };
     } catch (error) {
       if (queryRunner.isTransactionActive) await queryRunner.rollbackTransaction();

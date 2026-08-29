@@ -1,6 +1,7 @@
 import 'server-only';
-import { PROBLEM_TYPE, type Invitation, type Member } from '@easyesg/contracts';
-import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
+import type { Invitation, Member } from '@easyesg/contracts';
+import { API_OUTCOME } from '@/lib/api-outcome';
+import { TENANT_READ, isPermissionRefusal } from './tenant-read';
 import { toAccessRows, type AccessRow } from '@/features/organization/access';
 import { api } from '../api-client';
 
@@ -17,25 +18,16 @@ import { api } from '../api-client';
  * must already be fresh when this runs.
  */
 
-export const ACCESS_READ = {
-  READY: 'ready',
-  /**
-   * Signed in, and this screen is not theirs. The API is the authority — both controllers carry
-   * `@RequiresRole(ORGANIZATION_ADMINISTRATOR)` at class level — so the screen never computes the
-   * caller's role to decide what to draw. It asks, and renders S-16's permission state on a
-   * refusal. That is one fewer round trip than reading `/memberships` first, and one fewer place
-   * for the web tier's belief about a role to disagree with the server's.
-   */
-  FORBIDDEN: 'forbidden',
-  /** No answer, or one this tier could not read. Same fact and same remedy as the API being down. */
-  UNREACHABLE: 'unreachable',
-} as const;
-
-export type AccessReadStatus = (typeof ACCESS_READ)[keyof typeof ACCESS_READ];
+/**
+ * The read's three arms are `TENANT_READ`'s, shared since task 30.3 — S-15 draws the same three
+ * and a second `as const` beside this one is the drift the convention exists to prevent. The alias
+ * keeps this module's own vocabulary readable at its call sites.
+ */
+export { TENANT_READ as ACCESS_READ } from './tenant-read';
 
 export type AccessRead =
   | {
-      readonly status: typeof ACCESS_READ.READY;
+      readonly status: typeof TENANT_READ.READY;
       readonly rows: readonly AccessRow[];
       /**
        * The instant the rows were read, which is what an invitation's standing is judged against.
@@ -47,16 +39,9 @@ export type AccessRead =
        */
       readonly readAt: number;
     }
-  | { readonly status: typeof ACCESS_READ.FORBIDDEN }
-  | { readonly status: typeof ACCESS_READ.UNREACHABLE };
+  | { readonly status: typeof TENANT_READ.FORBIDDEN }
+  | { readonly status: typeof TENANT_READ.UNREACHABLE };
 
-const PERMISSION_PROBLEMS: readonly string[] = [
-  PROBLEM_TYPE.InsufficientRole,
-  PROBLEM_TYPE.MembershipRequired,
-];
-
-const isPermissionRefusal = (outcome: ApiOutcome<unknown>): boolean =>
-  outcome.status === API_OUTCOME.Problem && PERMISSION_PROBLEMS.includes(outcome.problem.type);
 
 /**
  * Both collections, together.
@@ -77,14 +62,14 @@ export const readOrganizationAccess = async (): Promise<AccessRead> => {
   ]);
 
   if (isPermissionRefusal(members) || isPermissionRefusal(invitations)) {
-    return { status: ACCESS_READ.FORBIDDEN };
+    return { status: TENANT_READ.FORBIDDEN };
   }
   if (members.status !== API_OUTCOME.Ok || invitations.status !== API_OUTCOME.Ok) {
-    return { status: ACCESS_READ.UNREACHABLE };
+    return { status: TENANT_READ.UNREACHABLE };
   }
 
   return {
-    status: ACCESS_READ.READY,
+    status: TENANT_READ.READY,
     rows: toAccessRows({ members: members.value.items, invitations: invitations.value.items }),
     readAt: Date.now(),
   };

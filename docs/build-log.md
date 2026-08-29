@@ -5951,3 +5951,146 @@ measurable gain; and a compound-component API for the form, which has one consum
 composition to expose.
 
 Verified: `pnpm gates:clean`.
+
+## Task 30.3 — S-15, and the screen that had no task · 2026-08-29
+
+The organization's legal identity and FR-16's identifiers on the Record archetype, editable in
+three locales. The row read `web`; it shipped **api+web**, on two decisions the project owner took
+against my recommendation on the first and beyond it on the second.
+
+### The artboard again, and three of four extras had owners
+
+`EasyESG Organization Admin.dc.html` draws a *default language of reports*, **VAT registration**, an
+**e-Factura recipient**, a callout about issued invoices, and a *Contact for reports* region — and
+omits legal form and the LEI, both of which §5's Content row requires. Tracing them took minutes
+and settled most of it without a decision:
+
+- **VAT registration, the e-Factura recipient and the invoice callout** are FR-106's billing
+  account, which that requirement makes *"distinct from the organization profile"*. S-23's, and §5's
+  Exits row already sends the reader there.
+- **A default report language is not an organization setting at all.** FR-52 makes export language a
+  choice taken *per export*, at S-11, explicitly independent of the interface language — an
+  organization-level default would be a second answer to a question that already has one.
+
+All three are recorded on `design_spec.md` S-15 rather than in a register row, because OQ-20 closed
+the precedence question two tasks earlier and this is that ruling applied, not a new one.
+
+**The fourth traced to nothing**, and the project owner made it a requirement. `FR-15 is amended`
+(29 Aug 2026) to carry the report-cover contact, and the amendment says why it is a *second* contact
+rather than a rename: the platform writes to `contactEmail` **about** the organization, while this
+is the person a reader of the published report contacts **about its content**, and in an SME those
+are routinely different people. Collected on S-15 only — S-04 stays at UC-49's four fields, because
+a founding screen has no report to put a cover on. Declined: letting task 44.3's PDF pipeline invent
+a cover contact from `contactEmail`, which would put a product decision inside a renderer and make
+the printed value unexplainable on the screen that owns the profile.
+
+### The attribution, and what it cost to answer honestly
+
+§5 lists change attribution among the Record's fixed elements and `GET /organization` answered a
+timestamp with no actor — OQ-19's gap on a second screen. I recommended rendering the timestamp
+alone and deferring the actor; the owner chose to add it. Two shapes were available and only one
+survives FR-15's own wording:
+
+An `updated_by` column on `core.organization`, written by the use case, would be a **second writer
+of a fact the database already owns** — task 14's capture trigger records the acting user per field,
+unbypassably, as `SECURITY DEFINER`. Two writers of one fact drift with nothing to notice. So the
+read takes the newest row from the trail that exists, and `OrganizationChangeAttributionDto` is
+`{ accountId, email, at }` — nullable as a unit, with `email` nullable within it, because
+`core.field_change.actor_id` carries no foreign key by design (task 14: an attribution must outlive
+the account it names, NFR-28).
+
+**The plan was measured rather than reasoned about**, per this package's own rule. `EXPLAIN` with
+`enable_seqscan = off` shows every `field_change` partition using
+`field_change_..._organization_id_table_name_record_id_occu_idx` with an **Index Cond on all three
+leading columns** — RLS supplies `organization_id`, which is also why no `WHERE` here names an
+organization — then `Merge Append` with `Sort Key: occurred_at DESC` and `Limit 1`. No sort node.
+That index was written by task 14 and this is its first reader.
+
+Two smaller things fell out of it. **`table_name` is schema-qualified** (`'core.organization'`),
+because the trigger writes `TG_TABLE_SCHEMA || '.' || TG_TABLE_NAME`; a bare `'organization'` would
+match nothing and answer *never changed*, which is this codebase's recurring shape of wrong answer
+in an RLS-scoped read. And **`updateProfile` re-reads instead of using `RETURNING`**: the capture
+trigger is `AFTER`, so its rows exist and are visible on the same transaction, but they cannot
+appear in a `RETURNING` clause — which sees the updated row and nothing else. One extra round trip
+on a write, rather than rendering "last changed" as the state before the change the reader just
+made. The e2e asserts exactly that ordering.
+
+**The join to `identity.account` reads no wider than the trail**, and that is worth stating because
+`identity.account` carries no RLS. The trail is already scoped to the bound organization, so the
+only accounts reachable through it are the ones that changed *this* organization — its own members,
+whose addresses S-16 already shows the same reader.
+
+### S-12 had no task, and that is why this one went looking
+
+Tracing who owns the artboard's *history* link found that **`design_spec.md` §4.4 carries S-12 —
+Field change history, with UC-47, FR-54 and FR-55 all at MVP, and no task row anywhere built it**.
+Task 14 writes `core.field_change` by trigger; this task reads one row of it for a line of text; the
+trail itself has no reader and no owner.
+
+Appended as **task 84**, api+web, in two sub-steps. It is the same class of gap tasks 28.2 and 28.4
+closed by assigning `AdminRealmGuard` and `AuditInterceptor`, and that Phase 9 closed for the public
+tier: a screen the inventory names, with requirements behind it, that a plan sliced from §15.4 could
+not contain. Not folded into this task, deliberately — S-15's attribution, S-13's entity record and
+FR-55's per-field history inside the wizard all point at it, and burying a named screen inside
+another screen's task is where the next reader cannot find it.
+
+### The screen
+
+Four `RecordSection`s under **one form with one save**, which is the difference from S-28 — that
+screen's sections each commit their own credential operation, while §5's Controls row here is *edit;
+save; cancel* for the record. Save is inert until a field differs and the screen **says so in
+words**, which is the artboard's own line rather than a greyed control left to imply it (UX-102).
+
+**The form re-seeds from what was stored, not from what was typed.** The API normalises — a trimmed
+name, an upper-cased country and LEI — so a form left holding the reader's input would show a
+permanently dirty field they cannot clean. That is also what makes `formState.isDirty` an honest
+gate rather than a control that never re-arms.
+
+**The identifier rules are `@easyesg/validation`'s**, which task 29.2 put there naming S-15 as the
+inline caller (§9.8). They separate *shape* from *check digits* because the two have different
+resolutions, and the screen spends that: a malformed LEI says *retype it exactly as it appears on
+your certificate*, and one whose MOD 97-10 digits disagree says *check that you copied the right
+one*. The fixture is a published LEI rather than a value this suite produced — the same discipline
+`entity-identifier.ts` records after its first draft refused every real one.
+
+Three findings from the front-end pass, all from lint rather than from review:
+
+- **`watch()` → `useWatch`.** The country select drives which legal forms are offered, and
+  `watch()` re-renders the whole form on every keystroke anywhere in it; it is also what
+  `react-hooks/incompatible-library` refuses. `register-form.tsx` had recorded the same choice.
+- **An effect re-seeding state from a prop, removed rather than silenced.**
+  `react-hooks/set-state-in-effect` flagged it and was right twice: the case it guarded — the
+  server re-rendering a newer record under a still-mounted form — is not one this screen produces,
+  since a save resets from its own response and any other route to a newer record remounts the
+  component. And in the one case it would have fired, resetting a form somebody is typing in
+  discards their work, which is why it already carried an `isDirty` guard that made it fire almost
+  never.
+- **A nested `Attribution` component, hoisted.** Declared during render it is a new type every
+  render, so React remounts its subtree instead of updating it. One line of text, costing nothing
+  measurable — which is exactly why it is worth fixing as a habit rather than after a profiler.
+
+### Two extractions, both because a second copy was about to exist
+
+**`TENANT_READ`**, from S-16's `ACCESS_READ`. Ready / forbidden / unreachable is the shape every
+tenant-scoped Server Component read draws, and S-15 needed the same three — a closed vocabulary
+declared twice, one edit before it drifts. `isPermissionRefusal` moved with it, including the reason
+it matches **both** `insufficient-role` and `membership-required`: a caller holding several
+memberships with no stated preference resolves no organization, so a `@RequiresRole` route refuses
+them for a different reason and the same fact.
+
+**Label resolution stays on the page**, as S-04's does. The app's `IntlMessages` augmentation
+narrows a namespace's keys to the ones authored, so `t(legalFormKey)` cannot take a value the API
+supplies; the page indexes the catalogue object and falls back to the key, which is OQ-43's stated
+behaviour for a value registered ahead of its wording. Ten legal forms in three locales, and the
+browser journey asserts that `srl` renders as *Societate cu răspundere limitată (SRL)* — a key on a
+screen renders identically to a correct label until somebody reads it.
+
+### Coverage
+
+Two API e2e tests (the attribution names the person who just saved; the cover contact is held apart
+from the platform contact and audited by the same trigger with no migration change), five browser
+journeys, one axe scan, three padded expansion frames. `field-change-audit.e2e-spec.ts`'s pinned
+column list grew for the third time in three tasks, which is that test doing its job — and its own
+comment about the cost now reads eleven empty rows of fifteen per founding insert.
+
+Verified: `pnpm gates:clean`.

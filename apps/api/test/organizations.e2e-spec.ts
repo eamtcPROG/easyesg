@@ -294,6 +294,67 @@ describe('organizations (UC-49, UC-50)', () => {
       );
     });
 
+    it('answers who last changed the profile, and when (FR-15, task 30.3)', async () => {
+      // Read AFTER the patch above, so the attribution is the change this suite just made rather
+      // than the creation. That ordering is the assertion: `updateProfile` re-reads instead of
+      // using `RETURNING`, precisely so the answer is not the state before the write.
+      const response = await http()
+        .get('/api/v1/organization')
+        .set(founder.authorization)
+        .expect(200);
+
+      const lastChange = (response.body as {
+        object: { lastChange: { accountId: string; email: string; at: number } | null };
+      }).object.lastChange;
+
+      expect(lastChange).not.toBeNull();
+      expect(lastChange?.accountId).toBe(founder.accountId);
+      expect(lastChange?.email).toBe(founder.email);
+      // Epoch milliseconds, like every other instant on the wire (OQ-50) — asserted as a number
+      // rather than a shape, because a `timestamptz` leaking through would still be truthy.
+      expect(typeof lastChange?.at).toBe('number');
+    });
+
+    it('holds the report-cover contact apart from the platform contact (FR-15, amended)', async () => {
+      const patched = await http()
+        .patch('/api/v1/organization')
+        .set(founder.authorization)
+        .send({
+          contactEmail: 'platforma@example.md',
+          reportContactName: 'Ana Rusu',
+          reportContactEmail: 'raport@example.md',
+        })
+        .expect(200);
+
+      const organization = (patched.body as {
+        object: { contactEmail: string; reportContactName: string; reportContactEmail: string };
+      }).object;
+
+      // Two contacts, and the point of the field is that they differ: the platform writes to the
+      // first about the organization, the second is printed on a document that leaves the platform.
+      expect(organization.contactEmail).toBe('platforma@example.md');
+      expect(organization.reportContactName).toBe('Ana Rusu');
+      expect(organization.reportContactEmail).toBe('raport@example.md');
+
+      // Audited like every other column, with no migration change — the capture trigger compares
+      // `jsonb` row images, so a new column is captured the moment it exists (task 14).
+      const changes = await asOrganization(owner, foundedId, (run) =>
+        run(
+          // `operation = 'UPDATE'` matters: the INSERT records every column of a created row
+          // including the ones left empty (task 14's decision, pinned by `field-change-audit`), so
+          // an unscoped match here counts each field twice and says nothing about this patch.
+          `SELECT field_name FROM core.field_change
+            WHERE record_id = $1 AND operation = 'UPDATE' AND field_name LIKE 'report_contact%'
+            ORDER BY field_name`,
+          [foundedId],
+        ),
+      );
+      expect(changes).toEqual([
+        { field_name: 'report_contact_email' },
+        { field_name: 'report_contact_name' },
+      ]);
+    });
+
     it('refuses a legal form the country does not register', async () => {
       const refused = await http()
         .patch('/api/v1/organization')

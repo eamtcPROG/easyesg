@@ -30,7 +30,13 @@ import { ROUTES } from '@/lib/routes';
  * whole navigational job, and the alternative — every page passing its own key down through the
  * layout — is a prop that one screen eventually forgets to pass, with no way to notice.
  */
-const SECTIONS = [{ key: 'users', href: ROUTES.ORGANIZATION_USERS }] as const;
+const SECTIONS = [
+  // S-15, added with task 30.3 — §4.2's *Organization*, and the first entry this tier has gained
+  // rather than lost. It sits before *Users & access* because §4.2 lists it there and because the
+  // reading order is the object then its people.
+  { key: 'organization', href: ROUTES.ORGANIZATION },
+  { key: 'users', href: ROUTES.ORGANIZATION_USERS },
+] as const;
 
 export function WorkspaceNavigation() {
   const t = useTranslations('chrome.workspaceNav');

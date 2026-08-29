@@ -51,6 +51,8 @@ export const ROUTES = {
   HOME: '/home',
   /** S-35 — the membership read failed, so §4.3's branch could not be taken. */
   ORGANIZATION_UNAVAILABLE: '/organization-unavailable',
+  /** S-15 — the organization profile and its identifiers (task 30.3). */
+  ORGANIZATION: '/organization',
   /** S-16 — users and access (task 26.4). */
   ORGANIZATION_USERS: '/organization/users',
   /** S-28 — credentials and linked identities (task 27.7). The destination S-01's

@@ -26,6 +26,7 @@
     },
     "workspaceNav": {
       "label": "Organisation sections",
+      "organization": "Organisation",
       "users": "Users & access"
     },
     "index": {
@@ -358,6 +359,100 @@
     },
     "countries": {
       "MD": "Republic of Moldova"
+    },
+    "legalForms": {
+      "srl": "Limited liability company (SRL)",
+      "sa": "Joint-stock company (SA)",
+      "snc": "General partnership (SNC)",
+      "sc": "Limited partnership (SC)",
+      "ii": "Sole proprietorship (ÎI)",
+      "cp": "Production cooperative (CP)",
+      "ci": "Entrepreneurs’ cooperative (CÎ)",
+      "is": "State-owned enterprise (ÎS)",
+      "im": "Municipal enterprise (ÎM)",
+      "gt": "Peasant farm (GȚ)"
+    },
+    "profile": {
+      "title": "Organisation profile",
+      "lede": "The legal identity printed on every report you file.",
+      "save": "Save changes",
+      "discard": "Discard",
+      "pristine": "Nothing changed yet — save stays inert until a value differs.",
+      "unsaved": "You have unsaved changes.",
+      "saved": {
+        "title": "Profile saved",
+        "body": "The new values apply to reports created from now on. Reports already filed keep the values in force when they were prepared."
+      },
+      "problemTitle": "The change could not be saved",
+      "problemBody": "The profile is unchanged because the request could not be processed.",
+      "attribution": {
+        "by": "Last changed by {email} · {at}",
+        "anonymous": "Last changed {at}. The account that made the change no longer exists.",
+        "unknown": "No change recorded yet."
+      },
+      "identity": {
+        "heading": "Legal identity",
+        "lede": "The name and legal form exactly as they appear in the state register.",
+        "name": "Legal name",
+        "nameHelp": "It prints on the report as you write it here.",
+        "nameRequired": "Enter the company’s legal name, or the profile cannot be saved.",
+        "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it to the name in the state register.",
+        "country": "Country of registration",
+        "countryHelp": "It decides which legal forms we can offer you below.",
+        "countryPlaceholder": "Choose a country",
+        "countryRequired": "Choose the country the company is registered in, so we know which legal forms to offer you.",
+        "legalForm": "Legal form",
+        "legalFormHelp": "Choose the form from the state register. You can leave it empty for now.",
+        "legalFormPlaceholder": "Choose a legal form"
+      },
+      "identifiers": {
+        "heading": "Entity identifiers",
+        "lede": "These reach the report and are checked by EFRAG’s own tooling at filing time.",
+        "idno": "IDNO",
+        "idnoHelp": "The state identification number — 13 digits, from your registration certificate.",
+        "idnoMalformed": "The IDNO is not 13 digits, so it cannot be recorded. Retype it exactly as it appears on the registration certificate, without spaces.",
+        "lei": "Legal Entity Identifier (LEI)",
+        "leiHelp": "A 20-character international code, required by some banks and EU buyers. Most small Moldovan companies do not hold one — leave it empty if you do not.",
+        "leiMalformed": "The LEI is not 20 upper-case letters and digits, so it cannot be recorded. Retype it exactly as it appears on your LEI certificate.",
+        "leiCheckDigits": "The LEI’s check digits do not agree with the rest of the code, so the code is not valid. Check that you copied the right one."
+      },
+      "address": {
+        "heading": "Registered address",
+        "lede": "The company’s registered address, not the place you work from day to day.",
+        "line1": "Street and number",
+        "line2": "Further detail (block, office)",
+        "locality": "Town or city",
+        "postalCode": "Postal code",
+        "lineTooLong": "The line is longer than 200 characters and cannot be saved. Shorten it.",
+        "localityTooLong": "The locality is longer than 120 characters and cannot be saved. Shorten it.",
+        "postalCodeTooLong": "The postal code is longer than 20 characters and cannot be saved. Leave only the code."
+      },
+      "contacts": {
+        "heading": "Contacts",
+        "lede": "Two different contacts: one for us, one for the people who read the report.",
+        "platformEmail": "Contact email for the platform",
+        "platformEmailHelp": "Where we write to you about this organisation. It does not appear in the report.",
+        "platformPhone": "Contact phone",
+        "reportName": "Contact printed on the report",
+        "reportNameHelp": "Who answers questions about the report’s content. It may be someone other than the account administrator.",
+        "reportEmail": "Email printed on the report",
+        "reportEmailHelp": "It appears on the cover and is seen by everyone who receives the report.",
+        "reportNameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+        "emailInvalid": "That is not the shape of an email address, so we could not write to it. Check the spelling — for example contact@company.md.",
+        "phoneTooLong": "The number is longer than 40 characters and cannot be saved. Leave only the phone number."
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to the organisation profile",
+          "body": "Only the organisation’s administrator can see and change these details. Your account holds a different role in this organisation.",
+          "action": "Back to home"
+        },
+        "unreachable": {
+          "title": "We could not load the profile",
+          "body": "The service did not answer, so the organisation’s details are not shown.",
+          "action": "Reload the page in a few moments."
+        }
+      }
     },
     "access": {
       "title": "Users & access",

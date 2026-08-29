@@ -67,10 +67,54 @@ export interface Organization {
   readonly registeredAddressLine2: string | null;
   readonly registeredLocality: string | null;
   readonly registeredPostalCode: string | null;
+  /** How the **platform** reaches the organization: verification, invitations, notifications. */
   readonly contactEmail: string | null;
   readonly contactPhone: string | null;
+  /**
+   * FR-15's report-cover contact (amended 29 Aug 2026, task 30.3) — the person a reader of the
+   * **published report** contacts about its content.
+   *
+   * **A second contact, not a rename of the pair above**, and the distinction is the reason it is
+   * two more columns: the platform writes to `contactEmail` *about* the organization, while this is
+   * printed on the cover *of a document that leaves the platform*. In an SME the first is whoever
+   * administers the account and the second is whoever will answer a bank's question about a figure
+   * in B3, and those are routinely different people.
+   */
+  readonly reportContactName: string | null;
+  readonly reportContactEmail: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+  /**
+   * Who last changed any field of this record, and when — FR-15's *attributed and timestamped*,
+   * answered rather than merely recorded (task 30.3).
+   *
+   * **Read from `core.field_change`, never from a column this application maintains.** Task 14's
+   * capture trigger already writes one row per field that moved, taking the actor from
+   * `app.current_user`; a second attribution written by the use case would be two writers of one
+   * fact, drifting with nothing to notice. `architecture.md` §12.5.6's task-30.3 row carries the
+   * decision and what it declined.
+   *
+   * **Null is a real answer with two causes**, and neither is an error: a record whose trail has
+   * been aged out of the retained partitions, and — since `actor_id` carries no foreign key by
+   * design — a change made by an account that has since been erased (NFR-28). The screen states the
+   * moment either way and simply does not name a person.
+   */
+  readonly lastChange: OrganizationChangeAttribution | null;
+}
+
+/**
+ * One line of attribution: who, and when.
+ *
+ * The address rather than a name because registration collects none (`design_spec.md` OQ-16), and
+ * `accountId` beside it because the address is display and the id is identity — S-12 (task 84) will
+ * link a trail entry to the person, and matching on an address is how that breaks the day someone
+ * changes theirs.
+ */
+export interface OrganizationChangeAttribution {
+  readonly accountId: string | null;
+  /** Null where the acting account no longer exists, or where the actor was the system. */
+  readonly email: string | null;
+  readonly at: Date;
 }
 
 /**
@@ -102,4 +146,6 @@ export type OrganizationProfilePatch = Partial<{
   readonly registeredPostalCode: string | null;
   readonly contactEmail: string | null;
   readonly contactPhone: string | null;
+  readonly reportContactName: string | null;
+  readonly reportContactEmail: string | null;
 }>;

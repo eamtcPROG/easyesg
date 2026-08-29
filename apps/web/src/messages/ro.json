@@ -26,6 +26,7 @@
     },
     "workspaceNav": {
       "label": "Secțiunile organizației",
+      "organization": "Organizația",
       "users": "Utilizatori și acces"
     },
     "index": {
@@ -358,6 +359,100 @@
     },
     "countries": {
       "MD": "Republica Moldova"
+    },
+    "legalForms": {
+      "srl": "Societate cu răspundere limitată (SRL)",
+      "sa": "Societate pe acțiuni (SA)",
+      "snc": "Societate în nume colectiv (SNC)",
+      "sc": "Societate în comandită (SC)",
+      "ii": "Întreprindere individuală (ÎI)",
+      "cp": "Cooperativă de producție (CP)",
+      "ci": "Cooperativă de întreprinzător (CÎ)",
+      "is": "Întreprindere de stat (ÎS)",
+      "im": "Întreprindere municipală (ÎM)",
+      "gt": "Gospodărie țărănească (GȚ)"
+    },
+    "profile": {
+      "title": "Profilul organizației",
+      "lede": "Identitatea juridică ce se tipărește pe fiecare raport pe care îl depuneți.",
+      "save": "Salvați modificările",
+      "discard": "Renunțați",
+      "pristine": "Nimic modificat încă — salvarea rămâne inactivă până când o valoare diferă.",
+      "unsaved": "Aveți modificări nesalvate.",
+      "saved": {
+        "title": "Profilul a fost salvat",
+        "body": "Valorile noi se aplică rapoartelor create de acum înainte. Rapoartele deja depuse păstrează valorile din momentul depunerii."
+      },
+      "problemTitle": "Modificarea nu a putut fi salvată",
+      "problemBody": "Profilul a rămas neschimbat din cauza unei erori la procesarea cererii.",
+      "attribution": {
+        "by": "Ultima modificare: {email} · {at}",
+        "anonymous": "Ultima modificare: {at}. Contul care a făcut-o nu mai există.",
+        "unknown": "Nicio modificare înregistrată încă."
+      },
+      "identity": {
+        "heading": "Identitatea juridică",
+        "lede": "Denumirea și forma juridică exact cum apar în registrul de stat.",
+        "name": "Denumirea juridică",
+        "nameHelp": "Se tipărește pe raport, așa cum o scrieți aici.",
+        "nameRequired": "Scrieți denumirea juridică a companiei, altfel profilul nu poate fi salvat.",
+        "nameTooLong": "Denumirea depășește 200 de caractere și nu poate fi salvată. Scurtați-o până la denumirea din registrul de stat.",
+        "country": "Țara de înregistrare",
+        "countryHelp": "Stabilește ce forme juridice vă putem oferi mai jos.",
+        "countryPlaceholder": "Alegeți țara",
+        "countryRequired": "Alegeți țara în care este înregistrată compania, ca să știm ce forme juridice vă putem oferi.",
+        "legalForm": "Forma juridică",
+        "legalFormHelp": "Alegeți forma din registrul de stat. O puteți lăsa necompletată deocamdată.",
+        "legalFormPlaceholder": "Alegeți forma juridică"
+      },
+      "identifiers": {
+        "heading": "Identificatorii entității",
+        "lede": "Ajung în raport și sunt verificați de instrumentele EFRAG la depunere.",
+        "idno": "IDNO",
+        "idnoHelp": "Numărul de identificare de stat — 13 cifre, de pe certificatul de înregistrare.",
+        "idnoMalformed": "IDNO-ul nu are 13 cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare pe certificatul de înregistrare, fără spații.",
+        "lei": "Identificator de entitate juridică (LEI)",
+        "leiHelp": "Cod internațional de 20 de caractere, cerut de unele bănci și cumpărători din UE. Majoritatea companiilor mici din Moldova nu au unul — lăsați câmpul gol dacă nu aveți.",
+        "leiMalformed": "Codul LEI nu are 20 de caractere din litere mari și cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare în certificatul LEI.",
+        "leiCheckDigits": "Cifrele de control ale codului LEI nu corespund restului codului, deci codul nu este valid. Verificați dacă ați copiat codul potrivit."
+      },
+      "address": {
+        "heading": "Adresa juridică",
+        "lede": "Adresa înregistrată a companiei, nu adresa unde lucrați zi de zi.",
+        "line1": "Strada și numărul",
+        "line2": "Detalii suplimentare (bloc, oficiu)",
+        "locality": "Localitatea",
+        "postalCode": "Codul poștal",
+        "lineTooLong": "Rândul depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
+        "localityTooLong": "Localitatea depășește 120 de caractere și nu poate fi salvată. Scurtați-o.",
+        "postalCodeTooLong": "Codul poștal depășește 20 de caractere și nu poate fi salvat. Lăsați doar codul."
+      },
+      "contacts": {
+        "heading": "Persoane de contact",
+        "lede": "Două contacte diferite: unul pentru noi, altul pentru cititorii raportului.",
+        "platformEmail": "E-mail de contact cu platforma",
+        "platformEmailHelp": "Aici vă scriem despre această organizație. Nu apare în raport.",
+        "platformPhone": "Telefon de contact",
+        "reportName": "Persoana de contact tipărită pe raport",
+        "reportNameHelp": "Cine răspunde la întrebări despre conținutul raportului. Poate fi altcineva decât administratorul contului.",
+        "reportEmail": "E-mailul tipărit pe raport",
+        "reportEmailHelp": "Apare pe copertă și îl vede oricine primește raportul.",
+        "reportNameTooLong": "Numele depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
+        "emailInvalid": "Adresa nu are forma unei adrese de e-mail, așa că nu putem scrie la ea. Verificați dacă ați scris corect, de exemplu contact@companie.md.",
+        "phoneTooLong": "Numărul depășește 40 de caractere și nu poate fi salvat. Lăsați doar numărul de telefon."
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la profilul organizației",
+          "body": "Doar administratorul organizației poate vedea și modifica aceste date. Contul dumneavoastră are alt rol în această organizație.",
+          "action": "Reveniți la prima pagină"
+        },
+        "unreachable": {
+          "title": "Nu am putut încărca profilul",
+          "body": "Serviciul nu a răspuns, așa că datele organizației nu sunt afișate.",
+          "action": "Reîncărcați pagina peste câteva momente."
+        }
+      }
     },
     "access": {
       "title": "Utilizatori și acces",

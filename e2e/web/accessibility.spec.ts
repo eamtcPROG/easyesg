@@ -114,6 +114,40 @@ test('axe finds no violations on the create-organization screen', async ({ page 
   await scan(page);
 });
 
+/**
+ * S-15 (task 30.3) — the Record archetype's second instance, and the first with a *record-level*
+ * save rather than per-section commits.
+ *
+ * What axe has to judge here that S-28 did not present: four `RecordSection` regions under one
+ * form, two selects built from configuration, a disabled primary action whose state is also stated
+ * in words, and an attribution line that is neither a heading nor a control.
+ */
+test('axe finds no violations on the organization profile screen', async ({ page }) => {
+  const email = `${RUN_PREFIX}-profile@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  organizations.push(
+    await grantMembership({ email, organizationName: `${RUN_PREFIX}-profile-org` }),
+  );
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/home');
+
+  await page.goto('/organization');
+  await expect(page.getByRole('heading', { name: 'Profilul organizației', level: 1 })).toBeVisible();
+  await scan(page);
+});
+
 test('axe finds no violations on the credentials screen', async ({ page }) => {
   const email = `${RUN_PREFIX}-credentials@example.md`;
 
