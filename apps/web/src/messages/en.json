@@ -27,6 +27,7 @@
     "workspaceNav": {
       "label": "Organisation sections",
       "organization": "Organisation",
+      "entities": "Entities",
       "users": "Users & access"
     },
     "index": {
@@ -451,6 +452,134 @@
           "title": "We could not load the profile",
           "body": "The service did not answer, so the organisation’s details are not shown.",
           "action": "Reload the page in a few moments."
+        }
+      }
+    },
+    "entities": {
+      "title": "Reporting entities",
+      "lede": "Each entity reports separately. Its activity and sites decide which questions appear in the report.",
+      "caption": "The organisation’s entities",
+      "add": "Add an entity",
+      "columns": {
+        "entity": "Entity",
+        "activity": "Activity",
+        "sites": "Sites",
+        "standing": "Status",
+        "unclassified": "No activity recorded"
+      },
+      "standing": {
+        "active": "Active",
+        "archived": "Archived"
+      },
+      "filter": {
+        "standing": "Filter by status",
+        "options": {
+          "any": "All",
+          "active": "Active only",
+          "archived": "Archived only"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "You have no entities yet",
+          "body": "An entity is the company a report is prepared for. Without at least one you cannot open a reporting period.",
+          "action": "Add your first entity"
+        },
+        "filtered": {
+          "title": "No entity matches the filter",
+          "body": "You have entities, but none has the status chosen above. Clear the filter to see them all.",
+          "action": "Clear the filter"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to entities",
+          "body": "Only the organisation’s administrator can change entities. Your account holds a different role in this organisation.",
+          "action": "Back to home"
+        },
+        "unreachable": {
+          "title": "We could not load the entities",
+          "body": "The service did not answer, so the list is not shown.",
+          "action": "Reload the page in a few moments."
+        },
+        "notFound": {
+          "title": "Entity not found",
+          "body": "This address leads to no entity of this organisation. The address may have been edited, or the entity may belong to another organisation.",
+          "action": "Back to the entity list"
+        }
+      },
+      "record": {
+        "title": "Entity",
+        "lede": "The entity’s master data. Reports already filed keep the values in force when they were prepared.",
+        "createTitle": "Add an entity",
+        "createLede": "An entity is the company a report is prepared for. You can fill it in gradually.",
+        "save": "Save changes",
+        "create": "Add the entity",
+        "discard": "Discard",
+        "saved": {
+          "title": "Entity saved",
+          "body": "The new values apply to reports prepared from now on. Reports already filed keep the values in force when they were prepared."
+        },
+        "problemTitle": "The change could not be saved",
+        "problemBody": "The entity is unchanged because the request could not be processed.",
+        "archived": {
+          "title": "Archived entity",
+          "body": "This entity’s data can no longer be changed. Its reports and exports remain available exactly as they were distributed."
+        },
+        "identity": {
+          "heading": "Entity identity",
+          "lede": "The name and legal form as they appear in the state register.",
+          "name": "Entity name",
+          "nameHelp": "It prints on this entity’s report.",
+          "nameRequired": "Enter the entity’s name, or it cannot be saved.",
+          "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+          "legalForm": "Legal form",
+          "legalFormPlaceholder": "Choose a legal form",
+          "activity": "Entity activities (NACE)",
+          "activityHelp": "Type the activity’s name or its code. The activity decides which water and pollution questions appear in the report.",
+          "activityPlaceholder": "for example: bakery or 10.71",
+          "activityPrompt": "Start typing to search for an activity.",
+          "activityEmpty": "No activity matches. Try another word, or the code from your certificate.",
+          "activitySearching": "Searching activities",
+          "activityRemove": "Remove the activity {activity}",
+          "activityRemoveShort": "Remove",
+          "activityNone": "No activity chosen yet."
+        },
+        "boundary": {
+          "heading": "Reporting boundary",
+          "lede": "It decides which figures enter the report: this entity alone, or its subsidiaries too.",
+          "basis": "Consolidation basis",
+          "basisHelp": "The standard asks for an explicit answer, so we do not choose one on your behalf.",
+          "basisPlaceholder": "Choose a basis",
+          "options": {
+            "individual": "Individual — this entity alone",
+            "consolidated": "Consolidated — the entity and its subsidiaries"
+          },
+          "member": "Subsidiary {position}",
+          "memberName": "Subsidiary name",
+          "memberNameRequired": "Enter the subsidiary’s name, or the boundary cannot be saved.",
+          "memberIdno": "Subsidiary IDNO",
+          "addMember": "Add a subsidiary",
+          "removeMember": "Remove the subsidiary"
+        },
+        "sites": {
+          "heading": "Sites",
+          "lede": "The places the entity operates from. They decide the biodiversity questions.",
+          "site": "Site {position}",
+          "name": "Site name",
+          "nameRequired": "Enter the site’s name, or it cannot be saved.",
+          "address": "Address",
+          "locality": "Town or city",
+          "add": "Add a site",
+          "remove": "Remove the site"
+        },
+        "archive": {
+          "action": "Archive the entity",
+          "title": "Archive this entity?",
+          "consequence": "The entity leaves active selection: you can no longer open new periods for it and it stops appearing in lists. Its master data becomes uneditable.",
+          "retained": "Reports already filed and their exports remain available exactly as they were distributed. Nothing is deleted.",
+          "confirm": "Archive the entity",
+          "cancel": "Cancel"
         }
       }
     },

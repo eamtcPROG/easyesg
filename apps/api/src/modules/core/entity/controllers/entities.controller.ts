@@ -93,6 +93,15 @@ export class EntitiesController {
   })
   @ApiQuery({ name: 'q', required: false, description: 'What the reader typed. Empty answers nothing.' })
   @ApiQuery({
+    name: 'codes',
+    required: false,
+    description:
+      'Comma-separated codes a record already holds, resolved to their words in the negotiated ' +
+      'language. Takes precedence over q, matches exactly rather than by prefix, answers in the ' +
+      'order given, and drops a code the classifier no longer carries rather than inventing a ' +
+      'label for it.',
+  })
+  @ApiQuery({
     name: 'limit',
     required: false,
     description: 'At most 50; values outside the range are clamped rather than refused.',
@@ -103,11 +112,24 @@ export class EntitiesController {
   })
   async searchNaceCodes(
     @Query('q') query = '',
+    @Query('codes') codes = '',
     @Query('limit', new DefaultValuePipe(NACE_SEARCH_DEFAULT_LIMIT), ParseIntPipe) limit: number,
   ): Promise<NaceCodeResponseDto[]> {
-    return (await this.entityService.searchActivityCodes({ query, limit })).map(
-      (match) => new NaceCodeResponseDto(match),
-    );
+    // **`codes` wins where both are sent**, rather than combining them. They are two questions —
+    // *what matches this text* and *what do these mean* — and a route that answered both at once
+    // would return a list whose order means nothing, since one flow answers in classifier order
+    // and the other in the caller's.
+    const requested = codes
+      .split(',')
+      .map((code) => code.trim())
+      .filter((code) => code !== '');
+
+    const matches =
+      requested.length > 0
+        ? await this.entityService.resolveActivityCodes({ codes: requested })
+        : await this.entityService.searchActivityCodes({ query, limit });
+
+    return matches.map((match) => new NaceCodeResponseDto(match));
   }
 
   @Get(':entityId')

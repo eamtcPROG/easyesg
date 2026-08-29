@@ -18,7 +18,7 @@ import {
 // leaves `Function` in the metadata and the provider cannot be found. It fails at boot with
 // "dependency at index 1", nowhere near the import that caused it. `NaceCodeMatch` stays a type
 // import because it is one; the class has to be here.
-import { SearchNaceCodes } from '../use-cases/search-nace-codes.use-case';
+import { NaceCodeLookup } from '../use-cases/search-nace-codes.use-case';
 import type { NaceCodeMatch } from '../models/reporting-entity.model';
 
 /**
@@ -34,7 +34,7 @@ import type { NaceCodeMatch } from '../models/reporting-entity.model';
 export class EntityService {
   constructor(
     private readonly manage: ManageReportingEntity,
-    private readonly searchNaceCodes: SearchNaceCodes,
+    private readonly naceCodes: NaceCodeLookup,
     @Inject(REPORTING_ENTITY_STORE) private readonly store: ReportingEntityStore,
   ) {}
 
@@ -48,7 +48,15 @@ export class EntityService {
    * account id in a query string, which is exactly what this layer exists to prevent.
    */
   searchActivityCodes(input: { readonly query: string; readonly limit: number }): Promise<NaceCodeMatch[]> {
-    return this.searchNaceCodes.execute({
+    return this.naceCodes.search({
+      ...input,
+      locale: requestContext()?.locale ?? SOURCE_LOCALE,
+    });
+  }
+
+  /** The words for codes a record already holds — S-13's Index and Record both render them. */
+  resolveActivityCodes(input: { readonly codes: readonly string[] }): Promise<NaceCodeMatch[]> {
+    return this.naceCodes.resolve({
       ...input,
       locale: requestContext()?.locale ?? SOURCE_LOCALE,
     });

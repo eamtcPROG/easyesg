@@ -137,6 +137,18 @@ export type CountryLegalForms = components['schemas']['CountryLegalFormsResponse
 /** One activity code the S-13 picker offers — the key stored and the words it was chosen by
  *  (FR-17, task 30.4.1). Searched server-side: the classifier is 996 entries in three languages. */
 export type NaceCodeMatch = components['schemas']['NaceCodeResponseDto'];
+
+// core — reporting entities (FR-17 … FR-20; tasks 29.3, 29.4). `sites` and `consolidationMembers`
+// are **whole-collection** saves on both writes: a member with an id is edited, one without is
+// added, and a stored member the array omits is removed. That is the API's own semantics and the
+// reason S-13's Record holds the two lists in its form rather than issuing per-row writes.
+export type ReportingEntity = components['schemas']['ReportingEntityResponseDto'];
+export type CreateReportingEntityRequest =
+  components['schemas']['CreateReportingEntityRequestDto'];
+export type UpdateReportingEntityRequest =
+  components['schemas']['UpdateReportingEntityRequestDto'];
+export type EntitySite = components['schemas']['SiteResponseDto'];
+export type ConsolidationMember = components['schemas']['ConsolidationMemberResponseDto'];
 /** FR-15's attribution line on S-15 — who last changed the profile, and when (task 30.3). */
 export type OrganizationChangeAttribution =
   components['schemas']['OrganizationChangeAttributionDto'];

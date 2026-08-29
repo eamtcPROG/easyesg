@@ -19,7 +19,7 @@ import {
 } from './interfaces/reporting-entity-store.interface';
 import { EntityService } from './services/entity.service';
 import { ManageReportingEntity } from './use-cases/manage-reporting-entity.use-case';
-import { SearchNaceCodes } from './use-cases/search-nace-codes.use-case';
+import { NaceCodeLookup } from './use-cases/search-nace-codes.use-case';
 
 /**
  * `core/entity` — FR-17 … FR-20
@@ -53,10 +53,10 @@ const httpProviders: Provider[] = [
   { provide: ORGANIZATION_VOCABULARY, useClass: OrganizationVocabularyService },
   { provide: CLOCK, useValue: () => new Date() },
   {
-    provide: SearchNaceCodes,
+    provide: NaceCodeLookup,
     inject: [ORGANIZATION_STORE, ORGANIZATION_VOCABULARY],
     useFactory: (organizations: OrganizationStore, vocabulary: OrganizationVocabulary) =>
-      new SearchNaceCodes(organizations, vocabulary),
+      new NaceCodeLookup(organizations, vocabulary),
   },
   {
     provide: ManageReportingEntity,

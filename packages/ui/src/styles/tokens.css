@@ -87,7 +87,14 @@
 
   --text-default: var(--slate-900);     /* 16.4:1 */
   --text-body: var(--slate-700);        /* 10.3:1 */
-  --text-muted: var(--slate-500);       /* 5.1:1 — never the sole carrier */
+  /* 5.1:1 on `--surface-default`, and never the sole carrier.
+     **It is only safe on `--surface-default` and `--surface-sunken`.** 5.1:1 leaves 0.6 of margin
+     over WCAG's 4.5:1, and any tinted surface spends it: on `--accent-tint` — the highlight every
+     menu and listbox row takes — it measures 4.36:1 and fails 1.4.3. Secondary text on a
+     highlighted row uses `--text-body` instead. Found 29 Aug 2026 by the axe scan on S-13's
+     combobox, and fixed at all three sites that could reach it (Combobox, Select, AccountMenu)
+     rather than at the one that was caught. */
+  --text-muted: var(--slate-500);
   --text-on-accent: var(--slate-0);
 
   --border-default: var(--slate-200);   /* card edge, divider, table rule */

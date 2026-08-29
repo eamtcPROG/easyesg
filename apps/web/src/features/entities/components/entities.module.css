@@ -1,0 +1,107 @@
+/* S-13. Values from EasyESG Organization Admin.dc.html (OQ-10); the Index and Record archetypes
+   own their own composition and are not restated here. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--grid-gutter-narrow);
+  max-inline-size: var(--content-max);
+  margin-inline: auto;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.title,
+.lede {
+  margin: 0;
+}
+
+.lede {
+  color: var(--text-body);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  align-items: flex-end;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sub {
+  color: var(--text-muted);
+}
+
+/* The codes read as one phrase rather than a list, and wrap rather than truncating: an entity with
+   three activities is the case the column exists for. */
+.activity {
+  display: block;
+  font: 400 14px/20px var(--font-text);
+  color: var(--text-body);
+}
+
+/* The save/discard/archive row. Wraps rather than compressing: at 390 the three buttons are wider
+   than the frame, and a +40% catalogue makes that true earlier. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* One row of a sub-collection — a site, or a subsidiary inside the boundary. A `fieldset` with its
+   own legend, because a screen reader arriving at "Name" needs to know WHICH site it belongs to;
+   the position is the only thing that distinguishes them before one is named. */
+.rowGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+}
+
+.activityPicker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-sunken);
+  font: 400 14px/20px var(--font-text);
+}
+
+/* The code beside the words, in the mono face every identifier uses (UX-82's `code` role). */
+.chipCode {
+  font: 400 13px/20px var(--font-mono);
+  color: var(--text-muted);
+}

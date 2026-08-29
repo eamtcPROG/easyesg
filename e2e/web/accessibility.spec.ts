@@ -148,6 +148,48 @@ test('axe finds no violations on the organization profile screen', async ({ page
   await scan(page);
 });
 
+/**
+ * S-13's Record (task 30.4.3) — the first screen carrying a **Combobox** and the first with
+ * repeating sub-collections.
+ *
+ * Both are shapes axe has something to say about that no earlier screen presented: a control whose
+ * ARIA is this codebase's rather than a library's (Radix publishes no combobox), and `fieldset`
+ * groups whose legends are the only thing distinguishing "Name" on site one from "Name" on site
+ * two. The Index is covered by the `entities` journey's own assertions; this is the composition.
+ */
+test('axe finds no violations on the entity record', async ({ page }) => {
+  const email = `${RUN_PREFIX}-entity@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  organizations.push(
+    await grantMembership({ email, organizationName: `${RUN_PREFIX}-entity-org` }),
+  );
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/home');
+
+  await page.goto('/entities/new');
+  await page.getByRole('button', { name: 'Adăugați un amplasament' }).click();
+  await page.getByRole('button', { name: 'Adăugați o filială' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await scan(page);
+
+  // And the combobox open, which is where its roles actually exist in the DOM.
+  await page.getByLabel(/Activitățile entității/).fill('brutarie');
+  await expect(page.getByRole('option').first()).toBeVisible();
+  await scan(page);
+});
+
 test('axe finds no violations on the credentials screen', async ({ page }) => {
   const email = `${RUN_PREFIX}-credentials@example.md`;
 

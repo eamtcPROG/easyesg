@@ -2892,6 +2892,8 @@ export interface operations {
             query?: {
                 /** @description At most 50; values outside the range are clamped rather than refused. */
                 limit?: number;
+                /** @description Comma-separated codes a record already holds, resolved to their words in the negotiated language. Takes precedence over q, matches exactly rather than by prefix, answers in the order given, and drops a code the classifier no longer carries rather than inventing a label for it. */
+                codes?: unknown;
                 /** @description What the reader typed. Empty answers nothing. */
                 q?: unknown;
             };

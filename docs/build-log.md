@@ -6223,3 +6223,147 @@ database. Seven component specs on the Combobox. Five API e2e tests over the **r
 rather than a fixture, including the three locales answering three different sentences.
 
 Verified: `pnpm gates:clean`.
+
+## Tasks 30.4.2 and 30.4.3 — S-13, and a classifier that had to answer a second question · 2026-08-29
+
+The entities Index and the entity Record, built in sequence and committed together (project
+owner) — an Index whose primary action and every row action lead to a screen returning `null` is
+the shape task 30.1 ruled against, and §4.6 makes the create affordance part of the archetype
+rather than an extra.
+
+### The classifier grew a second mode, and the reason is precision rather than volume
+
+Both screens render an entity's activity as words, and `GET /entities` answers bare keys —
+`["10.71"]`, which on a screen is an internal identifier. Task 30.4.1 built a *search*, and it is
+the wrong shape for *"resolve these three codes I already hold"* twice over: one request per code,
+and matching by **prefix**, so `10.7` answers three rows where one was asked for.
+
+`?codes=` is that second mode. It matches exactly, answers in the caller's order — the record's own
+list, which re-sorting would silently reorder — and **drops a code the classifier no longer
+carries** rather than inventing a label. AD-4 lets the set move without a redeploy, so a stored code
+with no entry is a real state; the screen still holds it and shows it as a code, and a made-up label
+would make a retired entry indistinguishable from a live one.
+
+**Declined: labels on `ReportingEntityResponseDto`.** It is the `organizationName`-on-a-membership
+pattern and would have been one request fewer — but it puts the classifier's wording inside every
+entity payload including the writes that echo one back, and makes a vocabulary change rewrite the
+shape of a record it does not belong to.
+
+The use case became `NaceCodeLookup` with `search` and `resolve`, sharing the country resolution and
+the locale fallback. Named for the vocabulary rather than for one flow, because neither is a UC:
+both support UC-52 and UC-53.
+
+### What the Index carries, once four columns are given back
+
+The artboard draws six and four belong elsewhere: entity **IDNO** and its *verified* marker are
+FR-107's fiscal lookup on the billing account, **employee count** is B1 disclosure data (UC-19)
+rather than entity master data, the **periods** column is task 31's, and the **entitlement counter**
+above the action is task 54.2's — the same deferral S-16 recorded for seats. What is left is what
+FR-17 actually puts on an entity: name, legal form, activity, sites, standing.
+
+Two decisions inside the read model are worth reading:
+
+- **The default filter is *any*, and active rows sort first instead.** A default that hid archived
+  entities would make *"you have no entities"* the first-use message for an organization whose only
+  entities are archived — and §4.6 exists to keep those two states apart. Sorting achieves what
+  hiding was for without collapsing the distinction.
+- **`matched` and `total` rather than a boolean.** `IndexShell`'s contract already tells its two
+  empty states apart from that pair; returning `filtered: true` would have moved the archetype's own
+  decision into the screen.
+
+**No context provider, unlike S-16.** That screen's rows *act* — a role change, a removal, a resend
+— so its state is several values moving on named events and belongs in a reducer. Here a row
+*navigates*, so the only state is the view, and the view lives in the address (UX-4).
+
+### The Record, and the region that is deliberately missing
+
+Sites and consolidation members are **whole-collection saves**, because that is the API's own
+semantics: a member with an id is edited, one without is added, one the array omits is removed. So
+the form holds both lists and sends what it holds — per-row writes would need an ordering between
+"add" and "remove" that the endpoint does not have.
+
+**The boundary is null until stated.** VSME asks the question explicitly, so nothing answers it on
+the undertaking's behalf, and `CONSOLIDATION_BASIS` has no third member for *not stated* — null is
+the absence of an answer, and a `not_stated` value would make "we have not decided" look like a
+decision. Setting `consolidated` with no subsidiary is the API's refusal to make and the screen does
+not pre-empt it: a client-side guard would be a second copy of a rule that can change.
+
+**The artboard's Size region is absent**, and it is the omission most worth stating. Employee count
+and balance-sheet total are B1 disclosure data gathered per reporting period (UC-19), and the
+artboard's own callout — *"Fifty or more employees changes what the 2026 report asks"* — describes
+conditional applicability, which is task 41's rule interpreter over a period task 31 has not built.
+Recording a headcount here would make master data of something the standard asks per report.
+
+**Archiving is a consequence-disclosing action** (§6.14, UX-70): the dialogue names the entity, says
+it leaves active selection and its master data freezes, and — UX-69's reassurance, which for FR-20
+is the whole reason archiving exists rather than deletion — that filed reports stay downloadable
+exactly as distributed. The archived record then renders read-only with UX-13's cause named, and
+says nothing restores editing, because nothing does.
+
+### `ActivityPicker` is a screen's arrangement, not a second control
+
+§11.5 lists Multi-select as its own entry and it stays unbuilt. What an entity needs is *add one,
+see what you have, remove one* — a Combobox plus a list — and building a multi-select to hold three
+codes would ship an inventory entry whose only consumer already has a simpler answer.
+
+The search is debounced at 250 ms: every keystroke against a 996-entry classifier is a request, and
+250 ms is short enough that the list feels attached to the typing and long enough that a word costs
+one request rather than seven. Chosen codes are filtered out of what is offered — adding one twice
+is not something the API refuses, it would simply store a duplicate, so the control makes it
+unrepresentable instead.
+
+### Two duplicate accessible names, and only one was a defect
+
+The browser suite met both, and they wanted opposite fixes:
+
+- **The filter and the table's status column were both called *Starea*.** Two controls, one name —
+  a screen reader user hears "Starea, combobox" then "Starea, column header". The **catalogue**
+  changed, to *Filtrați după stare*; a `.first()` would have been that defect's only record.
+- **The page's *Arhivați entitatea* and the dialogue's confirmation share a name deliberately.**
+  UX-70 wants the confirmation to restate the action rather than say "OK", so the ambiguity is the
+  design — and the locator names *where* the control is (`getByRole('alertdialog')`) rather than
+  loosening.
+
+### Three things pnpm and the linters caught
+
+- **`lucide-react` is `packages/ui`'s dependency, not `apps/web`'s.** An `X` glyph on the remove
+  control failed to resolve, and pnpm was right: importing an icon package into the app to say
+  "remove" is a dependency for something the catalogue already has. The control shows a word and
+  carries the activity in its accessible name, which is better than the glyph was.
+- **A hand-written column-key union** (`EntitySort | 'activity' | 'action'`) tripped the vocabulary
+  selector — and `'action'` was not even used, which is exactly what a union with no runtime value
+  hides.
+- **A bare `×` was user-facing text**, caught by the no-literal-text rule before it reached a
+  translator who would have had nothing to translate.
+
+### The axe scan found a token-cascade defect, not a component one
+
+The new scan on the entity record failed WCAG 1.4.3: `--text-muted` (`#67737F`) on
+`--accent-tint` (`#EDF5F0`) measures **4.36:1** against the required 4.5:1. The token is documented
+at *5.1:1 — never the sole carrier*, and that figure is against `--surface-default`; the 0.6 of
+margin it leaves is spent by any tinted surface, and `--accent-tint` is the highlight **every menu
+and listbox row takes**.
+
+So the finding was not the Combobox's. `Select`'s `.itemDescription` and `AccountMenu`'s
+`.itemValue` carry exactly the same shape and were latent — the scans that cover them (S-16's role
+select, task 30.1's open account menu) pass because neither had a **highlighted** row at the moment
+axe looked. Fixed at all three, and the constraint is now written beside the token in `tokens.css`
+rather than in the one component that happened to be caught:
+
+> `--text-muted` is only safe on `--surface-default` and `--surface-sunken`. Secondary text on a
+> highlighted row uses `--text-body`.
+
+That is the sweep rule working the way it is meant to: *is this one right?* and *are there others?*
+are different questions, and the scan only ever asks the first.
+
+### One failure that was the environment, chased rather than retried
+
+`password-reset.e2e-spec.ts` failed a `POST /auth/register` that expects 201, on an address unique
+to the run — so not a duplicate. `identity.auth_attempt` held **17 rows** accumulated across the
+day's runs, and draining it (the remedy `apps/api/CLAUDE.md` documents) made all 591 pass.
+
+Worth one correction to that note: it describes the symptom as arriving *"from inside
+`signInFreshAccount`"*, and this one arrived on **registration**. The remedy is the same and the
+cause is the same window; the note's example is narrower than its scope.
+
+Verified: `pnpm gates:clean`.

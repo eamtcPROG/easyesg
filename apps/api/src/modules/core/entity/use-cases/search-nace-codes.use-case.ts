@@ -6,6 +6,12 @@ import type { OrganizationStore } from '@api/modules/core/organization/interface
 import { NACE_SEARCH_MAX_LIMIT } from '../constants/nace-search.constants';
 import type { NaceCodeMatch } from '../models/reporting-entity.model';
 
+export interface ResolveNaceCodesCommand {
+  /** The codes a record already holds, exactly. Unknown ones are dropped rather than invented. */
+  readonly codes: readonly string[];
+  readonly locale: string;
+}
+
 export interface SearchNaceCodesCommand {
   /** What the reader typed. Empty is a real input and answers nothing — see the class docblock. */
   readonly query: string;
@@ -32,7 +38,12 @@ const fold = (value: string): string =>
 const bareCode = (value: string): string => value.replace(/[^0-9a-z]/giu, '').toLowerCase();
 
 /**
- * S-13's activity picker (FR-17, task 30.4.1) — the classifier searched, not merely validated.
+ * S-13's activity vocabulary (FR-17, tasks 30.4.1 and 30.4.2) — the classifier **searched** for a
+ * picker and **resolved** for a record that already holds codes.
+ *
+ * Named for the vocabulary rather than for one flow, because it carries two and they share the
+ * country resolution and the locale fallback. Neither is a UC of its own: both support UC-52 and
+ * UC-53, which `ManageReportingEntity` owns.
  *
  * §9.6 registered CAEM Rev.2 as configuration and `ManageReportingEntity` admits a code against it,
  * but nothing let a screen *offer* one. Without this, S-13 has a free-text field for a classifier
@@ -49,26 +60,51 @@ const bareCode = (value: string): string => value.replace(/[^0-9a-z]/giu, '').to
  * governing its activity codes is the one its organization is registered under. Reading it per call
  * keeps a country change (UC-50) applying to the next search with nothing to invalidate.
  *
+ * **`resolve` is a second flow over the same vocabulary, not a search with a different filter.**
+ * S-13 renders an entity's activity as words, and it already holds the codes — asking `search` for
+ * each in turn would be one request per code *and* wrong, since a code match is by prefix: `10.7`
+ * would answer three rows where one was asked for. It also answers in the caller's order rather
+ * than the classifier's, because the caller is rendering a record's own list.
+ *
  * **An empty query answers an empty list, deliberately.** The alternatives were both worse: the
  * first `n` codes in order is an arbitrary slice of agriculture, and the 21 sections — which reads
  * like a navigational starting point — would invite storing a **section** where B1 exports a
  * four-character code, so the picker's most convenient answer would be the one that leaves FR-17
  * unsatisfied. The control prompts instead.
  */
-export class SearchNaceCodes {
+export class NaceCodeLookup {
   constructor(
     private readonly organizations: OrganizationStore,
     private readonly vocabulary: OrganizationVocabulary,
   ) {}
 
-  async execute(command: SearchNaceCodesCommand): Promise<NaceCodeMatch[]> {
+  /**
+   * The words for codes a record already holds.
+   *
+   * **Unknown codes are dropped, not rendered as themselves.** A code that no longer exists in the
+   * classifier is a configuration change under a stored value — real, since AD-4 lets the set move
+   * without a redeploy — and the honest answer is that this vocabulary has nothing to say about it.
+   * The screen still holds the code and can show it as a code; inventing a label here would make a
+   * retired entry indistinguishable from a live one.
+   */
+  async resolve(command: ResolveNaceCodesCommand): Promise<NaceCodeMatch[]> {
+    if (command.codes.length === 0) return [];
+
+    const classifier = await this.classifier();
+    if (!classifier) return [];
+
+    const byCode = new Map(classifier.map((entry) => [entry.code, entry]));
+    return command.codes.flatMap((code) => {
+      const entry = byCode.get(code);
+      return entry ? [{ code: entry.code, label: this.label(entry, command.locale) }] : [];
+    });
+  }
+
+  async search(command: SearchNaceCodesCommand): Promise<NaceCodeMatch[]> {
     const query = command.query.trim();
     if (query === '') return [];
 
-    const organization = await this.organizations.findBoundOrganization();
-    if (!organization) return [];
-
-    const classifier = this.vocabulary.naceClassifierFor(organization.countryCode);
+    const classifier = await this.classifier();
     if (!classifier) return [];
 
     const limit = Math.min(Math.max(command.limit, 1), NACE_SEARCH_MAX_LIMIT);
@@ -93,6 +129,21 @@ export class SearchNaceCodes {
     }
 
     return [...byCode, ...byLabel].slice(0, limit);
+  }
+
+  /**
+   * The classifier registered for the **organization's** country, or null.
+   *
+   * Shared by both flows, and the country resolution is the reason it is a method rather than a
+   * parameter: an entity has sites which may be anywhere, but the classifier governing its activity
+   * codes is the one its organization is registered under — `ManageReportingEntity` states the same
+   * rule for the write path. Read per call, so a country change (UC-50) applies to the next request
+   * with nothing to invalidate.
+   */
+  private async classifier(): Promise<readonly NaceCode[] | null> {
+    const organization = await this.organizations.findBoundOrganization();
+    if (!organization) return null;
+    return this.vocabulary.naceClassifierFor(organization.countryCode);
   }
 
   /**

@@ -27,6 +27,7 @@
     "workspaceNav": {
       "label": "Secțiunile organizației",
       "organization": "Organizația",
+      "entities": "Entități",
       "users": "Utilizatori și acces"
     },
     "index": {
@@ -451,6 +452,134 @@
           "title": "Nu am putut încărca profilul",
           "body": "Serviciul nu a răspuns, așa că datele organizației nu sunt afișate.",
           "action": "Reîncărcați pagina peste câteva momente."
+        }
+      }
+    },
+    "entities": {
+      "title": "Entități raportoare",
+      "lede": "Fiecare entitate raportează separat. Activitatea și amplasamentele decid ce întrebări apar în raport.",
+      "caption": "Entitățile organizației",
+      "add": "Adăugați o entitate",
+      "columns": {
+        "entity": "Entitatea",
+        "activity": "Activitatea",
+        "sites": "Amplasamente",
+        "standing": "Starea",
+        "unclassified": "Fără activitate stabilită"
+      },
+      "standing": {
+        "active": "Activă",
+        "archived": "Arhivată"
+      },
+      "filter": {
+        "standing": "Filtrați după stare",
+        "options": {
+          "any": "Toate",
+          "active": "Doar active",
+          "archived": "Doar arhivate"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Nu aveți încă nicio entitate",
+          "body": "Entitatea este compania pentru care se pregătește raportul. Fără cel puțin una nu puteți deschide o perioadă de raportare.",
+          "action": "Adăugați prima entitate"
+        },
+        "filtered": {
+          "title": "Nicio entitate nu corespunde filtrului",
+          "body": "Aveți entități, dar niciuna nu are starea aleasă mai sus. Ștergeți filtrul ca să le vedeți pe toate.",
+          "action": "Ștergeți filtrul"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la entități",
+          "body": "Doar administratorul organizației poate modifica entitățile. Contul dumneavoastră are alt rol în această organizație.",
+          "action": "Reveniți la prima pagină"
+        },
+        "unreachable": {
+          "title": "Nu am putut încărca entitățile",
+          "body": "Serviciul nu a răspuns, așa că lista nu este afișată.",
+          "action": "Reîncărcați pagina peste câteva momente."
+        },
+        "notFound": {
+          "title": "Entitatea nu a fost găsită",
+          "body": "Adresa nu duce la nicio entitate a acestei organizații. Poate a fost ștearsă adresa din bara de navigare sau entitatea aparține altei organizații.",
+          "action": "Reveniți la lista de entități"
+        }
+      },
+      "record": {
+        "title": "Entitatea",
+        "lede": "Datele de bază ale entității. Rapoartele deja depuse păstrează valorile din momentul pregătirii lor.",
+        "createTitle": "Adăugați o entitate",
+        "createLede": "Entitatea este compania pentru care se pregătește raportul. O puteți completa treptat.",
+        "save": "Salvați modificările",
+        "create": "Adăugați entitatea",
+        "discard": "Renunțați",
+        "saved": {
+          "title": "Entitatea a fost salvată",
+          "body": "Valorile noi se aplică rapoartelor pregătite de acum înainte. Rapoartele deja depuse păstrează valorile din momentul pregătirii."
+        },
+        "problemTitle": "Modificarea nu a putut fi salvată",
+        "problemBody": "Entitatea a rămas neschimbată din cauza unei erori la procesarea cererii.",
+        "archived": {
+          "title": "Entitate arhivată",
+          "body": "Datele acestei entități nu mai pot fi modificate. Rapoartele și exporturile ei rămân disponibile exact așa cum au fost distribuite."
+        },
+        "identity": {
+          "heading": "Identitatea entității",
+          "lede": "Denumirea și forma juridică, așa cum apar în registrul de stat.",
+          "name": "Denumirea entității",
+          "nameHelp": "Se tipărește pe raportul acestei entități.",
+          "nameRequired": "Scrieți denumirea entității, altfel ea nu poate fi salvată.",
+          "nameTooLong": "Denumirea depășește 200 de caractere și nu poate fi salvată. Scurtați-o.",
+          "legalForm": "Forma juridică",
+          "legalFormPlaceholder": "Alegeți forma juridică",
+          "activity": "Activitățile entității (CAEM)",
+          "activityHelp": "Scrieți denumirea activității sau codul. Activitatea decide ce întrebări despre apă și poluare apar în raport.",
+          "activityPlaceholder": "de exemplu: brutărie sau 10.71",
+          "activityPrompt": "Începeți să scrieți ca să căutați o activitate.",
+          "activityEmpty": "Nicio activitate nu corespunde. Încercați alt cuvânt sau codul din certificat.",
+          "activitySearching": "Se caută activități",
+          "activityRemove": "Ștergeți activitatea {activity}",
+          "activityRemoveShort": "Ștergeți",
+          "activityNone": "Nicio activitate aleasă încă."
+        },
+        "boundary": {
+          "heading": "Perimetrul de raportare",
+          "lede": "Stabilește ce cifre intră în raport: doar entitatea, sau și filialele ei.",
+          "basis": "Baza de consolidare",
+          "basisHelp": "Standardul cere un răspuns explicit, așa că nu alegem noi în locul dumneavoastră.",
+          "basisPlaceholder": "Alegeți baza",
+          "options": {
+            "individual": "Individuală — doar această entitate",
+            "consolidated": "Consolidată — entitatea și filialele ei"
+          },
+          "member": "Filiala {position}",
+          "memberName": "Denumirea filialei",
+          "memberNameRequired": "Scrieți denumirea filialei, altfel perimetrul nu poate fi salvat.",
+          "memberIdno": "IDNO-ul filialei",
+          "addMember": "Adăugați o filială",
+          "removeMember": "Ștergeți filiala"
+        },
+        "sites": {
+          "heading": "Amplasamente",
+          "lede": "Locurile în care entitatea își desfășoară activitatea. Ele decid întrebările despre biodiversitate.",
+          "site": "Amplasamentul {position}",
+          "name": "Denumirea amplasamentului",
+          "nameRequired": "Scrieți denumirea amplasamentului, altfel el nu poate fi salvat.",
+          "address": "Adresa",
+          "locality": "Localitatea",
+          "add": "Adăugați un amplasament",
+          "remove": "Ștergeți amplasamentul"
+        },
+        "archive": {
+          "action": "Arhivați entitatea",
+          "title": "Arhivați această entitate?",
+          "consequence": "Entitatea iese din selecția activă: nu mai puteți deschide perioade noi pentru ea și nu mai apare în liste. Datele ei de bază devin needitabile.",
+          "retained": "Rapoartele deja depuse și exporturile lor rămân disponibile exact așa cum au fost distribuite. Nimic nu se șterge.",
+          "confirm": "Arhivați entitatea",
+          "cancel": "Renunțați"
         }
       }
     },

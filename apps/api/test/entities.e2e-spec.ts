@@ -259,6 +259,31 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
       expect(codes(broad.body).length).toBeLessThanOrEqual(5);
     });
 
+    it('resolves codes a record already holds, exactly and in the order given', async () => {
+      const response = await http()
+        .get('/api/v1/entities/nace-codes?codes=49.41,10.71')
+        .set(admin.authorization)
+        .set('Accept-Language', 'ro')
+        .expect(200);
+
+      const matches = (response.body as { objects: { code: string; label: string }[] }).objects;
+      // The caller's order, because this renders one entity's own list. And exactly two rows: the
+      // same query through `q` would match by prefix and answer more.
+      expect(matches.map((m) => m.code)).toEqual(['49.41', '10.71']);
+      expect(matches.every((m) => m.label !== m.code)).toBe(true);
+    });
+
+    it('drops a code the classifier does not carry rather than inventing a label', async () => {
+      const response = await http()
+        .get('/api/v1/entities/nace-codes?codes=10.71,99.99')
+        .set(admin.authorization)
+        .expect(200);
+
+      expect((response.body as { objects: { code: string }[] }).objects.map((m) => m.code)).toEqual([
+        '10.71',
+      ]);
+    });
+
     it('is readable by a Reporting Contributor, like the entity reads beside it', async () => {
       // D-2 makes master data OA-owned; the vocabulary an entity is classified by is not a
       // setting, and refusing it would make the wizard's own source unreadable to its author.

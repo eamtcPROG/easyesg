@@ -35,6 +35,9 @@ const SECTIONS = [
   // rather than lost. It sits before *Users & access* because §4.2 lists it there and because the
   // reading order is the object then its people.
   { key: 'organization', href: ROUTES.ORGANIZATION },
+  // S-13, added with task 30.4.2. §4.2 calls this section *Entities & periods*; periods are task
+  // 31's, so the label names what the section actually holds and gains its other half then.
+  { key: 'entities', href: ROUTES.ENTITIES },
   { key: 'users', href: ROUTES.ORGANIZATION_USERS },
 ] as const;
 

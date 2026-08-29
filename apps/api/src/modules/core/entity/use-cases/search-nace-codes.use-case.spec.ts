@@ -4,7 +4,7 @@ import {
 } from '@api/modules/core/organization/testing/organization.fakes';
 import type { NaceCode } from '@api/modules/core/organization/interfaces/organization-vocabulary.interface';
 import type { OrganizationVocabulary } from '@api/modules/core/organization/interfaces/organization-vocabulary.interface';
-import { SearchNaceCodes } from './search-nace-codes.use-case';
+import { NaceCodeLookup } from './search-nace-codes.use-case';
 import { NACE_SEARCH_DEFAULT_LIMIT } from '../constants/nace-search.constants';
 
 /**
@@ -35,13 +35,13 @@ const vocabulary = (classifier: readonly NaceCode[] | null): OrganizationVocabul
 
 const search = (classifier: readonly NaceCode[] | null = CLASSIFIER) => {
   const organizations = new FakeOrganizationStore(anOrganization({ countryCode: 'MD' }));
-  return new SearchNaceCodes(organizations, vocabulary(classifier));
+  return new NaceCodeLookup(organizations, vocabulary(classifier));
 };
 
 const run = (query: string, locale = 'ro', limit = NACE_SEARCH_DEFAULT_LIMIT) =>
-  search().execute({ query, locale, limit });
+  search().search({ query, locale, limit });
 
-describe('SearchNaceCodes (FR-17)', () => {
+describe('NaceCodeLookup — search (FR-17)', () => {
   it('matches a code by its digits, ignoring how the reader punctuated it', async () => {
     // One query written three ways: the picker must not ask somebody to type the dot.
     for (const typed of ['10.71', '1071', '10 71']) {
@@ -98,7 +98,46 @@ describe('SearchNaceCodes (FR-17)', () => {
     // §7.2's distinction: the platform does not operate there. Not an error, and not an empty
     // classifier either — the picker simply offers nothing to a country nobody registered.
     await expect(
-      search(null).execute({ query: 'brutarie', locale: 'ro', limit: NACE_SEARCH_DEFAULT_LIMIT }),
+      search(null).search({ query: 'brutarie', locale: 'ro', limit: NACE_SEARCH_DEFAULT_LIMIT }),
     ).resolves.toEqual([]);
+  });
+});
+
+describe('NaceCodeLookup — resolve (FR-17, task 30.4.2)', () => {
+  const resolve = (codes: string[], locale = 'ro') => search().resolve({ codes, locale });
+
+  it('answers the words for codes a record already holds, in the caller’s order', async () => {
+    // The record's order, not the classifier's: this is rendering one entity's own list, and
+    // re-sorting it would silently reorder what the reader entered.
+    await expect(resolve(['10.72', '10.71'])).resolves.toEqual([
+      { code: '10.72', label: 'Fabricarea biscuiţilor şi pişcoturilor' },
+      { code: '10.71', label: 'Fabricarea pâinii; fabricarea prăjiturilor' },
+    ]);
+  });
+
+  it('matches exactly, where search matches a prefix', async () => {
+    // The reason this is a second flow rather than a search per code: `10.7` searched answers
+    // three rows, and resolved answers the one that was asked for.
+    await expect(resolve(['10.7'])).resolves.toEqual([
+      { code: '10.7', label: 'Fabricarea produselor de brutărie' },
+    ]);
+  });
+
+  it('drops a code the classifier no longer carries rather than inventing a label', async () => {
+    // AD-4 lets the set move without a redeploy, so a stored code with no entry is a real state.
+    // The screen still holds the code; a label made up here would make a retired entry look live.
+    await expect(resolve(['10.71', '99.99'])).resolves.toEqual([
+      { code: '10.71', label: 'Fabricarea pâinii; fabricarea prăjiturilor' },
+    ]);
+  });
+
+  it('falls back to a language the entry does carry', async () => {
+    await expect(resolve(['49.41'], 'en')).resolves.toEqual([
+      { code: '49.41', label: 'Transporturi rutiere de mărfuri' },
+    ]);
+  });
+
+  it('answers nothing for no codes, and reads no classifier to say so', async () => {
+    await expect(resolve([])).resolves.toEqual([]);
   });
 });

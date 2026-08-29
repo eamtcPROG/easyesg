@@ -116,3 +116,11 @@
   gap: var(--space-3);
   color: var(--text-muted);
 }
+/* **Secondary text on a highlighted row takes `--text-body`, not `--text-muted`.** Measured, not
+   guessed: `--text-muted` is 5.1:1 on `--surface-default` and 4.36:1 on `--accent-tint`, which is
+   below WCAG's 4.5:1 — a 0.6 margin that any tinted surface spends. `tokens.css` states the rule
+   beside the token; this is one of the three sites it was found at. */
+.item[data-highlighted] .itemValue,
+.item[data-state='open'] .itemValue {
+  color: var(--text-body);
+}

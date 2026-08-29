@@ -1758,6 +1758,13 @@
             }
           },
           {
+            "name": "codes",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated codes a record already holds, resolved to their words in the negotiated language. Takes precedence over q, matches exactly rather than by prefix, answers in the order given, and drops a code the classifier no longer carries rather than inventing a label for it.",
+            "schema": {}
+          },
+          {
             "name": "q",
             "required": false,
             "in": "query",

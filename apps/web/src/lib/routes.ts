@@ -53,6 +53,11 @@ export const ROUTES = {
   ORGANIZATION_UNAVAILABLE: '/organization-unavailable',
   /** S-15 — the organization profile and its identifiers (task 30.3). */
   ORGANIZATION: '/organization',
+  /** S-13 — the entities index (task 30.4.2). */
+  ENTITIES: '/entities',
+  /** S-13's Record in its create mode (task 30.4.3). A literal segment rather than a query flag,
+   *  so an unsaved new entity is an address the reader can return to (UX-4). */
+  ENTITY_NEW: '/entities/new',
   /** S-16 — users and access (task 26.4). */
   ORGANIZATION_USERS: '/organization/users',
   /** S-28 — credentials and linked identities (task 27.7). The destination S-01's
@@ -71,6 +76,10 @@ export type Route = (typeof ROUTES)[keyof typeof ROUTES];
  * is the one address here that cannot be a constant.
  */
 export const invitationRoute = (token: string): string => `/invitation/${token}`;
+
+/** S-13's Record for one entity. The id is the entity's, never the organization's — tenancy comes
+ *  from the session and no route below `(app)` carries an organization (AD-2, UX-2). */
+export const entityRoute = (entityId: string): string => `/entities/${entityId}`;
 
 /**
  * A path with a query string, or the bare path when there is none.
