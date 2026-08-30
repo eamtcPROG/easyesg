@@ -6819,3 +6819,57 @@ One choice the skill does not cover: `POST /periods/{id}/lock` answers **200, no
 nothing, and returning the period in its new state is what S-14 re-renders — 204 would make the
 screen fetch again to show the lock it just placed. The entity's archive route answers 204 because
 it has nothing useful to return.
+
+---
+
+## CI is red on 31.1 and 31.2 — the seed a suite was borrowing · 2026-08-30
+
+Not a task. The first push after tasks 33.1, 31.1 and 31.2 turned the `BILLING_ENABLED=false` job
+red with **44 failures across two suites**, every one of them a flat `400` or `409` about something
+the suite was not testing. Both `pnpm gates` and `pnpm gates:clean` had been green locally, twice.
+
+### What it was
+
+`POST /entities` admits a legal form and an activity code against the configuration vocabularies,
+and `POST /periods` resolves its version pin from one. Against an empty store all three refuse, so
+`entities.e2e-spec.ts` and `periods.e2e-spec.ts` fail from their first request.
+
+They had been passing because `configuration-store.e2e-spec.ts` calls `seedConfiguration` as part of
+testing the seeder — so **whichever suite jest happened to run first was supplying the vocabulary
+for the rest**. Neither of the two that needed it seeded it.
+
+Two things kept that invisible for three tasks:
+
+- A developer's store is always already seeded from some earlier command, so no local run could
+  fail — the same shape as the `packages/i18n/dist` case this file's rule was written for.
+- **Jest's default sequencer orders by file size, not alphabetically.** So "the seeding suite runs
+  first" was never a rule, only a habit that happened to hold. The one CI job that migrates without
+  seeding drew the other order.
+
+### The fix, and the fix that was declined
+
+`pretest:e2e` now runs `config:seed`, which is the root `CLAUDE.md`'s own rule applied literally:
+*a script must be runnable on its own, and if `pnpm x` needs what `pnpm y` produces that belongs in
+a `prex` hook, not in a CI step*.
+
+**Adding a seed step to the `billing-off` job was the obvious fix and was declined for that same
+sentence.** It would have made `pnpm e2e` green in the two jobs that remembered to seed and red in
+the next one that did not — which is the bug, not its remedy.
+
+### Reproduced before it was fixed
+
+Per the rule. Emptying `config.entry_schedule` and running `entities.e2e-spec.ts` alone reproduced
+it in one run: 18 failed, 7 passed, the same `expected 201, got 400`. After the hook, the same
+condition — empty store, `BILLING_ENABLED=false` — gives 28 suites and 654 tests passing, with the
+seed's nine `published revision` lines visible ahead of them.
+
+`config.entry_version` refuses deletion of a superseded revision, so emptying the *schedule* is how
+you get a store with nothing in force without fighting the append-only guarantee.
+
+### What this says about the three green local runs
+
+Nothing about them was wrong; they were answering a different question. A single working directory
+cannot model job isolation, and this is the second time that has been the finding rather than the
+inconvenience. The rule it sharpens is that **"state a previous command left behind" includes a
+previous test suite inside the same command** — so the question to ask of a suite is what it needs
+that it does not create.

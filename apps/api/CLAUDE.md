@@ -584,6 +584,24 @@ inside `signInFreshAccount` — 66 failures across four suites that read like a 
 you just changed. `DELETE FROM identity.auth_attempt` as `esg_migrator` between runs is the fix. CI
 never sees it, because its database is fresh.
 
+**`pnpm e2e` seeds the configuration store itself, and that is `pretest:e2e`'s job rather than
+CI's** (30 Aug 2026, found by CI). `POST /entities` admits a legal form and an activity code against
+the configuration vocabularies, and `POST /periods` resolves its version pin from one — so both
+suites fail with a flat `400`/`409` against an empty store. They passed anyway, because
+`configuration-store.e2e-spec.ts` calls `seedConfiguration` as part of testing it, and **whichever
+suite jest happens to run first was silently providing the vocabulary for the rest**.
+
+Two things made that invisible. A developer's store is always already seeded from some earlier
+command, so no local run could fail. And jest's default sequencer orders by file size, not
+alphabetically — so "the seeding suite runs first" was never even reliably true; it just happened to
+be, until the `BILLING_ENABLED=false` job, which is the one job that migrates without seeding, drew
+the other order. 44 failures across two suites, none of them about the code they were testing.
+
+The fix is the root `CLAUDE.md`'s own rule applied literally — *a script must be runnable on its own,
+and if `pnpm x` needs what `pnpm y` produces that belongs in a `prex` hook, not in a CI step* — so
+`pretest:e2e` now runs `config:seed`. **Do not add a seed step to a workflow instead**: the next job
+that forgets it is the same bug again.
+
 **`outbox.e2e-spec.ts` still needs the table globally quiet for two of its tests**, and that is not
 something scoping can fix: `dispatchBatch` polls every pending row regardless of tenant, because the
 dispatcher is global by design (§6.7's single producer). Those tests assert the precondition rather

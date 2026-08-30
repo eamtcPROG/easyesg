@@ -84,6 +84,14 @@ Two things follow, and both are cheap:
 - **A script must be runnable on its own.** If `pnpm x` needs something `pnpm y` produces, that
   belongs in a `prex` hook, not in the order someone happens to run them or in a CI step. The fix
   for the case above was `pretest:e2e`, not a build step in the workflow.
+- **"A previous command" includes a previous *test suite* inside the same command** (30 Aug 2026,
+  found by CI on tasks 31.1/31.2). Two e2e suites needed the configuration store seeded and neither
+  seeded it; a third suite seeds it as part of testing the seeder, and was quietly supplying the
+  vocabulary for the other two. It survived because a developer's store is always already seeded,
+  and because **jest's default sequencer orders by file size, not alphabetically** — so even the
+  ordering it depended on was never a rule, only a habit. The one CI job that migrates without
+  seeding drew the other order and produced 44 failures about nothing the suites were testing. Ask
+  of a suite: *what does this need that it does not create?*
 - **Reproduce a CI failure locally before fixing it.** Deleting `packages/i18n/dist` reproduced that
   one in seconds and proved the fix, rather than pushing a guess and waiting two minutes to find out.
 
