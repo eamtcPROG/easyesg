@@ -73,3 +73,40 @@ export class TaxonomyVersionUnavailableError extends DomainError {
     super('core.period.taxonomy_version_unavailable');
   }
 }
+
+/**
+ * FR-22: the period is locked, so it takes no writes.
+ *
+ * **Not a role refusal**, which is the distinction §12.5.6's task-31.2 row settled: UC-57 names the
+ * Reporting Contributor and this refuses the Organization Administrator too. The way out is
+ * reopening, which is the one route through the lock and the thing UX-72 then displays — so the
+ * message names it rather than telling the caller they lack permission, which would be false.
+ *
+ * Raised by the use case from the row it has already read, **and** translated from SQLSTATE `45001`
+ * when the database's own trigger refuses first. The second path is not redundant: it is what a
+ * caller meets when the period was locked between the read and the write.
+ */
+export class PeriodLockedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.PeriodLocked;
+  readonly status = 409;
+
+  constructor() {
+    super('core.period.locked');
+  }
+}
+
+/**
+ * UC-57 on a period that is already locked, or UC-58 on one that is not.
+ *
+ * **One error for both directions, under the generic conflict slug**, because they share a cause
+ * and a resolution: the screen is showing a state the period has moved on from, and refreshing it
+ * settles the question. Nothing branches on them, which is what would justify slugs of their own.
+ */
+export class PeriodLockStateError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor(messageKey: 'core.period.already_locked' | 'core.period.not_locked') {
+    super(messageKey);
+  }
+}

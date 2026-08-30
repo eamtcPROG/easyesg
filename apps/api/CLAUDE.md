@@ -231,6 +231,37 @@ modelling them were not, until this task.
 `[rows, count]` where `SELECT`/`INSERT` answer rows. It had been written four times — twice as a
 declaration, twice hand-rolled inline — before task 31.1 needed a fifth.
 
+Task 31.2 adds **the lock** (UC-57, UC-58; FR-22): `locked_at`/`locked_by` on the period,
+`core.period_reopening`, and `POST /periods/{id}/{lock,reopening}` plus `GET /periods/{id}/reopenings`.
+Four things to know before touching it:
+
+- **The lock is not a role gate.** UC-57 names the Reporting Contributor and FR-22's criterion
+  followed it; read that way, an administrator's correction is ordinary editing in the trail, against
+  UC-58's rule that an amendment must look like one. It refuses **every** write and reopening is the
+  only route through it (§12.5.6's task-31.2 row; FR-22 amended). `LockReportingPeriod` never sees a
+  role, which is what makes that structural rather than remembered.
+- **A `BEFORE UPDATE` trigger enforces it too** (P-4), raising SQLSTATE `45001` — class 45 is left to
+  applications, so the repository can answer it as a domain conflict rather than a 500. It compares
+  **row images** (`to_jsonb(NEW) - 'locked_at' - 'locked_by' - 'updated_at'`), not a column list, so
+  a statement that cleared the lock *and* moved the dates is refused and a column added later is
+  covered the day it is added.
+- **`DELETE` is deliberately not covered.** Covering it made one locked period render its whole
+  **organization** undeletable through the cascade, and a row that ceases to exist has not been
+  amended — the history lives in `core.field_change`, which a deletion cannot reach.
+- **The reopening is a row, never columns**, so a second amendment cannot overwrite the first
+  (UX-72), and it is immutable by grant like `core.entity_snapshot`. The record is written **before**
+  the unlock: there is no ordering in which the lock is gone and the reason was never captured.
+
+**An actor column into `identity` is a bare `uuid`, never a foreign key** — §7.1 permits one
+cross-schema foreign key and it is not this one, and `ON DELETE SET NULL` would erase the attribution
+FR-55 requires be retained. `core.field_change.actor_id` set the precedent at task 14;
+`schema-invariants.e2e-spec.ts` is what catches a new one.
+
+**A schema gate over a migration that did not apply is a false green.** After removing those foreign
+keys the migration failed to compile — a backtick inside a SQL comment — and `db:invariants` then
+reported 36 passed, because the table was not there to fail on. Check the table exists before
+believing the invariants.
+
 **Not built yet, and do not assume otherwise:** two of the four edge guards — `EntitlementGuard`
 (task 54) and `AdminRealmGuard` (**task 67.3**, assigned 27 Aug 2026: it guards nothing until A-02
 exists, since the only admin routes today are task 23's sign-in handshake and that is already behind

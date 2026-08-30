@@ -286,6 +286,13 @@ const UNAUDITED_TABLES = [
    * different schema, and FR-18's guarantee rests on the immutability rather than on a trail of it.
    */
   'core.entity_snapshot',
+  /**
+   * `core.period_reopening` is the same argument again (task 31.2). It is immutable by grant — no
+   * runtime role holds UPDATE or DELETE and it carries no policy for either — so capturing per-field
+   * changes to it would record the writing of a record. It is itself the trail FR-22 asks for, and a
+   * record of an amendment that could be amended is not a record.
+   */
+  'core.period_reopening',
 ];
 
 const auditedTablesMissingCapture = (x: Executor) =>

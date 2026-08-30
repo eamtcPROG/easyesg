@@ -102,6 +102,9 @@
     "period-overlaps": {
       "title": "Perioade suprapuse"
     },
+    "period-locked": {
+      "title": "Perioadă blocată"
+    },
     "taxonomy-version-unavailable": {
       "title": "Versiune a standardului indisponibilă"
     },
@@ -191,7 +194,10 @@
       "not_found": "Perioada de raportare indicată nu există în această organizație, așa că nu a putut fi afișată. Reîmprospătați lista pentru a vedea perioadele curente.",
       "overlaps": "O altă perioadă de raportare a acestei entități acoperă deja o parte din intervalul ales, iar două perioade nu se pot suprapune. Ajustați data de început și data de sfârșit sau modificați perioada care le acoperă deja.",
       "dates_invalid": "Datele introduse nu descriu o perioadă: sfârșitul cade înaintea începutului sau una dintre ele nu este o zi reală din calendar. Verificați zilele alese și fusul orar, apoi încercați din nou.",
-      "taxonomy_version_unavailable": "Nicio versiune a standardului nu este înregistrată în platformă, așa că perioada nu poate fi deschisă — fiecare raport trebuie legat de o versiune anume. Contactați echipa de asistență; se rezolvă de partea noastră."
+      "taxonomy_version_unavailable": "Nicio versiune a standardului nu este înregistrată în platformă, așa că perioada nu poate fi deschisă — fiecare raport trebuie legat de o versiune anume. Contactați echipa de asistență; se rezolvă de partea noastră.",
+      "locked": "Perioada este blocată, așa că nu mai poate fi modificată de nimeni, nici de administrator. Redeschideți perioada, indicând motivul, pentru a face corectura — modificarea va rămâne vizibilă ca amendament.",
+      "already_locked": "Perioada este deja blocată, așa că nu a mai fost blocată o dată. Reîmprospătați pagina pentru a vedea starea curentă.",
+      "not_locked": "Perioada nu este blocată, așa că nu poate fi redeschisă. Reîmprospătați pagina pentru a vedea starea curentă."
     }
   },
   "notification": {

@@ -770,6 +770,66 @@ export interface paths {
         patch: operations["PeriodsController_update"];
         trace?: never;
     };
+    "/api/v1/periods/{id}/reopenings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every reopening of this period, most recent first (UC-58)
+         * @description UX-72 requires an amendment to look like an amendment, so this is a read every member has — a Contributor working in a reopened period must be able to see that it was reopened and why, not only the administrator who reopened it.
+         */
+        get: operations["PeriodsController_reopenings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/periods/{id}/lock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lock the period (UC-57)
+         * @description A locked period takes no writes from anyone, the administrator included — reopening is the only route through it (FR-22). An irreversible-class action under UX-71, which is why it is a named route rather than a field on the patch above.
+         */
+        post: operations["PeriodsController_lock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/periods/{id}/reopening": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reopen the period, recording who, when and why (UC-58)
+         * @description The reason is required and is displayed on the period thereafter (UX-72) — an amendment must look like an amendment. The acting user and the timestamp are recorded by the system and are not fields on this request.
+         */
+        post: operations["PeriodsController_reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -1549,6 +1609,13 @@ export interface components {
              * @description The entity master data as it stood when this period was opened (FR-18).
              */
             entitySnapshotId: Record<string, never> | null;
+            /** @description Unix epoch milliseconds, UTC. Non-null means the period is locked and takes no writes from anyone, including an administrator — reopening is the only route through it (FR-22). */
+            lockedAt: Record<string, never> | null;
+            /**
+             * Format: uuid
+             * @description The account that locked it. Retained after that account loses access or is removed (FR-55).
+             */
+            lockedBy: Record<string, never> | null;
             /** @description Unix epoch milliseconds, UTC. */
             createdAt: number;
             /** @description Unix epoch milliseconds, UTC. */
@@ -1564,6 +1631,21 @@ export interface components {
             periodEnd: components["schemas"]["LegalDateDto"];
             /** @description When the report must be complete — a different fact from when the period ends, and what deadline notices count down to. */
             dueDate?: components["schemas"]["LegalDateDto"] | null;
+        };
+        PeriodReopeningResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description Unix epoch milliseconds, UTC. When the lock this reopening ended was placed. */
+            lockedAt: number;
+            /** @description Unix epoch milliseconds, UTC. */
+            reopenedAt: number;
+            /** Format: uuid */
+            reopenedBy: Record<string, never> | null;
+            reason: string;
+        };
+        ReopenPeriodRequestDto: {
+            /** @description Why the period is being reopened. Displayed on the period thereafter (UX-72). */
+            reason: string;
         };
         UpdateReportingPeriodRequestDto: {
             fiscalYear?: number;
@@ -3275,7 +3357,125 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Another period overlaps these dates. */
+            /** @description Another period overlaps these dates, or the period is locked. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PeriodsController_reopenings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The reopenings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["PeriodReopeningResponseDto"][];
+                    };
+                };
+            };
+            /** @description No such period in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PeriodsController_lock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The period, locked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportingPeriodResponseDto"];
+                    };
+                };
+            };
+            /** @description No such period in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The period is already locked. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PeriodsController_reopen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReopenPeriodRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The period, reopened. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportingPeriodResponseDto"];
+                    };
+                };
+            };
+            /** @description No reason was stated. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such period in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The period is not locked. */
             409: {
                 headers: {
                     [name: string]: unknown;

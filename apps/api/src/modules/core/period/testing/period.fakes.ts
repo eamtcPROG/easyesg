@@ -8,6 +8,7 @@ import type {
 import type { ReportingPeriodStore } from '../interfaces/reporting-period-store.interface';
 import type {
   NewReportingPeriod,
+  PeriodReopening,
   ReportingPeriod,
   ReportingPeriodPatch,
 } from '../models/reporting-period.model';
@@ -35,6 +36,8 @@ export const aPeriod = (overrides: Partial<ReportingPeriod> = {}): ReportingPeri
   taxonomyVersion: REGISTERED_VERSION,
   priorPeriodId: null,
   entitySnapshotId: '00000000-0000-0000-0000-0000000000a1',
+  lockedAt: null,
+  lockedBy: null,
   createdAt: new Date('2026-08-01T00:00:00.000Z'),
   updatedAt: new Date('2026-08-01T00:00:00.000Z'),
   ...overrides,
@@ -93,6 +96,51 @@ export class FakeReportingPeriodStore implements ReportingPeriodStore {
     });
     this.rows = [...this.rows, created];
     return Promise.resolve(created);
+  }
+
+  private reopenings: PeriodReopening[] = [];
+
+  lock(input: { periodId: string; actorId: string | null; at: Date }): Promise<ReportingPeriod | null> {
+    const found = this.rows.find((row) => row.id === input.periodId);
+    if (!found) return Promise.resolve(null);
+    const locked = { ...found, lockedAt: input.at, lockedBy: input.actorId, updatedAt: input.at };
+    this.rows = this.rows.map((row) => (row.id === found.id ? locked : row));
+    return Promise.resolve(locked);
+  }
+
+  /**
+   * **Answers null for a period that is not locked**, matching the real store's conditional
+   * `INSERT ... SELECT ... WHERE locked_at IS NOT NULL`. A fake that reopened anything would model
+   * behaviour the thing it stands in for does not have — the divergence task 31.1 found in the
+   * patch-spread fakes, avoided here rather than rediscovered.
+   */
+  reopen(input: {
+    periodId: string;
+    reason: string;
+    actorId: string | null;
+    at: Date;
+  }): Promise<ReportingPeriod | null> {
+    const found = this.rows.find((row) => row.id === input.periodId);
+    if (!found || found.lockedAt === null) return Promise.resolve(null);
+    this.reopenings = [
+      {
+        id: `00000000-0000-0000-0000-0000000000e${this.reopenings.length + 1}`,
+        lockedAt: found.lockedAt,
+        reopenedAt: input.at,
+        reopenedBy: input.actorId,
+        reason: input.reason,
+      },
+      ...this.reopenings,
+    ];
+    const reopened = { ...found, lockedAt: null, lockedBy: null, updatedAt: input.at };
+    this.rows = this.rows.map((row) => (row.id === found.id ? reopened : row));
+    return Promise.resolve(reopened);
+  }
+
+  listReopenings(input: { periodId: string }): Promise<PeriodReopening[]> {
+    return Promise.resolve(
+      this.rows.some((row) => row.id === input.periodId) ? this.reopenings : [],
+    );
   }
 
   update(input: {

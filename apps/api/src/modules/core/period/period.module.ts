@@ -15,6 +15,7 @@ import {
   type ReportingPeriodStore,
 } from './interfaces/reporting-period-store.interface';
 import { PeriodService } from './services/period.service';
+import { LockReportingPeriod } from './use-cases/lock-reporting-period.use-case';
 import { OpenReportingPeriod } from './use-cases/open-reporting-period.use-case';
 
 /**
@@ -49,6 +50,11 @@ const httpProviders: Provider[] = [
   { provide: REPORTING_PERIOD_STORE, useClass: ReportingPeriodStoreRepository },
   { provide: REPORTING_ENTITY_STORE, useClass: ReportingEntityStoreRepository },
   { provide: CLOCK, useValue: () => new Date() },
+  {
+    provide: LockReportingPeriod,
+    inject: [REPORTING_PERIOD_STORE, CLOCK],
+    useFactory: (store: ReportingPeriodStore, now: Clock) => new LockReportingPeriod(store, now),
+  },
   {
     provide: OpenReportingPeriod,
     inject: [REPORTING_PERIOD_STORE, REPORTING_ENTITY_STORE, TAXONOMY_REGISTRY, CLOCK],

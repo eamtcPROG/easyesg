@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Length,
   Matches,
   Max,
   Min,
@@ -14,7 +15,13 @@ import {
 } from 'class-validator';
 import { Trim } from '@api/app/decorators/trim.decorator';
 import type { LegalDate } from '@api/contracts/types/time';
-import type { ReportingPeriod } from '../models/reporting-period.model';
+import type { PeriodReopening, ReportingPeriod } from '../models/reporting-period.model';
+
+/**
+ * OpenAPI can type an instant only as `integer`, so the unit has to be stated in prose on every one
+ * of them — CLAUDE.md's rule, and the reason this sentence repeats rather than being omitted.
+ */
+const EPOCH_MILLIS = 'Unix epoch milliseconds, UTC.';
 
 /** ISO 8601 calendar date. Shape only — that it names a real day is a domain rule. */
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/u;
@@ -175,10 +182,26 @@ export class ReportingPeriodResponseDto {
   })
   readonly entitySnapshotId: string | null;
 
-  @ApiProperty({ description: 'Unix epoch milliseconds, UTC.' })
+  @ApiProperty({
+    nullable: true,
+    description:
+      `${EPOCH_MILLIS} Non-null means the period is locked and takes no writes from ` +
+      'anyone, including an administrator — reopening is the only route through it (FR-22).',
+  })
+  readonly lockedAt: number | null;
+
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    description:
+      'The account that locked it. Retained after that account loses access or is removed (FR-55).',
+  })
+  readonly lockedBy: string | null;
+
+  @ApiProperty({ description: EPOCH_MILLIS })
   readonly createdAt: number;
 
-  @ApiProperty({ description: 'Unix epoch milliseconds, UTC.' })
+  @ApiProperty({ description: EPOCH_MILLIS })
   readonly updatedAt: number;
 
   constructor(period: ReportingPeriod) {
@@ -192,10 +215,57 @@ export class ReportingPeriodResponseDto {
     this.taxonomyVersion = period.taxonomyVersion;
     this.priorPeriodId = period.priorPeriodId;
     this.entitySnapshotId = period.entitySnapshotId;
+    this.lockedAt = period.lockedAt?.getTime() ?? null;
+    this.lockedBy = period.lockedBy;
     // The one conversion OQ-50 permits, at the persistence-to-DTO boundary. The period's own
     // boundaries stay calendar dates and are deliberately NOT converted — that is the distinction
     // NFR-34 draws, visible in one object.
     this.createdAt = period.createdAt.getTime();
     this.updatedAt = period.updatedAt.getTime();
+  }
+}
+
+/**
+ * UC-58's stated reason.
+ *
+ * **Required, and required to say something** — UX-72 makes the reason the thing displayed
+ * thereafter, so an empty one satisfies the letter and defeats the requirement. `@Trim` first, so
+ * whitespace is not a reason; the database refuses a blank one again.
+ */
+export class ReopenPeriodRequestDto {
+  @ApiProperty({
+    minLength: 1,
+    maxLength: 500,
+    description: 'Why the period is being reopened. Displayed on the period thereafter (UX-72).',
+  })
+  @Trim()
+  @IsString()
+  @Length(1, 500)
+  reason!: string;
+}
+
+/** One reopening, as UX-72 requires it displayed. */
+export class PeriodReopeningResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  readonly id: string;
+
+  @ApiProperty({ description: `${EPOCH_MILLIS} When the lock this reopening ended was placed.` })
+  readonly lockedAt: number;
+
+  @ApiProperty({ description: EPOCH_MILLIS })
+  readonly reopenedAt: number;
+
+  @ApiProperty({ format: 'uuid', nullable: true })
+  readonly reopenedBy: string | null;
+
+  @ApiProperty({ maxLength: 500 })
+  readonly reason: string;
+
+  constructor(reopening: PeriodReopening) {
+    this.id = reopening.id;
+    this.lockedAt = reopening.lockedAt.getTime();
+    this.reopenedAt = reopening.reopenedAt.getTime();
+    this.reopenedBy = reopening.reopenedBy;
+    this.reason = reopening.reason;
   }
 }

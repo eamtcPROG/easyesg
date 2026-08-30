@@ -12,6 +12,7 @@ import type {
 import type { ReportingPeriodStore } from '../interfaces/reporting-period-store.interface';
 import {
   PeriodDatesInvalidError,
+  PeriodLockedError,
   PeriodNotFoundError,
   TaxonomyVersionUnavailableError,
 } from '../errors/period.errors';
@@ -78,6 +79,12 @@ export class OpenReportingPeriod {
     // as a failure here and would be caught by a constraint violation instead.
     const current = await this.store.findPeriod({ periodId: command.periodId });
     if (!current) throw new PeriodNotFoundError();
+
+    // FR-22: a locked period takes no writes, the administrator's included — the shell as much as
+    // the report (§12.5.6's task-31.2 rows). Checked here so the caller gets a message naming the
+    // way out; the database's own trigger refuses it again, which is what closes the read-then-lock
+    // race this check cannot.
+    if (current.lockedAt !== null) throw new PeriodLockedError();
 
     // **Field by field, never `{ ...current, ...patch }`.** A DTO class field declared `foo?: T` is
     // *defined* as `undefined` on every instance under `useDefineForClassFields`, so spreading a

@@ -206,6 +206,12 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /periods/:id': ALL_MEMBERS,
   'POST /periods': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'PATCH /periods/:id': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  // UX-72: an amendment must look like an amendment, and to the person working inside the period as
+  // much as to the administrator who made it — so the reopening history is a read every member has,
+  // while the two actions that write it stay OA.
+  'GET /periods/:id/reopenings': ALL_MEMBERS,
+  'POST /periods/:id/lock': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /periods/:id/reopening': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
 };
 
 type Constructor = new (...args: never[]) => object;

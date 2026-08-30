@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import type { LegalDate } from '@api/contracts/types/time';
 import type { ReportingPeriodStore } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
-import { PeriodOverlapsError } from '@api/modules/core/period/errors/period.errors';
+import {
+  PeriodLockedError,
+  PeriodOverlapsError,
+} from '@api/modules/core/period/errors/period.errors';
 import type {
   NewReportingPeriod,
+  PeriodReopening,
   ReportingPeriod,
   ReportingPeriodPatch,
 } from '@api/modules/core/period/models/reporting-period.model';
@@ -24,8 +28,18 @@ interface PeriodRow {
   taxonomy_version: string;
   prior_period_id: string | null;
   entity_snapshot_id: string | null;
+  locked_at: Date | null;
+  locked_by: string | null;
   created_at: Date;
   updated_at: Date;
+}
+
+interface ReopeningRow {
+  id: string;
+  locked_at: Date;
+  reopened_at: Date;
+  reopened_by: string | null;
+  reason: string;
 }
 
 /**
@@ -39,7 +53,7 @@ const PERIOD_COLUMNS = `id, reporting_entity_id, fiscal_year,
         period_end::text    AS period_end,   period_end_tz,
         due_date::text      AS due_date,     due_date_tz,
         template_version, taxonomy_version, prior_period_id, entity_snapshot_id,
-        created_at, updated_at`;
+        locked_at, locked_by, created_at, updated_at`;
 
 const toPeriod = (row: PeriodRow): ReportingPeriod => ({
   id: row.id,
@@ -55,6 +69,8 @@ const toPeriod = (row: PeriodRow): ReportingPeriod => ({
   taxonomyVersion: row.taxonomy_version,
   priorPeriodId: row.prior_period_id,
   entitySnapshotId: row.entity_snapshot_id,
+  lockedAt: row.locked_at,
+  lockedBy: row.locked_by,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -67,11 +83,32 @@ const PATCHABLE = {
   dueDate: 'due_date',
 } as const satisfies Record<keyof ReportingPeriodPatch, string>;
 
-/** PostgreSQL's `exclusion_violation`. Any other code is not ours to interpret. */
-const EXCLUSION_VIOLATION = '23P01';
+/**
+ * The two SQLSTATEs this table answers with a domain error.
+ *
+ * `23P01` is PostgreSQL's own `exclusion_violation`, raised by the no-overlap constraint. `45001`
+ * is ours: class 45 is left to applications by the standard, and the lock trigger raises it so this
+ * refusal is distinguishable from every other plpgsql error in the schema — `raise_exception`
+ * (P0001) would have made them all look alike.
+ */
+const SQL_STATE = { EXCLUSION_VIOLATION: '23P01', PERIOD_LOCKED: '45001' } as const;
+type SqlState = (typeof SQL_STATE)[keyof typeof SQL_STATE];
 
-const isExclusionViolation = (error: unknown): boolean =>
-  typeof error === 'object' && error !== null && 'code' in error && error.code === EXCLUSION_VIOLATION;
+const hasSqlState = (error: unknown, state: SqlState): boolean =>
+  typeof error === 'object' && error !== null && 'code' in error && error.code === state;
+
+/**
+ * Both writes translate the same two refusals, so they translate them the same way.
+ *
+ * **The lock is re-raised from the database even though the use case checks it first**, and that is
+ * not redundancy: the application check produces the message, and this is what a caller meets when
+ * the period was locked between the read and the write.
+ */
+const translate = (error: unknown): never => {
+  if (hasSqlState(error, SQL_STATE.EXCLUSION_VIOLATION)) throw new PeriodOverlapsError();
+  if (hasSqlState(error, SQL_STATE.PERIOD_LOCKED)) throw new PeriodLockedError();
+  throw error;
+};
 
 @Injectable()
 export class ReportingPeriodStoreRepository
@@ -144,8 +181,7 @@ export class ReportingPeriodStoreRepository
       );
       created = rows[0];
     } catch (error) {
-      if (isExclusionViolation(error)) throw new PeriodOverlapsError();
-      throw error;
+      return translate(error);
     }
 
     await this.relinkSuccessor(created, input.at);
@@ -197,8 +233,7 @@ export class ReportingPeriodStoreRepository
         ),
       )[0];
     } catch (error) {
-      if (isExclusionViolation(error)) throw new PeriodOverlapsError();
-      throw error;
+      return translate(error);
     }
     if (!updated) return null;
 
@@ -208,6 +243,93 @@ export class ReportingPeriodStoreRepository
       await this.relinkSuccessor(updated, input.at);
     }
     return (await this.findPeriod({ periodId: updated.id })) ?? toPeriod(updated);
+  }
+
+  async lock(input: {
+    periodId: string;
+    actorId: string | null;
+    at: Date;
+  }): Promise<ReportingPeriod | null> {
+    try {
+      const rows = returnedRows<PeriodRow>(
+        await this.manager.query(
+          `UPDATE core.reporting_period
+              SET locked_at = $2, locked_by = $3, updated_at = $2
+            WHERE id = $1
+        RETURNING ${PERIOD_COLUMNS}`,
+          [input.periodId, input.at, input.actorId],
+        ),
+      );
+      return rows[0] ? toPeriod(rows[0]) : null;
+    } catch (error) {
+      return translate(error);
+    }
+  }
+
+  /**
+   * UC-58 as one statement sequence on the request transaction: record the amendment, then clear
+   * the lock.
+   *
+   * **The record is written first, and the order is the guarantee.** Both commit together or
+   * neither does (P-8), but writing the record first means the only way to reach the unlock is
+   * through a row that already states who reopened and why — there is no ordering in which the lock
+   * is gone and the reason was never captured.
+   *
+   * `locked_at` is copied from the period rather than passed in, so the record states the lock it
+   * actually ended rather than one the caller believed was in force.
+   */
+  async reopen(input: {
+    periodId: string;
+    reason: string;
+    actorId: string | null;
+    at: Date;
+  }): Promise<ReportingPeriod | null> {
+    const recorded = returnedRows<{ id: string }>(
+      await this.manager.query(
+        `INSERT INTO core.period_reopening
+             (organization_id, reporting_period_id, locked_at, reopened_at, reopened_by, reason)
+         SELECT p.organization_id, p.id, p.locked_at, $2, $3, $4
+           FROM core.reporting_period p
+          WHERE p.id = $1 AND p.locked_at IS NOT NULL
+      RETURNING id`,
+        [input.periodId, input.at, input.actorId, input.reason],
+      ),
+    );
+    // No row selected means the period is gone or is not locked. Answering null rather than
+    // clearing a lock that was not there keeps the record and the state in step.
+    if (recorded.length === 0) return null;
+
+    try {
+      const rows = returnedRows<PeriodRow>(
+        await this.manager.query(
+          `UPDATE core.reporting_period
+              SET locked_at = NULL, locked_by = NULL, updated_at = $2
+            WHERE id = $1
+        RETURNING ${PERIOD_COLUMNS}`,
+          [input.periodId, input.at],
+        ),
+      );
+      return rows[0] ? toPeriod(rows[0]) : null;
+    } catch (error) {
+      return translate(error);
+    }
+  }
+
+  async listReopenings(input: { periodId: string }): Promise<PeriodReopening[]> {
+    const rows = await this.manager.query<ReopeningRow[]>(
+      `SELECT id, locked_at, reopened_at, reopened_by, reason
+         FROM core.period_reopening
+        WHERE reporting_period_id = $1
+        ORDER BY reopened_at DESC, id DESC`,
+      [input.periodId],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      lockedAt: row.locked_at,
+      reopenedAt: row.reopened_at,
+      reopenedBy: row.reopened_by,
+      reason: row.reason,
+    }));
   }
 
   /**

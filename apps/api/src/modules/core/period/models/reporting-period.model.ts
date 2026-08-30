@@ -34,6 +34,17 @@ export interface ReportingPeriod {
   readonly priorPeriodId: string | null;
   /** FR-18's master data as it stood at open. Null only for a period opened before task 31.1. */
   readonly entitySnapshotId: string | null;
+  /**
+   * FR-22. Non-null means the period is locked: **read-only for everyone**, the Organization
+   * Administrator included, with reopening the only route through it (§12.5.6's task-31.2 row).
+   */
+  readonly lockedAt: Date | null;
+  /**
+   * Who locked it — a bare account id, deliberately not a foreign key. FR-55 requires historical
+   * attribution to outlive the account's access, and §7.1 permits one cross-schema foreign key,
+   * which is not this one. `core.field_change.actor_id` set the precedent.
+   */
+  readonly lockedBy: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -57,4 +68,23 @@ export interface ReportingPeriodPatch {
   readonly periodStart?: LegalDate;
   readonly periodEnd?: LegalDate;
   readonly dueDate?: LegalDate | null;
+}
+
+/**
+ * UC-58's record: one reopening of one period, kept forever.
+ *
+ * **A row rather than columns on the period**, because a second reopening would overwrite the
+ * first and the amendment history UX-72 requires is exactly what would be lost (§12.5.6). Immutable
+ * by grant, following `core.entity_snapshot` — a record of an amendment that could itself be
+ * amended is not a record.
+ */
+export interface PeriodReopening {
+  readonly id: string;
+  /** When the lock this reopening ended was placed, so the record states the whole amendment. */
+  readonly lockedAt: Date;
+  readonly reopenedAt: Date;
+  /** As `lockedBy`: a bare account id that outlives the account (FR-55). */
+  readonly reopenedBy: string | null;
+  /** UX-72's stated reason, displayed thereafter. Never empty — the database refuses blank. */
+  readonly reason: string;
 }

@@ -1,5 +1,6 @@
 import type {
   NewReportingPeriod,
+  PeriodReopening,
   ReportingPeriod,
   ReportingPeriodPatch,
 } from '../models/reporting-period.model';
@@ -46,6 +47,35 @@ export interface ReportingPeriodStore {
     readonly patch: ReportingPeriodPatch;
     readonly at: Date;
   }): Promise<ReportingPeriod | null>;
+
+  /**
+   * UC-57. Returns the period as it now stands, or null when nothing matched.
+   *
+   * **The write itself is guarded below the application** — a `BEFORE UPDATE OR DELETE` trigger
+   * refuses any write to a locked row that is not the one clearing the lock — so a second lock is
+   * refused by the database even if a caller reaches here believing otherwise (§12.5.6, P-4).
+   */
+  lock(input: {
+    readonly periodId: string;
+    readonly actorId: string | null;
+    readonly at: Date;
+  }): Promise<ReportingPeriod | null>;
+
+  /**
+   * UC-58, as **one** operation: record the reopening and clear the lock.
+   *
+   * The two are one method for `open`'s reason and a sharper one — a cleared lock whose record did
+   * not commit is precisely the silent post-publication edit FR-22 exists to make impossible.
+   */
+  reopen(input: {
+    readonly periodId: string;
+    readonly reason: string;
+    readonly actorId: string | null;
+    readonly at: Date;
+  }): Promise<ReportingPeriod | null>;
+
+  /** UX-72's display: every reopening of one period, most recent first. */
+  listReopenings(input: { readonly periodId: string }): Promise<PeriodReopening[]>;
 }
 
 /** DI token beside the interface, so a consumer imports one thing (CLAUDE.md, P-7). */

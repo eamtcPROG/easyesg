@@ -6723,3 +6723,99 @@ answers, and the discriminator is whether the provider is stateful.
 Declined by name: `error-throw-http-exceptions`, as standing policy — this codebase forbids an
 `HttpException` from domain or use-case code, and `PeriodOverlapsError` and its siblings are
 `DomainError`s carrying message keys.
+
+---
+
+## Task 31.2 — Period lock and reopen · 2026-08-30
+
+`locked_at`/`locked_by` on the period, `core.period_reopening`, and three routes:
+`POST /periods/{id}/lock`, `POST /periods/{id}/reopening`, `GET /periods/{id}/reopenings`.
+
+### The decision that changed how a requirement reads
+
+UC-57 says locking *"makes the period read-only for Reporting Contributors"* and FR-22's acceptance
+criterion followed it, naming only the RC. Read as a role gate, an administrator edits a locked
+period directly — and their correction lands in the change history as ordinary editing, against
+UC-58's own business rule that *"a post-publication amendment is visible as an amendment"*. It also
+empties UC-57's stated purpose: an endpoint one person can move is not a defensible one.
+
+So **the lock refuses every write, the administrator's included**, and reopening is the only route
+through it. FR-22's acceptance criterion is amended in the same change rather than left implying the
+opposite. The use case is the place this is most visible: `LockReportingPeriod` never sees a role,
+so there is no branch it could take on one — the property is structural rather than remembered.
+
+### The reopening is a table, and that is UX-72 rather than tidiness
+
+Columns on the period would hold only the most recent reopening, so a second amendment would
+silently overwrite the first — which is exactly the history UX-72 exists to keep. `audit.system_audit_log`
+was the other candidate and is wrong for a reason worth writing down: its rows carry a NULL
+organization and are invisible to `esg_app`, so S-14 could only read its own period's history
+through the `BYPASSRLS` role — a path the product does not use and should not learn.
+
+The table is immutable by grant, following `core.entity_snapshot`. A record of an amendment that
+could itself be amended is not a record.
+
+### Two things the database enforces, and one it deliberately does not
+
+The lock is a `BEFORE UPDATE` trigger as well as a use-case check (P-4). The application check
+produces the message a person can act on; the trigger is what makes the guarantee independent of
+every future writer, and it closes the read-then-lock race the check cannot.
+
+**The trigger compares row images, not columns.** `NEW.locked_at IS NULL` alone would have admitted
+a single statement that cleared the lock *and* moved the dates — so "reopening is the only route
+through the lock" would have been true of the statement and false of the data. Comparing
+`to_jsonb(NEW) - 'locked_at' - 'locked_by' - 'updated_at'` against OLD's closes it and needs no
+column list, so a column added by a later migration is covered the day it is added. Found by probing
+the trigger in a rolled-back transaction before building on it, not by a test failing later.
+
+**`DELETE` is deliberately not covered, and the first version got this wrong.** Covering it made a
+single locked period render its entire **organization** undeletable, because
+`core.reporting_period` is reached by `ON DELETE CASCADE` from the entity and the organization — a
+plpgsql error raised three tables from the statement that caused it. It is also not what FR-22 asks:
+a row that ceases to exist has not been amended, and the change history the lock defends lives in
+`core.field_change`, whose `record_id` carries no foreign key precisely so the trail outlives the
+row. A deletion cannot reach the endpoint the lock is defending; a silent `UPDATE` could. Settled on
+those merits rather than on the test failure that surfaced it, and it has its own e2e test now.
+
+### The invariant gate caught a cross-schema foreign key
+
+`locked_by` and `reopened_by` shipped as `REFERENCES identity.account (id) ON DELETE SET NULL`, and
+`schema-invariants.e2e-spec.ts` failed: §7.1 permits exactly **one** cross-schema foreign key,
+`identity` → `core.organization`, and these were two more pointing the other way.
+
+The fix is better on a second count that the gate could not see. `ON DELETE SET NULL` *erases* the
+attribution when an account is deleted, which is the opposite of FR-55's *retain historical
+attribution*. Both are bare `uuid` now, following `core.field_change.actor_id`, whose own migration
+states this precedent at task 14.
+
+**A false green on the way through, worth recording.** After removing the foreign keys the migration
+failed to compile — a backtick inside a SQL comment, the trap `apps/api/CLAUDE.md` names — and
+`db:invariants` then reported 36 passed. It was passing because the table did not exist. A gate over
+a schema is only meaningful once the schema applied; checking that the table was really there is
+what caught it.
+
+### Verification
+
+- `pnpm gates` and `pnpm gates:clean` green. 26 e2e over real HTTP and SQL, 22 unit with no database.
+- The split is the same one 31.1 drew, and the lock sharpens it: the use-case spec holds the state
+  machine — lock only when open, reopen only when locked, no edit while locked — and the e2e holds
+  what only the database can say: the trigger refusing a direct `UPDATE`, the smuggled change
+  refused alongside the unlock, the reopening record surviving an `UPDATE` attempt as `UPDATE 0`,
+  and the organization still being deletable.
+- The trigger was probed directly in a rolled-back `psql` transaction before any application code
+  was written against it, which is how the row-image gap was found while it was still cheap.
+
+### `nestjs-best-practices`, read against the diff
+
+Applied: `db-use-transactions` — the reopening record and the unlock are one transaction, and the
+record is written **first**, so there is no ordering in which the lock is gone and the reason was
+never captured. `api-use-dto-serialization`, `security-validate-all-input` (the reason is trimmed
+and length-bounded before the database refuses a blank one again), `di-use-interfaces-tokens`.
+
+Declined by name: `error-throw-http-exceptions`, as standing policy. Considered and not applicable:
+`api-versioning` — these routes join an already-versioned surface.
+
+One choice the skill does not cover: `POST /periods/{id}/lock` answers **200, not 201**. It creates
+nothing, and returning the period in its new state is what S-14 re-renders — 204 would make the
+screen fetch again to show the lock it just placed. The entity's archive route answers 204 because
+it has nothing useful to return.

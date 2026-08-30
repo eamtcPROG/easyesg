@@ -57,11 +57,23 @@ describe('reporting periods (UC-56)', () => {
     taxonomyVersion: string;
     priorPeriodId: string | null;
     entitySnapshotId: string | null;
+    lockedAt: number | null;
+    lockedBy: string | null;
+  }
+
+  interface ReopeningBody {
+    id: string;
+    lockedAt: number;
+    reopenedAt: number;
+    reopenedBy: string | null;
+    reason: string;
   }
 
   /** The success envelope, read once rather than cast at twenty call sites. */
   const objectOf = (body: unknown): PeriodBody => (body as { object: PeriodBody }).object;
   const objectsOf = (body: unknown): PeriodBody[] => (body as { objects: PeriodBody[] }).objects;
+  const reopeningsOf = (body: unknown): ReopeningBody[] =>
+    (body as { objects: ReopeningBody[] }).objects;
 
   const openPeriod = (body: Record<string, unknown>) =>
     http().post('/api/v1/periods').set(admin.authorization).send(body);
@@ -343,6 +355,176 @@ describe('reporting periods (UC-56)', () => {
         .set(admin.authorization)
         .send({ periodStart: { date: '2025-06-01', timezone: CHISINAU } })
         .expect(409);
+    });
+  });
+
+  /**
+   * FR-22, UC-57 and UC-58. **The database's half of the lock is what these test** — the trigger
+   * that refuses a locked row whatever the caller believes, the record that commits with the unlock
+   * or not at all, and the immutability of that record. The use-case spec carries the state machine.
+   */
+  describe('locking and reopening (UC-57, UC-58)', () => {
+    const lock = (id: string) =>
+      http().post(`/api/v1/periods/${id}/lock`).set(admin.authorization);
+    const reopen = (id: string, reason: string) =>
+      http().post(`/api/v1/periods/${id}/reopening`).set(admin.authorization).send({ reason });
+
+    it('locks the period and records who did it', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      const locked = objectOf((await lock(opened.id).expect(200)).body);
+
+      expect(locked.lockedAt).not.toBeNull();
+      expect(locked.lockedBy).toBe(admin.accountId);
+    });
+
+    /**
+     * §12.5.6's task-31.2 row over real HTTP: the lock refuses the **administrator**, who is the
+     * only actor these routes admit. Read as the role gate UC-57's wording suggests, this request
+     * would succeed.
+     */
+    it('refuses the administrator’s own edit while locked, and names reopening as the way out', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      const refused = await http()
+        .patch(`/api/v1/periods/${opened.id}`)
+        .set(admin.authorization)
+        .send({ dueDate: { date: '2027-04-30', timezone: CHISINAU } })
+        .expect(409);
+
+      expect((refused.body as { type?: string }).type).toBe(`${PROBLEM_BASE_URI}/period-locked`);
+      expect((refused.body as { detail?: string }).detail).toContain('Redeschideți');
+    });
+
+    /**
+     * The application checks the lock from the row it has read; this is the database refusing the
+     * same write directly, which is what covers the window between that read and the write. Driven
+     * through SQL because no HTTP request can produce the race on demand.
+     */
+    it('is refused by the database itself, not only by the use case', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      await expect(
+        asOrganization(owner, ORG, (run) =>
+          run(`UPDATE core.reporting_period SET fiscal_year = 2099 WHERE id = $1`, [opened.id]),
+        ),
+      ).rejects.toThrow(/is locked/);
+    });
+
+    /**
+     * The trigger governs UPDATE and deliberately not DELETE — its own comment carries the reasoning.
+     * Asserted because the first version covered both, and a locked period then made its entire
+     * **organization** undeletable through the cascade, failing three tables from the statement.
+     */
+    it('does not make its organization undeletable, which covering DELETE would have', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      const removed = await asOrganization(owner, ORG, (run) =>
+        run(`DELETE FROM core.reporting_period WHERE id = $1`, [opened.id]),
+      );
+      expect((removed as [unknown[], number])[1]).toBe(1);
+    });
+
+    /**
+     * The half a first version of the trigger missed: clearing the lock and moving the dates in one
+     * statement would have passed, so "reopening is the only route through the lock" would have been
+     * true of the statement and false of the data.
+     */
+    it('refuses a write that smuggles a change alongside the unlock', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      await expect(
+        asOrganization(owner, ORG, (run) =>
+          run(
+            `UPDATE core.reporting_period SET locked_at = NULL, period_end = '2027-06-30'
+              WHERE id = $1`,
+            [opened.id],
+          ),
+        ),
+      ).rejects.toThrow(/is locked/);
+    });
+
+    it('reopens with a stated reason, and displays it thereafter (UX-72)', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      const locked = objectOf((await lock(opened.id).expect(200)).body);
+
+      const reopened = objectOf((await reopen(opened.id, 'Cifra B3 corectată').expect(200)).body);
+      expect(reopened.lockedAt).toBeNull();
+      expect(reopened.lockedBy).toBeNull();
+
+      const records = reopeningsOf(
+        (await http().get(`/api/v1/periods/${opened.id}/reopenings`).set(admin.authorization).expect(200))
+          .body,
+      );
+      expect(records).toHaveLength(1);
+      expect(records[0]).toMatchObject({
+        reason: 'Cifra B3 corectată',
+        reopenedBy: admin.accountId,
+        // The lock this reopening ended, copied from the period rather than supplied by the caller.
+        lockedAt: locked.lockedAt,
+      });
+    });
+
+    it('refuses a reopening with no stated reason (UX-72)', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+
+      await reopen(opened.id, '   ').expect(400);
+      // …and the period is still locked, so a refused reopening is not a partial one.
+      const still = objectOf(
+        (await http().get(`/api/v1/periods/${opened.id}`).set(admin.authorization).expect(200)).body,
+      );
+      expect(still.lockedAt).not.toBeNull();
+    });
+
+    it('refuses locking a locked period and reopening an open one', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await reopen(opened.id, 'nimic de redeschis').expect(409);
+
+      await lock(opened.id).expect(200);
+      await lock(opened.id).expect(409);
+    });
+
+    /** A record of an amendment that could itself be amended is not a record. */
+    it('keeps the reopening record immutable, by grant as well as by policy', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+      await reopen(opened.id, 'motiv').expect(200);
+
+      const affected = await asOrganization(owner, ORG, (run) =>
+        run(`UPDATE core.period_reopening SET reason = 'rescris' WHERE reporting_period_id = $1`, [
+          opened.id,
+        ]),
+      );
+      // No UPDATE policy, so even the owning role matches zero rows — `UPDATE 0` rather than an
+      // error, which is the shape task 26.1's cleanup note records.
+      expect((affected as [unknown[], number])[1]).toBe(0);
+
+      const records = reopeningsOf(
+        (await http().get(`/api/v1/periods/${opened.id}/reopenings`).set(admin.authorization).expect(200))
+          .body,
+      );
+      expect(records[0].reason).toBe('motiv');
+    });
+
+    it('lets a contributor see that the period was reopened and why, but not reopen it', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await lock(opened.id).expect(200);
+      await reopen(opened.id, 'motiv vizibil').expect(200);
+
+      const records = reopeningsOf(
+        (await http()
+          .get(`/api/v1/periods/${opened.id}/reopenings`)
+          .set(editor.authorization)
+          .expect(200)
+        ).body,
+      );
+      expect(records[0].reason).toBe('motiv vizibil');
+
+      await http().post(`/api/v1/periods/${opened.id}/lock`).set(editor.authorization).expect(403);
     });
   });
 
