@@ -1,3 +1,5 @@
+import type { LegalDate } from '@api/contracts/types/time';
+
 /**
  * The report — FR-24 … FR-32, FR-66, FR-177 (task 31.3; UC-17, UC-18).
  *
@@ -65,6 +67,29 @@ export const REPORT_STATUS = {
 
 export type ReportStatus = (typeof REPORT_STATUS)[keyof typeof REPORT_STATUS];
 
+/**
+ * What a report is *about* — the entity and the period it covers, carried on the row.
+ *
+ * **A projection, not a second copy of the truth** (task 32.2, `architecture.md` §12.5.6). S-06's
+ * purpose is *"find the entity/period combination to work on"*, and a list answering
+ * `reportingPeriodId` alone is a list of identifiers rather than a screen. It is resolved by join at
+ * read time, so nothing can drift: there is no column here and no write path that could set one.
+ *
+ * The dates are `LegalDate`s for the reason every period boundary is (NFR-34) — a boundary rendered
+ * from an instant lands in the wrong fiscal year for a reader in another zone.
+ */
+export interface ReportSubject {
+  readonly reportingEntityId: string;
+  /** The undertaking's name as it stands **now**, not as the period's FR-18 snapshot recorded it.
+   *  This is a wayfinding label on an index, so the current name is what a reader is looking for;
+   *  what the filing discloses comes from the snapshot and is task 36's. */
+  readonly entityName: string;
+  readonly fiscalYear: number;
+  readonly periodStart: LegalDate;
+  readonly periodEnd: LegalDate;
+  readonly dueDate: LegalDate | null;
+}
+
 export interface Report {
   readonly id: string;
   /** The period this report covers. At most one report per period, so this identifies it too. */
@@ -83,6 +108,8 @@ export interface Report {
   readonly taxonomyVersion: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+  /** Resolved by join on every read. See `ReportSubject`. */
+  readonly subject: ReportSubject;
 }
 
 /**

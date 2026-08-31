@@ -7,7 +7,10 @@ import {
   type Report,
   type ReportScope,
   type ReportStatus,
+  type ReportSubject,
 } from '../models/report.model';
+import { LegalDateDto } from '@api/modules/core/period/dto/reporting-period.dto';
+import type { LegalDate } from '@api/contracts/types/time';
 
 /**
  * OpenAPI can type an instant only as `integer`, so the unit has to be stated in prose on every one
@@ -71,6 +74,47 @@ export class UpdateReportRequestDto {
   scope?: ReportScope;
 }
 
+/**
+ * What a report is about — the entity and period it covers (task 32.2).
+ *
+ * **A read projection resolved by join, not a stored copy.** S-06's purpose is finding the
+ * entity/period combination to work on, and a row answering `reportingPeriodId` alone is a list of
+ * identifiers. Present on the record as well as the list, so a creation flow and the record it
+ * lands on cannot read different shapes.
+ */
+export class ReportSubjectDto {
+  @ApiProperty({ format: 'uuid' })
+  readonly reportingEntityId: string;
+
+  @ApiProperty({
+    description:
+      'The undertaking’s name as it stands now — a wayfinding label. What a filing discloses comes ' +
+      'from the period’s point-in-time snapshot instead (FR-18).',
+  })
+  readonly entityName: string;
+
+  @ApiProperty({ example: 2026 })
+  readonly fiscalYear: number;
+
+  @ApiProperty({ type: LegalDateDto })
+  readonly periodStart: LegalDate;
+
+  @ApiProperty({ type: LegalDateDto })
+  readonly periodEnd: LegalDate;
+
+  @ApiProperty({ type: LegalDateDto, nullable: true })
+  readonly dueDate: LegalDate | null;
+
+  constructor(subject: ReportSubject) {
+    this.reportingEntityId = subject.reportingEntityId;
+    this.entityName = subject.entityName;
+    this.fiscalYear = subject.fiscalYear;
+    this.periodStart = subject.periodStart;
+    this.periodEnd = subject.periodEnd;
+    this.dueDate = subject.dueDate;
+  }
+}
+
 export class ReportResponseDto {
   @ApiProperty({ format: 'uuid' })
   readonly id: string;
@@ -109,6 +153,9 @@ export class ReportResponseDto {
   @ApiProperty({ description: EPOCH_MILLIS })
   readonly updatedAt: number;
 
+  @ApiProperty({ type: ReportSubjectDto })
+  readonly subject: ReportSubjectDto;
+
   constructor(report: Report) {
     this.id = report.id;
     this.reportingPeriodId = report.reportingPeriodId;
@@ -119,5 +166,6 @@ export class ReportResponseDto {
     // The one conversion OQ-50 permits, at the persistence-to-DTO boundary.
     this.createdAt = report.createdAt.getTime();
     this.updatedAt = report.updatedAt.getTime();
+    this.subject = new ReportSubjectDto(report.subject);
   }
 }

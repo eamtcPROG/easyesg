@@ -7841,3 +7841,57 @@ the API e2e at 0% CPU, tests complete, 26 minutes in, no database connections. I
 problem rather than a test failure: the same suite passed 699/699 standalone immediately before and
 after. A fourth flake — `invitation-acceptance.e2e-spec.ts`, green 16/16 alone — is recorded on task
 85's row with the others.
+
+---
+
+## Task 32.2.1 — `GET /reports` answers its subject, and S-06 turns out to be blocked · 2026-08-31
+
+S-06's purpose is *"find the entity/period combination to work on"*, and `GET /reports` answered
+`reportingPeriodId` and nothing else — a list of opaque identifiers, which is not a screen. Each row
+now carries its entity's name and its period's fiscal year and dates, resolved by join.
+
+**This is task 30.4.2's decision with two words changed.** That task added `codes=` to the classifier
+route because both entity screens must render an activity as *words* while `GET /entities` answers
+bare keys; substitute *report*, *entity and year*, and `GET /reports`, and the sentence is the same.
+Declined with it: assembling the join in the web tier from three reads, which needs no API change,
+is bounded at MVP scale, and is an N+1 on the busiest screen in the workspace with the join living
+in the one tier that cannot test it against the database enforcing the tenancy.
+
+**The projection reaches the record as well as the list**, because a shape that differed between them
+would make task 32.3's creation flow read one thing and the record it lands on another.
+
+### The writes had to stop returning columns
+
+`REPORT_COLUMNS` now spans three tables and a `RETURNING` clause can only name the row being
+written, so `create` and `update` return an id and re-read through `findReport`. The alternative was
+a second column list for writes — exactly the pair that drifts the day a column is added to one of
+them. `reporting-period-store.repository.ts` already re-reads after `open` for a narrower reason.
+
+### S-06 itself is blocked, and finding that out was the task's real content
+
+§4.4 has **no report record screen**: it goes S-06 (Index) → S-07 (Wizard) directly, and
+`/reports/[reportId]/page.tsx` is documented in its own scaffold as *"S-07 entry — resolves to the
+first incomplete module … renders nothing"*, which task 36 owns. So S-06's only exit does not exist
+yet.
+
+That matters because §4.6 makes the row action an Index fixed element, and task **30.4.2 was
+restructured for precisely this**: it shipped with 30.4.3 rather than pointing an Index at a Record
+returning `null`, on the rule task 30.1 set — *a control that cannot act is worse than an absent
+one*. Shipping S-06 now would reintroduce it on the busiest list in the product.
+
+**Recorded as a scheduling question for the project owner rather than resolved here**, in the same
+class as *"task 33.1 is pulled ahead of 31.3"*: either task 36's S-07 shell moves ahead of 32.2.2,
+or S-06 ships with a dead row action, or §4.6's fixed-element requirement is waived for it with a
+reason. 32.2 is split so the half that had no such dependency could land: **32.2.1 done, 32.2.2
+`BLOCKED`.**
+
+**An earlier framing of this was wrong and is corrected here**: the option put to the project owner
+said the rows could land on "32.3's report record". There is no such screen — 32.3's deliverable is
+a creation flow that *displays* the pins, not a record — and the mistake came from reading the task
+row without checking §4.4's inventory.
+
+### Verified
+
+Lint, typecheck, 526 api unit tests, and 47 e2e across the three suites the projection touches. The
+join is **proven to bite**: replacing `e.name` with a literal fails exactly one test, the one that
+asserts the row names its entity.

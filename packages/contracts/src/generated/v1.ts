@@ -1698,6 +1698,17 @@ export interface components {
             periodEnd?: components["schemas"]["LegalDateDto"];
             dueDate?: components["schemas"]["LegalDateDto"] | null;
         };
+        ReportSubjectDto: {
+            /** Format: uuid */
+            reportingEntityId: string;
+            /** @description The undertaking’s name as it stands now — a wayfinding label. What a filing discloses comes from the period’s point-in-time snapshot instead (FR-18). */
+            entityName: string;
+            /** @example 2026 */
+            fiscalYear: number;
+            periodStart: components["schemas"]["LegalDateDto"];
+            periodEnd: components["schemas"]["LegalDateDto"];
+            dueDate: components["schemas"]["LegalDateDto"] | null;
+        };
         ReportResponseDto: {
             /** Format: uuid */
             id: string;
@@ -1724,6 +1735,7 @@ export interface components {
             createdAt: number;
             /** @description Unix epoch milliseconds, UTC. */
             updatedAt: number;
+            subject: components["schemas"]["ReportSubjectDto"];
         };
         CreateReportRequestDto: {
             /**

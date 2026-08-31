@@ -4461,6 +4461,46 @@
           }
         }
       },
+      "ReportSubjectDto": {
+        "type": "object",
+        "properties": {
+          "reportingEntityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entityName": {
+            "type": "string",
+            "description": "The undertaking’s name as it stands now — a wayfinding label. What a filing discloses comes from the period’s point-in-time snapshot instead (FR-18)."
+          },
+          "fiscalYear": {
+            "type": "number",
+            "example": 2026
+          },
+          "periodStart": {
+            "$ref": "#/components/schemas/LegalDateDto"
+          },
+          "periodEnd": {
+            "$ref": "#/components/schemas/LegalDateDto"
+          },
+          "dueDate": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDateDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reportingEntityId",
+          "entityName",
+          "fiscalYear",
+          "periodStart",
+          "periodEnd",
+          "dueDate"
+        ]
+      },
       "ReportResponseDto": {
         "type": "object",
         "properties": {
@@ -4506,6 +4546,9 @@
           "updatedAt": {
             "type": "number",
             "description": "Unix epoch milliseconds, UTC."
+          },
+          "subject": {
+            "$ref": "#/components/schemas/ReportSubjectDto"
           }
         },
         "required": [
@@ -4516,7 +4559,8 @@
           "templateVersion",
           "taxonomyVersion",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "subject"
         ]
       },
       "CreateReportRequestDto": {

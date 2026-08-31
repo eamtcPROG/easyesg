@@ -70,6 +70,14 @@ describe('reports (UC-17, UC-18)', () => {
     taxonomyVersion: string;
     createdAt: number;
     updatedAt: number;
+    subject: {
+      reportingEntityId: string;
+      entityName: string;
+      fiscalYear: number;
+      periodStart: { date: string; timezone: string };
+      periodEnd: { date: string; timezone: string };
+      dueDate: { date: string; timezone: string } | null;
+    };
   }
 
   /** The success envelope, read once rather than cast at twenty call sites. */
@@ -186,6 +194,46 @@ describe('reports (UC-17, UC-18)', () => {
         templateVersion: REGISTERED_VERSION,
         taxonomyVersion: REGISTERED_VERSION,
       });
+    });
+
+    /**
+     * Task 32.2's projection. S-06's purpose is *"find the entity/period combination to work on"*,
+     * and before this the row answered `reportingPeriodId` alone — a list of identifiers. The join
+     * is what makes it a screen, so this is what fails if somebody simplifies the query.
+     */
+    it('carries the entity and period it is about, resolved by join', async () => {
+      const periodId = await openPeriod(2026);
+
+      const report = objectOf((await createReport(periodId).expect(201)).body);
+
+      expect(report.subject).toMatchObject({
+        reportingEntityId: entityId,
+        entityName: 'Brutăria Lina',
+        fiscalYear: 2026,
+        // Calendar days, not instants — the boundary NFR-34 exists for, asserted on the way out of
+        // a second table.
+        periodStart: { date: '2026-01-01', timezone: CHISINAU },
+        periodEnd: { date: '2026-12-31', timezone: CHISINAU },
+        dueDate: null,
+      });
+    });
+
+    /** The record and the list must answer one shape, or task 32.3's creation flow reads one thing
+     *  and the record it lands on another. */
+    it('answers the same subject on the record as in the list', async () => {
+      const periodId = await openPeriod(2026);
+      const created = objectOf((await createReport(periodId).expect(201)).body);
+
+      const record = objectOf(
+        (await http().get(`/api/v1/reports/${created.id}`).set(editor.authorization).expect(200))
+          .body,
+      );
+      const listed = objectsOf(
+        (await http().get('/api/v1/reports').set(editor.authorization).expect(200)).body,
+      )[0];
+
+      expect(record.subject).toEqual(created.subject);
+      expect(listed.subject).toEqual(created.subject);
     });
 
     it('carries D-A’s Comprehensive scope where the caller asks for it (FR-177)', async () => {

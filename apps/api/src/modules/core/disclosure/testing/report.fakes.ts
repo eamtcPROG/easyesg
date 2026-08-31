@@ -18,6 +18,20 @@ import {
 /** The adoption task 33.1's `reporting-taxonomy.vsme.json` registers. */
 const REGISTERED_VERSION = '2026-05-01';
 
+/** The joined subject (task 32.2). A fixture, because the fake stands in for a store whose reads
+ *  resolve it — a fake answering `undefined` would model a shape the product cannot produce. */
+const CHISINAU = 'Europe/Chisinau';
+
+export const aReportSubject = (over: Partial<Report['subject']> = {}): Report['subject'] => ({
+  reportingEntityId: '00000000-0000-0000-0000-0000000000b1',
+  entityName: 'Brutăria Lina',
+  fiscalYear: 2026,
+  periodStart: { date: '2026-01-01', timezone: CHISINAU },
+  periodEnd: { date: '2026-12-31', timezone: CHISINAU },
+  dueDate: null,
+  ...over,
+});
+
 export const aReport = (overrides: Partial<Report> = {}): Report => ({
   id: '00000000-0000-0000-0000-0000000000f1',
   reportingPeriodId: '00000000-0000-0000-0000-0000000000c1',
@@ -27,6 +41,7 @@ export const aReport = (overrides: Partial<Report> = {}): Report => ({
   taxonomyVersion: REGISTERED_VERSION,
   createdAt: new Date('2026-08-01T00:00:00.000Z'),
   updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+  subject: aReportSubject(),
   ...overrides,
 });
 
@@ -39,7 +54,12 @@ export class FakeReportStore implements ReportStore {
    * guarantee the product does not have.
    */
   constructor(
-    private readonly periods: { id: string; templateVersion: string; taxonomyVersion: string }[] = [],
+    private readonly periods: {
+      id: string;
+      templateVersion: string;
+      taxonomyVersion: string;
+      subject?: Report['subject'];
+    }[] = [],
     private rows: Report[] = [],
   ) {}
 
@@ -63,6 +83,7 @@ export class FakeReportStore implements ReportStore {
     const created = aReport({
       id: `00000000-0000-0000-0000-0000000000f${this.rows.length + 1}`,
       reportingPeriodId: period.id,
+      subject: period.subject ?? aReportSubject(),
       scope: input.report.scope,
       templateVersion: period.templateVersion,
       taxonomyVersion: period.taxonomyVersion,

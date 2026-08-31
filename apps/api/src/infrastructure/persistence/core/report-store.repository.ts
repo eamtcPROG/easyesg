@@ -23,6 +23,19 @@ interface ReportRow {
   taxonomy_version: string;
   created_at: Date;
   updated_at: Date;
+  // The subject, joined rather than stored (task 32.2). `::text` on every date column for the
+  // reason `reporting-period-store.repository.ts` states at length: the driver maps `date` to a
+  // JavaScript `Date`, so `2026-12-31` read in a zone behind UTC comes back as the 30th — NFR-34's
+  // exact failure, reintroduced at the boundary meant to uphold it.
+  reporting_entity_id: string;
+  entity_name: string;
+  fiscal_year: number;
+  period_start: string;
+  period_start_tz: string;
+  period_end: string;
+  period_end_tz: string;
+  due_date: string | null;
+  due_date_tz: string | null;
 }
 
 /**
@@ -31,14 +44,28 @@ interface ReportRow {
  * answering the same shape.
  */
 const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status,
-        r.template_version, r.taxonomy_version, r.created_at, r.updated_at`;
+        r.template_version, r.taxonomy_version, r.created_at, r.updated_at,
+        p.reporting_entity_id, e.name AS entity_name, p.fiscal_year,
+        p.period_start::text AS period_start, p.period_start_tz,
+        p.period_end::text   AS period_end,   p.period_end_tz,
+        p.due_date::text     AS due_date,     p.due_date_tz`;
 
 /**
- * The same list for `RETURNING`, which names the row being written and admits no alias. Derived
- * from the one above rather than typed twice — two hand-kept copies of a column list is how a
- * column added to one read goes missing from a write.
+ * **Every read joins the subject, so there is one shape.** A list that carried the entity and a
+ * record that did not would make task 32.3's creation flow read one thing and its own record
+ * another — and the join is over two tables RLS already scopes, so it raises no tenancy question.
  */
-const RETURNED_COLUMNS = REPORT_COLUMNS.replaceAll('r.', '');
+const REPORT_FROM = `FROM core.report r
+         JOIN core.reporting_period p ON p.id = r.reporting_period_id
+         JOIN core.reporting_entity e ON e.id = p.reporting_entity_id`;
+
+/**
+ * **The writes return an id and then re-read.** `REPORT_COLUMNS` now spans three tables, and a
+ * `RETURNING` clause can only name the row being written — so the alternative was a second column
+ * list for writes, which is exactly the pair that drifts when a column is added to one of them.
+ * `reporting-period-store.repository.ts` already re-reads after `open` for its own reason; this is
+ * the same move for a stronger one, since it is what makes every path answer one shape.
+ */
 
 const toReport = (row: ReportRow): Report => ({
   id: row.id,
@@ -49,6 +76,17 @@ const toReport = (row: ReportRow): Report => ({
   taxonomyVersion: row.taxonomy_version,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  subject: {
+    reportingEntityId: row.reporting_entity_id,
+    entityName: row.entity_name,
+    fiscalYear: row.fiscal_year,
+    periodStart: { date: row.period_start, timezone: row.period_start_tz },
+    periodEnd: { date: row.period_end, timezone: row.period_end_tz },
+    dueDate:
+      row.due_date !== null && row.due_date_tz !== null
+        ? { date: row.due_date, timezone: row.due_date_tz }
+        : null,
+  },
 });
 
 /**
@@ -90,8 +128,7 @@ export class ReportStoreRepository extends TenantRepository<never> implements Re
     // years, and a 2025 report created after the 2026 one still belongs below it.
     const rows = await this.manager.query<ReportRow[]>(
       `SELECT ${REPORT_COLUMNS}
-         FROM core.report r
-         JOIN core.reporting_period p ON p.id = r.reporting_period_id
+         ${REPORT_FROM}
         WHERE ($1::uuid IS NULL OR p.reporting_entity_id = $1)
         ORDER BY p.period_start DESC, r.id DESC`,
       [input.reportingEntityId ?? null],
@@ -101,7 +138,7 @@ export class ReportStoreRepository extends TenantRepository<never> implements Re
 
   async findReport(input: { reportId: string }): Promise<Report | null> {
     const rows = await this.manager.query<ReportRow[]>(
-      `SELECT ${REPORT_COLUMNS} FROM core.report r WHERE r.id = $1`,
+      `SELECT ${REPORT_COLUMNS} ${REPORT_FROM} WHERE r.id = $1`,
       [input.reportId],
     );
     return rows.length === 0 ? null : toReport(rows[0]);
@@ -121,7 +158,7 @@ export class ReportStoreRepository extends TenantRepository<never> implements Re
    */
   async create(input: { report: NewReport; at: Date }): Promise<Report | null> {
     try {
-      const rows = returnedRows<ReportRow>(
+      const rows = returnedRows<{ id: string }>(
         await this.manager.query(
           `INSERT INTO core.report (
                organization_id, reporting_period_id, scope,
@@ -129,11 +166,11 @@ export class ReportStoreRepository extends TenantRepository<never> implements Re
            SELECT p.organization_id, p.id, $2, p.template_version, p.taxonomy_version, $3, $3
              FROM core.reporting_period p
             WHERE p.id = $1
-        RETURNING ${RETURNED_COLUMNS}`,
+        RETURNING id`,
           [input.report.reportingPeriodId, input.report.scope, input.at],
         ),
       );
-      return rows[0] ? toReport(rows[0]) : null;
+      return rows[0] ? await this.findReport({ reportId: rows[0].id }) : null;
     } catch (error) {
       return translate(error);
     }
@@ -146,15 +183,15 @@ export class ReportStoreRepository extends TenantRepository<never> implements Re
   }): Promise<Report | null> {
     if (input.patch.scope === undefined) return this.findReport({ reportId: input.reportId });
     try {
-      const rows = returnedRows<ReportRow>(
+      const rows = returnedRows<{ id: string }>(
         await this.manager.query(
           `UPDATE core.report SET scope = $2, updated_at = $3
             WHERE id = $1
-        RETURNING ${RETURNED_COLUMNS}`,
+        RETURNING id`,
           [input.reportId, input.patch.scope, input.at],
         ),
       );
-      return rows[0] ? toReport(rows[0]) : null;
+      return rows[0] ? await this.findReport({ reportId: rows[0].id }) : null;
     } catch (error) {
       return translate(error);
     }
