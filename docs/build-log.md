@@ -7072,3 +7072,106 @@ split on `|` **before** inline code is parsed, so backticks do not protect a pip
 `||--o|` cardinality shredded a cell into ten. Both are now escaped. Nothing in the gate set reads
 markdown, so neither would ever have failed a build; the check is one line of Python asserting every
 row of every table has six cells, and it is worth running after editing these files.
+
+---
+
+## Task 31.4 — The snapshot that is a proof, not a table · 2026-08-31
+
+The only row so far whose deliverable is a **test**. §12.5.6 settled on 29 Aug that
+`core.report_snapshot` should not exist: FR-22 makes a locked period read-only, FR-18 makes entity
+master data point-in-time, and `core.export_artifact` retains the distributed file byte-for-byte, so
+a materialised copy of values that cannot move would be a fourth statement of the same fact and *the
+first thing to drift the day a reopen is permitted*. The row's job is to prove the property those
+three carry between them.
+
+`test/report-snapshot.e2e-spec.ts`, five tests, plus three schema invariants (42, up from 39).
+
+### What "reads identically" had to be made to mean
+
+Locking necessarily moves the lock — the report's `status`, the period's `locked_at`/`locked_by`,
+both `updated_at`s. So the deliverable's own sentence is false read literally, and the claim it is
+reaching for is that **only those four move**. Stated as a declared list subtracted from
+`to_jsonb` of the whole row, which is the `refuse_locked_write` triggers' own shape and buys the
+same property: a column added by a later task is covered the day it is added rather than the day
+somebody remembers this file. A column *renamed* fails loudly instead of silently widening the
+hole — the subtraction removes nothing and the renamed column then has to hold still.
+
+### The one test that makes the rest non-vacuous
+
+Four of the five would pass if the lock simply froze two rows. The fifth would not: **correcting the
+entity is permitted while a period is locked**, and must be — UC-52 makes master data OA-owned and
+editable at any time, and §7.2's own example is an address corrected in 2028 that must not rewrite
+the 2026 report. So the filing's stability rests on `core.entity_snapshot` being what it reads, not
+on the entity holding still. That is the entire reason the snapshot exists and **nothing asserted it
+across a lock until now**. The test edits the entity through the API while the period is locked,
+then asserts the snapshot still holds the old name and the live record really does hold the new one
+— both directions, because the equality alone would also pass on an empty snapshot or a refused
+edit.
+
+### Proven to bite, by mutation
+
+A test written to pass proves little, so each claim was broken and watched to fail, then restored:
+
+- making the lock also move `scope` → the two content-stability tests fail, and only those;
+- making `readFiling` read the **live entity** instead of the frozen snapshot → the FR-18 test
+  fails, and only that one, which is the precise blast radius that says the test distinguishes
+  *frozen* from *live* rather than merely reading something;
+- making reopening not return the report to `open` → both reopening tests fail.
+
+`git diff src/` was empty afterwards, which is the check that matters when a verification method
+edits the product.
+
+### The gate the decision was actually standing on
+
+Proving the property once and leaving it there is what the row literally asks for, and it stops
+being a proof the first time a filing grows a table. The risk was never a trigger being removed —
+it is **a later task adding a table inside the lock and not giving it one**, which nothing else
+would notice. So a third invariant: every tenant table with a foreign key into `core.report` or
+`core.reporting_period` carries `refuse_locked_write` or is declared exempt with its reason.
+Reachability is the foreign key rather than a maintained list of names, so a table joins the rule by
+being modelled rather than by being remembered.
+
+**Task 34's disclosure store is the case it was written for** — it hangs off `core.report`, and a
+report whose values stay editable while its period is locked is FR-22 defeated by a table that
+shipped afterwards, with RLS and per-field audit correctly attended to and nothing failing. One
+exemption today, `core.period_reopening`: it is the record *of* the reopening, written in the
+transaction that clears the lock, and immutable by grant — a stronger guarantee than the trigger's.
+Both directions have a proving-violation test, including the one that keeps the rule *satisfiable*
+rather than merely strict: a table outside a filing must not be flagged, or "flag everything" would
+look green too.
+
+### What is deliberately not proven here, and by whom
+
+- **Disclosure values.** `core.report_disclosure_value` arrives with task 34, so "the filing" is
+  today the report, its period and the entity snapshot. When values exist they join `readFiling`,
+  and the invariant above is what will make that obligation visible rather than optional.
+- **FR-53's third leg.** `core.export_artifact` does not exist, so *the retained file matches what
+  the lock froze* cannot be asserted at all yet. It is one third of the argument §12.5.6 used to
+  decline the table, and it stays owed to the export arc — stated here rather than left to look
+  covered by a suite named "report snapshot".
+- **The triggers themselves.** Already proven in `periods.e2e-spec.ts` and `reports.e2e-spec.ts`; a
+  duplicate is a second copy free to drift. What is new here is the **composite** claim none of them
+  makes.
+
+### Verified
+
+`pnpm gates` and `pnpm gates:clean`, both green — 526 unit, 42 invariants, 699 API e2e across 30
+suites, 2 worker, 103 browser. **No production code changed**: the diff is one e2e spec, three
+invariants, and the documents, which is what a row whose deliverable is a proof should look like.
+
+**A second non-reproducible stall, recorded because it is the second.** The first `gates:clean`
+attempt hung in the API e2e phase — 33 minutes against a normal 50 seconds, at 0% CPU, sleeping,
+with **no children, no database connections and nothing in `pg_stat_activity`**, so it had finished
+its work and was waiting on something that never came rather than blocked on a query. Killed and
+reproduced against: `pnpm test:e2e` alone ran 30 suites and 699 tests in 50 s, and a second
+`gates:clean` completed every phase, the same e2e phase taking 76 s. Jest's `estimated 832 s` on the
+next run is the only trace it left.
+
+It is logged with the transient `entities.e2e-spec.ts` 400 from task 31.3 the same day, because the
+pair is more informative than either: two idle-shaped anomalies, both **only** inside a long
+`gates`/`gates:clean` run, neither reproducible in five subsequent runs, neither touching a
+suite this work changed. `identity.auth_attempt` was drained before the successful re-run, per
+`apps/api/CLAUDE.md`'s note that repeated e2e runs exhaust the sign-in window — that is a candidate
+rather than a diagnosis, since nothing observed pointed at it. If a third appears, the thing to
+capture is the open handle: run the phase with `--detectOpenHandles`, which this investigation could
+not do after the fact.

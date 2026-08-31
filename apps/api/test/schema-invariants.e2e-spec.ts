@@ -403,6 +403,52 @@ const byTable = (rows: { location: string; column: string }[]): Record<string, s
   return grouped;
 };
 
+/**
+ * ── FR-22's lock, and the tables it has to reach (task 31.4) ─────────────────────────────────────
+ *
+ * A locked reporting period is read-only, and that is enforced by a `refuse_locked_write` trigger
+ * on each table the lock covers rather than by the use cases alone (P-4). **The risk is not that a
+ * trigger gets removed — it is that a later task adds a table inside the lock and does not give it
+ * one**, which nothing else here would notice: the disclosure store (task 34) hangs off
+ * `core.report`, and a report whose values stay editable while its period is locked is FR-22
+ * defeated by a table that shipped last week.
+ *
+ * §12.5.6's task-31.4 row declined a `core.report_snapshot` on the grounds that the lock already
+ * carries the guarantee. This is what keeps that true as tables are added — the gate that decision
+ * is standing on.
+ *
+ * **Reachability is the foreign key**, not a maintained list of table names: anything with an FK
+ * into `core.report` or `core.reporting_period` is inside a filing and must hold still while that
+ * filing is locked.
+ */
+const LOCK_GUARDED_ROOTS = ['core.report', 'core.reporting_period'];
+
+/**
+ * Tables inside a lock that deliberately carry no guard, each with its reason.
+ *
+ * `core.period_reopening` is the record *of* the reopening, written in the same transaction that
+ * clears the lock — guarding it would refuse the one write that ends the lock. It needs no guard of
+ * its own because it is immutable by grant: no runtime role holds UPDATE or DELETE and it carries
+ * no policy for either, which is a stronger guarantee than the trigger's, not a weaker one.
+ */
+const LOCK_GUARD_EXEMPT_TABLES = ['core.period_reopening'];
+
+const tablesInsideALockWithoutGuard = (x: Executor) =>
+  x.query<{ location: string }[]>(
+    `SELECT DISTINCT c.conrelid::regclass::text AS location
+       FROM pg_constraint c
+      WHERE c.contype = 'f'
+        AND c.confrelid::regclass::text = ANY($1)
+        AND c.conrelid::regclass::text <> ALL($2)
+        AND NOT EXISTS (
+              SELECT 1 FROM pg_trigger t
+               WHERE t.tgrelid = c.conrelid
+                 AND NOT t.tgisinternal
+                 AND t.tgname = 'refuse_locked_write')
+      ORDER BY 1`,
+    [LOCK_GUARDED_ROOTS, LOCK_GUARD_EXEMPT_TABLES],
+  );
+
 const ENCRYPTED_SECRET_DOMAIN = 'identity.encrypted_secret';
 
 /**
@@ -806,6 +852,41 @@ describe('schema invariants (§7)', () => {
       );
       expect(caught.map((r) => r.column)).toContain('__probe');
       expect(byTable(caught)).not.toEqual(APP_IMMUTABLE_COLUMNS);
+    });
+  });
+
+  describe('a locked period reaches every table inside it (FR-22, task 31.4)', () => {
+    it('holds — every table with a foreign key into a filing carries the guard, or is exempt', async () => {
+      expect((await tablesInsideALockWithoutGuard(db)).map((r) => r.location)).toEqual([]);
+    });
+
+    /**
+     * The failure this exists to prevent, in the shape it will actually arrive: task 34's
+     * disclosure-value table, hanging off `core.report` with RLS and audit attended to and the lock
+     * forgotten. Nothing else in this suite reads triggers by name, so without this the omission
+     * would ship green.
+     */
+    it('catches a table added inside a filing with no lock guard', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_disclosure_value (
+           id uuid PRIMARY KEY, organization_id uuid NOT NULL, report_id uuid NOT NULL,
+           FOREIGN KEY (report_id, organization_id) REFERENCES core.report (id, organization_id))`,
+        tablesInsideALockWithoutGuard,
+      );
+      expect(caught.map((r) => r.location)).toEqual(['core.__probe_disclosure_value']);
+    });
+
+    // Satisfiable rather than merely strict: a table outside the filing is nobody's lock
+    // obligation, which is what keeps this rule off `core.reporting_entity` and every `identity`
+    // table. Without this the rule could be "flag everything" and still look green above.
+    it('ignores a table that is not inside a filing', async () => {
+      const caught = await provingViolation(
+        `CREATE TABLE core.__probe_outside (
+           id uuid PRIMARY KEY, organization_id uuid NOT NULL,
+           FOREIGN KEY (organization_id) REFERENCES core.organization (id))`,
+        tablesInsideALockWithoutGuard,
+      );
+      expect(caught).toEqual([]);
     });
   });
 

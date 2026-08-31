@@ -844,6 +844,31 @@ Since task 27.1 there is one mechanism and the database enforces it (§12.5.6's 
   `SECRET_ENCRYPTION_KEY` or a corrupt row, and answering "no secret" turns an operator
   misconfiguration into what looks like a mistyped code.
 
+### Adding a table inside a filing
+
+A tenant table with a foreign key into `core.report` or `core.reporting_period` is **inside a
+reporting period's lock**, and FR-22 makes a locked period read-only. Attach the guard in the same
+migration:
+
+```sql
+CREATE TRIGGER refuse_locked_write BEFORE UPDATE ON core.<table>
+  FOR EACH ROW WHEN (OLD.<status or lock column> = ...) EXECUTE FUNCTION core.refuse_...();
+```
+
+— or add the table to `LOCK_GUARD_EXEMPT_TABLES` in `test/schema-invariants.e2e-spec.ts` with its
+reason. The gate fails a table that is in neither (task 31.4).
+
+**The risk it guards is not a trigger being removed; it is a table being added without one.** Task
+31.4 declined a `core.report_snapshot` because FR-22's lock already carries the guarantee that a
+locked period and an export cannot disagree — so the lock reaching every table inside a filing is
+the argument that decision stands on, and it had to become a gate rather than a review property.
+**Task 34's disclosure store is the case it was written for**: it hangs off `core.report`, and a
+report whose values stay editable while its period is locked is FR-22 defeated by a table that
+shipped afterwards, with RLS and per-field audit correctly attended to and nothing failing.
+
+Reachability is the **foreign key**, not a list of names, so a table joins the rule by being
+modelled rather than by being remembered.
+
 ### Adding an audited table
 
 Attach the capture trigger in the same migration and add the table to
