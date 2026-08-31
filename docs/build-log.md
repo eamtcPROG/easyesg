@@ -6873,3 +6873,143 @@ cannot model job isolation, and this is the second time that has been the findin
 inconvenience. The rule it sharpens is that **"state a previous command left behind" includes a
 previous test suite inside the same command** — so the question to ask of a suite is what it needs
 that it does not create.
+
+---
+
+## Task 31.3 — Report lifecycle, and a pin the request tier cannot reach · 2026-08-31
+
+`core.report` in **`core/disclosure`** — §17.5 gives that module FR-24 … FR-32, and §7's component
+table already listed `core.report` there beside `core.report_disclosure_value`. `GET/POST
+/api/v1/reports` and `GET/PATCH /reports/{id}`; the module had been an empty `@Module({})` since the
+foundation.
+
+The row's own sentence is what shaped the work: *"the pin is the invariant this slice exists to
+prove, not a column it happens to write."* Four decisions came out of taking that literally, all on
+`architecture.md` §12.5.6's task-31.3 rows, and two of them changed what the task builds.
+
+### Four questions raised before any code, because 31.1 had already answered half of them
+
+The period pins too. FR-65 says a version is *"pinned by periods opened from that point forward"*
+and UC-56 step 3 pins at period open; FR-66 says the version is stored *"against every report"*. So
+the open question was not *whether* the report carries a pin but **where its value comes from**, and
+`task.md`'s row — *pin through `pinFor()`, never `max(registeredVersions)`* — reads as though the
+report resolves its own.
+
+**It does not, and the difference is the whole of DR-4.** The two readings agree in every case but
+one: an adoption registered between period open and report creation. In that case a second
+resolution gives one filing **two disagreeing pins with nothing failing** — DR-4's "never moves
+silently" defeated by the mechanism meant to uphold it. The report copies the period's two columns,
+inside the inserting statement, so the strings never pass through the application at all. The task
+row's instruction is honoured where the resolution happens: `pinFor()` is still the only resolver
+anywhere, and `max(registeredVersions)` appears nowhere.
+
+The other three: a report is created **explicitly** rather than with its period (so §7.2's
+`REPORTING_PERIOD ||--|| REPORT` becomes `||--o|`, amended in the same change); the pin is protected
+by **column privilege**; and the write routes admit the **editor**.
+
+### The pin is unwritable by the tier, not by convention
+
+`esg_app` is granted `UPDATE` on `scope`, `status` and `updated_at` — and on nothing else. That is
+DR-6's own mechanism, *append-only enforced by DB privileges* (§7.7), narrowed from a table to two
+columns, and it costs nothing on the write path.
+
+Declined: a `BEFORE UPDATE` trigger in `refuse_locked_period_write`'s shape, which buys the same
+guarantee, pays a per-row function call on every report write, and needs an escape hatch inventing
+the mechanism task 76 owns. Also declined: surface absence plus the audit trail, which is how the
+period's own pin is protected today and is the weaker half of P-4 — a property of the code somebody
+remembered to write.
+
+FR-69's migration run is neither blocked nor built by this: task 76 grants the privilege to whatever
+role executes the run, in its own migration. That is *"nothing but an explicit migration moves
+them"*, exactly. The e2e asserts both halves — `esg_app` gets SQLSTATE `42501` with the tenant bound
+and the row present, and the schema owner succeeds.
+
+### The invariant was inert on its first draft, and inverting the list fixed it
+
+The gate first declared the columns `esg_app` **may** update and compared with `toEqual`. That
+catches a widened grant and is **blind to a column added later with no grant**: it appears in
+neither the actual set nor the declaration, so the gate stays green while the application cannot
+write it, and the failure arrives in production as a permission error.
+
+Declared instead as the columns **withheld**, every column of the table is accounted for by one list
+or the other, and all three mistakes surface — a pin regaining `UPDATE`, a new column shipping
+unwritable, a column dropped while its entry stayed. Both directions have a proving-violation test.
+This is `domain-free-of-frameworks`'s lesson on a different rule: a gate that matches nothing looks
+exactly like a gate that passes.
+
+### The status column's stated cost, paid in the period's transaction
+
+§12.5.6 settled `report_status` — `open`, `locked`, `ready_to_file`, `filed` — with the cost named:
+`open` and `locked` are then true in two places, so **the period lock is the only writer of that
+half**. `ReportingPeriodStoreRepository.lock`/`reopen` move every report inside the period in the
+same transaction, in a private `moveReportStatus`, and the report's own `refuse_locked_write`
+trigger admits that write and only that write while a report is locked — the row comparison ignores
+`status` and `updated_at` alone, so a scope change inside a locked period is refused below the
+application as well as above it.
+
+Two states stay declared and unreachable. `ready_to_file` is task 41.3's and `filed` is task 47's,
+and each has to say what a lock does to it; the lock currently moves every report unconditionally,
+which is right while nothing can produce those states and is a question the day something can.
+Stated in the method rather than guessed at.
+
+### The boundary rule caught the default in the wrong layer
+
+`controllers-not-to-use-cases` rejected `DEFAULT_REPORT_SCOPE` imported into the controller. The fix
+was not to move the import but to move the constant: it now sits in `models/report.model.ts` beside
+`REPORT_SCOPE`, per the root file's *an operation over a vocabulary lives with the vocabulary*, and
+the **use case** applies it while the DTO publishes the same constant as its OpenAPI `default`.
+Defaulted at the edge, the default was a transport fact — any other caller of the use case would
+have created a report with no scope, and the published `default` was a second copy free to drift.
+
+### `nestjs-best-practices`, read against the diff
+
+Followed: `di-use-interfaces-tokens` (`REPORT_STORE` beside its interface), `arch-use-repository-
+pattern`, `arch-feature-modules`, `di-prefer-constructor-injection`, `security-validate-all-input`
+(`@IsIn` derived from `REPORT_SCOPE`, `ParseUUIDPipe` on both params), `api-use-dto-serialization`,
+`api-versioning`, `error-use-exception-filters`, `db-avoid-n-plus-one` (the entity-filtered list is
+one join, not a read per report) and `test-e2e-supertest`.
+
+**Two declined by name, which is the half CLAUDE.md asks to be recorded.**
+
+`error-throw-http-exceptions` — the standing example. It asks for `HttpException`; this codebase
+forbids one from domain or use-case code in terms, so the three report failures are `DomainError`
+subclasses carrying message keys, mapped to status by the filter.
+
+`arch-module-sharing` — the interesting one, because the rule is right about its own harm and the
+harm does not exist here. It says a provider registered in two modules yields two instances with
+divergent state, and `DisclosureModule` registers `REPORTING_PERIOD_STORE` rather than importing
+`PeriodModule`. `ReportingPeriodStoreRepository` extends `TenantRepository`, whose `manager` is a
+**getter** resolving the request's `QueryRunner` from `AsyncLocalStorage` — it holds no mutable
+state, so a second registration is a second reference to identical behaviour, and importing
+`PeriodModule` would instead give this module a dependency on routes it never calls. That is
+`EntityModule` and `PeriodModule`'s own precedent, and `PeriodModule`'s header already draws the
+line the rule is really about: it *imports* `TaxonomyModule`, because the registry holds a cache
+keyed on the configuration revision and a second instance would be a second cache warming over 143
+elements and 973 waste members. Stateless adapter, re-provide; anything holding state, import.
+
+`ReportNotEditable` was **already in the problem vocabulary** waiting for this task; only
+`ReportAlreadyExists` is new, and it earns its own slug for `last-administrator`'s reason — S-06 has
+to name the specific way out, which here is opening the report that exists rather than changing what
+was submitted.
+
+### Verified
+
+`pnpm gates` and `pnpm gates:clean`, both green. New: 9 unit tests on `CreateReport`, 14 e2e in
+`test/reports.e2e-spec.ts`, and 3 schema invariants (39 total, up from 36). The e2e carries what a
+fake cannot: the pin copied inside an `INSERT ... SELECT` from a period deliberately moved to a
+superseded version — the only fixture that tells *copied from the period* apart from *resolved from
+the registry*, since the two agree everywhere else until task 33.3 registers a second version.
+
+The index claim is measured rather than reasoned, per `apps/api/CLAUDE.md`: with `SET enable_seqscan
+= off` the entity-filtered list plans as an index scan on
+`report_organization_id_reporting_period_id_key` joined to the period's primary key, and the other
+two reads plan as index scans as well. Which of the two unique indexes the planner picks is *not*
+determined at these sizes, which is precisely why the question is "is it usable" and not "is it
+used"; the comment says so rather than claiming more than was seen.
+
+**One transient failure, recorded rather than dismissed.** The first `pnpm gates` run failed
+`entities.e2e-spec.ts` — `GET /entities/{id}` answering 400 two lines after the same id archived
+successfully, which no path in that handler explains. It did not recur across the suite alone, the
+suite paired with the new one, a full `pnpm e2e`, `pnpm gates` and `pnpm gates:clean`. Left as an
+open observation with the checks that were run, because a flaky gate is a finding and the next
+reader should not have to rediscover that it was looked at.

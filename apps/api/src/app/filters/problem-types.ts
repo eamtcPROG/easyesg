@@ -113,6 +113,14 @@ export const ProblemType = {
    *  the one refusal on this route the caller cannot resolve themselves (task 31.1). */
   TaxonomyVersionUnavailable: 'taxonomy-version-unavailable',
   PeriodLocked: 'period-locked',
+  /** UC-18 refused: the period already carries a report, and it carries at most one (task 31.3).
+   *  Its own slug rather than the generic `conflict` for `last-administrator`'s reason — S-06 must
+   *  name the specific way out, which here is opening the report that exists rather than changing
+   *  what was submitted, and a front end cannot branch on wording. */
+  ReportAlreadyExists: 'report-already-exists',
+  /** FR-26/FR-22: the report takes no writes because its period is locked. Distinct from
+   *  `period-locked`, which answers a write to the period shell — this answers a write to the
+   *  report inside it, and the two name different ways out (task 31.3). */
   ReportNotEditable: 'report-not-editable',
   TaxonomyVersionSuperseded: 'taxonomy-version-superseded',
   ValidationFailed: 'validation-failed',

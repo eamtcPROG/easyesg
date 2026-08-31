@@ -263,6 +263,7 @@ const FIELD_AUDITED_TABLES = [
   'core.site',
   'core.consolidation_member',
   'core.reporting_period',
+  'core.report',
   'identity.membership',
   'identity.invitation',
 ];
@@ -345,6 +346,63 @@ const unclassifiedTenantTables = (x: Executor) =>
  * the provisioning CLI, not from a `psql` prompt. The claim in task 27.1's deliverable is "a
  * plaintext secret is unrepresentable", and a type is the only thing that makes it literally true.
  */
+/**
+ * ── DR-4's pin, protected by privilege (task 31.3) ──────────────────────────────────────────────
+ *
+ * **Tables where `esg_app` may update some columns and not others, declared as the columns it may
+ * NOT.** Everywhere else the grant is table-wide and this says nothing.
+ *
+ * `core.report` is the first, and the reason is FR-66 read strictly: DR-4 requires the template and
+ * taxonomy version never to move silently, and a pin protected only by the absence of a request DTO
+ * field is a property of the code somebody remembered to write. Column-level privileges make it a
+ * property of the database — DR-6's own mechanism (*append-only enforced by DB privileges*, §7.7)
+ * narrowed from a table to two columns.
+ *
+ * **The list is of what is withheld, not of what is granted, and that inversion is the whole
+ * point.** Declared the other way round, a column added by a later task appears in neither list and
+ * the gate stays green while the application cannot write it — the failure then arrives in
+ * production as a permission error. Stated as a withholding, every column of the table is accounted
+ * for by one list or the other, so all three mistakes are visible: a pin regaining `UPDATE`, a new
+ * column shipping unwritable, and a column dropped while its entry stayed.
+ */
+const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
+  'core.report': [
+    // Identity and tenancy. A row does not move between organizations or periods; that would be a
+    // different report (§12.5.6's task-31.3 rows).
+    'created_at',
+    'id',
+    'organization_id',
+    'reporting_period_id',
+    // DR-4's pin. The two this table exists to protect.
+    'taxonomy_version',
+    'template_version',
+  ],
+};
+
+/**
+ * `has_column_privilege` answers true for a table-wide grant as well as a column-level one, which is
+ * exactly the question: *can the application write this column, by any route*. So this lists the
+ * columns for which the answer is no.
+ */
+const appImmutableColumns = (x: Executor) =>
+  x.query<{ location: string; column: string }[]>(
+    `SELECT n.nspname || '.' || c.relname AS location, a.attname AS column
+       FROM pg_class c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+      WHERE n.nspname || '.' || c.relname = ANY($1)
+        AND NOT has_column_privilege('esg_app', c.oid, a.attname, 'UPDATE')
+      ORDER BY 1, 2`,
+    [Object.keys(APP_IMMUTABLE_COLUMNS)],
+  );
+
+/** Grouped the way the declaration above is written, so the two compare with one `toEqual`. */
+const byTable = (rows: { location: string; column: string }[]): Record<string, string[]> => {
+  const grouped: Record<string, string[]> = {};
+  for (const row of rows) (grouped[row.location] ??= []).push(row.column);
+  return grouped;
+};
+
 const ENCRYPTED_SECRET_DOMAIN = 'identity.encrypted_secret';
 
 /**
@@ -713,6 +771,41 @@ describe('schema invariants (§7)', () => {
         unclassifiedTenantTables,
       );
       expect(caught).toEqual([]);
+    });
+  });
+
+  describe('a version pin is unwritable by the application (DR-4, DR-6, task 31.3)', () => {
+    it('holds — exactly the declared columns are withheld from the application, on every such table', async () => {
+      expect(byTable(await appImmutableColumns(db))).toEqual(APP_IMMUTABLE_COLUMNS);
+    });
+
+    /**
+     * The failure this exists to prevent, in the direction it would actually arrive: somebody
+     * widening the grant while tidying a migration, or writing a table-wide `GRANT UPDATE` out of
+     * habit. Either makes `core.report.taxonomy_version` writable by every repository in the tier,
+     * and nothing else in the suite would notice.
+     */
+    it('catches a pin that regained UPDATE', async () => {
+      const caught = await provingViolation(
+        `GRANT UPDATE (taxonomy_version) ON core.report TO esg_app`,
+        appImmutableColumns,
+      );
+      expect(byTable(caught)).not.toEqual(APP_IMMUTABLE_COLUMNS);
+      expect(caught.map((r) => r.column)).not.toContain('taxonomy_version');
+    });
+
+    /**
+     * And the other direction, which is the one the inverted list catches and a list of *granted*
+     * columns never would: a column added by a later task with no grant is silently unwritable, and
+     * without this would surface as a permission error in production rather than here.
+     */
+    it('catches a new column that shipped with no grant', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE core.report ADD COLUMN __probe text`,
+        appImmutableColumns,
+      );
+      expect(caught.map((r) => r.column)).toContain('__probe');
+      expect(byTable(caught)).not.toEqual(APP_IMMUTABLE_COLUMNS);
     });
   });
 

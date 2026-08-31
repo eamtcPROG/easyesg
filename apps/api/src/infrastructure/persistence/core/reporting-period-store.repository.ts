@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { LegalDate } from '@api/contracts/types/time';
+import {
+  REPORT_STATUS,
+  type ReportStatus,
+} from '@api/modules/core/disclosure/models/report.model';
 import type { ReportingPeriodStore } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
 import {
   PeriodLockedError,
@@ -260,7 +264,9 @@ export class ReportingPeriodStoreRepository
           [input.periodId, input.at, input.actorId],
         ),
       );
-      return rows[0] ? toPeriod(rows[0]) : null;
+      if (!rows[0]) return null;
+      await this.moveReportStatus(input.periodId, REPORT_STATUS.LOCKED, input.at);
+      return toPeriod(rows[0]);
     } catch (error) {
       return translate(error);
     }
@@ -309,10 +315,47 @@ export class ReportingPeriodStoreRepository
           [input.periodId, input.at],
         ),
       );
-      return rows[0] ? toPeriod(rows[0]) : null;
+      if (!rows[0]) return null;
+      await this.moveReportStatus(input.periodId, REPORT_STATUS.OPEN, input.at);
+      return toPeriod(rows[0]);
     } catch (error) {
       return translate(error);
     }
+  }
+
+  /**
+   * **The period lock is the only writer of a report's `open` and `locked`** (§12.5.6's task-31.3
+   * row), and this is that writer.
+   *
+   * Task 31.3 stores the lifecycle on `core.report` because the four states the product needs
+   * include two — ready to file, and filed — that no lock can express. The accepted cost is that
+   * `open` and `locked` are then true in two places, and the way that cost is paid is here: every
+   * report inside the period moves in the **same transaction** as the lock, so the two cannot
+   * disagree. Nothing else in the codebase may write those two values.
+   *
+   * It lives in this repository rather than in the report's, and rather than in the lock use case
+   * calling both, for `open`'s reason: a period whose reports did not move is a period whose lock
+   * is a lie, and the port makes the pair one operation so a caller cannot accidentally do half.
+   *
+   * The report's own `refuse_locked_write` trigger admits this write, and only this write, while a
+   * report is locked — the row comparison it makes ignores `status` and `updated_at` alone.
+   *
+   * **It moves every report in the period unconditionally**, which is right while `open` and
+   * `locked` are the only reachable states and is a question the moment they are not: task 41.3's
+   * `ready_to_file` and task 47's `filed` each have to say what a lock does to them, and each owns
+   * that answer. Guessing one here would be a policy nobody asked for, on a state nothing can
+   * currently produce.
+   */
+  private async moveReportStatus(
+    periodId: string,
+    status: ReportStatus,
+    at: Date,
+  ): Promise<void> {
+    await this.manager.query(
+      `UPDATE core.report SET status = $2, updated_at = $3
+        WHERE reporting_period_id = $1 AND status IS DISTINCT FROM $2`,
+      [periodId, status, at],
+    );
   }
 
   async listReopenings(input: { periodId: string }): Promise<PeriodReopening[]> {

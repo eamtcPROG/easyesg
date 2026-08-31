@@ -2317,6 +2317,205 @@
         ]
       }
     },
+    "/api/v1/reports": {
+      "get": {
+        "description": "Organization-wide by default, which is what FR-23’s overview reads. Narrowed to one entity by query parameter — the active organization comes from the session, never from a parameter.",
+        "operationId": "ReportsController_list",
+        "parameters": [
+          {
+            "name": "reportingEntityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The reports.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ReportResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "List the reports in the active organization, newest reporting period first (UC-17)",
+        "tags": [
+          "report"
+        ]
+      },
+      "post": {
+        "description": "The template and taxonomy versions are copied from the period, which pinned them when it was opened (FR-66, DR-4) — neither is a field on this request, deliberately. A period carries at most one report.",
+        "operationId": "ReportsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The report created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such reporting period in the active organization."
+          },
+          "409": {
+            "description": "The period already has a report, or the period is locked."
+          }
+        },
+        "summary": "Create the report for a reporting period (UC-18)",
+        "tags": [
+          "report"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}": {
+      "get": {
+        "operationId": "ReportsController_view",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "One report, with its pinned versions",
+        "tags": [
+          "report"
+        ]
+      },
+      "patch": {
+        "description": "Comprehensive may be added to a report already in progress. The pinned versions are not editable: DR-4 moves them only by an explicit migration run (FR-69), so no field on this request can name one and the application role holds no privilege to write one.",
+        "operationId": "ReportsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The report as it now stands.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "409": {
+            "description": "The reporting period is locked."
+          }
+        },
+        "summary": "Change the report’s module scope (FR-177)",
+        "tags": [
+          "report"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -4259,6 +4458,99 @@
                 "$ref": "#/components/schemas/LegalDateDto"
               }
             ]
+          }
+        }
+      },
+      "ReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reportingPeriodId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "basic",
+              "basic_and_comprehensive"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "locked",
+              "ready_to_file",
+              "filed"
+            ],
+            "description": "Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22)."
+          },
+          "templateVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The EFRAG Digital Template release this report is pinned to (DR-4, FR-66). Copied from the reporting period at creation and moved only by an explicit migration run (FR-69)."
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The VSME taxonomy release this report is pinned to (DR-4, FR-66)."
+          },
+          "createdAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC."
+          },
+          "updatedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC."
+          }
+        },
+        "required": [
+          "id",
+          "reportingPeriodId",
+          "scope",
+          "status",
+          "templateVersion",
+          "taxonomyVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateReportRequestDto": {
+        "type": "object",
+        "properties": {
+          "reportingPeriodId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The reporting period this report covers. A period carries at most one report, and the period is what determines the pinned versions (FR-66, DR-4)."
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "basic",
+              "basic_and_comprehensive"
+            ],
+            "default": "basic",
+            "description": "Which VSME modules this report covers. Comprehensive is additive over Basic and may also be added later (FR-177). Defaults to Basic."
+          }
+        },
+        "required": [
+          "reportingPeriodId"
+        ]
+      },
+      "UpdateReportRequestDto": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "basic",
+              "basic_and_comprehensive"
+            ],
+            "description": "FR-177: Comprehensive may be added to a report already in progress."
           }
         }
       },

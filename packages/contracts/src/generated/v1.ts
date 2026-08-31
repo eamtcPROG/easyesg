@@ -830,6 +830,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the reports in the active organization, newest reporting period first (UC-17)
+         * @description Organization-wide by default, which is what FR-23’s overview reads. Narrowed to one entity by query parameter — the active organization comes from the session, never from a parameter.
+         */
+        get: operations["ReportsController_list"];
+        put?: never;
+        /**
+         * Create the report for a reporting period (UC-18)
+         * @description The template and taxonomy versions are copied from the period, which pinned them when it was opened (FR-66, DR-4) — neither is a field on this request, deliberately. A period carries at most one report.
+         */
+        post: operations["ReportsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One report, with its pinned versions */
+        get: operations["ReportsController_view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change the report’s module scope (FR-177)
+         * @description Comprehensive may be added to a report already in progress. The pinned versions are not editable: DR-4 moves them only by an explicit migration run (FR-69), so no field on this request can name one and the application role holds no privilege to write one.
+         */
+        patch: operations["ReportsController_update"];
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -1652,6 +1697,53 @@ export interface components {
             periodStart?: components["schemas"]["LegalDateDto"];
             periodEnd?: components["schemas"]["LegalDateDto"];
             dueDate?: components["schemas"]["LegalDateDto"] | null;
+        };
+        ReportResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            reportingPeriodId: string;
+            /** @enum {string} */
+            scope: "basic" | "basic_and_comprehensive";
+            /**
+             * @description Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22).
+             * @enum {string}
+             */
+            status: "open" | "locked" | "ready_to_file" | "filed";
+            /**
+             * @description The EFRAG Digital Template release this report is pinned to (DR-4, FR-66). Copied from the reporting period at creation and moved only by an explicit migration run (FR-69).
+             * @example 2026-05-01
+             */
+            templateVersion: string;
+            /**
+             * @description The VSME taxonomy release this report is pinned to (DR-4, FR-66).
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+            /** @description Unix epoch milliseconds, UTC. */
+            createdAt: number;
+            /** @description Unix epoch milliseconds, UTC. */
+            updatedAt: number;
+        };
+        CreateReportRequestDto: {
+            /**
+             * Format: uuid
+             * @description The reporting period this report covers. A period carries at most one report, and the period is what determines the pinned versions (FR-66, DR-4).
+             */
+            reportingPeriodId: string;
+            /**
+             * @description Which VSME modules this report covers. Comprehensive is additive over Basic and may also be added later (FR-177). Defaults to Basic.
+             * @default basic
+             * @enum {string}
+             */
+            scope: "basic" | "basic_and_comprehensive";
+        };
+        UpdateReportRequestDto: {
+            /**
+             * @description FR-177: Comprehensive may be added to a report already in progress.
+             * @enum {string}
+             */
+            scope?: "basic" | "basic_and_comprehensive";
         };
         AdminChallengeResponseDto: {
             /**
@@ -3476,6 +3568,143 @@ export interface operations {
                 content?: never;
             };
             /** @description The period is not locked. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_list: {
+        parameters: {
+            query?: {
+                reportingEntityId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The reports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["ReportResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    ReportsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReportRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The report created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportResponseDto"];
+                    };
+                };
+            };
+            /** @description No such reporting period in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The period already has a report, or the period is locked. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportResponseDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReportRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The report as it now stands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportResponseDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked. */
             409: {
                 headers: {
                     [name: string]: unknown;

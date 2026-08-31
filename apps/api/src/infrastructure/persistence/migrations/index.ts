@@ -26,6 +26,7 @@ import { ConsolidationScope1788912000000 } from './1788912000000-consolidation-s
 import { ReportContact1788998400000 } from './1788998400000-report-contact';
 import { ReportingPeriod1789084800000 } from './1789084800000-reporting-period';
 import { PeriodLock1789171200000 } from './1789171200000-period-lock';
+import { Report1789257600000 } from './1789257600000-report';
 import { ProviderIdentityUnlink1788393600000 } from './1788393600000-provider-identity-unlink';
 
 /**
@@ -72,4 +73,5 @@ export const migrations = [
   ReportContact1788998400000,
   ReportingPeriod1789084800000,
   PeriodLock1789171200000,
+  Report1789257600000,
 ];

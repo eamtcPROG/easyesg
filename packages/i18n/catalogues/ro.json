@@ -110,6 +110,12 @@
     },
     "consolidation-boundary-empty": {
       "title": "Perimetru de consolidare gol"
+    },
+    "report-already-exists": {
+      "title": "Raport existent"
+    },
+    "report-not-editable": {
+      "title": "Raport blocat"
     }
   },
   "validation": {},
@@ -198,6 +204,11 @@
       "locked": "Perioada este blocată, așa că nu mai poate fi modificată de nimeni, nici de administrator. Redeschideți perioada, indicând motivul, pentru a face corectura — modificarea va rămâne vizibilă ca amendament.",
       "already_locked": "Perioada este deja blocată, așa că nu a mai fost blocată o dată. Reîmprospătați pagina pentru a vedea starea curentă.",
       "not_locked": "Perioada nu este blocată, așa că nu poate fi redeschisă. Reîmprospătați pagina pentru a vedea starea curentă."
+    },
+    "report": {
+      "not_found": "Raportul indicat nu există în această organizație, așa că nu a putut fi afișat. Reîmprospătați lista pentru a vedea rapoartele curente.",
+      "already_exists": "Această perioadă de raportare are deja un raport, iar o perioadă poate avea unul singur. Deschideți raportul existent din listă, în loc să creați altul.",
+      "not_editable": "Perioada de raportare este blocată, așa că raportul nu mai poate fi modificat de nimeni, nici de administrator. Redeschideți perioada, indicând motivul, pentru a continua lucrul — modificarea va rămâne vizibilă ca amendament."
     }
   },
   "notification": {

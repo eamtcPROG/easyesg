@@ -96,6 +96,19 @@ const ALL_MEMBERS: Permission = `${PERMISSION.ROLE}:${[
   .join('+')}`;
 
 /**
+ * Every member who can write — the Organization Administrator and the Editor, which is
+ * `actors.md`'s Reporting Contributor. Introduced by task 31.3's report routes, and it is a
+ * **third** shape rather than a variant of the two above: master data is administrator-only
+ * (D-2), a read is everyone's, and a *report* write follows edit rights (FR-26).
+ */
+const WRITING_MEMBERS: Permission = `${PERMISSION.ROLE}:${[
+  MEMBERSHIP_ROLE.EDITOR,
+  MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+]
+  .sort()
+  .join('+')}`;
+
+/**
  * **The committed surface.** Sorted by route, so a diff reads as a diff.
  *
  * Adding a route means adding a line here, which is the point: the decision about who reaches it is
@@ -212,6 +225,18 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /periods/:id/reopenings': ALL_MEMBERS,
   'POST /periods/:id/lock': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'POST /periods/:id/reopening': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── Reports (UC-17, UC-18). **The writes break the pattern of the three blocks above, and that
+  // is the decision rather than an oversight** (§12.5.6's task-31.3 row): an organization, an
+  // entity and a period are master data, which D-2 makes Organization Administrator-owned, while
+  // the report is the Contributor's own workspace — UC-18's actor is the RC and FR-26 grants the
+  // editable session on *edit rights*, not on a role. A create route the Contributor could not
+  // reach would mean the person who authors the report cannot start it. The reads stay open to
+  // every member because FR-25 requires a view-only member to see the same entries.
+  'GET /reports': ALL_MEMBERS,
+  'GET /reports/:id': ALL_MEMBERS,
+  'POST /reports': WRITING_MEMBERS,
+  'PATCH /reports/:id': WRITING_MEMBERS,
 };
 
 type Constructor = new (...args: never[]) => object;

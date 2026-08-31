@@ -252,6 +252,45 @@ Four things to know before touching it:
   (UX-72), and it is immutable by grant like `core.entity_snapshot`. The record is written **before**
   the unlock: there is no ordering in which the lock is gone and the reason was never captured.
 
+Task 31.3 adds **the report** (UC-17, UC-18; FR-24 … FR-32, FR-66, FR-177) — in
+**`core/disclosure`**, which §17.5 gives FR-24 … FR-32 and §7's component table already listed
+`core.report` under. `GET/POST /api/v1/reports` and `GET/PATCH /reports/{id}`. Five things to know:
+
+- **The pin is copied from the period, never resolved a second time.** `pinFor()` is asked once, at
+  period open (task 31.1); the report's `INSERT ... SELECT` takes the two strings from the period's
+  own row, so they never pass through the application. Re-asking the registry agrees in every case
+  but one — an adoption registered in between — and in that one it gives a filing **two disagreeing
+  pins with nothing failing**, which is DR-4 defeated by its own mechanism (§12.5.6's task-31.3 row).
+- **`esg_app` cannot write either pin, and that is a privilege rather than a convention.** `GRANT
+  UPDATE (scope, status, updated_at)` and nothing else — see "Withholding a column" below.
+- **The period lock is the only writer of `open` and `locked`.** Storing the lifecycle on the report
+  makes those two true in two places, and the cost is paid in `ReportingPeriodStoreRepository`'s own
+  transaction: `lock`/`reopen` move every report inside the period. `ready_to_file` (task 41.3) and
+  `filed` (task 47) are declared and unreachable; each owes an answer about what a lock does to it.
+- **A `BEFORE UPDATE` trigger refuses a locked report's every write but `status`**, so a scope change
+  inside a locked period is refused below the application as well as above it (P-4). Row comparison,
+  not a column list, exactly as task 31.2's.
+- **The writes admit the editor**, which is the opposite of the split `EntitiesController` and
+  `PeriodsController` carry — master data is OA-owned (D-2), a report is the Contributor's workspace
+  (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.
+
+### Withholding a column from the application
+
+PostgreSQL grants `UPDATE` **per column**, and task 31.3 is the first place that matters: `GRANT
+SELECT, INSERT, DELETE ON core.report TO esg_app` plus `GRANT UPDATE (scope, status, updated_at)`.
+`INSERT` stays table-wide, because the withheld columns are *set* at creation and only then.
+
+- **It composes with RLS rather than competing with it.** The policy decides which rows, the grant
+  decides which columns. Both still apply.
+- **Declare what is WITHHELD in `test/schema-invariants.e2e-spec.ts`** (`APP_IMMUTABLE_COLUMNS`),
+  never what is granted. The first draft of that gate listed the granted columns and was **inert in
+  one direction**: a column added by a later task with no grant appears in neither the actual set nor
+  the declaration, so `toEqual` passes while the application cannot write it — and the failure
+  arrives in production as `42501` rather than at a gate. Inverted, every column of the table is
+  accounted for by one list or the other.
+- **Adding a column to such a table means adding its grant in the same migration.** The gate is what
+  tells you; without it the symptom is a write that worked in every test written before the column.
+
 **An actor column into `identity` is a bare `uuid`, never a foreign key** — §7.1 permits one
 cross-schema foreign key and it is not this one, and `ON DELETE SET NULL` would erase the attribution
 FR-55 requires be retained. `core.field_change.actor_id` set the precedent at task 14;
@@ -262,17 +301,18 @@ keys the migration failed to compile — a backtick inside a SQL comment — and
 reported 36 passed, because the table was not there to fail on. Check the table exists before
 believing the invariants.
 
-**Not built yet, and do not assume otherwise:** two of the four edge guards — `EntitlementGuard`
-(task 54) and `AdminRealmGuard` (**task 67.3**, assigned 27 Aug 2026: it guards nothing until A-02
-exists, since the only admin routes today are task 23's sign-in handshake and that is already behind
-a sealed cookie, an Origin proof and mandatory TOTP) — any `core` table beyond `core.organization`, any controller
-other than health, `/auth`, `/auth/admin`, `/members`, `/memberships` and `/invitations` (the
-administrator's three plus the bearer's two), and
-almost every module body — 29 of the 35 leaf `*.module.ts` files are registered but empty (counted
-25 Aug 2026: six carry a body, all in `identity/*` plus `platform/admin`). `core.organization` holds `id`/`name`/`created_at`/`updated_at`
-only: FR-15's profile fields and FR-16's identifiers are task 29's and arrive by
-expand→migrate→contract. `test/` holds the schema-invariant probe; the RLS cross-tenant probe and
-the `BILLING_ENABLED=false` suite land beside it.
+**Not built yet, and do not assume otherwise** (rewritten 31 Aug 2026 — the previous version was
+taken 25 Aug and had been overtaken by tasks 29, 30, 31 and 33, which is the failure mode a
+current-state list has): **two of the four edge guards** — `EntitlementGuard` (task 54) and
+`AdminRealmGuard` (**task 67.3**, assigned 27 Aug 2026: it guards nothing until A-02 exists, since
+the only admin routes today are task 23's sign-in handshake and that is already behind a sealed
+cookie, an Origin proof and mandatory TOTP) — and `AuditInterceptor` (task 67.4). No **disclosure
+value** store (task 34), no calculator, validation, comparatives, export or trace body, and no
+`billing` or `platform` body beyond `admin`, `configuration`, `localization` and `taxonomy`.
+
+**Read the module tree and `src/testing/route-permissions.ts` rather than a list here.** That table
+is the surface, it is a gate, and it cannot go stale — which is exactly why enumerating controllers
+in prose stopped being worth doing.
 
 **Both entrypoints must boot, and only a gate that boots them can say so** (26 Aug 2026, after
 CI). Task 28.1 registered `AuthGuard` as an `APP_GUARD` in `AppModule` while `SessionModule`
