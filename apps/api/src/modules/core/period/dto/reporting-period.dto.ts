@@ -167,6 +167,7 @@ export class ReportingPeriodResponseDto {
   readonly taxonomyVersion: string;
 
   @ApiProperty({
+    type: String,
     format: 'uuid',
     nullable: true,
     description:
@@ -176,13 +177,21 @@ export class ReportingPeriodResponseDto {
   readonly priorPeriodId: string | null;
 
   @ApiProperty({
+    type: String,
     format: 'uuid',
     nullable: true,
     description: 'The entity master data as it stood when this period was opened (FR-18).',
   })
   readonly entitySnapshotId: string | null;
 
+  // **`type` is explicit on every nullable property here, and that is not decoration** (task
+  // 32.1.2). A union like `number | null` reflects as `Object`, so `@ApiProperty({ nullable: true })`
+  // alone publishes `type: object` — and a generated client reads the field as
+  // `Record<string, never>`, which is unusable. `openapi:check` cannot catch it: the spec matches
+  // the source faithfully, and the source is what is wrong. It surfaced the first time a consumer
+  // typed against these five properties, four tasks after they shipped.
   @ApiProperty({
+    type: Number,
     nullable: true,
     description:
       `${EPOCH_MILLIS} Non-null means the period is locked and takes no writes from ` +
@@ -191,6 +200,7 @@ export class ReportingPeriodResponseDto {
   readonly lockedAt: number | null;
 
   @ApiProperty({
+    type: String,
     format: 'uuid',
     nullable: true,
     description:
@@ -255,7 +265,7 @@ export class PeriodReopeningResponseDto {
   @ApiProperty({ description: EPOCH_MILLIS })
   readonly reopenedAt: number;
 
-  @ApiProperty({ format: 'uuid', nullable: true })
+  @ApiProperty({ type: String, format: 'uuid', nullable: true })
   readonly reopenedBy: string | null;
 
   @ApiProperty({ maxLength: 500 })

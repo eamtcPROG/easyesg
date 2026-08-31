@@ -149,6 +149,22 @@ export type UpdateReportingEntityRequest =
   components['schemas']['UpdateReportingEntityRequestDto'];
 export type EntitySite = components['schemas']['SiteResponseDto'];
 export type ConsolidationMember = components['schemas']['ConsolidationMemberResponseDto'];
+// core — reporting periods (FR-21, FR-22, FR-45, FR-66; tasks 31.1, 31.2, consumed by S-14).
+//
+// **Every boundary is a `LegalDate`, never an instant** (NFR-34). `2026-12-31` is the case the
+// distinction was drawn for: as an epoch value it falls in the wrong fiscal year for a reader in
+// another zone, and FR-125 makes a document filed against the wrong year uncorrectable by editing.
+// The pairing is an object rather than two sibling fields so the zone cannot be half-supplied.
+export type LegalDate = components['schemas']['LegalDateDto'];
+export type ReportingPeriod = components['schemas']['ReportingPeriodResponseDto'];
+export type OpenReportingPeriodRequest =
+  components['schemas']['OpenReportingPeriodRequestDto'];
+export type UpdateReportingPeriodRequest =
+  components['schemas']['UpdateReportingPeriodRequestDto'];
+/** UC-58's stated reason. Required, and required to say something — UX-72 displays it thereafter. */
+export type ReopenPeriodRequest = components['schemas']['ReopenPeriodRequestDto'];
+export type PeriodReopening = components['schemas']['PeriodReopeningResponseDto'];
+
 /** FR-15's attribution line on S-15 — who last changed the profile, and when (task 30.3). */
 export type OrganizationChangeAttribution =
   components['schemas']['OrganizationChangeAttributionDto'];

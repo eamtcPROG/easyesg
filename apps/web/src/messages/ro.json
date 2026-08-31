@@ -619,6 +619,116 @@
         }
       }
     },
+    "periods": {
+      "title": "Perioade de raportare",
+      "lede": "Fiecare raport se pregătește pentru o perioadă. Perioada fixează versiunea standardului și leagă anul precedent, de unde se preiau comparativele.",
+      "caption": "Perioadele entității",
+      "open": "Deschideți o perioadă",
+      "columns": {
+        "year": "Anul fiscal",
+        "dates": "Intervalul",
+        "datesValue": "{start} – {end}",
+        "due": "Termenul",
+        "dueNone": "Fără termen",
+        "pin": "Versiunea standardului",
+        "taxonomy": "Taxonomie",
+        "standing": "Starea"
+      },
+      "standing": {
+        "open": "Deschisă",
+        "locked": "Blocată"
+      },
+      "filter": {
+        "standing": "Filtrați după stare",
+        "options": {
+          "any": "Toate",
+          "open": "Doar deschise",
+          "locked": "Doar blocate"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Nu aveți încă nicio perioadă",
+          "body": "Perioada este anul pentru care se pregătește raportul. Fără una nu se poate începe niciun raport pentru această entitate.",
+          "action": "Deschideți prima perioadă"
+        },
+        "filtered": {
+          "title": "Nicio perioadă nu corespunde filtrului",
+          "body": "Aveți perioade, dar niciuna nu are starea aleasă mai sus. Ștergeți filtrul ca să le vedeți pe toate.",
+          "action": "Ștergeți filtrul"
+        }
+      },
+      "record": {
+        "createTitle": "Perioadă nouă",
+        "titleYear": "Perioada {year}",
+        "createLede": "Versiunea standardului și legătura cu anul precedent se stabilesc automat la deschidere. Datele le stabiliți dumneavoastră.",
+        "lede": "Datele perioadei și termenul până la care raportul trebuie finalizat.",
+        "create": "Deschideți perioada",
+        "save": "Salvați",
+        "discard": "Renunțați la modificări",
+        "fiscalYear": "Anul fiscal",
+        "fiscalYearHelp": "Anul cu care compania își denumește exercițiul. Poate să nu coincidă cu anul calendaristic.",
+        "start": "Prima zi a perioadei",
+        "end": "Ultima zi a perioadei",
+        "endHelp": "Ultima zi inclusă în perioadă, nu prima zi de după.",
+        "due": "Termenul de finalizare",
+        "dueHelp": "Data până la care raportul trebuie să fie gata. Este altceva decât sfârșitul perioadei și este data de la care pornesc notificările.",
+        "rangeInvalid": "Perioada se încheie înainte să înceapă, așa că nu a fost salvată. Alegeți o zi de sfârșit ulterioară zilei de început.",
+        "prior": {
+          "linked": "Anul precedent este legat, deci comparativele se preiau automat.",
+          "none": "Este prima perioadă a acestei entități, deci nu există an precedent din care să se preia comparative."
+        }
+      },
+      "pins": {
+        "taxonomy": "Taxonomie VSME",
+        "template": "Șablonul EFRAG",
+        "help": "Versiunile sunt fixate la deschiderea perioadei și nu se schimbă de la sine. Raportul rămâne legat de ele și după apariția unei versiuni noi."
+      },
+      "lock": {
+        "action": "Blocați perioada",
+        "title": "Blocați perioada {year}?",
+        "consequence": "După blocare perioada nu mai poate fi modificată de nimeni, nici de administrator. Raportul devine stabil și istoricul modificărilor capătă un punct final.",
+        "retained": "Nimic nu se pierde: raportul, datele și exporturile rămân disponibile pentru citire.",
+        "compensating": "Singura cale înapoi este redeschiderea, care cere un motiv scris și rămâne vizibilă permanent ca amendament.",
+        "confirm": "Blocați perioada",
+        "cancel": "Renunțați"
+      },
+      "locked": {
+        "title": "Perioadă blocată",
+        "body": "Perioada este blocată, deci nu mai poate fi modificată de nimeni, nici de administrator. Redeschideți-o, indicând motivul, pentru a face o corectură — modificarea va rămâne vizibilă ca amendament."
+      },
+      "reopen": {
+        "action": "Redeschideți perioada",
+        "title": "Redeschideți perioada",
+        "body": "Redeschiderea se înregistrează permanent, împreună cu motivul, cu persoana și cu momentul. Este modul corect de a face o corectură după blocare.",
+        "reasonLabel": "Motivul redeschiderii",
+        "reasonHelp": "Va fi afișat pe perioadă de aici înainte. Scrieți ce anume se corectează.",
+        "reasonRequired": "Redeschiderea cere un motiv scris, așa că perioada nu a fost redeschisă. Descrieți în câteva cuvinte ce se corectează.",
+        "confirm": "Redeschideți",
+        "cancel": "Renunțați"
+      },
+      "amendments": {
+        "title": "Redeschideri",
+        "none": "Perioada nu a fost redeschisă niciodată.",
+        "entry": "Redeschisă la {at}"
+      },
+      "saved": {
+        "title": "Perioada a fost salvată",
+        "body": "Modificările sunt înregistrate."
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la perioade",
+          "body": "Doar administratorul organizației poate deschide și modifica perioade de raportare. Cereți-i accesul dacă aveți nevoie de el.",
+          "action": "Înapoi la pagina principală"
+        },
+        "unreachable": {
+          "title": "Perioadele nu au putut fi încărcate",
+          "body": "Nu am primit răspuns de la server, așa că lista nu poate fi afișată acum.",
+          "action": "Reîncărcați pagina"
+        }
+      }
+    },
     "access": {
       "title": "Utilizatori și acces",
       "lede": "Cine poate vedea datele ESG ale organizației și ce poate face fiecare.",

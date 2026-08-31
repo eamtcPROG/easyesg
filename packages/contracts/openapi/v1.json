@@ -4299,24 +4299,24 @@
             "description": "The VSME taxonomy release this period is pinned to (DR-4, FR-66)."
           },
           "priorPeriodId": {
-            "type": "object",
+            "type": "string",
             "format": "uuid",
             "nullable": true,
             "description": "The immediately preceding period for the same entity, from which comparatives resolve (FR-45). Null for an entity’s first period."
           },
           "entitySnapshotId": {
-            "type": "object",
+            "type": "string",
             "format": "uuid",
             "nullable": true,
             "description": "The entity master data as it stood when this period was opened (FR-18)."
           },
           "lockedAt": {
-            "type": "object",
+            "type": "number",
             "nullable": true,
             "description": "Unix epoch milliseconds, UTC. Non-null means the period is locked and takes no writes from anyone, including an administrator — reopening is the only route through it (FR-22)."
           },
           "lockedBy": {
-            "type": "object",
+            "type": "string",
             "format": "uuid",
             "nullable": true,
             "description": "The account that locked it. Retained after that account loses access or is removed (FR-55)."
@@ -4405,7 +4405,7 @@
             "description": "Unix epoch milliseconds, UTC."
           },
           "reopenedBy": {
-            "type": "object",
+            "type": "string",
             "format": "uuid",
             "nullable": true
           },

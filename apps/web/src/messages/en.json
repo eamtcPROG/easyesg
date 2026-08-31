@@ -619,6 +619,116 @@
         }
       }
     },
+    "periods": {
+      "title": "Reporting periods",
+      "lede": "Every report is prepared for a period. The period fixes the version of the standard and links last year, which is where comparatives come from.",
+      "caption": "The entity’s reporting periods",
+      "open": "Open a period",
+      "columns": {
+        "year": "Fiscal year",
+        "dates": "Range",
+        "datesValue": "{start} – {end}",
+        "due": "Due",
+        "dueNone": "No due date",
+        "pin": "Standard version",
+        "taxonomy": "Taxonomy",
+        "standing": "State"
+      },
+      "standing": {
+        "open": "Open",
+        "locked": "Locked"
+      },
+      "filter": {
+        "standing": "Filter by state",
+        "options": {
+          "any": "All",
+          "open": "Open only",
+          "locked": "Locked only"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "No reporting periods yet",
+          "body": "A period is the year a report is prepared for. Without one, no report can be started for this entity.",
+          "action": "Open the first period"
+        },
+        "filtered": {
+          "title": "No period matches the filter",
+          "body": "You have periods, but none is in the state chosen above. Clear the filter to see them all.",
+          "action": "Clear the filter"
+        }
+      },
+      "record": {
+        "createTitle": "New period",
+        "titleYear": "{year} period",
+        "createLede": "The version of the standard and the link to last year are set automatically when the period opens. The dates are yours to set.",
+        "lede": "The period’s dates, and the date by which the report must be complete.",
+        "create": "Open the period",
+        "save": "Save",
+        "discard": "Discard changes",
+        "fiscalYear": "Fiscal year",
+        "fiscalYearHelp": "The year the company labels its financial year with. It need not match the calendar year.",
+        "start": "First day of the period",
+        "end": "Last day of the period",
+        "endHelp": "The last day inside the period, not the first day after it.",
+        "due": "Due date",
+        "dueHelp": "When the report must be complete. This is a different fact from the end of the period, and it is what deadline notices count down to.",
+        "rangeInvalid": "The period ends before it starts, so it was not saved. Choose an end day that falls after the start day.",
+        "prior": {
+          "linked": "Last year is linked, so comparatives resolve automatically.",
+          "none": "This is the entity’s first period, so there is no earlier year to draw comparatives from."
+        }
+      },
+      "pins": {
+        "taxonomy": "VSME taxonomy",
+        "template": "EFRAG template",
+        "help": "The versions are fixed when the period opens and do not move on their own. The report stays tied to them even after a newer version is published."
+      },
+      "lock": {
+        "action": "Lock the period",
+        "title": "Lock the {year} period?",
+        "consequence": "Once locked, the period can no longer be changed by anyone, including an administrator. The report becomes stable and the change history gains an endpoint.",
+        "retained": "Nothing is lost: the report, its data and its exports all stay readable.",
+        "compensating": "The only way back is reopening, which requires a written reason and stays visible as an amendment for good.",
+        "confirm": "Lock the period",
+        "cancel": "Cancel"
+      },
+      "locked": {
+        "title": "Period locked",
+        "body": "The period is locked, so it can no longer be changed by anyone, an administrator included. Reopen it with a stated reason to make a correction — the change stays visible as an amendment."
+      },
+      "reopen": {
+        "action": "Reopen the period",
+        "title": "Reopen the period",
+        "body": "A reopening is recorded for good, together with the reason, the person and the moment. It is the correct way to make a correction after locking.",
+        "reasonLabel": "Reason for reopening",
+        "reasonHelp": "It is shown on the period from now on. Say what is being corrected.",
+        "reasonRequired": "Reopening requires a written reason, so the period was not reopened. Describe in a few words what is being corrected.",
+        "confirm": "Reopen",
+        "cancel": "Cancel"
+      },
+      "amendments": {
+        "title": "Reopenings",
+        "none": "This period has never been reopened.",
+        "entry": "Reopened on {at}"
+      },
+      "saved": {
+        "title": "The period has been saved",
+        "body": "Your changes are recorded."
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to reporting periods",
+          "body": "Only an organization administrator can open and change reporting periods. Ask them for access if you need it.",
+          "action": "Back to home"
+        },
+        "unreachable": {
+          "title": "The periods could not be loaded",
+          "body": "No answer came back from the server, so the list cannot be shown right now.",
+          "action": "Reload the page"
+        }
+      }
+    },
     "access": {
       "title": "Users & access",
       "lede": "Who can see your organisation's ESG data, and what each person may do.",

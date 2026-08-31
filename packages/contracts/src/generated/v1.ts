@@ -1648,19 +1648,19 @@ export interface components {
              * Format: uuid
              * @description The immediately preceding period for the same entity, from which comparatives resolve (FR-45). Null for an entity’s first period.
              */
-            priorPeriodId: Record<string, never> | null;
+            priorPeriodId: string | null;
             /**
              * Format: uuid
              * @description The entity master data as it stood when this period was opened (FR-18).
              */
-            entitySnapshotId: Record<string, never> | null;
+            entitySnapshotId: string | null;
             /** @description Unix epoch milliseconds, UTC. Non-null means the period is locked and takes no writes from anyone, including an administrator — reopening is the only route through it (FR-22). */
-            lockedAt: Record<string, never> | null;
+            lockedAt: number | null;
             /**
              * Format: uuid
              * @description The account that locked it. Retained after that account loses access or is removed (FR-55).
              */
-            lockedBy: Record<string, never> | null;
+            lockedBy: string | null;
             /** @description Unix epoch milliseconds, UTC. */
             createdAt: number;
             /** @description Unix epoch milliseconds, UTC. */
@@ -1685,7 +1685,7 @@ export interface components {
             /** @description Unix epoch milliseconds, UTC. */
             reopenedAt: number;
             /** Format: uuid */
-            reopenedBy: Record<string, never> | null;
+            reopenedBy: string | null;
             reason: string;
         };
         ReopenPeriodRequestDto: {

@@ -70,6 +70,18 @@ export const ROUTES = {
 export type Route = (typeof ROUTES)[keyof typeof ROUTES];
 
 /**
+ * Anything this file is willing to call a path — a constant above, or one of the helpers below that
+ * builds one around an id.
+ *
+ * **The `Route` union's guard does not survive a dynamic segment**, and pretending otherwise would
+ * mean branding every helper's return with a cast. What the union actually prevents is a
+ * hand-written literal at a call site, and that protection now rests on the helpers being the only
+ * way to construct a path carrying an id — which is why every one of them lives here beside the
+ * constants rather than in the feature that uses it (task 32.1.2).
+ */
+export type RoutePath = Route | (string & {});
+
+/**
  * S-03's address, which carries the emailed token in the path.
  *
  * The token rides the URL rather than a sealed cookie by decision (§12.5.6's task-26.3 row), and it
@@ -82,11 +94,40 @@ export const invitationRoute = (token: string): string => `/invitation/${token}`
 export const entityRoute = (entityId: string): string => `/entities/${entityId}`;
 
 /**
+ * S-14's Index — the reporting periods of one entity (task 32.1.2).
+ *
+ * **Nested under the entity, because a period only means anything against one**: `GET /periods`
+ * requires `reportingEntityId`, and an organization reporting on three entities has three period
+ * lists. A flat `/periods` would need the entity in a query parameter, which UX-4 permits for a
+ * *view* and not for the subject of the screen.
+ */
+export const entityPeriodsRoute = (entityId: string): string =>
+  `/entities/${entityId}/periods`;
+
+/** S-14's Record in its create mode. A literal segment rather than a query flag, so an unsaved new
+ *  period is an address the reader can return to (UX-4) — `ENTITY_NEW`'s reasoning. */
+export const newPeriodRoute = (entityId: string): string =>
+  `/entities/${entityId}/periods/new`;
+
+/**
+ * S-14's Record for one period.
+ *
+ * **One named object, not two positional strings** — the root file's rule reaches any function
+ * whose adjacent parameters share a type, and this is the shape it describes exactly: swapped,
+ * `periodRoute(periodId, entityId)` compiles and navigates to an address that looks plausible and
+ * is wrong. The first draft of this function had it.
+ */
+export const periodRoute = (input: {
+  readonly entityId: string;
+  readonly periodId: string;
+}): string => `/entities/${input.entityId}/periods/${input.periodId}`;
+
+/**
  * A path with a query string, or the bare path when there is none.
  *
  * Small enough to inline and repeated enough not to: every filtered Index screen writes an address
  * this way, and `?` with an empty query is a different address from no `?` at all — one that
  * survives into bookmarks and breaks an equality check nobody expected to be doing.
  */
-export const withQuery = (path: Route, query: string): string =>
+export const withQuery = (path: RoutePath, query: string): string =>
   query ? `${path}?${query}` : path;

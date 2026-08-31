@@ -7758,3 +7758,86 @@ have — left for the project owner rather than closed here.
 flipping the JSX spread so a caller could override `type`, inverting the superseded predicate,
 deleting the class, breaking the range rule, un-disabling the fieldset, dropping `min` — each failed
 exactly the tests that claimed it, and `git diff` was empty afterwards.
+
+---
+
+## Task 32.1.2 — S-14, and a contract that was wrong until something typed against it · 2026-08-31
+
+The Index and Record over tasks 31.1 and 31.2, in three locales. `/entities/{entityId}/periods`,
+`/new` and `/{periodId}` — **nested under the entity, because a period only means anything against
+one**: `GET /periods` requires `reportingEntityId`, and an organization reporting on three entities
+has three of these lists.
+
+### The published contract was under-typed, and only a consumer could find it
+
+`lockedAt`, `lockedBy`, `priorPeriodId`, `entitySnapshotId` and `reopenedBy` were all published as
+**`type: object`**, so a generated client reads each as `Record<string, never>` — unusable. The cause
+is one line of Nest reflection: `@ApiProperty({ nullable: true })` on a `number | null` reflects the
+union as `Object`, and the explicit `type:` the repository's own convention carries elsewhere
+(`@ApiProperty({ type: String, nullable: true })` on `ReportingEntityResponseDto.idno`) was missing
+on all five.
+
+**`openapi:check` cannot catch this.** It proves the committed spec matches the source, and the
+source was what was wrong — so the gate was green for four tasks. It took the first consumer typing
+against those properties, and the failure was immediate and total rather than subtle, which is the
+only good thing about it. Fixed at all five and regenerated. The DTO now carries a comment saying
+why `type` is explicit on every nullable property there.
+
+### The timezone, and a cost taken deliberately
+
+Every legal date the API stores is `{ date, timezone }` (NFR-34), and no screen had ever collected
+one — no artboard draws a timezone control. The project owner chose **the reporter's browser**
+(`Intl.DateTimeFormat().resolvedOptions().timeZone`), against the recommendation on record, which
+was the organization's country: NFR-34's own test is *would a different timezone change the answer to
+a legal question*, and a fiscal year is determined by the jurisdiction the undertaking files in.
+
+The decision is on `architecture.md` §12.5.6 with its cost named — **a reporter working from another
+country records a boundary in their own zone rather than the filing's**, which FR-125 makes
+uncorrectable by editing — and the reversal priced: one function plus a backfill, cheap now and
+dearer every filing season. `lib/legal-date.ts` is that one function, and it carries the same
+paragraph at the call site rather than only in a register, because the next person to read it is
+the one who needs it.
+
+Two smaller things it settles. `UTC` is the explicit fallback where `Intl` throws, because a period
+stored against UTC is wrong in a way somebody can find, where an empty string is refused by a
+`CHECK` and reads to the reporter as a form that will not submit. And `dateValue` is deliberately
+lossy — the control shows a calendar day and the zone travels beside it, so an edit resolves the
+zone fresh, which follows from the decision rather than softening it.
+
+### Lock and reopen as designed states
+
+UX-71 makes both irreversible-class, so each states its compensating mechanism before it happens:
+locking says reopening is the only way back **and that it is recorded**; reopening says the record
+is permanent. The screen never tells an administrator they may not — FR-22's lock refuses everyone,
+so it names the way through instead.
+
+The reopenings are read **with** the period rather than behind a disclosure: UX-72 requires an
+amendment to look like an amendment, and one that must be opened to be seen is one a reader can
+miss. A failed amendment read degrades to "none shown" rather than failing the screen, following
+the activity labels in `entities.ts` — the period is what the reader came for, and the lock state,
+which actually gates editing, comes from the period itself.
+
+### Two conventions caught on the way past
+
+**A route helper with two adjacent `string` parameters.** `periodRoute(entityId, periodId)` compiles
+when swapped and navigates somewhere plausible and wrong — the exact shape the root file's rule
+describes, written an hour after a review flagged the same class elsewhere. One named object now.
+
+**A fourth copy of the outcome-to-notice translation.** The Record's first draft branched on
+`API_OUTCOME.Ok` inline, which is `noticeFromOutcome`'s body written again — the defect
+`apps/web/CLAUDE.md` records three screens having grown independently, two of them drifted. The
+reducer holds the shared `Notice` and the component calls the helper, so a refusal whose problem
+document omits `title` renders the API's own three-part text rather than this screen's fallback.
+
+### Verified
+
+`pnpm gates:scoped` green — 190 web tests (up from 177), 79 UI, 526 api, 699 api e2e, 103 browser.
+The read model and the Record's reducer are unit specs because their interesting branches are ones a
+browser journey can only reach by contriving data or timing: a due date that is absent sorting last
+whichever way the column runs, and a settled notice being cleared by the *next* action starting.
+
+**The hang tracked by task 85 recurred twice during this work** and was caught live the second time —
+the API e2e at 0% CPU, tests complete, 26 minutes in, no database connections. It is an exit
+problem rather than a test failure: the same suite passed 699/699 standalone immediately before and
+after. A fourth flake — `invitation-acceptance.e2e-spec.ts`, green 16/16 alone — is recorded on task
+85's row with the others.
