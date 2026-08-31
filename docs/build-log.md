@@ -7895,3 +7895,65 @@ row without checking §4.4's inventory.
 Lint, typecheck, 526 api unit tests, and 47 e2e across the three suites the projection touches. The
 join is **proven to bite**: replacing `e.name` with a literal fails exactly one test, the one that
 asserts the row names its entity.
+
+---
+
+## Romanian VSME labels are not official either — OQ-5 closed, five statements amended · 2026-08-31
+
+Task 33.2 needs 143 element labels in three locales, and NFR-24 mandates *"the official EFRAG
+translation wherever one is published"*. Establishing which languages that reaches turned out to be
+the whole of the work so far.
+
+### The check, and what it found
+
+The Digital Template tracked in `config/efrag/` offers **twelve** languages in its Language
+Selection sheet, and Romanian is not among them. But `architecture.md` §12.5.6's task-33.1 row
+claimed the XBRL taxonomy package carries *"labels in 24 EU languages — Romanian and English among
+them"*. Two official artefacts, apparently disagreeing, and the package was not in the repository.
+
+The project owner authorised the download — the same authorisation task 29.3 had for the statistics
+bureau's `caem_rev2.zip`. The package is 508,353 bytes, matching the size already recorded, so it is
+the same artefact the earlier claim was made about.
+
+| | languages |
+| --- | --- |
+| **Carry labels** | `en` 467 · `sl` 401 · `da de es fr ga it lt nl pl pt` 319 each |
+| **Stubs — 1,161 bytes, zero labels** | `bg cs el et fi hr hu lv mt` **`ro`** `sk sv` |
+
+**Romanian ships as a file with no labels in it.** The two artefacts never disagreed: the template's
+twelve are exactly the twelve that carry content. **The error was reading a directory listing as a
+translation set** — counting `vsme-generic-label-*.xml` and reporting 24 languages.
+
+### Why it mattered more than a wrong number
+
+The claim had propagated into five normative statements, and the consequence was user-facing.
+**UX-47 told a reporter choosing Russian to prefer "RO or EN" for a bank or EU buyer** — pointing
+them at a locale carrying no more official standing than the one being caveated, on the export
+dialogue, about what to send a bank.
+
+Amended together: `problem_overview.md` **OQ-5** (closed), NFR-23's note, **NFR-24**, **T-14**,
+**UX-47** and **UX-98**, plus §5's export-dialogue description and §3's locale paragraph. NFR-24
+binds **English alone** of the three live locales; Romanian and Russian are both platform-authored;
+the caveat covers two locales including the **source** one, and the recommendation is English.
+
+### OQ-5 called its own shot, and lost
+
+Its 18 Aug narrowing said confirming Romanian *"requires downloading the current template — an
+action for the `config/efrag` seeding task, not an open question"*, and closed with: **"If Romanian
+labels are official, platform-authored label content shrinks to Russian alone."**
+
+It does not shrink. It doubles, and it includes the locale everything else is authored from. The row
+was right that the answer needed a download and right to refuse to guess; what it could not know is
+which way the answer would go, which is exactly why it stayed open rather than being decided from
+the likelihood.
+
+### Written against the property, not the locale
+
+UX-47 and T-14 now say *"a language whose labels are platform-authored"* rather than naming Russian.
+EFRAG ships the `ro` stub as a file it evidently means to fill, so this is a fact about a release
+rather than about Romanian — NFR-12's quarterly watch re-checks it, NFR-24's verification is amended
+to compare **content** rather than the presence of a file, and task 33.2's extractor must **fail
+loudly if a stub becomes populated** instead of silently preferring an authored label over a newly
+official one.
+
+No code in this change.

@@ -131,7 +131,7 @@ Four named breakpoints, defined by capability rather than device. Values live in
 
 ### 3.4 Language context
 
-Interface language, export language and email language are selected independently (UC-14, UC-48; source cites FR-169). Russian VSME labels are platform-authored and carry no official EFRAG standing; the interface says so at the point of export selection, not in a help centre. Three locales are live at MVP — Romanian as source, English and Russian each separately authored — resolved 18 Aug 2026; see §9.1 and OQ-1.
+Interface language, export language and email language are selected independently (UC-14, UC-48; source cites FR-169). Romanian and Russian VSME labels are both platform-authored and carry no official EFRAG standing — **corrected 31 Aug 2026**, when `problem_overview.md` OQ-5 closed and the `2026-05-01` package turned out to ship an empty Romanian label linkbase; **English alone is official at this version**. The interface says so at the point of export selection, not in a help centre. Three locales are live at MVP — Romanian as source, English and Russian each separately authored — resolved 18 Aug 2026; see §9.1 and OQ-1.
 
 **UX-135** Every locale that distinguishes them shall address the reader in the **formal register**, on every surface, without exception — Romanian *dumneavoastră*, Russian *вы*. English has no T-V distinction and is unaffected. **Set 27 Aug 2026, project owner**, closing a question the set had never asked.
 
@@ -506,7 +506,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Entry points:** S-07; S-10; a notification announcing a completed export job (UX-46).
 - **Layout and regions:** Panel for the dialogue (dismissible, non-modal, retains position); Index for the history (filter, sort, empty state, row action).
 - **Content and data shown:**
-  - Dialogue: exactly two decisions and no more — **format** (PDF · EFRAG Excel) and **language**, independent of interface language (UX-47). Where Russian is selected, a statement that Russian VSME labels are platform-authored and carry no official EFRAG standing, with RO or EN recommended for a bank or EU buyer. Where the report is pinned to a superseded taxonomy version, the choice between migration and export-against-original with an explicit notice (UX-48). Where findings are unresolved, an explicit warning listing what is unresolved (UX-25).
+  - Dialogue: exactly two decisions and no more — **format** (PDF · EFRAG Excel) and **language**, independent of interface language (UX-47). Where a language whose labels are platform-authored is selected — Romanian and Russian at `2026-05-01`, per T-14 as amended — a statement that those labels carry no official EFRAG standing, with **English** recommended for a bank or EU buyer. Where the report is pinned to a superseded taxonomy version, the choice between migration and export-against-original with an explicit notice (UX-48). Where findings are unresolved, an explicit warning listing what is unresolved (UX-25).
   - History: format, language, taxonomy version, timestamp and generating user for every prior export (UX-49).
 - **Controls and actions:** choose format; choose language; export; migrate first; export against the original version; re-download any prior artefact.
 - **States:** empty — first use (no exports yet); empty — filtered; loading — initial; **pending — async** (the defining state: export is presented as a job from the first interaction, with immediate acknowledgement, a named place to watch, and freedom to leave the screen; beyond 30 s the result is delivered by notification, UX-46, §8.5); error — recoverable; read-only (new exports blocked under suspension, UC-142, while previously generated documents remain downloadable, UX-54).
@@ -1363,7 +1363,7 @@ Eight design states, **six colour roles** — `error` and `invalid_url` share on
 
 **UX-46** Export shall be presented as an asynchronous job from the first interaction: the user requests it, receives immediate acknowledgement with a place to watch, and may leave the screen. Where a job exceeds 30 s the result is delivered by notification (§8.5).
 
-**UX-47** The export dialogue shall require two decisions and no more: **format** (PDF · EFRAG Excel) and **language** (independent of interface language, UC-48). Where Russian is selected, the dialogue shall state that Russian VSME labels are platform-authored and carry no official EFRAG standing, and shall recommend RO or EN for a bank or EU buyer.
+**UX-47** The export dialogue shall require two decisions and no more: **format** (PDF · EFRAG Excel) and **language** (independent of interface language, UC-48). Where a language whose VSME labels are platform-authored is selected, the dialogue shall state that those labels carry no official EFRAG standing, and shall recommend the language that does for a bank or EU buyer. **Amended 31 Aug 2026** (project owner), from *"where Russian is selected … recommend RO or EN"*: opening EFRAG's published package for task 33.2 showed **Romanian is a stub** — the `2026-05-01` taxonomy ships label linkbases for 23 languages of which twelve carry labels, and `ro` holds zero, matching the Digital Template's own twelve-language selection. So **English alone carries official standing at this version**, and the old wording recommended Romanian for exactly the reader — a bank or an EU buyer — for whom the distinction exists. The rule is written against *which labels are official* rather than naming locales, because EFRAG ships the `ro` stub as a file it evidently intends to fill; NFR-12's quarterly watch is what re-checks it, and task 33.2's extractor fails loudly if a stub becomes populated.
 
 **UX-48** Where a report is pinned to a superseded taxonomy version, the dialogue shall offer migration or export-against-original with an explicit notice, and shall not proceed silently (UC-43).
 
@@ -1579,7 +1579,7 @@ Interface language, export language and email language are three independent sel
 | Export language | S-11, per export | Independent of interface language (UX-47, UC-48, FR-52); recorded in export history |
 | Email language | Resolved per recipient | Email renders in the recipient's own language, resolved per recipient rather than per notification (UX-66, FR-169) |
 
-**UX-98** The Russian caveat (§6.9, UX-47) shall appear at the point of export language selection and on the exported document itself, not only in documentation.
+**UX-98** The platform-authored-label caveat (§6.9, UX-47) shall appear at the point of export language selection and on the exported document itself, not only in documentation. **Amended 31 Aug 2026** with UX-47: it read *"the Russian caveat"*, and at `2026-05-01` it covers **Romanian as well** — including the source locale, which is the one most readers will export in.
 
 ### 9.4 Voice and term handling
 
