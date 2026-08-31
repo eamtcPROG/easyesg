@@ -7486,3 +7486,95 @@ first version put it. A file's legend is read by someone already editing that fi
 whoever is about to close a task, and that person is reading `CLAUDE.md`. It carries its own history
 on purpose: written down because it decayed twice, and stating that the first fix was too generous
 is what stops a third attempt from re-deriving the same carve-out.
+
+---
+
+## Three review agents, and the fixtures that prove they still bite · 2026-08-31
+
+Not a task. The project owner asked whether subagents checking implementation against the rules,
+skills and conventions would improve quality and time. Split answer, because the two halves point
+opposite ways: **quality yes; time no.** A review pass adds wall-clock and tokens and never makes a
+task faster. What it buys is *the reviewer's* time — three of this session's corrections came from
+the project owner reading output, and each cost a round trip.
+
+### What today argued for it
+
+The gate set proves code *runs*; it says nothing about whether it *belongs*, which this file already
+recorded for the front ends. The day's evidence split cleanly: dependency-cruiser caught the
+mechanical thing (a controller importing `use-cases/`), and **everything else was caught by a person
+or by re-reading** — the pin's source, an inert invariant that would have shipped green, the Status
+column three times. The rule surface is ~2,900 lines of convention plus ~10,600 of normative
+specification, and the failure is not ignorance but **recall**: the author remembers a rule
+approximately, applies the approximate version, and is satisfied.
+
+### Three agents, not one
+
+`.claude/agents/{convention,spec,gate-integrity}-review.md`. Real files there rather than the
+`.agents/` symlink the skills use, because that indirection exists for skills *shared across
+projects* and these encode this repository's own rules. Three because they read different sources
+and rot differently; one agent with three jobs does the first well.
+
+Two rules keep them worth their cost, both in the root `CLAUDE.md`: **a finding names and quotes the
+rule it invokes, or it is not a finding**; and **a finding that recurs graduates into a mechanical
+gate** — the agent is a discovery mechanism, not a permanent tax.
+
+### The reason the fixtures exist
+
+**A review agent has no failing state.** It returns prose whether it is working or not, so one that
+has quietly stopped checking is indistinguishable from one reporting a clean diff — and the report
+is believed, because it looks the same. That is `domain-free-of-frameworks` shipping inert, one
+level up and worse, because there is no `--list` to run against it.
+
+`tools/reviewer-fixtures/` is that agent's `prove-boundaries.sh`: a seeded diff per agent, each hunk
+violating **exactly one rule no gate enforces** — an agent that only finds what lint already finds
+has earned nothing — with the answer key in `EXPECTED.md` that must never reach an agent's context.
+
+### All three were run against their fixtures before being committed
+
+Every seeded defect was found. What is worth recording is that all three **over-delivered**, and the
+key had to be corrected twice: **a key that under-predicts is worse than none**, because it scores a
+correct report as noise.
+
+- **convention** found the three seeded rules, plus `actorId` accepted as a parameter so the caller
+  names the actor (*"an attribution the caller could name is not an attribution"* — more expensive
+  than the seeded defect), a fourth reimplementation of `noticeFromOutcome`, and a manual pending
+  flag with no `try/finally`. It did **not** take the planted bait: Tailwind styling in the
+  one-off-component hunk went under "not rules", with the reason that no rule could be quoted
+  against it.
+- **spec** found that hunk 1 does not merely miscite FR-22 but re-implements the reading §12.5.6
+  *declined in terms*; that the invented 90-day retention is the **application-logs row** of a
+  schedule already closed by OQ-20, where report content is organization life + 1 year; and that the
+  `jsonb` claim contradicts §7.3's shipped DDL while borrowing AD-3's argument against
+  *column-per-disclosure* for a question AD-3 did not ask.
+- **gate-integrity** found the permitted-direction list, and that it guards `INSERT` where the
+  guarantee rests on `UPDATE`; that the second hunk's subject **cannot occur**, since `FILED` is
+  unwritten until task 47 and both the use case and the trigger key on `locked` alone; and — proved
+  by running `playwright test --list` rather than asserted — that a spec at `apps/web/e2e/web/…` is
+  **collected by no runner at all**, being outside `testDir`, vitest's include and jest's pattern.
+
+Each agent's claims about the repository were verified independently rather than taken on trust, per
+the standing rule about agent output. All held.
+
+### The model is pinned, and the pin says it is reasoned rather than measured
+
+`model: opus` on all three. **An agent that follows the session's model silently becomes a different
+reviewer, and its clean report looks identical to the verified one** — the fixtures' own problem one
+level up, since a fixture run only verifies the model it ran on. The pin carries its date, as §12's
+package pins do.
+
+Why the strong model, per agent: their failure mode is **over-reporting**, not under-reporting, and a
+reviewer that lists forty things is ignored within a week and is then pure cost. The hard judgement
+is *declining* to report — which is exactly what the Tailwind trap tests, and what the run above
+passed. **Stated as reasoned, not measured**, because the repository's own rule is to measure: the
+fixtures make it settleable by running one on a cheaper model and checking it finds every seeded
+defect *and* declines the trap. Recorded in each agent's frontmatter so the next reader knows which
+kind of claim the pin is.
+
+### A finding about the repository, not the fixture
+
+`docs/task.md`'s rows 34 and 34.1 call it **"the `jsonb` value table"** while `architecture.md` §7.3
+specifies `value_numeric`, `value_text`, `value_boolean`, `value_date` — a column per datatype, and
+no `jsonb` column. Verified independently. Whoever builds 34.1 must reconcile them, and by
+precedence the document wins and the task row is what is wrong. **Left for the project owner**: it
+is a specification question, not a cleanup, and closing it in passing is the thing `spec-review`
+exists to catch.

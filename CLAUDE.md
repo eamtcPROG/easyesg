@@ -83,6 +83,40 @@ precisely what catches a cross-workspace break: `typecheck`, `boundaries` and `l
 set is nine root scripts plus two e2e suites; writing this rule surfaced that its first draft
 stopped at nine and would have missed the very defect that prompted it.
 
+**Three review agents run at task close, before the build-log entry** (`.claude/agents/`, added
+31 Aug 2026). They exist because the gate set proves code *runs* and says nothing about whether it
+*belongs* — this file already records that every finding a review has raised on the front ends was
+invisible to all nine gates. The rule surface is ~2,900 lines of convention plus ~10,600 of
+normative specification, and the observed failure is not ignorance but **recall**: the author
+remembers a rule approximately, applies the approximate version, and is satisfied. An agent arrives
+with no rationalisation for the diff, which is the whole of its advantage.
+
+| Agent | Asks |
+| --- | --- |
+| `convention-review` | Does the diff violate a rule this repository has **written down**? |
+| `spec-review` | Was an open question closed in passing, a decision left unrecorded, an identifier re-derived instead of cited, a deliverable claimed but unmet? |
+| `gate-integrity-review` | Would every check the diff adds **fail** if the thing it guards were broken? |
+
+Three rather than one because they read different sources and rot differently; one agent with three
+jobs does the first well. Run them on the diff, not the whole tree.
+
+**Two rules keep them worth their cost.**
+
+- **A finding names and quotes the rule it invokes, or it is not a finding.** Anything else is
+  opinion, and this repository has enough prose. An agent may still say "this looks wrong and no
+  rule covers it" — separately, at the end, never mixed in.
+- **A finding that recurs graduates into a mechanical gate** — an ESLint selector, a boundary rule,
+  a schema invariant. The agent is a *discovery* mechanism, not a permanent tax, and this is
+  "fix the sites first, then turn the gate on" with the agent as the thing that finds the sites.
+
+**And they are proven to bite, like every other check here.** A review agent has **no failing
+state**: it returns prose whether it is working or not, so one that has quietly stopped checking is
+indistinguishable from one reporting a clean diff — the same shape as `domain-free-of-frameworks`
+shipping inert. `tools/reviewer-fixtures/` holds a seeded diff per agent, each hunk violating
+exactly one rule **no gate enforces**, with the answer key in `EXPECTED.md` that must never reach an
+agent's context. Re-run them when an agent's instructions change, or when a clean report starts
+feeling too easy.
+
 **Run `pnpm gates:clean` before pushing.** It removes every build output first, and that is not
 belt-and-braces — it is the only local run that can see a whole class of defect:
 
