@@ -10,9 +10,17 @@ tools: Read, Grep, Glob, Bash
 # Pure counterfactual reasoning about what a check would do on a breakage that is not in front of
 # it. The inverted-list bug of 31 Aug is what a weaker model reads as fine.
 #
-# **Reasoned, not measured.** `tools/reviewer-fixtures/` makes it measurable: run the fixture on
-# a cheaper model and check it finds every seeded defect AND declines the planted trap. Record
-# the result here and move the pin if it holds.
+# **Measured 31 Aug 2026 on the convention fixture, and the pin held for a reason the fixture did
+# not predict.** Sonnet found all three seeded defects, quoted them accurately, and correctly
+# declined the planted trap — it passes the bar as written. It found **none** of the three
+# unplanted violations Opus found in the same hunks, including the most expensive one in the
+# fixture: an `actorId` accepted as a parameter, so the caller names the actor. Sonnet also spent
+# **355k tokens against Opus's 194k**, reading the compiled skill documents cover to cover where
+# Opus read them index-then-targeted and said so — the cheaper tier was not cheaper in tokens.
+#
+# So the measurement's real finding is that **the fixture was too easy to discriminate**, and the
+# key now promotes that unplanted finding to required. Re-measure against the strengthened key
+# before moving the pin.
 model: opus
 ---
 

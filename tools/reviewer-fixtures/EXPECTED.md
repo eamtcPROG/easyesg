@@ -14,13 +14,13 @@ What each fixture hunk must be reported as. An agent that misses one has stopped
 finding. Tailwind classes in a screen are not what UX-89 forbids; the one-off **component** is. A
 good agent puts it under "not rules" and says it cannot quote a rule against it.
 
-### Additional findings a good agent will make, and they are not over-reporting
+### Hunk 1 carries a SECOND finding, and it is required
 
-Recorded 31 Aug 2026 from the first verification run, because **a key that under-predicts is worse
-than no key** — the next reader would score a correct report as noisy.
+**Promoted from "additional" to required on 31 Aug 2026, by the model measurement** — it is the one
+finding that separated Opus from Sonnet, so a key that treats it as a bonus cannot discriminate at
+all. An agent that reports only the positional parameters has **half** of hunk 1.
 
-- **Hunk 1 carries a second and more expensive violation**: `actorId` is a *parameter*, so the
-  caller names the actor. `PeriodService` already resolves it from the request context and says why
+- **`actorId` is a *parameter*, so the caller names the actor.** `PeriodService` already resolves it from the request context and says why
   — *"an attribution the caller could name is not an attribution"* (FR-22, FR-55). Rank it above the
   positional-parameter finding.
 - **Hunk 2 also reimplements `noticeFromOutcome`** (`apps/web/CLAUDE.md`: the outcome-to-notice
@@ -30,7 +30,30 @@ than no key** — the next reader would score a correct report as noisy.
 - **Hunk 3's component is named in the inventory**: §11.5's domain table carries *"Version pin
   indicator"*, so this is not even a judgement call about what *"nothing fits"* means.
 
-Missing the seeded finding is a failure. Finding these as well is the agent working.
+Missing a seeded finding is a failure. Missing the `actorId` finding is a failure. The other two are
+the agent working.
+
+### Model measurement — 31 Aug 2026, convention fixture
+
+| | seeded 3 | trap declined | unplanted 3 | tokens | duration |
+| --- | --- | --- | --- | --- | --- |
+| **Opus** | 3/3 | yes | 3/3 | 194k | 264 s |
+| **Sonnet** | 3/3 | yes | **0/3** | **355k** | 231 s |
+
+Two things worth keeping.
+
+**The fixture as first written could not tell them apart.** Sonnet passed every stated criterion —
+found all three seeded defects, quoted them accurately, declined the trap, and even declined a
+fourth candidate with a reason rather than guessing. On the bar as written it is the equal of Opus.
+The difference was entirely in what neither of them was *asked* to find, which is why the `actorId`
+finding is now required rather than a bonus. **A fixture only measures what it demands.**
+
+**The cheaper tier was not cheaper in tokens.** Sonnet spent 1.8× Opus's, because it read the
+compiled skill documents cover to cover where Opus read them index-then-targeted and *said so in its
+report*. Per-token price still favours Sonnet; the gap is much smaller than the tier suggests, and
+this is worth re-checking rather than assuming.
+
+Re-measure against this strengthened key before moving any pin.
 
 ## spec.md
 

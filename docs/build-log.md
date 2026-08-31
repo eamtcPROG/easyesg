@@ -7578,3 +7578,53 @@ no `jsonb` column. Verified independently. Whoever builds 34.1 must reconcile th
 precedence the document wins and the task row is what is wrong. **Left for the project owner**: it
 is a specification question, not a cleanup, and closing it in passing is the thing `spec-review`
 exists to catch.
+
+---
+
+## The model measurement, and the fixture that could not tell them apart · 2026-08-31
+
+Not a task. The `model: opus` pin on the three review agents shipped stated as *reasoned, not
+measured*, with the fixtures named as the way to settle it. Settled, on the convention fixture.
+
+| | seeded 3 | trap declined | unplanted 3 | tokens | duration |
+| --- | --- | --- | --- | --- | --- |
+| **Opus** | 3/3 | yes | 3/3 | 194k | 264 s |
+| **Sonnet** | 3/3 | yes | **0/3** | **355k** | 231 s |
+
+### The result is about the fixture, not only the models
+
+**Sonnet passed every criterion the fixture states.** It found all three seeded defects, quoted the
+rules accurately, and declined the planted trap — and declined a fourth candidate as well, with a
+reason rather than a guess: the `transfer` method reads as a thin service-to-store pass-through, and
+it said it could not confirm `use_cases.md` names such a flow, so it would not report it. That is
+exactly the discipline the agent is for.
+
+The difference was entirely in findings **neither model was asked for**. Opus found three more in
+the same three hunks, the sharpest being `actorId` accepted as a *parameter* — so the caller names
+the actor, against `PeriodService`'s own *"an attribution the caller could name is not an
+attribution"* (FR-22, FR-55). That is more expensive than the positional-parameter defect it sits
+beside, and the fixture treated it as a bonus.
+
+So the honest reading is not *"Opus is better"* but **"the fixture measured the wrong thing"**: it
+demanded the defects that were easy to plant, and the discriminating one was incidental. **A fixture
+only measures what it demands.** `EXPECTED.md` now requires the `actorId` finding, which is the one
+criterion the two models actually differed on, and any future re-measurement is against that.
+
+### The cheaper tier was not cheaper in tokens
+
+Sonnet spent **1.8× Opus's tokens** — 355k against 194k. The cause is visible in the two reports:
+Opus read the compiled skill documents index-then-targeted and *said so*, while Sonnet read
+`nestjs-best-practices/AGENTS.md` (5,959 lines), `vercel-react-best-practices/AGENTS.md` (3,810) and
+`vercel-composition-patterns/AGENTS.md` (946) in full. Per-token price still favours Sonnet, but by
+far less than the tier gap implies, and the instruction *"state which files you read and their line
+counts"* is what made the difference legible instead of a mystery.
+
+### What changed
+
+The pin stays `opus`, and its frontmatter comment now records the measurement rather than the
+reasoning — including that the fixture was too easy, so the next reader knows which claim they are
+inheriting. The key is strengthened and says to re-measure against it.
+
+**Worth stating plainly: on the bar as written, Sonnet is the equal of Opus here**, and if the
+unplanted findings turn out not to matter in practice — a few tasks' worth of reports would say —
+the pin should move. The measurement narrowed the question rather than closing it.
