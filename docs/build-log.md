@@ -7457,6 +7457,28 @@ ahead of 25.4"* is the **title** of its build-log entry — *"done out of order 
 exist without it"* — and *"27.8 built inside 27.7"* is that entry's second sentence, *"they are one
 entry because they became one task"*. Nothing moved; the cells were duplicates throughout.
 
+### The date went too, an hour later
+
+Third pass, same day, same reader: *"such text — 29 Aug 2026 should not be in Status column."*
+Correct, and consistent with the two before it — the legend declares **four words**, and tasks
+1 … 26 had carried a bare `DONE` from the start, so the dates were never the convention either. They
+were the last thing making the column look like a place where facts go.
+
+They are also a duplicate, which is the argument this file keeps making about itself: **when a task
+closed is the date on its `build-log.md` heading.** Checked before removing, per the rule — all 22
+dated cells resolve to a dated entry, including the two whose entries are shared headings
+(*"Tasks 27.7 and 27.8 · 2026-08-27"*, *"Tasks 30.4.2 and 30.4.3 · 2026-08-29"*), which an
+exact-match search reports as missing and reading confirms are not.
+
+All 338 cells are now one of exactly three values: `DONE` (68), `TODO` (269), `BLOCKED` (1). The
+single `BLOCKED` was checked rather than assumed stale — task 67.2, held on `architecture.md`
+OQ-44, which is genuinely still open.
+
+**Three retreats in one day is the useful part of this record.** Narrative, then a permitted clause,
+then a date: each was smaller than the last and each was defended on the grounds that this
+particular thing really did belong to the plan. The rule in `CLAUDE.md` names all three, because the
+next person to add "just the date" will have the same reason.
+
 ### Where the rule now lives
 
 The root `CLAUDE.md`, beside `task.md`'s own row in the document table — not in `task.md`, where the

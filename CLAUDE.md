@@ -158,21 +158,23 @@ what is wrong.
 | [task.md](docs/task.md) | The execution plan — §15.4's nine-step build order as 77 tasks, each with its scope and deliverables. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself | Read before starting work to find the next task; update its `Status` when one closes. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
-**`task.md`'s Status column holds one of four words and its date. Nothing else.** `DONE — 31 Aug
-2026`, `TODO`, `IN PROGRESS`, `BLOCKED` — no reasoning, no deviation, no decision, not one clause of
-either. Why a task ended up shaped the way it did is **`build-log.md`**'s, and the decisions
-themselves belong to the document that owns them, which for a task is almost always
-`architecture.md` §12.5.6. A sentence explaining a status is a build-log entry in the wrong file,
-and it is a *duplicate* of one that already exists — which is not extra safety but a second copy
-free to drift.
+**`task.md`'s Status column holds exactly one of four words: `DONE`, `TODO`, `IN PROGRESS`,
+`BLOCKED`.** Nothing else — no reasoning, no deviation, no decision, and **no date**. Why a task
+ended up shaped the way it did is **`build-log.md`**'s, *when* it closed is the date on its
+`build-log.md` entry, and the decisions themselves belong to the document that owns them, which for
+a task is almost always `architecture.md` §12.5.6. A sentence explaining a status is a build-log
+entry in the wrong file, and it is a *duplicate* of one that already exists — which is not extra
+safety but a second copy free to drift.
 
-The rule is written here because it decayed twice. It was implicit until 31 Aug 2026, when a sweep
-found eighteen cells between tasks 27.7 and 31.3 holding narrative, the worst of them 1,306
-characters; every one duplicated an entry already in `build-log.md`. Trimming them to *"the state,
-its date, and at most a short clause where the plan's own metadata changed"* was still too generous
-and the column drifted again within the day, because a permitted clause is an invitation. There is
-no clause. **A task that widened its workspace, merged with another slice or ran out of order is
-saying something about how it went, and that is `build-log.md`'s subject, not this column's.**
+The rule is written here because it decayed three times in one day (31 Aug 2026), and each retreat
+is worth knowing. A sweep found eighteen cells between tasks 27.7 and 31.3 holding narrative, the
+worst of them 1,306 characters, every one duplicating an entry already in `build-log.md`. Trimming
+them to *"the state, its date, and at most a short clause where the plan's own metadata changed"*
+was too generous and the column drifted again the same day, because **a permitted clause is an
+invitation** — a task that widened its workspace, merged with another slice or ran out of order is
+saying something about *how it went*, which is `build-log.md`'s subject. Then the dates went too:
+they are a second copy of what every `build-log.md` heading already carries, and tasks 1 … 26 had
+never had them, so they were the last thing making the column look like a place to put facts.
 
 **A parent row's status is the roll-up of its sub-steps, and closing the last child closes the
 parent.** Task 31 sat at `TODO` with 31.1 … 31.4 all `DONE`, which is the failure this sentence
