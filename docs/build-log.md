@@ -7415,3 +7415,52 @@ being an environment artefact, and this session's changes do not touch the appli
 `sh -c pnpm clean && pnpm gates`, `pnpm gates`, `pnpm e2e` and the jest beneath it running — which is
 how a killed run keeps going. Kill the tree, or better, do not start a second long run while unsure
 whether the first ended.
+
+---
+
+## The Status column, again — and this time without a permitted clause · 2026-08-31
+
+Not a task. The project owner, for the second time in a day: the column still holds more than a
+status, task 31 should read `DONE`, and the rule belongs in `CLAUDE.md`.
+
+### Why the first fix did not hold
+
+The morning's sweep trimmed eighteen cells and left a carve-out — *"the state, its date, and at most
+a short clause where the plan's own metadata changed"* — on the reasoning that a widened workspace
+or a merged slice is `task.md`'s own subject. It is not, and **a permitted clause is an invitation**:
+by evening the column had drifted again, and task 31.4 closed with 119 characters explaining why it
+built no table, in a file whose legend declares a four-word vocabulary.
+
+The distinction the carve-out rested on does not survive contact. *"`api+web` rather than `web`"*
+and *"built with 30.4.3 and committed together"* are statements about **how the work went**, which
+is `build-log.md`'s subject by definition, and every one of them was already written there. So there
+is no clause. Fourteen cells were stripped to `DONE — <date>`; all 338 now match
+`^(DONE|TODO|BLOCKED|IN PROGRESS)( — <date>)?$`, asserted rather than eyeballed.
+
+### The parent row nobody was checking
+
+**Task 31 sat at `TODO` with 31.1 … 31.4 all `DONE`.** Found by computing it rather than reading —
+group every row by its parent, ask whether the children are all closed, compare with the parent.
+Exactly one mismatch across sixty parent rows, which is the useful shape of that result: the file
+was right everywhere else, and one summary line was reporting work outstanding that had been
+finished for hours.
+
+That is now a stated rule — a parent's status is the roll-up of its sub-steps, and closing the last
+child closes the parent — because it is the kind of thing that is obvious when pointed at and
+invisible otherwise, and checking it is one pass over the table.
+
+### Verified before deleting, again
+
+Every clause removed was checked against the documents that own it, and the two that returned no
+match on an exact-phrase search were confirmed by reading rather than assumed missing: *"28.1 ran
+ahead of 25.4"* is the **title** of its build-log entry — *"done out of order because 25.4 could not
+exist without it"* — and *"27.8 built inside 27.7"* is that entry's second sentence, *"they are one
+entry because they became one task"*. Nothing moved; the cells were duplicates throughout.
+
+### Where the rule now lives
+
+The root `CLAUDE.md`, beside `task.md`'s own row in the document table — not in `task.md`, where the
+first version put it. A file's legend is read by someone already editing that file; the rule is for
+whoever is about to close a task, and that person is reading `CLAUDE.md`. It carries its own history
+on purpose: written down because it decayed twice, and stating that the first fix was too generous
+is what stops a third attempt from re-deriving the same carve-out.
