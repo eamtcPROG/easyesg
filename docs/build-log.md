@@ -7628,3 +7628,54 @@ inheriting. The key is strengthened and says to re-measure against it.
 **Worth stating plainly: on the bar as written, Sonnet is the equal of Opus here**, and if the
 unplanted findings turn out not to matter in practice — a few tasks' worth of reports would say —
 the pin should move. The measurement narrowed the question rather than closing it.
+
+---
+
+## Routing the reviewers by diff, because a cheap run's miss is silent · 2026-08-31
+
+Not a task. The project owner: *"it should be a mechanism that will check with sonnet first, if need
+will use opus."* The cost instinct is right and the trigger is the problem, which the measurement an
+hour earlier had already settled without either of us noticing.
+
+### Why "escalate if needed" cannot be built here
+
+On the convention fixture Sonnet found every seeded defect, quoted the rules accurately, declined
+the planted trap, and *declined a fourth candidate with a reason rather than a guess*. It also
+missed half of hunk 1 — the `actorId` finding, the most expensive in the fixture. Its report closed
+with **"Not rules — None"** and a confident count.
+
+**Nothing in that output distinguishes "found everything" from "found half."** No hedge, no short
+count, no uncertainty. So there is no property to escalate *on*: a cascade would run the cheap pass,
+read a clean report, stop, and lose exactly the findings the agents exist for — while feeling
+thorough and costing tokens. It is this session's recurring shape yet again, a check with no failing
+state, and this time it would have been bought deliberately.
+
+### What replaced it
+
+Routing decided from the **diff**, before any agent runs, and **downgrade-only**: the frontmatter
+pins `opus`, and `pnpm gates:scoped` prints whether `sonnet` is enough. Forget the rule and you get
+the better reviewer — the fail-safe points the right way rather than the cheap way.
+
+`opus` for a migration, a grant/policy/trigger, the contract surface, `identity` or the admin realm,
+or three or more workspaces. These are a proxy for what Sonnet measurably misses — findings that
+**connect a rule in one file to a convention in another** — and breadth plus the tenancy surface is
+where those live.
+
+The economics survive the token surprise: Sonnet spent 1.8× the tokens but at roughly a third the
+price, so a cascade pays as long as it escalates less than about two thirds of the time. Routing by
+diff shape is what keeps that fraction low without needing a signal that does not exist.
+
+### The routing rule was inert on its first run, in the only direction that mattered
+
+Written as a grep over the whole diff, it matched `GRANT UPDATE` **inside this repository's own
+prose** — the reviewer fixtures and the build-log entry describing them — and answered *"opus, this
+diff touches a grant, policy or trigger"* on a change that touched nothing but documentation and a
+shell script. It would have answered `opus` forever and **never downgraded once**: a routing rule
+that cannot route, indistinguishable from a working one, on a mechanism whose entire purpose is to
+sometimes say the cheaper thing.
+
+Scoped to `apps/api/src/**` excluding `*.md`, it now answers `sonnet` on a docs-and-tools diff and
+fires all three signals on task 31.3's real range — a migration, the contract surface and eleven
+grant/policy/trigger lines. **Verified in both directions**, which is the only way anything here is
+verified, and the reason the false positive was cheap: it was caught by running it rather than by
+reading it.

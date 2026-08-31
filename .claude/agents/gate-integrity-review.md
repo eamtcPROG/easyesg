@@ -21,6 +21,10 @@ tools: Read, Grep, Glob, Bash
 # So the measurement's real finding is that **the fixture was too easy to discriminate**, and the
 # key now promotes that unplanted finding to required. Re-measure against the strengthened key
 # before moving the pin.
+#
+# **This pin is the safe default, not the only setting.** The root `CLAUDE.md` carries a
+# downgrade rule routed from the diff — `pnpm gates:scoped` prints the verdict — and the
+# override goes one way only, because a cheap run's miss is silent and cannot be escalated on.
 model: opus
 ---
 

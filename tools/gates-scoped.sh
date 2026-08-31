@@ -147,6 +147,42 @@ echo
 if [ ${#FAILED[@]} -eq 0 ]; then
   printf '\033[32mScoped gates passed.\033[0m Run `pnpm gates:clean` before pushing — this run\n'
   printf 'deliberately skipped what your change cannot reach, and only the full one can say so.\n'
+
+  # ── Which model the review agents should run on ────────────────────────────────────────────────
+  #
+  # Decided from the DIFF, before any agent runs, because **the cheap model's miss is silent**:
+  # measured 31 Aug 2026, Sonnet returned a clean, confident report on the convention fixture and had
+  # found half of one hunk — no hedge, no short count, nothing to escalate on. So there is no
+  # "escalate if needed"; there is only routing decided in advance.
+  #
+  # The proxy is what Sonnet measurably misses — findings that connect a rule in one file to a
+  # convention in another. Breadth and the tenancy/privilege surface stand in for that.
+  #
+  # **Downgrade-only.** The frontmatter pins `opus`; this suggests overriding *down*. Forget it and
+  # you get the better reviewer, not the worse one.
+  workspaces=$(printf '%s\n' "$SELECTED" | grep -c '^/' || true)
+  risky=''
+  git diff --name-only "$BASE" -- '*/migrations/*' | grep -q . && risky='a migration'
+  # **Scoped to source, not to the whole diff.** The first version grepped the diff text and matched
+  # `GRANT UPDATE` inside this repository's own prose — the reviewer fixtures and a build-log entry —
+  # so it answered "opus" on a docs-only change and would never have downgraded at all: inert in the
+  # one direction it exists for.
+  [ -z "$risky" ] && git diff "$BASE" -- 'apps/api/src/*' ':(exclude)*.md' \
+    | grep -qE '^\+.*(GRANT |REVOKE |CREATE POLICY|CREATE TRIGGER|ROW LEVEL SECURITY)' \
+    && risky='a grant, policy or trigger'
+  [ -z "$risky" ] && git diff --name-only "$BASE" -- 'apps/api/src/contracts/*' 'packages/contracts/*' | grep -q . \
+    && risky='the contract surface'
+  [ -z "$risky" ] && git diff --name-only "$BASE" -- 'apps/api/src/modules/identity/*' 'apps/api/src/modules/platform/admin/*' | grep -q . \
+    && risky='identity or the admin realm'
+  [ -z "$risky" ] && [ "$workspaces" -ge 3 ] && risky="$workspaces workspaces"
+
+  echo
+  if [ -n "$risky" ]; then
+    printf 'Review agents: \033[1mopus\033[0m (the pinned default) — this diff touches %s.\n' "$risky"
+  else
+    printf 'Review agents: \033[1msonnet\033[0m is enough — one workspace, no migration, grant,\n'
+    printf 'policy, trigger, contract or identity surface. Pass `model: sonnet` when invoking them.\n'
+  fi
   exit 0
 fi
 

@@ -109,6 +109,25 @@ jobs does the first well. Run them on the diff, not the whole tree.
   a schema invariant. The agent is a *discovery* mechanism, not a permanent tax, and this is
   "fix the sites first, then turn the gate on" with the agent as the thing that finds the sites.
 
+**Which model they run on is routed from the diff, before any of them runs, and the routing only
+ever goes *down*.** The frontmatter pins `opus`; `pnpm gates:scoped` prints whether `sonnet` is
+enough, and you pass `model: sonnet` when invoking. Forget it and you get the better reviewer, not
+the worse one — the fail-safe points the right way on purpose.
+
+**There is no "escalate if it turns out to be needed", and the measurement is why** (31 Aug 2026).
+On the convention fixture Sonnet found every seeded defect, quoted the rules accurately and declined
+the planted trap — and missed half of one hunk, including the most expensive finding in it. Its
+report was clean, confident and closed with *"Not rules — None"*. **Nothing in the output
+distinguished "found everything" from "found half"**, so there is no signal to escalate on; a
+cascade would read a confident report, stop, and lose the expensive findings while feeling thorough.
+Route in advance or not at all.
+
+`opus` when the diff touches a **migration**, a **grant, policy or trigger**, the **contract
+surface** (`apps/api/src/contracts/**` or `packages/contracts/**`), **`identity`** or the admin
+realm, or **three or more workspaces**. `sonnet` otherwise. Those stand in for what Sonnet
+measurably misses — findings that connect a rule in one file to a convention in another — since
+breadth and the tenancy surface are where those live.
+
 **And they are proven to bite, like every other check here.** A review agent has **no failing
 state**: it returns prose whether it is working or not, so one that has quietly stopped checking is
 indistinguishable from one reporting a clean diff — the same shape as `domain-free-of-frameworks`
