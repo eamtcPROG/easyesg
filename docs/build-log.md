@@ -7176,6 +7176,10 @@ rather than a diagnosis, since nothing observed pointed at it. If a third appear
 capture is the open handle: run the phase with `--detectOpenHandles`, which this investigation could
 not do after the fact.
 
+**Superseded the same day** — see *"The stall was mine, and the run I called failed had not
+finished"* below. It recurred, the cause of the reporting was found, and `--detectOpenHandles` has
+since been run.
+
 ---
 
 ## The gate set got a scoped tier, measured rather than guessed · 2026-08-31
@@ -7339,6 +7343,9 @@ that shares a laptop with a build. Raising it is a real trade — it would have 
 green, and it would equally mask a genuine slowdown — so it is a decision to take deliberately
 rather than a knob to turn while tuning something else.
 
+**Superseded the same day.** That middle run had not failed; it had **hung**, and this section was
+written from a partial log. See the entry below.
+
 ### What did not change, and why that is the point
 
 `pnpm gates` still means exactly what CI runs, in CI's order — the sentence this file has carried
@@ -7346,3 +7353,65 @@ since the foundation stays true, and `gates:clean` still wraps it. **The pre-pus
 untouched.** A scoped run cannot see the two classes that only a clean full run can — state a
 previous command left behind, and job isolation — which is why it prints a line saying so on
 success rather than letting a green scoped run read as a green everything.
+
+---
+
+## The stall was mine, and the run I called failed had not finished · 2026-08-31
+
+Not a task. Raised by the project owner asking, plainly, *"what task is running?"* — and the answer
+was a `pnpm gates:clean` from forty minutes earlier that nobody knew was still alive.
+
+### The reporting error, which is the part worth keeping
+
+That run's API e2e finished its tests and printed `Jest did not exit one second after the test run
+has completed.` Then it sat at 0% CPU, holding the whole `&&` chain open, never reaching
+`e2e:worker` or `e2e:web`.
+
+It was polled with `pgrep -f "gates:clean"` in a nine-minute loop. **That is not a completion
+check**: the pattern matches the top of the tree, and the loop simply expired, so a *partial* log was
+read as a final result and reported as a red run. It was reported that way twice, and the second
+time a fresh `gates:clean` was started while the first was still alive.
+
+**A background command's own exit notification is the only reliable signal it finished.** A `pgrep`
+loop answers a different question — whether a process matching a pattern exists — and answers it
+wrongly for a process tree whose parent has already been reaped.
+
+### What that corrects
+
+Two entries above are now wrong where they were written in good faith, and both carry a pointer:
+
+- Task 31.4's *"second non-reproducible stall"* says it did not recur. **It recurred**, the same day,
+  with the identical message — so *"jest completes its tests and never exits"* has been seen twice
+  and is not a one-off.
+- The gate-tuning entry describes that middle `gates:clean` as failing with 18 timeouts in
+  `entities.e2e-spec.ts`. **The timeouts were real; the run was not finished.** It hung after them.
+
+### `--detectOpenHandles`, finally run, and what it says
+
+The diagnostic that entry called for was run against the full API e2e suite: **30 suites, 699 tests,
+131 s, no open handles reported, clean exit.** So there is no *unconditional* leak, which reframes
+the problem rather than solving it.
+
+The reading that now fits every observation is that **the hang is downstream of the timeouts, not an
+independent defect**: a jest test that exceeds its timeout does not cancel its in-flight `supertest`
+request, so a suite that times out eighteen times can reach `afterAll` with requests still running
+and close an application that is still being asked questions. On a run where nothing times out —
+every standalone run, now nine of them — nothing is left holding and jest exits.
+
+That makes the timeouts the thing to explain, and they are still unexplained. What is known: the
+suite is 2.9 s for 25 tests when healthy and took 91.8 s when it failed, a ~50× degradation against
+a 5 000 ms ceiling; connection exhaustion is refuted by measurement (peak 6 of 100, never an
+`idle in transaction`); `migrations:check`, which runs immediately before `e2e`, was checked
+separately and leaves no jest of its own behind. The hung process held 18 established TCP
+connections to a VS Code helper process, and its environment carried no debugger injection — an
+observation, not a cause, recorded so the next person can start there rather than rediscover it.
+
+**Appended as task 85** rather than pursued here, because it is a day's work with a real risk of
+being an environment artefact, and this session's changes do not touch the application.
+
+### The habit that produced the orphan
+
+`pkill -f "gates:clean"` was used twice to stop a run. It matches the top of the tree and leaves
+`sh -c pnpm clean && pnpm gates`, `pnpm gates`, `pnpm e2e` and the jest beneath it running — which is
+how a killed run keeps going. Kill the tree, or better, do not start a second long run while unsure
+whether the first ended.
