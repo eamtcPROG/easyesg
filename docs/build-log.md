@@ -7013,3 +7013,62 @@ successfully, which no path in that handler explains. It did not recur across th
 suite paired with the new one, a full `pnpm e2e`, `pnpm gates` and `pnpm gates:clean`. Left as an
 open observation with the checks that were run, because a flaky gate is a finding and the next
 reader should not have to rediscover that it was looked at.
+
+---
+
+## The Status column had become a second build log · 2026-08-31
+
+Not a task. Raised by the project owner immediately after 31.3: *"you add build logs on status
+column in `task.md`, this is wrong, that information should be in `build-log.md`."* Correct, and
+both documents already said so — this file's own header calls `task.md` *"the forward-looking plan
+[which] carries only a status per task"*, and `task.md` line 17 declares Status a closed vocabulary
+of four words.
+
+### The instance, and then the shape
+
+The 31.3 cell was 1,306 characters of narrative. Asking the second question — *are there others?* —
+found **eighteen**, every completed row from **27.7 to 31.3**, totalling ~12,000 characters. Tasks
+1 … 27.6 all carry a bare `DONE`. So this was not the house style being applied unevenly; it was a
+five-day regression, and each new entry was longer than the last because the previous one made it
+look normal.
+
+### Verified before deleting, not after
+
+The cells could have been the only record of something. They were not, and that was established
+rather than assumed: every completed row has a `build-log.md` entry, and each cell's distinctive
+tokens — backtick identifiers and spec references, extracted mechanically — were checked against
+this file. The handful that came back absent were tokenizer artefacts (a path prefix, an unbalanced
+backtick) or spelling variants, confirmed by reading the entry. Two claims that looked genuinely
+cell-only were the sharpest test and both were covered in depth: 30.2's *"+40% harness had been in
+the wrong Playwright project since 27.7"* is the entry whose **title** is "a harness that could not
+fail on what it claimed", and 28.2's two-gate split has its own section.
+
+So nothing moved. The cells were summaries of entries that already existed, which is the failure
+mode worth naming: **a duplicate is not extra safety, it is a second copy free to drift**, and the
+decisions themselves were never in either file — they are in `architecture.md` §12.5.6, where this
+file's own header says they belong.
+
+### What a Status cell may now say
+
+The state, its date, and at most a short clause where **`task.md`'s own metadata changed** — a
+workspace widened past what the Scope column claims, slices merged or reordered, a task appended.
+That is the plan describing what happened to the plan, which is its subject. The rule is written
+into `task.md`'s legend rather than left as a convention, because a convention is what this was.
+
+**One row deliberately untouched: 31.4, which is `TODO`.** Its cell explains why that task builds no
+table, and that changes what the task must *deliver* — forward-looking plan content, not a
+retrospective narrative, so it is out of scope for this sweep. It would sit better in the
+Description column, and moving it is a plan edit for unbuilt work rather than a cleanup; flagged
+rather than done.
+
+### A malformed row the sweep found on the way past
+
+`33.1` had **seven** cells against a six-column header: an extra `|` had split its Description in
+two, shifting every column right, so a renderer showed the *deliverables* under **Status** and
+dropped the real status outside the table. Repaired by merging the two halves.
+
+That is the same hazard 31.3 hit an hour earlier from the other direction — a markdown table row is
+split on `|` **before** inline code is parsed, so backticks do not protect a pipe, and mermaid's
+`||--o|` cardinality shredded a cell into ten. Both are now escaped. Nothing in the gate set reads
+markdown, so neither would ever have failed a build; the check is one line of Python asserting every
+row of every table has six cells, and it is worth running after editing these files.
