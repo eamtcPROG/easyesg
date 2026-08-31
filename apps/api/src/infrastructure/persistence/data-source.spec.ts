@@ -11,7 +11,7 @@ const config: AppConfig = {
   mode: 'http',
   port: 3000,
   billingEnabled: true,
-  database: { host: 'db', port: 5432, name: 'esg', user: 'esg_app', password: 'secret' },
+  database: { host: 'db', port: 5432, name: 'esg', user: 'esg_app', password: 'not-a-real-password' },
   redis: { host: 'redis', port: 6379 },
   // Task 19's settings. None of them reaches a DataSource, which is the point of listing them:
   // AppConfig is one shape and this fixture is the whole of it, so a key added for one subsystem

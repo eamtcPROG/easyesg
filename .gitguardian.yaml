@@ -1,0 +1,88 @@
+# GitGuardian — ggshield configuration (schema v2).
+#
+# WHAT THIS FILE GOVERNS, AND WHAT IT DOES NOT. It is read by **ggshield**: the CLI, the pre-commit
+# hook and the GitHub Action. It is NOT read by the GitGuardian *dashboard* — the GitHub App that
+# watches a push and raises an incident. Dashboard exclusions live in workspace settings under
+# Secrets detection → filepath exclusions, and they apply to every repository in the workspace, so
+# they are not this repository's to declare. Nothing added to this file silences a dashboard alert;
+# if that is what you came here to do, this is the wrong file and the setting is not in the repo.
+#
+# Written 30 Aug 2026, after the dashboard raised a Generic Password incident on a push to `dev`.
+# The investigation swept every secret-shaped value ever ADDED in any commit on any branch — 46
+# distinct values — and found no real credential, then or now. All are test fixtures (`Parola123!`,
+# `Gresita999!`), self-describing placeholders (`devonly-*`, `not-a-real-*`, `spec-secret-0000…`),
+# message keys and problem-type slugs, or the published RFC 4226/6238 TOTP test vector
+# `GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ`, which base32-decodes to the ASCII digits "12345678901234567890".
+# No `.env` has ever been committed and `.gitignore` keeps it so. Nothing required rotating.
+#
+# One method note, because it nearly produced the opposite conclusion. The first sweep used
+# `git grep -E "PASSWORD\s*="` and reported the tree clean. `git grep` is POSIX ERE, where `\s` is
+# not whitespace but a literal `s` — so the pattern read `PASSWORDs*=` and skipped every line with a
+# space around the `=`, which is how TypeScript writes one. `const PASSWORD = 'Parola123!'` sat in a
+# file the sweep called clean. Prove the pattern bites on a line that has the thing you are hunting
+# before you believe a green result; a grep that cannot match looks exactly like a tree with nothing
+# to find.
+
+version: 2
+
+secret:
+  # DETECTORS ARE NEVER DISABLED. `ignored_detectors: ['Generic Password']` would have closed that
+  # incident in one line — and every future real one with it, silently, because a detector that is
+  # switched off is indistinguishable from a detector that found nothing. The two axes below are
+  # bounded and reviewable: a path a person can read, or a literal a person can compare. A detector
+  # switch is neither. Kept explicit rather than omitted, because declining it is the decision.
+  ignored_detectors: []
+
+  # ── Excluded BY PATH — test surfaces, and nothing else ────────────────────────────────────────
+  #
+  # These are the file kinds whose purpose is to carry credential-shaped literals, and neither
+  # reaches a runtime artefact: `apps/api/tsconfig.build.json` excludes `test` and `**/*spec.ts`
+  # from `dist`, and `e2e/` is a standalone Playwright workspace that no app build includes.
+  #
+  # `**/testing/**` is excluded from `dist` for the same reason and is deliberately NOT listed here:
+  # it holds in-memory fakes and, as of this writing, not one credential-shaped literal. Add it if
+  # and when that stops being true — not in advance.
+  ignored_paths:
+    - '**/*.spec.ts'
+    - '**/*.spec.tsx'
+    - 'apps/api/test/**'
+    - 'e2e/**'
+
+  # ── Excluded BY VALUE — everywhere else ───────────────────────────────────────────────────────
+  #
+  # The two tempting path entries are `**/.env.example` and `.github/workflows/gates.yml`. Both are
+  # REFUSED, and the refusal is the security-carrying part of this file. An `.env.example` is
+  # precisely where a real secret lands when someone copies their `.env` and forgets to scrub it; a
+  # workflow file is where one lands when someone pastes a credential instead of referencing
+  # `secrets.*`. Those are two of the likeliest ways this repository would ever actually leak, so
+  # both stay scanned in full and only the known placeholder strings are ignored by value.
+  #
+  # Writing them in the clear is correct: each is a synthetic local-stack value that exists in
+  # `.env.example` templates and in CI, and the `devonly-` prefix exists so that it is self-evident.
+  # If one of these ever becomes a real credential, the fix is to rotate it and delete its line
+  # here — never to promote the file into `ignored_paths`.
+  ignored_matches:
+    - name: 'devonly — POSTGRES_PASSWORD, the container superuser (infra/compose)'
+      match: devonly-postgres
+    - name: 'devonly — DB_PASSWORD / ESG_APP_PASSWORD, the RLS-bound runtime role'
+      match: devonly-app
+    - name: 'devonly — DB_WORKER_PASSWORD, the worker entrypoint role'
+      match: devonly-worker
+    - name: 'devonly — DB_ADMIN_RO_PASSWORD, the read-only analyst role holding BYPASSRLS'
+      match: devonly-admin-ro
+    - name: 'devonly — DB_MIGRATOR_PASSWORD, the §7.6 migration owner no runtime process may hold'
+      match: devonly-migrator
+    - name: 'devonly — AUTH_PASSWORD_PEPPER, the §9.1 Argon2id pepper'
+      match: devonly-pepper
+    - name: 'devonly — AUTH_JWT_SECRET, the AD-12 access-token signing key'
+      match: devonly-jwt-secret
+    - name: 'devonly — AUTH_ADMIN_SECRET, the admin realm HKDF root'
+      match: devonly-admin-secret
+    - name: 'devonly — SECRET_ENCRYPTION_KEY, the NFR-61 at-rest key'
+      match: devonly-secret-encryption-key
+    - name: 'devonly — AUTH_SOCIAL_GOOGLE_CLIENT_SECRET'
+      match: devonly-google-secret
+    - name: 'devonly — AUTH_SOCIAL_MICROSOFT_CLIENT_SECRET'
+      match: devonly-microsoft-secret
+    - name: 'placeholder — SESSION_SECRET in apps/web/.env.example, an instruction rather than a value'
+      match: replace-me-with-32-bytes-of-csprng-output
