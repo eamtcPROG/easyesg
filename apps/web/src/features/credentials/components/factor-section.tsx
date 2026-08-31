@@ -129,7 +129,7 @@ function FactorBody({ factor }: { readonly factor: TotpState }) {
         <p className="t-caption">{t('codesHelp')}</p>
         <ul className={styles.codes}>
           {stage.codes.map((code) => (
-            <li key={code} className="t-code">
+            <li key={code} className="t-code" translate="no">
               {code}
             </li>
           ))}
@@ -146,7 +146,7 @@ function FactorBody({ factor }: { readonly factor: TotpState }) {
       <form onSubmit={(event) => void confirm(event)} noValidate className={styles.form}>
         <FormSummary control={control} title={tForms('summaryTitle')} />
         <p className="t-label">{t('secretHeading')}</p>
-        <p className={`t-code ${styles.secret}`}>{stage.secret}</p>
+        <p className={`t-code ${styles.secret}`} translate="no">{stage.secret}</p>
         <p className="t-caption">{t('secretHelp')}</p>
 
         <FormCodeField

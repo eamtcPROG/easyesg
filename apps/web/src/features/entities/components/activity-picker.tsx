@@ -95,7 +95,7 @@ export function ActivityPicker({ chosen, onChange, labels }: ActivityPickerProps
         <ul className={styles.chips}>
           {chosen.map((match) => (
             <li key={match.code} className={styles.chip}>
-              <span className={styles.chipCode}>{match.code}</span>
+              <span className={styles.chipCode} translate="no">{match.code}</span>
               <span>{match.label}</span>
               <Button
                 type="button"

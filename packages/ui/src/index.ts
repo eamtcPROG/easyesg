@@ -38,6 +38,7 @@ export {
 // form controls
 export { FormErrorSummary, type FormErrorSummaryItem, type FormErrorSummaryProps } from './form/form-error-summary';
 export { CodeField, type CodeFieldProps } from './form/code-field';
+export { DateField, type DateFieldProps } from './form/date-field';
 export { Combobox, type ComboboxOption, type ComboboxProps } from './form/combobox';
 export {
   RecordSection,
@@ -110,3 +111,20 @@ export {
   type IndexPage,
   type IndexShellProps,
 } from './archetypes/index-shell';
+
+/**
+ * Domain components — §11.5's own table, the ones that carry the product. `version-pin-indicator`
+ * is the first; the folder held nothing but a `.gitkeep` until task 32.1.1.
+ */
+export {
+  ReportingPeriodPicker,
+  periodRangeIsOrdered,
+  type ReportingPeriodPickerProps,
+  type ReportingPeriodValue,
+} from './domain/reporting-period-picker';
+export {
+  VERSION_PIN_STANDING,
+  VersionPinIndicator,
+  type VersionPinIndicatorProps,
+  type VersionPinStanding,
+} from './domain/version-pin-indicator';

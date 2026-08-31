@@ -7679,3 +7679,82 @@ fires all three signals on task 31.3's real range — a migration, the contract 
 grant/policy/trigger lines. **Verified in both directions**, which is the only way anything here is
 verified, and the reason the false positive was cheap: it was caught by running it rather than by
 reading it.
+
+---
+
+## Task 32.1.1 — S-14's three inventory additions, and a docstring the type contradicted · 2026-08-31
+
+S-14 could not be built out of what `packages/ui` held. Three §11.5 rows had no implementation, and
+**the audit that found two of them missed the third** — which is the part worth keeping.
+
+- **`DateField`** (Form controls). A native `<input type="date">` in `TextField`'s clothes. The
+  deciding property is the value, not the picker: it reads back ISO `YYYY-MM-DD` whatever the
+  display locale, which is exactly what `LegalDate.date` stores, so the control needs no parsing and
+  no locale table and cannot disagree with the wire in one of three languages.
+- **`VersionPinIndicator`** (Domain) — the first component in a folder that held a `.gitkeep`. Two
+  standings, because UX-48 says a superseded pin *"shall not proceed silently"*; only `IN_FORCE` is
+  reachable until task 33.3 registers a second version, and that is stated rather than discovered.
+- **`ReportingPeriodPicker`** (Domain), which §11.5 reserves *because of this screen*.
+
+### The addition the audit missed
+
+§11.5's fourth recorded addition reads: *"The reporting-period picker is its own component, separate
+from the date picker: reporting periods are the one place where a wrong date is expensive and
+invisible."* The first pass read §11.5 for the **rows** S-14 needed and never read the five recorded
+additions above the tables — so it decided "use `DateField` three times" against an inventory
+decision written about exactly that.
+
+`convention-review` found it, quoted it, and correctly said no new component was necessarily owed —
+*the recorded decision* was. It now owns the range rule and exports it as `periodRangeIsOrdered`, so
+a form validates on submit with the same predicate the control shows inline; two copies is how a
+screen comes to refuse what the control accepted.
+
+### A rule the docstring asserted and the type permitted
+
+`VersionPinIndicator` shipped its first version with `standingLabel` documented as *"required when
+`standing` is superseded — a state a sighted reader can see and a screen reader cannot is not a
+state"*, and typed optional. `gate-integrity-review` proved a superseded pin with no label compiles,
+renders the warning border and names the state to nobody; `convention-review` reached the same place
+from UX-102, *"no information shall be carried by colour alone"*. Verified independently — it
+typechecked — then made unrepresentable with a discriminated union.
+
+**Its sibling `StatusChip` had the guarantee right already** (*"Tone is never the sole carrier
+(UX-102). The chip always renders its own text"*, enforced by requiring `children`), which makes
+this the rule applied where it was found and not where it holds, one component later.
+
+The same review found the superseded **border** had no check at all: deleting the conditional class
+left all four assertions green. The standing now rides `data-standing`, which the stylesheet keys
+off and a spec can read.
+
+### Two assertions that could not fail on what they documented
+
+`expect(input).toHaveValue('2026-01-01')` is identical for a `type="text"` field, so the comment
+claiming it pinned the ISO contract was pinning a `defaultValue` passthrough. jsdom *does* implement
+date sanitization — a non-ISO value reads back empty where a text input echoes it — so the case that
+separates them is one line, and it is now there. A second test's title was corrected rather than its
+body: it guards `onChange`, not the value contract.
+
+### `translate="no"` was applied where it was written
+
+The indicator marks its release identifier untranslatable, with a spec, because a browser's page
+translation rewriting `2026-05-01` destroys the one string a reader is meant to copy.
+`convention-review` searched the shape and found three uncovered sites, **all more expensive than
+the one that got the fix**: the TOTP recovery codes and the enrolment secret, and the NACE code
+chip. A mangled version identifier is confusing; a mangled recovery code does not sign anyone in.
+
+### Three UX-89 obligations declined, with owners
+
+The components artboard — `CodeField`, `ProviderButton` and `AccountMenu` were all added without
+touching it, so the practice is that it is a rendered reference (OQ-10). Expansion coverage — a
+Playwright harness over a *screen*, so 32.1.2's. And a **dark map**, which cannot be provided:
+`tokens.css` defines no dark colour scheme at all, and its two dark surfaces are the Focus header
+and the global band. The root file's UX-89 passage names "no dark map" as one of four costs of
+inlining a component, and that half of the sentence describes something the token cascade does not
+have — left for the project owner rather than closed here.
+
+### Verified
+
+79 UI tests, up from 61. Every guarantee that could be broken was: removing `translate="no"`,
+flipping the JSX spread so a caller could override `type`, inverting the superseded predicate,
+deleting the class, breaking the range rule, un-disabling the fieldset, dropping `min` — each failed
+exactly the tests that claimed it, and `git diff` was empty afterwards.

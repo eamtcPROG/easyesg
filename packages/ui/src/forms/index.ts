@@ -15,6 +15,7 @@
  * form that created it.
  */
 export { FormCodeField, type FormCodeFieldProps } from './form-code-field';
+export { FormDateField, type FormDateFieldProps } from './form-date-field';
 export { FormTextField, type FormTextFieldProps } from './form-text-field';
 export { FormPasswordField, type FormPasswordFieldProps } from './form-password-field';
 export { FormSelect, type FormSelectProps } from './form-select';
