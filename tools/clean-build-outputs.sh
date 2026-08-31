@@ -23,4 +23,10 @@ rm -rf apps/*/dist apps/*/.next apps/*/coverage packages/*/dist coverage
 # `deleteOutDir` build has since removed — a build that "succeeds" into an empty directory.
 find . -name '*.tsbuildinfo' -not -path './node_modules/*' -not -path '*/node_modules/*' -delete
 
-echo "clean: build outputs removed; node_modules and .env kept."
+# ESLint's cache, added 31 Aug 2026 with `gates:scoped` — `lint` went from 43 s to 5 s warm, and the
+# cache is by definition "state a previous command left behind", which is the one thing this script
+# exists to remove. It lives under `node_modules/` so the blanket rule above spares it, and a stale
+# entry would make the single run that is supposed to catch a stale gate the run that cannot.
+rm -rf node_modules/.cache/eslint
+
+echo "clean: build outputs and caches removed; node_modules and .env kept."

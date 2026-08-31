@@ -7175,3 +7175,174 @@ suite this work changed. `identity.auth_attempt` was drained before the successf
 rather than a diagnosis, since nothing observed pointed at it. If a third appears, the thing to
 capture is the open handle: run the phase with `--detectOpenHandles`, which this investigation could
 not do after the fact.
+
+---
+
+## The gate set got a scoped tier, measured rather than guessed · 2026-08-31
+
+Not a task. Raised by the project owner: a full `pnpm gates` run costs most of an hour across a
+session, and the proposal was to run only the tests for the workspace that changed — api tests for
+an api change, web for web, admin for admin.
+
+**Half of that is right and half of it is unsafe here**, so the first move was to measure instead of
+agreeing. Timed warm, per phase:
+
+| gate | warm | share |
+| --- | --- | --- |
+| `e2e:web` | 200 s | 34% |
+| `boundaries:prove` | 90 s | 15% |
+| `e2e` | 84 s | 14% |
+| `test` | 60 s | 10% |
+| `lint` | 45 s | 8% |
+| `build` · `openapi:check` · `migrations:check` · `typecheck` · `e2e:worker` · `routes:check` · `boundaries` | 111 s | 19% |
+| **total** | **~590 s** | |
+
+### Why "api change → api tests" would have skipped the wrong thing
+
+**Task 31.3 is the counter-example, and it is this repository's own commit.** It was an api task. It
+also regenerated `packages/contracts` — the client `apps/web` and `apps/admin` both consume — and
+edited `packages/i18n`'s catalogues. An api-scoped run would have skipped precisely the gates that
+could have caught a break in the two front ends. That is the `packages/i18n/dist` incident's shape
+one layer up: the coupling is real, it is declared in `package.json`, and it is invisible to a rule
+written in terms of directories.
+
+The correct primitive is the dependency graph, and pnpm already has it: `--filter "...[<base>]"`
+selects changed packages **and their dependents**. Verified against that very commit — changed
+packages are `contracts`, `i18n`, `api`; with dependents it also selects `web` and `admin`. It
+hashes file *content*, so an uncommitted edit counts and a bare `touch` correctly does not, which
+was checked rather than assumed.
+
+### What `tools/gates-scoped.sh` runs
+
+Three gates always run whole-repo whatever the selection, because they are cheap and they are
+exactly what catches a cross-workspace break: `typecheck` (15 s — *"api moved the contract, web no
+longer compiles"*), `boundaries` (5 s) and `lint`. Then the affected workspaces' units; the api's
+contract, migration and e2e gates when `apps/api` is selected; and the browser suite **split by
+Playwright project** — `identity`+`expansion` for the tenant app, `admin` for the console — so a
+change confined to one front end pays for one of them.
+
+`boundaries:prove` is dropped from the loop and triggered by its own inputs. It costs 90 s to prove
+23 dependency-cruiser rules still *reject* a violation, and its inputs are `.dependency-cruiser.cjs`
+and `tools/prove-boundaries.sh` — files that change twice a year. **The trigger was verified in both
+directions**, which is the whole reason it can be trusted: touching the config runs it (84 s),
+leaving it alone does not. An untriggered trigger looks exactly like a passing one.
+
+### The reordering found a gate that could not run on its own
+
+Putting `boundaries` first — before anything had built — made it fail with 36
+`api-no-unresolvable` errors on `@easyesg/i18n`. The cause is the rule this repository has written
+down more than any other: **`pnpm boundaries` depends on state a previous command left behind.**
+dependency-cruiser resolves a workspace package through its `require`/`main` entry, which points at
+`dist/`, and the only thing that had ever built `packages/i18n/dist` first was `pnpm test`, through
+`apps/api`'s `pretest` hook.
+
+**It is present in CI too, and CI is green** — `.github/workflows/gates.yml` runs `pnpm test` two
+steps before `pnpm boundaries`, so the dist has always happened to be there. Nobody wrote that
+ordering down as a requirement; it was a habit that held, exactly like the configuration-store seed
+one suite was lending to two others (30 Aug 2026). `pnpm clean && pnpm boundaries` has been failing
+on any tree for as long as both have existed, and no gate could say so because no runner ever put
+`boundaries` first.
+
+The fix is the root file's own prescription — *if `pnpm x` needs what `pnpm y` produces, that
+belongs in a `prex` hook* — so `preboundaries` now builds the two packages it resolves through.
+Verified from a clean tree: `pnpm boundaries` passes standing alone. The consequence for the runner
+is that `boundaries` **builds** now, so it left the parallel group the same day it joined it and
+moved to the sequential one.
+
+TypeScript never saw this, and the reason is worth knowing: `packages/i18n`'s `exports` map points
+`types` and `source` at `./src/index.ts`, so `typecheck` resolves it from source and is genuinely
+clean-tree safe. Only the tools that resolve the *runtime* entry are exposed.
+
+### Two things deliberately left sequential
+
+**`pnpm test` is not in the parallel group.** `apps/api`'s `pretest` rebuilds `@easyesg/i18n` and
+`@easyesg/validation`, and running that beside a typecheck resolving those same `dist/` directories
+is a read-during-write race — this repository has already lost a day to shared `dist` state between
+gates (20 Aug 2026), and the parallel win is not worth reintroducing the hazard with the timing
+inverted. **`boundaries:prove` can never be parallelised at all**: it writes fixture files into the
+working tree, which is not theory — a `pnpm lint` issued beside it earlier the same day died on
+`ENOENT: __boundary_fixture.ts`.
+
+### ESLint had no cache — and adding one opened a hole in `gates:clean`
+
+`lint` was `eslint .` with no `--cache`. Measured: **43 s cold, 5 s warm.** `--cache-strategy
+content` rather than the default `metadata`, which keys on mtime and size and can miss an edit that
+changes neither.
+
+**Then the cache had to be taught to `pnpm clean`, and finding that out is the more useful half.**
+The cache lives under `node_modules/`, which `clean-build-outputs.sh` deliberately spares — so it
+survived a clean, and `gates:clean`, whose entire purpose is to defeat *"state a previous command
+left behind"*, could not have seen a stale-cache lint result. The script's own header names that
+rule; the change violated it within an hour of being written, in the one file that explains why not
+to. `rm -rf node_modules/.cache/eslint` is now in the clean script, verified by running it and
+checking the directory is gone.
+
+The general shape is worth keeping: **a speed-up that adds a cache adds state, and every cache this
+repository gains has to be listed in the one script that removes state.**
+
+### Measured, not estimated
+
+| run | before | after |
+| --- | --- | --- |
+| api-only task | ~590 s | **207 s** (238 s from a fully clean tree) |
+| change reaching shared packages (web + admin pulled in) | ~590 s | **397 s** |
+
+Even the worst case is a third faster, from the lint cache, the parallel hermetic group and dropping
+`boundaries:prove` and the standalone `build`. The best case is the common one.
+
+### Two bugs in the runner, both found by running it
+
+The first version stored phases as `label:command` strings and split on `:` — so every phase whose
+name contains one (`openapi:check`, `routes:check`, `e2e:web`, `e2e:worker`, `boundaries:prove`) ran
+as the garbage after the colon, and `e2e` and `e2e:web` collided on one log file. Two parallel arrays
+fixed it. The second was the parallel group collecting failures into a shell array from **subshells**,
+which cannot write to the parent — a group that silently loses a failure is worse than no group at
+all, so each phase now records its own exit code in a file.
+
+Both failed loudly, which is the only reason they were cheap. The first was caught because three
+phases reported `✗` in 0 s with `bash: check:pnpm: command not found`.
+
+### A third flake, and two hypotheses killed with measurements
+
+Validating this change cost three `gates:clean` runs, and the middle one failed: 18 timeouts in
+`entities.e2e-spec.ts`, the suite taking **91.8 s against a normal 2.9 s for its 25 tests**. Every
+failure was jest's 5 000 ms default, starting at the first test that hits `GET /entities/nace-codes`
+— the 996-code classifier read, the heaviest in the suite. The third run passed, 699/699.
+
+That is the **third** anomaly in one day, after 31.3's transient 400 and 31.4's 33-minute stall, and
+the pattern is now sharp enough to be worth more than the individual events:
+
+- **All three happened only inside a `gates` / `gates:clean` run.** `pnpm test:e2e` on its own has
+  passed every time it has been asked — six runs today, twice at 699/699.
+- **Two of the three are `entities.e2e-spec.ts`.**
+- **They begin on the day two new e2e spec files were added.** Jest's default sequencer orders by
+  file *size*, so `reports.e2e-spec.ts` and `report-snapshot.e2e-spec.ts` changed which suite runs
+  before which — the exact hazard recorded on 30 Aug when one suite was lending its configuration
+  seed to two others. Suspicious rather than established: no mechanism has been shown.
+
+Two hypotheses were refuted rather than argued away. **Connection exhaustion**: polled
+`pg_stat_activity` through a full run — peak **6 of 100**, never a single `idle in transaction`, so
+neither the pool nor a leaked request transaction. **Orphaned servers from the runs that were
+killed**: every `node dist/main.js` / `next-server` found was under a minute old and belonged to the
+Playwright phase then in flight.
+
+What was observed and not explained: host load average **6–11** during a `gates:clean`, while the
+Postgres container sat at 0–24% CPU — so the machine was saturated and the database was not. A 50×
+latency degradation against a 5 s ceiling would produce exactly the cascade seen, since a timed-out
+jest test does not cancel its in-flight request.
+
+**This is not this change's defect** — the first occurrence predates every line of it, and none of
+it touches the application. It is left as a named open item with the evidence attached, and the
+obvious next step is the one that could not be taken after the fact: run the e2e phase under
+`--detectOpenHandles`, and consider whether a 5 s default is the right ceiling for an HTTP suite
+that shares a laptop with a build. Raising it is a real trade — it would have turned this red run
+green, and it would equally mask a genuine slowdown — so it is a decision to take deliberately
+rather than a knob to turn while tuning something else.
+
+### What did not change, and why that is the point
+
+`pnpm gates` still means exactly what CI runs, in CI's order — the sentence this file has carried
+since the foundation stays true, and `gates:clean` still wraps it. **The pre-push rule is
+untouched.** A scoped run cannot see the two classes that only a clean full run can — state a
+previous command left behind, and job isolation — which is why it prints a line saying so on
+success rather than letting a green scoped run read as a green everything.

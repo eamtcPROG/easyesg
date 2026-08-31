@@ -38,7 +38,8 @@ each carry a Dockerfile, built with the repository root as context. Not started:
 `packages/{vsme,xlsx-patch}`, `config/efrag/`, `infra/{caddy,ansible,tofu}`, `docs/runbooks/`,
 and the `renderer` image (task 44).
 
-Working commands: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
+Working commands: `pnpm gates:scoped` (the inner loop — see "Closing a task"),
+`pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (23 rules, each with a fixture proving it rejects a real violation),
 `pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`, `pnpm e2e:worker`. **CI runs exactly these**
 (`.github/workflows/gates.yml`, two parallel jobs split on whether Docker is needed) — adding a gate
@@ -62,11 +63,25 @@ A task is not finished when its code works. It is finished when the gate set pas
 build-log entry is written — the two are the same obligation, since a decision recorded only in a
 chat transcript has not been made.
 
-**Run `pnpm gates` before saying a task is done.** Everything CI runs, in CI's order, failing fast.
-Running them one at a time as you go is fine and usually faster; this is the run that says the whole
-set still holds together — and it includes `pnpm e2e`, because CI does. Writing this rule surfaced
-that the first draft did not: the gate set is nine root scripts, the e2e suite is a tenth thing CI
-runs, and a runner that stopped at nine would have missed the very defect that prompted the rule.
+**Run `pnpm gates:scoped` while working, and before saying a task is done.** It runs everything
+`pnpm gates` proves *about the code you actually changed* — measured 31 Aug 2026 at **3.5 minutes
+for an api-only task against 10 minutes for the full set**, and 6.6 minutes when the change reaches
+shared packages, which is the point: it is fast because the change is narrow, not because it is
+lenient.
+
+**Its scoping is by the dependency graph, never by "which app did I edit".** That distinction is the
+whole safety argument, and task 31.3 is the worked example: an api task regenerated
+`packages/contracts` and edited `packages/i18n`, both of which `apps/web` and `apps/admin` consume,
+so an api-scoped run would have skipped exactly the gates that could have caught a break — the
+`packages/i18n/dist` incident's shape, one layer up. `pnpm --filter "...[<base>]"` selects changed
+packages **and their dependents**, verified against that commit, where it pulls in web and admin.
+Three gates always run whole-repo whatever the selection, because they are cheap and they are
+precisely what catches a cross-workspace break: `typecheck`, `boundaries` and `lint`.
+
+**`pnpm gates` is what CI runs, in CI's order, and `pnpm gates:clean` wraps it** — so running
+`gates` on its own before a push you are about to make is paying for the same set twice. The gate
+set is nine root scripts plus two e2e suites; writing this rule surfaced that its first draft
+stopped at nine and would have missed the very defect that prompted it.
 
 **Run `pnpm gates:clean` before pushing.** It removes every build output first, and that is not
 belt-and-braces — it is the only local run that can see a whole class of defect:
