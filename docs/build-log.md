@@ -7957,3 +7957,199 @@ loudly if a stub becomes populated** instead of silently preferring an authored 
 official one.
 
 No code in this change.
+
+---
+
+## Task 33.2 — Label resolution, and a constant the amendment had missed · 2026-09-01
+
+**Half the deliverable met, and the other half refused with its owners named** — corrected after
+review, having first been written as "Deliverable met." A VSME element resolves to a label in all
+three locales, from committed catalogues under
+`packages/i18n/catalogues/disclosure/2026-05-01/`, through `DISCLOSURE_LABELS` in `apps/api`'s
+`platform/localization`; every label carries its EFRAG standing, because no accessor anywhere answers
+text alone. **That is a design property, not the row's second clause.** *"Stated where a reader sees
+it"* needs a reader, and nothing reader-facing ships — no controller, no route, `packages/contracts`
+untouched. UX-47's export dialogue is task **47.3** and UX-98's exported document is task **46.3**;
+both are recorded as the owners in `architecture.md` §12.5.6, following task 32.2's precedent of
+refusing a part and naming who has it. The first draft of this entry argued the design property *as*
+the clause, which is the quiet redefinition the review caught.
+
+### The 286 labels
+
+`en.json` is transcribed by `tools/extract-vsme-labels.mjs` from EFRAG's published package: 143
+standard labels, followed `link:loc` → `link:labelArc` → `link:label` with only `role=label` taken.
+**The arcs are not optional** — EFRAG locates `VolumeOfMaterialUsed` under the label
+`VolumneOfMaterialUsed`, misspelled at source, so matching the locator's `xlink:label` to the element
+name silently mislabels whatever the typo touches. XML entities are decoded: the first run wrote
+`Basic &amp; Comprehensive Module`, an escaping artefact shown to a reader as the standard's own
+words, and a spec now pins that it stays decoded.
+
+`ro.json` and `ru.json` are **separately authored**, per NFR-23 and FR-63 — never machine-translated.
+Both are platform-authored with no EFRAG standing (T-14 as amended 31 Aug 2026). The three files
+carry the **same key order**, so a reviewer reads aligned columns and a regenerated `en.json` diffs
+as content rather than as a reordering. NFR-23's own verification — editorial sign-off recorded per
+translation publication, per locale — is **outstanding for both**, and this entry is not a
+substitute for it.
+
+### Standing is data per `(version, locale)`, which found a fifth amendment site
+
+Recorded in `architecture.md` §12.5.6. `packages/i18n/src/locales.ts` carried
+`LOCALES_WITH_OFFICIAL_EFRAG_LABELS = ['ro', 'en']` and `hasOfficialEfragLabels`. **Both were deleted
+rather than corrected**, and the wrong value is the lesser half of why.
+
+The 31 Aug amendment reached `problem_overview.md` OQ-5, NFR-23, NFR-24, T-14, UX-47 and UX-98 — six
+statements across four documents — and stopped there. Nothing imported the constant, so nothing
+failed, and no gate could have seen it.
+
+**And this entry first claimed that constant was the last site, which was wrong** — found by review,
+in the same document the claim was written into. `architecture.md` **§9.4** still carried the
+pre-amendment bullet as live normative prose, *"This is unavailable for Russian … NFR-24 therefore
+applies to RO and EN … an export intended for a bank or EU buyer should be produced in RO or EN"* —
+the exact reader-facing harm UX-47's amendment was made to remove, pointing a bank at a locale with
+no standing, and now flatly contradicted by the `standing.json` this task ships. **§6.6**'s
+service table said catalogue text *"never reaches this module"* while this task put label resolution
+in it. Two more sites stated the RO/EN claim as confirmed fact inside `design_spec.md`'s
+closed-question records. All four are amended here.
+
+So the lesson this entry was written to teach applied to the entry itself. *"`grep` for the shape,
+not only for the instance"* is right, and **the shape is the claim in prose, not the identifier**: I
+grepped for `OfficialEfrag`, `EFRAG_LABEL` and the constant's name, all of which are code spellings,
+and none of which appear in a sentence like *"applies to RO and EN"*. The search that would have
+worked is the one a reader would run — `RO and EN`, `RO or EN`, `RO/EN` — and it takes one command.
+
+The shape could not have been right either. Standing belongs to a version as well as a locale: EFRAG
+ships the `ro` stub as a file it evidently means to fill, and the release that fills it makes
+Romanian official **for that version and no earlier one**, while a report pinned to `2026-05-01` must
+still state its Romanian labels were platform-authored. That is DR-4, and one list cannot express it.
+So `standing.json` sits in each version directory, written **only** by the extractor and derived from
+the same read of EFRAG's linkbases that decides whether to refuse the run — the provenance a reader
+sees at UX-47's dialogue cannot disagree with what was extracted.
+
+### Where resolution lives, and the conflict that decided it
+
+Also in §12.5.6. The resolver was written in `packages/i18n`, beside the data, and **could not
+compile there.** That package emits twice — ESM for bundlers, CommonJS because `apps/api` is CJS and
+jest resolves it through the `require` condition — and the two make irreconcilable demands of a JSON
+import: `module: commonjs` rejects an import attribute (TS2823), while `nodenext`, which is how
+`apps/api` typechecks against that package's *source* through its `types` condition, requires one
+(TS1543).
+
+**Read as a boundary rather than as a toolchain defect.** The package owns the data and its
+integrity; resolution belongs to the one consumer that needs it, which is CommonJS, has
+`resolveJsonModule`, and reaches the files through the `./catalogues/*` export that already existed.
+`apps/web` never needs them directly — a label reaches the browser through the API like every other
+tenant-scoped read (AD-9). What crosses the boundary is `LABEL_STANDING` and `DisclosureLabel` in
+`disclosure-standing.ts`, which imports no JSON and carries a comment saying it must not grow one.
+
+**Declined, having implemented and reverted it:** widening `packages/i18n`'s `rootDir` to `.` and
+moving every entry point down a level. It made the emit work, and left `dist/esm` unloadable by bare
+`node` for want of the same attribute — a package-wide layout change that solved half the problem.
+
+### Four guards, each proven to reject a real violation
+
+`packages/i18n/src/disclosure-catalogues.parity.spec.ts` walks version directories with
+`import.meta.glob` (typed locally — `"types": []` rules out `node:fs`, as the directory's README
+recorded when it booked this obligation). `apps/api`'s `disclosure-label.artefact.spec.ts` holds the
+registered taxonomy and the catalogues against each other, which only it can do because the taxonomy
+is `config/seed/` data.
+
+Verified by seeding the defect, not by reading the assertions — and the review's own seeding found
+**two of the checks inert**, which is the whole reason that agent exists:
+
+- **`resolves the whole taxonomy without logging` could never fail.** `beforeEach` installs a fresh
+  spy before every test and the body called nothing, so it recorded zero calls under every possible
+  breakage. It was copied from `taxonomy-artefact.spec.ts`, which asserts *after* the loop that does
+  the resolving; the copy kept the assertion and dropped the calls. Now it resolves every element in
+  every locale first — deleting one label takes the suite from 1 failure to **2**, the second being
+  this test.
+- **The parity suite passed 10/10 on three empty catalogues.** Its version-directory guard proves a
+  directory exists, not that anything is in it, so every per-key assertion was vacuous over an empty
+  key set. `carries labels to compare` fixes it, and the shape was reachable from the *producer* —
+  `extract-vsme-labels.mjs` derives the catalogue from the artefact's element list, so an empty
+  artefact wrote `{}` and reported success. That now refuses at the source too.
+
+What the surviving seeds prove, re-measured after those fixes: three empty catalogues fail the parity
+suite; one deleted element fails two api tests; a ghost key fails the stale-label direction; copying
+`ro.json` over `ru.json` fails exactly one test, the distinct-locales guard, confirming key parity is
+blind to it. An earlier draft credited a fabricated `2027-01-01/` directory with "four tests at
+once" — accurate for that fabrication, which carried a blank label and an invented standing as well
+as a bad version, but misleading as evidence of any one guard's scope. Copying a directory forward
+and forgetting its manifest — the realistic mistake — fails exactly one test, and that is the right
+number.
+
+The extractor's own guard was proven in the previous session: a simulated populated `ro` linkbase
+exits 1 naming T-14, NFR-23, NFR-24, UX-47 and UX-98 as the statements to amend together.
+
+### What this task did not build
+
+- **FR-64's fallback review queue.** OQ-43 replaced it for committed text with build-time parity,
+  which is strictly stronger — a queue reports that a reader already saw the wrong language; parity
+  says nobody will. What remains of FR-64 is the configuration-store half and belongs to its owner.
+- **A `module()` accessor** composing the registry with the catalogue. That is the wizard's shape
+  (task 36) and building it now would be an abstraction with no consumer.
+- **A `standard` parameter.** One standard is registered and the catalogues have no directory level
+  for a second; adding the parameter would model a question nobody has asked.
+
+### The gate run found a defect in a commit that had already passed
+
+`gates:clean` failed at lint on `apps/web/src/features/periods/periods.spec.ts` — an
+`as ReportingPeriod` that task 32.2.1 had turned into a no-op by making five generated members
+precise, one commit after the spec was written. **Task 32.2.1 shipped red**, and every warm run since
+had agreed it was green: `pnpm lint` uses `--cache --cache-strategy content`, and the spec's own
+bytes never changed, while `no-unnecessary-type-assertion` reads the whole program. A cache key that
+does not cover a type-aware rule's inputs is state a previous command left behind, in a shape the
+existing rule did not name. Added to CLAUDE.md.
+
+### `nestjs-best-practices`, read against the diff
+
+- `di-use-interfaces-tokens` — followed. `DISCLOSURE_LABELS` is a `Symbol` beside the interface in
+  `contracts/`, bound `useClass` and exported by token, as `TAXONOMY_REGISTRY` is.
+- `di-interface-segregation`, `arch-single-responsibility` — followed. Three methods, one job.
+- `di-scope-awareness` — followed. Default singleton, no mutable request state; the only field is a
+  `Logger`.
+- `arch-module-sharing` — followed. Provided once in `LocalizationModule`, which `PlatformModule`
+  registers once.
+- `perf-use-caching` — **considered and declined**, and the decline is the reason the constants file
+  pairs each label with its standing at module load: with that done, every accessor is a property
+  lookup and a cache would be a map in front of a map. The service's docblock claimed this before it
+  was true — `labels()` was building 143 objects per call, on the accessor a forty-field form uses.
+- `test-use-testing-module` — **declined by id, with the reason.** The artefact spec instantiates
+  `new DisclosureLabelService()` and `new TaxonomyRegistryService(store)` directly, which is that
+  rule's "incorrect" example verbatim. Its stated harm is manual instantiation reaching a real
+  database; neither service has one — the resolver reads frozen JSON and the registry reads a fake
+  built from `config/seed/`. `Test.createTestingModule` would compile a module graph per suite and
+  prove nothing more. **What it would have caught is covered better elsewhere**: `pnpm openapi:check`
+  runs `NestFactory.create(AppModule)`, so a mis-bound token fails a gate on the whole graph rather
+  than on one module's wiring.
+
+### The three review agents, and what they found
+
+All three were run on the staged diff, on `opus` — the routing rule sends this diff there twice
+over, for touching `apps/api/src/contracts/**` and three workspaces. They found **eleven** things
+between them, and the value was not evenly spread:
+
+- **`spec-review` found the two expensive ones**, both described above: §9.4's live contradiction of
+  the data this task ships, and §6.6 saying label resolution never reaches the module this task put
+  it in. It also caught the deliverable clause being redefined rather than deferred, NFR-23's
+  sign-off recorded only in a file that owns nothing, and **UX-97 cited for a state it does not
+  describe** — it governs a string that *fell back* to the source locale, and this resolver falls
+  back to nothing and answers `null`, so the blank here is silent by omission rather than by rule.
+  Four files said otherwise; the ones this task introduced are corrected.
+- **`gate-integrity-review` found the two inert checks**, by seeding and restoring rather than by
+  reading — which is the only way either was visible, since both reported green.
+- **`convention-review` found three**, each a rule quoted verbatim: this section's absence, the
+  `LABEL_STANDING` narrowing duplicated at two call sites instead of exported beside the vocabulary
+  (`isLocale`/`toLocale` sit beside `LOCALES` two files away for exactly that reason), and the
+  seed-store double becoming shared by two specs without moving to `testing/` — which this task is
+  the moment that became true, and which paid down the `as unknown as ConfigurationStore` cast that
+  held the fake to nothing.
+
+**The pattern worth keeping**: every finding that cost real rework was a rule this repository had
+already written down, applied at the boundary of whatever file was open. That is the failure mode
+CLAUDE.md names, arriving on schedule, in a task whose own entry is largely about it.
+
+### Verified
+
+`pnpm gates:clean` — the full set from a cleaned tree, including both e2e suites, run twice: once
+before the reviews and once after their findings were applied. Measured rather than estimated:
+`packages/i18n` goes 61 → 72 tests and `apps/api` gains 14, all in one new suite.

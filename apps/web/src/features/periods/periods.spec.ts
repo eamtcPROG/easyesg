@@ -18,24 +18,23 @@ import {
  */
 const CHISINAU = 'Europe/Chisinau';
 
-const aPeriod = (over: Partial<ReportingPeriod> = {}): ReportingPeriod =>
-  ({
-    id: over.id ?? 'p1',
-    reportingEntityId: 'e1',
-    fiscalYear: 2026,
-    periodStart: { date: '2026-01-01', timezone: CHISINAU },
-    periodEnd: { date: '2026-12-31', timezone: CHISINAU },
-    dueDate: null,
-    templateVersion: '2026-05-01',
-    taxonomyVersion: '2026-05-01',
-    priorPeriodId: null,
-    entitySnapshotId: 's1',
-    lockedAt: null,
-    lockedBy: null,
-    createdAt: 0,
-    updatedAt: 0,
-    ...over,
-  }) as ReportingPeriod;
+const aPeriod = (over: Partial<ReportingPeriod> = {}): ReportingPeriod => ({
+  id: over.id ?? 'p1',
+  reportingEntityId: 'e1',
+  fiscalYear: 2026,
+  periodStart: { date: '2026-01-01', timezone: CHISINAU },
+  periodEnd: { date: '2026-12-31', timezone: CHISINAU },
+  dueDate: null,
+  templateVersion: '2026-05-01',
+  taxonomyVersion: '2026-05-01',
+  priorPeriodId: null,
+  entitySnapshotId: 's1',
+  lockedAt: null,
+  lockedBy: null,
+  createdAt: 0,
+  updatedAt: 0,
+  ...over,
+});
 
 describe('toPeriodRows', () => {
   /**

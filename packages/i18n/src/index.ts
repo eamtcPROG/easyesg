@@ -8,15 +8,14 @@
  * to prevent, so the two files are kept identical by review rather than by an abstraction.
  * NFR-26's "no hardcoded format pattern" is enforced in both, by a CI lint rule.
  */
-export {
-  LOCALES,
-  SOURCE_LOCALE,
-  LOCALES_WITH_OFFICIAL_EFRAG_LABELS,
-  hasOfficialEfragLabels,
-  isLocale,
-  toLocale,
-} from './locales.js';
+export { LOCALES, SOURCE_LOCALE, isLocale, toLocale } from './locales.js';
 export type { Locale } from './locales.js';
+export { LABEL_STANDING, isLabelStanding } from './disclosure-standing.js';
+export type {
+  LabelStanding,
+  DisclosureLabel,
+  LabelStandingManifest,
+} from './disclosure-standing.js';
 export type { MessageCatalogue, MessageLoader } from './messages.js';
 export { leafKeys, compareToSource, blankKeys } from './parity.js';
 export type { ParityResult } from './parity.js';

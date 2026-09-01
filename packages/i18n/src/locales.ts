@@ -14,18 +14,25 @@ export type Locale = (typeof LOCALES)[number];
 export const SOURCE_LOCALE = 'ro' satisfies Locale;
 
 /**
- * NFR-24 obliges the platform to use EFRAG's official translation of a VSME label verbatim
- * wherever one is published. EFRAG ships the Digital Template in EU languages, and Russian is
- * not one — so Russian VSME labels are platform-authored and carry no official standing.
+ * **`LOCALES_WITH_OFFICIAL_EFRAG_LABELS` and `hasOfficialEfragLabels` were here and are gone**
+ * (task 33.2, 1 Sep 2026). They answered NFR-24's "does EFRAG publish this locale's VSME labels"
+ * as a property of a locale, and both the answer and the shape were wrong.
  *
- * The export must SAY so rather than imply it (design_spec UX-47, UX-98), and a report headed
- * for a bank or an EU buyer should be produced in RO or EN.
+ * The answer: the constant read `['ro', 'en']`, and opening the published `2026-05-01` package
+ * showed Romanian's label linkbase is a **stub** — twelve of 23 language files carry labels and
+ * `ro` holds zero. The amendment that corrected T-14, NFR-23, NFR-24, UX-47 and UX-98 reached the
+ * doc set and stopped there, which is the "a rule is applied where it holds, not where it was
+ * found" failure in CLAUDE.md; nothing imported these two, so nothing failed.
+ *
+ * The shape, which is why they were deleted rather than edited: standing belongs to
+ * `(version, locale)`. EFRAG ships that stub as a file it evidently means to fill, and the release
+ * that fills it makes Romanian official for **that** version and no earlier one — while a report
+ * pinned to `2026-05-01` must still state its Romanian labels were platform-authored (DR-4). The
+ * replacement is `DisclosureLabelResolver.standing()` in `apps/api`'s `platform/localization`,
+ * reading a `standing.json` manifest the extractor derives from EFRAG's own linkbases. The
+ * vocabulary it answers in is `./disclosure-standing.js`, next to this file; the catalogues are read
+ * over there rather than here, and that module's docblock says why.
  */
-export const LOCALES_WITH_OFFICIAL_EFRAG_LABELS = ['ro', 'en'] as const satisfies readonly Locale[];
-
-export function hasOfficialEfragLabels(locale: Locale): boolean {
-  return (LOCALES_WITH_OFFICIAL_EFRAG_LABELS as readonly Locale[]).includes(locale);
-}
 
 /**
  * Is this unvalidated value one of the live locales?

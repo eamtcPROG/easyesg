@@ -1,7 +1,5 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { Logger } from '@nestjs/common';
-import type { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
+import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
 import { DISCLOSURE_KIND, PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
 import { TaxonomyRegistryService } from './services/taxonomy-registry.service';
 import {
@@ -26,28 +24,12 @@ import {
  * take the process down. That design is only safe if something reads the log, and this is it.
  */
 describe('the shipped VSME taxonomy artefacts', () => {
-  const SEED = resolve(process.cwd(), '../../config/seed');
   const VERSION = '2026-05-01';
 
-  /** Every seed file, as the loader parses it: `<kind>.<scope>.json`, dashes to underscores. */
-  const entries = readdirSync(SEED)
-    .filter((name) => name.endsWith('.json'))
-    .map((name) => {
-      const [, kind, scope] = /^([a-z0-9-]+)\.([a-z0-9-]+)\.json$/.exec(name) ?? [];
-      return {
-        kind: kind?.replaceAll('-', '_') ?? '',
-        scope: scope ?? '',
-        revision: 1,
-        payload: JSON.parse(readFileSync(resolve(SEED, name), 'utf8')) as Record<string, unknown>,
-      };
-    })
-    .filter((entry) => entry.kind !== '');
-
-  const store = {
-    get: (query: { kind: string; scope: string }) =>
-      entries.find((entry) => entry.kind === query.kind && entry.scope === query.scope),
-    list: (query: { kind: string }) => entries.filter((entry) => entry.kind === query.kind),
-  } as unknown as ConfigurationStore;
+  // The seed reader and the store fake moved to `testing/` at task 33.2, when a second spec needed
+  // them — `apps/api/CLAUDE.md`: "testing/ holds test doubles shared by more than one spec".
+  const entries = readSeedEntries();
+  const store = seedConfigurationStore(entries);
 
   let errors: jest.SpyInstance;
   beforeEach(() => {

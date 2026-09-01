@@ -162,6 +162,16 @@ Two things follow, and both are cheap:
   of a suite: *what does this need that it does not create?*
 - **Reproduce a CI failure locally before fixing it.** Deleting `packages/i18n/dist` reproduced that
   one in seconds and proved the fix, rather than pushing a guess and waiting two minutes to find out.
+- **A cache is state a previous command left behind, and eslint's key does not cover a type-aware
+  rule's inputs** (1 Sep 2026, found by `gates:clean` on task 33.2). `pnpm lint` runs with
+  `--cache --cache-strategy content`, so a file whose *own bytes* are unchanged is skipped — but
+  `@typescript-eslint`'s type-aware rules read the whole program, so their verdict depends on files
+  the key never hashes. Task 32.2.1 made five `ReportingPeriod` members precise in the generated
+  contract, which turned an `as ReportingPeriod` in a spec written one commit earlier into a no-op;
+  `no-unnecessary-type-assertion` had already passed that file and never looked again. The commit
+  shipped red and every warm run agreed it was green. `gates:clean` deletes the cache, which is why
+  it is the run that must pass before pushing — and why a warm `pnpm lint` after changing a *type*
+  rather than a *file* proves less than it appears to.
 
 **`gates:clean` removes build outputs. It cannot see the index — check that separately.**
 Added 27 Aug 2026, after a review found that the S-28 commit shipped **no S-28**: `.gitignore`
