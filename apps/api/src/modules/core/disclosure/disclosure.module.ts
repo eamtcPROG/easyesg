@@ -8,12 +8,23 @@ import {
   REPORTING_PERIOD_STORE,
   type ReportingPeriodStore,
 } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
+import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
+import { TAXONOMY_REGISTRY, type TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
+import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
+import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
 import { ReportsController } from './controllers/reports.controller';
-import { DISCLOSURE_VALUE_STORE } from './interfaces/disclosure-value-store.interface';
+import { WizardController } from './controllers/wizard.controller';
+import {
+  DISCLOSURE_VALUE_STORE,
+  type DisclosureValueStore,
+} from './interfaces/disclosure-value-store.interface';
 import { REPORT_STORE, type ReportStore } from './interfaces/report-store.interface';
 import { DisclosureFacade } from './services/disclosure-facade.service';
 import { ReportService } from './services/report.service';
+import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
+import { ReadWizardStep } from './use-cases/read-wizard-step.use-case';
+import { WriteDisclosureValues } from './use-cases/write-disclosure-values.use-case';
 
 /**
  * `core/disclosure` — FR-24 … FR-32, FR-177
@@ -54,6 +65,25 @@ const httpProviders: Provider[] = [
   DisclosureFacade,
   { provide: REPORTING_PERIOD_STORE, useClass: ReportingPeriodStoreRepository },
   { provide: CLOCK, useValue: () => new Date() },
+  // Task 89's wizard surface. Both use cases are framework-free, so each is a `useFactory` naming
+  // its ports — the price of the constraint, and the shape `CreateReport` already sets here.
+  WizardService,
+  {
+    provide: ReadWizardStep,
+    inject: [REPORT_STORE, DISCLOSURE_VALUE_STORE, TAXONOMY_REGISTRY, DISCLOSURE_LABELS],
+    useFactory: (
+      reports: ReportStore,
+      values: DisclosureValueStore,
+      taxonomy: TaxonomyRegistry,
+      labels: DisclosureLabelResolver,
+    ) => new ReadWizardStep(reports, values, taxonomy, labels),
+  },
+  {
+    provide: WriteDisclosureValues,
+    inject: [REPORT_STORE, DISCLOSURE_VALUE_STORE, TAXONOMY_REGISTRY],
+    useFactory: (reports: ReportStore, values: DisclosureValueStore, taxonomy: TaxonomyRegistry) =>
+      new WriteDisclosureValues(reports, values, taxonomy),
+  },
   {
     provide: CreateReport,
     inject: [REPORT_STORE, REPORTING_PERIOD_STORE, CLOCK],
@@ -63,7 +93,10 @@ const httpProviders: Provider[] = [
 ];
 
 @Module({
-  controllers: mode === APP_MODE.WORKER ? [] : [ReportsController],
+  // `TaxonomyModule` and `LocalizationModule` imported rather than their providers re-registered:
+  // both hold a parsed cache, and a second registration is a second cache (PeriodModule's rule).
+  imports: [TaxonomyModule, LocalizationModule],
+  controllers: mode === APP_MODE.WORKER ? [] : [ReportsController, WizardController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
   exports: mode === APP_MODE.WORKER ? [] : [DISCLOSURE_VALUE_STORE, DisclosureFacade],
 })

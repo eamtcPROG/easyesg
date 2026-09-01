@@ -208,7 +208,9 @@
     "report": {
       "not_found": "That report does not exist in this organization, so it could not be shown. Refresh the list to see the reports that do.",
       "already_exists": "This reporting period already has a report, and a period can hold only one. Open the report that already exists instead of creating another.",
-      "not_editable": "The reporting period is locked, so the report can no longer be changed by anyone, an administrator included. Reopen the period with a stated reason to carry on — the change stays visible as an amendment."
+      "not_editable": "The reporting period is locked, so the report can no longer be changed by anyone, an administrator included. Reopen the period with a stated reason to carry on — the change stays visible as an amendment.",
+      "taxonomy_version_unavailable": "The version of the standard this report was created under is no longer available on the platform, so its questions cannot be shown. Your saved answers are not affected. Contact support; this is resolved on our side.",
+      "unknown_disclosure_element": "The field submitted is not part of the version of the standard this report was created under, so it could not be saved. Refresh the page to load the current questions."
     }
   },
   "notification": {

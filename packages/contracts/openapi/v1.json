@@ -2516,6 +2516,178 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/modules": {
+      "get": {
+        "description": "S-07's persistent module list (UX-5). Resolved from the report's OWN pinned taxonomy version, never the newest registered (DR-4).",
+        "operationId": "WizardController_modules",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The modules the pinned version carries, in the standard's order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/DisclosureModuleSummaryDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "The report's modules, with how much of each is answered",
+        "tags": [
+          "report"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/modules/{module}": {
+      "get": {
+        "description": "Taxonomy shape, resolved label with its standing (NFR-24), and the stored value, joined server-side because only this tier holds all three.",
+        "operationId": "WizardController_step",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "module",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "B8",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The step.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/DisclosureStepDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "One wizard step: the module's fields, with their values",
+        "tags": [
+          "report"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/values": {
+      "put": {
+        "description": "FR-37 persists on blur or step change, so this takes one value or a queue flush. An upsert on the natural key, so FR-38's retry writes the same row rather than a second one. Refused while the report's period is locked (FR-22), by the database as well as by the use case.",
+        "operationId": "WizardController_write",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteDisclosureValuesRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What was durably committed — UX-36 acknowledges the commit, not local state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/DisclosureValueResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A field the pinned version does not name."
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "409": {
+            "description": "The reporting period is locked (FR-22)."
+          }
+        },
+        "summary": "Persist one or more field values (autosave)",
+        "tags": [
+          "report"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/prior-period": {
       "get": {
         "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
@@ -4644,6 +4816,329 @@
             "description": "FR-177: Comprehensive may be added to a report already in progress."
           }
         }
+      },
+      "DisclosureModuleSummaryDto": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "example": "B8",
+            "description": "The standard's own module."
+          },
+          "answered": {
+            "type": "number",
+            "description": "Fields with a stored answer, including nil return and not available."
+          },
+          "total": {
+            "type": "number",
+            "description": "Fields the pinned version puts in this module."
+          }
+        },
+        "required": [
+          "module",
+          "answered",
+          "total"
+        ]
+      },
+      "DisclosureFieldDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "NumberOfEmployees"
+          },
+          "dimensionKey": {
+            "type": "string",
+            "description": "An axis member, or empty where the element is undimensioned."
+          },
+          "ordinal": {
+            "type": "number",
+            "description": "Position within a repeating group; 0 where there is none."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "text_block",
+              "boolean",
+              "date",
+              "year",
+              "monetary",
+              "numeric",
+              "percent",
+              "enumeration",
+              "enumeration_set"
+            ],
+            "description": "Which of the typed columns this element answers into."
+          },
+          "periodType": {
+            "type": "string",
+            "enum": [
+              "duration",
+              "instant"
+            ],
+            "description": "Reported FOR the period (duration) or AS AT a moment in it (instant). The two compare differently against the prior period."
+          },
+          "axes": {
+            "description": "Axes this element is dimensioned along; empty for most.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "order": {
+            "type": "number",
+            "description": "EFRAG's own presentation order within the module."
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null where the pinned version carries no label for this element in this locale."
+          },
+          "labelStanding": {
+            "type": "string",
+            "nullable": true,
+            "description": "Whether the wording is EFRAG's own or platform-authored. Carried per field because it travels with the text — of three locales only English is official."
+          },
+          "valueNumeric": {
+            "type": "string",
+            "nullable": true,
+            "description": "Decimal as a string, never a float."
+          },
+          "valueText": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueBoolean": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "valueDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-12-31"
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "missing",
+              "inconsistency",
+              "error",
+              "invalid_url",
+              "not_available",
+              "not_material",
+              "nil_return"
+            ]
+          },
+          "notAvailableReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "carriedForward": {
+            "type": "boolean",
+            "description": "Carried forward from the prior period, and marked for review."
+          }
+        },
+        "required": [
+          "elementKey",
+          "dimensionKey",
+          "ordinal",
+          "kind",
+          "periodType",
+          "axes",
+          "order",
+          "label",
+          "labelStanding",
+          "valueNumeric",
+          "valueText",
+          "valueBoolean",
+          "valueDate",
+          "unitCode",
+          "state",
+          "notAvailableReason",
+          "carriedForward"
+        ]
+      },
+      "DisclosureStepDto": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "example": "B8"
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The report's own pinned version, which is what these fields were resolved from."
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisclosureFieldDto"
+            }
+          }
+        },
+        "required": [
+          "module",
+          "taxonomyVersion",
+          "fields"
+        ]
+      },
+      "DisclosureValueResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "elementKey": {
+            "type": "string"
+          },
+          "dimensionKey": {
+            "type": "string"
+          },
+          "ordinal": {
+            "type": "number"
+          },
+          "valueNumeric": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueText": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueBoolean": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "valueDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "missing",
+              "inconsistency",
+              "error",
+              "invalid_url",
+              "not_available",
+              "not_material",
+              "nil_return"
+            ]
+          },
+          "notAvailableReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "carriedForward": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC."
+          }
+        },
+        "required": [
+          "id",
+          "elementKey",
+          "dimensionKey",
+          "ordinal",
+          "valueNumeric",
+          "valueText",
+          "valueBoolean",
+          "valueDate",
+          "unitCode",
+          "state",
+          "notAvailableReason",
+          "carriedForward",
+          "updatedAt"
+        ]
+      },
+      "DisclosureValueWriteDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "NumberOfEmployees"
+          },
+          "dimensionKey": {
+            "type": "string",
+            "description": "An axis member; omit for an undimensioned element."
+          },
+          "ordinal": {
+            "type": "number",
+            "description": "Position within a repeating group."
+          },
+          "valueNumeric": {
+            "type": "string",
+            "description": "Decimal as a string, never a float (NFR-58)."
+          },
+          "valueText": {
+            "type": "string"
+          },
+          "valueBoolean": {
+            "type": "boolean"
+          },
+          "valueDate": {
+            "type": "string",
+            "example": "2026-12-31"
+          },
+          "unitCode": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "missing",
+              "inconsistency",
+              "error",
+              "invalid_url",
+              "not_available",
+              "not_material",
+              "nil_return"
+            ]
+          },
+          "notAvailableReason": {
+            "type": "string",
+            "description": "Required exactly when the state is not available (FR-32) — enforced by the store."
+          },
+          "carriedForward": {
+            "type": "boolean",
+            "description": "FR-47: this value was carried forward from the prior period."
+          }
+        },
+        "required": [
+          "elementKey",
+          "state"
+        ]
+      },
+      "WriteDisclosureValuesRequestDto": {
+        "type": "object",
+        "properties": {
+          "values": {
+            "description": "One field on blur, or everything a step change or an offline queue accumulated (FR-37, FR-38). The write is an upsert on the natural key, so a retried queue does not double-write.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisclosureValueWriteDto"
+            }
+          }
+        },
+        "required": [
+          "values"
+        ]
       },
       "PriorReportPinDto": {
         "type": "object",

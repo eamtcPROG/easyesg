@@ -875,6 +875,66 @@ export interface paths {
         patch: operations["ReportsController_update"];
         trace?: never;
     };
+    "/api/v1/reports/{id}/modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The report's modules, with how much of each is answered
+         * @description S-07's persistent module list (UX-5). Resolved from the report's OWN pinned taxonomy version, never the newest registered (DR-4).
+         */
+        get: operations["WizardController_modules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/modules/{module}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One wizard step: the module's fields, with their values
+         * @description Taxonomy shape, resolved label with its standing (NFR-24), and the stored value, joined server-side because only this tier holds all three.
+         */
+        get: operations["WizardController_step"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Persist one or more field values (autosave)
+         * @description FR-37 persists on blur or step change, so this takes one value or a queue flush. An upsert on the natural key, so FR-38's retry writes the same row rather than a second one. Refused while the report's period is locked (FR-22), by the database as well as by the use case.
+         */
+        put: operations["WizardController_write"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/prior-period": {
         parameters: {
             query?: never;
@@ -1776,6 +1836,108 @@ export interface components {
              * @enum {string}
              */
             scope?: "basic" | "basic_and_comprehensive";
+        };
+        DisclosureModuleSummaryDto: {
+            /**
+             * @description The standard's own module.
+             * @example B8
+             */
+            module: string;
+            /** @description Fields with a stored answer, including nil return and not available. */
+            answered: number;
+            /** @description Fields the pinned version puts in this module. */
+            total: number;
+        };
+        DisclosureFieldDto: {
+            /** @example NumberOfEmployees */
+            elementKey: string;
+            /** @description An axis member, or empty where the element is undimensioned. */
+            dimensionKey: string;
+            /** @description Position within a repeating group; 0 where there is none. */
+            ordinal: number;
+            /**
+             * @description Which of the typed columns this element answers into.
+             * @enum {string}
+             */
+            kind: "text" | "text_block" | "boolean" | "date" | "year" | "monetary" | "numeric" | "percent" | "enumeration" | "enumeration_set";
+            /**
+             * @description Reported FOR the period (duration) or AS AT a moment in it (instant). The two compare differently against the prior period.
+             * @enum {string}
+             */
+            periodType: "duration" | "instant";
+            /** @description Axes this element is dimensioned along; empty for most. */
+            axes: string[];
+            /** @description EFRAG's own presentation order within the module. */
+            order: number;
+            /** @description Null where the pinned version carries no label for this element in this locale. */
+            label: string | null;
+            /** @description Whether the wording is EFRAG's own or platform-authored. Carried per field because it travels with the text — of three locales only English is official. */
+            labelStanding: string | null;
+            /** @description Decimal as a string, never a float. */
+            valueNumeric: string | null;
+            valueText: string | null;
+            valueBoolean: boolean | null;
+            /** @example 2026-12-31 */
+            valueDate: string | null;
+            unitCode: string | null;
+            /** @enum {string} */
+            state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
+            notAvailableReason: string | null;
+            /** @description Carried forward from the prior period, and marked for review. */
+            carriedForward: boolean;
+        };
+        DisclosureStepDto: {
+            /** @example B8 */
+            module: string;
+            /**
+             * @description The report's own pinned version, which is what these fields were resolved from.
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+            fields: components["schemas"]["DisclosureFieldDto"][];
+        };
+        DisclosureValueResponseDto: {
+            /** Format: uuid */
+            id: string;
+            elementKey: string;
+            dimensionKey: string;
+            ordinal: number;
+            valueNumeric: string | null;
+            valueText: string | null;
+            valueBoolean: boolean | null;
+            valueDate: string | null;
+            unitCode: string | null;
+            /** @enum {string} */
+            state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
+            notAvailableReason: string | null;
+            carriedForward: boolean;
+            /** @description Unix epoch milliseconds, UTC. */
+            updatedAt: number;
+        };
+        DisclosureValueWriteDto: {
+            /** @example NumberOfEmployees */
+            elementKey: string;
+            /** @description An axis member; omit for an undimensioned element. */
+            dimensionKey?: string;
+            /** @description Position within a repeating group. */
+            ordinal?: number;
+            /** @description Decimal as a string, never a float (NFR-58). */
+            valueNumeric?: string;
+            valueText?: string;
+            valueBoolean?: boolean;
+            /** @example 2026-12-31 */
+            valueDate?: string;
+            unitCode?: string;
+            /** @enum {string} */
+            state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
+            /** @description Required exactly when the state is not available (FR-32) — enforced by the store. */
+            notAvailableReason?: string;
+            /** @description FR-47: this value was carried forward from the prior period. */
+            carriedForward?: boolean;
+        };
+        WriteDisclosureValuesRequestDto: {
+            /** @description One field on blur, or everything a step change or an offline queue accumulated (FR-37, FR-38). The write is an upsert on the natural key, so a retried queue does not double-write. */
+            values: components["schemas"]["DisclosureValueWriteDto"][];
         };
         PriorReportPinDto: {
             /** Format: uuid */
@@ -3791,6 +3953,118 @@ export interface operations {
                 content?: never;
             };
             /** @description The reporting period is locked. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WizardController_modules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The modules the pinned version carries, in the standard's order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["DisclosureModuleSummaryDto"][];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WizardController_step: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                module: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The step. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["DisclosureStepDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WizardController_write: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WriteDisclosureValuesRequestDto"];
+            };
+        };
+        responses: {
+            /** @description What was durably committed — UX-36 acknowledges the commit, not local state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["DisclosureValueResponseDto"][];
+                    };
+                };
+            };
+            /** @description A field the pinned version does not name. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked (FR-22). */
             409: {
                 headers: {
                     [name: string]: unknown;

@@ -241,6 +241,11 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // every member, on FR-25's argument: a view-only member sees the same entries, and what last
   // year said is one of them.
   'GET /reports/:id/prior-period': ALL_MEMBERS,
+  // The wizard's own surface (task 89; S-07, FR-24 … FR-32). Reads are every member's on FR-25's
+  // argument; the write follows edit rights rather than a role, exactly as `PATCH /reports/:id` does.
+  'GET /reports/:id/modules': ALL_MEMBERS,
+  'GET /reports/:id/modules/:module': ALL_MEMBERS,
+  'PUT /reports/:id/values': WRITING_MEMBERS,
 };
 
 type Constructor = new (...args: never[]) => object;

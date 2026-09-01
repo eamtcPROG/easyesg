@@ -3,6 +3,7 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
+import { NO_SUCH_REPORT } from '@api/modules/core/disclosure/errors/report.errors';
 import { PriorPeriodResponseDto } from '../dto/prior-period.dto';
 import { ComparativesService } from '../services/comparatives.service';
 
@@ -49,7 +50,7 @@ export class ComparativesController {
     status: 200,
     description: 'The prior period’s answers, each with its comparability verdict.',
   })
-  @ApiResponse({ status: 404, description: 'No such report in the active organization.' })
+  @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
   async priorPeriod(
     @Param('id', ParseUUIDPipe) reportId: string,
   ): Promise<PriorPeriodResponseDto> {

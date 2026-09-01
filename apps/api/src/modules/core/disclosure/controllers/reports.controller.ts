@@ -8,13 +8,8 @@ import {
   ReportResponseDto,
   UpdateReportRequestDto,
 } from '../dto/report.dto';
+import { NO_SUCH_REPORT } from '../errors/report.errors';
 import { ReportService } from '../services/report.service';
-
-/**
- * Two routes answer the same 404 for the same reason: RLS makes "not yours" and "not there" one
- * answer, so neither can tell a caller which it was.
- */
-const NO_SUCH_REPORT = 'No such report in the active organization.';
 
 /**
  * `/api/v1/reports` — S-06's index and the report record (UC-17, UC-18; FR-24 … FR-32, FR-66,

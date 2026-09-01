@@ -9512,3 +9512,88 @@ hung, which is how "still running" was distinguished from "stuck at the first fi
   `configuration-store.e2e-spec.ts`: the windows resolve at their own dates on both sides of the
   boundary, and the reshape guard refuses while restoring the schedule in a `finally` so a later
   suite still resolves a pin.
+
+---
+
+## Task 89 — the wizard had no server half, and nothing owned building one · 2026-09-01
+
+Appended and built the same day, because task 35 was picked up and had nothing to talk to.
+
+### The gap
+
+The tenant surface was 58 routes. **Not one served the taxonomy, or read or wrote a disclosure
+value** — while tasks 35.1 … 35.3 and 36.1 … 36.14 are every one scoped `web` or `pkg:ui`, so none
+could add one. Task 34.1 had said so in its own module header, accurately and to nobody:
+
+> *"Provided and exported with no use case above it yet: the wizard that writes through it is task
+> 36."*
+
+Task 36 cannot. This is the plan-gap class tasks 84, 67.3 and 67.4 closed in their own ranges: a
+deliverable sliced from §15.4 without its server half. Appended as its own row rather than widening a
+screen task, because each of the three surfaces carries a decision.
+
+### The reads: the server joins, the screen does not
+
+S-07 asks a step to show *"disclosure field labels, help text, values, units, state markers"* — three
+sources, and only this tier holds all three: `TAXONOMY_REGISTRY` and the label catalogues are api-side
+(AD-3; task 33.2's decision), and the values are behind RLS. A browser handed three of these and asked
+to join them would be a second implementation of the pinning rule DR-4 exists to keep in one place.
+
+**Two routes, not one**, because S-07's module list is persistent across every step (UX-5) while a
+step's fields change with each. One route serving both would refetch 143 fields to move the
+navigation.
+
+**`answered` counts the three answers that are not numbers.** FR-30's nil return, FR-31's not-material
+and FR-32's not-available are decisions, not gaps; counting them as outstanding would tell a reporter
+they still have work on a field they have already settled.
+
+### The write: a list, and idempotent for free
+
+FR-37 persists "on blur **or step change**", so a blur carries one field and a step change or FR-38's
+offline flush carries whatever accumulated. One endpoint taking a list serves both; a per-field
+endpoint would make the queue flush N round trips on the connection that had just failed.
+
+**Idempotency needed no token.** §7.3's key is natural and the store upserts on it, so FR-38's retry
+rewrites the row rather than leaving two answers to one question. AD-6's idempotency keys are for
+effects that leave the system; this effect is a row.
+
+**The lock is not checked in the use case.** FR-22 is enforced by the trigger beneath the store (P-4,
+task 31.3). A read-then-write check would be a second copy of the rule that loses the race the trigger
+cannot.
+
+**Every element is checked against the report's own pinned taxonomy before any write.** A value under
+a key that version does not name is invisible to every read in this module — a read walks the taxonomy
+and would never ask for it. That is task 34.2's *"a live row under a key nothing reads"*, one layer
+down, and the reason its typed facade exists.
+
+### Task 33.3 is what makes the central assertion testable
+
+The most important claim here is that a read resolves the report's **own** pin, never the newest
+adoption. Seeded — resolving `pinFor({})` instead — exactly one test fails:
+
+> `serves an EARLIER-pinned report from its own version (DR-4, task 33.3)` —
+> `Expected: "2026-02-01", Received: "2026-05-01"`
+
+with the other eight green, so the guard is specific rather than a tripwire. **Before task 33.3 that
+test could not have existed**: with one registered version both answers were `2026-05-01` and no
+assertion could tell the correct implementation from the defective one. R-7's argument — exercise the
+version dimension continuously rather than discover it at the first rollout — demonstrated end to end,
+one task later.
+
+### Two errors added, with their wording
+
+`TaxonomyVersionUnavailableError` (500) and `UnknownDisclosureElementError` (400), each with its
+message key authored in all three locales in the same change — `apps/api/CLAUDE.md`'s rule, since a
+`DomainError` whose key is missing renders no `detail` at all and loses NFR-79's second and third
+parts silently. The problem slug `taxonomy-version-unavailable` already existed: the vocabulary had
+anticipated this caller.
+
+### Verified
+
+- `pnpm --filter @easyesg/api test` — **566 passed**, the route-permissions gate accepting all three
+  new routes.
+- `wizard.e2e-spec.ts` — **9 passed** over real HTTP: module order, a step with labels and standing,
+  a value written and read back, a retry writing the same row, a deliberate non-answer counted as
+  answered, a refused unknown element, an earlier-pinned report served from its own version, a viewer
+  reading but not writing, and a write refused inside a locked period.
+- The seeded DR-4 proof above.
