@@ -64,6 +64,14 @@ fi
 LOGS="$(mktemp -d)"
 trap 'rm -rf "$LOGS"' EXIT
 
+# **Announce where the live output is going.** Each gate's stdout is captured to its own file and
+# only summarised as a one-line verdict when the gate finishes, which is right for a passing run and
+# useless for a hanging one: task 87 watched `e2e-api` sit for 21 minutes, and "no output yet" was
+# indistinguishable from "hung on the first test file" with no way to look. The files were being
+# written the whole time, in a directory nobody had been told about. One line fixes that; the trap
+# still removes them on exit, so a finished run leaves nothing behind.
+printf 'Live output: %s  (tail -f %s/<gate>.log)\n' "$LOGS" "$LOGS"
+
 # Each phase records its own exit code in a file. A subshell cannot append to the parent's array,
 # and a parallel group that silently loses a failure is worse than no parallel group at all.
 run() { # run <label> <command...>

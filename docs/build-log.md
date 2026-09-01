@@ -9003,3 +9003,109 @@ Not opened, and the reason rather than the omission: the diff is one npm script 
 `vitest.config.ts` comment blocks. It contains **no React, Next.js or component code**, so
 `vercel-react-best-practices` and `vercel-composition-patterns` have no surface in it. Recorded so the
 next reader can tell a considered decline from a forgotten checklist.
+
+---
+
+## Task 87 — the teardown closed the connections and left the listener · 2026-09-01
+
+**Task 85's fix was half a fix, and only a second hang could show it.** That entry ends *"the next
+live occurrence is the real test of this"*. One arrived the same day, during task 86's closing gate
+run, and it went straight through the fix.
+
+### Two hangs, opposite shapes
+
+| | task 85's instance | this one |
+| --- | --- | --- |
+| server | **already closed** by `app.close()` | **still listening** — `TCP *:53897 (LISTEN)` |
+| sockets | **one** — an orphaned supertest client | **six** established, plus the listener |
+| database | **none** | one live session, idle on the config-store poll |
+| duration | 19 min at 0 % CPU | 21 min at 0 % CPU |
+
+Task 85 diagnosed the left-hand column correctly and generalised from it. With the server already
+closed, destroying the abandoned connection *is* the whole remedy — so `closeAllConnections()` looked
+complete, and the case where `app.close()` never ran was never in view.
+
+### What actually holds the loop, measured
+
+Four processes that either exit or do not, each with an `unref`'d watchdog so the instrument cannot
+itself hold anything:
+
+| teardown | `server.listening` after | loop released |
+| --- | --- | --- |
+| `closeAllConnections()` alone, no connections | `true` | **no** — the listener holds it |
+| `closeAllConnections()` alone, one live connection | `true` | **no** |
+| `close()` alone, one live connection | `false` | **no** — the connection holds it |
+| **both, in this order** | `false` | **yes, the process exits** |
+
+**Neither call is sufficient and neither is redundant**, which is a sharper result than the task
+expected — it asked only whether `close()` should be added. The order follows from the third row:
+`close()` does not call back while an active connection exists, so destroying the connections first
+leaves it nothing to wait for.
+
+**`close()` takes no callback, and that is deliberate rather than incidental.** Node delivers
+`ERR_SERVER_NOT_RUNNING` *only* to a callback; a bare `close()` on an already-closed or never-listened
+server returns silently and emits no `error` event. Measured both ways, because the ordinary case in
+this teardown is a server the suite already closed — a callback would have manufactured the very
+failure the `catch` exists to absorb, on every well-behaved file.
+
+### The guard needed two tests, and one of them would have been vacuous
+
+The existing test closes its server by hand — it must, because that is the state task 85 diagnosed —
+and **`server.close()` sets `listening` to `false` synchronously even while it waits for an active
+connection**. So a listener assertion added to that test would pass whether or not the teardown closed
+anything: a guard that cannot fail, in a file whose whole subject is guards that cannot fail. The
+second test never closes its server, which is the only arrangement where the teardown is under test.
+
+Seeded, per the rule, and the two failures are worth separating:
+
+| teardown | `closes the listener` | the other test | process |
+| --- | --- | --- | --- |
+| as shipped here | ✓ | ✓ | exits, 0.83 s |
+| `server.close()` removed | **✕ `Expected: false, Received: true`** | ✓ | **hangs**, killed at 2:19, 0 % CPU |
+
+The right-hand column is the stronger result: **the live symptom now reproduces on demand**, which no
+earlier attempt in this row's history managed. The left-hand column is what makes it a gate rather
+than an anecdote. That the other test stays green in both rows is what proves the two assertions are
+independent rather than one assertion written twice.
+
+### The hang was also undiagnosable, and that is a separate defect
+
+`gates-scoped.sh` captures each gate's output to `$(mktemp -d)/<gate>.log` and prints only a one-line
+verdict when the gate finishes. Correct for a passing run, useless for a hanging one: for 21 minutes
+*"no output yet"* and *"hung on the first test file"* were indistinguishable — **and the log was being
+written the whole time, in a directory nobody had been told about.** The suite that was hanging is
+still unknown for that reason.
+
+One `printf` of the directory fixes it. The `EXIT` trap still removes the logs, so a finished run
+leaves nothing behind; a hung one is now one `tail -f` away from naming its own suite.
+
+### Not done, and why
+
+**Why `app.close()` had not run for that file is still unknown**, and this task cannot answer it
+without the output the previous paragraph just made available. That is the honest state: the *hang* is
+now impossible — both handles are released whatever a suite forgot — while the *reason a suite got
+stuck* is undiagnosed and will be legible the next time it happens. Worth saying plainly, because
+"the hang is fixed" and "the cause is understood" are different claims and this row has conflated
+them once already.
+
+**No `architecture.md` §12.5.6 row, deliberately.** Task 85's ceiling decision earned one because it
+changes what the gate set asserts; its *teardown* decision — tracking servers rather than
+`forceCloseConnections` — did not, and lives in the file's own docblock. This is the same class of
+thing one layer down, so it goes where its predecessor went. A §12.5.6 row for a test-harness detail
+would put two copies of one decision in two files free to drift, which is the failure that section's
+own rules describe.
+
+### Verified
+
+- `close-connections.e2e-spec.ts` — **2 passed**, 0.83 s, clean exit; both seeded states above.
+- `bash -n tools/gates-scoped.sh`, and the announced path checked against a real run.
+- `pnpm gates:scoped` — below.
+
+### The skill pass
+
+`nestjs-best-practices` opened and read against the diff. Two rules touch it and neither is violated:
+**`test-e2e-supertest`** asks for proper setup and teardown around supertest, which is what this
+strengthens; **`devops-graceful-shutdown`** governs the production app's signal handling, and
+`main.http.ts` is untouched — this is the test harness, where `forceCloseConnections: true` on
+`NestFactory.create` was already considered and declined under task 85 for having a forgetting mode.
+No rule declined.

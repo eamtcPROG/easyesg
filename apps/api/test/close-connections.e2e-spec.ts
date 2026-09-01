@@ -4,19 +4,26 @@ import type { AddressInfo } from 'node:net';
 import { closeTrackedConnections, trackedServerCount } from './support/close-connections';
 
 /**
- * Proves the teardown's two halves: that the `listen` patch takes effect, and that closing really
- * destroys a live socket.
+ * Proves the teardown's three claims: that the `listen` patch takes effect, that closing really
+ * destroys a live socket, and that it really stops the server listening.
  *
  * **It does not prove jest exits**, which cannot be asserted from inside jest. What the node-level
- * probes established is that an undestroyed socket is what keeps the loop alive; what this
- * establishes is that this file destroys it. The join between them is reasoning, and it is written
- * down rather than implied.
+ * probes established is which handles keep the loop alive; what this establishes is that this file
+ * releases both of them. The join between them is reasoning, and it is written down rather than
+ * implied.
+ *
+ * **The two assertions need two tests, and collapsing them would make one of them vacuous.** The
+ * first test closes the server by hand — it has to, because that is the state task 85 diagnosed —
+ * and `server.close()` sets `listening` to `false` synchronously even while it waits for an active
+ * connection. So a listener assertion inside that test would pass whether or not the teardown closes
+ * anything. The second test never closes the server, which is the only arrangement in which the
+ * teardown is the thing under test.
  *
  * **An `.e2e-spec.ts` although it needs no database**, because it tests the e2e *harness*: the unit
  * runner's `rootDir` is `src`, and this file is `test/`'s. Naming it `.spec.ts` put it in a gap where
  * neither runner matched it — which is the shape of a test nobody notices has stopped running.
  */
-describe('the e2e connection teardown (task 85, partial)', () => {
+describe('the e2e connection teardown (tasks 85 and 87)', () => {
   it('tracks a server that listens, and destroys the socket it holds', async () => {
     const before = trackedServerCount();
     const server = http.createServer(() => {
@@ -50,5 +57,27 @@ describe('the e2e connection teardown (task 85, partial)', () => {
     expect(closeTrackedConnections()).toBeGreaterThan(0);
     await new Promise<void>((resolve) => socket.on('close', () => resolve()));
     expect(socket.destroyed).toBe(true);
+  });
+
+  /**
+   * The listener half, added by task 87 after a 21-minute hang whose process still held
+   * `TCP *:53897 (LISTEN)`.
+   *
+   * **A listening server keeps node's event loop alive entirely on its own** — no connection
+   * required — so the teardown that task 85 shipped, which destroyed connections and nothing else,
+   * could not release a process whose suite never reached `app.close()`. Measured: with a listening
+   * server and no connections at all, `closeAllConnections()` leaves `listening === true` and the
+   * process does not exit.
+   *
+   * Nothing here closes the server but the teardown, which is what makes the assertion bite.
+   */
+  it('closes the listener, on a server nothing else closed', async () => {
+    const server = http.createServer(() => {});
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    expect(server.listening).toBe(true);
+
+    expect(closeTrackedConnections()).toBeGreaterThan(0);
+
+    expect(server.listening).toBe(false);
   });
 });

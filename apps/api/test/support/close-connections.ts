@@ -1,13 +1,14 @@
 import http from 'node:http';
 
 /**
- * Closes the sockets a timed-out test abandoned, so jest can exit (task 85, partial).
+ * Releases the handles an abandoned e2e request leaves behind, so jest can exit (tasks 85 and 87).
  *
  * ## What this fixes, and what it does not
  *
- * It fixes the **hang**, not the timeout. Task 85 records eight instances of an e2e run failing, and
- * two things were tangled in that row: a test exceeding jest's 5 000 ms limit, and jest then never
- * exiting. The second is a consequence of the first, and only the second is understood.
+ * It fixes the **hang**, never the thing that caused it. Task 85 collected eight instances in which an
+ * e2e run failed, and two things were tangled in that row: a test exceeding jest's 5 000 ms limit, and
+ * jest then never exiting. This file is the second only. The first is closed separately and was the
+ * host's memory rather than anything in the code — `architecture.md` §12.5.6 and `test/README.md`.
  *
  * Caught live on 1 Sep 2026, mid-hang: one test in `invitations.e2e-spec.ts` timed out, 750 of 751
  * passed, and the process then sat **19 minutes at 0.0 % CPU** holding **no database connection** and
@@ -16,9 +17,8 @@ import http from 'node:http';
  * `app.close()` closed the server and nothing closed the request the timed-out test had abandoned.
  * One referenced handle keeps node's event loop alive, and that is the whole of the non-exit.
  *
- * **The timeout itself remains unexplained**, and it is the half that matters. What changes here is
- * its cost: a one-test flake now fails in seconds instead of stalling a gate run for as long as
- * anyone leaves it.
+ * What this buys is cost, not correctness: a one-test flake now fails in seconds instead of stalling a
+ * gate run for as long as nobody is watching it.
  *
  * ## Why it closes the server's connections rather than an agent's
  *
@@ -42,15 +42,21 @@ import http from 'node:http';
  *
  * ## What is proven, and what is not
  *
- * The **mechanism** is proven deterministically, at the node level: an abandoned request with
- * `agent: false` keeps the loop alive after `server.close()`; `globalAgent.destroy()` does not help;
- * `closeAllConnections()` makes the process exit immediately. `close-connections.spec.ts` proves the
- * wiring — that the patch takes effect and that the exported teardown really destroys a live socket.
+ * The **mechanism** is proven deterministically at the node level, and the table on
+ * `closeTrackedConnections` below is that proof: an abandoned request with `agent: false` keeps the
+ * loop alive; `globalAgent.destroy()` does not help; and **neither `closeAllConnections()` nor
+ * `close()` alone releases it** — one leaves the listener, the other leaves the connection.
+ * `close-connections.e2e-spec.ts` proves the wiring, asserting both halves, and each assertion has
+ * been seeded to confirm it fails when its half is removed.
  *
- * **The in-situ hang was not reproduced.** Two attempts to force it inside a real suite — a 1 ms test
- * limit, and a socket the server still held at teardown — both exited cleanly, so the timing that
- * produces it is not one that can be summoned on demand. That is stated rather than glossed: the next
- * live occurrence is the real test of this fix, and task 85 stays open until one passes through it.
+ * **Task 85 shipped only the first half, and a live hang found the second** (task 87). That instance
+ * had `app.close()` already run, so its process held no listener and exactly one orphaned client —
+ * which made destroying connections look like the whole answer. The hang on 1 Sep 2026 at 18:01 had
+ * the opposite shape: server still listening, six connections, a live database session, 21 minutes at
+ * 0 % CPU. Both are now covered.
+ *
+ * **What is still not proven is either fix in situ**, because a hang arrives on timing nobody can
+ * summon. The next live occurrence remains the real test.
  */
 const listening = new Set<http.Server>();
 
@@ -83,22 +89,46 @@ const trackedListen = function trackedListen(this: http.Server, ...args: unknown
 http.Server.prototype.listen = trackedListen;
 
 /**
- * After every file, destroy whatever its sockets left behind.
+ * After every file, release whatever it left holding node's event loop — **both the connections and
+ * the listener**, because neither alone is enough.
  *
- * `closeAllConnections` is Node 18.2+ and destroys the sockets the *server* holds; both ends of a
- * loopback pair live in this process, so destroying the server end makes the abandoned client socket
- * error and close. Guarded because a suite may have closed its server already, which is the ordinary
- * case — this only has work to do when something went wrong.
+ * `closeAllConnections()` (Node 18.2+) destroys the sockets the *server* holds; both ends of a
+ * loopback pair live in this process, so destroying the server end makes an abandoned client socket
+ * error and close. `close()` stops the server listening. **A listening server is a ref'd handle and
+ * keeps the loop alive entirely on its own**, which is the gap this file shipped with under task 85
+ * and task 87 closed — after a 21-minute hang whose process still held `TCP *:53897 (LISTEN)`, six
+ * client connections and an idle database session.
+ *
+ * Measured rather than reasoned (1 Sep 2026), each row a process that either exits or does not:
+ *
+ * | teardown | `server.listening` after | loop released |
+ * | --- | --- | --- |
+ * | `closeAllConnections()` alone, no connections | `true` | **no** — the listener holds it |
+ * | `closeAllConnections()` alone, one live connection | `true` | **no** |
+ * | `close()` alone, one live connection | `false` | **no** — the connection holds it |
+ * | **both, in this order** | `false` | **yes, the process exits** |
+ *
+ * Task 85 measured only the third state it could see: its hang had the server *already closed* by
+ * `app.close()`, so destroying the orphaned client was the whole remedy there. It is not the whole
+ * remedy when `app.close()` never ran.
+ *
+ * **The order is not a preference.** `close()` does not call back while an active connection exists,
+ * so destroying the connections first leaves it nothing to wait for.
+ *
+ * **`close()` takes no callback, deliberately.** Node delivers `ERR_SERVER_NOT_RUNNING` *only* to a
+ * callback; a bare `close()` on an already-closed or never-listened server returns silently and
+ * emits no `error` event (measured both ways). Passing one would manufacture the very failure the
+ * `catch` exists to absorb — and the ordinary case here is a server a suite already closed.
  */
 export function closeTrackedConnections(): number {
   let closed = 0;
   for (const server of listening) {
     try {
       server.closeAllConnections();
+      server.close();
       closed += 1;
     } catch {
-      // A server already fully closed throws nothing useful, and a teardown that can fail is a
-      // teardown that masks the failure it was added to prevent.
+      // A teardown that can fail is a teardown that masks the failure it was added to prevent.
     }
   }
   listening.clear();

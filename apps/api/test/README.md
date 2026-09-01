@@ -120,6 +120,22 @@ suite ever needs more than 30 s, look for a multiplier to remove before raising 
 
 ## The related fix beside it
 
-`support/close-connections.ts` closes sockets a timed-out test abandoned, so a single flake fails in
-seconds instead of stalling the run — jest cannot exit while an abandoned request holds a handle.
-That is the same investigation and is documented in its own header.
+`support/close-connections.ts` releases what a stalled test file left holding node's event loop, so a
+single flake fails in seconds instead of stalling the run for as long as nobody is watching. **Two
+handles do that, and the file shipped closing only one of them.**
+
+| handle | released by | shipped in |
+| --- | --- | --- |
+| a request the test abandoned | `server.closeAllConnections()` | task 85 |
+| the server itself, still listening | `server.close()` | task 87 |
+
+Neither alone is enough, and that is measured rather than argued: with only the connections closed a
+listening server keeps the loop alive on its own, and with only the listener closed the live
+connection does. Task 85 could not see the second half because the hang it diagnosed had
+`app.close()` already run, leaving a process with no listener and exactly one orphaned client. The
+hang that found it, on 1 Sep 2026, had the opposite shape — server up, six connections, a live
+database session, 21 minutes at 0 % CPU.
+
+`close-connections.e2e-spec.ts` asserts both, in two tests rather than one, and each has been seeded:
+remove `server.close()` and *"closes the listener"* fails `Expected: false, Received: true` **and**
+jest stops exiting. The header docblock carries the full measurement.
