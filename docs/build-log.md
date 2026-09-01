@@ -8640,3 +8640,366 @@ The second row reproduces task 85's signature on demand, which no earlier attemp
 **What is still not proven is the fix in situ.** The live hang arises from a timeout nobody can
 summon, so the next real occurrence is the test of this. Task 85 stays `TODO`, and the reason is now
 one problem rather than two.
+
+---
+
+## Task 85 — the timeout explained: the machine is out of memory, not out of CPU · 2026-09-01
+
+**This closes the half the partial entry above left open.** That entry fixed the *hang* — an
+abandoned socket keeping node's loop alive — and ended *"the 5 000 ms timeout itself is still
+unexplained"*. It is explained now, and the explanation is not the one the day's first attempt
+reached for.
+
+### The measurement nobody had taken: what the suite's durations actually look like
+
+Every earlier instance recorded a *failure*. None recorded the distribution the failure came out of,
+so there was no baseline to say whether 5 000 ms was generous or marginal. Jest emits per-test
+`duration` under `--json`, which needs no change to the repository to collect.
+
+| | standalone | straight after a clean build (the `gates` shape) |
+| --- | --- | --- |
+| p50 | 14 ms | 24 ms |
+| p90 | 96 ms | 129 ms |
+| p99 | 294 ms | 680 ms |
+| **slowest test** | **639 ms** | **4 229 ms** |
+| suite wall time | 91.6 s | 133.9 s |
+| result | 752 passed | 752 passed |
+
+Two things fall out of it immediately, and both were invisible for eight instances.
+
+**Jest's default was never generous.** 5 000 ms is 7.8× the slowest test this suite owns. That reads
+like a wide margin until you see what the machine does to the tail.
+
+**The right-hand column is the row's own condition, reproduced.** `pnpm gates` runs `pnpm build`
+immediately before `pnpm e2e`; `gates:clean` rebuilds from cold first. Running the suite in that
+position moves the median 1.7× and the **tail 6.6×**, to 4 229 ms — a run that passed with 15 % of
+the ceiling to spare. Task 85's failures are this distribution with the tail slightly further out,
+which is why no suite and no test is stable across its instances.
+
+**A shortage of CPU cannot produce that shape.** It would slow everything by roughly one factor. What
+both this measurement and the row's own instances show instead is **episodic** degradation — here the
+tail moving 6.6× while the median moves 1.7×, and in the row's worst instance one file taking 91.8 s
+against a healthy 2.9 s while the rest of that run passed. Some stretches stall and most do not, which
+is what paging looks like and is not what a busy CPU looks like.
+
+### The resource that is actually short
+
+The host is an Intel **i5-8279U (4 cores) with 8 GB of RAM**, carrying Docker Desktop's Linux VM, an
+editor and a browser. Measured before anything was run: **4 399 MB of swap used of 5 120 MB**,
+2 909 964 pages in the memory compressor, 245 million lifetime swapins.
+
+Watched across the reproduction above:
+
+- `pnpm build` made macOS **grow the swap file, 5 120 MB → 6 144 MB**, and took load average from
+  **10.3 to 39.5 on four cores**. Its own log line for that phase reads *"Collecting page data using 7
+  workers"* — seven node processes on four cores and 8 GB.
+- the e2e run that followed did **2 959 415 swapins and 3 075 451 swapouts** of its own, at load
+  average 44.8; the closing `pnpm gates:scoped` reached 48.1.
+
+**The sharpest single reading came from the closing gate run itself.** Sampled while
+`pnpm gates:scoped` was in flight, at load average **160.3 on four cores**: `vm_stat` reported
+**`Pages free: 3596`** — about **14 MB of free RAM** — with 3 022 238 pages in the compressor and
+`com.apple.Virtualization.VirtualMachine`, Docker Desktop's Linux VM, resident at 434 MB beside the
+editor and the browser. A machine with 14 MB free is not scheduling work, it is finding pages for it.
+That the verification run reproduced the condition being documented is a coincidence worth naming
+rather than tidying away.
+
+This also retires an item the row listed as unexplained — *"host load 6–11 while Postgres sat at
+0–24 %"*. On macOS load average counts threads blocked in uninterruptible I/O, and a page fault is
+one. High load with an idle CPU and an idle database is the signature of paging, not of contention.
+
+### Two hypotheses refuted, and the wrong turn they came from
+
+The uncommitted work this task inherited attributed the ceiling to CPU contention, on the strength of
+one suite run under eight CPU burners that took 149.7 s and failed a test. Re-run as a controlled
+probe rather than as a whole suite, that attribution does not survive:
+
+| Probe | ambient | under 8 burners |
+| --- | --- | --- |
+| node event-loop delay (p99) | 2.9 ms | 2.5 ms |
+| Argon2id at m = 19 MiB (p50) | 19.6 ms | 19.4 ms |
+
+Neither moved. A `Math.sqrt` burner allocates nothing, and argon2 re-uses one resident 19 MiB buffer;
+**neither ever competed for memory**, which is the resource that is short. The earlier run's failure
+was the flake, not the load — the same coincidence this row has produced eight times.
+
+**The lesson is the one this repository already writes down about seeded gates**: a single run that
+agrees with a hypothesis is not a measurement of it. What separated the two accounts was probing the
+mechanism directly rather than observing the suite and attributing.
+
+### The ceiling, and why it is not the lazy answer
+
+`jest-e2e.json` now sets `testTimeout: 30000`. The row explicitly forbade reaching for this —
+*"not to be answered by turning it up … that would have made the red run green and would equally
+mask a real slowdown"* — so the number is calibrated against the table above rather than chosen:
+
+- 5 000 ms was **7.8×** the slowest test of a standalone run;
+- 30 000 ms is **7.1×** the slowest test of a post-build run.
+
+The ceiling now stands to the distribution that actually obtains in the relation jest's default stood
+to the idle one, and a genuinely hung request still fails in 30 s rather than never.
+
+**The masking objection is answered by pointing at the right instrument, not by refusing the change.**
+A ceiling only ever reports its own crossing; it never was the thing that would notice a slowdown.
+The per-test distribution is, it is recorded in `apps/api/test/README.md` with the command that
+regenerates it, and **p50 and p90 are the columns to read** — the two this machine's paging barely
+moves and a real regression would.
+
+### Deliberately not done
+
+**No gate.** The obvious one — assert the suite's p90 stays under some value — would fail on exactly
+the machine states this entry explains, which is a gate that cries wolf about the thing it was built
+to tolerate. `gate-integrity-review`'s question cuts the other way here: a check that cannot
+distinguish a regression from a page fault does not guard anything.
+
+**Nothing done about the build's memory demand.** Next.js's 7 workers on a 4-core / 8 GB host is the
+trigger, and constraining it would change build behaviour for CI too, where it is not a problem. That
+is a decision with a cost on both sides and it belongs to whoever owns the gate set's runtime, not to
+a task about a test ceiling. Recorded here rather than taken.
+
+**No claim that a failure was reproduced *in this suite*.** What was reproduced here is the
+mechanism: under the gates shape the tail moved to within 15 % of the old ceiling, in a run that still
+passed 752/752. A timeout in `apps/api`'s own e2e suite was never summoned on demand, and this entry
+does not pretend otherwise. **A failure in another suite was reproduced, unbidden, by the gate run
+closing this task** — see the next section; it is better evidence than a forced one would have been,
+because nothing was arranged to produce it.
+
+### Searched for the shape — and the search was incomplete, which the gate run then proved
+
+The first pass found what it went looking for. **One jest config carries a `testTimeout` and it is the
+one changed here**; `pnpm e2e:worker` reuses the same `jest-e2e.json` and inherits the new value.
+**Playwright** sets no test timeout, so it already runs at its own 30 000 ms default — the number this
+task independently calibrated jest to — with `retries: 0`, and it runs *last* in `pnpm gates`, the
+deepest point into the pressure described above. Nothing needed changing there.
+
+**Then the closing `pnpm gates:scoped` failed, and it failed on this.** Seven of eight gates were
+green; `units` was red:
+
+> `packages/ui` › `src/forms/forms.spec.tsx` › *binds value, label and submission from control + name
+> alone* — **Test timed out in 15000ms**, the test measuring 16 415 ms and its file 20 458 ms.
+
+Re-run on its own immediately afterwards, that suite is **79 passed in 13.96 s** — a 4.6× difference
+between the same tests inside a gate run and outside one, with jsdom environment setup alone going
+from 46.6 s to 162.3 s. That is this row's signature exactly: green standalone, red in the full run,
+no defect in the code.
+
+**What the first pass missed is the interesting part.** It checked the three Vitest configs for
+*existence* and not for *content*. All three — `packages/ui`, `apps/web`, `apps/admin` — already carry
+`testTimeout: 15_000`, raised from Vitest's 5 s default on **24 Aug 2026** in commit `c2f156e`, with
+this reason in the file:
+
+> *"the root `pnpm test` runs the workspaces in PARALLEL, and under that contention a userEvent typing
+> spec measured at 5–7 s against Vitest's 5 s default. Headroom for the harness, not slack for the
+> code."*
+
+**So this decision had already been taken three times, a week before task 85 was appended, and never
+reached `apps/api`.** It was recorded in a code comment and nowhere else — not in §12.5.6 — so nothing
+connected it to the row that opened on 31 Aug. That is precisely `CLAUDE.md`'s *"a rule is applied
+where it holds, not where it was found"*: the ceiling was raised where someone happened to be reading,
+and the workspace it was not raised in produced eight instances over the following week. **The §12.5.6
+row added by this task is the record those three changes never got**, and it names them.
+
+**Two consequences follow, and only the first is acted on here.**
+
+- **The row's title is narrower than the phenomenon.** *"The e2e suite times out under a full gate
+  run"* names one suite; the fault is the machine's and reaches every suite in the gate set. The
+  §12.5.6 row is written about the host rather than about `apps/api`, so the next occurrence in a
+  fourth workspace has somewhere to land.
+- **The three 15 000 ms ceilings are under-calibrated, and their stated cause is the one this entry
+  refutes.** They blame parallel-workspace contention; the failure above crossed them by 1.4 s on a
+  host with 14 MB of free RAM. **Not changed here** — task 85's scope column reads `api`, and picking
+  the right number needs the same per-test distribution collected for jest, which Vitest reports
+  differently and which no measurement in this task covers. Raised rather than guessed at, per
+  *"never widen a question by coding around it"*.
+
+### Verified
+
+- `pnpm e2e` standalone — **752 passed**, 74.8 s.
+- `pnpm clean && pnpm build && pnpm e2e` — **752 passed**, 133.9 s, slowest test 4 229 ms.
+- `pnpm gates:scoped`, **run twice on an unchanged tree, red both times and never the same way.**
+
+| | run 1 | run 2 |
+| --- | --- | --- |
+| `units` | **✗ `packages/ui` timed out at 16 415 ms** | ✓ 156 s |
+| `e2e-api` | ✓ 96 s | **✗ `route-matrix`, 1 of 752** |
+| everything else | ✓ | ✓ |
+
+  Neither failure is in code this diff touches, and **neither reproduces in isolation**: `packages/ui`
+  alone is 79 passed in 13.96 s, and `route-matrix.e2e-spec.ts` alone is **266 passed, twice**.
+
+  **Run 2's failure is not a timeout and is not this entry's subject.** `editor › PATCH /periods/:id`
+  expected `insufficient-role` and got `admitted`. That is the family the row separates out and calls
+  *"several isolation defects wearing one row's name"*. It was checked rather than assumed, because an
+  authorization matrix admitting the wrong role is not something to file under flake: the controller
+  carries `@RequiresRole(ORGANIZATION_ADMINISTRATOR)` on `@Patch(:id)` and
+  `src/testing/route-permissions.ts:221` declares the same, so the declaration and its enforcement
+  agree and the fault is in the run, not the rule. **The discriminating clue for whoever picks it up:
+  only one administrator-only route admitted the editor.** A wrong resolved role would have admitted
+  every one of them, so the explanation is route-specific rather than actor-specific — which is where
+  a wrong-role hypothesis should not be started. Handed off rather than pursued here; task 85 is about
+  the timeout.
+
+  **Both runs are recorded rather than re-run until green**, because re-running until green is how
+  eight instances of this row went by with nobody measuring it.
+
+### The skill pass
+
+`nestjs-best-practices` opened and read against the diff, which is test harness and configuration
+with no `src/` change. Two rules bear on it and neither is violated: **`test-e2e-supertest`** asks for
+proper setup and teardown around supertest, which `test/support/close-connections.ts` supplies one
+level above each suite rather than in each of them; **`devops-graceful-shutdown`** governs the
+production app's signal handling and `main.ts` is untouched. No rule declined.
+
+---
+
+## Task 86 — the units gate had task 85's fault, and a ceiling set for the wrong cause · 2026-09-01
+
+**This is the follow-up task 85 deferred**, and it did not end where it was expected to. The brief was
+to recalibrate three Vitest ceilings. The measurement said the ceiling was the wrong lever.
+
+### The decision had already been taken, three times, in the wrong place
+
+`packages/ui`, `apps/web` and `apps/admin` raised Vitest 5 000 → 15 000 ms on **24 Aug 2026**
+(`c2f156e`), with this reason in each file:
+
+> *"the root `pnpm test` runs the workspaces in PARALLEL, and under that contention a userEvent typing
+> spec measured at 5–7 s against Vitest's 5 s default."*
+
+It was recorded in three code comments and nowhere else — not in §12.5.6 — so when task 85 opened a
+week later against `apps/api`, nothing connected them. That workspace then produced eight instances.
+This is `CLAUDE.md`'s *"a rule is applied where it holds, not where it was found"* with a price tag.
+
+**And the comment was half right, which is the more useful correction.** Parallelism *is* the trigger.
+It is not CPU contention: it is a **memory multiplier** — three jsdom environments resident at once on
+an 8 GB host. Reading a memory effect as a CPU effect is why the number chosen was too small.
+
+### Four conditions, same 276 tests
+
+| | p90 | p99 | **slowest test** | `units` wall |
+| --- | --- | --- | --- | --- |
+| idle, one suite at a time | 298 ms | 810 ms | **1 198 ms** | — |
+| concurrent (`pnpm -r test`, the gate itself) | 972 ms | 3 207 ms | **3 914 ms** | — |
+| post-build + concurrent (the `gates:scoped` shape) | 1 136 ms | 4 513 ms | **4 998 ms** | **67 s** |
+| **post-build, one workspace at a time** | **285 ms** | **927 ms** | **1 425 ms** | **56 s** |
+| the 1 Sep failure, censored at its own ceiling | — | — | **≥15 000 ms** | — |
+
+**The censored row is the methodological point, and it is why the formula was not simply applied.**
+Task 85's method — hold the multiple the default held over the idle max — gives 4 998 × 4.17 ≈ 21 000.
+But a real failure had already reached ≥15 000 ms, **three times the worst value reproducible today**,
+because the machine was in a worse state then (14 MB free) than anything summonable now. Calibrating
+on a reproduction milder than the known failure is *exactly* how 15 000 was arrived at, and repeating
+it would have been the same mistake with a bigger number.
+
+### The finding that changed the answer
+
+**Serialising the workspaces is both tighter and faster.** The tail collapses from 4 998 ms to
+1 425 ms — back to within 19 % of idle — while the gate finishes **11 s sooner**, 56 s against 67 s.
+
+Concurrency here was buying nothing and costing a 3.5× tail. That is not a paradox: where the
+shortage is memory rather than CPU, paging is superlinear, so running fewer things at once finishes
+sooner. Three jsdom environments plus a jest run plus three more Vitest processes is seven Node
+processes on four cores and 8 GB.
+
+So the ceiling was treating a symptom whose cause is removable **at negative cost**, which is a
+different conclusion from the one the task assumed and the reason it was put to the project owner
+rather than decided here.
+
+### Decided: both (project owner, 1 Sep 2026)
+
+- `pnpm -r --workspace-concurrency=1 test` in the root script — the fix.
+- `testTimeout: 30_000` in the three jsdom configs — the margin, for machine states that survive the
+  cap. It matches `jest-e2e.json`, so the host now carries **one** ceiling rather than two: 6.0× the
+  worst post-build measurement, ~2× the one real failure.
+- All three comments rewritten to cite §12.5.6 instead of restating a mechanism.
+
+**The cost is named rather than waved past.** The cap applies in CI too, where the trade-off is
+probably the other way — a dedicated runner with several times this memory has CPU to spare and would
+have gained from parallelism. That is accepted deliberately: a gate that behaves differently locally
+and in CI would break *"`pnpm gates` is what CI runs, in CI's order"*, which is worth more than the
+seconds. Measured here it is not even a loss.
+
+### Searched for the shape, and it stops at jsdom
+
+`packages/{i18n,validation,vsme}` also run Vitest and declare **no config**, so they sit at the 5 000
+default — checked, and deliberately unchanged. They have no jsdom environment (`environment 0–1 ms`),
+and their *entire suites* are 219 ms and 165 ms of test time under the same concurrent load. The
+exposure is jsdom, not Vitest, and the three configs that carry an override are exactly the three that
+need one. `packages/contracts` has no specs.
+
+### Verified
+
+- The three suites measured in four conditions above, uncensored (`--testTimeout=180000`), so no
+  reported duration is a ceiling in disguise.
+- `pnpm test` with the cap applied — **exit 0, 52 s**, every workspace green: `apps/api` 548 (jest),
+  `apps/web` 190, `packages/ui` 79, `packages/i18n` 72, `packages/validation` 36, `apps/admin` 7, and
+  `packages/vsme` no test files. Faster than the `units` gate in either `gates:scoped` run that
+  preceded this task (67 s and 156 s).
+- **The whole gate set, green — but assembled from two runs, and the seam is worth reading.**
+  `gates:scoped` gave `typecheck` 21 s, `lint` 53 s, `boundaries` 7 s, **`units` 105 s**,
+  `openapi-check` 18 s, `routes-check` 4 s, `migrations` 17 s, and then **hung in `e2e-api` for
+  21 minutes** — the hang described below, which this diff cannot cause. After killing it: `pnpm e2e`
+  **752 passed** (73 s), `pnpm e2e:worker` **2 passed**, `pnpm e2e:web` **103 passed** (180 s).
+  `lint` and `typecheck` re-run afterwards at exit 0, because the first `lint` finished before the
+  comment blocks were rewrapped and a warm eslint cache does not re-read a file it has already passed
+  (`CLAUDE.md`'s own note about the cache key).
+- **One run in between was red, and it was self-inflicted rather than the flake** — 282 failed, from
+  the `kill -9` leaving a row behind. That is the second defect below, and it is recorded rather than
+  quietly re-run.
+
+### A hang caught during this task's own gate run, and it is not the one task 85 fixed
+
+`pnpm gates:scoped` passed `typecheck`, `lint`, `boundaries`, `units` (105 s), `openapi-check`,
+`routes-check` and `migrations`, then **sat in `e2e-api` for 21 minutes**. Inspected live, because
+task 85 established that is the only way these get solved:
+
+- jest at **0.0 % CPU**, its parent chain (`pnpm e2e` → `pnpm --filter @easyesg/api test:e2e`) intact;
+- **`TCP *:53897 (LISTEN)` — the Nest server still listening** — plus six established loopback client
+  connections to it, one Postgres connection and two Redis connections;
+- in `pg_stat_activity` the app's only session was **idle**, its last statement the configuration
+  store's `SELECT version::text FROM config.store_version` poll. No lock waits, nothing blocking.
+
+**That is a different signature from the one task 85 diagnosed and fixed.** Its eighth instance held
+*no* database connection and *exactly one* socket — an orphaned supertest client, server already
+closed. This one has the server up and the app still polling, which points at a **gap in that fix**:
+`closeTrackedConnections()` calls `server.closeAllConnections()`, which destroys connections and
+**does not stop the server listening**. A listening server is a ref'd handle and keeps the loop alive
+by itself, so the teardown closes the client it was written for and leaves the listener able to hang
+a run exactly as before. Confirmed by reading the function, not inferred.
+
+**It is not caused by this task's diff** — `pnpm e2e` reads neither the root `test` script's
+concurrency flag nor any `vitest.config.ts`. Killed, handed off with the captured evidence, and
+`pnpm e2e` re-run on its own to verify this task. Also worth fixing there: `gates-scoped.sh` buffers
+each gate's output until that gate finishes, so 21 minutes of hang and 21 minutes of healthy work
+look identical from outside.
+
+### Killing that run demonstrated a second defect, and it overturns a refutation task 85 recorded
+
+The `kill -9` left a row behind, and the next `pnpm e2e` answered **282 failed, 470 passed**:
+
+> `QueryFailedError: duplicate key value violates unique constraint "organization_pkey"`
+> — `FAIL test/route-matrix.e2e-spec.ts`, 266 of the 282 cascading from its `beforeAll`
+
+That suite inserts `core.organization` with a **hardcoded UUID**, no `ON CONFLICT`, and **no delete of
+the previous run's row before inserting** — cleanup lives only in `afterAll`. So any run that does not
+reach `afterAll` — a kill, a crash, a cancelled CI job — makes the *next* run fail. The run after that
+was clean, because the failed run's own `afterAll` removed the row, which is exactly why this is
+invisible: it fails once and then hides.
+
+**Task 85's row records the opposite as settled**, and the refutation is sound but narrower than it
+reads:
+
+> *"leftover `identity.account` rows from a killed run do NOT explain it … re-registering an address
+> answers **409** and the fixture expects 201, so that failure would land at registration"*
+
+Correct for `identity.account`. It was never applied to `core.organization`, where a leftover is fatal
+rather than merely awkward, and **cascades to ~266 tests** — the same shape as that row's sixth and
+seventh instances (*"cascading to 267 tests"*). Not claimed as their cause: the proximate errors
+differ, and this one was self-inflicted here. Claimed only as a hypothesis that was written off
+without being tested, and is now demonstrable on demand. Handed off with the reproduction.
+
+### The skill pass
+
+Not opened, and the reason rather than the omission: the diff is one npm script and three
+`vitest.config.ts` comment blocks. It contains **no React, Next.js or component code**, so
+`vercel-react-best-practices` and `vercel-composition-patterns` have no surface in it. Recorded so the
+next reader can tell a considered decline from a forgotten checklist.

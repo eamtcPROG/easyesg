@@ -39,8 +39,11 @@ describe('the e2e connection teardown (task 85, partial)', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(socket.destroyed).toBe(false);
 
+    // **Not awaited, and that is a fact about the defect rather than a shortcut.** `server.close()`
+    // does not call back while an active connection exists — it waits for one — so awaiting it here
+    // deadlocks until the test times out. That is the same reason the abandoned socket keeps node's
+    // loop alive, seen from the other side.
     server.close();
-    // `server.close()` alone leaves an ACTIVE connection alive — which is the entire defect.
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(socket.destroyed).toBe(false);
 

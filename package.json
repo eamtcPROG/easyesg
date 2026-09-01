@@ -21,7 +21,7 @@
     "dev:up": "docker compose -f infra/compose/docker-compose.yml up -d --wait",
     "dev:down": "docker compose -f infra/compose/docker-compose.yml down",
     "lint": "eslint . --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
-    "test": "pnpm -r test",
+    "test": "pnpm -r --workspace-concurrency=1 test",
     "preboundaries": "pnpm --filter @easyesg/i18n --filter @easyesg/validation --filter @easyesg/vsme build",
     "boundaries": "depcruise --config .dependency-cruiser.cjs apps/api/src apps/web/src apps/admin/src packages/ui/src packages/i18n/src",
     "boundaries:prove": "./tools/prove-boundaries.sh",

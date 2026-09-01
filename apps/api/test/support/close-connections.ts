@@ -67,8 +67,16 @@ const originalListen = http.Server.prototype.listen;
  * still exact: whatever arguments arrive are forwarded untouched, with the original `this`.
  */
 const trackedListen = function trackedListen(this: http.Server, ...args: unknown[]): http.Server {
+  // **Registered once per server, not once per `listen` call.** supertest calls `listen` for every
+  // request, so the first version of this added a `close` listener each time and node started
+  // reporting `MaxListenersExceededWarning: 11 close listeners added to [Server]` across the suite
+  // — a listener leak introduced by the very file meant to stop a leak. `Set.add` was already
+  // idempotent; the listener was not.
+  // Tracked until the teardown clears it, rather than until the server closes. The earlier version
+  // untracked on `close`, which is strictly worse for no benefit — `closeAllConnections()` on an
+  // already-closed server is harmless, and the set is cleared per file so it cannot grow. It also
+  // removes one ordering question from a file whose whole subject is ordering.
   listening.add(this);
-  this.once('close', () => listening.delete(this));
   return (originalListen as (...forwarded: unknown[]) => http.Server).apply(this, args);
 } as unknown as typeof http.Server.prototype.listen;
 

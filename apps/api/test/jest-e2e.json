@@ -20,5 +20,6 @@
   },
   "setupFilesAfterEnv": [
     "<rootDir>/support/close-connections.ts"
-  ]
+  ],
+  "testTimeout": 30000
 }
