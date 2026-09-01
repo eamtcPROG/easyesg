@@ -834,6 +834,27 @@
         "action": "Nu mai aveți nimic de făcut.",
         "failedAction": "Încercați din nou sau reîncărcați pagina."
       }
+    },
+    "wizard": {
+      "title": "Raport",
+      "exit": "Ieșiți din raport — lucrul este salvat",
+      "rail": {
+        "label": "Secțiunile raportului",
+        "answered": "{answered} din {total}"
+      },
+      "step": {
+        "title": "Secțiunea {module}",
+        "outstanding": "{count, plural, =0 {Nimic de completat} one {Un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}",
+        "unanswered": "Fără răspuns"
+      },
+      "forbidden": {
+        "title": "Nu aveți acces la acest raport",
+        "body": "Contul dumneavoastră nu are drepturi asupra acestui raport în organizația activă. Cereți unui administrator al organizației să vă acorde accesul."
+      },
+      "unreachable": {
+        "title": "Raportul nu a putut fi încărcat",
+        "body": "Nu am reușit să citim raportul chiar acum. Reîncărcați pagina; dacă se repetă, reveniți peste câteva minute."
+      }
     }
   }
 }

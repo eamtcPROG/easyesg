@@ -131,3 +131,16 @@ export const periodRoute = (input: {
  */
 export const withQuery = (path: RoutePath, query: string): string =>
   query ? `${path}?${query}` : path;
+
+/**
+ * S-07's steps (task 35.1). **The module is in the path, not in a query or in React state** — UX-4
+ * requires every addressable state to be addressable, and a wizard whose step lives in component
+ * state cannot be bookmarked, deep-linked from a validation finding (UX-22) or restored on the
+ * device someone resumes on (UX-39, FR-39).
+ */
+export const reportRoute = (reportId: string): string => `/reports/${reportId}`;
+
+export const reportStepRoute = (input: {
+  readonly reportId: string;
+  readonly module: string;
+}): string => `/reports/${input.reportId}/${input.module}`;

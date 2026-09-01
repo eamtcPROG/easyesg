@@ -46,6 +46,13 @@ export {
   type RecordSectionProps,
   type RecordShellProps,
 } from './archetypes/record-shell';
+export {
+  WizardModuleItem,
+  WizardShell,
+  type WizardModuleItemProps,
+  type WizardShellProps,
+} from './archetypes/wizard-shell';
+
 export { PasswordField, type PasswordFieldProps } from './form/password-field';
 export { Select, type SelectOption, type SelectProps } from './form/select';
 export { RequirementList, type RequirementItem, type RequirementListProps } from './form/requirement-list';

@@ -292,3 +292,62 @@ export async function cleanupOrganizations(organizationIds: readonly string[]): 
     await client.end();
   }
 }
+
+/**
+ * An entity, a period and its report, seeded straight to the database (task 35.1).
+ *
+ * **The wizard has no way in through the product yet**, which is why this exists: S-06 is task
+ * 32.2.2 and blocked, and report creation is task 32.3. A journey that could not reach S-07 could
+ * not check the one thing 35.1 delivers — that the steps are navigable and each has a URL that
+ * restores it.
+ *
+ * **The pins are written, not resolved.** A period opened through the API asks the taxonomy registry
+ * for them; here they are stated, so the fixture does not depend on which adoption window the
+ * calendar happens to be in. `2026-05-01` is what a FY2026 period pins under task 33.3's schedule.
+ *
+ * **`entity_snapshot_id` is left null.** FR-18's snapshot is taken at period open by the use case,
+ * and a browser journey about navigation has no business manufacturing one — the column is nullable
+ * precisely because it is the API's to fill.
+ */
+export async function seedReport(input: {
+  readonly organizationId: string;
+  readonly name: string;
+  readonly fiscalYear?: number;
+}): Promise<string> {
+  const { organizationId, name, fiscalYear = 2026 } = input;
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    const entityId = randomUUID();
+    const periodId = randomUUID();
+    const reportId = randomUUID();
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [organizationId]);
+    await client.query(
+      `INSERT INTO core.reporting_entity (id, organization_id, name, nace_codes)
+       VALUES ($1, $2, $3, '{}')`,
+      [entityId, organizationId, name],
+    );
+    await client.query(
+      `INSERT INTO core.reporting_period
+         (id, organization_id, reporting_entity_id, fiscal_year,
+          period_start, period_start_tz, period_end, period_end_tz,
+          template_version, taxonomy_version)
+       VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau', '2026-05-01', '2026-05-01')`,
+      [periodId, organizationId, entityId, fiscalYear, `${fiscalYear}-01-01`, `${fiscalYear}-12-31`],
+    );
+    await client.query(
+      `INSERT INTO core.report
+         (id, organization_id, reporting_period_id, scope, status, template_version, taxonomy_version)
+       VALUES ($1, $2, $3, 'basic', 'open', '2026-05-01', '2026-05-01')`,
+      [reportId, organizationId, periodId],
+    );
+    await client.query('COMMIT');
+    return reportId;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.end();
+  }
+}

@@ -156,6 +156,21 @@ export type ConsolidationMember = components['schemas']['ConsolidationMemberResp
 // another zone, and FR-125 makes a document filed against the wrong year uncorrectable by editing.
 // The pairing is an object rather than two sibling fields so the zone cannot be half-supplied.
 export type LegalDate = components['schemas']['LegalDateDto'];
+/**
+ * The wizard's surface (task 89; S-07). Aliased here for the same reason every other DTO is: the
+ * generated names carry `Dto` and the schema's own shape, and a screen should read the product's
+ * vocabulary rather than the emitter's.
+ */
+export type DisclosureModuleSummary = components['schemas']['DisclosureModuleSummaryDto'];
+export type DisclosureField = components['schemas']['DisclosureFieldDto'];
+export type DisclosureStep = components['schemas']['DisclosureStepDto'];
+export type DisclosureValueWrite = components['schemas']['DisclosureValueWriteDto'];
+export type WriteDisclosureValuesRequest =
+  components['schemas']['WriteDisclosureValuesRequestDto'];
+export type DisclosureValueResponse = components['schemas']['DisclosureValueResponseDto'];
+/** The prior-period comparative (task 34.3; UC-45, FR-46). */
+export type PriorPeriodComparatives = components['schemas']['PriorPeriodResponseDto'];
+
 export type ReportingPeriod = components['schemas']['ReportingPeriodResponseDto'];
 export type OpenReportingPeriodRequest =
   components['schemas']['OpenReportingPeriodRequestDto'];

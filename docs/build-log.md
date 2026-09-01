@@ -9597,3 +9597,75 @@ anticipated this caller.
   answered, a refused unknown element, an earlier-pinned report served from its own version, a viewer
   reading but not writing, and a write refused inside a locked period.
 - The seeded DR-4 proof above.
+
+---
+
+## Task 35.1 — S-07's shell, and the archetype a `web` task could not have built · 2026-09-02
+
+The Wizard archetype and S-07's shell over it: the module list, step navigation, and **the step in the
+URL**. Scope widened from `web` to `web+pkg:ui` before starting, with the project owner, on task
+32.1's precedent — §4.6 names Wizard one of the nine archetypes and UX-89 forbids a screen
+introducing its own component, so a `web`-only task could only have produced the defect that rule
+exists to prevent.
+
+### Two structural decisions, both forced rather than chosen
+
+**The shell is rendered by the step, not by the layout.** A Next.js layout at `[reportId]` cannot see
+the `[module]` segment, so a rail rendered there could not mark which step is current — and
+`aria-current="step"` is the whole of how a screen-reader user knows their position in an ordered
+progression (NFR-75). The layout stays a pass-through.
+
+**The exit control is a required prop, not a slot.** UX-5 wants it single, always visible and
+explicitly labelled; a shell that could omit it would be a shell that traps someone inside a form
+they are told is saving continuously.
+
+### The one claim, and the browser is the only thing that can check it
+
+35.1's deliverable is *"B1–B11 navigable; every step has a URL that restores it"*. UX-4 requires every
+addressable state to be addressable, and a wizard whose step lives in component state **fails that
+invisibly**: it navigates perfectly until someone bookmarks a step, follows a validation deep link
+(UX-22), or resumes on another device (FR-39). No unit test can tell the two implementations apart.
+
+`e2e/web/wizard.spec.ts` drives it: open the report and land on a step by URL (UX-10), move to B3 by
+clicking the rail, then `goto` B7 directly and find B7 rendered and marked current.
+
+**Proven by seeding, and the first attempt at that proof was worthless.** Editing the page to ignore
+the URL and re-running left the test *passing* — because Playwright serves
+`apps/web/.next/standalone`, a **built** bundle, so a source edit reaches nothing until a rebuild.
+Rebuilt with the defect in place, the journey fails. Worth recording as a property of this harness: a
+seeded web defect is not seeded until `pnpm --filter @easyesg/web build` has run, and a "passing"
+seed run is the shape of a proof that proved nothing.
+
+**A second harness note.** Filtered invocations — `pnpm exec playwright test -g …` — failed at
+registration with nothing reaching the api, repeatedly, while `pnpm e2e:web` passed **105/105**
+including both wizard journeys. The supported path is the gate script; a filtered run is not a
+cheaper version of it.
+
+### The fixture says what it is
+
+The report is seeded straight to the database by a new `seedReport` helper, because **there is no way
+into the wizard through the product yet**: S-06 is task 32.2.2 and blocked on task 36, and report
+creation is task 32.3. Stated in the helper and in the spec rather than left to read as a shortcut.
+Its pins are written rather than resolved, so the fixture does not depend on which adoption window
+the calendar is in, and `entity_snapshot_id` is left null because FR-18's snapshot is the API's to
+take.
+
+### What this task does not deliver, named rather than implied
+
+**The fields are listed, not editable.** Each renders its label and whatever has been answered; the
+inputs, units, and the not-available and not-material affordances are **task 36.1's** — replacing that
+list is that task's first act. Listing them is what keeps the step from being the dead screen task
+30.1 ruled against, and the page says so where a reader will find it.
+
+**Three of the eleven §8.1 states are present** — ready, error–permission, error–recoverable. The
+other eight arrive with the content that can be in them: read-only needs task 36's affordances to
+remove, offline and pending need 35.2's autosave.
+
+### Verified
+
+- `pnpm gates:scoped` — all ten green.
+- `pnpm e2e:web` — **105 passed**, including both new journeys.
+- The seeded URL proof above, after a rebuild.
+- Every design token the archetype's CSS references checked against `tokens.css`: the first draft
+  named six that do not exist (`--color-text-default`, `--radius-sm`, `--measure-reading` among them),
+  which typecheck and lint both pass and only a rendered page would have shown.

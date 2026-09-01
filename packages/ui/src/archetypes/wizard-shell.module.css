@@ -1,0 +1,112 @@
+.shell {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* The rail collapses above the step below `wide` (§3.3): the module list stays visible, because
+   UX-5 requires it, but it stops competing with the reading measure UX-74 sets for the step. */
+@media (max-width: 63.9375rem) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rail {
+  position: sticky;
+  top: var(--space-4);
+}
+
+.modules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.module {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.moduleLink,
+.moduleCurrent {
+  display: block;
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-1);
+  color: var(--text-default);
+}
+
+.moduleCurrent {
+  background: var(--surface-sunken);
+  font-weight: 600;
+}
+
+.indicator {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.main {
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-block-end: var(--space-5);
+}
+
+.heading {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.progress {
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+/* S-08 beside the step content, simultaneously visible at `wide` and stacked below it otherwise. */
+@media (min-width: 90rem) {
+  .body:has(.panel) {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  }
+}
+
+.step {
+  min-width: 0;
+  max-width: var(--measure-text);
+}
+
+.panel {
+  min-width: 0;
+}

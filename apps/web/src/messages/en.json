@@ -834,6 +834,27 @@
         "action": "There is nothing further to do.",
         "failedAction": "Try again, or reload the page."
       }
+    },
+    "wizard": {
+      "title": "Report",
+      "exit": "Leave the report — your work is saved",
+      "rail": {
+        "label": "Report sections",
+        "answered": "{answered} of {total}"
+      },
+      "step": {
+        "title": "Section {module}",
+        "outstanding": "{count, plural, =0 {Nothing left to answer} one {One field left} other {# fields left}}",
+        "unanswered": "Not answered"
+      },
+      "forbidden": {
+        "title": "You do not have access to this report",
+        "body": "Your account has no rights over this report in the active organization. Ask an organization administrator to grant you access."
+      },
+      "unreachable": {
+        "title": "The report could not be loaded",
+        "body": "We could not read the report just now. Reload the page; if it keeps happening, come back in a few minutes."
+      }
     }
   }
 }
