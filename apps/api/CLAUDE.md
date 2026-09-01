@@ -415,7 +415,11 @@ return values: `FakeAccountStore.run` restores its snapshot when the callback th
 lets a spec assert P-8's "all of it or none of it" instead of only that an error was raised.
 
 A module is a unit of ownership, not a URL prefix. Several own no routes at all
-(`core/comparatives`, `platform/configuration`, `billing/entitlement`); that is correct.
+(`platform/configuration`, `billing/entitlement`); that is correct. **`core/comparatives` left
+that list at task 34.3** — it still owns no table, which is the claim architecture.md's component
+table actually makes ("— (reads across periods)"), and it now serves
+`GET /reports/:id/prior-period` because comparability is computed from two pinned taxonomy
+versions through `TAXONOMY_REGISTRY`, which no browser can ask.
 
 ## The request pipeline
 

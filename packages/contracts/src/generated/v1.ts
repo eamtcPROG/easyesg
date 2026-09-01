@@ -875,6 +875,26 @@ export interface paths {
         patch: operations["ReportsController_update"];
         trace?: never;
     };
+    "/api/v1/reports/{id}/prior-period": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The prior period’s answers for this report
+         * @description Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.
+         */
+        get: operations["ComparativesController_priorPeriod"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -1756,6 +1776,60 @@ export interface components {
              * @enum {string}
              */
             scope?: "basic" | "basic_and_comprehensive";
+        };
+        PriorReportPinDto: {
+            /** Format: uuid */
+            reportId: string;
+            /** Format: uuid */
+            periodId: string;
+            /**
+             * @description The fiscal year the comparative was reported for.
+             * @example 2025
+             */
+            fiscalYear: number;
+            /**
+             * @description The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about.
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+        };
+        PriorPeriodValueDto: {
+            /** @example NumberOfEmployeesInHeadcount */
+            elementKey: string;
+            /** @description An axis member, or empty where the element is undimensioned. */
+            dimensionKey: string;
+            /** @description Position within a repeating group; 0 where there is none. */
+            ordinal: number;
+            /** @description Decimal as a string, never a float. */
+            valueNumeric: string | null;
+            valueText: string | null;
+            valueBoolean: boolean | null;
+            /** @example 2025-12-31 */
+            valueDate: string | null;
+            unitCode: string | null;
+            /** @enum {string} */
+            state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
+            /**
+             * @description Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render.
+             * @enum {string}
+             */
+            comparability: "comparable" | "element_absent" | "shape_changed";
+        };
+        PriorPeriodResponseDto: {
+            /** Format: uuid */
+            reportId: string;
+            /**
+             * @description The current report’s pinned taxonomy version.
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+            /**
+             * @description Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45).
+             * @enum {string}
+             */
+            availability: "available" | "no_prior_period" | "no_prior_report";
+            prior: components["schemas"]["PriorReportPinDto"] | null;
+            values: components["schemas"]["PriorPeriodValueDto"][];
         };
         AdminChallengeResponseDto: {
             /**
@@ -3718,6 +3792,37 @@ export interface operations {
             };
             /** @description The reporting period is locked. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ComparativesController_priorPeriod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The prior period’s answers, each with its comparability verdict. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["PriorPeriodResponseDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -9221,3 +9221,103 @@ leftover-row hypotheses had been disposed of as a class.
 `nestjs-best-practices` opened and read against the diff. **`test-e2e-supertest`** is the rule this
 task is entirely about — proper setup and teardown around supertest — and the change strengthens both
 halves. No other rule touches a test fixture and a response classifier; none declined.
+
+---
+
+## Task 34.3 — a comparative that says which two versions produced it · 2026-09-01
+
+Last year's value for this year's field (UC-45; FR-45, FR-46). It closes task 34.
+
+### Where it went, which was not where the task row implied
+
+The row reads *"it belongs with the store rather than with the wizard"*, which settles api-versus-web
+and says nothing about which module. §17.5:2533 does: **`core/comparatives`** owns FR-45 … FR-47, and
+the module has existed empty since 18 Aug. Putting the read in `core/disclosure` — where the report
+and the value table live, and where the work obviously starts — would have given FR-24 … FR-32's
+owner a second FR range.
+
+It owns **no table**, and still does not. architecture.md's component table records its storage as
+*"— (reads across periods)"*: a comparative is a query over two reports that already exist, never a
+third copy of a value.
+
+### The question that had to be asked before any of it
+
+The deliverable names the hard case in its own sentence — *"across two periods with different pins"* —
+and the sources do not settle what that means. DR-4 makes two taxonomy versions coexist; a report
+pins the one it was authored under; so the prior report may name an element the current version does
+not, or the same element with a different kind or period type. `PERIOD_TYPE`'s own header already
+says duration and instant facts *"are compared differently against the prior period (FR-46)"*.
+
+Four answers were put to the project owner. **Decided: the value, both pins, and a comparability
+fact** — `comparable`, `element_absent`, `shape_changed` — read from the registry rather than judged.
+Task 36.14 renders the verdict; this does not decide what to show.
+
+**What settled it is that the question cannot be deferred.** `TAXONOMY_REGISTRY` is an api port with
+no browser equivalent, so a read returning bare values would hand the question to the one tier unable
+to answer it. The thinnest honest option was thinner than the problem.
+
+**Nothing is dropped.** A value whose element the current taxonomy no longer names comes back marked
+rather than omitted: a version bump must not silently cost a reporter the comparative FR-45 makes
+mandatory from year two.
+
+**And absence is not one thing.** `PRIOR_PERIOD_AVAILABILITY` separates a first year from a linked
+period nobody reported on. The first is expected; the second is a gap a reporter may want to close,
+and an empty list says neither.
+
+### Two things the code refuses to let a later editor get wrong
+
+**Both version parameters are named.** `compare({ elementKey, currentVersion, priorVersion })` — two
+adjacent `string`s that, swapped positionally, compile and answer `comparable` or `element_absent`
+just as confidently. CLAUDE.md's rule exists for exactly this signature, and the unit spec asserts
+the *order* the registry is consulted in, because every other assertion in the file passes when the
+pair is reversed.
+
+**A first draft carried mutable instance state.** `private priorVersion = ''`, set nowhere, read
+during the map — a bug that typechecks, and one that would have made the use case unsafe under
+concurrent requests. Rewritten to pass both versions explicitly; recorded because the shape is
+attractive and the compiler is no help against it.
+
+### Recorded assumption: the standard is VSME
+
+`TaxonomyPin` carries a `standard`; `core.report` stores `taxonomy_version` and `template_version`
+and **no standard column**, so the pin's standard is discarded at persistence. The use case therefore
+asks under `TAXONOMY_STANDARD.VSME`. True while VSME is the only standard registered — and **what has
+to change if that stops being true is a migration, not this file**. Stated in §12.5.6 and in the use
+case's header so the next reader meets the assumption rather than the symptom.
+
+### Verified
+
+- **9 unit tests**, framework-free, no database: the availability split, the same-pin short-circuit
+  (asserting the registry is *not* consulted — a registry that answers nothing would otherwise make
+  every same-version value `element_absent`), the consultation order, an absent element, a changed
+  kind, a changed period type, an unchanged element across differing versions, and a withdrawn prior
+  version.
+- **6 e2e tests** over real HTTP, including the deliverable's own sentence: two periods, two reports,
+  the prior one repinned, the value retrieved with **both** pins on the answer. One asserts the whole
+  wire shape rather than a subset, so a dropped DTO field fails rather than passes.
+- **Proven by seeding.** Changing one join — `pr.reporting_period_id = pp.id` to `= p.id`, so the read
+  answers with *this* year's report — fails **5 of 6** e2e tests. The sixth is the 404 case, which
+  does not exercise the join and correctly stays green.
+
+**The cross-version e2e lands on `element_absent`, and that is the honest result rather than a weak
+one.** Only one taxonomy version is registered in this database, so a repinned report names a version
+the registry does not know — precisely the withdrawn-version branch. Registering a second is **task
+33.3**'s subject, and duplicating its arrangement here would give two tasks one setup. The version
+matrix is covered by the unit spec, where the registry can be made to answer for both.
+
+### Two written statements corrected rather than left to rot
+
+The module's scaffolded header said *"No HTTP surface of its own"*, and `apps/api/CLAUDE.md` listed
+`core/comparatives` among modules owning no routes. Both are now false and both are fixed in this
+change. Neither was normative — architecture.md's "—" is the *storage* column — and the route has to
+be in this tier for the reason above. Recorded in §12.5.6 rather than performed quietly.
+
+### The skill pass
+
+`nestjs-best-practices` opened and read against the diff. **`arch-use-repository-pattern`** and
+**`di-use-interfaces-tokens`** are what the shape follows: a `PRIOR_PERIOD_STORE` symbol beside its
+interface, the repository behind it, and the use case framework-free with `useFactory` + `inject`
+because a class with no `@Injectable` has no constructor metadata to read.
+**`error-throw-http-exceptions`** is **declined by name**, as this repository's standing example
+requires: it asks for `HttpException`, and a domain refusal here throws `ReportNotFoundError`, which
+the filter maps. **`arch-single-responsibility`** is the reason the read is not in `core/disclosure`.

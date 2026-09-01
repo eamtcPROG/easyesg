@@ -2516,6 +2516,53 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/prior-period": {
+      "get": {
+        "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
+        "operationId": "ComparativesController_priorPeriod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The prior period’s answers, each with its comparability verdict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/PriorPeriodResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "The prior period’s answers for this report",
+        "tags": [
+          "report"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -4597,6 +4644,153 @@
             "description": "FR-177: Comprehensive may be added to a report already in progress."
           }
         }
+      },
+      "PriorReportPinDto": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fiscalYear": {
+            "type": "number",
+            "example": 2025,
+            "description": "The fiscal year the comparative was reported for."
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about."
+          }
+        },
+        "required": [
+          "reportId",
+          "periodId",
+          "fiscalYear",
+          "taxonomyVersion"
+        ]
+      },
+      "PriorPeriodValueDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "NumberOfEmployeesInHeadcount"
+          },
+          "dimensionKey": {
+            "type": "string",
+            "description": "An axis member, or empty where the element is undimensioned."
+          },
+          "ordinal": {
+            "type": "number",
+            "description": "Position within a repeating group; 0 where there is none."
+          },
+          "valueNumeric": {
+            "type": "string",
+            "nullable": true,
+            "description": "Decimal as a string, never a float."
+          },
+          "valueText": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueBoolean": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "valueDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2025-12-31"
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "missing",
+              "inconsistency",
+              "error",
+              "invalid_url",
+              "not_available",
+              "not_material",
+              "nil_return"
+            ]
+          },
+          "comparability": {
+            "type": "string",
+            "enum": [
+              "comparable",
+              "element_absent",
+              "shape_changed"
+            ],
+            "description": "Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render."
+          }
+        },
+        "required": [
+          "elementKey",
+          "dimensionKey",
+          "ordinal",
+          "valueNumeric",
+          "valueText",
+          "valueBoolean",
+          "valueDate",
+          "unitCode",
+          "state",
+          "comparability"
+        ]
+      },
+      "PriorPeriodResponseDto": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The current report’s pinned taxonomy version."
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "available",
+              "no_prior_period",
+              "no_prior_report"
+            ],
+            "description": "Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45)."
+          },
+          "prior": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriorReportPinDto"
+              }
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriorPeriodValueDto"
+            }
+          }
+        },
+        "required": [
+          "reportId",
+          "taxonomyVersion",
+          "availability",
+          "prior",
+          "values"
+        ]
       },
       "AdminChallengeResponseDto": {
         "type": "object",
