@@ -8466,3 +8466,177 @@ shipped both.
 
 Suite 33/33 (three consecutive runs, no cleaning), invariants 54/54, `migrations:check` applies,
 reverts and re-applies.
+
+---
+
+## Task 34.2 — The typed facade, and three guesses the compiler refused · 2026-09-01
+
+**Deliverable met.** `packages/vsme` generates a typed descriptor per disclosure per taxonomy
+version, `DisclosureFacade` round-trips values through it in all three shapes, and `pnpm facade:check`
+fails when a taxonomy change has not been regenerated.
+
+### What it buys, demonstrated rather than asserted
+
+T-3 accepts that the element-keyed store gives up compile-time typing. The claim that a generated
+facade buys it back is easy to write and hard to evidence — so it is worth recording that **writing
+this task's own tests, the compiler refused three wrong guesses**, each of which the raw store would
+have accepted as a live row under a key nothing reads:
+
+- `DISCLOSURES.bThree.grossScopeOne…` — wrong module. Scope 1 is a **Comprehensive** disclosure, C3.
+- `writeScalar` on it — it is **dimensioned** along `ReportingScopesAxis` (baseline year, target
+  year, currently stated), not a single number.
+- A spec asserting three `GrossScope*` elements — there are **two**. Scope 2 is split into
+  location-based and market-based, so it does not start with `GrossScope` at all.
+
+The third was caught by a test, not the compiler, and it is the same shape as §7.3's three invented
+element keys: a remembered taxonomy asserted instead of a read one. That assertion now derives its
+expected set from the artefact.
+
+### Accessors spell their numbers
+
+Recorded in §12.5.6. `GrossScope1GreenhouseGasEmissions` → `grossScopeOneGreenhouseGasEmissions`,
+module `B11` → `bEleven` (project owner). Mechanical camel-casing rather than a curated short-name
+map, because mechanical is what makes *"a taxonomy addition regenerates it"* true — a new element
+needs no human naming step — and because a curated name per element is a second source of truth
+beside NFR-2's vocabulary.
+
+AD-3's own consequence cell shows `report.b3.scope1Emissions`. That is illustrative prose, and the
+element it names does not exist; deviating from it is deliberate and recorded.
+
+**The rule is enforced, not hoped for.** The generator's number table covers what the sources contain
+and the run *fails* on anything outside it rather than emitting a digit — so a future `Scope4` is a
+build failure with a message. It binds **identifiers only**: axis member keys become string-literal
+types, which matters because the waste and country axes carry keys like `123456`.
+
+### Two gates, because neither is sufficient alone
+
+- **`facade:check`** regenerates and `git diff --exit-code`s, like `openapi:check`. Proven by adding
+  an invented element to the seed artefact: the accessor appears, the gate fails, and it goes green
+  again on revert.
+- **`disclosure-facade.artefact.spec.ts`** holds the generated module against the taxonomy. This is
+  the one `facade:check` cannot be: both sides of that diff come from the same generator, so it would
+  pass just as happily if every key were wrong. The spec asserts the descriptor set equals the
+  element set in **both** directions, that keys are verbatim, and that members are declared only for
+  an axis that enumerates them.
+
+### What is not built
+
+- **No validation.** T-3's other two buy-backs are elsewhere by design: rule-driven validation is
+  task 40's, from registered definitions (FR-73) rather than from types, and the golden-report corpus
+  is NFR-20's. What this adds is that a well-typed write cannot name a nonexistent element or the
+  wrong shape for a real one.
+- **No version resolution.** The facade takes the descriptor its caller names rather than importing
+  one version's, because DR-4 makes two coexist and which applies is a property of the report the
+  caller holds. Task 36's wizard resolves it from the report's pin.
+- **`unit_code` is always null on a facade write.** Which units an element admits is the taxonomy's
+  business and the registry answers it; wiring that through is task 40's, with the validation that
+  checks it. Stated rather than left to be discovered.
+
+### The lint gate caught the convention this task is most about
+
+`gates:clean` failed with **17 errors**, and the largest was `packages/vsme/src/shape.ts` declaring
+`DisclosureKind` as a hand-written union of ten string literals — CLAUDE.md's *"a closed vocabulary
+is declared once as an `as const` object with its union derived from it"*, refused by the
+`no-restricted-syntax` selector added for exactly that shape. The docblock beside it even said
+*"mirrors `DISCLOSURE_KIND` in `apps/api`'s taxonomy port"*, which names the defect: a second copy of
+a closed set, with nothing able to see them disagree.
+
+**Fixed by removing the duplicate rather than adding a second `as const`.** §10.7 gives this package
+the taxonomy model, so `DISCLOSURE_KIND` is declared in `@easyesg/vsme` and
+`taxonomy-registry.port.ts` re-exports it — one declaration, nine call sites unchanged.
+
+The rest were the same rule one layer down: the facade compared a column name against string
+literals in seven places and branched on `kind` in a `switch`. Both are gone, replaced by
+`COLUMN_OF_KIND` — a **total** `Record<DisclosureKind, ValueColumn>` living beside the vocabulary,
+per *"an operation over a vocabulary lives with the vocabulary"*. Totality is the part worth having:
+a kind added to `DISCLOSURE_KIND` now fails to compile until its column is decided, where the
+`switch`'s `default` would have filed it silently as text.
+
+`no-base-to-string` caught the last one: `String(value)` on an `unknown` would have stored
+`[object Object]` on a filed disclosure. An enumeration set that is not an array is now refused
+rather than coerced.
+
+**None of this was new knowledge** — every rule was one I had cited earlier the same day. It is the
+recall failure CLAUDE.md describes, caught by the mechanical gate rather than by a reviewer, which is
+what that gate is for.
+
+### Two of my own process defects, both of which printed success
+
+- **`| head -N && echo CLEAN` reports the pipe's status, not the compiler's.** It printed
+  `TYPECHECK CLEAN` directly beneath TypeScript errors, more than once, and `set -o pipefail` did not
+  fix it — `head` closing the pipe early masks the exit. Checks now redirect to a file and read `$?`.
+- **A `python` replacement that matched nothing still printed its success message.** Every generated
+  edit now asserts its anchor before writing.
+
+Both are the same defect the reviewers keep finding in the code: a check that cannot fail.
+
+### Verified
+
+`pnpm gates:clean`. The suite is 38 tests and passes **three consecutive runs with no cleaning
+between**, which is the check task 34.1's own defects put in place.
+
+---
+
+## Task 85, partial — the hang explained and fixed; the timeout still is not · 2026-09-01
+
+**Scope, stated first because the task's title is the other half.** Task 85 is *"the e2e suite times
+out under a full gate run"*, and two things were tangled in that row: a test exceeding jest's
+5 000 ms limit, and jest then never exiting. **This closes the second and leaves the first open.** A
+flaky test now fails in seconds instead of stalling a run for as long as nobody notices; it still
+flakes.
+
+### Caught live, which is what made it solvable
+
+Task 34.2's closing `gates:clean` hung and was inspected mid-hang rather than after the fact — the
+first instance where that happened. One test in `invitations.e2e-spec.ts` timed out, 750 of 751
+passed, and the process then sat **19 minutes at 0.0 % CPU**, holding:
+
+- **no database connection** — `pg_stat_activity` showed one row on `esg` and it was the diagnostic
+  query itself, which retires the connection-exhaustion line of enquiry for good;
+- **exactly one socket** — `TCP localhost:53898->localhost:53897`, a loopback pair. Only the client
+  end survived, so `app.close()` closed the server and nothing closed the request the timed-out test
+  had abandoned.
+
+One referenced handle keeps node's event loop alive. That is the whole of the non-exit, and it is the
+mechanism the row already suspected — now with the handle identified rather than inferred.
+
+### The obvious global fix does nothing, and only measurement showed it
+
+`http.globalAgent.destroy()` needs no reference to any app, so it would have been one line in a setup
+file. **It does not work here.** `superagent/lib/node/index.js` sets `this._agent = false` and passes
+`options.agent = this._agent`; `agent: false` tells Node to build a *fresh* agent per request, so
+supertest's sockets are never in the global pool. A probe with `agent: false` still hung after
+`globalAgent.destroy()` and exited immediately after `server.closeAllConnections()`. Shipped on
+reasoning alone, it would have been a fix that changed nothing while looking like a fix.
+
+### Why a tracking setup file rather than Nest's own option
+
+`forceCloseConnections: true` on `NestFactory.create` makes `app.close()` do exactly this, and it is
+the documented API. It was the alternative and it lost on one point (project owner): twenty-five
+suites create an app, and the twenty-sixth omitting it produces no visible failure — only a gate run
+that stalls. `test/support/close-connections.ts` records every server that calls `listen` and closes
+its connections after each file, so nothing has to be remembered. The cost is named rather than
+hidden: it patches `http.Server.prototype.listen` for the test process.
+
+### Two wrong turns, both found by seeding rather than reading
+
+- **The first spec was inert.** It connected a socket, and passed with the fix removed. The reason is
+  the useful part: **`server.close()` does close idle connections** and waits only for active ones,
+  so an idle socket is not the state that hangs. The spec now sends a complete request to a handler
+  that never answers.
+- **That same misunderstanding wasted two earlier attempts** to reproduce the hang inside a real
+  suite — a 1 ms test limit and a held socket — both of which exited cleanly. I read that as "cannot
+  be reproduced" and nearly shipped the fix unproven in situ.
+
+### Verified
+
+| | Assertion | Process |
+| --- | --- | --- |
+| with the teardown | 1 passed | exits cleanly |
+| with `closeAllConnections()` removed | 1 **failed** | **hangs**, prints *"did not exit"* |
+
+The second row reproduces task 85's signature on demand, which no earlier attempt managed.
+
+**What is still not proven is the fix in situ.** The live hang arises from a timeout nobody can
+summon, so the next real occurrence is the test of this. Task 85 stays `TODO`, and the reason is now
+one problem rather than two.

@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // CommonJS output, because apps/api has no "type" field and Jest loads it as CJS. Without
+    // this, a CJS require fails with `SyntaxError: Unexpected token 'export'` — the same error a
+    // raw .ts import produces, which makes it easy to misdiagnose as a transform problem.
+    "module": "commonjs",
+    // `bundler` rather than `node10`: TS 6 deprecates node10 (TS5107), and node16/nodenext
+    // refuse to pair with module=commonjs (TS5110). This is the combination TS 6 accepts.
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": false,
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "rootDir": "./src",
+    "outDir": "./dist/cjs",
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts"]
+}

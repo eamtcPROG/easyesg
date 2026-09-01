@@ -22,7 +22,7 @@
     "dev:down": "docker compose -f infra/compose/docker-compose.yml down",
     "lint": "eslint . --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
     "test": "pnpm -r test",
-    "preboundaries": "pnpm --filter @easyesg/i18n --filter @easyesg/validation build",
+    "preboundaries": "pnpm --filter @easyesg/i18n --filter @easyesg/validation --filter @easyesg/vsme build",
     "boundaries": "depcruise --config .dependency-cruiser.cjs apps/api/src apps/web/src apps/admin/src packages/ui/src packages/i18n/src",
     "boundaries:prove": "./tools/prove-boundaries.sh",
     "migrations:check": "pnpm --filter @easyesg/api db:check",
@@ -31,13 +31,15 @@
     "e2e:worker": "pnpm --filter @easyesg/api test:worker",
     "pree2e:web": "pnpm --filter @easyesg/api... --filter @easyesg/web... --filter @easyesg/admin... build && ./tools/assemble-web-standalone.sh",
     "e2e:web": "playwright test --config e2e/playwright.config.ts",
-    "gates": "pnpm lint && pnpm typecheck && pnpm test && pnpm boundaries && pnpm boundaries:prove && pnpm build && pnpm openapi:check && pnpm routes:check && pnpm migrations:check && pnpm e2e && pnpm e2e:worker && pnpm e2e:web",
+    "gates": "pnpm lint && pnpm typecheck && pnpm test && pnpm boundaries && pnpm boundaries:prove && pnpm build && pnpm openapi:check && pnpm facade:check && pnpm routes:check && pnpm migrations:check && pnpm e2e && pnpm e2e:worker && pnpm e2e:web",
     "gates:scoped": "./tools/gates-scoped.sh",
     "gates:clean": "pnpm clean && pnpm gates",
     "openapi:emit": "pnpm --filter @easyesg/api openapi:emit",
     "openapi:check": "pnpm openapi:emit && pnpm --filter @easyesg/contracts generate && git diff --exit-code packages/contracts/openapi/v1.json packages/contracts/src/generated",
     "routes:check": "pnpm --filter @easyesg/admin build && git diff --exit-code apps/admin/src/app/route-tree.gen.ts",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "facade:generate": "node tools/generate-disclosure-facade.mjs 2026-05-01",
+    "facade:check": "pnpm facade:generate && git diff --exit-code packages/vsme/src/generated"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",

@@ -11,6 +11,7 @@ import {
 import { ReportsController } from './controllers/reports.controller';
 import { DISCLOSURE_VALUE_STORE } from './interfaces/disclosure-value-store.interface';
 import { REPORT_STORE, type ReportStore } from './interfaces/report-store.interface';
+import { DisclosureFacade } from './services/disclosure-facade.service';
 import { ReportService } from './services/report.service';
 import { CreateReport } from './use-cases/create-report.use-case';
 
@@ -47,6 +48,10 @@ const httpProviders: Provider[] = [
   // guarantees under it. Registering it now is what makes those guarantees testable against the real
   // schema rather than described — `disclosure-value.e2e-spec.ts` is the proof.
   { provide: DISCLOSURE_VALUE_STORE, useClass: DisclosureValueStoreRepository },
+  // Task 34.2's facade. Takes the store, and takes the *descriptor* from its caller rather than
+  // importing one version's — DR-4 makes two coexist, and which applies is a property of the report
+  // the caller holds.
+  DisclosureFacade,
   { provide: REPORTING_PERIOD_STORE, useClass: ReportingPeriodStoreRepository },
   { provide: CLOCK, useValue: () => new Date() },
   {
@@ -60,6 +65,6 @@ const httpProviders: Provider[] = [
 @Module({
   controllers: mode === APP_MODE.WORKER ? [] : [ReportsController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
-  exports: mode === APP_MODE.WORKER ? [] : [DISCLOSURE_VALUE_STORE],
+  exports: mode === APP_MODE.WORKER ? [] : [DISCLOSURE_VALUE_STORE, DisclosureFacade],
 })
 export class DisclosureModule {}

@@ -17,6 +17,8 @@ import {
   type DisclosureValueContents,
 } from '../src/modules/core/disclosure/models/disclosure-value.model';
 import { ReportNotEditableError } from '../src/modules/core/disclosure/errors/report.errors';
+import { DISCLOSURES } from '@easyesg/vsme';
+import { DisclosureFacade } from '../src/modules/core/disclosure/services/disclosure-facade.service';
 import { asOrganization, connectAs } from './support/database';
 import {
   cleanupSignedInAccounts,
@@ -88,6 +90,7 @@ describe('the disclosure value store (task 34.1)', () => {
 
   const http = () => request(app.getHttpServer());
   const store = new DisclosureValueStoreRepository();
+  const facade = new DisclosureFacade(store);
 
   /**
    * One tenant-bound transaction, with the shipped repository inside it.
@@ -553,6 +556,109 @@ describe('the disclosure value store (task 34.1)', () => {
           ),
         ),
       ).rejects.toMatchObject({ code: '23503' });
+    });
+  });
+
+  /**
+   * Task 34.2's deliverable: a write/read round trip **through the facade**, in each of the three
+   * shapes a descriptor can declare.
+   *
+   * **The point is what a caller no longer has to get right.** Every write below names a descriptor
+   * from `@easyesg/vsme`, so the element key comes from the generated module rather than from a
+   * string the caller typed, and the *shape* comes with it — `writeRow` on a scalar, or `writeScalar`
+   * on a repeating group, does not compile. That is T-3's typing buy-back, and none of it is
+   * observable from the store's own tests, which necessarily speak in element keys.
+   */
+  describe('the typed facade round-trips a value (task 34.2)', () => {
+    // A function, not a const: `editor` is assigned in `beforeAll` and this block is evaluated at
+    // collection time, so a const captures `undefined`.
+    const asEditor = () => ({ organizationId: ORG, actorId: editor.accountId });
+
+    it('writes and reads a scalar, storing it in the column its kind names', async () => {
+      // **The facade refused two guesses before this line was right**, which is the whole of what
+      // T-3 asks it to buy back. The first draft reached for `bThree.grossScopeOne…` — wrong module,
+      // Scope 1 is a Comprehensive disclosure in C3 — and the second for `writeScalar` on it, which
+      // is dimensioned along `ReportingScopesAxis` (baseline year, target year, currently stated).
+      // Against the raw store both would have compiled and written live rows under keys and shapes
+      // nothing reads.
+      const disclosure = DISCLOSURES.bTen.averageNumberOfAnnualTrainingHoursPerFemaleEmployee;
+      await asTenant(asEditor(), () =>
+        facade.writeScalar({ reportId, disclosure, value: '812.5' }),
+      );
+
+      const read = await asTenant(asEditor(), () => facade.read({ reportId, disclosure }));
+      expect(read).toBe('812.5');
+
+      // The column is chosen from the descriptor's `kind`, never from the runtime type of the
+      // value: '812.5' is a string either way, and inferring from it would put every numeric
+      // disclosure in `value_text` for any reporter who typed a number into a text field.
+      const row = await asTenant(asEditor(), () =>
+        store.find({ reportId, elementKey: disclosure.key, dimensionKey: '', ordinal: 0 }),
+      );
+      expect(row?.valueNumeric).toBe('812.5');
+      expect(row?.valueText).toBeNull();
+    });
+
+    it('writes and reads a dimensioned element, one value per axis member', async () => {
+      const disclosure = DISCLOSURES.bThree.energyConsumptionFromFuels;
+      await asTenant(asEditor(), () =>
+        facade.writeDimensioned({
+          reportId,
+          disclosure,
+          member: 'RenewableEnergyMember',
+          value: '120',
+        }),
+      );
+      await asTenant(asEditor(), () =>
+        facade.writeDimensioned({
+          reportId,
+          disclosure,
+          member: 'NonRenewableEnergyMember',
+          value: '340',
+        }),
+      );
+
+      const read = await asTenant(asEditor(), () => facade.read({ reportId, disclosure }));
+      expect(read).toEqual({ RenewableEnergyMember: '120', NonRenewableEnergyMember: '340' });
+    });
+
+    it('writes and reads a repeating group, ordered by its ordinal', async () => {
+      // A typed axis — the reporter supplies the identifier — so the rows are a sequence rather
+      // than a set, and `ordinal` is what makes that true.
+      const disclosure = DISCLOSURES.bOne.addressOfSite;
+      await asTenant(asEditor(), () =>
+        facade.writeRow({ reportId, disclosure, ordinal: 1, value: 'Strada Vasile Alecsandri 12' }),
+      );
+      await asTenant(asEditor(), () =>
+        facade.writeRow({ reportId, disclosure, ordinal: 0, value: 'Bulevardul Ștefan cel Mare 4' }),
+      );
+
+      const read = await asTenant(asEditor(), () => facade.read({ reportId, disclosure }));
+      expect(read).toEqual(['Bulevardul Ștefan cel Mare 4', 'Strada Vasile Alecsandri 12']);
+    });
+
+    it('answers null for a scalar nobody has answered', async () => {
+      // Distinct from a stored value in the `missing` state: this element has no row at all, and a
+      // facade that answered `undefined` or threw would make "not yet answered" a caller's problem
+      // on 143 fields.
+      const read = await asTenant(asEditor(), () =>
+        facade.read({ reportId, disclosure: DISCLOSURES.bEleven.totalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws }),
+      );
+      expect(read).toBeNull();
+    });
+
+    it('writes through the same lock and RLS as the store beneath it', async () => {
+      // The facade adds typing, not privilege. It must not become a way around the guarantees the
+      // store's own tests establish, which is the failure mode a "convenience layer" usually has.
+      await expect(
+        asTenant({ organizationId: OTHER_ORG, actorId: admin.accountId }, () =>
+          facade.writeScalar({
+            reportId,
+            disclosure: DISCLOSURES.bTen.averageNumberOfAnnualTrainingHoursPerFemaleEmployee,
+            value: '1',
+          }),
+        ),
+      ).rejects.toBeInstanceOf(ReportNotEditableError);
     });
   });
 

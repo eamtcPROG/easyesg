@@ -5,8 +5,8 @@
   "license": "UNLICENSED",
   "description": "easyesg public API \u2014 NestJS, HTTP and worker modes (architecture.md AD-1)",
   "scripts": {
-    "pretest": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build",
-    "pretest:e2e": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build && pnpm config:seed",
+    "pretest": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build && pnpm --filter @easyesg/vsme build",
+    "pretest:e2e": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build && pnpm --filter @easyesg/vsme build && pnpm config:seed",
     "build": "nest build",
     "postbuild": "tsc-alias -p tsconfig.build.json",
     "start": "nest start",
@@ -26,7 +26,7 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:cov": "jest --coverage",
     "test:e2e": "node --experimental-vm-modules --env-file-if-exists=.env ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runInBand --passWithNoTests",
-    "pretest:worker": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build",
+    "pretest:worker": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build && pnpm --filter @easyesg/vsme build",
     "test:worker": "MODE=worker node --experimental-vm-modules --env-file-if-exists=.env ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runInBand --runTestsByPath test/entrypoint-boot.e2e-spec.ts",
     "preopenapi:emit": "pnpm --filter @easyesg/api... build",
     "openapi:emit": "node dist/infrastructure/openapi/emit-openapi.js",
@@ -36,6 +36,7 @@
   "dependencies": {
     "@easyesg/i18n": "workspace:*",
     "@easyesg/validation": "workspace:*",
+    "@easyesg/vsme": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",

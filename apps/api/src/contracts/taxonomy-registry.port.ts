@@ -25,19 +25,17 @@
  * renderer's. `tools/extract-vsme-taxonomy.mjs` owns the mapping and fails on a type it does not
  * know, so an unmapped type is a build failure rather than a field that renders as free text.
  */
-export const DISCLOSURE_KIND = {
-  TEXT: 'text',
-  TEXT_BLOCK: 'text_block',
-  BOOLEAN: 'boolean',
-  DATE: 'date',
-  YEAR: 'year',
-  MONETARY: 'monetary',
-  NUMERIC: 'numeric',
-  PERCENT: 'percent',
-  ENUMERATION: 'enumeration',
-  ENUMERATION_SET: 'enumeration_set',
-} as const;
-export type DisclosureKind = (typeof DISCLOSURE_KIND)[keyof typeof DISCLOSURE_KIND];
+/**
+ * **Re-exported from `@easyesg/vsme`, which declares it** (task 34.2). §10.7 gives that package the
+ * taxonomy model, and this port previously declared its own copy; two `as const` objects over one
+ * closed set is the drift CLAUDE.md's rule exists to prevent, and nothing could have seen them
+ * disagree. Re-exported rather than replaced at the call sites so this port stays the one surface a
+ * consumer of the registry imports (ISP).
+ */
+import type { DisclosureKind } from '@easyesg/vsme';
+
+export { DISCLOSURE_KIND } from '@easyesg/vsme';
+export type { DisclosureKind } from '@easyesg/vsme';
 
 /**
  * XBRL's two period types. A `duration` fact is reported *for* the period (energy consumed); an
