@@ -9109,3 +9109,115 @@ strengthens; **`devops-graceful-shutdown`** governs the production app's signal 
 `main.http.ts` is untouched — this is the test harness, where `forceCloseConnections: true` on
 `NestFactory.create` was already considered and declined under task 85 for having a forgetting mode.
 No rule declined.
+
+---
+
+## Task 88 — a matrix that could report `admitted` for a request nobody admitted · 2026-09-01
+
+Two defects in `route-matrix.e2e-spec.ts`. One is an ordinary fixture bug. The other is the file
+lying about the only thing it exists to prove, and it is the one worth reading.
+
+### Defect 2 first, because it is the serious one
+
+The classifier reduced every response to *"one of the three guard refusals, or `admitted`"*. Its own
+comment defended the second arm: *"a `400` for the empty body, a `404` for the invented id, a `409`, a
+`200` — all of them mean the guard chain let the caller through and something downstream had an
+opinion."* True of those four. **Not true of three others in the same vocabulary:**
+
+| answer | what it actually means | what the matrix called it |
+| --- | --- | --- |
+| `internal` (any unexpected exception → 500) | the guard chain's verdict is **unknown** | `admitted` |
+| `rate-limited` (429) | refused **before** the guards could decide | `admitted` |
+| `session-expired` (401) | refused **by `AuthGuard`**, with a type this file does not list | `admitted` |
+
+The third is the worst: a token lapsing mid-run would turn every remaining route, for every actor,
+into a silent `admitted`. The first is the likeliest explanation of what was actually seen.
+
+**This is task 28.2's own recorded failure returning through a second door.** That header already
+says: *"the first version sliced the base URI without its separator, read every refusal as
+`admitted`, and briefly looked like the guards had stopped refusing."* The comparison was then fixed
+to go through `problemTypeUri`. What was never revisited is the **default** — and a default that says
+"admitted" is a default that fails open, on a gate about authorization.
+
+**Observed rather than hypothesised.** On 1 Sep 2026 a `gates:scoped` run reported
+
+> `editor › PATCH /periods/:id — Expected: "insufficient-role", Received: "admitted"`
+
+on a tree where the controller carries `@RequiresRole(ORGANIZATION_ADMINISTRATOR)`, the declaration
+agrees, five sibling routes with the identical declaration passed, and the file passes 266/266 alone.
+One transient answer of that family, on whichever request happens to draw it, produces exactly this —
+which is why it read as route-specific without being so, and why the discriminating clue (*only one
+admin-only route admitted the editor*) pointed away from a wrong-role explanation and toward the
+classifier.
+
+**A status alone cannot make the call, and the first attempt at this fix was wrong.** `POST
+/auth/session` is `@Public()` and answers `401 credential-invalid` to the matrix's empty body — which
+**is** admission: the guards let it through and the handler formed the opinion. Keying on status
+would have called that inconclusive and gone red on working code. The discriminator is the problem
+**type**; the status is only the backstop for a `5xx` that never reached the filter and so carries no
+type at all.
+
+The classification is now a pure function taking `{ status, type }`, separated from the request
+deliberately: **the arm that matters almost never fires against a live server**, and a branch nothing
+exercises is a branch that can be deleted with nothing going red.
+
+### Defect 1 — a cleanup that only runs at the end
+
+`beforeAll` inserted `core.organization` under a hardcoded id with no pre-clean; cleanup lived only in
+`afterAll`. So any run that never reaches `afterAll` — a kill, a crash, a cancelled CI job — leaves
+that row, and the next run fails `organization_pkey` in `beforeAll` and cascades: **282 failed, 470
+passed**, 266 of them this one file.
+
+**It hides, which is why it survived.** The broken run's own `afterAll` removes the row, so the run
+after it is clean and the whole episode reads as a one-off flake. The general form is worth stating:
+*a cleanup that only runs at the end does not run when it matters, because the runs that leave rows
+behind are exactly the ones that never reach the end.* One helper now, called from both hooks so they
+cannot drift.
+
+**`ON CONFLICT DO NOTHING` was rejected.** It would reuse a leftover organization along with whatever
+stale memberships hung off it — trading a loud failure for a silent one, on a file about permissions.
+
+### Searched for the shape rather than assuming it was local
+
+Fourteen e2e suites insert an organization. Classified rather than eyeballed:
+
+- **nine** already pre-clean before inserting;
+- **four** — `outbox`, `tenant-isolation`, `field-change-audit`, and the second half of
+  `tenant-context` — insert inside a **rolled-back** transaction, so a kill leaves nothing;
+- **one** committed a fixed id without cleaning first, and it is this file.
+
+`tenant-context` is worth a line because it nearly produced a false positive: a line-order scan says
+it has no pre-clean, and it does — `unseed()` is *defined* below the point where it is *called*. The
+scan was wrong, not the suite.
+
+### Verified, by seeding, three ways
+
+| seeded state | result |
+| --- | --- |
+| leftover row present, pre-clean in place | **269 passed** |
+| leftover row present, pre-clean removed | `duplicate key value violates unique constraint "organization_pkey"`, cascade |
+| classifier's inconclusive arm removed | **1 failed** — *"refuses to call a server error, a throttle or a lapsed token admission"*, `Expected: not "admitted"`; the other 268 green |
+
+The third row's second half is the part that matters: the new gate is **specific**, failing only on
+the thing it guards rather than dragging the file down with it.
+
+**A trap met while seeding, already documented and still surprising.** Inserting the leftover row as
+`esg_migrator` reports `INSERT 0 1` and a following `SELECT` answers **zero** — `FORCE ROW LEVEL
+SECURITY` subjects the owner to its own policies and no tenant was bound. The row is there; the owner
+cannot see it. The same is true of the `DELETE`, which answers `DELETE 0` unless the tenant is bound,
+which is why `removeFixtures` goes through `asOrganization`.
+
+### Task 85's row is narrowed, not overturned
+
+That row refutes leftover rows as an explanation: *"re-registering an address answers 409 and the
+fixture expects 201, so that failure would land at registration."* Sound for `identity.account`, and
+never applied to `core.organization`, where a leftover is fatal rather than awkward. **It does not
+explain the instances that row records** — their proximate errors were a 404 and a 401, not a
+duplicate key — so the amendment says exactly that. What it removes is the impression that
+leftover-row hypotheses had been disposed of as a class.
+
+### The skill pass
+
+`nestjs-best-practices` opened and read against the diff. **`test-e2e-supertest`** is the rule this
+task is entirely about — proper setup and teardown around supertest — and the change strengthens both
+halves. No other rule touches a test fixture and a response classifier; none declined.

@@ -128,12 +128,64 @@ const concreteUrl = (route: string): { method: string; url: string } => {
 /** The tenant surface: the admin realm is excluded above, with its reason. */
 const TENANT_ROUTES = Object.entries(SURFACE).filter(([route]) => !route.includes('/auth/admin'));
 
-/** The three ways the guard chain refuses. Anything else means the caller got past it. */
+/** The three ways the guard chain refuses on the tenant surface. */
 const REFUSALS = [
   ProblemType.AuthenticationRequired,
   ProblemType.MembershipRequired,
   ProblemType.InsufficientRole,
 ] as const;
+
+/**
+ * Answers that are evidence of **nothing**, and must never be read as admission.
+ *
+ * The original classifier said "anything that is not one of the three refusals means the caller got
+ * past the guard chain". That is true of a `400`, a `404`, a `409` or a `200` — something downstream
+ * had an opinion, so the guards let it through — and false of these three, each for its own reason:
+ *
+ *  - **`internal`** — the request 500'd. The guard chain's verdict is *unknown*; reporting
+ *    `admitted` asserts the opposite of what a failed request supports.
+ *  - **`rate-limited`** — refused *before* the guards could decide anything.
+ *  - **`session-expired`** — refused *by* `AuthGuard`, just not with the type this file lists. A
+ *    token that lapses mid-run would otherwise turn every remaining route into a silent `admitted`.
+ *
+ * This is not hypothetical. On 1 Sep 2026 a run inside `gates:scoped` reported
+ * `editor › PATCH /periods/:id — Expected: insufficient-role, Received: admitted` on a tree where
+ * the declaration and the guard agreed and 265 sibling assertions passed, including five routes
+ * carrying the identical declaration. One transient answer of this family produces exactly that.
+ *
+ * **The status check is the backstop for a 5xx that is not problem+json at all** — a crash before the
+ * filter has no `type`, and an empty `type` matched nothing and read as `admitted`.
+ */
+const INCONCLUSIVE = [
+  ProblemType.Internal,
+  ProblemType.RateLimited,
+  ProblemType.SessionExpired,
+] as const;
+
+/**
+ * What a response says about **authorization**, which is the only question this file asks.
+ *
+ * Pure, and separated from the request for exactly that reason: the branch that matters is the one
+ * that almost never fires, so it needs a test that does not depend on provoking a 500 out of a live
+ * server. `classification.spec` below covers all four arms.
+ *
+ * **A status alone cannot decide this, and a first attempt that used one was wrong.** `POST
+ * /auth/session` is `@Public()` and answers `401 credential-invalid` to the matrix's empty body —
+ * which *is* admission, since the handler formed that opinion. The discriminator is whether the
+ * refusal came from the guard chain, so it keys on the problem type and uses the status only for
+ * responses that carry no type at all.
+ */
+const classifyOutcome = ({ status, type }: { status: number; type: string }): string => {
+  const refusal = REFUSALS.find((slug) => problemTypeUri(slug) === type);
+  if (refusal !== undefined) return refusal;
+
+  const inconclusive = INCONCLUSIVE.find((slug) => problemTypeUri(slug) === type);
+  if (inconclusive !== undefined || status >= 500) {
+    return `inconclusive (${status} ${type === '' ? 'no problem+json body' : type})`;
+  }
+
+  return ADMITTED;
+};
 
 describe('the permission matrix reaches every route (task 28.2, actors.md §5)', () => {
   let app: NestExpressApplication;
@@ -143,6 +195,21 @@ describe('the permission matrix reaches every route (task 28.2, actors.md §5)',
 
   const http = () => request(app.getHttpServer());
 
+  /**
+   * This suite's own rows, removed. Called from **both** `beforeAll` and `afterAll`, which is the
+   * point: a cleanup that only runs at the end is a cleanup that does not run when it matters, since
+   * the runs that leave rows behind are exactly the ones that never reach the end.
+   *
+   * Deleting the organization is what clears the memberships too — a cascade bypasses row security
+   * by design, which is the only reason this works without binding a tenant for each of them.
+   */
+  const removeFixtures = async (): Promise<void> => {
+    await asOrganization(owner, ORG, (run) =>
+      run(`DELETE FROM core.organization WHERE id = $1`, [ORG]),
+    );
+    await owner.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [Object.values(EMAILS)]);
+  };
+
   beforeAll(async () => {
     await initialiseCatalogue();
     app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
@@ -151,6 +218,20 @@ describe('the permission matrix reaches every route (task 28.2, actors.md §5)',
 
     owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-matrix-owner');
     worker = await connectAs('DB_WORKER_USER', 'DB_WORKER_PASSWORD', 'easyesg-matrix-worker');
+
+    // **Before inserting, not only after.** This suite's organization and addresses are fixed
+    // constants, so the row it creates is the row a previous run may have left: any run that does
+    // not reach `afterAll` — a kill, a crash, a cancelled CI job — leaves it, and the `INSERT`
+    // below then fails `organization_pkey` and cascades to every test in the file. Observed on
+    // 1 Sep 2026 as **282 failed, 470 passed**, of which 266 were this file failing in `beforeAll`.
+    //
+    // It hides, which is why it went unrecognised: the failing run's own `afterAll` removes the row,
+    // so the run after the broken one is clean and the defect looks like a one-off flake.
+    //
+    // **`ON CONFLICT DO NOTHING` would be the wrong fix** — it would reuse a leftover organization
+    // along with whatever stale memberships were hanging off it, which is a worse failure than the
+    // loud one because it is silent.
+    await removeFixtures();
 
     await owner.query(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, $2, 'MD')`, [
       ORG,
@@ -188,12 +269,7 @@ describe('the permission matrix reaches every route (task 28.2, actors.md §5)',
 
   afterAll(async () => {
     await cleanupSignedInAccounts({ owner });
-    await asOrganization(owner, ORG, (run) =>
-      run(`DELETE FROM core.organization WHERE id = $1`, [ORG]),
-    );
-    await owner?.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [
-      Object.values(EMAILS),
-    ]);
+    await removeFixtures();
     await owner?.query(`DELETE FROM identity.auth_attempt`);
     await owner?.destroy();
     await worker?.destroy();
@@ -230,13 +306,50 @@ describe('the permission matrix reaches every route (task 28.2, actors.md §5)',
     // read as `admitted`, the whole matrix went green-then-red for the wrong reason, and for a
     // moment it looked like the guards had stopped refusing. An operation over a vocabulary belongs
     // with the vocabulary (CLAUDE.md); this is what that rule is protecting against.
-    const refusal = REFUSALS.find((slug) => problemTypeUri(slug) === type);
-    return refusal ?? ADMITTED;
+    return classifyOutcome({ status: response.status, type });
   };
 
   it('drives a surface worth calling a matrix', () => {
     // The guard `boundaries:prove` taught this repository: a matrix over an empty surface passes.
     expect(TENANT_ROUTES.length).toBeGreaterThan(20);
+  });
+
+  /**
+   * The classifier's own arms, because the interesting one almost never fires against a live server
+   * and a branch nothing exercises is a branch that can be deleted without anything going red.
+   *
+   * The third case is the whole point: before 1 Sep 2026 each of these read as `admitted`, so a
+   * transient 500, a throttle or a lapsed token was indistinguishable from the guards letting a
+   * caller through — on a file whose entire purpose is to say whether they did.
+   */
+  describe('what a response is taken to say about authorization', () => {
+    it('reads each guard refusal as itself', () => {
+      for (const slug of REFUSALS) {
+        expect(classifyOutcome({ status: 403, type: problemTypeUri(slug) })).toBe(slug);
+      }
+    });
+
+    it('reads a downstream opinion as admission, including a handler-formed 401', () => {
+      expect(classifyOutcome({ status: 200, type: '' })).toBe(ADMITTED);
+      expect(classifyOutcome({ status: 404, type: problemTypeUri(ProblemType.NotFound) })).toBe(
+        ADMITTED,
+      );
+      // `POST /auth/session` is public and answers this to an empty body. The guards admitted it;
+      // the handler refused it. Keying on status rather than type would call this inconclusive.
+      expect(
+        classifyOutcome({ status: 401, type: problemTypeUri(ProblemType.CredentialInvalid) }),
+      ).toBe(ADMITTED);
+    });
+
+    it('refuses to call a server error, a throttle or a lapsed token admission', () => {
+      for (const slug of INCONCLUSIVE) {
+        const verdict = classifyOutcome({ status: 500, type: problemTypeUri(slug) });
+        expect(verdict).not.toBe(ADMITTED);
+        expect(verdict).toContain(slug);
+      }
+      // A crash before the filter carries no problem+json at all, so there is no type to match.
+      expect(classifyOutcome({ status: 502, type: '' })).not.toBe(ADMITTED);
+    });
   });
 
   describe.each(Object.values(ACTOR))('%s', (actor) => {
