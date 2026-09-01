@@ -8379,3 +8379,90 @@ entire lock-reachability invariant return zero rows and pass having checked noth
 `pnpm gates:clean`, run before and after the reviews. `apps/api` gains **30** e2e tests and the
 invariant suite goes 42 → 54; `migrations:check` applies, reverts and re-applies. Every guarantee
 above was proven by removing it and re-running, and the tree restored to green after each.
+
+---
+
+## Task 34.1 addendum — the DELETE hole closed, and a premise that did not survive measurement · 2026-09-01
+
+**FR-22 now reaches a `DELETE` of a disclosure value.** `refuse_locked_write` covers `INSERT`,
+`UPDATE` and `DELETE`, and `remove()` answers `ReportNotEditableError` through the same `translate`
+path as every other write to the table.
+
+### The hole existed because a finding was inherited without being re-measured
+
+Task 34.1 declined to cover `DELETE`, citing task 31.2: a `BEFORE DELETE` trigger fires during a
+referential cascade, and the chain is organization → period → report → values, so the guard would
+make a locked report's organization undeletable.
+
+**That is true of 31.2's guard and false of this one**, and the difference is *which row the guard
+reads*:
+
+- `core.reporting_period`'s guard reads **its own row** — `OLD.locked_at` — which is present in
+  `OLD` whenever the trigger fires, cascade included. It really would refuse the cascade.
+- this guard reads **its parent**, `core.report.status`. PostgreSQL implements `ON DELETE CASCADE`
+  as an `AFTER ROW` trigger on the *referenced* table, so the parent row is already deleted when the
+  child's trigger runs.
+
+Measured, not reasoned: a throwaway parent/child pair with a child `BEFORE DELETE` trigger raising
+`NOTICE 'parent still visible: %'` prints **`f`** under a cascade. So the guard cannot see a locked
+parent while cascading, and covering `DELETE` costs nothing.
+
+### An RLS policy was built, applied, tested — and replaced
+
+The first fix was a `DELETE` policy excluding rows whose report is locked, on the documented
+guarantee that referential integrity actions *"always bypass row security"* where they do **not**
+bypass triggers. It was verified end to end before being written: on a throwaway pair, a direct
+`DELETE` as `esg_app` against a locked parent removed **0 rows** and left the child; deleting the
+locked parent as owner then cascaded and removed it.
+
+It works. It was replaced because it is the more complex answer to a problem that turned out not to
+exist. An RLS `USING` clause *filters* rather than raises, so a refused delete removed zero rows
+**silently** — the shape this codebase distrusts most — and the repository had to re-read the row to
+tell "refused" from "was never there". That is a second round trip, a second mechanism on one table,
+and a silent database refusal, all to avoid a cascade conflict that measurement showed was absent.
+
+**The lesson is not the mechanism, it is the shape of the error.** A guard's cascade behaviour
+depends on which row it reads, and 31.2's finding was applied to a guard of a different shape
+without being re-measured. Both the §12.5.6 row and 34.1's migration comment now say so.
+
+### Verified
+
+Three tests added, and each proven against a seeded defect:
+
+| Seeded | Result |
+| --- | --- |
+| trigger reverted to `INSERT OR UPDATE` — the hole reopened | 2 failures |
+| guard that refuses **every** delete, cascade included | the suite **hangs** — `afterAll` cannot delete its organizations |
+
+The second is the cascade harm 31.2 predicted, reproduced: a cascade-blind guard does not fail a
+test, it makes the fixture undeletable. **The experiment timed out rather than producing a per-test
+reading**, which is recorded as what it is — the hang is the evidence, and a clean per-test result
+for that seed was not obtained.
+
+### Two defects in the new tests, found by the gate run and invisible to every standalone one
+
+The closing `gates:clean` failed this suite, which had passed standalone every time. Both causes were
+mine, and both are the *leave-behind* direction of CLAUDE.md's question — not *what does this suite
+need that it does not create*, but **what does it leave that its next run trips over**:
+
+- **`oa@cascade.test` was registered inside a test and never cleaned.** `beforeAll` deletes the
+  addresses in `EMAILS`, and this one was a literal at its call site, so the second run against the
+  same database met a `409`. Every address the suite registers now lives in `EMAILS`.
+- **The cascade test enrolled the shared `admin` account into a second organization.** An account
+  with two memberships gets one resolved as active by `AuthGuard`, so the *next* test's request
+  against the original period answered `403`. The organization under test now uses only its own
+  actor. A shared actor is fixture state, and widening its memberships mid-suite changes what every
+  later request means.
+
+**Neither was reachable by running the file alone**, because a fresh database always passes the first
+time — which is exactly why the check that found them is now part of finishing: **run a new e2e suite
+three times in a row without cleaning between.** It passes 33/33 three times now; before these fixes
+it passed once and then failed.
+
+The same run also failed `reports.e2e-spec.ts` twice with `socket hang up` — task 85's flake, an
+eighth instance, and unrelated to the two above. Separating them mattered: two of the four failures
+in that run were a real defect and two were noise, and treating the whole run as flake would have
+shipped both.
+
+Suite 33/33 (three consecutive runs, no cleaning), invariants 54/54, `migrations:check` applies,
+reverts and re-applies.

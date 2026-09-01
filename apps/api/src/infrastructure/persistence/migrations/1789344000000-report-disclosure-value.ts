@@ -182,21 +182,12 @@ export class ReportDisclosureValue1789344000000 implements MigrationInterface {
       $$
     `);
 
-    // INSERT and UPDATE, and DELETE deliberately not — the same decision task 31.2 recorded at
-    // length and task 31.3 followed. A BEFORE DELETE trigger fires during a referential CASCADE, so
-    // covering DELETE here would make a locked report's PERIOD, and through it its ORGANIZATION,
-    // undeletable: the child trigger would fire while the parent is still visible and still locked.
-    //
-    // **The residual is a hole, and nothing closes it today.** A DELETE of one value row inside a
-    // locked report is refused by this trigger, by no use case — there is none above this store yet
-    // — and by no grant, since `esg_app` holds DELETE. FR-22 as amended says the lock "refuses every
-    // write", so this contradicts it rather than narrowing it. An earlier draft of this comment
-    // claimed the use case refused it; that use case does not exist, and the claim is the more
-    // dangerous half of the defect because it reads as though the hole were covered.
-    //
-    // Recorded in §12.5.6 with its owner: task 36 writes the first caller, and closing it needs a
-    // mechanism the cascade tolerates — a statement-level guard, or withholding DELETE from
-    // `esg_app` and removing values by state instead.
+    // INSERT and UPDATE here; **DELETE is added by `1789430400000-locked-disclosure-delete.ts`**,
+    // which is where the reason lives. In short: this migration declined to cover DELETE by
+    // inheriting task 31.2's finding that a BEFORE DELETE trigger fires during a referential
+    // cascade — true of the period's guard, which reads its own `OLD.locked_at`, and false of this
+    // one, which reads its parent and therefore cannot see a locked report once the cascade has
+    // deleted it. Measured there rather than assumed here, which is what 34.1 failed to do.
     await queryRunner.query(`
       CREATE TRIGGER refuse_locked_write
         BEFORE INSERT OR UPDATE ON core.report_disclosure_value

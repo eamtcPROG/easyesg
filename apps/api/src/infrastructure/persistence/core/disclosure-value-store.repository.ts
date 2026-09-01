@@ -166,15 +166,29 @@ export class DisclosureValueStoreRepository
     }
   }
 
+  /**
+   * Answers whether a row was removed rather than throwing on a miss: deleting a field nobody
+   * answered is the caller's intended end state, not an error.
+   *
+   * **A locked report refuses this, and the refusal comes from the trigger like every other write
+   * to this table.** `translate` turns its `45001` into `ReportNotEditableError`. That the lock
+   * reaches `DELETE` at all is task 34.1's recorded hole, closed by
+   * `1789430400000-locked-disclosure-delete.ts` — see it for why a cascade does not trip the guard,
+   * which is measured there rather than assumed.
+   */
   async remove(key: DisclosureValueKey): Promise<boolean> {
-    const removed = returnedRows<{ id: string }>(
-      await this.manager.query(
-        `DELETE FROM core.report_disclosure_value
-          WHERE report_id = $1 AND element_key = $2 AND dimension_key = $3 AND ordinal = $4
-      RETURNING id`,
-        [key.reportId, key.elementKey, key.dimensionKey, key.ordinal],
-      ),
-    );
-    return removed.length > 0;
+    try {
+      const removed = returnedRows<{ id: string }>(
+        await this.manager.query(
+          `DELETE FROM core.report_disclosure_value
+            WHERE report_id = $1 AND element_key = $2 AND dimension_key = $3 AND ordinal = $4
+        RETURNING id`,
+          [key.reportId, key.elementKey, key.dimensionKey, key.ordinal],
+        ),
+      );
+      return removed.length > 0;
+    } catch (error) {
+      return translate(error);
+    }
   }
 }

@@ -42,7 +42,19 @@ import {
 const ORG = '01930000-0000-7000-8000-0000000000d1';
 const OTHER_ORG = '01930000-0000-7000-8000-0000000000d2';
 
-const EMAILS = { admin: 'oa@disclosure.test', editor: 'rc@disclosure.test' };
+/**
+ * Every address this suite registers, including the one created inside a test.
+ *
+ * `oa@cascade.test` belongs here rather than only at its call site: `beforeAll` deletes these, and
+ * an address left out is a `409` on the second run against the same database — which is what
+ * happened, and which no standalone run could show, because the first run of a fresh database
+ * always passes.
+ */
+const EMAILS = {
+  admin: 'oa@disclosure.test',
+  editor: 'rc@disclosure.test',
+  cascade: 'oa@cascade.test',
+};
 const CHISINAU = 'Europe/Chisinau';
 
 /** A real element of the registered version, so the fixture is not inventing taxonomy (§7.3). */
@@ -563,6 +575,116 @@ describe('the disclosure value store (task 34.1)', () => {
       const read = await asTenant({ organizationId: ORG, actorId: editor.accountId }, () => store.forReport({ reportId }));
       expect(read.length).toBeGreaterThan(0);
     });
+
+    it('refuses a DELETE once locked, and says so rather than answering "no such row"', async () => {
+      // The hole task 34.1 shipped and recorded, closed by extending the trigger to DELETE. The
+      // reason it was left open — that the guard would refuse the organization → period → report →
+      // values cascade — held for the period's guard, which reads its own `OLD.locked_at`, and not
+      // for this one, which reads its parent: by the time a child's trigger fires under a cascade
+      // the parent row is already gone. The next test is what holds that.
+      await expect(
+        asTenant({ organizationId: ORG, actorId: editor.accountId }, () => store.remove(key())),
+      ).rejects.toBeInstanceOf(ReportNotEditableError);
+
+      const survived = await asTenant({ organizationId: ORG, actorId: editor.accountId }, () =>
+        store.find(key()),
+      );
+      expect(survived).not.toBeNull();
+    });
+
+    it('refuses it at the trigger, not only in the repository', async () => {
+      // The guarantee has to be the database's (P-4), so it is asserted against raw SQL as
+      // `esg_app` with the tenant bound rather than only through the store.
+      await expect(
+        asOrganization(application, ORG, (run) =>
+          run(`DELETE FROM core.report_disclosure_value WHERE report_id = $1`, [reportId]),
+        ),
+      ).rejects.toMatchObject({ code: '45001' });
+    });
+
+    it('still cascades, so a locked report’s organization stays deletable', async () => {
+      // **The test that proves the fix is not the trigger again.** Task 31.2 rejected covering
+      // DELETE precisely because it would strand the cascade; if this policy did the same, the hole
+      // would be closed by breaking something worse and nothing here would have noticed.
+      //
+      // Its own organization, locked, then deleted at the root of the chain.
+      const org = '01930000-0000-7000-8000-0000000000d3';
+      await asOrganization(owner, org, (run) =>
+        run(`DELETE FROM core.organization WHERE id = $1`, [org]),
+      );
+      await asOrganization(owner, null, (run) =>
+        run(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Nistru SRL', 'MD')`, [
+          org,
+        ]),
+      );
+      // **Only this organization's own actor is enrolled.** An earlier version also added `admin`,
+      // which broke the *next* test: an account with two memberships gets one of them resolved as
+      // active by `AuthGuard`, so the administrator's later request against the original period
+      // answered 403. A shared actor is fixture state, and widening its memberships mid-suite
+      // changes what every later request means.
+      const scoped = await signInFreshAccount({
+        server: app.getHttpServer(),
+        worker,
+        email: EMAILS.cascade,
+      });
+      await asOrganization(owner, org, (run) =>
+        run(`INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1,$2,$3)`, [
+          scoped.accountId,
+          org,
+          MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+        ]),
+      );
+      const ent = await http()
+        .post('/api/v1/entities')
+        .set(scoped.authorization)
+        .send({
+          name: 'Nistru SRL',
+          legalForm: 'srl',
+          naceCodes: ['35.11'],
+          sites: [{ name: 'Hidro', locality: 'Dubăsari', countryCode: 'MD' }],
+        })
+        .expect(201);
+      const per = await http()
+        .post('/api/v1/periods')
+        .set(scoped.authorization)
+        .send({
+          reportingEntityId: (ent.body as { object: { id: string } }).object.id,
+          fiscalYear: 2027,
+          periodStart: { date: '2027-01-01', timezone: CHISINAU },
+          periodEnd: { date: '2027-12-31', timezone: CHISINAU },
+        })
+        .expect(201);
+      const periodTwo = (per.body as { object: { id: string } }).object.id;
+      const rep = await http()
+        .post('/api/v1/reports')
+        .set(scoped.authorization)
+        .send({ reportingPeriodId: periodTwo })
+        .expect(201);
+      const reportTwo = (rep.body as { object: { id: string } }).object.id;
+
+      await asTenant({ organizationId: org, actorId: scoped.accountId }, () =>
+        store.write({
+          key: { reportId: reportTwo, elementKey: ELEMENT, dimensionKey: '', ordinal: 0 },
+          contents: answered(),
+        }),
+      );
+      await http()
+        .post(`/api/v1/periods/${periodTwo}/lock`)
+        .set(scoped.authorization)
+        .send({})
+        .expect(200);
+
+      // The whole chain, from the root, with the report locked and carrying values.
+      await asOrganization(owner, org, (run) =>
+        run(`DELETE FROM core.organization WHERE id = $1`, [org]),
+      );
+      const left = (await asOrganization(owner, org, (run) =>
+        run(`SELECT count(*)::int AS n FROM core.report_disclosure_value WHERE report_id = $1`, [
+          reportTwo,
+        ]),
+      )) as { n: number }[];
+      expect(left[0].n).toBe(0);
+    }, 60_000);
 
     it('accepts writes again once the period is reopened (UC-58)', async () => {
       await http()
