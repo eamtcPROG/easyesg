@@ -34,6 +34,7 @@ COPY packages/contracts/package.json packages/contracts/
 COPY packages/i18n/package.json packages/i18n/
 COPY packages/ui/package.json packages/ui/
 COPY packages/validation/package.json packages/validation/
+COPY packages/vsme/package.json packages/vsme/
 
 # --frozen-lockfile: an install that would change the lockfile fails instead of resolving something
 # else. `strictDepBuilds` additionally fails on a dependency build script nobody has adjudicated,
@@ -92,10 +93,15 @@ WORKDIR /repo
 # runs — but the cost of that choice is real: a missing entry builds cleanly and then dies at
 # start on a dangling symlink (`Cannot find module '@easyesg/<pkg>/dist/cjs/index.js'`), never
 # at build. `packages/validation` joined it with task 20. What catches an omission is the images
-# job actually RUNNING the container, which is why that step exists.
+# job actually RUNNING the container, which is why that step exists. **`packages/vsme` joined
+# it with task 34.2 and was missed until CI ran the image** — the port re-exports
+# `DISCLOSURE_KIND` as a *value*, so `taxonomy-registry.port.js` emits a real `require` and the
+# container died on start. The guard worked; what failed was that nothing was pushed for 23
+# commits, so it did not run for four tasks.
 COPY --from=build --chown=node:node /repo/node_modules ./node_modules
 COPY --from=build --chown=node:node /repo/packages/i18n ./packages/i18n
 COPY --from=build --chown=node:node /repo/packages/validation ./packages/validation
+COPY --from=build --chown=node:node /repo/packages/vsme ./packages/vsme
 COPY --from=build --chown=node:node /repo/apps/api ./apps/api
 
 # Never root. The image runs an HTTP tier reachable through the edge, and node's own image already

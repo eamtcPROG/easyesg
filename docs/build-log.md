@@ -9321,3 +9321,55 @@ because a class with no `@Injectable` has no constructor metadata to read.
 **`error-throw-http-exceptions`** is **declined by name**, as this repository's standing example
 requires: it asks for `HttpException`, and a domain refusal here throws `ReportNotFoundError`, which
 the filter maps. **`arch-single-responsibility`** is the reason the read is not in `core/disclosure`.
+
+---
+
+## The image guard fired, four tasks late · 2026-09-01
+
+**A red pipeline is a finding.** The push of 23 commits passed all three gate jobs and failed
+**Images**, at the step that boots the container a deploy would use:
+
+> `Error: Cannot find module '@easyesg/vsme'` — from `/repo/apps/api/dist/contracts/taxonomy-registry.port.js`
+
+### The defect, and whose it was
+
+Task 34.2 added `export { DISCLOSURE_KIND } from '@easyesg/vsme'` to the taxonomy port. That is a
+**value** re-export, so the compiled JS emits a real `require` — `apps/api` gained a third runtime
+workspace dependency. `apps/api/Dockerfile`'s runtime stage copies `packages/i18n` and
+`packages/validation` and stops there, so the symlink dangled and the container died at start.
+
+`apps/api/package.json` declares three `@easyesg/*` dependencies; the Dockerfile copied two. The
+whole defect is that difference.
+
+### The part worth keeping
+
+**The guard existed, was correct, and had already predicted this in its own comment:**
+
+> *"This list is exactly apps/api's workspace dependencies, and it grows with them … a missing entry
+> builds cleanly and then dies at start on a dangling symlink … `packages/validation` joined it with
+> task 20. What catches an omission is the images job actually RUNNING the container."*
+
+So nothing was missing from the design. **What failed was the feedback loop's length**: the images
+job runs on push, and nothing was pushed for 23 commits across five tasks, so a defect introduced in
+`f240cc2` sat undetected through four subsequent task closes — each of which ran `gates:scoped`, and
+one of which ran a clean `pnpm gates`. None of them build an image; only CI does.
+
+That is the honest reading, and it argues for pushing more often rather than for distrusting the
+gate. It also argues for a cheaper check, because `apps/api`'s workspace dependencies and the
+Dockerfile's copy list are two lists that must match and nothing compares them hermetically — three
+occurrences now (i18n, validation, vsme). Raised rather than built here: adding a gate is a change to
+the gate set, and this commit's job is to make `dev` green.
+
+### Verified locally rather than pushed hopefully
+
+The image was built and run against the Compose stack, reproducing CI's step exactly:
+
+- `require.resolve('@easyesg/vsme')` inside the image → `/repo/packages/vsme/dist/cjs/index.js`;
+- `dist/contracts/taxonomy-registry.port.js` — the exact module CI died on — loads, with all ten
+  `DISCLOSURE_KIND` members;
+- `api` and `worker` both reach `running` from one image (AD-1), `/health` answers `status: ok` on the
+  first poll, and neither container's log contains `Cannot find module`.
+
+One incident of its own along the way: the first local build died `DeadlineExceeded` fetching the
+`docker/dockerfile:1` frontend. A registry timeout, not a Dockerfile error — worth naming because it
+reads like a build failure and is not one.
