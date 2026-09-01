@@ -6,6 +6,10 @@ import {
   type LabelStandingManifest,
   type Locale,
 } from '@easyesg/i18n';
+import en20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/en.json';
+import ro20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/ro.json';
+import ru20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/ru.json';
+import standing20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/standing.json';
 import en20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/en.json';
 import ro20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/ro.json';
 import ru20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/ru.json';
@@ -89,9 +93,23 @@ function pair(
   return Object.fromEntries(Object.entries(texts).map(([key, text]) => [key, { text, standing }]));
 }
 
+const STANDING_20260201 = readStanding(standing20260201, '2026-02-01');
 const STANDING_20260501 = readStanding(standing20260501, '2026-05-01');
 
 export const DISCLOSURE_CATALOGUES: Readonly<Record<string, DisclosureCatalogue>> = {
+  // Task 33.3's second registered version (R-7). Its element keys and EFRAG's English wording are
+  // identical to May's — what moved between the two releases is the presentation-role naming, which
+  // labels do not carry. The two authored locales are therefore the same authored text for the same
+  // keys, which is per-version authoring rather than a copy of somebody else's translation: the
+  // directory is still written once and never edited, as this catalogue's README requires.
+  '2026-02-01': {
+    standing: STANDING_20260201,
+    labels: {
+      ro: pair(ro20260201, STANDING_20260201.ro),
+      en: pair(en20260201, STANDING_20260201.en),
+      ru: pair(ru20260201, STANDING_20260201.ru),
+    },
+  },
   '2026-05-01': {
     standing: STANDING_20260501,
     labels: {

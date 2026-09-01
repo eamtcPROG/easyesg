@@ -1,6 +1,22 @@
 {
-  "standard": "vsme",
-  "version": "2026-05-01",
-  "templateVersion": "2026-05-01",
-  "compatibleWith": null
+  "schedule": [
+    {
+      "validTo": "2026-01-01",
+      "payload": {
+        "standard": "vsme",
+        "version": "2026-02-01",
+        "templateVersion": "2026-02-01",
+        "compatibleWith": null
+      }
+    },
+    {
+      "validFrom": "2026-01-01",
+      "payload": {
+        "standard": "vsme",
+        "version": "2026-05-01",
+        "templateVersion": "2026-05-01",
+        "compatibleWith": null
+      }
+    }
+  ]
 }

@@ -244,25 +244,23 @@ describe('the prior period read (UC-45; FR-45, FR-46)', () => {
   it('retrieves the value across two periods pinned to DIFFERENT taxonomy versions', async () => {
     const priorReportId = await createReport(await openPeriod(2025));
     await writeValue(priorReportId, '999');
-    // Repinned as the owner, because no product path produces two pins yet: `esg_app` holds no
-    // UPDATE privilege on the column at all (task 31.3), and the second registered version is task
-    // 33.3's. The fixture is the only way to reach the state this task's deliverable names.
-    await asOrganization(owner, ORG, (run) =>
-      run(`UPDATE core.report SET taxonomy_version = '2025-01-01' WHERE id = $1`, [priorReportId]),
-    );
     const reportId = await createReport(await openPeriod(2026));
 
     const answer = objectOf((await priorPeriodOf(reportId).expect(200)).body);
 
-    // The deliverable's own sentence: retrievable, with BOTH pins on the answer so the reader can
-    // see they differ. DR-4 makes the version a data dimension; a comparative that hid it would be
-    // the "two disagreeing pins with nothing failing" shape one layer up.
+    // **Nothing is repinned by this test.** Task 33.3 registered EFRAG's February 2026 release
+    // beside the May one and scheduled the adoption by period start, so a FY2025 period and a
+    // FY2026 period pin different versions through the product's own path (FR-45, DR-4, R-7). Until
+    // then this test had to `UPDATE core.report` as the owner to reach the state its own deliverable
+    // named — a fixture standing in for an arrangement that did not exist yet.
     expect(answer.taxonomyVersion).toBe('2026-05-01');
-    expect(answer.prior?.taxonomyVersion).toBe('2025-01-01');
+    expect(answer.prior?.taxonomyVersion).toBe('2026-02-01');
     expect(answer.values[0].valueNumeric).toBe('999');
-    // Honest rather than flattering: that version is not registered here, so the registry cannot say
-    // the element is unchanged, and `comparable` would assert an equality nothing checked.
-    expect(answer.values[0].comparability).toBe(COMPARABILITY.ELEMENT_ABSENT);
+    // **And now the verdict is the interesting one.** Both versions are registered, so the registry
+    // can be asked about the element on each side: it exists in both with the same kind and period
+    // type, so last year's number may sit beside this year's field. Before 33.3 this could only
+    // reach `element_absent`, which was honest and proved less.
+    expect(answer.values[0].comparability).toBe(COMPARABILITY.COMPARABLE);
   });
 
   it('is readable by a viewer, because FR-25 gives them the same entries', async () => {

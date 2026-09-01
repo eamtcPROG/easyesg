@@ -306,5 +306,66 @@ describe('configuration store (DR-3, AD-4)', () => {
       });
       expect(registration?.payload.locales.map((l) => l.code)).toEqual(['ro', 'en', 'ru']);
     });
+    /**
+     * The scheduled form (task 33.3), which R-7 is the reason for: two taxonomy adoptions in force
+     * over different windows, so a FY2025 period and a FY2026 period pin different versions.
+     */
+    it('installs every window of a scheduled seed, each resolving on its own dates', async () => {
+      await seedConfiguration(app);
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+
+      const at = (on: string) =>
+        replica.get<{ version: string }>({ kind: 'reporting_taxonomy', scope: 'vsme', on })?.payload
+          .version;
+
+      // The boundary is half-open and keyed on period start: the day before belongs to the earlier
+      // adoption, the day itself to the later one.
+      expect(at('2025-01-01')).toBe('2026-02-01');
+      expect(at('2025-12-31')).toBe('2026-02-01');
+      expect(at('2026-01-01')).toBe('2026-05-01');
+      expect(at('2026-06-30')).toBe('2026-05-01');
+    });
+
+    /**
+     * **Narrowing a live schedule is refused with words, not with a constraint.**
+     *
+     * `config.entry_schedule` is keyed `WITHOUT OVERLAPS`, so replacing one unbounded slot with two
+     * windows collides. Left alone, an already-adopted deployment meets `entry_schedule_pkey` raised
+     * four directories from the JSON file that caused it; and deleting the slot instead would break
+     * `config/seed/README.md`'s promise that seeding does not undo an operator's edit — on the table
+     * that decides which taxonomy a filing is pinned to.
+     */
+    it('refuses to narrow a schedule already in force, naming what it found', async () => {
+      const slot = { kind: 'reporting_taxonomy', scope: 'vsme' };
+      const [{ id }] = await owner.query<{ id: string }[]>(
+        `SELECT id FROM config.entry_version WHERE kind = $1 AND scope = $2
+          ORDER BY revision DESC LIMIT 1`,
+        [slot.kind, slot.scope],
+      );
+      await owner.query(`DELETE FROM config.entry_schedule WHERE kind = $1 AND scope = $2`, [
+        slot.kind,
+        slot.scope,
+      ]);
+      await owner.query(
+        `INSERT INTO config.entry_schedule (kind, scope, validity, version_id)
+         VALUES ($1, $2, '[,)'::daterange, $3)`,
+        [slot.kind, slot.scope, id],
+      );
+
+      try {
+        await expect(seedConfiguration(app)).rejects.toThrow(/already holds \(,\)/);
+        // And it says what to do, rather than only that something is wrong (NFR-79's shape, applied
+        // to an operator rather than to an end user).
+        await expect(seedConfiguration(app)).rejects.toThrow(/operator action, not a seed/);
+      } finally {
+        // Put the two windows back, so a suite that runs after this one still resolves a pin.
+        await owner.query(`DELETE FROM config.entry_schedule WHERE kind = $1 AND scope = $2`, [
+          slot.kind,
+          slot.scope,
+        ]);
+        await seedConfiguration(app);
+      }
+    });
   });
 });

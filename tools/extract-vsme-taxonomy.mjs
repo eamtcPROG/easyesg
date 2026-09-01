@@ -115,14 +115,27 @@ const roleTypes = xsd.match(/<link:roleType\b[\s\S]*?<\/link:roleType>/g) ?? [];
 for (const block of roleTypes) {
   const uri = attribute(block, 'roleURI');
   const definition = /<link:definition>([^<]*)<\/link:definition>/.exec(block)?.[1] ?? '';
-  // **Every presentation role is kept, module or not.** Three of them — *Environment / Social /
-  // Governance - Other and/or entity specific information* — carry no `B`/`C` prefix because the
-  // standard's catch-all disclosures belong to a pillar rather than a numbered module. Filtering
-  // on the prefix dropped their three elements silently, which the count assertion below now makes
-  // impossible; what they get is `module: null` and the role's own words, rather than a 21st
-  // module invented here to give them somewhere to sit.
-  const module = /^\[\d+\]\s+([BC]\d{1,2})\b/.exec(definition)?.[1] ?? null;
-  if (uri && definition) moduleByRole.set(uri, { module, definition });
+  // **Every presentation role is kept, module or not.** The catch-all disclosures — *Other and/or
+  // entity specific information* — carry no module because they belong to a pillar rather than to a
+  // numbered one. Filtering on the prefix dropped their elements silently, which the count
+  // assertion below now makes impossible; what they get is `module: null` and the role's own words,
+  // rather than a 21st module invented here to give them somewhere to sit.
+  //
+  // **EFRAG has used two role-naming schemes, and reading only one is how a release goes silently
+  // module-less** (task 33.3). February 2026 numbers roles by module — `[B08.300] - Social - ...` —
+  // and May 2026 numbers them sequentially with the module beside it — `[1310] B8 - Social - ...`.
+  // The May pattern alone matched nothing in February, so every one of its 143 elements extracted
+  // with `module: null` while the summary reported them as the pillar catch-alls. Both schemes are
+  // read, and both canonicalise to the SAME token — `B01` and `B8` become `B1` and `B8` — because a
+  // comparative across two pins compares these strings (task 34.3), and `B01` beside `B1` would read
+  // as two different modules for one disclosure.
+  const module =
+    /^\[\d+\]\s+([BC])(\d{1,2})\b/.exec(definition)?.slice(1) ??
+    /^\[([BC])(\d{1,2})[.\d]*\]/.exec(definition)?.slice(1) ??
+    null;
+  // `[B, 01]` -> `B1`: parseInt drops the zero pad so the two schemes agree on one spelling.
+  const canonical = module === null ? null : `${module[0]}${Number.parseInt(module[1], 10)}`;
+  if (uri && definition) moduleByRole.set(uri, { module: canonical, definition });
 }
 
 // ── Presentation: which module an element belongs to, and in what order ─────────────────────────
@@ -464,6 +477,39 @@ const dropped = concrete.filter(([name]) => !placement.has(name)).map(([name]) =
 if (dropped.length > 0) {
   console.error(`${dropped.length} concrete element(s) reached no presentation role:`);
   for (const name of dropped) console.error(`  ${name}`);
+  process.exit(1);
+}
+
+/**
+ * **Module coverage, which this file's header has always claimed to check and did not.**
+ *
+ * That header says the run "fails loudly if the element count, the concrete count or the module
+ * coverage moves, so a shape this does not understand cannot pass silently". The first two were
+ * asserted below; the third was not, and the omission was invisible in exactly the way that matters:
+ * a role-naming scheme the regex does not understand yields `module: null` for **every** element,
+ * and the summary then reports them as the pillar catch-alls — a total failure of the derivation,
+ * printed as a known benign category. Extracting February 2026 produced 143 of 143 unmoduled and
+ * exited 0 (task 33.3).
+ *
+ * **The exception is named by its own words rather than by a count.** A catch-all role says so —
+ * *Other and/or entity specific information* — and how many elements hang off it is a property of
+ * the release: May 2026 splits it three ways by pillar, February 2026 has a single `[D99.000]`. A
+ * threshold of three would have passed February's total failure on a later release and failed a
+ * legitimate one; the words do not move.
+ */
+const CATCH_ALL_ROLE = /Other and\/or entity specific information/i;
+const unmoduled = reportable.filter(
+  ([name]) =>
+    placement.get(name).module === null && !CATCH_ALL_ROLE.test(placement.get(name).section),
+);
+if (unmoduled.length > 0) {
+  console.error(
+    `${unmoduled.length} reportable element(s) resolved no module and sit in no catch-all role.`,
+  );
+  console.error('This release names its presentation roles in a shape this script does not read:');
+  for (const [name] of unmoduled.slice(0, 5)) {
+    console.error(`  ${name} — ${placement.get(name).section}`);
+  }
   process.exit(1);
 }
 

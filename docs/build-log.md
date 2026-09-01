@@ -9373,3 +9373,142 @@ The image was built and run against the Compose stack, reproducing CI's step exa
 One incident of its own along the way: the first local build died `DeadlineExceeded` fetching the
 `docker/dockerfile:1` frontend. A registry timeout, not a Dockerfile error — worth naming because it
 reads like a build failure and is not one.
+
+---
+
+## Task 33.3 — the second version, and what it found in the first hour · 2026-09-01
+
+R-7 asks for two taxonomy versions registered "from day one … so the version dimension is exercised
+continuously rather than discovered at the first rollout". It closes task 33.
+
+### Two readings had to be settled before any code
+
+**"In staging" cannot be met literally.** `infra/` holds `ci`, `compose` and `postgres`; tasks 71 and
+72 build the staging stack and are `TODO`. Task **73.6** then rehearses rollouts *"in staging over
+33.3's two-version setup"* — so the plan already reads 33.3 as producing the setup and staging as
+consuming it later. Decided with the project owner: **ship the setup, defer the deployment**, and
+leave the row's wording alone rather than editing the plan to match what was done.
+
+**Which second version.** EFRAG publishes five VSME taxonomy packages. R-7 names one of them in its
+own words — *"The February 2026 release was backwards-incompatible"* — which makes `2026-02-01` the
+only choice that exercises a real break rather than a cosmetic gap.
+`VSME-XBRL-Taxonomy-February-2026.zip`, SHA-256 `c65f2e17…`, 484 889 B; provenance recorded in
+`config/seed/README.md` so a regeneration can be checked against the same bytes.
+
+### It found the hardcoding R-7 predicted, immediately
+
+R-7's residual risk is *"that the first implementation hardcodes something"*. It had:
+
+EFRAG renamed its presentation roles between the releases — `[B08.300] - Social - …` in February
+against `[1310] B8 - Social - …` in May — and `tools/extract-vsme-taxonomy.mjs` read only the May
+shape. **All 143 February elements extracted with `module: null`, and the run exited 0.**
+
+**The summary line was the accomplice.** It printed `unmoduled 143 (the standard's pillar-level
+catch-alls)` — a wording that is accurate for May, where exactly three elements sit in pillar
+catch-all roles. Applied to 143 of 143 it reports a total failure of the derivation as a known benign
+category. Nothing looked wrong.
+
+**And the file's header had claimed the check that would have caught it**, since task 33.1: *"the run
+fails loudly if the element count, the concrete count or the **module coverage** moves, so a shape
+this does not understand cannot pass silently."* The first two were asserted. The third never was.
+
+### Both fixed, and the exception named by its words rather than a count
+
+Both role-naming schemes are read, and both canonicalise to one spelling — `B01` and `B8` alike
+become `B8`. That is not tidiness: **task 34.3's comparative compares these strings**, so `B01`
+beside `B1` would read as two different modules for one disclosure.
+
+The assertion keys on the catch-all role's own words — *Other and/or entity specific information* —
+because how many elements hang off it is a property of the release: May splits it three ways by
+pillar, February has a single `[D99.000]` carrying four. **A threshold of three would have admitted
+February's total failure and refused a legitimate release.**
+
+| | result |
+| --- | --- |
+| May 2026 replayed under the new regex | **143/143 identical** — the committed artefact provably unchanged, without a second download |
+| February, fixed | 20 modules (B1–B11, C1–C9), 4 catch-all |
+| February, old regex seeded back | **exit 1**, "139 reportable elements resolved no module", artefact not written |
+
+### A seed file may now hold a schedule
+
+"A report pinned to each" needs two adoption windows, and `pinFor({ on })` resolves through
+`config.entry_schedule` — so a *starting state* that cannot express a schedule cannot ship an
+arrangement that depends on one. A file may hold `{ "schedule": [{ validFrom, validTo, payload }] }`
+instead of a bare payload. Generic rather than taxonomy-specific: AD-4 lists effective dates as store
+data, so factor sets, VAT rules and thresholds each want it.
+
+Three things about it, each a defect avoided rather than a preference:
+
+- **`schedule` must be the file's one and only key**, so a payload that happens to carry that field
+  is not silently truncated to it.
+- **Idempotence is per window**, compared at a date *inside* the window rather than at today —
+  otherwise a historical window republishes on every run and moves the store version for nothing,
+  which is the exact harm this loader's idempotence exists to prevent. Verified: the second run
+  reports every artefact `unchanged`.
+- **It refuses to narrow a schedule already in force.** `WITHOUT OVERLAPS` makes replacing one
+  unbounded slot with two windows a collision — found the honest way, by running it against a
+  database that already had the old slot and getting `entry_schedule_pkey` from four directories
+  away. Rather than surface that, or silently delete a slot an operator may have scheduled (which
+  `config/seed/README.md` promises seeding will not do), the run stops and names the ranges it found.
+  Proven by seeding an unbounded slot: the message names `(,)` and explains the operator action.
+
+### The boundary is the fiscal year, and that makes the arrangement structural
+
+Adoption is this platform's decision, deliberately not `max(registeredVersions)`. Keyed on **period
+start** at `2026-01-01`, it states a rule a reporter would recognise — the taxonomy a fiscal year is
+reported under — rather than a date lifted from EFRAG's release calendar, which would pin FY2025 and
+FY2026 alike and exercise nothing.
+
+The consequence is the good part: **the e2e suites already open FY2025 and FY2026 periods**, so two
+differently-pinned reports now exist in every run without any fixture contriving them. That is what
+R-7 means by continuously.
+
+It also paid a debt one task old. `prior-period.e2e-spec.ts` had to `UPDATE core.report` as the owner
+to reach two pins, with a comment saying no product path could produce them and that the second
+registered version was task 33.3's. That hack is deleted, and its cross-version assertion moved from
+`element_absent` to **`comparable`** — the verdict task 34.3 recorded it could not reach.
+
+### Registering a version is a checklist, and three gates recited it
+
+Adding `2026-02-01` was not one file. Each of these failed loudly and named what was missing, which
+is the whole return on the effort tasks 33.1 and 33.2 put into asserting rather than defaulting:
+
+- **`seed-configuration-store.ts`**, the *hermetic* loader the unit specs read artefacts through,
+  parsed every file as a bare payload. It got `{ schedule: [...] }`, `pinFor` found no `version`, and
+  eight tests failed at once. Its own header had already named this failure — *"A double that parsed
+  those differently would let a spec pass against artefacts the running system reads as something
+  else"* — so the fix is the header taken literally: it expands a schedule the way `config:seed`
+  does, and its `get` now honours `on` instead of returning the first match on disk.
+- **`disclosure-label.artefact.spec.ts`** refused a registered taxonomy version with no label
+  catalogue — *"the shape that makes every field of a whole taxonomy unnamed at once"*. English was
+  extracted from February's own package by `tools/extract-vsme-labels.mjs` and is **byte-identical to
+  May's**: what moved between the releases is presentation-role naming, which labels do not carry.
+  The two platform-authored locales are the same authored text for the same 143 keys.
+- **`DISCLOSURE_CATALOGUES`** is a declared map, not a directory scan, so the version had to be
+  registered there too — and the spec that compares it against the registered taxonomies is what
+  said so, in one assertion naming the missing version.
+
+None of this was foreseen when the task started. All three were found in seconds by gates written
+earlier, which is the argument for that style of gate stated better than prose could.
+
+### Verified
+
+- `config:seed` twice: first publishes two adoption windows and both February artefacts; second
+  reports everything `unchanged`. Schedule installed as `(,2026-01-01) → 2026-02-01` and
+  `[2026-01-01,) → 2026-05-01`.
+- `pnpm e2e` — **767 passed, 33 suites**, with the two-version arrangement live.
+- `pnpm --filter @easyesg/api test` — **566 passed, 67 suites**, with both versions registered.
+- `pnpm e2e` — **769 passed, 33 suites**, 76 s.
+
+**Two task-85 instances during this task's verification, recorded rather than quietly re-run.** One
+`gates:scoped` sat in `e2e-api` for **30 minutes** at 0.0 % CPU with load average 2.2 — so not the
+memory pressure that row explains — and the run after it completed in 62 s. That one then failed a
+single `route-matrix` assertion with **`socket hang up`**, which is one of the four symptoms task 85
+lists and which it separates from the timeout it closed. The next run passed 769/769. Neither is
+caused by anything here: the same tree passes and fails across consecutive runs. Task 87's log-path
+line earned itself during the first of these — the hung gate's `e2e-api.log` was readable while it
+hung, which is how "still running" was distinguished from "stuck at the first file" without guessing.
+- Three seeded proofs above, each failing in the intended way, plus two permanent ones added to
+  `configuration-store.e2e-spec.ts`: the windows resolve at their own dates on both sides of the
+  boundary, and the reshape guard refuses while restoring the schedule in a `finally` so a later
+  suite still resolves a pin.
