@@ -1,0 +1,108 @@
+.field {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-4);
+  border-block-end: 1px solid var(--border-default);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.label {
+  font-weight: 600;
+  color: var(--text-default);
+}
+
+/* One selector per tone rather than an inline style: a colour computed in a component is a colour
+   task 82's dark scheme cannot reach. */
+.marker {
+  flex: none;
+  font-size: 0.8125rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+}
+
+.marker[data-tone='ok'] { color: var(--state-ok); background: var(--state-ok-tint); }
+.marker[data-tone='attention'] { color: var(--state-attention); background: var(--state-attention-tint); }
+.marker[data-tone='warning'] { color: var(--state-warning); background: var(--state-warning-tint); }
+.marker[data-tone='error'] { color: var(--state-error); background: var(--state-error-tint); }
+.marker[data-tone='reasoned'] { color: var(--state-reasoned); background: var(--state-reasoned-tint); }
+.marker[data-tone='pending'] { color: var(--state-pending); background: var(--state-pending-tint); }
+.marker[data-tone='neutral'] { color: var(--state-neutral); background: var(--state-neutral-tint); }
+
+.help {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  max-width: var(--measure-text);
+}
+
+.entry {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.control {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.unit {
+  flex: none;
+  background: var(--field-unit-surface);
+  border-radius: var(--radius-1);
+  padding: var(--space-2) var(--space-3);
+}
+
+.prior {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.carry {
+  flex: none;
+}
+
+.message {
+  margin: 0;
+  font-size: 0.875rem;
+  max-width: var(--measure-text);
+}
+
+.message[data-tone='ok'] { color: var(--state-ok); }
+.message[data-tone='attention'] { color: var(--state-attention); }
+.message[data-tone='warning'] { color: var(--state-warning); }
+.message[data-tone='error'] { color: var(--state-error); }
+.message[data-tone='reasoned'] { color: var(--state-reasoned); }
+.message[data-tone='pending'] { color: var(--state-pending); }
+.message[data-tone='neutral'] { color: var(--text-muted); }
+
+.declare {
+  justify-self: start;
+}
+
+.more {
+  font-size: 0.875rem;
+}
+
+.moreSummary {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.moreBody {
+  margin-block-start: var(--space-2);
+  max-width: var(--measure-text);
+  color: var(--text-muted);
+}

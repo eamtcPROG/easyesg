@@ -9669,3 +9669,83 @@ remove, offline and pending need 35.2's autosave.
 - Every design token the archetype's CSS references checked against `tokens.css`: the first draft
   named six that do not exist (`--color-text-default`, `--radius-sm`, `--measure-reading` among them),
   which typecheck and lint both pass and only a rendered page would have shown.
+
+---
+
+## Task 36.1 — the disclosure field anatomy · 2026-09-02
+
+Taken ahead of 35.2 and 35.3, with the project owner: both depend on there being a field to autosave
+and to restore, and every one of 36.2 … 36.13 rests on this. That is the **third** dependency
+correction in this range in one day — 35.1 needed the Wizard archetype, task 89 needed the whole API,
+this needed to come before the two rows numbered ahead of it.
+
+### One anatomy, ten kinds
+
+§6.2 is *"the source's only screen-level layout diagram"*, which makes the anatomy normative rather
+than suggested: label and state marker, help, value input and unit, prior-period comparative with
+carry-forward, state message, the always-present not-available declaration, and progressive
+disclosure.
+
+**The input is a slot, and that is what §11.5's *"every variant shares one anatomy"* means.** Ten
+disclosure kinds answer into four typed columns, so the control differs per kind while everything
+around it does not. `TextField`'s own header had already predicted this component and its boundary —
+*"the disclosure field of §6.2 adds unit, comparative and reason capture on top of this anatomy; it
+is its own component"*.
+
+**Two props are required that a smaller design would have made optional**, because an optional prop
+makes an omission invisible where a required one makes it a decision:
+
+- `notAvailable` — UX-15 wants the declaration *"a first-class action, not an alternative discovered
+  after failing to answer"*. A field that could omit it would hide the only honest answer to a
+  question a reporter cannot answer.
+- `help` — UX-17 says *"the user shall never have to open anything to answer a normal question"*.
+
+### Two decisions worth their words
+
+**It takes a tone, not a disclosure state.** `packages/ui` has no workspace dependencies at all and
+that is deliberate — its values feed the print layer and the email renderer (UX-127) — so importing
+the store's eight-value `DisclosureState` would put a persistence model in every consumer's graph,
+the same argument `ui-forms-out-of-the-barrel` makes about react-hook-form. It is not a second copy
+of a vocabulary either: a *tone* is how the system paints a verdict, a *state* is what the store
+recorded, and the mapping is the app's. The seven tones are the cascade's own `--state-*` roles, so
+the component names nothing that was not already named.
+
+**"Dark maps" could not be met literally, and the coherent reading is discipline.** 36.1's Expected
+result asks for state sets *and dark maps*, and **no dark scheme exists anywhere in the repository** —
+`tokens.css` carries no `prefers-color-scheme` and no `[data-theme]`, because UX-80's cascade-wide
+scheme is **task 82**, still `TODO`. So the obligation is discharged the way the cascade was designed
+for: every colour is a semantic token, the tone selectors are CSS attribute selectors rather than
+computed styles — a colour computed in a component is one task 82 cannot reach — and the component
+inherits the scheme the day it lands without being reopened.
+
+### Caught by checking rather than by rendering
+
+The first CSS draft named tokens that do not exist. Both this component and task 35.1's archetype
+were checked token by token against `tokens.css`; `--radius-pill`, `--measure-text` and the
+`--state-*` family are real, and the `--color-text-*` / `--radius-sm` / `--measure-reading` names an
+earlier draft used are not. **Typecheck and lint pass either way** — only a rendered page or this
+check would show it.
+
+### What is deliberately not here
+
+**No narrative control.** UX-19 wants a length indication and *"a soft target derived from the
+reference corpus"* — and no reference corpus exists in this repository. That is a real dependency
+rather than an oversight, and B1 and B2 are narrative-heavy, so **task 36.2 meets it first**: it
+either builds the control with the soft target omitted and says so, or the corpus becomes its own
+question. Recorded here so that task starts with it rather than discovering it.
+
+**No boolean or enumeration control beyond `Select`.** Those arrive with the module that needs them,
+which is how `Combobox` and `DateField` entered the inventory.
+
+### Verified
+
+- `packages/ui` — **85 passed** (79 before), six of them this component's: the accessible group that
+  makes three controls read as one question, the always-present declaration, help visible without
+  opening anything, read-only removing affordances while keeping the question, the comparative with
+  its carry-forward, and a verdict announced as `status` rather than `alert` — forty alerts on one
+  step would make the step unusable.
+- Every token referenced checked against the cascade.
+- `pnpm gates:scoped` — nine green; `e2e-api` failed **one** test on `/health` answering **400**,
+  which a `packages/ui` change cannot cause and which task 85's row already collects as its
+  non-timeout family. `pnpm e2e` immediately after: **793 passed, 34 suites**. Recorded rather than
+  re-run away, per that row's own lesson.

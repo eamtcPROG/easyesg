@@ -37,6 +37,12 @@ export {
 
 // form controls
 export { FormErrorSummary, type FormErrorSummaryItem, type FormErrorSummaryProps } from './form/form-error-summary';
+export {
+  DisclosureField,
+  FIELD_TONE,
+  type DisclosureFieldProps,
+  type FieldTone,
+} from './disclosure/disclosure-field';
 export { CodeField, type CodeFieldProps } from './form/code-field';
 export { DateField, type DateFieldProps } from './form/date-field';
 export { Combobox, type ComboboxOption, type ComboboxProps } from './form/combobox';
