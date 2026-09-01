@@ -8153,3 +8153,229 @@ CLAUDE.md names, arriving on schedule, in a task whose own entry is largely abou
 `pnpm gates:clean` — the full set from a cleaned tree, including both e2e suites, run twice: once
 before the reviews and once after their findings were applied. Measured rather than estimated:
 `packages/i18n` goes 61 → 72 tests and `apps/api` gains 14, all in one new suite.
+
+---
+
+## Task 34.1 — The generic disclosure value store, and a primary key that could not be audited · 2026-09-01
+
+**Deliverable met.** `core.report_disclosure_value` is live under RLS, written and read through
+`DisclosureValueStoreRepository`, and every field change is recorded in `core.field_change` by a
+trigger no call site invokes.
+
+### §7.3's primary key would have failed on every write
+
+The one decision worth the name, taken with the project owner before any code and recorded in
+`architecture.md` §7.3 and §12.5.6.
+
+§7.3 specified `PRIMARY KEY (report_id, element_key, dimension_key, ordinal)` and no `id`, justified
+by *"an expression unique index cannot be an FK target — which `FIELD_CHANGE` needs"*. Task 14 built
+`core.field_change` as a **generic** trail keyed by `(table_name, record_id)` with **no foreign key
+to anything**, so nothing needed an FK target. What `core.capture_field_change` does need is a single
+`uuid` it reads as `to_jsonb(NEW) ->> 'id'`, for a `record_id` column that is `uuid NOT NULL` — and
+against the composite key the trigger would have raised a not-null violation on **every write to the
+table**.
+
+FR-54's acceptance criterion names *"any **disclosure field**"*, so this is the table the per-field
+trail exists for and exempting it was never available; NFR-7 adds that attribution cannot be
+retrofitted. **Declined: generalising the trigger to carry a composite subject**, which would have
+altered `core.field_change.record_id` — partitioned by range, sealed append-only, depended on by
+every other audited table — to avoid one column here. The cost is accepted and named: one `uuid` and
+one index per row on the highest-volume table in the system.
+
+**Worth noticing about the failure mode**: nothing would have caught it before the first write. The
+migration applies, the invariants pass, and the table looks correct; the not-null violation arrives
+the first time anyone answers a disclosure.
+
+### `value_date` is not a legal date, and the invariant now says so
+
+NFR-34's pairing invariant refused the table, because every `date` column must carry a `<field>_tz`
+sibling. Resolved from the taxonomy rather than from convenience: the `2026-05-01` artefact has
+**one** date-typed element of 143 —
+`DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet`, the date by which
+an undertaking intends to adopt a transition plan — and the reporter *asserts* it where a clock
+*determines* an invoice date. NFR-34 binds a date *"wherever a legal date is determined"*, and
+CLAUDE.md's test answers no: *"we will adopt by 30 June 2028"* is the same date in every zone. Its
+XBRL type is `xbrli:dateItemType`, which carries no zone, so a `_tz` would be a column the export
+could not use — modelling something the standard lacks, which is the error §7.3's three invented
+element keys already made once.
+
+So `LEGAL_DATE_EXEMPT_COLUMNS` joins `UNAUDITED_TABLES` and `LOCK_GUARD_EXEMPT_TABLES` as a list with
+a reason per entry, **plus a test that every entry names a column that exists** — an exemption for a
+dropped column is one that has quietly stopped meaning anything while still reading as coverage.
+
+The repository still casts `value_date::text`. Being exempt from NFR-34 does not make it safe to let
+the driver hand back a JavaScript `Date`: `2028-06-30` read in a zone behind UTC still comes back as
+the 29th, and a date read a day early is wrong whether or not a timezone decides which day it
+legally is.
+
+### The lock reaches the values, and the DELETE edge is inherited rather than introduced
+
+Task 31.4's invariant exists so this table could not ship inside a lock without a guard, and it bit
+as designed. The guard reads the parent report's status rather than comparing row images, since the
+lock lives on the parent.
+
+`INSERT` and `UPDATE` are covered and `DELETE` deliberately is not — a `BEFORE DELETE` trigger fires
+during a referential cascade, and the chain here is organization → period → report → values, so
+covering `DELETE` would make a locked report's organization undeletable.
+
+**This first read "refused by the use case and not by the schema", and that was false** — found by
+review. There is no use case above this store; `esg_app` holds `DELETE`; nothing refuses it. FR-22 as
+amended says the lock *"refuses every write"*, so this **contradicts** FR-22 rather than narrowing it,
+and the false mitigation was the more dangerous half because it read as covered. Recorded in §12.5.6
+with task 36 as owner and the two mechanisms that could close it.
+
+The same review found why the claim was easy to make: **task 31.2's own §12.5.6 row says
+`BEFORE UPDATE OR DELETE` and the shipped trigger is `BEFORE UPDATE` alone.** The code comment beside
+it always said so, with the cascade reason; the *record* claimed coverage that never existed, and
+this task inherited the claim into a second table before anyone checked. Corrected there too.
+
+### What is not built
+
+- **No HTTP surface.** 34.1 is the store; S-07 is the consumer and that is task 36. The provider is
+  registered and exported with no use case above it, which is what makes the guarantees testable
+  against the real schema now rather than described.
+- **No typed accessors.** T-3's buy-back is 34.2, generated from the taxonomy.
+- **No prior-period read.** FR-45/FR-46 across two differently-pinned reports is 34.3.
+
+### `nestjs-best-practices`, read against the diff
+
+- `di-use-interfaces-tokens` — followed. `DISCLOSURE_VALUE_STORE` is a `Symbol` beside the interface,
+  bound `useClass`, exported from the module.
+- `arch-use-repository-pattern`, `di-interface-segregation` — followed. Four methods, none taking an
+  `organizationId`, because RLS is the tenancy and a parameter would be a way to get it wrong.
+- `arch-module-sharing` — followed. Provided once in `DisclosureModule`.
+- `perf-optimize-database` — **read and its measurement rule applied**, which changed the code: see
+  below. `write()`'s `INSERT … RETURNING id` followed by a `find()` is a deliberate second round trip
+  — one column list for reads and writes rather than two that drift, the reason
+  `report-store.repository.ts` records — and is the one place this rule argues the other way. Noted
+  rather than resolved; it is a real cost on autosave and belongs to whoever profiles the wizard.
+- `test-use-testing-module` — **declined by id, and NOT by inheriting task 31.4's decline.** That one
+  turned on the subject having no database; this e2e constructs `new DisclosureValueStoreRepository()`
+  against a real one, so the condition does not carry. It is declined here for a different reason:
+  the repository takes no constructor dependencies and reads its `QueryRunner` from
+  `runInRequestContext`, so `Test.createTestingModule` would resolve a provider that needs the same
+  manual context anyway, and the DI wiring is already proven by `openapi:check` booting the whole
+  `AppModule`.
+
+### The index claim, measured rather than reasoned
+
+`apps/api/CLAUDE.md` requires database claims to be measured, and the first version of this migration
+asserted `report_disclosure_value_tenant_idx` "serves the tenant-wide scans an export and a
+validation run make". `EXPLAIN` under `esg_app` with a bound tenant and `enable_seqscan = off` says
+otherwise: **neither read this adapter issues touches it.** Both plan as an Index Scan on the
+natural-key `UNIQUE` — which leads with `report_id` and also satisfies `forReport`'s `ORDER BY`
+without a Sort — with RLS's `organization_id` applied as a *Filter*. That is the correct plan, since
+`report_id` is already selective.
+
+So the index is **reachable and currently unread**. It ships because §7.3 prescribes it and because
+adding one to this table later is a migration over live rows, but the write cost is real and
+unpaid-for today. The comment now says that instead of the opposite.
+
+### Verified by seeding, not by reading
+
+The e2e suite drives the **shipped repository** inside a real tenant transaction through
+`runInRequestContext`, not raw SQL — a suite that issued the statements itself would prove the schema
+and leave untested the one thing the adapter decides, which is that `organization_id` comes from the
+report rather than from the caller.
+
+Each guarantee was then removed and the gates re-run:
+
+| Seeded defect | Invariants failing |
+| --- | --- |
+| `GRANT UPDATE (element_key)` to `esg_app` | 1 |
+| `NO FORCE ROW LEVEL SECURITY` | 5 |
+| `refuse_locked_write` dropped | 3 |
+| `capture_field_change` dropped | 3 |
+| restored | 0 — 43/43 |
+
+Dropping the lock trigger also failed exactly one e2e test, which is the right number.
+
+**The staleness assertion was then applied where the rule holds, not where it was found.** It shipped
+guarding only `LEGAL_DATE_EXEMPT_COLUMNS`; review pointed out that `UNAUDITED_TABLES`,
+`LOCK_GUARD_EXEMPT_TABLES`, `FIELD_AUDITED_TABLES`, `ENCRYPTED_SECRET_COLUMNS`,
+`PLAINTEXT_BY_DESIGN_SECRET_COLUMNS` and `APP_IMMUTABLE_COLUMNS` all reach SQL as `= ANY(…)` or
+`<> ALL(…)` and have the identical hole — a dead entry matches nothing and still reads as coverage.
+One parameterised suite now covers all six, proven by planting a dead entry in each of the two shapes
+(2 failures, 2 plants). **Searched:** every `const` in `schema-invariants.e2e-spec.ts` passed to a
+query as a list.
+
+**Two experiments were confounded and are recorded as such rather than as evidence.** Re-running the
+e2e suite repeatedly tripped §12.5.6's own auth throttle, and a run that reported 16 failures was
+failing at `signInFreshAccount` with `429` rather than on anything seeded. It is a local artefact —
+CI migrates a fresh database, so `identity.auth_attempt` starts empty — but it is worth knowing
+before someone reads a red suite as a regression. Separately, a shell variable holding a `docker
+compose … psql` invocation did not expand as a command, so three consecutive "seeded" runs were all
+still carrying the *first* defect and reported one failure each; the numbers looked plausible and
+meant nothing. Both are the same lesson: a seeded-defect result is only evidence if the seed is
+verified to have landed.
+
+**And the closing gate run failed twice, on task 85's flake, in a way that changes that
+investigation.** `invitation-acceptance` failed inside `gates:clean` with a 404; the next
+`pnpm e2e` — **standalone** — failed differently, `route-matrix` with a 401 from
+`signInFreshAccount` cascading to 267 tests; the next standalone run passed 743/743 on an unchanged
+tree. Task 85's row asserted the flake appears *"never in a standalone `pnpm test:e2e`"*, and that is
+now false — recorded there, because it removes the only discriminator between "something about the
+full run" and "something intermittent everywhere". **I called it as not-the-flake after one
+reproduction and was wrong**, which is worth as much as the finding: two failures and a pass is the
+shape of intermittency, and one reproduction is not a pattern.
+
+### The three review agents — five guarantees were present and unproven
+
+All three ran on `opus`, which the routing rule chooses for a migration and for grants, policies and
+triggers. **`gate-integrity-review` earned the task's largest correction**: it verified all four of
+my seeded-defect claims exactly, and then found that **five things this migration ships were guarded
+by nothing**, each proven by removing it and watching both suites stay green.
+
+| Guarantee | Was | Now |
+| --- | --- | --- |
+| The `INSERT`, `UPDATE` and `DELETE` RLS policies | all three widened to `true` → 30/30 green | → 2 failures |
+| The composite `(report_id, organization_id)` FK — the tenant tie | replaced with a plain FK → green | → 1 failure |
+| `report_disclosure_value_state_known` | dropped → green | → 1 failure |
+| `value_date::text` | cast removed → green | → 1 failure |
+| The FR-54 audit assertion | passed with `capture_field_change` **dropped** | → 2 failures |
+
+Only the `SELECT` policy had been proven, and nothing anywhere asserts a *predicate* —
+`tablesMissingRowLevelSecurity` reads `relrowsecurity` and `relforcerowsecurity`, so RLS was proven
+switched on and not proven to do anything. That is live rather than latent exposure, because
+`remove()` deliberately carries no `organization_id` predicate — RLS is the tenancy — so that
+policy's `USING` is the only thing between a caller bound to one tenant and another's rows, and
+nothing called it from a foreign tenant.
+
+**The audit one is CLAUDE.md's own rule turned on this suite.** `core.field_change` is append-only
+with no foreign key, so `afterAll` cannot clean it: over a thousand rows from earlier runs survive
+under the same hard-coded organization id, and an unscoped `ORDER BY occurred_at DESC LIMIT 1` read
+whichever one a previous run left newest. Fresh CI would have caught it; no machine that had ever run
+the suite could. *"State a previous command left behind"*, where the previous command is a previous
+run of this same file. Both audit assertions are now scoped to rows this run wrote.
+
+**`spec-review` found the two documentation defects that mattered** — the missing §12.5.6 rows and
+the false mitigation, both above — plus three mis-citations that are exactly the plausible-paraphrase
+defect it exists for: `carried_forward` cited **FR-46** (displaying the prior value) where FR-47 owns
+carrying one forward and marking it; `INVALID_URL` cited **FR-29** (units — it never mentions URLs)
+where **FR-40** names all five validation states verbatim; and `INCONSISTENCY` cited **AD-5's
+`allow_with_warning`**, which is the entitlement service's gate outcome, on the far side of the DR-1
+boundary from a disclosure verdict. It also found that §7.2 and §7.9 still described the
+`RETURNING old.*, new.*` capture mechanism task 14 did not build — the same sentence class as §7.3's
+FK-target claim, two more instances of it, corrected together.
+
+**`convention-review` found the `SQL_STATE` drift.** `'45001'` was declared three times: `LOCKED` in
+two adapters and `PERIOD_LOCKED` in a third, with `hasSqlState` retyped beside each. One module now,
+beside `returned-rows.ts`, which was extracted at task 31.1 for the identical reason.
+`sonarjs/no-duplicate-string` cannot see it — `'45001'` is five word-characters against the rule's
+`MIN_LENGTH` of 10.
+
+**And the staleness sweep found two live defects on its first run.** Applied to all ten list
+constants in the invariant file, `RLS_EXEMPT_TABLES` and `MUTABLE_AUDIT_TABLES` both failed:
+each names `audit.inbound_event`, which does not exist. Not stale — **anticipatory**, added ahead of
+task 56, with the reason already in the comment beside them. The two are opposite defects that look
+identical to an assertion, so both are now modelled: `EXEMPTIONS_AWAITING_THEIR_TABLE` declares the
+promise, and a second assertion fails the day the table arrives and the entry is not promoted out.
+`LOCK_GUARDED_ROOTS` was the important addition — it reaches SQL as
+`confrelid::regclass::text = ANY($1)`, so a root name that stopped resolving would make task 31.4's
+entire lock-reachability invariant return zero rows and pass having checked nothing.
+
+### Verified
+
+`pnpm gates:clean`, run before and after the reviews. `apps/api` gains **30** e2e tests and the
+invariant suite goes 42 → 54; `migrations:check` applies, reverts and re-applies. Every guarantee
+above was proven by removing it and re-running, and the tree restored to green after each.

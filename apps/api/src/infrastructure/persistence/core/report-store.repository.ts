@@ -12,6 +12,7 @@ import type {
   ReportStatus,
 } from '@api/modules/core/disclosure/models/report.model';
 import { returnedRows } from '../returned-rows';
+import { SQL_STATE, hasSqlState } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
 
 interface ReportRow {
@@ -93,16 +94,10 @@ const toReport = (row: ReportRow): Report => ({
  * The two SQLSTATEs this table answers with a domain error.
  *
  * `23505` is PostgreSQL's own `unique_violation`, raised by the one-report-per-period constraint.
- * `45001` is ours, raised by the lock trigger — task 31.2 chose class 45 because the standard
- * leaves it to applications, so this refusal is distinguishable from every other plpgsql error in
- * the schema.
+ * `45001` is ours, raised by the lock trigger. Both now come from `../sql-state`, which task 34.1
+ * extracted when a third adapter declared its own copy — see that module for why the names had
+ * already drifted.
  */
-const SQL_STATE = { UNIQUE_VIOLATION: '23505', LOCKED: '45001' } as const;
-type SqlState = (typeof SQL_STATE)[keyof typeof SQL_STATE];
-
-const hasSqlState = (error: unknown, state: SqlState): boolean =>
-  typeof error === 'object' && error !== null && 'code' in error && error.code === state;
-
 /**
  * **The lock is re-raised from the database even though the use case checks it first**, and that is
  * not redundancy: the application check produces the message, and this is what a caller meets when

@@ -1,6 +1,7 @@
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
+import { DisclosureValueStoreRepository } from '@api/infrastructure/persistence/core/disclosure-value-store.repository';
 import { ReportStoreRepository } from '@api/infrastructure/persistence/core/report-store.repository';
 import { ReportingPeriodStoreRepository } from '@api/infrastructure/persistence/core/reporting-period-store.repository';
 import {
@@ -8,6 +9,7 @@ import {
   type ReportingPeriodStore,
 } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
 import { ReportsController } from './controllers/reports.controller';
+import { DISCLOSURE_VALUE_STORE } from './interfaces/disclosure-value-store.interface';
 import { REPORT_STORE, type ReportStore } from './interfaces/report-store.interface';
 import { ReportService } from './services/report.service';
 import { CreateReport } from './use-cases/create-report.use-case';
@@ -40,6 +42,11 @@ const { mode } = configuration();
 const httpProviders: Provider[] = [
   ReportService,
   { provide: REPORT_STORE, useClass: ReportStoreRepository },
+  // Task 34.1's store. Provided and exported with no use case above it yet: the wizard that writes
+  // through it is task 36 and the typed facade is 34.2, so what exists here is the adapter and the
+  // guarantees under it. Registering it now is what makes those guarantees testable against the real
+  // schema rather than described — `disclosure-value.e2e-spec.ts` is the proof.
+  { provide: DISCLOSURE_VALUE_STORE, useClass: DisclosureValueStoreRepository },
   { provide: REPORTING_PERIOD_STORE, useClass: ReportingPeriodStoreRepository },
   { provide: CLOCK, useValue: () => new Date() },
   {
@@ -53,5 +60,6 @@ const httpProviders: Provider[] = [
 @Module({
   controllers: mode === APP_MODE.WORKER ? [] : [ReportsController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
+  exports: mode === APP_MODE.WORKER ? [] : [DISCLOSURE_VALUE_STORE],
 })
 export class DisclosureModule {}

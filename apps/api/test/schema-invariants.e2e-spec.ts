@@ -84,11 +84,35 @@ const columnsOfType = (x: Executor, types: string[]) =>
   );
 
 /**
+ * Date columns that are deliberately **not** legal dates, each with its reason.
+ *
+ * NFR-34 binds a date *"wherever a legal date is **determined**"*, and CLAUDE.md gives the test:
+ * *would a different timezone change the answer to a legal or regulatory question?* Every entry here
+ * must answer no, and answer it from the value's own nature rather than from convenience.
+ *
+ * `core.report_disclosure_value.value_date` holds whatever the reporter states for a date-typed
+ * disclosure (task 34.1). At `2026-05-01` that is **one element of 143** —
+ * `DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet`, the date by which
+ * an undertaking that has not yet adopted a transition plan intends to — and the reporter *asserts*
+ * it rather than a clock *determining* it: "we will adopt by 30 June 2028" is the same date in every
+ * zone. Its XBRL type is `xbrli:dateItemType`, a calendar date the standard gives no zone, so a `_tz`
+ * would be a column the export could not carry and the taxonomy does not have — modelling something
+ * the standard lacks, which is the error §7.3's three invented element keys already made once.
+ * Contrast the dates NFR-34 exists for, all determined by something: an invoice date fixes a fiscal
+ * year and a VAT period, a period's start and end fix which year is filed, the BNM rate date fixes
+ * the rate applied.
+ */
+const LEGAL_DATE_EXEMPT_COLUMNS = ['core.report_disclosure_value.value_date'];
+
+/**
  * NFR-34's other half, which is a pairing rather than a type. A legal date must carry the timezone
  * that determined it, because an instant cannot settle which fiscal year a document falls in — and
  * FR-125 makes that error uncorrectable by editing, only by credit note. The convention is
  * `<field>` and `<field>_tz` (§7.9), so the check is mechanical. It first bites in task 31
  * (reporting period start/end/due) and task 57 (invoice and credit-note dates).
+ *
+ * **The exemption list above is named in the query rather than filtered afterwards**, so a column
+ * added to it that does not exist is not silently ignored — the list is asserted separately below.
  */
 const unpairedLegalDates = (x: Executor) =>
   x.query<{ location: string }[]>(
@@ -101,13 +125,14 @@ const unpairedLegalDates = (x: Executor) =>
         AND a.attnum > 0 AND NOT a.attisdropped
         AND n.nspname = ANY($1)
         AND format_type(a.atttypid, a.atttypmod) = 'date'
+        AND n.nspname || '.' || c.relname || '.' || a.attname <> ALL($2)
         AND NOT EXISTS (
           SELECT 1 FROM pg_attribute tz
            WHERE tz.attrelid = a.attrelid
              AND tz.attname  = a.attname || '_tz'
              AND NOT tz.attisdropped)
       ORDER BY 1`,
-    [DOMAIN_SCHEMAS],
+    [DOMAIN_SCHEMAS, LEGAL_DATE_EXEMPT_COLUMNS],
   );
 
 /**
@@ -264,6 +289,7 @@ const FIELD_AUDITED_TABLES = [
   'core.consolidation_member',
   'core.reporting_period',
   'core.report',
+  'core.report_disclosure_value',
   'identity.membership',
   'identity.invitation',
 ];
@@ -376,6 +402,23 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     // DR-4's pin. The two this table exists to protect.
     'taxonomy_version',
     'template_version',
+  ],
+  /**
+   * The row's identity (task 34.1). A disclosure value belongs to one report, names one element,
+   * one dimension member and one position in a repeating group; a row that moved any of those would
+   * be a different disclosure wearing an old row's `core.field_change` trail, which is the one thing
+   * FR-54's per-field history cannot survive. `id` and `created_at` are identity in the ordinary
+   * sense, and `organization_id` is tenancy — moving it would hide a row from its own tenant or
+   * expose it to another, and RLS enforces whatever the column says.
+   */
+  'core.report_disclosure_value': [
+    'created_at',
+    'dimension_key',
+    'element_key',
+    'id',
+    'ordinal',
+    'organization_id',
+    'report_id',
   ],
 };
 
@@ -674,6 +717,7 @@ describe('schema invariants (§7)', () => {
       );
       expect(caught).toEqual([]);
     });
+
   });
 
   describe('every tenant-scoped table has RLS enabled and forced (DR-5, AD-2)', () => {
@@ -1007,5 +1051,106 @@ describe('schema invariants (§7)', () => {
       [DOMAIN_SCHEMAS],
     );
     expect(Number(count)).toBeGreaterThan(0);
+  });
+
+  /**
+   * **Every exemption list names something that exists.**
+   *
+   * Added by task 34.1 for `LEGAL_DATE_EXEMPT_COLUMNS`, then applied to the four lists that already
+   * had the same hole — root `CLAUDE.md`: *"when you fix an instance of a rule, search for its shape
+   * before you close it … 'Is this one right?' and 'are there others?' are different questions"*.
+   *
+   * The hole is quiet by construction. Every one of these lists reaches SQL as `= ANY($n)` or
+   * `<> ALL($n)`, so an entry naming a dropped table or column simply matches nothing: the invariant
+   * it guards still passes, and the list still reads as though something is deliberately covered.
+   * The next reader treats the entry as a live decision and works around it.
+   *
+   * It is the same argument `APP_IMMUTABLE_COLUMNS` makes for stating withheld columns rather than
+   * granted ones — every entry accounted for by one list or the other — one level up.
+   */
+  describe('every exemption list is live (task 34.1)', () => {
+    const tablesIn = async (): Promise<string[]> => {
+      const rows = await db.query<{ location: string }[]>(
+        `SELECT n.nspname || '.' || c.relname AS location
+           FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE c.relkind IN ('r', 'p') AND n.nspname = ANY($1)`,
+        [DOMAIN_SCHEMAS],
+      );
+      return rows.map((r) => r.location);
+    };
+
+    const columnsIn = async (): Promise<string[]> => {
+      const rows = await db.query<{ location: string }[]>(
+        `SELECT n.nspname || '.' || c.relname || '.' || a.attname AS location
+           FROM pg_attribute a
+           JOIN pg_class     c ON c.oid = a.attrelid
+           JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE a.attnum > 0 AND NOT a.attisdropped AND n.nspname = ANY($1)`,
+        [DOMAIN_SCHEMAS],
+      );
+      return rows.map((r) => r.location);
+    };
+
+    /**
+   * Entries that name a table **before** it exists, each with the task that adds it.
+   *
+   * A stale entry and an anticipatory one look identical to the assertion below — both name
+   * something absent — and they are opposite defects. A stale entry has silently *stopped* meaning
+   * anything; an anticipatory one has not *started*, deliberately, and its list already carries the
+   * reason: `RLS_EXEMPT_TABLES` and `MUTABLE_AUDIT_TABLES` both name `audit.inbound_event`, whose
+   * comment reads *"will be the same when task 56 adds it"*.
+   *
+   * So they are declared rather than tolerated, and the second assertion below closes the other
+   * direction: once the table arrives, the entry must be promoted out of here, or this list starts
+   * excusing a real check. This suite found both entries on its first run.
+   */
+  const EXEMPTIONS_AWAITING_THEIR_TABLE = ['audit.inbound_event'];
+
+  it.each([
+      ['UNAUDITED_TABLES', UNAUDITED_TABLES],
+      ['LOCK_GUARD_EXEMPT_TABLES', LOCK_GUARD_EXEMPT_TABLES],
+      ['FIELD_AUDITED_TABLES', FIELD_AUDITED_TABLES],
+      ['RLS_EXEMPT_TABLES', RLS_EXEMPT_TABLES],
+      ['MUTABLE_AUDIT_TABLES', MUTABLE_AUDIT_TABLES],
+      ['APPEND_ONLY_TABLES', APPEND_ONLY_TABLES],
+      /**
+       * **The worst of the set, and why this suite is not only about tidiness.**
+       * `LOCK_GUARDED_ROOTS` reaches SQL as `confrelid::regclass::text = ANY($1)`. If either root
+       * name stopped resolving — a rename, a schema move — the join matches nothing,
+       * `tablesInsideALockWithoutGuard` returns zero rows, and the whole lock-reachability
+       * invariant passes having checked nothing. That is `domain-free-of-frameworks` shipping
+       * inert, in the gate task 31.4 built precisely so a table could not enter a lock unguarded.
+       */
+      ['LOCK_GUARDED_ROOTS', LOCK_GUARDED_ROOTS],
+    ])('%s names only tables that exist or are declared pending', async (_name, list) => {
+      const present = await tablesIn();
+      const accounted = [...present, ...EXEMPTIONS_AWAITING_THEIR_TABLE];
+      expect(list.filter((entry) => !accounted.includes(entry))).toEqual([]);
+    });
+
+    it('declares nothing as pending that already exists', async () => {
+      // The other direction. Task 56 creates `audit.inbound_event`, and on that day this entry
+      // stops being a promise and starts being a hole — it would go on excusing both lists from
+      // naming a table that is now real and checkable.
+      const present = await tablesIn();
+      expect(EXEMPTIONS_AWAITING_THEIR_TABLE.filter((entry) => present.includes(entry))).toEqual([]);
+    });
+
+    it.each([
+      ['LEGAL_DATE_EXEMPT_COLUMNS', LEGAL_DATE_EXEMPT_COLUMNS],
+      ['ENCRYPTED_SECRET_COLUMNS', ENCRYPTED_SECRET_COLUMNS],
+      ['PLAINTEXT_BY_DESIGN_SECRET_COLUMNS', PLAINTEXT_BY_DESIGN_SECRET_COLUMNS],
+    ])('%s names only columns that exist', async (_name, list) => {
+      const present = await columnsIn();
+      expect(list.filter((entry) => !present.includes(entry))).toEqual([]);
+    });
+
+    it('names only columns that exist in APP_IMMUTABLE_COLUMNS', async () => {
+      const present = await columnsIn();
+      const declared = Object.entries(APP_IMMUTABLE_COLUMNS).flatMap(([table, columns]) =>
+        columns.map((column) => `${table}.${column}`),
+      );
+      expect(declared.filter((entry) => !present.includes(entry))).toEqual([]);
+    });
   });
 });

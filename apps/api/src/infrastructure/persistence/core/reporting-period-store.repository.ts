@@ -16,6 +16,7 @@ import type {
   ReportingPeriodPatch,
 } from '@api/modules/core/period/models/reporting-period.model';
 import { returnedRows } from '../returned-rows';
+import { SQL_STATE, hasSqlState } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
 
 interface PeriodRow {
@@ -95,12 +96,6 @@ const PATCHABLE = {
  * refusal is distinguishable from every other plpgsql error in the schema — `raise_exception`
  * (P0001) would have made them all look alike.
  */
-const SQL_STATE = { EXCLUSION_VIOLATION: '23P01', PERIOD_LOCKED: '45001' } as const;
-type SqlState = (typeof SQL_STATE)[keyof typeof SQL_STATE];
-
-const hasSqlState = (error: unknown, state: SqlState): boolean =>
-  typeof error === 'object' && error !== null && 'code' in error && error.code === state;
-
 /**
  * Both writes translate the same two refusals, so they translate them the same way.
  *
@@ -110,7 +105,7 @@ const hasSqlState = (error: unknown, state: SqlState): boolean =>
  */
 const translate = (error: unknown): never => {
   if (hasSqlState(error, SQL_STATE.EXCLUSION_VIOLATION)) throw new PeriodOverlapsError();
-  if (hasSqlState(error, SQL_STATE.PERIOD_LOCKED)) throw new PeriodLockedError();
+  if (hasSqlState(error, SQL_STATE.LOCKED)) throw new PeriodLockedError();
   throw error;
 };
 
