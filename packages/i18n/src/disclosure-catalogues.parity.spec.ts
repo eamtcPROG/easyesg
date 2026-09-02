@@ -36,6 +36,19 @@ const FILES = (import.meta as unknown as GlobbingImportMeta).glob(
   { eager: true, import: 'default' },
 );
 
+/**
+ * The two sub-catalogues task 91.1 added beside the labels — `help/` (EFRAG's `documentation`
+ * label, sparse by construction) and `members/` (every enumeration member's label, total). Each
+ * is held to the same parity within a version as the labels, over its own key space: help's keys
+ * are the subset of elements EFRAG documents, and members' keys are the domains' members, so
+ * neither is compared to the element list — that is the api's artefact spec's claim.
+ */
+const SUB_CATALOGUES = ['help', 'members'] as const;
+const SUB_FILES = (import.meta as unknown as GlobbingImportMeta).glob(
+  '../catalogues/disclosure/*/{help,members}/*.json',
+  { eager: true, import: 'default' },
+);
+
 /** `../catalogues/disclosure/2026-05-01/ro.json` → `['2026-05-01', 'ro']`. */
 const parsePath = (path: string): { version: string; name: string } => {
   const [name, version] = path.split('/').reverse();
@@ -51,6 +64,18 @@ for (const [path, value] of Object.entries(FILES)) {
 }
 
 const VERSIONS = [...onDisk.keys()].sort();
+
+/** `../catalogues/disclosure/2026-05-01/help/ro.json` → version, sub-catalogue, locale. */
+const subOnDisk = new Map<string, Map<string, Map<string, unknown>>>();
+for (const [path, value] of Object.entries(SUB_FILES)) {
+  const [file, folder, version] = path.split('/').reverse();
+  const locale = (file ?? '').replace(/\.json$/, '');
+  const byFolder = subOnDisk.get(version ?? '') ?? new Map<string, Map<string, unknown>>();
+  const byLocale = byFolder.get(folder ?? '') ?? new Map<string, unknown>();
+  byLocale.set(locale, value);
+  byFolder.set(folder ?? '', byLocale);
+  subOnDisk.set(version ?? '', byFolder);
+}
 
 describe('disclosure label catalogues', () => {
   it('holds at least one version directory', () => {
@@ -124,6 +149,52 @@ describe('disclosure label catalogues', () => {
         ([, standing]) => standing === LABEL_STANDING.OFFICIAL,
       );
       expect(official.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe.each(VERSIONS)('%s sub-catalogues', (version) => {
+    const folders = subOnDisk.get(version) ?? new Map<string, Map<string, unknown>>();
+
+    it.each(SUB_CATALOGUES)('carries %s for every live locale', (folder) => {
+      // A version extracted after task 91.1 carries both folders; a missing one is a regeneration
+      // that stopped halfway, and the wizard would offer choice fields with no answers.
+      expect([...(folders.get(folder)?.keys() ?? [])].sort()).toEqual([...LOCALES].sort());
+    });
+
+    describe.each(SUB_CATALOGUES)('%s', (folder) => {
+      const files = folders.get(folder) ?? new Map<string, unknown>();
+      const source = files.get(SOURCE_LOCALE) as MessageCatalogue;
+      const translations = LOCALES.filter((l) => l !== SOURCE_LOCALE);
+
+      it('carries entries to compare', () => {
+        expect(Object.keys(source ?? {}).length).toBeGreaterThan(0);
+      });
+
+      it.each(translations)('matches the source key space in %s', (locale) => {
+        expect(
+          compareToSource({ source, translated: files.get(locale) as MessageCatalogue }),
+        ).toEqual({ missing: [], unexpected: [] });
+      });
+
+      it('renders every entry differently in each locale', () => {
+        const shared = Object.keys(source ?? {}).filter((key) => {
+          const rendered = LOCALES.map((locale) => (files.get(locale) as MessageCatalogue)[key]);
+          return new Set(rendered).size !== LOCALES.length;
+        });
+        expect(shared).toEqual([]);
+      });
+
+      it.each(LOCALES)('declares no empty entry in %s', (locale) => {
+        expect(blankKeys(files.get(locale) as MessageCatalogue)).toEqual([]);
+      });
+
+      it.each(LOCALES)('carries no XBRL scaffolding in %s', (locale) => {
+        // `[member]` is the taxonomy's own suffix and never a word a reporter should read.
+        const scaffolded = Object.entries(files.get(locale) as MessageCatalogue).filter(
+          ([, text]) => typeof text === 'string' && /\[member\]/u.test(text),
+        );
+        expect(scaffolded).toEqual([]);
+      });
     });
   });
 });

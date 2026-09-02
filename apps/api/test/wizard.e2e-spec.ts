@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -48,6 +50,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     elementKey: string; kind: string; periodType: string; order: number;
     label: string | null; labelStanding: string | null;
     valueText: string | null; state: string; carriedForward: boolean;
+    help: string | null;
+    options: { value: string; label: string | null; code: string | null }[] | null;
   }
   interface Step { module: string; taxonomyVersion: string; fields: Field[] }
 
@@ -223,6 +227,47 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     const modules = objectsOf<ModuleSummary>((await http()
       .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
     expect(modules.find((m) => m.module === 'B1')?.answered).toBe(1);
+  });
+
+  it('offers each choice field its answers, worded in the request’s locale, and help where EFRAG documents it (task 91.1)', async () => {
+    const reportId = await createReport(await openPeriod(2026));
+
+    const step = objectOf<Step>((await http()
+      .get(`/api/v1/reports/${reportId}/modules/B1`).set(editor.authorization).expect(200)).body);
+
+    // A `vsme` domain: two members, qualified as the export emits them, worded by the catalogue.
+    const basis = step.fields.find((f) => f.elementKey === 'BasisForReporting');
+    expect(basis?.options?.map((o) => o.value).sort()).toEqual(['vsme:ConsolidatedMember', 'vsme:IndividualMember']);
+    expect(basis?.options?.every((o) => typeof o.label === 'string' && o.label.length > 0)).toBe(true);
+    expect(basis?.options?.some((o) => /\[member\]/u.test(o.label ?? ''))).toBe(false);
+
+    // NACE: the classification the package ships, coded as CAEM prints it, named by the platform's
+    // own classifier in the request's locale.
+    const nace = step.fields.find((f) => f.elementKey === 'NaceSectorClassificationCodes');
+    expect(nace?.options?.length).toBe(1047);
+    const cereals = nace?.options?.find((o) => o.value === 'nace:NACE_A0111');
+    expect(cereals?.code).toBe('01.11');
+    // The platform's own Romanian for 01.11 — `nace-code.md.json`'s — not EFRAG's English fallback,
+    // which `toBeTruthy()` could not tell apart (gate-integrity review). The suite negotiates `ro`.
+    const caem = JSON.parse(
+      readFileSync(resolve(__dirname, '../../../config/seed/nace-code.md.json'), 'utf8'),
+    ) as { codes: Record<string, Record<string, string>> };
+    expect(cereals?.label).toBe(caem.codes['01.11']?.ro);
+    expect(cereals?.label).not.toBe(caem.codes['01.11']?.en);
+
+    // ISO 3166 is referenced and not shipped: the countries the platform registers, unnamed here.
+    const country = step.fields.find((f) => f.elementKey === 'CountryOfPrimaryOperationsAndLocationOfSignificantAssets');
+    expect(country?.options?.map((o) => o.value)).toEqual(['country:MD']);
+    expect(country?.options?.[0]?.label).toBeNull();
+
+    // A field that is not a choice offers nothing, and help is present exactly where published.
+    const employees = step.fields.find((f) => f.elementKey === 'NumberOfEmployees');
+    expect(employees?.options).toBeNull();
+    expect(employees?.help).toBeNull();
+    const certifications = step.fields.find(
+      (f) => f.elementKey === 'DescriptionOfSustainabilityRelatedCertificationsOrLabels',
+    );
+    expect(certifications?.help).toBeTruthy();
   });
 
   it('writes the same row on a retry, because the key is natural (FR-38)', async () => {

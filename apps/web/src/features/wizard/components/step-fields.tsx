@@ -33,10 +33,10 @@ import styles from './step.module.css';
  * the control inside points `aria-labelledby` at it (UX-110's *visible, programmatically
  * associated* label, once), and the group reuses the same element for its own name.
  *
- * **Two of the anatomy's slots are passed as `null` on purpose, and each names its owner.** `help`:
- * UX-17 wants one or two sentences visible by default, and no source for them exists — the
- * catalogues carry labels only (`architecture.md` §18, OQ-59). `notAvailable`: UX-15's declaration
- * is UC-31, task 36.13's. Both props are *required* on the component so that passing nothing is a
+ * **`help` is the api's, and it is sparse.** EFRAG documents 22 of 143 elements (task 91.1, closing
+ * OQ-59), so most fields carry `help: null` and the anatomy renders no sentence rather than a
+ * paraphrase of the label. **`notAvailable` is passed as `null` on purpose**: UX-15's declaration
+ * is UC-31, task 36.13's. The prop is *required* on the component so that passing nothing is a
  * decision a reader of this file can see, on `Callout`'s `action={null}` precedent — not a slot
  * that was forgotten.
  *
@@ -81,7 +81,7 @@ export function StepFields({
             key={key}
             labelId={labelId}
             label={field.label ?? field.elementKey}
-            help={null}
+            help={field.help}
             marker={marker?.label}
             markerTone={marker?.tone}
             unit={field.unitCode === null ? undefined : <span className={styles.unit}>{field.unitCode}</span>}

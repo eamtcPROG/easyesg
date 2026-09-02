@@ -14,11 +14,23 @@ import en20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/en.json';
 import ro20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/ro.json';
 import ru20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/ru.json';
 import standing20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/standing.json';
+import helpEn20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/help/en.json';
+import helpRo20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/help/ro.json';
+import helpRu20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/help/ru.json';
+import membersEn20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/members/en.json';
+import membersRo20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/members/ro.json';
+import membersRu20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/members/ru.json';
+import helpEn20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/help/en.json';
+import helpRo20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/help/ro.json';
+import helpRu20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/help/ru.json';
+import membersEn20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/members/en.json';
+import membersRo20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/members/ro.json';
+import membersRu20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/members/ru.json';
 
 /**
  * The committed VSME label catalogues, one entry per taxonomy version (task 33.2).
  *
- * **Adding a version is an edit to this file and nothing else.** Four imports and one map entry,
+ * **Adding a version is an edit to this file and nothing else.** Ten imports and one map entry,
  * and `disclosure-label.artefact.spec.ts` turns forgetting them into a failure rather than into a
  * taxonomy whose every field renders unnamed.
  *
@@ -45,6 +57,10 @@ import standing20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/sta
 export interface DisclosureCatalogue {
   readonly standing: Readonly<Record<Locale, LabelStanding>>;
   readonly labels: Readonly<Record<Locale, Readonly<Record<string, DisclosureLabel>>>>;
+  /** EFRAG's `documentation` labels — sparse: only the elements the package documents (task 91.1). */
+  readonly help: Readonly<Record<Locale, Readonly<Record<string, DisclosureLabel>>>>;
+  /** Every `vsme` enumeration member's label — the answers a choice field offers (task 91.1). */
+  readonly members: Readonly<Record<Locale, Readonly<Record<string, DisclosureLabel>>>>;
 }
 
 /**
@@ -109,6 +125,16 @@ export const DISCLOSURE_CATALOGUES: Readonly<Record<string, DisclosureCatalogue>
       en: pair(en20260201, STANDING_20260201.en),
       ru: pair(ru20260201, STANDING_20260201.ru),
     },
+    help: {
+      ro: pair(helpRo20260201, STANDING_20260201.ro),
+      en: pair(helpEn20260201, STANDING_20260201.en),
+      ru: pair(helpRu20260201, STANDING_20260201.ru),
+    },
+    members: {
+      ro: pair(membersRo20260201, STANDING_20260201.ro),
+      en: pair(membersEn20260201, STANDING_20260201.en),
+      ru: pair(membersRu20260201, STANDING_20260201.ru),
+    },
   },
   '2026-05-01': {
     standing: STANDING_20260501,
@@ -116,6 +142,16 @@ export const DISCLOSURE_CATALOGUES: Readonly<Record<string, DisclosureCatalogue>
       ro: pair(ro20260501, STANDING_20260501.ro),
       en: pair(en20260501, STANDING_20260501.en),
       ru: pair(ru20260501, STANDING_20260501.ru),
+    },
+    help: {
+      ro: pair(helpRo20260501, STANDING_20260501.ro),
+      en: pair(helpEn20260501, STANDING_20260501.en),
+      ru: pair(helpRu20260501, STANDING_20260501.ru),
+    },
+    members: {
+      ro: pair(membersRo20260501, STANDING_20260501.ro),
+      en: pair(membersEn20260501, STANDING_20260501.en),
+      ru: pair(membersRu20260501, STANDING_20260501.ru),
     },
   },
 };

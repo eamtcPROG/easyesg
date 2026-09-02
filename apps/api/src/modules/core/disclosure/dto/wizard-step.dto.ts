@@ -25,6 +25,7 @@ import {
 import type {
   DisclosureField,
   DisclosureModuleSummary,
+  DisclosureOption,
   DisclosureStep,
 } from '../models/wizard-step.model';
 
@@ -65,6 +66,35 @@ export class DisclosureModuleSummaryDto {
     this.answered = summary.answered;
     this.total = summary.total;
     this.lastAnsweredAt = summary.lastAnsweredAt;
+  }
+}
+
+/** One answer a choice field offers (task 91.1). */
+export class DisclosureOptionDto {
+  @ApiProperty({
+    example: 'vsme:IndividualMember',
+    description:
+      "The member's taxonomy-qualified name — what an answer stores; the Excel export maps it to " +
+      "the template's own value. An enumeration_set answer holds its chosen values space-separated.",
+  })
+  readonly value: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      "The member's wording in the request's locale; null where the platform holds none — ISO " +
+      '3166 members, whose names the client resolves from its own catalogue.',
+  })
+  readonly label: string | null;
+
+  @ApiProperty({ nullable: true, type: String, example: '01.11', description: "The classification's own code, where it has one." })
+  readonly code: string | null;
+
+  constructor(option: DisclosureOption) {
+    this.value = option.value;
+    this.label = option.label;
+    this.code = option.code;
   }
 }
 
@@ -111,6 +141,22 @@ export class DisclosureFieldDto {
   })
   readonly labelStanding: string | null;
 
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      "EFRAG's documentation label for the element, or null where the package carries none (UX-17).",
+  })
+  readonly help: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: [DisclosureOptionDto],
+    description:
+      'The answers a choice field offers; null for every kind that is not an enumeration.',
+  })
+  readonly options: DisclosureOptionDto[] | null;
+
   @ApiProperty({ nullable: true, type: String, description: 'Decimal as a string, never a float.' })
   readonly valueNumeric: string | null;
 
@@ -145,6 +191,8 @@ export class DisclosureFieldDto {
     this.order = field.order;
     this.label = field.label;
     this.labelStanding = field.labelStanding;
+    this.help = field.help;
+    this.options = field.options === null ? null : field.options.map((option) => new DisclosureOptionDto(option));
     this.valueNumeric = field.valueNumeric;
     this.valueText = field.valueText;
     this.valueBoolean = field.valueBoolean;

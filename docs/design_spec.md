@@ -1461,7 +1461,7 @@ It is a terminal state distinct from `missing` (D-4, FR-32), it satisfies valida
 
 ### 7.6 Help text and progressive disclosure
 
-**UX-17** Help text shall be visible by default at one to two sentences. Standard references, worked examples and rationale sit behind progressive disclosure. The user shall never have to open anything to answer a normal question (P1).
+**UX-17** Help text shall be visible by default at one to two sentences. Standard references, worked examples and rationale sit behind progressive disclosure. The user shall never have to open anything to answer a normal question (P1). **Cross-logged 2 Sep 2026 (task 91.1, `architecture.md` OQ-59):** EFRAG's own `documentation` labels cover 22 of 143 elements at `2026-05-01` and are shown; the remaining 121 render no help until task **94** authors it — the requirement is unmet there, stated rather than paraphrased.
 
 **UX-18** Field labels, help text and validation messages are content, not code (UC-71). No design shall depend on a specific string length; every layout shall tolerate a **+40 % expansion** from the Romanian source (§9.5).
 

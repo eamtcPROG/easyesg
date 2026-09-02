@@ -435,6 +435,149 @@
       "members": []
     }
   },
+  "enumerations": {
+    "country:CountryDomain": {
+      "taxonomy": "country",
+      "root": "CountryDomain",
+      "external": "iso3166",
+      "members": []
+    },
+    "nace:NACE_AllEconomicActivitiesNAMember": {
+      "taxonomy": "nace",
+      "root": "NACE_AllEconomicActivitiesNAMember",
+      "domainTaxonomy": "nace",
+      "domainVersion": "2026-02-01",
+      "members": []
+    },
+    "vsme:BasisForPreparationMember": {
+      "taxonomy": "vsme",
+      "root": "BasisForPreparationMember",
+      "members": [
+        "OptionABasicModuleOnlyMember",
+        "OptionBBasicModuleAndComprehensiveModuleMember"
+      ]
+    },
+    "vsme:BasisForReportingMember": {
+      "taxonomy": "vsme",
+      "root": "BasisForReportingMember",
+      "members": [
+        "ConsolidatedMember",
+        "IndividualMember"
+      ]
+    },
+    "vsme:EmployeeCountingMethodologyMember": {
+      "taxonomy": "vsme",
+      "root": "EmployeeCountingMethodologyMember",
+      "members": [
+        "AtTheEndOfTheReportingPeriodMember",
+        "AverageDuringTheReportingPeriodMember"
+      ]
+    },
+    "vsme:ListOfDisclosuresMember": {
+      "taxonomy": "vsme",
+      "root": "ListOfDisclosuresMember",
+      "members": [
+        "B1-BasisForPreparationMember",
+        "B1BasisForPreparationAndOtherUndertakingSGeneralInformationMember",
+        "B1ListOfSubsidiariesMember",
+        "B1DisclosureOfSustainabilityRelatedCertificationSOrLabelSMember",
+        "B1ListOfSiteSMember",
+        "B2-PracticesPoliciesAndFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyMember",
+        "B2CooperativeSpecificDisclosuresMember",
+        "B3-EnergyAndGreenhouseGasEmissionsMember",
+        "B3TotalEnergyConsumptionInMWhMember",
+        "B3BreakdownOfEnergyConsumptionInMWhMember",
+        "B3EstimatedGreenhouseGasEmissionsConsideringTheGHGProtocolVersion2004InTCO2eMember",
+        "B3GreenhouseGasEmissionIntensityPerTurnoverMember",
+        "B4-PollutionOfAirWaterAndSoilMember",
+        "B5-BiodiversityMember",
+        "B5SitesInBiodiversitySensitiveAreasMember",
+        "B5BiodiversityLandUseMember",
+        "B6-WaterMember",
+        "B6WaterWithdrawalMember",
+        "B6WaterConsumptionMember",
+        "B7-ResourceUseCircularEconomyAndWasteManagementMember",
+        "B7DescriptionOfCircularEconomyPrinciplesMember",
+        "B7WasteGeneratedMember",
+        "B7AnnualMassFlowOfRelevantMaterialsUsedMember",
+        "B8-WorkforceGeneralCharacteristicsMember",
+        "B8TypeOfContractMember",
+        "B8GenderMember",
+        "B8CountryOfEmploymentMember",
+        "B8TurnoverRateMember",
+        "B9-WorkforceHealthAndSafetyMember",
+        "B10-WorkforceRemunerationCollectiveBargainingAndTrainingMember",
+        "B10RemunerationCollectiveBargainingMember",
+        "B10NumberOfTrainingHoursPerEmployeeMember",
+        "B11-ConvictionsAndFinesForCorruptionAndBriberyMember",
+        "C1-StrategyBusinessModelAndSustainabilityRelatedInitiativesMember",
+        "C2-DescriptionOfPracticesPoliciesAndFutureInitiativesForTransitioningTowardsAMoreSustainableEconomyMember",
+        "C3-GhgReductionTargetsAndClimateTransitionMember",
+        "C3GHGReductionTargetsInTC02eMember",
+        "C3DisclosureOfListOfMainActionsTheEntitySeeksInOrderToAchieveItsTargetsMember",
+        "C3TransitionPlanForUndertakingsOperatingInHighClimateImpactSectorsMember",
+        "C4-ClimateRisksMember",
+        "C5-AdditionalGeneralWorkforceCharacteristicsMember",
+        "C6-AdditionalOwnWorkforceInformationHumanRightsPoliciesAndProcessesMember",
+        "C7-SevereNegativeHumanRightsIncidentsMember",
+        "C8-RevenuesFromCertainSectorsAndExclusionFromEuReferenceBenchmarksMember",
+        "C8RevenuesFromCertainActivitiesMember",
+        "C8ExclusionFromEUReferenceBenchmarksMember",
+        "C9-GenderDiversityRatioInTheGovernanceBodyMember",
+        "DisclosureOfAnyOtherGeneralAndOrEntitySpecificInformation",
+        "DisclosureOfAnyOtherEnvironmentalAndOrEntitySpecificEnvironmentalDisclosures",
+        "DisclosureOfAnyOtherSocialAndOrEntitySpecificSocialDisclosures",
+        "DisclosureOfAnyOtherGovernanceAndOrEntitySpecificGovernanceDisclosures"
+      ]
+    },
+    "vsme:ListOfUndertakingsLegalFormsMember": {
+      "taxonomy": "vsme",
+      "root": "ListOfUndertakingsLegalFormsMember",
+      "members": [
+        "CooperativeMember",
+        "OtherUndertakingsLegalFormMember",
+        "PartnershipMember",
+        "PrivateLimitedLiabilityUndertakingMember",
+        "SoleProprietorshipMember"
+      ]
+    },
+    "vsme:SustainabilityIssuesAddressedMember": {
+      "taxonomy": "vsme",
+      "root": "SustainabilityIssuesAddressedMember",
+      "members": [
+        "ClimateChangeMember",
+        "PollutionMember",
+        "BiodiversityAndEcosystemsMember",
+        "CircularEconomyMember",
+        "OwnWorkforceMember",
+        "WorkersInTheValueChainMember",
+        "AffectedCommunitiesMember",
+        "ConsumersAndEndUsersMember",
+        "BusinessConductMember",
+        "WaterAndMarineResourcesMember"
+      ]
+    },
+    "vsme:TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforceMember": {
+      "taxonomy": "vsme",
+      "root": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforceMember",
+      "members": [
+        "ChildLabourMember",
+        "ForcedLabourMember",
+        "HumanTraffickingMember",
+        "DiscriminationMember",
+        "AccidentPreventionMember",
+        "OtherContentMember"
+      ]
+    },
+    "vsme:TypeOfNumberOfEmployeesMember": {
+      "taxonomy": "vsme",
+      "root": "TypeOfNumberOfEmployeesMember",
+      "members": [
+        "HeadcountMember",
+        "Full-TimeEquivalentFTEMember"
+      ]
+    }
+  },
   "elements": {
     "AddressOfSite": {
       "module": "B1",

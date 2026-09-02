@@ -4,7 +4,7 @@ import { TaxonomyRegistryService } from '@api/modules/platform/taxonomy/services
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
 import { DisclosureLabelService } from './services/disclosure-label.service';
-import { DISCLOSURE_CATALOGUE_VERSIONS } from './constants/disclosure-catalogues';
+import { DISCLOSURE_CATALOGUES, DISCLOSURE_CATALOGUE_VERSIONS } from './constants/disclosure-catalogues';
 
 /**
  * The shipped catalogues, read by the shipped resolver, against the shipped taxonomy (task 33.2) —
@@ -100,6 +100,63 @@ describe('the shipped VSME label catalogues', () => {
         labels.standing({ version, locale });
       }
       expect(errors).not.toHaveBeenCalled();
+    });
+  });
+
+  describe.each(registeredVersions)('%s — help and members (task 91.1)', (version) => {
+    const taxonomy = registry.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version });
+
+    it('labels every member of every vsme enumeration in every locale, without logging', () => {
+      const domains = (taxonomy?.enumerations ?? []).filter((e) => e.taxonomy === 'vsme');
+      expect(domains.length).toBeGreaterThan(0);
+      for (const locale of LOCALES) {
+        const members = labels.memberLabels({ version, locale });
+        expect(members).not.toBeNull();
+        for (const domain of domains) {
+          for (const member of domain.members) {
+            // An unlabelled member is an XBRL name offered as an answer.
+            expect(members?.[member.key]?.text).toBeTruthy();
+            expect(members?.[member.key]?.text).not.toMatch(/\[member\]/u);
+          }
+        }
+      }
+      expect(errors).not.toHaveBeenCalled();
+    });
+
+    it('carries help only for registered elements, and for at least one', () => {
+      const keys = new Set((taxonomy?.elements ?? []).map((e) => e.key));
+      let documented = 0;
+      for (const element of keys) {
+        for (const locale of LOCALES) {
+          const help = labels.help({ version, locale, key: element });
+          if (help !== null) documented += 1;
+        }
+      }
+      // Sparse by construction — EFRAG documents 22 of 143 — but never empty.
+      expect(documented).toBeGreaterThan(0);
+      // The other direction, which a probe for an unknown key cannot see (gate-integrity review):
+      // every key the catalogue carries is an element the taxonomy registers. A version directory
+      // is never edited, so wording outlives the element — the same guard the labels have.
+      for (const locale of LOCALES) {
+        const stale = Object.keys(DISCLOSURE_CATALOGUES[version]?.help[locale] ?? {}).filter(
+          (key) => !keys.has(key),
+        );
+        expect(stale).toEqual([]);
+      }
+    });
+
+    it('names no member that no vsme enumeration offers', () => {
+      const offered = new Set(
+        (taxonomy?.enumerations ?? [])
+          .filter((e) => e.taxonomy === 'vsme')
+          .flatMap((e) => e.members.map((m) => m.key)),
+      );
+      for (const locale of LOCALES) {
+        const stale = Object.keys(DISCLOSURE_CATALOGUES[version]?.members[locale] ?? {}).filter(
+          (key) => !offered.has(key),
+        );
+        expect(stale).toEqual([]);
+      }
     });
   });
 

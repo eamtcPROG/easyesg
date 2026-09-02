@@ -125,6 +125,47 @@ export interface TaxonomyMember {
   readonly labels: Readonly<Record<string, string>>;
 }
 
+/**
+ * Whose members an enumeration domain's are (task 91.1) — the three taxonomies a VSME choice field
+ * draws from. Declared once so a reader branches on a member, never on a spelling of it.
+ */
+export const ENUMERATION_TAXONOMY = {
+  /** EFRAG's own domains, worded in the catalogues. */
+  VSME: 'vsme',
+  /** The NACE classification EFRAG ships beside VSME. */
+  NACE: 'nace',
+  /** ISO 3166, which the package references from xbrl.org and does not ship. */
+  COUNTRY: 'country',
+} as const;
+
+export type EnumerationTaxonomy = (typeof ENUMERATION_TAXONOMY)[keyof typeof ENUMERATION_TAXONOMY];
+
+/** Is this unvalidated value one of the three? Beside the set, not retyped at each reader (CLAUDE.md). */
+export const isEnumerationTaxonomy = (value: unknown): value is EnumerationTaxonomy =>
+  typeof value === 'string' && (Object.values(ENUMERATION_TAXONOMY) as string[]).includes(value);
+
+/**
+ * One enumeration domain — the answers a choice field offers (task 91.1).
+ *
+ * Keyed by the **qualified** domain (`vsme:BasisForPreparationMember`, `nace:NACE_AllEconomic…`,
+ * `country:CountryDomain`), which is what `TaxonomyElement.domain` names and what a stored answer
+ * is qualified against: an enumeration value is stored as the member's taxonomy-qualified name, the
+ * form the export must emit.
+ *
+ * **Members are resolved for the taxonomies the package ships and stated as external for the one it
+ * does not.** NACE ships beside VSME and resolves like the waste list; ISO 3166 is imported from
+ * xbrl.org and not shipped, so `external` names it and `members` is empty — the caller resolves
+ * countries from what the platform holds, which the api's wizard read does.
+ */
+export interface TaxonomyEnumeration {
+  readonly key: string;
+  /** The taxonomy whose members these are — the vocabulary above, never a spelling of it. */
+  readonly taxonomy: EnumerationTaxonomy;
+  /** A classification the package does not ship, by name (`iso3166`); `null` where members resolve. */
+  readonly external: string | null;
+  readonly members: readonly TaxonomyMember[];
+}
+
 /** A registered taxonomy version (FR-65). */
 export interface RegisteredTaxonomy {
   readonly standard: string;
@@ -134,6 +175,8 @@ export interface RegisteredTaxonomy {
   readonly modules: readonly string[];
   /** Every reportable element, ordered by module and then by the standard's own presentation order. */
   readonly elements: readonly TaxonomyElement[];
+  /** Every choice field's domain, keyed by its qualified name (task 91.1). */
+  readonly enumerations: readonly TaxonomyEnumeration[];
 }
 
 /** Which versions a report opened now would be pinned to (FR-66, DR-4). */
@@ -193,6 +236,13 @@ export interface TaxonomyRegistry {
     readonly version: string;
     readonly key: string;
   }): TaxonomyAxis | null;
+
+  /** One enumeration domain by its qualified key, or `null` where the version declares none. */
+  enumeration(query: {
+    readonly standard: string;
+    readonly version: string;
+    readonly key: string;
+  }): TaxonomyEnumeration | null;
 }
 
 /** DI token beside the interface, so a consumer imports one thing (CLAUDE.md, P-7). */

@@ -62,6 +62,27 @@ export interface DisclosureLabelResolver {
    * has no element in hand, so requiring one would mean picking an arbitrary element to ask about.
    */
   standing(query: { readonly version: string; readonly locale: Locale }): LabelStanding | null;
+
+  /**
+   * One element's help text — EFRAG's `documentation` label — or `null` where the package carries
+   * none for it (task 91.1; UX-17, OQ-59). **Sparse by construction**: at `2026-05-01` twenty-two of
+   * 143 elements are documented, and a field with no help says so rather than paraphrasing its own
+   * label. Same standing as the labels, since the same package and the same authoring produced it.
+   */
+  help(query: {
+    readonly version: string;
+    readonly locale: Locale;
+    readonly key: string;
+  }): DisclosureLabel | null;
+
+  /**
+   * Every `vsme` enumeration member's label at a version in a locale — the answers a choice field
+   * offers — keyed by member (task 91.1). `null` for an unregistered version, like `labels`.
+   */
+  memberLabels(query: {
+    readonly version: string;
+    readonly locale: Locale;
+  }): Readonly<Record<string, DisclosureLabel>> | null;
 }
 
 /** DI token beside the interface, so a consumer imports one thing (CLAUDE.md, P-7). */

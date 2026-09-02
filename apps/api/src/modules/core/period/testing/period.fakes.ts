@@ -1,6 +1,7 @@
 import type {
   RegisteredTaxonomy,
   TaxonomyAxis,
+  TaxonomyEnumeration,
   TaxonomyElement,
   TaxonomyPin,
   TaxonomyRegistry,
@@ -184,6 +185,10 @@ export class FakeTaxonomyRegistry implements TaxonomyRegistry {
   }
 
   element(): TaxonomyElement | null {
+    return null;
+  }
+
+  enumeration(): TaxonomyEnumeration | null {
     return null;
   }
 

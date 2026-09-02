@@ -36,8 +36,24 @@
  * typo touches.
  *
  * Roles matter too. The package carries `label` (the standard label, what a form shows),
- * `documentation` and `measurementGuidance` (help text, which is UX-17's and not this task's),
- * `verboseLabel` and `totalLabel`. Only `label` is taken.
+ * `documentation` (help text — UX-17's, taken since task 91.1 into `help/`), `measurementGuidance`
+ * (the units an element admits — `[utr:kg,utr:t]` — which is unit data rather than wording and is
+ * left for the task that offers units, UX-14), `verboseLabel` and `totalLabel`.
+ *
+ * ## Three catalogues per version, since task 91.1
+ *
+ *     <version>/{ro,en,ru}.json          the element labels — the standard's question
+ *     <version>/help/{ro,en,ru}.json     EFRAG's `documentation` label, where one is published
+ *     <version>/members/{ro,en,ru}.json  the enumeration members' labels — the answers a choice
+ *                                        field offers, read from the artefact's `enumerations`
+ *
+ * Help is **sparse by construction**: at `2026-05-01` EFRAG documents 22 of 143 elements, and the
+ * catalogue carries those 22 and no invented sentence for the rest — a field with no help says so
+ * rather than paraphrasing its own label (OQ-59, closed 2 Sep 2026). Members are total: every member
+ * of every `vsme` enumeration domain must label, and the run fails otherwise, for the reason the
+ * element check below gives — an unlabelled member is an XBRL name rendered as an answer.
+ *
+ * Only English is written here, for all three; `ro` and `ru` are platform-authored beside them.
  */
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -139,13 +155,17 @@ const decodeEntities = (text) =>
     return String.fromCodePoint(Number.parseInt(dec ?? hex, dec ? 10 : 16));
   });
 
-/** Element name → its standard English label, followed through the arcs. */
+/**
+ * Concept name → its English text, per label role, followed through the arcs.
+ *
+ * **A locator without the `vsme_` prefix is still a `vsme` concept** (task 91.1): EFRAG declares 24
+ * of `ListOfDisclosuresMember`'s members with bare ids like `B1ListOfSubsidiariesMember` in
+ * `vsme-all.xsd` itself, and a read keyed on the prefix labelled none of them.
+ */
 const readLabels = (xml) => {
   const locators = new Map();
-  for (const m of xml.matchAll(
-    /<link:loc\b[^>]*xlink:href="[^"#]*#vsme_([^"]+)"[^>]*xlink:label="([^"]+)"/g,
-  )) {
-    locators.set(m[2], m[1]);
+  for (const m of xml.matchAll(/<link:loc\b[^>]*xlink:href="[^"#]*#([^"]+)"[^>]*xlink:label="([^"]+)"/g)) {
+    locators.set(m[2], m[1].replace(/^vsme_/, ''));
   }
 
   const texts = new Map();
@@ -156,16 +176,18 @@ const readLabels = (xml) => {
     // is "Basic &amp; Comprehensive Module", which written verbatim into a catalogue renders as
     // `&amp;` on the screen — an escaping artefact shown to a reader as though it were the
     // standard's own words.
-    if (id && role === 'label') texts.set(id, decodeEntities(m[2].replace(/\s+/g, ' ').trim()));
+    if (id && role) texts.set(id, { role, text: decodeEntities(m[2].replace(/\s+/g, ' ').trim()) });
   }
 
-  const byElement = new Map();
+  const byRole = { label: new Map(), documentation: new Map() };
   for (const m of xml.matchAll(/<link:labelArc\b[^>]*xlink:from="([^"]+)"[^>]*xlink:to="([^"]+)"/g)) {
-    const element = locators.get(m[1]);
-    const text = texts.get(m[2]);
-    if (element && text) byElement.set(element, text);
+    const concept = locators.get(m[1]);
+    const resource = texts.get(m[2]);
+    if (concept && resource && byRole[resource.role] && resource.text) {
+      byRole[resource.role].set(concept, resource.text);
+    }
   }
-  return byElement;
+  return byRole;
 };
 
 const files = findFiles(packageDir);
@@ -176,12 +198,20 @@ if (!english) {
   console.error('no vsme-label-en.xml in the package — the one linkbase this task cannot do without.');
   process.exit(1);
 }
-const labels = readLabels(readFileSync(english, 'utf8'));
+const { label: labels, documentation } = readLabels(readFileSync(english, 'utf8'));
 
 const artefact = JSON.parse(
   readFileSync(join('config', 'seed', `vsme-taxonomy.${version}.json`), 'utf8'),
 );
 const elements = Object.keys(artefact.elements);
+/** Every member of every `vsme` enumeration domain — the answers a choice field offers. */
+const members = [
+  ...new Set(
+    Object.values(artefact.enumerations ?? {})
+      .filter((domain) => domain.taxonomy === 'vsme')
+      .flatMap((domain) => domain.members),
+  ),
+].sort();
 
 /**
  * **Every registered element must resolve, and the run fails otherwise.** A missing label is not a
@@ -206,7 +236,32 @@ if (unlabelled.length > 0) {
   process.exit(1);
 }
 
+// The same refusal the element list gets, for the same reason: an artefact with no `enumerations`
+// makes every member check vacuous and writes `members/en.json` as `{}` with nothing to report.
+if (members.length === 0) {
+  console.error(
+    `config/seed/vsme-taxonomy.${version}.json registers no enumeration members — regenerate it with ` +
+      'extract-vsme-taxonomy.mjs first.',
+  );
+  process.exit(1);
+}
+
+const unlabelledMembers = members.filter((key) => !labels.has(key));
+if (unlabelledMembers.length > 0) {
+  console.error(`${unlabelledMembers.length} enumeration members have no English label:`);
+  for (const key of unlabelledMembers.slice(0, 10)) console.error(`  ${key}`);
+  process.exit(1);
+}
+
 const catalogue = Object.fromEntries(elements.sort().map((key) => [key, labels.get(key)]));
+const help = Object.fromEntries(
+  elements.filter((key) => documentation.has(key)).sort().map((key) => [key, documentation.get(key)]),
+);
+// `[member]` is XBRL scaffolding the root CLAUDE.md forbids from any surface a person reads — the
+// same strip the waste list's names get — so a choice reads *Individual*, not *Individual [member]*.
+const memberCatalogue = Object.fromEntries(
+  members.map((key) => [key, labels.get(key).replace(/\s*\[member\]$/, '')]),
+);
 // `disclosure/<taxonomy-version>/{ro,en,ru}.json` — the layout that directory's own README fixes,
 // and OQ-45 settled the version identifier as EFRAG's `YYYY-MM-DD`. A version directory is written
 // once and never edited: a report authored under one version must still render *that* version's
@@ -216,6 +271,16 @@ mkdirSync(dir, { recursive: true });
 const out = join(dir, 'en.json');
 writeFileSync(out, `${JSON.stringify(catalogue, null, 2)}\n`);
 console.log(`${elements.length} English labels written to ${out}`);
+
+for (const [folder, texts] of [
+  ['help', help],
+  ['members', memberCatalogue],
+]) {
+  mkdirSync(join(dir, folder), { recursive: true });
+  const file = join(dir, folder, 'en.json');
+  writeFileSync(file, `${JSON.stringify(texts, null, 2)}\n`);
+  console.log(`${Object.keys(texts).length} English ${folder} entries written to ${file}`);
+}
 
 /**
  * **The standing manifest — the fact UX-47 and UX-98 make a reader see, as data.**

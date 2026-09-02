@@ -4846,6 +4846,32 @@
           "lastAnsweredAt"
         ]
       },
+      "DisclosureOptionDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "example": "vsme:IndividualMember",
+            "description": "The member's taxonomy-qualified name — what an answer stores; the Excel export maps it to the template's own value. An enumeration_set answer holds its chosen values space-separated."
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "The member's wording in the request's locale; null where the platform holds none — ISO 3166 members, whose names the client resolves from its own catalogue."
+          },
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "example": "01.11",
+            "description": "The classification's own code, where it has one."
+          }
+        },
+        "required": [
+          "value",
+          "label",
+          "code"
+        ]
+      },
       "DisclosureFieldDto": {
         "type": "object",
         "properties": {
@@ -4906,6 +4932,19 @@
             "nullable": true,
             "description": "Whether the wording is EFRAG's own or platform-authored. Carried per field because it travels with the text — of three locales only English is official."
           },
+          "help": {
+            "type": "string",
+            "nullable": true,
+            "description": "EFRAG's documentation label for the element, or null where the package carries none (UX-17)."
+          },
+          "options": {
+            "nullable": true,
+            "description": "The answers a choice field offers; null for every kind that is not an enumeration.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisclosureOptionDto"
+            }
+          },
           "valueNumeric": {
             "type": "string",
             "nullable": true,
@@ -4960,6 +4999,8 @@
           "order",
           "label",
           "labelStanding",
+          "help",
+          "options",
           "valueNumeric",
           "valueText",
           "valueBoolean",

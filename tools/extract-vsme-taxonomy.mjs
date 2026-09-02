@@ -104,6 +104,11 @@ for (const tag of declarations) {
     substitutionGroup: attribute(tag, 'substitutionGroup'),
     periodType: attribute(tag, 'xbrli:periodType'),
     domain: attribute(tag, 'enum2:domain')?.replace(/^vsme:/, '') ?? null,
+    // The qualified domain and the link role its members are drawn in — `enum2:linkrole` names one
+    // `definitionLink`, and walking `domain-member` inside it is what EFRAG means by "the members of
+    // this enumeration" (task 91.1). Kept qualified so an external domain says whose it is.
+    enumerationDomain: attribute(tag, 'enum2:domain'),
+    enumerationLinkRole: attribute(tag, 'enum2:linkrole'),
   });
 }
 
@@ -209,7 +214,15 @@ const resolveName = (href) => {
   const [path, fragment] = href.split('#');
   if (!fragment) return null;
   const separator = fragment.indexOf('_');
-  if (separator < 0) return null;
+  // **A fragment with no prefix is a `vsme` concept, not an unresolvable one** (task 91.1). EFRAG
+  // declares 24 of the `ListOfDisclosuresMember` domain's members with ids like
+  // `B1ListOfSubsidiariesMember` — no `vsme_` — inside `vsme-all.xsd` itself. Dropping them read
+  // as a 27-member domain where the standard has 51.
+  if (separator < 0) {
+    return path === undefined || path === '' || path.endsWith('vsme-all.xsd')
+      ? { name: fragment, taxonomy: 'vsme', version }
+      : null;
+  }
   const prefix = fragment.slice(0, separator);
   const external = /(?:^|\/)([a-z-]+)\/([\d-]+)\/[^/]+$/.exec(path ?? '');
   return {
@@ -222,6 +235,7 @@ const resolveName = (href) => {
 /** Every `definitionLink`, resolved from xlink labels to taxonomy-qualified names. */
 const definitionLinks = (linkbase) =>
   (linkbase.match(/<link:definitionLink\b[\s\S]*?<\/link:definitionLink>/g) ?? []).map((link) => {
+    const linkRole = attribute(link, 'xlink:role');
     const named = new Map();
     for (const loc of link.match(/<link:loc\b[^>]*\/>/g) ?? []) {
       const resolved = resolveName(attribute(loc, 'xlink:href'));
@@ -234,7 +248,7 @@ const definitionLinks = (linkbase) =>
       const from = named.get(attribute(arc, 'xlink:from') ?? '');
       const to = named.get(attribute(arc, 'xlink:to') ?? '');
       if (arcrole?.startsWith(`${ARCROLE}/`) && from && to) {
-        arcs.push({ role: arcrole.slice(ARCROLE.length + 1), from, to });
+        arcs.push({ role: arcrole.slice(ARCROLE.length + 1), from, to, linkRole });
       }
     }
     return arcs;
@@ -330,10 +344,18 @@ const axesForElement = (name) => [...(elementAxes.get(name) ?? [])];
  */
 const externalTaxonomy = (taxonomy, taxonomyVersion, root) => {
   const externalDir = join(dir, '..', '..', taxonomy, taxonomyVersion);
-  const arcs = definitionLinks(
-    readFileSync(join(externalDir, `${taxonomy}-definition.xml`), 'utf8'),
-  ).flat();
-  const labelFile = readFileSync(join(externalDir, `${taxonomy}-label-en.xml`), 'utf8');
+  // EFRAG names the waste files `waste-*` and the NACE files `nace-codes-*`; the stem is the
+  // package's, read from the directory rather than assumed from the taxonomy's prefix.
+  const definitions = readdirSync(externalDir).filter((file) => file.endsWith('-definition.xml'));
+  // Exactly one, not the first of several: a second definition linkbase in the directory would be
+  // a package this script does not understand, and picking one by directory order is silent.
+  if (definitions.length !== 1) {
+    console.error(`expected one *-definition.xml under ${externalDir}, found ${definitions.length}`);
+    process.exit(1);
+  }
+  const stem = definitions[0].replace(/-definition\.xml$/, '');
+  const arcs = definitionLinks(readFileSync(join(externalDir, `${stem}-definition.xml`), 'utf8')).flat();
+  const labelFile = readFileSync(join(externalDir, `${stem}-label-en.xml`), 'utf8');
 
   // `xlink:label` → the standard label's text, joined to a `loc` through the labelArc.
   const labelText = new Map();
@@ -381,27 +403,52 @@ const externalTaxonomy = (taxonomy, taxonomyVersion, root) => {
     return text.trim();
   };
 
+  /**
+   * How a member's code and name are read differs per classification, and each is proved rather
+   * than pattern-matched — a member EFRAG formats differently fails the run instead of being
+   * silently mis-coded.
+   *
+   * - **Waste**: the code and the hazard flag are in the member's *name*, and the label repeats them.
+   * - **NACE** (task 91.1): the member name is `NACE_A0111` — the code without its point — and the
+   *   label carries the section letter, the pointed code and the activity's name:
+   *   `A - 01.11 Growing of cereals…`, or `A - AGRICULTURE, FORESTRY AND FISHING` at section level.
+   *   The pointed code is what CAEM prints and what `nace-code.md.json` is keyed by, so it is the
+   *   code carried here; the section letter is its own code where no number follows it.
+   */
+  const MEMBER_PARSERS = {
+    waste: (name, raw) => {
+      const parsed = /^W-(\d+)-(Hazardous|Non-Hazardous)?/.exec(name);
+      // Rendered the way the List of Waste itself writes it — `01 01 01`, in pairs.
+      const code = (parsed?.[1] ?? '').replace(/(\d\d)(?=\d)/g, '$1 ');
+      return {
+        code,
+        ...(parsed?.[2] ? { hazardous: parsed[2] === 'Hazardous' } : {}),
+        label: raw === null ? null : humanLabel(raw, code, parsed?.[2] ?? null),
+      };
+    },
+    nace: (name, raw) => {
+      const parsed = raw === null ? null : /^([A-Z]) - (?:(\d{2}(?:\.\d{1,2})?) )?(.+)$/.exec(raw);
+      return {
+        code: parsed?.[2] ?? parsed?.[1] ?? '',
+        label: parsed?.[3]?.trim() ?? null,
+      };
+    },
+  };
+  const parseMember = MEMBER_PARSERS[taxonomy];
+  if (!parseMember) {
+    console.error(`no member parser for the ${taxonomy} classification — add one rather than defaulting`);
+    process.exit(1);
+  }
+
   const entries = descend(root, arcs).map((name) => {
-    // `W-010101-Non-Hazardous-WastesFromMineralMetalliferousExcavationMember` — the EU code and the
-    // hazard classification are stated in the member's own name, which is how the standard carries
-    // them. A chapter or sub-chapter has a code and no hazard classification, which is why the
-    // flag is omitted rather than defaulted to `false`: *not stated at this level* and *classified
-    // as non-hazardous* are different answers, and B7 reports on the second.
-    const parsed = /^W-(\d+)-(Hazardous|Non-Hazardous)?/.exec(name);
-    // Rendered the way the List of Waste itself writes it — `01 01 01`, in pairs.
-    const formattedCode = (parsed?.[1] ?? '').replace(/(\d\d)(?=\d)/g, '$1 ');
+    const { label, ...member } = parseMember(name, labels.get(name) ?? null);
     return [
       name,
       {
-        code: formattedCode,
-        ...(parsed?.[2] ? { hazardous: parsed[2] === 'Hazardous' } : {}),
+        ...member,
         parent: parentOf.get(name) === root ? null : (parentOf.get(name) ?? null),
         order: arcOrder.get(name) ?? 0,
-        labels: {
-          ...(labels.has(name)
-            ? { en: humanLabel(labels.get(name), formattedCode, parsed?.[2] ?? null) }
-            : {}),
-        },
+        labels: { ...(label ? { en: label } : {}) },
       },
     ];
   });
@@ -429,6 +476,81 @@ for (const [, axis] of axes) {
     axis.domainTaxonomy,
     externalTaxonomy(axis.domainTaxonomy, axis.domainVersion, axis.domain),
   );
+}
+
+// ── Enumerations ────────────────────────────────────────────────────────────────────────────────
+/**
+ * The choice fields — `enumeration` and `enumeration_set` items — and the members each offers
+ * (task 91.1). B1 alone has ten, and until this the artefact recorded each element's *domain* and
+ * not one member of it, so a wizard could name the question and not the answers.
+ *
+ * **Walked inside the `definitionLink` the element's own `enum2:linkrole` names.** `domain-member`
+ * arcs draw every domain in the taxonomy and the same member name can hang from two roots in two
+ * roles, so a global walk is how an enumeration ends up offering a sibling axis's members. The link
+ * role is EFRAG's own statement of which arcs count. A domain with no arcs in that role is the
+ * walk being wrong and fails below — with one named exception, checked by kind: EFRAG puts
+ * `enum2:domain` on eight **boolean** items too, which are not choice fields and are ignored here.
+ *
+ * **Two domains are another taxonomy's.** NACE ships in the package beside VSME and is emitted as
+ * its own artefact on the waste list's precedent — a versioned classification of its own, whose
+ * names are the value's own name rather than this project's wording. ISO 3166 does **not** ship in
+ * the package: `country:CountryDomain` is imported from xbrl.org, so the artefact records the
+ * reference and the api resolves the members from what the platform already holds.
+ */
+const ENUMERATION_KINDS = new Set(['enumeration', 'enumeration_set']);
+
+/** `vsme:BasisForPreparationMember` → the taxonomy and the local name. */
+const qualified = (domain) => {
+  const [prefix, name] = domain.split(':');
+  return name === undefined ? { taxonomy: 'vsme', name: prefix } : { taxonomy: prefix, name };
+};
+
+const enumerations = new Map();
+for (const e of elements.values()) {
+  if (!ENUMERATION_KINDS.has(KIND_BY_TYPE[e.type]) || !e.enumerationDomain) continue;
+  if (enumerations.has(e.enumerationDomain)) continue;
+  const { taxonomy, name: root } = qualified(e.enumerationDomain);
+
+  if (taxonomy === 'vsme') {
+    // Scoped to the element's own link role where it names one, and to nothing wider: falling back
+    // to every arc when the role is empty would hand the domain a sibling axis's members with the
+    // right count, which is the one shape the emptiness check below could never see.
+    const scoped = e.enumerationLinkRole
+      ? everyArc.filter((arc) => arc.linkRole === e.enumerationLinkRole)
+      : everyArc;
+    enumerations.set(e.enumerationDomain, { taxonomy, root, members: descend(root, scoped) });
+    continue;
+  }
+
+  if (taxonomy === 'nace') {
+    const naceVersion = /taxonomy\/nace\/([\d-]+)/.exec(xsd)?.[1] ?? version;
+    if (!externals.has('nace')) externals.set('nace', externalTaxonomy('nace', naceVersion, root));
+    enumerations.set(e.enumerationDomain, {
+      taxonomy,
+      root,
+      domainTaxonomy: 'nace',
+      domainVersion: naceVersion,
+      members: [],
+    });
+    continue;
+  }
+
+  // ISO 3166, referenced from xbrl.org and not shipped: recorded as the reference it is.
+  enumerations.set(e.enumerationDomain, { taxonomy, root, external: 'iso3166', members: [] });
+}
+
+// An external classification counts as resolved only if it actually resolved members — the
+// attempt alone is not a member list.
+const emptyEnumerations = [...enumerations.entries()].filter(
+  ([, en]) =>
+    en.members.length === 0 &&
+    !en.external &&
+    !(en.domainTaxonomy && Object.keys(externals.get(en.domainTaxonomy)?.members ?? {}).length > 0),
+);
+if (emptyEnumerations.length > 0) {
+  console.error('enumeration domain with no members — the walk is wrong, not the taxonomy:');
+  for (const [domain] of emptyEnumerations) console.error(`  ${domain}`);
+  process.exit(1);
 }
 
 /**
@@ -529,6 +651,10 @@ const payload = {
     .sort((a, b) => a.localeCompare(b, 'en', { numeric: true })),
   /** Each reporting axis and the members it admits, so a form can offer them without a code change. */
   axes: Object.fromEntries([...axes.entries()].sort(([a], [b]) => a.localeCompare(b))),
+  /** Each choice field's domain and the members it offers (task 91.1), keyed by the qualified domain. */
+  enumerations: Object.fromEntries(
+    [...enumerations.entries()].sort(([a], [b]) => a.localeCompare(b)),
+  ),
   elements: Object.fromEntries(
     reportable
       .map(([name, e]) => {

@@ -64,6 +64,28 @@ export class DisclosureLabelService implements DisclosureLabelResolver {
     return labels;
   }
 
+  help(query: {
+    readonly version: string;
+    readonly locale: Locale;
+    readonly key: string;
+  }): DisclosureLabel | null {
+    // Not logged: absence is the ordinary case (22 of 143 at `2026-05-01`), and a field with no
+    // help is a field with no help, not a catalogue defect.
+    return DISCLOSURE_CATALOGUES[query.version]?.help[query.locale]?.[query.key] ?? null;
+  }
+
+  memberLabels(query: {
+    readonly version: string;
+    readonly locale: Locale;
+  }): Readonly<Record<string, DisclosureLabel>> | null {
+    const members = DISCLOSURE_CATALOGUES[query.version]?.members[query.locale];
+    if (members === undefined) {
+      this.logger.error(`no member catalogue for ${query.version} in ${query.locale}`);
+      return null;
+    }
+    return members;
+  }
+
   standing(query: { readonly version: string; readonly locale: Locale }): LabelStanding | null {
     // Not logged. An unregistered version is already reported by whichever accessor tried to read
     // it, and UX-47's dialogue asks this once per offered language — logging here would turn one

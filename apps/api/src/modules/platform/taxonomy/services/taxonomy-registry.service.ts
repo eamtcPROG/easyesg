@@ -11,6 +11,8 @@ import {
   type TaxonomyMember,
   type TaxonomyPin,
   type TaxonomyRegistry,
+  type TaxonomyEnumeration,
+  isEnumerationTaxonomy,
 } from '@api/contracts/taxonomy-registry.port';
 import {
   externalDomainConfigKind,
@@ -35,6 +37,7 @@ interface ReadTaxonomy {
   readonly taxonomy: RegisteredTaxonomy;
   readonly elementsByKey: ReadonlyMap<string, TaxonomyElement>;
   readonly axesByKey: ReadonlyMap<string, TaxonomyAxis>;
+  readonly enumerationsByKey: ReadonlyMap<string, TaxonomyEnumeration>;
 }
 
 /**
@@ -122,6 +125,14 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
     return this.read(query)?.axesByKey.get(query.key) ?? null;
   }
 
+  enumeration(query: {
+    readonly standard: string;
+    readonly version: string;
+    readonly key: string;
+  }): TaxonomyEnumeration | null {
+    return this.read(query)?.enumerationsByKey.get(query.key) ?? null;
+  }
+
   /** Reads and validates one version's payload once, for all three readers above. */
   private read(query: {
     readonly standard: string;
@@ -138,7 +149,7 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
     // carries no revision, and the hit path then reads a property off nothing.
     if (cached !== undefined && cached.revision === entry.revision) return cached.read;
 
-    const { modules, elements, axes } = entry.payload;
+    const { modules, elements, axes, enumerations } = entry.payload;
     if (!isStringArray(modules) || !isRecord(elements) || !isRecord(axes)) {
       this.logger.error(
         `Configuration entry ${key} (revision ${entry.revision}) is malformed; the version will ` +
@@ -149,6 +160,13 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
 
     const readAxes = this.readAxes(axes, key, entry.revision);
     const readElements = this.readElements(elements, modules, key, entry.revision);
+    // An artefact extracted before task 91.1 carries no `enumerations`; that is a version with no
+    // resolvable choice fields, not a malformed one, and it reads as an empty list.
+    const readEnumerations = this.readEnumerations(
+      isRecord(enumerations) ? enumerations : {},
+      key,
+      entry.revision,
+    );
 
     const read: ReadTaxonomy = {
       taxonomy: {
@@ -156,9 +174,11 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
         version: query.version,
         modules,
         elements: readElements,
+        enumerations: readEnumerations,
       },
       elementsByKey: new Map(readElements.map((element) => [element.key, element])),
       axesByKey: new Map(readAxes.map((axis) => [axis.key, axis])),
+      enumerationsByKey: new Map(readEnumerations.map((en) => [en.key, en])),
     };
     this.cache.set(key, { revision: entry.revision, read });
     return read;
@@ -217,9 +237,13 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
     revision: number,
   ): TaxonomyAxis[] {
     const read: TaxonomyAxis[] = [];
+    const dropped: string[] = [];
 
     for (const [axisKey, value] of Object.entries(axes)) {
-      if (!isRecord(value)) continue;
+      if (!isRecord(value)) {
+        dropped.push(axisKey);
+        continue;
+      }
       const typed = value.typed === true;
       const local = isStringArray(value.members) ? value.members : [];
 
@@ -239,6 +263,56 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
           external ??
           local.map((member) => ({ key: member, code: null, hazardous: null, labels: {} })),
       });
+    }
+    // Applied where it holds (task 91.1's review): this reader dropped silently since task 33.1,
+    // which left the artefact spec's no-error assertion unable to see a malformed axis.
+    if (dropped.length > 0) {
+      this.logger.error(
+        `Configuration entry ${key} (revision ${revision}) carries ${dropped.length} malformed ` +
+          `axis entry(ies), dropped: ${dropped.join(', ')}`,
+      );
+    }
+    return read;
+  }
+
+  /**
+   * The choice fields' domains (task 91.1). A `vsme` domain lists its members in the artefact; a
+   * domain the package ships beside VSME (`nace`) resolves through the same external read the waste
+   * axis uses; a domain the package only references (`country`, ISO 3166) is carried as external
+   * with no members, for the caller to resolve from what the platform holds.
+   */
+  private readEnumerations(
+    enumerations: Record<string, unknown>,
+    key: string,
+    revision: number,
+  ): TaxonomyEnumeration[] {
+    const read: TaxonomyEnumeration[] = [];
+    const dropped: string[] = [];
+    for (const [enumerationKey, value] of Object.entries(enumerations)) {
+      // Dropped and LOGGED, never dropped alone: a fail-soft read is only safe when a gate reads the
+      // log (`apps/api/CLAUDE.md`, task 33.1), and `taxonomy-artefact.spec.ts` asserts no such line.
+      if (!isRecord(value) || !isEnumerationTaxonomy(value.taxonomy)) {
+        dropped.push(enumerationKey);
+        continue;
+      }
+      const local = isStringArray(value.members) ? value.members : [];
+      const shipped =
+        typeof value.domainTaxonomy === 'string' && typeof value.domainVersion === 'string'
+          ? this.readExternalDomain(value.domainTaxonomy, value.domainVersion, key, revision)
+          : null;
+      read.push({
+        key: enumerationKey,
+        taxonomy: value.taxonomy,
+        external: typeof value.external === 'string' ? value.external : null,
+        members:
+          shipped ?? local.map((member) => ({ key: member, code: null, hazardous: null, labels: {} })),
+      });
+    }
+    if (dropped.length > 0) {
+      this.logger.error(
+        `Configuration entry ${key} (revision ${revision}) carries ${dropped.length} malformed ` +
+          `enumeration(s), dropped — a choice field on them will offer no answers: ${dropped.join(', ')}`,
+      );
     }
     return read;
   }
@@ -260,8 +334,12 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
     }
 
     const members: (TaxonomyMember & { order: number })[] = [];
+    const dropped: string[] = [];
     for (const [memberKey, value] of Object.entries(entry.payload.members)) {
-      if (!isRecord(value)) continue;
+      if (!isRecord(value)) {
+        dropped.push(memberKey);
+        continue;
+      }
       members.push({
         key: memberKey,
         code: typeof value.code === 'string' ? value.code : null,
@@ -279,6 +357,12 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
       });
     }
 
+    if (dropped.length > 0) {
+      this.logger.error(
+        `Configuration entry ${domainKind}/${domainVersion} carries ${dropped.length} malformed ` +
+          `member(s), dropped: ${dropped.slice(0, 10).join(', ')}`,
+      );
+    }
     return members
       .sort((a, b) => a.order - b.order)
       .map(({ order: _order, ...member }) => member);

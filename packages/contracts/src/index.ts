@@ -176,6 +176,8 @@ export {
 export type Report = components['schemas']['ReportResponseDto'];
 export type DisclosureModuleSummary = components['schemas']['DisclosureModuleSummaryDto'];
 export type DisclosureField = components['schemas']['DisclosureFieldDto'];
+/** One answer a choice field offers (task 91.1): `value` is the member's taxonomy-qualified name, what an answer stores. */
+export type DisclosureOption = components['schemas']['DisclosureOptionDto'];
 export type DisclosureStep = components['schemas']['DisclosureStepDto'];
 export type DisclosureValueWrite = components['schemas']['DisclosureValueWriteDto'];
 export type WriteDisclosureValuesRequest =

@@ -1850,6 +1850,20 @@ export interface components {
             /** @description Unix epoch milliseconds, UTC — when the module's most recent answer was stored, or null where nothing in it is answered. Where work last happened is where a returning reporter resumes (FR-39). */
             lastAnsweredAt: number | null;
         };
+        DisclosureOptionDto: {
+            /**
+             * @description The member's taxonomy-qualified name — what an answer stores; the Excel export maps it to the template's own value. An enumeration_set answer holds its chosen values space-separated.
+             * @example vsme:IndividualMember
+             */
+            value: string;
+            /** @description The member's wording in the request's locale; null where the platform holds none — ISO 3166 members, whose names the client resolves from its own catalogue. */
+            label: string | null;
+            /**
+             * @description The classification's own code, where it has one.
+             * @example 01.11
+             */
+            code: string | null;
+        };
         DisclosureFieldDto: {
             /** @example NumberOfEmployees */
             elementKey: string;
@@ -1875,6 +1889,10 @@ export interface components {
             label: string | null;
             /** @description Whether the wording is EFRAG's own or platform-authored. Carried per field because it travels with the text — of three locales only English is official. */
             labelStanding: string | null;
+            /** @description EFRAG's documentation label for the element, or null where the package carries none (UX-17). */
+            help: string | null;
+            /** @description The answers a choice field offers; null for every kind that is not an enumeration. */
+            options: components["schemas"]["DisclosureOptionDto"][] | null;
             /** @description Decimal as a string, never a float. */
             valueNumeric: string | null;
             valueText: string | null;

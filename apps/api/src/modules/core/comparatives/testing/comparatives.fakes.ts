@@ -3,6 +3,7 @@ import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
 import type {
   RegisteredTaxonomy,
   TaxonomyAxis,
+  TaxonomyEnumeration,
   TaxonomyElement,
   TaxonomyPin,
   TaxonomyRegistry,
@@ -84,6 +85,10 @@ export class FakeElementRegistry implements TaxonomyRegistry {
   }
 
   taxonomy(): RegisteredTaxonomy | null {
+    return null;
+  }
+
+  enumeration(): TaxonomyEnumeration | null {
     return null;
   }
 

@@ -10131,3 +10131,137 @@ run them in sequence, not in parallel, or read a red gate against `git status` b
   them) and the api e2e **794 passed, 34 suites**, run in sequence on the settled tree. The scoped
   gate set's other stages were green on the same tree; `openapi:check` is red by design until the
   regenerated contract is committed, and is run green on the commit itself.
+
+## Task 91.1 — the answers a choice field offers, and the help EFRAG publishes · 2026-09-02
+
+The first slice of task 91, appended the same day 36.2 was picked up and found three server-side
+gaps. This one: B1's ten choice fields had no member list anywhere, and UX-17's help had no source.
+
+### What the package turned out to hold
+
+Both EFRAG packages were downloaded (May 2026 `47e1c4a6…`, February 2026 `c65f2e17…`, the second
+matching the hash `config/seed/README.md` recorded) and opened rather than remembered. Three
+findings decided the shape:
+
+- **Enumeration members are drawn by `domain-member` arcs inside the `definitionLink` each element
+  names in `enum2:linkrole`.** A global walk would hand an enumeration a sibling axis's members; the
+  link role is EFRAG's own statement of which arcs count. Eight *boolean* items also carry an
+  `enum2:domain` (`PracticePolicyOrFutureInitiativeMember`, with no members in any role) and are
+  ignored by kind, so the empty-domain assertion is about choice fields alone.
+- **Twenty-four members have no `vsme_` prefix.** EFRAG declares `B1ListOfSubsidiariesMember` and
+  its siblings with bare ids inside `vsme-all.xsd`. Both extractors keyed on the prefix; the
+  taxonomy one dropped them as unresolvable and the label one never labelled them. Resolved as `vsme`
+  concepts in both, which is what turned a 27-member `ListOfDisclosuresMember` into the standard's 51.
+- **The `documentation` role exists, on 22 elements.** So OQ-59 closes the way its recommendation
+  hoped: extracted, official for English, authored for Romanian and Russian like the labels. The same
+  linkbase carries `measurementGuidance` on 42 elements — unit lists, `[utr:kg,utr:t]` — which is
+  UX-14's unit data, named in the extractor and left for the task that offers units.
+
+### Two external domains, two different answers
+
+**NACE ships in the package**, as `nace-codes-*` files under its own directory, and is emitted as its
+own artefact on the waste list's precedent — 1 047 members, sections to classes. Its code is carried
+**pointed** (`01.11`) rather than as the member's `NACE_A0111` spelling, because that is what CAEM
+prints and what `nace-code.md.json` is keyed by; the read joins the two so a Romanian reader sees the
+platform's own Romanian name where EFRAG publishes English only. Getting there took two corrections
+worth a line each: the external reader assumed the file stem equals the taxonomy prefix (`waste-*`
+does, `nace-codes-*` does not), and NACE Rev. 2.1 has a section **V**, which a regex written for A–U
+refused on four members.
+
+**ISO 3166 does not ship**: `country:CountryDomain` is imported from xbrl.org. The artefact records
+the reference, and the read offers the countries the platform registers a vocabulary for, with
+`label: null` — the client already names a country code from its own catalogue, and the api has no
+authority to ship a world list. The cost — a site abroad cannot be named until the vocabulary grows —
+is a seed addition, and it is recorded.
+
+### What an answer stores
+
+The member's taxonomy-qualified name, `vsme:IndividualMember`, because that is the form an XBRL
+enumeration fact carries and the export must emit; an `enumeration_set` holds its members
+space-separated as XBRL does. The read answers `options` already in that form, so the browser stores
+what it was offered. Refusing a value outside the domain is task 41's.
+
+### Layout: three folders, not three sections
+
+`help/` and `members/` beside the labels, each with `{ro,en,ru}.json` and held to the same
+within-version parity — a per-locale file with three sections would have changed the shape every
+reader of the labels depends on. Eighty members and twenty-two help sentences authored in Romanian
+and Russian, never machine-translated; the one member whose Romanian equalled its English
+(*Individual*) was caught by the parity suite's "renders differently in each locale" case.
+
+### Verified
+
+- `pnpm --filter @easyesg/i18n test` — 126 passed, the sub-catalogue parity included, and it caught
+  the same-valued member above before anything else did.
+- `apps/api` unit — the two artefact specs extended: every choice field's domain resolves or is named
+  external; B1's basis has two members; the list of disclosures has 51 with an unprefixed one present;
+  NACE resolves to 1 047 with `01.11` for `NACE_A0111` and `A` for the section; every `vsme` member
+  labelled in three locales without scaffolding; help present for at least one registered element and
+  absent for an unknown key. 148 passed across the affected suites.
+- The api wizard e2e — a new case reading B1 over HTTP: basis for reporting offers its two qualified
+  members with words; NACE offers 1 047 with `01.11` coded and named; the country field offers
+  `country:MD` unnamed; a numeric field offers nothing and has no help; the certifications field has
+  help. Recorded below with the gate run.
+- `help` reaches S-07 through `step-fields.tsx` — the one web line this task touches, because OQ-59's
+  disposition said `null` held only until this landed.
+- `pnpm gates:scoped` after every review fix: ten gates green, `openapi:check` red by design until
+  the regenerated contract is committed (green on the commit), and `e2e-api` **794 of 795** — the one
+  red a pre-existing wizard case, *a viewer reads but cannot write*, answering 404 where 403 is
+  expected, which passed 11/11 standalone immediately before and immediately after the run. That is
+  task 85's row's non-timeout family — a refusal from the shared sign-in fixture rather than from
+  this diff — and is recorded here as the ninth instance rather than re-run away.
+
+**NFR-23's own verification — editorial sign-off recorded per translation publication, per locale —
+is outstanding for the 44 help sentences and 160 member labels authored here, and this entry is not
+a substitute for it.** Task 33.2's entry said the same of the labels; it holds harder here, because
+help is calculation guidance (*"(number of employees who left … / average number …) × 100"*), where
+an authoring slip changes what a reporter computes. Task 94 owns the remaining 121 elements and
+carries the same obligation.
+
+### Skills opened against the diff
+
+`nestjs-best-practices`, per `apps/api/CLAUDE.md`. Applied: `arch-module-sharing` — the vocabulary
+port reaches `DisclosureModule` by importing `OrganizationModule`, which now exports the token, not
+by re-registering the provider; `di-use-interfaces-tokens` — `ORGANIZATION_VOCABULARY` is the
+existing symbol beside its interface; `arch-avoid-circular-deps` — checked: `OrganizationModule`
+imports nothing from `core/disclosure`. Found wanting and corrected after the convention review:
+`di-interface-segregation` — the use case took the whole five-method port for two calls, and now
+takes a `Pick` of the two. `vercel-react-best-practices`, per `apps/web/CLAUDE.md`, for the one
+`.tsx` line: a prop passed through; no rule in its eight categories reaches it, and none was
+declined.
+
+### What the reviews found
+
+**Spec review, eight findings, all taken.** The CAEM-to-NACE join crosses two revisions — EFRAG
+ships NACE Rev. 2.1, CAEM mirrors Rev. 2 — and the row had stated it as an equivalence; measured on
+the committed artefacts (180 members with no CAEM code, 129 codes with no member) and recorded as an
+assumption with what changes if it is wrong, and task 91.2 warned. FR-50 had been cited for an XBRL
+form the Excel template does not take; the row and the DTO now give the real reason — identity
+across domains — and name task 46's mapping as owed. Two deferrals had no owner: task **94** now owns
+platform-authored help for the 121 undocumented elements (UX-17 cross-logged), and task **91.4** the
+unit lists the `measurementGuidance` role carries (UX-14). Task 35.2's row was cross-logged for the
+two statements this task made false, the standing assumption behind help and members was written
+down with the moment the extractor enforces it, row 91.1's deliverable was rewritten to what was
+decided, and the members row now names the parity suite rather than the extractor as the
+three-locale guard.
+
+**Gate-integrity review, six checks that would not have failed on their subject, every one
+proved by seeding.** The choice-field floor of ten passed with three fields demoted to text — it is
+now the pinned set of thirteen keys, and the reviewer's note that only B1's are read by the e2e is
+why the set includes B2's, C6's and C7's. The members and help specs ran in one direction only —
+taxonomy to catalogue — and a stale key in all three locales went green everywhere; both now run the
+other direction too, as the labels always had. The taxonomy extractor's enumeration walk fell back
+to every arc when an element's link role was empty, which is precisely the wrong-members-right-count
+defect its own guard was written for; the fallback is gone, and an external classification now
+counts as resolved only by its member count. The label extractor's member guard was vacuous on an
+artefact with no `enumerations` — the state its sibling guard for elements had been written to
+refuse — and refuses it now. And the e2e's NACE assertion could not tell the platform's Romanian
+from EFRAG's English; it now compares against `nace-code.md.json`'s own Romanian and asserts it is
+not the English.
+
+**Convention review, four findings.** The enumeration reader dropped a malformed domain silently,
+which made the new *no error logged* assertion inert for enumerations — fixed there and, applying the
+rule where it holds, in the two older readers (`readAxes`, `readExternalDomain`) that had the same
+shape. `TaxonomyEnumeration.taxonomy` was `string` beside its own vocabulary; it is now the derived
+union, with the narrowing beside the set. The use case's port dependency became a `Pick`. And this
+entry gained the skills record above.

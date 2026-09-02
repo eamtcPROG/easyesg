@@ -43,6 +43,23 @@ export interface DisclosureModuleSummary {
   readonly lastAnsweredAt: EpochMillis | null;
 }
 
+/**
+ * One answer a choice field offers (task 91.1).
+ *
+ * `value` is the member's **taxonomy-qualified** name — `vsme:IndividualMember`, `nace:NACE_A0111`,
+ * `country:MD` — for identity: two taxonomies can declare the same local name, and a stored
+ * `IndividualMember` alone names nothing once it has left the domain it was offered in. It is also
+ * XBRL's own serialisation of an enumeration fact (a Phase 2 export, FR-176); the Excel Digital
+ * Template's dropdowns take the template's own values, and mapping to them is task 46's. An
+ * `enumeration_set` stores its chosen values space-separated.
+ */
+export interface DisclosureOption {
+  readonly value: string;
+  readonly label: string | null;
+  /** The classification's own code where it has one — `01.11` for a NACE class — for a picker. */
+  readonly code: string | null;
+}
+
 /** One answerable field: its shape from the taxonomy, its wording from the catalogue, its value from the store. */
 export interface DisclosureField {
   readonly elementKey: string;
@@ -64,6 +81,19 @@ export interface DisclosureField {
    * official.
    */
   readonly labelStanding: string | null;
+  /**
+   * EFRAG's `documentation` label for the element, in the request's locale, or `null` where the
+   * package carries none — which is the ordinary case (task 91.1; UX-17, OQ-59). Its standing is
+   * the label's, and `labelStanding` already carries it.
+   */
+  readonly help: string | null;
+  /**
+   * The answers a choice field offers, for `enumeration` and `enumeration_set` kinds; `null` for
+   * every other kind (task 91.1). Each `value` is the member's taxonomy-qualified name — what the
+   * store holds and the export emits — and `label` its wording in the request's locale, `null`
+   * where none is held (ISO 3166 members, whose names the browser resolves from its own catalogue).
+   */
+  readonly options: readonly DisclosureOption[] | null;
   readonly valueNumeric: string | null;
   readonly valueText: string | null;
   readonly valueBoolean: boolean | null;

@@ -161,6 +161,75 @@ describe('the shipped VSME taxonomy artefacts', () => {
     });
   });
 
+  describe('the choice fields, and the answers each offers (task 91.1)', () => {
+    it('resolves every enumeration element’s domain to members, or names it as external', () => {
+      const versions = registry().registeredVersions({ standard: TAXONOMY_STANDARD.VSME });
+      expect(versions.length).toBeGreaterThan(0);
+      for (const version of versions) {
+        const at = { standard: TAXONOMY_STANDARD.VSME, version };
+        const taxonomy = registry().taxonomy(at);
+        const choiceFields = (taxonomy?.elements ?? []).filter(
+          (e) => e.kind === DISCLOSURE_KIND.ENUMERATION || e.kind === DISCLOSURE_KIND.ENUMERATION_SET,
+        );
+        // The set, not a floor: a floor of ten passed with three choice fields demoted to text
+        // (gate-integrity review, 2 Sep 2026). Both registered versions carry these thirteen.
+        expect(choiceFields.map((e) => e.key).sort()).toEqual(
+          [
+            'BasisForPreparation',
+            'BasisForReporting',
+            'CountryOfPrimaryOperationsAndLocationOfSignificantAssets',
+            'CountryOfSite',
+            'EmployeeCountingMethodology',
+            'ListOfDisclosuresForWhichNoChangesAreReportedComparedToThePreviousPeriodReporting',
+            'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation',
+            'NaceSectorClassificationCodes',
+            'TypeOfNumberOfEmployees',
+            'UndertakingsLegalForm',
+            'SustainabilityIssueAddressedByPracticePolicyAndOrFutureInitiative',
+            'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce',
+            'TypeOfHumanRightRelatedToTheConfirmedIncident',
+          ].sort(),
+        );
+        for (const field of choiceFields) {
+          const key = field.domain?.includes(':') ? field.domain : `vsme:${field.domain ?? ''}`;
+          const enumeration = registry().enumeration({ ...at, key });
+          // Every choice field's domain is registered, and offers members unless the package only
+          // references it — which is ISO 3166 and nothing else.
+          expect(enumeration).not.toBeNull();
+          if (enumeration?.external === null) expect(enumeration.members.length).toBeGreaterThan(0);
+          else expect(enumeration?.external).toBe('iso3166');
+        }
+      }
+      expect(errors).not.toHaveBeenCalled();
+    });
+
+    it('draws B1’s basis for reporting from two members, neither of them scaffolding', () => {
+      const members = registry().enumeration({ ...at, key: 'vsme:BasisForReportingMember' })?.members ?? [];
+      expect(members.map((m) => m.key).sort()).toEqual(['ConsolidatedMember', 'IndividualMember']);
+    });
+
+    it('draws the list of disclosures from 51 members, the unprefixed ones included', () => {
+      // EFRAG declares 24 of these with ids like `B1ListOfSubsidiariesMember` — no `vsme_` — and a
+      // read keyed on the prefix offered 27 of 51.
+      const members = registry().enumeration({ ...at, key: 'vsme:ListOfDisclosuresMember' })?.members ?? [];
+      expect(members).toHaveLength(51);
+      expect(members.some((m) => m.key === 'B1ListOfSubsidiariesMember')).toBe(true);
+    });
+
+    it('resolves NACE through the enumeration, as its own classification with pointed codes', () => {
+      const nace = registry().enumeration({ ...at, key: 'nace:NACE_AllEconomicActivitiesNAMember' });
+      expect(nace?.external).toBeNull();
+      // Sections A–V, divisions, groups and classes: NACE Rev. 2.1's own structure.
+      expect(nace?.members).toHaveLength(1047);
+      const cereals = nace?.members.find((m) => m.key === 'NACE_A0111');
+      // The pointed code is what CAEM prints and what `nace-code.md.json` is keyed by.
+      expect(cereals?.code).toBe('01.11');
+      expect(cereals?.labels.en).toBe('Growing of cereals, other than rice, leguminous crops and oil seeds');
+      expect(nace?.members.find((m) => m.key === 'NACE_A')?.code).toBe('A');
+      expect(errors).not.toHaveBeenCalled();
+    });
+  });
+
   it('pins new reports to a version that is actually registered', () => {
     const taxonomy = registry();
     const pin = taxonomy.pinFor({});

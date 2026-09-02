@@ -10,6 +10,8 @@ import {
 } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
 import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
 import { TAXONOMY_REGISTRY, type TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
+import { ORGANIZATION_VOCABULARY } from '@api/modules/core/organization/interfaces/organization-vocabulary.interface';
+import { OrganizationModule } from '@api/modules/core/organization/organization.module';
 import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
 import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
 import { ReportsController } from './controllers/reports.controller';
@@ -23,7 +25,7 @@ import { DisclosureFacade } from './services/disclosure-facade.service';
 import { ReportService } from './services/report.service';
 import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
-import { ReadWizardStep } from './use-cases/read-wizard-step.use-case';
+import { ReadWizardStep, type WizardVocabulary } from './use-cases/read-wizard-step.use-case';
 import { WriteDisclosureValues } from './use-cases/write-disclosure-values.use-case';
 
 /**
@@ -70,13 +72,14 @@ const httpProviders: Provider[] = [
   WizardService,
   {
     provide: ReadWizardStep,
-    inject: [REPORT_STORE, DISCLOSURE_VALUE_STORE, TAXONOMY_REGISTRY, DISCLOSURE_LABELS],
+    inject: [REPORT_STORE, DISCLOSURE_VALUE_STORE, TAXONOMY_REGISTRY, DISCLOSURE_LABELS, ORGANIZATION_VOCABULARY],
     useFactory: (
       reports: ReportStore,
       values: DisclosureValueStore,
       taxonomy: TaxonomyRegistry,
       labels: DisclosureLabelResolver,
-    ) => new ReadWizardStep(reports, values, taxonomy, labels),
+      vocabulary: WizardVocabulary,
+    ) => new ReadWizardStep(reports, values, taxonomy, labels, vocabulary),
   },
   {
     provide: WriteDisclosureValues,
@@ -95,7 +98,9 @@ const httpProviders: Provider[] = [
 @Module({
   // `TaxonomyModule` and `LocalizationModule` imported rather than their providers re-registered:
   // both hold a parsed cache, and a second registration is a second cache (PeriodModule's rule).
-  imports: [TaxonomyModule, LocalizationModule],
+  // `OrganizationModule` for its vocabulary port (task 91.1): the wizard names NACE members in the
+  // platform's own Romanian and Russian and offers the countries the platform registers.
+  imports: [TaxonomyModule, LocalizationModule, OrganizationModule],
   controllers: mode === APP_MODE.WORKER ? [] : [ReportsController, WizardController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
   exports: mode === APP_MODE.WORKER ? [] : [DISCLOSURE_VALUE_STORE, DisclosureFacade],
