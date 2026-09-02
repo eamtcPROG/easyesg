@@ -1,0 +1,27 @@
+/* Textarea — the control's box. Everything shared with TextField comes from its stylesheet. */
+
+.control {
+  align-items: stretch;
+}
+
+.textarea {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-default);
+  /* Vertical only: a horizontal resize would break the reading measure UX-74 sets. */
+  resize: vertical;
+  min-block-size: 6rem;
+}
+
+.textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.textarea:disabled {
+  color: var(--text-muted);
+}

@@ -1,0 +1,23 @@
+.fields {
+  display: grid;
+  gap: var(--space-6);
+}
+
+/* UX-13: read-only keeps the anatomy and shows the answer as text, not as a disabled box that reads
+   as a field someone failed to fill in. */
+.readOnlyValue {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--text-default);
+}
+
+.readOnlyEmpty {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--text-muted);
+}
+
+.unit {
+  color: var(--text-body);
+  white-space: nowrap;
+}

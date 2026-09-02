@@ -58,8 +58,20 @@ export interface DateFieldProps
   min?: string;
   /** ISO `YYYY-MM-DD`. */
   max?: string;
+  /** `TextField`'s rule: hidden visually, kept for assistive technology. */
+  labelHidden?: boolean;
 }
 
-export function DateField({ label, help, error, id, ...input }: DateFieldProps) {
-  return <TextField {...input} type="date" label={label} help={help} error={error} id={id} />;
+export function DateField({ label, help, error, id, labelHidden, ...input }: DateFieldProps) {
+  return (
+    <TextField
+      {...input}
+      type="date"
+      label={label}
+      labelHidden={labelHidden}
+      help={help}
+      error={error}
+      id={id}
+    />
+  );
 }

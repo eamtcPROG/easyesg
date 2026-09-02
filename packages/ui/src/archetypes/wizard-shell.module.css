@@ -86,7 +86,17 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  flex: none;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Wide: the pair keeps its width and the heading yields. Narrow: it drops under the heading and
+   wraps, because a +40% exit sentence beside a 12rem indicator is wider than a phone (UX-94). */
+@media (min-width: 48rem) {
+  .controls {
+    flex: none;
+  }
 }
 
 .body {

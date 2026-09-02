@@ -351,3 +351,39 @@ export async function seedReport(input: {
     await client.end();
   }
 }
+
+/**
+ * One stored disclosure value, read as the migration owner **with the tenant bound** — RLS is forced
+ * on the tenant tables for the owner too, so an unbound read answers nothing rather than everything.
+ * `null` where no row exists. What the autosave journey asserts on: the acknowledgement the screen
+ * shows is only honest if this row is what it says (NFR-56).
+ */
+export async function disclosureValueOf(input: {
+  readonly organizationId: string;
+  readonly reportId: string;
+  readonly elementKey: string;
+}): Promise<{ valueNumeric: string | null; valueText: string | null; state: string } | null> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    const result = await client.query<{
+      value_numeric: string | null;
+      value_text: string | null;
+      state: string;
+    }>(
+      `SELECT value_numeric, value_text, state
+         FROM core.report_disclosure_value
+        WHERE report_id = $1 AND element_key = $2 AND dimension_key = '' AND ordinal = 0`,
+      [input.reportId, input.elementKey],
+    );
+    await client.query('COMMIT');
+    const row = result.rows[0];
+    return row === undefined
+      ? null
+      : { valueNumeric: row.value_numeric, valueText: row.value_text, state: row.state };
+  } finally {
+    await client.end();
+  }
+}

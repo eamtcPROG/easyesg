@@ -9862,3 +9862,176 @@ script two reasons to change.
 Assumed meanwhile: that the ordering fixed above holds, which nothing enforces — so the next gate
 added is the next chance to break it, exactly as `facade:check` did. If that happens before the gate
 exists, this deferral is what was wrong.
+
+## Task 35.2 — autosave: the pattern that discharges UC-35, and what it found in the anatomy · 2026-09-02
+
+The draft-integrity pattern (UX-34 … UX-37) live on S-07: every field change persists on blur with
+no save button, the indicator reports four states from one fixed location, an offline change queues
+in IndexedDB and drains on reconnection — or on the next open of the report, after the tab is closed
+— and leaving the wizard with something unsent asks first. Scope widened from `web` to
+`web+pkg:ui+pkg:contracts` before starting, on task 35.1's precedent: three §11.5 rows the pattern
+needs had no implementation (the save-state indicator, the Banner, the Textarea), and the browser
+needed three vocabularies the api owns.
+
+### The reducer owns what is unacknowledged; Query owns only the wire
+
+§12.1 pinned TanStack Query for *"debounced batched mutations with retry"* and `apps/web/CLAUDE.md`
+named autosave as its consumer. Both are honoured, and both had to be read narrowly: the mutation
+cache is memory, and §4.10's design has the queue *survive a tab close*. So the pending set lives in
+`features/wizard/autosave-state.ts` — a pure reducer, on `access-state.ts`'s precedent, because a
+flush that succeeds moves four fields at once — and `useMutation` is the transport of one flush per
+step, reading the reducer's snapshot at the moment it runs. The two persist-client packages that
+would have made Query's cache durable were declined rather than pinned for one consumer.
+
+**The one rule worth the words: a key is acknowledged only if its sequence still equals the one
+sent.** That is what makes editing a field while its previous value is in flight safe — the newer
+edit survives the older acknowledgement and leaves in the next flush — with no lock on the input
+(NFR-38: never blocked) and no cancellation of the request on the wire. The hook spec drives exactly
+this: two changes during a flush, and the second flush carries both and nothing else.
+
+**Batching is coalescing, not a timer.** A change flushes at once when nothing is on the wire and
+accumulates otherwise. The debounce timer the design's phrase suggests was declined because every
+millisecond of delay is spent from NFR-38's 250 ms before the API has seen anything.
+
+### The acknowledgement is the response, and the proof reads the row
+
+`FLUSH_SUCCEEDED` is dispatched from `onSuccess` with the rows as committed; nothing leaves
+`pending` before that. UX-36's other half — *saving* only past the budget, never a false *saved* —
+is a derived state: pending inside 250 ms still reads *saved*, so a save that lands in 80 ms never
+flickers. The browser proof (`e2e/web/autosave.spec.ts`) checks the indicator against the database
+row it claims, through a new `disclosureValueOf` helper that binds the tenant as the owner — RLS is
+forced for the owner too, and an unbound read answers nothing.
+
+### What the queue is keyed by, and why it is not the report
+
+IndexedDB, keyed `<accountId>/<reportId>`. A queue keyed by the report alone would let the next
+person to sign in on the same browser flush the previous person's changes under their own session —
+refused by RLS where they are not a member, silently attributed to them where they are. The account
+id comes from the sealed session on the server side of the page. Where IndexedDB is unavailable the
+store falls back to memory and the banner says what that gives up.
+
+### A step change persists; it does not fire
+
+Unmount writes nothing. The queue is in the store and the next step's mount restores and flushes it,
+so the indicator on the new step tells the truth about writes the old step left — which is the
+deliverable's own sentence. IndexedDB orders overlapping `readwrite` transactions across connections
+by creation, which is what keeps the next page's read from racing the previous page's write. The
+exit control warns with a consequence dialogue; the rail does not, since a step change abandons
+nothing. UX-37's other two triggers — sign-out and the organization switch — are recorded against
+their owners in `architecture.md` §12.5.6 rather than built here.
+
+### What the anatomy could not be given, stated rather than filled
+
+Replacing task 35.1's list with task 36.1's `DisclosureField` met two required props with nothing
+honest to put in them. **`help`** — UX-17's one or two sentences — has no source: the catalogues
+carry labels only, and the taxonomy artefact carries no documentation labels. Registered as
+**OQ-59** in `architecture.md` §18, owned by task 36.2, and passed as `null` with the row cited.
+**`notAvailable`** is UC-31, task 36.13's, passed as `null` likewise. Required-and-null on
+`Callout`'s `action={null}` precedent: a decision a reader of the page can see, where an optional
+prop would have been a slot nobody decided.
+
+**Three controls are generic on purpose**, each with its module named in the component: enumeration
+kinds render as text until task 36.2 brings the domain members to the browser (an api addition that
+task raises); `text_block` is a plain `TextArea` — the §11.5 row, built now — until 36.2's narrative
+control; numeric kinds carry no unit chooser because the read carries no unit list.
+
+**Read-only arrived with the first editable field**, as 35.1 said it would: a locked period and a
+view-only membership, each with its own banner naming the cause and what restores editing (UX-13),
+the lock outranking the role per task 31.2. The suspended entitlement is task 54's and is absent from
+the vocabulary rather than present and unreachable.
+
+### Two register entries that were not this task's decisions
+
+**OQ-58 was closed by task 89 and the register still said open.** The §12.5.6 row *"The wizard's
+reads and write are the api's, not a screen's"* decided that labels reach the browser on the step
+read; the §18 row was never amended. Cross-logged now, citing that row — the update this file's own
+rule requires, not a decision taken here.
+
+**The vocabulary mirrors are held at compile time.** `DISCLOSURE_STATE`, `DISCLOSURE_KIND` and
+`REPORT_STATUS` join `membership.ts`'s pattern in `@easyesg/contracts`, each asserted equal to the
+generated enum by a `Same<Mirror, Generated>` type — a drift fails `typecheck` in the package before
+`openapi:check` would. `DISCLOSURE_KIND` is mirrored rather than imported from `@easyesg/vsme`, which
+dual-builds to `dist/` and carries the generated facade; the browser needs ten strings.
+
+### Three things about the harness
+
+- **Playwright's `setOffline` is the only honest offline.** The reducer's *queued* state is exercised
+  against a real dropped connection, and the tab-close journey closes the page, restores the
+  connection, opens a new one, and reads the row the old tab never sent.
+- **The label's own `labelHidden`.** `DisclosureField` names the group and the control still needs an
+  accessible name of its own (UX-110); rendering the words twice made every question read as two.
+  `Select` already had the prop; `TextField`, `TextArea` and `DateField` gained it.
+- **The generated write type carries no `null`.** `DisclosureValueWriteDto`'s optionals emit as
+  `?: string`, so a clearing write *omits* the column and the api's controller reads the omission as
+  null; the first draft sent nulls and did not typecheck.
+
+### Verified
+
+- `packages/ui` — **93 passed** (85 before): the indicator as a polite, atomic live region that reads
+  without colour and changes text only on a state change; the banner as `status` never `alert`, with
+  no empty action slot; the textarea keeping paragraph breaks.
+- `apps/web` — **207 passed** (192 before): the reducer's eight transitions, the decimal parser, the
+  write builder, and the hook against a controllable `fetch` — acknowledgement after the response,
+  *saving* past the budget, a change during a flush surviving it, the durable queue restored and
+  drained at mount, a refusal recorded with the API's own document and not retried on its own.
+- `e2e/web/autosave.spec.ts` — six journeys: blur persists and reloads from the server; a non-number
+  is refused at the field and never sent; offline queues, warns, and drains on reconnection; a queued
+  change survives the tab being closed; leaving asks first; a viewer sees the step read-only with the
+  cause named. `wizard.expansion.spec.ts` — S-07 at +40% in three frames.
+### What the three reviews found, and what changed
+
+Run on the diff before this entry, routed `opus` (contracts surface, four workspaces). Twenty-two
+findings between them; every one either changed the code or gained a recorded reason.
+
+- **The reducer was invisible to `git diff`.** Both `convention-review` and `spec-review` noticed it
+  independently: `writeKey`'s separator was written as three literal NUL bytes, so git classed the
+  task's central file as binary. `\u0000` as an escape sequence is byte-identical at runtime and
+  text to git. Worth a habit: after a `Write`, `git diff --stat` says `Bin` where it should say a
+  line count.
+- **§4.10's per-field `synced | queued | failed` marker had been dropped without a word**, while the
+  row quoting §12.1 stopped one clause short of it. Built: `syncStateOf` beside `saveStateOf`, from
+  the same pending set, so the field's marker and the shell's indicator cannot disagree.
+- **UX-110 was cited for the opposite of what it says.** The control's label was hidden and UX-110
+  named as the reason; UX-110 requires a *visible* programmatically associated label. Fixed as an
+  association rather than a hiding: the visible label carries a stable id, the input's
+  `aria-labelledby` points at it, and the hidden `<label for>` stays for click-to-focus.
+- **`react-hook-form` was never opened**, and the rule says a rule never opened is an omission. Opened
+  and declined, with the reason in its own §12.5.6 row: no submit, no summary, and the reducer
+  already owns dirtiness.
+- **UX-38 and UX-37's sign-out flush had no owner** — the first inside this row's stated scope, the
+  second assigned to a closed task. Raised as **OQ-60** with what holds meanwhile; the sign-out row
+  now cites it instead of task 30.1.
+- **Two specs were inert, proved by seeding.** The indicator's "announces on transition only" passed
+  against a component that replaced its live-region node every render (`textContent` equality
+  cannot see replacement); it now asserts node identity across a same-state render. The hook's
+  "restored before written back" passed with the `hydrated` guard deleted, because the memory fake
+  reads synchronously; it now drives a store whose `load` resolves only when released, and asserts
+  no write-back before that.
+- **`readOnlyCauseOf` had no spec**, and the lock-outranks-role rule with it. It does now; the role
+  is typed as the contract's union rather than `string`.
+- **`failureNotice` was re-implemented** in the banner — the fourth hand copy of the per-member
+  RFC 9457 fallback, which `lib/notice.ts` exists to own. Replaced.
+- **`useContext` → `use()`** at the three context readers, per the composition skill's React 19
+  rule, applied where it holds rather than only in the new file.
+- **The IndexedDB fallback covered absence and not refusal.** A browser can expose `indexedDB` and
+  still refuse to open it; the store now demotes to memory on the first failed call and reports it.
+- **`COLUMN_OF_KIND`** moved beside the kind mirror in `@easyesg/contracts`, with its stated limit.
+- **The e2e locators**: `getByLabel` resolved to both the group and the input once the two shared a
+  name — the right repair was the role, not `.first()`. The `.first()` the expansion spec had
+  copied from its siblings was redundant beside its own padded locator and is gone; the helper's
+  two adjacent strings became a named object.
+- **Two things declined with a reason.** The unreachable path's exponential delays are asserted as
+  the pure function they are, with the retry *count* driven under real timers through a schedule
+  seam — advancing fake time across Query's scheduler hung the runner. The `beforeunload` handler
+  and the memory fallback's sentence still have no test that produces them; both are stated here
+  rather than claimed.
+
+### Verified, after the reviews
+
+- `packages/ui` — **93 passed**; `apps/web` — **213 passed** (26 files); `pnpm --filter
+  @easyesg/contracts typecheck` holds the three mirrors.
+- `pnpm gates:scoped` — the first run's browser gate failed all six autosave journeys on the label
+  locator above and one expansion frame on a 118 px overflow at 390 px (the header's controls could
+  not shrink); both fixed. **Second run, after every review fix: all eleven gates green** —
+  `e2e-web` 289 s with the six autosave journeys, the three S-07 expansion frames and every
+  earlier journey passing. `pnpm gates:clean` remains the run before pushing.

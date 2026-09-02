@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import {
   createContext,
   useCallback,
-  useContext,
+  use,
   useMemo,
   useReducer,
   useTransition,
@@ -109,7 +109,7 @@ const AccessContext = createContext<AccessContextValue | null>(null);
  * nothing to do with the mistake.
  */
 export function useAccess(): AccessContextValue {
-  const value = useContext(AccessContext);
+  const value = use(AccessContext);
   if (value === null) {
     throw new Error('useAccess must be used inside <AccessProvider>');
   }

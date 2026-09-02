@@ -161,6 +161,19 @@ export type LegalDate = components['schemas']['LegalDateDto'];
  * generated names carry `Dto` and the schema's own shape, and a screen should read the product's
  * vocabulary rather than the emitter's.
  */
+export {
+  COLUMN_OF_KIND,
+  DISCLOSURE_KIND,
+  DISCLOSURE_STATE,
+  REPORT_STATUS,
+  VALUE_COLUMN,
+  type DisclosureKind,
+  type DisclosureState,
+  type ReportStatus,
+  type ValueColumn,
+} from './disclosure';
+/** The report record (task 31.3) — its status is what tells S-07 a locked period has made it read-only (UX-13). */
+export type Report = components['schemas']['ReportResponseDto'];
 export type DisclosureModuleSummary = components['schemas']['DisclosureModuleSummaryDto'];
 export type DisclosureField = components['schemas']['DisclosureFieldDto'];
 export type DisclosureStep = components['schemas']['DisclosureStepDto'];

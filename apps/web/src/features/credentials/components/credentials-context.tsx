@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useReducer, useTransition } from 'react';
+import { createContext, use, useCallback, useMemo, useReducer, useTransition } from 'react';
 import type { ReactNode } from 'react';
 import { useForm, type Control } from 'react-hook-form';
 import type { SocialProvider } from '@easyesg/contracts';
@@ -98,7 +98,7 @@ const CredentialsContext = createContext<CredentialsContextValue | null>(null);
  * do with the mistake.
  */
 export function useCredentials(): CredentialsContextValue {
-  const value = useContext(CredentialsContext);
+  const value = use(CredentialsContext);
   if (value === null) {
     throw new Error('useCredentials must be used inside <CredentialsProvider>');
   }

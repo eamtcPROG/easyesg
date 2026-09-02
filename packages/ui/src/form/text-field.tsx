@@ -30,6 +30,9 @@ export interface TextFieldProps extends Omit<ComponentPropsWithRef<'input'>, 'id
   id?: string;
   /** Rendered inside the field's border, after the input — the password reveal lives here. */
   trailing?: ReactNode;
+  /** Hides the label visually while keeping it for assistive technology — for a control whose
+   *  group already names it, as inside a disclosure field (task 35.2). Never simply omitted. */
+  labelHidden?: boolean;
 }
 
 export function TextField({
@@ -38,6 +41,7 @@ export function TextField({
   error,
   id,
   trailing,
+  labelHidden = false,
   className,
   'aria-describedby': describedBy,
   ...input
@@ -54,7 +58,7 @@ export function TextField({
 
   return (
     <div className={[styles.field, className].filter(Boolean).join(' ')}>
-      <label className={styles.label} htmlFor={fieldId}>
+      <label className={labelHidden ? styles.labelHidden : styles.label} htmlFor={fieldId}>
         {label}
       </label>
       <span className={[styles.control, error ? styles.invalid : ''].filter(Boolean).join(' ')}>

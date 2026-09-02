@@ -85,6 +85,12 @@ export interface DisclosureFieldProps {
   more?: ReactNode;
   /** Read-only (UX-13) removes the affordances and keeps the layout, rather than greying a form. */
   readOnly?: boolean;
+  /**
+   * The id of the visible label, so the control inside can point `aria-labelledby` at it and the
+   * question's words are the input's programmatic name (UX-110) without being rendered twice.
+   * Auto-generated if omitted.
+   */
+  labelId?: string;
 }
 
 export function DisclosureField({
@@ -102,17 +108,19 @@ export function DisclosureField({
   moreLabel,
   more,
   readOnly = false,
+  labelId,
 }: DisclosureFieldProps) {
   const id = useId();
   const messageId = `${id}-message`;
+  const labelElementId = labelId ?? `${id}-label`;
 
   return (
     // `group` with an accessible name, so a screen reader announces which disclosure it is inside
     // when the input, the unit and the carry-forward control are three separate stops. Without it a
     // reporter tabbing through forty fields hears three unattached controls per question.
-    <section className={styles.field} role="group" aria-labelledby={`${id}-label`}>
+    <section className={styles.field} role="group" aria-labelledby={labelElementId}>
       <div className={styles.head}>
-        <span className={styles.label} id={`${id}-label`}>
+        <span className={styles.label} id={labelElementId}>
           {label}
         </span>
         {marker ? (

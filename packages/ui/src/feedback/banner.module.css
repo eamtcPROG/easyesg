@@ -1,0 +1,96 @@
+/* Banner — §8.3's persistent, page-level vehicle. Tier 3 only (UX-78): every colour is a `--state-*`
+   role, so task 82's dark scheme reaches it without this file being reopened. */
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  border-block: 1px solid;
+  padding: var(--space-4) var(--space-5);
+  margin-block-end: var(--space-5);
+}
+
+.icon {
+  inline-size: 20px;
+  block-size: 20px;
+  flex-shrink: 0;
+  margin-block-start: 1px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  margin: 0;
+  font: 600 15px/22px var(--font-text);
+  color: var(--text-default);
+}
+
+.body {
+  font: 400 14px/21px var(--font-text);
+  color: var(--text-body);
+  max-width: var(--measure-text);
+}
+
+.action {
+  flex: none;
+  font: 400 14px/21px var(--font-text);
+  align-self: center;
+}
+
+/* Below the reading width the action drops under the text rather than squeezing it (UX-73). */
+@media (max-width: 47.9375rem) {
+  .banner {
+    flex-wrap: wrap;
+  }
+
+  .action {
+    flex-basis: 100%;
+    margin-inline-start: calc(20px + var(--space-4));
+  }
+}
+
+.info {
+  border-color: var(--state-pending);
+  background: var(--state-pending-tint);
+}
+.info .icon {
+  color: var(--state-pending);
+}
+
+.attention {
+  border-color: var(--state-attention);
+  background: var(--state-attention-tint);
+}
+.attention .icon {
+  color: var(--state-attention);
+}
+
+.warning {
+  border-color: var(--state-warning);
+  background: var(--state-warning-tint);
+}
+.warning .icon {
+  color: var(--state-warning);
+}
+
+.error {
+  border-color: var(--state-error);
+  background: var(--state-error-tint);
+}
+.error .icon {
+  color: var(--state-error);
+}
+
+.success {
+  border-color: var(--state-ok);
+  background: var(--state-ok-tint);
+}
+.success .icon {
+  color: var(--state-ok);
+}

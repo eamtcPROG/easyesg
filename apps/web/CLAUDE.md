@@ -122,6 +122,31 @@ would strip the cookie from. S-01's provider buttons (`SocialProviders`, a Serve
 streamed behind the form) and the `?notice=` callout (`SocialNoticeCallout`, closed vocabulary in
 `features/identity/social.ts`) are the screen surface; FR-8 link/unlink is task 27's, on S-28.
 
+**S-07's draft-integrity pattern is live (task 35.2).** `client/autosave/` is built — `useAutosave`
+over `features/wizard/autosave-state.ts`'s reducer, the IndexedDB `PendingWriteStore` with its
+memory fallback, and `putDisclosureValues`, the **first browser-originated write** through
+`app/api/[...path]`. The step page renders §6.2's anatomy through `features/wizard/components/`
+(`StepFields` → `DisclosureControl`, one control per kind), with the indicator in `WizardShell`'s
+`saveState` slot, the unsynced banner above the fields, and the exit control's consequence dialogue.
+Four things to know before touching it:
+
+- **The reducer owns what is unacknowledged; Query owns only the wire.** `FLUSH_SUCCEEDED` is
+  dispatched from `onSuccess` with the rows as committed, and nothing leaves `pending` before that
+  (NFR-56). A key is acknowledged only if its sequence still equals the one sent — edit a field while
+  its previous value is in flight and the newer edit survives. `architecture.md` §12.5.6 records why
+  Query's mutation cache could not be the queue.
+- **The `QueryClientProvider` lives in the `[reportId]` layout, not in `(app)`.** Autosave is the
+  first Query consumer and lives entirely under `(wizard)`; the provider moves up when the
+  notification unread count (task 50.2) needs it on every screen. Do not create a second client.
+- **A step change persists and does not fire.** Unmount writes nothing; the queue is in IndexedDB and
+  the next step's mount restores and flushes it. The exit control warns (UX-37); the rail does not,
+  because a step change abandons nothing. The queue's key carries the **account id** from the sealed
+  session — `pending-store.ts` says why a report-scoped key would let the next sign-in drain it.
+- **Two required slots are `null` with their owners named**: `help` (OQ-59 — no source for UX-17's
+  sentences exists) and `notAvailable` (task 36.13). `enumeration` kinds render as text until task
+  36.2 brings the domain to the browser; `text_block` is a plain `TextArea` until 36.2's narrative
+  control. Every one of these is a different control arriving with its module, not a boolean prop.
+
 **S-28 and S-01's staged factor step are live (tasks 27.7, 27.8).** `features/credentials/` holds
 the Record screen over `RecordShell` — extracted to `packages/ui` at this first instance, not
 deferred — and `features/identity/`'s `factor.ts` / `factor-state.ts` / `components/factor-form.tsx`
@@ -223,7 +248,7 @@ src/
 ├─ features/       10 domains, mirroring apps/api/src/modules names
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter)
 ├─ server/         server-only: session, api-client, data/
-├─ client/         browser-only: autosave (IndexedDB queue), polling
+├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), polling
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice
 ```
 
@@ -387,8 +412,9 @@ conditional render, which is how it ends up half-suppressed on one screen.
   to those sections, not a ticket.
 
 - **TanStack Query is for client islands, and calling the API directly from one is a security
-  bug, not a shortcut.** It is here for the three polls above plus autosave's queued mutations
-  (§12.1, shared catalog pin with `apps/admin`). Everything reachable server-side keeps going
+  bug, not a shortcut.** It is here for the three polls above plus autosave's flush — its first
+  live consumer since task 35.2, as the *transport* of one mutation per step and not as the queue
+  (§12.1, shared catalog pin with `apps/admin`; the provider is the `[reportId]` layout's). Everything reachable server-side keeps going
   through `src/app/api/[...path]` and `src/server/session.ts` — that proxy is what holds the
   access token out of browser JavaScript (AD-9, AD-12). A `useQuery` whose `queryFn` fetches the
   API origin itself works perfectly in development and moves the token to exactly where AD-12
@@ -414,6 +440,11 @@ conditional render, which is how it ends up half-suppressed on one screen.
   reducer as **one event carrying the outcome** — `ACTION_SETTLED` with the notice already built —
   rather than as a branch that dispatches two different actions, which puts the outcome-reading in
   the component where the rest of the wire handling lives.
+
+- **A context is read with React 19's `use(Context)`, not `useContext`** (2 Sep 2026, task 35.2's
+  convention review). The composition skill's §4.1 names the replacement, `react` is pinned at 19,
+  and the three readers this app had — S-16's, S-28's and the wizard's — all said `useContext`
+  until a rule opened against one diff was applied where it holds. Same semantics; one API.
 
 - **A context provider wraps the screen, not one region of it** (29 Aug 2026). `AccessProvider`
   was rendered inside `AccessBoard`, so S-16's invite panel — `AccessBoard`'s sibling — kept its own

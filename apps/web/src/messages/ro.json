@@ -844,8 +844,7 @@
       },
       "step": {
         "title": "Secțiunea {module}",
-        "outstanding": "{count, plural, =0 {Nimic de completat} one {Un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}",
-        "unanswered": "Fără răspuns"
+        "outstanding": "{count, plural, =0 {Nimic de completat} one {Un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}"
       },
       "forbidden": {
         "title": "Nu aveți acces la acest raport",
@@ -854,6 +853,60 @@
       "unreachable": {
         "title": "Raportul nu a putut fi încărcat",
         "body": "Nu am reușit să citim raportul chiar acum. Reîncărcați pagina; dacă se repetă, reveniți peste câteva minute."
+      },
+      "saveState": {
+        "label": "Starea salvării",
+        "saved": "Salvat",
+        "saving": "Se salvează…",
+        "queued": "În așteptare — fără conexiune",
+        "failed": "Salvarea nu a reușit"
+      },
+      "queue": {
+        "offlineTitle": "Modificările nu au fost încă trimise",
+        "offlineBody": "{count, plural, one {O modificare așteaptă} few {# modificări așteaptă} other {# de modificări așteaptă}} conexiunea. Vor fi trimise automat când conexiunea revine; până atunci rămân pe acest dispozitiv.",
+        "notDurable": "Acest browser nu permite păstrarea lor după închiderea filei — lăsați fila deschisă până când conexiunea revine.",
+        "unreachableTitle": "Modificările nu au putut fi salvate",
+        "unreachableBody": "{count, plural, one {O modificare nu a ajuns} few {# modificări nu au ajuns} other {# de modificări nu au ajuns}} la server. Le vom trimite din nou peste puțin timp; puteți continua să completați.",
+        "refusedTitle": "Modificările au fost respinse",
+        "refusedBody": "{count, plural, one {O modificare nu a putut fi salvată} few {# modificări nu au putut fi salvate} other {# de modificări nu au putut fi salvate}}. Verificați starea perioadei de raportare și încercați din nou.",
+        "retry": "Încercați din nou"
+      },
+      "readOnly": {
+        "lockedTitle": "Perioada de raportare este blocată",
+        "lockedBody": "Raportul poate fi citit, dar nu modificat. Un administrator al organizației poate redeschide perioada din fișa acesteia, cu un motiv consemnat.",
+        "lockedAction": "Deschideți perioada de raportare",
+        "viewerTitle": "Aveți acces doar pentru citire",
+        "viewerBody": "Rolul dumneavoastră în această organizație permite citirea raportului, nu completarea lui. Cereți unui administrator al organizației rolul de editor."
+      },
+      "field": {
+        "unanswered": "Fără răspuns",
+        "yes": "Da",
+        "no": "Nu",
+        "choose": "Alegeți",
+        "invalidNumber": "Valoarea nu este un număr. Nu a fost salvată. Introduceți doar cifre, cu virgulă sau punct pentru zecimale.",
+        "carried": "Preluat din perioada anterioară",
+        "markers": {
+          "missing": "De completat",
+          "inconsistency": "Neconcordanță",
+          "error": "Eroare",
+          "invalid_url": "Adresă invalidă",
+          "not_available": "Indisponibil, cu motiv",
+          "not_material": "Nesemnificativ",
+          "nil_return": "Zero declarat"
+        },
+        "sync": {
+          "queued": "În așteptare",
+          "saving": "Se salvează",
+          "failed": "Nesalvat"
+        }
+      },
+      "leave": {
+        "title": "Ieșiți cu modificări netrimise?",
+        "object": "{count, plural, one {O modificare nu a fost încă trimisă} few {# modificări nu au fost încă trimise} other {# de modificări nu au fost încă trimise}}",
+        "consequence": "Modificările rămân pe acest dispozitiv și vor fi trimise data viitoare când deschideți raportul de aici. Pe alt dispozitiv nu vor apărea până atunci.",
+        "retained": "Tot ce a fost deja confirmat ca salvat rămâne salvat.",
+        "confirm": "Ieșiți oricum",
+        "cancel": "Rămâneți în raport"
       }
     }
   }

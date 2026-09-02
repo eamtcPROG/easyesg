@@ -63,8 +63,10 @@ export { PasswordField, type PasswordFieldProps } from './form/password-field';
 export { Select, type SelectOption, type SelectProps } from './form/select';
 export { RequirementList, type RequirementItem, type RequirementListProps } from './form/requirement-list';
 export { TextField, type TextFieldProps } from './form/text-field';
+export { TextArea, type TextAreaProps } from './form/text-area';
 
 // feedback
+export { Banner, type BannerProps } from './feedback/banner';
 export { CALLOUT_INTENT, Callout, type CalloutIntent, type CalloutProps } from './feedback/callout';
 export {
   ConsequenceDialogue,
@@ -141,3 +143,9 @@ export {
   type VersionPinIndicatorProps,
   type VersionPinStanding,
 } from './domain/version-pin-indicator';
+export {
+  SAVE_STATE,
+  SaveStateIndicator,
+  type SaveState,
+  type SaveStateIndicatorProps,
+} from './domain/save-state-indicator';

@@ -844,8 +844,7 @@
       },
       "step": {
         "title": "Section {module}",
-        "outstanding": "{count, plural, =0 {Nothing left to answer} one {One field left} other {# fields left}}",
-        "unanswered": "Not answered"
+        "outstanding": "{count, plural, =0 {Nothing left to answer} one {One field left} other {# fields left}}"
       },
       "forbidden": {
         "title": "You do not have access to this report",
@@ -854,6 +853,60 @@
       "unreachable": {
         "title": "The report could not be loaded",
         "body": "We could not read the report just now. Reload the page; if it keeps happening, come back in a few minutes."
+      },
+      "saveState": {
+        "label": "Save state",
+        "saved": "Saved",
+        "saving": "Saving…",
+        "queued": "Queued — no connection",
+        "failed": "Save failed"
+      },
+      "queue": {
+        "offlineTitle": "Changes not yet sent",
+        "offlineBody": "{count, plural, one {One change is waiting} other {# changes are waiting}} for the connection. They will be sent automatically when it returns; until then they stay on this device.",
+        "notDurable": "This browser cannot keep them after the tab is closed — leave the tab open until the connection returns.",
+        "unreachableTitle": "Changes could not be saved",
+        "unreachableBody": "{count, plural, one {One change did not reach} other {# changes did not reach}} the server. We will send them again shortly; you can keep working.",
+        "refusedTitle": "Changes were refused",
+        "refusedBody": "{count, plural, one {One change could not be saved} other {# changes could not be saved}}. Check the reporting period's state and try again.",
+        "retry": "Try again"
+      },
+      "readOnly": {
+        "lockedTitle": "The reporting period is locked",
+        "lockedBody": "The report can be read but not changed. An organization administrator can reopen the period from its record, with a recorded reason.",
+        "lockedAction": "Open the reporting period",
+        "viewerTitle": "You have view-only access",
+        "viewerBody": "Your role in this organization allows reading the report, not filling it in. Ask an organization administrator for the editor role."
+      },
+      "field": {
+        "unanswered": "Not answered",
+        "yes": "Yes",
+        "no": "No",
+        "choose": "Choose",
+        "invalidNumber": "The value is not a number. It was not saved. Enter digits only, with a comma or a point for decimals.",
+        "carried": "Carried from the prior period",
+        "markers": {
+          "missing": "To answer",
+          "inconsistency": "Inconsistent",
+          "error": "Error",
+          "invalid_url": "Invalid address",
+          "not_available": "Not available, with reason",
+          "not_material": "Not material",
+          "nil_return": "Declared zero"
+        },
+        "sync": {
+          "queued": "Queued",
+          "saving": "Saving",
+          "failed": "Not saved"
+        }
+      },
+      "leave": {
+        "title": "Leave with unsent changes?",
+        "object": "{count, plural, one {One change has not been sent yet} other {# changes have not been sent yet}}",
+        "consequence": "The changes stay on this device and will be sent the next time you open the report here. On another device they will not appear until then.",
+        "retained": "Everything already confirmed as saved stays saved.",
+        "confirm": "Leave anyway",
+        "cancel": "Stay in the report"
       }
     }
   }
