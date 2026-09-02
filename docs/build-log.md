@@ -10035,3 +10035,99 @@ findings between them; every one either changed the code or gained a recorded re
   not shrink); both fixed. **Second run, after every review fix: all eleven gates green** —
   `e2e-web` 289 s with the six autosave journeys, the three S-07 expansion frames and every
   earlier journey passing. `pnpm gates:clean` remains the run before pushing.
+
+## Task 35.3 — resume: position is where work last happened · 2026-09-02
+
+The pattern's other half. Field values already survived a reload and a second device after task
+35.2 — the store is the truth and every step read comes from it — so what this task had to settle
+was **wizard position**, which nothing server-side recorded, and prove the second device.
+
+### One rule reconciles UC-18 and UC-36
+
+UC-18 enters a report *"at the first incomplete step"* (UX-10, built by task 35.1); UC-36 restores
+*"the previous state — … wizard position"* on any device (FR-39). Read as two triggers they are
+not in conflict, and the project owner chose one rule over a new table: **the module with the most
+recent answer is where work stopped**, derived from the values' own `updated_at`, with UX-10's
+first incomplete step where nothing has been answered. `GET /reports/:id/modules` gains
+`lastAnsweredAt` per module — epoch milliseconds, null where nothing is answered — and `resumeModule`
+in `server/data/wizard.ts` replaces `firstIncompleteModule`. Scope widened from `web` to `api+web`
+for that one field.
+
+**A per-person resume point was the alternative** and was declined as the widest shape for a fact
+the store already holds: a table under RLS, a write on every step change, and an identity-to-core
+reference §7.1 permits exactly once. The cost accepted is stated in the §12.5.6 row: position is
+per report, not per person.
+
+**Clearing an answer does not move the position.** A row set back to `missing` is not work in a
+module, and the api e2e asserts it — otherwise an erasure would land a returning reporter on the
+step whose only event was deleting something.
+
+### OQ-60, narrowed rather than closed
+
+The owner took the recommendation: prove UX-38's *"queued changes are submitted"* half on the
+existing `?return=` path rather than build the inline re-authentication here. `resume.spec.ts`
+clears the cookies under an open wizard, blurs a value, sees the refusal, reloads into the proxy's
+gate, signs in, and finds the row on return. What remains open under OQ-60 is the inline dialogue
+and UX-37's sign-out flush, and the register says so.
+
+### What the reviews found
+
+The spec review caught two things the first draft of this entry had not. **Four normative sentences
+still said "the first incomplete step" alone** — FR-24's acceptance criterion, UX-10, UC-18's step 3
+and `actors.md`'s RC line — and the rule taken contradicts each of them the moment anything is
+answered. Amended in the same edit, on tasks 31.2 and 26.2's precedent, with the date and the
+authority. **FR-39's third clause, validation flags, was neither delivered nor deferred.** It is now
+recorded as deferred to task 41 with its assumption stated: findings are recomputed rather than
+resumed, which FR-43's idempotent validation makes equivalent — and if that ever stops being true,
+task 41 inherits the question. FR-39 carries the cross-log.
+
+The gate-integrity review proved eight of nine new checks by seeding — reverting the rule to
+first-incomplete, inverting the comparison, dropping each fallback — and named the one thing none
+could fail on: **"the most recent answer *within* a module"** had no case, because every api write
+answered one element. Added: `Assets` iterates before `BasisForPreparation` and is answered second,
+so a summary taking the last element it met reports the older stamp and fails. **Ties were real and
+unspecified** — `updated_at` is the transaction's `now()`, so one queue flush spanning two modules
+stamps both alike; the rule is now written (the earlier module in the standard's order) and has its
+case. Two things it named that stay as recorded gaps: no journey exercises the queue's account
+scoping with a second account (task 35.2's property, asserted by construction in
+`pendingWriteScope` and by nothing else), and dimensioned answers move neither the count nor the
+position — the limit task 89 stated for the read, inherited unchanged.
+
+The convention review found the new instant typed `number` where `apps/api/CLAUDE.md` wants
+`EpochMillis` — the alias that says what an integer means, since OpenAPI cannot — and, applying the
+rule where it holds, five older sites in `core/` (`report.dto.ts`, `reporting-period.dto.ts`,
+`wizard-step.dto.ts`) typed the same way while `identity` had followed the rule at sixteen. All six
+swept; the alias erases, so `openapi:check` proves the emitted contract did not move. It also found
+UX-39 as the one register the validation-flags deferral had not reached, and — as an observation
+rather than a rule — that a context created from Playwright's `browser` fixture inherits none of the
+project's `use`, so the second device now takes `test.info().project.use` rather than a bare locale.
+
+**Two defects the browser gate found that no unit could.** The return-path journey committed its
+row and the input stayed empty: the control's draft was initialised once, so a value arriving
+through a *restored* queue — one this control never sent — never reached the input. The control now
+adopts the server's value whenever it holds no edit of its own, as one state object adjusted from
+the changed prop during render. And 35.2's offline journey, green twice, raced once: the indicator
+read *saving* while the network was down because the browser's `offline` event had not reached the
+reducer between the blur and the flush. The hook now converges on `navigator.onLine` at the two
+moments it matters — before a flush leaves and when one fails — so the event stream is a hint and
+the browser's own verdict is the fact. **The `EpochMillis` sweep also needed `type: Number` on each
+`@ApiProperty`**: the swagger plugin infers `object` from a type alias, and the api's own docs e2e —
+the served document must equal the committed contract — is what said so.
+
+**One harness note.** The first `pnpm gates:scoped` of this task failed its unit stage on
+`resumeModule` — not a defect but the gate-integrity reviewer seeding one into the same file while
+the run was reading it. A review that mutates the tree and a gate run share a working directory;
+run them in sequence, not in parallel, or read a red gate against `git status` before believing it.
+
+### Verified
+
+- `apps/api` wizard e2e — two new assertions in the module list, and a new case for the
+  cleared-back-to-missing rule.
+- `apps/web` — `resumeModule` spec: the latest answer wins over both the first incomplete and a
+  complete module; the fallbacks hold; an empty list resolves to nothing.
+- `e2e/web/resume.spec.ts` — three journeys: a second browser context lands on B3 and reads the
+  value the first device wrote; a fresh report lands on B1; the return path submits a queued change.
+- After every fix: `pnpm e2e:web` **117 passed** (the three new journeys and 35.2's six among
+  them) and the api e2e **794 passed, 34 suites**, run in sequence on the settled tree. The scoped
+  gate set's other stages were green on the same tree; `openapi:check` is red by design until the
+  regenerated contract is committed, and is run green on the commit itself.

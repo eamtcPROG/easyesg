@@ -16,6 +16,7 @@ import {
 } from 'class-validator';
 import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
+import type { EpochMillis } from '@api/contracts/types/time';
 import {
   DISCLOSURE_STATE,
   type DisclosureState,
@@ -49,10 +50,21 @@ export class DisclosureModuleSummaryDto {
   @ApiProperty({ description: 'Fields the pinned version puts in this module.' })
   readonly total: number;
 
+  @ApiProperty({
+    nullable: true,
+    type: Number,
+    description:
+      "Unix epoch milliseconds, UTC — when the module's most recent answer was stored, or null " +
+      'where nothing in it is answered. Where work last happened is where a returning reporter ' +
+      'resumes (FR-39).',
+  })
+  readonly lastAnsweredAt: EpochMillis | null;
+
   constructor(summary: DisclosureModuleSummary) {
     this.module = summary.module;
     this.answered = summary.answered;
     this.total = summary.total;
+    this.lastAnsweredAt = summary.lastAnsweredAt;
   }
 }
 
@@ -279,8 +291,8 @@ export class DisclosureValueResponseDto {
   @ApiProperty()
   readonly carriedForward: boolean;
 
-  @ApiProperty({ description: 'Unix epoch milliseconds, UTC.' })
-  readonly updatedAt: number;
+  @ApiProperty({ type: Number, description: 'Unix epoch milliseconds, UTC.' })
+  readonly updatedAt: EpochMillis;
 
   constructor(value: DisclosureValue) {
     this.id = value.id;

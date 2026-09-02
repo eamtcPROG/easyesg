@@ -1,5 +1,6 @@
 import type { DisclosureKind } from '@easyesg/vsme';
 import type { PeriodType } from '@api/contracts/taxonomy-registry.port';
+import type { EpochMillis } from '@api/contracts/types/time';
 import type { DisclosureState } from './disclosure-value.model';
 
 /**
@@ -32,6 +33,14 @@ export interface DisclosureModuleSummary {
   readonly module: string;
   readonly answered: number;
   readonly total: number;
+  /**
+   * When this module's most recent answer was stored — epoch milliseconds — or `null` where nothing
+   * in it has been answered (task 35.3; UC-36, FR-39). **Position is where work last happened**:
+   * the module with the latest value is where a returning reporter is put, on any device, and
+   * nothing records anyone's position separately — the values already carry it. `updated_at` is
+   * the store's own column, so this is derived rather than written.
+   */
+  readonly lastAnsweredAt: EpochMillis | null;
 }
 
 /** One answerable field: its shape from the taxonomy, its wording from the catalogue, its value from the store. */

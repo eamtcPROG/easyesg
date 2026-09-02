@@ -7,7 +7,7 @@ import {
 } from '@easyesg/contracts';
 import { DateField, Select, TextArea, TextField } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { useRef, useState, type FocusEvent } from 'react';
+import { useState, type FocusEvent } from 'react';
 import {
   BOOLEAN_CHOICE,
   COLUMN_OF_KIND,
@@ -59,12 +59,31 @@ export function DisclosureControl({
   readonly onCommit: (write: DisclosureValueWrite) => void;
 }) {
   const t = useTranslations('organization.wizard.field');
-  const [draft, setDraft] = useState(() => draftOf(field));
+  // One value, because its three parts move together (the reducer rule): `draft` is what the input
+  // shows, `committed` is what this control last sent, `server` is what the field arrived holding.
+  // A blur with `draft === committed` writes nothing.
+  const [values, setValues] = useState<ControlValues>(() => {
+    const initial = draftOf(field);
+    return { draft: initial, committed: initial, server: initial };
+  });
   const [invalid, setInvalid] = useState(false);
-  // What the field is known to hold, in draft form — so a blur with nothing changed writes nothing.
-  const committed = useRef(draftOf(field));
   const label = field.label ?? field.elementKey;
   const column = COLUMN_OF_KIND[field.kind];
+
+  // **An acknowledgement this control did not send still reaches the input.** A queue restored from
+  // an earlier tab drains after the page rendered, so the server's value arrives while the input
+  // shows the old one; task 35.3's return-path journey is the case. Adopted only while the control
+  // holds no edit of its own (`draft === committed`), so typing is never overwritten. Adjusting
+  // state from a changed prop during render is React's own idiom for this, not an effect.
+  const server = draftOf(field);
+  if (server !== values.server) {
+    setValues(
+      values.draft === values.committed
+        ? { draft: server, committed: server, server }
+        : { ...values, server },
+    );
+  }
+  const { draft } = values;
 
   if (readOnly) {
     const shown = column === VALUE_COLUMN.BOOLEAN ? booleanLabel(draft, { yes: t('yes'), no: t('no') }) : draft;
@@ -77,10 +96,11 @@ export function DisclosureControl({
 
   /** Commit a draft-form value: `''` clears, anything else is the column's value. */
   const commit = (asDraft: string) => {
-    if (asDraft === committed.current) return;
-    committed.current = asDraft;
+    if (asDraft === values.committed) return;
+    setValues({ ...values, draft: asDraft, committed: asDraft });
     onCommit(writeFor(field, asDraft === '' ? null : asDraft));
   };
+  const setDraft = (next: string) => setValues({ ...values, draft: next });
 
   const onTextBlur = (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const raw = event.currentTarget.value;
@@ -105,10 +125,7 @@ export function DisclosureControl({
           labelHidden
           placeholder={t('choose')}
           value={draft === '' ? undefined : draft}
-          onValueChange={(choice) => {
-            setDraft(choice);
-            commit(choice);
-          }}
+          onValueChange={(choice) => commit(choice)}
           options={[
             { value: BOOLEAN_CHOICE.YES, label: t('yes') },
             { value: BOOLEAN_CHOICE.NO, label: t('no') },
@@ -160,6 +177,12 @@ export function DisclosureControl({
         />
       );
   }
+}
+
+interface ControlValues {
+  readonly draft: string;
+  readonly committed: string;
+  readonly server: string;
 }
 
 function booleanLabel(draft: string, words: { readonly yes: string; readonly no: string }): string {

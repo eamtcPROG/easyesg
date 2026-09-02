@@ -116,16 +116,36 @@ export async function readWizardModules(reportId: string): Promise<WizardModules
 }
 
 /**
- * UX-10: *"Opening a report shall place the user at the first incomplete step, not at the
- * beginning."*
+ * Where a returning reporter lands (task 35.3; UC-36, FR-39, UX-10, UX-39).
  *
- * **First incomplete in the standard's order, and the list already arrives in it** — the api returns
- * modules in the taxonomy's own order, so this is a scan rather than a sort. A completed report
- * resolves to its first module: there is no incomplete step to open, and refusing to resolve one
- * would leave the entry segment with nowhere to send anybody.
+ * **Where work last happened, else the first incomplete step, else the first.** FR-39 restores
+ * *"wizard position … regardless of the device"*, and UX-10 says opening a report lands on *"the
+ * first incomplete step, not at the beginning"*. One rule reconciles them (project owner,
+ * 2 Sep 2026): the module with the most recent answer is where work stopped, on whichever device
+ * it stopped; a report nobody has answered yet has no such module, and UX-10's rule is what
+ * remains. Nothing records anyone's position separately — the values carry it, which is why a
+ * second device sees the same answer as the first.
+ *
+ * **First incomplete in the standard's order, and the list already arrives in it** — the api
+ * returns modules in the taxonomy's own order, so this is a scan rather than a sort. A completed
+ * report with no answers newer than another's resolves to its first module: there is no incomplete
+ * step to open, and refusing to resolve one would leave the entry segment with nowhere to send
+ * anybody.
+ *
+ * **A tie goes to the earlier module in the standard's order**, and ties are real rather than
+ * theoretical: `updated_at` is the transaction's `now()`, so one FR-38 queue flush spanning two
+ * modules stamps both with the same millisecond. Strict `>` over a list already in the taxonomy's
+ * order is what makes the answer deterministic; `>=` would hand the reporter to whichever module
+ * the flush happened to list last.
  */
-export function firstIncompleteModule(
-  modules: readonly DisclosureModuleSummary[],
-): string | undefined {
-  return (modules.find((module) => module.answered < module.total) ?? modules[0])?.module;
+export function resumeModule(modules: readonly DisclosureModuleSummary[]): string | undefined {
+  // Not named `module`: Next reserves that identifier (the entry page records the same).
+  let latest: { readonly module: string; readonly at: number } | undefined;
+  for (const summary of modules) {
+    if (summary.lastAnsweredAt === null) continue;
+    if (latest === undefined || summary.lastAnsweredAt > latest.at) {
+      latest = { module: summary.module, at: summary.lastAnsweredAt };
+    }
+  }
+  return latest?.module ?? (modules.find((m) => m.answered < m.total) ?? modules[0])?.module;
 }

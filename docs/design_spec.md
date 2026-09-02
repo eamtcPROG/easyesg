@@ -1222,7 +1222,7 @@ Patterns are defined once here and referenced from the screen specifications. Th
 
 **UX-9** The wizard shall present the report's sections as a persistent, always-visible list with a per-module state indicator, and shall permit free navigation between them. Sequence is guidance, not a gate — except that **B1 shall be completed before any conditional module is presented**, because B1 answers determine applicability (UC-19, P2). **Amended 25 Aug 2026 (`problem_overview.md` OQ-12):** the list was "the eleven Basic Module sections"; with Comprehensive promoted it is eleven or twenty depending on the report's scope flag (D-A), so the rule now names the report's sections rather than a count. Everything else about the rule is unchanged, B1's precedence included — it gates C's conditional sections for the same reason it gates B's.
 
-**UX-10** Opening a report shall place the user at the first incomplete step, not at the beginning (UC-18).
+**UX-10** Opening a report shall place the user at the module where work last happened and, where nothing has been answered, at the first incomplete step — never at the beginning (UC-18, UC-36). **Amended 2 Sep 2026 (task 35.3, project owner):** the rule read "the first incomplete step" alone; FR-39's restored position and this rule are one rule, recorded in `architecture.md` §12.5.6.
 
 **UX-11** Each module step shall show, without scrolling: the module name in plain language alongside its standard reference (`B8 — Workforce characteristics`), its completion and validation state, and how many fields remain outstanding.
 
@@ -1343,7 +1343,7 @@ Eight design states, **six colour roles** — `error` and `invalid_url` share on
 
 **UX-38** Session expiry shall not lose work: on re-authentication the user returns to the exact screen and record, and queued changes are submitted (UC-07). Re-authentication shall be presented inline over the preserved context, never as a redirect to a blank sign-in screen.
 
-**UX-39** Resumption shall restore field values, wizard position and validation state on any device (UC-36).
+**UX-39** Resumption shall restore field values, wizard position and validation state on any device (UC-36). **Cross-logged 2 Sep 2026 (task 35.3):** field values and position are restored from the store — position as the module where work last happened, per report; validation state is recomputed by task 41's validation rather than resumed, which FR-43's idempotent validation makes equivalent (`architecture.md` §12.5.6).
 
 ### 6.8 The carbon calculator
 

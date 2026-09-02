@@ -10,7 +10,7 @@ import {
   type ReportSubject,
 } from '../models/report.model';
 import { LegalDateDto } from '@api/modules/core/period/dto/reporting-period.dto';
-import type { LegalDate } from '@api/contracts/types/time';
+import type { EpochMillis, LegalDate } from '@api/contracts/types/time';
 
 /**
  * OpenAPI can type an instant only as `integer`, so the unit has to be stated in prose on every one
@@ -147,11 +147,11 @@ export class ReportResponseDto {
   })
   readonly taxonomyVersion: string;
 
-  @ApiProperty({ description: EPOCH_MILLIS })
-  readonly createdAt: number;
+  @ApiProperty({ type: Number, description: EPOCH_MILLIS })
+  readonly createdAt: EpochMillis;
 
-  @ApiProperty({ description: EPOCH_MILLIS })
-  readonly updatedAt: number;
+  @ApiProperty({ type: Number, description: EPOCH_MILLIS })
+  readonly updatedAt: EpochMillis;
 
   @ApiProperty({ type: ReportSubjectDto })
   readonly subject: ReportSubjectDto;

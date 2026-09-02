@@ -1,6 +1,6 @@
 import { MEMBERSHIP_ROLE, REPORT_STATUS } from '@easyesg/contracts';
 import { describe, expect, it, vi } from 'vitest';
-import { READ_ONLY_CAUSE, readOnlyCauseOf } from './wizard';
+import { READ_ONLY_CAUSE, readOnlyCauseOf, resumeModule } from './wizard';
 
 // Throws outside a React Server environment by design; `api-client.spec.ts` records the same.
 vi.mock('server-only', () => ({}));
@@ -29,5 +29,35 @@ describe('readOnlyCauseOf', () => {
     // No membership resolved is not "viewer": the API is the authority on the role, and a screen
     // that could not read it must not invent one.
     expect(readOnlyCauseOf({ report: { status: REPORT_STATUS.OPEN }, role: null })).toBeNull();
+  });
+});
+
+/**
+ * Where a returning reporter lands (task 35.3): work last happened, else first incomplete, else
+ * first — the rule that reconciles FR-39's position with UX-10's entry.
+ */
+describe('resumeModule', () => {
+  const summary = (module: string, answered: number, lastAnsweredAt: number | null) => ({
+    module,
+    answered,
+    total: 3,
+    lastAnsweredAt,
+  });
+
+  it('prefers the module with the most recent answer, wherever it sits in the order', () => {
+    const modules = [summary('B1', 1, 10), summary('B2', 0, null), summary('B3', 2, 500), summary('B4', 3, 200)];
+    // B4 is complete and B1 is first: neither wins, because B3 is where work stopped.
+    expect(resumeModule(modules)).toBe('B3');
+  });
+
+  it('gives a tie to the earlier module in the standard’s order', () => {
+    // One queue flush spanning two modules stamps both with the transaction's `now()`.
+    expect(resumeModule([summary('B1', 0, null), summary('B3', 1, 500), summary('B7', 1, 500)])).toBe('B3');
+  });
+
+  it('falls back to UX-10 when nothing has been answered, and to the first module when all is complete', () => {
+    expect(resumeModule([summary('B1', 3, null), summary('B2', 0, null)])).toBe('B2');
+    expect(resumeModule([summary('B1', 3, null), summary('B2', 3, null)])).toBe('B1');
+    expect(resumeModule([])).toBeUndefined();
   });
 });

@@ -43,7 +43,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   const objectOf = <T>(body: unknown): T => (body as { object: T }).object;
   const objectsOf = <T>(body: unknown): T[] => (body as { objects: T[] }).objects;
 
-  interface ModuleSummary { module: string; answered: number; total: number }
+  interface ModuleSummary { module: string; answered: number; total: number; lastAnsweredAt: number | null }
   interface Field {
     elementKey: string; kind: string; periodType: string; order: number;
     label: string | null; labelStanding: string | null;
@@ -134,6 +134,49 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     ]);
     expect(modules.every((m) => m.total > 0)).toBe(true);
     expect(modules.every((m) => m.answered === 0)).toBe(true);
+    // Nothing answered anywhere: no module can say when work last happened in it.
+    expect(modules.every((m) => m.lastAnsweredAt === null)).toBe(true);
+  });
+
+  it('says where work last happened, per module, from the values themselves (FR-39, task 35.3)', async () => {
+    const reportId = await createReport(await openPeriod(2026));
+    const before = Date.now();
+
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: B1_ELEMENT, valueText: 'Individual', state: DISCLOSURE_STATE.OK }],
+    }).expect(200);
+
+    const modules = objectsOf<ModuleSummary>((await http()
+      .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
+    const b1 = modules.find((m) => m.module === 'B1');
+    // Epoch milliseconds, from the store's own `updated_at` — derived, never written separately.
+    expect(b1?.lastAnsweredAt).toBeGreaterThanOrEqual(before);
+    expect(b1?.lastAnsweredAt).toBeLessThanOrEqual(Date.now());
+    expect(modules.filter((m) => m.module !== 'B1').every((m) => m.lastAnsweredAt === null)).toBe(true);
+
+    // The MOST RECENT answer in the module, not the last one in the taxonomy's order: `Assets`
+    // iterates before `BasisForPreparation`, and it is answered second, so a summary that took the
+    // last element it met would report the older timestamp.
+    const later = objectsOf<{ updatedAt: number }>((await http()
+      .put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [{ elementKey: 'Assets', valueNumeric: '1000', state: DISCLOSURE_STATE.OK }],
+      }).expect(200)).body);
+    const withTwo = objectsOf<ModuleSummary>((await http()
+      .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
+    expect(withTwo.find((m) => m.module === 'B1')?.lastAnsweredAt).toBe(later[0]?.updatedAt);
+    expect(later[0]?.updatedAt).toBeGreaterThanOrEqual(b1?.lastAnsweredAt ?? Number.POSITIVE_INFINITY);
+
+    // Clearing the answer back to missing is not work in the module: the position must not move
+    // to a step whose only event was an erasure.
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: B1_ELEMENT, state: DISCLOSURE_STATE.MISSING }],
+    }).expect(200);
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: 'Assets', state: DISCLOSURE_STATE.MISSING }],
+    }).expect(200);
+    const after = objectsOf<ModuleSummary>((await http()
+      .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
+    expect(after.find((m) => m.module === 'B1')?.lastAnsweredAt).toBeNull();
   });
 
   it('serves a step with its fields, labels and standing, in presentation order', async () => {

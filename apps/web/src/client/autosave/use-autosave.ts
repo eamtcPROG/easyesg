@@ -78,6 +78,9 @@ const DEFAULT_RETRY_SCHEDULE: RetrySchedule = { retries: TRANSPORT_RETRIES, dela
 /** After the transport gives up, how long the hook waits before asking again on its own. */
 const UNREACHABLE_RETRY_MS = 30_000;
 
+/** What the browser believes right now — `true` where there is no browser to ask. */
+const browserOnline = (): boolean => typeof navigator === 'undefined' || navigator.onLine;
+
 /** Thrown by the mutation so Query retries; carries the failure the reducer records. */
 class FlushError extends Error {
   constructor(readonly failure: FlushFailure) {
@@ -109,7 +112,7 @@ export function useAutosave(input: {
   const schedule = input.retrySchedule ?? DEFAULT_RETRY_SCHEDULE;
   const [state, dispatch] = useReducer(
     autosaveReducer,
-    { online: typeof navigator === 'undefined' ? true : navigator.onLine },
+    { online: browserOnline() },
     initialAutosaveState,
   );
 
@@ -126,6 +129,12 @@ export function useAutosave(input: {
       dispatch({ type: AUTOSAVE_EVENT.FLUSH_STARTED, sent });
       const outcome = await putDisclosureValues({ reportId, values: writes, fetch: input.fetch });
       if (outcome.status === API_OUTCOME.Ok) return outcome.value;
+      // The browser's own verdict outranks the event stream: an `offline` event can be missed
+      // between a blur and its flush, and a request that failed while `navigator.onLine` is false
+      // is a queued change, not a failed one (UX-35's third state, not its fourth).
+      if (outcome.status === API_OUTCOME.Unreachable && !browserOnline()) {
+        dispatch({ type: AUTOSAVE_EVENT.CONNECTION_CHANGED, connection: CONNECTION.OFFLINE });
+      }
       throw new FlushError(
         outcome.status === API_OUTCOME.Problem
           ? { kind: FLUSH_FAILURE.REFUSED, problem: outcome.problem }
@@ -166,7 +175,13 @@ export function useAutosave(input: {
   // The one place a flush leaves from. `isPending` covers a flush Query is holding for the network
   // or a retry delay, which the reducer sees as "not in flight" between attempts.
   useEffect(() => {
-    if (state.hydrated && canFlush(state) && !isPending) mutate();
+    if (!state.hydrated || !canFlush(state) || isPending) return;
+    if (!browserOnline()) {
+      // Same convergence on the way out: never leave with a request the browser says cannot go.
+      dispatch({ type: AUTOSAVE_EVENT.CONNECTION_CHANGED, connection: CONNECTION.OFFLINE });
+      return;
+    }
+    mutate();
   }, [state, isPending, mutate]);
 
   useEffect(() => {

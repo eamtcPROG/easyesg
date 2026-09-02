@@ -80,7 +80,7 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-15 | Accept an invitation to join an organization | CA | Gain the assigned role in the inviting organization | MVP | FR-11 |
 | UC-16 | View memberships and switch active organization | CA | Select which organization the session is scoped to | MVP | FR-12 |
 | UC-17 | View accessible reporting entities and periods | RC | See which reports are open to the user and their status | MVP | FR-25 |
-| UC-18 | Open a report for editing | RC | Enter the guided wizard at the first incomplete step | MVP | FR-24, FR-26 |
+| UC-18 | Open a report for editing | RC | Enter the guided wizard where work last happened, or at the first incomplete step | MVP | FR-24, FR-26 |
 | UC-19 | Complete B1 — Basis for preparation | RC | Record the basis-for-preparation disclosure that drives applicability | MVP | FR-24, FR-27, FR-28 |
 | UC-20 | Complete B2 — Practices, policies and future initiatives | RC | Record sustainability policies, practices, targets and initiatives | MVP | FR-24 |
 | UC-21 | Complete B3 — Energy and GHG emissions | RC | Report energy consumption, Scope 1 and 2 emissions, GHG intensity | MVP | FR-24, FR-29 |
@@ -702,7 +702,7 @@ their numbers put them.
 - **Main success scenario:**
   1. The Contributor opens the entity/period combination.
   2. The system checks that the period is open and that the user holds edit rights.
-  3. The Contributor enters the guided wizard at the first incomplete step.
+  3. The Contributor enters the guided wizard at the module where work last happened, or at the first incomplete step where nothing has been answered (amended 2 Sep 2026, task 35.3 — one rule with UC-36's restored position; `architecture.md` §12.5.6).
 - **Exception flows:** Where the period is locked or the user holds view-only rights, no editable session is granted.
 - **Postconditions:** An editable session exists on the report.
 - **Related FRs:** FR-24, FR-26

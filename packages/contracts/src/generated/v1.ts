@@ -1847,6 +1847,8 @@ export interface components {
             answered: number;
             /** @description Fields the pinned version puts in this module. */
             total: number;
+            /** @description Unix epoch milliseconds, UTC — when the module's most recent answer was stored, or null where nothing in it is answered. Where work last happened is where a returning reporter resumes (FR-39). */
+            lastAnsweredAt: number | null;
         };
         DisclosureFieldDto: {
             /** @example NumberOfEmployees */

@@ -1,14 +1,16 @@
 import { redirect } from '@/i18n/navigation';
 import { notFound } from 'next/navigation';
-import { firstIncompleteModule, readWizardModules } from '@/server/data/wizard';
+import { readWizardModules, resumeModule } from '@/server/data/wizard';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { activateRequestLocale, type LocaleParams } from '@/i18n/page';
 import { reportStepRoute } from '@/lib/routes';
 
 /**
- * S-07 entry — resolves to the first incomplete module and redirects (UX-10).
+ * S-07 entry — resolves to where work last happened, else the first incomplete module, and
+ * redirects (UC-36 and UX-10; task 35.3's rule in `resumeModule`).
  *
- * *"Opening a report shall place the user at the first incomplete step, not at the beginning."*
+ * *"Opening a report shall place the user at the first incomplete step, not at the beginning"*, and
+ * a returning reporter is *"restored to their previous state — … wizard position"* on any device.
  * This segment renders nothing; it exists to perform that resolution, so the step a reporter lands
  * on has a URL of its own from the first moment rather than after a client-side decision (UX-4).
  *
@@ -28,8 +30,8 @@ export default async function ReportEntryPage({ params }: Props) {
 
   // Not named `module`: Next reserves that identifier, and the rule exists because assigning it
   // breaks the bundler's own module scope rather than merely reading oddly.
-  const firstStep = firstIncompleteModule(read.modules);
-  if (firstStep === undefined) notFound();
+  const step = resumeModule(read.modules);
+  if (step === undefined) notFound();
 
-  redirect({ href: reportStepRoute({ reportId, module: firstStep }), locale });
+  redirect({ href: reportStepRoute({ reportId, module: step }), locale });
 }

@@ -14,7 +14,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Trim } from '@api/app/decorators/trim.decorator';
-import type { LegalDate } from '@api/contracts/types/time';
+import type { EpochMillis, LegalDate } from '@api/contracts/types/time';
 import type { PeriodReopening, ReportingPeriod } from '../models/reporting-period.model';
 
 /**
@@ -208,11 +208,11 @@ export class ReportingPeriodResponseDto {
   })
   readonly lockedBy: string | null;
 
-  @ApiProperty({ description: EPOCH_MILLIS })
-  readonly createdAt: number;
+  @ApiProperty({ type: Number, description: EPOCH_MILLIS })
+  readonly createdAt: EpochMillis;
 
-  @ApiProperty({ description: EPOCH_MILLIS })
-  readonly updatedAt: number;
+  @ApiProperty({ type: Number, description: EPOCH_MILLIS })
+  readonly updatedAt: EpochMillis;
 
   constructor(period: ReportingPeriod) {
     this.id = period.id;

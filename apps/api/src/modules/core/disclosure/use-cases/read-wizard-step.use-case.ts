@@ -79,14 +79,22 @@ export class ReadWizardStep {
     const registered = await this.pinned(query.reportId);
     const byKey = await this.storedByKey(query.reportId);
 
-    const counts = new Map<string, { answered: number; total: number }>();
+    const counts = new Map<string, { answered: number; total: number; lastAnsweredAt: number | null }>();
     for (const element of registered.elements) {
       // The pillar-level catch-alls carry no module (task 33.3). They are reportable and belong to
       // no step, so they are counted into no module rather than into one invented to hold them.
       if (element.module === null) continue;
-      const count = counts.get(element.module) ?? { answered: 0, total: 0 };
+      const count = counts.get(element.module) ?? { answered: 0, total: 0, lastAnsweredAt: null };
       count.total += 1;
-      if (isAnswered(byKey.get(plainKey(element.key)))) count.answered += 1;
+      const value = byKey.get(plainKey(element.key));
+      if (isAnswered(value)) {
+        count.answered += 1;
+        // The latest answer in the module is where work last happened (task 35.3, FR-39). A row
+        // cleared back to `missing` is not an answer and does not move it.
+        if (value !== undefined && (count.lastAnsweredAt === null || value.updatedAt > count.lastAnsweredAt)) {
+          count.lastAnsweredAt = value.updatedAt;
+        }
+      }
       counts.set(element.module, count);
     }
 
@@ -94,7 +102,9 @@ export class ReadWizardStep {
     // the standard does, and `RegisteredTaxonomy.modules` is already in that order.
     return registered.modules.flatMap((module) => {
       const count = counts.get(module);
-      return count === undefined ? [] : [{ module, answered: count.answered, total: count.total }];
+      return count === undefined
+        ? []
+        : [{ module, answered: count.answered, total: count.total, lastAnsweredAt: count.lastAnsweredAt }];
     });
   }
 
