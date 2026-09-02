@@ -92,12 +92,16 @@ WORKDIR /repo
 # explicit where the build stage does not, because a runtime image should carry only what it
 # runs — but the cost of that choice is real: a missing entry builds cleanly and then dies at
 # start on a dangling symlink (`Cannot find module '@easyesg/<pkg>/dist/cjs/index.js'`), never
-# at build. `packages/validation` joined it with task 20. What catches an omission is the images
-# job actually RUNNING the container, which is why that step exists. **`packages/vsme` joined
-# it with task 34.2 and was missed until CI ran the image** — the port re-exports
-# `DISCLOSURE_KIND` as a *value*, so `taxonomy-registry.port.js` emits a real `require` and the
-# container died on start. The guard worked; what failed was that nothing was pushed for 23
-# commits, so it did not run for four tasks.
+# at build. `packages/validation` joined it with task 20, and **`packages/vsme` with task 34.2** —
+# the taxonomy port re-exports `DISCLOSURE_KIND` as a *value*, so `taxonomy-registry.port.js` emits
+# a real `require`, and the container died on start. That one broke `dev`: the images job caught it,
+# correctly, four tasks after it was introduced, because nothing had been pushed for 23 commits.
+#
+# **Since task 90 the list is checked hermetically, and this comment is no longer the only guard.**
+# `pnpm image:check` compares it against `apps/api/package.json` in under a second on every run —
+# both directions, so a copy left behind by a dropped dependency fails too. The images job stays as
+# the backstop that proves the container actually starts; it is no longer the discovery mechanism it
+# had been three times over.
 COPY --from=build --chown=node:node /repo/node_modules ./node_modules
 COPY --from=build --chown=node:node /repo/packages/i18n ./packages/i18n
 COPY --from=build --chown=node:node /repo/packages/validation ./packages/validation

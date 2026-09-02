@@ -9749,3 +9749,116 @@ which is how `Combobox` and `DateField` entered the inventory.
   which a `packages/ui` change cannot cause and which task 85's row already collects as its
   non-timeout family. `pnpm e2e` immediately after: **793 passed, 34 suites**. Recorded rather than
   re-run away, per that row's own lesson.
+
+## Task 90 — the image's dependency list, and the CI line nobody had checked · 2026-09-02
+
+The Dockerfile's runtime stage lists `apps/api`'s workspace dependencies by hand. Nothing compared
+that list to `apps/api/package.json`, and it had drifted before — most recently at task 34.2,
+[recorded above](#the-image-guard-fired-four-tasks-late--2026-09-01) as a red `dev` pipeline.
+
+**The count in the task row is three; two survive checking**, and the difference is worth a line
+because the gate's own docblock nearly repeated it. `git log -S` finds `packages/validation` at task
+20 (`2b34a94`) and `packages/vsme` at task 34.2 (`56f2fb0`). `packages/i18n` shipped *with* the
+Dockerfile at task 18 — counting it makes the original look like a regression. The two are still the
+same class, and instructively not the same line: task 20's omission was in the **build** stage, fixed
+by copying the whole `packages` tree, and task 34.2's in the **runtime** stage, which is the one that
+must stay explicit. Both were caught only by the Images job running the container.
+
+What makes this worth a gate rather than a habit is **when** the drift becomes visible. A missing
+`COPY` builds cleanly: the symlink `apps/api/node_modules/@easyesg/vsme` points at
+`../../../../packages/vsme`, and a dangling link is a *runtime* error. So the container starts, dies
+on `Cannot find module`, and the only thing in the repository that could ever see it was the Images
+job actually running it — which happens on push, behind three other jobs, after a real image build.
+Every hermetic gate passes on a broken image, by construction.
+
+### The decision was placement, not detection
+
+Detection is a dozen lines of regex. The question was where it lives, and a spec was the wrong
+answer twice over: `apps/api`'s unit runner has `rootDir: 'src'` and this asserts nothing about
+`src`, while `test/` belongs to the e2e runner and needs Docker — so the sub-second check would have
+waited for Postgres to start. It is a fact about **repository packaging**, not about the API, and
+`CLAUDE.md` already had the shape written down: *"adding a gate means adding a root script and one
+line, never workflow-only logic."* One script, `tools/check-image-dependencies.mjs`, wired into all
+three runners that claim to be the gate set — `pnpm gates`, `gates-scoped.sh`'s hermetic parallel
+group, and the workflow's `hermetic` job.
+
+**It asserts equality, not sufficiency**, which is `schema-invariants.e2e-spec.ts`'s form: a `COPY`
+for a package that is *no longer* a dependency fails too. That direction has never broken anything,
+but a runtime image carrying what it does not run is the same list being wrong, and the inverted
+half is the one that catches a *removal* — the drift nobody is watching for.
+
+**The directory comes from each `packages/*/package.json`'s own `name` field**, never from stripping
+the scope off `@easyesg/x`. The convention holds today for all five; a gate that assumes it would
+quietly stop matching the day one package's folder and name diverge.
+
+### The bug in the checker, which is the interesting part
+
+The first draft matched `packages/([a-z-]+)` and **passed**. It was also blind to `packages/i18n` —
+the charset has no digits — so the one gate whose entire job is noticing a missing package would not
+have noticed that one missing. It is the `domain-free-of-frameworks` failure in miniature: a check
+that matches nothing looks exactly like a check that passes. The charset is `[a-z0-9-]+` and the
+trap is written into the script rather than into this file only.
+
+### `apps/web` and `apps/admin` — confirmed, not assumed
+
+The task asked. Neither can hold this defect, and for different reasons:
+
+- **`apps/web`** sets `output: 'standalone'`, so Next traces its own dependencies and the Dockerfile
+  copies `.next/standalone` wholesale. There is no hand-maintained list to drift. `CLAUDE.md`
+  already records the bundle's 29 symlinks as verified relative and self-contained.
+- **`apps/admin`** is a static Vite build: `dist` is copied to `/srv` and the image has no
+  `node_modules` at all.
+
+So the gate is `apps/api`-shaped on purpose, and the script says so. If `apps/web` ever leaves
+standalone output, this is the check that has to grow a second target.
+
+### The second finding, which the first one produced
+
+Wiring the workflow line meant reading `CLAUDE.md`'s claim that **"CI runs exactly these"** — and it
+was false. **`pnpm facade:check` had no line in the workflow at all**, while `pnpm gates` had run it
+since task 85. Same drift as the Dockerfile's, one layer up: two lists maintained separately and
+compared by nobody. Its consequence was that a stale generated disclosure facade could be caught
+locally and never in CI, in a repository whose argument for generated artefacts is precisely that
+the diff gate is what makes them contracts (P-5, DR-11).
+
+A **third** instance turned up in the same read: CI spelled one gate `pnpm --filter @easyesg/api
+test:e2e` in the `database` job and `pnpm e2e` in `billing-off` — the same command, two spellings, so
+even a careful reader comparing the lists would have to expand one by hand. Normalised to the root
+script.
+
+Fixed by adding the line **and** by making the two lists concatenate in the same order, so the claim
+is checkable by reading rather than by trusting: the `hermetic` job is the chain's first ten
+commands and `database` its last four, in order, with only `dev:up` and the Playwright install
+interleaved as setup. `CLAUDE.md`'s counts were corrected with it: they
+said nine root scripts and two e2e suites, and the truth is eleven and three — `facade:check` and
+`image:check` had both arrived since. Two rhetorical *"all nine gates"* sentences elsewhere became
+*"every gate"*, since they are arguments about coverage and the number in them decays on every task
+of this kind.
+
+### Verified
+
+- **Seeded three ways**, each restored afterwards:
+  - the `packages/vsme` runtime `COPY` removed — task 34.2's actual break — **exit 1**, naming it;
+  - a `COPY` added for a package that is not a dependency — **exit 1**, naming it as stray;
+  - a `packages/*/package.json` line removed from the manifest layer — **exit 1**.
+  - unmodified — **exit 0**: *"apps/api/Dockerfile carries all 3 workspace dependencies and nothing
+    else (i18n, validation, vsme)."*
+- `pnpm facade:check` — **exit 0** before adding its CI line, so the new step starts green.
+- The workflow parsed and its jobs' `run` steps listed mechanically, rather than read: `hermetic`
+  is the ten hermetic root scripts line for line, `database` the remaining four.
+- `pnpm gates:scoped`, and the Dockerfile comment corrected: it claimed the Images job is what
+  catches an omission, which is no longer where that is decided.
+
+### Deferred, with the reason
+
+**The chain-versus-workflow comparison is not itself mechanical, and by this repository's own rule it
+should be.** Two instances of that drift were found here by reading (`facade:check` absent, `e2e`
+double-spelled), and `CLAUDE.md` says *"a finding that recurs graduates into a mechanical gate"* —
+recurrence is established. It is not built here because it is a **different** assertion from this
+task's: one script comparing `package.json`'s `gates` chain against the workflow's job steps, with
+its own seeding proof and its own place in the chain. Building it inside `image:check` would give one
+script two reasons to change.
+
+Assumed meanwhile: that the ordering fixed above holds, which nothing enforces — so the next gate
+added is the next chance to break it, exactly as `facade:check` did. If that happens before the gate
+exists, this deferral is what was wrong.

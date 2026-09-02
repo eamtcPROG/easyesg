@@ -66,6 +66,10 @@ jobs:
       # of them is defined here.
       - run: pnpm lint
       - run: pnpm typecheck
+      # The api image's workspace-dependency list against its manifest (task 90). Hermetic and
+      # sub-second; it exists because the Images job caught this three times and only after an
+      # image build, on push, with every other gate already green.
+      - run: pnpm image:check
       - run: pnpm test
       - run: pnpm boundaries
 
@@ -75,11 +79,17 @@ jobs:
 
       - run: pnpm build
 
-      # Both diff a generated artefact against the committed one, so they must run after build.
-      # A pull request that changes a route or the admin route tree fails until the regenerated
-      # file is committed — which is what makes the OpenAPI document the contract (P-5, DR-11)
-      # rather than a description of it.
+      # All three diff a generated artefact against the committed one. Two of them need the build
+      # above; `facade:check` does not — it reads `config/seed` — and it is here rather than earlier
+      # so that this list is the `pnpm gates` chain in the same order, which is what lets CLAUDE.md
+      # say CI runs exactly the root scripts. A pull request that changes a route, the admin route
+      # tree or the taxonomy fails until the regenerated file is committed — which is what makes the
+      # OpenAPI document the contract (P-5, DR-11) rather than a description of it.
+      #
+      # `facade:check` had NO line here until task 90, while `pnpm gates` had run it since task 85 —
+      # the same drift, one layer up, found by checking that claim instead of repeating it.
       - run: pnpm openapi:check
+      - run: pnpm facade:check
       - run: pnpm routes:check
 
   database:
@@ -123,7 +133,12 @@ jobs:
 
       # RLS isolation as both roles, append-only enforcement, per-field capture, the outbox crash
       # window and configuration publish/revert. AD-2 calls for exactly this suite in CI.
-      - run: pnpm --filter @easyesg/api test:e2e
+      #
+      # Spelled as the root script rather than as `pnpm --filter @easyesg/api test:e2e`, which is
+      # what it expanded to until task 90. The two are the same command, and that is the problem:
+      # the `billing-off` job below already said `pnpm e2e`, so one gate had two spellings and the
+      # claim that CI runs the root scripts could not be checked by reading.
+      - run: pnpm e2e
 
       # AD-1's second entrypoint, booted (26 Aug 2026). `MODE` is read at module-definition time,
       # so one process cannot exercise both branches — the run above is the HTTP half and this is

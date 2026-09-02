@@ -39,13 +39,21 @@ each carry a Dockerfile, built with the repository root as context. Not started:
 and the `renderer` image (task 44).
 
 Working commands: `pnpm gates:scoped` (the inner loop — see "Closing a task"),
-`pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm boundaries`,
+`pnpm lint`, `pnpm typecheck`, `pnpm image:check`, `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (23 rules, each with a fixture proving it rejects a real violation),
-`pnpm openapi:check`, `pnpm routes:check`, `pnpm migrations:check`, `pnpm e2e:worker`. **CI runs exactly these**
+`pnpm build`, `pnpm openapi:check`, `pnpm facade:check`, `pnpm routes:check`,
+`pnpm migrations:check`, `pnpm e2e`, `pnpm e2e:worker`, `pnpm e2e:web`. **CI runs exactly these**
 (`.github/workflows/gates.yml`, two parallel jobs split on whether Docker is needed) — adding a gate
 means adding a root script and one line, never workflow-only logic.
 
-`pnpm gates` runs all ten plus the two e2e suites (`pnpm e2e`, then `pnpm e2e:web` — the
+**That last sentence is a claim about CI, and it was false for two gates until someone checked it**
+(task 90). `facade:check` had been in the `gates` chain since task 85 with no line in the workflow at
+all, so a stale generated facade could only be caught locally. The list above is now in the chain's
+own order, and the workflow's two jobs concatenate to exactly it — which is the form that makes the
+claim checkable by reading rather than by trusting.
+
+`pnpm gates` runs all fourteen — eleven root scripts, then the three e2e suites (`pnpm e2e`,
+`pnpm e2e:worker`, then `pnpm e2e:web` — the
 Playwright browser run, three projects since task 23: the tenant journeys with their axe scan,
 the +40% expansion check, and the admin console driven cross-origin against its built bundle;
 it needs the migrated Compose stack plus `pnpm exec playwright install chromium` once per
@@ -53,7 +61,9 @@ machine), in CI's order — a local runner that omitted either suite would not b
 build output first, and the difference between the two is the subject of the next section. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
 applies, reverts, re-applies and then asserts §7's schema invariants against the Compose stack,
 because neither "the baseline applies from an empty database" nor "no foreign key crosses the
-core/billing boundary" is a property any hermetic test can assert. The other eight run anywhere, and
+core/billing boundary" is a property any hermetic test can assert. **Four need the stack** —
+`migrations:check` and the three e2e suites — and **the other ten run anywhere**, which is not a
+count to take on trust either: those ten are the workflow's `hermetic` job line for line. And
 keeping that true is why `TypeOrmModule` is not registered until task 11 — `openapi:check` boots the
 whole `AppModule`.
 
@@ -80,13 +90,13 @@ precisely what catches a cross-workspace break: `typecheck`, `boundaries` and `l
 
 **`pnpm gates` is what CI runs, in CI's order, and `pnpm gates:clean` wraps it** — so running
 `gates` on its own before a push you are about to make is paying for the same set twice. The gate
-set is nine root scripts plus two e2e suites; writing this rule surfaced that its first draft
-stopped at nine and would have missed the very defect that prompted it.
+set is eleven root scripts plus three e2e suites; writing this rule surfaced that its first draft
+stopped at the hermetic ones and would have missed the very defect that prompted it.
 
 **Three review agents run at task close, before the build-log entry** (`.claude/agents/`, added
 31 Aug 2026). They exist because the gate set proves code *runs* and says nothing about whether it
 *belongs* — this file already records that every finding a review has raised on the front ends was
-invisible to all nine gates. The rule surface is ~2,900 lines of convention plus ~10,600 of
+invisible to every gate. The rule surface is ~2,900 lines of convention plus ~10,600 of
 normative specification, and the observed failure is not ignorance but **recall**: the author
 remembers a rule approximately, applies the approximate version, and is satisfied. An agent arrives
 with no rationalisation for the diff, which is the whole of its advantage.
@@ -647,7 +657,7 @@ Shared with the other NestJS/Next.js projects. Real files live in `.agents/skill
   Apply in `packages/ui` and any component API that is growing boolean props.
 
 **A skill is loaded and read against the diff, not recalled.** Every finding a review has raised on
-the front ends was invisible to all nine gates — the wrong data-fetching idiom, a screen that did
+the front ends was invisible to every gate — the wrong data-fetching idiom, a screen that did
 not match its artboard, components in the wrong folder, and no `useMemo`/`useCallback`/`memo()`
 anywhere in three React workspaces while `reactCompiler: false`. Gates prove code runs; they say
 nothing about whether it belongs. Each app's `CLAUDE.md` carries a **"Before you call it done"**

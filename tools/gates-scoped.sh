@@ -104,7 +104,10 @@ run() { # run <label> <command...>
 # typecheck.
 echo
 echo "Hermetic (parallel):"
-for phase in lint typecheck; do run "$phase" pnpm "$phase" & done
+# `image:check` joins the hermetic group rather than the sequential one: it reads two files and
+# exits, depends on no build output and no database, and it always runs whatever the selection —
+# a Dockerfile can drift from a manifest in a change that touches neither app.
+for phase in lint typecheck image:check; do run "${phase%%:*}" pnpm "$phase" & done
 wait
 
 # ── Group 2: everything that shares the database or a build output, in order ─────────────────────
