@@ -60,6 +60,19 @@ export interface DisclosureOption {
   readonly code: string | null;
 }
 
+/**
+ * What a field would hold if the reporter accepted what the platform already knows (task 91.2;
+ * FR-27, UX-109). The value columns and nothing else — the field already carries the key, so
+ * committing a default is one write of `{ ...key, ...defaultValue, state: ok }`, which is how the
+ * client makes it an answer on blur or step change (UX-34; §12.5.6, task 91.2's row).
+ */
+export interface DisclosureDefault {
+  readonly valueNumeric: string | null;
+  readonly valueText: string | null;
+  readonly valueBoolean: boolean | null;
+  readonly valueDate: string | null;
+}
+
 /** One answerable field: its shape from the taxonomy, its wording from the catalogue, its value from the store. */
 export interface DisclosureField {
   readonly elementKey: string;
@@ -94,6 +107,14 @@ export interface DisclosureField {
    * where none is held (ISO 3166 members, whose names the browser resolves from its own catalogue).
    */
   readonly options: readonly DisclosureOption[] | null;
+  /**
+   * The entity record's answer where the store holds none (task 91.2; FR-27, D-2). **`null` the
+   * moment a row exists for this key, in any state** — a field the reporter cleared is a decision,
+   * not an invitation to re-fill — and `null` on every field the platform cannot answer, which is
+   * most of them. Distinguishable from a stored value by construction: it is a different property,
+   * and the value columns beside it stay `null` until something is written.
+   */
+  readonly defaultValue: DisclosureDefault | null;
   readonly valueNumeric: string | null;
   readonly valueText: string | null;
   readonly valueBoolean: boolean | null;

@@ -14,26 +14,33 @@ import type { OrganizationVocabulary } from '@api/modules/core/organization/inte
  * The two operations of the vocabulary port this use case calls — a `Pick`, so it depends on no
  * operation it never calls (CLAUDE.md, Interface Segregation), and a spec fakes two methods, not five.
  */
-export type WizardVocabulary = Pick<OrganizationVocabulary, 'registeredLegalForms' | 'naceClassifierFor'>;
+export type WizardVocabulary = Pick<
+  OrganizationVocabulary,
+  'registeredLegalForms' | 'naceClassifierFor' | 'legalFormMemberFor'
+>;
 
 /**
- * Whose classifier names NACE members in the two locales EFRAG does not publish. **Fixed to Moldova
- * rather than read from the report's organization** (task 91.1): the classifier vocabulary is
- * registered per country (§7.2) and only `md` registers one, so there is nothing else to ask for;
- * the day a second country registers a classifier, this becomes a read of the organization's country.
+ * Whose vocabularies name NACE members in the two locales EFRAG does not publish, and classify legal
+ * forms into EFRAG's five (task 91.2). **Fixed to Moldova rather than read from the report's
+ * organization** (task 91.1): both vocabularies are registered per country (§7.2) and only `md`
+ * registers either, so there is nothing else to ask for; the day a second country registers one,
+ * this becomes a read of the organization's country.
  */
-const CLASSIFIER_COUNTRY = 'md';
+const VOCABULARY_COUNTRY = 'md';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import { DISCLOSURE_STATE, type DisclosureValue } from '../models/disclosure-value.model';
+import type { Report } from '../models/report.model';
 import type {
+  DisclosureDefault,
   DisclosureField,
   DisclosureModuleSummary,
   DisclosureOption,
   DisclosureStep,
 } from '../models/wizard-step.model';
+import { entityDefaults, type EntityDefaults } from './entity-defaults';
 
 export interface ReadModulesQuery {
   readonly reportId: string;
@@ -63,9 +70,14 @@ const keyOf = (v: {
   readonly ordinal: number;
 }): string => `${v.elementKey}\u0000${v.dimensionKey}\u0000${v.ordinal}`;
 
-/** The key an undimensioned field holds: no axis member, no position (§7.3). */
-const plainKey = (elementKey: string): string =>
-  keyOf({ elementKey, dimensionKey: '', ordinal: 0 });
+/** No axis member: the key every undimensioned field holds, and every row of a typed axis (§7.3). */
+const NO_DIMENSION = '';
+
+/** The stored values, indexed both ways the reads need them. */
+interface StoredValues {
+  readonly byKey: ReadonlyMap<string, DisclosureValue>;
+  readonly byElement: ReadonlyMap<string, readonly DisclosureValue[]>;
+}
 
 /**
  * UC-19 — what a wizard step and its module list are given (task 89; S-07, FR-24 … FR-32).
@@ -85,6 +97,15 @@ const plainKey = (elementKey: string): string =>
  * a withdrawn version surfaces as an explicit failure rather than as an empty form"* — and a wizard
  * that rendered no questions would look like a report that asks none.
  */
+/**
+ * Where a read's non-fatal findings go. **A one-method sink rather than a framework logger**,
+ * because a use case may not import `@nestjs/common` (`domain-free-of-frameworks`); the module
+ * hands in a `Logger`, and a spec hands in an array.
+ */
+export interface ReadWarnings {
+  warn(message: string): void;
+}
+
 export class ReadWizardStep {
   constructor(
     private readonly reports: ReportStore,
@@ -97,12 +118,13 @@ export class ReadWizardStep {
      * country domain — ISO 3166, not shipped — offers the countries the platform registers.
      */
     private readonly vocabulary: WizardVocabulary,
+    private readonly warnings: ReadWarnings,
   ) {}
 
   /** The persistent module list (UX-5), with how much of each module has been answered. */
   async modules(query: ReadModulesQuery): Promise<readonly DisclosureModuleSummary[]> {
-    const registered = await this.pinned(query.reportId);
-    const byKey = await this.storedByKey(query.reportId);
+    const { registered } = await this.pinned(query.reportId);
+    const { byElement } = await this.stored(query.reportId);
 
     const counts = new Map<string, { answered: number; total: number; lastAnsweredAt: number | null }>();
     for (const element of registered.elements) {
@@ -111,13 +133,17 @@ export class ReadWizardStep {
       if (element.module === null) continue;
       const count = counts.get(element.module) ?? { answered: 0, total: 0, lastAnsweredAt: null };
       count.total += 1;
-      const value = byKey.get(plainKey(element.key));
-      if (isAnswered(value)) {
+      // An element counts as answered when ANY of its rows is (task 91.2): a repeating group's
+      // second site is as much an answer as its first, and `total` counts elements, not rows.
+      const answered = (byElement.get(element.key) ?? []).filter(isAnswered);
+      if (answered.length > 0) {
         count.answered += 1;
         // The latest answer in the module is where work last happened (task 35.3, FR-39). A row
         // cleared back to `missing` is not an answer and does not move it.
-        if (value !== undefined && (count.lastAnsweredAt === null || value.updatedAt > count.lastAnsweredAt)) {
-          count.lastAnsweredAt = value.updatedAt;
+        for (const value of answered) {
+          if (count.lastAnsweredAt === null || value.updatedAt > count.lastAnsweredAt) {
+            count.lastAnsweredAt = value.updatedAt;
+          }
         }
       }
       counts.set(element.module, count);
@@ -135,8 +161,9 @@ export class ReadWizardStep {
 
   /** One step: the module's fields, in the standard's presentation order, with their values. */
   async step(query: ReadStepQuery): Promise<DisclosureStep> {
-    const registered = await this.pinned(query.reportId);
-    const byKey = await this.storedByKey(query.reportId);
+    const { report, registered } = await this.pinned(query.reportId);
+    const { byKey, byElement } = await this.stored(query.reportId);
+    const defaults = await this.defaultsFor(report, registered);
     const at = { version: registered.version, locale: query.locale };
     const catalogue = this.labels.labels(at);
     const standing = this.labels.standing(at);
@@ -148,27 +175,83 @@ export class ReadWizardStep {
       locale: query.locale,
     });
 
+    // Whether an axis is typed is asked of the registry once per axis, not once per element: B1
+    // alone names its site axis on five elements.
+    const typedAxes = new Map<string, boolean>();
+    const isTyped = (key: string): boolean => {
+      const known = typedAxes.get(key);
+      if (known !== undefined) return known;
+      const typed =
+        this.taxonomy.axis({ standard: registered.standard, version: registered.version, key })?.typed ?? false;
+      typedAxes.set(key, typed);
+      return typed;
+    };
+
     const fields = registered.elements
       .filter((element) => element.module === query.module)
-      .map((element) =>
-        toField(element, byKey.get(plainKey(element.key)), {
+      .flatMap((element) => {
+        const wording = {
           catalogue,
           standing,
           help: this.labels.help({ ...at, key: element.key }),
           options: options.optionsFor(element),
-        }),
-      );
+        };
+        const perOrdinal = defaults.get(element.key) ?? [];
+        return rowsOf({
+          element,
+          repeating: element.axes.some(isTyped),
+          stored: byElement.get(element.key) ?? [],
+          defaultRows: perOrdinal.length,
+        }).map((ordinal) => {
+          const value = byKey.get(keyOf({ elementKey: element.key, dimensionKey: NO_DIMENSION, ordinal }));
+          // A row in any state suppresses the default: cleared is a decision (§12.5.6, task 91.2).
+          const defaultValue = value === undefined ? (perOrdinal[ordinal] ?? null) : null;
+          return toField(element, { ordinal, value, defaultValue }, wording);
+        });
+      });
 
     return { module: query.module, taxonomyVersion: registered.version, fields };
   }
 
-  private async storedByKey(reportId: string): Promise<Map<string, DisclosureValue>> {
+  private async stored(reportId: string): Promise<StoredValues> {
     const stored = await this.values.forReport({ reportId });
-    return new Map(stored.map((value) => [keyOf(value), value]));
+    const byElement = new Map<string, DisclosureValue[]>();
+    for (const value of stored) {
+      byElement.set(value.elementKey, [...(byElement.get(value.elementKey) ?? []), value]);
+    }
+    return { byKey: new Map(stored.map((value) => [keyOf(value), value])), byElement };
   }
 
-  /** The report's own pinned taxonomy, or the reason it cannot be served. */
-  private async pinned(reportId: string): Promise<RegisteredTaxonomy> {
+  /**
+   * What the platform already knows, for the fields it can answer (task 91.2; FR-27, UX-109).
+   *
+   * The snapshot is the period's, the scope the report's, and the legal-form member the country's
+   * configuration — three sources this tier joins, none of which the screen holds. A code the pinned
+   * NACE domain has no member for is logged rather than refused (the owner's decision, §12.5.6).
+   */
+  private async defaultsFor(report: Report, registered: RegisteredTaxonomy): Promise<EntityDefaults> {
+    const snapshot = await this.reports.entitySnapshotOf({ reportId: report.id });
+    const legalFormMember =
+      snapshot?.legalForm === undefined || snapshot.legalForm === null
+        ? null
+        : this.vocabulary.legalFormMemberFor({ countryCode: VOCABULARY_COUNTRY, legalForm: snapshot.legalForm });
+    const { defaults, unmappedActivityCodes } = entityDefaults({
+      registered,
+      snapshot,
+      scope: report.scope,
+      legalFormMember,
+    });
+    if (unmappedActivityCodes.length > 0) {
+      this.warnings.warn(
+        `Report ${report.id}: activity code(s) ${unmappedActivityCodes.join(', ')} have no member in ` +
+          `${registered.standard} ${registered.version}'s NACE domain and were not pre-filled`,
+      );
+    }
+    return defaults;
+  }
+
+  /** The report and its own pinned taxonomy, or the reason it cannot be served. */
+  private async pinned(reportId: string): Promise<{ report: Report; registered: RegisteredTaxonomy }> {
     const report = await this.reports.findReport({ reportId });
     // RLS makes "not yours" and "not there" one answer (task 31.3), so this cannot say which.
     if (report === null) throw new ReportNotFoundError();
@@ -178,22 +261,50 @@ export class ReadWizardStep {
       version: report.taxonomyVersion,
     });
     if (registered === null) throw new TaxonomyVersionUnavailableError();
-    return registered;
+    return { report, registered };
   }
 }
 
 /**
- * One field, joined from three sources.
+ * Which rows a step shows for one element (task 91.2).
  *
- * **A dimensioned element still renders one field here, and that is a stated limit rather than an
- * oversight.** §7.3 keys a value by `(element, dimension, ordinal)`, so a repeating group is as many
- * rows as it has members — but which members a group offers is the axis domain, and rendering a
- * group is task 36.1's *disclosure field anatomy*. This read serves the undimensioned key so a step
- * is answerable now; the 34 dimensioned elements arrive with the component that can draw them.
+ * **An element on a typed axis is a repeating group, and its rows are its ordinals** — every
+ * ordinal the store holds plus one per site or subsidiary in the snapshot, in order, so a stored
+ * third site and a snapshotted first two render as three rows. Nothing in either is one empty row,
+ * as before, so the group is still answerable. Everything else is one row at ordinal 0: the 34
+ * elements on *explicit* axes keep task 89's stated limit until the component that draws a
+ * member-keyed group exists.
+ */
+function rowsOf(input: {
+  readonly element: TaxonomyElement;
+  readonly repeating: boolean;
+  readonly stored: readonly DisclosureValue[];
+  readonly defaultRows: number;
+}): readonly number[] {
+  if (!input.repeating) return [0];
+  const ordinals = new Set<number>();
+  for (const value of input.stored) if (value.dimensionKey === NO_DIMENSION) ordinals.add(value.ordinal);
+  for (let ordinal = 0; ordinal < input.defaultRows; ordinal += 1) ordinals.add(ordinal);
+  return ordinals.size === 0 ? [0] : [...ordinals].sort((a, b) => a - b);
+}
+
+/**
+ * One field, joined from four sources: the taxonomy's shape, the catalogue's wording, the store's
+ * value and the platform's default.
+ *
+ * **An element on an explicit axis still renders one field here, and that is a stated limit rather
+ * than an oversight.** §7.3 keys a value by `(element, dimension, ordinal)`, so a member-keyed group
+ * is as many rows as its axis has members — but which members a group offers is the axis domain,
+ * and rendering one is task 36.1's *disclosure field anatomy*. Typed axes — sites, subsidiaries —
+ * are the exception since task 91.2: `rowsOf` gives them a row per ordinal.
  */
 function toField(
   element: TaxonomyElement,
-  value: DisclosureValue | undefined,
+  row: {
+    readonly ordinal: number;
+    readonly value: DisclosureValue | undefined;
+    readonly defaultValue: DisclosureDefault | null;
+  },
   wording: {
     readonly catalogue: Readonly<Record<string, DisclosureLabel>> | null;
     readonly standing: string | null;
@@ -202,11 +313,12 @@ function toField(
   },
 ): DisclosureField {
   const { catalogue, standing: fallbackStanding } = wording;
+  const { value } = row;
   const label = catalogue?.[element.key] ?? null;
   return {
     elementKey: element.key,
-    dimensionKey: '',
-    ordinal: 0,
+    dimensionKey: NO_DIMENSION,
+    ordinal: row.ordinal,
     kind: element.kind,
     periodType: element.periodType,
     axes: element.axes,
@@ -217,6 +329,7 @@ function toField(
     labelStanding: label?.standing ?? fallbackStanding,
     help: wording.help?.text ?? null,
     options: wording.options,
+    defaultValue: row.defaultValue,
     valueNumeric: value?.valueNumeric ?? null,
     valueText: value?.valueText ?? null,
     valueBoolean: value?.valueBoolean ?? null,
@@ -289,7 +402,7 @@ class OptionResolver {
       // CAEM Rev.2 is NACE Rev.2 with Moldova's typesetting; both are keyed by the pointed code, and
       // the platform's classifier carries the two authored locales EFRAG does not.
       const named = new Map(
-        (this.input.vocabulary.naceClassifierFor(CLASSIFIER_COUNTRY) ?? []).map((code) => [code.code, code.labels]),
+        (this.input.vocabulary.naceClassifierFor(VOCABULARY_COUNTRY) ?? []).map((code) => [code.code, code.labels]),
       );
       return enumeration.members.map((member) => ({
         value: qualify(member.key),

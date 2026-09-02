@@ -1,3 +1,4 @@
+import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import type { NewReport, Report, ReportPatch } from '../models/report.model';
 
 /**
@@ -25,6 +26,15 @@ export interface ReportStore {
 
   /** Null when the id is unknown *or* belongs to another tenant, which RLS makes one answer. */
   findReport(input: { readonly reportId: string }): Promise<Report | null>;
+
+  /**
+   * FR-18's snapshot behind a report — the master data in force when its period opened, which is
+   * what B1 pre-populates from (task 91.2; FR-27). **Here rather than on the entity store**,
+   * because the question is asked of a report: it is one hop through the period this store already
+   * joins, and RLS scopes all three tables. Null when the report is unknown, another tenant's, or
+   * its period predates task 31.1 and took none — one answer, since each is *nothing to default*.
+   */
+  entitySnapshotOf(input: { readonly reportId: string }): Promise<EntitySnapshot | null>;
 
   /**
    * Create the report for a period, **pinning it from that period's own columns in the inserting

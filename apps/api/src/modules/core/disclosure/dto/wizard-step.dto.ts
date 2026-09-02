@@ -23,6 +23,7 @@ import {
   type DisclosureValue,
 } from '../models/disclosure-value.model';
 import type {
+  DisclosureDefault,
   DisclosureField,
   DisclosureModuleSummary,
   DisclosureOption,
@@ -98,6 +99,33 @@ export class DisclosureOptionDto {
   }
 }
 
+/** The entity record's answer for a field, in the write's own columns (task 91.2). */
+/** NFR-58's rule, stated once for the three numeric columns the surface carries. */
+const DECIMAL_AS_STRING = 'Decimal as a string, never a float (NFR-58).';
+/** A calendar date as `YYYY-MM-DD`, never an instant (§7.9). */
+const DATE_EXAMPLE = '2026-12-31';
+
+export class DisclosureDefaultDto {
+  @ApiProperty({ nullable: true, type: String, description: DECIMAL_AS_STRING })
+  readonly valueNumeric: string | null;
+
+  @ApiProperty({ nullable: true, type: String })
+  readonly valueText: string | null;
+
+  @ApiProperty({ nullable: true, type: Boolean })
+  readonly valueBoolean: boolean | null;
+
+  @ApiProperty({ nullable: true, type: String, example: DATE_EXAMPLE })
+  readonly valueDate: string | null;
+
+  constructor(value: DisclosureDefault) {
+    this.valueNumeric = value.valueNumeric;
+    this.valueText = value.valueText;
+    this.valueBoolean = value.valueBoolean;
+    this.valueDate = value.valueDate;
+  }
+}
+
 export class DisclosureFieldDto {
   @ApiProperty({ example: 'NumberOfEmployees' })
   readonly elementKey: string;
@@ -157,7 +185,18 @@ export class DisclosureFieldDto {
   })
   readonly options: DisclosureOptionDto[] | null;
 
-  @ApiProperty({ nullable: true, type: String, description: 'Decimal as a string, never a float.' })
+  @ApiProperty({
+    nullable: true,
+    type: DisclosureDefaultDto,
+    description:
+      'What the field would hold if the reporter accepted what the platform already knows — the ' +
+      'entity record, or the report’s own scope. Null once any row is stored for this key, and null ' +
+      'for every field the platform cannot answer. Committed by the client on blur or step change; ' +
+      'never stored by the read.',
+  })
+  readonly defaultValue: DisclosureDefaultDto | null;
+
+  @ApiProperty({ nullable: true, type: String, description: DECIMAL_AS_STRING })
   readonly valueNumeric: string | null;
 
   @ApiProperty({ nullable: true, type: String })
@@ -166,7 +205,7 @@ export class DisclosureFieldDto {
   @ApiProperty({ nullable: true, type: Boolean })
   readonly valueBoolean: boolean | null;
 
-  @ApiProperty({ nullable: true, type: String, example: '2026-12-31' })
+  @ApiProperty({ nullable: true, type: String, example: DATE_EXAMPLE })
   readonly valueDate: string | null;
 
   @ApiProperty({ nullable: true, type: String })
@@ -193,6 +232,7 @@ export class DisclosureFieldDto {
     this.labelStanding = field.labelStanding;
     this.help = field.help;
     this.options = field.options === null ? null : field.options.map((option) => new DisclosureOptionDto(option));
+    this.defaultValue = field.defaultValue === null ? null : new DisclosureDefaultDto(field.defaultValue);
     this.valueNumeric = field.valueNumeric;
     this.valueText = field.valueText;
     this.valueBoolean = field.valueBoolean;
@@ -243,7 +283,7 @@ export class DisclosureValueWriteDto {
   @Min(0)
   ordinal?: number;
 
-  @ApiPropertyOptional({ type: String, description: 'Decimal as a string, never a float (NFR-58).' })
+  @ApiPropertyOptional({ type: String, description: DECIMAL_AS_STRING })
   @IsOptional()
   @IsString()
   valueNumeric?: string | null;
@@ -258,7 +298,7 @@ export class DisclosureValueWriteDto {
   @IsBoolean()
   valueBoolean?: boolean | null;
 
-  @ApiPropertyOptional({ type: String, example: '2026-12-31' })
+  @ApiPropertyOptional({ type: String, example: DATE_EXAMPLE })
   @IsOptional()
   @IsISO8601({ strict: true })
   valueDate?: string | null;

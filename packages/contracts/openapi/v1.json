@@ -4872,6 +4872,35 @@
           "code"
         ]
       },
+      "DisclosureDefaultDto": {
+        "type": "object",
+        "properties": {
+          "valueNumeric": {
+            "type": "string",
+            "nullable": true,
+            "description": "Decimal as a string, never a float (NFR-58)."
+          },
+          "valueText": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueBoolean": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "valueDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-12-31"
+          }
+        },
+        "required": [
+          "valueNumeric",
+          "valueText",
+          "valueBoolean",
+          "valueDate"
+        ]
+      },
       "DisclosureFieldDto": {
         "type": "object",
         "properties": {
@@ -4945,10 +4974,20 @@
               "$ref": "#/components/schemas/DisclosureOptionDto"
             }
           },
+          "defaultValue": {
+            "nullable": true,
+            "description": "What the field would hold if the reporter accepted what the platform already knows — the entity record, or the report’s own scope. Null once any row is stored for this key, and null for every field the platform cannot answer. Committed by the client on blur or step change; never stored by the read.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DisclosureDefaultDto"
+              }
+            ]
+          },
           "valueNumeric": {
             "type": "string",
             "nullable": true,
-            "description": "Decimal as a string, never a float."
+            "description": "Decimal as a string, never a float (NFR-58)."
           },
           "valueText": {
             "type": "string",
@@ -5001,6 +5040,7 @@
           "labelStanding",
           "help",
           "options",
+          "defaultValue",
           "valueNumeric",
           "valueText",
           "valueBoolean",

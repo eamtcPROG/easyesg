@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { ReportStore } from '@api/modules/core/disclosure/interfaces/report-store.interface';
+import type {
+  EntitySnapshot,
+  SnapshotConsolidationMember,
+  SnapshotSite,
+} from '@api/modules/core/disclosure/models/entity-snapshot.model';
+import { isConsolidationBasis } from '@api/modules/core/entity/models/reporting-entity.model';
 import {
   ReportAlreadyExistsError,
   ReportNotEditableError,
@@ -103,6 +109,48 @@ const toReport = (row: ReportRow): Report => ({
  * not redundancy: the application check produces the message, and this is what a caller meets when
  * the period was locked between the read and the write.
  */
+/**
+ * The snapshot's `payload` is `to_jsonb(row)` over the entity plus its two collections
+ * (`reporting-period-store.repository.ts`), so its keys are the columns' — and **which columns
+ * depends on when it was taken**: one from before task 29.4 has no `consolidation_basis`. Each
+ * reader below tolerates an absent or differently-typed key as *unset* rather than refusing the
+ * document, because a snapshot is immutable by grant and there is no correcting it.
+ */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+const stringOrNull = (value: unknown): string | null => (typeof value === 'string' ? value : null);
+const strings = (value: unknown): readonly string[] =>
+  Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
+const records = (value: unknown): readonly Record<string, unknown>[] =>
+  Array.isArray(value) ? value.filter(isRecord) : [];
+
+const toSite = (row: Record<string, unknown>): SnapshotSite => ({
+  name: stringOrNull(row.name) ?? '',
+  addressLine1: stringOrNull(row.address_line1),
+  locality: stringOrNull(row.locality),
+  postalCode: stringOrNull(row.postal_code),
+  countryCode: stringOrNull(row.country_code),
+  latitude: stringOrNull(row.latitude),
+  longitude: stringOrNull(row.longitude),
+});
+
+const toMember = (row: Record<string, unknown>): SnapshotConsolidationMember => ({
+  name: stringOrNull(row.name) ?? '',
+  countryCode: stringOrNull(row.country_code),
+});
+
+const toSnapshot = (row: { taken_at: Date; payload: unknown }): EntitySnapshot => {
+  const payload = isRecord(row.payload) ? row.payload : {};
+  return {
+    takenAt: row.taken_at,
+    legalForm: stringOrNull(payload.legal_form),
+    naceCodes: strings(payload.nace_codes),
+    consolidationBasis: isConsolidationBasis(payload.consolidation_basis) ? payload.consolidation_basis : null,
+    consolidationMembers: records(payload.consolidation_members).map(toMember),
+    sites: records(payload.sites).map(toSite),
+  };
+};
+
 const translate = (error: unknown): never => {
   if (hasSqlState(error, SQL_STATE.UNIQUE_VIOLATION)) throw new ReportAlreadyExistsError();
   if (hasSqlState(error, SQL_STATE.LOCKED)) throw new ReportNotEditableError();
@@ -112,6 +160,32 @@ const translate = (error: unknown): never => {
 @Injectable()
 export class ReportStoreRepository extends TenantRepository<never> implements ReportStore {
   protected readonly entity = 'core.report' as never;
+
+  async entitySnapshotOf(input: { reportId: string }): Promise<EntitySnapshot | null> {
+    // Report → period → snapshot, each RLS-scoped; a period that took no snapshot joins nothing,
+    // which is the same answer as an unknown report and means the same thing to the caller.
+    //
+    // **The coordinates are re-rendered as text inside the query.** `to_jsonb` wrote the
+    // `numeric(9, 6)` columns as JSON numbers, and the driver's `JSON.parse` would hand them over
+    // as doubles — the representation AD-14 constraint 4 keeps out of the application. `->>` reads
+    // the jsonb numeric at its stored scale, so `47.383300` crosses the boundary as `47.383300`.
+    const rows = await this.manager.query<{ taken_at: Date; payload: unknown }[]>(
+      `SELECT s.taken_at,
+              s.payload || jsonb_build_object('sites', COALESCE(
+                (SELECT jsonb_agg(site || jsonb_build_object(
+                          'latitude',  site->>'latitude',
+                          'longitude', site->>'longitude'))
+                   FROM jsonb_array_elements(s.payload->'sites') AS site),
+                '[]'::jsonb)) AS payload
+         FROM core.report r
+         JOIN core.reporting_period p ON p.id = r.reporting_period_id
+         JOIN core.entity_snapshot s ON s.id = p.entity_snapshot_id
+        WHERE r.id = $1`,
+      [input.reportId],
+    );
+    const row = rows[0];
+    return row === undefined ? null : toSnapshot(row);
+  }
 
   async listReports(input: { reportingEntityId?: string }): Promise<Report[]> {
     // **The join is the entity filter.** A report knows its period and the period knows its entity,

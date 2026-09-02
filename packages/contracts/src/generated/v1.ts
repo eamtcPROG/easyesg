@@ -1864,6 +1864,14 @@ export interface components {
              */
             code: string | null;
         };
+        DisclosureDefaultDto: {
+            /** @description Decimal as a string, never a float (NFR-58). */
+            valueNumeric: string | null;
+            valueText: string | null;
+            valueBoolean: boolean | null;
+            /** @example 2026-12-31 */
+            valueDate: string | null;
+        };
         DisclosureFieldDto: {
             /** @example NumberOfEmployees */
             elementKey: string;
@@ -1893,7 +1901,9 @@ export interface components {
             help: string | null;
             /** @description The answers a choice field offers; null for every kind that is not an enumeration. */
             options: components["schemas"]["DisclosureOptionDto"][] | null;
-            /** @description Decimal as a string, never a float. */
+            /** @description What the field would hold if the reporter accepted what the platform already knows — the entity record, or the report’s own scope. Null once any row is stored for this key, and null for every field the platform cannot answer. Committed by the client on blur or step change; never stored by the read. */
+            defaultValue: components["schemas"]["DisclosureDefaultDto"] | null;
+            /** @description Decimal as a string, never a float (NFR-58). */
             valueNumeric: string | null;
             valueText: string | null;
             valueBoolean: boolean | null;

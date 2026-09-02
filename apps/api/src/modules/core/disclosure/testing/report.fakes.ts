@@ -1,4 +1,5 @@
 import type { ReportStore } from '../interfaces/report-store.interface';
+import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import {
   REPORT_SCOPE,
   REPORT_STATUS,
@@ -59,6 +60,8 @@ export class FakeReportStore implements ReportStore {
       templateVersion: string;
       taxonomyVersion: string;
       subject?: Report['subject'];
+      /** What the period snapshotted at open; absent models a period that took none (pre-31.1). */
+      snapshot?: EntitySnapshot;
     }[] = [],
     private rows: Report[] = [],
   ) {}
@@ -73,6 +76,13 @@ export class FakeReportStore implements ReportStore {
 
   findReport(input: { reportId: string }): Promise<Report | null> {
     return Promise.resolve(this.rows.find((row) => row.id === input.reportId) ?? null);
+  }
+
+  entitySnapshotOf(input: { reportId: string }): Promise<EntitySnapshot | null> {
+    // Through the report's period, as the real store's join does — never a snapshot keyed by report.
+    const report = this.rows.find((row) => row.id === input.reportId);
+    const period = this.periods.find((row) => row.id === report?.reportingPeriodId);
+    return Promise.resolve(period?.snapshot ?? null);
   }
 
   create(input: { report: NewReport; at: Date }): Promise<Report | null> {

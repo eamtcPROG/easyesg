@@ -28,6 +28,7 @@ const CLASSIFIER: NaceCode[] = [
 const vocabulary = (classifier: readonly NaceCode[] | null): OrganizationVocabulary => ({
   legalFormsFor: () => null,
   registeredLegalForms: () => [],
+  legalFormMemberFor: () => null,
   naceCodesFor: () => null,
   naceClassifierFor: () => classifier,
   relationshipTypes: () => [],

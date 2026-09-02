@@ -10265,3 +10265,130 @@ rule where it holds, in the two older readers (`readAxes`, `readExternalDomain`)
 shape. `TaxonomyEnumeration.taxonomy` was `string` beside its own vocabulary; it is now the derived
 union, with the narrowing beside the set. The use case's port dependency became a `Pick`. And this
 entry gained the skills record above.
+
+## Task 91.2 — B1's defaults from the entity snapshot · 2026-09-02
+
+The second slice of task 91: FR-27's pre-population, which task 36.2 could not build because no
+read served it. B1 now opens with what the platform already knows, served as a `defaultValue` beside
+each field, from the period's FR-18 snapshot and the report's own scope — and stores nothing.
+
+### Four decisions the sources did not hold, raised in one batch
+
+The task row said *"served as defaults … written only when the reporter answers"* and nothing in the
+seven documents said more than that. Each of these would have been an assumption made in the code:
+
+- **Which EFRAG member a Moldovan legal form is.** EFRAG's domain has five members and Moldova
+  registers ten forms; the sources enumerate neither side's correspondence. The owner adopted the
+  proposed table — `sa`, `is`, `im` to *other*, there being no public-limited or state-enterprise
+  member; `gt` to sole proprietorship — over classifying only the six unambiguous forms or none.
+  Held as data in the country's own legal-form artefact (`vsmeMembers`), because what a form is in
+  the standard's terms is decided when a country's vocabulary is registered (AD-4).
+- **What makes an untouched default an answer.** If the store holds nothing until a blur, a reporter
+  who accepts every pre-filled value and moves on has filed nothing. The owner chose the client
+  committing on blur or step change — UX-34's rule for a typed value — over *display only, validation
+  flags it* (contradicts UX-109) and *the export falls back to the snapshot* (a second source of
+  truth for a disclosure). Task 36.2 owns the commit; the api never writes on a read, and the default
+  is served in the write's own columns so committing one is one PUT of what was shown.
+- **Activity codes with no NACE member.** The 91.1 assumption row had measured 129 such CAEM codes.
+  The owner chose serving the codes that map and logging the rest, over a wire field naming the
+  unmapped ones and over all-or-nothing.
+- **The basis for preparation.** Not in the snapshot, but the report already carries it as D-A's
+  scope flag; the owner agreed it defaults from there — the one default a period that took no
+  snapshot still gets.
+
+All four are rows in `architecture.md` §12.5.6, with the alternatives declined; the 91.1 NACE row's
+forward-looking clause was rewritten to the decision it now has; FR-27 was amended after the spec
+review so its own text says *snapshot, never the live record* and names the commit rule.
+
+### What was built, and two things it found
+
+- **The snapshot read is the report store's** (`entitySnapshotOf`): report → period → snapshot, one
+  query over three RLS-scoped tables, index-only under `enable_seqscan = off` (three primary keys).
+  Placed there rather than on the entity store because the question is asked of a report. The
+  payload is `to_jsonb(row)`, so its keys are whatever columns existed on the day: a snapshot taken
+  before task 29.4 has no `consolidation_basis`, and the reader takes an absent key as *unstated*
+  rather than refusing an immutable document.
+- **The coordinates came back as doubles.** `to_jsonb` writes `numeric(9, 6)` as a JSON number and
+  the driver's `JSON.parse` hands it over as a float — AD-14 constraint 4's forbidden representation,
+  found by the e2e when a site's GPS default read `null`. The query now re-renders `latitude` and
+  `longitude` through `->>` inside the `jsonb` so `47.383300` crosses as `47.383300`.
+- **`entityDefaults` is a pure module** (`use-cases/entity-defaults.ts`): pinned element keys and
+  member names as `as const`, every mapping a unit case, and the pins held against **both** shipped
+  taxonomy versions in the same spec — the shape task 33.1 chose after §7.3's invented keys. A member
+  the report's own version does not declare is an empty field, not a wrong one (DR-4 at the default).
+- **Typed axes render as repeating groups.** Sites and subsidiaries are one row per ordinal — the
+  store's ordinals plus one per snapshot entry, in the snapshot's order — which is what §7.3 reserved
+  `ordinal` for. The 34 elements on explicit axes keep task 89's stated limit. A module now counts
+  an element as answered when any of its rows is; `total` still counts elements.
+- **A `Logger` in a use case is a boundary violation, and the gate said so.** The first scoped run
+  failed `domain-free-of-frameworks` on the unmapped-codes warning. The use case now takes a
+  one-method `ReadWarnings` sink the module satisfies with a `Logger` — the dependency rule, not a
+  preference — and the spec that had imported `Logger` to silence the artefact reader no longer
+  does, since *nothing logged* is `taxonomy-artefact.spec.ts`'s claim.
+- Not defaulted, and why: the country of primary operations (the organization's country is not in
+  the entity's snapshot, and reading it live would break FR-18 at this field too), the subsidiary's
+  registered address (a consolidation member records none), the *other* legal form's wording (the
+  client's catalogue's, OQ-43), and the headcount, which no record holds. Recorded in the row.
+
+### Verified
+
+- `apps/api` unit — `entity-defaults.spec.ts`: scope with and without a snapshot; the legal-form
+  member qualified, omitted when unmapped, omitted when the pinned version lacks it; NACE by pointed
+  code into one space-separated set with the unmapped named, and none when nothing maps; the basis
+  as its member and subsidiaries only under `consolidated`; sites as rows with `null` where a site
+  lacks a field, GPS as one string only where both halves exist; every pinned element in B1 and every
+  pinned member declared, in both versions; every registered Moldovan form classified into a member
+  both versions declare. `organization-vocabulary.service.spec.ts`: the member from the same entry,
+  `null` for an unclassified form, a country without a map and a country without a vocabulary, and
+  `null` — not the entries that parse — from a malformed map. 88 passed across the touched suites.
+- The api wizard e2e, three new cases over HTTP and one amended: B1 opens pre-filled from the
+  fixture entity (`srl` → private limited liability, `10.71` → `nace:NACE_C1071`, Chișinău,
+  `country:MD`, Option A from the scope) with every field still `missing` and the module list at
+  zero; a dedicated entity corrected **after** its period opened still defaults to the snapshot's
+  form, a stored answer replaces the default for that key alone, a row cleared back to `missing`
+  does not re-offer it, and the entity reads back as the Administrator set it; two sites and a
+  consolidated member lay out as ordered rows, a third site written by the reporter is a third row,
+  and the earlier-pinned report is pre-filled against its own version. 14 of 14.
+- `pnpm gates:scoped`, twice. The first run failed `lint` (one description string three times —
+  now one constant, and the date example likewise) and `boundaries` (the `Logger` above); the second
+  is green on every gate but two. `openapi:check` is red by design until the regenerated contract is
+  committed, green on the commit. **`e2e:web` did not run on this machine, in either run**:
+  Playwright's `reuseExistingServer` found port 3000 held by the sibling `magnamed` project's api,
+  started at 16:04 today, whose `/health` answers 404, and timed out waiting for it. Nothing in this
+  diff touches `apps/web`'s behaviour — the contract type gains one nullable property, and
+  `typecheck` and the web unit suite pass — but that is an argument, not the gate; CI runs it, and
+  it should be re-run locally once the port is free.
+- `EXPLAIN` on the new query with `SET enable_seqscan = off`: index scans on `report_pkey`,
+  `reporting_period_pkey`, `entity_snapshot_pkey`, as the checklist asks.
+
+### Skills opened against the diff
+
+`nestjs-best-practices`, per `apps/api/CLAUDE.md`. Applied: `arch-use-repository-pattern` — the
+snapshot query lives in the repository behind the `ReportStore` port, and the use case reads a
+model; `di-interface-segregation` — `WizardVocabulary` widens its `Pick` by exactly the one method
+it now calls, and the warnings sink is one method rather than `LoggerService`; `db-avoid-n-plus-one`
+— one query for the snapshot, one for the values, and the axis lookup cached per step rather than
+per element; `devops-use-logging` — the unmapped codes go through Nest's `Logger` at `warn` with the
+report id, not `console`. Declined by name: `error-throw-http-exceptions`, as every entry since task
+26.1 declines it — no exception is added here, and the use case throws its domain errors as before.
+`vercel-react-best-practices` not opened: no line in `apps/web` or `apps/admin` changes.
+
+### What the reviews found
+
+Run on `sonnet` by the owner's instruction of today, against the root file's routing (the diff
+touches the contract surface and three workspaces). **Spec review: no findings**; one opinion
+taken — FR-27's text read *entity master record* where the design means the snapshot, amended.
+**Convention review: no findings** beyond the two the gates had already caught in the first run.
+**Gate-integrity review: eleven checks seeded and proven, one that would not have failed on its
+subject.** Proven by seeding: the DR-4 guard in `memberOf`, the consolidated-only subsidiaries, the
+pinned names against both artefacts (a renamed key fails both versions), the legal-form map in both
+directions (a form left unclassified, and a member no version declares), the vocabulary's
+case-insensitivity and its whole-map fail-closed, and in the e2e a default leaking into `valueText`,
+the module count ignoring a non-zero ordinal, and a stored row failing to suppress the default. The
+one that did not: the line added to the earlier-pinned case, which reads as a DR-4 proof and is not
+one — `srl`'s member is declared identically in both versions, so resolving defaults against the
+*newest* version passed it. No fixture on the shipped artefacts can tell the two apart at that
+field; the assertion stays, its comment now says what it proves (defaults reach an earlier-pinned
+report) and where DR-4 at the default is actually held (the unit case where a member one version
+lacks serves nothing). A harness note: the reviewer reported `docs/build-log.md` modified under it —
+that was this entry being written concurrently, not a seed it left behind.

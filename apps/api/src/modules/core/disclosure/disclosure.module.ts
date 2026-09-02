@@ -1,4 +1,4 @@
-import { Module, type Provider } from '@nestjs/common';
+import { Logger, Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { DisclosureValueStoreRepository } from '@api/infrastructure/persistence/core/disclosure-value-store.repository';
@@ -79,7 +79,7 @@ const httpProviders: Provider[] = [
       taxonomy: TaxonomyRegistry,
       labels: DisclosureLabelResolver,
       vocabulary: WizardVocabulary,
-    ) => new ReadWizardStep(reports, values, taxonomy, labels, vocabulary),
+    ) => new ReadWizardStep(reports, values, taxonomy, labels, vocabulary, new Logger(ReadWizardStep.name)),
   },
   {
     provide: WriteDisclosureValues,

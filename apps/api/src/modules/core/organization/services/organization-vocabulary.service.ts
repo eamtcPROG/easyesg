@@ -11,6 +11,12 @@ import type { NaceCode, OrganizationVocabulary } from '../interfaces/organizatio
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 
+const isStringRecord = (value: unknown): value is Record<string, string> =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.values(value).every((entry) => typeof entry === 'string');
+
 /**
  * `OrganizationVocabulary` over the configuration store — the adapter half of AD-4 for FR-14's
  * organization types and FR-15's legal forms.
@@ -52,6 +58,26 @@ export class OrganizationVocabularyService implements OrganizationVocabulary {
       return null;
     }
     return forms;
+  }
+
+  legalFormMemberFor(input: { readonly countryCode: string; readonly legalForm: string }): string | null {
+    const scope = input.countryCode.toLowerCase();
+    const entry = this.configurationStore.get({ kind: ORGANIZATION_LEGAL_FORM_CONFIG_KIND, scope });
+    if (!entry) return null;
+
+    const members = entry.payload.vsmeMembers;
+    // Absent is a country whose forms nobody has classified yet — not an error, an empty field.
+    if (members === undefined) return null;
+    if (!isStringRecord(members)) {
+      // Malformed fails closed and logs, as `legalFormsFor` does: a payload that read as a partial
+      // map would pre-fill some forms and not others with nothing to say why.
+      this.logger.error(
+        `Configuration entry ${ORGANIZATION_LEGAL_FORM_CONFIG_KIND}/${scope} (revision ${entry.revision}) ` +
+          `carries a malformed vsmeMembers; serving no legal-form default`,
+      );
+      return null;
+    }
+    return members[input.legalForm] ?? null;
   }
 
   registeredLegalForms(): readonly { countryCode: string; legalForms: readonly string[] }[] {

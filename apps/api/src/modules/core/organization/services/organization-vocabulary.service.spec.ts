@@ -26,10 +26,10 @@ describe('OrganizationVocabularyService (FR-14, FR-15, NFR-9)', () => {
     return new OrganizationVocabularyService(store);
   };
 
-  const legalForms = (scope: string, forms: unknown) => ({
+  const legalForms = (scope: string, forms: unknown, vsmeMembers?: unknown) => ({
     kind: 'organization_legal_form',
     scope,
-    payload: { forms },
+    payload: vsmeMembers === undefined ? { forms } : { forms, vsmeMembers },
   });
   const relationshipTypes = (types: unknown) => ({
     kind: 'organization_relationship_type',
@@ -105,6 +105,28 @@ describe('OrganizationVocabularyService (FR-14, FR-15, NFR-9)', () => {
         { countryCode: 'md', legalForms: ['srl'] },
         { countryCode: 'ro', legalForms: ['sa'] },
       ]);
+    });
+
+    it('classifies a form into its EFRAG member from the same entry, and null where none is registered (task 91.2)', () => {
+      const service = build([
+        legalForms('md', ['srl', 'gt'], { srl: 'PrivateLimitedLiabilityUndertakingMember' }),
+        legalForms('ro', ['sa']),
+      ]);
+
+      expect(service.legalFormMemberFor({ countryCode: 'MD', legalForm: 'srl' })).toBe(
+        'PrivateLimitedLiabilityUndertakingMember',
+      );
+      // A registered form nobody has classified, a country with no map, and a country with nothing
+      // registered all answer the same: no default, and the reporter chooses.
+      expect(service.legalFormMemberFor({ countryCode: 'md', legalForm: 'gt' })).toBeNull();
+      expect(service.legalFormMemberFor({ countryCode: 'ro', legalForm: 'sa' })).toBeNull();
+      expect(service.legalFormMemberFor({ countryCode: 'fr', legalForm: 'sarl' })).toBeNull();
+    });
+
+    it('serves no member from a malformed map, rather than the entries that happen to parse', () => {
+      const service = build([legalForms('md', ['srl', 'sa'], { srl: 'PrivateLimitedLiabilityUndertakingMember', sa: 7 })]);
+
+      expect(service.legalFormMemberFor({ countryCode: 'md', legalForm: 'srl' })).toBeNull();
     });
   });
 });

@@ -1,3 +1,15 @@
 {
-  "forms": ["srl", "sa", "snc", "sc", "ii", "cp", "ci", "is", "im", "gt"]
+  "forms": ["srl", "sa", "snc", "sc", "ii", "cp", "ci", "is", "im", "gt"],
+  "vsmeMembers": {
+    "srl": "PrivateLimitedLiabilityUndertakingMember",
+    "sa": "OtherUndertakingsLegalFormMember",
+    "snc": "PartnershipMember",
+    "sc": "PartnershipMember",
+    "ii": "SoleProprietorshipMember",
+    "cp": "CooperativeMember",
+    "ci": "CooperativeMember",
+    "is": "OtherUndertakingsLegalFormMember",
+    "im": "OtherUndertakingsLegalFormMember",
+    "gt": "SoleProprietorshipMember"
+  }
 }

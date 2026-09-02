@@ -47,11 +47,12 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
 
   interface ModuleSummary { module: string; answered: number; total: number; lastAnsweredAt: number | null }
   interface Field {
-    elementKey: string; kind: string; periodType: string; order: number;
+    elementKey: string; ordinal: number; kind: string; periodType: string; order: number;
     label: string | null; labelStanding: string | null;
     valueText: string | null; state: string; carriedForward: boolean;
     help: string | null;
     options: { value: string; label: string | null; code: string | null }[] | null;
+    defaultValue: { valueText: string | null; valueNumeric: string | null } | null;
   }
   interface Step { module: string; taxonomyVersion: string; fields: Field[] }
 
@@ -311,6 +312,129 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     }).expect(400);
   });
 
+  const readStep = async (reportId: string, module = 'B1'): Promise<Step> =>
+    objectOf<Step>((await http()
+      .get(`/api/v1/reports/${reportId}/modules/${module}`).set(editor.authorization).expect(200)).body);
+  const rowsOf = (step: Step, elementKey: string): Field[] =>
+    step.fields.filter((f) => f.elementKey === elementKey).sort((a, b) => a.ordinal - b.ordinal);
+  /** The default's text, `null` where the row carries none — and `undefined` only where the row itself is absent. */
+  const defaultText = (field: Field | undefined): string | null | undefined =>
+    field === undefined ? undefined : field.defaultValue === null ? null : field.defaultValue.valueText;
+  const defaultOf = (step: Step, elementKey: string, ordinal = 0): string | null | undefined =>
+    defaultText(rowsOf(step, elementKey)[ordinal]);
+
+  it('opens B1 pre-filled from the period’s entity snapshot, with nothing stored (FR-27, UX-109; task 91.2)', async () => {
+    const reportId = await createReport(await openPeriod(2026));
+    const step = await readStep(reportId);
+
+    // The entity: `srl`, CAEM 10.71, one site in Chișinău, MD — each in EFRAG's own terms.
+    expect(defaultOf(step, 'UndertakingsLegalForm')).toBe('vsme:PrivateLimitedLiabilityUndertakingMember');
+    expect(defaultOf(step, 'NaceSectorClassificationCodes')).toBe('nace:NACE_C1071');
+    expect(defaultOf(step, 'CityOfSite')).toBe('Chișinău');
+    expect(defaultOf(step, 'CountryOfSite')).toBe('country:MD');
+    // The report: its scope is the basis for preparation.
+    expect(defaultOf(step, 'BasisForPreparation')).toBe('vsme:OptionABasicModuleOnlyMember');
+    // What the platform does not know opens empty — the site has no street, the boundary is unstated.
+    expect(defaultOf(step, 'AddressOfSite')).toBeNull();
+    expect(rowsOf(step, 'BasisForReporting')[0]?.defaultValue).toBeNull();
+    expect(rowsOf(step, 'NumberOfEmployees')[0]?.defaultValue).toBeNull();
+
+    // A default is not an answer: every field is still missing, and the module list agrees.
+    expect(step.fields.every((f) => f.state === DISCLOSURE_STATE.MISSING && f.valueText === null)).toBe(true);
+    const modules = objectsOf<ModuleSummary>((await http()
+      .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
+    expect(modules.find((m) => m.module === 'B1')?.answered).toBe(0);
+  });
+
+  it('keeps the snapshot’s defaults after the entity changes, and a stored answer replaces the default without touching the entity (FR-18, D-2)', async () => {
+    // A dedicated entity, so the shared fixture's snapshot is not what this test edits.
+    const created = await http().post('/api/v1/entities').set(admin.authorization).send({
+      name: 'Moara Veche', legalForm: 'srl', naceCodes: ['10.61'], sites: [],
+    }).expect(201);
+    const ownEntity = (created.body as { object: { id: string } }).object.id;
+    const period = (await http().post('/api/v1/periods').set(admin.authorization).send({
+      reportingEntityId: ownEntity, fiscalYear: 2026,
+      periodStart: { date: '2026-01-01', timezone: CHISINAU },
+      periodEnd: { date: '2026-12-31', timezone: CHISINAU },
+    }).expect(201)).body as { object: { id: string } };
+    const reportId = await createReport(period.object.id);
+
+    // The Administrator corrects the record AFTER the period opened.
+    await http().patch(`/api/v1/entities/${ownEntity}`).set(admin.authorization)
+      .send({ legalForm: 'cp' }).expect(200);
+
+    // The filing keeps the values in force when it was prepared (FR-18), not the entity's now.
+    expect(defaultOf(await readStep(reportId), 'UndertakingsLegalForm')).toBe('vsme:PrivateLimitedLiabilityUndertakingMember');
+
+    // The reporter answers otherwise. The store row wins, the default is gone for that key only …
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: 'UndertakingsLegalForm', valueText: 'vsme:SoleProprietorshipMember', state: DISCLOSURE_STATE.OK }],
+    }).expect(200);
+    const answered = await readStep(reportId);
+    expect(rowsOf(answered, 'UndertakingsLegalForm')[0]).toMatchObject({
+      valueText: 'vsme:SoleProprietorshipMember', defaultValue: null,
+    });
+    expect(defaultOf(answered, 'NaceSectorClassificationCodes')).toBe('nace:NACE_C1061');
+
+    // … and a row cleared back to missing is a decision, not an invitation to re-fill.
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: 'UndertakingsLegalForm', state: DISCLOSURE_STATE.MISSING }],
+    }).expect(200);
+    expect(rowsOf(await readStep(reportId), 'UndertakingsLegalForm')[0]?.defaultValue).toBeNull();
+
+    // D-2: the disclosure never wrote the master record — it still says what the Administrator set.
+    const entity = objectOf<{ legalForm: string }>((await http()
+      .get(`/api/v1/entities/${ownEntity}`).set(admin.authorization).expect(200)).body);
+    expect(entity.legalForm).toBe('cp');
+  });
+
+  it('lays sites and subsidiaries out as repeating groups, one row per snapshot entry, in its order', async () => {
+    const created = await http().post('/api/v1/entities').set(admin.authorization).send({
+      name: 'Grupul Codru', legalForm: 'sa', naceCodes: ['10.71'],
+      sites: [
+        { name: 'Depozit', locality: 'Bălți', addressLine1: 'str. Decebal 1', countryCode: 'MD' },
+        { name: 'Atelier', locality: 'Orhei', countryCode: 'MD', latitude: '47.383300', longitude: '28.823300' },
+      ],
+    }).expect(201);
+    const ownEntity = (created.body as { object: { id: string } }).object.id;
+    await http().patch(`/api/v1/entities/${ownEntity}`).set(admin.authorization).send({
+      consolidationBasis: 'consolidated',
+      consolidationMembers: [{ name: 'Codru Sud SRL', idno: '1002600012345', countryCode: 'MD' }],
+    }).expect(200);
+    const period = (await http().post('/api/v1/periods').set(admin.authorization).send({
+      reportingEntityId: ownEntity, fiscalYear: 2026,
+      periodStart: { date: '2026-01-01', timezone: CHISINAU },
+      periodEnd: { date: '2026-12-31', timezone: CHISINAU },
+    }).expect(201)).body as { object: { id: string } };
+    const reportId = await createReport(period.object.id);
+    const step = await readStep(reportId);
+
+    // The snapshot orders sites by name: Atelier, then Depozit.
+    expect(rowsOf(step, 'CityOfSite').map((f) => [f.ordinal, defaultText(f)])).toEqual([
+      [0, 'Orhei'], [1, 'Bălți'],
+    ]);
+    expect(rowsOf(step, 'AddressOfSite').map(defaultText)).toEqual([null, 'str. Decebal 1']);
+    expect(rowsOf(step, 'GPSLocationOfSite').map(defaultText)).toEqual(['47.383300, 28.823300', null]);
+    // `sa` has no EFRAG member of its own — the owner's table classes it as "other".
+    expect(defaultOf(step, 'UndertakingsLegalForm')).toBe('vsme:OtherUndertakingsLegalFormMember');
+    expect(defaultOf(step, 'BasisForReporting')).toBe('vsme:ConsolidatedMember');
+    expect(rowsOf(step, 'NameOfTheSubsidiary').map(defaultText)).toEqual(['Codru Sud SRL']);
+    // A field with no repeating group is still exactly one row.
+    expect(rowsOf(step, 'UndertakingsLegalForm')).toHaveLength(1);
+
+    // A third site answered by the reporter is a third row beside the two snapshotted ones.
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: 'CityOfSite', ordinal: 2, valueText: 'Cahul', state: DISCLOSURE_STATE.OK }],
+    }).expect(200);
+    const grown = await readStep(reportId);
+    expect(rowsOf(grown, 'CityOfSite').map((f) => [f.ordinal, f.valueText, defaultText(f)])).toEqual([
+      [0, null, 'Orhei'], [1, null, 'Bălți'], [2, 'Cahul', null],
+    ]);
+    const modules = objectsOf<ModuleSummary>((await http()
+      .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
+    expect(modules.find((m) => m.module === 'B1')?.answered).toBe(1);
+  });
+
   it('serves an EARLIER-pinned report from its own version (DR-4, task 33.3)', async () => {
     // A FY2025 period pins 2026-02-01 through the product's own adoption schedule.
     const reportId = await createReport(await openPeriod(2025));
@@ -321,6 +445,11 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     // The report's OWN version, not the newest registered — which is the whole of DR-4 at a read.
     expect(step.taxonomyVersion).toBe('2026-02-01');
     expect(step.fields.find((f) => f.elementKey === B1_ELEMENT)?.label).toBeTruthy();
+    // And pre-filled too (task 91.2). This says the defaults reach an earlier-pinned report, not
+    // that they were resolved against ITS version — `srl`'s member is declared identically in both
+    // shipped versions, so no fixture here can tell the two apart; DR-4 at the default is
+    // `entity-defaults.spec.ts`'s claim, where a member one version lacks is proven to serve nothing.
+    expect(defaultOf(step, 'UndertakingsLegalForm')).toBe('vsme:PrivateLimitedLiabilityUndertakingMember');
   });
 
   it('lets a viewer read and refuses their write (FR-25, FR-26)', async () => {

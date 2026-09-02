@@ -43,6 +43,18 @@ export interface OrganizationVocabulary {
   registeredLegalForms(): readonly { readonly countryCode: string; readonly legalForms: readonly string[] }[];
 
   /**
+   * The EFRAG member a country's legal form discloses as — `PrivateLimitedLiabilityUndertakingMember`
+   * for Moldova's `srl` — or `null` where the form maps to nothing (task 91.2; FR-27).
+   *
+   * **In the country's own legal-form artefact, as `vsmeMembers`**, because what a form is in the
+   * standard's five-member classification is a fact about the form, decided when the country's
+   * vocabulary is registered (architecture.md §12.5.6, task 91.2's row; the Moldovan table is the
+   * project owner's). Absent from a payload is not malformed — a country may register forms before
+   * anyone classifies them, and B1's field then opens empty for the reporter to choose.
+   */
+  legalFormMemberFor(input: { readonly countryCode: string; readonly legalForm: string }): string | null;
+
+  /**
    * The activity codes registered for a country — CAEM Rev.2 for Moldova (FR-17).
    *
    * **A set rather than a list, because the only question asked of it is membership.** S-13 renders

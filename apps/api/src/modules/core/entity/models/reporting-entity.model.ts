@@ -40,6 +40,10 @@ export const CONSOLIDATION_BASIS = {
 export type ConsolidationBasis =
   (typeof CONSOLIDATION_BASIS)[keyof typeof CONSOLIDATION_BASIS];
 
+/** Is this unvalidated value one of the two? Beside the set, not retyped at each reader (CLAUDE.md). */
+export const isConsolidationBasis = (value: unknown): value is ConsolidationBasis =>
+  typeof value === 'string' && (Object.values(CONSOLIDATION_BASIS) as string[]).includes(value);
+
 /**
  * One subsidiary inside the reporting boundary (UC-54).
  *

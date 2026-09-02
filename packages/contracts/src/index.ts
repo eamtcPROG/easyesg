@@ -178,6 +178,8 @@ export type DisclosureModuleSummary = components['schemas']['DisclosureModuleSum
 export type DisclosureField = components['schemas']['DisclosureFieldDto'];
 /** One answer a choice field offers (task 91.1): `value` is the member's taxonomy-qualified name, what an answer stores. */
 export type DisclosureOption = components['schemas']['DisclosureOptionDto'];
+/** What a field would hold if the reporter accepted what the platform already knows (task 91.2; FR-27). Committed by the client, never by the read. */
+export type DisclosureDefault = components['schemas']['DisclosureDefaultDto'];
 export type DisclosureStep = components['schemas']['DisclosureStepDto'];
 export type DisclosureValueWrite = components['schemas']['DisclosureValueWriteDto'];
 export type WriteDisclosureValuesRequest =

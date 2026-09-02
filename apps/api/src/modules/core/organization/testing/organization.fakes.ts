@@ -113,10 +113,18 @@ export class FakeOrganizationVocabulary implements OrganizationVocabulary {
     private readonly naceCodes: Record<string, readonly string[]> = {
       md: ['A', '01', '01.1', '01.11', '10.11', '62.01'],
     },
+    /** Country → form → EFRAG member; a form absent here maps to nothing, as the port says. */
+    private readonly members: Record<string, Readonly<Record<string, string>>> = {
+      md: { srl: 'PrivateLimitedLiabilityUndertakingMember', sa: 'OtherUndertakingsLegalFormMember' },
+    },
   ) {}
 
   legalFormsFor(countryCode: string): readonly string[] | null {
     return this.legalForms[countryCode.toLowerCase()] ?? null;
+  }
+
+  legalFormMemberFor(input: { readonly countryCode: string; readonly legalForm: string }): string | null {
+    return this.members[input.countryCode.toLowerCase()]?.[input.legalForm] ?? null;
   }
 
   registeredLegalForms(): readonly { countryCode: string; legalForms: readonly string[] }[] {
