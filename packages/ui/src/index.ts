@@ -63,6 +63,7 @@ export { PasswordField, type PasswordFieldProps } from './form/password-field';
 export { Select, type SelectOption, type SelectProps } from './form/select';
 export { RequirementList, type RequirementItem, type RequirementListProps } from './form/requirement-list';
 export { TextField, type TextFieldProps } from './form/text-field';
+export { Fieldset, type FieldsetProps } from './form/fieldset';
 export { TextArea, type TextAreaProps } from './form/text-area';
 
 // feedback

@@ -5019,6 +5019,10 @@
               "type": "string"
             }
           },
+          "repeating": {
+            "type": "boolean",
+            "description": "Whether this field is one row of a repeating group — an element on a typed axis, whose rows are sites, subsidiaries or materials the reporter adds. Not derivable from axes: several elements share a fixed member axis too."
+          },
           "order": {
             "type": "number",
             "description": "EFRAG's own presentation order within the module."
@@ -5121,6 +5125,7 @@
           "kind",
           "periodType",
           "axes",
+          "repeating",
           "order",
           "label",
           "labelStanding",

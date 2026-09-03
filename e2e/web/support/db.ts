@@ -313,8 +313,17 @@ export async function seedReport(input: {
   readonly organizationId: string;
   readonly name: string;
   readonly fiscalYear?: number;
+  /**
+   * Sites for the FR-18 snapshot the period takes at open (task 36.2).
+   *
+   * **The snapshot is what B1's pre-population reads**, never the live entity, so a fixture without
+   * one produces a B1 with no defaults and no site rows — which is a legitimate report and the wrong
+   * subject for a journey about either. Omitted means exactly that: a period that took no snapshot,
+   * which the api tolerates and one case here still uses.
+   */
+  readonly sites?: readonly { readonly name: string; readonly locality: string }[];
 }): Promise<string> {
-  const { organizationId, name, fiscalYear = 2026 } = input;
+  const { organizationId, name, fiscalYear = 2026, sites } = input;
   const client = new Client(asOwner());
   await client.connect();
   try {
@@ -328,13 +337,35 @@ export async function seedReport(input: {
        VALUES ($1, $2, $3, '{}')`,
       [entityId, organizationId, name],
     );
+    // The payload is `to_jsonb(row)`'s shape — whatever columns the entity had on the day — which
+    // is what the api's reader tolerates by design (task 91.2).
+    const snapshotId = sites === undefined ? null : randomUUID();
+    if (snapshotId !== null) {
+      await client.query(
+        `INSERT INTO core.entity_snapshot (id, organization_id, reporting_entity_id, payload)
+         VALUES ($1, $2, $3, $4::jsonb)`,
+        [
+          snapshotId,
+          organizationId,
+          entityId,
+          JSON.stringify({
+            id: entityId,
+            name,
+            legal_form: 'srl',
+            nace_codes: ['10.71'],
+            consolidation_basis: 'individual',
+            sites: sites.map((site) => ({ name: site.name, locality: site.locality, country_code: 'MD' })),
+          }),
+        ],
+      );
+    }
     await client.query(
       `INSERT INTO core.reporting_period
          (id, organization_id, reporting_entity_id, fiscal_year,
           period_start, period_start_tz, period_end, period_end_tz,
-          template_version, taxonomy_version)
-       VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau', '2026-05-01', '2026-05-01')`,
-      [periodId, organizationId, entityId, fiscalYear, `${fiscalYear}-01-01`, `${fiscalYear}-12-31`],
+          template_version, taxonomy_version, entity_snapshot_id)
+       VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau', '2026-05-01', '2026-05-01', $7)`,
+      [periodId, organizationId, entityId, fiscalYear, `${fiscalYear}-01-01`, `${fiscalYear}-12-31`, snapshotId],
     );
     await client.query(
       `INSERT INTO core.report

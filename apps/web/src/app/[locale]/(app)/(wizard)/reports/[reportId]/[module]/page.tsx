@@ -83,6 +83,24 @@ export default async function ReportModuleStepPage({ params }: Props) {
     Object.values(DISCLOSURE_STATE).map((state) => [state, markers[state] ?? '']),
   ) as Record<DisclosureState, string>;
 
+  // The country domain is ISO 3166, which EFRAG references and does not ship, so the api serves its
+  // members unnamed and says so (task 91.1). The words are this app's — S-04's country field reads
+  // the same catalogue — and they are resolved here for the reason the markers above are: a
+  // translator call cannot take a key the API supplies.
+  const countries: Record<string, string> = messages.organization.countries;
+  const fields = read.step.fields.map((field) =>
+    field.options === null
+      ? field
+      : {
+          ...field,
+          options: field.options.map((option) =>
+            option.label !== null || option.code === null
+              ? option
+              : { ...option, label: countries[option.code] ?? option.code },
+          ),
+        },
+  );
+
   return (
     <NextIntlClientProvider messages={{ organization: { wizard: messages.organization.wizard } }}>
       <AutosaveProvider reportId={reportId} accountId={session.account.id}>
@@ -94,6 +112,7 @@ export default async function ReportModuleStepPage({ params }: Props) {
               modules={read.modules}
               current={module}
               answeredLabel={(m) => t('rail.answered', { answered: m.answered, total: m.total })}
+              inapplicableLabel={t('rail.inapplicable')}
             />
           }
           title={t('step.title', { module })}
@@ -112,7 +131,7 @@ export default async function ReportModuleStepPage({ params }: Props) {
           )}
           <AutosaveBanner />
           <StepFields
-            fields={read.step.fields}
+            fields={fields}
             readOnly={readOnly}
             markerLabels={markerLabels}
             carriedLabel={t('field.carried')}

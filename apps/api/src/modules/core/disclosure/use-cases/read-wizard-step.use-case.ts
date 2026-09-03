@@ -235,16 +235,19 @@ export class ReadWizardStep {
           applicabilityCause: toCause(verdict, catalogue),
         };
         const perOrdinal = defaults.get(element.key) ?? [];
+        // Asked once per element and answered to the screen as well as used here: a typed axis is
+        // what makes these rows a group the reporter can add to (task 36.2).
+        const repeating = element.axes.some(isTyped);
         return rowsOf({
           element,
-          repeating: element.axes.some(isTyped),
+          repeating,
           stored: byElement.get(element.key) ?? [],
           defaultRows: perOrdinal.length,
         }).map((ordinal) => {
           const value = byKey.get(keyOf({ elementKey: element.key, dimensionKey: NO_DIMENSION, ordinal }));
           // A row in any state suppresses the default: cleared is a decision (§12.5.6, task 91.2).
           const defaultValue = value === undefined ? (perOrdinal[ordinal] ?? null) : null;
-          return toField(element, { ordinal, value, defaultValue }, resolved);
+          return toField(element, { ordinal, value, defaultValue, repeating }, resolved);
         });
       });
 
@@ -462,6 +465,7 @@ function toField(
     readonly ordinal: number;
     readonly value: DisclosureValue | undefined;
     readonly defaultValue: DisclosureDefault | null;
+    readonly repeating: boolean;
   },
   resolved: {
     readonly catalogue: Readonly<Record<string, DisclosureLabel>> | null;
@@ -482,6 +486,7 @@ function toField(
     kind: element.kind,
     periodType: element.periodType,
     axes: element.axes,
+    repeating: row.repeating,
     order: element.order,
     label: label?.text ?? null,
     // The catalogue's own standing where the label resolved, the version's otherwise — so a field

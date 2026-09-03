@@ -43,20 +43,79 @@ export const BOOLEAN_CHOICE = { YES: 'yes', NO: 'no' } as const;
 
 export type BooleanChoice = (typeof BOOLEAN_CHOICE)[keyof typeof BOOLEAN_CHOICE];
 
-/** The value a field currently holds in the column its kind answers into, as the draft a control shows. */
+/** The value a field **holds in the store**, in the column its kind answers into, as a draft. */
+export function storedDraftOf(field: DisclosureField): string {
+  return columnDraft(field.kind, field);
+}
+
+/**
+ * What a control **shows**: the stored value, or the platform's default where nothing is stored
+ * (task 36.2; FR-27, UX-109).
+ *
+ * The two are deliberately different functions rather than one with a flag. A control starts its
+ * draft here and its *committed* at `storedDraftOf`, which is precisely what makes an untouched
+ * default commit on blur: the draft differs from what was last sent (§12.5.6, task 91.2's row —
+ * *"a default nobody edits becomes an answer when the client commits it"*). One function could not
+ * express that difference, and a control seeding both from the same place would silently discard
+ * every pre-filled value the reporter accepted.
+ */
 export function draftOf(field: DisclosureField): string {
-  switch (COLUMN_OF_KIND[field.kind]) {
+  const stored = storedDraftOf(field);
+  if (stored !== '' || field.defaultValue === null) return stored;
+  return columnDraft(field.kind, field.defaultValue);
+}
+
+/** The one column-to-draft mapping both readings share. */
+function columnDraft(
+  kind: DisclosureField['kind'],
+  value: Pick<DisclosureField, 'valueNumeric' | 'valueText' | 'valueBoolean' | 'valueDate'>,
+): string {
+  switch (COLUMN_OF_KIND[kind]) {
     case VALUE_COLUMN.NUMERIC:
-      return field.valueNumeric ?? '';
+      return value.valueNumeric ?? '';
     case VALUE_COLUMN.DATE:
-      return field.valueDate ?? '';
+      return value.valueDate ?? '';
     case VALUE_COLUMN.BOOLEAN:
-      if (field.valueBoolean === null) return '';
-      return field.valueBoolean ? BOOLEAN_CHOICE.YES : BOOLEAN_CHOICE.NO;
+      if (value.valueBoolean === null) return '';
+      return value.valueBoolean ? BOOLEAN_CHOICE.YES : BOOLEAN_CHOICE.NO;
     default:
-      return field.valueText ?? '';
+      return value.valueText ?? '';
   }
 }
+
+/**
+ * The writes that turn a step's shown defaults into stored answers (task 36.2; FR-27, UX-34).
+ *
+ * **UX-34 says *"on blur or step change"*, and for a default that has to mean the step the reporter
+ * arrives at, not the one they leave.** `useAutosave` states the reason in its own header — *"a step
+ * change persists; it does not fire"* — and mirrors the queue to the durable store **in an effect**,
+ * so a write enqueued from an unmount cleanup updates a reducer nobody will read and never reaches
+ * the store. Arrival is the moment the machinery can carry, and it is a step change like any other.
+ *
+ * A field whose draft already equals what is stored contributes nothing, so this is empty on every
+ * visit after the first — and empty for every field the platform cannot answer, which is most.
+ */
+export function outstandingDefaults(fields: readonly DisclosureField[]): readonly DisclosureValueWrite[] {
+  return fields.flatMap((field) => {
+    const shown = draftOf(field);
+    return shown === '' || shown === storedDraftOf(field) ? [] : [writeFor(field, shown)];
+  });
+}
+
+/**
+ * How an `enumeration_set` answer is written: the chosen members, space-separated (task 91.1).
+ *
+ * The separator is the taxonomy's, not this screen's — `architecture.md` §12.5.6 states it for the
+ * store and the export alike — so it is declared once here and never spelled at a call site.
+ */
+export const MEMBER_SEPARATOR = ' ';
+
+/** The members a set-valued draft holds, in the order the reporter chose them. */
+export const membersOf = (draft: string): readonly string[] =>
+  draft.split(/\s+/u).filter((member) => member !== '');
+
+/** Those members back as one draft. Empty is the empty string, which clears the field. */
+export const draftOfMembers = (members: readonly string[]): string => members.join(MEMBER_SEPARATOR);
 
 /**
  * The write for one field's new value, or its clearing.

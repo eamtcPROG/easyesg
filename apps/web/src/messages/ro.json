@@ -840,7 +840,8 @@
       "exit": "Ieșiți din raport — lucrul este salvat",
       "rail": {
         "label": "Secțiunile raportului",
-        "answered": "{answered} din {total}"
+        "answered": "{answered} din {total}",
+        "inapplicable": "Nu se aplică"
       },
       "step": {
         "title": "Secțiunea {module}",
@@ -898,7 +899,14 @@
           "queued": "În așteptare",
           "saving": "Se salvează",
           "failed": "Nesalvat"
-        }
+        },
+        "choicePrompt": "Începeți să scrieți pentru a căuta",
+        "choiceEmpty": "Nimic nu corespunde căutării",
+        "choiceRemove": "Eliminați {member}",
+        "choiceRemoveShort": "Eliminați",
+        "choiceLoading": "Se caută",
+        "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}}",
+        "unnamed": "Fără denumire"
       },
       "leave": {
         "title": "Ieșiți cu modificări netrimise?",
@@ -907,6 +915,16 @@
         "retained": "Tot ce a fost deja confirmat ca salvat rămâne salvat.",
         "confirm": "Ieșiți oricum",
         "cancel": "Rămâneți în raport"
+      },
+      "group": {
+        "legend": "{name} {position}",
+        "add": "Adăugați încă un rând",
+        "names": {
+          "IdentifierOfSiteTypedAxis": "Amplasament",
+          "IdentifierOfSubsidiaryTypedAxis": "Filială",
+          "IdentifierOfMaterialTypedAxis": "Material"
+        },
+        "fallbackName": "Rând"
       }
     }
   }

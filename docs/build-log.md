@@ -10601,3 +10601,199 @@ the suite is 21 of 21 on three consecutive runs inside one window, which it coul
 reports *`tail`'s* exit status, which is always 0 — so "exit code 0" said nothing about the gates.
 That first run did genuinely pass (its last line is the final gate's `117 passed`), but the evidence
 I cited for it was not evidence. The final run below is unpiped.
+
+## Task 36.2 — B1, and three controls the plan had been deferring to it · 2026-09-03
+
+The first wizard module, and the one every other module waits on: B1's answers drive FR-28's
+conditional applicability, so building B2 … B11 before it means building against a guess. What it
+actually took was closing three gaps earlier tasks had named and left, plus one the api had to
+answer before the screen could be written at all.
+
+### Three unknowns, raised in one batch before starting
+
+- **How B1's typed-axis rows present.** Task 91.2 serves sites and subsidiaries as one row per
+  ordinal, §5's S-07 row says nothing about grouping, and the artboards draw none — so *flat* was
+  what the plan would have produced: a two-site B1 reading *Address of site, Address of site, City
+  of site, City of site* in the standard's own order, with nothing saying which belongs to which.
+  The owner chose **a `Fieldset` per ordinal with a control that appends the next**, over flat-with-
+  the-ordinal-in-the-label and over deferring the grouping to a later slice covering B7 and B8 too.
+  `Fieldset` is §11.5's own entry and had never been built, so this completes the inventory rather
+  than inventing (UX-89); the Components artboard specifies the implementation by name — *"native
+  fieldset/legend"*.
+- **UX-19's soft target, which has no source.** Task 36.1 shipped no narrative control and recorded
+  why: the requirement wants *"a soft target derived from the reference corpus"* and **no reference
+  corpus exists in this repository**, with this task named as where the choice lands. The owner chose
+  **the length indication alone, the target deferred and recorded**, over appending a corpus task and
+  over picking a plausible number — which would read to a reporter as guidance from the standard.
+- **Who owns UX-27's announcement.** Task 91.3 put `applicable` and its cause on both reads, and
+  nothing in the plan renders either; 36.2's own deliverable stops at the module list. Appended as
+  **task 95**, one slice for every module a rule governs, on 36.13's precedent.
+
+All three are rows in `architecture.md` §12.5.6; UX-19 carries the deferral's cross-log.
+
+### The api had to answer one more question first
+
+**The screen cannot tell a repeating row from a member-keyed one, and the obvious guess is
+provably wrong.** `axes` says an element is dimensioned, not whether the dimension takes an
+arbitrary identifier or a member of a fixed domain — and the only other signal on the wire, *several
+elements share this axis*, holds for **four explicit axes** at `2026-05-01`: the energy breakdown,
+reporting scopes, pollutants and waste types. A client-side heuristic would have offered *add a
+pollutant row* to a closed classification, and B1 would have looked correct throughout.
+
+So `DisclosureField.repeating` joins the step read — a value `ReadWizardStep` already computed per
+axis and threw away. **That widens this row past its stated `web` scope**, on task 32.2's precedent,
+and it is entailed by the owner's own answer: a control that appends the next ordinal cannot be
+built without it. The e2e pins both directions — B1's `CityOfSite` repeats, B3's three elements on
+one fixed member axis do not.
+
+### What was built
+
+- **`packages/ui`**: `Fieldset` (native element, an `action` slot for *remove this row*, read-only
+  withdrawing the affordance and keeping the group) and `TextArea`'s `count` — a node, not a number,
+  since the words and the choice to count characters or words are the caller's, and described rather
+  than announced because a live region updating per keystroke talks over the typing it counts.
+- **`step-layout.ts`**, pure: `layOutStep` groups by `(axis, ordinal)` and keeps a group at the
+  position of its first field, `nextOrdinal` goes one past the highest row rather than counting
+  (rows 0 and 2 is what the api serves once row 1 is cleared), `blankRow` carries the questions and
+  no default — the snapshot's sites are already rows, and offering one again would show a site twice.
+- **The defaults, as two functions rather than one with a flag**: a control opens its draft at
+  `draftOf` (stored, else the platform's default) and its *committed* at `storedDraftOf` (stored
+  alone). Their difference **is** the mechanism — leaving the field writes the value the reporter
+  accepted — and seeding both from one place would discard every pre-filled value silently.
+- **`outstandingDefaults` on arrival, and UX-34's *"step change"* has to mean arrival here.**
+  `useAutosave` says so in its own header — *"a step change persists; it does not fire"* — and
+  mirrors its queue to the durable store **in an effect**, so a write enqueued from an unmount
+  cleanup updates a reducer nobody reads and never reaches IndexedDB. Departure would have lost
+  every default with nothing failing.
+- **Three controls the plan had deferred to this task**: `enumeration` as a `Select` over task
+  91.1's members, `enumeration_set` as `ChoiceSet` — S-13's *add one, see what you have, remove one*
+  arrangement over `Combobox`, not §11.5's unbuilt Multi-select — and `text_block` as the narrative
+  field. The choice of control follows the **kind**, not the domain's size, so no threshold is
+  invented; B1's only large domain is NACE's 1 047 members and it is a *set*.
+- **Country names resolved server-side**, like the state markers beside them: EFRAG references ISO
+  3166 and does not ship it, so the api serves those members unnamed and the app's own catalogue
+  supplies the words.
+- **The rail says *does not apply*** where task 91.3 ruled a module out, rather than `0 of 0`.
+
+### Measured rather than assumed
+
+B1's activity domain is **1 047 options, 98.7 KiB raw and 15.8 KiB gzipped** (brotli 12.0). That is
+what made local filtering the right answer over S-13's debounced Server Action: a search endpoint
+would cost a round trip per keystroke to avoid a payload the response compresses to less than a
+photograph. `server-serialization` was opened against it and declined on that measurement, which is
+the skill's own standard for a considered exception.
+
+### Verified
+
+- `packages/ui` — `Fieldset`'s group and its read-only withdrawal, `TextArea`'s count described
+  alongside help and **not** announced. **The spec disproved the component's own docblock**: the
+  first draft claimed a legend joins each control's accessible name. It does not — accname takes the
+  control's own label, the legend names the *group*, and containment carries the association. Both
+  the header and the spec now say so, and the spec records what it deliberately does not assert.
+- `apps/web` unit — 29: the layout's grouping, the four-explicit-axis case that must **not** group,
+  non-contiguous ordinals, `blankRow`'s absent default; and the defaults shown-versus-stored,
+  including a boolean and a repeating group's per-row keys.
+- `apps/api` e2e — 22, one new: `repeating` true for B1's sites and false for B3's fixed member axis.
+- **Browser — 121 passed**, four of them new: B1 opening pre-filled with two named site groups and
+  the accepted defaults reaching the **store**; a choice field exposing role `combobox` with no
+  member key in any option; the narrative count with no `maxlength`; and the rail naming the scope
+  of a module the rules ruled out. `seedReport` now takes an FR-18 snapshot, because a fixture
+  without one produces a B1 with no defaults and no rows — a legitimate report and the wrong subject
+  for a journey about either.
+- `pnpm gates:scoped`: green but one `socket hang up` in the api e2e — task 85's recorded flake
+  family, 22 of 22 on an immediate re-run.
+
+### Two hours lost to a hook I stepped around, and one exposure it surfaced
+
+The browser suite failed every registering test at `waitForURL`, including two that had nothing to
+do with this task. It was not a defect: **`pnpm e2e:web` has a `pree2e:web` hook** that builds and
+runs `tools/assemble-web-standalone.sh`, and Next's `output: 'standalone'` traces modules only — so
+`.next/static` must be copied in beside the server. Calling `playwright` directly through `pnpm exec`
+skipped it, and the server answered **404 for every JS chunk**. The repo's rule was already
+satisfied; I walked around it. Diagnosing by reading logs got nowhere, and driving one registration
+in a real browser found it in a minute — the page had reverted to a native form submit.
+
+**And that is how task 96 was found.** With no client JS the register form submitted as a **GET**,
+landing on `/register?email=…&password=Parola123%21`. Every form in both front ends is
+`<form onSubmit={…} noValidate>` with no `method` and no `action` — **14 of them, 8 carrying a
+credential or a one-time code** — so the browser's default applies whenever the handler has not
+attached. The realistic trigger is not a broken build but a fast typist: the markup is interactive
+before React hydrates. Appended as its own row rather than fixed here; the remedy is a decision
+between `method="post"` and a React form `action`, and the exposure predates this task.
+
+**Two assertions I wrote could not have failed correctly, and both were the shapes this repo already
+names.** `first.getByRole('textbox').first()` was positional — the fixture's snapshot carries a
+locality and no address, so the first field is legitimately empty — and `getByText('Salvat')`
+matched the save indicator *and* the exit link's own sentence *"lucrul este salvat"*, which strict
+mode caught. Both are named locators now.
+
+### Skills opened against the diff
+
+`vercel-react-best-practices`, per `apps/web/CLAUDE.md`, in its own priority order. Applied:
+`js-combine-iterations` and `js-set-map-lookups` — `ChoiceSet` walked 1 047 options four times per
+keystroke and did a linear `find` per chosen row, now one pass with a `Set` and a `Map`, stopping at
+the cap; `rerender-memo` — `StepFields` re-renders on every autosave transition while `fields` moves
+only on a server render, so grouping the list was the *expensive derivation recomputed per render*
+case `apps/web/CLAUDE.md` says bites with `reactCompiler` off. Considered and declined with reasons:
+`server-serialization` (the measurement above); `rerender-no-inline-components` — `renderField` is
+called as a function, not rendered as a component, so no component type is created per render;
+`rerender-memo` for `ChoiceSet`'s filter, since its input changes on the keystroke that causes the
+render and a memo would save nothing. `vercel-composition-patterns` opened for `Fieldset`'s API: the
+`action` slot is a node rather than a third boolean, which is the smell that skill names.
+
+### What the reviews found
+
+Run on **`sonnet`**, per the owner's standing instruction. The routing table would have said `opus` —
+the diff touches the contract surface and four workspaces — and the override makes the table dormant
+as a default; escalation was weighed before the run and not taken, since the diff adds no migration,
+grant, policy or trigger. **Seven findings, all fixed before this entry closed**, and the pattern
+across them is one thing: every one was a **claim that did not match its subject**.
+
+**Spec review — two, and the first is the serious one.**
+
+- **FR-27's own sentence said the opposite of what ships.** Task 91.2 amended it on 2 September to
+  read *"becomes the report's answer when the reporter leaves the field or the step … and is stored
+  nowhere before that"*, and this task commits a shown default when the step **opens**. The reason
+  is sound and was written up here — but `build-log.md` **owns no decisions**, so the requirement was
+  left contradicting the code. FR-27 is amended and §12.5.6 carries the decision with its mechanical
+  cause. *A requirement the shipped code disagrees with is the defect, not the code.*
+- **The row still said `web`.** Adding `repeating` touched three `apps/api` files, and task 32.2's
+  precedent has **two** halves — the Scope column *and* an architecture row stating the widening.
+  This entry named that precedent and then followed neither. Both done.
+- Two calibrated non-findings were taken anyway: `group.remove` shipped as a **dead catalogue key**
+  in three locales while nothing wires a remove control, and `Fieldset`'s docblock promised one — the
+  key is gone and the docblock now says the slot carries *add* today and that removal has no consumer
+  yet. The reviewer also noted task 91's parent row sitting at `TODO`; that is correct, since 91.4 is
+  open — the roll-up closes a parent when its **last** child does.
+
+**Gate-integrity review — three proven inert or unguarded, plus two the same pass found in my fixes.**
+
+- **`reorderRows` was untested.** Replacing it with `entries => entries` left all eight cases green:
+  every input already arrived in an order the naive bucket loop got right. The new case has row 1
+  before row 0 with a second axis between them, and **fails on that mutation**.
+- **The "cleared" case overwrote its own subject** — it built the cleared field and then spread
+  `valueText: 'x'` over it before asserting, so it duplicated the line above. Rewritten to assert
+  what is actually true, and to name the seam that makes the case unreachable: `ReadWizardStep`
+  serves `defaultValue: null` the moment a row exists in **any** state, so a cleared field is never
+  re-offered — and the day that guarantee moves, this test says where to look.
+- **`ChoiceSet` had no coverage of any kind** — no unit spec, and no browser journey reaching it, so
+  the exclusion of chosen members, the cap, the search and the read-only rendering all shipped
+  unguarded. Seven cases now, each proven against a mutation of the behaviour it names.
+- **The add-a-row flow was unguarded for a structural reason**: `withAddedRows` and `isLastRow` were
+  unexported locals in a `.tsx`, so no spec could reach them and no journey clicks the control. They
+  are layout logic and now live in `step-layout.ts` with the rest of it — the fix is the move, not
+  more tests around the old shape.
+
+**Two of my own fixes were inert until I mutated them.** The first `ChoiceSet` spec used
+`toContain(expect.stringContaining(…))`, and `toContain` compares by identity — an asymmetric matcher
+there passes against anything. And after adding the add-row cases, `const start = rows.length`
+*still* passed: it equals `nextOrdinal` unless the rows have a gap, which is the exact case
+`nextOrdinal` exists for. Both closed, both re-proven.
+
+**And one thing no review could see, because git could not.** `step-layout.ts` carried a **literal
+NUL byte** in a template literal, which makes git treat the file as **binary** — `git diff` renders
+`Bin 0 -> 6010 bytes` and shows no content at all. Both reviewers flagged it outside their mandate,
+which is the only reason it was found: a brand-new 150-line file was invisible to every diff-reading
+reviewer, human or agent, while being perfectly present on disk. The same shape as the `credentials/`
+`.gitignore` incident — a file that *is there* and is not what it looks like. One byte, replaced with
+a space.

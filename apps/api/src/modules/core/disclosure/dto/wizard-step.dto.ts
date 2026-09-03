@@ -232,6 +232,14 @@ export class DisclosureFieldDto {
   @ApiProperty({ type: [String], description: 'Axes this element is dimensioned along; empty for most.' })
   readonly axes: string[];
 
+  @ApiProperty({
+    description:
+      'Whether this field is one row of a repeating group — an element on a typed axis, whose rows ' +
+      'are sites, subsidiaries or materials the reporter adds. Not derivable from axes: several ' +
+      'elements share a fixed member axis too.',
+  })
+  readonly repeating: boolean;
+
   @ApiProperty({ description: "EFRAG's own presentation order within the module." })
   readonly order: number;
 
@@ -324,6 +332,7 @@ export class DisclosureFieldDto {
     this.kind = field.kind;
     this.periodType = field.periodType;
     this.axes = [...field.axes];
+    this.repeating = field.repeating;
     this.order = field.order;
     this.label = field.label;
     this.labelStanding = field.labelStanding;

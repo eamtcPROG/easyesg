@@ -840,7 +840,8 @@
       "exit": "Leave the report — your work is saved",
       "rail": {
         "label": "Report sections",
-        "answered": "{answered} of {total}"
+        "answered": "{answered} of {total}",
+        "inapplicable": "Does not apply"
       },
       "step": {
         "title": "Section {module}",
@@ -898,7 +899,14 @@
           "queued": "Queued",
           "saving": "Saving",
           "failed": "Not saved"
-        }
+        },
+        "choicePrompt": "Start typing to search",
+        "choiceEmpty": "Nothing matches that search",
+        "choiceRemove": "Remove {member}",
+        "choiceRemoveShort": "Remove",
+        "choiceLoading": "Searching",
+        "length": "{count, plural, one {One character} other {# characters}}",
+        "unnamed": "Unnamed"
       },
       "leave": {
         "title": "Leave with unsent changes?",
@@ -907,6 +915,16 @@
         "retained": "Everything already confirmed as saved stays saved.",
         "confirm": "Leave anyway",
         "cancel": "Stay in the report"
+      },
+      "group": {
+        "legend": "{name} {position}",
+        "add": "Add another row",
+        "names": {
+          "IdentifierOfSiteTypedAxis": "Site",
+          "IdentifierOfSubsidiaryTypedAxis": "Subsidiary",
+          "IdentifierOfMaterialTypedAxis": "Material"
+        },
+        "fallbackName": "Row"
       }
     }
   }

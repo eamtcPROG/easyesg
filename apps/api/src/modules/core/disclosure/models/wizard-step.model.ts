@@ -134,6 +134,18 @@ export interface DisclosureField {
   readonly periodType: PeriodType;
   /** The axes this element is dimensioned along; empty for the 109 that are not. */
   readonly axes: readonly string[];
+  /**
+   * Whether this field is one **row of a repeating group** — an element on a *typed* axis, whose
+   * rows are sites, subsidiaries or materials the reporter adds (task 36.2; §7.3).
+   *
+   * **The screen cannot derive it, and a plausible guess is wrong.** `axes` alone does not say
+   * whether a dimension takes an arbitrary identifier or a member of a fixed domain, and "several
+   * elements share an axis" — the only other signal on the wire — holds for four *explicit* axes at
+   * `2026-05-01` (energy breakdown, reporting scopes, pollutants, waste types), which would offer to
+   * add a pollutant row to a fixed classification. Whether an axis is typed is the registry's
+   * answer, and this is it, resolved once per axis rather than once per field.
+   */
+  readonly repeating: boolean;
   /** The presentation order EFRAG gives it, so a step renders as the standard reads. */
   readonly order: number;
   /** `null` where the pinned version's catalogue names no label — logged, and rendered as absent. */

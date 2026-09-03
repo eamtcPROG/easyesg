@@ -1,0 +1,41 @@
+/*
+ * Fieldset — §11.5's group, for S-07's repeating rows (task 36.2).
+ *
+ * The browser's own `<fieldset>` carries a default border and padding that no other control here
+ * has; both are reset so the group reads as this system's, and the grouping is carried by the
+ * legend, the sunken ground and the indent rather than by a box drawn around every row.
+ */
+
+.fieldset {
+  position: relative;
+  min-inline-size: 0; /* A fieldset otherwise refuses to shrink below its content's intrinsic width. */
+  margin: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--surface-sunken);
+}
+
+.legend {
+  padding-inline: var(--space-2);
+  margin-inline-start: calc(var(--space-2) * -1);
+  font: 600 15px/24px var(--font-text);
+  color: var(--text-default);
+}
+
+/*
+ * Beside the legend rather than under it: the action belongs to the group's heading line, and a
+ * `<legend>` may not contain a button — the element's content model is phrasing content, and a
+ * control inside it is announced as part of the group's name.
+ */
+.action {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-end: var(--space-4);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

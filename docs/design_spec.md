@@ -1467,7 +1467,7 @@ It is a terminal state distinct from `missing` (D-4, FR-32), it satisfies valida
 
 ### 7.7 Narrative inputs
 
-**UX-19** Narrative fields shall show a length indication and a soft target derived from the reference corpus, never a hard limit unless the taxonomy imposes one, and shall support paragraph structure only — no rich formatting that the PDF and Excel exports cannot faithfully carry.
+**UX-19** Narrative fields shall show a length indication and a soft target derived from the reference corpus, never a hard limit unless the taxonomy imposes one, and shall support paragraph structure only — no rich formatting that the PDF and Excel exports cannot faithfully carry. **The soft target is deferred (task 36.2, 3 Sep 2026): no reference corpus exists in this repository**, so the control ships with the count, the paragraph-only structure and no hard limit, and the target arrives with a corpus — `architecture.md` §12.5.6 records what is assumed meanwhile.
 
 **UX-74** applies to narrative inputs specifically: they shall match the 60–75 character reading measure, because a full-width textarea produces unreadable text and worse writing.
 

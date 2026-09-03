@@ -840,7 +840,8 @@
       "exit": "Выйти из отчёта — работа сохранена",
       "rail": {
         "label": "Разделы отчёта",
-        "answered": "{answered} из {total}"
+        "answered": "{answered} из {total}",
+        "inapplicable": "Не применяется"
       },
       "step": {
         "title": "Раздел {module}",
@@ -898,7 +899,14 @@
           "queued": "В очереди",
           "saving": "Сохраняется",
           "failed": "Не сохранено"
-        }
+        },
+        "choicePrompt": "Начните вводить для поиска",
+        "choiceEmpty": "Ничего не найдено",
+        "choiceRemove": "Удалить {member}",
+        "choiceRemoveShort": "Удалить",
+        "choiceLoading": "Идёт поиск",
+        "length": "{count, plural, one {Один символ} few {# символа} many {# символов} other {# символа}}",
+        "unnamed": "Без названия"
       },
       "leave": {
         "title": "Выйти с неотправленными изменениями?",
@@ -907,6 +915,16 @@
         "retained": "Всё, что уже подтверждено как сохранённое, остаётся сохранённым.",
         "confirm": "Всё равно выйти",
         "cancel": "Остаться в отчёте"
+      },
+      "group": {
+        "legend": "{name} {position}",
+        "add": "Добавить ещё одну строку",
+        "names": {
+          "IdentifierOfSiteTypedAxis": "Площадка",
+          "IdentifierOfSubsidiaryTypedAxis": "Дочерняя компания",
+          "IdentifierOfMaterialTypedAxis": "Материал"
+        },
+        "fallbackName": "Строка"
       }
     }
   }

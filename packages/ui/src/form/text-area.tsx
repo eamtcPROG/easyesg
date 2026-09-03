@@ -15,11 +15,18 @@ import styles from './text-area.module.css';
  * this shares `TextField`'s stylesheet for the parts it shares and carries its own only for the
  * control's box.
  *
- * **This is not the narrative disclosure control UX-19 describes.** That one carries a length
- * indication and *"a soft target derived from the reference corpus"*, and no reference corpus exists
- * in this repository — task 36.1 recorded the gap and named task 36.2 as where it is met. What this
- * is: a multi-line text input that keeps paragraph breaks, which a single-line field silently
- * flattens. It supports *"paragraph structure only — no rich formatting"* by being a plain textarea.
+ * **This is UX-19's narrative field, minus one deferred value** (task 36.2). It supports
+ * *"paragraph structure only — no rich formatting"* by being a plain textarea, imposes no hard
+ * limit, and takes a `count` for the length indication. What it does not carry is the *"soft target
+ * derived from the reference corpus"*: **no reference corpus exists in this repository**, which
+ * task 36.1 recorded and the project owner deferred on 3 Sep 2026 rather than let a plausible
+ * number be invented — a number with no authority reads to a reporter as guidance from the standard.
+ * `architecture.md` §12.5.6 states what is assumed meanwhile; when a corpus exists the target is one
+ * more node in the same slot, not a different control.
+ *
+ * **The count is a node, not a number**, like every other string here: the words are the caller's,
+ * and so is the decision to count characters or words. It is described, never announced — a live
+ * region updating on every keystroke would talk over the typing it is counting.
  *
  * States (§8.1 subset): inherited from `TextField` — rest, focus, filled, invalid, disabled — plus
  * its own resize behaviour, which is vertical only so the reading measure (UX-74) holds.
@@ -34,6 +41,14 @@ export interface TextAreaProps extends Omit<ComponentPropsWithRef<'textarea'>, '
   id?: string;
   /** Hides the label visually while keeping it for assistive technology — `TextField`'s rule. */
   labelHidden?: boolean;
+  /**
+   * UX-19's length indication — already worded and already counted by the caller.
+   *
+   * Described rather than announced (see the header), and rendered whether or not `help` is, since
+   * a narrative field with help and no count would otherwise be indistinguishable from one whose
+   * count the caller forgot.
+   */
+  count?: ReactNode;
 }
 
 export function TextArea({
@@ -42,6 +57,7 @@ export function TextArea({
   error,
   id,
   labelHidden = false,
+  count,
   className,
   'aria-describedby': describedBy,
   rows = 4,
@@ -51,9 +67,10 @@ export function TextArea({
   const fieldId = id ?? autoId;
   const helpId = `${fieldId}-help`;
   const errorId = `${fieldId}-error`;
+  const countId = `${fieldId}-count`;
 
   const description =
-    [error ? errorId : null, help ? helpId : null, describedBy ?? null]
+    [error ? errorId : null, help ? helpId : null, count ? countId : null, describedBy ?? null]
       .filter(Boolean)
       .join(' ') || undefined;
 
@@ -84,6 +101,11 @@ export function TextArea({
       {error ? (
         <span id={errorId} className={fieldStyles.error}>
           {error}
+        </span>
+      ) : null}
+      {count ? (
+        <span id={countId} className={styles.count}>
+          {count}
         </span>
       ) : null}
     </div>

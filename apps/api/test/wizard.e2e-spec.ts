@@ -61,7 +61,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   }
   interface Field {
     elementKey: string; ordinal: number; kind: string; periodType: string; order: number;
-    label: string | null; labelStanding: string | null;
+    label: string | null; labelStanding: string | null; repeating: boolean; axes: string[];
     valueText: string | null; valueNumeric: string | null; state: string; carriedForward: boolean;
     help: string | null;
     options: { value: string; label: string | null; code: string | null }[] | null;
@@ -407,6 +407,26 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     const entity = objectOf<{ legalForm: string }>((await http()
       .get(`/api/v1/entities/${ownEntity}`).set(admin.authorization).expect(200)).body);
     expect(entity.legalForm).toBe('cp');
+  });
+
+  it('says which fields repeat, and a fixed member axis does not (task 36.2)', async () => {
+    const reportId = await createReport(await openPeriod(2026));
+
+    const b1 = await readStep(reportId);
+    const site = b1.fields.find((f) => f.elementKey === 'CityOfSite');
+    // A typed axis: its rows are sites the reporter adds, so the screen may offer to add one.
+    expect({ axes: site?.axes, repeating: site?.repeating }).toEqual({
+      axes: ['IdentifierOfSiteTypedAxis'],
+      repeating: true,
+    });
+    expect(b1.fields.find((f) => f.elementKey === 'NumberOfEmployees')?.repeating).toBe(false);
+
+    // The case a client-side guess gets wrong: three B3 elements share ONE axis, and it is a fixed
+    // member domain — "several elements share an axis" would offer to add a row to a classification.
+    const b3 = await readStep(reportId, 'B3');
+    const breakdown = b3.fields.filter((f) => f.axes.includes('BreakdownOfEnergyConsumptionAxis'));
+    expect(breakdown.length).toBeGreaterThan(1);
+    expect(breakdown.every((f) => !f.repeating)).toBe(true);
   });
 
   it('lays sites and subsidiaries out as repeating groups, one row per snapshot entry, in its order', async () => {

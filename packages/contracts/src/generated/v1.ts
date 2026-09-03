@@ -1917,6 +1917,8 @@ export interface components {
             periodType: "duration" | "instant";
             /** @description Axes this element is dimensioned along; empty for most. */
             axes: string[];
+            /** @description Whether this field is one row of a repeating group — an element on a typed axis, whose rows are sites, subsidiaries or materials the reporter adds. Not derivable from axes: several elements share a fixed member axis too. */
+            repeating: boolean;
             /** @description EFRAG's own presentation order within the module. */
             order: number;
             /** @description Null where the pinned version carries no label for this element in this locale. */

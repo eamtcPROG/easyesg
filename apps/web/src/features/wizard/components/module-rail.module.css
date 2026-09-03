@@ -39,3 +39,14 @@
   margin: 0;
   color: var(--text-muted);
 }
+
+/*
+ * A module FR-28 has ruled out (task 36.2). Muted rather than struck through or hidden: it is a
+ * statement about scope, not a failure, and the step stays reachable because UX-28 keeps values
+ * entered before the condition turned.
+ */
+.inapplicable {
+  composes: count;
+  color: var(--text-muted);
+  font-style: italic;
+}
