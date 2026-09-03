@@ -195,6 +195,67 @@ describe('the api client (§6.8 wire conventions, in one place)', () => {
 });
 
 /**
+ * **Every path to `unreachable` says something to an operator** (3 Sep 2026).
+ *
+ * Found the hard way: a browser run in which every registration failed left the web server's log
+ * completely empty, because two of the three paths to `unreachable` discarded the failure — the
+ * `catch` took no binding at all. To a user those failures are one fact with one remedy, which is
+ * why they share an outcome; to whoever is holding the pager they are *the API is down*, *something
+ * else answered for it*, and *the API answered something unusable*, which need different responses.
+ *
+ * What each case also asserts is the **absence** of the request: NFR-30 keeps personal data out of
+ * logs, and a register body carries an address and a password.
+ */
+describe('what reaches the log when a call fails (NFR-30)', () => {
+  let logged: unknown[][];
+
+  beforeEach(() => {
+    logged = [];
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      logged.push(args);
+    });
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('names a timed-out request apart from a dead one, which is the whole point of logging it', async () => {
+    // What `AbortSignal.timeout` raises. A slow API and an unreachable one are the same outcome
+    // here and different operational problems, and the name is what separates them.
+    const timeout = new Error('The operation was aborted due to timeout');
+    timeout.name = 'TimeoutError';
+    fetchMock.mockRejectedValue(timeout);
+
+    await api.post('/auth/register', { email: 'someone@example.md', password: 'Parola123!' });
+
+    expect(logged).toHaveLength(1);
+    expect(logged[0]?.[1]).toEqual({ method: 'POST', path: '/auth/register', reason: 'TimeoutError' });
+  });
+
+  it('names a network failure by its own class', async () => {
+    fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+    await api.get('/things/x');
+    expect(logged[0]?.[1]).toMatchObject({ path: '/things/x', reason: 'TypeError' });
+  });
+
+  it('carries the status when something other than the API answered', async () => {
+    fetchMock.mockResolvedValue(
+      new Response('Bad Gateway', { status: 502, headers: { 'content-type': 'text/html' } }),
+    );
+    await api.get('/things/x');
+    expect(logged[0]?.[1]).toMatchObject({ path: '/things/x', status: 502 });
+  });
+
+  it('never writes the request body, whatever the failure', async () => {
+    fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+    await api.post('/auth/register', { email: 'someone@example.md', password: 'Parola123!' });
+
+    const written = JSON.stringify(logged);
+    expect(written).not.toContain('someone@example.md');
+    expect(written).not.toContain('Parola123!');
+  });
+});
+
+/**
  * The body guards, which exist because the alternative is a silent wrong answer: a blind cast
  * reads a missing `object` as `undefined` and a screen renders that as *empty*. Every case here
  * asserts the outcome is `unreachable` rather than a malformed success — a guard that never

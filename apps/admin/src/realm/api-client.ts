@@ -76,7 +76,14 @@ async function send(
       cache: 'no-store',
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-  } catch {
+  } catch (error) {
+    // The tenant seam's rule, applied where it holds (3 Sep 2026): a request that never completed
+    // is the failure an operator must be able to see, and a bare `catch` discarded it. The class,
+    // never the request — an admin sign-in body carries a password and a code.
+    console.error('admin api-client: request did not complete', {
+      path,
+      reason: error instanceof Error ? error.name : 'unknown',
+    });
     return { status: API_OUTCOME.Unreachable };
   }
 
@@ -91,6 +98,9 @@ async function send(
   }
 
   if (!response.ok) {
+    // Something other than the api answered. Identical to the tenant seam's case, and silent here
+    // for the same reason it was silent there: the status is the only thing that says which hop.
+    console.error('admin api-client: non-problem failure from upstream', { path, status: response.status });
     return { status: API_OUTCOME.Unreachable };
   }
 

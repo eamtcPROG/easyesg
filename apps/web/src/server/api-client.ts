@@ -100,6 +100,12 @@ type RequestContext = (typeof REQUEST_CONTEXT)[keyof typeof REQUEST_CONTEXT];
  * The body READERS live in `@easyesg/contracts` since task 23 (`outcome.ts` there carries the
  * validate-never-cast argument in full) — this seam keeps what is its own: turning a reader's
  * throw into `unreachable`, and logging the reason for a developer without the body (NFR-30).
+ *
+ * **Every path to `unreachable` logs, and that sentence was false until 3 Sep 2026.** Three
+ * failures produce it — the fetch never completing, a non-problem HTTP status, and a body no
+ * reader can use — and only the third said anything. The first two are the ones an operator
+ * actually needs: they mean the API is unreachable or something else answered for it, which is
+ * a fact about the deployment rather than about one request.
  */
 /**
  * Parses a JSON body, turning any failure — malformed JSON, or a body that is not the envelope
@@ -160,7 +166,22 @@ async function send(
       cache: 'no-store',
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-  } catch {
+  } catch (error) {
+    // **A request that never completed is the one failure an operator must be able to see**, and
+    // until 3 Sep 2026 it was the one this seam said nothing about: the `catch` took no binding, so
+    // a dead API, a DNS failure and a timed-out call were indistinguishable from each other and
+    // from silence. Found while diagnosing a browser run in which every registration failed and the
+    // server log was empty.
+    //
+    // The failure's CLASS, never the request: a register body carries an address and a password
+    // (NFR-30), and a URL is enough to locate the call. `TimeoutError` is the name worth telling
+    // apart — `AbortSignal.timeout` raises it, and a slow API and a dead one need different answers
+    // from whoever is holding the pager.
+    console.error('api-client: request did not complete', {
+      method,
+      path,
+      reason: error instanceof Error ? error.name : 'unknown',
+    });
     return { status: API_OUTCOME.Unreachable };
   }
 
@@ -178,7 +199,13 @@ async function send(
   if (!response.ok) {
     // A non-problem failure means something other than the API answered (an edge 502, a
     // half-started stack). To the user that is indistinguishable from unreachable, and the
-    // remedy — try again — is the same.
+    // remedy — try again — is the same. **To an operator it is not**: the status says which
+    // hop answered, and without it the two causes look alike in the only place they differ.
+    console.error('api-client: non-problem failure from upstream', {
+      method,
+      path,
+      status: response.status,
+    });
     return { status: API_OUTCOME.Unreachable };
   }
 
