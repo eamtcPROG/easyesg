@@ -4817,6 +4817,62 @@
           }
         }
       },
+      "ApplicabilityDriverDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "NumberOfEmployees"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "The element's wording in the request's locale — what the announcement names, since an element key is not something a reader may be shown. Null where the catalogue holds none."
+          }
+        },
+        "required": [
+          "elementKey",
+          "label"
+        ]
+      },
+      "ApplicabilityCauseDto": {
+        "type": "object",
+        "properties": {
+          "condition": {
+            "type": "string",
+            "enum": [
+              "numeric_at_least",
+              "any_row_answered",
+              "member_within"
+            ],
+            "description": "How the rule decides. The client words the announcement from this plus the values below; no sentence is composed server-side."
+          },
+          "drivers": {
+            "description": "The B1 elements whose answers decide it.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicabilityDriverDto"
+            }
+          },
+          "threshold": {
+            "type": "string",
+            "nullable": true,
+            "example": "50",
+            "description": "Decimal as a string, never a float (NFR-58). Null for conditions that carry no threshold."
+          },
+          "answer": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the reporter answered, as stored. Null where the deciding field is unanswered — the state every conditional field is in before B1 is filled in — or where the condition has no single answer to quote."
+          }
+        },
+        "required": [
+          "condition",
+          "drivers",
+          "threshold",
+          "answer"
+        ]
+      },
       "DisclosureModuleSummaryDto": {
         "type": "object",
         "properties": {
@@ -4837,13 +4893,29 @@
             "type": "number",
             "nullable": true,
             "description": "Unix epoch milliseconds, UTC — when the module's most recent answer was stored, or null where nothing in it is answered. Where work last happened is where a returning reporter resumes (FR-39)."
+          },
+          "applicable": {
+            "type": "boolean",
+            "description": "Whether the module has anything to answer (FR-28). True while any one of its elements applies; answered and total above count applicable elements only."
+          },
+          "applicabilityCause": {
+            "nullable": true,
+            "description": "Why the module does not apply, where its elements agree on one reason; null otherwise, including whenever the module applies.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApplicabilityCauseDto"
+              }
+            ]
           }
         },
         "required": [
           "module",
           "answered",
           "total",
-          "lastAnsweredAt"
+          "lastAnsweredAt",
+          "applicable",
+          "applicabilityCause"
         ]
       },
       "DisclosureOptionDto": {
@@ -5026,6 +5098,20 @@
           "carriedForward": {
             "type": "boolean",
             "description": "Carried forward from the prior period, and marked for review."
+          },
+          "applicable": {
+            "type": "boolean",
+            "description": "Whether this field applies to this reporter (FR-28). False does not mean empty: a value entered before the condition turned is retained and served as stored (UX-28), so a retained answer is applicable false beside a state that is not missing."
+          },
+          "applicabilityCause": {
+            "nullable": true,
+            "description": "Why, for the fields a rule governs; null for the ones no rule names.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApplicabilityCauseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -5048,7 +5134,9 @@
           "unitCode",
           "state",
           "notAvailableReason",
-          "carriedForward"
+          "carriedForward",
+          "applicable",
+          "applicabilityCause"
         ]
       },
       "DisclosureStepDto": {

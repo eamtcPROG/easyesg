@@ -185,6 +185,7 @@ describe('TaxonomyRegistryService (FR-65, FR-66)', () => {
               'W-200301-Non-Hazardous-MixedMunicipalWasteMember': {
                 code: '20 03 01',
                 hazardous: false,
+                parent: 'W-20-MunicipalWastesMember',
                 order: 2,
                 labels: { en: 'Mixed municipal waste' },
               },
@@ -195,11 +196,15 @@ describe('TaxonomyRegistryService (FR-65, FR-66)', () => {
 
       const axis = registry.axis({ standard: 'vsme', version: '2026-05-01', key: 'TypeOfWasteAxis' });
       expect(axis?.members).toEqual([
-        { key: 'W-20-MunicipalWastesMember', code: '20', hazardous: null, labels: { en: 'Municipal' } },
+        // `parent` carries the classification's own hierarchy (task 91.3). A root member has none,
+        // and an entry below one names it — which is what makes a member-or-descendant rule
+        // answerable at all; without it a section and its classes are unrelated strings.
+        { key: 'W-20-MunicipalWastesMember', code: '20', hazardous: null, parent: null, labels: { en: 'Municipal' } },
         {
           key: 'W-200301-Non-Hazardous-MixedMunicipalWasteMember',
           code: '20 03 01',
           hazardous: false,
+          parent: 'W-20-MunicipalWastesMember',
           labels: { en: 'Mixed municipal waste' },
         },
       ]);

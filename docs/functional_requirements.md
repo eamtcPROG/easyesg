@@ -480,9 +480,9 @@ These rules are not additional requirements. Each is a rule already carried insi
 | BR-VAL-4 | Export is permitted with unresolved findings after an explicit warning; gaps are marked visibly in the output, never omitted silently. | FR-44 |
 | BR-APP-1 | Employee turnover disclosure applies at a B1 headcount of ≥50. | FR-28, FR-72 |
 | BR-APP-2 | The unadjusted gender pay gap applies at a B1 headcount of ≥150. | FR-28, FR-72 |
-| BR-APP-3 | Biodiversity applicability is site-driven, evaluated from the B1 site geolocations; a company with no qualifying site records a negative determination rather than an empty section. | FR-28, FR-19 |
-| BR-APP-4 | Water relevance is sector-driven and supports a documented immateriality determination. | FR-28, FR-31 |
-| BR-APP-5 | A field that does not apply is hidden rather than presented and later rejected. | FR-28 |
+| BR-APP-3 | Biodiversity applicability is site-driven, evaluated from the B1 site geolocations; a company with no qualifying site records a negative determination rather than an empty section. **The rule governs B5's site-dimensioned disclosures only** (task 91.3; `architecture.md` §12.5.6) — the module's undimensioned disclosures carry no condition, which is where that negative determination is recorded. | FR-28, FR-19 |
+| BR-APP-4 | Water relevance is sector-driven and supports a documented immateriality determination. **The relevant sectors are NACE sections A–E, held as data and matched member-or-descendant against the B1 activity answer** (task 91.3; `architecture.md` §12.5.6). | FR-28, FR-31 |
+| BR-APP-5 | A field that does not apply is hidden rather than presented and later rejected. **A field whose B1 driver is unanswered does not yet apply** (task 91.3), so nothing conditional is presented before B1 is answered (UX-9). | FR-28 |
 | BR-DIS-1 | A nil or zero return is an affirmative disclosure, stored and rendered distinctly from an unanswered field. | FR-30 |
 | BR-DIS-2 | A section declared not material or not applicable requires a rationale, satisfies validation, and carries the declaration into both export formats. | FR-31 |
 | BR-DIS-3 | A field declared not available requires a stated reason and is a terminal state distinct from `MISSING VALUE`. | FR-32, D-4 |

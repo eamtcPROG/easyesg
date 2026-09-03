@@ -17,12 +17,15 @@ import {
 import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
+import { APPLICABILITY_CONDITION, type ApplicabilityCondition } from '../models/applicability.model';
 import {
   DISCLOSURE_STATE,
   type DisclosureState,
   type DisclosureValue,
 } from '../models/disclosure-value.model';
 import type {
+  ApplicabilityDriver,
+  DisclosureApplicabilityCause,
   DisclosureDefault,
   DisclosureField,
   DisclosureModuleSummary,
@@ -33,6 +36,12 @@ import type {
 const STATES = Object.values(DISCLOSURE_STATE);
 const KINDS = Object.values(DISCLOSURE_KIND);
 const PERIOD_TYPES = Object.values(PERIOD_TYPE);
+const CONDITIONS = Object.values(APPLICABILITY_CONDITION);
+
+/** NFR-58's rule, stated once for the three numeric columns the surface carries. */
+const DECIMAL_AS_STRING = 'Decimal as a string, never a float (NFR-58).';
+/** A calendar date as `YYYY-MM-DD`, never an instant (§7.9). */
+const DATE_EXAMPLE = '2026-12-31';
 
 /**
  * **A batch is bounded.** FR-38 queues offline changes and flushes them on reconnect, so the size of
@@ -41,6 +50,65 @@ const PERIOD_TYPES = Object.values(PERIOD_TYPE);
  * which is the largest honest flush.
  */
 const MAX_VALUES_PER_WRITE = 143;
+
+/** One B1 element an applicability rule reads, with its wording (task 91.3). */
+export class ApplicabilityDriverDto {
+  @ApiProperty({ example: 'NumberOfEmployees' })
+  readonly elementKey: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      "The element's wording in the request's locale — what the announcement names, since an " +
+      'element key is not something a reader may be shown. Null where the catalogue holds none.',
+  })
+  readonly label: string | null;
+
+  constructor(driver: ApplicabilityDriver) {
+    this.elementKey = driver.elementKey;
+    this.label = driver.label;
+  }
+}
+
+/** Why a field or a module does or does not apply (task 91.3; FR-28, UX-27). */
+export class ApplicabilityCauseDto {
+  @ApiProperty({
+    enum: CONDITIONS,
+    description:
+      'How the rule decides. The client words the announcement from this plus the values below; ' +
+      'no sentence is composed server-side.',
+  })
+  readonly condition: ApplicabilityCondition;
+
+  @ApiProperty({ type: [ApplicabilityDriverDto], description: 'The B1 elements whose answers decide it.' })
+  readonly drivers: ApplicabilityDriverDto[];
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '50',
+    description: `${DECIMAL_AS_STRING} Null for conditions that carry no threshold.`,
+  })
+  readonly threshold: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      'What the reporter answered, as stored. Null where the deciding field is unanswered — the ' +
+      'state every conditional field is in before B1 is filled in — or where the condition has no ' +
+      'single answer to quote.',
+  })
+  readonly answer: string | null;
+
+  constructor(cause: DisclosureApplicabilityCause) {
+    this.condition = cause.condition;
+    this.drivers = cause.drivers.map((driver) => new ApplicabilityDriverDto(driver));
+    this.threshold = cause.threshold;
+    this.answer = cause.answer;
+  }
+}
 
 export class DisclosureModuleSummaryDto {
   @ApiProperty({ example: 'B8', description: "The standard's own module." })
@@ -62,11 +130,30 @@ export class DisclosureModuleSummaryDto {
   })
   readonly lastAnsweredAt: EpochMillis | null;
 
+  @ApiProperty({
+    description:
+      'Whether the module has anything to answer (FR-28). True while any one of its elements ' +
+      'applies; answered and total above count applicable elements only.',
+  })
+  readonly applicable: boolean;
+
+  @ApiProperty({
+    nullable: true,
+    type: ApplicabilityCauseDto,
+    description:
+      'Why the module does not apply, where its elements agree on one reason; null otherwise, ' +
+      'including whenever the module applies.',
+  })
+  readonly applicabilityCause: ApplicabilityCauseDto | null;
+
   constructor(summary: DisclosureModuleSummary) {
     this.module = summary.module;
     this.answered = summary.answered;
     this.total = summary.total;
     this.lastAnsweredAt = summary.lastAnsweredAt;
+    this.applicable = summary.applicable;
+    this.applicabilityCause =
+      summary.applicabilityCause === null ? null : new ApplicabilityCauseDto(summary.applicabilityCause);
   }
 }
 
@@ -100,11 +187,6 @@ export class DisclosureOptionDto {
 }
 
 /** The entity record's answer for a field, in the write's own columns (task 91.2). */
-/** NFR-58's rule, stated once for the three numeric columns the surface carries. */
-const DECIMAL_AS_STRING = 'Decimal as a string, never a float (NFR-58).';
-/** A calendar date as `YYYY-MM-DD`, never an instant (§7.9). */
-const DATE_EXAMPLE = '2026-12-31';
-
 export class DisclosureDefaultDto {
   @ApiProperty({ nullable: true, type: String, description: DECIMAL_AS_STRING })
   readonly valueNumeric: string | null;
@@ -220,6 +302,21 @@ export class DisclosureFieldDto {
   @ApiProperty({ description: 'Carried forward from the prior period, and marked for review.' })
   readonly carriedForward: boolean;
 
+  @ApiProperty({
+    description:
+      'Whether this field applies to this reporter (FR-28). False does not mean empty: a value ' +
+      'entered before the condition turned is retained and served as stored (UX-28), so a ' +
+      'retained answer is applicable false beside a state that is not missing.',
+  })
+  readonly applicable: boolean;
+
+  @ApiProperty({
+    nullable: true,
+    type: ApplicabilityCauseDto,
+    description: 'Why, for the fields a rule governs; null for the ones no rule names.',
+  })
+  readonly applicabilityCause: ApplicabilityCauseDto | null;
+
   constructor(field: DisclosureField) {
     this.elementKey = field.elementKey;
     this.dimensionKey = field.dimensionKey;
@@ -241,6 +338,9 @@ export class DisclosureFieldDto {
     this.state = field.state;
     this.notAvailableReason = field.notAvailableReason;
     this.carriedForward = field.carriedForward;
+    this.applicable = field.applicable;
+    this.applicabilityCause =
+      field.applicabilityCause === null ? null : new ApplicabilityCauseDto(field.applicabilityCause);
   }
 }
 

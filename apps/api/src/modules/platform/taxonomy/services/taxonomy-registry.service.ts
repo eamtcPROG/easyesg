@@ -261,7 +261,7 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
         defaultMember: typeof value.defaultMember === 'string' ? value.defaultMember : null,
         members:
           external ??
-          local.map((member) => ({ key: member, code: null, hazardous: null, labels: {} })),
+          local.map((member) => ({ key: member, code: null, hazardous: null, parent: null, labels: {} })),
       });
     }
     // Applied where it holds (task 91.1's review): this reader dropped silently since task 33.1,
@@ -305,7 +305,7 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
         taxonomy: value.taxonomy,
         external: typeof value.external === 'string' ? value.external : null,
         members:
-          shipped ?? local.map((member) => ({ key: member, code: null, hazardous: null, labels: {} })),
+          shipped ?? local.map((member) => ({ key: member, code: null, hazardous: null, parent: null, labels: {} })),
       });
     }
     if (dropped.length > 0) {
@@ -346,6 +346,9 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
         // Absent means *the classification does not state it at this level* — a waste chapter —
         // which is a different answer from `false`, and B7 reports on `false`.
         hazardous: typeof value.hazardous === 'boolean' ? value.hazardous : null,
+        // The classification's own hierarchy, which task 91.3's sector rule walks. Absent at a
+        // root member, and absent from an artefact extracted before the extractor carried it.
+        parent: typeof value.parent === 'string' ? value.parent : null,
         labels: isRecord(value.labels)
           ? Object.fromEntries(
               Object.entries(value.labels).filter(

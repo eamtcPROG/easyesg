@@ -24,7 +24,7 @@ const enumeration = (
     key,
     taxonomy: taxonomy as RegisteredTaxonomy['enumerations'][number]['taxonomy'],
     external: null,
-    members: members.map((member) => ({ key: member.key, code: member.code ?? null, hazardous: null, labels: {} })),
+    members: members.map((member) => ({ key: member.key, code: member.code ?? null, hazardous: null, parent: null, labels: {} })),
   };
 };
 

@@ -1837,6 +1837,28 @@ export interface components {
              */
             scope?: "basic" | "basic_and_comprehensive";
         };
+        ApplicabilityDriverDto: {
+            /** @example NumberOfEmployees */
+            elementKey: string;
+            /** @description The element's wording in the request's locale — what the announcement names, since an element key is not something a reader may be shown. Null where the catalogue holds none. */
+            label: string | null;
+        };
+        ApplicabilityCauseDto: {
+            /**
+             * @description How the rule decides. The client words the announcement from this plus the values below; no sentence is composed server-side.
+             * @enum {string}
+             */
+            condition: "numeric_at_least" | "any_row_answered" | "member_within";
+            /** @description The B1 elements whose answers decide it. */
+            drivers: components["schemas"]["ApplicabilityDriverDto"][];
+            /**
+             * @description Decimal as a string, never a float (NFR-58). Null for conditions that carry no threshold.
+             * @example 50
+             */
+            threshold: string | null;
+            /** @description What the reporter answered, as stored. Null where the deciding field is unanswered — the state every conditional field is in before B1 is filled in — or where the condition has no single answer to quote. */
+            answer: string | null;
+        };
         DisclosureModuleSummaryDto: {
             /**
              * @description The standard's own module.
@@ -1849,6 +1871,10 @@ export interface components {
             total: number;
             /** @description Unix epoch milliseconds, UTC — when the module's most recent answer was stored, or null where nothing in it is answered. Where work last happened is where a returning reporter resumes (FR-39). */
             lastAnsweredAt: number | null;
+            /** @description Whether the module has anything to answer (FR-28). True while any one of its elements applies; answered and total above count applicable elements only. */
+            applicable: boolean;
+            /** @description Why the module does not apply, where its elements agree on one reason; null otherwise, including whenever the module applies. */
+            applicabilityCause: components["schemas"]["ApplicabilityCauseDto"] | null;
         };
         DisclosureOptionDto: {
             /**
@@ -1915,6 +1941,10 @@ export interface components {
             notAvailableReason: string | null;
             /** @description Carried forward from the prior period, and marked for review. */
             carriedForward: boolean;
+            /** @description Whether this field applies to this reporter (FR-28). False does not mean empty: a value entered before the condition turned is retained and served as stored (UX-28), so a retained answer is applicable false beside a state that is not missing. */
+            applicable: boolean;
+            /** @description Why, for the fields a rule governs; null for the ones no rule names. */
+            applicabilityCause: components["schemas"]["ApplicabilityCauseDto"] | null;
         };
         DisclosureStepDto: {
             /** @example B8 */

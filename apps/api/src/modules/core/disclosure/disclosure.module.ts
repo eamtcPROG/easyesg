@@ -17,10 +17,15 @@ import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
 import { ReportsController } from './controllers/reports.controller';
 import { WizardController } from './controllers/wizard.controller';
 import {
+  APPLICABILITY_RULES,
+  type ApplicabilityRules,
+} from './interfaces/applicability-rules.interface';
+import {
   DISCLOSURE_VALUE_STORE,
   type DisclosureValueStore,
 } from './interfaces/disclosure-value-store.interface';
 import { REPORT_STORE, type ReportStore } from './interfaces/report-store.interface';
+import { ApplicabilityRulesService } from './services/applicability-rules.service';
 import { DisclosureFacade } from './services/disclosure-facade.service';
 import { ReportService } from './services/report.service';
 import { WizardService } from './services/wizard.service';
@@ -70,16 +75,39 @@ const httpProviders: Provider[] = [
   // Task 89's wizard surface. Both use cases are framework-free, so each is a `useFactory` naming
   // its ports — the price of the constraint, and the shape `CreateReport` already sets here.
   WizardService,
+  // Task 91.3's rules. `useClass` rather than a factory, like the taxonomy registry it sits beside:
+  // it is an adapter over the configuration store — reads, validates and caches per revision — and
+  // no framework-free use case owns it. The port is not exported: FR-28 belongs to this module
+  // (§17.5), and a consumer elsewhere would be evaluating a report's shape from outside the module
+  // that holds its values.
+  { provide: APPLICABILITY_RULES, useClass: ApplicabilityRulesService },
   {
     provide: ReadWizardStep,
-    inject: [REPORT_STORE, DISCLOSURE_VALUE_STORE, TAXONOMY_REGISTRY, DISCLOSURE_LABELS, ORGANIZATION_VOCABULARY],
+    inject: [
+      REPORT_STORE,
+      DISCLOSURE_VALUE_STORE,
+      TAXONOMY_REGISTRY,
+      DISCLOSURE_LABELS,
+      ORGANIZATION_VOCABULARY,
+      APPLICABILITY_RULES,
+    ],
     useFactory: (
       reports: ReportStore,
       values: DisclosureValueStore,
       taxonomy: TaxonomyRegistry,
       labels: DisclosureLabelResolver,
       vocabulary: WizardVocabulary,
-    ) => new ReadWizardStep(reports, values, taxonomy, labels, vocabulary, new Logger(ReadWizardStep.name)),
+      applicability: ApplicabilityRules,
+    ) =>
+      new ReadWizardStep(
+        reports,
+        values,
+        taxonomy,
+        labels,
+        vocabulary,
+        applicability,
+        new Logger(ReadWizardStep.name),
+      ),
   },
   {
     provide: WriteDisclosureValues,

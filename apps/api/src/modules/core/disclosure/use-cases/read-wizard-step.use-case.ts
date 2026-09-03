@@ -29,21 +29,34 @@ export type WizardVocabulary = Pick<
 const VOCABULARY_COUNTRY = 'md';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
+import type { ApplicabilityRules } from '../interfaces/applicability-rules.interface';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
-import { DISCLOSURE_STATE, type DisclosureValue } from '../models/disclosure-value.model';
+import {
+  APPLICABILITY_CONDITION,
+  type ApplicabilityRule,
+  type EvaluatedApplicability,
+} from '../models/applicability.model';
+import { DISCLOSURE_STATE, isAnsweredState, type DisclosureValue } from '../models/disclosure-value.model';
 import type { Report } from '../models/report.model';
 import type {
+  DisclosureApplicabilityCause,
   DisclosureDefault,
   DisclosureField,
   DisclosureModuleSummary,
   DisclosureOption,
   DisclosureStep,
 } from '../models/wizard-step.model';
+import { evaluateApplicability, soleCause, type MemberAncestry } from './applicability';
 import { entityDefaults, type EntityDefaults } from './entity-defaults';
 
 export interface ReadModulesQuery {
   readonly reportId: string;
+  /**
+   * For the applicability cause's wording (task 91.3). The list carries a cause like the step does,
+   * because a module can go whole — B6 does — and UX-27's announcement is the same announcement.
+   */
+  readonly locale: Locale;
 }
 
 export interface ReadStepQuery {
@@ -51,17 +64,6 @@ export interface ReadStepQuery {
   readonly module: string;
   readonly locale: Locale;
 }
-
-/**
- * A field that has been answered, including the three answers that are not numbers.
- *
- * **`missing` is the only state that is not an answer.** FR-30's nil return is an answered zero,
- * FR-31's not-material is a considered exclusion and FR-32's not-available is a deliberate
- * non-answer carrying a reason. Counting those as unanswered would tell a reporter they still have
- * work on a field they have already decided, which is the opposite of what the module list is for.
- */
-const isAnswered = (value: DisclosureValue | undefined): boolean =>
-  value !== undefined && value.state !== DISCLOSURE_STATE.MISSING;
 
 /** The store's natural key as one string, so a field finds its value without a nested scan. */
 const keyOf = (v: {
@@ -118,6 +120,12 @@ export class ReadWizardStep {
      * country domain — ISO 3166, not shipped — offers the countries the platform registers.
      */
     private readonly vocabulary: WizardVocabulary,
+    /**
+     * FR-28's conditional applicability, as configuration (task 91.3). Read here rather than in the
+     * browser because only this tier holds the stored B1 answers and the store — and because UX-27's
+     * announcement needs the cause, which a boolean computed anywhere else would not carry.
+     */
+    private readonly applicability: ApplicabilityRules,
     private readonly warnings: ReadWarnings,
   ) {}
 
@@ -125,17 +133,32 @@ export class ReadWizardStep {
   async modules(query: ReadModulesQuery): Promise<readonly DisclosureModuleSummary[]> {
     const { registered } = await this.pinned(query.reportId);
     const { byElement } = await this.stored(query.reportId);
+    const applicability = this.applicabilityOf({ registered, byElement });
+    const catalogue = this.labels.labels({ version: registered.version, locale: query.locale });
 
-    const counts = new Map<string, { answered: number; total: number; lastAnsweredAt: number | null }>();
+    const counts = new Map<string, ModuleCount>();
     for (const element of registered.elements) {
       // The pillar-level catch-alls carry no module (task 33.3). They are reportable and belong to
       // no step, so they are counted into no module rather than into one invented to hold them.
       if (element.module === null) continue;
-      const count = counts.get(element.module) ?? { answered: 0, total: 0, lastAnsweredAt: null };
+      const count = counts.get(element.module) ?? newModuleCount();
+      counts.set(element.module, count);
+
+      // An element FR-28 has ruled out is not part of this report's obligations, so it is counted
+      // into neither side of the module's progress (task 91.3): a services company that can never
+      // fill B6 must not be shown a denominator it cannot reach. Its cause is kept, because a
+      // module every one of whose elements has gone is a module that has gone, and UX-27 asks why.
+      const verdict = applicability.get(element.key);
+      if (verdict !== undefined && !verdict.applicable) {
+        count.causes.push(verdict);
+        continue;
+      }
+
+      count.applicable = true;
       count.total += 1;
       // An element counts as answered when ANY of its rows is (task 91.2): a repeating group's
       // second site is as much an answer as its first, and `total` counts elements, not rows.
-      const answered = (byElement.get(element.key) ?? []).filter(isAnswered);
+      const answered = (byElement.get(element.key) ?? []).filter((value) => isAnsweredState(value.state));
       if (answered.length > 0) {
         count.answered += 1;
         // The latest answer in the module is where work last happened (task 35.3, FR-39). A row
@@ -146,16 +169,26 @@ export class ReadWizardStep {
           }
         }
       }
-      counts.set(element.module, count);
     }
 
     // The taxonomy's own module order rather than the map's insertion order: S-07's list reads as
     // the standard does, and `RegisteredTaxonomy.modules` is already in that order.
     return registered.modules.flatMap((module) => {
       const count = counts.get(module);
-      return count === undefined
-        ? []
-        : [{ module, answered: count.answered, total: count.total, lastAnsweredAt: count.lastAnsweredAt }];
+      if (count === undefined) return [];
+      // One cause or none — `soleCause` states the rule and a unit case reaches its other branch,
+      // which the four shipped rules cannot produce (gate-integrity review, 3 Sep 2026).
+      const only = count.applicable ? undefined : soleCause(count.causes);
+      return [
+        {
+          module,
+          answered: count.answered,
+          total: count.total,
+          lastAnsweredAt: count.lastAnsweredAt,
+          applicable: count.applicable,
+          applicabilityCause: toCause(only, catalogue),
+        },
+      ];
     });
   }
 
@@ -164,6 +197,7 @@ export class ReadWizardStep {
     const { report, registered } = await this.pinned(query.reportId);
     const { byKey, byElement } = await this.stored(query.reportId);
     const defaults = await this.defaultsFor(report, registered);
+    const applicability = this.applicabilityOf({ registered, byElement });
     const at = { version: registered.version, locale: query.locale };
     const catalogue = this.labels.labels(at);
     const standing = this.labels.standing(at);
@@ -190,11 +224,15 @@ export class ReadWizardStep {
     const fields = registered.elements
       .filter((element) => element.module === query.module)
       .flatMap((element) => {
-        const wording = {
+        const verdict = applicability.get(element.key);
+        const resolved = {
           catalogue,
           standing,
           help: this.labels.help({ ...at, key: element.key }),
           options: options.optionsFor(element),
+          // An element no rule names applies, always — the artefact holds conditions, not verdicts.
+          applicable: verdict?.applicable ?? true,
+          applicabilityCause: toCause(verdict, catalogue),
         };
         const perOrdinal = defaults.get(element.key) ?? [];
         return rowsOf({
@@ -206,7 +244,7 @@ export class ReadWizardStep {
           const value = byKey.get(keyOf({ elementKey: element.key, dimensionKey: NO_DIMENSION, ordinal }));
           // A row in any state suppresses the default: cleared is a decision (§12.5.6, task 91.2).
           const defaultValue = value === undefined ? (perOrdinal[ordinal] ?? null) : null;
-          return toField(element, { ordinal, value, defaultValue }, wording);
+          return toField(element, { ordinal, value, defaultValue }, resolved);
         });
       });
 
@@ -250,6 +288,65 @@ export class ReadWizardStep {
     return defaults;
   }
 
+  /**
+   * FR-28's verdicts for this report, keyed by element (task 91.3) — for the elements a rule
+   * governs, and for no others.
+   *
+   * The rules are read **as at today** rather than for the report's period, which is where this
+   * differs from DR-4's version pin: UC-81 has a threshold change obliging review of reports
+   * already open, and §12.5.6's task-91.3 row carries the argument.
+   */
+  private applicabilityOf(input: {
+    readonly registered: RegisteredTaxonomy;
+    readonly byElement: ReadonlyMap<string, readonly DisclosureValue[]>;
+  }): ReadonlyMap<string, EvaluatedApplicability> {
+    const rules = this.applicability.rulesFor({ standard: input.registered.standard });
+    if (rules.length === 0) return new Map();
+    return evaluateApplicability({
+      rules,
+      answers: input.byElement,
+      ancestry: this.ancestryOf({ rules, ...input }),
+    });
+  }
+
+  /**
+   * The classification hierarchy a `member_within` rule walks — qualified member to qualified
+   * parent, over the domains those rules actually name.
+   *
+   * **Built only where the driving field is answered.** NACE is 1 047 members and both wizard reads
+   * evaluate on every request; an unanswered B1 activity decides the rule without any walk at all,
+   * which is the common case for most of a report's life.
+   */
+  private ancestryOf(input: {
+    readonly rules: readonly ApplicabilityRule[];
+    readonly registered: RegisteredTaxonomy;
+    readonly byElement: ReadonlyMap<string, readonly DisclosureValue[]>;
+  }): MemberAncestry {
+    const ancestry = new Map<string, string | null>();
+    const at = { standard: input.registered.standard, version: input.registered.version };
+
+    for (const rule of input.rules) {
+      if (rule.condition.kind !== APPLICABILITY_CONDITION.MEMBER_WITHIN) continue;
+      const answered = (input.byElement.get(rule.condition.elementKey) ?? []).some((value) =>
+        isAnsweredState(value.state),
+      );
+      if (!answered) continue;
+
+      const element = this.taxonomy.element({ ...at, key: rule.condition.elementKey });
+      const domain = element === null ? null : qualifiedDomainOf(element);
+      if (domain === null) continue;
+      const enumeration = this.taxonomy.enumeration({ ...at, key: domain });
+      if (enumeration === null) continue;
+      for (const member of enumeration.members) {
+        ancestry.set(
+          `${enumeration.taxonomy}:${member.key}`,
+          member.parent === null ? null : `${enumeration.taxonomy}:${member.parent}`,
+        );
+      }
+    }
+    return ancestry;
+  }
+
   /** The report and its own pinned taxonomy, or the reason it cannot be served. */
   private async pinned(reportId: string): Promise<{ report: Report; registered: RegisteredTaxonomy }> {
     const report = await this.reports.findReport({ reportId });
@@ -264,6 +361,67 @@ export class ReadWizardStep {
     return { report, registered };
   }
 }
+
+/**
+ * What one module's row is accumulated in while the elements are walked (task 91.3).
+ *
+ * Every inapplicable element's verdict is kept, duplicates included: what decides the module's own
+ * announcement is how many *distinct* reasons its elements left for, and `soleCause` is what
+ * answers that — here it is only collection.
+ */
+interface ModuleCount {
+  answered: number;
+  total: number;
+  lastAnsweredAt: number | null;
+  applicable: boolean;
+  causes: EvaluatedApplicability[];
+}
+
+const newModuleCount = (): ModuleCount => ({
+  answered: 0,
+  total: 0,
+  lastAnsweredAt: null,
+  // False until an applicable element is met: a module whose every element a rule ruled out has
+  // nothing to answer, and one with no elements at all never reaches the list.
+  applicable: false,
+  causes: [],
+});
+
+/**
+ * The evaluated cause with its wording joined — the one place a driver key becomes a label.
+ *
+ * Separate from the evaluation because the evaluation is pure and locale-free: what a rule read is
+ * a fact about the report, and what to call it is a fact about the reader (task 33.2).
+ */
+const toCause = (
+  evaluated: EvaluatedApplicability | undefined,
+  catalogue: Readonly<Record<string, DisclosureLabel>> | null,
+): DisclosureApplicabilityCause | null =>
+  evaluated === undefined
+    ? null
+    : {
+        condition: evaluated.cause.condition,
+        drivers: evaluated.cause.driverKeys.map((elementKey) => ({
+          elementKey,
+          label: catalogue?.[elementKey]?.text ?? null,
+        })),
+        threshold: evaluated.cause.threshold,
+        answer: evaluated.cause.answer,
+      };
+
+/**
+ * An element's domain as the registry keys enumerations — qualified (task 91.1).
+ *
+ * The artefact leaves a `vsme` domain unqualified on the element and qualifies every enumeration,
+ * so the two readers of that rule — the option resolver and task 91.3's sector walk — share this
+ * rather than each spelling it out.
+ */
+const qualifiedDomainOf = (element: TaxonomyElement): string | null =>
+  element.domain === null
+    ? null
+    : element.domain.includes(':')
+      ? element.domain
+      : `${ENUMERATION_TAXONOMY.VSME}:${element.domain}`;
 
 /**
  * Which rows a step shows for one element (task 91.2).
@@ -305,14 +463,16 @@ function toField(
     readonly value: DisclosureValue | undefined;
     readonly defaultValue: DisclosureDefault | null;
   },
-  wording: {
+  resolved: {
     readonly catalogue: Readonly<Record<string, DisclosureLabel>> | null;
     readonly standing: string | null;
     readonly help: DisclosureLabel | null;
     readonly options: readonly DisclosureOption[] | null;
+    readonly applicable: boolean;
+    readonly applicabilityCause: DisclosureApplicabilityCause | null;
   },
 ): DisclosureField {
-  const { catalogue, standing: fallbackStanding } = wording;
+  const { catalogue, standing: fallbackStanding } = resolved;
   const { value } = row;
   const label = catalogue?.[element.key] ?? null;
   return {
@@ -327,8 +487,8 @@ function toField(
     // The catalogue's own standing where the label resolved, the version's otherwise — so a field
     // whose wording is missing still says whose wording it would have been (NFR-24, UX-47).
     labelStanding: label?.standing ?? fallbackStanding,
-    help: wording.help?.text ?? null,
-    options: wording.options,
+    help: resolved.help?.text ?? null,
+    options: resolved.options,
     defaultValue: row.defaultValue,
     valueNumeric: value?.valueNumeric ?? null,
     valueText: value?.valueText ?? null,
@@ -338,6 +498,10 @@ function toField(
     state: value?.state ?? DISCLOSURE_STATE.MISSING,
     notAvailableReason: value?.notAvailableReason ?? null,
     carriedForward: value?.carriedForward ?? false,
+    // Every row of an element shares its verdict: FR-28's drivers are the report's answers, not
+    // this row's, so a second site is as applicable as the first.
+    applicable: resolved.applicable,
+    applicabilityCause: resolved.applicabilityCause,
   };
 }
 
@@ -372,9 +536,8 @@ class OptionResolver {
     if (element.kind !== DISCLOSURE_KIND.ENUMERATION && element.kind !== DISCLOSURE_KIND.ENUMERATION_SET) {
       return null;
     }
-    if (element.domain === null) return [];
-    // The artefact keeps a `vsme` domain unqualified on the element and qualifies every enumeration.
-    const key = element.domain.includes(':') ? element.domain : `${ENUMERATION_TAXONOMY.VSME}:${element.domain}`;
+    const key = qualifiedDomainOf(element);
+    if (key === null) return [];
     const cached = this.cache.get(key);
     if (cached !== undefined) return cached;
 

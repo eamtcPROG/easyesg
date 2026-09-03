@@ -50,6 +50,20 @@ export type DisclosureState = (typeof DISCLOSURE_STATE)[keyof typeof DISCLOSURE_
 export const DEFAULT_DISCLOSURE_STATE = DISCLOSURE_STATE.MISSING;
 
 /**
+ * Has this field been answered? **`missing` is the only state that is not an answer.**
+ *
+ * FR-30's nil return is an answered zero, FR-31's not-material is a considered exclusion and
+ * FR-32's not-available is a deliberate non-answer carrying a reason — counting any of them as
+ * unanswered would tell a reporter they still have work on a field they have already decided.
+ *
+ * Beside the vocabulary rather than at each caller (CLAUDE.md): the module list counts with it and
+ * task 91.3's site rule asks the same question of B1's rows, and two copies of *what an answer is*
+ * is how a progress count and an applicability verdict come to disagree.
+ */
+export const isAnsweredState = (state: DisclosureState | undefined): boolean =>
+  state !== undefined && state !== DISCLOSURE_STATE.MISSING;
+
+/**
  * What identifies a value within a report — the natural key, and a `UNIQUE` in the schema.
  *
  * **A single object rather than four parameters**, and this is the signature CLAUDE.md's rule was

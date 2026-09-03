@@ -37,11 +37,15 @@ describe('readOnlyCauseOf', () => {
  * first — the rule that reconciles FR-39's position with UX-10's entry.
  */
 describe('resumeModule', () => {
-  const summary = (module: string, answered: number, lastAnsweredAt: number | null) => ({
+  const summary = (module: string, answered: number, lastAnsweredAt: number | null, total = 3) => ({
     module,
     answered,
-    total: 3,
+    total,
     lastAnsweredAt,
+    // FR-28's applicability reaches the list since task 91.3. A module the rules ruled out counts
+    // no elements on either side, which is what the `total` argument stands in for below.
+    applicable: total > 0,
+    applicabilityCause: null,
   });
 
   it('prefers the module with the most recent answer, wherever it sits in the order', () => {
@@ -53,6 +57,12 @@ describe('resumeModule', () => {
   it('gives a tie to the earlier module in the standard’s order', () => {
     // One queue flush spanning two modules stamps both with the transaction's `now()`.
     expect(resumeModule([summary('B1', 0, null), summary('B3', 1, 500), summary('B7', 1, 500)])).toBe('B3');
+  });
+
+  it('does not land a returning reporter on a module FR-28 ruled out (task 91.3)', () => {
+    // An inapplicable module has nothing to answer, so `answered < total` is false for it and it
+    // is never the first incomplete one — which is why this needed no rule of its own.
+    expect(resumeModule([summary('B1', 3, null), summary('B6', 0, null, 0), summary('B7', 0, null)])).toBe('B7');
   });
 
   it('falls back to UX-10 when nothing has been answered, and to the first module when all is complete', () => {

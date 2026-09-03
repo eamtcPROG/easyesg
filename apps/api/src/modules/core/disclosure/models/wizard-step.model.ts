@@ -1,6 +1,7 @@
 import type { DisclosureKind } from '@easyesg/vsme';
 import type { PeriodType } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
+import type { ApplicabilityCondition } from './applicability.model';
 import type { DisclosureState } from './disclosure-value.model';
 
 /**
@@ -18,6 +19,40 @@ import type { DisclosureState } from './disclosure-value.model';
  * `2026-02-01` must render that version's elements years after `2026-05-01` is adopted, and task
  * 33.3 registered a second version precisely so this is exercised rather than asserted.
  */
+
+/**
+ * One B1 element an applicability rule reads, with its wording (task 91.3).
+ *
+ * The key is identity and the label is what the announcement says: UX-27 requires the cause to be
+ * *named*, and `NumberOfEmployees` is a taxonomy element key, which no reader may be shown.
+ */
+export interface ApplicabilityDriver {
+  readonly elementKey: string;
+  /** The element's wording in the request's locale; `null` where the catalogue names none. */
+  readonly label: string | null;
+}
+
+/**
+ * Why a field or a module does or does not apply — UX-27's cause, as data the screen words
+ * (task 91.3; FR-28).
+ *
+ * **No sentence is composed here.** The reader is an SME owner or a bookkeeper, the wording is a
+ * catalogue key in the browser, and what crosses the wire is the condition, who it read and what
+ * they answered.
+ */
+export interface DisclosureApplicabilityCause {
+  readonly condition: ApplicabilityCondition;
+  /** The B1 elements whose answers decide it — one for a threshold, five for the site rule. */
+  readonly drivers: readonly ApplicabilityDriver[];
+  /** A `numeric_at_least` threshold as decimal text (NFR-58); `null` for the other conditions. */
+  readonly threshold: string | null;
+  /**
+   * What the reporter answered, as the store holds it. **`null` where the deciding field is
+   * unanswered** — the state every conditional field is in before B1 is filled in — or where the
+   * condition has no single answer to quote, which is the site rule.
+   */
+  readonly answer: string | null;
+}
 
 /**
  * One module as the persistent list shows it (UX-5).
@@ -41,6 +76,22 @@ export interface DisclosureModuleSummary {
    * the store's own column, so this is derived rather than written.
    */
   readonly lastAnsweredAt: EpochMillis | null;
+  /**
+   * Whether the module has anything to answer at all (task 91.3; FR-28, UX-9).
+   *
+   * **True while any one of its elements applies** — so B8 stays applicable at 40 employees, where
+   * only its turnover rate has gone, and B6 goes whole because one rule governs all four of its
+   * elements. `answered` and `total` above count applicable elements only: a services company that
+   * can never fill B6 must not be shown a denominator it cannot reach.
+   */
+  readonly applicable: boolean;
+  /**
+   * The cause, where the module is inapplicable and its elements agree on one; `null` otherwise.
+   *
+   * Agreement is the condition rather than a formality: naming one of two reasons a module vanished
+   * would be a wrong announcement, and UX-27 asks for the cause, not for a cause.
+   */
+  readonly applicabilityCause: DisclosureApplicabilityCause | null;
 }
 
 /**
@@ -125,6 +176,17 @@ export interface DisclosureField {
   readonly notAvailableReason: string | null;
   /** FR-47: this value was carried forward from the prior period and is marked for review. */
   readonly carriedForward: boolean;
+  /**
+   * Whether this field applies to this reporter (task 91.3; FR-28, BR-APP-5).
+   *
+   * **`false` does not mean empty.** UX-28 requires a value entered before the condition turned to
+   * be retained and the reporter told so, so the value columns above are served exactly as stored —
+   * a retained answer is `applicable: false` beside a `state` that is not `missing`, and that pair
+   * is the whole of the retention signal.
+   */
+  readonly applicable: boolean;
+  /** Why, for the fields a rule governs; `null` for the ones no rule names, which is most. */
+  readonly applicabilityCause: DisclosureApplicabilityCause | null;
 }
 
 /** One wizard step: a module, and the fields the pinned taxonomy puts in it, in its order. */

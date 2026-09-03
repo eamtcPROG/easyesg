@@ -116,6 +116,16 @@ export interface TaxonomyMember {
    */
   readonly hazardous: boolean | null;
   /**
+   * The member this one sits under in the classification, `null` at its root — `NACE_C1071`'s is
+   * `NACE_C107`, four levels below the section `NACE_C`. **Local, like `key`**, never qualified.
+   *
+   * On the port since task 91.3, because FR-28's water rule asks a question no flat list answers:
+   * B1 stores an activity as a *class* and the rule names *sections*, and the two are related by
+   * descent rather than by a shared prefix — the pointed code `10.71` contains no `C`. Both shipped
+   * classifications have always carried it; the adapter dropped it.
+   */
+  readonly parent: string | null;
+  /**
    * The member's own name, where the classification publishes one — an external authority's text,
    * not this project's wording, which is why it is data rather than a catalogue key (NFR-24, and
    * the same reason `nace-code.md.json` carries names). Keyed by locale, and a locale it does not

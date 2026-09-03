@@ -131,6 +131,20 @@ export const cleanupSignedInAccounts = async (input: {
     `DELETE FROM audit.outbox_event WHERE event_type = $1 AND payload->>'email' = ANY($2)`,
     [EMAIL_VERIFICATION_REQUESTED, [...registered]],
   );
+  // **And the throttle rows this helper spent** (3 Sep 2026, task 91.3). `identity.auth_attempt`
+  // carries the address *inside its key* rather than as a foreign key, so deleting the account
+  // leaves the attempt behind — and §12.5.6's window is 5 per (IP, account) per 15 minutes. A
+  // suite signing three actors in therefore stops working on its **second** run within the window,
+  // failing in `beforeAll` as `expected 201, got 429`, which reads as a broken suite rather than
+  // as a spent budget. CI never sees it (one run per job); a developer's inner loop always does.
+  //
+  // Here rather than in each suite because this helper is what spent them: six suites had written
+  // the `LIKE` pattern out by hand and **twelve had not**, which is the shape a shared helper is
+  // supposed to remove. `key LIKE '%:<email>'` matches `<path>:<ip>:<email>` for every path.
+  await input.owner.query(
+    `DELETE FROM identity.auth_attempt WHERE attempt_key LIKE ANY($1)`,
+    [[...registered].map((email) => `%:${email.toLowerCase()}`)],
+  );
   registered.clear();
 };
 

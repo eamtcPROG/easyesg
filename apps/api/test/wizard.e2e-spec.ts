@@ -8,8 +8,12 @@ import type { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { configureHttpApp } from '../src/main.http';
+import { ConfigurationPublisher } from '../src/infrastructure/configuration/configuration-publisher.service';
+import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
+import { DISCLOSURE_APPLICABILITY_CONFIG_KIND } from '../src/modules/core/disclosure/constants/disclosure.constants';
 import { DISCLOSURE_STATE } from '../src/modules/core/disclosure/models/disclosure-value.model';
+import { TAXONOMY_STANDARD } from '../src/modules/platform/taxonomy/constants/taxonomy.constants';
 import { asOrganization, connectAs } from './support/database';
 import {
   cleanupSignedInAccounts,
@@ -45,14 +49,25 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   const objectOf = <T>(body: unknown): T => (body as { object: T }).object;
   const objectsOf = <T>(body: unknown): T[] => (body as { objects: T[] }).objects;
 
-  interface ModuleSummary { module: string; answered: number; total: number; lastAnsweredAt: number | null }
+  interface Cause {
+    condition: string;
+    drivers: { elementKey: string; label: string | null }[];
+    threshold: string | null;
+    answer: string | null;
+  }
+  interface ModuleSummary {
+    module: string; answered: number; total: number; lastAnsweredAt: number | null;
+    applicable: boolean; applicabilityCause: Cause | null;
+  }
   interface Field {
     elementKey: string; ordinal: number; kind: string; periodType: string; order: number;
     label: string | null; labelStanding: string | null;
-    valueText: string | null; state: string; carriedForward: boolean;
+    valueText: string | null; valueNumeric: string | null; state: string; carriedForward: boolean;
     help: string | null;
     options: { value: string; label: string | null; code: string | null }[] | null;
     defaultValue: { valueText: string | null; valueNumeric: string | null } | null;
+    applicable: boolean;
+    applicabilityCause: Cause | null;
   }
   interface Step { module: string; taxonomyVersion: string; fields: Field[] }
 
@@ -137,7 +152,13 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(modules.map((m) => m.module).slice(0, 12)).toEqual([
       'B1','B2','B3','B4','B5','B6','B7','B8','B9','B10','B11','C1',
     ]);
-    expect(modules.every((m) => m.total > 0)).toBe(true);
+    // Every module has fields to answer except the ones FR-28 has not yet admitted (task 91.3).
+    // With B1 unanswered, B6 is the only module whose every element is conditional — all four of
+    // its water disclosures — so it is the one that starts at zero and says it does not apply,
+    // which is UX-9's "B1 before any conditional module" as the list shows it.
+    expect(modules.filter((m) => m.total === 0).map((m) => m.module)).toEqual(['B6']);
+    expect(modules.find((m) => m.module === 'B6')?.applicable).toBe(false);
+    expect(modules.filter((m) => m.module !== 'B6').every((m) => m.total > 0 && m.applicable)).toBe(true);
     expect(modules.every((m) => m.answered === 0)).toBe(true);
     // Nothing answered anywhere: no module can say when work last happened in it.
     expect(modules.every((m) => m.lastAnsweredAt === null)).toBe(true);
@@ -469,5 +490,187 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
       values: [{ elementKey: B1_ELEMENT, valueText: 'late', state: DISCLOSURE_STATE.OK }],
     }).expect(409);
+  });
+
+  /**
+   * FR-28's conditional applicability over real HTTP (task 91.3; BR-APP-1 … BR-APP-5, UX-26 … UX-28).
+   *
+   * The unit spec holds every boundary; what only this level can show is that the rules reach the
+   * two reads from the **configuration store**, against the report's own stored answers — and that
+   * a value under a field that stops applying survives (UX-28).
+   */
+  describe('conditional applicability (FR-28)', () => {
+    const HEADCOUNT = 'NumberOfEmployees';
+    const TURNOVER_RATE = 'EmployeeTurnoverRate';
+    const ACTIVITY_CODES = 'NaceSectorClassificationCodes';
+    const WATER_CONSUMPTION = 'TotalWaterConsumption';
+    const BIODIVERSITY = 'SiteLocatedInABiodiversitySensitiveArea';
+
+    const write = async (reportId: string, values: Record<string, unknown>[]): Promise<void> => {
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization)
+        .send({ values }).expect(200);
+    };
+    const headcount = (value: string) => ({ elementKey: HEADCOUNT, valueNumeric: value, state: DISCLOSURE_STATE.OK });
+    const fieldOf = (step: Step, elementKey: string): Field | undefined =>
+      step.fields.find((f) => f.elementKey === elementKey);
+    const moduleOf = async (reportId: string, module: string): Promise<ModuleSummary | undefined> =>
+      objectsOf<ModuleSummary>((await http()
+        .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body)
+        .find((m) => m.module === module);
+
+    it('brings B8’s turnover rate in at 50 employees and not at 49, naming the cause (BR-APP-1)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+
+      await write(reportId, [headcount('49')]);
+      const below = fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE);
+      expect(below?.applicable).toBe(false);
+      // UX-27's announcement names the B1 answer that caused it — the element's own wording, since
+      // no reader may be shown `NumberOfEmployees`.
+      expect(below?.applicabilityCause).toMatchObject({
+        condition: 'numeric_at_least',
+        threshold: '50',
+        answer: '49',
+        drivers: [{ elementKey: HEADCOUNT }],
+      });
+      // The driver's OWN wording, not merely some label: a cause that named the right element and
+      // rendered another's would announce the wrong reason, and `not.toBeNull()` could not see it.
+      const b1Headcount = (await readStep(reportId)).fields.find((f) => f.elementKey === HEADCOUNT);
+      expect(b1Headcount?.label).not.toBeNull();
+      expect(below?.applicabilityCause?.drivers[0]?.label).toBe(b1Headcount?.label);
+
+      await write(reportId, [headcount('50')]);
+      const at = fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE);
+      expect(at?.applicable).toBe(true);
+      expect(at?.applicabilityCause?.answer).toBe('50');
+    });
+
+    it('holds B10’s pay gap to 150, the same read answering both thresholds (BR-APP-2)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await write(reportId, [headcount('149')]);
+
+      expect(fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE)?.applicable).toBe(true);
+      const gap = fieldOf(await readStep(reportId, 'B10'), 'PercentageGapInPayBetweenFemaleAndMaleEmployees');
+      expect(gap?.applicable).toBe(false);
+      expect(gap?.applicabilityCause?.threshold).toBe('150');
+
+      await write(reportId, [headcount('150')]);
+      const at = fieldOf(await readStep(reportId, 'B10'), 'PercentageGapInPayBetweenFemaleAndMaleEmployees');
+      expect(at?.applicable).toBe(true);
+    });
+
+    it('nothing conditional applies before B1 is answered — a served default is not one (UX-9; task 91.2)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+
+      // The entity's `10.71` reaches B1 as a *default* and the store holds nothing, so the water
+      // rule reads no answer. A default that drove applicability would be the second source of
+      // truth §6.5 rules out — and the shape of the report would then depend on the entity record.
+      expect(defaultOf(await readStep(reportId), ACTIVITY_CODES)).not.toBeNull();
+      const water = fieldOf(await readStep(reportId, 'B6'), WATER_CONSUMPTION);
+      expect(water?.applicable).toBe(false);
+      expect(water?.applicabilityCause?.answer).toBeNull();
+      expect(fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE)?.applicable).toBe(false);
+    });
+
+    it('applies water to a manufacturer through descent, and not to a retailer (BR-APP-4)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+
+      // `10.71` is bakery products — four levels under manufacturing, whose section the rule names.
+      await write(reportId, [
+        { elementKey: ACTIVITY_CODES, valueText: 'nace:NACE_C1071', state: DISCLOSURE_STATE.OK },
+      ]);
+      expect(fieldOf(await readStep(reportId, 'B6'), WATER_CONSUMPTION)?.applicable).toBe(true);
+      expect((await moduleOf(reportId, 'B6'))?.applicable).toBe(true);
+
+      await write(reportId, [
+        { elementKey: ACTIVITY_CODES, valueText: 'nace:NACE_G4711', state: DISCLOSURE_STATE.OK },
+      ]);
+      const step = await readStep(reportId, 'B6');
+      // One rule governs all four of B6's elements, so the module goes whole — and carries the one
+      // cause its elements agree on.
+      expect(step.fields.every((f) => !f.applicable)).toBe(true);
+      const b6 = await moduleOf(reportId, 'B6');
+      expect(b6?.applicable).toBe(false);
+      expect(b6?.applicabilityCause).toMatchObject({ condition: 'member_within', answer: 'nace:NACE_G4711' });
+      // Counted into neither side: a retailer must not be shown a denominator they cannot reach.
+      expect({ answered: b6?.answered, total: b6?.total }).toEqual({ answered: 0, total: 0 });
+    });
+
+    it('brings B5’s site fields in once B1 lists a site, leaving the rest of the module alone (BR-APP-3)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+
+      const before = await readStep(reportId, 'B5');
+      expect(fieldOf(before, BIODIVERSITY)?.applicable).toBe(false);
+      // The undimensioned disclosures carry no rule: a company with no site still records the
+      // negative determination UC-23's alternate flow requires, so the module stays.
+      expect(fieldOf(before, 'TotalUseOfLand')?.applicable).toBe(true);
+      expect((await moduleOf(reportId, 'B5'))?.applicable).toBe(true);
+
+      // A site row carrying only a GPS fix is a site — which is why the rule reads five elements.
+      await write(reportId, [
+        { elementKey: 'GPSLocationOfSite', valueText: '47.0105 28.8638', state: DISCLOSURE_STATE.OK },
+      ]);
+      expect(fieldOf(await readStep(reportId, 'B5'), BIODIVERSITY)?.applicable).toBe(true);
+    });
+
+    it('retains a value under a field that stops applying, and hands it back marked (UX-28)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await write(reportId, [headcount('200')]);
+      await write(reportId, [{ elementKey: TURNOVER_RATE, valueNumeric: '12.5', state: DISCLOSURE_STATE.OK }]);
+      expect((await moduleOf(reportId, 'B8'))?.answered).toBe(1);
+
+      await write(reportId, [headcount('40')]);
+      const retained = fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE);
+      // Retained, not dropped: the value is served exactly as stored, and `applicable: false`
+      // beside a state that is not `missing` is the whole of the retention signal.
+      expect(retained?.applicable).toBe(false);
+      expect(retained?.valueNumeric).toBe('12.5');
+      expect(retained?.state).toBe(DISCLOSURE_STATE.OK);
+      // And it counts toward nothing while it does not apply, so B8's progress is honest.
+      expect((await moduleOf(reportId, 'B8'))?.answered).toBe(0);
+
+      // Writing to it is not refused (BR-APP-5): rejecting a field nobody was shown is the
+      // "presented and later rejected" the rule exists to prevent.
+      await write(reportId, [{ elementKey: TURNOVER_RATE, valueNumeric: '13', state: DISCLOSURE_STATE.OK }]);
+    });
+
+    it('takes a threshold change from the store, with no redeploy and no restart (FR-72, UC-81)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await write(reportId, [headcount('40')]);
+      expect(fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE)?.applicable).toBe(false);
+
+      const shipped = app.get(ConfigurationStore).get({
+        kind: DISCLOSURE_APPLICABILITY_CONFIG_KIND,
+        scope: TAXONOMY_STANDARD.VSME,
+      });
+      const rules = (shipped?.payload as { rules: { condition: Record<string, unknown> }[] }).rules;
+      try {
+        await app.get(ConfigurationPublisher).publish({
+          kind: DISCLOSURE_APPLICABILITY_CONFIG_KIND,
+          scope: TAXONOMY_STANDARD.VSME,
+          payload: {
+            rules: rules.map((rule) =>
+              rule.condition.threshold === '50'
+                ? { ...rule, condition: { ...rule.condition, threshold: '20' } }
+                : rule,
+            ),
+          },
+        });
+        await app.get(ConfigurationStore).refreshIfStale();
+
+        const moved = fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE);
+        expect(moved?.applicable).toBe(true);
+        expect(moved?.applicabilityCause?.threshold).toBe('20');
+      } finally {
+        // Restored in the file's own words, not deleted: the store keeps every revision, and the
+        // next suite reads what `config/seed` ships.
+        await app.get(ConfigurationPublisher).publish({
+          kind: DISCLOSURE_APPLICABILITY_CONFIG_KIND,
+          scope: TAXONOMY_STANDARD.VSME,
+          payload: shipped?.payload ?? { rules },
+        });
+        await app.get(ConfigurationStore).refreshIfStale();
+      }
+      expect(fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE)?.applicable).toBe(false);
+    });
   });
 });

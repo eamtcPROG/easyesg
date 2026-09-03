@@ -25,7 +25,9 @@ export class WizardService {
   ) {}
 
   modules(query: { readonly reportId: string }): Promise<readonly DisclosureModuleSummary[]> {
-    return this.reads.modules(query);
+    // The list carries an applicability cause of its own since task 91.3, so it resolves the
+    // request's locale exactly as `step` does — and falls back the same way, for the same reason.
+    return this.reads.modules({ ...query, locale: requestContext()?.locale ?? SOURCE_LOCALE });
   }
 
   step(query: { readonly reportId: string; readonly module: string }): Promise<DisclosureStep> {

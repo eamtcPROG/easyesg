@@ -10392,3 +10392,212 @@ field; the assertion stays, its comment now says what it proves (defaults reach 
 report) and where DR-4 at the default is actually held (the unit case where a member one version
 lacks serves nothing). A harness note: the reviewer reported `docs/build-log.md` modified under it —
 that was this entry being written concurrently, not a seed it left behind.
+
+## Task 91.3 — Applicability as a thresholds artefact · 2026-09-03
+
+The third slice of task 91, and the last one task 36.2 was waiting on: FR-28's four conditional
+rules as effective-dated configuration, evaluated by the api against B1's **stored** answers, with
+both wizard reads answering `applicable` and the cause that decided it.
+
+### Four unknowns the sources did not hold, raised in one batch
+
+`architecture.md` §12.5.6 already carried the decision that applicability is a thresholds artefact
+evaluated server-side (2 Sep 2026). What it did not carry is what any of the four rules actually
+*says*, and two of them are not derivable from the seven documents at all. Each of these would
+otherwise have been an assumption made while writing the evaluator:
+
+- **What makes water applicable.** FR-28 says *sector-driven* and no document enumerates a sector.
+  UC-24 is the only source with content — water is *"material for manufacturing and agri-processing,
+  typically immaterial for services"*. The owner adopted **NACE sections A–E** held as data, over
+  seeding only the two UC-24 names and over leaving B6 applicable to everyone with UC-30's
+  immateriality determination carrying the judgement alone (which contradicts FR-28's *showing or
+  hiding* in terms).
+- **What the site rule governs.** UC-23's alternate flow decides it: a company with no qualifying
+  site *"records a negative determination rather than an empty section"*. So the rule governs B5's
+  three site-dimensioned elements and **not** the module — hiding the module whole was declined,
+  because that is what *empty section* names.
+- **Which calendar date the rules resolve for.** **Today**, not the report's period start, over the
+  precedent DR-4's pin sets: UC-81's business rule has a threshold change *"that obliges review of an
+  existing report"* raising a notice (UC-171), which only holds if a change reaches reports already
+  open. The cost is stated in the row — a report's *shape* is not pinned, which is the case UX-28
+  exists for.
+- **What happens before the driver is answered.** **Inapplicable, with the cause saying the driver
+  is unanswered**, over applicable-until-proven-otherwise: UX-9 requires B1 completed before any
+  conditional module is presented, and BR-APP-5 hides rather than presents-and-rejects.
+
+All four are rows in `architecture.md` §12.5.6, with the alternatives declined; BR-APP-3, BR-APP-4
+and BR-APP-5 were amended in the same edit so the business rules state the predicates they now have.
+
+### What was built
+
+- **`config/seed/disclosure-applicability.vsme.json`** — four rules, no table and no code, scope the
+  standard on `reporting_taxonomy`'s precedent. A rule says what makes a field **apply**, so an
+  element no rule names always applies and a version that adds a hundred elements needs no line in
+  it. The seed README's row records why it is here rather than in code.
+- **`ApplicabilityRulesService`** reads it — validated never cast, cached per configuration
+  revision — and **fails open**, which reverses `OrganizationVocabularyService`'s direction on
+  purpose. An unreadable legal-form list refuses a save in front of the person who can fix it; an
+  unreadable applicability list would *hide disclosures*, and nobody can see what they were never
+  shown. A malformed threshold is a dropped rule for the same reason, rather than one nothing
+  satisfies.
+- **`evaluateApplicability`** is pure — no store, no registry, no `Logger` — so every threshold
+  either side of its boundary is a unit case with no infrastructure. Three condition kinds as one
+  `as const`: `numeric_at_least`, `any_row_answered`, `member_within`.
+- **The sector rule matches by descent, and that needed a port change.** B1 stores an activity as a
+  *class* (`nace:NACE_C1071`) and the rule names *sections*; the pointed code `10.71` contains no
+  `C`, so a key prefix would be string surgery on an external identifier. `TaxonomyMember` now
+  carries `parent` — which **both shipped classifications have always had and the registry was
+  dropping**. The ancestry map is built only where the driving field is answered, since NACE is
+  1 047 members and both reads run per request.
+- **Both reads carry it.** `DisclosureField` and `DisclosureModuleSummary` gain `applicable` and
+  `applicabilityCause`; the module list resolves a locale now, because a module can go whole (B6
+  does) and UX-27's announcement is the same announcement. A module is applicable while any one of
+  its elements is, and carries a cause only where its inapplicable elements agree on one — naming
+  one of two reasons would be a wrong announcement.
+- **The cause is data, never a sentence.** Condition, drivers with their resolved labels, threshold
+  and the reporter's own answer. `NumberOfEmployees` is a taxonomy element key and no reader may be
+  shown one, so the label is joined at the read and the wording is a catalogue key in the browser.
+
+### Three things it decided in passing, each recorded rather than left in the code
+
+- **A served default is not an answer, so an unvisited B1 makes every conditional field
+  inapplicable.** This follows from task 91.2 and is the interaction most likely to read as a bug:
+  the entity's `10.71` reaches B1 as a `defaultValue` and the store holds nothing, so the water rule
+  sees no answer. The shape of a report follows the store and never the snapshot — the second source
+  of truth §7.2 rules out. Added to §12.5.6's row and pinned by an e2e case.
+- **The module list counts applicable elements only**, on both sides. A services company that can
+  never fill B6 must not be shown a denominator it cannot reach. This changed an existing e2e
+  assertion — `modules.every((m) => m.total > 0)` — which was rewritten to name the one module that
+  now starts at zero rather than weakened.
+- **The write refuses nothing.** Rejecting a write to an inapplicable field is the *later rejected*
+  BR-APP-5 forbids, and UX-28 requires a value stored before the condition turned to be retained.
+
+### Verified
+
+- `apps/api` unit — `applicability.spec.ts`: both thresholds at 49/50/149/150/151; the cause's three
+  parts; unanswered and cleared-to-missing; exact decimal comparison including a pair no double can
+  separate; an unparseable answer; the site rule across five driver elements and on a second row
+  after the first was cleared; the sector rule by descent, by direct section, by one of several
+  reported activities, and refusing an unknown member and a cycle in published data; two rules over
+  one element as a conjunction. `applicability-rules.service.spec.ts`: the three conditions narrowed;
+  six malformed payloads each failing open with a named log line; the per-revision cache; and the
+  **shipped** artefact held against **both** registered versions — every governed element present,
+  every driver in B1, every named NACE member declared and at the domain's root. 65 in the module's
+  suites, 94 with the taxonomy registry's.
+- `apps/api` e2e — seven new cases and one amended in `wizard.e2e-spec.ts`: 49 vs 50 with the cause;
+  150 for the pay gap with the same read answering both; nothing conditional before B1, a served
+  default included; water by descent for `NACE_C1071` and gone for `NACE_G4711`, module and all;
+  B5's site fields arriving on a GPS-only row while its undimensioned fields never left; UX-28's
+  retention with the value intact and the write still admitted; and a threshold moved by publishing
+  a revision, restored in a `finally`. 21 of 21.
+- **Proven by seeding, since a test that cannot fail is not a gate.** Nine mutations, each caught:
+  `atLeast` comparing as floats (1 failure), descent stopping at the exact member (3), a dropped rule
+  no longer logged (4), the artefact naming a renamed element key (2), the water rule naming a
+  division instead of a section (2), a field never reporting inapplicable (7 e2e), inapplicable
+  elements counted in anyway (3 e2e), the module list dropping its cause (1 e2e), and a published
+  revision never re-read (the whole e2e suite).
+- `pnpm gates:scoped`: green on every gate but `lint`, twice-run. The first run failed **two real
+  findings**, both fixed at the cause rather than silenced: a `sign === '-'` comparison the
+  vocabulary selector flagged — removed by capturing the minus into the `BigInt` literal, which also
+  moved threshold validation to the reader where fail-open lives — and an `any` member access in the
+  spec, replaced by capturing typed log lines. The scoped run reached `apps/web` and `apps/admin` on
+  its own, which is the dependency-graph scoping working: the contract regeneration broke
+  `apps/web`'s `resumeModule` fixture, and an api-scoped run would have missed it.
+
+### Skills opened against the diff
+
+`nestjs-best-practices`, per `apps/api/CLAUDE.md`. Applied: `arch-use-repository-pattern` — the rule
+set is read through a port with a service adapter over the configuration store, and the use case
+takes the port; `di-interface-segregation` — `ApplicabilityRules` is one method, and the port is not
+exported from the module because FR-28 belongs to `core/disclosure` (§17.5); `db-avoid-n-plus-one` —
+the rules are cached per revision and the ancestry built once per read, not per field. Declined by
+name: `error-throw-http-exceptions`, as every entry since task 26.1 declines it — nothing here
+throws, since an unreadable rule is a logged drop rather than a refused request.
+`vercel-react-best-practices` **not** opened, with the reason: the only `apps/web` change is a
+vitest fixture and one added case, no component or data path.
+
+### What the reviews found
+
+Run on **`sonnet`**, per the owner's standing instruction of 3 Sep 2026. The routing table would have
+sent this diff to `opus` — it touches the contract surface and three workspaces — and the override
+says the table is dormant as a default; escalation was considered before the run and not taken,
+since the diff adds no migration, grant, policy or trigger and the tenancy surface is untouched.
+All seven findings below were fixed before this entry was finished.
+
+**Convention review — two, both rules already applied elsewhere in the same diff.**
+`atLeast(value, threshold)` was two adjacent `string` parameters, which the root file's rule makes
+unrepresentable for a stated reason: swapped, the comparison inverts, returns a perfectly good
+boolean, and hides a disclosure that applies — this task's own §12.5.6 row calls that the expensive
+direction. And `rulesFor(standard)` was positional while `TaxonomyRegistry.registeredVersions({
+standard })`, in the port file this diff edits and consumed by the same use case, takes an object
+for the identical single field. **Searched for both shapes across the touched files** rather than
+fixing only the two reported instances: one further hit, `read(rules: unknown, standard, revision)`,
+where the compiler already rejects the swap (`unknown` accepts a `string`, `string` refuses
+`unknown`) — left as it is, matching `TaxonomyRegistryService`'s own private readers.
+
+**Spec review — two, one of them a citation this diff inherited and spread.**
+The build-log entry had no review section naming its model, which the root file requires. And
+*"the default, never the authority"* was cited as **§6.5** — Identity components — where it is
+**§7.2**, The reporting core. That pointer was already wrong in task 91's plan row and task 91.2's
+decision row, and this diff copied it into two more places; **all four are corrected**, which is the
+"applied where it holds, not where it was found" rule at citation hygiene. Two calibrated
+non-findings were taken anyway: the conjunction rule and the module's one-cause rule are reasoned
+but fire against none of the four shipped rules, so both are now stated in §12.5.6 rather than only
+in a comment; and *"B1 answered"* was a loose paraphrase of UX-9's *completed*, so the row now says
+which grain is which — UX-9 gates module navigation, `applicable` is the per-field primitive FR-28's
+own acceptance criterion asks for.
+
+**Gate-integrity review — three, and two of them are checks that could not fail.** This is the
+review that earned its cost here.
+
+- **The conjunction test passed under last-write-wins.** Replacing the merge guard with an
+  unconditional `set` left all 21 cases green, because the one test put the refusing rule *last*.
+  Now `it.each` over **both orders**, plus the case where every rule holds.
+- **The module's "one cause or none" branch had no coverage at any layer.** Replacing it with
+  "always name the first cause" left 21 of 21 e2e green, because the four shipped rules never put
+  two of them over one module — so the disagreement branch this code exists for had never run. The
+  rule is now `soleCause`, a pure exported function in `applicability.ts` with three unit cases
+  including two verdicts that disagree. **A check only the shipped artefact can reach is a check
+  that never runs**, and extracting it is what made the other branch reachable.
+- **The NACE-root assertion was vacuous.** "Every listed section has `parent: null`" is trivially
+  true when the reader answers `null` for *everything* — exactly the regression it was meant to
+  catch. It now also walks `nace:NACE_C1071` to `nace:NACE_C` and asserts the three-hop chain, so
+  the artefact is proved to carry descent rather than merely to have roots.
+- Taken as well, though the review ranked it minor: the e2e's `drivers[0].label` check asserted only
+  that a label was present. It now reads B1's own `NumberOfEmployees` field and asserts the driver
+  carries *that* wording, so a cause naming the right element and rendering another's would fail.
+
+### A defect the reviews did not find, and my own re-runs did
+
+The clean gate run after those fixes went red: **all 21 wizard e2e tests failed in `beforeAll`, at
+`expected 201 "Created", got 429`.** My first reading was that a concurrent scoped run had been
+competing for the database. That was a guess, it was wrong, and the real cause is a gap this suite
+shipped with in task 89:
+
+`identity.auth_attempt` carries the address **inside its key** (`sign-in:<ip>:<email>`) rather than
+as a foreign key, so deleting the account leaves the attempt row behind. §12.5.6's window is 5 per
+(IP, account) per 15 minutes. The wizard suite signs three fixed addresses in, drains nothing, and
+therefore **stops working on its second run inside the window** — failing in `beforeAll`, in a
+shared helper, as a status-code mismatch that reads as a broken suite rather than as a spent budget.
+CI never sees it, because CI runs each job once; a developer's inner loop always does, and mine did
+after six runs of the same suite in fifteen minutes.
+
+**Searched for the shape before fixing it, and the search is the finding.** Six of the eighteen
+suites that call `signInFreshAccount` drain `auth_attempt` by hand-written `LIKE` pattern; **twelve
+do not** — `organizations`, `disclosure-value`, `members`, `entities`, `tenant-context`,
+`invitations`, `memberships`, `outbox`, `periods`, `reports`, `prior-period`, `report-snapshot` and
+this one. So the fix is not in `wizard.e2e-spec.ts`. It is in `cleanupSignedInAccounts`, which is
+the helper that **spent** those attempts and already knows exactly which addresses it registered —
+a set it keeps precisely so a suite "cannot pass the wrong one or forget an actor it added later".
+Twelve suites are fixed by one statement, and the six hand-written patterns become redundant rather
+than wrong. `apps/api/CLAUDE.md` already carried the rule this violates — *"a suite touching these
+routes more than four times must drain between tests"* — and its own worked example is task 27.5's
+retro-fit, which "announced itself" the same way.
+
+**Proven by removing it**: one run leaves **3** attempt rows without the drain and **0** with it, and
+the suite is 21 of 21 on three consecutive runs inside one window, which it could not survive before.
+
+**And the reason I called the earlier run green was itself unsound.** `pnpm gates:clean 2>&1 | tail`
+reports *`tail`'s* exit status, which is always 0 — so "exit code 0" said nothing about the gates.
+That first run did genuinely pass (its last line is the final gate's `117 passed`), but the evidence
+I cited for it was not evidence. The final run below is unpiped.
