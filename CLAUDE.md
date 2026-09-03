@@ -124,6 +124,27 @@ ever goes *down*.** The frontmatter pins `opus`; `pnpm gates:scoped` prints whet
 enough, and you pass `model: sonnet` when invoking. Forget it and you get the better reviewer, not
 the worse one — the fail-safe points the right way on purpose.
 
+**Overridden 3 Sep 2026 by the owner, standing until withdrawn: these three review agents run on
+`sonnet` by default, whatever the diff touches.** The scope is deliberate and narrow — *these
+three*, not subagents in general, which keep whatever model their own definition names. The reason
+is usage, not a re-reading of the measurement: the reviews are worth their cost and were not worth
+*that* cost, three opus runs over a whole task diff at every close. So the frontmatter pin has
+moved to `sonnet`, which inverts the sentence above — forgetting now costs nothing.
+
+**Escalation stays available: pass `model: opus` on the call where a diff earns it.** The routing
+table below is dormant as a *default* and intact as the *description* of what earning it looks
+like — a migration, a grant or policy, the contract surface, `identity`, three or more workspaces.
+What the next paragraph forbids is narrower than it first reads, and survives this override
+unchanged: escalating **from a sonnet report**. That report is the one artefact the 31 Aug
+measurement found carries no signal, so it cannot be the trigger for anything. Decide from the
+diff, before the run — which is what "routed in advance" always meant.
+
+What is assumed meanwhile is that a missed cross-file finding is cheaper than a session that stops;
+what falsifies it is a defect reaching `main` on a diff the table below would have sent to `opus`.
+Record that in `build-log.md` and raise the override rather than quietly re-routing every task —
+and **say in each build-log review section which model the reviews ran on**, so the record never
+has to be inferred.
+
 **There is no "escalate if it turns out to be needed", and the measurement is why** (31 Aug 2026).
 On the convention fixture Sonnet found every seeded defect, quoted the rules accurately and declined
 the planted trap — and missed half of one hunk, including the most expensive finding in it. Its
