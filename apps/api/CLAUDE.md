@@ -342,6 +342,33 @@ provider surfaces at startup instead of at the gate.
 
 ## Commands
 
+**Running the worker in development: `pnpm --filter @easyesg/api start:worker:dev`.** It is
+`start:worker` plus the two things a laptop needs and a container does not — a `prestart` build,
+because the worker runs from `dist` and only `postbuild`'s `tsc-alias` rewrites `@api/*` there, and
+`--env-file-if-exists=.env`.
+
+**It is also the only way to see a verification link.** `EmailPort`'s development adapter writes the
+message to the log rather than sending it, so nothing reaches an inbox — but the message is written
+by the *worker*, since registration only enqueues an outbox row (P-8). With no worker running, the
+row sits with `dispatched_at` null and nothing anywhere displays the token. Two further things about
+that log, both deliberate:
+
+- **The `log` line carries a pseudonym, not the address**, and the link is at **`debug`** (NFR-30 —
+  the adapter's own header explains why `EMAIL_PROVIDER` has no default). Nest 11 enables `debug` by
+  default, so the link prints with no extra flag; **nothing in this app reads `LOG_LEVEL`**, and
+  setting it does nothing.
+- **The raw token exists in exactly one durable place** — `audit.outbox_event`'s payload.
+  `identity.verification_token` holds only its SHA-256 (OQ-54), which is why `verificationTokenFor`
+  in the e2e helpers reads the outbox and why a token cannot be recovered from the token table:
+
+  ```sql
+  SELECT payload->>'email', payload->>'token' FROM audit.outbox_event
+   WHERE event_type = 'identity.email_verification.requested' ORDER BY occurred_at DESC LIMIT 1;
+  ```
+
+  The event type is dotted — `identity.email_verification.requested`. Guessing underscores returns
+  zero rows, which reads exactly like "nothing was registered".
+
 Run boundary and lint checks from the **repo root**; they are workspace-wide.
 
 | From | Command | Notes |

@@ -13,6 +13,8 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
     "start:worker": "MODE=worker node dist/main.js",
+    "prestart:worker:dev": "pnpm build",
+    "start:worker:dev": "MODE=worker node --env-file-if-exists=.env dist/main.js",
     "db:cli": "node --env-file-if-exists=.env ./node_modules/typeorm/cli-ts-node-commonjs.js",
     "db:migrate": "pnpm db:cli migration:run -d src/infrastructure/persistence/migration.data-source.ts",
     "db:revert": "pnpm db:cli migration:revert -d src/infrastructure/persistence/migration.data-source.ts",
