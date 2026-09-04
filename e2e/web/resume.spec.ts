@@ -123,6 +123,13 @@ test('a change queued while the session is gone is submitted after signing in ag
   // The session ends underneath the open wizard — the sealed cookie is gone, the page is not.
   await context.clearCookies();
   await answer(page, { label: EMPLOYEES.label, value: '12' });
+  // **The field's own marker first, and then the shell's.** Since task 36.2 a step opens with its
+  // shown defaults pending (FR-27), so the shell's refusal state is reached by B1's arrival default
+  // failing too — which makes it satisfiable without this reporter's change being anywhere, and
+  // useless as the barrier in front of the reload below. `autosave.spec.ts` carries the measurement.
+  await expect(
+    page.getByRole('group', { name: EMPLOYEES.label, exact: true }).getByText('Nesalvat', { exact: true }),
+  ).toHaveCount(1);
   // The flush is refused (no session), and the queue keeps the change under the account's key.
   await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvarea nu a reușit/u);
   expect(await disclosureValueOf({ organizationId, reportId, elementKey: EMPLOYEES.elementKey })).toBeNull();

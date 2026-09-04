@@ -8,8 +8,16 @@ import type { DisclosureValueWrite } from '@easyesg/contracts';
  * **A port with two adapters, and the browser one is IndexedDB.** `localStorage` is synchronous and
  * quota-limited; a `BroadcastChannel` does not survive a close. IndexedDB is the one browser store
  * that is durable, asynchronous, and — the property that matters at a step change — orders
- * overlapping `readwrite` transactions across connections by creation, so the next step's read of
- * the queue waits for the previous step's write to commit rather than racing it.
+ * `readwrite` transactions on one connection by creation, so the next step's read of the queue
+ * waits for the previous step's write to commit rather than racing it.
+ *
+ * **That ordering is a property of the transaction, not of the call, which is why the connection is
+ * held** (4 Sep 2026). This paragraph said *"across connections"* and the adapter opened a fresh one
+ * per call, so the transaction was created only after an `await` — and the ordering guarantee never
+ * covered the gap in front of it. Measured on the task-36.2 browser journey: a tab closed inside
+ * that `await` **five times in eight**, and the queued change was gone when the report was next
+ * opened — the failure §4.10's sentence exists to forbid, with the indicator saying *queued*
+ * throughout, since the reducer's own set was right and only the durable mirror was wrong.
  *
  * **A scope is an account and a report, never a report alone.** Two people can sign in on one
  * browser, and a queue keyed by report would let the second flush the first's changes under their
@@ -68,33 +76,100 @@ const isWriteList = (value: unknown): value is DisclosureValueWrite[] =>
       typeof (item as { elementKey?: unknown }).elementKey === 'string',
   );
 
-/** The IndexedDB adapter. Each call opens and closes its own connection — the queue is small and
- *  a held connection blocks a version upgrade in another tab. */
+/**
+ * The IndexedDB adapter, over **one connection held for the page's lifetime**.
+ *
+ * **Once that connection is open, a `save` needs no macrotask** — and that, rather than speed, is
+ * the durability argument. Opening a database completes on an event, so a `save` that opens one
+ * yields the thread and the tab can close in the gap; a `save` over a standing connection creates
+ * its transaction inside the **microtask drain of the task that changed the value**, which finishes
+ * before the browser can take the close off the queue at all. The module docblock has the numbers.
+ *
+ * A held connection blocks another tab's version upgrade, which is why the per-call open was
+ * chosen originally; `versionchange` is the answer to that rather than never holding one — the
+ * connection is given up the moment an upgrade wants it, and the next call reopens.
+ */
 export function indexedDbPendingWriteStore(indexedDb: IDBFactory): PendingWriteStoreHandle {
+  // `ready` is what an immediate `save` needs; `opening` coalesces concurrent first calls.
+  let ready: IDBDatabase | null = null;
+  let opening: Promise<IDBDatabase> | null = null;
+  // Every operation is chained behind the last, because each `save` carries the WHOLE queue and a
+  // late one overtaking an early one leaves the store holding the older snapshot. Measured: with
+  // the connection held but the calls unordered, the first save of a page still awaits the open
+  // while the next takes the ready path and passes it — and the queue kept the state from *before*
+  // the reporter's change (one run in six, 4 Sep 2026).
+  let tail: Promise<unknown> = Promise.resolve();
+
+  const forget = (): void => {
+    ready = null;
+    opening = null;
+  };
+
+  const connect = (): Promise<IDBDatabase> => {
+    if (ready !== null) return Promise.resolve(ready);
+    opening ??= openDatabase(indexedDb).then(
+      (db) => {
+        // Another tab upgrading the schema is blocked while this connection stands, so give it up
+        // and reopen on the next call. `onclose` covers the browser closing it under us.
+        db.onversionchange = () => {
+          db.close();
+          forget();
+        };
+        db.onclose = () => forget();
+        ready = db;
+        opening = null;
+        return db;
+      },
+      (reason: unknown) => {
+        forget();
+        throw reason;
+      },
+    );
+    return opening;
+  };
+
+  const writeTo = (
+    db: IDBDatabase,
+    scope: string,
+    writes: readonly DisclosureValueWrite[],
+  ): Promise<void> => {
+    const store = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME);
+    const settled =
+      writes.length === 0 ? request(store.delete(scope)) : request(store.put([...writes], scope));
+    return settled.then(() => undefined);
+  };
+
+  /** One operation, behind everything already asked for. A failure does not poison the chain. */
+  const inTurn = <T>(work: (db: IDBDatabase) => Promise<T>): Promise<T> => {
+    const settled = tail.then(() => connect()).then((db) => {
+      try {
+        return work(db);
+      } catch {
+        // `transaction()` throws rather than rejecting when the connection closed under us — an
+        // upgrade in another tab. Give the handle up and take a fresh one, once.
+        forget();
+        return connect().then(work);
+      }
+    });
+    tail = settled.catch(() => undefined);
+    return settled;
+  };
+
   return {
     durable: true,
-    async load(scope) {
-      const db = await openDatabase(indexedDb);
-      try {
-        const stored: unknown = await request<unknown>(
+    load(scope) {
+      return inTurn((db) =>
+        request<unknown>(
           db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(scope),
-        );
-        // Validated rather than cast: what is read back was written by an earlier build of this
-        // code, and a shape it no longer recognises must not become a request body.
-        return isWriteList(stored) ? stored : [];
-      } finally {
-        db.close();
-      }
+        ).then((stored) =>
+          // Validated rather than cast: what is read back was written by an earlier build of this
+          // code, and a shape it no longer recognises must not become a request body.
+          isWriteList(stored) ? stored : [],
+        ),
+      );
     },
-    async save(scope, writes) {
-      const db = await openDatabase(indexedDb);
-      try {
-        const store = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME);
-        if (writes.length === 0) await request(store.delete(scope));
-        else await request(store.put([...writes], scope));
-      } finally {
-        db.close();
-      }
+    save(scope, writes) {
+      return inTurn((db) => writeTo(db, scope, writes));
     },
   };
 }

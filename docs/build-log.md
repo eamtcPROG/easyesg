@@ -10797,3 +10797,106 @@ which is the only reason it was found: a brand-new 150-line file was invisible t
 reviewer, human or agent, while being perfectly present on disk. The same shape as the `credentials/`
 `.gitignore` incident — a file that *is there* and is not what it looks like. One byte, replaced with
 a space.
+
+## Task 36.2 (defect) — the flake was mine, and it was two defects wearing one symptom · 2026-09-04
+
+`autosave.spec.ts`'s *"a queued change survives the tab being closed"* had been failing
+intermittently since task 36.2 closed, and I had left it in the previous entry as **unattributed**,
+with a mechanism I had guessed at and could not confirm. It is attributed now: **the arrival commit
+task 36.2 shipped made the test's own barrier vacuous**, and underneath that it exposed a real
+durability gap in task 35.2's queue. Both are fixed; the guessed mechanism was wrong.
+
+### How it was attributed, since guessing had already failed once
+
+Measurement first, in this order, each step answering one question:
+
+- **Is it real?** 12 separate processes (`--repeat-each` is unusable — `RUN_PREFIX` is module-level,
+  so repeats inside one worker re-register the same address). **6 failed.** Not a rare flake; a coin
+  flip, which is why one green run had reassured me.
+- **Is it 36.2's?** The cheap A/B: pre-store `BasisForPreparation` in the database and the arrival
+  commit has nothing outstanding, so the code path is *disabled without editing or rebuilding
+  anything*. Eight interleaved pairs: **5/8 lost the write with it on, 0/8 with it off.**
+- **How?** A probe inside the store, written to `localStorage` — synchronous, same-origin, and
+  therefore **readable from the second tab after the first is gone**, which no console listener can
+  be. That last property mattered: attaching `page.on('console')` to the tab under test enables CDP
+  domains and slowed it enough that the failure stopped reproducing, 8 runs out of 8. **The first
+  instrument I reached for was hiding the thing it was pointed at.**
+
+### The barrier that stopped being a barrier
+
+`await expect(saveState(page)).toHaveText(/În așteptare/u)` meant *"the value I just typed is
+queued"*. Since task 36.2 it is satisfied the moment the connection is cut, by B1's own
+`BasisForPreparation` default — measured directly: with the arrival commit on, the indicator reads
+`⏸În așteptare — fără conexiune` **before the reporter types anything**; with it off, `✓Salvat`.
+
+The assertion never went red. It was doing a second, unwritten job — pacing the step after it — and
+when it stopped waiting, the failure landed several lines away, on the drain, which is where I spent
+a day looking. **A barrier that silently stops waiting is worse than one that breaks**, because the
+symptom moves to code that is working.
+
+Fixed by naming the field: `syncStateOf(key)` already existed and already answers per key, so the
+locator is the field's own `role="group"` and its marker. Applied at all three sites, in two suites
+— `autosave.spec.ts` ×2 and `resume.spec.ts`, whose `/Salvarea nu a reușit/` had the same shape and
+the same hazard, `page.reload()` standing in for the close.
+
+### The durability gap underneath it
+
+With the barrier honest, the test still failed. The probe said why: `save` reached `transaction()`
+only after `await openDatabase()`, and **opening a database completes on an event** — a macrotask —
+so the tab could be killed in the gap with the write neither issued nor recorded. The module's own
+docblock had asserted the safety property it lacked: IndexedDB orders *transactions* "by creation",
+and the gap was in front of the transaction.
+
+Holding the connection fixes that, and the first attempt at it introduced a second defect worth
+recording: keeping a fast path for the ready case let a later `save` overtake the first of the page,
+and the queue was left holding the snapshot from **before** the reporter's change — visible as
+`[BasisForPreparation]` alone in the second tab. Chaining every operation behind one tail is both
+simpler and strictly correct, and costs only microtasks once the connection is up, so ordering and
+durability stopped competing.
+
+**What is still not guaranteed, stated rather than hidden.** A transaction commits when it goes
+idle; IndexedDB gives a page no synchronous flush. The probe's last failing run showed the
+transaction created *in the same millisecond as the change* and killed before it committed. No page
+code closes that. §12.5.6 carries the assumption and what would have to change.
+
+So the test now asserts its own precondition — that the change is in the **durable queue** — by
+reading it. That is a barrier rather than a wait: a `readonly` transaction is ordered behind the
+outstanding `readwrite` one, so the read cannot answer until the write has committed, and it answers
+`false` rather than sleeping if the write never went.
+
+### Verified
+
+- **16 consecutive runs of the previously 6-in-12 test, green.**
+- **Mutation, both halves, and they fail at different lines**: `save` made a no-op fails at the
+  durable-queue assertion; `load` returning nothing fails at the drain. Neither half is carried by
+  the other.
+- The full browser suite, three projects.
+
+### Two process notes, both mine
+
+- **`gates:clean` for task 36.2 exited 1 and I reported it as passing**, twice. The cause is the
+  same one this file already records for `| tail`: I read a status that belonged to a trailing
+  `echo`, not to `pnpm`. Piping and appending both destroy an exit code, and the harness's own
+  completion notice reports the *last* command in a compound. Run the gate unpiped, or read
+  `${PIPESTATUS[0]}`.
+- **The three review agents were not run on this diff.** This session was started with a standing
+  instruction not to invoke subagents, and it was not withdrawn; the diff would have routed to
+  `sonnet` (one workspace plus `e2e/`, no migration, no contract surface, no `identity`). Recorded
+  so the absence is a fact in the log rather than an inference from its silence.
+
+### Two api e2e flakes met on the way out, one of them now explained
+
+`pnpm gates:scoped` went red twice on `e2e-api`, on **two different tests**, neither reachable from
+this diff (`apps/web` plus two browser specs). A third run: **806 of 806, green**.
+
+- `organizations.e2e-spec.ts` — `socket hang up`, task 85's recorded family.
+- `wizard.e2e-spec.ts:179` (task 35.3's) — `lastAnsweredAt` came back **4 ms before** a
+  `Date.now()` taken earlier in the same test. That one is not mysterious: `before` is the **host's**
+  clock and `updated_at` defaults to PostgreSQL's `now()`, generated inside the Compose container.
+  Measured from the host over a persistent `pg` connection, 40 round trips with no `docker exec`
+  latency in the way: **the container's clock runs up to 2 ms behind Node's.** The assertion compares
+  two clocks with a strict inequality and passes only while they agree to the millisecond;
+  `now()` being *transaction start* time widens it in the same direction. Left for its own change —
+  the property FR-39 actually claims is that the stamp moved across the write, which needs no clock
+  agreement at all, and `toBeLessThanOrEqual(Date.now())` on the next line has the same defect
+  mirrored.

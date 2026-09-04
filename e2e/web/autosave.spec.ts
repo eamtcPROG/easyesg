@@ -79,6 +79,62 @@ const openB1 = async (page: Page, reportId: string) => {
 const saveState = (page: Page) => page.getByRole('status', { name: SAVE_STATE_REGION });
 
 /**
+ * That **this field's** change is queued — §4.10's per-field marker, not the shell's indicator.
+ *
+ * The shell answers for the whole step, and since task 36.2 a step opens with its shown defaults
+ * pending (FR-27): B1's `basis for preparation` is committed on arrival, so once the connection is
+ * cut the indicator reads *În așteptare* **before the reporter has typed anything**. Every barrier
+ * here that means *"the value I just entered is queued"* has to name the field, or it is satisfied
+ * by a write the reporter never made — which is not a locator preference but the difference between
+ * a test that can fail on its subject and one that cannot. Measured 4 Sep 2026: as the shell
+ * assertion, the barrier below let `page.close()` land five times in eight before the durable write
+ * had been issued, and the suite blamed the drain.
+ *
+ * The two markers are distinct words — the field says *În așteptare*, the shell *În așteptare —
+ * fără conexiune* — and no state marker shares either (`field.markers` in the catalogue).
+ */
+const queuedMarker = (page: Page, label: string) =>
+  page.getByRole('group', { name: label, exact: true }).getByText('În așteptare', { exact: true });
+
+/**
+ * Whether the change is in the **durable** queue — §4.10's *"IndexedDB-backed outbound queue"*,
+ * read as itself.
+ *
+ * The screen cannot answer this. The reducer holds a change the instant it is made and the
+ * indicator paints from the reducer, while the durable write is a transaction that commits a moment
+ * later — so *"close the tab with the change still queued"* is a precondition no on-screen assertion
+ * establishes. Measured 4 Sep 2026: the transaction was created in the same millisecond as the
+ * change and `page.close()` still killed it before it committed, because IndexedDB commits when a
+ * transaction goes idle and offers no synchronous flush to any page.
+ *
+ * **This is a barrier, not a wait.** A `readonly` transaction is ordered behind the `readwrite` one
+ * already outstanding on the same database, so the read cannot answer until that write has
+ * committed — and it answers `false`, rather than sleeping, if the write never went. Naming
+ * IndexedDB here is not a leak: it is the store §4.10 specifies, and this is the test of it.
+ */
+const durablyQueued = (page: Page, elementKey: string): Promise<boolean> =>
+  page.evaluate(async (key) => {
+    const open = indexedDB.open('easyesg-autosave', 1);
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      open.onsuccess = () => resolve(open.result);
+      open.onerror = () => reject(open.error ?? new Error('IndexedDB open failed'));
+    });
+    try {
+      const queues = await new Promise<unknown[]>((resolve) => {
+        const all = db.transaction('pending', 'readonly').objectStore('pending').getAll();
+        all.onsuccess = () => resolve(all.result);
+      });
+      return queues.some(
+        (queue) =>
+          Array.isArray(queue) &&
+          queue.some((write: { elementKey?: unknown }) => write.elementKey === key),
+      );
+    } finally {
+      db.close();
+    }
+  }, elementKey);
+
+/**
  * The input for one question. `textbox` by name rather than `getByLabel`: the disclosure field's
  * group carries the same accessible name as its input on purpose (one visible label, UX-110), so a
  * label query resolves to both.
@@ -138,6 +194,9 @@ test('offline changes queue, the reader is warned, and the queue drains on recon
   await context.setOffline(true);
   await answer(page, { label: TURNOVER.label, value: '1000' });
 
+  // The field first: that *turnover* is queued is this test's own claim, and the shell's indicator
+  // cannot carry it — B1's arrival default is pending too, and would satisfy it alone.
+  await expect(queuedMarker(page, TURNOVER.label)).toHaveCount(1);
   // UX-35's third state, and UX-37's standing warning — in that order, both text.
   await expect(saveState(page)).toHaveText(/În așteptare — fără conexiune/u);
   await expect(page.getByText('Modificările nu au fost încă trimise')).toBeVisible();
@@ -163,7 +222,9 @@ test('a queued change survives the tab being closed and is sent when the report 
 
   await context.setOffline(true);
   await answer(page, { label: EMPLOYEES.label, value: '7' });
-  await expect(saveState(page)).toHaveText(/În așteptare/u);
+  await expect(queuedMarker(page, EMPLOYEES.label)).toHaveCount(1);
+  // The screen says queued; the queue itself is what this test then closes the tab on.
+  await expect.poll(() => durablyQueued(page, EMPLOYEES.elementKey)).toBe(true);
 
   // Close the tab with the change still queued. Nothing has reached the API.
   await page.close();
@@ -190,7 +251,7 @@ test('leaving the wizard with unsent changes asks first, with a chance to stay (
 
   await context.setOffline(true);
   await answer(page, { label: EMPLOYEES.label, value: '3' });
-  await expect(saveState(page)).toHaveText(/În așteptare/u);
+  await expect(queuedMarker(page, EMPLOYEES.label)).toHaveCount(1);
 
   await page.getByRole('link', { name: /Ieșiți din raport/u }).click();
   const dialogue = page.getByRole('alertdialog');
