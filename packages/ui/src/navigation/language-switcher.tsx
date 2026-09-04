@@ -3,6 +3,7 @@
 import { ChevronDown } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import type { ReactNode } from 'react';
+import { SWITCHER_TONE, type SwitcherTone } from './language-switcher-vocabulary';
 import styles from './language-switcher.module.css';
 
 /**
@@ -24,14 +25,6 @@ export interface SwitcherLocale<Code extends string = string> {
   /** The language's own name for itself, e.g. "Română". */
   label: string;
 }
-
-/**
- * The two surfaces this switcher sits on, as an `as const` object with the union derived
- * (CLAUDE.md, "Conventions"). Deriving changes no caller — `tone="header"` still compiles.
- */
-export const SWITCHER_TONE = { DEFAULT: 'default', HEADER: 'header' } as const;
-
-export type SwitcherTone = (typeof SWITCHER_TONE)[keyof typeof SWITCHER_TONE];
 
 export interface LanguageSwitcherProps<Code extends string = string> {
   /** Accessible name for the trigger ("Language"), localized by the app. */

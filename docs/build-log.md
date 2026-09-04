@@ -10945,3 +10945,167 @@ process, which in e2e runs on the host**, so both sides are one clock — and th
 minutes to seven days besides, with `sessions` already carrying explicit ±5 s tolerances. The
 distinction that matters is not *"is `Date.now()` mentioned"* but *"does one side originate in the
 container"*. This was the only site where it did.
+
+---
+
+## Task 74.1 (header half) — the public band, and a vocabulary that was not a value · 2026-09-04
+
+**Asked for:** a header on `/` so signing in is reachable. That is task 74.1's header half, built
+out of plan order at the owner's request, with two scope choices taken on the owner's answer rather
+than assumed: **header only** (not the footer) and **no section nav**.
+
+### What shipped
+
+`shared/public-header.tsx` in the `(public)` layout, so it renders on `/`, `/help` and `/legal/*`
+alike — brand → `/`, the language choice, *Sign in*, and *Create an account* as the primary action.
+Three locales, three UX-73 frames. `/` itself still returns `null`: S-29 is task 74.3 and §5 owns
+its content.
+
+`/` needed **no** `UNAUTHENTICATED_SEGMENTS` change — the other half of 74.1's row. `requiresSession`
+already answers `false` for a path with no route segment, which `route-access.ts` states and
+`e2e/web/routing.spec.ts` holds. The row's warning is about the screens 74.3 … 77 add.
+
+### The decisions
+
+**`GlobalBar`, not a second band.** §11.5's Navigation row enumerates *Global bar* and no other, and
+UX-89's test for an addition is a difference in **anatomy** — brand at one end, actions at the other,
+one row, with the bar's own documented empty state (no organization plate) being exactly what an
+unauthenticated screen renders. Recorded in `design_spec.md` §11.5 as a sixth bullet, together with
+the two differences that are real and are the *caller's*: the public actions slot holds three nodes
+where the account corner holds one, and the section nav arrives with task 74.3. That bullet names
+74.3 as the point to re-read the decision rather than inherit it.
+
+**The band carries what renders.** The prototype's header draws *How it works · The questions ·
+Plans · Help centre*; three are S-29 sections that do not exist and the fourth returns `null` until
+77.2. `GlobalTier` closed this in task 30.1 — a chrome entry leading to a blank page teaches the
+reader the product is broken rather than unfinished — and OQ-10 is the other half: a prototype is
+authoritative over *values*, never over scope.
+
+**The language choice is on the band although no artboard draws one.** §5's S-29 Controls row lists
+it, §5 governs content, and on a surface whose entire chrome is this band it is the only place a
+reader can change language at all.
+
+**`BUTTON_TONE`, a UX-89 addition to an existing entry.** `--accent` is `--pine-600` and the band is
+`--pine-800`: a primary button there is about 1.4:1, so the pairing **inverts** rather than dims.
+`LanguageSwitcher`'s `SWITCHER_TONE` had reached this answer alone in task 20, so `Button` shares the
+word instead of inventing a second one. No new anatomy and no new state set — the shape `Button`'s
+own docstring already records for `asChild`. It pairs `primary` and nothing else: the prototype's
+outlined mate belongs to S-29's hero, and a pairing shipped ahead of its screen is a colour nobody
+has looked at on a real surface. Tokens are tier 3 (`--button-band-*`), so UX-79 survives.
+
+**The public actions wrap at ≤639px; the authenticated band still does not.** Not a preference —
+measured. Brand + language + sign-in + call to action is about 480px against the 390 frame's 375, so
+one row is an overflow, not a layout choice. Two rows on a phone is what `FocusShell` already does on
+this same pine. The wrap and its vertical padding live in the app's own `public-header.module.css`,
+on the nodes the app owns; `GlobalBar`'s own regions are untouched and its "one row at every width"
+comment still holds for the band. The prototype answers 390 with a disclosure menu — that is 74.3's,
+with the nav it exists to hold.
+
+**`LocaleChoice` extracted to `shared/`, and `IdentityHeaderActions` refactored onto it.** The
+switcher wiring would otherwise have had a second copy. It takes every string as a prop, which is
+what let it be shared at all: the `(identity)` layout puts `chrome` into a client provider and the
+`(public)` one deliberately does not (NFR-43, §14.2). `AccountCorner`'s remains a third copy on
+purpose — a Radix *submenu*, whose second `Root` would break the first's keyboard contract.
+
+### What it found: a vocabulary in a client module is not a value on the server
+
+The band rendered pine-on-pine. `BUTTON_TONE.BAND` was **`undefined`** in `PublicHeader`: React's
+`'use client'` marks the whole module a client boundary, the bundler replaces every export with a
+client reference, and only components survive the crossing. The member read came back `undefined`
+rather than throwing, `.filter(Boolean)` dropped the class, and the button rendered in the wrong
+colours **with nothing in any log**. `pnpm typecheck` was green and correct to be — TypeScript
+resolves the import against the source module, where the value is real.
+
+`apps/web`'s `PublicHeader` is this repository's first Server Component to read one of these. Every
+existing `BUTTON_VARIANT.` site is inside a `'use client'` file, which is why the defect had been
+latent since task 20 and looked exactly like health.
+
+**Searched for the shape before closing it** (root `CLAUDE.md`), and the search was run twice
+because the first pass was scoped wrongly. `packages/ui` held four — `BUTTON_VARIANT` and
+`BUTTON_TONE`, `SWITCHER_TONE`, `SORT_DIRECTION`/`COLUMN_ALIGN`, `VERSION_PIN_STANDING` — of which
+three had no server reader yet and would each have failed the same silent way on the first. The
+convention review then found a **fifth in `apps/web`**: `ACCESS_COLUMN`, in
+`features/organization/components/access-columns.tsx`, which is the same shape and was outside the
+sweep because the sweep had been reading the design system. That is this repository's own rule
+failing on the change that was invoking it — *"answering 'is this one right?' correctly six times
+never once implied 'are there others?'"* — and it is why the sweep is now the gate below rather than
+a paragraph. `ACCESS_COLUMN` moved to `features/organization/access.ts`, beside the `ACCESS_SORT` it
+is spread from.
+
+All five now live in modules with no directive, which the barrel exports **directly** — a re-export
+routed back through the client module is still a client reference, so the fix does not survive being
+tidied away. The rule is in the root `CLAUDE.md` under "A closed vocabulary is declared once";
+`primitives/button-vocabulary.ts` carries the full account and the others point at it.
+
+**And it is a gate, not a paragraph.** `eslint.config.mjs` gains a fourth vocabulary selector —
+`Program:has(> ExpressionStatement[directive='use client']) > ExportNamedDeclaration > … >
+TSAsExpression` — the only one in that list guarding a **runtime value** rather than a spelling.
+Sites first, then the gate, so it starts green; **proven to bite** by appending
+`export const PROBE_TONE = { A: 'a' } as const;` to `language-switcher.tsx`, which it rejected, then
+restoring.
+
+### What the reviews found, and what each cost
+
+Three, all acted on. The convention review's fifth vocabulary site is above. The spec review found
+that **`design_spec.md` was reconciled and the code was not**: `global-bar.tsx`'s docstring and
+`tokens.css`'s comment both still read *"present on every authenticated screen"*, which this change
+made false — and those two are what an implementer reads first, before any specification. Both
+amended, each pointing at §11.5's new bullet rather than restating it.
+
+The gate-integrity review's finding was the expensive one and it was **proven, not argued**: with
+`props.tone === BUTTON_TONE.BAND ? styles.band : undefined` replaced by `undefined`, all 98 tests in
+`packages/ui` still passed and `tsc` stayed clean. So the tone had no unit-level guard at all.
+`button.spec.tsx` gains four assertions — the class applied, not applied by default, carried through
+the `asChild` seam (which is the path the header actually uses), and kept off the DOM — and the same
+mutation now fails two of them. One of the four exists only to stop the other three passing
+vacuously: `expect(styles.band).toBeTruthy()`, because `undefined` is the shape the defect took.
+
+### Two checks, and the second is what the change is really guarded by
+
+`e2e/web/public-header.spec.ts` — no session and no database, which makes it the cheapest spec in
+the suite. It asserts the band's structure with exact counts rather than `.first()`, the three
+locales' hrefs (which is where `localePrefix: 'as-needed'` bites), no horizontal overflow at the 390
+frame, and — the one that matters — the call to action's **computed** `background-color` against
+`--button-band-surface` *and* against `--accent`, the two of which must differ. A hex literal there
+would fail on the next re-skin, which UX-79 says should cost a tier 1 edit and nothing else; "not
+accent" alone would pass on any wrong colour.
+
+`/`, `/en` and `/ru` joined `accessibility.spec.ts`'s axe scan, and **failed on the first run**:
+`document-title`, WCAG 2.4.2 Page Titled, Level A — the page returns `null` and declared no
+metadata, so the tab had no name. Fixed with the product's own name and deliberately nothing more.
+It is written as a plain `generateMetadata` rather than through `localizedPageTitle`, because that
+helper resolves a catalogue `title` leaf and the wordmark is *identity, not copy* — `BrandMark`
+already records that no catalogue owns it. A fuller title, with the canonical and `hreflang` pair
+that belongs beside it, is **task 74.5's**, whose row requires the decision written into its owning
+artefact *before* any `<head>` is authored; authoring one here would have closed it in passing.
+
+### Verified
+
+`typecheck` (8 workspaces), `lint` cold-cached, `boundaries` (944 modules, no violations), `test`
+(631 jest + 102 ui + 249 web + others), `build`, `openapi:check`, `facade:check`, `routes:check` —
+all green, with no drift in either generated tree. `pnpm e2e:web`: 121 passed before the change,
+130 after.
+
+In the browser at `/`: the band in **ro** (unprefixed, source), **en** and **ru**, each with its own
+`banner` name and locale-correct hrefs; the language menu opens and offers all three; 68px at the
+1440 frame, matching the artboard.
+
+**The original defect was found by looking, not by a gate**, and it is worth being precise about
+why: it is invisible in a screenshot unless you already know what colour the button should be.
+Reading the computed `background-color` against the token is what caught it — `rgb(46, 106, 79)`
+where the token says `#fff`. Both checks written since exist to make that reading automatic.
+
+### Left undone, deliberately
+
+- **The footer.** `SiteFooter` links to three legal documents that all return `null` until task
+  75.3, whose own row already records those as dead links shipping on the identity screens today.
+  Placing it here spreads a known defect to a second surface to close a row a day earlier. 74.1 is
+  `IN PROGRESS`, not `DONE`.
+- **`"use cache"`** (74.4), the section nav and S-29 itself (74.3), the `Content` archetype (74.2),
+  and the two unknowns 74.5 and 74.6 raise — none touched.
+- **No +40% expansion spec for the band** (UX-94). The gate-integrity review is right that a module
+  doing pixel arithmetic — 480px against the 390 frame's 375 — is exactly what that harness exists
+  to check. It is not written because the band's answer to running out of room is now to wrap, so
+  the honest assertion is about the *wrapped* result rather than about overflow, and S-29's body
+  arriving in 74.3 changes what a `/` expansion spec would be measuring. It belongs with 74.3, whose
+  parent row already carries the expansion harness as a deliverable.

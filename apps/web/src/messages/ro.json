@@ -19,6 +19,11 @@
       "label": "Antetul aplicației",
       "organization": "Organizația activă"
     },
+    "publicHeader": {
+      "label": "Antetul site-ului",
+      "signIn": "Autentificare",
+      "register": "Creați un cont"
+    },
     "accountMenu": {
       "label": "Contul dumneavoastră",
       "credentials": "Date de autentificare",

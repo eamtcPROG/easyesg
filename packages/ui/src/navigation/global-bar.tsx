@@ -8,6 +8,13 @@ import styles from './global-bar.module.css';
  * screen; `WorkspaceNav`, which is present outside the wizard; and the wizard's module rail, which
  * replaces the second rather than nesting inside it (UX-5).
  *
+ * **It is also the `(public)` chrome, since task 74.1** — §11.5's Navigation row enumerates one
+ * band and this is it, so the sentence above describes §4.2's tiers rather than this component's
+ * reach. `design_spec.md` §11.5's sixth bullet records the reading and names the two differences
+ * that belong to the caller, not to the band: a public actions slot holds three nodes where the
+ * account corner holds one, and the section nav arrives with task 74.3 — which is the point to
+ * re-read that bullet rather than inherit it.
+ *
  * **UX-2 is what this component is for.** The active organization must be visible at all times and
  * must never be inferred from a URL segment or a request header — it is a property of the session.
  * That is why the name arrives as a plain string resolved server-side rather than as anything this

@@ -4,10 +4,11 @@ import { StatusChip, type DataTableColumn, type StatusTone } from '@easyesg/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import {
+  ACCESS_COLUMN,
   ACCESS_ROW_KIND,
-  ACCESS_SORT,
   ACCESS_STANDING,
   accessStanding,
+  type AccessColumnKey,
   type AccessRow,
   type AccessStanding,
 } from '../access';
@@ -35,17 +36,6 @@ const STANDING_TONE: Record<AccessStanding, StatusTone> = {
   [ACCESS_STANDING.INVITED]: 'pending',
   [ACCESS_STANDING.INVITATION_EXPIRED]: 'attention',
 };
-
-/**
- * Every sortable column, plus the row-action column that is not.
- *
- * Spread from `ACCESS_SORT` rather than restated, so a new sort dimension becomes a column with no
- * edit here — and so the two cannot disagree about how a column is spelled, which is what the
- * `sort=` parameter and the header both read.
- */
-export const ACCESS_COLUMN = { ...ACCESS_SORT, ACTIONS: 'actions' } as const;
-
-export type AccessColumnKey = (typeof ACCESS_COLUMN)[keyof typeof ACCESS_COLUMN];
 
 export function useAccessColumns(
   now: number,

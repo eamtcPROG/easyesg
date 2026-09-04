@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import styles from './version-pin-indicator.module.css';
+import { VERSION_PIN_STANDING } from './version-pin-indicator-vocabulary';
 
 /**
  * Version pin indicator — §11.5's Domain row, defined in §6.9, and the **first component in this
@@ -37,15 +38,6 @@ import styles from './version-pin-indicator.module.css';
  * superseded standing is built here per UX-8 and UX-90 — every applicable §8.1 state designed
  * before any instance — and its first real driver is task 33.3's.
  */
-export const VERSION_PIN_STANDING = {
-  /** The registered version this record was pinned to, still current. */
-  IN_FORCE: 'in_force',
-  /** A newer version has been adopted since. UX-48 forbids passing this silently. */
-  SUPERSEDED: 'superseded',
-} as const;
-
-export type VersionPinStanding = (typeof VERSION_PIN_STANDING)[keyof typeof VERSION_PIN_STANDING];
-
 /**
  * **A discriminated union rather than two independent optionals**, corrected 31 Aug 2026 before
  * this shipped: the first version documented `standingLabel` as *"required when `standing` is

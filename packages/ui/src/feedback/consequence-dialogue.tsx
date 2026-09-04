@@ -2,7 +2,8 @@
 
 import { AlertDialog } from 'radix-ui';
 import type { ReactNode } from 'react';
-import { Button, BUTTON_VARIANT } from '../primitives/button';
+import { Button } from '../primitives/button';
+import { BUTTON_VARIANT } from '../primitives/button-vocabulary';
 import styles from './consequence-dialogue.module.css';
 
 /**

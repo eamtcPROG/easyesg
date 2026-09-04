@@ -2,6 +2,12 @@
 
 import { Slot } from 'radix-ui';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
+import {
+  BUTTON_TONE,
+  BUTTON_VARIANT,
+  type ButtonTone,
+  type ButtonVariant,
+} from './button-vocabulary';
 import { Spinner } from './spinner';
 import styles from './button.module.css';
 
@@ -29,23 +35,10 @@ import styles from './button.module.css';
  * focus and cannot be disabled or busy. **That is enforced rather than documented:** the props are
  * a union, so `asChild` and `busy` cannot both be passed.
  */
-/**
- * The four variants, as an `as const` object with the union derived (CLAUDE.md, "Conventions").
- * Deriving changes no caller — `variant="primary"` still compiles — and it gives the set a
- * runtime value, which is what a specimen page needs to render every variant without a second
- * hand-written list going stale beside this one.
- */
-export const BUTTON_VARIANT = {
-  PRIMARY: 'primary',
-  SECONDARY: 'secondary',
-  SUBTLE: 'subtle',
-  DESTRUCTIVE: 'destructive',
-} as const;
-
-export type ButtonVariant = (typeof BUTTON_VARIANT)[keyof typeof BUTTON_VARIANT];
-
 interface ButtonCommon {
   variant?: ButtonVariant;
+  /** The surface behind the button. `band` is the dark chrome band — see `BUTTON_TONE`. */
+  tone?: ButtonTone;
   className?: string;
   children: ReactNode;
 }
@@ -76,6 +69,9 @@ export function Button(props: ButtonProps) {
   const classes = [
     styles.button,
     styles[props.variant ?? BUTTON_VARIANT.PRIMARY],
+    // Additive rather than replacing the variant class: the band pairing overrides colour and
+    // nothing else, so geometry, type and the focus ring stay the variant's own.
+    props.tone === BUTTON_TONE.BAND ? styles.band : undefined,
     props.className,
   ]
     .filter(Boolean)
@@ -93,8 +89,17 @@ export function Button(props: ButtonProps) {
   // `asChild` and `busy` are this component's own vocabulary and must not reach the DOM — React
   // forwards unknown attributes to `<button>` and warns on every render. Omitting them by
   // destructure is what `ignoreRestSiblings` exists for (eslint.config.mjs).
-  const { variant, className, children, asChild, busy = false, disabled, type = 'button', ...rest } =
-    props;
+  const {
+    variant,
+    tone,
+    className,
+    children,
+    asChild,
+    busy = false,
+    disabled,
+    type = 'button',
+    ...rest
+  } = props;
 
   return (
     <button

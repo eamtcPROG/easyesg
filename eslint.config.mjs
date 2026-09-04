@@ -160,6 +160,35 @@ const restrictedSyntaxVocabulary = [
       'BUTTON_VARIANT.SUBTLE or SWITCHER_TONE.HEADER — the literal still type-checks, which is ' +
       'why nothing else catches it, and that is the reason to write the member instead.',
   },
+  {
+    // Added 4 Sep 2026, task 74.1, and it is the only selector here that guards a RUNTIME value
+    // rather than a spelling. React's `'use client'` marks the whole module a client boundary:
+    // the bundler replaces every export with a client reference, and only the ones React knows
+    // how to render — components — survive the crossing. So an `as const` exported from such a
+    // module reads as `undefined` in a Server Component, and a member off it is `undefined` again
+    // rather than a throw.
+    //
+    // **Nothing else can see it.** TypeScript resolves the import against the *source* module,
+    // where the value is real, and is right to; `next build` succeeds; the page renders. What
+    // shipped was a call to action painted `--accent` on `--globalbar-surface` — pine on pine at
+    // about 1.4:1 — because `tone={BUTTON_TONE.BAND}` passed `undefined` and `.filter(Boolean)`
+    // dropped the class. Four vocabularies in `packages/ui` and one in `apps/web` were living this
+    // way; one had a server reader, and the other four were waiting for theirs.
+    //
+    // The fix is a sibling module with no directive (`*-vocabulary.ts`), which the barrel exports
+    // DIRECTLY — a re-export routed back through the client module is still a client reference,
+    // so this selector is also what stops the fix being tidied away. Sites fixed first, then the
+    // gate: it starts green.
+    selector:
+      "Program:has(> ExpressionStatement[directive='use client']) > ExportNamedDeclaration > " +
+      'VariableDeclaration > VariableDeclarator > TSAsExpression',
+    message:
+      'A closed vocabulary may not be declared in a module carrying `\'use client\'` ' +
+      '(CLAUDE.md, "A closed vocabulary is declared once"). The directive makes every export a ' +
+      'client reference, so a Server Component importing this gets `undefined` — silently, and ' +
+      'past typecheck, lint and build alike. Move the `as const` to a sibling module with no ' +
+      'directive and import it back; see packages/ui/src/primitives/button-vocabulary.ts.',
+  },
 ];
 
 export default tseslint.config(

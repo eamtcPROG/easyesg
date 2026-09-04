@@ -158,6 +158,27 @@ export const ACCESS_SORT = {
 
 export type AccessSort = (typeof ACCESS_SORT)[keyof typeof ACCESS_SORT];
 
+/**
+ * Every sortable column, plus the row-action column that is not.
+ *
+ * Spread from `ACCESS_SORT` rather than restated, so a new sort dimension becomes a column with no
+ * edit here — and so the two cannot disagree about how a column is spelled, which is what the
+ * `sort=` parameter and the header both read.
+ */
+export const ACCESS_COLUMN = { ...ACCESS_SORT, ACTIONS: 'actions' } as const;
+
+export type AccessColumnKey = (typeof ACCESS_COLUMN)[keyof typeof ACCESS_COLUMN];
+
+/**
+ * **Declared here rather than beside `useAccessColumns`, and that is the client-boundary rule
+ * rather than tidiness** (4 Sep 2026, task 74.1's convention review). `access-columns.tsx` carries
+ * `'use client'`, so every export it makes is a client reference: a Server Component reading this
+ * object would get `undefined`, silently, past every gate — see `CLAUDE.md` under "A closed
+ * vocabulary is declared once". Nothing on the server reads it today, which is exactly the state
+ * `packages/ui`'s four vocabularies were in when the first server reader arrived and found them.
+ *
+ * It also puts the derivation next to its source: `ACCESS_SORT` is directly above.
+ */
 export const ACCESS_SORT_DIRECTION = {
   ASCENDING: 'asc',
   DESCENDING: 'desc',

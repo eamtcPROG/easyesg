@@ -136,7 +136,9 @@
   --focus-footer-border: var(--slate-100);
 
   /* Global tier (§4.2) — the dark band present on every authenticated screen, added with the
-     first workspace chrome (task 30.1). Values extracted from `EasyESG Workspace.dc.html`'s
+     first workspace chrome (task 30.1). **Since task 74.1 the same band is the `(public)` chrome**,
+     so these tokens paint an unauthenticated surface too; `design_spec.md` §11.5's sixth bullet
+     records why there is one band rather than two. Values extracted from `EasyESG Workspace.dc.html`'s
      "The chrome, once" artboard per OQ-10: extracted through tokens, never copied as markup.
 
      The three translucent rules are white-over-brand rather than a pine step, and deliberately:
@@ -151,6 +153,16 @@
   --globalbar-plate-hover: rgba(255, 255, 255, 0.10);
   --globalbar-avatar-surface: var(--pine-100);
   --globalbar-avatar-text: var(--pine-800);
+
+  /* A button standing ON one of those two dark bands, added with the public chrome (task 74.1).
+     It exists because `--accent` is `--pine-600` and both bands are `--pine-800`: a primary
+     button there is pine on pine at about 1.4:1, so the pairing has to INVERT rather than dim.
+     Values extracted from `EasyESG Public Home.dc.html` per OQ-10, where the same white-on-pine
+     pair is drawn four times — the header, the hero, the closing call to action and the 390
+     frame — which is why it is a token family and not a screen's local override. */
+  --button-band-surface: var(--slate-0);
+  --button-band-surface-hover: var(--pine-50);
+  --button-band-text: var(--pine-800);
 }
 
 /* ── Type roles (§11.6 — the ten-role scale; UX-82, UX-83) ─────────────

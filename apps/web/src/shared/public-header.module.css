@@ -1,0 +1,51 @@
+/* The public chrome's own anchors (task 74.1). App-level like `site-footer.module.css`, and for
+   the same reason: `packages/ui` owns the BAND — `GlobalBar` styles its brand region and holds the
+   `--globalbar-*` pairing — while the nodes in the actions slot are this app's, because they carry
+   text and a router and that package owns neither (UX-79).
+
+   Values extracted from `EasyESG Public Home.dc.html` per OQ-10, through tier 3 tokens rather than
+   copied as markup: 14.5px medium, no underline at rest, underline on hover — which is exactly how
+   `focus-shell.module.css` draws the same affordance on the same pine. */
+
+.link {
+  color: var(--globalbar-text);
+  font: 500 14.5px/1.4 var(--font-text);
+  text-decoration: none;
+  border-radius: var(--radius-1);
+  white-space: nowrap;
+}
+
+.link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* **The actions region wraps, and the authenticated band's does not.** `GlobalBar` keeps its own
+   two regions on one row at every frame — a wrapping *global tier* would read as two tiers, and
+   §4.2 says there are three. That argument is about the band's regions, not about how many nodes a
+   caller puts in one slot, and here there are three where the authenticated corner has one: at the
+   390 frame, brand + language + sign-in + the call to action measure about 480px against 375, so
+   one row is not a layout choice but an overflow.
+
+   Two rows on a phone is what `FocusShell` already does on this same pine (`flex-wrap: wrap` on its
+   own header), so this is the identity screens' behaviour rather than a new one. The vertical
+   padding is here because `.bar`'s is `0` — correct for a single 68px row, and not survivable by a
+   second one.
+
+   The prototype answers the 390 frame with a disclosure menu instead. That is task 74.3's, with the
+   section nav it exists to hold; a menu built now would collapse three items into a control that
+   costs a tap to reveal what currently fits. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-5);
+  padding-block: var(--space-3);
+}
+
+@media (max-width: 639px) {
+  .actions {
+    gap: var(--space-4);
+  }
+}

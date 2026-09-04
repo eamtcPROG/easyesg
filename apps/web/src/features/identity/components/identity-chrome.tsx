@@ -1,11 +1,10 @@
 'use client';
 
 import { LOCALES } from '@easyesg/i18n';
-import { LanguageSwitcher, SWITCHER_TONE } from '@easyesg/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
-import { Link, usePathname } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
+import { LocaleChoice } from '@/shared/locale-choice';
 
 /**
  * The Focus header's actions (IMPLEMENTATION_PLAN Phase 2: the language switcher lands here
@@ -13,36 +12,22 @@ import { ROUTES } from '@/lib/routes';
  * and now lives in `src/shared/site-footer.tsx` — it is shared with the public surfaces, and it
  * belongs on the server, which this file is not.
  *
- * Language is URL state (routing.ts), so switching is a `Link` to the same path in the other
- * locale — query string included, because a verification token must survive the switch
- * (UX-4: the address restores the state). The labels are each language's own name for itself,
- * from the catalogue: a reader who cannot read the current language must still find theirs.
+ * **The switcher itself moved to `src/shared/locale-choice.tsx` (task 74.1)** for the reason the
+ * footer moved: the public chrome carries the same control, and a second copy of the wiring is
+ * what UX-89 forbids. What is left here is this header's own composition — the help link and the
+ * labels, resolved from the catalogue a reader who cannot read the current language still needs.
  */
 export function IdentityHeaderActions() {
   const t = useTranslations('chrome');
   const locale = useLocale();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const query = searchParams.toString();
-  const target = query ? `${pathname}?${query}` : pathname;
-
-  const locales = LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }));
-  const current = locales.find((entry) => entry.code === locale) ?? locales[0];
 
   return (
     <>
       <Link href={ROUTES.HELP_CENTRE}>{t('helpCentre')}</Link>
-      <LanguageSwitcher
-        tone={SWITCHER_TONE.HEADER}
+      <LocaleChoice
         label={t('language')}
-        current={current}
-        locales={locales}
-        renderItem={(entry) => (
-          <Link href={target} locale={entry.code}>
-            {entry.label}
-          </Link>
-        )}
+        locale={locale}
+        locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
       />
     </>
   );

@@ -3,6 +3,12 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 import styles from './data-table.module.css';
+import {
+  COLUMN_ALIGN,
+  SORT_DIRECTION,
+  type ColumnAlign,
+  type SortDirection,
+} from './data-table-vocabulary';
 
 /**
  * Data table — §11.5's Data display entry, and the body of the Index archetype.
@@ -30,20 +36,6 @@ import styles from './data-table.module.css';
  * initial* — because a table that rendered its own empty state would need the caller's copy, and a
  * table that rendered its own error would need the caller's retry.
  */
-
-/** Which way a column is sorted. Ascending first, because that is what a click means by default. */
-export const SORT_DIRECTION = { ASCENDING: 'asc', DESCENDING: 'desc' } as const;
-
-/**
- * Which edge a column's content sits against — logical, not physical, because the product is
- * read in three languages and `start`/`end` follow the writing direction where `left`/`right`
- * would have to be flipped per locale.
- */
-export const COLUMN_ALIGN = { START: 'start', END: 'end' } as const;
-
-export type ColumnAlign = (typeof COLUMN_ALIGN)[keyof typeof COLUMN_ALIGN];
-
-export type SortDirection = (typeof SORT_DIRECTION)[keyof typeof SORT_DIRECTION];
 
 export interface DataTableSort<TColumnKey extends string> {
   readonly column: TColumnKey;

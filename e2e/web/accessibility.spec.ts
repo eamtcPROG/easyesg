@@ -11,7 +11,11 @@ import { enrolFactor, presentPassword } from './support/second-factor';
  * All three locales on the register screen: the axe pass is mostly locale-independent, but
  * `lang` correctness and accessible names are precisely what varies.
  */
-const SCREENS = ['/register', '/en/register', '/ru/register', '/verify'];
+// `/` is the `(public)` chrome (task 74.1) — the band alone until S-29 fills the body, and worth
+// the three locales for the same reason the register screen gets them: `lang` correctness and
+// accessible names are exactly what varies. It is also the only screen here with no `<main>` yet,
+// which is a fact about task 74.3 rather than a violation of the tags below.
+const SCREENS = ['/', '/en', '/ru', '/register', '/en/register', '/ru/register', '/verify'];
 
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 

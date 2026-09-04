@@ -22,7 +22,16 @@
 
 // primitives
 export { BrandMark } from './primitives/brand-mark';
-export { BUTTON_VARIANT, Button, type ButtonProps, type ButtonVariant } from './primitives/button';
+// The vocabularies come from their own directive-free modules, never through the client
+// component: a re-export from a `'use client'` module is still a client reference, so a
+// Server Component reading one gets `undefined`. See `primitives/button-vocabulary.ts`.
+export {
+  BUTTON_TONE,
+  BUTTON_VARIANT,
+  type ButtonTone,
+  type ButtonVariant,
+} from './primitives/button-vocabulary';
+export { Button, type ButtonProps } from './primitives/button';
 export { Panel } from './primitives/panel';
 export { ProviderButton, type ProviderButtonProps } from './primitives/provider-button';
 export { Spinner } from './primitives/spinner';
@@ -87,12 +96,11 @@ export {
   type GlobalBarOrganization,
   type GlobalBarProps,
 } from './navigation/global-bar';
+export { SWITCHER_TONE, type SwitcherTone } from './navigation/language-switcher-vocabulary';
 export {
-  SWITCHER_TONE,
   LanguageSwitcher,
   type LanguageSwitcherProps,
   type SwitcherLocale,
-  type SwitcherTone,
 } from './navigation/language-switcher';
 export { Pagination, type PaginationProps } from './navigation/pagination';
 export {
@@ -104,14 +112,16 @@ export {
 // Data display — §11.5
 export {
   COLUMN_ALIGN,
-  DataTable,
   SORT_DIRECTION,
+  type ColumnAlign,
+  type SortDirection,
+} from './data-display/data-table-vocabulary';
+export {
+  DataTable,
   nextSort,
   type DataTableColumn,
   type DataTableProps,
-  type ColumnAlign,
   type DataTableSort,
-  type SortDirection,
 } from './data-display/data-table';
 export {
   STATUS_TONE,
@@ -140,9 +150,11 @@ export {
 } from './domain/reporting-period-picker';
 export {
   VERSION_PIN_STANDING,
+  type VersionPinStanding,
+} from './domain/version-pin-indicator-vocabulary';
+export {
   VersionPinIndicator,
   type VersionPinIndicatorProps,
-  type VersionPinStanding,
 } from './domain/version-pin-indicator';
 export {
   SAVE_STATE,

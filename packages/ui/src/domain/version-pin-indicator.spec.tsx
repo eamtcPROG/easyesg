@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { VERSION_PIN_STANDING, VersionPinIndicator } from './version-pin-indicator';
+import { VersionPinIndicator } from './version-pin-indicator';
+import { VERSION_PIN_STANDING } from './version-pin-indicator-vocabulary';
 
 /**
  * The version pin indicator's contract (task 32.1.1) — the parts that render identically when

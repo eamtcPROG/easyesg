@@ -19,6 +19,11 @@
       "label": "Application header",
       "organization": "Active organisation"
     },
+    "publicHeader": {
+      "label": "Site header",
+      "signIn": "Sign in",
+      "register": "Create an account"
+    },
     "accountMenu": {
       "label": "Your account",
       "credentials": "Sign-in details",

@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { IndexView } from '@/shared/index-view';
 import { useAccess } from './access-context';
-import { useAccessColumns, type AccessColumnKey } from './access-columns';
+import { useAccessColumns } from './access-columns';
+import type { AccessColumnKey } from '../access';
 import { ACCESS_FILTER_ANY, accessRowKey, type AccessRow, type AccessSort } from '../access';
 
 /**

@@ -845,6 +845,19 @@ semantics and pins their relationship.
 The smell is a helper whose body mentions an imported vocabulary and nothing else local. That is
 not a helper for this file; it is a missing export from the vocabulary's own module.
 
+**And it may not be declared inside a `'use client'` module** (4 Sep 2026, task 74.1). React's
+directive marks the whole module a client boundary: the bundler replaces every export with a client
+reference, and only the ones React knows how to render — components — survive the crossing. An
+`as const` object imported by a Server Component is `undefined`, and a member off it is `undefined`
+again rather than a throw. `packages/ui`'s `PublicHeader` passed `tone={BUTTON_TONE.BAND}`, the
+class was dropped by a `.filter(Boolean)`, and the button rendered in the wrong colours with nothing
+in any log — through `typecheck`, `lint` and every other gate, because TypeScript resolves the
+import against the *source* module and is right to. Four of `packages/ui`'s vocabularies were living
+this way and only one had a server reader; all four moved to directive-free sibling modules
+(`*-vocabulary.ts`), which the barrel exports **directly** — a re-export routed through the client
+module is still a client reference. A vocabulary is data, not behaviour, so this costs nothing it
+was entitled to.
+
 Two deliberate exceptions, part of the rule rather than escapes from it:
 
 - **Migration SQL stays literal.** A migration is frozen history, and interpolating a constant that

@@ -55,3 +55,17 @@
 .destructive:hover:not(:disabled) {
   filter: brightness(0.92);
 }
+
+/* `tone="band"` (task 74.1) — a button standing on the dark chrome band, `--globalbar-surface` or
+   `--focus-header-surface`. Additive to the variant class, so only the colour pairing changes:
+   `.band.primary` is 0,2,0 against `.primary`'s 0,1,0 and needs no `!important` and no ordering
+   assumption. The pairing INVERTS rather than dimming — `--accent` is `--pine-600` on a
+   `--pine-800` band, about 1.4:1, which is not a contrast problem any adjustment of the ordinary
+   treatment solves. Values from `EasyESG Public Home.dc.html` per OQ-10. */
+.band.primary {
+  background: var(--button-band-surface);
+  color: var(--button-band-text);
+}
+.band.primary:hover:not(:disabled) {
+  background: var(--button-band-surface-hover);
+}
