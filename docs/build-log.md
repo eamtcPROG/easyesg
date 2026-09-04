@@ -10900,3 +10900,48 @@ this diff (`apps/web` plus two browser specs). A third run: **806 of 806, green*
   the property FR-39 actually claims is that the stamp moved across the write, which needs no clock
   agreement at all, and `toBeLessThanOrEqual(Date.now())` on the next line has the same defect
   mirrored.
+
+### The clock-skew flake, closed — `wizard.e2e-spec.ts` (task 35.3's) · 2026-09-04
+
+Fixed in the session that found it, on the owner's instruction. The failing pair was
+
+```ts
+const before = Date.now();                              // the HOST's clock
+expect(b1?.lastAnsweredAt).toBeGreaterThanOrEqual(before);
+expect(b1?.lastAnsweredAt).toBeLessThanOrEqual(Date.now());
+```
+
+and `lastAnsweredAt` comes from `report_disclosure_value.updated_at`, defaulted by PostgreSQL's
+`now()` **inside the Compose container**. Two clocks, a strict inequality, and a margin of zero.
+
+**Option 3 of the three offered, and it turned out to be already written 13 lines below.** The
+second half of this same test asserts `withTwo…lastAnsweredAt === later[0].updatedAt` — the module
+summary against the write's own answer, both from the database. The first half only ever needed the
+same shape, so the write now captures its response and the assertion is
+`expect(b1?.lastAnsweredAt).toBe(written[0]?.updatedAt)`. The host's clock is gone from the test,
+which makes the flake impossible rather than unlikely.
+
+Declined, and why: a **tolerance** (option 1) keeps two clocks and hides them behind a number nobody
+can justify — skew is a property of the machine, not a constant. Taking `before` **from the
+database** (option 2) works but adds a query to state a weaker claim than the equality does.
+
+**The replacement is stronger than what it replaced, and the mutation shows it by how it fails.**
+With the summary made to report `Date.now()` instead of the row's stamp — a plausible fresh instant
+that the **old bracket would have accepted** — the assertion fails on a 23 ms difference. The
+old form could not have caught that mutation at all; it asserted *plausibly recent*, and FR-39
+claims *derived from the values*.
+
+**One hazard the change introduces and closes in the same edit.** `expect(undefined).toBe(undefined)`
+passes, so an equality with `?.` on both sides goes green when the response shape changes — a risk
+the old inequality did not have (`undefined >= n` fails). Hence
+`expect(typeof written[0]?.updatedAt).toBe('number')` immediately above it.
+
+**Searched for the shape before closing it** (root `CLAUDE.md`). Every assertion in `apps/api/test/`
+touching a database-defaulted instant — `createdAt`, `updatedAt`, `lastAnsweredAt`, `lastActiveAt` —
+is `=== null`, `typeof === 'number'`, or database-value against database-value. The other four
+`Date.now()` comparisons (`sessions`, `factor-challenge`, `invitations`, `admin-session`) are safe
+for a reason worth writing down rather than for luck: **those expiries are computed in the api
+process, which in e2e runs on the host**, so both sides are one clock — and their margins are five
+minutes to seven days besides, with `sessions` already carrying explicit ±5 s tolerances. The
+distinction that matters is not *"is `Date.now()` mentioned"* but *"does one side originate in the
+container"*. This was the only site where it did.

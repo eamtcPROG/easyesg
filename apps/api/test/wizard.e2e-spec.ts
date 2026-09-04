@@ -166,18 +166,29 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
 
   it('says where work last happened, per module, from the values themselves (FR-39, task 35.3)', async () => {
     const reportId = await createReport(await openPeriod(2026));
-    const before = Date.now();
 
-    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
-      values: [{ elementKey: B1_ELEMENT, valueText: 'Individual', state: DISCLOSURE_STATE.OK }],
-    }).expect(200);
+    const written = objectsOf<{ updatedAt: number }>((await http()
+      .put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [{ elementKey: B1_ELEMENT, valueText: 'Individual', state: DISCLOSURE_STATE.OK }],
+      }).expect(200)).body);
 
     const modules = objectsOf<ModuleSummary>((await http()
       .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
     const b1 = modules.find((m) => m.module === 'B1');
-    // Epoch milliseconds, from the store's own `updated_at` — derived, never written separately.
-    expect(b1?.lastAnsweredAt).toBeGreaterThanOrEqual(before);
-    expect(b1?.lastAnsweredAt).toBeLessThanOrEqual(Date.now());
+    // Epoch milliseconds, from the store's own `updated_at` — derived, never written separately,
+    // which is what the equality says: the summary reports the row's stamp to the millisecond.
+    //
+    // **Compared against the write's own answer, never against `Date.now()`** (4 Sep 2026). This
+    // read `before <= lastAnsweredAt <= Date.now()` with `before` taken here, and those are two
+    // different clocks: `updated_at` defaults to PostgreSQL's `now()`, generated inside the Compose
+    // container, while `Date.now()` is the host's. Measured from the host over a persistent
+    // connection, 40 round trips with no `docker exec` latency in the way, the container's clock ran
+    // up to **2 ms behind** Node's — and the suite failed on a 4 ms deficit. A bracket between two
+    // clocks is only correct while they agree to the millisecond, and `now()` being *transaction
+    // start* time widens the same gap. Nothing here needed the host's clock: what FR-39 claims is
+    // that the position comes from the values, which is a statement about two database values.
+    expect(typeof written[0]?.updatedAt).toBe('number');
+    expect(b1?.lastAnsweredAt).toBe(written[0]?.updatedAt);
     expect(modules.filter((m) => m.module !== 'B1').every((m) => m.lastAnsweredAt === null)).toBe(true);
 
     // The MOST RECENT answer in the module, not the last one in the taxonomy's order: `Assets`
