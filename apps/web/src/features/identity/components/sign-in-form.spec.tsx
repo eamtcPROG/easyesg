@@ -59,9 +59,30 @@ describe('S-01 · sign-in form', () => {
     expect(action).toHaveBeenCalledWith({
       email: EMAIL,
       password: PASSWORD,
+      // Untouched, and the wire's own default (§12.5.6, OQ-35 amended 4 Sep 2026): declining is
+      // what an unticked box means, and it must be SENT rather than left to the API to assume.
+      remember: false,
       returnTo: '/reports?page=2',
     });
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  /**
+   * S-01's *Keep me signed in on this device* reaching the wire. Asserted through the label the
+   * artboard draws rather than through a test id, because the label is what makes the control
+   * usable — a checkbox this query cannot find is one no reader can either.
+   */
+  it('sends the persistence choice when the reader ticks it', async () => {
+    const user = userEvent.setup();
+    action.mockResolvedValue(undefined);
+    renderForm();
+
+    await user.click(screen.getByLabelText('Țineți-mă autentificat pe acest dispozitiv'));
+    await fillAndSubmit(user);
+
+    expect(action).toHaveBeenCalledWith(
+      expect.objectContaining({ remember: true }),
+    );
   });
 
   it('blocks an empty submission client-side — nothing leaves, the UX-111 summary links the fields', async () => {

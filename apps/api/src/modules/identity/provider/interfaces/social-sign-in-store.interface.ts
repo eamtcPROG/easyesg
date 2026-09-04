@@ -1,6 +1,6 @@
 import type { AccountEffect } from '@api/modules/identity/account/interfaces/account-store.interface';
 import type { Account, NewVerificationToken } from '@api/modules/identity/account/models/account.model';
-import type { Session } from '@api/modules/identity/session/models/session.model';
+import type { NewSession, Session } from '@api/modules/identity/session/models/session.model';
 import type { SocialProvider } from '@api/contracts/identity-provider.port';
 import type { NewProviderAccount, ProviderIdentity } from '../models/provider-identity.model';
 
@@ -58,7 +58,7 @@ export interface SocialSignInTransaction {
   createProviderAccount(account: NewProviderAccount): Promise<Account>;
 
   /** Same contract as `SessionTransaction.createSession` — the session and its first token together. */
-  createSession(accountId: string, refreshTokenHash: Buffer, at: Date): Promise<Session>;
+  createSession(session: NewSession): Promise<Session>;
 
   issueVerificationToken(token: NewVerificationToken): Promise<void>;
 

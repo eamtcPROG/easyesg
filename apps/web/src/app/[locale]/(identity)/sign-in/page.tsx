@@ -43,13 +43,23 @@ export default async function SignInPage({ params, searchParams }: Props) {
       <div className={styles.notice}>
         <SocialNoticeCallout notice={notice} />
       </div>
-      <SignInForm returnTo={returnTo} />
-      {/* Streams behind the form (async-suspense-boundaries): the provider list is an API
-          round trip, and S-01's credential form must not wait on it — with the api
-          unreachable, the component renders null and password sign-in stands alone. */}
-      <Suspense fallback={null}>
-        <SocialProviders intent={SOCIAL_SIGN_IN_INTENT.SIGN_IN} returnTo={returnTo} />
-      </Suspense>
+      {/* The providers go INSIDE the form's card, below the rule, which is where the artboard
+          draws them at all three widths (§5's S-01 Layout row, amended 4 Sep 2026) — so they are
+          handed in as a slot rather than rendered as a sibling.
+
+          Still streamed (async-suspense-boundaries): the provider list is an API round trip and
+          S-01's credential form must not wait on it. Passing the boundary as an element keeps that
+          true across the move — a Server Component cannot be imported by the Client Component that
+          renders the card, but its already-rendered output can be handed to it. With the api
+          unreachable the component renders null and password sign-in stands alone. */}
+      <SignInForm
+        returnTo={returnTo}
+        providers={
+          <Suspense fallback={null}>
+            <SocialProviders intent={SOCIAL_SIGN_IN_INTENT.SIGN_IN} returnTo={returnTo} />
+          </Suspense>
+        }
+      />
     </>
   );
 }

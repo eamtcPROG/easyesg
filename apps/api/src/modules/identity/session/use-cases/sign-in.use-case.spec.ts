@@ -4,7 +4,11 @@ import {
   type Account,
 } from '@api/modules/identity/account/models/account.model';
 import { FakePasswordHasher } from '@api/modules/identity/account/testing/account-store.fake';
-import { ACCESS_TOKEN_TTL_MS, SESSION_IDLE_TTL_MS } from '../domain/session-expiry';
+import {
+  ACCESS_TOKEN_TTL_MS,
+  SESSION_IDLE_TTL_MS,
+  SESSION_SHORT_ABSOLUTE_TTL_MS,
+} from '../domain/session-expiry';
 import {
   AccountLockedError,
   CredentialInvalidError,
@@ -83,14 +87,36 @@ describe('SignIn (UC-04, FR-4)', () => {
       expect(issued.account.id).toBe('account-1');
       expect(issued.sessionId).toBe(store.sessions[0].id);
       expect(issued.accessTokenExpiresAt.getTime()).toBe(now.getTime() + ACCESS_TOKEN_TTL_MS);
-      // Fresh session: the idle bound is the earlier of the two clocks.
-      expect(issued.refreshTokenExpiresAt.getTime()).toBe(now.getTime() + SESSION_IDLE_TTL_MS);
+      // **The command carries no `remember`, so this is the SHORTER pair** (§12.5.6, OQ-35 amended
+      // 4 Sep 2026). This line read `SESSION_IDLE_TTL_MS` until the amendment and failed on it,
+      // which is what a changed default should do to a test that pinned the old one.
+      expect(issued.refreshTokenExpiresAt.getTime()).toBe(
+        now.getTime() + SESSION_SHORT_ABSOLUTE_TTL_MS,
+      );
+      expect(store.sessions[0].remembered).toBe(false);
       // The raw refresh token reaches the caller; the store holds only a hash of it.
       expect(issued.refreshToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
       expect(store.liveTokensFor(issued.sessionId)).toHaveLength(1);
       expect(signer.signed).toEqual([
         { sessionId: issued.sessionId, expiresAt: issued.accessTokenExpiresAt },
       ]);
+    });
+
+    /**
+     * S-01's *Keep me signed in on this device* reaching the session row (OQ-35, amended
+     * 4 Sep 2026). Asserted on BOTH the stored fact and the reported expiry, because they are two
+     * different failures: writing the column and never reading it back would leave the expiry
+     * short while the row looked right, and vice versa.
+     */
+    it('grants the longer pair, and records the choice, when the caller asks to be remembered', async () => {
+      store.seedAccount(account(), credential());
+
+      const issued = signedIn(
+        await signIn.execute({ email, password: 'Parola123!', remember: true }),
+      );
+
+      expect(store.sessions[0].remembered).toBe(true);
+      expect(issued.refreshTokenExpiresAt.getTime()).toBe(now.getTime() + SESSION_IDLE_TTL_MS);
     });
 
     it('resets the consecutive-failure count a lockout would be built on', async () => {

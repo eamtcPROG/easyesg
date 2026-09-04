@@ -429,7 +429,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
 - **Main success scenario:**
   1. The user authenticates at the provider.
   2. The system matches the provider's subject identifier — not the email address — to the account.
-  3. The system issues a session identical in scope and lifetime to a password session.
+  3. The system issues a session identical in scope to a password session, and of the **remembered** lifetime (`architecture.md` OQ-35, amended 4 Sep 2026 — S-01's *Keep me signed in on this device* governs the credential form, since a provider button is a plain anchor with no client JavaScript to carry a toggled answer; a visitor wanting a short provider session signs out).
 - **Alternate flows:** If the presented identity is not linked to any account, the user is offered registration (UC-02) rather than being silently signed in to a new empty account.
 - **Business rules:** The subject identifier is the matching key, so a user who later changes their email at the provider still resolves to the same account.
 - **Related FRs:** FR-4

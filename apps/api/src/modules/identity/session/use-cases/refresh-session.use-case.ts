@@ -35,6 +35,8 @@ type RefreshOutcome =
       account: Account;
       sessionId: string;
       sessionCreatedAt: Date;
+      /** Which of §12.5.6's two pairs bounds this session — read from the row, never re-decided. */
+      sessionRemembered: boolean;
     };
 
 /**
@@ -89,6 +91,7 @@ export class RefreshSession {
           {
             sessionCreatedAt: presented.sessionCreatedAt,
             tokenIssuedAt: presented.tokenIssuedAt,
+            remembered: presented.sessionRemembered,
           },
           now,
         )) {
@@ -110,6 +113,7 @@ export class RefreshSession {
         account,
         sessionId: presented.sessionId,
         sessionCreatedAt: presented.sessionCreatedAt,
+        sessionRemembered: presented.sessionRemembered,
       };
     });
 
@@ -123,7 +127,12 @@ export class RefreshSession {
       accessToken: await this.signer.sign(outcome.sessionId, accessTokenExpiresAt),
       accessTokenExpiresAt,
       refreshToken: next.value,
-      refreshTokenExpiresAt: sessionExpiresAt({ sessionCreatedAt: outcome.sessionCreatedAt, tokenIssuedAt: now }),
+      refreshTokenExpiresAt: sessionExpiresAt({
+        sessionCreatedAt: outcome.sessionCreatedAt,
+        tokenIssuedAt: now,
+        // Rotation rolls the idle window; it never changes which pair bounds the session.
+        remembered: outcome.sessionRemembered,
+      }),
     };
   }
 }

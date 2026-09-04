@@ -392,6 +392,16 @@ const unclassifiedTenantTables = (x: Executor) =>
  * column shipping unwritable, and a column dropped while its entry stayed.
  */
 const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
+  /**
+   * The session's identity, and the lifetime policy it was granted under (task 97).
+   *
+   * `remembered` is the one this table joined the list for: §12.5.6 gives a session one of two
+   * lifetime pairs *at sign-in*, and a session whose persistence the application could change
+   * afterwards would be one whose stated lifetime is not the one it was granted under. The other
+   * three are identity in the ordinary sense. Everything the application does update —
+   * `active_organization_id`, `revoked_at`, `revoked_reason` — is granted by column.
+   */
+  'identity.session': ['account_id', 'created_at', 'id', 'remembered'],
   'core.report': [
     // Identity and tenancy. A row does not move between organizations or periods; that would be a
     // different report (§12.5.6's task-31.3 rows).
@@ -896,6 +906,38 @@ describe('schema invariants (§7)', () => {
       );
       expect(caught.map((r) => r.column)).toContain('__probe');
       expect(byTable(caught)).not.toEqual(APP_IMMUTABLE_COLUMNS);
+    });
+  });
+
+  /**
+   * The half of task 97's migration that governs **every future row**, and the half no other check
+   * observes.
+   *
+   * The migration adds the column `DEFAULT true` and then sets the default to `false` — two
+   * statements because they answer two different populations: sessions already alive were granted
+   * under OQ-35's original policy and must keep it, while a row written by a path nobody updated
+   * must take the safer window. Collapsed into one clause — the obvious "tidy" — every future
+   * session silently becomes remembered, and nothing in the suite would say so. The backfill itself
+   * is a one-shot historical fact no hermetic harness can model; the default is not.
+   */
+  describe('a session defaults to the shorter lifetime (§12.5.6, OQ-35, task 97)', () => {
+    const remberedDefault = (x: Executor) =>
+      x.query<{ column_default: string | null }[]>(
+        `SELECT column_default FROM information_schema.columns
+          WHERE table_schema = 'identity' AND table_name = 'session' AND column_name = 'remembered'`,
+      );
+
+    it('holds — a new session row is not remembered unless it says so', async () => {
+      const [row] = await remberedDefault(db);
+      expect(row?.column_default).toBe('false');
+    });
+
+    it('catches the default being left at the backfill value', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE identity.session ALTER COLUMN remembered SET DEFAULT true`,
+        remberedDefault,
+      );
+      expect(caught[0]?.column_default).toBe('true');
     });
   });
 

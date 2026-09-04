@@ -257,7 +257,18 @@ export class CompleteSocialSignIn {
     now: Date,
   ): Promise<SocialSignInResolution> {
     const minted = mintRefreshToken();
-    const session = await tx.createSession(account.id, minted.hash, now);
+    // **Remembered, and that is OQ-35's recorded sub-decision rather than a default reached for
+    // here.** S-01's checkbox sits above the divider and governs the credential form; the provider
+    // buttons are plain anchors carrying no client JavaScript (task 24, UX-108), so they cannot
+    // carry a value toggled after render. It is also the non-regressing choice — the lifetime every
+    // provider session had before this column existed — and it is how UC-05's "identical in scope
+    // and lifetime to a password session" reads against the two pairs §12.5.6 now states.
+    const session = await tx.createSession({
+      accountId: account.id,
+      refreshTokenHash: minted.hash,
+      remembered: true,
+      at: now,
+    });
     return { kind: RESOLUTION.ISSUED, account, session, refreshTokenValue: minted.value };
   }
 }

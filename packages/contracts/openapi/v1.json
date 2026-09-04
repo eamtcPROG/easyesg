@@ -3317,6 +3317,10 @@
             "type": "string",
             "format": "password",
             "description": "Verified against the stored credential; failures are uniform and rate-limited."
+          },
+          "remember": {
+            "type": "boolean",
+            "description": "Whether the session persists on this device. Absent or false grants the shorter lifetime."
           }
         },
         "required": [

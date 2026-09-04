@@ -30,6 +30,17 @@ export interface TextFieldProps extends Omit<ComponentPropsWithRef<'input'>, 'id
   id?: string;
   /** Rendered inside the field's border, after the input — the password reveal lives here. */
   trailing?: ReactNode;
+  /**
+   * Rendered on the LABEL's row, at its end — S-01's *Forgot password?* beside the password label
+   * (task 97's screen pass; the Identity artboard draws it there at all three widths).
+   *
+   * A UX-89 addition to this inventory entry rather than a new control: no new anatomy and no new
+   * state set, exactly as `trailing` above and `Button`'s `asChild`. **It is a slot and not a
+   * `resetHref`** because this package owns no router and no text — the caller passes its own
+   * anchor, already localized. Anything that is not a link belongs in `help` instead; the row is
+   * the label's, so a control here competes with it for the field's accessible name.
+   */
+  labelAction?: ReactNode;
   /** Hides the label visually while keeping it for assistive technology — for a control whose
    *  group already names it, as inside a disclosure field (task 35.2). Never simply omitted. */
   labelHidden?: boolean;
@@ -41,6 +52,7 @@ export function TextField({
   error,
   id,
   trailing,
+  labelAction,
   labelHidden = false,
   className,
   'aria-describedby': describedBy,
@@ -58,9 +70,20 @@ export function TextField({
 
   return (
     <div className={[styles.field, className].filter(Boolean).join(' ')}>
-      <label className={labelHidden ? styles.labelHidden : styles.label} htmlFor={fieldId}>
-        {label}
-      </label>
+      {/* No wrapper when there is no action: an extra element around the label would change
+          nothing visually and would show up in every existing snapshot and DOM assertion. */}
+      {labelAction === undefined ? (
+        <label className={labelHidden ? styles.labelHidden : styles.label} htmlFor={fieldId}>
+          {label}
+        </label>
+      ) : (
+        <span className={styles.labelRow}>
+          <label className={labelHidden ? styles.labelHidden : styles.label} htmlFor={fieldId}>
+            {label}
+          </label>
+          {labelAction}
+        </span>
+      )}
       <span className={[styles.control, error ? styles.invalid : ''].filter(Boolean).join(' ')}>
         <input
           {...input}

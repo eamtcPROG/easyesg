@@ -2,8 +2,9 @@
 
 import { PROBLEM_TYPE } from '@easyesg/contracts';
 import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
-import { FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms';
+import { FormCheckbox, FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { API_OUTCOME } from '@/lib/api-outcome';
@@ -38,12 +39,29 @@ import { ROUTES } from '@/lib/routes';
 interface SignInInput {
   email: string;
   password: string;
+  /** S-01's *Keep me signed in on this device* (§12.5.6, OQ-35 amended 4 Sep 2026). */
+  remember: boolean;
 }
 
 /** Light shape check only — the API is authoritative, and NFR-64 keeps its answer uniform. */
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function SignInForm({ returnTo }: { returnTo?: string }) {
+/**
+ * The provider choices arrive as a **slot** rather than being rendered beside this form.
+ *
+ * The artboard puts them inside the same card as the credential fields, below the rule — and this
+ * is a Client Component while `SocialProviders` is a Server Component that reads the API, so it
+ * cannot be imported here. Passing the already-rendered element (with its own `Suspense` boundary)
+ * from the page keeps both properties: the artboard's single card, and the streaming the page's own
+ * comment argues for — the credential form must not wait on a provider round trip.
+ */
+export function SignInForm({
+  returnTo,
+  providers,
+}: {
+  returnTo?: string;
+  providers?: ReactNode;
+}) {
   const t = useTranslations('identity.signIn');
   // The reveal toggle's accessible names. `packages/ui` owns no text (UX-79), so the app supplies
   // them — and they belong to no feature, which is why they are `forms` rather than borrowed from
@@ -53,7 +71,12 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<SignInFailure>(undefined);
 
-  const { control, handleSubmit } = useForm<SignInInput>({ mode: 'onTouched' });
+  const { control, handleSubmit } = useForm<SignInInput>({
+    mode: 'onTouched',
+    // The checkbox needs a declared starting value or its first render is uncontrolled; `false` is
+    // also the wire default (§12.5.6), so the form and the API agree without either restating it.
+    defaultValues: { remember: false },
+  });
 
   const submit = handleSubmit((input) => {
     setFailure(undefined);
@@ -139,19 +162,27 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
             revealLabel={tForms('show')}
             concealLabel={tForms('hide')}
             rules={{ required: t('passwordMissing') }}
+            // On the label's row, where the artboard draws it at all three widths — beside the
+            // field it concerns rather than adrift below the card (§5's S-01 Layout row, amended
+            // 4 Sep 2026).
+            labelAction={
+              <TextLink asChild className={styles.labelLink}>
+                <Link href={ROUTES.RESET}>{t('forgot')}</Link>
+              </TextLink>
+            }
           />
+
+          <FormCheckbox control={control} name="remember" label={t('remember')} />
 
           <Button type="submit" busy={pending}>
             {t('submit')}
           </Button>
+
+          {/* Inside the card, below the rule — the artboard's arrangement. Streamed, so an
+              unreachable API leaves the credential form standing on its own. */}
+          {providers}
         </div>
       </Panel>
-
-      <p className={styles.altAction}>
-        <TextLink asChild>
-          <Link href={ROUTES.RESET}>{t('forgot')}</Link>
-        </TextLink>
-      </p>
 
       <p className={styles.altAction}>
         {t('noAccount')}{' '}

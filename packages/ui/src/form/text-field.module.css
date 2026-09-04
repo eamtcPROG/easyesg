@@ -77,3 +77,14 @@
   font: 400 13px/19px var(--font-text);
   color: var(--state-error);
 }
+
+/* The label's own row, present only when a `labelAction` is passed (task 97). `baseline` rather
+   than `center` because the two are different type sizes — the label is 14/20 semibold and the
+   action is a 13px link — and centring them makes the smaller one sit visibly low. Values from
+   `EasyESG Identity.dc.html`'s S-01 artboard (OQ-10). */
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}

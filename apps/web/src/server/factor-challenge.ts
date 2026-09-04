@@ -26,6 +26,16 @@ export interface HeldChallenge {
   readonly expiresAt: number;
   /** UX-38's deep link, preserved across the second step so the destination survives (task 25.4). */
   readonly returnTo?: string;
+  /**
+   * S-01's *Keep me signed in on this device*, held across the second step so the **cookie** the
+   * factor completion writes matches the session the API issues.
+   *
+   * The API carries the same answer independently, sealed into its own challenge — so this is not
+   * the authority and cannot widen anything: the API decides the session's lifetime from its copy,
+   * and this one only decides whether the cookie carries a `Max-Age`. Two copies of one answer, in
+   * two sealed places, each used for the half it owns.
+   */
+  readonly remember: boolean;
 }
 
 export async function holdFactorChallenge(held: HeldChallenge): Promise<void> {
@@ -43,13 +53,16 @@ export async function holdFactorChallenge(held: HeldChallenge): Promise<void> {
  *  reader back to the password step rather than failing somewhere later. */
 function readHeld(parsed: unknown): HeldChallenge | null {
   if (typeof parsed !== 'object' || parsed === null) return null;
-  const { challenge, expiresAt, returnTo } = parsed as Record<string, unknown>;
+  const { challenge, expiresAt, returnTo, remember: remembered } = parsed as Record<string, unknown>;
   if (typeof challenge !== 'string' || typeof expiresAt !== 'number') return null;
   if (expiresAt <= Date.now()) return null;
   return {
     challenge,
     expiresAt,
     returnTo: typeof returnTo === 'string' ? returnTo : undefined,
+    // A challenge held by an older build says nothing about the choice; `false` is the safer read,
+    // and the cost of being wrong is one sign-in rather than a session kept longer than asked.
+    remember: remembered === true,
   };
 }
 

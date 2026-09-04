@@ -34,6 +34,8 @@ export async function finaliseIssuedSession(
     refreshTokenExpiresAt: sessionExpiresAt({
       sessionCreatedAt: issuance.session.createdAt,
       tokenIssuedAt: issuance.now,
+      // The pair the session was granted under — never re-decided here (§12.5.6, OQ-35).
+      remembered: issuance.session.remembered,
     }),
   };
 }

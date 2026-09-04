@@ -45,6 +45,7 @@ const sessionWith = (overrides: Partial<SessionPayload> = {}): SessionPayload =>
   accessTokenExpiresAt: Date.now() + 10 * 60 * 1000,
   refreshToken: 'refresh-token-1',
   refreshTokenExpiresAt: Date.now() + 7 * DAY_MS,
+  remembered: true,
   account: { id: 'a', email: 'ana@example.md', locale: 'ro' },
   ...overrides,
 });
@@ -69,6 +70,11 @@ const refreshAnswers = (session: SessionPayload) => {
           accessTokenExpiresAt: session.accessTokenExpiresAt,
           refreshToken: session.refreshToken,
           refreshTokenExpiresAt: session.refreshTokenExpiresAt,
+          // **No `remembered` here, deliberately.** `SessionResponse` does not carry one: the API
+          // states the session's expiry and never the choice behind it, which is exactly why the
+          // web tier seals the flag into its own payload and carries it forward across rotation.
+          // A fixture supplying it would be indistinguishable from code that reads it off the
+          // response — the one mistake this arrangement exists to prevent.
           account: session.account,
         },
         messages: [],
@@ -128,6 +134,34 @@ describe('proxy · page-load rotation', () => {
     expect(forwarded).toContain(REFRESH_COOKIE);
     const sealed = forwarded?.split(`${REFRESH_COOKIE}=`)[1]?.split(';')[0] ?? '';
     expect(unsealSession(sealed, SECRET)?.accessToken).toBe('rotated-access-token');
+  });
+
+  /**
+   * **The persistence choice must survive rotation, and nothing observed that it did** (task 97's
+   * gate review, which proved the property inert by re-deriving the flag and watching all 250 web
+   * tests stay green).
+   *
+   * It is the defect `session-codec.ts`'s own docblock names: the API's refresh answer states an
+   * expiry and never the choice behind it, so a successor built from the response alone becomes
+   * *remembered* — and a session the person declined to keep quietly gains a persistent cookie on
+   * its first rotation, roughly fifteen minutes in. The rotation path runs here rather than in a
+   * Server Action, which is why the assertion belongs in this file.
+   */
+  it('carries a declined session’s persistence into its successor (OQ-35)', async () => {
+    refreshAnswers(sessionWith({ refreshToken: 'refresh-token-2' }));
+
+    const response = await proxy(
+      requestFor('/en/organization/users', { ...staleSession(), remembered: false }),
+    );
+
+    // The successor the browser is given: session-scoped, as the original was.
+    const header = setCookie(response) ?? '';
+    expect(header).toContain(REFRESH_COOKIE);
+    expect(header.toLowerCase()).not.toContain('max-age');
+
+    // And the successor the seal carries, so the NEXT rotation makes the same decision.
+    const sealed = header.split(`${REFRESH_COOKIE}=`)[1]?.split(';')[0] ?? '';
+    expect(unsealSession(sealed, SECRET)?.remembered).toBe(false);
   });
 
   it('also sets the successor on the response, with OQ-33 attributes', async () => {

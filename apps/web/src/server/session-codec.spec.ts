@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-import { sealSession, unsealSession, type SessionPayload } from './session-codec';
+import { sealJson, sealSession, unsealSession, type SessionPayload } from './session-codec';
 
 const SECRET = 'spec-secret-0000000000000000000000000000';
 
@@ -11,6 +11,7 @@ const payload: SessionPayload = {
   accessTokenExpiresAt: 1_787_444_100_000,
   refreshToken: 'opaque-refresh-token',
   refreshTokenExpiresAt: 1_788_048_000_000,
+  remembered: true,
   account: { id: 'c0ffee00-0000-7000-8000-000000000001', email: 'ana@example.md', locale: 'ro' },
 };
 
@@ -56,5 +57,33 @@ describe('the session cookie codec (OQ-33)', () => {
     expect(
       unsealSession(sealSession(foreign as unknown as SessionPayload, SECRET), SECRET),
     ).toBeNull();
+  });
+});
+
+
+/**
+ * `remembered`'s two rules, neither of which any other check observes (task 97's gate review).
+ *
+ * They pull in opposite directions on purpose and each is one line of code, so each is one
+ * mutation away from being silently wrong: the reader tolerates a payload with no such field and
+ * calls it *remembered*, while the wire's default for a client that omits it is *false*.
+ */
+describe('session persistence in the sealed payload (OQ-35)', () => {
+  it('opens a payload sealed before the field existed as remembered', () => {
+    // Sealed through the generic box rather than `sealSession`, which is the honest simulation:
+    // an older build sealed a payload with no such key, and the typed sealer cannot express that
+    // shape today — which is the point.
+    const { remembered: _dropped, ...legacy } = payload;
+    const sealed = sealJson(legacy, SECRET);
+
+    // `true`, not `false`: the session was granted under the original 7 d / 30 d policy, so reading
+    // it short would retroactively shorten a window already given — the same view the migration's
+    // backfill takes of a session row.
+    expect(unsealSession(sealed, SECRET)?.remembered).toBe(true);
+  });
+
+  it('keeps a declined session declined across the seal', () => {
+    const declined = sealSession({ ...payload, remembered: false }, SECRET);
+    expect(unsealSession(declined, SECRET)?.remembered).toBe(false);
   });
 });

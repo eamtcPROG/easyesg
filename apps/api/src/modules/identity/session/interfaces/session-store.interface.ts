@@ -1,5 +1,10 @@
 import type { Account, Credential } from '@api/modules/identity/account/models/account.model';
-import type { PresentedRefreshToken, Session, SessionRevokedReason } from '../models/session.model';
+import type {
+  NewSession,
+  PresentedRefreshToken,
+  Session,
+  SessionRevokedReason,
+} from '../models/session.model';
 
 /**
  * The `identity/session` store — the same unit-of-work shape as `AccountStore`, which task 19
@@ -41,7 +46,7 @@ export interface SessionTransaction {
   clearFailedSignIns(accountId: string): Promise<void>;
 
   /** Creates the session AND its first refresh token together — a session with no token is dead. */
-  createSession(accountId: string, refreshTokenHash: Buffer, at: Date): Promise<Session>;
+  createSession(session: NewSession): Promise<Session>;
 
   /** By hash, flattened with its session's facts. Null when nothing matches. */
   findRefreshToken(tokenHash: Buffer): Promise<PresentedRefreshToken | null>;

@@ -1,0 +1,106 @@
+/* Values from `EasyESG Identity.dc.html`'s S-01 artboard (OQ-10): an 18px square on
+   `--field-border-rest`, 10px from a 14px label. Tier 2/3 tokens only (UX-78). */
+
+/* The tick's geometry — a shape, carrying no colour, so the colour stays a token (see `::before`).
+   Declared here rather than inline because a `mask` shorthand cannot hold a multi-line data URI
+   legibly, and both the `-webkit-` and the standard property need the same one. */
+.field {
+  --checkbox-tick-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* The whole row is the label, so the hit target is the text as well as the square — which is what
+   satisfies NFR-75's 24×24 minimum without inflating the box itself. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.input {
+  /* `appearance: none` removes the platform's painting and NOTHING else: the element is still a
+     real checkbox, so space toggles it, forms submit it and every screen reader announces it. */
+  appearance: none;
+  inline-size: 18px;
+  block-size: 18px;
+  flex-shrink: 0;
+  margin: 0;
+  border: 1px solid var(--field-border-rest);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  cursor: pointer;
+  transition: background-color var(--motion-instant) var(--motion-ease),
+    border-color var(--motion-instant) var(--motion-ease);
+}
+
+.row:hover .input:not(:disabled) {
+  border-color: var(--accent);
+}
+
+/* The tick is drawn rather than typed: a glyph would be a string this package does not own (UX-79).
+   **Masked rather than embedded as a coloured image**, so its colour is a token like every other
+   value here — the first version inlined `stroke='%23FFFFFF'` in the data URI, which is the one
+   thing UX-78 forbids and which §11.7's second theme would have turned into an invisible tick on a
+   light accent with nothing failing. The SVG carries no colour at all; `background-color` paints
+   through the mask. */
+.input::before {
+  content: '';
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  background-color: var(--checkbox-tick);
+  -webkit-mask: var(--checkbox-tick-shape) center / 14px 14px no-repeat;
+  mask: var(--checkbox-tick-shape) center / 14px 14px no-repeat;
+  opacity: 0;
+  transition: opacity var(--motion-instant) var(--motion-ease);
+}
+
+.input:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.input:checked::before {
+  opacity: 1;
+}
+
+/* Replaced, never removed — the global two-layer ring, matching the text field's. */
+.input:focus-visible {
+  outline: none;
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 1px var(--field-border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--field-border-invalid);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.row:has(.input:disabled) {
+  cursor: not-allowed;
+}
+
+.label {
+  font: 400 14px/20px var(--font-text);
+  color: var(--text-body);
+}
+
+.help {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
+
+.error {
+  font: 400 13px/19px var(--font-text);
+  color: var(--state-error);
+}

@@ -53,6 +53,7 @@ export {
   type FieldTone,
 } from './disclosure/disclosure-field';
 export { CodeField, type CodeFieldProps } from './form/code-field';
+export { Checkbox, type CheckboxProps } from './form/checkbox';
 export { DateField, type DateFieldProps } from './form/date-field';
 export { Combobox, type ComboboxOption, type ComboboxProps } from './form/combobox';
 export {

@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
+import { FormCheckbox } from './form-checkbox';
 import { FormPasswordField } from './form-password-field';
 import { FormSummary } from './form-summary';
 import { FormTextField } from './form-text-field';
@@ -179,5 +180,91 @@ describe('@easyesg/ui/forms · bound controls', () => {
     // reason the binding coerces to ''. React only warns on the transition, i.e. on first type.
     expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
+  });
+});
+
+/**
+ * `FormCheckbox` and the `toggle` shape it spreads (task 97).
+ *
+ * **Guarded only from `apps/web` until now**, which is the wrong package: the binding lives here,
+ * its failure mode is the one `useBoundField`'s own header calls silent — *"renders an unchecked
+ * box that never changes and nothing fails"* — and a control bound to `value` instead of `checked`
+ * leaves this package's 107 tests green while every consumer is broken.
+ */
+interface Preference {
+  remember: boolean;
+}
+
+function PreferenceForm({ onValid = vi.fn() }: { onValid?: (values: Preference) => void }) {
+  const { control, handleSubmit, setValue } = useForm<Preference>({
+    mode: 'onTouched',
+    defaultValues: { remember: false },
+  });
+
+  return (
+    <form onSubmit={(event) => void handleSubmit(onValid)(event)} noValidate>
+      <FormCheckbox control={control} name="remember" label="Keep me signed in" />
+      {/* A programmatic write, which is the only thing that tells a CONTROLLED checkbox from an
+          uncontrolled one — see the case below. */}
+      <button type="button" onClick={() => setValue('remember', true)}>
+        Tick it for me
+      </button>
+      <button type="submit">Continue</button>
+    </form>
+  );
+}
+
+describe('FormCheckbox', () => {
+  it('reports the boolean, not the event and not a string', async () => {
+    const user = userEvent.setup();
+    const onValid = vi.fn();
+    render(<PreferenceForm onValid={onValid} />);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Keep me signed in' }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+    // `toEqual` on the whole value, not a truthiness check: binding through `value` submits the
+    // string `'on'`, which is truthy and would pass a looser assertion while the stored answer is
+    // the wrong type all the way to the wire.
+    expect(onValid).toHaveBeenCalledWith(
+      expect.objectContaining({ remember: true }),
+      expect.anything(),
+    );
+  });
+
+  it('renders the declared default as unchecked and toggles from it', async () => {
+    const user = userEvent.setup();
+    render(<PreferenceForm />);
+    const box = screen.getByRole('checkbox', { name: 'Keep me signed in' });
+
+    expect(box).not.toBeChecked();
+    await user.click(box);
+    expect(box).toBeChecked();
+    await user.click(box);
+    expect(box).not.toBeChecked();
+  });
+
+  /**
+   * **The one case that distinguishes `toggle` from binding `value`**, and it took a mutation to
+   * find: react-hook-form's own `onChange` already unwraps a checkbox event, and a checkbox given
+   * `value` instead of `checked` is *uncontrolled* — so it still ticks under a click, records the
+   * right boolean, and passes every assertion above. What it cannot do is follow the form. A
+   * `setValue` from anywhere else — a reset, a "select all", a value restored from a draft — moves
+   * the state and leaves the box showing the opposite of what will be submitted.
+   */
+  it('follows a value written by the form, not only by a click', async () => {
+    const user = userEvent.setup();
+    const onValid = vi.fn();
+    render(<PreferenceForm onValid={onValid} />);
+    const box = screen.getByRole('checkbox', { name: 'Keep me signed in' });
+
+    await user.click(screen.getByRole('button', { name: 'Tick it for me' }));
+
+    expect(box).toBeChecked();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onValid).toHaveBeenCalledWith(
+      expect.objectContaining({ remember: true }),
+      expect.anything(),
+    );
   });
 });

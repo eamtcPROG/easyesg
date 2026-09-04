@@ -27,6 +27,15 @@ export interface SessionPayload {
   accessTokenExpiresAt: number;
   refreshToken: string;
   refreshTokenExpiresAt: number;
+  /**
+   * S-01's *Keep me signed in on this device* (§12.5.6, OQ-35 amended 4 Sep 2026).
+   *
+   * Sealed here rather than re-derived because it must survive **rotation**: a refresh rebuilds the
+   * payload from the API's answer, which states the session's expiry but not the choice behind it,
+   * so without this the cookie would silently become persistent on the first rotation of a session
+   * the person asked not to keep.
+   */
+  remembered: boolean;
   account: {
     id: string;
     email: string;
@@ -89,7 +98,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  */
 function readPayload(parsed: unknown): SessionPayload | null {
   if (!isRecord(parsed) || !isRecord(parsed.account)) return null;
-  const { accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt } = parsed;
+  const { accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt, remembered } =
+    parsed;
   const { id, email, locale } = parsed.account;
   if (
     typeof accessToken !== 'string' ||
@@ -107,6 +117,13 @@ function readPayload(parsed: unknown): SessionPayload | null {
     accessTokenExpiresAt,
     refreshToken,
     refreshTokenExpiresAt,
+    // **Absent reads as remembered, and this is the one tolerant member of an otherwise strict
+    // reader.** A cookie sealed before the field existed belongs to a session the API granted under
+    // OQ-35's original 7 d / 30 d policy — the same fact the migration backfills `true` for — so
+    // rejecting it would sign every signed-in user out for a format change, and defaulting it
+    // `false` would shorten a window already granted. The strict alternative is right where the
+    // cost is one retype (`factor-challenge.ts` takes it) and wrong here.
+    remembered: typeof remembered === 'boolean' ? remembered : true,
     account: { id, email, locale },
   };
 }

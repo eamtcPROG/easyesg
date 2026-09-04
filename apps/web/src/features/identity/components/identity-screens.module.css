@@ -153,3 +153,18 @@
     margin-bottom: 0;
   }
 }
+
+/* S-01's *Forgot password?* on the password field's label row (task 97's screen pass). The
+   artboard draws it 13px/500 and NOT underlined at rest, where `TextLink`'s inline default is
+   underlined — an inline link inside prose and a chrome-style action on a label row are different
+   affordances, and this is the one place the two meet. Underlined on hover, so colour is never the
+   sole carrier (UX-102). */
+.labelLink {
+  font: 500 13px/18px var(--font-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.labelLink:hover {
+  text-decoration: underline;
+}

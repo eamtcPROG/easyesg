@@ -18,6 +18,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 interface SessionRow {
   account_id: string;
   session_created_at: Date;
+  session_remembered: boolean;
   token_issued_at: Date | null;
   revoked_at: Date | null;
   active_organization_id: string | null;
@@ -84,6 +85,9 @@ export class RequestIdentityStoreRepository implements RequestIdentityStore {
         accountId: session.account_id,
         anchors: {
           sessionCreatedAt: session.session_created_at,
+          // §12.5.6's two pairs: the guard must judge this session against the one it was granted
+          // under, not against whichever is longer.
+          remembered: session.session_remembered,
           // A session always has a live refresh token — `createSession` writes both together, and
           // `refresh_token_live_key` keeps it to one. Falling back to the session's own creation
           // is the honest reading if that invariant ever broke: it makes the idle window start at
@@ -110,6 +114,7 @@ export class RequestIdentityStoreRepository implements RequestIdentityStore {
     const rows = (await runner.query(
       `SELECT s.account_id,
               s.created_at             AS session_created_at,
+              s.remembered             AS session_remembered,
               s.revoked_at,
               s.active_organization_id,
               t.issued_at              AS token_issued_at

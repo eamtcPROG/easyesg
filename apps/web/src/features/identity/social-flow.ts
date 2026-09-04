@@ -198,7 +198,12 @@ export async function completeSocialFlow(
   );
 
   if (outcome.status === API_OUTCOME.Ok) {
-    const session = await establishSession(outcome.value);
+    // **Remembered, matching what the API grants a provider session** (OQ-35's fourth
+    // sub-decision, recorded 4 Sep 2026): S-01's checkbox governs the credential form, and the
+    // provider buttons are plain anchors with no client JavaScript to carry a toggled value. The
+    // two must agree — a session-scoped cookie over a 30-day session would sign the person out on
+    // the next browser restart with the API still holding a live session.
+    const session = await establishSession({ session: outcome.value, remembered: true });
     // §4.3's branch (task 25.4), replacing task 22's recorded `?return=`-or-`/home` interim — a
     // provider session is the same session (UC-05), so it exits through the same decision rather
     // than through a copy of it.

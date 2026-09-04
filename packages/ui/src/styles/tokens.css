@@ -163,6 +163,11 @@
   --button-band-surface: var(--slate-0);
   --button-band-surface-hover: var(--pine-50);
   --button-band-text: var(--pine-800);
+
+  /* The checkbox's tick (task 97). Tier 3 so a second theme moves it with the accent it sits on —
+     §11.7's MUD-approximating theme is a real deliverable, and a tick hardcoded white would be
+     invisible on a light accent with nothing failing. */
+  --checkbox-tick: var(--text-on-accent);
 }
 
 /* ── Type roles (§11.6 — the ten-role scale; UX-82, UX-83) ─────────────

@@ -1207,6 +1207,8 @@ export interface components {
              * @description Verified against the stored credential; failures are uniform and rate-limited.
              */
             password: string;
+            /** @description Whether the session persists on this device. Absent or false grants the shorter lifetime. */
+            remember?: boolean;
         };
         CompleteFactorRequestDto: {
             /** @description The opaque challenge returned by the first step. Sealed; the API is the only thing that can read it. */

@@ -113,6 +113,7 @@ export class CompleteFactorChallenge {
     // refusal as a wrong code — a challenge naming nothing is a challenge that cannot be answered.
     if (account === null) throw new FactorInvalidError();
 
-    return this.signIn.issue(account, now);
+    // The answer given at the password step, carried by the sealed challenge — never re-asked.
+    return this.signIn.issue({ account, now, remembered: challenge.remembered });
   }
 }

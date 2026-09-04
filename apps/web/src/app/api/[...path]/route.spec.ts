@@ -42,6 +42,7 @@ const sessionWith = (overrides: Partial<SessionPayload> = {}): SessionPayload =>
   accessTokenExpiresAt: Date.now() + 10 * 60 * 1000,
   refreshToken: 'refresh-token-1',
   refreshTokenExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+  remembered: true,
   account: { id: 'a', email: 'ana@example.md', locale: 'ro' },
   ...overrides,
 });
@@ -139,6 +140,7 @@ describe('the /api/[...path] pass-through (task 22)', () => {
       accessTokenExpiresAt: Date.now() + 15 * 60 * 1000,
       refreshToken: 'refresh-token-2',
       refreshTokenExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      remembered: true,
       account: { id: 'a', email: 'ana@example.md', locale: 'ro' },
     };
     fetchMock

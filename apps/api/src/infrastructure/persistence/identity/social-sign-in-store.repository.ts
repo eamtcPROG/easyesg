@@ -20,7 +20,7 @@ import type {
   NewProviderAccount,
   ProviderIdentity,
 } from '@api/modules/identity/provider/models/provider-identity.model';
-import type { Session } from '@api/modules/identity/session/models/session.model';
+import type { NewSession, Session } from '@api/modules/identity/session/models/session.model';
 import type { SocialProvider } from '@api/contracts/identity-provider.port';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
@@ -78,6 +78,7 @@ interface SessionRow {
   id: string;
   account_id: string;
   created_at: Date;
+  remembered: boolean;
   revoked_at: Date | null;
 }
 
@@ -340,26 +341,27 @@ class SocialSignInTransactionAdapter implements SocialSignInTransaction {
     }
   }
 
-  async createSession(accountId: string, refreshTokenHash: Buffer, at: Date): Promise<Session> {
+  async createSession(session: NewSession): Promise<Session> {
     const rows = returnedRows<SessionRow>(
       await this.queryRunner.query(
-        `INSERT INTO identity.session (account_id, created_at)
-         VALUES ($1, $2)
-         RETURNING id, account_id, created_at, revoked_at`,
-        [accountId, at],
+        `INSERT INTO identity.session (account_id, created_at, remembered)
+         VALUES ($1, $2, $3)
+         RETURNING id, account_id, created_at, remembered, revoked_at`,
+        [session.accountId, session.at, session.remembered],
       ),
     );
 
     await this.queryRunner.query(
       `INSERT INTO identity.refresh_token (session_id, token_hash, issued_at)
        VALUES ($1, $2, $3)`,
-      [rows[0].id, refreshTokenHash, at],
+      [rows[0].id, session.refreshTokenHash, session.at],
     );
 
     return {
       id: rows[0].id,
       accountId: rows[0].account_id,
       createdAt: rows[0].created_at,
+      remembered: rows[0].remembered,
       revokedAt: rows[0].revoked_at,
     };
   }

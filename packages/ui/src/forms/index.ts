@@ -14,6 +14,7 @@
  * second copy resolved for this package would give a field a different `Control` type than the
  * form that created it.
  */
+export { FormCheckbox, type FormCheckboxProps } from './form-checkbox';
 export { FormCodeField, type FormCodeFieldProps } from './form-code-field';
 export { FormDateField, type FormDateFieldProps } from './form-date-field';
 export { FormTextField, type FormTextFieldProps } from './form-text-field';

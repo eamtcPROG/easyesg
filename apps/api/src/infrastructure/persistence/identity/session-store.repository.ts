@@ -11,6 +11,7 @@ import type {
   SessionTransaction,
 } from '@api/modules/identity/session/interfaces/session-store.interface';
 import type {
+  NewSession,
   PresentedRefreshToken,
   Session,
   SessionRevokedReason,
@@ -73,6 +74,7 @@ interface SessionRow {
   id: string;
   account_id: string;
   created_at: Date;
+  remembered: boolean;
   revoked_at: Date | null;
 }
 
@@ -83,6 +85,7 @@ interface PresentedRefreshTokenRow {
   token_issued_at: Date;
   token_consumed_at: Date | null;
   session_created_at: Date;
+  session_remembered: boolean;
   session_revoked_at: Date | null;
 }
 
@@ -172,26 +175,27 @@ class SessionTransactionAdapter implements SessionTransaction {
     );
   }
 
-  async createSession(accountId: string, refreshTokenHash: Buffer, at: Date): Promise<Session> {
+  async createSession(session: NewSession): Promise<Session> {
     const rows = returnedRows<SessionRow>(
       await this.queryRunner.query(
-        `INSERT INTO identity.session (account_id, created_at)
-         VALUES ($1, $2)
-         RETURNING id, account_id, created_at, revoked_at`,
-        [accountId, at],
+        `INSERT INTO identity.session (account_id, created_at, remembered)
+         VALUES ($1, $2, $3)
+         RETURNING id, account_id, created_at, remembered, revoked_at`,
+        [session.accountId, session.at, session.remembered],
       ),
     );
 
     await this.queryRunner.query(
       `INSERT INTO identity.refresh_token (session_id, token_hash, issued_at)
        VALUES ($1, $2, $3)`,
-      [rows[0].id, refreshTokenHash, at],
+      [rows[0].id, session.refreshTokenHash, session.at],
     );
 
     return {
       id: rows[0].id,
       accountId: rows[0].account_id,
       createdAt: rows[0].created_at,
+      remembered: rows[0].remembered,
       revokedAt: rows[0].revoked_at,
     };
   }
@@ -201,7 +205,8 @@ class SessionTransactionAdapter implements SessionTransaction {
       await this.queryRunner.query(
         `SELECT t.id AS token_id, t.session_id, s.account_id,
                 t.issued_at AS token_issued_at, t.consumed_at AS token_consumed_at,
-                s.created_at AS session_created_at, s.revoked_at AS session_revoked_at
+                s.created_at AS session_created_at, s.remembered AS session_remembered,
+                s.revoked_at AS session_revoked_at
            FROM identity.refresh_token t
            JOIN identity.session s ON s.id = t.session_id
           WHERE t.token_hash = $1`,
@@ -216,6 +221,7 @@ class SessionTransactionAdapter implements SessionTransaction {
       tokenIssuedAt: rows[0].token_issued_at,
       tokenConsumedAt: rows[0].token_consumed_at,
       sessionCreatedAt: rows[0].session_created_at,
+      sessionRemembered: rows[0].session_remembered,
       sessionRevokedAt: rows[0].session_revoked_at,
     };
   }

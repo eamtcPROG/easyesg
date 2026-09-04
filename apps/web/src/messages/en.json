@@ -120,6 +120,7 @@
       "passwordMissing": "The password is missing, so we cannot verify your identity. Fill in the password before continuing.",
       "submit": "Sign in",
       "forgot": "Forgot your password?",
+      "remember": "Keep me signed in on this device",
       "noAccount": "Don't have an account yet?",
       "register": "Create one",
       "problemTitle": "Sign-in did not succeed",

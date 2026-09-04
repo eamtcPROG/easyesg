@@ -42,11 +42,27 @@ async function registerAndVerify(page: Page, email: string): Promise<void> {
   await expect(page.getByText('Adresa este confirmată')).toBeVisible();
 }
 
-async function signIn(page: Page, email: string, password: string): Promise<void> {
+async function signIn(
+  page: Page,
+  email: string,
+  password: string,
+  options: { remember?: boolean } = {},
+): Promise<void> {
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(password);
+  if (options.remember) {
+    await page.getByLabel('Țineți-mă autentificat pe acest dispozitiv').check();
+  }
   await page.getByRole('button', { name: 'Intrați în cont' }).click();
+}
+
+/** The session cookie as the BROWSER holds it — `expires` is what persistence actually means. */
+async function sessionCookie(page: Page) {
+  const jar = await page.context().cookies();
+  const found = jar.find((c) => c.name === 'easyesg_session');
+  expect(found, 'no session cookie was set').toBeDefined();
+  return found!;
 }
 
 test('a user signs in, holds an httpOnly session, and signs out (UC-04, UC-06)', async ({
@@ -169,4 +185,56 @@ test('a bare set-password arrival explains itself and offers the request route',
   await expect(page.getByText('Linkul este incomplet')).toBeVisible();
   await page.getByRole('link', { name: 'Cereți un link nou' }).click();
   await page.waitForURL('**/reset');
+});
+
+/**
+ * S-01's *Keep me signed in on this device* (§12.5.6, OQ-35 amended 4 Sep 2026), across the two
+ * halves that have to agree — and they are held by different systems, which is the whole reason
+ * this is a browser test rather than two unit tests.
+ *
+ * The **API** decides the session's lifetime from the `remember` field and answers a
+ * `refreshTokenExpiresAt`; the **web tier** decides whether the cookie carries a `Max-Age` at all.
+ * A defect in either alone is invisible: a persistent cookie over a 12 h session signs the reader
+ * out on their next visit with no explanation, and a session cookie over a 30 d session throws away
+ * a month of it the moment the browser closes. Playwright reports `expires === -1` for a
+ * browser-session cookie, which is the only place that distinction is observable at all.
+ */
+test.describe('session persistence (OQ-35)', () => {
+  test('declining leaves a cookie that dies with the browser, capped at 12 hours', async ({
+    page,
+  }) => {
+    const email = addressFor('not-remembered');
+    await registerAndVerify(page, email);
+
+    await signIn(page, email, PASSWORD);
+    await page.waitForURL('**/create-organization');
+
+    const cookie = await sessionCookie(page);
+    // -1 is Playwright's spelling of "no expiry attribute" — a browser-session cookie.
+    expect(cookie.expires).toBe(-1);
+    // Still httpOnly, and still nothing readable: the shorter window changes the lifetime and
+    // nothing else about how the session is held.
+    expect(cookie.httpOnly).toBe(true);
+    expect(await page.evaluate(() => document.cookie)).not.toContain('easyesg_session');
+  });
+
+  test('ticking it persists the cookie, and for the longer window', async ({ page }) => {
+    const email = addressFor('remembered');
+    await registerAndVerify(page, email);
+
+    await signIn(page, email, PASSWORD, { remember: true });
+    await page.waitForURL('**/create-organization');
+
+    const cookie = await sessionCookie(page);
+    expect(cookie.expires).toBeGreaterThan(0);
+
+    // **The bound is asserted as a range, not a value.** The clock moves between the API stamping
+    // the expiry and this line reading it, so an equality would be flaky by construction — and the
+    // claim that matters is which POLICY was applied, which a day's worth of margin settles
+    // absolutely: 12 h and 7 days cannot both satisfy it.
+    const secondsLeft = cookie.expires - Date.now() / 1000;
+    const day = 24 * 60 * 60;
+    expect(secondsLeft).toBeGreaterThan(6 * day);
+    expect(secondsLeft).toBeLessThanOrEqual(7 * day);
+  });
 });

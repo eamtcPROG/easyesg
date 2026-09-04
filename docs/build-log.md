@@ -11109,3 +11109,211 @@ where the token says `#fff`. Both checks written since exist to make that readin
   the honest assertion is about the *wrapped* result rather than about overflow, and S-29's body
   arriving in 74.3 changes what a `/` expansion spec would be measuring. It belongs with 74.3, whose
   parent row already carries the expansion harness as a deliverable.
+
+---
+
+## Task 97 — S-01 to its artboard, and the session choice it was drawing · 2026-09-04
+
+**Asked for:** *"Sign in screen correspond with the design mock."* Read against
+`EasyESG Identity.dc.html`'s S-01 artboard and §5's S-01 row, that is three differences — and
+OQ-10 splits them into two kinds that had to be handled differently.
+
+### The two that were placement, and were the artboard's to decide
+
+§5's Layout row read *"No further per-screen layout is specified in the source"*, so it deferred
+entirely and the artboard governs. Both are now in that row instead, amended in the same change:
+
+- **The route to password reset sits on the password field's own label row**, right-aligned, where
+  the artboard draws it at all three widths. It had been a centred paragraph *below* the card.
+  `TextField` gains a `labelAction` slot — a UX-89 addition to an existing entry, no new anatomy
+  and no new state set, exactly as `trailing` and `Button`'s `asChild`.
+- **The provider choices sit inside the credential card**, below the rule, rather than as a sibling
+  block beneath it. They arrive as a **slot**: `SocialProviders` is a Server Component that reads
+  the API and `SignInForm` is a Client Component, so the page hands the already-rendered element —
+  `Suspense` boundary included — into the card. That keeps both properties at once, the artboard's
+  single card and the streaming the page's own comment argues for.
+
+**The values were already right** and are worth recording as a non-finding: 440px column, 28px/34px
+heading, 15px/24px subtitle at `--text-body`, 40px button, card padding 28/32/30 — all measured in
+the browser against the artboard, all matching. Task 20 extracted them through tokens rather than
+copying markup, and that has held.
+
+### The third was scope, and it was not mine to settle
+
+The artboard draws **Keep me signed in on this device**. §5's S-01 Content and Controls rows list no
+such control, and `architecture.md` OQ-35 fixes *one* tenant session window (7 d idle / 30 d
+absolute) with no room for a second. That is the shape of OQ-19 — an artboard showing a capability
+no requirement wrote down — so it was put to the project owner as a decision with three options.
+**The owner chose to build it.**
+
+**Amending OQ-35 came first, and the code after** — the register row, §12.5.6's lifetimes row and its
+web-session-cookie row, and §5's S-01 Content and Controls rows, all before a line was written.
+Four sub-decisions are recorded there rather than left to be inferred from the diff:
+
+- **Not remembered is 12 h idle / 12 h absolute.** 12 h is not a new number: it is §12.5.6's own
+  admin-session absolute, a value this document has already reasoned about for a surface that may
+  not be the user's own machine. **Equal** on purpose — a rolling idle window on a session someone
+  has just declined to keep would answer the checkbox with its opposite, so the absolute cap always
+  binds.
+- **The stored fact is the choice, never a deadline.** `identity.session.remembered`, with the two
+  pairs staying in `session-expiry.ts` beside their citation — which is the rule that file already
+  stated, so an amendment to either window remains a constant and not a data migration.
+- **Absent on the wire reads as `false`.** A client that has not been updated gets the safer window;
+  the cost of being wrong in that direction is one sign-in.
+- **Provider sign-in issues a remembered session.** The checkbox sits above S-01's divider and
+  governs the credential form; the provider buttons are deliberately plain anchors with no client
+  JavaScript (task 24, UX-108) and cannot carry a value toggled after render. It is also the
+  non-regressing reading of UC-05's *"identical in scope and lifetime to a password session"*.
+  Recorded with what changes if it is wrong: the choice would ride the OAuth transaction cookie,
+  which costs the anchor its zero-JS property.
+
+### Where the choice has to survive, and how
+
+Three crossings, each a place the answer could have been silently dropped:
+
+- **Rotation.** The API reads `remembered` from the session row, so refresh judges expiry against
+  the pair the session was granted under. On the web side it is sealed *into the session payload*,
+  because the refresh response states an expiry and not the choice behind it — without that, the
+  cookie would become persistent on the first rotation of a session the person declined to keep.
+- **The second factor.** The choice is sealed into the API's own factor challenge rather than asked
+  again at `POST /auth/session/factor`. A `remember` field on that request would make the *client*
+  responsible for holding an answer given a screen earlier, so a client that dropped it would
+  quietly shorten the session with nothing failing. The web's held challenge carries its own copy,
+  used only for the cookie — two copies in two sealed places, each used for the half it owns.
+- **The cookie.** `Max-Age` only where the session is remembered; declining leaves a
+  browser-session cookie. The server's 12 h cap is the authority, and this is the half a person on
+  a shared machine actually experiences. `undefined`, never `0` — zero is a valid `Max-Age` meaning
+  *expire now*, which would delete the cookie rather than make it session-scoped.
+
+**The migration backfills existing rows `true` and defaults new ones `false`** — two directions in
+one column, which is why it is `ADD COLUMN … DEFAULT true` followed by `ALTER … SET DEFAULT false`
+rather than one clause. Every session alive when it runs was issued under the original policy;
+defaulting them `false` would apply a 12 h cap retroactively and sign every user out for a schema
+change. Verified against the migrated database: six existing rows `true`, column default `false`.
+The web's payload reader takes the same view for the same reason — a cookie sealed before the field
+existed reads as remembered, the one tolerant member of an otherwise strict reader, while the
+factor challenge stays strict because there the cost is one retype.
+
+### Two things the design system owed
+
+**`Checkbox` is §11.5's own inventory row** — enumerated in the specification since it was written
+and never built, so this is UX-89 step 1 rather than step 2 and what was decided is the anatomy, not
+whether it belongs. A real `<input type="checkbox">` under `appearance: none`: the platform control
+carries the space binding, form participation, forced-colours mode and every assistive technology's
+checkbox semantics, where a `role="checkbox"` div carries whichever of those someone remembered. The
+label wraps the input, so it is labelled without an id agreement and the whole row is the hit target
+— which is what clears NFR-75's 24×24 minimum around an 18px square.
+
+**`useBoundField` gained a third shape.** A checkbox holds its state in `checked`; `value` on one is
+the *string it submits*, so binding the value there renders an unchecked box that never changes and
+nothing fails. That adaptation belongs in the binding — its own header already said so, naming
+`FormSwitch` as a future reader — so `FormCheckbox` is the same three lines every other bound
+control is.
+
+### Verified
+
+`typecheck` across eight workspaces; `lint` cold-cached; `boundaries` (951 modules) with all 23
+proofs; unit — 650 api, 110 ui, 256 web, plus the rest; `build`; `openapi:check` regenerated and
+diffed; `migrations:check` — apply, revert, re-apply, and 56 schema invariants; `pnpm e2e` 809/809;
+`pnpm e2e:web` 132/132.
+
+New coverage, and each case is one a passing suite would otherwise not have distinguished:
+`session-expiry.spec.ts` asserts both pairs as arithmetic **and** that a 13 h-old session is dead
+under one policy and live under the other; `refresh-session.use-case.spec.ts` gets the refresh-side
+twin, where a fresh token inside the remembered idle window must not save a session past its 12 h
+cap; `sign-in.use-case.spec.ts` asserts the stored fact and the reported expiry separately, because
+writing the column and never reading it back would leave the row right and the session short;
+`checkbox.spec.tsx` asserts the platform semantics `appearance: none` could silently cost; and
+`e2e/web/session.spec.ts` holds the two halves that live in different systems — Playwright reports
+`expires === -1` for a browser-session cookie, which is the only place that distinction is
+observable.
+
+**One existing assertion had to change, and it changed for the right reason.** The sign-in use case's
+success test pinned `SESSION_IDLE_TTL_MS` for a command carrying no `remember`; under the amendment
+that command takes the shorter pair, so the test failed. A changed default *should* break a test
+that pinned the old one — the line now says which pair it is asserting and why.
+
+### Not done, and what holds meanwhile
+
+- **The artboard's copy was left alone**, on the owner's answer and on OQ-10: a prototype is
+  authoritative over values, never content. The subtitle stays *"Sign in to your account to work on
+  your organizations' reports"* rather than the artboard's line, and the labels stay
+  *"Email address"* / *"Password"*.
+### A false conclusion, corrected — the suites were not flaky, the host was
+
+Both stack suites failed intermittently through this task, a **different** suite each run:
+`sessions` + `disclosure-value`, then `members`, then none, then `password-reset` with eight
+timeouts; the browser suite failed two `entities` cases, then three, then two others on a `git stash`
+of every change here. I wrote that down as "flaky on this host, not this task's", having reproduced
+it on clean `HEAD` — which was the right procedure and the wrong conclusion.
+
+**The cause was the dev servers I had left running.** The last `password-reset` failures were
+`Exceeded timeout of 30000 ms`, not assertions, and that suite runs in **4.3 seconds** on its own
+against a 242-second estimate — a 55× spread. `apps/api/CLAUDE.md` already records the mechanism
+under the vitest timeout: *"the development host's MEMORY … on a host short of memory rather than of
+CPU, running fewer things at once finishes sooner"*, and Argon2id is memory-hard by design. With the
+`next dev` and `nest start` previews stopped: **`pnpm e2e` 809/809 in 72 s**, and **`pnpm e2e:web`
+132/132 in 3.0 min**, `entities` included.
+
+Two things worth keeping. **A red suite whose diff cannot explain it is a timing claim before it is
+a regression** — the app's own trap list says so, and the tell here was a *different* suite each
+run, which no code change can produce. And **reproducing on clean `HEAD` proves the change is not
+the cause; it does not prove the suite is at fault** — the stash left the dev servers running too,
+so both arms of that experiment shared the confound. Stop the previews before running the stack
+suites.
+
+### The reviews — all three on **opus**, and they earned it
+
+Routed up before any of them ran, per the table: a migration, the contract surface, `identity`, four
+workspaces. Eleven findings between them, nine acted on and two recorded.
+
+**The one that mattered most was found by two of them independently: three comments claimed a
+guarantee the database did not hold.** The migration's header, the DTO's and the model's all said
+`remembered` could never be updated — and task 21 had granted `SELECT, INSERT, UPDATE` on
+`identity.session` **table-wide**, which covers a column added later. So `esg_app` could have widened
+a session's window after it was granted, and the property three files described belonged to nothing.
+That is the shape `apps/api/CLAUDE.md` records under *"Withholding a column from the application"*,
+with `core.report`'s DR-4 pins as the precedent. Fixed in the same migration: the grant is narrowed
+to `active_organization_id, revoked_at, revoked_reason` — verified as the only columns any
+`UPDATE identity.session` in the tree touches — and `APP_IMMUTABLE_COLUMNS` declares the withholding,
+so a fifth column added later fails a gate instead of shipping unwritable. Confirmed against the live
+database: `has_column_privilege` now answers false for `remembered`, `id`, `account_id` and
+`created_at`.
+
+**The specification review found FR-4's acceptance criterion made false.** *"A password session and a
+provider session are identical in scope and lifetime"* stopped being true the moment a password
+session could take either pair while a provider session always takes the remembered one. Amended
+inline on FR-22's own precedent, and UC-05's step 3 with it — the sentence the code had been
+*reading* three times while `use_cases.md` said something else. §5's S-01 Controls row now says the
+control governs the credential form, which is the one thing about it a reader would otherwise get
+wrong. Two §12.5.6 rows were added for decisions that had been living only in code comments: the
+factor step's carriage of the choice, and the sealed payload's tolerant default. Five source comments
+citing task 74.1 for this task's work were corrected.
+
+**The gate-integrity review is the one to read twice**, and its verdict was the shape of the whole
+task: *"every property the API decides at sign-in is well covered, and every property that has to
+survive something — the factor step, rotation, a legacy cookie, the trip to the cookie's `Max-Age` —
+is not."* Six of those it proved inert by breaking the code and watching the suites stay green, and
+three of the six are on the normal path of ordinary users. Every one is now covered and every cover
+is mutation-proven: the factor step carrying the choice in both directions; rotation preserving it
+through the proxy, where the failure was a declined session gaining a persistent cookie fifteen
+minutes in; `sessionCookie`'s `Max-Age` omission, which had no hermetic test at all and only a
+six-minute browser run could see; the refresh response's reported bound; the codec's legacy default;
+`readFactorChallenge`'s strict refusal; and the column default that governs every future row.
+
+It also caught a **fabricated fixture** — `proxy.spec.ts`'s refresh response carried a `remembered`
+field that `SessionResponse` does not have, which is indistinguishable from a world where the code
+reads the flag off the response. Removed, with the reason in its place.
+
+**And one of my own mutations found my own test inert**, which is worth recording because it is the
+rule working on the person applying it. The first `FormCheckbox` case asserted that ticking the box
+submits `true` — and binding `value` instead of `checked` passes it, because react-hook-form already
+unwraps a checkbox event. What actually distinguishes the two is *controlledness*: an uncontrolled
+box ticks correctly under a click and cannot follow a `setValue`. The case now writes the value from
+the form and asserts the box follows, and the mutation fails it.
+
+**Two findings recorded rather than fixed.** The `?? false` wire default is written at two sites in
+one method — locally correct, no rule covers it. And `.labelLink` removes `TextLink`'s
+underline-at-rest for the reset link, which is a considered deviation stated in the stylesheet: the
+underline returns on hover, and WCAG 1.4.1's block-of-text scoping is what makes it defensible rather
+than the hover alone.

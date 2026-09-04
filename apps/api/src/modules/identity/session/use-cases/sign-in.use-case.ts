@@ -34,6 +34,18 @@ import { FACTOR_CHALLENGE_TTL_MS } from '../domain/factor-challenge';
 export interface SignInCommand {
   readonly email: string;
   readonly password: string;
+  /**
+   * S-01's *Keep me signed in on this device* — which of §12.5.6's two lifetime pairs the session
+   * is granted under (OQ-35, amended 4 Sep 2026).
+   *
+   * **Optional here, and `false` when absent**, which is the opposite of `SessionLifetimeAnchors`
+   * where it is required. The two are different questions: a *client's* silence is an answer the
+   * wire has to have a default for, and the safe default is the shorter window; a *caller's*
+   * omission inside this application is a bug the compiler should catch. Adding it as an optional
+   * field is also what let this reach `SignIn` without touching a single existing call site — the
+   * property the object-shaped command was written for.
+   */
+  readonly remember?: boolean;
   /** For §12.5.6's per-(IP, account) window. Absent until task 71 configures trust-proxy. */
   readonly clientIp?: string;
 }
@@ -130,22 +142,43 @@ export class SignIn {
     if (await this.secondFactor.isEnrolled(account.id)) {
       return {
         kind: SIGN_IN_OUTCOME.CHALLENGED,
-        challenge: this.challenges.seal({ accountId: account.id, issuedAt: now.getTime() }),
+        // The persistence choice is sealed WITH the challenge, so the factor step issues the
+        // session the person actually asked for without the client having to hold the answer.
+        challenge: this.challenges.seal({
+          accountId: account.id,
+          issuedAt: now.getTime(),
+          remembered: command.remember ?? false,
+        }),
         expiresAt: new Date(now.getTime() + FACTOR_CHALLENGE_TTL_MS),
       };
     }
 
-    return { kind: SIGN_IN_OUTCOME.SIGNED_IN, session: await this.issue(account, now) };
+    return {
+      kind: SIGN_IN_OUTCOME.SIGNED_IN,
+      session: await this.issue({ account, now, remembered: command.remember ?? false }),
+    };
   }
 
   /**
    * Minting the session, shared with `CompleteFactorChallenge` so the challenged and unchallenged
    * paths cannot issue different things. `AD-12`'s pair is assembled in exactly one place.
    */
-  async issue(account: Account, now: Date): Promise<IssuedSession> {
+  async issue(issuance: {
+    readonly account: Account;
+    readonly now: Date;
+    /** Which of §12.5.6's two lifetime pairs to grant. Named, not positional: a bare `true` in
+     *  third place says nothing at the call site about which policy it selects. */
+    readonly remembered: boolean;
+  }): Promise<IssuedSession> {
+    const { account, now, remembered } = issuance;
     const minted = mintRefreshToken();
     const session = await this.store.run((tx) =>
-      tx.createSession(account.id, minted.hash, now),
+      tx.createSession({
+        accountId: account.id,
+        refreshTokenHash: minted.hash,
+        remembered,
+        at: now,
+      }),
     );
 
     return finaliseIssuedSession(

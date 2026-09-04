@@ -206,6 +206,16 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
     const signedIn = object<SessionBody>(await completeFlow('sign-in', 201));
     expect(signedIn.account.id).toBe(registered.account.id);
     expect(signedIn.account.email).toBe(email);
+
+    // **A provider session is the REMEMBERED pair** (OQ-35's fourth sub-decision, 4 Sep 2026):
+    // S-01's checkbox governs the credential form, and a provider button is a plain anchor with no
+    // client JavaScript to carry a toggled answer. It is asserted here because the constant is
+    // written in two places — this use case and `apps/web`'s `social-flow.ts`, which sets the
+    // cookie to match — and nothing else fails if one moves without the other, which would leave a
+    // 30-day session behind a cookie that dies with the browser. The margin is a day, so the two
+    // pairs cannot both satisfy it.
+    const day = 24 * 60 * 60 * 1000;
+    expect(signedIn.refreshTokenExpiresAt - Date.now()).toBeGreaterThan(6 * day);
   });
 
   it('offers registration instead of a session for an unknown identity (UC-05 alternate)', async () => {

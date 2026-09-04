@@ -9,7 +9,10 @@ import type {
   FakeRefreshToken,
   FakeStoredSession,
 } from '@api/modules/identity/session/testing/session-store.fake';
-import type { Session } from '@api/modules/identity/session/models/session.model';
+import type {
+  NewSession,
+  Session,
+} from '@api/modules/identity/session/models/session.model';
 import type { SocialProvider } from '@api/contracts/identity-provider.port';
 import type {
   SocialSignInStore,
@@ -203,11 +206,12 @@ export class FakeSocialSignInStore implements SocialSignInStore {
         return Promise.resolve(created);
       },
 
-      createSession(accountId: string, refreshTokenHash: Buffer, at: Date): Promise<Session> {
+      createSession(input: NewSession): Promise<Session> {
         const session: FakeStoredSession = {
           id: `session-${store.nextId++}`,
-          accountId,
-          createdAt: at,
+          accountId: input.accountId,
+          createdAt: input.at,
+          remembered: input.remembered,
           revokedAt: null,
           revokedReason: null,
         };
@@ -215,11 +219,17 @@ export class FakeSocialSignInStore implements SocialSignInStore {
         store.refreshTokens.push({
           id: `token-${store.nextId++}`,
           sessionId: session.id,
-          tokenHash: refreshTokenHash,
-          issuedAt: at,
+          tokenHash: input.refreshTokenHash,
+          issuedAt: input.at,
           consumedAt: null,
         });
-        return Promise.resolve({ id: session.id, accountId, createdAt: at, revokedAt: null });
+        return Promise.resolve({
+          id: session.id,
+          accountId: input.accountId,
+          createdAt: input.at,
+          remembered: input.remembered,
+          revokedAt: null,
+        });
       },
 
       issueVerificationToken(token: NewVerificationToken): Promise<void> {

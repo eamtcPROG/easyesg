@@ -36,6 +36,21 @@ export interface FactorChallengePayload {
   readonly accountId: string;
   /** Epoch-ms — the payload is a wire format (OQ-50). */
   readonly issuedAt: number;
+  /**
+   * S-01's *Keep me signed in on this device*, carried across the factor step (OQ-35, amended
+   * 4 Sep 2026).
+   *
+   * **It rides the sealed challenge rather than being asked again**, and the alternative is worth
+   * stating because it looks simpler: a `remember` field on `POST /auth/session/factor` would make
+   * the *client* responsible for holding an answer the person gave one screen earlier, so a client
+   * that dropped it would quietly shorten the session with nothing failing. Sealed here, the answer
+   * is the API's own and cannot be edited by whoever holds the challenge — the same property the
+   * `kind` discriminator above exists for.
+   *
+   * The cost, once, on deploy: a challenge sealed by the previous build lacks the field and reads
+   * as no challenge, so anyone mid-factor retypes their password. The window is five minutes.
+   */
+  readonly remembered: boolean;
 }
 
 /**
@@ -64,7 +79,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  */
 export function readFactorChallenge(parsed: unknown): FactorChallengePayload | null {
   if (!isRecord(parsed) || parsed.kind !== FACTOR_CHALLENGE_KIND) return null;
-  const { accountId, issuedAt } = parsed;
+  const { accountId, issuedAt, remembered } = parsed;
   if (typeof accountId !== 'string' || typeof issuedAt !== 'number') return null;
-  return { kind: FACTOR_CHALLENGE_KIND, accountId, issuedAt };
+  // Required, not defaulted: a payload missing it was sealed by a build that did not know the
+  // question, and guessing an answer to "keep me signed in" is exactly what must not happen.
+  if (typeof remembered !== 'boolean') return null;
+  return { kind: FACTOR_CHALLENGE_KIND, accountId, issuedAt, remembered };
 }

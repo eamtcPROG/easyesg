@@ -47,11 +47,16 @@ const ACCESS_TOKEN_REFRESH_SKEW_MS = 30_000;
 
 const SECONDS_PER_YEAR = 60 * 60 * 24 * 365;
 
-const toPayload = (session: SessionResponse): SessionPayload => ({
+/**
+ * `remembered` is the caller's, not the response's: the API states the session's *expiry* and never
+ * the choice behind it, so on rotation it is carried forward from the payload being replaced.
+ */
+const toPayload = (session: SessionResponse, remembered: boolean): SessionPayload => ({
   accessToken: session.accessToken,
   accessTokenExpiresAt: session.accessTokenExpiresAt,
   refreshToken: session.refreshToken,
   refreshTokenExpiresAt: session.refreshTokenExpiresAt,
+  remembered,
   account: session.account,
 });
 
@@ -63,7 +68,12 @@ export interface SessionCookie {
   readonly secure: true;
   readonly sameSite: 'lax';
   readonly path: '/';
-  readonly maxAge: number;
+  /**
+   * Absent where the session is not remembered — a browser-session cookie, gone when the browser
+   * closes (§12.5.6's web-session-cookie row, amended with OQ-35). The API's 12 h cap is the
+   * authority; this is the half the person on a shared machine actually experiences.
+   */
+  readonly maxAge?: number;
 }
 
 /**
@@ -88,7 +98,12 @@ export function sessionCookie(payload: SessionPayload): SessionCookie {
     secure: true,
     sameSite: 'lax',
     path: '/',
-    maxAge: Math.max(0, Math.floor((payload.refreshTokenExpiresAt - Date.now()) / 1000)),
+    // `undefined`, not 0: zero is a valid `Max-Age` meaning *expire immediately*, so it would
+    // delete the cookie rather than make it session-scoped. Omitting the attribute is the only
+    // spelling of "until the browser closes".
+    maxAge: payload.remembered
+      ? Math.max(0, Math.floor((payload.refreshTokenExpiresAt - Date.now()) / 1000))
+      : undefined,
   };
 }
 
@@ -135,8 +150,14 @@ export async function readSession(): Promise<SessionPayload | null> {
  * redirect without the redirect knowing about sessions. Rotation deliberately does NOT come
  * through here: refreshing must not overwrite a language the user has since navigated to.
  */
-export async function establishSession(session: SessionResponse): Promise<SessionPayload> {
-  const payload = toPayload(session);
+export async function establishSession(issued: {
+  readonly session: SessionResponse;
+  /** Whether the cookie persists. Named, not positional: `establishSession(x, true)` reads as
+   *  nothing at all, and it is the argument that decides how long the session survives. */
+  readonly remembered: boolean;
+}): Promise<SessionPayload> {
+  const { session, remembered } = issued;
+  const payload = toPayload(session, remembered);
   await headerJar.write(sessionCookie(payload));
   const store = await cookies();
   store.set(LOCALE_COOKIE, session.account.locale, {
@@ -181,7 +202,9 @@ async function exchangeRefreshToken(
     { refreshToken: current.refreshToken },
   );
   if (outcome.status === API_OUTCOME.Ok) {
-    const payload = toPayload(outcome.value);
+    // The choice survives rotation — see `toPayload`. Re-deriving it here would make every
+    // refreshed session persistent.
+    const payload = toPayload(outcome.value, current.remembered);
     await jar.write(sessionCookie(payload));
     return { session: payload };
   }

@@ -81,12 +81,19 @@ export type BoundRules<TValues extends FieldValues, TName extends FieldPath<TVal
  * `register` plus a read of `formState.errors` re-renders the whole form on any field's error —
  * the more fields a screen has, the more that matters.
  *
- * **Why two shapes rather than one.** A native input reports a change as an *event* (`onChange`);
- * a Radix control reports the *value* (`onValueChange`), because there is no event to read it
- * from. The adaptation between them lives here, once, rather than in each bound control — the
- * same reason `isLocale`/`toLocale` sit beside `LOCALES` instead of being retyped per caller. It
- * was added for `FormSelect` (26 Aug 2026) and is what `FormCombobox`, `FormMultiSelect`,
- * `FormSwitch` and `FormDate` will each read instead of re-deriving.
+ * **Why three shapes rather than one.** A native text input reports a change as an *event*
+ * (`onChange`) and holds its state in `value`; a Radix control reports the *value*
+ * (`onValueChange`), because there is no event to read it from; and a checkbox or switch is an
+ * event again but holds its state in **`checked`**, where `value` means the string it submits. The
+ * adaptation between them lives here, once, rather than in each bound control — the same reason
+ * `isLocale`/`toLocale` sit beside `LOCALES` instead of being retyped per caller. `input` and
+ * `choice` were added for `FormSelect` (26 Aug 2026), `toggle` for `FormCheckbox` (4 Sep 2026),
+ * and `FormCombobox`, `FormMultiSelect`, `FormSwitch` and `FormDate` each read one instead of
+ * re-deriving it.
+ *
+ * **`toggle` deliberately does not take the `?? ''` below.** On a checkbox that coercion would put
+ * an empty string where React expects a boolean, which renders an unchecked box that never
+ * changes — the exact silent-wrong-answer shape the "both are spread" paragraph warns about.
  *
  * **Both are spread, never picked apart at the call site.** `field` carries a `ref`, and the
  * React Compiler's refs rule correctly refuses `input.ref` in a render body; more to the point, a
@@ -122,5 +129,14 @@ export function useBoundField<TValues extends FieldValues, TName extends FieldPa
     input: { ...rest, onChange, value },
     /** A control that reports its own value — Radix `Select`, and its successors. */
     choice: { ...rest, onValueChange: onChange, value },
+    /**
+     * A native checkbox or switch: `checked` plus an event-shaped `onChange` that reports the
+     * boolean rather than the event, so the stored value is what the control means.
+     */
+    toggle: {
+      ...rest,
+      checked: field.value === true,
+      onChange: (event: { target: { checked: boolean } }) => onChange(event.target.checked),
+    },
   };
 }

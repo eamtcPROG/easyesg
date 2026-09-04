@@ -120,6 +120,7 @@
       "passwordMissing": "Parola lipsește, deci nu vă putem verifica identitatea. Completați parola înainte de a continua.",
       "submit": "Intrați în cont",
       "forgot": "V-ați uitat parola?",
+      "remember": "Țineți-mă autentificat pe acest dispozitiv",
       "noAccount": "Nu aveți încă un cont?",
       "register": "Creați unul",
       "problemTitle": "Autentificarea nu a reușit",

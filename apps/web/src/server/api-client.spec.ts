@@ -112,6 +112,7 @@ describe('the api client (§6.8 wire conventions, in one place)', () => {
       accessTokenExpiresAt: Date.now() + 10 * 60 * 1000,
       refreshToken: 'refresh-token-1',
       refreshTokenExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      remembered: true,
       account: { id: 'a', email: 'ana@example.md', locale: 'ro' },
     };
     cookieJar.set(

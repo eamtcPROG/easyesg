@@ -112,8 +112,10 @@ describe('sessions and sign-in (UC-04, UC-06, FR-4, FR-5, AD-12)', () => {
     await http().post('/api/v1/auth/verify-email').send({ token: rows[0].payload.token }).expect(200);
   };
 
-  const signIn = (email: string, password = PASSWORD) =>
-    http().post('/api/v1/auth/session').send({ email, password });
+  const signIn = (email: string, password = PASSWORD, remember?: boolean) =>
+    http()
+      .post('/api/v1/auth/session')
+      .send(remember === undefined ? { email, password } : { email, password, remember });
 
   const refresh = (refreshToken: string) =>
     http().post('/api/v1/auth/session/refresh').send({ refreshToken });
@@ -142,12 +144,13 @@ describe('sessions and sign-in (UC-04, UC-06, FR-4, FR-5, AD-12)', () => {
       expect(claims.exp * 1000).toBe(Math.floor(issued.accessTokenExpiresAt / 1000) * 1000);
       expect(Object.keys(claims).sort()).toEqual(['exp', 'iat', 'sub']);
 
-      // ≤ 15 minutes (AD-12), and the refresh bound is the 7-day idle window (§12.5.6, OQ-35).
+      // ≤ 15 minutes (AD-12). The refresh bound is the **12 h** pair, because this request sends no
+      // `remember` — §12.5.6's amendment of 4 Sep 2026, where an absent field is the shorter
+      // window. It asserted 7 days until then and failed on the change, which is what a test that
+      // pins a default should do when the default moves.
       expect(issued.accessTokenExpiresAt - before).toBeLessThanOrEqual(15 * 60 * 1000 + 5_000);
-      expect(issued.refreshTokenExpiresAt - before).toBeLessThanOrEqual(
-        7 * 24 * 60 * 60 * 1000 + 5_000,
-      );
-      expect(issued.refreshTokenExpiresAt - before).toBeGreaterThan(7 * 24 * 60 * 60 * 1000 - 5_000);
+      expect(issued.refreshTokenExpiresAt - before).toBeLessThanOrEqual(12 * 60 * 60 * 1000 + 5_000);
+      expect(issued.refreshTokenExpiresAt - before).toBeGreaterThan(12 * 60 * 60 * 1000 - 5_000);
 
       // OQ-32: the sign-in response is where the web tier learns the locale for NEXT_LOCALE.
       expect(issued.account).toMatchObject({ email, locale: 'ro' });
@@ -159,6 +162,33 @@ describe('sessions and sign-in (UC-04, UC-06, FR-4, FR-5, AD-12)', () => {
         [`%${issued.refreshToken}%`],
       );
       expect(stored[0].found).toBe('0');
+    });
+
+    /**
+     * The wire half of §12.5.6's amendment (OQ-35): `remember` reaching the session's lifetime, and
+     * the row recording the choice rather than a deadline.
+     *
+     * **Both are asserted, because either alone passes while the other is broken.** A column
+     * written and never read leaves the row right and the session short; a lifetime chosen and
+     * never stored leaves the first sign-in right and every refresh after it wrong. The margin is
+     * a day: 12 h and 7 days cannot both satisfy it, so no clock skew can make this ambiguous.
+     */
+    it('grants the longer window, and records the choice, when remember is sent (OQ-35)', async () => {
+      const before = Date.now();
+      const issued = session(await signIn(email, PASSWORD, true).expect(201));
+
+      const day = 24 * 60 * 60 * 1000;
+      expect(issued.refreshTokenExpiresAt - before).toBeGreaterThan(6 * day);
+      expect(issued.refreshTokenExpiresAt - before).toBeLessThanOrEqual(7 * day + 5_000);
+
+      const [row] = await owner.query<{ remembered: boolean }[]>(
+        `SELECT s.remembered FROM identity.session s
+           JOIN identity.account a ON a.id = s.account_id
+          WHERE lower(a.email) = lower($1)
+          ORDER BY s.created_at DESC LIMIT 1`,
+        [email],
+      );
+      expect(row.remembered).toBe(true);
     });
   });
 

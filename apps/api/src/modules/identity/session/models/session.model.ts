@@ -35,7 +35,30 @@ export interface Session {
   readonly accountId: string;
   /** The absolute lifetime's anchor (§12.5.6, OQ-35). */
   readonly createdAt: Date;
+  /**
+   * S-01's *Keep me signed in on this device* — which of §12.5.6's two lifetime pairs bounds this
+   * session (OQ-35 amended 4 Sep 2026). The row stores the CHOICE and never a deadline, so an
+   * amendment to either pair is a constant here rather than a data migration.
+   */
+  readonly remembered: boolean;
   readonly revokedAt: Date | null;
+}
+
+/**
+ * What creating a session needs — one named input rather than four positional arguments.
+ *
+ * `remembered` is why: `(accountId, hash, at)` were three distinct types and safe positionally, but
+ * a bare `true` in fourth place says nothing at the call site about which of two lifetime policies
+ * it selects. CLAUDE.md's rule is about parameters a swap could silently transpose; this is the
+ * neighbouring case it exists for — an argument whose *meaning* is unreadable without counting.
+ */
+export interface NewSession {
+  readonly accountId: string;
+  /** The first refresh token's hash. Session and token are written together — see the store. */
+  readonly refreshTokenHash: Buffer;
+  /** The person's answer at sign-in. Never changed afterwards: the migration grants no UPDATE. */
+  readonly remembered: boolean;
+  readonly at: Date;
 }
 
 /**
@@ -52,6 +75,8 @@ export interface PresentedRefreshToken {
   /** Non-null means the token was rotated away — presenting it is the reuse signal. */
   readonly tokenConsumedAt: Date | null;
   readonly sessionCreatedAt: Date;
+  /** The session's lifetime policy, carried so the refresh path judges expiry against the right pair. */
+  readonly sessionRemembered: boolean;
   readonly sessionRevokedAt: Date | null;
 }
 

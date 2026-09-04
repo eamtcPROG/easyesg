@@ -5,6 +5,7 @@ import type {
   SessionTransaction,
 } from '../interfaces/session-store.interface';
 import type {
+  NewSession,
   PresentedRefreshToken,
   Session,
   SessionRevokedReason,
@@ -27,6 +28,7 @@ export interface FakeStoredSession {
   id: string;
   accountId: string;
   createdAt: Date;
+  remembered: boolean;
   revokedAt: Date | null;
   revokedReason: SessionRevokedReason | null;
 }
@@ -151,11 +153,12 @@ export class FakeSessionStore implements SessionStore {
         return Promise.resolve();
       },
 
-      createSession(accountId: string, refreshTokenHash: Buffer, at: Date): Promise<Session> {
+      createSession(input: NewSession): Promise<Session> {
         const session: FakeStoredSession = {
           id: `session-${store.nextId++}`,
-          accountId,
-          createdAt: at,
+          accountId: input.accountId,
+          createdAt: input.at,
+          remembered: input.remembered,
           revokedAt: null,
           revokedReason: null,
         };
@@ -163,14 +166,15 @@ export class FakeSessionStore implements SessionStore {
         store.refreshTokens.push({
           id: `token-${store.nextId++}`,
           sessionId: session.id,
-          tokenHash: refreshTokenHash,
-          issuedAt: at,
+          tokenHash: input.refreshTokenHash,
+          issuedAt: input.at,
           consumedAt: null,
         });
         return Promise.resolve({
           id: session.id,
-          accountId,
-          createdAt: at,
+          accountId: input.accountId,
+          createdAt: input.at,
+          remembered: input.remembered,
           revokedAt: null,
         });
       },
@@ -187,6 +191,7 @@ export class FakeSessionStore implements SessionStore {
           tokenIssuedAt: token.issuedAt,
           tokenConsumedAt: token.consumedAt,
           sessionCreatedAt: session.createdAt,
+          sessionRemembered: session.remembered,
           sessionRevokedAt: session.revokedAt,
         });
       },
@@ -268,7 +273,10 @@ export class FakeSecondFactor {
  * the path a forged or stale challenge takes.
  */
 export class FakeChallengeSealer {
-  seal(challenge: { readonly accountId: string; readonly issuedAt: number }): string {
+  // Typed from the payload rather than restated, so a field added to the challenge — `remembered`
+  // was, at task 97 — reaches every caller of this fake as a compile error instead of as a spec
+  // that quietly stops covering it.
+  seal(challenge: Omit<FactorChallengePayload, 'kind'>): string {
     return JSON.stringify({ ...challenge, kind: FACTOR_CHALLENGE_KIND });
   }
 

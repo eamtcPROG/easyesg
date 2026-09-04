@@ -2,6 +2,10 @@ import { AuthRateLimitedError } from '@api/modules/identity/account/errors/accou
 import { FakePasswordHasher } from '@api/modules/identity/account/testing/account-store.fake';
 import { ACCOUNT_STATUS, type Account } from '@api/modules/identity/account/models/account.model';
 import { FACTOR_CHALLENGE_TTL_MS } from '../domain/factor-challenge';
+import {
+  SESSION_IDLE_TTL_MS,
+  SESSION_SHORT_ABSOLUTE_TTL_MS,
+} from '../domain/session-expiry';
 import { AccountLockedError, FactorInvalidError } from '../errors/session.errors';
 import {
   FakeAccessTokenSigner,
@@ -59,8 +63,8 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
     });
   });
 
-  const signInAndChallenge = async () => {
-    const outcome = await signIn.execute({ email: EMAIL, password: PASSWORD });
+  const signInAndChallenge = async (remember?: boolean) => {
+    const outcome = await signIn.execute({ email: EMAIL, password: PASSWORD, remember });
     if (outcome.kind !== SIGN_IN_OUTCOME.CHALLENGED) throw new Error('expected a challenge');
     return outcome;
   };
@@ -93,6 +97,39 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
       expect(store.sessions.filter((session) => session.accountId === 'account-1')).toHaveLength(0);
     });
 
+    /**
+     * **The persistence choice has to survive the step, and nothing else in the suite would notice
+     * if it did not** (task 97's gate review, which proved three separate mutations here left all
+     * 639 api tests green). The answer is given at the password step and the session is issued a
+     * screen later; every user with a factor enrolled takes this path.
+     *
+     * Both directions, because they fail differently: sealing the choice and never reading it back
+     * leaves every factor user on the short window, and reading a hardcoded `true` leaves every one
+     * of them on the long one.
+     */
+    it('carries a remembered choice across the step (OQ-35)', async () => {
+      const { challenge } = await signInAndChallenge(true);
+
+      const issued = await complete.execute({ challenge, code: CODE });
+
+      // Both halves: the row records the choice, and the reported expiry applies it. Either alone
+      // passes while the other is broken.
+      expect(store.sessions.at(-1)?.remembered).toBe(true);
+      expect(issued.refreshTokenExpiresAt.getTime()).toBe(now.getTime() + SESSION_IDLE_TTL_MS);
+    });
+
+    /** Separate cases rather than one: the fake's code is single-use, as a real authenticator's is. */
+    it('carries a declined choice across the step (OQ-35)', async () => {
+      const { challenge } = await signInAndChallenge(false);
+
+      const issued = await complete.execute({ challenge, code: CODE });
+
+      expect(store.sessions.at(-1)?.remembered).toBe(false);
+      expect(issued.refreshTokenExpiresAt.getTime()).toBe(
+        now.getTime() + SESSION_SHORT_ABSOLUTE_TTL_MS,
+      );
+    });
+
     it('issues the session once the code is right', async () => {
       const { challenge } = await signInAndChallenge();
 
@@ -122,7 +159,7 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
         ['a challenge this API never sealed', () => Promise.resolve({ challenge: 'not-sealed', code: CODE })],
         [
           'a challenge naming an account with no factor',
-          () => Promise.resolve({ challenge: sealer.seal({ accountId: 'nobody', issuedAt: now.getTime() }), code: CODE }),
+          () => Promise.resolve({ challenge: sealer.seal({ accountId: 'nobody', issuedAt: now.getTime(), remembered: false }), code: CODE }),
         ],
       ])('refuses %s identically', async (_name, build) => {
         await expect(complete.execute(await build())).rejects.toBeInstanceOf(FactorInvalidError);
@@ -131,6 +168,7 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
       it('refuses an expired challenge', async () => {
         const stale = sealer.seal({
           accountId: 'account-1',
+          remembered: false,
           issuedAt: now.getTime() - FACTOR_CHALLENGE_TTL_MS,
         });
         await expect(complete.execute({ challenge: stale, code: CODE })).rejects.toBeInstanceOf(

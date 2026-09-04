@@ -113,7 +113,9 @@ export async function completeFactorAction(command: {
     return outcome;
   }
 
-  const session = await establishSession(outcome.value);
+  // The answer given at the password step. The API applied its own sealed copy to the session's
+  // lifetime; this applies ours to the cookie's persistence.
+  const session = await establishSession({ session: outcome.value, remembered: held.remember });
   const target = await resolvePostSignIn(held.returnTo ?? undefined);
   redirect({ href: target.href, locale: target.locale ?? session.account.locale });
 }
@@ -121,6 +123,13 @@ export async function completeFactorAction(command: {
 export interface SignInCommand {
   email: string;
   password: string;
+  /**
+   * S-01's *Keep me signed in on this device*. It reaches the API, which decides the session's
+   * lifetime from it (§12.5.6, OQ-35 amended 4 Sep 2026), and the cookie, which is persistent only
+   * when it is true — the API's cap is the authority and the cookie is what a shared machine
+   * actually experiences.
+   */
+  remember: boolean;
   /**
    * `proxy.ts`'s `?return=` value, carried through the screen — and **sanitized downstream**, in
    * `resolvePostSignIn`, because it round-trips through the browser and is therefore
@@ -149,7 +158,7 @@ export interface SignInCommand {
 export async function signInAction(command: SignInCommand): Promise<SignInFailure> {
   const outcome = await api.post<SignInRequest, SessionResponse | FactorChallengeResponse>(
     '/auth/session',
-    { email: command.email, password: command.password },
+    { email: command.email, password: command.password, remember: command.remember },
   );
   if (outcome.status !== API_OUTCOME.Ok) return outcome;
 
@@ -163,6 +172,7 @@ export async function signInAction(command: SignInCommand): Promise<SignInFailur
       challenge: answered.challenge,
       expiresAt: answered.expiresAt,
       returnTo: command.returnTo,
+      remember: command.remember,
     });
     // The reader's CURRENT locale, not the profile's: they are still on S-01 and the sign-in has
     // not completed, so OQ-32's preference has nothing to apply to yet.
@@ -172,7 +182,7 @@ export async function signInAction(command: SignInCommand): Promise<SignInFailur
     return undefined;
   }
 
-  const session = await establishSession(answered);
+  const session = await establishSession({ session: answered, remembered: command.remember });
   // §4.3's branch, over the memberships the session can now read (task 25.4). It replaces the
   // recorded interim that landed every sign-in on `/home`, and it decides the `?return=` question
   // too: a deep link is honoured only where an organization resolves.

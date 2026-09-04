@@ -6,6 +6,7 @@ import { REFRESH_REUSE_GRACE_MS, hashRefreshToken } from '../domain/refresh-toke
 import {
   SESSION_ABSOLUTE_TTL_MS,
   SESSION_IDLE_TTL_MS,
+  SESSION_SHORT_ABSOLUTE_TTL_MS,
 } from '../domain/session-expiry';
 import { SessionExpiredError, SessionInvalidError } from '../errors/session.errors';
 import { SESSION_REVOKED_REASON } from '../models/session.model';
@@ -36,6 +37,8 @@ describe('RefreshSession (AD-12)', () => {
     tokenAgeMs?: number;
     consumedAgoMs?: number;
     revoked?: boolean;
+    /** §12.5.6's two pairs (OQ-35). Remembered by default — every case below predates the choice. */
+    remembered?: boolean;
   } = {}) => {
     const createdAt = new Date(now.getTime() - (options.sessionAgeMs ?? 0));
     const issuedAt = new Date(now.getTime() - (options.tokenAgeMs ?? 0));
@@ -43,6 +46,7 @@ describe('RefreshSession (AD-12)', () => {
       id: 'session-1',
       accountId: account.id,
       createdAt,
+      remembered: options.remembered ?? true,
       revokedAt: options.revoked ? new Date(now.getTime() - 1000) : null,
       revokedReason: options.revoked ? SESSION_REVOKED_REASON.SIGNED_OUT : null,
     });
@@ -137,6 +141,41 @@ describe('RefreshSession (AD-12)', () => {
 
     it('rotation cannot outlive the 30-day absolute cap', async () => {
       seedSession({ sessionAgeMs: SESSION_ABSOLUTE_TTL_MS, tokenAgeMs: 60_000 });
+
+      await expect(refresh.execute({ refreshToken: raw })).rejects.toBeInstanceOf(
+        SessionExpiredError,
+      );
+    });
+
+    /**
+     * The amendment of 4 Sep 2026 reaching the refresh path (OQ-35). A 13 h-old session with a
+     * token minted a minute ago is well inside the *remembered* idle window and outside the
+     * not-remembered cap — so this case passes for the wrong reason unless the flag is actually
+     * read from the row. It is the refresh-side twin of `session-expiry.spec.ts`'s last case.
+     */
+    /**
+     * The value the web tier writes into the cookie's `Max-Age` and checks staleness against — so a
+     * refresh that reported the remembered bound for a declined session would hand the browser a
+     * month-long cookie over a 12 h session. Proven absent by the gate review: hardcoding the flag
+     * here left all 639 api tests green.
+     */
+    it('reports the shorter bound when it rotates a not-remembered session (OQ-35)', async () => {
+      seedSession({ sessionAgeMs: 60 * 60 * 1000, tokenAgeMs: 60 * 60 * 1000, remembered: false });
+
+      const issued = await refresh.execute({ refreshToken: raw });
+
+      // From SIGN-IN, not from this rotation: with the pair equal, the absolute cap binds.
+      expect(issued.refreshTokenExpiresAt.getTime()).toBe(
+        now.getTime() - 60 * 60 * 1000 + SESSION_SHORT_ABSOLUTE_TTL_MS,
+      );
+    });
+
+    it('refuses a not-remembered session past its 12 h cap, however fresh its token', async () => {
+      seedSession({
+        sessionAgeMs: 13 * 60 * 60 * 1000,
+        tokenAgeMs: 60_000,
+        remembered: false,
+      });
 
       await expect(refresh.execute({ refreshToken: raw })).rejects.toBeInstanceOf(
         SessionExpiredError,

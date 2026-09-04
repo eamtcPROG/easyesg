@@ -15,6 +15,7 @@ describe('SignOut (UC-06, FR-5)', () => {
       id: 'session-1',
       accountId: 'account-1',
       createdAt: new Date(now.getTime() - 1000),
+      remembered: true,
       revokedAt: options.revoked ? new Date(now.getTime() - 500) : null,
       revokedReason: options.revoked ? SESSION_REVOKED_REASON.PASSWORD_RESET : null,
     });
