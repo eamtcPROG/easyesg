@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsUUID } from 'class-validator';
 import {
-  DEFAULT_REPORT_SCOPE,
   REPORT_SCOPE,
   REPORT_STATUS,
   type Report,
@@ -40,9 +39,16 @@ export class CreateReportRequestDto {
    * the template and taxonomy version the period's to determine; a request field naming one would
    * let a caller pin a filing to a version of their choosing.
    */
+  /*
+   * **No `default:` in the schema.** openapi-typescript treats a property carrying a default as
+   * always present and emits it as REQUIRED, so the generated client would oblige every caller to
+   * send a field this schema's own `required` list omits. The default is stated in the description,
+   * where a reader needs it, and applied where it can actually be applied — in the use case.
+   * (Found on `SignInRequestDto` at task 97, swept here at task 32.3; these two were the only
+   * request properties in the whole spec carrying a default.)
+   */
   @ApiPropertyOptional({
     enum: SCOPES,
-    default: DEFAULT_REPORT_SCOPE,
     description:
       'Which VSME modules this report covers. Comprehensive is additive over Basic and may also ' +
       'be added later (FR-177). Defaults to Basic.',

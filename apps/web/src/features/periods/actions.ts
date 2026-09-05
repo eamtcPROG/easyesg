@@ -8,6 +8,10 @@ import type {
 } from '@easyesg/contracts';
 import { revalidatePath } from 'next/cache';
 import { mapOutcome, type ApiOutcome } from '@/lib/api-outcome';
+// Moved out of this file at task 32.3, when a second action needed the same path: a `'use server'`
+// module may export only async functions, so a shared constant cannot live in one — the build says
+// so and nothing else does.
+import { PERIODS_PATH } from '@/lib/revalidate-paths';
 import { api } from '@/server/api-client';
 
 /**
@@ -24,7 +28,7 @@ import { api } from '@/server/api-client';
  * not an attribution"*. A Server Action that accepted an actor would be that attribution, named by
  * the caller, one tier further out.
  */
-const PERIODS_PATH = '/[locale]/(app)/(workspace)/entities/[entityId]/periods';
+
 
 /** The list and the record are one path family, so one call covers both. */
 const revalidatePeriods = (): void => {

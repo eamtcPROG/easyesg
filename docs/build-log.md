@@ -11317,3 +11317,188 @@ one method — locally correct, no rule covers it. And `.labelLink` removes `Tex
 underline-at-rest for the reset link, which is a considered deviation stated in the stylesheet: the
 underline returns on hover, and WCAG 1.4.1's block-of-text scoping is what makes it defensible rather
 than the hover alone.
+
+---
+
+## Tasks 32.2.2 and 32.3 — S-06, and the exit that had been blocking it · 2026-09-05
+
+**How this task was chosen matters, because the plan said it could not be done.** 32.2.2 was
+`BLOCKED`, and the reason was recorded on 31 Aug: §4.4 has no report record screen, so an Index
+row's only exit is S-07, and `reports/[reportId]/page.tsx` was a redirector that rendered nothing —
+pointing the busiest list in the product at it would be the dead row action task 30.1 ruled against
+and 30.4.2 was restructured to avoid. **Tasks 35.1 … 36.2 have since built that exit.** The
+redirector now resolves to where work last happened and lands on a real B1. The blocker had cleared
+and nothing had said so, which is the failure mode a status column is prone to: it records a
+judgement made on a day, and the world moves.
+
+### The two were built together, on the owner's answer and 30.4.2's precedent
+
+§4.6 requires an Index's empty state to **teach**; the *offer the first action* half is §5's, on
+S-05's own state row — a distinction worth keeping, because the citation supporting a scheduling
+decision should say what it is quoted for. Both point the same way here: the S-06 artboard's teaching
+state leads with *"A report is one entity, one period"* under a **Create the 2026 report** button. Shipping 32.2.2 alone would put an empty state on the screen with nothing to offer — the
+same defect one level down. Put to the project owner with 30.4.2's precedent (*it shipped with
+30.4.3 rather than pointing an Index at a Record returning `null`*), the answer was to build both.
+
+### What the artboard draws and this does not
+
+The parent row had already refused two of the six columns with owners named; reading the artboard
+against what exists refused two more and narrowed a fifth:
+
+- **Completion** is task 41.3's roll-up, **validation findings** are task 40's — the parent's own
+  decision, unchanged.
+- **The export count and *Download*** beneath a filed row are task 47's, and **Preview** is S-11's
+  (task 43). So the artboard's four state-dependent row actions become **one**: every row opens.
+  A control that cannot act is worse than an absent one, which is the rule this task existed on the
+  wrong side of until today.
+- **Last activity ships half-built, deliberately.** The artboard draws *"Today 14:32 · Ana R."*;
+  `GET /reports` answers `updatedAt` and no actor. The instant is shown and the person is not, with
+  the reason recorded where the row is built: who last touched a report is provenance (§6.13, FR-55)
+  and reaches a screen only when a read answers it. Half a column that is honest beats a whole one
+  that is invented.
+- On the creation flow, **carry-forward** — the artboard's *"what to bring over from VSME 2024"* —
+  is task 38's comparatives and has no field on `POST /reports`; refused rather than drawn inert.
+  **Scope is not asked at all**, and that is the artboard agreeing: FR-177 makes Comprehensive
+  additive and reversible at any point, and the prototype says so in the reader's own words —
+  *"You will start on B1. The Comprehensive module can be added later."* A control there would
+  present as a decision being locked in, which is the opposite of what the requirement grants.
+
+### Both choices are links, and the pins are the deliverable
+
+The creation flow's two decisions ride the address (`?entity=…&period=…`), so the whole screen is a
+Server Component except the confirm, and a half-made choice is something a reader can reload or
+share (UX-4). That is not only tidiness: **`GET /periods` is scoped to one entity by design**
+(FR-21, and the parameter is required), so the second decision cannot be offered until the first is
+made — the shape the API already had.
+
+**Task 32.3's deliverable is literally the pin on the screen** — *DR-4 is only checkable by a user
+if the pin is on the screen* — so the chosen period's template and taxonomy versions are shown
+before the report exists, which is the moment they are decided. They are shown again on every row of
+the index. Neither claims a *standing*: nothing yet tells a screen a version has been superseded
+(task 33.3 registers the second one that makes the question answerable), and `PeriodsList` records
+the same restraint.
+
+**Periods already carrying a report are removed from the offer rather than refused on submit.** A
+period holds at most one report — the API's own rule — so offering a taken one would put a 409
+behind a control that looked available.
+
+### A route collision retired before it could cost anything
+
+`/reports/new` is a **static sibling of `(wizard)`'s `[reportId]`, across route groups**, which Next
+can refuse as two pages resolving to one path. Probed with a stub page and a build before a line of
+the screen was written: both routes emit, the static segment wins. Recorded on the route constant so
+the next reader does not have to rediscover it.
+
+### The sweep I owed from yesterday
+
+`CreateReportRequest.scope` came back from the generator as **required**, which is the identical
+defect task 97 fixed on `SignInRequestDto.remember` one day earlier: openapi-typescript treats a
+property carrying a `default` as always present, so the generated client obliges callers to send a
+field the spec's own `required` list omits. Yesterday I fixed the site I met. **The root rule is
+that a rule is applied where it holds, not where it was found** — so this time the spec was swept:
+`ChangePasswordRequestDto.terminateOtherSessions` and `CreateReportRequestDto.scope` were the only
+two request properties in the whole document carrying a default, and both now state the default in
+their description and apply it where it can actually be applied. `create-report.use-case.ts` already
+said so in a comment — *"`DEFAULT_REPORT_SCOPE` is applied here, not at the edge"* — which is how
+the DTO's import turned out to be dead once the schema default went.
+
+### One fixture split rather than copied
+
+The creation journey needs an entity with a free period and **no** report, which no helper offered.
+`seedReport` was split over a private `seedFiling` rather than copied: the entity, the snapshot and
+the period are the same four inserts, and two copies would drift the moment a column is added —
+which `core.reporting_period` has already gained twice (the lock at 31.2, the snapshot link at
+31.1). `seedReport`'s signature is unchanged, because five suites call it and none wants the
+period.
+
+### Verified
+
+**`pnpm gates:clean`, green** — the whole set from a cleaned tree: `typecheck` across eight
+workspaces, `lint` cold-cached, `image:check`, unit (652 api · 286 web · 110 ui · and the rest),
+`boundaries` (961 modules) with all 23 proofs, `build`, `openapi:check`, `facade:check`,
+`routes:check`, `migrations:check` with **56** schema invariants, `pnpm e2e` **809**,
+`pnpm e2e:worker`, and `pnpm e2e:web` **138 passed**, up from 132.
+
+The view model is pure, so the filter, the sort, the page arithmetic and the two-empty-state pair
+are asserted as unit tests rather than through a browser; `server/data/reports.spec.ts` covers the
+seam's withholding and its two refusal arms. The six browser journeys assert only what crosses a
+boundary: the row's link resolving through the redirector to a real B1 (the claim the block was
+about, spanning two screens and a redirect); the teaching empty state leading to the creation flow
+and a report arriving at its first step; a stale `?period=` leaving no confirm to press; the
+**filtered** empty state being a different screen from the **first-use** one, which the shell
+chooses from `matched` and `total` and which is only observable rendered; the view-only member's two
+missing writes and unchanged entries; and the screen in three locales.
+
+### The reviews — all three on **opus**, and each found something the others could not
+
+Routed up before any ran: `packages/contracts/**`, `apps/api/**/dto/**` and four workspaces. Between
+them, seventeen findings. What follows is what changed because of them, because that is the part a
+diff cannot show.
+
+**Three were defects, not records.**
+
+- **A locked period was offered as a choice the API refuses.** The read seam withheld periods that
+  already carry a report — with a comment arguing exactly why a refusal must not sit behind an
+  available control — and did not withhold **locked** ones, which `CreateReport` refuses outright
+  (FR-26, UC-18). The rule had been applied to one of its two causes.
+- **A view-only member saw both writes.** FR-25's acceptance criterion is *"a view-only member sees
+  the same entries and no edit affordances"*, and §5's S-06 States row names `read-only (view-only
+  membership)`. The screen carried a rule from S-13 and S-15 — *never compute the caller's role* —
+  to the one screen where the requirement says otherwise. The role was already in hand and `cache()`d.
+- **The template pin was on the row model and on no screen.** Task 32.3's deliverable is *"displays
+  its pinned version**s**"*; only the taxonomy one rendered. They are separate facts — FR-69 migrates
+  them independently — so half the deliverable read as the whole of it.
+
+**Two of my own checks were proven inert**, by mutation, which is the only way that is ever
+discovered: deleting the **status filter's predicate** left every test green (the "all three
+filters" case narrowed to one row on the other two), and deleting the creation flow's **entire
+withholding filter** left all 275 green, because the e2e seeds a free period so the branch had no
+subject anywhere. Both now have specs that fail on exactly those mutations, and
+`server/data/reports.spec.ts` exists because the seam had none — it also covers the `FORBIDDEN` and
+`UNREACHABLE` arms, which nothing distinguished. Writing it found a third thing: my first refusal
+fixture keyed on the HTTP **status**, where `tenant-read.ts` keys on the problem **type**.
+
+**The e2e was tightened where it was passing for the wrong reason.** `toContainText('VSME Basic')`
+cannot tell the two scopes apart — `basic_and_comprehensive`'s label *contains* it.
+`toContainText('2026')` holds even with an empty year cell, because the row also renders the period
+and the pin. And `.first()` on the pin assertion meant either indicator satisfied it, on the screen
+whose whole deliverable is that both are checkable — the root rule's own words: *"a test that works
+around an ambiguity is that ambiguity's only record"*. Two viewer journeys and a stale-`?period=`
+step were added; the first four all ran as administrator, so the refusals had no failing state.
+
+**And the recurrence graduated into a gate.** The `default:`-on-a-request-property defect has now
+arrived three times — `SignInRequestDto.remember` at task 97, `CreateReportRequestDto.scope` here,
+and `ChangePasswordRequestDto.terminateOtherSessions`, which the sweep found and nobody had noticed.
+`openapi:check` cannot see it: it regenerates both sides and diffs them against each other, so a bad
+shape stays green forever. `src/infrastructure/openapi/contract-shape.spec.ts` walks every schema a
+`requestBody` points at, runs hermetically in `pnpm test`, started green, and was proven to bite by
+putting the default back. The rule is in `apps/api/CLAUDE.md` beside the other route conventions.
+
+**Four decisions had been taken in code comments and are now in the register** (§12.5.6): the
+scheduling call that unblocked 32.2.2 and shipped it with 32.3; *last activity* without its actor,
+with the finding that **no task row owns the report-level actor**; the pins shown twice; and the one
+that matters most — **the creation flow asks for no scope, and FR-177's acceptance criteria say it
+should be settable at creation**. That is a requirement clause left unmet, recorded as a deferral
+with what is assumed and what changes if it is wrong, plus the gap it rests on: task 78.1 has not
+settled whether narrowing an existing report is even permitted, and no row owns the control.
+
+**The screen with no `S-nn` became `design_spec.md` OQ-21** rather than a paragraph in a page file.
+§4.4 goes S-06 → S-07 with nothing between, so the creation flow belongs to no inventory row, and
+two things ride on that: its archetype (Focus-shaped, but rendered inside `(workspace)` with §4.2's
+tier, which Focus's fixed elements exclude) and the state set UX-8 wants before an instance is
+designed. It ships under a stated assumption; §5's S-06 row was amended for the rest of the residue
+— the new exit, the new entry point, the columns that now render, and the `error — permission` state.
+
+Two citations were overstated and are corrected: §4.6 requires an empty state to *teach*, and the
+*offer the first action* half is §5's; and FR-55 is about **retaining** attribution after access is
+removed, where the missing actor is §6.13's chip and UX-68's history.
+
+**And acting on one finding broke the build in a way nothing else could see.** Sharing the
+`revalidatePath` pattern meant exporting it from `features/periods/actions.ts` — and **a
+`'use server'` module may export only async functions**. Ten Turbopack errors, with `typecheck`,
+`lint` and 286 unit tests all green; `pree2e:web`'s build is what found it. The pattern now lives in
+`lib/revalidate-paths.ts`, deliberately not in `lib/routes.ts`: it carries `[locale]` and the route
+groups that never appear in a URL, so the two are different vocabularies and mixing them would
+eventually put one behind a `Link`. The constraint is now a trap entry in `apps/web/CLAUDE.md`,
+because it is a rule about where shared code may live and this repository did not have it written
+down.

@@ -1,0 +1,35 @@
+/* S-06 and the creation flow (tasks 32.2.2, 32.3). Spacing and column rhythm only — anything with
+   its own anatomy is an inventory component in `@easyesg/ui` (UX-89); these classes arrange them. */
+
+.screen { display: flex; flex-direction: column; gap: var(--space-6); }
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.title { margin: 0; }
+.lede { margin: var(--space-2) 0 0; color: var(--text-body); max-width: var(--measure-text); }
+
+.filters { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+
+/* The entity cell carries the scope beneath the name, as the artboard draws it. */
+.subject { display: flex; flex-direction: column; gap: var(--space-1); }
+
+/* The creation flow's decisions, each a titled block so the reader can see how many there are —
+   the artboard's "three decisions, one of which matters". */
+.decisions { display: flex; flex-direction: column; gap: var(--space-7); }
+.decision { display: flex; flex-direction: column; gap: var(--space-4); }
+.decisionTitle { margin: 0; }
+.decisionHint { margin: 0; color: var(--text-body); max-width: var(--measure-text); }
+
+/* The year buttons: the artboard draws the choice as buttons rather than a picker, because a
+   handful of open periods is a set to see rather than a list to search. */
+.periods { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+
+.pins { display: flex; gap: var(--space-6); flex-wrap: wrap; }
+
+.submit { display: flex; gap: var(--space-4); flex-wrap: wrap; align-items: center; }

@@ -1,6 +1,6 @@
 'use client';
 
-import { StatusChip, type DataTableColumn, type StatusTone } from '@easyesg/ui';
+import { StatusChip, STATUS_TONE, type DataTableColumn, type StatusTone } from '@easyesg/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import {
@@ -32,9 +32,9 @@ import { RoleCell, RowActions } from './access-row';
  * stopped working and wants a resend. `error` would overstate it; `pending` would hide it.
  */
 const STANDING_TONE: Record<AccessStanding, StatusTone> = {
-  [ACCESS_STANDING.ACTIVE]: 'positive',
-  [ACCESS_STANDING.INVITED]: 'pending',
-  [ACCESS_STANDING.INVITATION_EXPIRED]: 'attention',
+  [ACCESS_STANDING.ACTIVE]: STATUS_TONE.POSITIVE,
+  [ACCESS_STANDING.INVITED]: STATUS_TONE.PENDING,
+  [ACCESS_STANDING.INVITATION_EXPIRED]: STATUS_TONE.ATTENTION,
 };
 
 export function useAccessColumns(

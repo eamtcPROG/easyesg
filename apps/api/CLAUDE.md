@@ -1158,6 +1158,15 @@ because dependency-cruiser matches npm dependencies by *resolved* path, so `^@ne
   Since task 28.2 a route declaring none fails `route-permissions.spec.ts`, so "closed by default"
   is a gate rather than a review property.
 - Gate it with `@RequiresEntitlement(key)` or record why it needs no key.
+- **No `default:` on a request DTO's `@ApiProperty`/`@ApiPropertyOptional`.** openapi-typescript
+  treats a property carrying a default as always present and emits it **required**, so the generated
+  client obliges every caller to send a field the schema's own `required` list omits. State the
+  default in the `description`, where a reader needs it, and apply it in the use case, where it can
+  actually be applied. Gated hermetically by `src/infrastructure/openapi/contract-shape.spec.ts`,
+  which walks every schema a `requestBody` points at — added at task 32.3 after the same defect
+  arrived three times (`SignInRequestDto.remember`, `CreateReportRequestDto.scope`, and
+  `ChangePasswordRequestDto.terminateOtherSessions`, which nobody had noticed at all). A default on
+  a **response** property is a different claim and is untouched by the rule.
 - A list handler returns a bare array and is annotated `@ApiListResponse(Dto, …)`. Annotating it
   `@ApiOkResponse({ type: [Dto] })` publishes a contract saying the body IS an array, while
   `ResultListDto` arrives — the generated client then reads `response[0]` where `response.objects[0]`

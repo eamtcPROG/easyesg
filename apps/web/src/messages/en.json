@@ -31,6 +31,7 @@
     },
     "workspaceNav": {
       "label": "Organisation sections",
+      "reports": "Reports",
       "organization": "Organisation",
       "entities": "Entities",
       "users": "Users & access"
@@ -733,6 +734,114 @@
           "body": "No answer came back from the server, so the list cannot be shown right now.",
           "action": "Reload the page"
         }
+      }
+    },
+    "reports": {
+      "title": "Reports",
+      "lede": "Your organization's sustainability reports, by entity and year.",
+      "add": "New report",
+      "caption": "The reports you can open",
+      "columns": {
+        "entity": "Entity",
+        "year": "Year",
+        "period": "Period",
+        "periodValue": "{start} – {end}",
+        "status": "State",
+        "activity": "Last activity",
+        "pin": "Version",
+        "template": "Template",
+        "taxonomy": "Taxonomy"
+      },
+      "scope": {
+        "basic": "VSME Basic",
+        "basic_and_comprehensive": "VSME Basic and Comprehensive"
+      },
+      "status": {
+        "open": "In progress",
+        "locked": "Locked",
+        "ready_to_file": "Ready to file",
+        "filed": "Filed"
+      },
+      "filter": {
+        "entity": "Entity",
+        "year": "Year",
+        "status": "State",
+        "options": {
+          "anyEntity": "All entities",
+          "anyYear": "All years",
+          "any": "All states",
+          "open": "In progress",
+          "locked": "Locked",
+          "ready_to_file": "Ready to file",
+          "filed": "Filed"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "No reports yet",
+          "body": "A report covers one entity and one reporting period. You fill it in by answering eleven sets of questions, at your own pace.",
+          "action": "Create the first report"
+        },
+        "filtered": {
+          "title": "No report matches the filter",
+          "body": "Reports exist, but none match the filters you have chosen. Clear the filters to see them all.",
+          "action": "Clear the filters"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to this organization's reports",
+          "body": "Your account is not an active member of the selected organization, so the list cannot be shown.",
+          "action": "Go to the home page"
+        },
+        "unreachable": {
+          "title": "The report list could not be loaded",
+          "body": "The service did not answer, so we do not know which reports exist. Reload the page in a moment.",
+          "action": "Reload the page"
+        }
+      },
+      "create": {
+        "title": "New report",
+        "lede": "A report covers one entity and one reporting period.",
+        "permission": {
+          "title": "You cannot create reports in this organization",
+          "body": "Your account is not an active member of the selected organization, so we cannot show the entities a report could be created for.",
+          "action": "Go to the home page"
+        },
+        "unreachable": {
+          "title": "We could not find out what a report can be created for",
+          "body": "The service did not answer, so we do not know which entities and periods are available. Reload the page in a moment.",
+          "action": "Reload the page"
+        },
+        "standard": {
+          "title": "Standard",
+          "value": "VSME — the EU standard for small companies",
+          "hint": "It is the one banks and larger customers ask for. Others become available as the platform supports them."
+        },
+        "entity": {
+          "title": "Reporting entity",
+          "hint": "Choose the entity the report is for. The periods on offer follow from it.",
+          "noneTitle": "No reporting entity",
+          "noneBody": "A report is made for an entity, and your organization has none yet — so there is nothing to create one for.",
+          "noneAction": "Add an entity"
+        },
+        "period": {
+          "title": "Reporting period",
+          "hint": "Only periods that do not already have a report are shown.",
+          "noneTitle": "No free period",
+          "noneBody": "Every period of this entity already has a report, and a period can hold only one. Open a new period, or choose another entity.",
+          "noneAction": "See the entity's periods",
+          "value": "{start} – {end}"
+        },
+        "pins": {
+          "title": "The versions this report is pinned to",
+          "template": "Template",
+          "taxonomy": "Taxonomy",
+          "hint": "They are taken from the period you choose and stay fixed for the life of the report, so a figure always means the same thing."
+        },
+        "comprehensive": "You will start on B1. The Comprehensive module can be added later if a customer asks for it.",
+        "submit": "Create the report",
+        "cancel": "Cancel"
       }
     },
     "access": {

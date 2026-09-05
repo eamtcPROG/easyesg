@@ -31,6 +31,7 @@
     },
     "workspaceNav": {
       "label": "Secțiunile organizației",
+      "reports": "Rapoarte",
       "organization": "Organizația",
       "entities": "Entități",
       "users": "Utilizatori și acces"
@@ -733,6 +734,114 @@
           "body": "Nu am primit răspuns de la server, așa că lista nu poate fi afișată acum.",
           "action": "Reîncărcați pagina"
         }
+      }
+    },
+    "reports": {
+      "title": "Rapoarte",
+      "lede": "Rapoartele de sustenabilitate ale organizației dumneavoastră, pe entitate și pe an.",
+      "add": "Raport nou",
+      "caption": "Rapoartele la care aveți acces",
+      "columns": {
+        "entity": "Entitatea",
+        "year": "Anul",
+        "period": "Perioada",
+        "periodValue": "{start} – {end}",
+        "status": "Starea",
+        "activity": "Ultima activitate",
+        "pin": "Versiunea",
+        "template": "Șablon",
+        "taxonomy": "Taxonomie"
+      },
+      "scope": {
+        "basic": "VSME Basic",
+        "basic_and_comprehensive": "VSME Basic și Comprehensive"
+      },
+      "status": {
+        "open": "În lucru",
+        "locked": "Blocat",
+        "ready_to_file": "Gata de depunere",
+        "filed": "Depus"
+      },
+      "filter": {
+        "entity": "Entitatea",
+        "year": "Anul",
+        "status": "Starea",
+        "options": {
+          "anyEntity": "Toate entitățile",
+          "anyYear": "Toți anii",
+          "any": "Toate stările",
+          "open": "În lucru",
+          "locked": "Blocate",
+          "ready_to_file": "Gata de depunere",
+          "filed": "Depuse"
+        }
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Niciun raport deocamdată",
+          "body": "Un raport acoperă o singură entitate și o singură perioadă de raportare. Îl completați răspunzând la unsprezece seturi de întrebări, în ritmul dumneavoastră.",
+          "action": "Creați primul raport"
+        },
+        "filtered": {
+          "title": "Niciun raport nu corespunde filtrului",
+          "body": "Există rapoarte, dar niciunul nu corespunde filtrelor alese. Ștergeți filtrele ca să le vedeți pe toate.",
+          "action": "Ștergeți filtrele"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la rapoartele acestei organizații",
+          "body": "Contul dumneavoastră nu este membru activ al organizației selectate, deci lista nu poate fi afișată.",
+          "action": "Mergeți la pagina principală"
+        },
+        "unreachable": {
+          "title": "Lista rapoartelor nu a putut fi încărcată",
+          "body": "Serviciul nu a răspuns, deci nu știm ce rapoarte există. Reîncărcați pagina peste câteva momente.",
+          "action": "Reîncărcați pagina"
+        }
+      },
+      "create": {
+        "title": "Raport nou",
+        "lede": "Un raport acoperă o singură entitate și o singură perioadă de raportare.",
+        "permission": {
+          "title": "Nu puteți crea rapoarte în această organizație",
+          "body": "Contul dumneavoastră nu este membru activ al organizației selectate, deci nu putem afișa entitățile pentru care s-ar putea crea un raport.",
+          "action": "Mergeți la pagina principală"
+        },
+        "unreachable": {
+          "title": "Nu am putut afla pentru ce se poate crea un raport",
+          "body": "Serviciul nu a răspuns, deci nu știm ce entități și ce perioade sunt disponibile. Reîncărcați pagina peste câteva momente.",
+          "action": "Reîncărcați pagina"
+        },
+        "standard": {
+          "title": "Standardul",
+          "value": "VSME — standardul european pentru companii mici",
+          "hint": "Este standardul pe care îl cer băncile și clienții mari. Alte standarde apar pe măsură ce platforma le acceptă."
+        },
+        "entity": {
+          "title": "Entitatea raportoare",
+          "hint": "Alegeți entitatea pentru care se face raportul. Perioadele disponibile depind de ea.",
+          "noneTitle": "Nicio entitate raportoare",
+          "noneBody": "Un raport se face pentru o entitate, iar organizația dumneavoastră nu are încă niciuna — deci nu există pentru ce să creați unul.",
+          "noneAction": "Adăugați o entitate"
+        },
+        "period": {
+          "title": "Perioada de raportare",
+          "hint": "Sunt afișate doar perioadele care nu au deja un raport.",
+          "noneTitle": "Nicio perioadă liberă",
+          "noneBody": "Fiecare perioadă a acestei entități are deja un raport, iar o perioadă poate avea unul singur. Deschideți o perioadă nouă sau alegeți altă entitate.",
+          "noneAction": "Vedeți perioadele entității",
+          "value": "{start} – {end}"
+        },
+        "pins": {
+          "title": "Versiunile la care se fixează raportul",
+          "template": "Șablon",
+          "taxonomy": "Taxonomie",
+          "hint": "Sunt preluate din perioada aleasă și rămân neschimbate pe toată durata raportului, ca cifrele să însemne mereu același lucru."
+        },
+        "comprehensive": "Veți începe cu B1. Modulul Comprehensive poate fi adăugat mai târziu, dacă vi-l cere un client.",
+        "submit": "Creați raportul",
+        "cancel": "Renunțați"
       }
     },
     "access": {

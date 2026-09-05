@@ -1,6 +1,14 @@
 'use client';
 
-import { Button, BUTTON_VARIANT, EmptyState, Select, StatusChip, TextLink } from '@easyesg/ui';
+import {
+  Button,
+  BUTTON_VARIANT,
+  EmptyState,
+  Select,
+  StatusChip,
+  STATUS_TONE,
+  TextLink,
+} from '@easyesg/ui';
 import type { DataTableColumn, StatusTone } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useTransition } from 'react';
@@ -46,8 +54,8 @@ export type EntityColumnKey = EntitySort | (typeof ENTITY_COLUMN)[keyof typeof E
 /** Active is positive; archived is neutral rather than an error — FR-20 makes it a deliberate,
  *  reversible-by-nobody state, not a fault the reader should be alarmed by. */
 const STANDING_TONE: Record<EntityStanding, StatusTone> = {
-  [ENTITY_STANDING.ACTIVE]: 'positive',
-  [ENTITY_STANDING.ARCHIVED]: 'neutral',
+  [ENTITY_STANDING.ACTIVE]: STATUS_TONE.POSITIVE,
+  [ENTITY_STANDING.ARCHIVED]: STATUS_TONE.NEUTRAL,
 };
 
 export interface EntitiesListProps {

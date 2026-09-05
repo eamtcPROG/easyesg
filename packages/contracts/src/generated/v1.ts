@@ -1140,11 +1140,8 @@ export interface components {
              * @description The replacement, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.
              */
             password: string;
-            /**
-             * @description End the account’s **other** active sessions. Opt-in, because FR-7 says *where the user elects it* — and the session making this request is never one of them, so the device the change was made from keeps working.
-             * @default false
-             */
-            terminateOtherSessions: boolean;
+            /** @description End the account’s **other** active sessions. Opt-in, because FR-7 says *where the user elects it* — and the session making this request is never one of them, so the device the change was made from keeps working. */
+            terminateOtherSessions?: boolean;
         };
         SessionAccountDto: {
             /** Format: uuid */
@@ -1827,10 +1824,9 @@ export interface components {
             reportingPeriodId: string;
             /**
              * @description Which VSME modules this report covers. Comprehensive is additive over Basic and may also be added later (FR-177). Defaults to Basic.
-             * @default basic
              * @enum {string}
              */
-            scope: "basic" | "basic_and_comprehensive";
+            scope?: "basic" | "basic_and_comprehensive";
         };
         UpdateReportRequestDto: {
             /**

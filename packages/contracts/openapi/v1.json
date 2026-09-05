@@ -3201,7 +3201,6 @@
           },
           "terminateOtherSessions": {
             "type": "boolean",
-            "default": false,
             "description": "End the account’s **other** active sessions. Opt-in, because FR-7 says *where the user elects it* — and the session making this request is never one of them, so the device the change was made from keeps working."
           }
         },
@@ -4800,7 +4799,6 @@
               "basic",
               "basic_and_comprehensive"
             ],
-            "default": "basic",
             "description": "Which VSME modules this report covers. Comprehensive is additive over Basic and may also be added later (FR-177). Defaults to Basic."
           }
         },

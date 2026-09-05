@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { Callout, TextLink, type CalloutProps } from '@easyesg/ui';
+import { CALLOUT_INTENT, Callout, TextLink, type CalloutProps } from '@easyesg/ui';
 import { Link } from '@/i18n/navigation';
 import { SOCIAL_NOTICE, isSocialNotice, type SocialNotice } from '../social';
 import { ROUTES } from '@/lib/routes';
@@ -21,13 +21,13 @@ const NOTICE_KEY = {
 } as const;
 
 const NOTICE_INTENT: Record<SocialNotice, CalloutProps['intent']> = {
-  [SOCIAL_NOTICE.CANCELLED]: 'info',
-  [SOCIAL_NOTICE.RESTART]: 'attention',
-  [SOCIAL_NOTICE.UNAVAILABLE]: 'attention',
-  [SOCIAL_NOTICE.FAILED]: 'error',
-  [SOCIAL_NOTICE.EMAIL_IN_USE]: 'attention',
-  [SOCIAL_NOTICE.VERIFY_SENT]: 'success',
-  [SOCIAL_NOTICE.UNKNOWN_IDENTITY]: 'info',
+  [SOCIAL_NOTICE.CANCELLED]: CALLOUT_INTENT.INFO,
+  [SOCIAL_NOTICE.RESTART]: CALLOUT_INTENT.ATTENTION,
+  [SOCIAL_NOTICE.UNAVAILABLE]: CALLOUT_INTENT.ATTENTION,
+  [SOCIAL_NOTICE.FAILED]: CALLOUT_INTENT.ERROR,
+  [SOCIAL_NOTICE.EMAIL_IN_USE]: CALLOUT_INTENT.ATTENTION,
+  [SOCIAL_NOTICE.VERIFY_SENT]: CALLOUT_INTENT.SUCCESS,
+  [SOCIAL_NOTICE.UNKNOWN_IDENTITY]: CALLOUT_INTENT.INFO,
 };
 
 export interface SocialNoticeCalloutProps {

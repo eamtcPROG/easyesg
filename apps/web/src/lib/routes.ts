@@ -63,8 +63,12 @@ export const ROUTES = {
   /** S-28 — credentials and linked identities (task 27.7). The destination S-01's
    *  provider-collision refusal names, which is why it is a route constant and not a literal. */
   ACCOUNT_CREDENTIALS: '/account/credentials',
-  /** S-06 — the report list. */
   REPORTS: '/reports',
+  /** S-06's creation flow (task 32.3). A literal segment rather than a query flag, so a half-made
+   *  choice is an address the reader can return to or share (UX-4) — `ENTITY_NEW`'s reasoning.
+   *  It is a static sibling of `(wizard)`'s `[reportId]`, which resolves because a static segment
+   *  wins over a dynamic one; verified against the build rather than assumed. */
+  REPORT_NEW: '/reports/new',
 } as const;
 
 export type Route = (typeof ROUTES)[keyof typeof ROUTES];

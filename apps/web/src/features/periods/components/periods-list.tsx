@@ -6,6 +6,7 @@ import {
   EmptyState,
   Select,
   StatusChip,
+  STATUS_TONE,
   TextLink,
   VersionPinIndicator,
 } from '@easyesg/ui';
@@ -50,8 +51,8 @@ export type PeriodColumnKey = PeriodSort | (typeof PERIOD_COLUMN)[keyof typeof P
  * for the same reason.
  */
 const STANDING_TONE: Record<PeriodStanding, StatusTone> = {
-  [PERIOD_STANDING.OPEN]: 'positive',
-  [PERIOD_STANDING.LOCKED]: 'neutral',
+  [PERIOD_STANDING.OPEN]: STATUS_TONE.POSITIVE,
+  [PERIOD_STANDING.LOCKED]: STATUS_TONE.NEUTRAL,
 };
 
 export interface PeriodsListProps {

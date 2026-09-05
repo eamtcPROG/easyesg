@@ -14,11 +14,11 @@ import { ROUTES } from '@/lib/routes';
  * cannot live there: the routes, the localized labels, and the locale-aware `Link` that
  * `next/link` would silently break.
  *
- * **The set holds the sections that render.** Today that is one, because every other
- * `(workspace)` screen still returns `null`, and a nav item leading to a blank page is worse than
+ * **The set holds the sections that render**, and a nav item leading to a blank page is worse than
  * an absent one — it teaches the reader that the product is broken rather than unfinished. §4.2's
- * full set is Reports, Entities & periods, Organization, Users & access, and Plan & billing, and
- * tasks 30.3, 30.4 and 30.5 are what add them here.
+ * full set is Reports, Entities & periods, Organization, Users & access, and Plan & billing; tasks
+ * 30.3, 30.4 and 32.2.2 added the first four, and *Plan & billing* is still absent because its
+ * screens are Phase 7's.
  *
  * **S-28 left this set in task 30.1**, which is the correction that task promised rather than a
  * change of mind. Task 27.7 put credentials here with its reason stated — §4.2 puts it under the
@@ -31,6 +31,12 @@ import { ROUTES } from '@/lib/routes';
  * layout — is a prop that one screen eventually forgets to pass, with no way to notice.
  */
 const SECTIONS = [
+  // S-06, added with task 32.2.2 — §4.2 lists *Reports* first, and this tier's own rule is that the
+  // set holds the sections that render. It could not until now: the Index's only exit is the wizard
+  // (§4.4 has no report record screen), and `reports/[reportId]` was a redirector returning nothing
+  // until tasks 35.1 … 36.2 made S-07 real. That is the same rule this comment already states,
+  // applied to the screen rather than to the link.
+  { key: 'reports', href: ROUTES.REPORTS },
   // S-15, added with task 30.3 — §4.2's *Organization*, and the first entry this tier has gained
   // rather than lost. It sits before *Users & access* because §4.2 lists it there and because the
   // reading order is the object then its people.

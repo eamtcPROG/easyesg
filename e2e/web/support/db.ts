@@ -309,7 +309,30 @@ export async function cleanupOrganizations(organizationIds: readonly string[]): 
  * and a browser journey about navigation has no business manufacturing one — the column is nullable
  * precisely because it is the API's to fill.
  */
-export async function seedReport(input: {
+/** What both fixtures need. `seedReport` returns the report's id; `seedOpenPeriod` returns the
+ *  period's, and neither caller sees the other's half. */
+export interface SeedReportInput {
+  readonly organizationId: string;
+  readonly name: string;
+  readonly fiscalYear?: number;
+  readonly sites?: readonly { readonly name: string; readonly locality: string }[];
+}
+
+/**
+ * S-06's fixture (task 32.2.2): the report id, as every caller before this task expected.
+ *
+ * The shape is unchanged deliberately — five suites call this and none of them wants the entity or
+ * the period, so widening the return would make every one of them read a field it ignores.
+ */
+export async function seedReport(input: SeedReportInput): Promise<string> {
+  const { reportId } = await seedFiling({ ...input, withReport: true });
+  // Non-null by construction: `withReport` is true. Asserted rather than asserted-away, because a
+  // fixture that silently returned `null` would fail a journey somewhere far from here.
+  if (reportId === null) throw new Error('seedReport: the report was not written');
+  return reportId;
+}
+
+async function seedFiling(input: {
   readonly organizationId: string;
   readonly name: string;
   readonly fiscalYear?: number;
@@ -322,8 +345,13 @@ export async function seedReport(input: {
    * which the api tolerates and one case here still uses.
    */
   readonly sites?: readonly { readonly name: string; readonly locality: string }[];
-}): Promise<string> {
-  const { organizationId, name, fiscalYear = 2026, sites } = input;
+  readonly withReport: boolean;
+}): Promise<{
+  readonly entityId: string;
+  readonly periodId: string;
+  readonly reportId: string | null;
+}> {
+  const { organizationId, name, fiscalYear = 2026, sites, withReport } = input;
   const client = new Client(asOwner());
   await client.connect();
   try {
@@ -367,20 +395,39 @@ export async function seedReport(input: {
        VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau', '2026-05-01', '2026-05-01', $7)`,
       [periodId, organizationId, entityId, fiscalYear, `${fiscalYear}-01-01`, `${fiscalYear}-12-31`, snapshotId],
     );
-    await client.query(
-      `INSERT INTO core.report
-         (id, organization_id, reporting_period_id, scope, status, template_version, taxonomy_version)
-       VALUES ($1, $2, $3, 'basic', 'open', '2026-05-01', '2026-05-01')`,
-      [reportId, organizationId, periodId],
-    );
+    if (withReport) {
+      await client.query(
+        `INSERT INTO core.report
+           (id, organization_id, reporting_period_id, scope, status, template_version, taxonomy_version)
+         VALUES ($1, $2, $3, 'basic', 'open', '2026-05-01', '2026-05-01')`,
+        [reportId, organizationId, periodId],
+      );
+    }
     await client.query('COMMIT');
-    return reportId;
+    return { entityId, periodId, reportId: withReport ? reportId : null };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
   } finally {
     await client.end();
   }
+}
+
+/**
+ * The same fixture **without** the report — an entity with one open period, which is what S-06's
+ * creation flow needs something to offer (task 32.3).
+ *
+ * A variant of `seedReport` rather than a copy of it: the entity, the snapshot and the period are
+ * the same four inserts, and two copies of them would drift the moment a column is added — which is
+ * exactly what `core.reporting_period` gained twice already (the lock at 31.2, the snapshot link at
+ * 31.1).
+ */
+export async function seedOpenPeriod(input: SeedReportInput): Promise<{
+  readonly entityId: string;
+  readonly periodId: string;
+}> {
+  const { entityId, periodId } = await seedFiling({ ...input, withReport: false });
+  return { entityId, periodId };
 }
 
 /**

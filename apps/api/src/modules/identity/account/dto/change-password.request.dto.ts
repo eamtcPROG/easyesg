@@ -28,9 +28,16 @@ export class ChangePasswordRequestDto {
   @IsString()
   password!: string;
 
+  /*
+   * **No `default:` in the schema.** openapi-typescript treats a property carrying a default as
+   * always present and emits it as REQUIRED, so the generated client would oblige every caller to
+   * send a field this schema's own `required` list omits. The default is stated in the description,
+   * where a reader needs it, and applied where it can actually be applied — in the use case.
+   * (Found on `SignInRequestDto` at task 97, swept here at task 32.3; these two were the only
+   * request properties in the whole spec carrying a default.)
+   */
   @ApiProperty({
     required: false,
-    default: false,
     description:
       'End the account’s **other** active sessions. Opt-in, because FR-7 says *where the user ' +
       'elects it* — and the session making this request is never one of them, so the device the ' +

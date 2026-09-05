@@ -315,6 +315,16 @@ conditional render, which is how it ends up half-suppressed on one screen.
     the jar differs between the proxy and an action — deciding whether to refresh, spending the
     single-use token exactly once, and reading a failure are one implementation in `session.ts`.
 
+- **A `'use server'` module may export ONLY async functions, and no gate but the build says so.**
+  Task 32.3 moved a shared `revalidatePath` pattern into `features/periods/actions.ts`'s exports so a
+  second action could reuse it — *"Only async functions are allowed to be exported in a 'use server'
+  file"*, ten Turbopack errors, and `pnpm typecheck`, `pnpm lint` and 286 unit tests all green. The
+  constant is a **route pattern**, not a route: it carries `[locale]` and the route groups
+  (`(app)`, `(workspace)`) that never appear in a URL, so it lives in `lib/revalidate-paths.ts` and
+  not in `lib/routes.ts`, where something would eventually hand it to a `Link` and 404. Anything a
+  Server Action needs to share — a constant, a type guard, a plain helper — belongs beside it, not
+  in it.
+
 - **Never import `next/link` or `next/navigation`'s locale-aware members.** Use
   `@/i18n/navigation`. A raw `next/link` renders a working-looking anchor that drops the locale
   prefix: nothing throws, nothing logs, and it survives review. Lint-enforced.
