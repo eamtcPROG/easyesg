@@ -11502,3 +11502,408 @@ groups that never appear in a URL, so the two are different vocabularies and mix
 eventually put one behind a `Link`. The constraint is now a trap entry in `apps/web/CLAUDE.md`,
 because it is a rule about where shared code may live and this repository did not have it written
 down.
+
+## `Slot` in a client boundary — a 500 that looked like a screen bug · 2026-09-07
+
+Reported as a runtime error on `/en/entities`: *"Slot failed to slot onto its children. Expected a
+single React element child or `Slottable`."* It was neither an entities defect nor a Radix one. The
+cause was `'use client'` on `packages/ui/src/primitives/button.tsx`, and the fix was deleting it.
+
+### The mechanism, and why every gate was green and right to be
+
+`Slot` does not **render** its child, it **introspects** it: `Children.count`, `isValidElement`,
+then `cloneElement` with the merged props. The directive makes the module a client boundary, and
+children a Server Component writes for a boundary cross it as a Flight reference — measured, not
+inferred: `$$typeof: Symbol(react.lazy)`, `_payload` a *fulfilled* chunk. react-slot 1.3.3 does
+handle that shape (`use(children._payload)`), the guard fires, and the unwrapped value is still not
+a single element, so Slot throws and the route 500s.
+
+`Button` had carried the directive since task 20 and never needed it — no hook, no browser API, no
+handler of its own. It became load-bearing at task 26.3, which gave it the `asChild` seam. **The
+control was `TextLink`**: identical seam, never had the directive, has rendered from a Server
+Component since **task 22** — `set-password/page.tsx`, the first page to call it without one. The
+seam is task 20's on both primitives, and dating the control there would overstate it: every task-20
+consumer was itself a Client Component, so the mechanism went unexercised on both at once. That is
+the same latency twice, and it is why neither the defect nor its control surfaced for a year of
+screens. Nothing else could see the difference. TypeScript resolves the import
+against the source module and is right to; `pnpm build`, `lint`, `typecheck` and 403 unit tests were
+all green throughout.
+
+### Three properties made this expensive to find
+
+- **It presented as a screen bug and was a directive.** The search began in `apps/web/src/features/
+  entities/` and belonged in `packages/ui/src/primitives/`. Every client-side caller was fine,
+  because a client → client `asChild` never crosses Flight — so `apps/admin`, the `EmptyState`
+  action inside `EntitiesList`, and every list cell worked while the page header died.
+- **It was intermittent, and the intermittency lied.** The failing arm renders only when the tenant
+  read answers `READY`, so a request whose API call had *failed* served a clean error state and
+  returned 200. The screen looked healthiest exactly when its data was broken. Measured at 5/5, then
+  3/8, then 5/5 across identical requests before the cause was known.
+- **It was not entities-specific.** `/reports` failed identically once reached. S-13 and S-06 share
+  the shape — a Server Component page whose primary action is `<Button asChild><Link/></Button>` —
+  and so do `/entities/{id}/periods` and both `/new` screens.
+
+### What made it findable
+
+The error message is built as `` `${ownerName} failed to slot…` ``. Radix's own primitives pass
+names — `Primitive.div`, `SelectCollectionItemSlot` — so a bare **`Slot`** owner is the generic
+export, which this repository imports in exactly two files. That narrowed a whole-page hunt to
+`button.tsx` and `text-link.tsx` in one grep, before anything was reproduced.
+
+Reproducing it needed a session, and the page is behind one. It was minted headlessly rather than
+through the sign-in form: register over the API, read the verification token from the outbox row as
+`esg_worker` (OQ-54 — the raw token exists nowhere else), seed the organization and membership as
+`esg_migrator` the way `e2e/web/support/db.ts` does, `POST /auth/session`, then seal the payload into
+`easyesg_session` with `session-codec.ts`'s own AES-256-GCM shape under the dev `SESSION_SECRET`.
+The account, its organization and its outbox row were deleted afterwards.
+
+**Four component-level probes all passed and were the reason the answer arrived late.** Rendering
+`<Button asChild>` and `<TextLink asChild>` from a Server Component in `(public)`, and mounting
+`EntitiesList` with both a row and an empty page, reproduced nothing — because the probe pages were
+small enough that the children chunk resolved inline. The defect needed the real page's chunking to
+appear at all, which is the argument for reproducing against the running system rather than against
+a reduction of it.
+
+### The gate, and what it deliberately does not cover
+
+The recurrence rule applies: this is the **second** time a `'use client'` directive has silently
+changed what a Server Component sees, after task 74.1's `BUTTON_TONE` arriving `undefined`. So
+`eslint.config.mjs` gains `restrictedSyntaxClientBoundary` — one selector rejecting a module that
+both carries the directive and imports `Slot` (`radix-ui`, or anything from `@radix-ui/react-slot`,
+because closing the umbrella spelling while leaving the direct one open would make the workaround
+the first thing a reader reaches for).
+
+**It is narrower than the mechanism, and that is a decision rather than an oversight.** The general
+defect is *introspecting caller-supplied children across a boundary*, which would mean matching
+`Children.*` and `cloneElement` in any `'use client'` module — and no selector can tell whether
+those children came from a Server Component or from the client parent one line up, where the same
+code is correct and ordinary. Such a rule starts green and fires on legitimate code later, which
+trains the inline disable that the `align="end"` note in the same file exists to avoid. `Slot` is
+decidable for a narrower reason than "slotting is a server thing": **importing** it is how you build
+your own slotting primitive, and such a primitive is presentational by construction. Using a Radix
+part's own `asChild` is a different act and stays legitimate in a client boundary — `combobox.tsx`,
+`select.tsx`, `language-switcher.tsx` and `consequence-dialogue.tsx` all do it, correctly, and none
+imports `Slot`.
+
+**The known gap is recorded rather than left to be rediscovered.** `account-menu.tsx` wraps a
+caller-supplied `items[].node` in Radix's own `DropdownMenu.Item asChild`. It cannot be covered — the
+menu needs `'use client'` for its state, so its rule is *"do not pass slotted children across the
+boundary"*, which belongs to the **caller** and is not a shape a syntax selector can see. It is safe
+today only because its only caller, `apps/web/src/shared/account-corner.tsx`, is itself a Client
+Component; if a Server Component ever supplies those items it fails the same way and no gate will
+say so. `align="end"`'s allowlist reasoning is the precedent for writing the boundary down.
+
+The rule is in the root `CLAUDE.md` beside the closed-vocabulary section whose `'use client'`
+paragraph it is the sibling of. `design_spec.md` §11.5 needed no amendment: the Button inventory row
+gains no variant, no state and no anatomy, and UX-89 is untouched — the directive was never part of
+the component's contract.
+
+### Verified
+
+Sites first, then the gate, so it starts green: `pnpm exec eslint . --no-cache` passes on the whole
+tree with both selectors live. `pnpm gates:scoped` passed the lot — image 1 s, lint 8 s, typecheck
+19 s, boundaries 8 s, units 129 s, and the browser suite at 615 s across all three Playwright
+projects.
+
+**Proven to bite by planted probes, and the probes are the deliverable here** — a selector that
+matches nothing is indistinguishable from a clean tree, which is `boundaries:prove`'s whole argument
+one rule down. Rejected, as they must be: a named `Slot` from `radix-ui`; any import from
+`@radix-ui/react-slot`; `<Radix.Slot.Root>` by namespace in JSX; and `Radix.Slot.Root` in expression
+position. Passed, as they must: a directive-free module importing `Slot` (the shape `Button` and
+`TextLink` actually have), a `'use client'` module importing `DropdownMenu` from the same package,
+and one reaching `Radix.DropdownMenu.Root` by namespace.
+
+**The spread was proven per block, and the first count of the blocks was wrong.** `no-restricted-
+syntax` options REPLACE rather than merge — the hazard `eslint.config.mjs` documents at length —
+and **four** blocks set the rule, not the three this entry first claimed: the general one, the
+browser tier, `apps/web`'s own, and a fourth for `*.spec.{ts,tsx}` in all three browser workspaces,
+which comes last and therefore replaces the others for those files. I had counted the blocks I
+*edited* rather than the blocks that *set the rule*, so a spec carrying the directive beside a
+`Slot` import would have passed silently while the constant's own docblock claimed "every block".
+Probes now sit in `apps/api`, `apps/admin`, `apps/web` and a `.spec.tsx`, one per block.
+
+The spec block does **not** get the vocabulary selectors' exemption, and the asymmetry is reasoned
+rather than inherited: a spec asserts a wire literal on purpose, but nothing legitimately writes
+`'use client'` beside a `Slot` import in a vitest file — the directive is inert under jsdom, so the
+rule can only ever fire there on the real shape.
+
+**One of my own selectors shipped inert, and only a probe said so.** The namespace branch matched
+`MemberExpression` alone; `<Radix.Slot.Root>` parses as a **`JSXMemberExpression`**, so the branch
+existed, read correctly, and could not see the one spelling it was written for. It matched nothing
+and looked exactly like a passing rule — the `domain-free-of-frameworks` shape, in a file that
+cannot lint itself because `eslint.config.mjs` is in its own `ignores` list. It now matches both
+node types, and the non-JSX form is not hypothetical: `text-link.tsx` spells it
+`asChild ? Slot.Root : 'a'`.
+
+**Three limits are recorded rather than closed**, because a syntax selector cannot reach them and
+pretending otherwise is worse than naming them. **Indirection**: a local module that re-exports or
+wraps `Slot` defeats it, since `source.value` is then `'./something'` — proven, and a general
+property of every selector in this file rather than of this one. **A directive that is not the first
+statement** is not a directive to the parser, so the selector misses it — proven; it is low severity
+because it is not a directive to *Next* either, and `no-unused-expressions` already objects to the
+shape. **Nothing re-fires**: the proof was plant-run-delete, which is task 74.1's precedent for an
+ESLint selector but leaves no committed fixture, so a later edit that silently breaks the selector
+would be invisible. An `eslint:prove` gate on `boundaries:prove`'s model is the answer and is not
+this change.
+
+The runtime fix was verified end to end against the running dev server before any of this: 500 on
+5/5 requests to `/en/entities` before, 200 on 3/3 after, and the same for `/reports`,
+`/entities/new`, `/reports/new` and `/ru/entities`, with the header action rendering as a styled
+anchor in a real browser.
+
+### The reviews — all three on **sonnet**, and two of three findings were in the gate itself
+
+Routed in advance from the changed surface, per the 3 Sep standing override: one lint selector, one
+deleted directive and prose. `gates:scoped` printed `opus` on its "three or more workspaces" test,
+but that count comes from *dependents* — `packages/ui` pulls in web and admin — rather than from the
+breadth of the change, and the override makes the table dormant as a default. Worth knowing that the
+runner's own text is now stale: it calls opus "the pinned default" and its comment says *"The
+frontmatter pins `opus`"*, where all three agent files have pinned `model: sonnet` since 3 Sep. The
+mechanism still works as an escalation hint; only the wording predates the override.
+
+Each agent found something, and none of the three findings overlapped.
+
+- **spec-review — a citation that overstated its own evidence.** Two of four new passages dated
+  `TextLink`'s Server-Component provenance to task 20. The seam is task 20's, but every task-20
+  consumer — `register-form`, `confirm-email`, `verification-pending` — carries `'use client'`, so
+  the mechanism went unexercised; the first page to render `<TextLink asChild>` without a directive
+  is `set-password/page.tsx` at task 22. Verified independently before accepting it. The correction
+  is worth more than the date: it is *the same latency twice*, on both primitives at once, and it is
+  why neither the defect nor its control surfaced for a year of screens.
+- **convention-review — the fourth block**, above. It quoted my own docblock against the diff
+  ("Spread into every block that sets `no-restricted-syntax`") and named it as the root file's
+  *"a rule is applied where it holds, not where it was found"* failing inside the commit that
+  invokes it. It also caught the rationale reading more absolutely than the codebase: `asChild` on a
+  Radix **part** is fine in a client boundary, and `combobox`, `select`, `language-switcher` and
+  `consequence-dialogue` all do it. The rule is about *importing* `Slot`, and now says so.
+- **gate-integrity — the namespace bypass**, proven with its own probes: the
+  `@radix-ui/react-slot` branch is unconditional on specifier shape while the `radix-ui` branch
+  needs a named `Slot`, so the package this repository actually imports from was the one with the
+  hole. It also confirmed as *not* gaps, by probe rather than by argument, the two I would have
+  guessed at: a double-quoted directive (the parser's `directive` holds the cooked value) and an
+  aliased `import { Slot as X }` (`imported.name` is source-side).
+
+The one thing no agent could have raised, because it was introduced by acting on their findings, is
+the inert selector above. That is the argument for the probe and against the review as the last
+step.
+
+## `eslint:prove` — the selectors get a failing state · 2026-09-07
+
+The sibling of `boundaries:prove`, one rule set down, and built for the same sentence CLAUDE.md has
+carried since foundation stage: *"a rule that silently matches nothing looks identical to a rule
+that passes."* Fourteen `no-restricted-syntax` selectors were configuration nothing ever fired at a
+matching file.
+
+### It is not a hypothetical — it happened in the change that prompted it
+
+The client-boundary namespace branch, added hours earlier the same day, was written
+`MemberExpression[property.name='Slot']`. `<Radix.Slot.Root>` parses as a **`JSXMemberExpression`**,
+so the branch could not see the one spelling it existed for. It read correctly, `pnpm lint` was
+green, and it matched nothing. A hand-planted probe found it — and the probe was then deleted, which
+is precisely the proof that cannot catch the next one. Task 74.1's `PROBE_TONE` had the same shape:
+proven on the day, unprovable afterwards.
+
+Two structural facts make the gap larger than one selector. **`eslint.config.mjs` is in its own
+`ignores` list**, so `pnpm lint` never parses the selectors at all. And **all fourteen share one
+rule id**, so nothing distinguishes "this selector fired" from "some selector fired" without going
+through the message.
+
+### What it asserts, and why the second half is the one that would have caught the last defect
+
+**Per selector**: a fixture violating exactly that selector must be rejected, matched on a
+distinctive phrase from the selector's own **message** — the only thing that tells fourteen entries
+sharing `no-restricted-syntax` apart. Rewording a message therefore forces a visit to its fixture,
+which is the right cost for a deliberate act.
+
+**Per carve-out**: nine documented exceptions must still pass — `alt=""`, `x === ''`, a `typeof`
+check, `Pick`/`Omit` key unions, a JSX attribute outside the `intent|variant|tone` allowlist, a
+directive-free module importing `Slot`, a `'use client'` module reaching another Radix part by name
+and by namespace, and a spec asserting a wire literal. Over-matching is the *expensive* failure:
+it trains the inline disable, which is how a rule stops being read.
+
+**Per block** — and this is the half a fixture cannot express. Rule options REPLACE rather than
+merge, four blocks set `no-restricted-syntax`, and the change three hours earlier spread a new
+constant into three of them. So the gate reads the resolved config and compares a **selector-set
+matrix** per block. A fixture per (selector × block) would be fifty-six eslint runs; the matrix is
+the same assertion for nothing, and it fails three distinct ways — a **fifth block** appearing, a
+constant **missing** from a block, and a selector whose text this gate **does not recognise**, which
+is what makes editing a selector without revisiting its fixture impossible rather than merely
+discouraged.
+
+### Node, not bash, unlike its sibling
+
+`tools/prove-eslint.mjs` rather than the `tools/prove-eslint.sh` the task named. The fixture half
+would be bash comfortably; the matrix half cannot be, because it imports the flat config and
+compares selector sets. Splitting them would give the spread check its own file and its own chance
+to rot — and the spread check is the one that catches what actually went wrong.
+
+One departure from the sibling's shape is deliberate rather than incidental: `prove-boundaries.sh`
+re-cruises per fixture because depcruise must walk the whole graph to see a new file. ESLint takes
+explicit paths and the fixtures are independent, so this runs **one** eslint invocation over all
+twenty-five and reads the JSON per file — which turns a type-aware startup paid twenty-five times
+into one, and is why the gate costs ~20 s rather than ~2 min.
+
+### Verified
+
+Green on the real tree, then **proved to bite by three deliberate breakages**, each restored:
+
+- **A selector made inert** — the 7 Sep defect put back verbatim. Caught twice over, by the fixture
+  (*"slot-namespace did NOT reject its violation"*) and by the matrix (*"a selector this gate does
+  not know"*), which is the belt and the braces working on the case they were written for.
+- **A constant dropped from one block** — the fourth-block miss, put back. *"NOT spread into it:
+  slot-import, slot-namespace. Rule options replace rather than merge, so these files are
+  uncovered."*
+- **A fifth block added** — *"5 blocks set no-restricted-syntax, expected 4."*
+- **Two blocks reordered** — added after the gate-integrity review proved it, which the three above
+  had not covered. It is a real hazard rather than bookkeeping: options replace rather than merge,
+  so swapping the browser tier with `apps/web`'s block puts `apps/web` under the one lacking
+  `use-cache`, the single selector standing between a compiler-generated cache key and a
+  cross-tenant leak (§14.2). Caught twice in one run — the matrix on the `files` globs, and,
+  independently, the `use-cache` fixture failing to be rejected.
+- **A negative fixture made unparseable, and another moved under an `ignores` glob** — the fix for
+  the review's own highest finding, below.
+
+**Three of its own claims or choices were wrong when first made, and checking them is what this
+change is about.** The workflow comment I added said `database` has four `run:` lines; it has five,
+one being `dev:up`, which is stack setup and not a gate. A fixture in `apps/web` imported
+`radix-ui`, which only `packages/ui` declares — a **phantom dependency**, the coupling DR-1/AD-1 and
+pnpm's strictness exist to prevent, inside the gate meant to enforce discipline; it moved to
+`packages/ui`, whose block the matrix asserts anyway.
+
+And five fixtures were written into **`apps/api/src`**, which is the one tree this repository has
+already been bitten by. `prove-boundaries.sh` says so at the top: a running `nest start --watch`
+compiled its api fixture and left stray `index.js`/`.d.ts` emits that failed lint a gates run later.
+Its fix was excluding `**/__boundary_fixture.ts` from both api tsconfigs — an **exact filename**, so
+`__eslint_fixture_*.ts` inherited nothing, and I had quoted that very lesson in this file's own
+header while walking into it. Excluding these as well is not available: they must stay inside a
+tsconfig program or `projectService` cannot lint them at all. So the general block is exercised from
+`packages/validation`, which no watcher emits from. `apps/web` and `packages/ui` are watched too and
+stay, for the reason the sibling already writes into them: Turbopack recompiles in memory and puts
+nothing in the tree.
+
+### The gate's own failure mode, found inside the gate
+
+The nine carve-out checks assert *"no `no-restricted-syntax` finding"* — and **three different
+things produce that**: the carve-out held, the file failed to parse, and the file matched one of
+`eslint.config.mjs`'s own `ignores` globs. The last two report a single message with `ruleId: null`,
+which the rule-id filter drops, so the check would print `ok` having proven nothing.
+
+Proven rather than argued, by the review that found it: a fixture with a syntax error *containing a
+real `alt="A real caption"` violation* reported `{ruleId: null, fatal: true}` and nothing else. None
+of the nine was exposed — the point is that nothing stopped one being, and that a positive fixture
+fails loudly under the identical conditions, so only half the file was honest.
+
+An `evaluated()` guard now runs before both halves and names which of the two happened. It was
+proven both ways: breaking a negative's syntax gives *"eslint did not lint it: Parsing error"*, and
+moving one under `packages/ui/dist/` gives *"File ignored because of a matching ignore pattern"* —
+each a failure where each was previously a pass. **This is the shape the whole gate exists to refuse,
+reproduced one layer inside the tool built to refuse it**, which is worth more as a record than the
+fix is as code.
+
+### Two false claims found in the files being edited
+
+`eslint.config.mjs`'s `tools/*.mjs` block said the surviving rules there include *"the
+`no-restricted-syntax` vocabulary selectors"*. They do not, and never did: every block that sets the
+rule is scoped to `*.{ts,tsx}`, and `.mjs` is neither. `eslint --print-config tools/prove-eslint.mjs`
+answers with **no `no-restricted-syntax` at all**.
+
+It is worth the paragraph because of *how* it survived. A rule that is not configured reports
+nothing — which is exactly what a clean file reports — so no run, green or red, could ever have
+contradicted the sentence. It is the same failure as an inert selector, one level up, in the prose
+about the selectors. The comment now states what is true and says to widen a block's `files` rather
+than to re-assert the claim.
+
+**The second was in `tools/gates-scoped.sh`, and had been false for four days.** Its model-routing
+block read *"**Downgrade-only.** The frontmatter pins `opus`; this suggests overriding *down*. Forget
+it and you get the better reviewer, not the worse one"*, and the line it printed called opus *"the
+pinned default"*. The owner's standing override of **3 Sep 2026** moved the pin to `sonnet` in all
+three agent files — verified, not assumed: `model: sonnet` in each. So the fail-safe had inverted
+and the script still described the old one, which matters because forgetting now costs the *cheaper*
+reviewer rather than the better one. It now suggests overriding **up**, says the pin it is
+overriding, and keeps the part the override does not touch: decide from the diff **before** any
+agent runs, never from a sonnet report, which the 31 Aug measurement found carries no signal to
+escalate on.
+
+Both corrections are the same shape as this entry's subject and neither is a gate: **a stale
+sentence about a pin is not a claim any run evaluates.** `CLAUDE.md` is not among them — it states
+the pre-override rule and then records the override that inverts it, which is the form that stays
+true.
+
+### The host confound, met a second time, and the tell that named it in minutes
+
+`e2e:web` failed mid-task and the diagnosis is worth the paragraph because the *first* occurrence
+cost a day (26 Aug 2026, "A false conclusion, corrected — the suites were not flaky, the host was").
+Three runs of one suite, in one hour, with **no runtime file changed between them**:
+
+| | previews running | result |
+| --- | --- | --- |
+| `gates:scoped`, previous task | yes | **494 s, green** |
+| `gates:scoped`, this task | yes | 8 failed, 20.1 min |
+| `e2e:web --project identity` | yes | ~57 failed, 15.4 min |
+| `e2e:web`, previews **stopped** | no | **138/138 in 3.6 min** |
+
+The earlier entry's remedy — *"stop the previews before running the stack suites"* — reproduced its
+own measurement almost exactly: it recorded 132/132 in 3.0 min. Swap sat at 2.58 GB of 4 GB
+throughout, and `apps/api/CLAUDE.md` already names the mechanism: Argon2id is memory-hard by design
+and every browser journey registers an account.
+
+**Two tells settled it before any test output was read, and both generalise.** The failures *deepened*
+across runs while the tree sat still, and no code change can do that — the earlier entry's version of
+this was "a different suite each run". And every failure was in the `identity` project, the only one
+Playwright *reuses* an existing server for; `expansion` and `admin`, which it starts itself, were
+green in the same runs. That second tell is new and is the faster one: it points at the environment
+rather than the suite in a single glance at the report.
+
+The third check was mechanical rather than inferential — classify every changed file by whether the
+app loads it. Nine files changed; eight are docs or tooling, and the ninth, `button.tsx`, was
+untouched by this task and present in both green runs. A change that cannot reach the runtime cannot
+have broken the runtime, and that is a two-minute check rather than a judgement.
+
+### Wiring, and the claim that has now been checked twice
+
+`pnpm eslint:prove` sits immediately after `pnpm lint` in the chain, exactly as `boundaries:prove`
+follows `boundaries`, and it may never run beside a linter because it writes fixtures into the
+working tree — `tools/gates-scoped.sh` already records that constraint for its sibling, and runs
+this one under the same condition — but that condition had **three** inputs where the first draft
+said two. A selector matches an AST, so it breaks when the *parser* changes shape as readily as when
+someone edits its text, and this task's own worked example is exactly that. `pnpm-workspace.yaml` is
+where eslint, typescript-eslint and every plugin are pinned, so a catalog bump can change what
+fourteen hand-written selectors match while both watched files sit untouched. A transitive bump
+through the lockfile alone stays uncovered on purpose: that is left to the two runs that are
+unconditional — CI's `hermetic` job and `gates:clean` — rather than firing a 22-second gate on every
+dependency change.
+
+CLAUDE.md's four counts moved together — fifteen gates, twelve root scripts, eleven hermetic. The
+workflow's own header had drifted independently: it read *"eight gates run anywhere, and one
+cannot"*, true when written and stale since, which is task 90's `facade:check` failure in the prose
+instead of in the steps. Rather than repeat the claim, it was **executed**: a script parsed the
+`gates` chain, the two jobs' `run:` lines and CLAUDE.md's own list, and asserted all three are the
+same fifteen gates in the same order. They are.
+
+### The reviews — all three on **sonnet**, and every one found something the others did not
+
+Routed in advance per the 3 Sep standing override. `gates:scoped` printed `opus` on its "three or
+more workspaces" test, but that count comes from *dependents* — `packages/ui` pulls in web and admin
+— rather than from the breadth of the change, which is one new tool, root config and prose.
+
+- **gate-integrity — the vacuous carve-out**, recorded in its own section above, and the most
+  valuable finding of the three: it is this gate's own subject matter turned on the gate. It also
+  proved **block reordering** is caught, which my three breakages had not covered, and disproved two
+  hazards I would have guessed at rather than tested — a parse error in one fixture does *not*
+  swallow another's result in the batched run, and an unhandled async rejection still fires the
+  cleanup handler on Node 26.7.0.
+- **spec — the decision had no home.** Tasks 85, 86, 88 and 90 are the precedent, each a root-level
+  gate decision found while closing something else, and each got an `architecture.md` §12.5.6 row
+  *and* a `docs/task.md` row. This had neither. It also caught that §12.5.6's **task-90 row states a
+  count this change makes false** — *"fourteen commands, ten of them hermetic"* — which is that
+  row's own lesson arriving on the row itself; the count is now corrected in the row that caused it,
+  with the reason it will need correcting again.
+- **convention — the entry you are reading had no reviews section**, quoting the rule that says to
+  name the model so the record never has to be inferred.
+
+**Acting on a finding produced a fresh one, which is worth recording because it is the same class.**
+The §12.5.6 row was first written citing **task 92** — a number already held by *"Inline
+re-authentication over the preserved wizard"*. An identifier invented rather than looked up, in the
+change that adds a gate against unchecked claims, immediately after a review whose stated subject is
+identifiers re-derived instead of cited. It is task **98**, the next free number, and the check that
+found it took one `grep`.

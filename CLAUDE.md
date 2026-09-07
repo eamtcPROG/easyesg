@@ -39,7 +39,9 @@ each carry a Dockerfile, built with the repository root as context. Not started:
 and the `renderer` image (task 44).
 
 Working commands: `pnpm gates:scoped` (the inner loop — see "Closing a task"),
-`pnpm lint`, `pnpm typecheck`, `pnpm image:check`, `pnpm test`, `pnpm boundaries`,
+`pnpm lint`, `pnpm eslint:prove` (14 `no-restricted-syntax` selectors, each with a fixture
+proving it rejects a real violation, plus the four config blocks' spread matrix),
+`pnpm typecheck`, `pnpm image:check`, `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (23 rules, each with a fixture proving it rejects a real violation),
 `pnpm build`, `pnpm openapi:check`, `pnpm facade:check`, `pnpm routes:check`,
 `pnpm migrations:check`, `pnpm e2e`, `pnpm e2e:worker`, `pnpm e2e:web`. **CI runs exactly these**
@@ -52,7 +54,7 @@ all, so a stale generated facade could only be caught locally. The list above is
 own order, and the workflow's two jobs concatenate to exactly it — which is the form that makes the
 claim checkable by reading rather than by trusting.
 
-`pnpm gates` runs all fourteen — eleven root scripts, then the three e2e suites (`pnpm e2e`,
+`pnpm gates` runs all fifteen — twelve root scripts, then the three e2e suites (`pnpm e2e`,
 `pnpm e2e:worker`, then `pnpm e2e:web` — the
 Playwright browser run, three projects since task 23: the tenant journeys with their axe scan,
 the +40% expansion check, and the admin console driven cross-origin against its built bundle;
@@ -62,8 +64,8 @@ build output first, and the difference between the two is the subject of the nex
 applies, reverts, re-applies and then asserts §7's schema invariants against the Compose stack,
 because neither "the baseline applies from an empty database" nor "no foreign key crosses the
 core/billing boundary" is a property any hermetic test can assert. **Four need the stack** —
-`migrations:check` and the three e2e suites — and **the other ten run anywhere**, which is not a
-count to take on trust either: those ten are the workflow's `hermetic` job line for line. And
+`migrations:check` and the three e2e suites — and **the other eleven run anywhere**, which is not
+a count to take on trust either: those eleven are the workflow's `hermetic` job line for line. And
 keeping that true is why `TypeOrmModule` is not registered until task 11 — `openapi:check` boots the
 whole `AppModule`.
 
@@ -90,7 +92,7 @@ precisely what catches a cross-workspace break: `typecheck`, `boundaries` and `l
 
 **`pnpm gates` is what CI runs, in CI's order, and `pnpm gates:clean` wraps it** — so running
 `gates` on its own before a push you are about to make is paying for the same set twice. The gate
-set is eleven root scripts plus three e2e suites; writing this rule surfaced that its first draft
+set is twelve root scripts plus three e2e suites; writing this rule surfaced that its first draft
 stopped at the hermetic ones and would have missed the very defect that prompted it.
 
 **Three review agents run at task close, before the build-log entry** (`.claude/agents/`, added
@@ -909,6 +911,56 @@ Four things are deliberately *not* matched, each because it is not a vocabulary:
 any JSX attribute outside that allowlist. **Each selector was turned on only after its own sites
 were fixed** — 17 for the first two, 39 for the third — so the gate starts green and any new
 finding is new code. Tests are exempt, per the exception above.
+
+### A component that slots may not be a client boundary
+
+**A module that carries `'use client'` may not import Radix's `Slot` — nor reach it as
+`Radix.Slot` through a namespace import, which is the same violation wearing the spelling a
+refused import invites.** Added 7 Sep 2026, and it is the sibling of the paragraph above rather
+than a new subject: the same directive, silently changing the same thing — what a Server Component
+gets — with every gate green. There it was the module's *exports*; here it is its *children*.
+
+`Slot` does not **render** its child, it **introspects** it: `Children.count`, `isValidElement`,
+then `cloneElement` with the merged props. `'use client'` makes the module a boundary, and children
+a Server Component writes for a boundary cross it as a Flight reference —
+`$$typeof: Symbol(react.lazy)` — not as an element. react-slot 1.3.3 unwraps one such layer
+(`use(children._payload)`) and the payload is already *fulfilled*, so the guard fires and still does
+not yield a single element. Slot throws *"Slot failed to slot onto its children"* and takes the
+route down with a **500**.
+
+`Button` carried the directive from task 20 and never needed it — no hook, no browser API, no
+handler of its own — so nothing noticed until task 26.3 gave it the `asChild` seam and S-13 and S-06
+died on their *"Add"* primary action. **`TextLink` was the control**: identical seam, never had the
+directive, has worked from a Server Component throughout. The fix was one deleted line.
+
+Three properties are why this is a gate and not a fixed bug:
+
+- **It presented as a screen bug and was a directive**, so the search starts in the wrong workspace.
+  Every client-side caller was fine, because client → client `asChild` never crosses Flight.
+- **It was intermittent, and the intermittency lied.** The failing arm renders only when the tenant
+  read answers `READY`, so a request whose API call had *failed* served a clean error state and
+  returned 200 — the screen looked healthiest exactly when its data was broken.
+- **Nothing else can see it.** TypeScript resolves the import against the source module and is right
+  to; `next build` succeeds; the page renders until it doesn't.
+
+**The gate is deliberately narrower than the mechanism, and that is a decision rather than an
+oversight.** The general defect is *introspecting caller-supplied children across a boundary*, which
+would mean matching `Children.*` and `cloneElement` in any `'use client'` module — and no selector
+can tell whether those children came from a Server Component or from the client parent one line up,
+where the same code is correct and ordinary. A rule like that starts green and fires on legitimate
+code later, which trains the inline disable. `Slot` is decidable for a narrower reason than
+"slotting is a server thing": **importing** it is how you build your own slotting primitive, and
+such a primitive is presentational by construction. Using a Radix part's own `asChild` is a
+different act and stays legitimate in a client boundary — `combobox.tsx`, `select.tsx`,
+`language-switcher.tsx` and `consequence-dialogue.tsx` all do it, correctly, and none imports
+`Slot`.
+
+The known gap is `packages/ui/src/navigation/account-menu.tsx`, which wraps a caller-supplied
+`items[].node` in Radix's own `DropdownMenu.Item asChild`. It cannot be covered: the menu needs
+`'use client'` for its state, so its rule is *"do not pass slotted children across the boundary"* —
+a **caller's** obligation, and not a shape a syntax selector can see. It is safe today because its
+only caller, `apps/web/src/shared/account-corner.tsx`, is itself a Client Component. If a Server
+Component ever supplies those items, it fails the same way and no gate will say so.
 
 ### An application-boundary call takes one object, never positional parameters
 

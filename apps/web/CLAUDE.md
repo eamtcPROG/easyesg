@@ -534,6 +534,24 @@ conditional render, which is how it ends up half-suppressed on one screen.
   every local repetition, so treat a red job whose diff cannot explain it as a timing assertion
   before you go looking for a regression.
 
+- **Children you write for a Client Component that *slots* them cross the RSC boundary as a Flight
+  reference, not as an element** (7 Sep 2026). `Slot` introspects its child — `Children.count`,
+  `isValidElement`, `cloneElement` — so it meets `$$typeof: Symbol(react.lazy)`, throws *"Slot failed
+  to slot onto its children"*, and 500s the route. The root `CLAUDE.md` carries the account; the half
+  that is **yours** is the half no gate can see. A selector in `eslint.config.mjs` now stops a
+  `packages/ui` primitive being both a slotter and a client boundary, which is why `<Button asChild>`
+  and `<TextLink asChild>` are safe from a Server Component. It cannot see the *caller's* side: a
+  component that needs `'use client'` for its own state and slots a node you hand it — `AccountMenu`'s
+  `items[].node`, wrapped in Radix's `DropdownMenu.Item asChild` — fails the same way if the node is
+  written by a Server Component. `account-corner.tsx` is a Client Component and that is load-bearing,
+  not incidental.
+
+  **Expect it to lie about where it lives.** It presented as a broken *screen*, on `/entities` and
+  `/reports`, while `apps/admin` and every client-side caller were fine — a client → client `asChild`
+  never crosses Flight. And it is intermittent in the worst direction: the failing arm renders only
+  when the tenant read answers `READY`, so a request whose API call had failed served a clean error
+  state and returned 200.
+
 ## Before you add a screen
 
 - It has an `S-nn` in `design_spec.md` §4.4, or it is one of the public/legal/help surfaces that

@@ -191,6 +191,109 @@ const restrictedSyntaxVocabulary = [
   },
 ];
 
+/**
+ * **A component that slots may not be a client boundary** (root `CLAUDE.md`, "Conventions") —
+ * added 7 Sep 2026, from a defect that 500'd two screens for three days.
+ *
+ * The same family as the last selector above, and the second time a `'use client'` directive has
+ * changed what a Server Component sees without changing anything a gate could read. There it was
+ * the module's *exports* (an `as const` arriving `undefined`); here it is the module's *children*.
+ *
+ * `Slot` does not render its child, it **introspects** it — `React.Children.count`,
+ * `isValidElement`, then `cloneElement` with the merged props. The directive makes the module a
+ * boundary, and children a Server Component writes for a boundary cross it as a Flight reference
+ * (`$$typeof: Symbol(react.lazy)`), not as an element. react-slot 1.3.3 unwraps one such layer
+ * (`use(children._payload)`) and the payload is already *fulfilled*, so the guard fires and still
+ * does not yield a single element; Slot throws *"Slot failed to slot onto its children"* and takes
+ * the route down with a 500.
+ *
+ * `Button` carried the directive from task 20 and never needed it — no hook, no browser API, no
+ * handler of its own — which is why nothing noticed until task 26.3 gave it the `asChild` seam.
+ * `TextLink` carries the identical seam, has never had the directive, and has worked from a Server
+ * Component throughout: it was the control, and the fix was to make the two consistent.
+ *
+ * **Three properties made it worth a gate rather than a fix.** It presented as a screen bug and was
+ * a directive, so the search started in the wrong workspace. It was *intermittent* — the failing
+ * arm renders only when the tenant read answers READY, so a screen whose data call had failed
+ * served a clean error state and looked healthy. And every other gate was green and right to be:
+ * TypeScript resolves the import against the source module, and `next build` succeeds.
+ *
+ * **Deliberately narrower than the mechanism** (recorded 7 Sep 2026 rather than left to be
+ * rediscovered). The general defect is *introspecting caller-supplied children across a boundary*,
+ * which would mean matching `Children.*` and `cloneElement` in any `'use client'` module — and a
+ * selector cannot tell whether those children came from a Server Component or from the client
+ * parent one line up, where the same code is correct and ordinary. Such a rule would start green
+ * and fire on legitimate code later, which trains the inline disable the `align="end"` note above
+ * exists to avoid. `Slot` is decidable for a narrower reason than "slotting is a server thing":
+ * *importing* it is how you build your own slotting primitive, and such a primitive is
+ * presentational by construction. Using a Radix part's own `asChild` is a different act and stays
+ * legitimate in a client boundary — `combobox.tsx`, `select.tsx`, `language-switcher.tsx` and
+ * `consequence-dialogue.tsx` all do it, correctly, and none imports `Slot`.
+ *
+ * The known gap is `account-menu.tsx`, which wraps a caller-supplied `items[].node` in Radix's own
+ * `DropdownMenu.Item asChild`. It cannot be covered here — it needs `'use client'` for the menu's
+ * state, so the rule for it is *"do not pass slotted children across the boundary"*, which belongs
+ * to the caller and is not a shape a syntax selector can see. It is safe today because its only
+ * caller is itself a Client Component.
+ *
+ * Spread into every block that sets `no-restricted-syntax`, for the reason the constants above
+ * document: the option REPLACES rather than merges.
+ */
+const restrictedSyntaxClientBoundary = [
+  {
+    // Both spellings, because closing the umbrella import while leaving the direct one open would
+    // make the workaround the first thing a reader reaches for. Only `packages/ui` depends on
+    // `radix-ui` today and nothing depends on `@radix-ui/react-slot` at all — the second half is
+    // one line of insurance, not an abstraction.
+    selector:
+      "Program:has(> ExpressionStatement[directive='use client']) > ImportDeclaration" +
+      ":matches([source.value='@radix-ui/react-slot'], " +
+      "[source.value='radix-ui']:has(ImportSpecifier[imported.name='Slot']))",
+    message:
+      'A component that slots may not be a client boundary (CLAUDE.md, "Conventions"). `Slot` ' +
+      'does not render its child, it INTROSPECTS it — Children.count, isValidElement, ' +
+      'cloneElement — and `\'use client\'` makes this module a boundary, so children written by ' +
+      'a Server Component arrive as a Flight reference (Symbol(react.lazy)) rather than an ' +
+      'element. Slot then throws "Slot failed to slot onto its children" and 500s the route — ' +
+      'intermittently, and past typecheck, lint and build alike. Delete the directive: a ' +
+      'slotting primitive needs no hook and no browser API. See ' +
+      'packages/ui/src/primitives/button.tsx.',
+  },
+  {
+    // The namespace spelling of the SAME import, matched on the **usage** rather than on the
+    // import — added after a gate-integrity review proved the asymmetry. The branch above closes
+    // `@radix-ui/react-slot` whatever the specifier shape, but the `radix-ui` branch needs a named
+    // `Slot`, and `radix-ui` is the package this repository actually imports from: so
+    // `import * as Radix from 'radix-ui'` then `<Radix.Slot.Root>` went straight through the one
+    // spelling most likely to be reached for once the named form is refused.
+    //
+    // It cannot be closed at the import, because `import * as Radix from 'radix-ui'` is also how a
+    // client module would legitimately reach `Radix.DropdownMenu` — the import says nothing. The
+    // usage does. It matches the `Radix.Slot` inside `Radix.Slot.Root` and does NOT match
+    // `Slot.Root` itself, so the named-import case above is reported once, by the branch that
+    // names the package — verified, not assumed.
+    //
+    // **Both node types, because JSX has its own.** The first draft matched `MemberExpression`
+    // alone and was INERT: `<Radix.Slot.Root>` parses as a `JSXMemberExpression`, so the one
+    // spelling this branch exists for was the one it could not see. It looked exactly like a
+    // passing rule. A plain `MemberExpression` is still needed for the non-JSX form —
+    // `text-link.tsx`'s `asChild ? Slot.Root : 'a'` is one.
+    //
+    // Zero occurrences of any `.Slot` member access exist in the workspace today (grepped before
+    // turning it on, per "fix the sites first"), so this starts green and the theoretical false
+    // positive — an unrelated `foo.Slot` in a client module — has no instance to argue about.
+    selector:
+      "Program:has(> ExpressionStatement[directive='use client']) " +
+      ":matches(MemberExpression, JSXMemberExpression)[property.name='Slot']",
+    message:
+      'A component that slots may not be a client boundary (CLAUDE.md, "Conventions"), and the ' +
+      'namespace spelling is the same violation. `Radix.Slot` in a module carrying ' +
+      '`\'use client\'` introspects its child across an RSC boundary, where children arrive as a ' +
+      'Flight reference rather than an element, and throws "Slot failed to slot onto its ' +
+      'children". Delete the directive — a slotting primitive needs no hook and no browser API.',
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -310,7 +413,13 @@ export default tseslint.config(
   {
     files: ['**/*.{ts,tsx}'],
     ignores: ['**/*.spec.{ts,tsx}', '**/*.e2e-spec.ts', 'apps/api/test/**/*.ts', 'e2e/**/*.ts'],
-    rules: { 'no-restricted-syntax': ['error', ...restrictedSyntaxVocabulary] },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...restrictedSyntaxVocabulary,
+        ...restrictedSyntaxClientBoundary,
+      ],
+    },
   },
 
   // ── The browser tier: apps/web, apps/admin, packages/ui ─────────────────────────────────
@@ -338,7 +447,13 @@ export default tseslint.config(
       // A-01 — so scoping a11y to the tenant app would exempt the one admin screen that names
       // an accessibility criterion.
       ...jsxA11y.flatConfigs.recommended.rules,
-      'no-restricted-syntax': ['error', ...restrictedSyntaxFormatting, ...restrictedSyntaxText, ...restrictedSyntaxVocabulary],
+      'no-restricted-syntax': [
+        'error',
+        ...restrictedSyntaxFormatting,
+        ...restrictedSyntaxText,
+        ...restrictedSyntaxVocabulary,
+        ...restrictedSyntaxClientBoundary,
+      ],
     },
   },
 
@@ -376,6 +491,7 @@ export default tseslint.config(
         ...restrictedSyntaxFormatting,
         ...restrictedSyntaxText,
         ...restrictedSyntaxVocabulary,
+        ...restrictedSyntaxClientBoundary,
       ],
 
       /**
@@ -517,7 +633,18 @@ export default tseslint.config(
       'apps/admin/**/*.spec.{ts,tsx}',
       'packages/ui/**/*.spec.{ts,tsx}',
     ],
-    rules: { 'no-restricted-syntax': ['error', ...restrictedSyntaxFormatting] },
+    // `restrictedSyntaxClientBoundary` IS respread here, unlike the vocabulary selectors, and the
+    // asymmetry is the point: a spec asserts a wire literal on purpose (CLAUDE.md's own exception),
+    // but nothing legitimately writes `'use client'` beside a `Slot` import in a vitest file — the
+    // directive is inert under jsdom, so the rule can only ever fire on the real shape. Leaving it
+    // out would have made this the fourth block, and the constant's docblock says *every* block.
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...restrictedSyntaxFormatting,
+        ...restrictedSyntaxClientBoundary,
+      ],
+    },
   },
 
   // src/i18n/navigation.ts is where the wrappers are created, so it is the one file that must
@@ -536,10 +663,18 @@ export default tseslint.config(
    * an untyped file produce nothing but `no-unsafe-*`: 286 of them, every one saying "this value
    * has no type", which is true and is not a finding.
    *
-   * What is left still bites — undeclared variables, unused bindings, unreachable code, the
-   * `no-restricted-syntax` vocabulary selectors — which is the half worth having here. Ignoring the
-   * file was the alternative, and the ignores block above rejects it in terms: a source file that
-   * ends up unlinted is the failure this rule set exists to prevent.
+   * What is left still bites — undeclared variables, unused bindings, unreachable code — which is
+   * the half worth having here. Ignoring the file was the alternative, and the ignores block above
+   * rejects it in terms: a source file that ends up unlinted is the failure this rule set exists to
+   * prevent.
+   *
+   * **This paragraph used to claim the `no-restricted-syntax` vocabulary selectors bite here too,
+   * and they do not** (corrected 7 Sep 2026, found while adding `eslint:prove`). Every block that
+   * sets the rule is scoped to `*.{ts,tsx}`, and `.mjs` is neither — `eslint --print-config
+   * tools/prove-eslint.mjs` answers with no `no-restricted-syntax` at all. The claim was wrong from
+   * the day it was written, in the file whose own selectors it describes, and nothing could have
+   * caught it: a rule that is not configured reports nothing, which is what a clean file also does.
+   * Widen a block's `files` if these should apply here; do not re-assert that they already do.
    */
   {
     files: ['tools/*.mjs'],

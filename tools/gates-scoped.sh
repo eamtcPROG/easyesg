@@ -61,6 +61,29 @@ if ! git diff --quiet "$BASE" -- .dependency-cruiser.cjs tools/prove-boundaries.
   RULES_CHANGED=1
 fi
 
+# `eslint:prove` is the same arrangement one rule set down (7 Sep 2026): it belongs to changes that
+# touch its inputs and to the pre-push run, not to every task.
+#
+# **`pnpm-workspace.yaml` is the third input, and the first draft of this said there were two.** A
+# selector is matched against an AST, so it breaks when the PARSER changes shape as readily as when
+# someone edits its text — and this repository's own worked example is exactly that: a selector
+# written for `MemberExpression` could not see `<Radix.Slot.Root>`, which is a `JSXMemberExpression`.
+# The catalog is where `eslint`, `typescript-eslint` and every plugin are pinned (§12.1), so a bump
+# there can silently change what fourteen hand-written selectors match while both files below sit
+# untouched. Found by the gate-integrity review of the change that added this line, which proved
+# that a catalog bump attributes nothing to any workspace and so reaches no other condition either.
+#
+# What remains uncovered is a transitive bump arriving through `pnpm-lock.yaml` alone. That is left
+# to the two runs that are unconditional — CI's `hermetic` job and `pnpm gates:clean` — rather than
+# firing this on every dependency change; the local loop is allowed to be the fast one precisely
+# because it is not the last word.
+ESLINT_PROVE_INPUTS=(eslint.config.mjs tools/prove-eslint.mjs pnpm-workspace.yaml)
+ESLINT_RULES_CHANGED=0
+if ! git diff --quiet "$BASE" -- "${ESLINT_PROVE_INPUTS[@]}" 2>/dev/null \
+   || [ -n "$(git status --porcelain -- "${ESLINT_PROVE_INPUTS[@]}")" ]; then
+  ESLINT_RULES_CHANGED=1
+fi
+
 LOGS="$(mktemp -d)"
 trap 'rm -rf "$LOGS"' EXIT
 
@@ -136,6 +159,9 @@ selected /apps/web && BROWSER_PROJECTS+=(--project identity --project expansion)
 selected /apps/admin && BROWSER_PROJECTS+=(--project admin)
 [ ${#BROWSER_PROJECTS[@]} -gt 0 ] && phase e2e-web "pnpm e2e:web ${BROWSER_PROJECTS[*]}"
 [ "$RULES_CHANGED" -eq 1 ] && phase boundaries-prove "pnpm boundaries:prove"
+# Sequential with the rest, and never beside `lint`: it writes fixture files into the working tree,
+# which is the same reason `boundaries:prove` is excluded from the parallel group above.
+[ "$ESLINT_RULES_CHANGED" -eq 1 ] && phase eslint-prove "pnpm eslint:prove"
 
 if [ ${#LABELS[@]} -gt 0 ]; then
   echo
@@ -169,8 +195,22 @@ if [ ${#FAILED[@]} -eq 0 ]; then
   # The proxy is what Sonnet measurably misses — findings that connect a rule in one file to a
   # convention in another. Breadth and the tenancy/privilege surface stand in for that.
   #
-  # **Downgrade-only.** The frontmatter pins `opus`; this suggests overriding *down*. Forget it and
-  # you get the better reviewer, not the worse one.
+  # **Upgrade-only, since 3 Sep 2026 — this block said the opposite until 7 Sep.** The owner's
+  # standing override moved the frontmatter pin to `sonnet` for every one of the three agents,
+  # whatever the diff touches. The reason was usage, not a re-reading of the measurement above: the
+  # reviews are worth their cost and were not worth three opus runs over a whole task diff at every
+  # close. So the table below is dormant as a **default** and intact as the **description** of what
+  # earning `opus` looks like, and this line suggests overriding *up*.
+  #
+  # The consequence is worth stating because it inverts the old fail-safe: forgetting now gets you
+  # the cheaper reviewer rather than the better one, which is exactly why this prints at all. What
+  # does NOT change is that the choice is made from the diff **before** any agent runs — never from
+  # a sonnet report, which the 31 Aug measurement found carries no signal to escalate on.
+  #
+  # It read *"Downgrade-only. The frontmatter pins `opus`"* for four days after that stopped being
+  # true, and the printed line called opus "the pinned default" while all three agent files pinned
+  # `model: sonnet`. Nothing could catch it: a stale sentence about a pin is not a claim any run
+  # evaluates — the same shape as the `tools/*.mjs` comment corrected in the same task.
   workspaces=$(printf '%s\n' "$SELECTED" | grep -c '^/' || true)
   risky=''
   git diff --name-only "$BASE" -- '*/migrations/*' | grep -q . && risky='a migration'
@@ -189,10 +229,13 @@ if [ ${#FAILED[@]} -eq 0 ]; then
 
   echo
   if [ -n "$risky" ]; then
-    printf 'Review agents: \033[1mopus\033[0m (the pinned default) — this diff touches %s.\n' "$risky"
+    printf 'Review agents: this diff EARNS \033[1mopus\033[0m — it touches %s.\n' "$risky"
+    printf 'The pin is `sonnet`, so pass `model: opus` when invoking them. Decide now, not after\n'
+    printf 'reading a report: a sonnet report gives nothing to escalate on.\n'
   else
-    printf 'Review agents: \033[1msonnet\033[0m is enough — one workspace, no migration, grant,\n'
-    printf 'policy, trigger, contract or identity surface. Pass `model: sonnet` when invoking them.\n'
+    printf 'Review agents: \033[1msonnet\033[0m, the pinned default, and nothing here earns opus —\n'
+    printf 'one workspace, no migration, grant, policy, trigger, contract or identity surface.\n'
+    printf 'Invoke them as they are.\n'
   fi
   exit 0
 fi

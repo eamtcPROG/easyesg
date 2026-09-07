@@ -5,8 +5,14 @@
 # a gate means adding a root script and one line.
 #
 # The split between the two jobs is a property worth keeping visible rather than a scheduling
-# convenience: eight gates run anywhere, and one cannot. A lint error should not wait on a database
-# it has no use for.
+# convenience: eleven gates run anywhere and four need the stack. A lint error should not wait on a
+# database it has no use for.
+#
+# That sentence read "eight gates run anywhere, and one cannot" until 7 Sep 2026, having been true
+# when it was written and drifted silently since — the same shape as task 90's `facade:check`, in
+# the prose rather than in the steps. Both counts are checkable by reading: `hermetic` runs eleven
+# gates and nothing else, `database` runs four (`migrations:check` and the three e2e suites) around
+# the stack setup that is not a gate, and the two concatenate to the `pnpm gates` chain in order.
 #
 # THE JOBS RUN IN PARALLEL ON PURPOSE. The obvious change is `needs: hermetic` on the database job,
 # so e2e never runs against a commit whose unit tests are already red. Measured on run 32353913669
@@ -65,6 +71,15 @@ jobs:
       # Ordered cheapest-first so the common failures report soonest. Each is a root script; none
       # of them is defined here.
       - run: pnpm lint
+
+      # Asserts each `no-restricted-syntax` selector still REJECTS a violation, and that each of
+      # the four config blocks still carries the selectors it is supposed to (task 90's lesson,
+      # one layer down: options REPLACE rather than merge). `eslint.config.mjs` is in its own
+      # `ignores` list, so `pnpm lint` never parses the selectors at all — without this, a
+      # selector that has stopped matching is indistinguishable from a clean tree. It writes
+      # fixtures into the tree and removes them, so it may never run beside another linter.
+      - run: pnpm eslint:prove
+
       - run: pnpm typecheck
       # The api image's workspace-dependency list against its manifest (task 90). Hermetic and
       # sub-second; it exists because the Images job caught this three times and only after an
