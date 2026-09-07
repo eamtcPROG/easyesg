@@ -1,4 +1,5 @@
 import type { LegalDate } from '@api/contracts/types/time';
+import type { ReportStatus } from '@api/modules/core/disclosure/models/report.model';
 
 /**
  * The reporting period (FR-21, FR-45, FR-66; UC-56).
@@ -46,6 +47,53 @@ export interface ReportingPeriod {
    */
   readonly lockedBy: string | null;
   readonly createdAt: Date;
+  readonly updatedAt: Date;
+  /**
+   * The entity's name, joined rather than stored — FR-23's overview lists periods across every
+   * entity, and a row that could name only an identifier is not a screen (task 32.4).
+   *
+   * **Flat, where `Report.subject` is an object, and the difference is the point.** A report
+   * carried no period fact at all, so the join gave it six; a period already holds its entity id,
+   * its year and its three dates, so the join adds exactly one string and a wrapper around it
+   * would be structure with nothing to hold.
+   */
+  readonly entityName: string;
+  /**
+   * The report opened against this period, or null where none has been (task 32.4).
+   *
+   * **`null` is UC-67's most important answer**, not an absence: since task 31.3 a report is an
+   * explicit creation and §7.2's diagram was amended to `REPORTING_PERIOD ||--o| REPORT` in the
+   * same change, so a period with a due date nobody has started is a real state — and the one
+   * *"is everything ready before the deadline"* is asked about.
+   */
+  readonly report: PeriodReport | null;
+}
+
+/**
+ * What a period says about the report opened against it.
+ *
+ * **One object rather than two nullable fields on the period**, which is `LegalDateDto`'s rule at
+ * a different boundary: `reportId` and `reportStatus` as siblings are two values a reader can
+ * half-supply, where one object makes *started* and *not started* the only two states there are.
+ *
+ * `scope` is deliberately absent. D-A's flag is a filing choice S-06 renders where a reader picks
+ * among filings; the overview answers readiness and never shows it, and a field with no reader is
+ * what §12.5.6 keeps refusing. Joining it costs nothing the day something reads it.
+ *
+ * **`ReportStatus` is imported, never restated.** The vocabulary is declared once in
+ * `core/disclosure` and the `CHECK` constraint is the database's own copy; a second union here is
+ * the drift CLAUDE.md's closed-vocabulary rule exists to prevent.
+ */
+export interface PeriodReport {
+  readonly id: string;
+  readonly status: ReportStatus;
+  /**
+   * When the report was last written — an instant, converted at the DTO boundary (OQ-50).
+   *
+   * **It is here because it has a reader**, which is the test `scope` fails: UX-6's *where did I
+   * leave off* is *which* report was touched last, and asking `GET /reports` for it as well would
+   * be a second read answering a question this row already holds.
+   */
   readonly updatedAt: Date;
 }
 

@@ -29,7 +29,14 @@ import { PeriodService } from '../services/period.service';
 const NO_SUCH_PERIOD = 'No such period in the active organization.';
 
 /**
- * `/api/v1/periods` — S-14's Index and Record (UC-56; FR-21, FR-45, FR-66).
+ * `/api/v1/periods` — S-14's Index and Record (UC-56; FR-21, FR-45, FR-66), and since task 32.4
+ * S-05's organization-wide overview (UC-67, FR-23).
+ *
+ * **The list answers the organization by default and one entity on request**, which is the
+ * widening FR-23 required: its overview is asked of the organization, and a route that could only
+ * answer one entity at a time made the screen an N+1 (§12.5.6). Every row carries its entity's
+ * name and the report opened against it, so *not started* — the state task 31.3 made real — is a
+ * row rather than an absence.
  *
  * **Reads are open to every member; writes are Organization Administrator only.** UC-56 names the
  * OA as its primary actor, and the reason the reads are wider is `EntitiesController`'s: a
@@ -62,15 +69,18 @@ export class PeriodsController {
     MEMBERSHIP_ROLE.VIEWER,
   )
   @ApiOperation({
-    summary: 'List the reporting periods of one entity, newest first',
+    summary: 'List reporting periods, newest first — the organization’s, or one entity’s',
     description:
-      'Scoped to one entity because a period only means anything against one (FR-21). The active ' +
-      'organization comes from the session, never from a parameter.',
+      'Organization-wide by default, which is what FR-23’s overview reads: it lists every entity ' +
+      'AND period, including the periods no report has been opened against. Narrowed to one ' +
+      'entity by query parameter, which is S-14’s question. The active organization comes from ' +
+      'the session, never from a parameter.',
   })
-  @ApiQuery({ name: 'reportingEntityId', required: true, format: 'uuid' })
-  @ApiListResponse(ReportingPeriodResponseDto, { status: 200, description: 'The entity’s periods.' })
+  @ApiQuery({ name: 'reportingEntityId', required: false, format: 'uuid' })
+  @ApiListResponse(ReportingPeriodResponseDto, { status: 200, description: 'The periods.' })
   async list(
-    @Query('reportingEntityId', ParseUUIDPipe) reportingEntityId: string,
+    @Query('reportingEntityId', new ParseUUIDPipe({ optional: true }))
+    reportingEntityId?: string,
   ): Promise<ReportingPeriodResponseDto[]> {
     const periods = await this.periods.list({ reportingEntityId });
     return periods.map((period) => new ReportingPeriodResponseDto(period));

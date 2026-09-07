@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import type { AccountMembership } from '@easyesg/contracts';
+import { MEMBERSHIP_ROLE, type AccountMembership } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from './api-client';
 
@@ -35,3 +35,26 @@ export const readMemberships = cache(async (): Promise<AccountMembership[] | nul
  */
 export const readActiveMembership = async (): Promise<AccountMembership | null> =>
   (await readMemberships())?.find((membership) => membership.active) ?? null;
+
+/**
+ * Whether this membership may write in the organization it names — FR-25's *"a view-only member
+ * sees the same entries and no edit affordances"*, as one predicate (extracted 7 Sep 2026, task
+ * 32.4's review).
+ *
+ * **Beside the read rather than at each screen**, which is the root file's rule that an operation
+ * over a vocabulary belongs with the vocabulary: `MEMBERSHIP_ROLE` is `@easyesg/contracts`' and the
+ * narrowing *is this membership one of the writing roles* is derived from it. It had been written
+ * twice in two different orders — `membership?.role !== VIEWER && membership !== null` on S-06 and
+ * `membership !== null && membership.role !== VIEWER` on S-05 — which are equivalent only because
+ * of the null conjunct, so a reader cannot see that they are one rule and nothing fails if one
+ * drifts.
+ *
+ * **`null` reads as view-only, and that is the safe direction**: the affordance disappears and the
+ * screen still renders, where guessing *editor* would offer a write the API refuses. A caller
+ * holding several memberships with no active one resolves nothing, which is task 83's to end.
+ *
+ * It takes the membership rather than the role so a caller cannot reach for `.role` on a `null`
+ * and get the answer by accident.
+ */
+export const mayWrite = (membership: AccountMembership | null): boolean =>
+  membership !== null && membership.role !== MEMBERSHIP_ROLE.VIEWER;

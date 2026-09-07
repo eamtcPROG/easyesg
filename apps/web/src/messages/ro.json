@@ -370,12 +370,52 @@
     },
     "home": {
       "title": "Prima pagină",
-      "lede": "Aici veți vedea starea rapoartelor organizației dumneavoastră.",
-      "reports": {
-        "heading": "Starea rapoartelor",
+      "lede": "Starea raportărilor din organizație și organizațiile la care aveți acces.",
+      "overview": {
+        "attention": {
+          "heading": "Ce necesită atenție",
+          "lede": "Raportările la care mai are cineva de lucrat, cu termenul cel mai apropiat primul.",
+          "empty": {
+            "title": "Nimic în așteptare",
+            "body": "Fiecare perioadă deschisă este fie finalizată, fie blocată. Nu mai aveți nimic de făcut înainte de termenele stabilite."
+          }
+        },
+        "resume": {
+          "heading": "Unde ați rămas",
+          "body": "Ați lucrat ultima dată la raportul entității {entity}, pentru anul {year}.",
+          "action": "Continuați raportul"
+        },
+        "everything": {
+          "heading": "Cum stau lucrurile",
+          "lede": "Fiecare entitate și fiecare perioadă de raportare din organizație."
+        },
+        "standing": {
+          "not_started": "Neînceput",
+          "open": "În lucru",
+          "locked": "Blocat",
+          "ready_to_file": "Gata de depunere",
+          "filed": "Depus"
+        },
+        "overdue": "Termen depășit",
+        "periodLocked": "Perioadă blocată",
+        "due": "Termen: {date}",
+        "dueNone": "Fără termen stabilit",
+        "period": "{start} – {end}",
+        "start": "Începeți raportul",
+        "open": "Deschideți raportul",
         "empty": {
           "title": "Nu există încă nicio perioadă de raportare",
-          "body": "Aici va apărea starea fiecărui raport — ce cere atenție, unde ați rămas și cum stau lucrurile în ansamblu. Regiunea se completează după ce deschideți prima perioadă de raportare pentru o entitate."
+          "body": "O raportare acoperă o entitate și un an. După ce deschideți prima perioadă de raportare pentru o entitate, aici veți vedea ce necesită atenție, unde ați rămas și cum stau lucrurile în ansamblu.",
+          "action": "Vedeți entitățile"
+        },
+        "unreachable": {
+          "title": "Nu am putut încărca starea raportărilor",
+          "body": "Serviciul nu a răspuns, așa că nu știm cum stau raportările dumneavoastră. Restul paginii funcționează.",
+          "action": "Reîncărcați pagina peste câteva momente."
+        },
+        "forbidden": {
+          "title": "Nu putem afișa starea raportărilor",
+          "body": "Contul dumneavoastră nu este membru activ al unei organizații, așa că perioadele de raportare nu pot fi citite. Un administrator al organizației vă poate acorda accesul."
         }
       },
       "memberships": {

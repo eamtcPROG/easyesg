@@ -65,3 +65,35 @@ export function legalDate(date: string | null | undefined): LegalDate | null {
 export function dateValue(legal: LegalDate | null | undefined): string {
   return legal?.date ?? '';
 }
+
+/**
+ * The calendar day it is **in a given zone**, as ISO `YYYY-MM-DD` (task 32.4).
+ *
+ * **Here rather than beside its one caller**, per the root file's rule that an operation over a
+ * type belongs with the type: this module is where a calendar date and its zone meet, and a
+ * `formatToParts` call written inside a screen is the copy that later disagrees with this one.
+ *
+ * It exists so *"has the deadline passed"* can be asked the way NFR-34 requires it be asked.
+ * A due date is a legal date, so the question is answered in **the period's own zone** and not the
+ * reader's — a bookkeeper in another country must not see a different answer from the one the
+ * filing is judged by. The comparison is then two ISO strings, which order lexicographically, and
+ * that is the whole reason these dates are never turned into a `Date`.
+ *
+ * **`formatToParts`, not a locale that happens to format ISO.** `en-CA` produces `2026-09-07`
+ * today and is a locale's presentation choice, which NFR-26 puts outside this file's control;
+ * assembling the parts asks the formatter only for the numbers.
+ *
+ * `now` is a parameter so a caller's clock is visible and testable — the two arguments differ in
+ * type, so the swap the root file's rule guards against cannot compile.
+ */
+export function todayIn(timezone: string, now: Date): string {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((part) => part.type === type)?.value ?? '';
+  return `${value('year')}-${value('month')}-${value('day')}`;
+}

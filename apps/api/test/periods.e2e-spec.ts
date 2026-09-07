@@ -27,6 +27,10 @@ import {
  */
 
 const ORG = '01930000-0000-7000-8000-0000000000d1';
+/** FR-23's list answers *every* period, so the tenancy question is asked of it directly. */
+const OTHER_ORG = '01930000-0000-7000-8000-0000000000d2';
+const OTHER_ENTITY = '01930000-0000-7000-8000-0000000000e2';
+const OTHER_PERIOD = '01930000-0000-7000-8000-0000000000f2';
 
 const EMAILS = {
   admin: 'oa@periods.test',
@@ -59,6 +63,14 @@ describe('reporting periods (UC-56)', () => {
     entitySnapshotId: string | null;
     lockedAt: number | null;
     lockedBy: string | null;
+    entityName: string;
+    /**
+     * **Every field, not the two this suite happens to read.** `apps/api` may not import
+     * `@easyesg/contracts` (`api-not-to-contracts-package`), so this interface is a hand-written
+     * second copy of `PeriodReportDto` and the compiler cannot tell it has fallen behind — the
+     * `toEqual` below is what does, which is why it names all three.
+     */
+    report: { id: string; status: string; updatedAt: number } | null;
   }
 
   interface ReopeningBody {
@@ -136,9 +148,11 @@ describe('reporting periods (UC-56)', () => {
 
   afterAll(async () => {
     await cleanupSignedInAccounts({ owner });
-    await asOrganization(owner, ORG, (run) =>
-      run(`DELETE FROM core.organization WHERE id = $1`, [ORG]),
-    );
+    for (const organization of [ORG, OTHER_ORG]) {
+      await asOrganization(owner, organization, (run) =>
+        run(`DELETE FROM core.organization WHERE id = $1`, [organization]),
+      );
+    }
     await owner?.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [
       Object.values(EMAILS),
     ]);
@@ -525,6 +539,184 @@ describe('reporting periods (UC-56)', () => {
       expect(records[0].reason).toBe('motiv vizibil');
 
       await http().post(`/api/v1/periods/${opened.id}/lock`).set(editor.authorization).expect(403);
+    });
+  });
+
+  /**
+   * FR-23's overview, which is the read S-05 answers *"is everything ready before the deadline"*
+   * from (UC-67; task 32.4).
+   *
+   * **These five exist because the alternative shapes all pass a narrower test.** A route that
+   * still required an entity, one that answered the organization but dropped the entity's name, one
+   * that inner-joined the report, and one that read the period back before moving its report's
+   * status each produce a plausible list — and each breaks exactly one of the claims below.
+   */
+  describe("the organization's periods, for the status overview (UC-67, FR-23)", () => {
+    /** A second entity in the same organization: an overview spanning one entity proves nothing. */
+    let secondEntityId: string;
+
+    beforeAll(async () => {
+      const created = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({ name: 'Moara Lina', legalForm: 'srl', naceCodes: ['10.71'] })
+        .expect(201);
+      secondEntityId = (created.body as { object: { id: string } }).object.id;
+
+      // A whole second tenant, written as the owner — the list below claims to answer *every*
+      // period, so the claim has to be made against a database that holds somebody else's.
+      await asOrganization(owner, null, (run) =>
+        run(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Vecinul SRL', 'MD')`, [
+          OTHER_ORG,
+        ]),
+      );
+      await asOrganization(owner, OTHER_ORG, async (run) => {
+        await run(`INSERT INTO core.reporting_entity (id, organization_id, name) VALUES ($1,$2,$3)`, [
+          OTHER_ENTITY,
+          OTHER_ORG,
+          'Vecinul',
+        ]);
+        await run(
+          `INSERT INTO core.reporting_period (id, organization_id, reporting_entity_id, fiscal_year,
+                 period_start, period_start_tz, period_end, period_end_tz,
+                 template_version, taxonomy_version)
+           VALUES ($1,$2,$3,2026,'2026-01-01',$4,'2026-12-31',$4,'2026-05-01','2026-05-01')`,
+          [OTHER_PERIOD, OTHER_ORG, OTHER_ENTITY, CHISINAU],
+        );
+      });
+    });
+
+    const overview = async () =>
+      objectsOf((await http().get('/api/v1/periods').set(admin.authorization).expect(200)).body);
+
+    it('lists every entity and period in the organization, and nobody else’s', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+      await openPeriod(aYear(2025, { reportingEntityId: secondEntityId })).expect(201);
+
+      const listed = await overview();
+
+      // Both entities, which is the whole point of the widening: FR-23 is answerable *"without
+      // opening each report"*, and a per-entity route makes that one request per entity.
+      expect(listed.map((row) => row.reportingEntityId).sort()).toEqual(
+        [entityId, secondEntityId].sort(),
+      );
+      // The second tenant's period exists and is not here. RLS is what refuses it; this is the
+      // test that would notice if the widening had reached for the rows a filter used to hide.
+      expect(listed.map((row) => row.id)).not.toContain(OTHER_PERIOD);
+    });
+
+    it('still narrows to one entity when asked, which is S-14’s question', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+      await openPeriod(aYear(2025, { reportingEntityId: secondEntityId })).expect(201);
+
+      const narrowed = objectsOf(
+        (
+          await http()
+            .get(`/api/v1/periods?reportingEntityId=${secondEntityId}`)
+            .set(admin.authorization)
+            .expect(200)
+        ).body,
+      );
+
+      expect(narrowed).toHaveLength(1);
+      expect(narrowed[0].reportingEntityId).toBe(secondEntityId);
+    });
+
+    it('names the entity on every row, so a list spanning entities is readable', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+      await openPeriod(aYear(2025, { reportingEntityId: secondEntityId })).expect(201);
+
+      const byEntity = new Map((await overview()).map((row) => [row.reportingEntityId, row.entityName]));
+
+      expect(byEntity.get(entityId)).toBe('Brutăria Lina');
+      expect(byEntity.get(secondEntityId)).toBe('Moara Lina');
+    });
+
+    /**
+     * **The row FR-23 exists for.** Since task 31.3 a report is an explicit creation, so a period
+     * with a deadline and no report is a real state — and it is invisible to `GET /reports` by
+     * construction. An inner join here would drop it silently and the overview would look correct.
+     */
+    it('answers the report where one was opened, and null where none was', async () => {
+      const started = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      const untouched = objectOf(
+        (await openPeriod(aYear(2025, { reportingEntityId: secondEntityId })).expect(201)).body,
+      );
+      const created = await http()
+        .post('/api/v1/reports')
+        .set(admin.authorization)
+        .send({ reportingPeriodId: started.id })
+        .expect(201);
+      const report = (created.body as { object: { id: string; updatedAt: number } }).object;
+
+      const byPeriod = new Map((await overview()).map((row) => [row.id, row.report]));
+
+      expect(byPeriod.get(started.id)).toEqual({
+        id: report.id,
+        status: 'open',
+        // **The REPORT's instant, and the assertion is that it comes from the report's own column.**
+        // UX-6 picks the filing to resume by it, and `r.updated_at` → `p.updated_at` in the
+        // projection would be a plausible edit that every other test here tolerates: the two are
+        // written in the same transaction at period open, so they agree until the moment a reporter
+        // touches a report — which is precisely when the resume answer starts to matter. Comparing
+        // against `GET /reports/{id}`'s own value is what ties them.
+        updatedAt: report.updatedAt,
+      });
+      expect(byPeriod.get(untouched.id)).toBeNull();
+    });
+
+    /**
+     * The other half of the pair above, and it had no test at all until review found it (7 Sep
+     * 2026). `reopen` moves the period **and** every report inside it in one transaction, so the
+     * projection has to be read afterwards — read before, a reopened period answers `lockedAt:
+     * null` while the report it carries still reads `locked`, which is the disagreement
+     * `moveReportStatus` exists to prevent, wearing the opposite sign from the lock's.
+     */
+    it('reports the report’s status as the reopening left it', async () => {
+      const period = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await http()
+        .post('/api/v1/reports')
+        .set(admin.authorization)
+        .send({ reportingPeriodId: period.id })
+        .expect(201);
+      await http().post(`/api/v1/periods/${period.id}/lock`).set(admin.authorization).expect(200);
+
+      const reopened = objectOf(
+        (
+          await http()
+            .post(`/api/v1/periods/${period.id}/reopening`)
+            .set(admin.authorization)
+            .send({ reason: 'A figure was corrected after the filing.' })
+            .expect(200)
+        ).body,
+      );
+
+      expect(reopened.lockedAt).toBeNull();
+      expect(reopened.report?.status).toBe('open');
+      expect((await overview()).find((row) => row.id === period.id)?.report?.status).toBe('open');
+    });
+
+    /**
+     * The lock moves the period **and** its report in one transaction (§12.5.6's task-31.3 row), so
+     * the projection has to be read after that move. Reading it before is the subtle version of this
+     * change that passes every other test here: a locked period reporting an open report.
+     */
+    it('reports the report’s status as the lock left it, not as it stood before', async () => {
+      const period = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await http()
+        .post('/api/v1/reports')
+        .set(admin.authorization)
+        .send({ reportingPeriodId: period.id })
+        .expect(201);
+
+      const locked = objectOf(
+        (await http().post(`/api/v1/periods/${period.id}/lock`).set(admin.authorization).expect(200))
+          .body,
+      );
+
+      expect(locked.lockedAt).not.toBeNull();
+      expect(locked.report?.status).toBe('locked');
+      expect((await overview()).find((row) => row.id === period.id)?.report?.status).toBe('locked');
     });
   });
 

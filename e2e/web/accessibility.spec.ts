@@ -1,6 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { cleanupAccounts, cleanupOrganizations, grantMembership, verificationTokenFor } from './support/db';
+import {
+  cleanupAccounts,
+  cleanupOrganizations,
+  grantMembership,
+  seedOpenPeriod,
+  seedReport,
+  verificationTokenFor,
+} from './support/db';
 import { enrolFactor, presentPassword } from './support/second-factor';
 
 /**
@@ -195,9 +202,15 @@ test('axe finds no violations on the entity record', async ({ page }) => {
 });
 
 /**
- * S-05 (task 30.5) — the screen every sign-in lands on, and the one composition axe has not yet
- * judged: a `banner`, a `navigation`, a `main` and two `Panel` regions with their own headings,
- * over an `EmptyState` that is present rather than absent.
+ * S-05 (tasks 30.5, 32.4) — the screen every sign-in lands on, and the richest composition axe
+ * judges: a `banner`, a `navigation`, a `main`, and four `Panel` regions with their own headings
+ * over UX-6's three questions.
+ *
+ * **It is scanned with filings, not empty**, which is task 32.4's addition and not a detail. The
+ * empty screen is one `EmptyState` and a list of memberships; the populated one is where the
+ * status chips, the overdue marker and a link per row live — and a status chip is exactly the
+ * shape UX-102 is about, a colour whose meaning must also be in words. Scanning the empty version
+ * would have judged the screen the least interesting way it renders.
  */
 test('axe finds no violations on the home screen', async ({ page }) => {
   const email = `${RUN_PREFIX}-home@example.md`;
@@ -210,7 +223,20 @@ test('axe finds no violations on the home screen', async ({ page }) => {
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
   await page.getByRole('button', { name: 'Confirmați adresa' }).click();
 
-  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX}-home-org` }));
+  const organizationId = await grantMembership({
+    email,
+    organizationName: `${RUN_PREFIX}-home-org`,
+  });
+  organizations.push(organizationId);
+  // One filing in progress with a deadline behind it, and one nobody has started — between them
+  // they render every region and every chip S-05 can draw.
+  await seedReport({
+    organizationId,
+    name: `${RUN_PREFIX}-Brutăria`,
+    fiscalYear: 2024,
+    dueDate: '2025-04-30',
+  });
+  await seedOpenPeriod({ organizationId, name: `${RUN_PREFIX}-Moara`, fiscalYear: 2025 });
 
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
@@ -219,6 +245,12 @@ test('axe finds no violations on the home screen', async ({ page }) => {
   await page.waitForURL('**/home');
 
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  // **Each of the three things the docblock claims this scan covers, named.** A guard on the resume
+  // region alone would let `seedOpenPeriod` silently produce nothing and leave the *not started*
+  // chip and its link unscanned, with axe passing on a screen that never rendered them.
+  await expect(page.getByRole('heading', { name: 'Unde ați rămas' })).toBeVisible();
+  await expect(page.getByText('Neînceput').first()).toBeVisible();
+  await expect(page.getByText('Termen depășit').first()).toBeVisible();
   await scan(page);
 });
 

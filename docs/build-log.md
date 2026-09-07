@@ -11907,3 +11907,140 @@ re-authentication over the preserved wizard"*. An identifier invented rather tha
 change that adds a gate against unchecked claims, immediately after a review whose stated subject is
 identifiers re-derived instead of cited. It is task **98**, the next free number, and the check that
 found it took one `grep`.
+
+## Task 32.4 — the overview reads periods, because a report nobody started is not a report · 2026-09-07
+
+S-05's report status overview (UC-67, FR-23), completing the stub task 30.5 drew. It closes task
+32, whose other five sub-steps had been `DONE` since 5 September.
+
+**Scope widened from `web` to `api+web`, and the reason is one sentence of FR-23 read literally.**
+The overview *"lists every entity **and period** in the organization"*. Since task 31.3 made a
+report an explicit creation — §7.2's `REPORTING_PERIOD ||--o| REPORT` — the row *"is everything
+ready before the deadline"* is actually asked about is **a period with a deadline nobody has
+started**, and `GET /reports` cannot see it by construction. So `GET /periods` answers the
+organization when no entity is named, and every row carries its entity's name and the report opened
+against it. This is task **32.2.1**'s decision with *period* substituted for *report*, and its
+declined alternative is declined again for the same reason one screen up: assembling it from
+`/entities` plus one `/periods` per entity is an N+1 on a busier page than S-06.
+
+Two shapes inside it were decided rather than copied. **`entityName` is flat where a report
+publishes a `subject` object** — a report carried no period fact at all, a period carries every
+entity fact but this one, and a one-field wrapper is structure with nothing to hold. **The report is
+nested**, which is `LegalDateDto`'s rule at another boundary: `reportId` and `reportStatus` as
+siblings are two values a caller can half-supply. It carries `id`, `status` and `updatedAt`, and not
+`scope` — the test applied was *does anything read it*, and `updatedAt` picks the filing to resume
+while `scope` is a choice S-06 renders.
+
+**No migration.** Both new fields are joins over tables RLS already scopes.
+
+### What the screen refuses, and what it does not invent
+
+FR-23 names *completion and validation status*. Neither exists: the roll-up is task **41.3**'s,
+server-computed because *"two counters would be two answers"*, and findings are task **40**'s. Both
+are absent rather than drawn empty — S-06's decision on the same two columns, one screen up.
+Deriving completion from `GET /reports/:id/modules`' `answered`/`total` was declined twice over: it
+is one read per report, and §11.5 defines the completeness meter as *"resolved / reasoned /
+outstanding and **never** a single percentage"*, whose two missing words are exactly what tasks 40
+and 36.13 supply.
+
+**No *due soon* threshold was invented.** FR-173 holds deadline lead times as notification
+configuration, unbuilt until task 50, so the screen states a deadline that has **passed** — a
+comparison rather than a number somebody chose. It is read **in the period's own timezone**, since
+NFR-34 makes a due date a legal date and *has the deadline passed* is a legal question: a bookkeeper
+in another country must not see a different answer from the one the filing is judged by.
+
+### The regions are lists, not the Index archetype's table
+
+`DataTable` takes `cell` render functions, which a Server Component cannot hand across the RSC
+boundary at all — so using it makes the most-visited page in the product a client boundary, to buy
+sorting UX-6 does not ask for. Each region has exactly one order and it is its own question's. The
+regions compose inventory primitives inside `Panel`s, which is the shape the membership region on
+the same screen has had since task 30.5.
+
+**The resume region is a sentence and a link, not a fourth copy of a row.** UX-6 says a
+single-entity organization *"reduces to one resumable report and its completion state"* — one
+thing, where a `FilingList` there would draw the same filing three times on the commonest shape in
+the product.
+
+### Reviews — all three on `opus`
+
+Escalated from the standing `sonnet` default per §12.5.6's routing description: the diff touches the
+contract surface and five workspaces, which are its two heaviest triggers. The escalation was
+decided from the diff before any of them ran, never from a report.
+
+They earned it. **Both convention and spec independently found the same defect, and it was the one
+thing in the diff that could actually hurt somebody.**
+
+**The carve-out block dropped a security rule while faithfully following the rule that governs it.**
+`apps/web/src/lib/legal-date.ts` needed one exemption from NFR-26's `Intl` ban — `todayIn` reads a
+zone's calendar day and formats nothing a reader sees, and `Temporal.Now.plainDateISO(zone)` is the
+API this wants and Node 26.7.0 does not have it (checked, not remembered). ESLint options replace
+rather than merge, so the block respread all four hoisted selector constants — and §14.2's
+`"use cache"` ban was declared **inline** in the `apps/web` block, invisible to that habit. AD-2's
+cache-key rule was silently off for one file. Then `EXPECTED_BLOCKS` was updated to match what the
+block carried rather than what it should, so the gate **recorded the hole instead of catching it**.
+
+The fix is structural rather than a re-spread: the selector is hoisted into
+`restrictedSyntaxCacheComponents` and spread into both blocks. **A selector declared inline is one
+nobody can see is missing** — that, not this task's carve-out, is what the incident is about, and
+§12.5.6's task-98 row is amended to say so.
+
+Three more convention findings, each a rule applied where it was found and not where it holds:
+`canWrite` was a third spelling of S-06's own predicate in the opposite conjunct order (now
+`mayWrite`, beside the membership read, and S-06 reads it too); `STANDING_TONE` and `FilingList`
+were in the route file, against *"`app/` — routes only, thin"* and UX-89's third step (now in
+`features/organization/components/`); and two independent `getTranslations` ran sequentially in a
+component that renders twice per request (`async-parallel`, CRITICAL).
+
+From spec: FR-177 was cited three times for *a period may exist with no report* — its subject is
+the Comprehensive Module, and it reached the published contract that way; S-05's States row did not
+list `error — permission` although the diff implemented it, which is UX-90's *"an undefined state is
+a defect"*; and **UX-13 was violated in terms** — a locked period and a view-only membership
+produced one indistinguishable row, with `overview.periodLocked` authored in three locales and read
+by nothing. All corrected, with the two new §12.5.6 rows gaining UX-6 and UX-13 in their Refs.
+
+### Gate integrity — three checks that would not have failed on their subject
+
+Run before the reviews: three mutations, three failures in exactly the guarding tests. The reviewer
+found what those mutations did not reach, and each was proven by execution rather than argued.
+
+- **`reopen()` had no test at all.** `lock()`'s read-after-the-status-move was proven; its mirror
+  carried a comment and nothing else. A reopened period could answer `lockedAt: null` while the
+  report it carries still read `locked`. Now covered, and the mutation fails exactly one test.
+- **`report.updatedAt`'s provenance was pinned nowhere.** `r.updated_at` → `p.updated_at` passed
+  every test in the repository — the two agree until somebody touches a report, which is precisely
+  when the resume answer starts to matter. The one assertion that could have pinned it had been
+  written to *exclude* it: `toEqual({ id, status })` against a DTO carrying three fields, which was
+  red at the time of review because the field was added after that suite last ran.
+- **`exactlyPadded` admitted zero padding.** `^…·*$` matches ordinary Romanian, so the S-05
+  expansion frames would have gone green measuring an unpadded catalogue — concrete rather than
+  theoretical, since `reuseExistingServer` is on outside CI. `expandString` pads every non-empty
+  string, so `·+` is strictly correct; and because every expansion suite routes its sign-in through
+  that helper, one character also closed the same pre-existing gap in `wizard.expansion.spec.ts`.
+
+Also from that review and taken: the axe scan now names each of the three things its own docblock
+claims it covers, rather than guarding on the resume region alone; and the browser assertions count
+rows instead of `.first()`-ing them, since the count was already asserted and scoping to one row
+would let a list that rendered a chip in one region and not the other pass.
+
+**One finding was read and not acted on.** The two refusal arms of the overview read
+(`TENANT_READ.FORBIDDEN` and `UNREACHABLE`) are exercised by nothing. That is a repository-wide
+shape rather than something this diff regressed — no screen's refusal arms have coverage, because
+nothing can currently make the API refuse a read on demand from a browser. Recorded here rather than
+fixed, because the fix is a test seam, not a screen.
+
+### Verified
+
+`pnpm gates:clean` green on a clean tree: fifteen gates, 141 browser tests, 814 api e2e. Three
+behaviour mutations before the reviews and two after, each failing exactly the test that claims it.
+The eslint carve-out proven narrow by planting `toFixed`, `toLocaleDateString` and `"use cache"` in
+that file and watching all three fail.
+
+**And one self-inflicted red herring worth recording, because it cost twenty minutes.** Seven
+browser tests failed at *registration* — including four this task never touched. The cause was
+running `pnpm exec playwright test` directly instead of `pnpm e2e:web`, which skipped the
+`pree2e:web` hook that runs `tools/assemble-web-standalone.sh`; Next's `output: 'standalone'` does
+not copy `.next/static`, so every Client Component was inert. The diagnosis was in the failure list
+rather than in the code: **when untouched tests fail alongside yours, the tree is the problem.** It
+is `CLAUDE.md`'s own `pretest:e2e` rule, met from the other side — a script is runnable on its own,
+and reaching past it for the binary it wraps gives up exactly what the hook was added to guarantee.

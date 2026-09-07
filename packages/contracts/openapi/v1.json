@@ -1951,12 +1951,12 @@
     },
     "/api/v1/periods": {
       "get": {
-        "description": "Scoped to one entity because a period only means anything against one (FR-21). The active organization comes from the session, never from a parameter.",
+        "description": "Organization-wide by default, which is what FR-23’s overview reads: it lists every entity AND period, including the periods no report has been opened against. Narrowed to one entity by query parameter, which is S-14’s question. The active organization comes from the session, never from a parameter.",
         "operationId": "PeriodsController_list",
         "parameters": [
           {
             "name": "reportingEntityId",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "format": "uuid",
@@ -1966,7 +1966,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The entity’s periods.",
+            "description": "The periods.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1990,7 +1990,7 @@
             }
           }
         },
-        "summary": "List the reporting periods of one entity, newest first",
+        "summary": "List reporting periods, newest first — the organization’s, or one entity’s",
         "tags": [
           "period"
         ]
@@ -4480,6 +4480,34 @@
           "timezone"
         ]
       },
+      "PeriodReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "locked",
+              "ready_to_file",
+              "filed"
+            ],
+            "description": "Where the report stands. `open` and `locked` are written only by the period lock (FR-22)."
+          },
+          "updatedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC. The report's last activity — which is how UX-6 picks the one to resume."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "updatedAt"
+        ]
+      },
       "ReportingPeriodResponseDto": {
         "type": "object",
         "properties": {
@@ -4550,6 +4578,20 @@
           "updatedAt": {
             "type": "number",
             "description": "Unix epoch milliseconds, UTC."
+          },
+          "entityName": {
+            "type": "string",
+            "description": "The entity this period belongs to, named. Resolved by join so a list spanning entities can say whose year each row is (FR-23)."
+          },
+          "report": {
+            "nullable": true,
+            "description": "The report opened against this period, or null where none has been. Null is a real state and the one UC-67 asks about: a period holds at most one report and may hold none (§7.2).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeriodReportDto"
+              }
+            ]
           }
         },
         "required": [
@@ -4566,7 +4608,9 @@
           "lockedAt",
           "lockedBy",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "entityName",
+          "report"
         ]
       },
       "OpenReportingPeriodRequestDto": {

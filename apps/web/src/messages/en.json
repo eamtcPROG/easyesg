@@ -370,12 +370,52 @@
     },
     "home": {
       "title": "Home",
-      "lede": "Your organisation’s report status will appear here.",
-      "reports": {
-        "heading": "Report status",
+      "lede": "How your organization's reporting stands, and the organizations you can reach.",
+      "overview": {
+        "attention": {
+          "heading": "What needs attention",
+          "lede": "The filings someone still has work to do on, soonest deadline first.",
+          "empty": {
+            "title": "Nothing is waiting",
+            "body": "Every open reporting period is either finished or locked. There is nothing left to do before the deadlines you have set."
+          }
+        },
+        "resume": {
+          "heading": "Where you left off",
+          "body": "You last worked on the report for {entity}, covering {year}.",
+          "action": "Continue the report"
+        },
+        "everything": {
+          "heading": "How everything stands",
+          "lede": "Every entity and every reporting period in the organization."
+        },
+        "standing": {
+          "not_started": "Not started",
+          "open": "In progress",
+          "locked": "Locked",
+          "ready_to_file": "Ready to file",
+          "filed": "Filed"
+        },
+        "overdue": "Deadline passed",
+        "periodLocked": "Period locked",
+        "due": "Due: {date}",
+        "dueNone": "No deadline set",
+        "period": "{start} – {end}",
+        "start": "Start the report",
+        "open": "Open the report",
         "empty": {
           "title": "No reporting period yet",
-          "body": "This is where each report’s status will appear — what needs attention, where you left off, and how everything stands. The region fills once you open the first reporting period for an entity."
+          "body": "A filing covers one entity and one year. Once you open the first reporting period for an entity, this is where you will see what needs attention, where you left off, and how everything stands.",
+          "action": "Go to entities"
+        },
+        "unreachable": {
+          "title": "The reporting status could not be loaded",
+          "body": "The service did not answer, so we do not know how your filings stand. The rest of the page works.",
+          "action": "Reload the page in a moment."
+        },
+        "forbidden": {
+          "title": "We cannot show the reporting status",
+          "body": "Your account is not an active member of an organization, so the reporting periods cannot be read. An administrator of the organization can grant you access."
         }
       },
       "memberships": {

@@ -14,8 +14,15 @@ import type {
  * from the policy the moment either changes.
  */
 export interface ReportingPeriodStore {
-  /** Every period for one entity, newest first. */
-  listPeriods(input: { readonly reportingEntityId: string }): Promise<ReportingPeriod[]>;
+  /**
+   * Every period, newest first — the whole organization, or one entity's (task 32.4).
+   *
+   * **The entity is optional and the widening is FR-23's**, not a convenience: UC-67's overview is
+   * asked of the organization, and narrowing it to one entity is S-14's question rather than the
+   * only one this table answers. Omitting it lists every period RLS admits, which is exactly the
+   * bound organization's.
+   */
+  listPeriods(input: { readonly reportingEntityId?: string }): Promise<ReportingPeriod[]>;
 
   /** Null when the id is unknown *or* belongs to another tenant, which RLS makes one answer. */
   findPeriod(input: { readonly periodId: string }): Promise<ReportingPeriod | null>;

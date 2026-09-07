@@ -9,11 +9,10 @@ import {
 } from '@/features/reports/reports';
 import styles from '@/features/reports/components/reports.module.css';
 import { readReportList, type ReportListRead } from '@/server/data/reports';
-import { readActiveMembership } from '@/server/memberships';
+import { mayWrite, readActiveMembership } from '@/server/memberships';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
-import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { ROUTES } from '@/lib/routes';
 
 /**
@@ -71,9 +70,9 @@ export default async function ReportsIndexPage({ params, searchParams }: Props) 
     // global tier has already read it this render pass.
     readActiveMembership(),
   ]);
-  // **Absent membership reads as view-only**, which is the safe direction: the affordance is hidden
-  // and the list still renders, where guessing *editor* would offer a write the API refuses.
-  const canCreate = membership?.role !== MEMBERSHIP_ROLE.VIEWER && membership !== null;
+  // FR-25's clause. The predicate — including why an absent membership reads as view-only — lives
+  // beside the membership read, so S-05 and this screen cannot answer it differently (task 32.4).
+  const canCreate = mayWrite(membership);
 
   return (
     <div className={styles.screen}>

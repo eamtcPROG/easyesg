@@ -316,6 +316,15 @@ export interface SeedReportInput {
   readonly name: string;
   readonly fiscalYear?: number;
   readonly sites?: readonly { readonly name: string; readonly locality: string }[];
+  /**
+   * FR-21's optional due date, as ISO `YYYY-MM-DD` (task 32.4).
+   *
+   * S-05's overview is the first journey that needs one: *has the deadline passed* is answerable
+   * only against a deadline, and a fixture that could not set one would leave the overdue state
+   * reachable in a unit spec and unreachable in a browser. Omitted means a period with no deadline,
+   * which is a real and common state.
+   */
+  readonly dueDate?: string;
 }
 
 /**
@@ -345,13 +354,14 @@ async function seedFiling(input: {
    * which the api tolerates and one case here still uses.
    */
   readonly sites?: readonly { readonly name: string; readonly locality: string }[];
+  readonly dueDate?: string;
   readonly withReport: boolean;
 }): Promise<{
   readonly entityId: string;
   readonly periodId: string;
   readonly reportId: string | null;
 }> {
-  const { organizationId, name, fiscalYear = 2026, sites, withReport } = input;
+  const { organizationId, name, fiscalYear = 2026, sites, dueDate, withReport } = input;
   const client = new Client(asOwner());
   await client.connect();
   try {
@@ -388,12 +398,26 @@ async function seedFiling(input: {
       );
     }
     await client.query(
+      // The zone travels with the date on both boundaries and on the due date, which is the paired
+      // `<field>`/`<field>_tz` shape §7.9 requires and the `CHECK` refuses a half of.
       `INSERT INTO core.reporting_period
          (id, organization_id, reporting_entity_id, fiscal_year,
           period_start, period_start_tz, period_end, period_end_tz,
+          due_date, due_date_tz,
           template_version, taxonomy_version, entity_snapshot_id)
-       VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau', '2026-05-01', '2026-05-01', $7)`,
-      [periodId, organizationId, entityId, fiscalYear, `${fiscalYear}-01-01`, `${fiscalYear}-12-31`, snapshotId],
+       VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau',
+               $7, CASE WHEN $7::date IS NULL THEN NULL ELSE 'Europe/Chisinau' END,
+               '2026-05-01', '2026-05-01', $8)`,
+      [
+        periodId,
+        organizationId,
+        entityId,
+        fiscalYear,
+        `${fiscalYear}-01-01`,
+        `${fiscalYear}-12-31`,
+        dueDate ?? null,
+        snapshotId,
+      ],
     );
     if (withReport) {
       await client.query(

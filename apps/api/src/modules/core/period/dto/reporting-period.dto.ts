@@ -15,7 +15,15 @@ import {
 } from 'class-validator';
 import { Trim } from '@api/app/decorators/trim.decorator';
 import type { EpochMillis, LegalDate } from '@api/contracts/types/time';
-import type { PeriodReopening, ReportingPeriod } from '../models/reporting-period.model';
+import {
+  REPORT_STATUS,
+  type ReportStatus,
+} from '@api/modules/core/disclosure/models/report.model';
+import type {
+  PeriodReopening,
+  PeriodReport,
+  ReportingPeriod,
+} from '../models/reporting-period.model';
 
 /**
  * OpenAPI can type an instant only as `integer`, so the unit has to be stated in prose on every one
@@ -135,6 +143,39 @@ export class UpdateReportingPeriodRequestDto {
   dueDate?: LegalDateDto | null;
 }
 
+/**
+ * The report opened against a period (task 32.4) — FR-23's *started or not*, on the wire.
+ *
+ * **The enum is derived from `REPORT_STATUS`, never listed here**, so declaration order is contract
+ * order and a reordering is a diff `openapi:check` fails on. It is the same vocabulary
+ * `ReportResponseDto` publishes, from the same object.
+ */
+export class PeriodReportDto {
+  @ApiProperty({ format: 'uuid' })
+  readonly id: string;
+
+  @ApiProperty({
+    enum: Object.values(REPORT_STATUS),
+    description:
+      'Where the report stands. `open` and `locked` are written only by the period lock (FR-22).',
+  })
+  readonly status: ReportStatus;
+
+  @ApiProperty({
+    type: Number,
+    description: `${EPOCH_MILLIS} The report's last activity — which is how UX-6 picks the one to resume.`,
+  })
+  readonly updatedAt: EpochMillis;
+
+  constructor(report: PeriodReport) {
+    this.id = report.id;
+    this.status = report.status;
+    // OQ-50's conversion, at the boundary that owns it — beside `createdAt`/`updatedAt` below and
+    // deliberately not beside the period's own calendar boundaries, which stay calendar dates.
+    this.updatedAt = report.updatedAt.getTime();
+  }
+}
+
 export class ReportingPeriodResponseDto {
   @ApiProperty({ format: 'uuid' })
   readonly id: string;
@@ -214,6 +255,27 @@ export class ReportingPeriodResponseDto {
   @ApiProperty({ type: Number, description: EPOCH_MILLIS })
   readonly updatedAt: EpochMillis;
 
+  /**
+   * **Flat, where a report publishes a `subject` object** — the difference is recorded on the model
+   * and is worth repeating at the surface a client reads: a report carried no period fact at all,
+   * a period carries every entity fact but this one.
+   */
+  @ApiProperty({
+    description:
+      'The entity this period belongs to, named. Resolved by join so a list spanning entities ' +
+      'can say whose year each row is (FR-23).',
+  })
+  readonly entityName: string;
+
+  @ApiProperty({
+    type: PeriodReportDto,
+    nullable: true,
+    description:
+      'The report opened against this period, or null where none has been. Null is a real state ' +
+      'and the one UC-67 asks about: a period holds at most one report and may hold none (§7.2).',
+  })
+  readonly report: PeriodReportDto | null;
+
   constructor(period: ReportingPeriod) {
     this.id = period.id;
     this.reportingEntityId = period.reportingEntityId;
@@ -232,6 +294,8 @@ export class ReportingPeriodResponseDto {
     // NFR-34 draws, visible in one object.
     this.createdAt = period.createdAt.getTime();
     this.updatedAt = period.updatedAt.getTime();
+    this.entityName = period.entityName;
+    this.report = period.report === null ? null : new PeriodReportDto(period.report);
   }
 }
 

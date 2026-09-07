@@ -192,6 +192,13 @@ export type DisclosureValueResponse = components['schemas']['DisclosureValueResp
 export type PriorPeriodComparatives = components['schemas']['PriorPeriodResponseDto'];
 
 export type ReportingPeriod = components['schemas']['ReportingPeriodResponseDto'];
+/**
+ * The report opened against a period, or `null` where none has been (task 32.4).
+ *
+ * `null` is the state FR-23's overview exists to show: a report is an explicit creation, so a
+ * period with a due date and nobody working on it is a row rather than an absence.
+ */
+export type PeriodReport = components['schemas']['PeriodReportDto'];
 export type OpenReportingPeriodRequest =
   components['schemas']['OpenReportingPeriodRequestDto'];
 export type UpdateReportingPeriodRequest =

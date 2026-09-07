@@ -54,3 +54,47 @@
   font: 600 15px/24px var(--font-text);
   color: var(--text-default);
 }
+
+/* UX-6's three regions (task 32.4). One row per filing, in the same idiom as `.membership` above —
+   the screen composes inventory primitives into lists rather than reaching for the Index
+   archetype's table, which is a client boundary and buys sorting these regions do not have. */
+.filings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Three columns that collapse to a stack. The subject and the state each keep their own internal
+   wrapping, so a long legal name never pushes the action off the row — it wraps under it. */
+.filing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+}
+
+.filingSubject {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.filingState {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* Pushed to the trailing edge on a wide row, and to its own line when the row wraps. */
+.filingAction {
+  margin-inline-start: auto;
+}

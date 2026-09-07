@@ -104,6 +104,31 @@ const restrictedSyntaxText = [
  * Spread into every block that sets `no-restricted-syntax`, for the reason the constant below
  * documents: the option REPLACES rather than merges.
  */
+/**
+ * §14.2's `"use cache"` ban — a SECURITY rule, not a performance preference. A cache key the
+ * compiler generated without knowing about organization_id would leak a rendered page across
+ * tenants ABOVE the RLS boundary of AD-2, where none of its probes would catch it.
+ *
+ * Next-only because the directive is Next-only. apps/admin holds no tenant data to leak: D-5 gives
+ * it no standing access to any organization's report content in the first place.
+ *
+ * **Hoisted 7 Sep 2026, and the reason is the one this file already states twice.** It was declared
+ * inline in the `apps/web` block, so it was invisible to the "spread it into every block" habit —
+ * and task 32.4's `legal-date.ts` carve-out, which respread all four constants faithfully, dropped
+ * a security rule for that path while its own §12.5.6 row claimed to be one selector wide. A
+ * selector that lives in a constant is one somebody can forget to spread and a gate can notice; a
+ * selector that lives inline is one nobody can see is missing.
+ */
+const restrictedSyntaxCacheComponents = [
+  {
+    selector: 'ExpressionStatement > Literal[value="use cache"]',
+    message:
+      'Cache Components are disabled as a security rule (architecture.md §14.2, AD-9). ' +
+      'Every page here is tenant-scoped; a compiler-generated cache key does not know ' +
+      'about organization_id and would leak across tenants above the RLS boundary.',
+  },
+];
+
 const restrictedSyntaxVocabulary = [
   // Anchored on the two parents that mean "this union IS the vocabulary" — a type alias, and a
   // property's type. Matching `TSUnionType` alone was the first draft and it was wrong: it also
@@ -471,23 +496,10 @@ export default tseslint.config(
       // directory that will never exist and reports its absence on every run.
       '@next/next/no-html-link-for-pages': 'off',
 
-      /**
-       * §14.2's `"use cache"` ban is a SECURITY rule, not a performance preference. A cache key
-       * the compiler generated without knowing about organization_id would leak a rendered page
-       * across tenants ABOVE the RLS boundary of AD-2, where none of its probes would catch it.
-       *
-       * Next-only because the directive is Next-only. apps/admin holds no tenant data to leak:
-       * D-5 gives it no standing access to any organization's report content in the first place.
-       */
+      /** §14.2's `"use cache"` ban — see `restrictedSyntaxCacheComponents`, where it now lives. */
       'no-restricted-syntax': [
         'error',
-        {
-          selector: 'ExpressionStatement > Literal[value="use cache"]',
-          message:
-            'Cache Components are disabled as a security rule (architecture.md §14.2, AD-9). ' +
-            'Every page here is tenant-scoped; a compiler-generated cache key does not know ' +
-            'about organization_id and would leak across tenants above the RLS boundary.',
-        },
+        ...restrictedSyntaxCacheComponents,
         ...restrictedSyntaxFormatting,
         ...restrictedSyntaxText,
         ...restrictedSyntaxVocabulary,
@@ -642,6 +654,40 @@ export default tseslint.config(
       'no-restricted-syntax': [
         'error',
         ...restrictedSyntaxFormatting,
+        ...restrictedSyntaxClientBoundary,
+      ],
+    },
+  },
+
+  // `lib/legal-date.ts` is the one module that may construct an `Intl` formatter, and only that
+  // one selector is lifted — `toFixed` and the `toLocale*` family stay banned here like everywhere.
+  //
+  // NFR-26 governs **what a reader sees**: "format all dates, numbers, units and currency values
+  // from the active locale, using no hardcoded format pattern". `todayIn` formats nothing a reader
+  // sees. It answers *which calendar day is it in this IANA zone* so that "has the deadline passed"
+  // can be asked in the period's own zone, which is what NFR-34 requires of a legal date — and the
+  // platform offers no other source of zone data. `Temporal.Now.plainDateISO(zone)` is the API this
+  // wants and Node 26.7.0 does not have it (checked 7 Sep 2026); re-read this block when it does.
+  //
+  // **A file rather than an inline disable**, because the exemption is then discoverable by reading
+  // the config instead of by reading the file that benefits from it — and this module is already
+  // the designated one place a calendar date and its zone meet. `reports.ts` records the sibling
+  // case decided the other way: `localeCompare` sorts rather than displays, and it needed no
+  // exemption because it constructs nothing.
+  {
+    files: ['apps/web/src/lib/legal-date.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        // **Everything but the one selector**, respread rather than turned off — including §14.2's
+        // cache ban, which is a security rule and was very nearly lost here: this block replaces
+        // the `apps/web` one for this path, and that selector used to be declared inline in it.
+        ...restrictedSyntaxCacheComponents,
+        ...restrictedSyntaxFormatting.filter(
+          (entry) => entry.selector !== 'NewExpression[callee.object.name="Intl"]',
+        ),
+        ...restrictedSyntaxText,
+        ...restrictedSyntaxVocabulary,
         ...restrictedSyntaxClientBoundary,
       ],
     },

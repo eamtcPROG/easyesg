@@ -733,8 +733,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List the reporting periods of one entity, newest first
-         * @description Scoped to one entity because a period only means anything against one (FR-21). The active organization comes from the session, never from a parameter.
+         * List reporting periods, newest first — the organization’s, or one entity’s
+         * @description Organization-wide by default, which is what FR-23’s overview reads: it lists every entity AND period, including the periods no report has been opened against. Narrowed to one entity by query parameter, which is S-14’s question. The active organization comes from the session, never from a parameter.
          */
         get: operations["PeriodsController_list"];
         put?: never;
@@ -1703,6 +1703,17 @@ export interface components {
              */
             timezone: string;
         };
+        PeriodReportDto: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description Where the report stands. `open` and `locked` are written only by the period lock (FR-22).
+             * @enum {string}
+             */
+            status: "open" | "locked" | "ready_to_file" | "filed";
+            /** @description Unix epoch milliseconds, UTC. The report's last activity — which is how UX-6 picks the one to resume. */
+            updatedAt: number;
+        };
         ReportingPeriodResponseDto: {
             /** Format: uuid */
             id: string;
@@ -1744,6 +1755,10 @@ export interface components {
             createdAt: number;
             /** @description Unix epoch milliseconds, UTC. */
             updatedAt: number;
+            /** @description The entity this period belongs to, named. Resolved by join so a list spanning entities can say whose year each row is (FR-23). */
+            entityName: string;
+            /** @description The report opened against this period, or null where none has been. Null is a real state and the one UC-67 asks about: a period holds at most one report and may hold none (§7.2). */
+            report: components["schemas"]["PeriodReportDto"] | null;
         };
         OpenReportingPeriodRequestDto: {
             /** Format: uuid */
@@ -3617,8 +3632,8 @@ export interface operations {
     };
     PeriodsController_list: {
         parameters: {
-            query: {
-                reportingEntityId: string;
+            query?: {
+                reportingEntityId?: string;
             };
             header?: never;
             path?: never;
@@ -3626,7 +3641,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The entity’s periods. */
+            /** @description The periods. */
             200: {
                 headers: {
                     [name: string]: unknown;

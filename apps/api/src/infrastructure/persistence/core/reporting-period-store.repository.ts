@@ -37,6 +37,29 @@ interface PeriodRow {
   locked_by: string | null;
   created_at: Date;
   updated_at: Date;
+  // The joins (task 32.4). The entity's name completes a reference the row already carries; the
+  // report is a LEFT JOIN because a period may legitimately have none — since task 31.3 a report is
+  // an explicit creation, and *not started* is FR-23's most important answer rather than an absence.
+  entity_name: string;
+  report_id: string | null;
+  report_status: ReportStatus | null;
+  report_updated_at: Date | null;
+}
+
+/**
+ * What a relink needs, and **named for that rather than being a second copy of the projection**.
+ *
+ * `PERIOD_COLUMNS` spans three tables since task 32.4, and a `RETURNING` clause can only name the
+ * row being written — so the two writes that relink afterwards return this instead. It is not the
+ * pair `report-store.repository.ts` warns about: that hazard is two lists trying to be the same
+ * projection, and this one is trying to be the four facts `relinkOwn` and `relinkSuccessor` read.
+ * Adding a column to the projection has no reason to touch it.
+ */
+interface RelinkRow {
+  id: string;
+  reporting_entity_id: string;
+  period_start: string;
+  period_end: string;
 }
 
 interface ReopeningRow {
@@ -53,12 +76,31 @@ interface ReopeningRow {
  * precise failure NFR-34 exists to prevent, reintroduced at the boundary that was supposed to
  * uphold it. Selecting the text keeps the calendar day a calendar day the whole way out.
  */
-const PERIOD_COLUMNS = `id, reporting_entity_id, fiscal_year,
-        period_start::text  AS period_start, period_start_tz,
-        period_end::text    AS period_end,   period_end_tz,
-        due_date::text      AS due_date,     due_date_tz,
-        template_version, taxonomy_version, prior_period_id, entity_snapshot_id,
-        locked_at, locked_by, created_at, updated_at`;
+const PERIOD_COLUMNS = `p.id, p.reporting_entity_id, p.fiscal_year,
+        p.period_start::text  AS period_start, p.period_start_tz,
+        p.period_end::text    AS period_end,   p.period_end_tz,
+        p.due_date::text      AS due_date,     p.due_date_tz,
+        p.template_version, p.taxonomy_version, p.prior_period_id, p.entity_snapshot_id,
+        p.locked_at, p.locked_by, p.created_at, p.updated_at,
+        e.name AS entity_name, r.id AS report_id, r.status AS report_status,
+        r.updated_at AS report_updated_at`;
+
+/**
+ * **Every read joins the same two tables, so there is one shape** — `report-store.repository.ts`'s
+ * rule, and the reason is the same one level down: a list that named the entity and a record that
+ * did not would let S-14 and FR-23's overview read one period differently.
+ *
+ * The report join is `LEFT`, and it multiplies nothing: `report_period_unique` admits at most one
+ * report per period, which is the constraint that lets `report` be an object rather than a list.
+ * Both tables are RLS-scoped, so the join raises no tenancy question.
+ */
+const PERIOD_FROM = `FROM core.reporting_period p
+         JOIN core.reporting_entity e ON e.id = p.reporting_entity_id
+    LEFT JOIN core.report r ON r.reporting_period_id = p.id`;
+
+/** What the two relinking writes return. See `RelinkRow`. */
+const RELINK_COLUMNS = `id, reporting_entity_id,
+        period_start::text AS period_start, period_end::text AS period_end`;
 
 const toPeriod = (row: PeriodRow): ReportingPeriod => ({
   id: row.id,
@@ -78,6 +120,13 @@ const toPeriod = (row: PeriodRow): ReportingPeriod => ({
   lockedBy: row.locked_by,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  entityName: row.entity_name,
+  // Both halves or neither — the LEFT JOIN answers two nulls together, and reading `id` alone would
+  // make a half-joined report representable in the one place the model says it is not.
+  report:
+    row.report_id !== null && row.report_status !== null && row.report_updated_at !== null
+      ? { id: row.report_id, status: row.report_status, updatedAt: row.report_updated_at }
+      : null,
 });
 
 /** The columns a patch may name. The two version pins are absent by construction — see the model. */
@@ -119,19 +168,32 @@ export class ReportingPeriodStoreRepository
   /** §7.6's expression, so the inserts supply exactly what the policies check. */
   private readonly boundOrganization = `NULLIF(current_setting('app.current_org', true), '')::uuid`;
 
-  async listPeriods(input: { reportingEntityId: string }): Promise<ReportingPeriod[]> {
+  /**
+   * S-14's list, and FR-23's (task 32.4).
+   *
+   * **Omitting the entity narrows to nothing and that is the whole widening**: RLS already scopes
+   * the statement to `app.current_org`, so *every period this caller may see* is exactly the bound
+   * organization's — the filter is a screen's question, never the tenancy.
+   *
+   * The order is unchanged and stays the store's: newest first. FR-23's overview wants soonest
+   * deadline first, which is a rule over the data rather than a property of it, so it is applied
+   * where the other presentation rules are.
+   */
+  async listPeriods(input: { reportingEntityId?: string }): Promise<ReportingPeriod[]> {
+    const scoped = input.reportingEntityId !== undefined;
     const rows = await this.manager.query<PeriodRow[]>(
-      `SELECT ${PERIOD_COLUMNS} FROM core.reporting_period
-        WHERE reporting_entity_id = $1
-        ORDER BY period_start DESC, id DESC`,
-      [input.reportingEntityId],
+      `SELECT ${PERIOD_COLUMNS}
+         ${PERIOD_FROM}
+        ${scoped ? 'WHERE p.reporting_entity_id = $1' : ''}
+        ORDER BY p.period_start DESC, p.id DESC`,
+      scoped ? [input.reportingEntityId] : [],
     );
     return rows.map(toPeriod);
   }
 
   async findPeriod(input: { periodId: string }): Promise<ReportingPeriod | null> {
     const rows = await this.manager.query<PeriodRow[]>(
-      `SELECT ${PERIOD_COLUMNS} FROM core.reporting_period WHERE id = $1`,
+      `SELECT ${PERIOD_COLUMNS} ${PERIOD_FROM} WHERE p.id = $1`,
       [input.periodId],
     );
     return rows.length === 0 ? null : toPeriod(rows[0]);
@@ -152,9 +214,12 @@ export class ReportingPeriodStoreRepository
   }): Promise<ReportingPeriod> {
     const snapshotId = await this.takeEntitySnapshot(input.period.reportingEntityId, input.at);
 
-    let created: PeriodRow;
+    // **`RETURNING` names only the row being written**, and `PERIOD_COLUMNS` now spans three
+    // tables (task 32.4). So every write below returns what the relink needs and re-reads through
+    // `findPeriod`, which is `report-store.repository.ts`'s move and is what keeps one shape.
+    let created: RelinkRow;
     try {
-      const rows = await this.manager.query<PeriodRow[]>(
+      const rows = await this.manager.query<RelinkRow[]>(
         `INSERT INTO core.reporting_period (
              organization_id, reporting_entity_id, fiscal_year,
              period_start, period_start_tz, period_end, period_end_tz,
@@ -162,7 +227,7 @@ export class ReportingPeriodStoreRepository
              prior_period_id, entity_snapshot_id, created_at, updated_at)
            VALUES (${this.boundOrganization}, $1, $2, $3::date, $4, $5::date, $6, $7::date, $8, $9, $10,
                    ${this.priorPeriodExpression('$1', '$3::date')}, $11, $12, $12)
-        RETURNING ${PERIOD_COLUMNS}`,
+        RETURNING ${RELINK_COLUMNS}`,
         [
           input.period.reportingEntityId,
           input.period.fiscalYear,
@@ -185,9 +250,13 @@ export class ReportingPeriodStoreRepository
 
     await this.relinkSuccessor(created, input.at);
     // Re-read: `relinkSuccessor` may have moved this row's own successor, and the RETURNING above
-    // predates that. The period itself is unchanged, but reading it once more is cheaper than a
-    // reader having to know which of the two answers is current.
-    return (await this.findPeriod({ periodId: created.id })) ?? toPeriod(created);
+    // predates that — and since task 32.4 it is also the only place the entity's name and the
+    // period's report are resolved. **No fallback**: a period that was just inserted on this
+    // transaction and cannot be read back is a broken invariant, not a degraded answer, and the
+    // former `?? toPeriod(created)` would now be an un-joined row wearing the joined type.
+    const period = await this.findPeriod({ periodId: created.id });
+    if (period === null) throw new Error(`Period ${created.id} was inserted and could not be read.`);
+    return period;
   }
 
   async update(input: {
@@ -219,15 +288,15 @@ export class ReportingPeriodStoreRepository
     assignments.push(`updated_at = $${values.length}`);
     values.push(input.periodId);
 
-    let updated: PeriodRow | undefined;
+    let updated: RelinkRow | undefined;
     try {
       // `UPDATE ... RETURNING` answers `[rows, count]` where `INSERT` answers rows — normalised by
       // `returnedRows`, whose header explains why that is not remembered per call site.
-      updated = returnedRows<PeriodRow>(
+      updated = returnedRows<RelinkRow>(
         await this.manager.query(
           `UPDATE core.reporting_period SET ${assignments.join(', ')}
             WHERE id = $${values.length}
-        RETURNING ${PERIOD_COLUMNS}`,
+        RETURNING ${RELINK_COLUMNS}`,
           values,
         ),
       )[0];
@@ -241,7 +310,7 @@ export class ReportingPeriodStoreRepository
       await this.relinkOwn(updated, input.at);
       await this.relinkSuccessor(updated, input.at);
     }
-    return (await this.findPeriod({ periodId: updated.id })) ?? toPeriod(updated);
+    return this.findPeriod({ periodId: updated.id });
   }
 
   async lock(input: {
@@ -250,18 +319,21 @@ export class ReportingPeriodStoreRepository
     at: Date;
   }): Promise<ReportingPeriod | null> {
     try {
-      const rows = returnedRows<PeriodRow>(
+      const rows = returnedRows<{ id: string }>(
         await this.manager.query(
           `UPDATE core.reporting_period
               SET locked_at = $2, locked_by = $3, updated_at = $2
             WHERE id = $1
-        RETURNING ${PERIOD_COLUMNS}`,
+        RETURNING id`,
           [input.periodId, input.at, input.actorId],
         ),
       );
       if (!rows[0]) return null;
       await this.moveReportStatus(input.periodId, REPORT_STATUS.LOCKED, input.at);
-      return toPeriod(rows[0]);
+      // Re-read **after** the status move, not before: the report the period now carries is
+      // `locked`, and answering the image from before it would report a locked period holding an
+      // open report — the exact disagreement `moveReportStatus` exists to prevent.
+      return this.findPeriod({ periodId: input.periodId });
     } catch (error) {
       return translate(error);
     }
@@ -301,18 +373,19 @@ export class ReportingPeriodStoreRepository
     if (recorded.length === 0) return null;
 
     try {
-      const rows = returnedRows<PeriodRow>(
+      const rows = returnedRows<{ id: string }>(
         await this.manager.query(
           `UPDATE core.reporting_period
               SET locked_at = NULL, locked_by = NULL, updated_at = $2
             WHERE id = $1
-        RETURNING ${PERIOD_COLUMNS}`,
+        RETURNING id`,
           [input.periodId, input.at],
         ),
       );
       if (!rows[0]) return null;
       await this.moveReportStatus(input.periodId, REPORT_STATUS.OPEN, input.at);
-      return toPeriod(rows[0]);
+      // After the status move, for `lock`'s reason in the other direction.
+      return this.findPeriod({ periodId: input.periodId });
     } catch (error) {
       return translate(error);
     }
@@ -416,7 +489,7 @@ export class ReportingPeriodStoreRepository
    * Without it, opening FY2026 before backfilling FY2025 leaves FY2026's prior null **forever**, so
    * D-3's comparatives are silently absent in the second reporting year with nothing failing.
    */
-  private async relinkSuccessor(period: PeriodRow, at: Date): Promise<void> {
+  private async relinkSuccessor(period: RelinkRow, at: Date): Promise<void> {
     await this.manager.query(
       `UPDATE core.reporting_period AS successor
           SET prior_period_id = $1, updated_at = $3
@@ -432,7 +505,7 @@ export class ReportingPeriodStoreRepository
   }
 
   /** The same maintenance for the moved period's own link, after an edit shifted its dates. */
-  private async relinkOwn(period: PeriodRow, at: Date): Promise<void> {
+  private async relinkOwn(period: RelinkRow, at: Date): Promise<void> {
     await this.manager.query(
       `UPDATE core.reporting_period AS moved
           SET prior_period_id = ${this.priorPeriodExpression('$2', '$3::date')}, updated_at = $4

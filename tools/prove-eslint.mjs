@@ -89,12 +89,15 @@ const ANCHOR = {
 
 // ── The spread: which selectors each config block must carry ─────────────────────────────────
 //
-// **This half is not about the selectors at all — it is about the four places they are spread
-// into.** `no-restricted-syntax` options REPLACE rather than merge, which `eslint.config.mjs`
+// **This half is not about the selectors at all — it is about the places they are spread into.**
+// `no-restricted-syntax` options REPLACE rather than merge, which `eslint.config.mjs`
 // documents at length, and the change that added `restrictedSyntaxClientBoundary` still spread it
-// into three blocks out of four. A fixture per (selector x block) would be fifty-six runs; the
-// matrix below is the same assertion at no cost, and it fails on a FIFTH block appearing as
-// loudly as on a missing spread — which is what "revisit the spreads" has to mean mechanically.
+// into three blocks out of four. A fixture per (selector x block) would be seventy runs; the
+// matrix below is the same assertion at no cost, and it fails on a block APPEARING as loudly as on
+// a missing spread — which is what "revisit the spreads" has to mean mechanically. It caught task
+// 32.4's carve-out on the run that added it, which is the intended behaviour rather than an
+// inconvenience: a new block is a new set of files somebody decided the rules apply differently
+// to, and it has to be read before it is recorded.
 const VOCABULARY = [
   'vocab-union-alias',
   'vocab-union-property',
@@ -105,6 +108,14 @@ const VOCABULARY = [
 const CLIENT_BOUNDARY = ['slot-import', 'slot-namespace'];
 const FORMATTING = ['format-tofixed', 'format-tolocale', 'format-intl'];
 const TEXT = ['text-jsx-text', 'text-attribute', 'text-alt'];
+/**
+ * §14.2's cache ban — its own constant since 7 Sep 2026, on both sides of this gate.
+ *
+ * It was written inline here (`'use-cache'`) and inline in `eslint.config.mjs`, which is what let
+ * task 32.4's carve-out block drop a **security** selector while respreading all four named
+ * constants faithfully. Naming it makes it something a new block has to answer for.
+ */
+const CACHE = ['use-cache'];
 
 const EXPECTED_BLOCKS = [
   {
@@ -120,7 +131,7 @@ const EXPECTED_BLOCKS = [
   {
     name: 'apps/web (Next only)',
     files: ['apps/web/**/*.{ts,tsx}'],
-    selectors: ['use-cache', ...FORMATTING, ...TEXT, ...VOCABULARY, ...CLIENT_BOUNDARY],
+    selectors: [...CACHE, ...FORMATTING, ...TEXT, ...VOCABULARY, ...CLIENT_BOUNDARY],
   },
   {
     // Specs keep the formatting bans (a spec asserting a formatted value is still an NFR-26
@@ -134,6 +145,32 @@ const EXPECTED_BLOCKS = [
       'packages/ui/**/*.spec.{ts,tsx}',
     ],
     selectors: [...FORMATTING, ...CLIENT_BOUNDARY],
+  },
+  {
+    /*
+     * The one module that may construct an `Intl` formatter (task 32.4). `todayIn` answers *which
+     * calendar day is it in this IANA zone*, which is what NFR-34 requires of a legal date and is
+     * not something a reader sees; `architecture.md` §12.5.6 carries the decision.
+     *
+     * **The narrowness is proved HERE rather than by a fixture, and this matrix is the better
+     * proof.** A fixture would have to be written at this exact path, which is a real source file
+     * — so it would clobber the module under test. The list below is read out of the resolved
+     * config, so it fails if `format-intl` is ever spread back in, if `format-tofixed` or
+     * `format-tolocale` is dropped, or if the exemption is widened to a second path.
+     */
+    name: 'apps/web/src/lib/legal-date.ts (NFR-26 Intl carve-out)',
+    files: ['apps/web/src/lib/legal-date.ts'],
+    selectors: [
+      // `CACHE` is listed FIRST and deliberately: this block replaces the `apps/web` one for this
+      // path, and the first draft of both it and this entry omitted §14.2's security selector —
+      // caught by review rather than by this gate, because a matrix that records the hole asserts
+      // it. Its presence here is now the thing that fails if the carve-out loses it again.
+      ...CACHE,
+      ...FORMATTING.filter((id) => id !== 'format-intl'),
+      ...TEXT,
+      ...VOCABULARY,
+      ...CLIENT_BOUNDARY,
+    ],
   },
 ];
 

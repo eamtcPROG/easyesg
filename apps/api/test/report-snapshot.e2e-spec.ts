@@ -276,8 +276,20 @@ describe('the filing does not move while the period is locked (task 31.4)', () =
       expect(without(reportAfter, ['status', 'updatedAt'])).toEqual(
         without(reportBefore, ['status', 'updatedAt']),
       );
-      expect(without(periodAfter, ['lockedAt', 'lockedBy', 'updatedAt'])).toEqual(
-        without(periodBefore, ['lockedAt', 'lockedBy', 'updatedAt']),
+      // **The period carries the report since task 32.4**, so *"but for the lock itself"* now has
+      // to reach one level down: the lock moves the nested report's `status` and `updatedAt` in the
+      // same transaction (§12.5.6's task-31.3 row), which is the guarantee rather than a wobble.
+      // Excluding the whole `report` object would have been the cheap fix and would have stopped
+      // this test noticing if the join disappeared altogether; excluding the two fields the lock is
+      // *entitled* to move keeps every other one under assertion, and keeps `null` a failure.
+      const nested = (period: Row): Row => {
+        const report = period.report as Record<string, unknown> | null;
+        expect(report).not.toBeNull();
+        return without(report as Row, ['status', 'updatedAt']);
+      };
+      expect(nested(periodAfter)).toEqual(nested(periodBefore));
+      expect(without(periodAfter, ['lockedAt', 'lockedBy', 'updatedAt', 'report'])).toEqual(
+        without(periodBefore, ['lockedAt', 'lockedBy', 'updatedAt', 'report']),
       );
     });
   });

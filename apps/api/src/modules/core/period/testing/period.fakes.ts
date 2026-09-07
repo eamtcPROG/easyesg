@@ -41,6 +41,10 @@ export const aPeriod = (overrides: Partial<ReportingPeriod> = {}): ReportingPeri
   lockedBy: null,
   createdAt: new Date('2026-08-01T00:00:00.000Z'),
   updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+  entityName: 'Alfa SRL',
+  // The default is *no report*, which is the state task 31.3 made real and FR-23's overview exists
+  // to show. A fake defaulting the other way would make the started case look like the ordinary one.
+  report: null as ReportingPeriod['report'],
   ...overrides,
 });
 
@@ -68,8 +72,14 @@ export class FakeReportingPeriodStore implements ReportingPeriodStore {
     return this.rows;
   }
 
-  listPeriods(input: { reportingEntityId: string }): Promise<ReportingPeriod[]> {
-    return Promise.resolve(this.rows.filter((row) => row.reportingEntityId === input.reportingEntityId));
+  /** The optional filter, modelled: omitting it lists the whole (single) organization (task 32.4). */
+  listPeriods(input: { reportingEntityId?: string }): Promise<ReportingPeriod[]> {
+    const { reportingEntityId } = input;
+    return Promise.resolve(
+      reportingEntityId === undefined
+        ? [...this.rows]
+        : this.rows.filter((row) => row.reportingEntityId === reportingEntityId),
+    );
   }
 
   findPeriod(input: { periodId: string }): Promise<ReportingPeriod | null> {

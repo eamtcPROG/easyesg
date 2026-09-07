@@ -41,7 +41,8 @@ export class PeriodService {
     return requestContext()?.actorId ?? null;
   }
 
-  list(input: { readonly reportingEntityId: string }): Promise<ReportingPeriod[]> {
+  /** One entity's periods, or the whole organization's where none is named (FR-23, task 32.4). */
+  list(input: { readonly reportingEntityId?: string }): Promise<ReportingPeriod[]> {
     return this.store.listPeriods(input);
   }
 
