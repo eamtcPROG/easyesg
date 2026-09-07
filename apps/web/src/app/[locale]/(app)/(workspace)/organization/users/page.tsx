@@ -121,6 +121,7 @@ async function AccessScreenBody({
           left the invite panel holding an outcome of its own that nothing else could clear — so a
           settled invite notice survived a row action starting, and two callouts could show at
           once. The screen holds one notice; each region renders it only when it is theirs. */}
+      {/* Its own provider since task 99 — see `i18n/client-messages.ts`. */}
       <AccessProvider page={page} view={view} now={read.readAt} inviteAnchorId={INVITE_ANCHOR}>
         <AccessBoard />
         <InviteMember id={INVITE_ANCHOR} />

@@ -1,4 +1,3 @@
-import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import type { CountryLegalForms, Organization } from '@easyesg/contracts';
 import { EntityRecordForm } from '@/features/entities/components/entity-record-form';
@@ -40,15 +39,7 @@ export default async function NewEntityPage({ params }: { params: LocaleParams }
 
   return (
     <div className={styles.screen}>
-      <NextIntlClientProvider
-        messages={{
-          organization: { entities: messages.organization.entities },
-          forms: messages.forms,
-          identity: { unreachable: messages.identity.unreachable },
-        }}
-      >
-        <EntityRecordForm entity={null} activity={[]} legalForms={legalForms} />
-      </NextIntlClientProvider>
+      <EntityRecordForm entity={null} activity={[]} legalForms={legalForms} />
     </div>
   );
 }

@@ -1,5 +1,3 @@
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
 import { PeriodRecordForm } from '@/features/periods/components/period-record-form';
 import styles from '@/features/periods/components/periods.module.css';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
@@ -24,18 +22,10 @@ export const generateMetadata = localizedPageTitle(MESSAGES);
 export default async function NewReportingPeriodPage({ params }: Props) {
   const { entityId } = await params;
   await activateRequestLocale(params as unknown as LocaleParams);
-  const messages = await getMessages();
 
   return (
     <div className={styles.record}>
-      <NextIntlClientProvider
-        messages={{
-          organization: { periods: messages.organization.periods },
-          forms: messages.forms,
-        }}
-      >
-        <PeriodRecordForm entityId={entityId} reopenings={[]} />
-      </NextIntlClientProvider>
+      <PeriodRecordForm entityId={entityId} reopenings={[]} />
     </div>
   );
 }

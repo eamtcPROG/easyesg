@@ -1,5 +1,4 @@
 import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
-import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { OrganizationProfileForm } from '@/features/organization/components/organization-profile-form';
 import { readOrganizationProfile, type OrganizationProfileRead } from '@/server/data/organization-profile';
@@ -28,9 +27,8 @@ import styles from '@/features/organization/components/organization-profile.modu
  * records all three, and the *report-cover contact* is the fourth, which turned out to be a real
  * field nobody had written down and now amends FR-15.
  *
- * **The catalogue reaches the browser namespace-scoped and from the page**, as S-04's does and for
- * the same two reasons: the `(workspace)` layout's provider does not carry `organization.profile`,
- * and the root layout ships `messages={null}` on purpose (NFR-43).
+ * **The catalogue reaches the browser from the root layout, once** (task 99) — this screen used to
+ * mount its own scoped provider, which is what that paragraph described.
  *
  * States (§8.1): error — permission · error — recoverable · ready. The form owns the rest.
  */
@@ -114,14 +112,6 @@ async function ProfileScreenBody({
   }));
 
   return (
-    <NextIntlClientProvider
-      messages={{
-        organization: { profile: messages.organization.profile },
-        forms: messages.forms,
-        identity: { unreachable: messages.identity.unreachable },
-      }}
-    >
-      <OrganizationProfileForm organization={read.organization} countries={countries} />
-    </NextIntlClientProvider>
+    <OrganizationProfileForm organization={read.organization} countries={countries} />
   );
 }

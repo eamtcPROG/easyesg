@@ -12044,3 +12044,79 @@ not copy `.next/static`, so every Client Component was inert. The diagnosis was 
 rather than in the code: **when untouched tests fail alongside yours, the tree is the problem.** It
 is `CLAUDE.md`'s own `pretest:e2e` rule, met from the other side — a script is runnable on its own,
 and reaching past it for the binary it wraps gives up exactly what the hook was added to guarantee.
+
+## Task 99 — thirteen message providers where one would do, and the two ways they were wrong · 2026-09-07
+
+Appended from a question the project owner asked on task 32.4's close: *is defining
+`NextIntlClientProvider` this many times good practice?* It was not. `apps/web` now mounts exactly
+one, in `[locale]/layout.tsx`, and it takes no props.
+
+**Two independent things were wrong, and the first is the one worth remembering.**
+
+**The scoping was incorrect, not merely excessive.** next-intl 4.13's configuration docs:
+*"Nested instances of NextIntlClientProvider inherit configuration from their ancestors. However,
+props are treated as **atomic**, meaning that if you need to combine messages from different levels,
+you must perform the merge manually."* So a nested provider **replaces**. `(workspace)/layout.tsx`
+passed `organization: messages.organization` — all ten screens, 31 KB — and eight pages beneath it
+each passed a subset of what their parent had already sent. They could not reduce a payload already
+serialized, they added a duplicate of part of it, and they **narrowed their own subtree**: inside
+`reports/page.tsx`'s provider a client component could no longer see `chrome.nav` or
+`identity.unreachable`. Every one of the eight cited NFR-43's bundle budget as its reason.
+
+**And the premise had stopped being true.** The root layout justified `messages={null}` because the
+default ships *"every B1-B11 field label, help text and validation message across three locales"*.
+Both halves are false. A request serves **one** locale. And those labels are not in this catalogue
+at all — `packages/i18n/catalogues/disclosure/` holds them, and **OQ-58 closed 1 Sep 2026 by
+serving them through the API on the wizard's step read**, in that row's own words *"so no bundle
+carries any version's catalogue"*. What is actually in `src/messages` is `chrome`, `forms`,
+`identity` and `organization`: **14.4 KB gzipped in `ro`, 17.2 KB in `ru`** — measured, not
+estimated. It is serialized in the **layout** segment, which Next reuses across navigations inside
+it, where the per-page providers were re-sent on every navigation.
+
+So the architecture was defending a budget against a payload that had moved out from under it four
+tasks earlier, and defending it with a mechanism that did not work.
+
+### The intermediate answer, recorded because it is the reasonable-looking one
+
+The first fix was a helper — `i18n/client-messages.ts` owning a base (`chrome`, `forms`,
+`identity.unreachable`) plus a typed two-level path per screen, with the workspace layout narrowed
+to the base and three provider-less pages (S-16, S-28, the report creation flow) gaining their own.
+It was correct: it removed the duplication, removed the narrowing, and typed the relationship
+`apps/web/CLAUDE.md` had already named as untyped.
+
+It was also the wrong answer, and the owner said so twice before it was heard. It optimises a
+payload that measurement says is not worth optimising, and buys that with **sixteen** mount sites
+and a per-screen argument every new screen must remember — leaving the original question, *why is
+there more than one*, unanswered. It is deleted. §12.5.6 records it as declined rather than
+silently dropping it, because the next person to look at this will reach for it first.
+
+### What replaced it
+
+`<NextIntlClientProvider>{children}</NextIntlClientProvider>` — no props. Rendered from a Server
+Component it inherits `locale`, `messages`, `formats` and `timeZone` from `i18n/request.ts`, which
+already resolves all four per request and memoises them. Fifteen providers deleted, two layouts and
+five page docblocks corrected, and two files needed a fragment where the provider had been the only
+parent.
+
+**What is given up, stated rather than implied:** a screen with no client component still carries
+the catalogue in its layout's payload. That is the trade, and it is defensible only while
+`src/messages` stays the size it is — a future disclosure-sized namespace here would reopen it,
+which is precisely what OQ-58 prevents.
+
+### Verified
+
+**A `MISSING_MESSAGE` renders as an empty string here, not as a key** — `request.ts`'s
+`getMessageFallback` returns `''` because UX-97 forbids a visible marker and the key is an internal
+identifier. So an under-provided namespace is invisible in a screenshot and shows up only where a
+test asserts on visible text, which makes `pnpm e2e:web` the check that matters and a screenshot
+worthless. 141/141 green.
+
+Proven load-bearing rather than assumed: putting `messages={null}` back on the single provider
+fails all seven S-05 journeys. `pnpm gates:clean` green on a clean tree.
+
+**One thing was looked at and left.** `identity.credentials` (3,384 bytes) is S-28's, lives under
+`identity`, and therefore used to ride along on every register and sign-in render. Under one
+provider that is no longer a scoping question at all — but the misplacement is real, and its honest
+fix is to move the namespace out from under `identity`, which is a catalogue change with readers to
+update and belongs in its own task. `identity.unreachable` is the same shape and was already
+recorded that way.

@@ -1,6 +1,5 @@
 import { CALLOUT_INTENT, Callout, TextLink } from '@easyesg/ui';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { PeriodRecordForm } from '@/features/periods/components/period-record-form';
 import styles from '@/features/periods/components/periods.module.css';
 import { readPeriodRecord } from '@/server/data/periods';
@@ -29,9 +28,8 @@ export default async function ReportingPeriodRecordPage({ params }: Props) {
   const { entityId, periodId } = await params;
   await activateRequestLocale(params as unknown as LocaleParams);
   const t = await getTranslations(MESSAGES);
-  const [read, messages] = await Promise.all([
+  const [read] = await Promise.all([
     readPeriodRecord({ entityId, periodId }),
-    getMessages(),
   ]);
 
   if (read.status === TENANT_READ.FORBIDDEN) {
@@ -65,18 +63,11 @@ export default async function ReportingPeriodRecordPage({ params }: Props) {
   return (
     <div className={styles.record}>
       <p className="t-caption">{read.entity.name}</p>
-      <NextIntlClientProvider
-        messages={{
-          organization: { periods: messages.organization.periods },
-          forms: messages.forms,
-        }}
-      >
-        <PeriodRecordForm
-          entityId={entityId}
-          period={read.period}
-          reopenings={read.reopenings}
-        />
-      </NextIntlClientProvider>
+      <PeriodRecordForm
+        entityId={entityId}
+        period={read.period}
+        reopenings={read.reopenings}
+      />
     </div>
   );
 }

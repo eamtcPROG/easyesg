@@ -375,23 +375,36 @@ conditional render, which is how it ends up half-suppressed on one screen.
   locale to a Russian reader while the page beneath it renders correctly. Nothing would catch it: a
   loading state is transient, so no browser test asserts one.
 
-- **`NextIntlClientProvider` is `messages={null}` at the root.** The default ships every message
-  to the browser — the full B1–B11 label set across three locales, against NFR-43's LCP budget.
-  Client components get a namespace-scoped provider instead. This matters more now that the
-  catalogues are bundled: they are reachable from any import, so the only thing keeping them out
-  of the client bundle is this deliberate `null` plus scoped providers below it.
+- **There is exactly ONE `NextIntlClientProvider`, in `[locale]/layout.tsx`, and it takes no
+  props** (task 99, 7 Sep 2026). Rendered from a Server Component it inherits `locale`, `messages`,
+  `formats` and `timeZone` from `i18n/request.ts`, so every client component in every route group
+  reads the catalogue its request already resolved. **Do not add a second one.** Adding a top-level
+  namespace is a catalogue edit and nothing else — no provider to update, and a unit spec that
+  mounts its own provider is the only place the subset still has to be named by hand.
 
-  **So adding a top-level namespace is not a catalogue edit — it is an edit to every scoped
-  provider whose subtree reads it** (29 Aug 2026). Nothing types that relationship; the failure is
-  a runtime `MISSING_MESSAGE` in every client component below, and a unit spec that mounts its own
-  provider needs the same addition. `forms` — `show`, `hide`, `summaryTitle` — is the namespace for
-  strings the **form layer** needs that `packages/ui` cannot own (UX-79: it owns no text) and no
-  screen owns either, because every screen with a form needs the same words. Before it existed, its
-  three strings were declared per feature and reached by borrowing: an alias named `tPolicy` that
-  read no policy, and this app's workspace layout hand-assembling a two-key fragment of
-  `identity.register`. **A layout synthesising part of another screen's namespace is the tell** that
-  a string does not live where it belongs. `identity.unreachable` is the outstanding case and is
-  *not* a `forms` string — the workspace layout records that its honest home is `chrome`.
+  **It replaced fifteen scoped providers, and both reasons matter because the first one is the
+  trap.** They were *incorrect*: next-intl treats `messages` as **atomic**, so a nested provider
+  replaces rather than merges — and the `(workspace)` layout already passed the whole
+  `organization` namespace, so the eight pages beneath it were duplicating a subset of what their
+  parent had sent and **narrowing their own subtree**. And they were *unnecessary*: the scoping
+  existed to keep the B1–B11 label set out of the bundle, which those labels have not been in since
+  **OQ-58** closed by serving them through the API on the wizard's step read. What is actually in
+  `src/messages` is 14.4 KB gzipped in `ro`.
+
+  **A `MISSING_MESSAGE` here renders as an empty string, not as a key.** `request.ts`'s
+  `getMessageFallback` returns `''` because UX-97 forbids a visible missing-translation marker and
+  the key is an internal identifier. So an under-provided namespace is invisible in a screenshot
+  and shows up only where a test asserts on visible text — which is why the browser suite is the
+  check that matters when anything about messages changes.
+
+  `forms` — `show`, `hide`, `summaryTitle` — is the namespace for strings the **form layer** needs
+  that `packages/ui` cannot own (UX-79: it owns no text) and no screen owns either, because every
+  screen with a form needs the same words. Before it existed, its three strings were declared per
+  feature and reached by borrowing: an alias named `tPolicy` that read no policy, and the workspace
+  layout hand-assembling a two-key fragment of `identity.register`. **A layout synthesising part of
+  another screen's namespace is the tell** that a string does not live where it belongs.
+  `identity.unreachable` is the outstanding case and is *not* a `forms` string — its honest home is
+  `chrome`, and moving it is a catalogue change with readers to update.
 
 - **Formatting has one home.** `src/i18n/formats.ts` declares named formats; components reach
   them by name through `useFormatter()`. `toFixed`, `toLocaleString` and `new Intl.*Format` are

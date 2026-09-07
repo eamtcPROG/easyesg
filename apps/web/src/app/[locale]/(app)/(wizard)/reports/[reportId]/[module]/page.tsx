@@ -1,6 +1,5 @@
 import { DISCLOSURE_STATE, type DisclosureState } from '@easyesg/contracts';
 import { Banner, CALLOUT_INTENT, Callout, TextLink, WizardShell } from '@easyesg/ui';
-import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { AutosaveBanner } from '@/features/wizard/components/autosave-banner';
@@ -102,43 +101,41 @@ export default async function ReportModuleStepPage({ params }: Props) {
   );
 
   return (
-    <NextIntlClientProvider messages={{ organization: { wizard: messages.organization.wizard } }}>
-      <AutosaveProvider reportId={reportId} accountId={session.account.id}>
-        <WizardShell
-          modulesLabel={t('rail.label')}
-          modules={
-            <ModuleRail
-              reportId={reportId}
-              modules={read.modules}
-              current={module}
-              answeredLabel={(m) => t('rail.answered', { answered: m.answered, total: m.total })}
-              inapplicableLabel={t('rail.inapplicable')}
-            />
-          }
-          title={t('step.title', { module })}
-          progress={t('step.outstanding', { count: outstanding })}
-          saveState={readOnly ? null : <SaveState />}
-          exit={<WizardExit />}
-        >
-          {read.readOnly === null ? null : (
-            <ReadOnlyBanner
-              cause={read.readOnly}
-              periodHref={periodRoute({
-                entityId: read.report.subject.reportingEntityId,
-                periodId: read.report.reportingPeriodId,
-              })}
-            />
-          )}
-          <AutosaveBanner />
-          <StepFields
-            fields={fields}
-            readOnly={readOnly}
-            markerLabels={markerLabels}
-            carriedLabel={t('field.carried')}
+    <AutosaveProvider reportId={reportId} accountId={session.account.id}>
+      <WizardShell
+        modulesLabel={t('rail.label')}
+        modules={
+          <ModuleRail
+            reportId={reportId}
+            modules={read.modules}
+            current={module}
+            answeredLabel={(m) => t('rail.answered', { answered: m.answered, total: m.total })}
+            inapplicableLabel={t('rail.inapplicable')}
           />
-        </WizardShell>
-      </AutosaveProvider>
-    </NextIntlClientProvider>
+        }
+        title={t('step.title', { module })}
+        progress={t('step.outstanding', { count: outstanding })}
+        saveState={readOnly ? null : <SaveState />}
+        exit={<WizardExit />}
+      >
+        {read.readOnly === null ? null : (
+          <ReadOnlyBanner
+            cause={read.readOnly}
+            periodHref={periodRoute({
+              entityId: read.report.subject.reportingEntityId,
+              periodId: read.report.reportingPeriodId,
+            })}
+          />
+        )}
+        <AutosaveBanner />
+        <StepFields
+          fields={fields}
+          readOnly={readOnly}
+          markerLabels={markerLabels}
+          carriedLabel={t('field.carried')}
+        />
+      </WizardShell>
+    </AutosaveProvider>
   );
 }
 

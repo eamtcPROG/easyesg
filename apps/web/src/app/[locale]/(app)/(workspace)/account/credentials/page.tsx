@@ -39,5 +39,10 @@ export default async function CredentialsPage({ params }: { params: LocaleParams
   // settings screen should not pay a second round trip for an ordering that does not exist.
   const [read, pending] = await Promise.all([readCredentials(), readPendingLink()]);
 
-  return <CredentialsBoard read={read} pendingLinkProvider={pending?.provider ?? null} />;
+  return (
+    /* Its own provider since task 99. This screen had none and relied on the workspace
+       layout shipping every namespace — the breadth that narrowing removes, paid here
+       explicitly rather than met later as a `MISSING_MESSAGE` nothing can see (UX-97). */
+    <CredentialsBoard read={read} pendingLinkProvider={pending?.provider ?? null} />
+  );
 }

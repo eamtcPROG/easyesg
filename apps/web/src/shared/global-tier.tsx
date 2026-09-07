@@ -17,10 +17,14 @@ import { AccountCorner } from './account-corner';
  * unsealable cookie renders nothing here, and the first data call's 401 is what surfaces it.
  *
  * **Every string is resolved here and handed down as a prop.** `AccountCorner` needs the browser
- * only for the current address (a language choice is a link to the same page in another locale), so
- * making it read the catalogue would put `chrome` into the client bundle for a component that needs
- * two hooks and no messages — the cost the `(workspace)` layout's namespace-scoped provider exists
- * to avoid (NFR-43).
+ * only for the current address — a language choice is a link to the same page in another locale —
+ * so it takes two hooks and no messages, and resolving its words in this Server Component is the
+ * cheaper composition: no `useTranslations`, no lookup, and the strings are already in hand.
+ *
+ * This used to be argued from payload — the catalogue reached the browser only where a scoped
+ * provider named it, so a `useTranslations` here meant shipping `chrome`. **Task 99 ended that**:
+ * one provider at the root serves every route group, so the argument above is what actually
+ * survives, and it is about the client bundle rather than about the message payload.
  *
  * **The tier carries what renders, and nothing else** (29 Aug 2026, project owner). §4.2's global
  * tier is *organization switcher · notification centre · user menu · help*, and two of those four

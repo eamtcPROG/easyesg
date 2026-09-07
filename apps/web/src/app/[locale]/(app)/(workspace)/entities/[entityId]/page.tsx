@@ -1,5 +1,4 @@
 import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
-import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { EntityRecordForm } from '@/features/entities/components/entity-record-form';
 import styles from '@/features/entities/components/entities.module.css';
@@ -91,19 +90,11 @@ export default async function EntityRecordPage({
 
   return (
     <div className={styles.screen}>
-      <NextIntlClientProvider
-        messages={{
-          organization: { entities: messages.organization.entities },
-          forms: messages.forms,
-          identity: { unreachable: messages.identity.unreachable },
-        }}
-      >
-        <EntityRecordForm
-          entity={read.entity}
-          activity={read.activity}
-          legalForms={legalForms}
-        />
-      </NextIntlClientProvider>
+      <EntityRecordForm
+        entity={read.entity}
+        activity={read.activity}
+        legalForms={legalForms}
+      />
     </div>
   );
 }

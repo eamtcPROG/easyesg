@@ -1,6 +1,5 @@
 import { BrandMark, FocusShell } from '@easyesg/ui';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { IdentityHeaderActions } from '@/features/identity/components/identity-chrome';
 import { SiteFooter } from '@/shared/site-footer';
@@ -14,29 +13,25 @@ import { Link } from '@/i18n/navigation';
  * rather than inside it — there is no session yet, so there is no global tier to render.
  *
  * The client provider is namespace-scoped on purpose: the root layout mounts
- * `NextIntlClientProvider messages={null}` so the full catalogue never reaches the browser
- * (NFR-43); these screens' client components need exactly `identity` and `chrome`, so exactly
- * those ship — plus `forms`, the two reveal-toggle labels that belong to no screen.
+ * **It mounts no message provider since task 99.** It used to, because the root layout shipped
+ * `messages={null}` and a namespace reached the browser only by being named — a scoping built to
+ * keep the B1–B11 label set out of the bundle, which OQ-58 has served through the API since
+ * 1 Sep 2026. What is left is 14.4 KB gzipped, provided once at the root.
  */
 export default async function IdentityLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations('chrome');
-  const messages = await getMessages();
 
   return (
-    <NextIntlClientProvider
-      messages={{ identity: messages.identity, chrome: messages.chrome, forms: messages.forms }}
+    <FocusShell
+      brand={
+        <Link href="/" aria-label={t('brandHome')}>
+          <BrandMark />
+        </Link>
+      }
+      actions={<IdentityHeaderActions />}
+      footer={<SiteFooter />}
     >
-      <FocusShell
-        brand={
-          <Link href="/" aria-label={t('brandHome')}>
-            <BrandMark />
-          </Link>
-        }
-        actions={<IdentityHeaderActions />}
-        footer={<SiteFooter />}
-      >
-        {children}
-      </FocusShell>
-    </NextIntlClientProvider>
+      {children}
+    </FocusShell>
   );
 }

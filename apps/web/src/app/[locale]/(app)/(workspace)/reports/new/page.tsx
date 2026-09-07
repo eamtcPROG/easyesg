@@ -229,6 +229,7 @@ async function NewReportBody({
             {t('period.value', { start: period.periodStart.date, end: period.periodEnd.date })}
           </p>
           <p className={`t-caption ${styles.decisionHint}`}>{t('comprehensive')}</p>
+          {/* Its own provider since task 99 — see `i18n/client-messages.ts`. */}
           <CreateReportForm periodId={period.id} />
         </section>
       )}

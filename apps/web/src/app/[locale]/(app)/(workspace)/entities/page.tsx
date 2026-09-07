@@ -1,5 +1,4 @@
 import { Button, Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
-import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { EntitiesList } from '@/features/entities/components/entities-list';
 import { applyEntityView, readEntityView } from '@/features/entities/entities';
@@ -112,14 +111,6 @@ async function EntitiesScreenBody({
   const legalForms: Readonly<Record<string, string>> = messages.organization.legalForms;
 
   return (
-    <NextIntlClientProvider
-      messages={{
-        organization: { entities: messages.organization.entities },
-        chrome: { index: messages.chrome.index },
-        forms: messages.forms,
-      }}
-    >
-      <EntitiesList page={page} view={view} legalForms={legalForms} />
-    </NextIntlClientProvider>
+    <EntitiesList page={page} view={view} legalForms={legalForms} />
   );
 }

@@ -68,18 +68,30 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale}>
       <body>
         {/*
-          `messages={null}` is deliberate and load-bearing.
+          **One provider, at the root, with no props — task 99.**
 
-          The default ships EVERY message to the client. This catalogue is every B1-B11 field
-          label, help text and validation message across three locales - a payload that works
-          directly against NFR-43 (LCP <= 2.5 s, INP <= 200 ms at p75 on 4G mid-range).
+          `NextIntlClientProvider` rendered from a Server Component inherits `locale`, `messages`,
+          `formats`, `now` and `timeZone` from `i18n/request.ts`, so this needs no configuration and
+          there is nowhere else in the app that mounts one. Every Client Component, in any route
+          group, reads the catalogue its request already resolved.
 
-          It also fits AD-9's split exactly: Server Components render the shell, navigation,
-          list views and export preview, and only the wizard's field-level interaction is a
-          Client Component. So the wizard segment wraps itself in a namespace-scoped provider
-          and nothing else needs messages in the browser at all.
+          **It used to be `messages={null}` with fifteen scoped providers below it**, on the stated
+          grounds that the default "ships EVERY message to the client … every B1-B11 field label,
+          help text and validation message across three locales", against NFR-43. Both halves of
+          that were false by the time it mattered. A request serves ONE locale, not three. And the
+          B1-B11 labels are not in this catalogue at all — `packages/i18n/catalogues/disclosure/`
+          holds them and OQ-58 closed 1 Sep 2026 by serving them through the API on the wizard's
+          step read, "so no bundle carries any version's catalogue".
+
+          What is actually here is `chrome`, `forms`, `identity` and `organization`: **14.4 KB
+          gzipped** in Romanian, 17.2 KB in Russian. It is serialized in this LAYOUT's payload,
+          which Next reuses across navigations inside it — where the per-page providers it replaces
+          were re-sent on every navigation, each one duplicating a subset its parent had already
+          shipped and narrowing its own subtree, because next-intl treats `messages` as atomic.
+
+          `architecture.md` §12.5.6 carries the decision and what it cost to reach.
         */}
-        <NextIntlClientProvider messages={null}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,6 +1,5 @@
 import { Button, Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { ReportsList } from '@/features/reports/components/reports-list';
 import {
   applyReportView,
@@ -62,10 +61,9 @@ export default async function ReportsIndexPage({ params, searchParams }: Props) 
   const t = await getTranslations(MESSAGES);
   // Independent: the query string is already in hand and the read is an API round trip, so the
   // parse does not wait on the fetch (`async-parallel`).
-  const [query, read, messages, membership] = await Promise.all([
+  const [query, read, membership] = await Promise.all([
     searchParams,
     readReportList(),
-    getMessages(),
     // Independent of all three — and free, because `readMemberships` is React-`cache()`d and the
     // global tier has already read it this render pass.
     readActiveMembership(),
@@ -88,7 +86,7 @@ export default async function ReportsIndexPage({ params, searchParams }: Props) 
         ) : null}
       </header>
 
-      <ReportsScreenBody read={read} query={query} messages={messages} canCreate={canCreate} />
+      <ReportsScreenBody read={read} query={query} canCreate={canCreate} />
     </div>
   );
 }
@@ -100,12 +98,10 @@ export default async function ReportsIndexPage({ params, searchParams }: Props) 
 async function ReportsScreenBody({
   read,
   query,
-  messages,
   canCreate,
 }: {
   readonly read: ReportListRead;
   readonly query: Record<string, string | string[] | undefined>;
-  readonly messages: Awaited<ReturnType<typeof getMessages>>;
   /** FR-25: a view-only member sees the same entries and no edit affordances. */
   readonly canCreate: boolean;
 }) {
@@ -147,20 +143,12 @@ async function ReportsScreenBody({
   const options = reportFilterOptions(read.rows);
 
   return (
-    <NextIntlClientProvider
-      messages={{
-        organization: { reports: messages.organization.reports },
-        chrome: { index: messages.chrome.index },
-        forms: messages.forms,
-      }}
-    >
-      <ReportsList
-        page={page}
-        view={view}
-        entities={options.entities}
-        years={options.years}
-        canCreate={canCreate}
-      />
-    </NextIntlClientProvider>
+    <ReportsList
+      page={page}
+      view={view}
+      entities={options.entities}
+      years={options.years}
+      canCreate={canCreate}
+    />
   );
 }

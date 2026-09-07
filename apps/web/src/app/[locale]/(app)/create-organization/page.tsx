@@ -1,4 +1,3 @@
-import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { FOCUS_MEASURE, FocusColumn } from '@easyesg/ui';
 import type { CountryLegalForms } from '@easyesg/contracts';
@@ -23,17 +22,18 @@ import styles from '@/features/organization/components/create-organization.modul
  * (task 30.1), which is exactly what the Workspace artboard draws. So it takes `FocusColumn`,
  * extracted for this screen, and the `<main>` landmark comes with it.
  *
- * **The client provider is namespace-scoped and mounted on the PAGE rather than a layout**, which
- * is a first. The two `(app)` screens outside `(workspace)` share no layout that could hold one,
- * and the alternative — mounting a provider in `(app)/layout.tsx` — would put a catalogue in the
- * bundle of every authenticated screen to serve two of them. The root layout ships
- * `messages={null}` on purpose (NFR-43), so a namespace reaches the browser only by being named.
+ * **This screen used to mount its own client provider, on the PAGE rather than a layout**, which
+ * was a first. **Task 99 removed it, along with fourteen others**: the root layout provides the
+ * catalogue once, for every route group, so no screen names a namespace to reach the browser.
  *
  * `design_spec.md` §5 owns this screen's content, controls and states, and **OQ-20 owns why it has
  * four fields where the prototype draws five** — closed 29 Aug 2026, after the row was held rather
  * than built against a disagreement between the artboard and three other sources.
  */
-export const generateMetadata = localizedPageTitle('organization.create');
+/** Named once rather than written at three call sites, which is what every other page here does. */
+const MESSAGES = 'organization.create';
+
+export const generateMetadata = localizedPageTitle(MESSAGES);
 
 export default async function CreateOrganizationPage({ params }: { params: LocaleParams }) {
   // Sequential and not a waterfall to fix: `activateRequestLocale` calls `setRequestLocale`, and
@@ -43,7 +43,7 @@ export default async function CreateOrganizationPage({ params }: { params: Local
   await activateRequestLocale(params);
   const [outcome, t, messages] = await Promise.all([
     api.getList<CountryLegalForms>('/organizations/legal-forms'),
-    getTranslations('organization.create'),
+    getTranslations(MESSAGES),
     getMessages(),
   ]);
 
@@ -80,15 +80,7 @@ export default async function CreateOrganizationPage({ params }: { params: Local
     <FocusColumn measure={FOCUS_MEASURE.WIDE}>
       <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
       <p className={`t-body ${styles.subtitle}`}>{t('subtitle')}</p>
-      <NextIntlClientProvider
-        messages={{
-          organization: { create: messages.organization.create },
-          forms: messages.forms,
-          identity: { unreachable: messages.identity.unreachable },
-        }}
-      >
-        <CreateOrganizationForm countries={countries} />
-      </NextIntlClientProvider>
+      <CreateOrganizationForm countries={countries} />
       <p className={`t-caption ${styles.waiting}`}>{t('waitingForInvitation')}</p>
     </FocusColumn>
   );

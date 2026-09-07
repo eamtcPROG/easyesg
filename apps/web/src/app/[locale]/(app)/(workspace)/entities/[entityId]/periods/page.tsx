@@ -1,6 +1,5 @@
 import { Button, CALLOUT_INTENT, Callout, TextLink } from '@easyesg/ui';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { PeriodsList } from '@/features/periods/components/periods-list';
 import { applyPeriodView, readPeriodView, toPeriodRows } from '@/features/periods/periods';
 import styles from '@/features/periods/components/periods.module.css';
@@ -40,10 +39,9 @@ export default async function ReportingPeriodsPage({ params, searchParams }: Pro
   const t = await getTranslations(MESSAGES);
   // Independent: the query string is in hand and the read is an API round trip, so the parse does
   // not wait on the fetch (`async-parallel`).
-  const [query, read, messages] = await Promise.all([
+  const [query, read] = await Promise.all([
     searchParams,
     readPeriodList(entityId),
-    getMessages(),
   ]);
 
   return (
@@ -60,7 +58,7 @@ export default async function ReportingPeriodsPage({ params, searchParams }: Pro
         ) : null}
       </header>
 
-      <PeriodsScreenBody entityId={entityId} read={read} query={query} messages={messages} />
+      <PeriodsScreenBody entityId={entityId} read={read} query={query} />
     </div>
   );
 }
@@ -71,12 +69,10 @@ async function PeriodsScreenBody({
   entityId,
   read,
   query,
-  messages,
 }: {
   readonly entityId: string;
   readonly read: PeriodListRead;
   readonly query: Record<string, string | string[] | undefined>;
-  readonly messages: Awaited<ReturnType<typeof getMessages>>;
 }) {
   const t = await getTranslations(MESSAGES);
 
@@ -112,15 +108,9 @@ async function PeriodsScreenBody({
   const page = applyPeriodView({ rows: toPeriodRows(read.periods), view });
 
   return (
-    <NextIntlClientProvider
-      messages={{
-        organization: { periods: messages.organization.periods },
-        chrome: { index: messages.chrome.index },
-        forms: messages.forms,
-      }}
-    >
+    <>
       <p className="t-caption">{read.entity.name}</p>
       <PeriodsList entityId={entityId} page={page} view={view} />
-    </NextIntlClientProvider>
+    </>
   );
 }
