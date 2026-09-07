@@ -194,6 +194,148 @@ test('counts a narrative field’s length, and imposes no limit on it (UX-19)', 
   await expect(narrative).not.toHaveAttribute('maxlength', /.+/u);
 });
 
+/**
+ * B2 end to end (UC-20, FR-24; task 36.3) — **the module that tests whether task 36.2 built B1 or
+ * built the anatomy.**
+ *
+ * B2 is the narrative module: six elements, no axis on any of them and no applicability rule
+ * touching it, so nothing here is B1's shape. Its four kinds — `text_block`, `monetary`, `boolean`
+ * and `enumeration_set` — are all kinds B1 also carries, which is exactly why this case is worth
+ * running rather than assuming: if 36.2's dispatch is generic over the taxonomy, B2 needs no code,
+ * and the only way to know that is to drive it.
+ *
+ * It asserts one field of each kind, and the store rather than the screen for the two that carry
+ * UC-20's own content — *"largely free-text with structured yes/no anchors"*.
+ */
+/** The three control words this case reads, from `organization.wizard.field` — the catalogue owns
+ *  them, and naming them here keeps the assertions about behaviour rather than about wording. */
+const FIELD_WORDS = { choose: 'Alegeți', yes: 'Da' } as const;
+
+test('B2 renders and stores each of its kinds, with no code of its own (UC-20)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b2');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B2`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('B2');
+
+  // 1 — the narrative half of UC-20, and the first `text_block` outside B1. Its count is UX-19's,
+  //     which `disclosure-control.tsx` renders for every `text_block` rather than for B1's one.
+  const narrative = page.getByRole('textbox', {
+    name: 'Descrierea participării efective a lucrătorilor, utilizatorilor sau a altor părți interesate ori comunități la guvernanță',
+  });
+  await narrative.fill('Consiliul consultativ se întrunește trimestrial.');
+  // **48, which is Romanian's `other` plural — *"de caractere"*.** B1's own case asserts 9 and gets
+  // `few`, so this is the first time the count's third form is rendered at all: `ro` has one/few/
+  // other, few covering n%100 in 1..19, and a catalogue that had only ever been read at 9 could
+  // have carried a wrong `other` form indefinitely. UX-95's whole-message rule is what makes this
+  // the catalogue's business rather than a component's.
+  await expect(page.getByText('48 de caractere')).toBeVisible();
+
+  // 2 — `monetary`. It renders as a decimal field and carries NO unit: `unit_code` stays null
+  //     until a module sets one (UX-14, task 91.4), so a currency marker here would be invented.
+  const investment = page.getByRole('textbox', {
+    name: 'Investiția financiară în capitalul sau activele entităților din economia socială',
+  });
+  await expect(investment).toHaveAttribute('inputmode', 'decimal');
+  await investment.fill('125000');
+  // **Blurred explicitly, because blur IS the commit** (UX-34: *"on blur or step change"*). The
+  // narrative above committed only because filling this field took focus off it — so a case that
+  // ends on a typed field asserts a store that was never written, which is what the first run of
+  // this test did. Nothing else in the suite typed into the LAST field of a step.
+  await investment.blur();
+
+  /*
+   * 3 — the structured yes/no anchor UC-20 names, rendered as **a Select that starts empty**, which
+   *     is `architecture.md` §12.5.6's task-35.2 decision — *boolean as a two-option `Select`* —
+   *     and the property rather than the widget is what this asserts. A disclosure has three
+   *     answers: unanswered, yes, no. A checkbox holds two, so it would make *not answered yet*
+   *     indistinguishable from *no*.
+   *
+   *     **The emptiness is the assertion, and the first draft did not have it** (found by review):
+   *     it asserted a combobox and the absence of a checkbox, and the second of those can never be
+   *     the failing one — Playwright throws on the first failed expect, so a boolean that regressed
+   *     to a checkbox fails the line above it and the count never runs. A trigger pre-set to a
+   *     value is the defect that assertion pair could not see.
+   */
+  const target = page.getByRole('combobox', {
+    name: 'Întreprinderea a stabilit o țintă legată de o politică',
+  });
+  await expect(target).toHaveText(FIELD_WORDS.choose);
+  await target.click();
+  await page.getByRole('option', { name: FIELD_WORDS.yes, exact: true }).click();
+  await expect(target).toHaveText(FIELD_WORDS.yes);
+
+  /*
+   * 4 — `enumeration_set`, and **the assertion is that it is searchable, not that it is a
+   *     combobox** (found by review). `Select` and `Combobox` both expose `role="combobox"`, so a
+   *     visibility check cannot tell a multi-select over the taxonomy's members from the
+   *     two-option Select the boolean above renders — an `ENUMERATION_SET` mis-dispatched to a
+   *     `Select` would satisfy it exactly as well as correct code. Typing is what distinguishes
+   *     them: only `Combobox` filters, and a `Select` trigger takes no text at all.
+   */
+  const issues = page.getByRole('combobox', {
+    name: 'Aspectele de sustenabilitate abordate prin practică, politică și/sau inițiativă viitoare',
+  });
+  await issues.fill('clim');
+  await expect(page.getByRole('option').first()).toBeVisible();
+
+  // The store is the fact, not the indicator (NFR-56). One text and one numeric, because those are
+  // two different value columns and a dispatch that got either wrong would still look right.
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+    timeout: 15_000,
+  });
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey:
+              'DescriptionOfTheEffectiveParticipationOfWorkersUsersOrOtherInterestedPartiesOrCommunitiesInGovernance',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Consiliul consultativ se întrunește trimestrial.');
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'FinancialInvestmentInTheCapitalOrAssetsOfSocialEconomyEntities',
+          })
+        )?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('125000');
+
+  /*
+   * The deliverable's own clause — *"stored in three locales"*. **The label is the assertion**,
+   * because it is the one string on this screen the app does not own: task 33.2 resolves an element
+   * key against the report's **pinned** version through `platform/localization`, and OQ-58 serves it
+   * on the step read rather than from any bundle. So this proves the API answered in the request's
+   * language, which no unit test on this side can. The numeric field is not re-asserted per locale
+   * because a stored number has no locale — NFR-26 governs how it is *displayed* and this field
+   * shows the raw draft. (An earlier draft cited NFR-58 for that, which is a billing requirement
+   * about minor units and the BNM rate and says nothing about it.)
+   */
+  await page.goto(`/en/reports/${reportId}/B2`);
+  await expect(
+    page.getByRole('textbox', { name: /^Description of the effective participation of workers/u }),
+  ).toHaveValue('Consiliul consultativ se întrunește trimestrial.');
+  await page.goto(`/ru/reports/${reportId}/B2`);
+  // The same pair as `en`, not visibility alone: a defect that resolved the Russian LABEL while
+  // losing the field's VALUE under `ru` — a locale-keyed lookup confusion — would pass a
+  // visibility check silently, and `en` would catch the same defect. Asymmetric coverage of two
+  // locales is coverage of one (found by review).
+  await expect(
+    page.getByRole('textbox', { name: /^Описание фактического участия работников/u }),
+  ).toHaveValue('Consiliul consultativ se întrunește trimestrial.');
+});
+
 test('a module the rules ruled out says so on the rail rather than counting to zero (FR-28)', async ({
   page,
 }) => {

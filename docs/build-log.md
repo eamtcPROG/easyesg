@@ -12120,3 +12120,151 @@ provider that is no longer a scoping question at all — but the misplacement is
 fix is to move the namespace out from under `identity`, which is a catalogue change with readers to
 update and belongs in its own task. `identity.unreachable` is the same shape and was already
 recorded that way.
+
+## Task 36.3 — B2, and the discovery that the module was already built · 2026-09-07
+
+B2 (UC-20, FR-24) ships as **one browser journey and no production code**. That is the finding, not
+a shortcut, and it is worth more than the module.
+
+**Task 36.2's row reads as *B1*; what it built is the anatomy.** `disclosure-control.tsx` dispatches
+on `VALUE_COLUMN` off the report's pinned taxonomy, so a module needs code only where it introduces
+something that dispatch has not met. B2 introduces nothing. Checked before writing anything, against
+the artefacts rather than by reading the code:
+
+| Question | B2 |
+| --- | --- |
+| Kinds | `text_block` ×2, `monetary`, `boolean` ×2, `enumeration_set` — **every one also in B1** |
+| Axes | none on any of the six elements → no repeating groups |
+| Applicability | none of the four registered rules names B2 → unconditional, no UX-9 gate |
+| Labels | 6/6 in `ro`, `en`, `ru` |
+
+So the deliverable — *"B2 complete and stored in three locales"* — was already true, and the task is
+to demonstrate it. The journey renders one field of each kind, stores a text and a numeric under
+RLS, and reads a label back in all three locales, which is the one string on that screen the app
+does not own: task 33.2 resolves it against the **pinned** version through `platform/localization`
+and OQ-58 serves it on the step read.
+
+### Three things the journey found, none of them in B2
+
+**A boolean disclosure is a three-state `Select`, not a checkbox** — and the first draft of this
+test asserted a checkbox, which is the wrong shape for the right reason. A disclosure has three
+answers: unanswered, yes, no; a checkbox holds two, so it makes *not answered yet* indistinguishable
+from *no*. The decision is already on record as §12.5.6's task-35.2 row, *boolean as a two-option
+`Select`* — this entry first credited task 36.12/FR-30 instead, which is a rule about a **nil
+return** on a counted quantity and has no bearing here, B11 carrying no boolean element at all.
+
+**The assertion then had to be rewritten twice**, and the second time is the instructive one. It
+asserted a combobox *and* the absence of a checkbox — and the second of those can never be the
+failing assertion, because Playwright throws on the first failed expect: a boolean that regressed
+to a checkbox fails the line above and the count never runs. What neither line asserted was the
+property the comment claimed: that the trigger **starts empty**. It now reads the placeholder,
+chooses *Da*, and reads it back.
+
+**Romanian's third plural form had never been rendered.** UX-19's length count is
+`{count, plural, one {…} few {# caractere} other {# de caractere}}`, and `ro`'s `few` covers
+`n%100` in 1..19. The existing B1 case asserts `9 caractere` — `few`. Nothing had ever produced
+`other`, so a wrong `de caractere` could have sat in the catalogue indefinitely. This case fills 48
+characters and asserts `48 de caractere`, which is why the string is that length.
+
+**A case that ends on a typed field asserts a store nobody wrote.** `onTextBlur` is the commit
+(UX-34: *"on blur or step change"*), so the narrative committed only because filling the next field
+took focus off it — while the monetary field, being last, never committed and the store read
+`undefined`. The fix is `investment.blur()`, and the reason it had not bitten before is that no
+other case in the suite types into the last field of a step. **Worth carrying into 36.4 … 36.12**,
+which will all type into fields.
+
+**`enumeration_set` was asserted by a role that cannot distinguish it.** `Select` and `Combobox`
+both expose `role="combobox"`, so a visibility check could not tell a multi-select over the
+taxonomy's members from the two-option Select the boolean renders one field above — a mis-dispatch
+would have satisfied it exactly as well as correct code. It now types into the field, which only a
+`Combobox` accepts.
+
+### The gap the module hid: UC-20's own step 2
+
+The spec review asked the question this task's verification method never did — not *do B2's elements
+render*, but *is UC-20 discharged*. Step 2 read: *"The Contributor states whether an ESG-responsible
+person or contact point exists."* **No element in the 143-element taxonomy carries it**, so it was
+unreportable and unstorable, and B2 was about to be closed `DONE` with the deliverable's own use
+case partly unmet.
+
+**Checked against EFRAG's package rather than amended on inference** (the project owner's
+instruction, and the right one). `config/efrag/VSME-Digital-Template-1.3.0.xlsx` is on disk: across
+its **10,909 shared strings**, nothing matches a contact point or a responsible person. The twelve
+hits are EU List of Waste entries (*"contact acid"*), EFRAG's copyright boilerplate in five
+languages, a converter disclaimer — and one that had to be run down: `NumberOfPermanentContract`
+`Employees`, a B8 headcount whose **official English label carries EFRAG's own typo**, *"Number of
+permanent **contact** employees"*. Unrelated.
+
+So the template genuinely has no such disclosure, the extraction is right — it asserts rather than
+defaults, so a concrete element reaching no presentation role fails the run — and **UC-20 is
+stale**: `use_cases.md` predates task 33.1's extraction and step 2 was written from the standard's
+prose. Amended to name the two `boolean` anchors B2 actually carries, with the evidence and the
+authority recorded on the use case itself.
+
+### What this does and does not settle
+
+It settles that *being a module* is not itself work. It does **not** settle 36.4 … 36.12, and the
+§12.5.6 row says so with the reasons: those rows carry things neither B1 nor B2 does — a calculated
+value arriving from elsewhere (36.4), site- and sector-driven applicability (36.6, 36.7), a
+table-shaped breakdown (36.9), a derived rate beside its inputs (36.10). Each still has to be
+opened. What changed is the expected shape of the answer.
+
+**The currency question was looked at, and the first answer to it named the wrong owner** (found by
+review). B2's `monetary` element renders as a decimal field with no currency marker, and this entry
+deferred that to **task 91.4** — which owns UX-14's *physical* units, the UTR list a
+`measurementGuidance` role carries on 42 elements, and will never answer a currency. The owner is
+§12.5.6's **task-30.2** row, *"Reporting currency, deferred — there is none, and MDL is assumed"*.
+
+**And that row's stated premise was false**, which only building a `monetary` field could show. It
+read *"no Basic-module disclosure holds a monetary amount"*; four do — `Assets` and `Turnover` in
+B1, B2's investment, B11's fines. The decision survives on its own argument, which never depended
+on the clause: a Moldova-resident SME denominates in MDL and a per-organization choice is an
+abstraction with one member. What changes is the **trigger**: the row named C8 (task 79.8) as the
+first monetary disclosure, so its deadline had already passed unnoticed. Corrected in place, with
+the safety of the assumption restated as the narrower claim it actually rests on.
+
+### Reviews — both on `sonnet`
+
+Per the routing table: one workspace plus docs, no migration, no grant or policy, no contract
+surface. They were worth more than the code they reviewed, which had none.
+
+**Spec** found four, and the first is the one that stopped this task closing: UC-20 step 2 above,
+plus the currency row's false premise, `NFR-58` cited for a locale-invariance property it does not
+state (it is a billing requirement about minor units and the BNM rate), and task 36.12/FR-30 named
+as the boolean control's precedent when task 35.2's row already held it. All four corrected.
+
+**Gate integrity** executed the blur mutation independently and reproduced it, then found three
+assertions that would not fail on their subject: the `enumeration_set` role check, the
+checkbox-absence check that can never be the failing one, and the `ru` locale block asserting
+visibility where `en` asserts a value — *asymmetric coverage of two locales is coverage of one*.
+All three rewritten. It also reported the repository changing under it mid-review — build outputs
+vanishing between its commands, and transient `__eslint_fixture_*.ts` files appearing.
+
+**That was my own `gates:clean`, and it cost two hours of wall clock before the cause was named.**
+`pnpm e2e` runs in about 85 seconds; twice it sat for over an hour and had to be killed. The first
+diagnosis — stray preview servers left by `reuseExistingServer`, which is the shape
+`build-log.md` already records for Argon2id — was **wrong**, and checking rather than re-running is
+what showed it: no server was listening on any of the four ports, no node process held more than
+200 MB, and `pg_stat_activity` showed no stuck transaction and no lock wait. What was true is
+simpler and is in the reviewer's own report: `gates:clean` **deletes every build output first**, and
+a review agent driving Playwright against the same tree rebuilds them underneath it. Two processes,
+one working directory, one Compose stack.
+
+**So reviews and gates do not overlap.** They read the same tree and one of them empties it. The
+rule this repository already states — *a gate must not depend on state a previous command left
+behind* — has a sibling: **a gate must not run while another command is producing that state.**
+
+**One api e2e failure is unexplained, and the reason it is unexplained is worth more than the
+failure.** A `gates:clean` run reported `1 failed, 814 passed` — and the command was piped through
+`tail -12`, so the test's name went with the rest of the output. `pnpm e2e` then passed 815/815
+standalone and a full `gates:clean` passed twice after it, so nothing is reproducible and nothing is
+diagnosable. **Piping a gate run through `tail` discards exactly the part that matters**; capture
+the log and read the tail of the file. Recorded rather than called a flake, because a single
+unreproduced failure with its evidence thrown away is not evidence of anything.
+
+### Verified
+
+The whole wizard suite, 7/7, and `pnpm gates:clean` green — 142 browser tests, 815 api e2e. Proven to bite by mutation: `MONETARY`
+mapped to `VALUE_COLUMN.TEXT` in `@easyesg/contracts` — the shape that still renders a field and
+only moves the column — fails the case at `inputmode`; and removing `investment.blur()` fails the
+store poll, which the reviewer reproduced independently.

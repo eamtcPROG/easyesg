@@ -731,8 +731,9 @@ their numbers put them.
 - **Trigger:** The Contributor reaches the B2 step.
 - **Main success scenario:**
   1. The Contributor describes existing sustainability policies, practices, targets and planned initiatives.
-  2. The Contributor states whether an ESG-responsible person or contact point exists.
+  2. The Contributor states whether a target related to a policy has been set, and whether the practice, policy or initiative is publicly available.
 - **Business rules:** This is the report's principal narrative module, largely free-text with structured yes/no anchors.
+- **Amended 7 Sep 2026 (project owner), against EFRAG's own package rather than by inference.** Step 2 read *"states whether an ESG-responsible person or contact point exists"*, and **no such disclosure exists in the VSME Digital Template 1.3.0**: a search of the workbook's 10,909 shared strings returns waste-catalogue entries, EFRAG's copyright boilerplate, and `NumberOfPermanentContractEmployees` — a B8 headcount whose official English label carries EFRAG's own typo, *"permanent **contact** employees"*. The 143-element taxonomy has none either, and `tools/extract-vsme-taxonomy.mjs` **asserts rather than defaults**, so a concrete element reaching no presentation role fails the run — a missing element means the template has none, not that extraction dropped one. This use case predates task 33.1's extraction and was written from the standard's prose; the two `boolean` anchors B2 actually carries are what step 2 now names. Found by task 36.3's spec review, which asked whether the module's own use case was discharged rather than whether its elements rendered.
 - **Related FRs:** FR-24
 - **Related UCs:** UC-30, UC-46
 
