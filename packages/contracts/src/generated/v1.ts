@@ -1902,6 +1902,8 @@ export interface components {
              * @example 01.11
              */
             code: string | null;
+            /** @description Whether the classification marks this entry hazardous; null where it says nothing — a NACE class and a pollutant are not "non-hazardous", they are outside a classification that makes the distinction. Carried because EFRAG’s own instruction cannot be followed without it: B7’s waste table says to select a type of waste that is Hazardous or Non-Hazardous, and the published list marks it with an asterisk on the code (01 03 04*) that this platform’s extracted code does not carry. */
+            hazardous: boolean | null;
         };
         DisclosureDefaultDto: {
             /** @description Decimal as a string, never a float (NFR-58). */
@@ -1981,8 +1983,13 @@ export interface components {
             key: string;
             /** @description What to call the axis on screen — its default member's label, which is the domain's own name. Null where the pinned version words no label for it in this locale. */
             label: string | null;
-            /** @description Every member the reporter may report along. The default member is excluded: it is the domain’s root, and an amount filed against it would be filed against the category rather than against a member of it. */
+            /** @description Every member the reporter may report along — the domain’s LEAVES. The default member is excluded because it is the domain’s root, and a member with children is excluded because a category is not a valid answer: EFRAG’s own workbook instructs a reporter to select a type of waste rather than a category. A flat domain is unaffected. */
             members: components["schemas"]["DisclosureOptionDto"][];
+            /**
+             * @description The language the member names are actually in, where that is NOT the requested locale — null otherwise, which is the ordinary answer. EFRAG publishes the EU List of Waste in English alone, so B7’s picker answers "en" for a Romanian or Russian reader and the screen says so. Distinct from a label’s standing, which is about whose words these are: these are EFRAG’s own, in a language the reader did not ask for. **Derived from LOCALES rather than typed as a string** so a client names the language rather than asserting one.
+             * @enum {string|null}
+             */
+            memberLanguage: "ro" | "en" | "ru" | null;
         };
         DisclosureStepDto: {
             /** @example B8 */

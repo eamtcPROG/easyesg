@@ -27,6 +27,7 @@ export function MemberPicker({
   taken,
   onChoose,
   labels,
+  memberLang,
 }: {
   readonly members: readonly DisclosureOption[];
   /** The member this row reports, or `''` while it has none. */
@@ -42,7 +43,25 @@ export function MemberPicker({
     readonly loading: string;
     /** For a member the pinned version names in no locale the platform holds — never its key. */
     readonly unnamed: string;
+    /** EFRAG's own distinction, said in the reader's language rather than left in the member key. */
+    readonly hazardous: string;
+    readonly nonHazardous: string;
+    /**
+     * Said where the domain's names are not in the reader's language (task 36.8) — `null` where
+     * they are, which is the ordinary case.
+     *
+     * EFRAG publishes the EU List of Waste in English alone, so B7's reporter meets Romanian
+     * element labels above an English picker. Saying so here is the on-screen counterpart of what
+     * UX-47 and UX-98 require of the export: an unexplained language switch mid-form is
+     * indistinguishable from a defect.
+     */
+    readonly language: string | null;
   };
+  /**
+   * The BCP 47 tag the member names are written in, where that is not the page's (WCAG 2.2 SC
+   * 3.1.2). `null` is the ordinary case and marks nothing.
+   */
+  readonly memberLang: string | null;
 }) {
   // One value nothing else moves with — the case the reducer rule leaves to a single `useState`.
   const [query, setQuery] = useState('');
@@ -54,13 +73,32 @@ export function MemberPicker({
     const needle = query.trim().toLocaleLowerCase();
     return members
       .filter((member) => member.value === chosen || !taken.has(member.value))
-      .filter((member) => needle === '' || memberName(member, labels.unnamed).toLocaleLowerCase().includes(needle))
+      // **Label OR code**, which is `ChoiceSet`'s own filter beside this one and was missed here
+      // when this component was written (task 36.8). The code is the half a reporter has in hand:
+      // B7's waste entries are matched against a waste manifest that carries `01 01 01` and not the
+      // English sentence, and it is the only part of an entry that is language-independent — which
+      // matters most in exactly the domain EFRAG publishes in one language.
+      .filter(
+        (member) =>
+          needle === '' ||
+          memberName(member, labels.unnamed).toLocaleLowerCase().includes(needle) ||
+          (member.code ?? '').toLocaleLowerCase().includes(needle),
+      )
+      // **Capped, which `ChoiceSet` does three lines below its own filter and this did not**
+      // (spec review, 8 Sep 2026). Not a limit on the domain — every member stays reachable by
+      // typing — but on what is rendered: B7's waste list is 842 entries, and an open listbox
+      // holding all of them is a scroll nobody uses and a paint NFR-43 has to pay for. The filter
+      // was copied from `ChoiceSet` and the cap in the same loop was not.
+      .slice(0, MAX_OFFERED)
       .map((member) => ({
         value: member.value,
         label: memberName(member, labels.unnamed),
-        ...(member.label !== null && member.code !== null ? { description: member.code } : {}),
+        // The code where there is one, and the hazard mark where the classification makes the
+        // distinction — EFRAG's B7 instruction is *select a type of waste that is Hazardous or
+        // Non-Hazardous*, and nothing else the reader sees says which this is (task 36.8).
+        ...describe(member, labels),
       }));
-  }, [members, taken, chosen, query, labels.unnamed]);
+  }, [members, taken, chosen, query, labels]);
 
   return (
     <Combobox
@@ -72,6 +110,11 @@ export function MemberPicker({
       query={query}
       onQueryChange={setQuery}
       options={options}
+      // The anatomy's own help slot, which is where a note about the control belongs rather than
+      // beside it: `Combobox` associates it with `aria-describedby`, so it is announced with the
+      // field instead of being a sentence a screen reader meets on its own.
+      {...(labels.language === null ? {} : { help: labels.language })}
+      {...(memberLang === null ? {} : { optionsLang: memberLang })}
       placeholder={labels.placeholder}
       promptLabel={labels.prompt}
       emptyLabel={labels.empty}
@@ -93,5 +136,26 @@ export function MemberPicker({
  * `AmmoniaNH3Member` at a reporter — the shape the user-facing-text rule forbids. The
  * classification's own code is the honest middle step; a neutral word is the floor.
  */
+/**
+ * How many options an open listbox renders at once — `ChoiceSet`'s own cap, and its reason.
+ *
+ * Not a limit on the domain: every member stays reachable by typing, and the filter runs over all
+ * of them. It bounds the *paint*, which is what NFR-43's interaction budget is spent on — B7's
+ * waste list is 842 entries and B1's activity domain 1 047.
+ */
+const MAX_OFFERED = 50;
+
+/** The second line under an option: its code, and whether the classification calls it hazardous. */
+function describe(
+  member: DisclosureOption,
+  labels: { readonly hazardous: string; readonly nonHazardous: string },
+): { readonly description?: string } {
+  const marks = [
+    member.code,
+    member.hazardous === null ? null : member.hazardous ? labels.hazardous : labels.nonHazardous,
+  ].filter((mark): mark is string => mark !== null);
+  return marks.length === 0 ? {} : { description: marks.join(' · ') };
+}
+
 export const memberName = (member: DisclosureOption | undefined, unnamed: string): string =>
   member?.label ?? member?.code ?? unnamed;

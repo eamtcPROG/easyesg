@@ -1097,11 +1097,15 @@
         "names": {
           "IdentifierOfSiteTypedAxis": "Site",
           "IdentifierOfSubsidiaryTypedAxis": "Subsidiary",
-          "IdentifierOfMaterialTypedAxis": "Material"
+          "IdentifierOfMaterialTypedAxis": "Material",
+          "TypeOfWasteAxis": "Type of waste"
         },
         "fallbackName": "Row",
         "addRow": "Add a row",
-        "unassignedRow": "{name} — to choose"
+        "unassignedRow": "{name} — to choose",
+        "domainLanguage": "This classification is published in English only, so the names below are in English. The code beside each entry is the one from the official list.",
+        "hazardous": "Hazardous",
+        "nonHazardous": "Non-hazardous"
       }
     }
   }

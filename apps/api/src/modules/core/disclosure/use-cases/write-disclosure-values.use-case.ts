@@ -76,11 +76,23 @@ export class WriteDisclosureValues {
     // not send one is not the layer that can guarantee nobody does.
     const misdimensioned = command.values.filter((value) => {
       if (value.dimensionKey === '') return false;
-      return !known.get(value.elementKey)?.axes.some((key) =>
-        this.taxonomy
-          .axis({ standard: TAXONOMY_STANDARD.VSME, version: report.taxonomyVersion, key })
-          ?.members.some((member) => member.key === value.dimensionKey),
-      );
+      return !known.get(value.elementKey)?.axes.some((key) => {
+        const axis = this.taxonomy.axis({
+          standard: TAXONOMY_STANDARD.VSME,
+          version: report.taxonomyVersion,
+          key,
+        });
+        if (axis === null) return false;
+        // **A category is not an answer** (task 36.8, convention review): EFRAG's own workbook says
+        // a reporter must select a type of waste rather than a category, so a member with children
+        // is refused here for the same reason an undeclared one is — the step read offers only the
+        // leaves, and a row under a category would draw on every element of the axis while
+        // rendering *unnamed*, since the picker no longer carries it.
+        const parents = new Set(axis.members.flatMap((m) => (m.parent === null ? [] : [m.parent])));
+        return axis.members.some(
+          (member) => member.key === value.dimensionKey && !parents.has(member.key),
+        );
+      });
     });
     if (misdimensioned.length > 0) throw new UnknownDisclosureDimensionError();
 

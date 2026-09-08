@@ -1097,11 +1097,15 @@
         "names": {
           "IdentifierOfSiteTypedAxis": "Amplasament",
           "IdentifierOfSubsidiaryTypedAxis": "Filială",
-          "IdentifierOfMaterialTypedAxis": "Material"
+          "IdentifierOfMaterialTypedAxis": "Material",
+          "TypeOfWasteAxis": "Tipul de deșeu"
         },
         "fallbackName": "Rând",
         "addRow": "Adăugați un rând",
-        "unassignedRow": "{name} — de ales"
+        "unassignedRow": "{name} — de ales",
+        "domainLanguage": "Această clasificare este publicată doar în engleză, așa că denumirile de mai jos sunt în engleză. Codul din dreptul fiecărei intrări este cel din nomenclatorul oficial.",
+        "hazardous": "Periculos",
+        "nonHazardous": "Nepericulos"
       }
     }
   }

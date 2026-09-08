@@ -73,6 +73,13 @@ export interface ComboboxProps {
   /** Visually hidden but present for assistive technology, as `Select`'s is. */
   labelHidden?: boolean;
   help?: ReactNode;
+  /**
+   * The language the *options* are written in, where it is not the page's (WCAG 2.2 SC 3.1.2).
+   *
+   * A BCP 47 tag, applied to the listbox. Omitted is the ordinary case — the options are in the
+   * page's own language and the attribute would be noise.
+   */
+  optionsLang?: string;
   /** The inline state message. Its presence is what marks the field invalid. */
   error?: ReactNode;
   /** The chosen option's value, or `''` for nothing chosen. */
@@ -103,6 +110,7 @@ export function Combobox({
   label,
   labelHidden = false,
   help,
+  optionsLang,
   error,
   value,
   onValueChange,
@@ -250,7 +258,16 @@ export function Combobox({
             onOpenAutoFocus={(event) => event.preventDefault()}
             onCloseAutoFocus={(event) => event.preventDefault()}
           >
-            <ul id={listId} role="listbox" aria-label={typeof label === 'string' ? label : undefined}>
+            <ul
+              id={listId}
+              role="listbox"
+              aria-label={typeof label === 'string' ? label : undefined}
+              // WCAG 2.2 SC 3.1.2 *Language of Parts*, Level AA: where a domain's options are
+              // published in a language the page is not written in — EFRAG's EU List of Waste is
+              // English only — the passage must be marked so assistive technology pronounces it.
+              // On the list rather than each option, because a classification is one language.
+              {...(optionsLang === undefined ? {} : { lang: optionsLang })}
+            >
               {options.map((option, index) => (
                 <li
                   key={option.value}

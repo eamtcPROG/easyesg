@@ -1,3 +1,4 @@
+import type { Locale } from '@easyesg/i18n';
 import type { DisclosureKind } from '@easyesg/vsme';
 import type { PeriodType } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
@@ -109,6 +110,20 @@ export interface DisclosureOption {
   readonly label: string | null;
   /** The classification's own code where it has one — `01.11` for a NACE class — for a picker. */
   readonly code: string | null;
+  /**
+   * Whether the classification marks this entry hazardous — `null` where it says nothing (task 36.8).
+   *
+   * **Carried because EFRAG's own instruction cannot be followed without it**: B7's waste table says
+   * *"select a Type of waste (Hazardous or Non-Hazardous) rather than a category"*, and nothing else
+   * a reader sees expresses the distinction. The published list marks it with an asterisk on the
+   * code — `01 03 04*` — which this platform's extracted `code` does not carry, and the member key
+   * that does may not reach a reader.
+   *
+   * `null` is not `false`: a NACE class and a pollutant are not *non-hazardous*, they are outside a
+   * classification that makes the distinction at all — the port's own `TaxonomyMember.hazardous`
+   * draws the same three-way line.
+   */
+  readonly hazardous: boolean | null;
 }
 
 /**
@@ -270,6 +285,26 @@ export interface DisclosureAxis {
   readonly key: string;
   /** What to call the axis on screen — its default member's label, which is the domain's own name. */
   readonly label: string | null;
-  /** Every member the reporter may report along, worded in the request's locale. */
+  /**
+   * Every member the reporter may report along, worded in the request's locale where anything words
+   * it — **the domain's leaves only** (task 36.8).
+   *
+   * A member with children is a *category*, and EFRAG says in the workbook itself that a category
+   * is not a valid answer: B7's waste table instructs *"select a Type of waste (Hazardous or
+   * Non-Hazardous) rather than a category"*. Derived from parentage rather than registered, unlike
+   * the axis's shape, because parentage is in the artefact where shape is nowhere in the package.
+   */
   readonly members: readonly DisclosureOption[];
+  /**
+   * The language the member names are actually in, where that is **not** the reader's (task 36.8).
+   *
+   * `null` is the ordinary answer and means *in the reader's own language*. EFRAG publishes the EU
+   * List of Waste in English alone, so B7's picker answers `en` for every locale but one, and the
+   * screen says so — the on-screen counterpart of what UX-47 and UX-98 require of the export.
+   *
+   * **Not `LabelStanding`**, which these names would answer `official` to: that vocabulary is about
+   * *authority* — whose words these are — and is silent about which language they are in. Both are
+   * true of a waste entry at once.
+   */
+  readonly memberLanguage: Locale | null;
 }

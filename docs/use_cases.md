@@ -799,7 +799,9 @@ their numbers put them.
 - **Main success scenario:**
   1. The Contributor describes circularity practices.
   2. The Contributor reports waste quantities split into hazardous and non-hazardous, with the share diverted to recycling or reuse.
+  3. The Contributor reports the annual mass-flow of the relevant materials used — each material by name with its weight or volume — and the totals across them.
 - **Business rules:** Narrative and quantitative content are captured together so a figure can be explained in context.
+- **Amended 8 Sep 2026 (project owner), against EFRAG's own package rather than by inference.** The module is *resource use*, circular economy **and** waste, and the two steps named the last two: **five elements over two sections went unmentioned** — `[1210] Breakdown of annual mass-flow of relevant materials used` (`NameOfMaterialUsed`, `WeightOfMaterialUsed`, `VolumeOfMaterialUsed`, a repeating group over `IdentifierOfMaterialTypedAxis`) and `[1220] Total annual mass-flow of materials used` (`TotalMassOfMaterialUsed`, `TotalVolumeOfMaterialUsed`). Step 2's own reading was checked and holds: the hazardous/non-hazardous split is the six undimensioned totals in `[1200]`, and the share diverted sits on the waste axis. Found by task 36.8's spec review — the third module in three days whose use case described less than its module, which is why the check is now a standing rule (`architecture.md` §12.5.6).
 - **Related FRs:** FR-24, FR-29
 
 ### UC-26 — Complete B8 — Workforce characteristics

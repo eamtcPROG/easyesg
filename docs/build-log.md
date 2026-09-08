@@ -13148,6 +13148,127 @@ applied fails the `m³` assertion and the stored `unit_code`; and removing manuf
 water rule's NACE list fails the applicability assertion — which is also the check the pre-existing
 one-directional case could never have made.
 
+## Task 36.8 — B7, and the rule that reached one of three readers · 2026-09-09
+
+B7 (UC-25, FR-24, FR-29) is the largest module in Basic — **19 elements over five sections** — and
+the only one carrying all three group shapes at once: a classification over the 973-member EU List
+of Waste (36.5's), a typed axis for materials (36.2's, named by 36.6's), and ten undimensioned
+fields with 91.4's units in both branches. Everything the last five tasks built meets here, and what
+36.8 adds is the domain itself.
+
+### The workbook answered three questions the sources otherwise leave open
+
+**Which members a picker offers.** EFRAG's B7 table carries the instruction *"Please select a Type
+of waste (Hazardous or Non-Hazardous) rather than a category else an ERROR message will appear."*
+That is *select a leaf*, so the picker filters by parentage. **Measured before choosing to derive it
+rather than register it**: the leaf set and the hazard-flagged set are identical, 842 and 842, and
+the filter is a **no-op** for B4's flat pollutant list — which is what makes a derived rule safe
+where the axis's *shape* had to be configuration.
+
+**How many figures a waste row asks.** The taxonomy gives the axis six elements — diverted, disposal
+and total, each `…Mass` and `…Volume` — where the workbook shows three quantity columns and a
+mass-or-volume switch. **Six fields, and the divergence recorded** (project owner): pairing them is a
+rule no source states, it would be an inventory addition, and 36.8's own row requires B7 be carried
+*"without a bespoke field"*. Half of every waste row is blank by construction and the Excel export
+inherits the fold.
+
+**What language the names are in.** All 973 members carry an `en` label and nothing else, so a
+Romanian reporter meets Romanian element labels above an English picker. `DisclosureAxis` carries
+the language rather than a flag, so the note disappears by itself the day names are authored.
+**Deliberately not `LabelStanding`**: these words are EFRAG's own, which that vocabulary would call
+`official` — true about authority and silent about language, and both are true of a waste entry.
+
+### The rule that reached one of the three places that decide it
+
+Both reviews found the same defect from opposite ends, and it is the sharpest thing here: the leaf
+rule was implemented in `MemberResolver.domainOf` and **not** in `admits` or in
+`WriteDisclosureValues`.
+
+That is not merely incomplete — it is **worse than not having the rule**. Before it, a stored
+chapter key rendered its English name; after it, the same key still passed both guards, still drew a
+row on all six waste elements, and now rendered *unnamed*, because the picker no longer carried it.
+The write use case argues the point directly above the check that was missing: *the client that must
+not send one is not the layer that can guarantee nobody does.* One `answerable()` now answers for
+all three.
+
+**And the fix for it introduced a second regression the browser caught.** Indexing the members to
+kill an 842-element `find` per row per render, I resolved each row's member from
+`entry.dimensionKey` — but a member the reporter has *just picked* lives in the row's own state
+until a value is written under it, so a fresh waste entry rendered *Fără denumire*. The index is
+passed down and looked up inside the row now. Two fixes, one from each review, and the journey
+between them is what stopped the second shipping.
+
+### What else the reviews found
+
+**`memberLanguage` was `string` where the value is a `Locale`** — so `apps/web` could only test it
+for null, and its note hardcoded *"published in English only"*: a second domain in some other
+language would have been described wrongly with nothing failing. Derived from `LOCALES` now, on
+`session.response.dto.ts`'s precedent.
+
+**The hazard flag was loaded and dropped.** `TaxonomyMember.hazardous` is populated for all 842
+leaves and `domainOf` discarded it — so EFRAG's own instruction was unfollowable at the control it
+is about. Our extracted `code` is `01 03 04` where the published list writes `01 03 04*`, the
+asterisk being how it marks a hazardous entry, and only the member key carried the distinction. It
+is on the option now (project owner), shown beside the code, and `null` rather than `false` wherever
+a classification makes no such distinction.
+
+**`ChoiceSet`'s render cap was not carried across, and the domain it protects grew nine-fold.** The
+filter was copied from `ChoiceSet` and `MAX_OFFERED = 50` three lines below it was not — so an
+unfiltered B7 picker rendered 842 options against NFR-43's interaction budget. The same reading
+found `MemberPicker`'s own docblock still arguing from *94 pollutants*.
+
+**WCAG 2.2 SC 3.1.2 is a gap inside a recorded decision.** The language note is prose a sighted
+reader sees; *Language of Parts* is Level AA and asks for the passage marked. `Combobox` gained an
+`optionsLang` for the listbox and the row's legend carries `lang` once a member is chosen — and
+**axe cannot detect either way**, so NFR-75's stated CI verification stays green whether or not it is
+there. Green gate, real gap, which is this repository's recurring shape.
+
+**Two prose counts were wrong** — *nine* undimensioned figures where B7 has ten fields (eight
+figures, a boolean, a narrative), in the task row and the e2e docblock.
+
+### UC-25, and the third time in three days
+
+The spec review asked 36.3's question again and B7 answered it worst of the three: the module is
+*resource use*, circular economy **and** waste, and UC-25's steps named the last two — **five material
+elements over two sections went unmentioned**. Step 2's own reading was checked and holds: the
+hazardous/non-hazardous split is the six undimensioned totals, and the share diverted sits on the
+axis.
+
+**So it is a standing rule now** (project owner), recorded in §12.5.6: a module slice opens the
+published package alongside the artefact and holds its use case to what B*n* actually asks. The
+pattern is not carelessness in the writing — `use_cases.md` predates the extraction and was written
+from the standard's **prose**, so it is systematically less precise than the package, and nothing
+catches it because a use case is not a gate and a module whose elements all render satisfies every
+check this repository has. UC-20, UC-24 and UC-25 were each raised as though new; 36.9 … 36.12 will
+not be.
+
+### Reviews — both on `opus`
+
+Eleven findings between them, all fixed. `convention-review` found four: the leaf rule's three
+readers, `memberLanguage` as a bare string, the English-borrowing rule applied at one of two sites,
+and the per-row `find`. `spec-review` found seven, three of them the same defects from the record's
+side, plus UC-25, the dangling §12.5.6 citation for the plan-row changes, the hazard flag, SC 3.1.2
+and the miscount.
+
+The **NACE branch is deliberately excluded** from the language note and the reason is the shape of
+the gap: its fallback is per *member* rather than per domain — most activity classes are named in
+the reader's language and a few are not — so *this classification is published in English only*
+would be false of it. A per-member marker is a different mechanism.
+
+`gate-integrity-review` was not run, per task 36.5's entry: it executes suites and belongs with
+`gates:clean` at task 36's parent close.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm openapi:check`, `pnpm docs:check` green; **670** api unit,
+**318** web unit, **110** ui unit, **835** api e2e and **149** browser tests.
+
+Proven to bite, by mutation, each restored afterwards: offering categories fails the leaf case;
+`memberLanguage: null` fails the language case while B4's own case fails the opposite hardcoding;
+the write accepting a category fails two cases; dropping the hazard flag fails one; and in the
+browser, a picker that stops matching on the code times out where a reporter would have been
+searching by `01 01 01`, and a suppressed note fails the text assertion.
+
 ## Task 100 — The counts in the CLAUDE.md files are compared to nothing · 2026-09-08
 
 Appended by the project owner after a CLAUDE.md audit across all four files. The audit's headline

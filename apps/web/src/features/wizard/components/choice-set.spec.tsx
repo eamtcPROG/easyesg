@@ -29,6 +29,9 @@ const LABELS = {
 const option = (value: string, label: string | null, code: string | null = null): DisclosureOption => ({
   value,
   label,
+  // `null` rather than `false`: these options are not from a classification that makes EFRAG's
+  // hazardous/non-hazardous distinction at all (task 36.8).
+  hazardous: null,
   code,
 });
 

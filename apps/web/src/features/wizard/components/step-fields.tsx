@@ -5,6 +5,7 @@ import {
   DISCLOSURE_STATE,
   type DisclosureAxis,
   type DisclosureField as DisclosureFieldShape,
+  type DisclosureOption,
   type DisclosureState,
 } from '@easyesg/contracts';
 import {
@@ -121,6 +122,13 @@ export function StepFields({
     [TYPED_AXIS.SITE]: tGroup('names.IdentifierOfSiteTypedAxis'),
     [TYPED_AXIS.SUBSIDIARY]: tGroup('names.IdentifierOfSubsidiaryTypedAxis'),
     [TYPED_AXIS.MATERIAL]: tGroup('names.IdentifierOfMaterialTypedAxis'),
+    // **A classification is named by its own domain where EFRAG names one, and only otherwise from
+    // here** (task 36.8). B4's pollutant axis has a default member, so the api answers *Tipul de
+    // poluant* from the member catalogue and this entry is never reached for it. The waste axis has
+    // none — its domain root is in neither the members map nor any catalogue — so the name comes
+    // from the workbook's own column header, *Type of waste*, authored in three locales here rather
+    // than hand-edited into a members catalogue the extractor regenerates.
+    [CLASSIFICATION_AXIS.WASTE]: tGroup('names.TypeOfWasteAxis'),
   };
 
   // How many rows the reporter has added to each axis beyond the ones the api served. One value
@@ -155,6 +163,20 @@ export function StepFields({
   const takenByAxis = useMemo(
     () => new Map(axes.map((axis) => [axis.key, membersTaken(entries, axis.key)])),
     [axes, entries],
+  );
+
+  /**
+   * Each classification's members indexed by value, built once for the step (convention review,
+   * 8 Sep 2026).
+   *
+   * `ClassificationRow` needs its own member to write a legend, and a `find` there is a linear scan
+   * **per row per render** — of 94 pollutants before task 36.8 and of **842 waste entries** after
+   * it, while this component re-renders on every autosave transition. That is `js-index-maps`
+   * exactly, and the same argument `takenByAxis` above was memoized for.
+   */
+  const membersByAxis = useMemo(
+    () => new Map(axes.map((axis) => [axis.key, new Map(axis.members.map((m) => [m.value, m]))])),
+    [axes],
   );
 
   /**
@@ -246,6 +268,8 @@ export function StepFields({
             key={`${entry.axis} ${entry.dimensionKey}`}
             entry={entry}
             domain={axisOf(entry.axis)}
+            axisNames={rowNames}
+            byValue={membersByAxis.get(entry.axis) ?? NO_MEMBERS_BY_VALUE}
             taken={takenByAxis.get(entry.axis) ?? NO_MEMBERS}
             readOnly={readOnly}
             action={
@@ -310,6 +334,8 @@ export function StepFields({
 function ClassificationRow({
   entry,
   domain,
+  axisNames,
+  byValue,
   taken,
   readOnly,
   action,
@@ -317,6 +343,17 @@ function ClassificationRow({
 }: {
   readonly entry: StepClassificationEntry;
   readonly domain: DisclosureAxis | undefined;
+  /** What this app calls each axis, for the ones EFRAG's package words nowhere. */
+  readonly axisNames: Readonly<Record<string, string>>;
+  /**
+   * The axis's members indexed by value, built once for the step.
+   *
+   * **The index rather than the resolved member**, because the row's member is not always
+   * `entry.dimensionKey`: a member the reporter has just picked lives in this component's own state
+   * until a value is written under it, so the parent cannot resolve it. Passing the pre-resolved
+   * member made a just-chosen waste entry render *unnamed* — caught by the browser journey.
+   */
+  readonly byValue: ReadonlyMap<string, DisclosureOption>;
   readonly taken: ReadonlySet<string>;
   readonly readOnly: boolean;
   readonly action: ReactNode;
@@ -328,6 +365,10 @@ function ClassificationRow({
   // The reporter's choice for a row the server served without one. `null` means *not chosen here*,
   // which is not the same as the server's `''` — a row the server DID key stays keyed.
   const [picked, setPicked] = useState<string | null>(null);
+
+  // What to call the axis: its own domain's name where EFRAG publishes one, this app's otherwise,
+  // and a neutral word if neither — never the axis key, which is an XBRL identifier.
+  const axisName = domain?.label ?? axisNames[entry.axis] ?? tGroup('fallbackName');
   const member = entry.dimensionKey !== '' ? entry.dimensionKey : (picked ?? '');
 
   // **The legend names the member, never the axis key.** A member the pinned version words in no
@@ -335,14 +376,25 @@ function ClassificationRow({
   // reader, and an unnamed row is a visible defect rather than a plausible-looking wrong word.
   const legend =
     member === ''
-      ? tGroup('unassignedRow', { name: domain?.label ?? tGroup('fallbackName') })
-      : memberName(
-          domain?.members.find((candidate) => candidate.value === member),
-          tField('unnamed'),
-        );
+      ? tGroup('unassignedRow', { name: axisName })
+      : memberName(byValue.get(member), tField('unnamed'));
 
   return (
-    <Fieldset legend={legend} readOnly={readOnly} action={action}>
+    <Fieldset
+      // **The legend is marked too, not just the listbox** (WCAG 2.2 SC 3.1.2): once a member is
+      // chosen its name IS the group's accessible name, so an English waste entry would otherwise
+      // be announced as Romanian by the document's own `lang`. `Fieldset.legend` is a `ReactNode`,
+      // which is what makes this one span rather than a prop on the component.
+      legend={
+        domain?.memberLanguage === null || domain === undefined || member === '' ? (
+          legend
+        ) : (
+          <span lang={domain.memberLanguage}>{legend}</span>
+        )
+      }
+      readOnly={readOnly}
+      action={action}
+    >
       {/* The picker only where the row has no member yet: once a value is stored under one, moving
           it would leave the old key's answers behind under a pollutant nobody reports. Changing an
           unanswered row costs nothing, which is why the choice stays open until then. */}
@@ -352,13 +404,24 @@ function ClassificationRow({
           chosen={member}
           taken={taken}
           onChoose={setPicked}
+          // WCAG 2.2 SC 3.1.2: the api answers which language the names are in, so the listbox is
+          // marked rather than left for a screen reader to pronounce as Romanian (task 36.8).
+          memberLang={domain.memberLanguage}
           labels={{
-            label: domain.label ?? tGroup('fallbackName'),
+            label: axisName,
             placeholder: tField('choose'),
             prompt: tField('choicePrompt'),
             empty: tField('choiceEmpty'),
             loading: tField('choiceLoading'),
             unnamed: tField('unnamed'),
+            hazardous: tGroup('hazardous'),
+            nonHazardous: tGroup('nonHazardous'),
+            // **The wire decides whether to say it, and the catalogue says what** (task 36.8).
+            // `memberLanguage` is `null` wherever the names are in the reader's own — B4's
+            // pollutants are worded in the catalogues — so the note appears only where a domain is
+            // published in a language the reader did not ask for, and stops appearing on its own
+            // the day one is translated.
+            language: domain.memberLanguage === null ? null : tGroup('domainLanguage'),
           }}
         />
       ) : null}
@@ -609,6 +672,9 @@ function groupLegend(
 /** No row of this axis names a member yet. Module-level, so it is one identity rather than many. */
 const NO_MEMBERS: ReadonlySet<string> = new Set();
 
+/** An axis the step serves no domain for. Module-level for `NO_MEMBERS`' reason. */
+const NO_MEMBERS_BY_VALUE: ReadonlyMap<string, DisclosureOption> = new Map();
+
 /**
  * The catalogue namespaces this file reads, declared once because three components read them.
  *
@@ -618,6 +684,14 @@ const NO_MEMBERS: ReadonlySet<string> = new Set();
  */
 const FIELD_MESSAGES = 'organization.wizard.field' as const;
 const GROUP_MESSAGES = 'organization.wizard.group' as const;
+
+/**
+ * The classification axes this product has to name itself — the ones EFRAG's package words nowhere.
+ *
+ * Declared beside `TYPED_AXIS` and for its reasons: the value is EFRAG's axis key, used as a
+ * **message key** and never rendered, written out so the catalogue lookup is type-checked.
+ */
+const CLASSIFICATION_AXIS = { WASTE: 'TypeOfWasteAxis' } as const;
 
 /**
  * The typed axes this product names a row of — B1's two and B7's, at `2026-05-01`.

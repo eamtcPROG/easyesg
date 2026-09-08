@@ -469,6 +469,73 @@ test('B4 reports an emission against a pollutant the reporter names (UC-22)', as
 });
 
 /**
+ * B7 in a browser (UC-25, FR-24, FR-29; task 36.8) — **the module that exercises everything at once.**
+ *
+ * At 19 elements over five sections B7 is the largest in Basic, and the only one carrying all three
+ * group shapes together: a **classification** over the 973-member EU List of Waste (36.5's machinery),
+ * a **typed axis** for materials (36.2's, named by 36.6's rule), and ten undimensioned fields — eight
+ * figures with 91.4's units in both branches, a boolean and a narrative. What is new here is the domain itself: it is published by EFRAG in
+ * English alone, and only its *leaves* are valid answers.
+ */
+test('B7 reports waste against an entry of the published list, and says whose language it is (UC-25)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b7');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B7`);
+
+  // Section 1 is two undimensioned fields, and it is what makes B7 *narrative and figures in one
+  // module* — the thing 36.8's row says the anatomy must carry without a bespoke field.
+  await expect(
+    page.getByRole('group', { name: 'Întreprinderea aplică principiile economiei circulare' }),
+  ).toBeVisible();
+
+  // The waste table's unassigned row, named from the workbook's own column header rather than from
+  // the axis — EFRAG publishes no name for this domain, and `Rând` is what a reader would otherwise
+  // have met.
+  const unassigned = page.getByRole('group', { name: 'Tipul de deșeu — de ales' });
+  await expect(unassigned).toBeVisible();
+
+  const picker = unassigned.getByRole('combobox', { name: 'Tipul de deșeu' });
+  // **The language note, said where the names are** (UX-47 and UX-98's on-screen counterpart). It
+  // is `Combobox`'s help slot, so it is announced with the field rather than as a loose sentence.
+  await expect(unassigned).toContainText('Această clasificare este publicată doar în engleză');
+
+  // A leaf, found by its code — which is what a reporter matches against their own waste manifest,
+  // and the half of the entry that is language-independent.
+  await picker.fill('01 01 01');
+  await page.getByRole('option', { name: /Wastes from mineral metalliferous excavation/u }).click();
+
+  const entry = page.getByRole('group', { name: 'Wastes from mineral metalliferous excavation' });
+  // **Six figures on this row, not three.** EFRAG's sheet shows three quantity columns and a
+  // mass-or-volume switch; the taxonomy models six elements, and §12.5.6 records the divergence
+  // rather than inventing the pairing rule a switch would need.
+  await expect(entry.getByRole('textbox')).toHaveCount(6);
+
+  const diverted = entry.getByRole('textbox', {
+    name: 'Deșeuri direcționate spre reciclare sau reutilizare (masă)',
+  });
+  await diverted.fill('340');
+  await diverted.blur();
+
+  // The figure is keyed to the waste entry the reporter chose, not to the undimensioned row a
+  // classification that ignored its member would have written.
+  const stored = { organizationId, reportId, elementKey: 'WasteDivertedToRecycleOrReuseMass' };
+  await expect
+    .poll(
+      async () =>
+        await disclosureValueOf({
+          ...stored,
+          dimensionKey: 'W-010101-Non-Hazardous-WastesFromMineralMetalliferousExcavationMember',
+        }),
+      { timeout: 15_000 },
+    )
+    .toMatchObject({ valueNumeric: '340', unitCode: 'kg' });
+  expect(await disclosureValueOf(stored)).toBeNull();
+});
+
+/**
  * UX-15's declaration, in a browser (UC-31, FR-32, D-4; task 36.5).
  *
  * *"Every field shall offer the 'not available, with reason' declaration as a first-class action,

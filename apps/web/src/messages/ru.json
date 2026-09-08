@@ -1097,11 +1097,15 @@
         "names": {
           "IdentifierOfSiteTypedAxis": "Площадка",
           "IdentifierOfSubsidiaryTypedAxis": "Дочерняя компания",
-          "IdentifierOfMaterialTypedAxis": "Материал"
+          "IdentifierOfMaterialTypedAxis": "Материал",
+          "TypeOfWasteAxis": "Тип отходов"
         },
         "fallbackName": "Строка",
         "addRow": "Добавить строку",
-        "unassignedRow": "{name} — выберите"
+        "unassignedRow": "{name} — выберите",
+        "domainLanguage": "Этот классификатор опубликован только на английском языке, поэтому названия ниже приведены на английском. Код рядом с каждой записью — из официального перечня.",
+        "hazardous": "Опасные",
+        "nonHazardous": "Неопасные"
       }
     }
   }

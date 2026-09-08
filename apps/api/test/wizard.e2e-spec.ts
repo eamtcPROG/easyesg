@@ -71,7 +71,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     applicable: boolean;
     applicabilityCause: Cause | null;
   }
-  interface Axis { key: string; label: string | null; members: { value: string; label: string | null; code: string | null }[] }
+  interface Axis { key: string; label: string | null; memberLanguage: string | null; members: { value: string; label: string | null; code: string | null; hazardous: boolean | null }[] }
   interface Step { module: string; taxonomyVersion: string; fields: Field[]; axes: Axis[] }
 
   const openPeriod = async (year: number): Promise<string> => {
@@ -853,8 +853,10 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       // Romanian, because the read negotiates a locale and these accounts have no other — which
       // is what shows the member wording is the catalogue's rather than the artefact's English.
       expect(pollutants.members.slice(0, 2)).toEqual([
-        { value: 'AlachlorMember', label: 'Alaclor', code: null },
-        { value: 'AldrinMember', label: 'Aldrin', code: null },
+        // `hazardous: null` rather than `false` — a pollutant is not *non-hazardous*, it is outside
+        // a classification that makes EFRAG's hazardous/non-hazardous distinction at all (36.8).
+        { value: 'AlachlorMember', label: 'Alaclor', code: null, hazardous: null },
+        { value: 'AldrinMember', label: 'Aldrin', code: null, hazardous: null },
       ]);
       // **The default member is not offered**, and that is the decision rather than an omission: it
       // is the domain's root — *Type of pollutant* — so an amount filed against it would be filed
@@ -1001,6 +1003,103 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
           carriedForward: false,
         }],
       }).expect(200);
+    });
+
+    it('offers B7 the waste list’s leaves, in the language EFRAG publishes them (UC-25)', async () => {
+      const step = await stepOf(await createReport(await openPeriod(2026)), 'B7');
+
+      expect(step.axes.map((a) => a.key)).toEqual(['TypeOfWasteAxis']);
+      const waste = step.axes[0];
+
+      // **842 of 973**, which is the whole of the leaf rule: the EU List of Waste is 20 chapters,
+      // 111 sub-chapters and 842 entries, and EFRAG's own workbook says *"select a Type of waste
+      // (Hazardous or Non-Hazardous) rather than a category else an ERROR message will appear."*
+      expect(waste.members).toHaveLength(842);
+      // A chapter and a sub-chapter, named to make the exclusion legible rather than a number.
+      const offered = new Set(waste.members.map((m) => m.value));
+      expect(offered.has('W-01-WastesResultingFromExplorationMiningQuarryingAndPhysicalAndChemicalTreatmentOfMineralsMember')).toBe(false);
+      expect(offered.has('W-0101-WastesFromMineralExcavationMember')).toBe(false);
+      expect(offered.has('W-010101-Non-Hazardous-WastesFromMineralMetalliferousExcavationMember')).toBe(true);
+
+      // **English, and the wire says so.** Every one of the 973 members carries an `en` label and
+      // nothing else, and this read asked in Romanian — so the picker will state it rather than let
+      // a reporter meet an unexplained language switch. `null` here would mean *the reader's own*.
+      expect(waste.memberLanguage).toBe('en');
+      expect(waste.members.find((m) => m.code === '01 01 01')).toEqual({
+        value: 'W-010101-Non-Hazardous-WastesFromMineralMetalliferousExcavationMember',
+        label: 'Wastes from mineral metalliferous excavation',
+        code: '01 01 01',
+        // **EFRAG's own instruction cannot be followed without this** (spec review, 8 Sep 2026):
+        // the workbook says to select a type of waste that is Hazardous or Non-Hazardous, and
+        // nothing else a reader sees says which. The published list marks it with an asterisk on
+        // the code — `01 03 04*` — which this platform's extracted code does not carry, and the
+        // member key that does may not reach a reader.
+        hazardous: false,
+      });
+      expect(waste.members.find((m) => m.code === '01 03 04')?.hazardous).toBe(true);
+      // `null` rather than `false` where the classification makes no such distinction at all.
+      const b4 = await stepOf(await createReport(await openPeriod(2027)), 'B4');
+      expect(b4.axes[0]?.members[0]?.hazardous).toBeNull();
+    });
+
+    it('refuses a category at the write, not only at the picker', async () => {
+      // **The leaf rule's third reader** (convention review, 8 Sep 2026). It reached `domainOf` and
+      // left the write accepting a chapter — which would then draw a row on all six waste elements
+      // *and* render `unnamed`, because the picker no longer carries it: strictly worse than not
+      // having the rule. P-4 again — the client that must not send one is not the layer that can
+      // guarantee nobody does.
+      const reportId = await createReport(await openPeriod(2026));
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [{
+          elementKey: 'WasteDivertedToRecycleOrReuseMass',
+          dimensionKey: 'W-0101-WastesFromMineralExcavationMember',
+          ordinal: 0,
+          valueNumeric: '5',
+          state: DISCLOSURE_STATE.OK,
+          carriedForward: false,
+        }],
+      }).expect(400);
+
+      // And a leaf under the same chapter is accepted, so the refusal is about the category rather
+      // than about the axis.
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [{
+          elementKey: 'WasteDivertedToRecycleOrReuseMass',
+          dimensionKey: 'W-010101-Non-Hazardous-WastesFromMineralMetalliferousExcavationMember',
+          ordinal: 0,
+          valueNumeric: '5',
+          state: DISCLOSURE_STATE.OK,
+          carriedForward: false,
+        }],
+      }).expect(200);
+    });
+
+    it('says nothing about language where the members are named in the reader’s own', async () => {
+      // B4's pollutants are worded in the catalogues, so a Romanian read is answered in Romanian and
+      // the note has nothing to announce. Without this, `memberLanguage` could be hardcoded to `en`
+      // and the case above would not notice.
+      const step = await stepOf(await createReport(await openPeriod(2026)), 'B4');
+      expect(step.axes[0]?.memberLanguage).toBeNull();
+    });
+
+    it('renders every element on the waste axis, mass and volume alike (UC-25)', async () => {
+      // Six, where EFRAG's sheet shows three quantity columns and a mass-or-volume switch — the
+      // divergence `architecture.md` §12.5.6 records rather than designs around, because pairing
+      // `…Mass` with `…Volume` is a rule no source states.
+      const step = await stepOf(await createReport(await openPeriod(2026)), 'B7');
+      expect(
+        step.fields.filter((f) => f.axes.includes('TypeOfWasteAxis')).map((f) => f.elementKey).sort(),
+      ).toEqual([
+        'TotalWasteRecycledReusedAndDirectedToDisposalMass',
+        'TotalWasteRecycledReusedAndDirectedToDisposalVolume',
+        'WasteDirectedToDisposalMass',
+        'WasteDirectedToDisposalVolume',
+        'WasteDivertedToRecycleOrReuseMass',
+        'WasteDivertedToRecycleOrReuseVolume',
+      ]);
+      // And the module carries its other thirteen — the two circularity fields, the six totals, the
+      // material group and its two totals. A classification that swallowed the step would fail here.
+      expect(step.fields.filter((f) => !f.axes.includes('TypeOfWasteAxis'))).toHaveLength(13);
     });
 
     it('offers no domain on a step that has no classification', async () => {

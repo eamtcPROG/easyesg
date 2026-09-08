@@ -6,6 +6,7 @@ import {
   type RegisteredTaxonomy,
   type TaxonomyAxis,
   type TaxonomyElement,
+  type TaxonomyMember,
   type TaxonomyEnumeration,
   type TaxonomyRegistry,
 } from '@api/contracts/taxonomy-registry.port';
@@ -28,6 +29,19 @@ export type WizardVocabulary = Pick<
  * this becomes a read of the organization's country.
  */
 const VOCABULARY_COUNTRY = 'md';
+
+/**
+ * The one language EFRAG publishes the external classifications in (task 36.8).
+ *
+ * Declared here and unexported, on `VOCABULARY_COUNTRY`'s precedent above: it is a fact about the
+ * package this module reads, not a vocabulary anything else shares. All 973 members of the EU List
+ * of Waste carry an `en` label and nothing else — so a Romanian reporter picking a waste entry is
+ * shown English, and `DisclosureAxis.memberLanguage` is how the screen learns to say so.
+ *
+ * **A locale rather than a flag**: the day Romanian names are authored the fallback stops firing and
+ * the note disappears on its own, with nothing to remember to turn off.
+ */
+const PUBLISHED_CLASSIFICATION_LOCALE: Locale = 'en';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
 import type { ApplicabilityRules } from '../interfaces/applicability-rules.interface';
@@ -236,6 +250,7 @@ export class ReadWizardStep {
       registered,
       taxonomy: this.taxonomy,
       memberLabels,
+      locale: query.locale,
       breakdownAxes: this.axisShapes.breakdownAxes({ standard: registered.standard }),
       classificationAxes: this.axisShapes.classificationAxes({ standard: registered.standard }),
     });
@@ -799,11 +814,15 @@ function toField(
 class MemberResolver {
   private readonly cache = new Map<string, readonly string[]>();
 
+  /** A classification's answerable members, per axis — see `answerable`. */
+  private readonly leaves = new Map<string, readonly TaxonomyMember[]>();
+
   constructor(
     private readonly input: {
       readonly registered: RegisteredTaxonomy;
       readonly taxonomy: TaxonomyRegistry;
       readonly memberLabels: Readonly<Record<string, DisclosureLabel>> | null;
+      readonly locale: Locale;
       readonly breakdownAxes: ReadonlySet<string>;
       readonly classificationAxes: ReadonlySet<string>;
     },
@@ -867,23 +886,68 @@ class MemberResolver {
   domainOf(name: string): DisclosureAxis | null {
     const axis = this.axis(name);
     if (axis === null || axis.typed) return null;
+
+    /** The language a published name was shown in, where that is not the reader's (task 36.8). */
+    let borrowed: Locale | null = null;
+    const members = this.answerable(axis)
+      .map((member) => {
+        // The platform's own catalogue first, in the request's locale.
+        const named = this.labelFor(member.key);
+        const shape = { value: member.key, code: member.code, hazardous: member.hazardous };
+        if (named !== null) return { ...shape, label: named };
+        // Then the classification's own published name — its in-locale one where it has it, and
+        // English otherwise, which for the EU List of Waste is every member.
+        const own = member.labels[this.input.locale] ?? null;
+        if (own !== null) return { ...shape, label: own };
+        const english = member.labels[PUBLISHED_CLASSIFICATION_LOCALE] ?? null;
+        if (english !== null) borrowed = PUBLISHED_CLASSIFICATION_LOCALE;
+        // Never the member key, which is an XBRL identifier. The published code is the honest
+        // middle step, as it is for an enumeration.
+        return { ...shape, label: english };
+      });
+
     return {
       key: name,
       label: axis.defaultMember === null ? null : this.labelFor(axis.defaultMember),
-      members: axis.members.map((member) => ({
-        value: member.key,
-        // Its own name where the pinned version has one; never the member key, which is an XBRL
-        // identifier. The published code is the honest middle step, as it is for an enumeration.
-        label: this.labelFor(member.key) ?? member.labels.en ?? null,
-        code: member.code,
-      })),
+      members,
+      memberLanguage: borrowed,
     };
   }
 
-  /** Does this axis declare that member? The domain, never a shape the store happens to hold. */
+  /**
+   * Does this axis admit that member as an **answer**? The domain's leaves, never a shape the store
+   * happens to hold — and never a category (task 36.8).
+   *
+   * **One answer for three readers**, which is what the first version of the leaf rule was not: it
+   * reached `domainOf`'s picker and left this and the write path accepting a category. A category
+   * written by anything but the browser would then have drawn a row on every element of the axis
+   * *and* been rendered `unnamed`, because the picker no longer carries it — a strictly worse
+   * outcome than before the rule existed.
+   */
   admits(name: string, member: string): boolean {
     const axis = this.axis(name);
-    return axis !== null && axis.members.some((candidate) => candidate.key === member);
+    return axis !== null && this.answerable(axis).some((candidate) => candidate.key === member);
+  }
+
+  /**
+   * The members of a classification a reporter may actually answer: its **leaves**.
+   *
+   * EFRAG says so in the workbook itself, on B7's waste table — *"Please select a Type of waste
+   * (Hazardous or Non-Hazardous) rather than a category else an ERROR message will appear."* The EU
+   * List of Waste is 973 members over three levels and only its 842 entries carry the hazard
+   * classification B7 reports on.
+   *
+   * **Derived from parentage rather than registered**, because unlike an axis's *shape* this one is
+   * in the artefact — and it is a no-op for a flat domain like B4's 94 pollutants. Cached per axis:
+   * `admits` is asked once per stored row and would otherwise rebuild the parent set each time.
+   */
+  private answerable(axis: TaxonomyAxis): readonly TaxonomyMember[] {
+    const cached = this.leaves.get(axis.key);
+    if (cached !== undefined) return cached;
+    const parents = new Set(axis.members.flatMap((m) => (m.parent === null ? [] : [m.parent])));
+    const answerable = axis.members.filter((member) => !parents.has(member.key));
+    this.leaves.set(axis.key, answerable);
+    return answerable;
   }
 
   private axis(name: string): TaxonomyAxis | null {
@@ -948,7 +1012,13 @@ class OptionResolver {
       // ISO 3166: the countries the platform registers, named by the client's own catalogue.
       return this.input.vocabulary
         .registeredLegalForms()
-        .map(({ countryCode }) => ({ value: qualify(countryCode.toUpperCase()), label: null, code: countryCode.toUpperCase() }));
+        .map(({ countryCode }) => ({
+          value: qualify(countryCode.toUpperCase()),
+          label: null,
+          code: countryCode.toUpperCase(),
+          // `null`, not `false`: a country is outside a classification that makes the distinction.
+          hazardous: null,
+        }));
     }
 
     if (enumeration.taxonomy === ENUMERATION_TAXONOMY.NACE) {
@@ -960,10 +1030,16 @@ class OptionResolver {
       return enumeration.members.map((member) => ({
         value: qualify(member.key),
         code: member.code,
+        hazardous: member.hazardous,
         label:
           (member.code === null ? undefined : named.get(member.code)?.[this.input.locale]) ??
           member.labels[this.input.locale] ??
-          member.labels.en ??
+          // **Not marked as borrowed, and that is a decision** (spec review, 8 Sep 2026): this
+          // fallback is per MEMBER, not per domain — most NACE classes are named in the reader's
+          // language and a few are not — so a domain-level note would assert something false about
+          // the classification as a whole. A per-member marker is a different mechanism and belongs
+          // with whichever task first needs one; `architecture.md` §12.5.6 carries the reasoning.
+          member.labels[PUBLISHED_CLASSIFICATION_LOCALE] ??
           null,
       }));
     }
@@ -971,6 +1047,7 @@ class OptionResolver {
     return enumeration.members.map((member) => ({
       value: qualify(member.key),
       code: member.code,
+      hazardous: member.hazardous,
       label: this.input.memberLabels?.[member.key]?.text ?? null,
     }));
   }
