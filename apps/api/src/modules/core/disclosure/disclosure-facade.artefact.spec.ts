@@ -24,10 +24,7 @@ describe('the generated disclosure facade', () => {
   ) as {
     modules: string[];
     axes: Record<string, { typed: boolean; members: string[] }>;
-    elements: Record<
-      string,
-      { module: string | null; kind: string; axes?: string[] }
-    >;
+    elements: Record<string, { modules: string[]; kind: string; axes?: string[] }>;
   };
 
   const groups = Object.values(DISCLOSURES) as Record<string, Disclosure>[];
@@ -36,7 +33,32 @@ describe('the generated disclosure facade', () => {
   it('generates a descriptor for every registered element, and no others', () => {
     // Both directions. A missing descriptor is a disclosure no typed caller can reach; an extra one
     // is a key that would write a row the taxonomy does not recognise and no export would carry.
-    expect(descriptors.map(([, d]) => d.key).sort()).toEqual(Object.keys(artefact.elements).sort());
+    // **Unique keys**, because an element presented in two modules is emitted under both (task
+    // 36.4) — so this asserts coverage, and the case below asserts the duplication is the intended
+    // one rather than a generator that lost track of what it had already written.
+    expect([...new Set(descriptors.map(([, d]) => d.key))].sort()).toEqual(
+      Object.keys(artefact.elements).sort(),
+    );
+  });
+
+  /**
+   * **A disclosure presented in two modules is reachable under both** (task 36.4).
+   *
+   * The eight B3/C3 emissions are one shared hypercube in EFRAG's package. Grouping the facade by a
+   * single module would leave whichever group lost the tie-break silently short — which is the
+   * defect this task repaired in the artefact, reproduced one layer up. Named rather than counted,
+   * for the same reason the artefact's own guard names them: a count cannot see a lost relation.
+   */
+  it('reaches a disclosure presented in two modules under each of them', () => {
+    const shared = Object.entries(artefact.elements).filter(([, e]) => e.modules.length > 1);
+    expect(shared.length).toBeGreaterThan(0);
+
+    for (const [key, element] of shared) {
+      const homes = groups.filter((group) =>
+        Object.values(group).some((descriptor) => descriptor.key === key),
+      );
+      expect({ key, reachedIn: homes.length }).toEqual({ key, reachedIn: element.modules.length });
+    }
   });
 
   it('carries the element key verbatim, never a transformation of it', () => {
@@ -82,11 +104,16 @@ describe('the generated disclosure facade', () => {
       }
     }
 
-    // And the pair that would collide if the numbers were dropped rather than spelled.
-    const emissions = descriptors
-      .filter(([, d]) => d.key === 'GrossScope1GreenhouseGasEmissions' || d.key === 'GrossScope3GreenhouseGasEmissions')
-      .map(([accessor]) => accessor)
-      .sort();
+    // And the pair that would collide if the numbers were dropped rather than spelled. Deduped
+    // because both are presented in B3 and C3 (task 36.4) and this case is about the *spelling*;
+    // that they appear under two groups is the case above's subject, not this one's.
+    const emissions = [
+      ...new Set(
+        descriptors
+          .filter(([, d]) => d.key === 'GrossScope1GreenhouseGasEmissions' || d.key === 'GrossScope3GreenhouseGasEmissions')
+          .map(([accessor]) => accessor),
+      ),
+    ].sort();
     expect(emissions).toEqual([
       'grossScopeOneGreenhouseGasEmissions',
       'grossScopeThreeGreenhouseGasEmissions',
@@ -124,9 +151,9 @@ describe('the generated disclosure facade', () => {
   });
 
   it('covers the elements the standard files under no module', () => {
-    // `module: null` is a real answer, not a missing one (the taxonomy port says so): three
+    // An empty `modules` is a real answer, not a missing one (the taxonomy port says so): three
     // pillar-level catch-alls belong to Environment / Social / Governance rather than to B1…C9.
-    const unmoduled = Object.entries(artefact.elements).filter(([, e]) => e.module === null);
+    const unmoduled = Object.entries(artefact.elements).filter(([, e]) => e.modules.length === 0);
     expect(Object.keys(DISCLOSURES.general)).toHaveLength(unmoduled.length);
   });
 });

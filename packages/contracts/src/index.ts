@@ -164,10 +164,12 @@ export type LegalDate = components['schemas']['LegalDateDto'];
 export {
   COLUMN_OF_KIND,
   DISCLOSURE_KIND,
+  DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
   REPORT_STATUS,
   VALUE_COLUMN,
   type DisclosureKind,
+  type DisclosureOrigin,
   type DisclosureState,
   type ReportStatus,
   type ValueColumn,

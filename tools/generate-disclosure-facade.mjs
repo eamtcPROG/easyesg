@@ -91,14 +91,29 @@ const artefact = JSON.parse(
   readFileSync(join('config', 'seed', `vsme-taxonomy.${version}.json`), 'utf8'),
 );
 
-/** Elements the standard files under no numbered module — the three pillar-level catch-alls. */
+/** Elements the standard files under no numbered module — the pillar-level catch-alls. */
 const UNMODULED = 'general';
 
+/**
+ * **An element is emitted under every module that presents it** (task 36.4).
+ *
+ * Eight disclosures are presented in B3 *and* C3 — one shared hypercube — so grouping by a single
+ * module would leave whichever group lost the tie-break silently short. That is the defect this
+ * task repaired in the artefact itself, and reproducing it here would only move it one layer up:
+ * `DISCLOSURES.cThree` missing the emissions C3 asks about is no better than B3 missing them.
+ *
+ * The two descriptors are separate frozen literals rather than one shared constant. A `Disclosure`
+ * is identified by its `key` and every reader compares on that, so structural equality is the
+ * property that matters; emitting a constant and referencing it twice would buy identity nobody
+ * asks for at the cost of generated code that no longer reads as a plain table.
+ */
 const groups = new Map();
 for (const [key, element] of Object.entries(artefact.elements)) {
-  const group = element.module === null ? UNMODULED : accessor(element.module);
-  if (!groups.has(group)) groups.set(group, []);
-  groups.get(group).push([key, element]);
+  const homes = element.modules.length === 0 ? [UNMODULED] : element.modules.map(accessor);
+  for (const group of homes) {
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push([key, element]);
+  }
 }
 
 /**
@@ -191,8 +206,14 @@ const dir = join('packages', 'vsme', 'src', 'generated');
 const out = join(dir, `${version}.ts`);
 writeFileSync(out, `${lines.join('\n')}\n`);
 
+// Both numbers, because they differ and the difference is the point: a disclosure presented in two
+// modules is emitted under both, so the accessor count exceeds the element count by exactly the
+// number of shared placements. Printing only the first is how a relation hides behind a count.
 const count = Object.keys(artefact.elements).length;
-console.log(`${count} disclosures in ${moduleOrder.length} groups written to ${out}`);
+const accessors = [...groups.values()].reduce((total, group) => total + group.length, 0);
+console.log(
+  `${count} disclosures as ${accessors} accessors in ${moduleOrder.length} groups written to ${out}`,
+);
 
 // The convention this file exists to keep, asserted against its own output rather than trusted.
 const emitted = readFileSync(out, 'utf8');

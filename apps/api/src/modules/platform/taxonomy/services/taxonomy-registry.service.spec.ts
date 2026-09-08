@@ -29,7 +29,7 @@ describe('TaxonomyRegistryService (FR-65, FR-66)', () => {
   };
 
   const element = (over: Record<string, unknown> = {}) => ({
-    module: 'B3',
+    modules: ['B3'],
     section: '[1090] B3 - Environment',
     order: 1,
     parent: null,
@@ -63,7 +63,7 @@ describe('TaxonomyRegistryService (FR-65, FR-66)', () => {
           version: '2026-05-01',
           key: 'SomeElementNobodyHasNamedInCode',
         }),
-      ).toMatchObject({ key: 'SomeElementNobodyHasNamedInCode', kind: 'numeric', module: 'B3' });
+      ).toMatchObject({ key: 'SomeElementNobodyHasNamedInCode', kind: 'numeric', modules: ['B3'] });
     });
 
     it('registers two versions side by side, so a pinned report resolves its own (DR-4)', () => {
@@ -146,19 +146,22 @@ describe('TaxonomyRegistryService (FR-65, FR-66)', () => {
         version({
           modules: ['B1', 'B3'],
           elements: {
-            ThirdInB3: element({ module: 'B3', order: 2 }),
-            SecondInB3: element({ module: 'B3', order: 1 }),
-            FirstInB1: element({ module: 'B1', order: 1 }),
-            // The standard's pillar-level catch-alls carry no module. `indexOf` answering -1 would
-            // sort them ahead of B1, which is the bug this case exists for.
-            PillarCatchAll: element({ module: null, order: 1 }),
+            ThirdInB3: element({ modules: ['B3'], order: 2 }),
+            SecondInB3: element({ modules: ['B3'], order: 1 }),
+            FirstInB1: element({ modules: ['B1'], order: 1 }),
+            // An element in two modules sorts by its first, which is the one `order` describes
+            // (task 36.4) — so this sits between B1's and B3's own, not after both.
+            SharedB1AndB3: element({ modules: ['B1', 'B3'], order: 2 }),
+            // The standard's pillar-level catch-alls carry no module at all. `indexOf` answering -1
+            // would sort them ahead of B1, which is the bug this case exists for.
+            PillarCatchAll: element({ modules: [], order: 1 }),
           },
         }),
       ]);
 
       expect(
         registry.taxonomy({ standard: 'vsme', version: '2026-05-01' })?.elements.map((e) => e.key),
-      ).toEqual(['FirstInB1', 'SecondInB3', 'ThirdInB3', 'PillarCatchAll']);
+      ).toEqual(['FirstInB1', 'SharedB1AndB3', 'SecondInB3', 'ThirdInB3', 'PillarCatchAll']);
     });
 
     it('resolves a domain published in another taxonomy, so no caller learns of the second artefact', () => {

@@ -220,6 +220,12 @@ export const DISCLOSURES = {
       axis: 'BreakdownOfEnergyConsumptionAxis',
       members: ['RenewableEnergyMember', 'NonRenewableEnergyMember'],
     } as Disclosure<Dimensioned<string, 'RenewableEnergyMember' | 'NonRenewableEnergyMember'>>,
+    grossScopeOneGreenhouseGasEmissions: {
+      key: 'GrossScope1GreenhouseGasEmissions',
+      kind: 'numeric',
+      axis: 'ReportingScopesAxis',
+      members: ['BaselineYearMember', 'TargetYearMember', 'CurrentlyStatedMember'],
+    } as Disclosure<Dimensioned<string, 'BaselineYearMember' | 'TargetYearMember' | 'CurrentlyStatedMember'>>,
     totalEnergyConsumption: {
       key: 'TotalEnergyConsumption',
       kind: 'numeric',
@@ -232,12 +238,24 @@ export const DISCLOSURES = {
       axis: 'BreakdownOfEnergyConsumptionAxis',
       members: ['RenewableEnergyMember', 'NonRenewableEnergyMember'],
     } as Disclosure<Dimensioned<string, 'RenewableEnergyMember' | 'NonRenewableEnergyMember'>>,
+    grossLocationBasedScopeTwoGreenhouseGasEmissions: {
+      key: 'GrossLocationBasedScope2GreenhouseGasEmissions',
+      kind: 'numeric',
+      axis: 'ReportingScopesAxis',
+      members: ['BaselineYearMember', 'TargetYearMember', 'CurrentlyStatedMember'],
+    } as Disclosure<Dimensioned<string, 'BaselineYearMember' | 'TargetYearMember' | 'CurrentlyStatedMember'>>,
     energyConsumptionFromFuels: {
       key: 'EnergyConsumptionFromFuels',
       kind: 'numeric',
       axis: 'BreakdownOfEnergyConsumptionAxis',
       members: ['RenewableEnergyMember', 'NonRenewableEnergyMember'],
     } as Disclosure<Dimensioned<string, 'RenewableEnergyMember' | 'NonRenewableEnergyMember'>>,
+    grossMarketBasedScopeTwoGreenhouseGasEmissions: {
+      key: 'GrossMarketBasedScope2GreenhouseGasEmissions',
+      kind: 'numeric',
+      axis: 'ReportingScopesAxis',
+      members: ['BaselineYearMember', 'TargetYearMember', 'CurrentlyStatedMember'],
+    } as Disclosure<Dimensioned<string, 'BaselineYearMember' | 'TargetYearMember' | 'CurrentlyStatedMember'>>,
     scopeOneAndScopeTwoGreenhouseGasEmissionsIntensityValueLocationBased: {
       key: 'Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased',
       kind: 'numeric',
@@ -250,18 +268,48 @@ export const DISCLOSURES = {
       axis: null,
       members: null,
     } as Disclosure<Scalar<string>>,
+    totalGrossLocationBasedScopeOneAndScopeTwoGHGEmissions: {
+      key: 'TotalGrossLocationBasedScope1AndScope2GHGEmissions',
+      kind: 'numeric',
+      axis: 'ReportingScopesAxis',
+      members: ['BaselineYearMember', 'TargetYearMember', 'CurrentlyStatedMember'],
+    } as Disclosure<Dimensioned<string, 'BaselineYearMember' | 'TargetYearMember' | 'CurrentlyStatedMember'>>,
+    totalGrossMarketBasedScopeOneAndScopeTwoGHGEmissions: {
+      key: 'TotalGrossMarketBasedScope1AndScope2GHGEmissions',
+      kind: 'numeric',
+      axis: 'ReportingScopesAxis',
+      members: ['BaselineYearMember', 'TargetYearMember', 'CurrentlyStatedMember'],
+    } as Disclosure<Dimensioned<string, 'BaselineYearMember' | 'TargetYearMember' | 'CurrentlyStatedMember'>>,
     totalLocationBasedGreenhouseGasEmissionsIntensityValue: {
       key: 'TotalLocationBasedGreenhouseGasEmissionsIntensityValue',
       kind: 'numeric',
       axis: null,
       members: null,
     } as Disclosure<Scalar<string>>,
+    grossScopeThreeGreenhouseGasEmissions: {
+      key: 'GrossScope3GreenhouseGasEmissions',
+      kind: 'numeric',
+      axis: 'ReportingScopesAxis',
+      members: ['BaselineYearMember', 'TargetYearMember', 'CurrentlyStatedMember'],
+    } as Disclosure<Dimensioned<string, 'BaselineYearMember' | 'TargetYearMember' | 'CurrentlyStatedMember'>>,
     totalMarketBasedGreenhouseGasEmissionsIntensityValue: {
       key: 'TotalMarketBasedGreenhouseGasEmissionsIntensityValue',
       kind: 'numeric',
       axis: null,
       members: null,
     } as Disclosure<Scalar<string>>,
+    totalGrossLocationBasedGHGEmissions: {
+      key: 'TotalGrossLocationBasedGHGEmissions',
+      kind: 'numeric',
+      axis: 'ReportingScopesAxis',
+      members: ['BaselineYearMember', 'TargetYearMember', 'CurrentlyStatedMember'],
+    } as Disclosure<Dimensioned<string, 'BaselineYearMember' | 'TargetYearMember' | 'CurrentlyStatedMember'>>,
+    totalGrossMarketBasedGHGEmissions: {
+      key: 'TotalGrossMarketBasedGHGEmissions',
+      kind: 'numeric',
+      axis: 'ReportingScopesAxis',
+      members: ['BaselineYearMember', 'TargetYearMember', 'CurrentlyStatedMember'],
+    } as Disclosure<Dimensioned<string, 'BaselineYearMember' | 'TargetYearMember' | 'CurrentlyStatedMember'>>,
   },
   bFour: {
     amountOfEmissionToAir: {

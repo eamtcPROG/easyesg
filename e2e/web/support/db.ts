@@ -464,6 +464,13 @@ export async function disclosureValueOf(input: {
   readonly organizationId: string;
   readonly reportId: string;
   readonly elementKey: string;
+  /**
+   * §7.3's second key part (task 36.4). Defaults to `''` — the undimensioned row every caller
+   * before B3 wanted — so a breakdown's member row is reachable **and** the undimensioned row a
+   * broken breakdown would have written to stays assertable. Reading only `''` is what made the
+   * first B3 case claim a property it could not see.
+   */
+  readonly dimensionKey?: string;
 }): Promise<{ valueNumeric: string | null; valueText: string | null; state: string } | null> {
   const client = new Client(asOwner());
   await client.connect();
@@ -477,8 +484,8 @@ export async function disclosureValueOf(input: {
     }>(
       `SELECT value_numeric, value_text, state
          FROM core.report_disclosure_value
-        WHERE report_id = $1 AND element_key = $2 AND dimension_key = '' AND ordinal = 0`,
-      [input.reportId, input.elementKey],
+        WHERE report_id = $1 AND element_key = $2 AND dimension_key = $3 AND ordinal = 0`,
+      [input.reportId, input.elementKey, input.dimensionKey ?? ''],
     );
     await client.query('COMMIT');
     const row = result.rows[0];

@@ -146,7 +146,7 @@ describe('the shipped rules, against the shipped taxonomy versions', () => {
         entry.condition.kind === APPLICABILITY_CONDITION.ANY_ROW_ANSWERED
           ? entry.condition.elementKeys
           : [entry.condition.elementKey];
-      for (const key of drivers) expect({ key, module: byKey.get(key)?.module }).toEqual({ key, module: 'B1' });
+      for (const key of drivers) expect({ key, modules: byKey.get(key)?.modules }).toEqual({ key, modules: ['B1'] });
     }
   });
 

@@ -176,12 +176,63 @@ describe('disclosure label catalogues', () => {
         ).toEqual({ missing: [], unexpected: [] });
       });
 
+      /**
+       * The check that catches a locale pasted from another — and **it over-matched on a class it
+       * was never written for** (narrowed 8 Sep 2026, task 36.4).
+       *
+       * It was written when `members/` held task 91.1's eighty *enumeration* members: descriptive
+       * phrases, where three renderings that agree means somebody copied a file. Task 36.4 added
+       * the explicit axes' members, and `TypeOfPollutantAxis` brings ten ISO 1750 pesticide common
+       * names — Aldrin, DDT, Mirex — which **Romanian adopts verbatim** while Russian
+       * transliterates. Identity between `ro` and `en` is the correct label there, and satisfying
+       * the gate by inventing a Romanian spelling would be exactly the machine-translated guess
+       * FR-63 forbids, in the one place a reader could not tell.
+       *
+       * **Declared and reasoned rather than tolerated by shape**, on the pattern this repository
+       * already uses for `UNAUDITED_TABLES` and `PLAINTEXT_BY_DESIGN_SECRET_COLUMNS`: a name here
+       * is a decision somebody took with the label in front of them, and anything unlisted still
+       * fails. A shape rule — *one word, no spaces* — would have admitted every untranslated
+       * single-word label in the catalogue, which is the copy this check exists to find.
+       */
+      const IDENTICAL_BY_NOMENCLATURE = new Set([
+        'AldrinMember',
+        'DDTMember',
+        'DicofolMember',
+        'DieldrinMember',
+        'DiuronMember',
+        'EndrinMember',
+        'IsodrinMember',
+        'IsoproturonMember',
+        'MirexMember',
+        'TrifluralinMember',
+      ]);
+
       it('renders every entry differently in each locale', () => {
         const shared = Object.keys(source ?? {}).filter((key) => {
+          if (IDENTICAL_BY_NOMENCLATURE.has(key)) return false;
           const rendered = LOCALES.map((locale) => (files.get(locale) as MessageCatalogue)[key]);
           return new Set(rendered).size !== LOCALES.length;
         });
         expect(shared).toEqual([]);
+      });
+
+      /**
+       * **And the allowlist itself is held to its reason**: every name on it must still differ in
+       * at least one locale. Without this a key could be parked there to silence a genuine copy —
+       * which is the failure an exemption list invites, and the reason this repository's other
+       * lists are each paired with an assertion that they are not hiding one.
+       */
+      it('admits no entry that is identical in all three locales', () => {
+        const uniform = [...IDENTICAL_BY_NOMENCLATURE]
+          // Scoped to the keys THIS folder holds: the list is `members`', and every one of them is
+          // absent from `help`, where three `undefined`s would collide with each other and report
+          // the allowlist as hiding ten copies it has nothing to do with.
+          .filter((key) => key in (source ?? {}))
+          .filter((key) => {
+            const rendered = LOCALES.map((locale) => (files.get(locale) as MessageCatalogue)[key]);
+            return new Set(rendered).size === 1;
+          });
+        expect(uniform).toEqual([]);
       });
 
       it.each(LOCALES)('declares no empty entry in %s', (locale) => {
@@ -189,9 +240,13 @@ describe('disclosure label catalogues', () => {
       });
 
       it.each(LOCALES)('carries no XBRL scaffolding in %s', (locale) => {
-        // `[member]` is the taxonomy's own suffix and never a word a reporter should read.
+        // `[member]` and `[abstract]` are the taxonomy's own role suffixes and never words a
+        // reporter should read. **`[abstract]` was added 8 Sep 2026 and had a live victim**: EFRAG
+        // tags `SimazineMember` as `Simazine [abstract]`, and the extractor stripped `[member]`
+        // alone — so a pollutant picker would have rendered an XBRL role at a reporter. It surfaced
+        // only when task 36.4 first asked for the axis members' labels.
         const scaffolded = Object.entries(files.get(locale) as MessageCatalogue).filter(
-          ([, text]) => typeof text === 'string' && /\[member\]/u.test(text),
+          ([, text]) => typeof text === 'string' && /\[(?:member|abstract)\]/u.test(text),
         );
         expect(scaffolded).toEqual([]);
       });

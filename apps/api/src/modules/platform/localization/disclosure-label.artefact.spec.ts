@@ -6,6 +6,15 @@ import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-confi
 import { DisclosureLabelService } from './services/disclosure-label.service';
 import { DISCLOSURE_CATALOGUES, DISCLOSURE_CATALOGUE_VERSIONS } from './constants/disclosure-catalogues';
 
+/** What this file reads off a `vsme_taxonomy` payload's `axes` — the two exclusion flags included. */
+interface ShippedAxis {
+  readonly typed?: boolean;
+  readonly domainTaxonomy?: string;
+  readonly memberTaxonomy?: string;
+  readonly defaultMember?: string;
+  readonly members?: readonly string[];
+}
+
 /**
  * The shipped catalogues, read by the shipped resolver, against the shipped taxonomy (task 33.2) —
  * the sibling of `taxonomy-artefact.spec.ts`, and the same claim in the other direction.
@@ -24,7 +33,8 @@ import { DISCLOSURE_CATALOGUES, DISCLOSURE_CATALOGUE_VERSIONS } from './constant
  * release (NFR-12), and nothing else compares their output.
  */
 describe('the shipped VSME label catalogues', () => {
-  const store = seedConfigurationStore(readSeedEntries());
+  const seeded = readSeedEntries();
+  const store = seedConfigurationStore(seeded);
 
   let errors: jest.SpyInstance;
   beforeEach(() => {
@@ -116,7 +126,58 @@ describe('the shipped VSME label catalogues', () => {
           for (const member of domain.members) {
             // An unlabelled member is an XBRL name offered as an answer.
             expect(members?.[member.key]?.text).toBeTruthy();
-            expect(members?.[member.key]?.text).not.toMatch(/\[member\]/u);
+            expect(members?.[member.key]?.text).not.toMatch(/\[(?:member|abstract)\]/u);
+          }
+        }
+      }
+      expect(errors).not.toHaveBeenCalled();
+    });
+
+    /**
+     * **And every member of every explicit axis** (task 36.4; gate-integrity review, 8 Sep 2026).
+     *
+     * The case above iterates `enumerations` only, which was the whole of what `members/` held when
+     * task 91.1 wrote it. This task added 101 axis members to the catalogue and guarded them in one
+     * direction only — the stale-key case below fails when the catalogue names a member the version
+     * does not register, and nothing failed when a member the version *does* register lost its
+     * label. Deleting `RenewableEnergyMember` from all three catalogues left every gate green.
+     *
+     * It matters from task 36.5 rather than today: registering `TypeOfPollutantAxis` renders 94
+     * columns, and a re-extraction that dropped their labels would draw 94 rows all reading
+     * *unnamed*, because `MISSING_MESSAGE` renders empty by design (UX-97) and the row name falls
+     * back to nothing rather than to a key.
+     *
+     * **The `defaultMember` is included**: it is the total line every breakdown leads with, so
+     * losing its label loses the row the standard asks for first. Axes drawing members from another
+     * taxonomy are excluded here for the reason the extractor excludes them — B7's waste categories
+     * carry their own catalogue and B8's countries are `Intl`'s to name, not EFRAG's.
+     */
+    it('labels every member of every explicit vsme axis in every locale', () => {
+      // Read from the **artefact**, not through the port: `domainTaxonomy` and `memberTaxonomy` are
+      // what say whose members an axis draws, the registry resolves them away, and they are exactly
+      // the extractor's own two exclusions — so reading them here keeps this test and the thing it
+      // guards using one rule rather than two that can disagree.
+      const payload = seeded.find(
+        (entry) => entry.kind === 'vsme_taxonomy' && entry.scope === version,
+      )?.payload as { axes?: Record<string, ShippedAxis> } | undefined;
+      const axes = Object.entries(payload?.axes ?? {}).filter(
+        ([, axis]) => !axis.typed && !axis.domainTaxonomy && !axis.memberTaxonomy,
+      );
+      expect(axes.length).toBeGreaterThan(0);
+
+      for (const locale of LOCALES) {
+        const members = labels.memberLabels({ version, locale });
+        for (const [axisKey, axis] of axes) {
+          const keys = [...(axis.defaultMember ? [axis.defaultMember] : []), ...(axis.members ?? [])];
+          expect({ axis: axisKey, hasMembers: keys.length > 0 }).toEqual({ axis: axisKey, hasMembers: true });
+          for (const key of keys) {
+            // Named in the failure, because "a member is unlabelled" without which one is a search.
+            expect({ locale, axis: axisKey, key, labelled: Boolean(members?.[key]?.text) }).toEqual({
+              locale,
+              axis: axisKey,
+              key,
+              labelled: true,
+            });
           }
         }
       }
@@ -145,12 +206,31 @@ describe('the shipped VSME label catalogues', () => {
       }
     });
 
-    it('names no member that no vsme enumeration offers', () => {
-      const offered = new Set(
-        (taxonomy?.enumerations ?? [])
+    /**
+     * **Widened 8 Sep 2026 (task 36.4): a member catalogue names an axis's members too.**
+     *
+     * It read enumerations alone, which was the whole of what `members/` held when task 91.1 wrote
+     * it — the answers a choice field offers. Task 36.4 added the explicit axes' members, because a
+     * member-keyed group has to name its columns, and 101 correct keys read as stale. The claim
+     * this makes is unchanged and is the one worth keeping: **every key the catalogue carries is a
+     * member the pinned version actually registers**, so wording cannot outlive the thing it names
+     * in a directory that is written once and never edited.
+     */
+    it('names no member the pinned version does not register', () => {
+      const offered = new Set([
+        ...(taxonomy?.enumerations ?? [])
           .filter((e) => e.taxonomy === 'vsme')
           .flatMap((e) => e.members.map((m) => m.key)),
-      );
+        // Axes are reached through the registry rather than off `RegisteredTaxonomy`, which carries
+        // no axis list — so they are gathered from the elements that name them.
+        ...[...new Set((taxonomy?.elements ?? []).flatMap((element) => element.axes))]
+          .map((key) => registry.axis({ standard: 'vsme', version, key }))
+          .flatMap((axis) =>
+            axis === null
+              ? []
+              : [...(axis.defaultMember ? [axis.defaultMember] : []), ...axis.members.map((m) => m.key)],
+          ),
+      ]);
       for (const locale of LOCALES) {
         const stale = Object.keys(DISCLOSURE_CATALOGUES[version]?.members[locale] ?? {}).filter(
           (key) => !offered.has(key),

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
   type DisclosureField as DisclosureFieldShape,
   type DisclosureState,
@@ -84,6 +85,9 @@ export function StepFields({
   const t = useTranslations('organization.wizard.field.sync');
   const tField = useTranslations('organization.wizard.field');
   const tGroup = useTranslations('organization.wizard.group');
+  // Task 36.4's origin marker. One string, so it is read beside the others rather than in the
+  // branch that uses it — `useTranslations` is a hook and the branch is inside a function.
+  const calculatedLabel = tField('calculated');
   const { state, change } = useAutosaveContext();
   const syncLabels: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, string>> = {
     [SAVE_STATE.QUEUED]: t('queued'),
@@ -147,6 +151,21 @@ export function StepFields({
           >
             {entry.fields.map((field) => renderField(field))}
           </Fieldset>
+        ) : entry.kind === STEP_ENTRY.BREAKDOWN ? (
+          /*
+           * A breakdown (task 36.4) — **the same `Fieldset`, and no inventory addition**. UX-89's
+           * test for one is a difference in *anatomy*, and there is none: a legend over a set of
+           * related fields is what this control is. What differs is content — the legend names the
+           * element instead of a position, each row is named by its member instead of by its own
+           * element, and nothing is added, because the standard fixes the members.
+           */
+          <Fieldset
+            key={entry.elementKey}
+            legend={entry.fields[0]?.label ?? tField('unnamed')}
+            readOnly={readOnly}
+          >
+            {entry.fields.map((field) => renderField(field, field.dimensionLabel))}
+          </Fieldset>
         ) : (
           renderField(entry.field)
         ),
@@ -154,13 +173,17 @@ export function StepFields({
     </div>
   );
 
-  function renderField(served: DisclosureFieldShape) {
+  /**
+   * @param named what to call this field, where the row's own name is not the element's — a
+   *   breakdown's member. `undefined` everywhere else, so every other caller is unchanged.
+   */
+  function renderField(served: DisclosureFieldShape, named?: string | null) {
     const key = writeKey(served);
     const field = withCommitted(served, state.committed[key]);
     const sync = syncStateOf(state, key);
     const marker =
       sync === SAVE_STATE.SAVED
-        ? markerFor(field, markerLabels, carriedLabel)
+        ? markerFor(field, markerLabels, { carried: carriedLabel, calculated: calculatedLabel })
         : { label: syncLabels[sync], tone: SYNC_TONE[sync] };
     const labelId = labelIdFor(key);
     return (
@@ -169,7 +192,16 @@ export function StepFields({
         labelId={labelId}
         // Never the element key — the user-facing-text rule's own example (found by the convention
         // review, 3 Sep 2026, at two sites this task did not write and one it did).
-        label={field.label ?? tField('unnamed')}
+        /*
+         * **`named === null` is not `named === undefined`, and `??` collapsed them** (found by the
+         * spec review). `undefined` means *this row is not a breakdown member, use the element's
+         * label*; `null` means *this IS a member and the pinned version names it nothing*. Falling
+         * through to the element label for the second gave three identically-named rows — the
+         * exact reading this task exists to prevent, and what `wizard-step.model.ts` promises does
+         * not happen: an unnamed member must render as an unnamed column, a visible defect rather
+         * than a plausible-looking wrong word.
+         */
+        label={named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'))}
         help={field.help}
         marker={marker?.label}
         markerTone={marker?.tone}
@@ -210,12 +242,33 @@ const SYNC_TONE: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, Fi
 /** A stable, HTML-safe id from the natural key — element and member keys are XBRL names. */
 const labelIdFor = (key: string): string => `disclosure-${key.replace(/[^A-Za-z0-9_-]/gu, '-')}`;
 
+/**
+ * What the field says about itself, where it has something to say.
+ *
+ * **Origin is read first, and it is the one marker about where a figure CAME FROM** rather than
+ * about its state (task 36.4). UC-21's alternate flow makes B3's figures *"normally produced by
+ * the carbon calculator rather than typed directly"*, and UX-12 hangs a provenance mark off exactly this
+ * distinction — a trace can only be offered for a figure the system computed.
+ *
+ * **`calculated` cannot occur yet, and that is recorded rather than hidden.** Nothing writes it
+ * until task 39.2's return from the calculator, so this branch is unreachable on today's data. It
+ * is here because the marker is the seam 39.2 writes into; `architecture.md` §12.5.6 carries the
+ * decision and the cost. `overridden` is deliberately NOT marked here — UX-43 requires an override
+ * to display the superseded value beside the substituted one and to carry a reason, which is a
+ * component and not a word, and it belongs to task 38.5 that produces it.
+ */
 function markerFor(
   field: DisclosureFieldShape,
   labels: Readonly<Record<DisclosureState, string>>,
-  carriedLabel: string,
+  // Named rather than two adjacent `string`s, per the root CLAUDE.md: swapped, the call compiles
+  // and every calculated figure reads *carried forward* — a plausible wrong answer, which is the
+  // whole of what that rule is about.
+  provenance: { readonly carried: string; readonly calculated: string },
 ): { readonly label: string; readonly tone: FieldTone } | undefined {
-  if (field.carriedForward) return { label: carriedLabel, tone: FIELD_TONE.NEUTRAL };
+  if (field.origin === DISCLOSURE_ORIGIN.CALCULATED) {
+    return { label: provenance.calculated, tone: FIELD_TONE.NEUTRAL };
+  }
+  if (field.carriedForward) return { label: provenance.carried, tone: FIELD_TONE.NEUTRAL };
   if (!hasMarker(field.state)) return undefined;
   return { label: labels[field.state], tone: TONE_OF_STATE[field.state] };
 }

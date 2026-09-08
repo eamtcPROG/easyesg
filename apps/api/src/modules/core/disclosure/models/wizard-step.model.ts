@@ -2,7 +2,7 @@ import type { DisclosureKind } from '@easyesg/vsme';
 import type { PeriodType } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import type { ApplicabilityCondition } from './applicability.model';
-import type { DisclosureState } from './disclosure-value.model';
+import type { DisclosureOrigin, DisclosureState } from './disclosure-value.model';
 
 /**
  * What the wizard is given (task 89; S-07, FR-24 … FR-32).
@@ -129,6 +129,24 @@ export interface DisclosureField {
   readonly elementKey: string;
   /** An axis member, or `''` where the element is undimensioned — §7.3's convention. */
   readonly dimensionKey: string;
+  /**
+   * What to call this row where it is one member of a breakdown — *Renewable energy* (task 36.4).
+   *
+   * `null` for an undimensioned row and for a member the pinned version's catalogue does not name.
+   * **The key is never a fallback**: `RenewableEnergyMember` is an internal identifier, and the
+   * root `CLAUDE.md` forbids one on any surface a person reads — so an unnamed member renders as an
+   * unnamed column, which is a visible defect rather than a plausible-looking wrong word.
+   */
+  readonly dimensionLabel: string | null;
+  /**
+   * Where the stored value came from (task 36.4) — `reported` for an unanswered field and for every
+   * row today, because nothing writes anything else until task 39.2's calculator return.
+   *
+   * On the field rather than left to the screen because UC-21's alternate flow makes it a fact
+   * about the *value*: B3's figures are *"normally produced by the carbon calculator rather than
+   * typed directly"*, and the reporter cannot tell which by looking.
+   */
+  readonly origin: DisclosureOrigin;
   readonly ordinal: number;
   readonly kind: DisclosureKind;
   readonly periodType: PeriodType;

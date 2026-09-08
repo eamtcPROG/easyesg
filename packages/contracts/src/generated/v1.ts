@@ -1916,6 +1916,13 @@ export interface components {
             elementKey: string;
             /** @description An axis member, or empty where the element is undimensioned. */
             dimensionKey: string;
+            /** @description What to call this row where it is one member of a breakdown — “Renewable energy”. Null for an undimensioned row, and for a member the pinned version names no label for: the member key is never a fallback, because it is an internal identifier. */
+            dimensionLabel: string | null;
+            /**
+             * @description Where the stored value came from. `reported` on every row today — the calculator that writes `calculated` is task 39.2 and the override that writes `overridden` is task 38.5, so a client may render the other two but will not meet them yet.
+             * @enum {string}
+             */
+            origin: "reported" | "calculated" | "overridden";
             /** @description Position within a repeating group; 0 where there is none. */
             ordinal: number;
             /**

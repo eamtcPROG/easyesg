@@ -30,6 +30,7 @@ const VOCABULARY_COUNTRY = 'md';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
 import type { ApplicabilityRules } from '../interfaces/applicability-rules.interface';
+import type { AxisShapes } from '../interfaces/axis-shape.interface';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import {
@@ -37,7 +38,12 @@ import {
   type ApplicabilityRule,
   type EvaluatedApplicability,
 } from '../models/applicability.model';
-import { DISCLOSURE_STATE, isAnsweredState, type DisclosureValue } from '../models/disclosure-value.model';
+import {
+  DEFAULT_DISCLOSURE_ORIGIN,
+  DISCLOSURE_STATE,
+  isAnsweredState,
+  type DisclosureValue,
+} from '../models/disclosure-value.model';
 import type { Report } from '../models/report.model';
 import type {
   DisclosureApplicabilityCause,
@@ -126,6 +132,12 @@ export class ReadWizardStep {
      * announcement needs the cause, which a boolean computed anywhere else would not carry.
      */
     private readonly applicability: ApplicabilityRules,
+    /**
+     * Which explicit axes are breakdowns, as configuration (task 36.4). Beside `applicability` and
+     * for its reason: an axis's *shape* is a fact about the standard that EFRAG's package does not
+     * state, so it is published rather than released (AD-4, DR-3).
+     */
+    private readonly axisShapes: AxisShapes,
     private readonly warnings: ReadWarnings,
   ) {}
 
@@ -138,34 +150,41 @@ export class ReadWizardStep {
 
     const counts = new Map<string, ModuleCount>();
     for (const element of registered.elements) {
-      // The pillar-level catch-alls carry no module (task 33.3). They are reportable and belong to
-      // no step, so they are counted into no module rather than into one invented to hold them.
-      if (element.module === null) continue;
-      const count = counts.get(element.module) ?? newModuleCount();
-      counts.set(element.module, count);
-
       // An element FR-28 has ruled out is not part of this report's obligations, so it is counted
       // into neither side of the module's progress (task 91.3): a services company that can never
       // fill B6 must not be shown a denominator it cannot reach. Its cause is kept, because a
       // module every one of whose elements has gone is a module that has gone, and UX-27 asks why.
       const verdict = applicability.get(element.key);
-      if (verdict !== undefined && !verdict.applicable) {
-        count.causes.push(verdict);
-        continue;
-      }
-
-      count.applicable = true;
-      count.total += 1;
       // An element counts as answered when ANY of its rows is (task 91.2): a repeating group's
       // second site is as much an answer as its first, and `total` counts elements, not rows.
       const answered = (byElement.get(element.key) ?? []).filter((value) => isAnsweredState(value.state));
-      if (answered.length > 0) {
-        count.answered += 1;
-        // The latest answer in the module is where work last happened (task 35.3, FR-39). A row
-        // cleared back to `missing` is not an answer and does not move it.
-        for (const value of answered) {
-          if (count.lastAnsweredAt === null || value.updatedAt > count.lastAnsweredAt) {
-            count.lastAnsweredAt = value.updatedAt;
+
+      // **Counted into every module that presents it** (task 36.4). The eight disclosures B3 and C3
+      // share are one obligation with one stored value, so each module's own denominator includes
+      // them and both progress figures move together — which is what the taxonomy says, and what a
+      // Comprehensive reporter filling B3 should see on C3.
+      //
+      // The pillar-level catch-alls present in none (task 33.3). They are reportable and belong to
+      // no step, so they are counted into no module rather than into one invented to hold them.
+      for (const module of element.modules) {
+        const count = counts.get(module) ?? newModuleCount();
+        counts.set(module, count);
+
+        if (verdict !== undefined && !verdict.applicable) {
+          count.causes.push(verdict);
+          continue;
+        }
+
+        count.applicable = true;
+        count.total += 1;
+        if (answered.length > 0) {
+          count.answered += 1;
+          // The latest answer in the module is where work last happened (task 35.3, FR-39). A row
+          // cleared back to `missing` is not an answer and does not move it.
+          for (const value of answered) {
+            if (count.lastAnsweredAt === null || value.updatedAt > count.lastAnsweredAt) {
+              count.lastAnsweredAt = value.updatedAt;
+            }
           }
         }
       }
@@ -201,12 +220,21 @@ export class ReadWizardStep {
     const at = { version: registered.version, locale: query.locale };
     const catalogue = this.labels.labels(at);
     const standing = this.labels.standing(at);
+    // Read once and shared: the same catalogue names a choice field's answers and a member-keyed
+    // group's columns, and it is 181 entries at `2026-05-01`.
+    const memberLabels = this.labels.memberLabels(at);
     const options = new OptionResolver({
       registered,
       taxonomy: this.taxonomy,
-      memberLabels: this.labels.memberLabels(at),
+      memberLabels,
       vocabulary: this.vocabulary,
       locale: query.locale,
+    });
+    const members = new MemberResolver({
+      registered,
+      taxonomy: this.taxonomy,
+      memberLabels,
+      breakdownAxes: this.axisShapes.breakdownAxes({ standard: registered.standard }),
     });
 
     // Whether an axis is typed is asked of the registry once per axis, not once per element: B1
@@ -222,7 +250,8 @@ export class ReadWizardStep {
     };
 
     const fields = registered.elements
-      .filter((element) => element.module === query.module)
+      // Membership, not equality: eight of B3's seventeen are presented in C3 as well (task 36.4).
+      .filter((element) => element.modules.includes(query.module))
       .flatMap((element) => {
         const verdict = applicability.get(element.key);
         const resolved = {
@@ -241,13 +270,25 @@ export class ReadWizardStep {
         return rowsOf({
           element,
           repeating,
+          members: members.membersFor(element),
           stored: byElement.get(element.key) ?? [],
           defaultRows: perOrdinal.length,
-        }).map((ordinal) => {
-          const value = byKey.get(keyOf({ elementKey: element.key, dimensionKey: NO_DIMENSION, ordinal }));
+        }).map((row) => {
+          const value = byKey.get(keyOf({ elementKey: element.key, ...row }));
           // A row in any state suppresses the default: cleared is a decision (§12.5.6, task 91.2).
-          const defaultValue = value === undefined ? (perOrdinal[ordinal] ?? null) : null;
-          return toField(element, { ordinal, value, defaultValue, repeating }, resolved);
+          // **Defaults are per ordinal and a member-keyed group has none** — task 91.2 fills sites
+          // and subsidiaries from the entity snapshot, and no snapshot knows a renewable-energy
+          // figure. Reading `perOrdinal[0]` for every member would hand one element's default to
+          // each of its columns.
+          const defaultValue =
+            value === undefined && row.dimensionKey === NO_DIMENSION
+              ? (perOrdinal[row.ordinal] ?? null)
+              : null;
+          return toField(
+            element,
+            { ...row, value, defaultValue, repeating, dimensionLabel: members.labelFor(row.dimensionKey) },
+            resolved,
+          );
         });
       });
 
@@ -426,27 +467,50 @@ const qualifiedDomainOf = (element: TaxonomyElement): string | null =>
       ? element.domain
       : `${ENUMERATION_TAXONOMY.VSME}:${element.domain}`;
 
+/** One row of one element: §7.3's `(element, dimension, ordinal)` minus the element. */
+interface FieldRow {
+  readonly dimensionKey: string;
+  readonly ordinal: number;
+}
+
 /**
- * Which rows a step shows for one element (task 91.2).
+ * Which rows a step shows for one element (task 91.2; **explicit axes since task 36.4**).
  *
- * **An element on a typed axis is a repeating group, and its rows are its ordinals** — every
- * ordinal the store holds plus one per site or subsidiary in the snapshot, in order, so a stored
- * third site and a snapshotted first two render as three rows. Nothing in either is one empty row,
- * as before, so the group is still answerable. Everything else is one row at ordinal 0: the 34
- * elements on *explicit* axes keep task 89's stated limit until the component that draws a
- * member-keyed group exists.
+ * Three shapes, and §7.3's key is what makes them one function rather than three:
+ *
+ * - **A typed axis is a repeating group, and its rows are its ordinals** — every ordinal the store
+ *   holds plus one per site or subsidiary in the snapshot, in order, so a stored third site and a
+ *   snapshotted first two render as three rows. Nothing in either is one empty row, as before, so
+ *   the group is still answerable.
+ * - **An explicit axis is a member-keyed group, and its rows are its members** — the axis's
+ *   `defaultMember` first, then the domain's, each at ordinal 0. The default member leads because
+ *   it is the member a fact carrying no dimension is taken to mean — the *total* line, so a reader
+ *   meets the whole before its parts. **UC-21 is not the authority for that ordering**: step 1 names
+ *   the split and no total, and orders nothing; the reason is the default member's own semantics.
+ * - Everything else is one undimensioned row.
+ *
+ * **The two cannot combine and nothing here pretends they might**: no element in the registered
+ * versions carries more than one axis, so a cross-product has no producer and inventing one would
+ * be an abstraction with no member — checked against the artefact, not assumed.
  */
 function rowsOf(input: {
   readonly element: TaxonomyElement;
   readonly repeating: boolean;
+  readonly members: readonly string[];
   readonly stored: readonly DisclosureValue[];
   readonly defaultRows: number;
-}): readonly number[] {
-  if (!input.repeating) return [0];
-  const ordinals = new Set<number>();
-  for (const value of input.stored) if (value.dimensionKey === NO_DIMENSION) ordinals.add(value.ordinal);
-  for (let ordinal = 0; ordinal < input.defaultRows; ordinal += 1) ordinals.add(ordinal);
-  return ordinals.size === 0 ? [0] : [...ordinals].sort((a, b) => a - b);
+}): readonly FieldRow[] {
+  if (input.repeating) {
+    const ordinals = new Set<number>();
+    for (const value of input.stored) if (value.dimensionKey === NO_DIMENSION) ordinals.add(value.ordinal);
+    for (let ordinal = 0; ordinal < input.defaultRows; ordinal += 1) ordinals.add(ordinal);
+    const rows = ordinals.size === 0 ? [0] : [...ordinals].sort((a, b) => a - b);
+    return rows.map((ordinal) => ({ dimensionKey: NO_DIMENSION, ordinal }));
+  }
+  if (input.members.length > 0) {
+    return input.members.map((dimensionKey) => ({ dimensionKey, ordinal: 0 }));
+  }
+  return [{ dimensionKey: NO_DIMENSION, ordinal: 0 }];
 }
 
 /**
@@ -462,10 +526,12 @@ function rowsOf(input: {
 function toField(
   element: TaxonomyElement,
   row: {
+    readonly dimensionKey: string;
     readonly ordinal: number;
     readonly value: DisclosureValue | undefined;
     readonly defaultValue: DisclosureDefault | null;
     readonly repeating: boolean;
+    readonly dimensionLabel: string | null;
   },
   resolved: {
     readonly catalogue: Readonly<Record<string, DisclosureLabel>> | null;
@@ -481,7 +547,11 @@ function toField(
   const label = catalogue?.[element.key] ?? null;
   return {
     elementKey: element.key,
-    dimensionKey: NO_DIMENSION,
+    dimensionKey: row.dimensionKey,
+    dimensionLabel: row.dimensionLabel,
+    // An unanswered field is `reported`: the reporter is the one who would answer it, and a
+    // nullable origin would make every reader branch on a third case that means the default.
+    origin: value?.origin ?? DEFAULT_DISCLOSURE_ORIGIN,
     ordinal: row.ordinal,
     kind: element.kind,
     periodType: element.periodType,
@@ -508,6 +578,64 @@ function toField(
     applicable: resolved.applicable,
     applicabilityCause: resolved.applicabilityCause,
   };
+}
+
+/**
+ * An element's member-keyed rows, and what to call each one (task 36.4).
+ *
+ * **Resolved once per axis, not once per field** — `OptionResolver`'s reason exactly: three B3
+ * elements share `BreakdownOfEnergyConsumptionAxis`, so a per-field lookup would ask the registry
+ * three times for one answer.
+ *
+ * **Which axes expand is configuration, not a property of the axis** (AD-4; the reasoning is on
+ * `DISCLOSURE_AXIS_SHAPE_CONFIG_KIND`). An explicit axis says an element is reported along a fixed
+ * domain and says nothing about how it is answered: energy's two members are a breakdown a reporter
+ * fills, B4's 94 pollutants are a domain they pick from. Nothing in EFRAG's package tells them
+ * apart, so an axis expands when the standard's registered shape says it does — and every axis
+ * nobody has registered keeps the single undimensioned row it had before this task.
+ */
+class MemberResolver {
+  private readonly cache = new Map<string, readonly string[]>();
+
+  constructor(
+    private readonly input: {
+      readonly registered: RegisteredTaxonomy;
+      readonly taxonomy: TaxonomyRegistry;
+      readonly memberLabels: Readonly<Record<string, DisclosureLabel>> | null;
+      readonly breakdownAxes: ReadonlySet<string>;
+    },
+  ) {}
+
+  /** The rows this element is reported along, `[]` where it is undimensioned, typed or a picker. */
+  membersFor(element: TaxonomyElement): readonly string[] {
+    const name = element.axes.find((axis) => this.input.breakdownAxes.has(axis));
+    if (name === undefined) return [];
+    const cached = this.cache.get(name);
+    if (cached !== undefined) return cached;
+
+    const axis = this.input.taxonomy.axis({
+      standard: this.input.registered.standard,
+      version: this.input.registered.version,
+      key: name,
+    });
+    // A typed axis registered as a breakdown is a contradiction the registry settles, not this: its
+    // rows are identifiers the reporter supplies, so it keeps task 91.2's ordinals.
+    const members =
+      axis === null || axis.typed
+        ? []
+        : [
+            ...(axis.defaultMember ? [axis.defaultMember] : []),
+            ...axis.members.map((member) => member.key),
+          ];
+    this.cache.set(name, members);
+    return members;
+  }
+
+  /** The member's label in the request's locale; `null` for an undimensioned row. */
+  labelFor(dimensionKey: string): string | null {
+    if (dimensionKey === NO_DIMENSION) return null;
+    return this.input.memberLabels?.[dimensionKey]?.text ?? null;
+  }
 }
 
 /**

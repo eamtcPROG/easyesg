@@ -8,6 +8,43 @@
  */
 
 /**
+ * Where a value came from — the `report_disclosure_value_origin_known` CHECK's vocabulary
+ * (task 36.4).
+ *
+ * UC-21's alternate flow is the reason it exists: B3's quantitative figures are *"normally produced
+ * by the carbon calculator (UC-33) rather than typed directly"*, and a reporter looking at a filled
+ * field cannot otherwise tell which happened. UX-12's provenance and UX-43's override marker both
+ * rest on the distinction — a trace can only be offered for a figure the system computed.
+ *
+ * **Three members and one reachable**, stated rather than left to be discovered, exactly as
+ * `REPORT_STATUS` states its four. `CALCULATED` arrives with task 39.2's return from the
+ * calculator and `OVERRIDDEN` with task 38.5's UC-34; the migration's own header carries why the
+ * `CHECK` declares all three now.
+ */
+export const DISCLOSURE_ORIGIN = {
+  /** The reporter entered it. Every row today, and the column's default. */
+  REPORTED: 'reported',
+  /** The carbon calculator produced it (UC-33; task 39.2 writes it). */
+  CALCULATED: 'calculated',
+  /** A reporter replaced a computed figure, with a reason (UC-34; task 38.5 writes it). */
+  OVERRIDDEN: 'overridden',
+} as const;
+
+export type DisclosureOrigin = (typeof DISCLOSURE_ORIGIN)[keyof typeof DISCLOSURE_ORIGIN];
+
+/**
+ * What a row with no recorded provenance is — the `report_disclosure_value.origin` column's own
+ * `DEFAULT`, mirrored here rather than restated at each reader.
+ *
+ * Beside the vocabulary because it is an operation over it (root `CLAUDE.md`: *"an operation over a
+ * vocabulary lives with the vocabulary, not with each caller"*). A step read serving a field with no
+ * stored row must still answer an origin, and `?? DISCLOSURE_ORIGIN.REPORTED` written at that call
+ * site is a second place the column's default is true — which is the thing that drifts when 39.2
+ * makes `CALCULATED` reachable and someone changes one of the two.
+ */
+export const DEFAULT_DISCLOSURE_ORIGIN: DisclosureOrigin = DISCLOSURE_ORIGIN.REPORTED;
+
+/**
  * What a stored value *is*, beyond its contents — **FR-40's five validation states**, plus FR-30,
  * FR-31 and FR-32/D-4's three that are answers rather than verdicts.
  *
@@ -120,6 +157,17 @@ export interface DisclosureValueContents {
 /** A stored value, as read back. */
 export interface DisclosureValue extends DisclosureValueKey, DisclosureValueContents {
   readonly id: string;
+  /**
+   * Where this value came from (task 36.4) — **on the read shape and deliberately not on
+   * `DisclosureValueContents`**, which is what a caller writes.
+   *
+   * Nothing in the application can decide it yet: the column defaults to `reported`, and the two
+   * members that are not the default arrive with the tasks that produce them — 39.2's calculator
+   * return and 38.5's override. Putting it on the write shape would oblige every caller to supply
+   * a value only those tasks can know, and `wizard.controller.ts` would be sending `'reported'` on
+   * every keystroke as though it had chosen. **The read tells; the write cannot.**
+   */
+  readonly origin: DisclosureOrigin;
   readonly createdAt: number;
   readonly updatedAt: number;
 }

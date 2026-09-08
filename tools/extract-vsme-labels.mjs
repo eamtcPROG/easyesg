@@ -44,8 +44,10 @@
  *
  *     <version>/{ro,en,ru}.json          the element labels — the standard's question
  *     <version>/help/{ro,en,ru}.json     EFRAG's `documentation` label, where one is published
- *     <version>/members/{ro,en,ru}.json  the enumeration members' labels — the answers a choice
- *                                        field offers, read from the artefact's `enumerations`
+ *     <version>/members/{ro,en,ru}.json  member labels — the answers a choice field offers, and
+ *                                        since task 36.4 the row names of a member-keyed group,
+ *                                        read from the artefact's `enumerations` and from its
+ *                                        explicit `axes` alike
  *
  * Help is **sparse by construction**: at `2026-05-01` EFRAG documents 22 of 143 elements, and the
  * catalogue carries those 22 and no invented sentence for the rest — a field with no help says so
@@ -204,13 +206,40 @@ const artefact = JSON.parse(
   readFileSync(join('config', 'seed', `vsme-taxonomy.${version}.json`), 'utf8'),
 );
 const elements = Object.keys(artefact.elements);
-/** Every member of every `vsme` enumeration domain — the answers a choice field offers. */
+
+/**
+ * Every `vsme` member a reader can be shown — the answers a choice field offers, **and since task
+ * 36.4 the columns of a member-keyed group**.
+ *
+ * The two sources are different shapes of the same need. An **enumeration** domain holds the
+ * answers to one field; an **explicit axis** holds the members an element is reported *along* —
+ * renewable and non-renewable energy, the reporting scopes, the pollutants. Until B3 nothing
+ * rendered the second kind, so nothing had ever asked for their labels, and all 355 of them were
+ * absent: a group naming its columns from the member key would print `RenewableEnergyMember` at a
+ * reporter, which the user-facing-text rule forbids by name.
+ *
+ * **The axis's `defaultMember` is included and is not decoration.** It is the member a fact
+ * carrying no dimension is taken to mean — the *total* line in every VSME case — so a group that
+ * omitted it would show the breakdown and lose the figure the standard actually asks for first.
+ *
+ * **A typed axis contributes nothing**, because its rows are identifiers the reporter supplies
+ * rather than members. **Two exclusions cover the axes whose members are somebody else's**, and
+ * they are different facts: `domainTaxonomy` is B7's waste categories, the EU List of Waste, which
+ * EFRAG publishes and versions separately with a catalogue of its own; `memberTaxonomy` is
+ * `CountryOfEmploymentContractAxis`, whose *domain* is a VSME concept and whose 256 *members* are
+ * XBRL International's country codes. The second was recorded by no artefact until task 36.4 asked
+ * for their labels and the run refused — a country's name in three languages is `Intl`'s to give,
+ * not EFRAG's, and B8 (task 36.9) is the module that will need it.
+ */
 const members = [
-  ...new Set(
-    Object.values(artefact.enumerations ?? {})
+  ...new Set([
+    ...Object.values(artefact.enumerations ?? {})
       .filter((domain) => domain.taxonomy === 'vsme')
       .flatMap((domain) => domain.members),
-  ),
+    ...Object.values(artefact.axes ?? {})
+      .filter((axis) => !axis.typed && !axis.domainTaxonomy && !axis.memberTaxonomy)
+      .flatMap((axis) => [...(axis.defaultMember ? [axis.defaultMember] : []), ...(axis.members ?? [])]),
+  ]),
 ].sort();
 
 /**
@@ -236,11 +265,12 @@ if (unlabelled.length > 0) {
   process.exit(1);
 }
 
-// The same refusal the element list gets, for the same reason: an artefact with no `enumerations`
-// makes every member check vacuous and writes `members/en.json` as `{}` with nothing to report.
+// The same refusal the element list gets, for the same reason: an artefact with neither
+// `enumerations` nor `axes` makes every member check vacuous and writes `members/en.json` as `{}`
+// with nothing to report.
 if (members.length === 0) {
   console.error(
-    `config/seed/vsme-taxonomy.${version}.json registers no enumeration members — regenerate it with ` +
+    `config/seed/vsme-taxonomy.${version}.json registers no members — regenerate it with ` +
       'extract-vsme-taxonomy.mjs first.',
   );
   process.exit(1);
@@ -248,7 +278,7 @@ if (members.length === 0) {
 
 const unlabelledMembers = members.filter((key) => !labels.has(key));
 if (unlabelledMembers.length > 0) {
-  console.error(`${unlabelledMembers.length} enumeration members have no English label:`);
+  console.error(`${unlabelledMembers.length} member(s) have no English label:`);
   for (const key of unlabelledMembers.slice(0, 10)) console.error(`  ${key}`);
   process.exit(1);
 }
@@ -257,10 +287,18 @@ const catalogue = Object.fromEntries(elements.sort().map((key) => [key, labels.g
 const help = Object.fromEntries(
   elements.filter((key) => documentation.has(key)).sort().map((key) => [key, documentation.get(key)]),
 );
-// `[member]` is XBRL scaffolding the root CLAUDE.md forbids from any surface a person reads — the
-// same strip the waste list's names get — so a choice reads *Individual*, not *Individual [member]*.
+/**
+ * `[member]` and `[abstract]` are XBRL scaffolding the root CLAUDE.md forbids from any surface a
+ * person reads — the same strip the waste list's names get — so a choice reads *Individual*, not
+ * *Individual [member]*.
+ *
+ * **`[abstract]` was added 8 Sep 2026 (task 36.4), and it had one live victim.** EFRAG tags
+ * `SimazineMember` as `Simazine [abstract]`; the strip matched `[member]` alone, so a pollutant
+ * picker would have rendered the XBRL role at a reporter. It surfaced only because this task was
+ * the first to ask for axis members' labels — nothing had read that key before.
+ */
 const memberCatalogue = Object.fromEntries(
-  members.map((key) => [key, labels.get(key).replace(/\s*\[member\]$/, '')]),
+  members.map((key) => [key, labels.get(key).replace(/\s*\[(?:member|abstract)\]$/, '')]),
 );
 // `disclosure/<taxonomy-version>/{ro,en,ru}.json` — the layout that directory's own README fixes,
 // and OQ-45 settled the version identifier as EFRAG's `YYYY-MM-DD`. A version directory is written
