@@ -145,13 +145,11 @@ test('opens B1 pre-filled, stores what the reporter accepts, and groups the site
 
   // FR-27's other half: the defaults the reporter did not touch are stored on arrival, so a B1
   // nobody edited is still a B1 that was filed. The indicator is the screen's own claim; the store
-  // is the fact (NFR-56).
-  // The indicator by its region, not by its words: *"Salvat"* also appears inside the exit link's
-  // own sentence — *"lucrul este salvat"* — and a text locator matches both (found by strict mode,
-  // 3 Sep 2026). UX-35 puts the state in one fixed location, and this is that location.
-  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
-    timeout: 15_000,
-  });
+  // is the fact (NFR-56) — **and only the second of those is asserted here** (convention review,
+  // 8 Sep 2026). A wait on the indicator was the barrier this case appeared to have, and it was
+  // none: `saveStateOf` answers `SAVED` both when nothing is pending *and* while a write is pending
+  // inside UX-36's 250 ms anti-flicker budget, so it matched on arrival, before the defaults were
+  // ever queued. The poll below is the barrier and the fact at once.
   await expect
     .poll(
       async () =>
@@ -620,9 +618,19 @@ test('B5 asks about each site the report knows, and names it (UC-23)', async ({ 
   // the step commits its shown defaults (FR-27, UX-34), which is task 91.2's rule and the reason
   // §7.2 calls the snapshot the default rather than the authority.
   await page.goto(`/reports/${reportId}/B1`);
-  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
-    timeout: 15_000,
-  });
+  // **Waited on the STORE, not on the indicator** (found while writing task 36.7's B6 journey, which
+  // has the same shape): *Salvat* is also what the indicator reads when nothing is pending, which is
+  // its state on arrival — so a wait on it here passes before the defaults are queued, and B5 would
+  // then be asserted against a report that had answered nothing. It happens to still pass, because
+  // `answeredRows` folds the snapshot's rows in either way — which is exactly what makes the vacuous
+  // wait dangerous rather than merely useless: it would let a regression in the *stored* half hide.
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'CityOfSite' }))?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Bălți');
 
   await page.goto(`/reports/${reportId}/B5`);
 
@@ -664,6 +672,115 @@ test('B5 asks about each site the report knows, and names it (UC-23)', async ({ 
     .toMatchObject({ valueBoolean: false, state: 'ok' });
   // …and the other site is untouched, so *no for Bălți* has not been filed as *no for Orhei*.
   expect(await disclosureValueOf({ ...stored, ordinal: 1 })).toBeNull();
+});
+
+/**
+ * B6 in a browser (UC-24, FR-24, FR-28, FR-29; task 36.7) — **the direction nothing proved.**
+ *
+ * B6 introduces no anatomy: four `numeric` elements, no axis, one admitted unit each, and a
+ * sector-driven applicability rule task 91.3 registered and proved both ways at the api. So this
+ * task is the *proof*, not the build — task 36.3's finding on B2, reached the same way. What no
+ * test covered is B6 **applying**: the case below it asserts only that an untouched B1 leaves the
+ * module ruled out, and a rule that had stopped applying to anyone would satisfy that perfectly.
+ *
+ * It is also the clearest thing in the suite about why the rule reads B1's *stored* answers rather
+ * than the entity snapshot (§7.2): the entity is a bakery, and B6 is ruled out until B1 is opened
+ * and its shown defaults are committed (FR-27, UX-34). The module arrives because the **report**
+ * says the undertaking manufactures, not because the platform knew it.
+ */
+test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-24)', async ({
+  page,
+}) => {
+  // **A site is what makes the fixture take a snapshot at all** (`seedReport` writes one only when
+  // sites are given), and the snapshot is where B1's defaults come from — so without it there is no
+  // activity code to commit and this journey would test nothing while looking like it passed.
+  const reportId = await signedInWithReport(page, 'b6', [{ name: 'Brutăria', locality: 'Chișinău' }]);
+  const organizationId = organizationOf.get(reportId) ?? '';
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+
+  // Ruled out to begin with, on an entity whose snapshot already says `10.71` — bakery products,
+  // four levels under the manufacturing section the rule names. Nothing is stored yet.
+  await page.goto(`/reports/${reportId}/B6`);
+  const b6 = rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B6', exact: true }) });
+  await expect(b6).toHaveText(/Nu se aplică/u);
+
+  // Opening B1 commits its shown defaults, which is what turns the snapshot's activity code into
+  // the report's own answer (§12.5.6, task 91.2).
+  await page.goto(`/reports/${reportId}/B1`);
+  // **Waited on the STORE, not on the indicator**, and the mechanism is worth naming because it is
+  // not what it looks like: `saveStateOf` answers `SAVED` when nothing is pending **and** while a
+  // write is pending inside UX-36's 250 ms anti-flicker budget. So `toHaveText(/Salvat/)` matches
+  // on arrival, before the defaults are queued — the assertion below would then read a rail
+  // rendered from a report that had answered nothing. It cost half an hour to find; the indicator
+  // is right and the wait was vacuous.
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({
+          organizationId,
+          reportId,
+          elementKey: 'NaceSectorClassificationCodes',
+        }))?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('nace:NACE_C1071');
+
+  await page.goto(`/reports/${reportId}/B6`);
+  await expect(b6).not.toHaveText(/Nu se aplică/u);
+
+  // **UC-24's two steps, and there are four fields rather than the three it used to name.** The use
+  // case was amended on 8 Sep 2026 against EFRAG's own package: its step 1 listed withdrawal, the
+  // high-stress share and consumption, and `WaterDischargeFromUndertakingProductionProcesses` — the
+  // figure between the last two — was named by neither it nor `design_spec.md` §6.1. The template's
+  // own layout is the split now written into the use case: `B6 - Water Withdrawal` over the first
+  // pair, `B6 - Water Consumption` over the second.
+  //
+  // Exactly four, so a rule that brought in a subset — or a module that grew one — fails here
+  // rather than passing a check for the one field this case goes on to fill.
+  for (const label of [
+    'Cantitatea totală de apă prelevată de la toate amplasamentele',
+    'Cantitatea de apă prelevată la amplasamentele situate în zone cu stres hidric ridicat',
+    'Apele evacuate din procesele de producție ale întreprinderii',
+    'Consumul total de apă',
+  ]) {
+    await expect(page.getByRole('group', { name: label })).toBeVisible();
+  }
+  // **Page-wide, and that is a measurement rather than laziness** (convention review, 8 Sep 2026,
+  // which asked for it scoped). `WizardShell` renders `<div className={styles.main}>` — a CSS name,
+  // not a `<main>` landmark — so there is nothing to scope to: `getByRole('main')` finds zero on
+  // this screen, and four of the five archetype shells are the same. Measured here: the wizard
+  // chrome contributes no textbox, so page-wide IS the step's fields today. What it gives up is
+  // stated rather than hidden — a textbox added to the chrome would satisfy this count while
+  // saying nothing about B6.
+  await expect(page.getByRole('textbox')).toHaveCount(4);
+
+  // **UX-14's first branch, which B4 never exercises**: `m3` is the only unit the taxonomy admits
+  // here, so it is *shown* and never asked — a chooser over one option is a control that cannot
+  // change anything. Rendered as its symbol, because `m3` is EFRAG's UTR code and an internal
+  // identifier may not reach a reader.
+  const consumption = page.getByRole('group', { name: 'Consumul total de apă' });
+  await expect(consumption.getByText('m³', { exact: true })).toBeVisible();
+  await expect(consumption.getByRole('combobox')).toHaveCount(0);
+
+  const total = consumption.getByRole('textbox');
+  await total.fill('1450');
+  await total.blur();
+
+  // **The poll is the barrier; there is no indicator wait above it** (convention review, 8 Sep
+  // 2026). A blur does *not* make one non-vacuous, which is what this task first assumed:
+  // `saveStateOf` answers `SAVED` while a write is pending inside UX-36's 250 ms budget as well as
+  // when none is, so `toHaveText(/Salvat/)` matches at the instant of the blur. What makes the five
+  // remaining waits in this file sound is the store poll after each of them, not the blur before.
+  //
+  // The figure carries its unit, which the indicator cannot tell you either: a fixed unit that
+  // reached the screen and not the write would store 1450 of nothing.
+  await expect
+    .poll(
+      async () =>
+        await disclosureValueOf({ organizationId, reportId, elementKey: 'TotalWaterConsumption' }),
+      { timeout: 15_000 },
+    )
+    .toMatchObject({ valueNumeric: '1450', unitCode: 'm3', state: 'ok' });
 });
 
 test('a module the rules ruled out says so on the rail rather than counting to zero (FR-28)', async ({

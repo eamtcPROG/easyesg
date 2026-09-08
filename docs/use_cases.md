@@ -782,8 +782,11 @@ their numbers put them.
 - **Preconditions:** An editable report session.
 - **Trigger:** The Contributor reaches the B6 step.
 - **Main success scenario:**
-  1. The Contributor reports water withdrawal, the portion withdrawn in areas of high water stress, and water consumption.
+  1. The Contributor reports total water withdrawn from all sites and the portion withdrawn at sites in areas of high water stress.
+  2. The Contributor reports water discharged from the undertaking's production processes and total water consumption.
 - **Alternate flows:** The module supports a documented immateriality determination (UC-30), since sector relevance varies sharply — material for manufacturing and agri-processing, typically immaterial for services.
+- **Amended 8 Sep 2026 (project owner), against EFRAG's own package rather than by inference.** Step 1 named three disclosures — *"water withdrawal, the portion withdrawn in areas of high water stress, and water consumption"* — where B6 carries **four**: `WaterDischargeFromUndertakingProductionProcesses` was named by neither the use case nor `design_spec.md` §6.1, and is the figure a reporter meets between the other two. The split into two steps is EFRAG's own: the Digital Template 1.3.0 lays B6 out as `B6 - Water Withdrawal … [Always to be reported]` over the first pair and `B6 - Water Consumption … [If applicable]` over the second, discharge included. Found by task 36.7's spec review, asking whether the module's own use case was discharged rather than whether its elements rendered — the same question that amended UC-20 on 7 Sep 2026.
+- **The template's two-section conditionality is deliberately *not* mirrored by this platform's applicability rule**, which governs all four (BR-APP-4, task 91.3). The reasoning is recorded in `architecture.md` §12.5.6's task-36.7 row; it is a divergence taken with the evidence in hand rather than an oversight, and this line exists so the next reader meets it here too.
 - **Related FRs:** FR-24, FR-28, FR-29
 - **Related UCs:** UC-30, UC-81
 

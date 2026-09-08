@@ -13035,6 +13035,119 @@ again fails the B5 browser journey, and so does dropping the row's name; the sto
 last-wins fails two api cases; and a cleared answer falling back to its own default fails the case
 written for it — **which the first version of that case did not**, and is why there are two.
 
+## Task 36.7 — B6, and a guard that only pointed one way · 2026-09-08
+
+B6 (UC-24, FR-24, FR-28, FR-29) ships as **one browser journey and no production change** — B2's
+answer, re-asked because task 36.3's row names this one by number among those *"each still has to be
+opened"*.
+
+Opened against the artefacts: four `numeric` elements, every kind met since B1; **no axis**, so none
+of 36.2's, 36.4's or 36.5's three group shapes; `m3` on all four, which is UX-14's *fixed by the
+taxonomy* branch task 91.4 built; the sector rule registered and proven both ways at the api by task
+91.3; and 4/4 labels in three locales.
+
+### What the proof had to be
+
+The existing browser case asserts that an untouched B1 leaves B6 **ruled out** — and **a rule that
+had stopped applying to anyone would satisfy it exactly**. That is the one-directional guard shape
+task 36.4's review named for the axis-member labels, in another module.
+
+So the journey is B6 *arriving*: B1's committed answer says the undertaking manufactures, four fields
+render, `m³` shows as a fixed unit with no chooser, and a figure stores with its unit. It is also the
+clearest thing in the suite about why the rule reads B1's **stored** answers rather than the entity
+snapshot — the entity is a bakery, and B6 stays ruled out until B1 is opened and its defaults
+committed. The module arrives because the *report* says the undertaking manufactures.
+
+### The wait that was not a wait
+
+The journey failed with the api plainly answering `applicable: true`, which is how a defect in the
+test rather than the product announced itself.
+
+```ts
+await page.goto(`/reports/${id}/B1`);
+await expect(saveIndicator).toHaveText(/Salvat/u);   // passes instantly
+```
+
+**`saveStateOf` answers `SAVED` twice** — when nothing is pending, *and* while a write is pending
+inside UX-36's 250 ms anti-flicker budget. So the wait matched on arrival, before the defaults were
+queued, and B6 was then asserted against a report that had answered nothing.
+
+**The search for its shape found two more, and one of them was mine from an hour earlier.** Task
+36.6's B5 journey has the identical `goto`-then-wait, and it *passed* — because `answeredRows` folds
+the snapshot's rows in either way. That is what makes a vacuous wait worse than useless rather than
+merely useless: it would let a regression in the **stored** half hide behind the snapshot half.
+
+**And the reason I gave for leaving the other five was wrong**, which the convention review caught
+and is the sharper half of this entry. I wrote that they were sound because each *follows a blur*.
+A blur does not make the wait non-vacuous — the 250 ms budget covers exactly that case. What makes
+them sound is the **store poll after each**, which is a different claim and the true one. I had also
+written a seventh instance on the false reason, in this task's own journey. Two removed, the
+judgement restated: *backed by a store poll*, never *follows a blur*.
+
+Searched: every `toHaveText(/Salvat/)` in `e2e/web/`, six in `wizard.spec.ts` and five in
+`autosave.spec.ts`. The `autosave.spec.ts` set asserts transitions the indicator genuinely makes
+(`În așteptare`, offline, failure) and is untouched.
+
+### UC-24 named three disclosures; B6 has four
+
+The spec review asked 36.3's question — *is the use case discharged* — and B6 answers it worse than
+B2 did. UC-24 step 1 read *"water withdrawal, the portion withdrawn in areas of high water stress,
+and water consumption"*. B6 carries **four** elements, and
+`WaterDischargeFromUndertakingProductionProcesses` is named by neither the use case nor
+`design_spec.md` §6.1.
+
+**Checked against the workbook rather than amended on inference**, which is the method UC-20's own
+amendment established. EFRAG lays B6 out as two sections — `B6 - Water Withdrawal … [Always to be
+reported]` over the first pair, `B6 - Water Consumption … [If applicable]` over the discharge and
+the total. UC-24 is amended to those two steps, with the evidence and the authority on the use case.
+
+### The divergence the workbook exposed, kept deliberately
+
+That reading turns up something larger than the missing disclosure. **EFRAG marks the withdrawal
+half *always to be reported*, and this platform's rule governs all four** — so a Moldovan retailer is
+shown no water disclosure at all, including the two the workbook says are unconditional. Task 91.3
+never had that evidence: its row records UC-24 as *"the only source with content"* and lists two
+declined alternatives, neither of them the template's own split. Its sibling rule for B5 took the
+narrower line for exactly this reason — *"governs B5's site-dimensioned elements, not the module"*.
+
+**The rule stands** (project owner): UC-24's *"typically immaterial for services"* is a judgement
+about the whole module, and asking a Moldovan hairdresser for total water withdrawn is the noise
+FR-28 exists to remove. What it costs is recorded rather than left to be found — it is the one place
+the product hides a disclosure the standard's workbook says is always reported, and 91.3's own
+guiding sentence argues against it. Narrowing the rule is a **publish, not a release** (FR-72), so
+being wrong here costs one artefact revision.
+
+**And EFRAG's own gate for that section is unreportable anyway**: it opens with *"does the
+undertaking have production processes which significantly consume water"*, and no element in the 143
+carries it — the third sighting of that shape, after B2's contact point and B4's row 74.
+
+### Reviews — both on `opus`
+
+`spec-review` found three, two of them halves of the gap above: no §12.5.6 row for a task that ships
+no code when 36.3's row explicitly left that question open for this one; UC-24's three-of-four; and
+the test comment citing UC-24 step 1 over a four-element array, which is the paraphrase that hid it.
+
+`convention-review` found two, and both are about the sweep rather than the code: one site the sweep
+missed, whose comment claimed the barrier property the wait cannot carry, and the false *follows a
+blur* reason above. It also noted the four-textbox count is page-wide where its siblings are scoped —
+not a rule, and it turns out there is nothing to scope to: `WizardShell` renders `<div
+className={styles.main}>`, a CSS name rather than a `<main>` landmark, and four of the five archetype
+shells are the same. Measured and recorded at the assertion instead of hidden.
+
+`gate-integrity-review` was not run, per task 36.5's entry — it executes suites and belongs with
+`gates:clean` at task 36's parent close.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm docs:check` green; **318** web unit and **145** browser tests.
+Sub-step gates for a `web`-and-docs change; `pnpm gates:clean` and the third agent wait for task 36's
+parent close, as do task 91's.
+
+Proven to bite, by mutation, each restored afterwards: a single admitted unit that stops being
+applied fails the `m³` assertion and the stored `unit_code`; and removing manufacturing from the
+water rule's NACE list fails the applicability assertion — which is also the check the pre-existing
+one-directional case could never have made.
+
 ## Task 100 — The counts in the CLAUDE.md files are compared to nothing · 2026-09-08
 
 Appended by the project owner after a CLAUDE.md audit across all four files. The audit's headline
