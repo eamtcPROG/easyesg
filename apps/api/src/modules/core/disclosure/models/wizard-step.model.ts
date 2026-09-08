@@ -130,12 +130,23 @@ export interface DisclosureField {
   /** An axis member, or `''` where the element is undimensioned — §7.3's convention. */
   readonly dimensionKey: string;
   /**
-   * What to call this row where it is one member of a breakdown — *Renewable energy* (task 36.4).
+   * What to call this row — one question, answered from two places (tasks 36.4, 36.5, 36.6).
    *
-   * `null` for an undimensioned row and for a member the pinned version's catalogue does not name.
-   * **The key is never a fallback**: `RenewableEnergyMember` is an internal identifier, and the
-   * root `CLAUDE.md` forbids one on any surface a person reads — so an unnamed member renders as an
-   * unnamed column, which is a visible defect rather than a plausible-looking wrong word.
+   * - A **member-keyed** row is named by its member: *Renewable energy* on a breakdown, *Ammonia
+   *   (NH3)* on a classification, resolved against the pinned version's catalogue.
+   * - A **typed-axis** row is named by what the report *shows* for that ordinal — B1's address for
+   *   the site B5 is asking about: the stored answer where there is one, the FR-18 snapshot's
+   *   default otherwise, taking the first element on the axis that has either. §7.2's *"the
+   *   default, never the authority"* settles the **direction** and not the source: a stored answer
+   *   outranks the default offered for the same element, and clearing one suppresses that default
+   *   rather than falling back to it.
+   *
+   * `null` where neither answers: an undimensioned row, a member the catalogue does not name, a
+   * site nobody has described yet. **The key is never a fallback**: `RenewableEnergyMember` is an
+   * internal identifier, and the root `CLAUDE.md` forbids one on any surface a person reads — so an
+   * unnamed row renders as an unnamed row, which is a visible defect rather than a
+   * plausible-looking wrong word. The screen keeps the ordinal in the legend either way, so a row
+   * with no name is still *site 2*.
    */
   readonly dimensionLabel: string | null;
   /**

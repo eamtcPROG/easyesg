@@ -12917,6 +12917,124 @@ undimensioned row the journey asserts is absent. The declaration's own mutation 
 behind is refused by the database's `report_disclosure_value_reason_matches_state` constraint, so
 P-4's guarantee is visible in the failure rather than only in the migration.
 
+## Task 36.6 — B5, and the ragged group nobody could see from one element · 2026-09-08
+
+B5 (UC-23, FR-24, FR-28) ships with **no new field anatomy**, and the interesting part is a defect
+repair it shares with B1.
+
+### The module was already built; its rows were not
+
+Task 36.3's question — *what does this module introduce that the anatomy has not met?* — comes back
+almost clean on B5. Its five kinds are all met; its site fields sit on a **typed** axis, which is
+36.2's repeating group; its four land-use figures admit `ha` or `sqkm`, which is yesterday's chooser
+(91.4); its applicability is task 91.3's registered rule, already proven both ways as BR-APP-5; and
+7/7 labels are in `ro`, `en` and `ru`.
+
+**The task row's own Description was circular**, and correcting it is where the work turned up. It
+read *"proximity to a sensitive area decides whether the section appears at all"* — but proximity is
+answered **in** B5, so it cannot gate B5. `design_spec.md` §6.1, which owns the module table, says
+*"applicability is site-driven from the B1 site geolocations"*, which is exactly what 91.3
+registered. Three corrections to the row, recorded in §12.5.6 because `task.md` holds no decisions.
+
+### What was actually missing, measured rather than reasoned
+
+```
+City: 3   Address: 2   GPS: 2   |   B5 SiteLocatedIn: 1
+```
+
+A report whose reporter adds a third site by answering its city serves `CityOfSite` three rows and
+`AddressOfSite` two — **that site's address is unanswerable through the wizard**, which makes FR-24's
+acceptance criterion (*"all B1–B11 fields are reachable through the wizard"*) false. And B5, sharing
+`IdentifierOfSiteTypedAxis` since task 36.4's repair, served **one** row for a three-site report,
+`dimensionLabel: null` on every one of them.
+
+**This is yesterday's defect in the other kind of axis.** Task 36.5 changed a *classification's* rows
+from per-element to per-axis, because a reporter who names ammonia is being asked all three amounts
+for it. A **typed** axis has the identical property — a site is one row across every element on the
+axis — and was never changed. Two symptoms, one root, and fixing it for classifications should have
+prompted the check. It did not, because each element reached *a* row count and no test had asserted
+a sibling's.
+
+So `rowsOf`'s repeating branch takes the ordinals **any** element on the axis is answered at, folded
+with the snapshot's rows for **any** element on it — B1's `AddressOfSite` has two and B5's site
+elements none, so reading the element's own defaults is what showed B5 one row for a two-site
+company.
+
+### Naming a row, and the record that outran the code twice
+
+A row now carries what the report *shows* for it: the stored answer where there is one, the FR-18
+snapshot's default otherwise, taking the **first** element on the axis that has either, in the
+standard's presentation order. For sites that is address, then postal code, then city, then GPS;
+`CountryOfSite` is excluded by being an `enumeration`, since it stores a member key and a key may not
+reach a reader. No per-axis naming vocabulary had to be invented, and the order does something useful
+rather than merely deterministic: a site with a GPS fix and no street address is named by its
+**city**, because `CityOfSite` (5) precedes `GPSLocationOfSite` (7).
+
+**Two things the reviews caught, and both were the record claiming more than the code did.**
+
+The row was first titled *"named by the report's own answer, never by the snapshot"*. That is false
+and this task's own e2e proves it: a site nobody has typed over is named by the snapshot, which is
+what a *default* is. §7.2's *"the default, never the authority"* settles the **direction**, not the
+source — a stored answer outranks the default offered for the same element, and clearing one
+suppresses that default rather than falling back to it.
+
+And the stored pass was written **last**-wins while the record said first. Not an edge case: the
+browser commits B1's shown defaults on arrival (FR-27, UX-34), so an ordinary site holds an address,
+a postal code, a city *and* a GPS fix — and every one of them would have been named by its
+coordinate pair, the single outcome the ordering exists to avoid. **Neither test could see it**: the
+api case exercised only the defaults path, which was already first-wins, and the browser fixture
+gives a site a locality and nothing else.
+
+**The case written for it was then wrong in the same way**, which is worth more than the fix. Its
+clearing half asserted that emptying an answer hands the name on — and passed under mutation,
+because its entity has no sites, so there was no default to suppress and both versions behaved
+alike. It is a second case now, over an entity that has one.
+
+### Two more the reviews found
+
+**`blankRow` copied the template row's identity.** Until this task a typed row's `dimensionLabel` was
+always null, so there was nothing to clear; now *Adăugați încă un rând* on a two-site B1 rendered
+**"Amplasament 3 — Orhei"** — a site nobody has described wearing site 2's name. `blankCell`, written
+twelve lines below it for 36.5, clears exactly this. The same read found it also kept `state` and
+`unitCode`, so a row added after a declared gap inherited the declaration with no reason; all three
+are cleared now.
+
+**FR-28 was cited for a repair that is FR-24's.** Applicability is 91.3's and was already discharged;
+what the ragged group made false is *"all B1–B11 fields are reachable through the wizard"*. And
+§6.1's *site-driven from the B1 site geolocations* is an **applicability** sentence — citing it for a
+decision about **rows** reads it as something it is not. `UX-2` was cited too, and governs the active
+organization.
+
+### Reviews — both on `opus`
+
+Per the routing table: the contract surface and three workspaces. `gate-integrity-review` was not
+run, for the reason task 36.5's entry gives — it executes suites and belongs with `gates:clean` at
+task 36's parent close.
+
+`convention-review` found three: the last-wins name, `blankRow`'s inherited identity, and the
+`Scope` column omitting `pkg:contracts` while the diff regenerates the contract. `spec-review` found
+four: the same naming overstatement from the register's side, in three separate claims; the three
+`task.md` amendments cited to §12.5.6 and recorded in neither new row; `UX-2`; and FR-28 for FR-24.
+All seven fixed.
+
+Two calibration notes from the spec review are worth keeping. **"Presentation order" is well defined
+only within a section** — `order` restarts per section, and it is safe here because each typed axis's
+text elements share one; an axis spanning two would need a rule this does not give, and the §12.5.6
+row now says so. And **the rule reaches every typed axis**, not only B5's: subsidiaries are named by
+`NameOfTheSubsidiary`, B7's materials by `NameOfMaterialUsed`. That is the rule applied where it
+holds, which is right, and nothing had said so.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm openapi:check`, `pnpm docs:check` green; **670** api unit,
+**318** web unit, **831** api e2e and **147** browser tests. Sub-step gates per the 8 Sep policy;
+`pnpm gates:clean` and the third review agent wait for task 36's parent close, as does task 91's.
+
+Proven to bite, by mutation, each restored afterwards: computing a typed axis's rows per element
+again fails the B5 browser journey, and so does dropping the row's name; the stored pass restored to
+last-wins fails two api cases; and a cleared answer falling back to its own default fails the case
+written for it — **which the first version of that case did not**, and is why there are two.
+
 ## Task 100 — The counts in the CLAUDE.md files are compared to nothing · 2026-09-08
 
 Appended by the project owner after a CLAUDE.md audit across all four files. The audit's headline

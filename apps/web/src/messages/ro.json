@@ -1092,6 +1092,7 @@
       },
       "group": {
         "legend": "{name} {position}",
+        "legendNamed": "{name} {position} — {given}",
         "add": "Adăugați încă un rând",
         "names": {
           "IdentifierOfSiteTypedAxis": "Amplasament",

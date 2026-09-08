@@ -1092,6 +1092,7 @@
       },
       "group": {
         "legend": "{name} {position}",
+        "legendNamed": "{name} {position} — {given}",
         "add": "Добавить ещё одну строку",
         "names": {
           "IdentifierOfSiteTypedAxis": "Площадка",

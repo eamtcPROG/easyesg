@@ -485,9 +485,132 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(rowsOf(grown, 'CityOfSite').map((f) => [f.ordinal, f.valueText, defaultText(f)])).toEqual([
       [0, null, 'Orhei'], [1, null, 'Bălți'], [2, 'Cahul', null],
     ]);
+    // **And every sibling grows with it** (task 36.6). A typed axis identifies a *thing*, so the
+    // third site's address has to be enterable — measured before this task at 2 rows against
+    // `CityOfSite`'s 3, which made it unanswerable through the wizard with nothing failing.
+    expect(rowsOf(grown, 'AddressOfSite').map((f) => f.ordinal)).toEqual([0, 1, 2]);
+    expect(rowsOf(grown, 'GPSLocationOfSite').map((f) => f.ordinal)).toEqual([0, 1, 2]);
+
+    // **The site reaches B5, which shares the axis** — `design_spec.md` §6.1's *site-driven from
+    // the B1 site geolocations*, and UC-23's *using the B1 site geolocations*. Three sites, three
+    // rows, each named by the report's own answer rather than by its position alone.
+    const b5 = await readStep(reportId, 'B5');
+    expect(
+      rowsOf(b5, 'SiteLocatedInABiodiversitySensitiveArea').map((f) => [f.ordinal, f.dimensionLabel]),
+    ).toEqual([
+      // **The first *text* element on the axis with a value, in the standard's own presentation
+      // order** — `AddressOfSite` (1), `PostalCodeOfSite` (4), `CityOfSite` (5),
+      // `GPSLocationOfSite` (7). `CountryOfSite` is an `enumeration` and is excluded: it stores a
+      // member key, and a key may not reach a reader.
+      //
+      // So the Orhei site — which the entity gave a GPS fix and no street address — is named by its
+      // **city** rather than by a coordinate pair, because the order reaches `CityOfSite` first.
+      // That is presentation order doing something useful rather than merely being deterministic,
+      // and it is why no per-axis naming vocabulary had to be invented.
+      [0, 'Orhei'],
+      [1, 'str. Decebal 1'],
+      // The third site is the reporter's own, added by answering its city alone.
+      [2, 'Cahul'],
+    ]);
     const modules = objectsOf<ModuleSummary>((await http()
       .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
     expect(modules.find((m) => m.module === 'B1')?.answered).toBe(1);
+  });
+
+  /**
+   * What names a typed-axis row when several elements have something (task 36.6).
+   *
+   * **The case both of this task's first tests were blind to** (convention and spec reviews, 8 Sep
+   * 2026). The api case exercised only the snapshot's defaults, which were already first-wins, and
+   * the browser fixture gives a site a locality and nothing else — so a stored pass written
+   * *last*-wins passed both while naming every site by its coordinate pair, which is the one
+   * outcome the presentation order exists to avoid. It is not an edge case: the browser commits
+   * B1's shown defaults on arrival (FR-27, UX-34), so an ordinary site holds all four.
+   */
+  it('names a site by the first text element that has something, not the last', async () => {
+    const reportId = await createReport(await openPeriod(2026));
+    // Deliberately written in reverse presentation order, so a reader cannot mistake insertion
+    // order for the rule: GPS (7), city (5), postal code (4), address (1).
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [
+        ['GPSLocationOfSite', '47.0105 28.8638'],
+        ['CityOfSite', 'Chișinău'],
+        ['PostalCodeOfSite', 'MD-2001'],
+        ['AddressOfSite', 'str. Bănulescu-Bodoni 57'],
+      ].map(([elementKey, valueText]) => ({
+        elementKey, ordinal: 0, valueText, state: DISCLOSURE_STATE.OK, carriedForward: false,
+      })),
+    }).expect(200);
+
+    const named = (step: Step, elementKey: string): string | null =>
+      step.fields.find((f) => f.elementKey === elementKey)?.dimensionLabel ?? null;
+
+    // `AddressOfSite` is order 1 in its section, so it names the row on both steps that share the
+    // axis — B1, where the answers live, and B5, which is asking about the same site.
+    expect(named(await readStep(reportId), 'AddressOfSite')).toBe('str. Bănulescu-Bodoni 57');
+    expect(named(await readStep(reportId, 'B5'), 'SiteLocatedInABiodiversitySensitiveArea'))
+      .toBe('str. Bănulescu-Bodoni 57');
+
+    // Clearing the winner hands the name on to the next element in order — the postal code.
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: 'AddressOfSite', ordinal: 0, state: DISCLOSURE_STATE.MISSING, carriedForward: false }],
+    }).expect(200);
+    expect(named(await readStep(reportId, 'B5'), 'SiteLocatedInABiodiversitySensitiveArea')).toBe('MD-2001');
+  });
+
+  /**
+   * Clearing an answer suppresses **that element's snapshot default** rather than falling back to
+   * it (task 36.6).
+   *
+   * **A separate case because the one above cannot reach it** (found by mutation, 8 Sep 2026): its
+   * entity has no sites, so no element has a default to fall back to, and the clearing assertion
+   * there passes whether or not the suppression exists. This is the step read's own rule — *a row
+   * in any state suppresses the default, because cleared is a decision* — applied to what names a
+   * row, and it needs a snapshot site to be visible at all.
+   */
+  it('a cleared answer suppresses its own snapshot default, and the name hands on', async () => {
+    const created = await http().post('/api/v1/entities').set(admin.authorization).send({
+      name: 'Grupul Rezina', legalForm: 'sa', naceCodes: ['10.71'],
+      sites: [{ name: 'Sediu', locality: 'Rezina', addressLine1: 'str. Păcii 3', countryCode: 'MD' }],
+    }).expect(201);
+    const entity = (created.body as { object: { id: string } }).object.id;
+    const period = (await http().post('/api/v1/periods').set(admin.authorization).send({
+      reportingEntityId: entity, fiscalYear: 2026,
+      periodStart: { date: '2026-01-01', timezone: CHISINAU },
+      periodEnd: { date: '2026-12-31', timezone: CHISINAU },
+    }).expect(201)).body as { object: { id: string } };
+    const reportId = await createReport(period.object.id);
+
+    const siteName = async (): Promise<string | null> =>
+      (await readStep(reportId, 'B5')).fields.find(
+        (f) => f.elementKey === 'SiteLocatedInABiodiversitySensitiveArea',
+      )?.dimensionLabel ?? null;
+
+    // The snapshot names it, because nothing is stored yet — which is what §7.2 means by the
+    // snapshot being the *default*, and what this row's first record wrongly denied.
+    expect(await siteName()).toBe('str. Păcii 3');
+
+    // The reporter clears the address. The default it was offered is gone with it, so the name
+    // hands on to the next element in presentation order — the city, also from the snapshot.
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: 'AddressOfSite', ordinal: 0, state: DISCLOSURE_STATE.MISSING, carriedForward: false }],
+    }).expect(200);
+    expect(await siteName()).toBe('Rezina');
+
+    // Clear every text answer and the row keeps its position and loses its name — `Amplasament 1`
+    // with nothing after it, rather than a site still wearing a description nobody stands behind.
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: ['CityOfSite', 'PostalCodeOfSite', 'GPSLocationOfSite'].map((elementKey) => ({
+        elementKey, ordinal: 0, state: DISCLOSURE_STATE.MISSING, carriedForward: false,
+      })),
+    }).expect(200);
+    expect(await siteName()).toBeNull();
+    // And the row is still there to be answered again.
+    expect(
+      (await readStep(reportId, 'B5')).fields.filter(
+        (f) => f.elementKey === 'SiteLocatedInABiodiversitySensitiveArea',
+      ),
+    ).toHaveLength(1);
   });
 
   it('serves an EARLIER-pinned report from its own version (DR-4, task 33.3)', async () => {

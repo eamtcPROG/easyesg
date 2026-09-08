@@ -194,9 +194,14 @@ export function StepFields({
         entry.kind === STEP_ENTRY.GROUP ? (
           <Fieldset
             key={`${entry.axis} ${entry.ordinal}`}
-            legend={tGroup('legend', {
+            legend={groupLegend(tGroup, {
               name: rowNames[entry.axis] ?? tGroup('fallbackName'),
               position: entry.ordinal + 1,
+              // What the report itself calls this row — B1's address or city for the site B5 is
+              // asking about (task 36.6). Every field of a group shares an ordinal, so they share
+              // the name; `null` where nothing has described it yet, and the position still says
+              // which row it is.
+              given: entry.fields[0]?.dimensionLabel ?? null,
             })}
             readOnly={readOnly}
             action={
@@ -580,6 +585,26 @@ const UNIT_CODE = {
   SQUARE_KILOMETRE: 'sqkm',
 } as const;
 
+
+/**
+ * A repeating group's legend: *Amplasament 2* where nothing names the row, *Amplasament 2 — Orhei*
+ * where the report does (task 36.6).
+ *
+ * **The position stays either way**, which is what makes a repeated name usable: two sites in one
+ * city are *Amplasament 1 — Orhei* and *Amplasament 2 — Orhei*, and the ordinal is the identity
+ * §7.3 actually keys on. The name only helps a reader tell them apart.
+ *
+ * Two catalogue keys rather than one with an empty argument, because a message with a dangling
+ * separator is a message the translator cannot fix.
+ */
+function groupLegend(
+  t: ReturnType<typeof useTranslations<typeof GROUP_MESSAGES>>,
+  row: { readonly name: string; readonly position: number; readonly given: string | null },
+): string {
+  return row.given === null
+    ? t('legend', { name: row.name, position: row.position })
+    : t('legendNamed', { name: row.name, position: row.position, given: row.given });
+}
 
 /** No row of this axis names a member yet. Module-level, so it is one identity rather than many. */
 const NO_MEMBERS: ReadonlySet<string> = new Set();

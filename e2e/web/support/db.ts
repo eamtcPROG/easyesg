@@ -471,6 +471,12 @@ export async function disclosureValueOf(input: {
    * first B3 case claim a property it could not see.
    */
   readonly dimensionKey?: string;
+  /**
+   * §7.3's third key part (task 36.6). Defaults to `0` — every caller before B5 wanted the only
+   * row an undimensioned element has — so a typed axis's second site is reachable, **and** the row
+   * a group that ignored its ordinal would have written stays assertable.
+   */
+  readonly ordinal?: number;
 }): Promise<{
   valueNumeric: string | null;
   valueText: string | null;
@@ -478,6 +484,7 @@ export async function disclosureValueOf(input: {
   unitCode: string | null;
   /** FR-32's reason, which the store pairs to `not_available` alone (task 36.5). */
   notAvailableReason: string | null;
+  valueBoolean: boolean | null;
   state: string;
 } | null> {
   const client = new Client(asOwner());
@@ -490,12 +497,13 @@ export async function disclosureValueOf(input: {
       value_text: string | null;
       unit_code: string | null;
       not_available_reason: string | null;
+      value_boolean: boolean | null;
       state: string;
     }>(
-      `SELECT value_numeric, value_text, unit_code, not_available_reason, state
+      `SELECT value_numeric, value_text, unit_code, not_available_reason, value_boolean, state
          FROM core.report_disclosure_value
-        WHERE report_id = $1 AND element_key = $2 AND dimension_key = $3 AND ordinal = 0`,
-      [input.reportId, input.elementKey, input.dimensionKey ?? ''],
+        WHERE report_id = $1 AND element_key = $2 AND dimension_key = $3 AND ordinal = $4`,
+      [input.reportId, input.elementKey, input.dimensionKey ?? '', input.ordinal ?? 0],
     );
     await client.query('COMMIT');
     const row = result.rows[0];
@@ -506,6 +514,7 @@ export async function disclosureValueOf(input: {
           valueText: row.value_text,
           unitCode: row.unit_code,
           notAvailableReason: row.not_available_reason,
+          valueBoolean: row.value_boolean,
           state: row.state,
         };
   } finally {

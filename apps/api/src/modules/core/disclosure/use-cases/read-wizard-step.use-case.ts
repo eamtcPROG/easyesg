@@ -262,6 +262,14 @@ export class ReadWizardStep {
       admits: (axis, member) => members.admits(axis, member),
       byElement,
     });
+    // The ordinals each typed axis is answered at, and what names them (task 36.6). Built over
+    // EVERY element of the version, not the step's — a B5 row exists because B1 named a site.
+    const rowsByAxis = answeredRows({
+      elements: registered.elements,
+      typedAxisOf: (element) => element.axes.find(isTyped) ?? null,
+      byElement,
+      defaults,
+    });
     const fields = registered.elements
       // Membership, not equality: eight of B3's seventeen are presented in C3 as well (task 36.4).
       .filter((element) => element.modules.includes(query.module))
@@ -280,6 +288,8 @@ export class ReadWizardStep {
         // Asked once per element and answered to the screen as well as used here: a typed axis is
         // what makes these rows a group the reporter can add to (task 36.2).
         const repeating = element.axes.some(isTyped);
+        const typedAxis = repeating ? element.axes.find(isTyped) : undefined;
+        const answered = typedAxis === undefined ? undefined : rowsByAxis.get(typedAxis);
         // The axis this element is *selected* along, where it has one (task 36.5). Collected as we
         // go, so the step carries each domain once rather than each field carrying a copy.
         const classification = members.classificationFor(element);
@@ -290,6 +300,8 @@ export class ReadWizardStep {
           members: members.membersFor(element),
           classification,
           chosen: classification === null ? [] : (chosenByAxis.get(classification) ?? []),
+          // The axis's ordinals, which already fold in the snapshot's rows for every element on it.
+          answeredOrdinals: [...(answered?.ordinals ?? [])],
           stored: byElement.get(element.key) ?? [],
           defaultRows: perOrdinal.length,
         }).map((row) => {
@@ -305,7 +317,18 @@ export class ReadWizardStep {
               : null;
           return toField(
             element,
-            { ...row, value, defaultValue, repeating, dimensionLabel: members.labelFor(row.dimensionKey) },
+            {
+              ...row,
+              value,
+              defaultValue,
+              repeating,
+              // A member-keyed row is named by its member; a typed one by the report's own answer
+              // for that ordinal (task 36.6). Both answer *what to call this row*, which is the one
+              // question `dimensionLabel` carries.
+              dimensionLabel: repeating
+                ? (answered?.names.get(row.ordinal) ?? null)
+                : members.labelFor(row.dimensionKey),
+            },
             resolved,
           );
         });
@@ -498,6 +521,83 @@ const qualifiedDomainOf = (element: TaxonomyElement): string | null =>
       ? element.domain
       : `${ENUMERATION_TAXONOMY.VSME}:${element.domain}`;
 
+interface AxisRows {
+  /** Every ordinal the axis has a row for — answered anywhere, or offered by the snapshot. */
+  readonly ordinals: ReadonlySet<number>;
+  /** What names each, where anything does. */
+  readonly names: ReadonlyMap<number, string>;
+}
+
+/**
+ * Which ordinals a report has answered on each **typed** axis, and what names each of them
+ * (task 36.6).
+ *
+ * **Axis-wide, for `chosenMembers`' reason one axis kind over**: a typed axis identifies a *thing*,
+ * and every element on it describes the same one. Per element the group goes ragged — measured:
+ * `CityOfSite` three rows and `AddressOfSite` two — and a site answered in B1 never reaches B5,
+ * which shares the axis since task 36.4's repair.
+ *
+ * **The name is the report's own answer, never the snapshot's.** §7.2 makes the snapshot *"the
+ * default, never the authority"*, and task 91.3's applicability rule already reads B1's stored
+ * answers to decide whether B5 applies at all — two mechanisms disagreeing about which sites exist
+ * is what this avoids. The first `text` element on the axis with an answer, in the standard's own
+ * presentation order, is what names the row: no per-axis naming vocabulary EFRAG does not state.
+ * `enumeration` is excluded because it stores a member key, and a key may not reach a reader.
+ */
+function answeredRows(input: {
+  readonly elements: readonly TaxonomyElement[];
+  readonly typedAxisOf: (element: TaxonomyElement) => string | null;
+  readonly byElement: ReadonlyMap<string, readonly DisclosureValue[]>;
+  readonly defaults: EntityDefaults;
+}): ReadonlyMap<string, AxisRows> {
+  const gathering = new Map<string, { ordinals: Set<number>; names: Map<number, string> }>();
+  // Presentation order, so the FIRST element that has something names the row — the elements arrive
+  // in it already, and relying on that is why no naming vocabulary is declared.
+  for (const element of input.elements) {
+    const axis = input.typedAxisOf(element);
+    if (axis === null) continue;
+    const standing = gathering.get(axis) ?? { ordinals: new Set<number>(), names: new Map<number, string>() };
+    gathering.set(axis, standing);
+    const names = element.kind === DISCLOSURE_KIND.TEXT;
+
+    // **What THIS element says about each ordinal, resolved before anything is named** (convention
+    // review, 8 Sep 2026). Gathering across elements and rows in one pass made the name *last*-wins
+    // within an ordinal, so a site with an address, a city and a GPS fix — which is every site once
+    // the browser commits B1's defaults on arrival — was named by its coordinate pair, the one
+    // outcome the presentation order exists to avoid. Neither test could see it: the api's names
+    // came from defaults, which were already first-wins, and the browser fixture gives a site a
+    // locality and nothing else.
+    const shown = new Map<number, string>();
+
+    // **The snapshot's rows count for the whole axis, not just the element it defaults** (task
+    // 36.6). B1's `AddressOfSite` is given two rows by the snapshot and B5's site elements none, so
+    // reading the element's own defaults would show B5 one row for a two-site company — a site the
+    // platform knows about is a site B5 must ask about, whether or not anyone has committed it yet.
+    for (const [ordinal, value] of (input.defaults.get(element.key) ?? []).entries()) {
+      standing.ordinals.add(ordinal);
+      const text = value?.valueText ?? null;
+      if (names && text !== null && text !== '') shown.set(ordinal, text);
+    }
+
+    // A stored answer replaces the default offered for the same element — **including by being
+    // empty**, which is the step read's own rule twenty lines down: *a row in any state suppresses
+    // the default, because cleared is a decision*. A site whose address the reporter deleted is not
+    // still named by the address the snapshot proposed.
+    for (const value of input.byElement.get(element.key) ?? []) {
+      if (value.dimensionKey !== NO_DIMENSION) continue;
+      standing.ordinals.add(value.ordinal);
+      if (!names) continue;
+      const text = value.valueText;
+      if (text !== null && text !== '') shown.set(value.ordinal, text);
+      else shown.delete(value.ordinal);
+    }
+
+    // First element in presentation order that has something wins, and keeps it.
+    for (const [ordinal, text] of shown) if (!standing.names.has(ordinal)) standing.names.set(ordinal, text);
+  }
+  return gathering;
+}
+
 /**
  * Which members a report has chosen on each classification axis (task 36.5).
  *
@@ -568,12 +668,20 @@ function rowsOf(input: {
   readonly classification: string | null;
   /** The members chosen anywhere on this element's classification axis, in a stable order. */
   readonly chosen: readonly string[];
+  /** The ordinals anything on this element's typed axis is answered at, anywhere in the report. */
+  readonly answeredOrdinals: readonly number[];
   readonly stored: readonly DisclosureValue[];
   readonly defaultRows: number;
 }): readonly FieldRow[] {
   if (input.repeating) {
-    const ordinals = new Set<number>();
-    for (const value of input.stored) if (value.dimensionKey === NO_DIMENSION) ordinals.add(value.ordinal);
+    // **The ordinals the AXIS is answered at, not this element's** (task 36.6). A typed axis
+    // identifies a thing — this site, that subsidiary — and §7.3 makes the ordinal that identity,
+    // so a row exists for the axis the moment any element on it is answered. Computed per element,
+    // a reporter who added a third site by answering its city got `CityOfSite` three rows and
+    // `AddressOfSite` two: a ragged group whose third address could not be entered at all. It is
+    // task 36.5's classification rule on the other kind of axis, and it is what carries a site from
+    // B1 into B5, which share this axis since task 36.4's repair.
+    const ordinals = new Set<number>(input.answeredOrdinals);
     for (let ordinal = 0; ordinal < input.defaultRows; ordinal += 1) ordinals.add(ordinal);
     const rows = ordinals.size === 0 ? [0] : [...ordinals].sort((a, b) => a - b);
     return rows.map((ordinal) => ({ dimensionKey: NO_DIMENSION, ordinal }));

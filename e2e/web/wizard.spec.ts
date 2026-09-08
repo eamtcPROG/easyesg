@@ -596,6 +596,76 @@ test('a unit is shown where the standard fixes it and asked where it admits seve
     .toMatchObject({ valueNumeric: '12', unitCode: 't' });
 });
 
+/**
+ * B5 in a browser (UC-23, FR-24, FR-28; task 36.6) — **a site the report knows about is a B5 row,
+ * named by the report's own answer for it.**
+ *
+ * `design_spec.md` §6.1 makes B5 *"site-driven from the B1 site geolocations"* and UC-23 asks the
+ * question *"using the B1 site geolocations"*. Task 91.3 built the applicability half — the fields
+ * appear once B1 lists a site — and the rows were the half nothing built: measured before this
+ * task, a three-site report served **one** B5 row, unnamed. A reporter asked *is this site in a
+ * biodiversity-sensitive area?* could not tell which site was being asked about.
+ *
+ * `IdentifierOfSiteTypedAxis` is presented in B1 **and** B5 (task 36.4's repair), so this is one
+ * rule rather than a B5 feature: a typed axis's rows belong to the axis, not to each element.
+ */
+test('B5 asks about each site the report knows, and names it (UC-23)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b5', [
+    { name: 'Depozit', locality: 'Bălți' },
+    { name: 'Atelier', locality: 'Orhei' },
+  ]);
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  // **B1 first, because the rows are the report's answers and not the snapshot's alone** — opening
+  // the step commits its shown defaults (FR-27, UX-34), which is task 91.2's rule and the reason
+  // §7.2 calls the snapshot the default rather than the authority.
+  await page.goto(`/reports/${reportId}/B1`);
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+    timeout: 15_000,
+  });
+
+  await page.goto(`/reports/${reportId}/B5`);
+
+  // Each group's legend carries the position AND what the report calls the row. The position is
+  // what §7.3 actually keys on — two sites in one city would both read *Bălți* — and the name is
+  // what lets a reader tell one row from another at all. Before this task both read *Amplasament 1*
+  // and there was only one of them.
+  const balti = page.getByRole('group', { name: 'Amplasament 1 — Bălți' });
+  const orhei = page.getByRole('group', { name: 'Amplasament 2 — Orhei' });
+  await expect(balti).toBeVisible();
+  await expect(orhei).toBeVisible();
+  // Exactly two, so a third site nobody entered — or a group per element — fails here.
+  //
+  // **The pattern matches the legend's shape, not the word**, and that is precision rather than a
+  // workaround: §6.2's anatomy gives every disclosure field `role="group"` too, and B5's own
+  // element labels begin *"Amplasament situat…"* — so a bare `/^Amplasament /` resolves six.
+  await expect(page.getByRole('group', { name: /^Amplasament \d+ — / })).toHaveCount(2);
+
+  // UC-23's alternate flow is a **negative determination, not an empty section**: the reporter says
+  // no rather than leaving the field blank, and the two are different answers in the store.
+  const near = balti.getByRole('combobox', {
+    name: 'Amplasament situat în apropierea unei zone sensibile din punctul de vedere al biodiversității',
+  });
+  await near.click();
+  await page.getByRole('option', { name: 'Nu', exact: true }).click();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+    timeout: 15_000,
+  });
+
+  // **Stored against the right site**, which the indicator cannot tell you — it reads *Salvat*
+  // whichever ordinal was written, and a group that ignored its ordinal would look identical.
+  const stored = {
+    organizationId,
+    reportId,
+    elementKey: 'SiteLocatedNearABiodiversitySensitiveArea',
+  };
+  await expect
+    .poll(async () => await disclosureValueOf({ ...stored, ordinal: 0 }), { timeout: 15_000 })
+    .toMatchObject({ valueBoolean: false, state: 'ok' });
+  // …and the other site is untouched, so *no for Bălți* has not been filed as *no for Orhei*.
+  expect(await disclosureValueOf({ ...stored, ordinal: 1 })).toBeNull();
+});
+
 test('a module the rules ruled out says so on the rail rather than counting to zero (FR-28)', async ({
   page,
 }) => {

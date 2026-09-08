@@ -255,10 +255,21 @@ export function blankRow(template: StepGroupEntry, ordinal: number): StepGroupEn
     fields: template.fields.map((field) => ({
       ...field,
       ordinal,
+      // **The template's IDENTITY is cleared along with its values** (convention review, 8 Sep
+      // 2026). Until task 36.6 a typed row's `dimensionLabel` was always null, so there was nothing
+      // here to copy; now it carries what the report calls that site, and an added row inherited it
+      // — *Amplasament 3 — Orhei*, a site nobody has described wearing site 2's name. `blankCell`
+      // twelve lines down clears exactly this for the other axis kind, which is where the shape
+      // was noticed and not applied.
+      dimensionLabel: null,
       valueNumeric: null,
       valueText: null,
       valueBoolean: null,
       valueDate: null,
+      // A row added after a declared gap is not itself a declared gap: `state` and `unitCode` are
+      // as much the template's answer as its values are.
+      unitCode: null,
+      state: DISCLOSURE_STATE.MISSING,
       notAvailableReason: null,
       carriedForward: false,
       // A new row is the reporter's, so it carries no pre-fill: the snapshot's sites are the rows
