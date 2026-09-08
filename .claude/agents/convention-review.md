@@ -26,14 +26,19 @@ tools: Read, Grep, Glob, Bash
 # downgrade rule routed from the diff — `pnpm gates:scoped` prints the verdict — and the
 # override goes one way only, because a cheap run's miss is silent and cannot be escalated on.
 #
-# **Amended 3 Sep 2026 — the pin is `sonnet`, by the owner's standing override.** The routing
-# rule above is dormant, not withdrawn: the 31 Aug measurement still holds, so this accepts a
-# known gap on a usage budget rather than claiming the gap closed. Two consequences are worth
-# stating. The **pin** moved rather than the call site, because a default is what survives being
-# forgotten, and forgetting is precisely what the budget cannot afford. And the override now
-# points *up* — pass `model: opus` deliberately for a diff the routing table names — so the
-# fail-safe points at the cheap reviewer on purpose, inverting the paragraph above.
-model: sonnet
+# **The 3 Sep 2026 override is withdrawn (8 Sep 2026, owner) and the pin is `opus` again.** That
+# override was never a re-reading of the measurement; its stated reason was usage — *"three opus
+# runs over a whole task diff at every close"*. The 8 Sep gate policy removed that cost by moving
+# these agents from every sub-step close to the parent's: for task 36, three runs instead of
+# forty-two, since its fourteen sub-steps each used to close with all three. The premise is gone,
+# so the exception goes with it. An exception that outlives its condition is an unexamined default.
+#
+# **There is no downgrade path now, deliberately.** A parent-task diff is large by construction —
+# every sub-step's commits together — so a rule for the cheap case would describe almost nothing,
+# and the 31 Aug measurement's finding is that Sonnet's miss is *silent*. The routing table in the
+# root `CLAUDE.md` is dormant in both directions, kept as the description of where a review earns
+# the most rather than as a router.
+model: opus
 ---
 
 You review a diff against this repository's written conventions. You are not a general code

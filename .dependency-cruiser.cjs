@@ -5,10 +5,10 @@
  * silently matches nothing looks identical to a rule that passes." Every rule below has a
  * counter-fixture in tools/prove-boundaries.sh, which asserts each one still rejects it.
  *
- * Rules 1-6 guard apps/api; 7-11 guard apps/web and packages/ui; 12-18 guard apps/admin and the
- * separation between the two front ends; no-circular guards everything cruised. The `boundaries`
- * script names all four roots — a rule anchored at a path that is never walked is inert in the
- * same invisible way.
+ * Rules 1-8 guard apps/api; 9-14 guard apps/web and packages/ui; 15-21 guard apps/admin and the
+ * separation between the two front ends; 22 guards packages/i18n; no-circular guards everything
+ * cruised. The `boundaries` script names all five roots — a rule anchored at a path that is never
+ * walked is inert in the same invisible way.
  */
 module.exports = {
   forbidden: [

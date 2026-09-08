@@ -62,7 +62,7 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 | From | Command | Notes |
 | --- | --- | --- |
 | root | `pnpm lint` | One flat config at the root; this package has no `lint` script |
-| root | `pnpm boundaries` / `boundaries:prove` | Four rules govern this app — see below |
+| root | `pnpm boundaries` / `boundaries:prove` | Seven rules govern this app — see below |
 | here | `pnpm typecheck` | `tsc --noEmit` |
 | here | `pnpm build` | `vite build`. **Needs the environment it is built for** — see the env trap |
 | here | `pnpm start:dev` / `start:prod` | Port 3200 both ways; `start:prod` previews `dist/` |
@@ -159,7 +159,8 @@ src/
 
 ## Before you call it done
 
-The root `CLAUDE.md` requires `pnpm gates`. Everything in `apps/web/CLAUDE.md`'s "Before you call it
+The root `CLAUDE.md`'s "Closing a task" says which run applies — a sub-step gets only the gates its
+change reaches, the parent gets `pnpm gates:clean`. Everything in `apps/web/CLAUDE.md`'s "Before you call it
 done" applies here too — load `vercel-react-best-practices` and read the diff against it, load
 `vercel-composition-patterns` when a component API grows, re-read these traps against what you
 wrote, check the screen against its `A-nn` row in `design_spec.md` §5.2 and its artboard in

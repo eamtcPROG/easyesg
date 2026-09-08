@@ -85,6 +85,13 @@ jobs:
       # sub-second; it exists because the Images job caught this three times and only after an
       # image build, on push, with every other gate already green.
       - run: pnpm image:check
+
+      # Every countable claim the CLAUDE.md files make, against the repository they describe
+      # (task 100). A number in prose is invisible to every other gate and reads as authoritative
+      # precisely because it is specific; the 8 Sep 2026 audit found fourteen wrong statements
+      # across four files, three of them wrong on the day they were written. Hermetic and
+      # sub-second — it reads files and counts.
+      - run: pnpm docs:check
       - run: pnpm test
       - run: pnpm boundaries
 

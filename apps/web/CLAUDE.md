@@ -245,7 +245,7 @@ src/
 ├─ proxy.ts        Next 16's middleware. Locale AND session — see below
 ├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
-├─ features/       10 domains, mirroring apps/api/src/modules names
+├─ features/       14 domains, mirroring apps/api/src/modules names
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter)
 ├─ server/         server-only: session, api-client, data/
 ├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), polling
@@ -588,9 +588,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
 
 ## Before you call it done
 
-The root `CLAUDE.md` requires `pnpm gates`, and that is necessary rather than sufficient: the gates
-prove the code *runs*, not that it *belongs here*. Every finding the project owner has raised on
-this app and on `apps/admin` was invisible to all nine — a screen carrying the wrong idiom, a
+The root `CLAUDE.md`'s "Closing a task" says which run a sub-step and a parent each get, and
+whichever applies is necessary rather than sufficient: the gates prove the code *runs*, not that it
+*belongs here*. Every finding the project owner has raised on
+this app and on `apps/admin` was invisible to all sixteen — a screen carrying the wrong idiom, a
 screen that did not match its artboard, components in the wrong folder, no memoization anywhere.
 Gates cannot see any of those, so a convention pass is part of finishing, not a courtesy after it.
 

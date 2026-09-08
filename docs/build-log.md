@@ -12585,3 +12585,178 @@ nothing else running. The failure has never once been reproducible in isolation,
 property that makes it worth naming every time it appears.
 
 
+
+## Task 100 — The counts in the CLAUDE.md files are compared to nothing · 2026-09-08
+
+Appended by the project owner after a CLAUDE.md audit across all four files. The audit's headline
+was fourteen wrong statements; the finding that decided this task's shape was smaller and worse.
+
+### Three of the counts were wrong on the day they were written
+
+Not decayed — wrong at birth. `git log -S` on each claim settles it:
+
+| Claim | Introduced | Real figure at that commit |
+| --- | --- | --- |
+| "Module tree (36 registered" | `7444f47`, 24 Aug 2026 | 39 `.module.ts` under `src/modules/` |
+| "36 route files across four route groups" | `805aabe`, 18 Aug 2026 | 35 `page.tsx` |
+| "seventeen §7 invariants" | `7af64fa`, 20 Aug 2026 | the spec file did not yet exist |
+
+That reframes the gate. A staleness check would have caught the first two eventually and taken the
+blame for someone else's drift; what actually happened is that a number was invented, read as
+authoritative *because* it was specific, and survived three weeks of every gate passing. **A count
+in prose is invisible to `lint`, `typecheck`, `boundaries` and every other check in the set.**
+
+It is task 90's shape ("the image's workspace-dependency list is compared to nothing") and task 98's
+("the selectors have no failing state"), one layer out: an artefact the repository describes, with
+nothing comparing the description to the thing.
+
+### The design decision: the prose is the single source of the claim
+
+The obvious manifest — `{ file, claim, expected: 44 }` — is wrong, and wrong in a way this
+repository has already named twice. It is a second copy of the number, free to disagree with the
+sentence it describes, exactly as duplicated DTOs drift in `iftamaster` and as a hand-written copy
+of a vocabulary drifts from its `as const`. It would also produce the worst failure available here:
+a manifest and a document that agree with each other and not with the code.
+
+So an entry carries **no expected value**. It carries a `pattern` whose capture group is the number
+*as written in the document*, and an `actual()` that computes the truth from the repository without
+reading that document. There is one place the number lives, and it is the sentence a reader sees.
+
+Three ways an entry fails, and the second and third are the interesting ones:
+
+- claimed and computed disagree — the ordinary case;
+- **the pattern matches nothing.** The prose was rewritten and the claim moved or vanished. That is
+  a failure, not a pass. A check whose subject has gone is not satisfied, and the alternative is a
+  manifest that silently shrinks to zero live entries while reporting success;
+- **the pattern matches twice**, which makes "the claim" ambiguous and the capture a coin toss.
+
+### The prove pass runs inside `docs:check`, not beside it
+
+`boundaries:prove` and `eslint:prove` exist because a rule that matches nothing looks exactly like a
+rule that passes. The same hazard lives here in a subtler form: a pattern can match, capture the
+*wrong number in the sentence*, and agree with `actual()` by coincidence — green, and checking
+nothing.
+
+So after every claim passes, each is re-run against an in-memory copy of the document with that
+claim's number changed, and the run fails unless the check now fails. That proves the capture group
+is anchored to the figure a human would edit.
+
+It is part of `docs:check` rather than a third `*:prove` script for one reason: it is instant and
+in-memory, and **a prover nobody runs is worth nothing**. `boundaries:prove` costs 90 s and
+`eslint:prove` writes fixtures into the tree, which is why both are separate and conditional. This
+one has neither excuse.
+
+### The manifest pins its own size, which is the gate's failing state
+
+Twenty-six entries prove five documents right. **None of them notices if the array is emptied.** A
+`CLAIMS` with two entries left in it passes, prints a cheerful line, and checks almost nothing —
+`domain-free-of-frameworks` shipping inert, one more time.
+
+So the twentieth entry checks `CLAIMS.length` against a number written into `CLAUDE.md`'s
+working-commands list. It is a fixpoint rather than a circularity: delete an entry and the computed
+length falls below what the document claims. Proven by deleting one — `1 of 24 claims failed`.
+
+### It corrected a claim about itself on the way in
+
+Two, in fact, and the second is the better story.
+
+Adding `docs:check` to the chain moved "twelve root scripts" to thirteen and "all fifteen" to
+sixteen — and the gate caught the second of those itself, since the chain length is one of the
+claims it checks.
+
+The other was already wrong. Both `CLAUDE.md` and `gates-scoped.sh` said **"Three gates always run
+whole-repo whatever the selection"** and listed `typecheck`, `boundaries` and `lint`. `image:check`
+has always run unconditionally too, and its own comment in `gates-scoped.sh` said so four lines
+below — so the count had been four since task 90 and read three. It is five now, and both files say
+which five. Nothing but reading the two sentences against each other could have found it, which is
+the argument for the gate restated in miniature.
+
+### What is deliberately not checked
+
+`~3,200 lines of convention` and `~10,600 of normative specification` stay unchecked. They are
+orders of magnitude, not counts, and pinning them would fail on every paragraph anyone writes —
+a gate that fires on correct work trains the inline disable.
+
+### Reviews — not run
+
+**The three review agents were not invoked, and this entry does not claim they were.** The session's
+standing instruction is not to spawn agents unless asked, and the owner did not ask. Under the
+8 Sep 2026 gate policy this task is a parent with no sub-steps, so its close does call for them, and
+that obligation is outstanding rather than discharged.
+
+By the routing table this diff earns `opus`: it touches the contract of what CI runs, `gates.yml`,
+`gates-scoped.sh` and five documents — comfortably three or more workspaces' worth of surface.
+
+### Verified
+
+- `pnpm docs:check` — 26 claims across 5 documents, each additionally proven to notice a changed
+  number.
+- **Proven to bite on four failure modes**, by deliberate breakage: a wrong number
+  (`says 45 … has 44`); prose rewritten so the pattern matches nothing; a real source change the
+  document does not know about (`touch packages/ui/src/primitives/probe-widget.tsx` → two claims
+  fail, the count and its restatement in the `'use client'` sentence); and a deleted manifest entry.
+  All four restored and re-verified green.
+- **`pnpm gates` and the CI `hermetic` + `database` jobs still concatenate to the same list in the
+  same order**, checked by diffing the two — which is the property task 90 added and the one this
+  change was most likely to break.
+- `pnpm lint` clean.
+- **`pnpm gates:clean` was not run**, per the owner's 8 Sep 2026 policy and their machine's cost;
+  CI's full set stands behind the push.
+
+### Addendum, same day — the gate shipped with a coverage hole
+
+A second CLAUDE.md audit an hour after this task closed found that `docs:check` watched **four of
+the five documents**. The uncovered one, `apps/web/CLAUDE.md`, was the only file holding a **live
+wrong count**: *"invisible to all nine"*, which was correct on 24 Aug 2026 when the chain had nine
+non-e2e root scripts and was thirteen by the time anyone looked.
+
+The manifest's coverage had been chosen by **where the first audit happened to be reading**, which
+is the defect this gate exists for, one level up: a check whose scope is set by attention rather
+than by where claims are. Five entries were added — the chain total, the boundary-rule count, the
+nine archetypes, the three message catalogues, the fourteen feature domains — taking the manifest to
+25 across all five documents. The gate-count claim is now pinned in **two** files, so the next
+change to the chain fails until both are updated.
+
+Two other statements went with it, and their cause is worth recording because it is not the same:
+
+> *"The root `CLAUDE.md` requires `pnpm gates`"* — false since the 8 Sep gate policy — stood in
+> `apps/web/CLAUDE.md` and `apps/admin/CLAUDE.md` after being fixed in `apps/api/CLAUDE.md` earlier
+> the same day, **because that is where the audit surfaced it**.
+
+That is `CLAUDE.md`'s own rule ignored in the same session it was quoted: *"when you fix an instance
+of a rule, search for its shape before you close it."* One `grep` for the sentence would have found
+all three. `docs:check` cannot catch this class — it is a prose assertion, not a count — which is
+the honest boundary of what this gate buys.
+
+### Second addendum, same day — auditing `task.md` found the plan lying about itself
+
+`docs/task.md` passes every convention `CLAUDE.md` states about it, and that was checked rather than
+assumed: 361 rows, all six columns, **361/361 statuses one of the four permitted words** with no
+dates and no narrative, ids 1–100 with no gaps and no duplicates, no parent-status disagreement, and
+**every one of the 105 `DONE` tasks carries a build-log record**. Two rows that looked wrong were
+right — 74.1 is `IN PROGRESS` because its entry closed only the *header half*, and 67.2 is `BLOCKED`
+on the **left-hand** `OQ-44`, still open, while the *shadowed* one closed on 24 Aug (§18 records that
+collision deliberately).
+
+What was wrong was the grouping. **Tasks 85–100 sat under "Phase 10 — Comprehensive Module"** — e2e
+timeouts, the image guard, the ESLint selectors, message providers, this task — for one reason:
+appending puts a row at the end of the file, and Phase 10's table was last. The numbering rule was
+obeyed exactly; the heading was simply never asked whether it still described its contents.
+
+The cost was a false number rather than untidiness. Phase 10 read **27% complete while none of tasks
+78–84 had started** — all thirteen of its finished rows were appended work. Computed per phase, it
+was the only phase whose figure lied.
+
+The fix is one heading, *Appended — work found outside the plan*, inserted before task 85. **No
+number moves**: they are cited in §12.5.6, in this file and in commits, and moving one would be an
+insertion. Every section now maps to a contiguous range, and the Comprehensive Module reads 0%.
+
+**And `CLAUDE.md` said the plan held "77 tasks"** — 23 behind, the sentence never revisited as work
+was appended. It is the 26th claim now, computed from `task.md` itself. It is also the first claim
+this gate covered about a **tracking file** rather than about code: the manifest had been built
+entirely from counts describing source, so a count describing `task.md` was outside its scope
+without anyone choosing that. The same shape as the coverage hole in the first addendum, one more
+time — scope set by where the last audit was looking.
+
+No new task number was opened. The gate's growth belongs to task 100, and a heading inserted into a
+tracking file is not a slice of the build.

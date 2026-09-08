@@ -14,9 +14,11 @@
 # `pnpm --filter "...[<base>]"` selects changed packages AND their dependents, which gets right what
 # the hand-rolled rule gets wrong — verified against that commit, where it pulls in web and admin.
 #
-# Three gates always run whole-repo regardless of selection, because they are cheap and they are
+# Five gates always run whole-repo regardless of selection, because they are cheap and they are
 # precisely what catches a cross-workspace break: typecheck (15 s) — "api moved the contract, web no
-# longer compiles" — boundaries (5 s, below, because it builds) and lint (~5 s cached).
+# longer compiles" — boundaries (5 s, below, because it builds), lint (~5 s cached), and the two
+# file-reading checks, image:check and docs:check. This said "three" and listed the first three
+# until task 100; image:check has always run unconditionally too.
 #
 set -uo pipefail
 
@@ -110,9 +112,9 @@ run() { # run <label> <command...>
   fi
 }
 
-# ── Group 1: the three that build nothing, in parallel ───────────────────────────────────────────
+# ── Group 1: the four that build nothing, in parallel ────────────────────────────────────────────
 #
-# **Only these three.** `pnpm test` is deliberately not here: `apps/api`'s `pretest` rebuilds
+# **Only these four.** `pnpm test` is deliberately not here: `apps/api`'s `pretest` rebuilds
 # `@easyesg/i18n` and `@easyesg/validation`, and running that concurrently with a typecheck
 # resolving those same `dist/` directories is a read-during-write race. This repository has already
 # lost a day to shared `dist` state between gates (20 Aug 2026); the parallel win is not worth
@@ -129,8 +131,11 @@ echo
 echo "Hermetic (parallel):"
 # `image:check` joins the hermetic group rather than the sequential one: it reads two files and
 # exits, depends on no build output and no database, and it always runs whatever the selection —
-# a Dockerfile can drift from a manifest in a change that touches neither app.
-for phase in lint typecheck image:check; do run "${phase%%:*}" pnpm "$phase" & done
+# a Dockerfile can drift from a manifest in a change that touches neither app. `docs:check` joins
+# it for the same three reasons and one of its own: it is exactly the gate a narrow run would skip,
+# because a count in `packages/ui/CLAUDE.md` goes stale from a change in `packages/ui/src` that
+# never touches the document.
+for phase in lint typecheck image:check docs:check; do run "${phase%%:*}" pnpm "$phase" & done
 wait
 
 # ── Group 2: everything that shares the database or a build output, in order ─────────────────────
@@ -195,22 +200,24 @@ if [ ${#FAILED[@]} -eq 0 ]; then
   # The proxy is what Sonnet measurably misses — findings that connect a rule in one file to a
   # convention in another. Breadth and the tenancy/privilege surface stand in for that.
   #
-  # **Upgrade-only, since 3 Sep 2026 — this block said the opposite until 7 Sep.** The owner's
-  # standing override moved the frontmatter pin to `sonnet` for every one of the three agents,
-  # whatever the diff touches. The reason was usage, not a re-reading of the measurement above: the
-  # reviews are worth their cost and were not worth three opus runs over a whole task diff at every
-  # close. So the table below is dormant as a **default** and intact as the **description** of what
-  # earning `opus` looks like, and this line suggests overriding *up*.
+  # **Nothing routes here any more (8 Sep 2026).** The owner's 3 Sep override, which had pinned all
+  # three agents to `sonnet`, is withdrawn: its reason was usage — three opus runs over a whole task
+  # diff at *every* close — and the same day's gate policy moved the reviews to the parent's close
+  # only, which for task 36 is three runs instead of forty-two. The premise went, so the exception
+  # went with it. The pin is `opus` and there is no downgrade path, because a parent-task diff is
+  # large by construction and Sonnet's miss is silent.
   #
-  # The consequence is worth stating because it inverts the old fail-safe: forgetting now gets you
-  # the cheaper reviewer rather than the better one, which is exactly why this prints at all. What
-  # does NOT change is that the choice is made from the diff **before** any agent runs — never from
-  # a sonnet report, which the 31 Aug measurement found carries no signal to escalate on.
+  # **The computation below is kept as a signal, not a router**, and that is a deliberate choice
+  # rather than leftover code: it says which surface a diff touches, which is where a reviewer
+  # should look hardest whatever model is reading. It also cost real debugging to get right — see
+  # the `apps/api/src/*` scoping note below — and a measurement deleted is a measurement thrown
+  # away.
   #
-  # It read *"Downgrade-only. The frontmatter pins `opus`"* for four days after that stopped being
-  # true, and the printed line called opus "the pinned default" while all three agent files pinned
-  # `model: sonnet`. Nothing could catch it: a stale sentence about a pin is not a claim any run
-  # evaluates — the same shape as the `tools/*.mjs` comment corrected in the same task.
+  # This block has now been wrong in both directions. It read *"Downgrade-only. The frontmatter pins
+  # `opus`"* for four days after the 3 Sep override made that false, and printed "the pinned
+  # default" about opus while all three agent files said `model: sonnet`. Nothing catches that: a
+  # stale sentence about a pin is not a claim any run evaluates. The pin is the fact; this comment
+  # is a description of it, and descriptions rot.
   workspaces=$(printf '%s\n' "$SELECTED" | grep -c '^/' || true)
   risky=''
   git diff --name-only "$BASE" -- '*/migrations/*' | grep -q . && risky='a migration'
@@ -228,14 +235,9 @@ if [ ${#FAILED[@]} -eq 0 ]; then
   [ -z "$risky" ] && [ "$workspaces" -ge 3 ] && risky="$workspaces workspaces"
 
   echo
+  printf 'Review agents: \033[1mopus\033[0m — the pin since 8 Sep, and no routing decision to make.\n'
   if [ -n "$risky" ]; then
-    printf 'Review agents: this diff EARNS \033[1mopus\033[0m — it touches %s.\n' "$risky"
-    printf 'The pin is `sonnet`, so pass `model: opus` when invoking them. Decide now, not after\n'
-    printf 'reading a report: a sonnet report gives nothing to escalate on.\n'
-  else
-    printf 'Review agents: \033[1msonnet\033[0m, the pinned default, and nothing here earns opus —\n'
-    printf 'one workspace, no migration, grant, policy, trigger, contract or identity surface.\n'
-    printf 'Invoke them as they are.\n'
+    printf 'This diff touches %s, which is where a review earns the most.\n' "$risky"
   fi
   exit 0
 fi

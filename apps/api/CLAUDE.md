@@ -211,6 +211,24 @@ Five things about it that are load-bearing:
   `modules/platform/taxonomy/taxonomy-artefact.spec.ts` asserts the shipped artefacts produce no such
   line — a fail-soft design is only safe when a gate reads the log.
 
+Task 34.2 adds **the typed facade over that registry** (AD-3, T-3), in `packages/vsme` — the
+disclosure store is element-keyed, so `DISCLOSURES.bThree.grossScopeOneGreenhouseGasEmissions` is
+what buys back the compile-time typing a generic store never had. Two rules about it, and both are
+DR-4's:
+
+- **`packages/vsme/src/generated/<version>.ts` is written once and never edited.** A report pinned
+  to `2026-05-01` must still read against *that* version's elements after a newer one registers, so
+  a taxonomy change is a **new file**, never an edit to the old one — the same append-only shape the
+  label catalogues use. The vocabulary those files are written against lives beside them in
+  `packages/vsme/src/shape.ts`, hand-written, so changing what a descriptor *means* stays one edit
+  rather than one per registered version.
+- **Regenerate, never hand-edit.** `pnpm facade:generate` writes it from
+  `config/seed/vsme-taxonomy.<version>.json`, and `pnpm facade:check` regenerates and then
+  `git diff --exit-code`s the result — so a hand edit fails the gate exactly as a stale file does.
+  The generator asserts rather than defaults, like the extractor above it: an unmapped disclosure
+  kind, an axis the version does not declare, an element carrying more than one axis, or an
+  identifier that would carry a digit each fail the run with a message.
+
 Task 31.1 adds **the reporting period** (UC-56; FR-21, FR-45, FR-66): `core.reporting_period` with
 `GET/POST /api/v1/periods` and `GET/PATCH /periods/{id}`, reads open to every member and writes
 `@RequiresRole(OA)`. Four things about it are load-bearing:
@@ -1138,8 +1156,10 @@ pass baked into finishing a task since 24 Aug 2026, and `apps/api` — the works
 - **Measure the database claims, do not reason about them.** `EXPLAIN` the queries a task adds; at
   these table sizes the planner prefers a sequential scan, so confirm an index is *usable* with
   `SET enable_seqscan = off` rather than concluding it is missing.
-- **Then `pnpm gates`, then `pnpm gates:clean`, then the build-log entry** — the root file's rule,
-  and the entry is half of what "finished" means.
+- **Then the run the root file's "Closing a task" calls for** — a sub-step gets only the gates its
+  change reaches; the parent gets `pnpm gates:clean` and the three review agents. Then the build-log
+  entry, which is half of what "finished" means. Never `pnpm gates` followed by `pnpm gates:clean`:
+  the second wraps the first, so that is the same set paid for twice.
 
 ## Boundary rules
 
@@ -1147,7 +1167,7 @@ Nine, in `.dependency-cruiser.cjs`: `core-not-to-billing`, `billing-not-to-core`
 `api-no-unresolvable`, `controllers-not-to-use-cases`, `cross-cutting-not-to-modules`,
 `api-not-to-contracts-package`, `contracts-is-a-leaf`, `domain-free-of-frameworks`, `no-circular`.
 
-All seven have a fixture in `tools/prove-boundaries.sh` proving they reject a real violation. Keep
+All nine have a fixture in `tools/prove-boundaries.sh` proving they reject a real violation. Keep
 that true: if you add or edit a rule, add its fixture in the same change. A rule that matches nothing
 looks exactly like a rule that passes — `domain-free-of-frameworks` shipped inert on its first run
 because dependency-cruiser matches npm dependencies by *resolved* path, so `^@nestjs` never matched
