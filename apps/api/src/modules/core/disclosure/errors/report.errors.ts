@@ -124,3 +124,26 @@ export class UnknownDisclosureElementError extends DomainError {
     super('core.report.unknown_disclosure_element');
   }
 }
+
+/**
+ * A value was offered under a dimension the element's axes do not admit (task 36.5).
+ *
+ * **The same defect as the element check above, one key part over**, and it became reachable when
+ * task 36.5 made a classification derive its rows from the *store*: before that a stray
+ * `dimension_key` was merely never read, and now it would materialise as a visible row on every
+ * element of the axis. The browser refuses to write one — but a guarantee that lives in one client
+ * is P-4 inverted, and this is the layer that owns it.
+ *
+ * **An undimensioned key is not this error.** `''` is what an unaxed element carries, what a typed
+ * axis's rows carry (their position is the ordinal), and what an explicit axis in neither registered
+ * shape carries — `ReportingScopesAxis`, whose default member *is* the answer. Refusing it would
+ * refuse three legitimate shapes to catch one.
+ */
+export class UnknownDisclosureDimensionError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.unknown_disclosure_dimension');
+  }
+}

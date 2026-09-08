@@ -201,6 +201,17 @@ export interface DisclosureField {
   readonly valueBoolean: boolean | null;
   readonly valueDate: string | null;
   readonly unitCode: string | null;
+  /**
+   * The units the standard admits for this element (task 91.4; UX-14).
+   *
+   * **Empty is *EFRAG states none*, and the two branches UX-14 names are `length` rather than a
+   * flag**: one code is a unit the field *shows*, several are a list it *asks* from. 38 of the 78
+   * quantitative elements carry any — B4's three emissions take `kg` or `t`, B3's total energy is
+   * fixed at `MWh`, and its two fuel breakdowns state nothing at all.
+   *
+   * Distinct from `unitCode` beside it, which is what a stored row *holds*: this is what it may.
+   */
+  readonly unitCodes: readonly string[];
   readonly state: DisclosureState;
   /** FR-32's reason, required exactly when the state is `not_available`. */
   readonly notAvailableReason: string | null;
@@ -224,4 +235,30 @@ export interface DisclosureStep {
   readonly module: string;
   readonly taxonomyVersion: string;
   readonly fields: readonly DisclosureField[];
+  /**
+   * The domains this step's **classifications** draw their rows from (task 36.5).
+   *
+   * **On the step and deliberately not on the field**, which is where `options` puts an
+   * enumeration's answers. A classification's members are the same list for every element on the
+   * axis — B4's three emissions share 94 pollutants, B7's waste elements share 973 — so a per-field
+   * copy is 282 objects for one answer and 973 × N for the next module. The field names its axis;
+   * the step carries the axis once.
+   */
+  readonly axes: readonly DisclosureAxis[];
+}
+
+/**
+ * One classification axis and the rows a reporter may add from it (task 36.5).
+ *
+ * **Only classifications appear here.** A *breakdown* axis has no picker — its rows are fixed and
+ * already served as fields — and a *typed* axis's rows are identifiers the reporter supplies, so
+ * neither has a domain to offer. Which is which is `AxisShapes`' answer, not a property of the axis
+ * (AD-4; `DISCLOSURE_AXIS_SHAPE_CONFIG_KIND` carries the reasoning).
+ */
+export interface DisclosureAxis {
+  readonly key: string;
+  /** What to call the axis on screen — its default member's label, which is the domain's own name. */
+  readonly label: string | null;
+  /** Every member the reporter may report along, worded in the request's locale. */
+  readonly members: readonly DisclosureOption[];
 }

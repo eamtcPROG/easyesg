@@ -1,3 +1,4 @@
 {
-  "breakdown": ["BreakdownOfEnergyConsumptionAxis"]
+  "breakdown": ["BreakdownOfEnergyConsumptionAxis"],
+  "classification": ["TypeOfPollutantAxis"]
 }

@@ -1,4 +1,4 @@
-import type { DisclosureField } from '@easyesg/contracts';
+import { DISCLOSURE_STATE, type DisclosureField } from '@easyesg/contracts';
 
 /**
  * How a step's fields lay out (task 36.2) — a flat list of questions, or a repeating group.
@@ -13,7 +13,12 @@ import type { DisclosureField } from '@easyesg/contracts';
  * §12.5.6, task 36.2).
  */
 
-export const STEP_ENTRY = { FIELD: 'field', GROUP: 'group', BREAKDOWN: 'breakdown' } as const;
+export const STEP_ENTRY = {
+  FIELD: 'field',
+  GROUP: 'group',
+  BREAKDOWN: 'breakdown',
+  CLASSIFICATION: 'classification',
+} as const;
 
 export type StepEntryKind = (typeof STEP_ENTRY)[keyof typeof STEP_ENTRY];
 
@@ -50,7 +55,38 @@ export interface StepBreakdownEntry {
   readonly fields: readonly DisclosureField[];
 }
 
-export type StepEntry = StepFieldEntry | StepGroupEntry | StepBreakdownEntry;
+/**
+ * One row of a **classification**: the fields answered for one member the reporter chose (task 36.5).
+ *
+ * EFRAG's B4 sheet is the shape this draws — `Row ID │ Pollutant │ Emission to air │ Emission to
+ * water │ Emission to soil`, over rows the reporter adds. So a row names a *member* and carries
+ * every element on the axis, which is neither of the other two groupings:
+ *
+ * - a **repeating group** is one row of several objects, identified by its **position** — this site,
+ *   that site — and the reporter names it in a text field;
+ * - a **breakdown** is one question answered several ways, over members the standard **fixes**, so
+ *   there is nothing to add and no picker;
+ * - a **classification** is rows the reporter **selects** from a domain, so it has a picker *and* an
+ *   add control, and its legend names the chosen member.
+ *
+ * A fourth kind rather than a flag on `GROUP`, on `BREAKDOWN`'s own precedent: the alternative is a
+ * boolean on every branch that reads one, which is the smell UX-89 names.
+ */
+export interface StepClassificationEntry {
+  readonly kind: typeof STEP_ENTRY.CLASSIFICATION;
+  /** The axis these rows are chosen from — what the picker offers, and what an added row extends. */
+  readonly axis: string;
+  /**
+   * The chosen member, or `''` for a row nobody has assigned one to yet.
+   *
+   * Empty on a *dimensioned* element is task 36.5's *no member chosen*, and is not the undimensioned
+   * row an unaxed field carries — the difference is the axis, which the field names.
+   */
+  readonly dimensionKey: string;
+  readonly fields: readonly DisclosureField[];
+}
+
+export type StepEntry = StepFieldEntry | StepGroupEntry | StepBreakdownEntry | StepClassificationEntry;
 
 /** A group under construction — the one place `fields` is writable. */
 interface Collecting {
@@ -71,7 +107,19 @@ interface Collecting {
  * in raw presentation order (they share the same `order`), so grouping is by `(axis, ordinal)` and
  * the groups themselves are ordered by ordinal.
  */
-export function layOutStep(fields: readonly DisclosureField[]): readonly StepEntry[] {
+export function layOutStep(
+  fields: readonly DisclosureField[],
+  /**
+   * The axes a reporter **selects** rows from, from the step's own `axes` (task 36.5).
+   *
+   * Handed in rather than derived, because no property of a field says which of the three shapes
+   * its axis is answered in: `repeating` distinguishes the typed one, and a *breakdown* and a
+   * *classification* look identical on the wire — several elements, member-keyed rows. That is
+   * `AxisShapes`' registered answer (AD-4), and a client-side guess is what task 36.2's header
+   * already warns against.
+   */
+  classificationAxes: ReadonlySet<string> = new Set(),
+): readonly StepEntry[] {
   // Mutable while collecting, `readonly` once returned: the same object is both the map's entry and
   // the list's, so a row's later fields reach a group already positioned in the step.
   const groups = new Map<string, Collecting>();
@@ -80,8 +128,35 @@ export function layOutStep(fields: readonly DisclosureField[]): readonly StepEnt
   // Breakdown rows collect by element: every row of one element shares its label and differs only
   // by member, so the element is the group and the member is the row (task 36.4).
   const breakdowns = new Map<string, { kind: typeof STEP_ENTRY.BREAKDOWN; elementKey: string; fields: DisclosureField[] }>();
+  // Classification rows collect by MEMBER, across elements: one pollutant's air, water and soil are
+  // one row of EFRAG's own table (task 36.5) — the transpose of a breakdown's grouping.
+  const classifications = new Map<
+    string,
+    { kind: typeof STEP_ENTRY.CLASSIFICATION; axis: string; dimensionKey: string; fields: DisclosureField[] }
+  >();
 
   for (const field of fields) {
+    const selected = field.axes.find((axis) => classificationAxes.has(axis));
+    // **Checked first, and before `dimensionKey`**, because a classification's unassigned row
+    // carries an empty `dimensionKey` and would otherwise fall through to the undimensioned branch
+    // — where it would render as a bare field with no picker and no way to name what it measures.
+    if (selected !== undefined) {
+      const key = `${selected}\u0000${field.dimensionKey}`;
+      const standing = classifications.get(key);
+      if (standing === undefined) {
+        const row = {
+          kind: STEP_ENTRY.CLASSIFICATION as typeof STEP_ENTRY.CLASSIFICATION,
+          axis: selected,
+          dimensionKey: field.dimensionKey,
+          fields: [field],
+        };
+        classifications.set(key, row);
+        entries.push(row);
+      } else {
+        standing.fields.push(field);
+      }
+      continue;
+    }
     // **Checked before `repeating`, and the two cannot both hold**: the api gives a row either an
     // ordinal (typed axis) or a member (breakdown axis), never both, because no registered element
     // carries more than one axis. Reading them in this order means a future element that did would
@@ -212,7 +287,10 @@ export function withAddedRows(
       (entry): entry is StepGroupEntry => entry.kind === STEP_ENTRY.GROUP && entry.axis === axis,
     );
     const template = rows.at(-1);
-    if (template === undefined) return standing;
+    // **A classification's added row is not a repeating group's**, so the two are separate branches
+    // rather than one with a flag: a typed axis's new row takes the next *ordinal*, and a
+    // classification's takes no identity at all until the reporter picks a member.
+    if (template === undefined) return withAddedClassificationRows(standing, axis, count);
     const start = nextOrdinal(standing, axis);
     const extra = Array.from({ length: count }, (_unused, index) => blankRow(template, start + index));
     // After the axis's own last row, so the group stays contiguous and the questions after it keep
@@ -220,6 +298,86 @@ export function withAddedRows(
     const at = standing.lastIndexOf(template) + 1;
     return [...standing.slice(0, at), ...extra, ...standing.slice(at)];
   }, entries);
+}
+
+/**
+ * The classification rows the reporter added, each a member-less copy of that axis's last row.
+ *
+ * **Member-less, and that is the whole difference from `blankRow`.** A repeating group's new row is
+ * *site 3* the moment it appears; a classification's new row is a question — *which pollutant?* —
+ * and has no key until it is answered. So `dimensionKey` stays `''` and nothing is written under it
+ * (§7.3 would take an empty dimension as the undimensioned row, which for a dimensioned element is
+ * a fact the standard does not admit).
+ */
+function withAddedClassificationRows(
+  entries: readonly StepEntry[],
+  axis: string,
+  count: number,
+): readonly StepEntry[] {
+  const rows = entries.filter(
+    (entry): entry is StepClassificationEntry =>
+      entry.kind === STEP_ENTRY.CLASSIFICATION && entry.axis === axis,
+  );
+  const template = rows.at(-1);
+  if (template === undefined) return entries;
+  const extra = Array.from({ length: count }, (): StepClassificationEntry => ({
+    kind: STEP_ENTRY.CLASSIFICATION,
+    axis,
+    dimensionKey: '',
+    fields: template.fields.map(blankCell),
+  }));
+  const at = entries.lastIndexOf(template) + 1;
+  return [...entries.slice(0, at), ...extra, ...entries.slice(at)];
+}
+
+/**
+ * One cell of an added classification row: the element's shape with nothing in it.
+ *
+ * `dimensionKey` is emptied along with the values, because this cell belongs to no member yet — a
+ * copy carrying the template's member would write the new row's answers over the old row's.
+ */
+const blankCell = (field: DisclosureField): DisclosureField => ({
+  ...field,
+  dimensionKey: '',
+  dimensionLabel: null,
+  valueNumeric: null,
+  valueText: null,
+  valueBoolean: null,
+  valueDate: null,
+  unitCode: null,
+  state: DISCLOSURE_STATE.MISSING,
+  notAvailableReason: null,
+  carriedForward: false,
+  defaultValue: null,
+});
+
+/**
+ * Every member the step's rows already report on one axis (task 36.5).
+ *
+ * The picker offers what is left, because two rows reporting one pollutant would collide on §7.3's
+ * natural key — `(report, element, dimension, ordinal)` — and the second would silently overwrite
+ * the first. Making it unrepresentable is the same move `ChoiceSet` makes for a set-valued answer.
+ */
+export function membersTaken(entries: readonly StepEntry[], axis: string): ReadonlySet<string> {
+  return new Set(
+    entries.flatMap((entry) =>
+      entry.kind === STEP_ENTRY.CLASSIFICATION && entry.axis === axis && entry.dimensionKey !== ''
+        ? [entry.dimensionKey]
+        : [],
+    ),
+  );
+}
+
+/** The add control belongs to the axis's last row, so a table offers it once rather than per row. */
+export function isLastClassificationRow(
+  entries: readonly StepEntry[],
+  row: StepClassificationEntry,
+): boolean {
+  const rows = entries.filter(
+    (entry): entry is StepClassificationEntry =>
+      entry.kind === STEP_ENTRY.CLASSIFICATION && entry.axis === row.axis,
+  );
+  return rows.at(-1) === row;
 }
 
 /** The add control belongs to the axis's last row, so a group offers it once rather than per row. */

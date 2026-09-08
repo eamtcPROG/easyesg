@@ -52,3 +52,17 @@
   font: 400 15px/24px var(--font-text);
   color: var(--text-body);
 }
+
+/* UX-15's declaration, while it is being written (task 36.5). Tokens only — no literal colour,
+   no literal length — so the dark map task 82 adds reaches it without this file being touched. */
+.declaration {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.declarationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

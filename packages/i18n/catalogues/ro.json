@@ -210,7 +210,8 @@
       "already_exists": "Această perioadă de raportare are deja un raport, iar o perioadă poate avea unul singur. Deschideți raportul existent din listă, în loc să creați altul.",
       "not_editable": "Perioada de raportare este blocată, așa că raportul nu mai poate fi modificat de nimeni, nici de administrator. Redeschideți perioada, indicând motivul, pentru a continua lucrul — modificarea va rămâne vizibilă ca amendament.",
       "taxonomy_version_unavailable": "Versiunea standardului sub care a fost creat acest raport nu mai este disponibilă în platformă, așa că întrebările lui nu pot fi afișate. Răspunsurile salvate nu sunt afectate. Contactați echipa de asistență; se rezolvă de partea noastră.",
-      "unknown_disclosure_element": "Câmpul trimis nu face parte din versiunea standardului sub care a fost creat acest raport, așa că nu a putut fi salvat. Reîmprospătați pagina pentru a încărca întrebările curente."
+      "unknown_disclosure_element": "Câmpul trimis nu face parte din versiunea standardului sub care a fost creat acest raport, așa că nu a putut fi salvat. Reîmprospătați pagina pentru a încărca întrebările curente.",
+      "unknown_disclosure_dimension": "Categoria selectată nu face parte din lista pe care standardul o admite pentru acest câmp, așa că valoarea nu a putut fi salvată. Reîmprospătați pagina și alegeți din nou din listă."
     }
   },
   "notification": {

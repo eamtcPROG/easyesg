@@ -471,7 +471,15 @@ export async function disclosureValueOf(input: {
    * first B3 case claim a property it could not see.
    */
   readonly dimensionKey?: string;
-}): Promise<{ valueNumeric: string | null; valueText: string | null; state: string } | null> {
+}): Promise<{
+  valueNumeric: string | null;
+  valueText: string | null;
+  /** UX-14's unit as stored (task 91.4) — the half of the answer a bare number cannot carry. */
+  unitCode: string | null;
+  /** FR-32's reason, which the store pairs to `not_available` alone (task 36.5). */
+  notAvailableReason: string | null;
+  state: string;
+} | null> {
   const client = new Client(asOwner());
   await client.connect();
   try {
@@ -480,9 +488,11 @@ export async function disclosureValueOf(input: {
     const result = await client.query<{
       value_numeric: string | null;
       value_text: string | null;
+      unit_code: string | null;
+      not_available_reason: string | null;
       state: string;
     }>(
-      `SELECT value_numeric, value_text, state
+      `SELECT value_numeric, value_text, unit_code, not_available_reason, state
          FROM core.report_disclosure_value
         WHERE report_id = $1 AND element_key = $2 AND dimension_key = $3 AND ordinal = 0`,
       [input.reportId, input.elementKey, input.dimensionKey ?? ''],
@@ -491,7 +501,13 @@ export async function disclosureValueOf(input: {
     const row = result.rows[0];
     return row === undefined
       ? null
-      : { valueNumeric: row.value_numeric, valueText: row.value_text, state: row.state };
+      : {
+          valueNumeric: row.value_numeric,
+          valueText: row.value_text,
+          unitCode: row.unit_code,
+          notAvailableReason: row.not_available_reason,
+          state: row.state,
+        };
   } finally {
     await client.end();
   }

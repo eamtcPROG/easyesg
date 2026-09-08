@@ -1062,7 +1062,25 @@
         "choiceLoading": "Идёт поиск",
         "length": "{count, plural, one {Один символ} few {# символа} many {# символов} other {# символа}}",
         "unnamed": "Без названия",
-        "calculated": "Рассчитано"
+        "calculated": "Рассчитано",
+        "unitLabel": "Единица измерения",
+        "units": {
+          "kg": "kg",
+          "t": "t",
+          "m3": "m³",
+          "MWh": "MWh",
+          "tCO2e": "tCO₂e",
+          "ha": "ha",
+          "sqkm": "km²"
+        },
+        "notAvailable": {
+          "declare": "Отметить как недоступное",
+          "reason": "Почему значение недоступно",
+          "reasonHelp": "Этот текст попадёт в экспортированный отчёт, где его прочитает третья сторона.",
+          "confirm": "Подтвердить",
+          "cancel": "Отмена",
+          "resume": "Вернуться к заполнению"
+        }
       },
       "leave": {
         "title": "Выйти с неотправленными изменениями?",
@@ -1080,7 +1098,9 @@
           "IdentifierOfSubsidiaryTypedAxis": "Дочерняя компания",
           "IdentifierOfMaterialTypedAxis": "Материал"
         },
-        "fallbackName": "Строка"
+        "fallbackName": "Строка",
+        "addRow": "Добавить строку",
+        "unassignedRow": "{name} — выберите"
       }
     }
   }

@@ -211,6 +211,11 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
         periodType: value.periodType,
         domain: typeof value.domain === 'string' ? value.domain : null,
         axes: isStringArray(value.axes) ? value.axes : [],
+        // Absent for most elements: EFRAG states units for 38 of them, and an element with no
+        // stated unit is not the same as an unreadable row (task 91.4). Read like `axes` —
+        // validated, never cast, so a payload carrying a number here degrades to *no units*
+        // rather than putting one on a screen.
+        unitCodes: isStringArray(value.unitCodes) ? value.unitCodes : [],
       });
     }
 

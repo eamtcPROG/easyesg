@@ -7,7 +7,10 @@ import {
   membersOf,
   outstandingDefaults,
   parseDecimalInput,
+  notAvailableWrite,
+  resumeWrite,
   storedDraftOf,
+  unitOf,
   writeFor,
 } from './values';
 
@@ -19,6 +22,7 @@ const numeric = {
   ordinal: 0,
   kind: DISCLOSURE_KIND.NUMERIC,
   unitCode: null,
+  unitCodes: [],
 };
 
 describe('parseDecimalInput', () => {
@@ -90,6 +94,7 @@ const shaped = (over: Partial<DisclosureField> & { elementKey: string }): Disclo
   valueBoolean: null,
   valueDate: null,
   unitCode: null,
+  unitCodes: [],
   state: DISCLOSURE_STATE.MISSING,
   notAvailableReason: null,
   carriedForward: false,
@@ -174,5 +179,107 @@ describe('membersOf', () => {
     expect(membersOf('nace:NACE_C1071 nace:NACE_A0111')).toEqual(['nace:NACE_C1071', 'nace:NACE_A0111']);
     expect(membersOf('')).toEqual([]);
     expect(membersOf('  nace:NACE_C  ')).toEqual(['nace:NACE_C']);
+  });
+});
+
+
+/**
+ * UX-14's unit, and the precedence its three sources have (task 91.4).
+ *
+ * Stated as cases rather than reached through the browser, because two of the three are `null` most
+ * of the time and the interesting answers are the ones a journey would have to contrive: a field
+ * the standard says nothing about, and a stored unit that is not the standard's first.
+ */
+describe('which unit a field is answered in', () => {
+  const emission = {
+    ...numeric,
+    elementKey: 'AmountOfEmissionToAir',
+    unitCode: null,
+    unitCodes: ['kg', 't'],
+  };
+
+  it('offers NO unit before anyone chooses, where the standard admits several', () => {
+    // **The defect this case used to assert** (spec review, 8 Sep 2026): it answered `kg`, on the
+    // belief that `unitCodes` is an order of preference. Nothing in EFRAG's package says so, and its
+    // own Digital Template ships `metric tonnes (t)` pre-selected for exactly these three elements —
+    // so with task 91.2's rule that a shown default becomes an answer, a reporter who typed a figure
+    // and never opened the chooser filed kilogrammes where the standard files tonnes. A
+    // thousandfold error on a pollution disclosure, and the comment on this line argued for `t`
+    // while the assertion pinned `kg`.
+    expect(unitOf(emission, null)).toBeNull();
+  });
+
+  it('applies the one unit the standard fixes, because that is not a choice', () => {
+    // UX-14's first branch: 25 of the 38 elements that state units state exactly one, and a chooser
+    // over a single option is a control that cannot change anything.
+    expect(unitOf({ ...numeric, unitCode: null, unitCodes: ['MWh'] }, null)).toBe('MWh');
+  });
+
+  it('prefers what the row was written with over the standard’s first', () => {
+    // A reporter who chose tonnes last visit must not find kilograms on their return — the number
+    // would be read as a different quantity with nothing on screen having changed.
+    expect(unitOf({ ...emission, unitCode: 't' }, null)).toBe('t');
+  });
+
+  it('prefers the reporter’s choice over both', () => {
+    expect(unitOf({ ...emission, unitCode: 't' }, 'kg')).toBe('kg');
+  });
+
+  it('answers null where the standard states no unit, rather than inventing one', () => {
+    // 40 of the 78 quantitative elements, `EnergyConsumptionFromFuels` among them. A field here
+    // renders no unit at all; anything else would put a unit EFRAG does not state on a filing.
+    expect(unitOf({ ...numeric, unitCode: null, unitCodes: [] }, null)).toBeNull();
+  });
+
+  it('writes the value with the unit it is answered in', () => {
+    // The two are one fact: 12 kg and 12 t are different disclosures, so a write that dropped the
+    // unit would store a number whose meaning is unrecoverable.
+    const written = writeFor({ ...emission, unitCode: unitOf(emission, 't') }, '12');
+    expect({ value: written.valueNumeric, unit: written.unitCode }).toEqual({ value: '12', unit: 't' });
+  });
+});
+
+
+/**
+ * FR-32's reasoned non-answer, and the return from it (UC-31, UX-15; task 36.5).
+ *
+ * What these pin is the pair of properties the store's own `CHECK` enforces one layer down, so that
+ * a client that got them wrong fails here rather than as a 400 the reporter cannot act on.
+ */
+describe('declaring a value not available', () => {
+  const field = { ...numeric, valueNumeric: '12' };
+
+  it('carries the reason and no value, because a gap holding a figure is not a gap', () => {
+    const written = notAvailableWrite(field, 'Furnizorul nu publică datele');
+    expect(written).toEqual({
+      elementKey: field.elementKey,
+      dimensionKey: '',
+      ordinal: 0,
+      state: DISCLOSURE_STATE.NOT_AVAILABLE,
+      notAvailableReason: 'Furnizorul nu publică datele',
+      carriedForward: false,
+    });
+    // Stated as its own assertion: UX-119 requires a reader to tell a zero from a gap, and a
+    // declaration that left `valueNumeric` behind would export as a gap over a stored number.
+    expect(written).not.toHaveProperty('valueNumeric');
+  });
+
+  it('drops the carried-forward mark, because a declared gap is this year’s decision', () => {
+    // UX-32 marks a value as carried *until edited*, and declaring a gap is an edit — the strongest
+    // one there is. The write says so rather than inheriting the field's mark, which is why the
+    // input type is a `Pick` of the key alone.
+    expect(notAvailableWrite(field, 'x').carriedForward).toBe(false);
+  });
+
+  it('resumes to unanswered, with the reason omitted rather than emptied', () => {
+    const written = resumeWrite(field);
+    expect(written.state).toBe(DISCLOSURE_STATE.MISSING);
+    // **Omitted, not `''`.** The store pairs a reason to `not_available` alone, so an empty string
+    // left behind would be refused — and this wire says *clear it* by absence, as `writeFor` does
+    // for the value columns.
+    expect(written).not.toHaveProperty('notAvailableReason');
+    // And no value comes back: declaring cleared the columns, so resuming reopens the field rather
+    // than resurrecting a figure the reporter withdrew.
+    expect(written).not.toHaveProperty('valueNumeric');
   });
 });

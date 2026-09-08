@@ -118,6 +118,36 @@ export const membersOf = (draft: string): readonly string[] =>
 export const draftOfMembers = (members: readonly string[]): string => members.join(MEMBER_SEPARATOR);
 
 /**
+ * Which unit this field is answered in — the reporter's choice, else what the row was written with,
+ * else the one unit the standard admits (task 91.4; UX-14).
+ *
+ * **Where several are admitted there is NO default, and that is a decision rather than an omission**
+ * (project owner, 8 Sep 2026, closing a question this function's first version answered by
+ * accident). It read `?? field.unitCodes[0]`, on the belief that EFRAG's list order is a
+ * preference — nothing in the package says so, and the Digital Template contradicts it outright: its
+ * B4 cell ships **`metric tonnes (t)`** while the taxonomy lists `[utr:kg,utr:t]`. Combined with
+ * task 91.2's rule that a shown default becomes an answer on commit, a reporter who typed a figure
+ * and never opened the chooser would have filed **kilogrammes where the standard's own workbook
+ * files tonnes** — a thousandfold error on a pollution disclosure, written silently.
+ *
+ * So `null` until chosen, and UX-14 is the better served for it: an *explicit* unit is what that
+ * rule asks for, and a chosen one is more explicit than an assumed one. A figure entered before the
+ * choice is stored with no unit — visible as a gap, which validation (task 40) is what expresses —
+ * rather than stored under a unit nobody picked.
+ *
+ * **One admitted unit is not a choice and is applied**: UX-14's *fixed by the taxonomy* branch, 25
+ * of the 38 elements that carry a unit list at all.
+ *
+ * `null` too where the standard states none — 40 of the 78 quantitative elements, which render no
+ * unit rather than an invented one.
+ */
+export const unitOf = (
+  field: Pick<DisclosureField, 'unitCode' | 'unitCodes'>,
+  chosen: string | null,
+): string | null =>
+  chosen ?? field.unitCode ?? (field.unitCodes.length === 1 ? (field.unitCodes[0] ?? null) : null);
+
+/**
  * The write for one field's new value, or its clearing.
  *
  * `null` clears: the row keeps its natural key and moves to `missing` with every column null, which
@@ -150,6 +180,57 @@ export function writeFor(
     default:
       return { ...base, valueText: String(value) };
   }
+}
+
+/**
+ * FR-32's reasoned non-answer, and the return from it (UC-31, UX-15; task 36.5).
+ *
+ * **A pair of functions rather than a third argument to `writeFor`**, because they are not the same
+ * act. `writeFor` carries a *value* into the column its kind answers into; these carry a **state**,
+ * and the value columns go with it — a figure left behind under `not_available` would be exported
+ * as a gap while the store still held a number (UX-119: a reader must never be unable to tell a
+ * zero from a gap).
+ *
+ * **The reason is required exactly when the state is `not_available`**, which is the store's own
+ * `CHECK` rather than this module's opinion — so resuming clears it in the same write, and a reason
+ * cannot outlive the state it explains.
+ */
+export function notAvailableWrite(
+  field: Pick<DisclosureField, 'elementKey' | 'dimensionKey' | 'ordinal'>,
+  reason: string,
+): DisclosureValueWrite {
+  return {
+    elementKey: field.elementKey,
+    dimensionKey: field.dimensionKey,
+    ordinal: field.ordinal,
+    state: DISCLOSURE_STATE.NOT_AVAILABLE,
+    notAvailableReason: reason,
+    // A declared gap is the reporter's own decision, so it is no longer last year's answer.
+    carriedForward: false,
+  };
+}
+
+/**
+ * Back to unanswered, from a declared gap.
+ *
+ * **`missing` rather than the value that was there before**, because there is none: declaring
+ * cleared the columns, and inventing a previous value from the screen's memory would resurrect a
+ * figure the reporter deliberately withdrew. Resuming means the field is open again, not that the
+ * old answer returns.
+ */
+export function resumeWrite(
+  field: Pick<DisclosureField, 'elementKey' | 'dimensionKey' | 'ordinal'>,
+): DisclosureValueWrite {
+  return {
+    elementKey: field.elementKey,
+    dimensionKey: field.dimensionKey,
+    ordinal: field.ordinal,
+    state: DISCLOSURE_STATE.MISSING,
+    // **Omitted, not null.** The generated write type carries no `null` here — an absent member is
+    // how this wire says *clear it*, which `writeFor` above records for the value columns; the
+    // store's own `CHECK` then refuses a reason that outlived its state.
+    carriedForward: false,
+  };
 }
 
 /** A field as the screen shows it once the API has acknowledged a write for it. */

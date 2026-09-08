@@ -83,6 +83,89 @@ const SOURCE = `https://xbrl.efrag.org/downloads/vsme/${archive}.zip`;
 
 const attribute = (tag, name) => new RegExp(`\\b${name}="([^"]*)"`).exec(tag)?.[1] ?? null;
 
+// ── Units ───────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The units each element admits, from the label linkbase's `measurementGuidance` role (task 91.4;
+ * UX-14, FR-29).
+ *
+ * **Wording is not extracted here and this is not an exception to that** — see the file header. A
+ * unit code is not text a reader is shown; it is the constrained set UX-14 requires a quantitative
+ * field to be answered in, which makes it taxonomy *shape* like `kind` and `axes`. The element's
+ * words stay in `packages/i18n`'s catalogues, where `tools/extract-vsme-labels.mjs` puts them.
+ *
+ * **The parse is a shape test on the whole label, never a scrape for `[utr:…]` tokens**, and the
+ * four intensity elements are why. Their guidance is a sentence — *"The numerator is expected to be
+ * 'tCO2e [utr:tCO2e]' and the denominator a currency with a unit from the iso4217 set"* — so a
+ * reader that harvested bracketed tokens wherever they appeared would answer **tCO2e** for a figure
+ * whose unit is a *ratio*: a wrong answer with a plausible look, which is worse than none.
+ *
+ * A label is a unit list when it is nothing but comma-separated unit tokens, optionally inside one
+ * pair of brackets, each token optionally prefixed `utr:`. That admits EFRAG's own informality as
+ * well as its convention: `TotalMassOfMaterialUsed` is written `kg, t` while its sibling
+ * `WeightOfMaterialUsed` is `[utr:kg,utr:t]` for the same two units — the same class as the
+ * misspelled `VolumneOfMaterialUsed` locator this file's header already records, and a
+ * bracket-keyed parser would drop the datum with nothing failing.
+ */
+const UNIT_TOKEN = /^(?:utr:)?[A-Za-z][A-Za-z0-9]*$/;
+
+const unitsOf = (guidance) => {
+  const inner = /^\[(.*)\]$/.exec(guidance)?.[1] ?? guidance;
+  const tokens = inner.split(',').map((token) => token.trim());
+  return tokens.every((token) => UNIT_TOKEN.test(token))
+    ? tokens.map((token) => token.replace(/^utr:/, ''))
+    : null;
+};
+
+/**
+ * The elements whose guidance is **prose rather than a unit list**, declared by name.
+ *
+ * Declared so that *omission* fails, never a sample so only the named ones do — `APP_IMMUTABLE_`
+ * `COLUMNS`' rule, and the one task 36.4's artefact guard was rewritten to follow. All four are
+ * intensities, and what their sentence describes is a ratio the taxonomy does not fix: `design_`
+ * `spec.md` §7.2 makes these computed rather than typed, and task 39.2 owns the divisor.
+ *
+ * A release that turns one of these into a list, or a list into one of these, fails the run.
+ */
+const PROSE_GUIDANCE = new Set([
+  'Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased',
+  'Scope1AndScope2GreenhouseGasEmissionsIntensityValueMarketBased',
+  'TotalLocationBasedGreenhouseGasEmissionsIntensityValue',
+  'TotalMarketBasedGreenhouseGasEmissionsIntensityValue',
+]);
+
+/**
+ * Every unit code the standard admits, across both registered versions.
+ *
+ * A set rather than a count, for the reason above: a run that parsed `kg, t` as the single unit
+ * `kg, t` would still report the right *number* of elements, and only naming the values catches it.
+ * An eighth unit is a release to read, not a default to take.
+ */
+const KNOWN_UNITS = new Set(['MWh', 'ha', 'kg', 'm3', 'sqkm', 't', 'tCO2e']);
+
+/** Concept → its `measurementGuidance` text, followed through the arcs like every other label. */
+const readGuidance = (xml) => {
+  const located = new Map();
+  for (const m of xml.matchAll(/<link:loc\b[^>]*xlink:href="[^"#]*#([^"]+)"[^>]*xlink:label="([^"]+)"/g)) {
+    located.set(m[2], m[1].replace(/^vsme_/, ''));
+  }
+  const resources = new Map();
+  for (const m of xml.matchAll(/<link:label\b([^>]*)>([\s\S]*?)<\/link:label>/g)) {
+    const id = attribute(m[1], 'xlink:label');
+    const role = /xlink:role="[^"]*\/([^"/]+)"/.exec(m[1])?.[1];
+    if (id && role === 'measurementGuidance') resources.set(id, m[2].replace(/\s+/g, ' ').trim());
+  }
+  const guidance = new Map();
+  for (const m of xml.matchAll(/<link:labelArc\b[^>]*xlink:from="([^"]+)"[^>]*xlink:to="([^"]+)"/g)) {
+    const concept = located.get(m[1]);
+    const text = resources.get(m[2]);
+    if (concept && text !== undefined) guidance.set(concept, text);
+  }
+  return guidance;
+};
+
+const guidance = readGuidance(readFileSync(join(dir, 'vsme-label-en.xml'), 'utf8'));
+
 /**
  * XBRL's item types, mapped to the vocabulary a form and a validator actually branch on.
  *
@@ -771,6 +854,54 @@ if (unmapped.length > 0) {
   process.exit(1);
 }
 
+/**
+ * **The guidance partitions, or the run fails.**
+ *
+ * Three ways this can go wrong silently and each is checked, because none of them moves a count
+ * this file already prints: guidance reaching an element that is not reportable (the walk is
+ * wrong); a prose element the parser read as a list, or a list element it read as prose (the shape
+ * test is wrong, or EFRAG changed a label); and a unit code nobody has seen (a release, or a
+ * mis-split). Task 36.4 is the precedent for all three — its defect was in a relation recorded as a
+ * scalar, which no count could detect.
+ */
+const reportableNames = new Set(reportable.map(([name]) => name));
+const guided = [...guidance.keys()];
+
+const unplaced = guided.filter((name) => !reportableNames.has(name));
+if (unplaced.length > 0) {
+  console.error(`${unplaced.length} element(s) carry measurement guidance and are not reportable:`);
+  for (const name of unplaced) console.error(`  ${name}`);
+  process.exit(1);
+}
+
+const unitsByElement = new Map();
+const prose = [];
+for (const name of guided) {
+  const units = unitsOf(guidance.get(name));
+  if (units === null) prose.push(name);
+  else unitsByElement.set(name, units);
+}
+
+const misread = [
+  ...prose.filter((name) => !PROSE_GUIDANCE.has(name)),
+  ...[...unitsByElement.keys()].filter((name) => PROSE_GUIDANCE.has(name)),
+];
+if (misread.length > 0) {
+  console.error(
+    'measurement guidance no longer partitions as PROSE_GUIDANCE declares — read the release, ' +
+      'do not widen the parser to fit it:',
+  );
+  for (const name of misread) console.error(`  ${name}: ${JSON.stringify(guidance.get(name))}`);
+  process.exit(1);
+}
+
+const strangers = [...new Set([...unitsByElement.values()].flat())].filter((u) => !KNOWN_UNITS.has(u));
+if (strangers.length > 0) {
+  console.error(`unit code(s) outside KNOWN_UNITS — a release to read, not a default to take:`);
+  for (const unit of strangers) console.error(`  ${unit}`);
+  process.exit(1);
+}
+
 const payload = {
   taxonomy: 'vsme',
   version,
@@ -804,6 +935,11 @@ const payload = {
             // The axes this element is reported along, if any. Empty is the ordinary case; a
             // non-empty list is what makes `report_disclosure_value.dimension_key` meaningful.
             ...(axesForElement(name).length > 0 ? { axes: axesForElement(name) } : {}),
+            // The units this element admits (task 91.4; UX-14). Omitted where EFRAG states none —
+            // 38 of 78 quantitative elements carry guidance — so an absent key is *the standard
+            // says nothing*, never *this element takes no unit*. One entry is a fixed unit the
+            // field shows; several are the constrained list it asks from.
+            ...(unitsByElement.has(name) ? { unitCodes: unitsByElement.get(name) } : {}),
           },
         ];
       })
@@ -837,4 +973,10 @@ console.log(
 console.log(`  axes           ${Object.keys(payload.axes).length}`);
 console.log(
   `  dimensioned    ${reportable.filter(([n]) => axesForElement(n).length > 0).length} element(s)`,
+);
+console.log(
+  `  units          ${unitsByElement.size} element(s) — ` +
+    `${[...unitsByElement.values()].filter((u) => u.length === 1).length} fixed, ` +
+    `${[...unitsByElement.values()].filter((u) => u.length > 1).length} chosen; ` +
+    `${prose.length} stated as prose`,
 );

@@ -1,7 +1,10 @@
 import type { TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
-import { UnknownDisclosureElementError } from '../errors/report.errors';
+import {
+  UnknownDisclosureDimensionError,
+  UnknownDisclosureElementError,
+} from '../errors/report.errors';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import type {
@@ -61,11 +64,25 @@ export class WriteDisclosureValues {
     });
     if (registered === null) throw new TaxonomyVersionUnavailableError();
 
-    const known = new Set(registered.elements.map((element) => element.key));
+    const known = new Map(registered.elements.map((element) => [element.key, element]));
     // Refused before any write, so a batch is all-or-nothing about what it names. A partially
     // applied autosave would leave the indicator saying `saved` over a step that is not.
     const unknown = command.values.filter((value) => !known.has(value.elementKey));
     if (unknown.length > 0) throw new UnknownDisclosureElementError();
+
+    // **And the dimension, since task 36.5.** A classification's rows are derived from the store,
+    // so a `dimension_key` the element's axes do not declare is no longer merely unread — it draws
+    // a row. Checked here rather than trusted from the browser, which is P-4: the client that must
+    // not send one is not the layer that can guarantee nobody does.
+    const misdimensioned = command.values.filter((value) => {
+      if (value.dimensionKey === '') return false;
+      return !known.get(value.elementKey)?.axes.some((key) =>
+        this.taxonomy
+          .axis({ standard: TAXONOMY_STANDARD.VSME, version: report.taxonomyVersion, key })
+          ?.members.some((member) => member.key === value.dimensionKey),
+      );
+    });
+    if (misdimensioned.length > 0) throw new UnknownDisclosureDimensionError();
 
     const written: DisclosureValue[] = [];
     for (const value of command.values) {

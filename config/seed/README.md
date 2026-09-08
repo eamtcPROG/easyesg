@@ -61,9 +61,10 @@ The packages these were extracted from, so a regeneration can be checked against
 | `2026-02-01` | [`VSME-XBRL-Taxonomy-February-2026.zip`](https://xbrl.efrag.org/downloads/vsme/VSME-XBRL-Taxonomy-February-2026.zip) | `c65f2e174400f0d1a63d3dabdb2a8fa1b3a8f74ac8eaa56e32bc0ba87aa7b8d0` (484 889 B) |
 
 The script asserts rather than defaults: an unmapped XBRL item type, a concrete element that reaches
-no presentation role, an explicit axis that resolves no members, **or a reportable element that
-resolves no module and sits in no catch-all role** each fail the run and name what they found. Each
-of those four assertions exists because it caught a real defect on first use — `architecture.md` §7.3
+no presentation role, an explicit axis that resolves no members, a reportable element that
+resolves no module and sits in no catch-all role, **or measurement guidance that no longer partitions
+into unit lists and the four intensities' prose** each fail the run and name what they found. Four
+of those five assertions exist because they caught a real defect on first use — `architecture.md` §7.3
 records what the third one found, and the fourth is task 33.3's.
 
 **The fourth is worth reading before adding a fifth.** This file's header had claimed since task 33.1
@@ -73,6 +74,17 @@ scheme the script cannot read yields `module: null` for *every* element — and 
 them as the pillar catch-alls. Extracting February 2026 produced 143 of 143 unmoduled and exited 0. A
 claimed assertion that does not exist is the shape this repository keeps finding; the lesson is that
 the summary line was the accomplice, reporting a total failure as a known benign category.
+
+**The fifth is preventive rather than corrective, and it guards a parse that is easy to get wrong in
+a way nothing else notices** (task 91.4). EFRAG states admitted units in a `measurementGuidance`
+label — `[utr:kg,utr:t]` on B4's emissions — but four elements carry *prose* there instead, naming
+tCO₂e as an intensity's **numerator** over an ISO 4217 denominator. A parser that harvested
+`[utr:…]` tokens wherever they appeared would give those four the unit of their top half, which is a
+wrong answer with a plausible look; so the parse is a shape test on the whole label, the four are
+declared by name, and every unit code is checked against a declared set. Two of the shapes only
+EFRAG's own inconsistency explains: `TotalMassOfMaterialUsed` is written `kg, t` with no `utr:`
+prefix while its sibling `WeightOfMaterialUsed` is `[utr:kg,utr:t]` for the same two units — so a
+bracket-keyed parser silently drops a real datum, which is what the assertion catches.
 
 ## Scheduled seeds
 

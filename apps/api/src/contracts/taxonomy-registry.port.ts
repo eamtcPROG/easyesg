@@ -88,6 +88,21 @@ export interface TaxonomyElement {
    * makes `report_disclosure_value.dimension_key` meaningful for this element (§7.3).
    */
   readonly axes: readonly string[];
+  /**
+   * The units this element admits, from EFRAG's `measurementGuidance` label role (task 91.4; UX-14).
+   *
+   * **Empty means the standard states none, never that the element takes no unit.** EFRAG's role
+   * reaches 42 elements at `2026-05-01` and 38 of them state a *unit list*, out of 78 quantitative
+   * elements — the other four are the intensities, whose guidance is a ratio in prose and yields no
+   * unit at all. `EnergyConsumptionFromFuels` is one of the 40 the role never reaches, while its own
+   * `TotalEnergyConsumption` carries `[utr:MWh]`. A field with an empty list
+   * renders no unit and stores `unit_code` null, which is what task 36.4 recorded as holding.
+   *
+   * **One entry is UX-14's *fixed by the taxonomy*; several are its *constrained list*.** The two
+   * are one datum read twice, not two fields — 25 elements admit one unit and 13 admit several — so
+   * a caller asks `length` rather than being told which branch it is in.
+   */
+  readonly unitCodes: readonly string[];
 }
 
 /** One reporting axis, with its members already resolved. */

@@ -606,6 +606,10 @@
       "periodType": "duration",
       "axes": [
         "TypeOfPollutantAxis"
+      ],
+      "unitCodes": [
+        "kg",
+        "t"
       ]
     },
     "AmountOfEmissionToSoil": {
@@ -620,6 +624,10 @@
       "periodType": "duration",
       "axes": [
         "TypeOfPollutantAxis"
+      ],
+      "unitCodes": [
+        "kg",
+        "t"
       ]
     },
     "AmountOfEmissionToWater": {
@@ -634,6 +642,10 @@
       "periodType": "duration",
       "axes": [
         "TypeOfPollutantAxis"
+      ],
+      "unitCodes": [
+        "kg",
+        "t"
       ]
     },
     "AmountOfWaterWithdrawnAtSitesLocatedInAreasOfHighWaterStress": {
@@ -645,7 +657,10 @@
       "parent": "WaterWithdrawalAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:volumeItemType",
-      "periodType": "instant"
+      "periodType": "instant",
+      "unitCodes": [
+        "m3"
+      ]
     },
     "AreaOfSiteInBiodiversitySensitiveArea": {
       "modules": [
@@ -659,6 +674,10 @@
       "periodType": "duration",
       "axes": [
         "IdentifierOfSiteTypedAxis"
+      ],
+      "unitCodes": [
+        "ha",
+        "sqkm"
       ]
     },
     "Assets": {
@@ -1050,6 +1069,9 @@
       "periodType": "duration",
       "axes": [
         "BreakdownOfEnergyConsumptionAxis"
+      ],
+      "unitCodes": [
+        "MWh"
       ]
     },
     "EnergyConsumptionFromFuels": {
@@ -1163,6 +1185,9 @@
       "periodType": "duration",
       "axes": [
         "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
       ]
     },
     "GrossMarketBasedScope2GreenhouseGasEmissions": {
@@ -1178,6 +1203,9 @@
       "periodType": "duration",
       "axes": [
         "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
       ]
     },
     "GrossScope1GreenhouseGasEmissions": {
@@ -1193,6 +1221,9 @@
       "periodType": "duration",
       "axes": [
         "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
       ]
     },
     "GrossScope3GreenhouseGasEmissions": {
@@ -1208,6 +1239,9 @@
       "periodType": "duration",
       "axes": [
         "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
       ]
     },
     "LinkToPreviousReportContainingDisclosuresThatRemainUnchanged": {
@@ -1719,7 +1753,10 @@
       "parent": "WaterWithdrawalAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:volumeItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
     },
     "TotalEnergyConsumption": {
       "modules": [
@@ -1730,7 +1767,10 @@
       "parent": "TotalEnergyConsumptionAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:energyItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "MWh"
+      ]
     },
     "TotalGrossLocationBasedGHGEmissions": {
       "modules": [
@@ -1745,6 +1785,9 @@
       "periodType": "duration",
       "axes": [
         "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
       ]
     },
     "TotalGrossLocationBasedScope1AndScope2GHGEmissions": {
@@ -1760,6 +1803,9 @@
       "periodType": "duration",
       "axes": [
         "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
       ]
     },
     "TotalGrossMarketBasedGHGEmissions": {
@@ -1775,6 +1821,9 @@
       "periodType": "duration",
       "axes": [
         "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
       ]
     },
     "TotalGrossMarketBasedScope1AndScope2GHGEmissions": {
@@ -1790,6 +1839,9 @@
       "periodType": "duration",
       "axes": [
         "ReportingScopesAxis"
+      ],
+      "unitCodes": [
+        "tCO2e"
       ]
     },
     "TotalHazardousWasteGeneratedMass": {
@@ -1801,7 +1853,11 @@
       "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:massItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
     },
     "TotalHazardousWasteGeneratedVolume": {
       "modules": [
@@ -1812,7 +1868,10 @@
       "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:volumeItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
     },
     "TotalLocationBasedGreenhouseGasEmissionsIntensityValue": {
       "modules": [
@@ -1845,7 +1904,11 @@
       "parent": "AnnualMassFlowOfRelevantMaterialsUsedByTheUndertakingAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:massItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
     },
     "TotalNatureOrientedAreaOffSite": {
       "modules": [
@@ -1856,7 +1919,11 @@
       "parent": "BiodiversityMetricsOnLandUseAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:areaItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "ha",
+        "sqkm"
+      ]
     },
     "TotalNatureOrientedAreaOnSite": {
       "modules": [
@@ -1867,7 +1934,11 @@
       "parent": "BiodiversityMetricsOnLandUseAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:areaItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "ha",
+        "sqkm"
+      ]
     },
     "TotalNonHazardousWasteGeneratedMass": {
       "modules": [
@@ -1878,7 +1949,11 @@
       "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:massItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
     },
     "TotalNonHazardousWasteGeneratedVolume": {
       "modules": [
@@ -1889,7 +1964,10 @@
       "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:volumeItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
     },
     "TotalNumberOfConvictionsForTheViolationOfAntiCorruptionAndAntiBriberyLaws": {
       "modules": [
@@ -1944,7 +2022,11 @@
       "parent": "BiodiversityMetricsOnLandUseAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:areaItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "ha",
+        "sqkm"
+      ]
     },
     "TotalUseOfLand": {
       "modules": [
@@ -1955,7 +2037,11 @@
       "parent": "BiodiversityMetricsOnLandUseAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:areaItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "ha",
+        "sqkm"
+      ]
     },
     "TotalVolumeOfMaterialUsed": {
       "modules": [
@@ -1966,7 +2052,10 @@
       "parent": "AnnualMassFlowOfRelevantMaterialsUsedByTheUndertakingAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:volumeItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
     },
     "TotalWasteGeneratedMass": {
       "modules": [
@@ -1977,7 +2066,11 @@
       "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:massItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "kg",
+        "t"
+      ]
     },
     "TotalWasteGeneratedVolume": {
       "modules": [
@@ -1988,7 +2081,10 @@
       "parent": "TotalHazardousAndNonHazardousWasteGeneratedAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:volumeItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
     },
     "TotalWasteRecycledReusedAndDirectedToDisposalMass": {
       "modules": [
@@ -2002,6 +2098,9 @@
       "periodType": "duration",
       "axes": [
         "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "kg"
       ]
     },
     "TotalWasteRecycledReusedAndDirectedToDisposalVolume": {
@@ -2016,6 +2115,9 @@
       "periodType": "duration",
       "axes": [
         "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "m3"
       ]
     },
     "TotalWaterConsumption": {
@@ -2027,7 +2129,10 @@
       "parent": "WaterConsumptionAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:volumeItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
     },
     "Turnover": {
       "modules": [
@@ -2194,6 +2299,9 @@
       "periodType": "duration",
       "axes": [
         "IdentifierOfMaterialTypedAxis"
+      ],
+      "unitCodes": [
+        "m3"
       ]
     },
     "WasteDirectedToDisposalMass": {
@@ -2208,6 +2316,9 @@
       "periodType": "duration",
       "axes": [
         "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "kg"
       ]
     },
     "WasteDirectedToDisposalVolume": {
@@ -2222,6 +2333,9 @@
       "periodType": "duration",
       "axes": [
         "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "m3"
       ]
     },
     "WasteDivertedToRecycleOrReuseMass": {
@@ -2236,6 +2350,9 @@
       "periodType": "duration",
       "axes": [
         "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "kg"
       ]
     },
     "WasteDivertedToRecycleOrReuseVolume": {
@@ -2250,6 +2367,9 @@
       "periodType": "duration",
       "axes": [
         "TypeOfWasteAxis"
+      ],
+      "unitCodes": [
+        "m3"
       ]
     },
     "WaterDischargeFromUndertakingProductionProcesses": {
@@ -2261,7 +2381,10 @@
       "parent": "WaterConsumptionAbstract",
       "kind": "numeric",
       "xbrlType": "dtr-types:volumeItemType",
-      "periodType": "duration"
+      "periodType": "duration",
+      "unitCodes": [
+        "m3"
+      ]
     },
     "WeightOfMaterialUsed": {
       "modules": [
@@ -2275,6 +2398,10 @@
       "periodType": "duration",
       "axes": [
         "IdentifierOfMaterialTypedAxis"
+      ],
+      "unitCodes": [
+        "kg",
+        "t"
       ]
     }
   }

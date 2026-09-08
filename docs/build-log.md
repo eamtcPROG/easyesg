@@ -12586,6 +12586,337 @@ property that makes it worth naming every time it appears.
 
 
 
+## Task 91.4 — the units EFRAG states, and the four it does not · 2026-09-08
+
+UX-14 requires every quantitative field to carry a unit *"either fixed by the taxonomy or chosen
+from a constrained list"*, and this task is the one that found out which. **Both branches are real
+and the source is a label role**: `measurementGuidance` reaches **42** reportable elements — the same
+42 in `2026-02-01` and `2026-05-01` — of which **25 admit one unit** and **13 admit several**.
+
+**Ordered before task 36.5 by the project owner**, because B4 is the module EFRAG's own Digital
+Template asks the unit question on: its sheet carries *"Please select the unit used for reporting the
+amount (i.e. either kg or tonne)"* with *metric tonnes (t)* pre-selected. Shipping B4 first would
+have stored three masses with nothing recording what they measured.
+
+### The source was not on this machine, and the fix is now recorded
+
+`config/efrag/` tracks the two `.xlsx` binaries and **not the XBRL taxonomy package**, which is where
+`measurementGuidance` lives — so the task was blocked on an input no gate could have surfaced.
+Raised rather than worked around; the owner authorised fetching it from EFRAG.
+
+**Both downloads verified against `config/seed/README.md`'s recorded SHA-256** — `47e1c4a6…`
+(508 353 B) and `c65f2e17…` (484 889 B), byte-identical to the packages the pinned artefacts were
+extracted from. That table existed for exactly this and paid for itself the first time it was used.
+
+**Then the extractor was replayed before it was changed**, and reproduced the committed artefact
+byte for byte. That is a cheap habit worth naming: a generator you cannot replay is a generator whose
+next diff you cannot attribute, and it is what let the change below be measured rather than argued —
+both artefacts are **identical once `unitCodes` is stripped**, so exactly one key was added and
+nothing moved.
+
+### The parse is a shape test, and the four intensities are why
+
+The obvious implementation is a scrape for `[utr:…]` tokens. It is wrong, and wrong in the direction
+that does not look wrong: EFRAG states the four intensity elements' guidance as a **sentence** —
+*"The numerator is expected to be tCO2e [utr:tCO2e] and the denominator a currency with a unit from
+the iso4217 set"* — so a scrape answers **tCO2e** for a figure whose unit is a *ratio*. A wrong
+answer wearing a plausible look, which is worse than none.
+
+So a label is a unit list only when it is **nothing but** comma-separated unit tokens, optionally
+inside one pair of brackets. That also recovers a datum the *other* obvious implementation drops:
+`TotalMassOfMaterialUsed` is written **`kg, t`** with no `utr:` prefix, while its own sibling
+`WeightOfMaterialUsed` is `[utr:kg,utr:t]` for the same two units. EFRAG being informally
+inconsistent — the class this file's header already records for the misspelled `VolumneOfMaterialUsed`
+locator — and a bracket-keyed parser loses it silently.
+
+**Three assertions make the partition a build failure**, and each was proven by mutation:
+
+| Mutation | Result |
+| --- | --- |
+| Scrape `[utr:…]` tokens instead of testing the whole label | fails, naming all five it misreads |
+| Match brackets only | fails, naming `TotalMassOfMaterialUsed: "kg, t"` |
+| Forget to strip the `utr:` prefix | fails on seven unit codes outside `KNOWN_UNITS` |
+
+The second is the one worth keeping: the assertion does not merely catch a typo, it **names the
+element the simplest correct-looking parser would drop**.
+
+### What the units are not
+
+`unitCodes` is on `DisclosureFieldDto` and deliberately **not** on `DisclosureValueResponseDto` —
+task 36.4's split for `origin`, one direction over. `unitCode` (singular) is what a stored row
+*holds*; `unitCodes` is what the standard *admits*, and a value response restating the taxonomy's
+answer would be a second place it is true.
+
+**Empty means EFRAG states none, not that the element takes no unit.** 38 of the 78 quantitative
+elements carry guidance at all: `EnergyConsumptionFromFuels` and
+`EnergyConsumptionFromSelfGeneratedElectricity` carry none while their own `TotalEnergyConsumption`
+carries `[utr:MWh]`, which task 36.4 recorded and this task confirms rather than fixes. B2's
+`monetary` field carries none either — and its browser case's stated reason **was corrected here**:
+it read *"`unit_code` stays null until a module sets one"*, which was true before this task and is
+now EFRAG's answer rather than a deferral. The currency question itself remains task 30.2's.
+
+### Two things the build found
+
+**The anatomy's `unit` slot is truthy even when its child renders `null`.** `DisclosureField` draws
+`{unit ? <div className={styles.unit}>…</div> : null}`, so a `<FieldUnit />` that returned `null`
+would still lay out an empty box beside every text field — the slot has to be `undefined`, which
+only the caller can decide. Caught while writing it, not by a test, and now stated at the call site.
+
+**`renderField` had to stop being a closure.** A field now holds state — the reporter's chosen unit —
+and a `useState` cannot be called from inside a `.map`. It is a `StepField` component, which is also
+what let task 36.5 add a second per-row component beside it.
+
+**And `unitOf` moved to `values.ts` so it could have a spec**, which is task 36.4's own lesson
+applied before it bit: an unexported local in a `.tsx` file has no unit test and no browser journey
+can reach its interesting cases — a field the standard says nothing about, a stored unit that is not
+the standard's first.
+
+### The review found a thousandfold error, and it was in the sentence that argued against it
+
+**The default unit shipped as `kg` and this entry's §12.5.6 row argued for `t`.** `unitOf` read
+`?? field.unitCodes[0]`, on the belief that EFRAG's list order is a preference — a meaning I invented
+and then wrote a comment defending with the *opposite* evidence: the Digital Template's B4 cell ships
+`metric tonnes (t)` while the taxonomy lists `[utr:kg,utr:t]`. Combined with task 91.2's rule that a
+shown default becomes an answer on commit, a reporter who typed a figure and never opened the chooser
+would have filed **kilogrammes where the standard's own workbook files tonnes**: a thousandfold error
+on a pollution disclosure, written silently, with every gate green and a unit test asserting it.
+
+**Closed by the project owner as *no default*** (8 Sep 2026, §12.5.6). Where several units are
+admitted the chooser starts empty and a figure entered before the choice stores `unit_code` null —
+visible as a gap, which validation (task 40) is what expresses. UX-14 is better served for it: it
+asks for an *explicit* unit, and a chosen one is more explicit than an assumed one. One admitted unit
+is not a choice and is still applied.
+
+**What makes this worth more than the fix**: the row was *arguing for the right answer while
+describing the wrong one*, and neither the spec nor the test could see it, because the test asserted
+the code. A quoted piece of evidence that does not support the sentence around it is the shape task
+36.4 recorded for FR-72 — and this is the second sighting inside two tasks.
+
+**And the granularity was wrong in the same place.** The choice lived in `StepField`, which renders
+once per served field, so B4 had a chooser per pollutant × per column and one filing could carry
+ammonia in kilogrammes beside asbestos in tonnes down a single column. EFRAG's own B4 unit is the
+merged cell `C78:K78` — one for the whole table. Scoped to the **element** (owner, 8 Sep 2026): the
+one granularity always expressible, since B7 admits `[utr:kg,utr:t]` on one waste figure and
+`[utr:kg]` on its neighbour, so a per-table unit has no answer there.
+
+**UX-14 is unmet on 40 of 78 quantitative elements and now says so.** The spec review's second
+finding: `design_spec.md` §7.2 promises *"MWh for energy"* and two of B3's three energy breakdown
+rows state no unit anywhere in the published package. Cross-logged in UX-14's own text on UX-17's
+precedent, and registered as **`design_spec.md` OQ-22** — *not* a deferral with an owner, because
+the source does not exist to extract and inventing a unit EFRAG never stated would put it on a
+filing.
+
+Two smaller corrections from the same review: the sentence *"38 of the 78 quantitative elements carry
+guidance"* collapsed exactly the distinction this task exists to draw — the role reaches **42** and
+38 of them state a *list* — and the row cited **NFR-24**, which is about official translations and
+has nothing to do with a unit code the extractor deliberately does not treat as wording.
+
+### Verified
+
+Proven to bite, by mutation, each restored afterwards: the three extractor assertions above; three
+artefact mutations (an element losing its units, an intensity gaining its numerator's, and the unit
+**order** flipping — `kg t` and `t kg` are different screens); `unitCodes: []` in the step read fails
+two wire cases; an intensity carrying `['tCO2e']` in the artefact fails the third, which is the case
+the step-read mutation could not fail because it asserts `[]`; and in the browser, a chooser that
+never renders fails the count while a write that drops the chosen unit fails the stored row.
+
+## Task 36.5 — B4, and the third shape an axis can be answered in · 2026-09-08
+
+B4 (UC-22, FR-24, FR-29) is the first **classification**: a group whose rows are members the reporter
+*selects*, where a breakdown's are fixed and a typed axis's are numbered. It ships with UX-15's
+field-level reasoned non-answer, and the row was widened past `web` to reach either.
+
+### What B4 is, checked against EFRAG's own template rather than the taxonomy alone
+
+Task 36.3 established the first question — *what does this module introduce that the anatomy has not
+met?* — and on B4 the table is almost clean: five elements, every kind already met, no applicability
+rule naming it, and 5/5 labels plus 95/95 axis-member labels in `ro`, `en` and `ru`. One row is not:
+all three numerics sit on `TypeOfPollutantAxis`, 94 members.
+
+`config/efrag/VSME-Digital-Template-1.3.0.xlsx`, *Environmental Disclosures*, rows 70–100 settles
+what that means: `B4 - Pollution of air water and soil … [If applicable]`, a unit dropdown, and then
+**`Row ID │ Pollutant │ Emission to air │ Emission to water │ Emission to soil`** over 21 expandable
+rows. So B4 is a table the reporter builds, and what shipped before this task was three undimensioned
+numeric fields with **no pollutant named** — not the disclosure the standard asks for.
+
+**Row 74's gating question has no taxonomy element**, and that was checked rather than assumed: no
+element key or English label matches *"already required by law … to report … emissions of
+pollutants"*. It is template scaffolding for the `[If applicable]` heading, the same category as the
+B2 contact-point question task 36.3 ran down.
+
+### The decision: three shapes, two registered lists, one default
+
+Task 36.4 registered which explicit axes are **breakdowns** and said every other one stays a single
+undimensioned row. The obvious extension — *not a breakdown means a classification* — is wrong, and
+the e2e said so within a minute of being written: **`ReportingScopesAxis` appeared as B3's
+classification**, offering a picker of baseline year / target year / currently stated over eight
+emissions disclosures. Task 36.4's own §12.5.6 row had already recorded why that axis is neither
+(*"which year, not which scope … one undimensioned row is correct"*); a binary split would have
+contradicted a decision three rows above the one being written.
+
+So `disclosure-axis-shape.vsme.json` carries **two** lists, and an axis in neither keeps one row —
+which preserves `AxisShapeService`'s fail-closed argument exactly: the conservative answer is still
+the shape every module had before task 36.4, never 94 rows.
+
+**The two lists are read from one entry and cached together, and degrade independently.** A
+malformed `classification` must not take `breakdown` down with it — B4 losing its picker is one
+defect and B3 losing its breakdown at the same time is two, which a single early return would have
+produced.
+
+### The rows are the axis's, not the element's
+
+The first implementation keyed a classification's rows on each element's own stored members, and
+served air one row and water none. That is not what the template asks: a reporter who names ammonia
+is being asked **all three** amounts for it. `chosenMembers` therefore gathers the members chosen
+anywhere on the axis, so every element gets a cell for every pollutant the report names — which is
+also the only shape a client can lay out as a table, and the difference between *not emitted* and
+*pollutant not named*.
+
+**One unassigned row where a report holds none**, exactly as the typed-axis branch serves ordinal 0
+for a report with no sites: a module whose fields appear only once something is stored can never be
+started.
+
+### The correctness rule inside the rendering
+
+An unassigned row shows its picker and **no amounts**, and that is not a design preference. §7.3 keys
+a value by `(element, dimension, ordinal)` and the step read collects a classification's rows from
+the members a report *holds* — so an amount written while `dimensionKey` is `''` would be stored
+under the undimensioned key and **never read back**: a live row under a key nothing looks at, which
+is the defect the typed facade exists to prevent one layer down. It also happens to match the order
+EFRAG's sheet asks in, filled left to right: never *how much* before *of what*.
+
+**A fourth `STEP_ENTRY` rather than a flag on `GROUP`**, on `BREAKDOWN`'s own precedent — the
+alternative is a boolean on every branch that reads one, which is the smell UX-89 names. And
+`layOutStep` is **told** which axes are classifications rather than deriving it: a breakdown and a
+classification are indistinguishable on the wire (several elements, member-keyed rows), which is
+what task 36.2's header already warns a client-side heuristic would get wrong.
+
+**No inventory addition, for the third time in this module range.** A classification row is
+`Fieldset` — a legend over related fields is what that control is — and `MemberPicker` is a screen's
+arrangement of `Combobox`, which is the conclusion `ChoiceSet` and S-13's activity picker both
+reached. UX-89's test is a difference in **anatomy**, and there is none.
+
+### UX-15, and the half of the exclusion path this task does not build
+
+36.5's row said *"including the reasoned-exclusion path"*, and that read as one thing when it is two
+with different owners and different storage. **The split was taken with the project owner** and is
+recorded in §12.5.6:
+
+- **UX-15's field-level declaration is built here, for every module.** Its storage has existed since
+  task 34.1 — `DISCLOSURE_STATE.NOT_AVAILABLE` with `not_available_reason` and the `CHECK` pairing
+  them — while `step-fields.tsx` passed `notAvailable={null}` with task 36.13 named. B4 is where it
+  stops being an edge case: UC-22's alternate flow says the module *"resolves to not-applicable"* for
+  most Moldovan SMEs.
+- **UC-30's section exclusion stays task 36.13's.** FR-31's rationale is section-scoped and has no
+  column at all; the 1 Sep 2026 §12.5.6 row rules it out of `not_available_reason` and `§7.1` names a
+  `core.section_declaration` no task builds. Closing that in passing while building B4 is what the
+  open-question protocol forbids.
+
+**Reversible, and D-4 calls the state terminal — so that is a decision** (raised by the spec review,
+not as a finding). *Terminal* means it satisfies validation as a resolution rather than sitting in
+the queue as a failure; it does not mean a reporter who obtains the figure next week may not enter
+it. §6.2's anatomy draws only `[Mark not available ▾]`, so the *return* is this task's addition and
+is recorded here rather than left to be inferred from a button. Resuming reopens the field at
+`missing`, never at a value the reporter withdrew.
+
+The declaration's two writes are their own functions rather than a third argument to `writeFor`,
+because they carry a **state** and the value columns go with it — a figure left behind under
+`not_available` would export as a gap while the store still held a number (UX-119). Resuming omits
+the reason rather than nulling it, since the generated write type carries no `null` there and
+absence is how this wire says *clear it*.
+
+**One assumption stated rather than left silent: the Russian unit symbols are Latin.** `ru.json`
+carries `kg`, `t`, `m³`, `MWh`, `tCO₂e` — identical to `ro` and `en` — where Russian technical prose
+often writes `кг`, `т`, `МВт·ч`. The reason is that these are the standard's own UTR codes rendered
+as SI symbols, which EFRAG publishes in Latin and which a Russian-reading filer meets in Latin in the
+template itself; `tCO₂e` has no Cyrillic form at all. Raised by the convention review as *"what a
+placeholder looks like"*, which is fair — so it is recorded as a choice. If a Russian-speaking
+reviewer says otherwise it is a three-line catalogue edit.
+
+### One regression, in the task before it
+
+91.4's browser case asserted a unit chooser inside a group named *Cantitatea de emisii în aer* — true
+before this task, and false after it, because B4's amounts are now cells of a **pollutant's** row and
+do not exist until one is named. It failed in the browser run, was updated to name a pollutant first,
+and is the clearest evidence in this diff that these guards reach across tasks.
+
+### Reviews — both on `opus`
+
+Per the routing table, four of its five triggers: the contract surface, three-plus workspaces, and a
+config artefact. `gate-integrity-review` was not run — see below.
+
+**`convention-review` found four, all of them mine, and the first is the one worth keeping.**
+`membersTaken` was called inline in JSX and returns a fresh `Set`, so it defeated the very `useMemo`
+in `MemberPicker` whose comment says it exists because this component re-renders on every autosave
+transition — *the comment invoked the rule the prop two files up was breaking*. Built once beside
+`entries` now. The other three: `state: 'missing'` as a bare literal in `blankCell` — the only one
+in three React workspaces, and invisible to all three `no-restricted-syntax` selectors because it is
+an object property *value*; `AXIS_SHAPE` declared and then bypassed two lines above its own use; and
+the member-naming fallback written twice, in the two components that name the **same member in one
+render** — `MemberPicker`'s option and `ClassificationRow`'s legend above it. It also flagged three
+docblocks detached by insertions, which is the shape task 36.4 recorded, and all three are
+reattached.
+
+**`spec-review` found nine, and two of them changed the product.** The unit default and its
+granularity are above, in 91.4's entry, because that is where they belong. Of the rest, one is a
+correctness finding this task created:
+
+**The guard against an unreadable row lived in the browser.** §7.3 keys a value by `(element,
+dimension, ordinal)`, and before this task a `dimension_key` the axis does not declare was merely
+never asked for. A classification derives its rows **from the store**, so an arbitrary string now
+draws a visible row on every element of the axis — and the only thing preventing one was
+`step-fields.tsx`. That is P-4 inverted, in a codebase whose write use case argues the identical
+point for the element key one line above where the check was missing. Both halves added:
+`WriteDisclosureValues` refuses a dimension the element's axes do not declare (with
+`UnknownDisclosureDimensionError` and its key in all three catalogues), and the step read filters
+stored members against the axis's own domain. **The second is defence in depth and had to be proven
+as such** — with the write guard live it is unreachable through the API, so its case inserts the
+stray row in SQL and asserts the step draws nothing from it.
+
+The rest were citations and records: **UC-22's alternate flow was cited as the warrant for the
+field-level declaration**, and it is not — it names UC-30 in its own words, which is precisely the
+*section* half this task defers, so the field half stands on UX-15 and D-4 alone; **UX-30 likewise**,
+which is §6.5's section rationale where §7.4 is the field's; **task 36.13's row was not amended**
+while UC-31 and FR-32 quietly acquired a second owner; and the **91 parent's** workspace column
+still read `api+config` after 91.4's was widened.
+
+**`gate-integrity-review` was not run, and that is a gap rather than a decision.** The 8 Sep policy
+runs all three at the parent close, and the project owner's instruction during this task was that
+`pnpm gates:clean` waits for task 36 — so the third agent goes with it. What that leaves unchecked
+is the question only it asks: whether each check added here fails when the thing it guards is
+broken. Fifteen mutations were run by hand and are listed below, which is the same question asked by
+the author rather than by an agent with no rationalisation for the diff — a weaker instrument, and
+named as one.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm openapi:check`, `pnpm facade:check`, `pnpm docs:check`,
+`pnpm routes:check` green; **670** api unit, **318** web unit, **7** admin unit, **829** api e2e and
+**146** browser tests. Per the 8 Sep gate policy these are the sub-step's own gates — `pnpm gates:clean` is task 36's parent
+close and has not been run here. **Task 91's parent row closed in the same change** (91.1 … 91.4 all
+`DONE`), which by the written rule fires its own `gates:clean` and its three reviews; the owner's
+instruction folds that run into task 36's, so it is outstanding and recorded rather than skipped.
+
+**One api e2e failure was seen and is explained rather than waved away.** A run reported
+`1 failed, 825 passed` in `invitations`, a suite this diff does not touch; `pnpm gates:clean` had
+been started and killed against the same Compose stack minutes earlier, which is the concurrency
+shape this file has already diagnosed twice. The suite passes 27/27 alone and the full set passes
+826/826 with nothing else running — both captured to a log file rather than piped through `tail`,
+which is the lesson task 36.3 recorded after throwing the evidence away.
+
+Proven to bite, by mutation, each restored afterwards: renaming the classification axis in the
+artefact fails three axis-shape cases, moving `ReportingScopesAxis` into `classification` fails one,
+and emptying the list fails one; grouping by element rather than member fails five layout cases, a
+blank row keeping its template's member fails one, and a picker offering a member another row
+reports fails one; dropping the write's dimension check fails one e2e case and dropping the read's
+domain filter fails another — **separately, which is the point**: with the write guard live the read
+guard is unreachable through the API, so proving it needed a row inserted in SQL rather than a
+second mutation of the same test; and in the browser, withholding the step's registered axes from
+`layOutStep` fails the B4 journey, while a cell that does not carry its member writes the
+undimensioned row the journey asserts is absent. The declaration's own mutation is the sharpest: a resume that leaves the reason
+behind is refused by the database's `report_disclosure_value_reason_matches_state` constraint, so
+P-4's guarantee is visible in the failure rather than only in the migration.
+
 ## Task 100 — The counts in the CLAUDE.md files are compared to nothing · 2026-09-08
 
 Appended by the project owner after a CLAUDE.md audit across all four files. The audit's headline

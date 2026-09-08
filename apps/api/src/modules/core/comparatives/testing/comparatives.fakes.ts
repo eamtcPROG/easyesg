@@ -55,6 +55,7 @@ export const element = (over: Partial<TaxonomyElement> = {}): TaxonomyElement =>
   periodType: PERIOD_TYPE.INSTANT,
   domain: null,
   axes: [],
+  unitCodes: [],
   ...over,
 });
 

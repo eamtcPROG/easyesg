@@ -294,6 +294,131 @@ describe('the shipped VSME taxonomy artefacts', () => {
     });
   });
 
+  /**
+   * UX-14's units, as the standard states them (task 91.4).
+   *
+   * **The whole map, so that omission fails** — task 36.4's rule, and here it guards a defect that
+   * is otherwise invisible in both directions. An element that *loses* its units renders a quantity
+   * with no unit, which UX-14 calls the primary source of unusable ESG data; an element that
+   * *gains* them wrongly is worse, and the four intensities are the case: EFRAG states their
+   * guidance as prose — a numerator of tCO₂e over an ISO 4217 denominator — so a parser that
+   * scraped `[utr:…]` tokens would give a **ratio** the unit of its numerator, a wrong answer with
+   * a plausible look. They are named below as carrying none, so that trap fails here as well as in
+   * the extractor.
+   *
+   * Asserted on **every registered version**, like the B3/C3 guard above: both shipped artefacts
+   * carry the same 38, and a re-extraction that broke one would otherwise be caught only on
+   * whichever version a constant happened to name.
+   */
+  it('carries the units EFRAG admits per element, in every version', () => {
+    const taxonomy = registry();
+    const versions = taxonomy.registeredVersions({ standard: TAXONOMY_STANDARD.VSME });
+    expect(versions.length).toBeGreaterThan(1);
+
+    // Space-joined so the ORDER is pinned too: `unitCodes[0]` is the unit a field shows before the
+    // reporter chooses, so `kg t` and `t kg` are different screens.
+    const UNITS_BY_ELEMENT: Readonly<Record<string, string>> = {
+      AmountOfEmissionToAir: 'kg t',
+      AmountOfEmissionToSoil: 'kg t',
+      AmountOfEmissionToWater: 'kg t',
+      AmountOfWaterWithdrawnAtSitesLocatedInAreasOfHighWaterStress: 'm3',
+      AreaOfSiteInBiodiversitySensitiveArea: 'ha sqkm',
+      EnergyConsumptionFromElectricity: 'MWh',
+      GrossLocationBasedScope2GreenhouseGasEmissions: 'tCO2e',
+      GrossMarketBasedScope2GreenhouseGasEmissions: 'tCO2e',
+      GrossScope1GreenhouseGasEmissions: 'tCO2e',
+      GrossScope3GreenhouseGasEmissions: 'tCO2e',
+      TotalAmountOfWaterWithdrawnFromAllSites: 'm3',
+      TotalEnergyConsumption: 'MWh',
+      TotalGrossLocationBasedGHGEmissions: 'tCO2e',
+      TotalGrossLocationBasedScope1AndScope2GHGEmissions: 'tCO2e',
+      TotalGrossMarketBasedGHGEmissions: 'tCO2e',
+      TotalGrossMarketBasedScope1AndScope2GHGEmissions: 'tCO2e',
+      TotalHazardousWasteGeneratedMass: 'kg t',
+      TotalHazardousWasteGeneratedVolume: 'm3',
+      TotalMassOfMaterialUsed: 'kg t',
+      TotalNatureOrientedAreaOffSite: 'ha sqkm',
+      TotalNatureOrientedAreaOnSite: 'ha sqkm',
+      TotalNonHazardousWasteGeneratedMass: 'kg t',
+      TotalNonHazardousWasteGeneratedVolume: 'm3',
+      TotalSealedArea: 'ha sqkm',
+      TotalUseOfLand: 'ha sqkm',
+      TotalVolumeOfMaterialUsed: 'm3',
+      TotalWasteGeneratedMass: 'kg t',
+      TotalWasteGeneratedVolume: 'm3',
+      TotalWasteRecycledReusedAndDirectedToDisposalMass: 'kg',
+      TotalWasteRecycledReusedAndDirectedToDisposalVolume: 'm3',
+      TotalWaterConsumption: 'm3',
+      VolumeOfMaterialUsed: 'm3',
+      WasteDirectedToDisposalMass: 'kg',
+      WasteDirectedToDisposalVolume: 'm3',
+      WasteDivertedToRecycleOrReuseMass: 'kg',
+      WasteDivertedToRecycleOrReuseVolume: 'm3',
+      WaterDischargeFromUndertakingProductionProcesses: 'm3',
+      WeightOfMaterialUsed: 'kg t',
+    };
+
+    /**
+     * The four EFRAG states as prose rather than as a list. Named rather than merely absent from
+     * the map above, because *absent* is also what an element nobody has looked at is.
+     */
+    const STATED_AS_PROSE = [
+      'Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased',
+      'Scope1AndScope2GreenhouseGasEmissionsIntensityValueMarketBased',
+      'TotalLocationBasedGreenhouseGasEmissionsIntensityValue',
+      'TotalMarketBasedGreenhouseGasEmissionsIntensityValue',
+    ];
+
+    for (const version of versions) {
+      const read = taxonomy.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version });
+      const stated: Record<string, string> = Object.fromEntries(
+        (read?.elements ?? [])
+          .filter((element) => element.unitCodes.length > 0)
+          .map((element): readonly [string, string] => [element.key, element.unitCodes.join(' ')])
+          .sort((a, b) => a[0].localeCompare(b[0])),
+      );
+      expect({ version, stated }).toEqual({ version, stated: UNITS_BY_ELEMENT });
+
+      for (const key of STATED_AS_PROSE) {
+        const element = taxonomy.element({ standard: TAXONOMY_STANDARD.VSME, version, key });
+        // The element exists and states no unit — two claims, because a typo in the key would
+        // satisfy the second alone.
+        expect({ version, key, exists: element !== null, units: element?.unitCodes }).toEqual({
+          version,
+          key,
+          exists: true,
+          units: [],
+        });
+      }
+    }
+  });
+
+  /**
+   * The two branches UX-14 names, counted — *"either fixed by the taxonomy or chosen from a
+   * constrained list"*.
+   *
+   * The counts are what decide how many fields render a chooser at all, and B4 is why this task
+   * exists: EFRAG's own Digital Template asks its three emissions in `kg` or `t`.
+   */
+  it('states one unit for most elements and a choice for thirteen', () => {
+    const read = registry().taxonomy({ standard: TAXONOMY_STANDARD.VSME, version: VERSION });
+    const stated = (read?.elements ?? []).filter((element) => element.unitCodes.length > 0);
+
+    expect({
+      stated: stated.length,
+      fixed: stated.filter((element) => element.unitCodes.length === 1).length,
+      chosen: stated.filter((element) => element.unitCodes.length > 1).length,
+    }).toEqual({ stated: 38, fixed: 25, chosen: 13 });
+
+    // B4's three, which is the module that made this task precede 36.5.
+    for (const key of ['AmountOfEmissionToAir', 'AmountOfEmissionToWater', 'AmountOfEmissionToSoil']) {
+      expect({ key, units: registry().element({ ...at, key })?.unitCodes }).toEqual({
+        key,
+        units: ['kg', 't'],
+      });
+    }
+  });
+
   it('pins new reports to a version that is actually registered', () => {
     const taxonomy = registry();
     const pin = taxonomy.pinFor({});

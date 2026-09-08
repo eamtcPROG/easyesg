@@ -64,13 +64,15 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     label: string | null; labelStanding: string | null; repeating: boolean; axes: string[];
     dimensionKey: string; dimensionLabel: string | null; origin: string;
     valueText: string | null; valueNumeric: string | null; state: string; carriedForward: boolean;
+    unitCode: string | null; unitCodes: string[];
     help: string | null;
     options: { value: string; label: string | null; code: string | null }[] | null;
     defaultValue: { valueText: string | null; valueNumeric: string | null } | null;
     applicable: boolean;
     applicabilityCause: Cause | null;
   }
-  interface Step { module: string; taxonomyVersion: string; fields: Field[] }
+  interface Axis { key: string; label: string | null; members: { value: string; label: string | null; code: string | null }[] }
+  interface Step { module: string; taxonomyVersion: string; fields: Field[]; axes: Axis[] }
 
   const openPeriod = async (year: number): Promise<string> => {
     const response = await http().post('/api/v1/periods').set(admin.authorization).send({
@@ -670,7 +672,14 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       expect(after.fields.find((f) => f.elementKey === element)?.origin).toBe('calculated');
     });
 
-    it('leaves an axis nobody registered as one undimensioned row', async () => {
+    /**
+     * **Retitled at task 36.5, because the shape it described stopped being produced.** It read
+     * *"leaves an axis nobody registered as one undimensioned row"* — true when a classification
+     * had no rendering at all, and now a claim about the old behaviour that would have stayed
+     * green while saying the opposite of what ships. What survives is the *count*: an axis nobody
+     * registered as a breakdown must not expand, and 94 pollutants × 3 elements is the defect.
+     */
+    it('does not expand a classification into a row per member, however many it admits', async () => {
       const reportId = await createReport(await openPeriod(2026));
       const step = objectOf<Step>(
         (await http()
@@ -679,15 +688,269 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
           .expect(200)).body,
       );
 
-      // B4's elements are on `TypeOfPollutantAxis` — 94 members, and a classification rather than a
-      // breakdown, so it is absent from the seeded shape. One row each, `dimensionKey` empty.
-      // Exactly three — `AmountOfEmissionTo{Air,Soil,Water}`. A knowable count rather than a
-      // vacuity guard, so registering `TypeOfPollutantAxis` as a breakdown (task 36.5's decision)
+      // Exactly three — `AmountOfEmissionTo{Air,Soil,Water}`, one unassigned row each. A knowable
+      // count rather than a vacuity guard, so registering `TypeOfPollutantAxis` as a breakdown
       // fails here and gets read, instead of quietly satisfying `> 0` with 282 rows.
       const dimensioned = step.fields.filter((f) => f.axes.includes('TypeOfPollutantAxis'));
       expect(dimensioned).toHaveLength(3);
+      // `dimensionKey` empty on a *dimensioned* element is task 36.5's *no member chosen yet* — the
+      // template row that lets a module be started, not the undimensioned row an unaxed field has.
       expect(dimensioned.every((f) => f.dimensionKey === '')).toBe(true);
       expect(dimensioned.every((f) => f.dimensionLabel === null)).toBe(true);
+    });
+  });
+
+  /**
+   * B4's classification — a row whose identity is a **chosen member** (UC-22, task 36.5).
+   *
+   * The third row shape, and the one no task had built. A *breakdown* fixes its rows and a *typed*
+   * axis numbers them; a classification is selected from, which is why 94 pollutants must not
+   * become 94 rows and why the rows a step serves are the ones a report actually holds.
+   */
+  describe('a classification is selected from, not answered for every member (UC-22)', () => {
+    const stepOf = async (reportId: string, module: string): Promise<Step> =>
+      objectOf<Step>(
+        (await http()
+          .get(`/api/v1/reports/${reportId}/modules/${module}`)
+          .set(editor.authorization)
+          .expect(200)).body,
+      );
+
+    it('carries the pollutant domain once on the step, not on each of the three fields', async () => {
+      const step = await stepOf(await createReport(await openPeriod(2026)), 'B4');
+
+      expect(step.axes.map((axis) => axis.key)).toEqual(['TypeOfPollutantAxis']);
+      const pollutants = step.axes[0];
+      // 94 members — EFRAG's list, and the reason this is on the step: three elements share it, so
+      // a per-field copy would put 282 objects on the wire, and B7's waste axis 973 × N.
+      expect(pollutants.members).toHaveLength(94);
+      // The axis names itself from its default member, so a screen can head the table without
+      // inventing a word. Never the axis key, which is an XBRL identifier.
+      expect(pollutants.label).toBe('Tipul de poluant');
+      // Romanian, because the read negotiates a locale and these accounts have no other — which
+      // is what shows the member wording is the catalogue's rather than the artefact's English.
+      expect(pollutants.members.slice(0, 2)).toEqual([
+        { value: 'AlachlorMember', label: 'Alaclor', code: null },
+        { value: 'AldrinMember', label: 'Aldrin', code: null },
+      ]);
+      // **The default member is not offered**, and that is the decision rather than an omission: it
+      // is the domain's root — *Type of pollutant* — so an amount filed against it would be filed
+      // against the category rather than against a pollutant.
+      expect(pollutants.members.map((m) => m.value)).not.toContain('TypeOfPollutantMember');
+    });
+
+    it('serves every element a cell for every pollutant the report names, as the template does', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [
+          {
+            elementKey: 'AmountOfEmissionToAir',
+            dimensionKey: 'AmmoniaNH3Member',
+            ordinal: 0,
+            valueNumeric: '12',
+            unitCode: 't',
+            state: DISCLOSURE_STATE.OK,
+            carriedForward: false,
+          },
+          {
+            elementKey: 'AmountOfEmissionToWater',
+            dimensionKey: 'AlachlorMember',
+            ordinal: 0,
+            valueNumeric: '3',
+            unitCode: 'kg',
+            state: DISCLOSURE_STATE.OK,
+            carriedForward: false,
+          },
+        ],
+      }).expect(200);
+
+      const step = await stepOf(reportId, 'B4');
+      const rows = step.fields
+        .filter((f) => f.axes.includes('TypeOfPollutantAxis'))
+        .map((f) => ({ element: f.elementKey, member: f.dimensionKey, name: f.dimensionLabel, value: f.valueNumeric }));
+
+      // **Two pollutants named, so all three elements answer for both** — EFRAG's B4 sheet is a
+      // table headed `Row ID │ Pollutant │ air │ water │ soil`, and a reporter who names ammonia is
+      // being asked all three amounts for it. The four cells nobody filled are empty rather than
+      // absent, which is what distinguishes *not emitted* from *pollutant not named*.
+      //
+      // **Exactly this set**, so a classification that quietly expanded to 94 members fails, and so
+      // does one that served each element only its own stored rows — the ragged shape no client
+      // could lay out as a table.
+      expect(rows).toEqual([
+        { element: 'AmountOfEmissionToAir', member: 'AlachlorMember', name: 'Alaclor', value: null },
+        { element: 'AmountOfEmissionToAir', member: 'AmmoniaNH3Member', name: 'Amoniac (NH3)', value: '12' },
+        { element: 'AmountOfEmissionToWater', member: 'AlachlorMember', name: 'Alaclor', value: '3' },
+        { element: 'AmountOfEmissionToWater', member: 'AmmoniaNH3Member', name: 'Amoniac (NH3)', value: null },
+        { element: 'AmountOfEmissionToSoil', member: 'AlachlorMember', name: 'Alaclor', value: null },
+        { element: 'AmountOfEmissionToSoil', member: 'AmmoniaNH3Member', name: 'Amoniac (NH3)', value: null },
+      ]);
+    });
+
+    it('serves one row per member a single element holds, in a stable order', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      // Written out of alphabetical order deliberately: the rows must not come back in whatever
+      // order the store's plan chose, or one report renders two ways.
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: ['MercuryAndCompoundsHgMember', 'AlachlorMember', 'AsbestosMember'].map((dimensionKey) => ({
+          elementKey: 'AmountOfEmissionToAir',
+          dimensionKey,
+          ordinal: 0,
+          valueNumeric: '1',
+          unitCode: 'kg',
+          state: DISCLOSURE_STATE.OK,
+          carriedForward: false,
+        })),
+      }).expect(200);
+
+      const air = (await stepOf(reportId, 'B4')).fields.filter(
+        (f) => f.elementKey === 'AmountOfEmissionToAir',
+      );
+      expect(air.map((f) => f.dimensionKey)).toEqual([
+        'AlachlorMember',
+        'AsbestosMember',
+        'MercuryAndCompoundsHgMember',
+      ]);
+      // The unassigned row is gone once the reporter has answered: adding another is the browser's
+      // to offer, and serving a spare here would put an empty row under every table forever.
+      expect(air.map((f) => f.dimensionKey)).not.toContain('');
+    });
+
+    it('refuses a value under a member the axis does not declare, below the browser', async () => {
+      // **P-4, and it became reachable with this task.** A classification derives its rows from the
+      // store, so a stray `dimension_key` is no longer merely unread — it draws a visible row on
+      // every element of the axis, labelled *unnamed*. The browser will not send one; a guarantee
+      // that lives in one client is the inversion this repository refuses.
+      const reportId = await createReport(await openPeriod(2026));
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [{
+          elementKey: 'AmountOfEmissionToAir',
+          dimensionKey: 'NotAPollutantMember',
+          ordinal: 0,
+          valueNumeric: '12',
+          state: DISCLOSURE_STATE.OK,
+          carriedForward: false,
+        }],
+      }).expect(400);
+
+      // Nothing was written, so nothing can be drawn from it — the batch is all-or-nothing about
+      // what it names, exactly as the element check above it is.
+      const step = await stepOf(reportId, 'B4');
+      expect(step.fields.filter((f) => f.dimensionKey !== '')).toEqual([]);
+    });
+
+    it('draws no row for a stored member the axis does not declare', async () => {
+      // **Written through SQL because the write guard above makes it unreachable through the API**,
+      // which is the point: the read guard is defence in depth for a row that arrives by any other
+      // path — a migration, a future writer, an operator. Before task 36.5 a stray `dimension_key`
+      // was simply never asked for; now the rows come FROM the store, so an unvalidated string
+      // would materialise as a visible row on all three of B4's elements, labelled *unnamed*.
+      const reportId = await createReport(await openPeriod(2026));
+      await asOrganization(owner, ORG, (run) =>
+        run(
+          `INSERT INTO core.report_disclosure_value
+             (organization_id, report_id, element_key, dimension_key, ordinal, value_numeric, state)
+           VALUES ($1, $2, 'AmountOfEmissionToAir', 'NotAPollutantMember', 0, 7, 'ok')`,
+          [ORG, reportId],
+        ),
+      );
+
+      const step = await stepOf(reportId, 'B4');
+      // The unassigned template row and nothing else: the stray member neither draws its own row nor
+      // adds a column to the other two elements.
+      expect(step.fields.filter((f) => f.axes.includes('TypeOfPollutantAxis')).map((f) => f.dimensionKey))
+        .toEqual(['', '', '']);
+    });
+
+    it('admits the undimensioned key, which three legitimate shapes carry', async () => {
+      // `''` is what an unaxed element carries, what a typed axis's rows carry, and what an explicit
+      // axis in neither registered shape carries — `ReportingScopesAxis`, whose default member IS
+      // the answer. Refusing it to catch the case above would refuse all three.
+      const reportId = await createReport(await openPeriod(2026));
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [{
+          elementKey: 'GrossScope1GreenhouseGasEmissions',
+          dimensionKey: '',
+          ordinal: 0,
+          valueNumeric: '5',
+          unitCode: 'tCO2e',
+          state: DISCLOSURE_STATE.OK,
+          carriedForward: false,
+        }],
+      }).expect(200);
+    });
+
+    it('offers no domain on a step that has no classification', async () => {
+      // B3's axis is a registered breakdown and B1's are typed, so neither is selected from. An
+      // empty list rather than a missing member: a client reads `axes` unconditionally.
+      const reportId = await createReport(await openPeriod(2026));
+      expect((await stepOf(reportId, 'B3')).axes).toEqual([]);
+      expect((await stepOf(reportId, 'B1')).axes).toEqual([]);
+    });
+  });
+
+  /**
+   * UX-14's units, on the wire (task 91.4).
+   *
+   * The artefact spec holds the whole 38-element map hermetically; what only this level shows is
+   * that the taxonomy's answer survives the registry's parse, the step read's join and the DTO —
+   * four layers, each of which has a `unitCodes` of its own that could quietly answer `[]`.
+   */
+  describe('the units a field admits (UX-14, task 91.4)', () => {
+    const unitsOn = async (module: string): Promise<Record<string, string[]>> => {
+      const reportId = await createReport(await openPeriod(2026));
+      const step = objectOf<Step>(
+        (await http()
+          .get(`/api/v1/reports/${reportId}/modules/${module}`)
+          .set(editor.authorization)
+          .expect(200)).body,
+      );
+      return Object.fromEntries(step.fields.map((field) => [field.elementKey, field.unitCodes]));
+    };
+
+    it('offers B4 a choice of kilograms or tonnes, and states none for its two other fields', async () => {
+      const units = await unitsOn('B4');
+      // EFRAG's own Digital Template asks this on its B4 sheet — *"either kg or tonne"*, with
+      // tonnes pre-selected — which is why 91.4 was ordered before B4's module slice.
+      expect(units).toEqual({
+        AmountOfEmissionToAir: ['kg', 't'],
+        AmountOfEmissionToWater: ['kg', 't'],
+        AmountOfEmissionToSoil: ['kg', 't'],
+        // A boolean and a URL take no unit at all, and `[]` is that answer rather than a gap.
+        PubliclyAvailableDisclosure: [],
+        URLOrLinkToThePubliclyAvailableDisclosure: [],
+      });
+    });
+
+    it('states one unit for B3’s total energy and none for the two breakdown rows EFRAG omits', async () => {
+      const units = await unitsOn('B3');
+      // The asymmetry is EFRAG's, not this platform's, and it is the fact task 36.4 handed to this
+      // one: the total states MWh, two of the three sources it decomposes into state nothing. A
+      // reader of the screen sees a unit on one row of a breakdown and none on the others.
+      expect({
+        total: units.TotalEnergyConsumption,
+        electricity: units.EnergyConsumptionFromElectricity,
+        fuels: units.EnergyConsumptionFromFuels,
+        selfGenerated: units.EnergyConsumptionFromSelfGeneratedElectricity,
+        scopeOne: units.GrossScope1GreenhouseGasEmissions,
+      }).toEqual({
+        total: ['MWh'],
+        electricity: ['MWh'],
+        fuels: [],
+        selfGenerated: [],
+        scopeOne: ['tCO2e'],
+      });
+    });
+
+    it('states no unit for the intensities, whose guidance is a ratio rather than a list', async () => {
+      // The trap the parser is a shape test for: EFRAG's guidance here is a sentence naming tCO₂e
+      // as the NUMERATOR over an ISO 4217 denominator, so a token scrape would answer `['tCO2e']`
+      // and a screen would offer a ratio the unit of its top half.
+      const units = await unitsOn('B3');
+      expect({
+        location: units.Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased,
+        market: units.Scope1AndScope2GreenhouseGasEmissionsIntensityValueMarketBased,
+      }).toEqual({ location: [], market: [] });
     });
   });
 

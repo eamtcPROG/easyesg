@@ -186,6 +186,13 @@ export type DisclosureOption = components['schemas']['DisclosureOptionDto'];
 /** What a field would hold if the reporter accepted what the platform already knows (task 91.2; FR-27). Committed by the client, never by the read. */
 export type DisclosureDefault = components['schemas']['DisclosureDefaultDto'];
 export type DisclosureStep = components['schemas']['DisclosureStepDto'];
+/**
+ * One classification axis and the members a reporter may add a row from (task 36.5; UC-22).
+ *
+ * On the **step**, not the field: every element on an axis shares one domain, so B4's three
+ * emissions would otherwise carry 94 pollutants three times over and B7's would carry 973.
+ */
+export type DisclosureAxis = components['schemas']['DisclosureAxisDto'];
 export type DisclosureValueWrite = components['schemas']['DisclosureValueWriteDto'];
 export type WriteDisclosureValuesRequest =
   components['schemas']['WriteDisclosureValuesRequestDto'];

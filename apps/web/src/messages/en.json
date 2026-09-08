@@ -1062,7 +1062,25 @@
         "choiceLoading": "Searching",
         "length": "{count, plural, one {One character} other {# characters}}",
         "unnamed": "Unnamed",
-        "calculated": "Calculated"
+        "calculated": "Calculated",
+        "unitLabel": "Unit of measurement",
+        "units": {
+          "kg": "kg",
+          "t": "t",
+          "m3": "m³",
+          "MWh": "MWh",
+          "tCO2e": "tCO₂e",
+          "ha": "ha",
+          "sqkm": "km²"
+        },
+        "notAvailable": {
+          "declare": "Mark as not available",
+          "reason": "Why the value is not available",
+          "reasonHelp": "This text appears in the exported report, where a third party will read it.",
+          "confirm": "Confirm",
+          "cancel": "Cancel",
+          "resume": "Answer this field after all"
+        }
       },
       "leave": {
         "title": "Leave with unsent changes?",
@@ -1080,7 +1098,9 @@
           "IdentifierOfSubsidiaryTypedAxis": "Subsidiary",
           "IdentifierOfMaterialTypedAxis": "Material"
         },
-        "fallbackName": "Row"
+        "fallbackName": "Row",
+        "addRow": "Add a row",
+        "unassignedRow": "{name} — to choose"
       }
     }
   }

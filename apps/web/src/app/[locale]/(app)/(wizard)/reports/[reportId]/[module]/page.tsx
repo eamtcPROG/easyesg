@@ -130,6 +130,7 @@ export default async function ReportModuleStepPage({ params }: Props) {
         <AutosaveBanner />
         <StepFields
           fields={fields}
+          axes={read.step.axes}
           readOnly={readOnly}
           markerLabels={markerLabels}
           carriedLabel={t('field.carried')}

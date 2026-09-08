@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   STEP_ENTRY,
   blankRow,
+  isLastClassificationRow,
   isLastRow,
   layOutStep,
+  membersTaken,
   nextOrdinal,
   withAddedRows,
+  type StepClassificationEntry,
   type StepGroupEntry,
 } from './step-layout';
 
@@ -34,6 +37,7 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
   valueBoolean: null,
   valueDate: null,
   unitCode: null,
+  unitCodes: [],
   state: DISCLOSURE_STATE.MISSING,
   notAvailableReason: null,
   carriedForward: false,
@@ -175,6 +179,8 @@ describe('layOutStep (task 36.2)', () => {
       const named = (entry: (typeof entries)[number]): string => {
         if (entry.kind === STEP_ENTRY.BREAKDOWN) return entry.elementKey;
         if (entry.kind === STEP_ENTRY.GROUP) return entry.axis;
+        // A classification names its axis too, so this reads the same for both grouped shapes.
+        if (entry.kind === STEP_ENTRY.CLASSIFICATION) return entry.axis;
         return entry.field.elementKey;
       };
       expect(entries.map(named)).toEqual([
@@ -283,5 +289,126 @@ describe('withAddedRows and isLastRow', () => {
     // One control per group, not one per row: a fieldset each offering "add another" reads as four
     // different actions.
     expect(groups.map((g) => isLastRow(entries, g))).toEqual([false, true]);
+  });
+});
+
+
+/**
+ * A classification's rows (task 36.5; UC-22) — the transpose of a breakdown's grouping.
+ *
+ * Stated here rather than reached through a browser for `step-layout.ts`'s own stated reason: the
+ * interesting cases are data shapes. A row whose member the server named beside one it did not, a
+ * second axis on the same step, a picker offering a member another row already reports — each is a
+ * line here and a contrivance in Playwright.
+ */
+describe('a classification groups by member, across elements', () => {
+  const POLLUTANTS = new Set(['TypeOfPollutantAxis']);
+  const emission = (elementKey: string, dimensionKey: string): DisclosureField =>
+    field({ elementKey, dimensionKey, axes: ['TypeOfPollutantAxis'], kind: DISCLOSURE_KIND.NUMERIC });
+
+  it('makes one row per member, carrying every element answered for it', () => {
+    // The api's own order: each element in turn, its members within it. The table's rows are the
+    // transpose — one pollutant, three amounts — which is what EFRAG's B4 sheet asks for.
+    const entries = layOutStep(
+      [
+        emission('AmountOfEmissionToAir', 'AlachlorMember'),
+        emission('AmountOfEmissionToAir', 'AsbestosMember'),
+        emission('AmountOfEmissionToWater', 'AlachlorMember'),
+        emission('AmountOfEmissionToWater', 'AsbestosMember'),
+      ],
+      POLLUTANTS,
+    );
+
+    expect(entries).toHaveLength(2);
+    expect(
+      entries.map((entry) =>
+        entry.kind === STEP_ENTRY.CLASSIFICATION
+          ? { member: entry.dimensionKey, elements: entry.fields.map((f) => f.elementKey) }
+          : entry.kind,
+      ),
+    ).toEqual([
+      { member: 'AlachlorMember', elements: ['AmountOfEmissionToAir', 'AmountOfEmissionToWater'] },
+      { member: 'AsbestosMember', elements: ['AmountOfEmissionToAir', 'AmountOfEmissionToWater'] },
+    ]);
+  });
+
+  it('keeps an unassigned row apart from the named ones rather than folding them together', () => {
+    // `''` is *no member chosen*, not a member — a row keyed on it would collect every unassigned
+    // cell of every added row into one, and the reporter would name one pollutant for all of them.
+    const entries = layOutStep(
+      [emission('AmountOfEmissionToAir', 'AlachlorMember'), emission('AmountOfEmissionToAir', '')],
+      POLLUTANTS,
+    );
+    expect(entries.map((entry) => (entry.kind === STEP_ENTRY.CLASSIFICATION ? entry.dimensionKey : '?'))).toEqual([
+      'AlachlorMember',
+      '',
+    ]);
+  });
+
+  it('is not a breakdown, however member-keyed its rows look on the wire', () => {
+    // The two are indistinguishable from a field alone — several elements, member-keyed rows — so
+    // the shape comes from the step's registered axes. Without the set, this is B3's grouping: one
+    // entry per ELEMENT, which for B4 reads *Emission to air* three times with pollutants inside it.
+    const fields = [
+      emission('AmountOfEmissionToAir', 'AlachlorMember'),
+      emission('AmountOfEmissionToWater', 'AlachlorMember'),
+    ];
+    expect(layOutStep(fields, POLLUTANTS).map((entry) => entry.kind)).toEqual([STEP_ENTRY.CLASSIFICATION]);
+    expect(layOutStep(fields).map((entry) => entry.kind)).toEqual([
+      STEP_ENTRY.BREAKDOWN,
+      STEP_ENTRY.BREAKDOWN,
+    ]);
+  });
+
+  it('offers the picker every member no row already reports', () => {
+    // Two rows on one pollutant would collide on §7.3's natural key and the second would overwrite
+    // the first, so the control makes it unrepresentable rather than refusing it afterwards.
+    const entries = layOutStep(
+      [
+        emission('AmountOfEmissionToAir', 'AlachlorMember'),
+        emission('AmountOfEmissionToAir', 'AsbestosMember'),
+        emission('AmountOfEmissionToAir', ''),
+      ],
+      POLLUTANTS,
+    );
+    expect([...membersTaken(entries, 'TypeOfPollutantAxis')].sort()).toEqual([
+      'AlachlorMember',
+      'AsbestosMember',
+    ]);
+    // The unassigned row contributes nothing: `''` is not a member, and adding it would offer the
+    // picker one fewer option for no reason.
+    expect(membersTaken(entries, 'TypeOfPollutantAxis').has('')).toBe(false);
+  });
+
+  it('adds an unnamed row after the axis’s last, and names nothing in it', () => {
+    const entries = layOutStep([emission('AmountOfEmissionToAir', 'AlachlorMember')], POLLUTANTS);
+    const added = withAddedRows(entries, { TypeOfPollutantAxis: 1 });
+
+    expect(added).toHaveLength(2);
+    const fresh = added[1] as StepClassificationEntry;
+    // **No member and no values** — a repeating group's added row is *site 3* the moment it
+    // appears, and a classification's is a question. A copy carrying the template's member would
+    // write the new row's answers over the old row's.
+    expect({ kind: fresh.kind, member: fresh.dimensionKey }).toEqual({
+      kind: STEP_ENTRY.CLASSIFICATION,
+      member: '',
+    });
+    expect(fresh.fields.map((f) => ({ key: f.dimensionKey, value: f.valueNumeric }))).toEqual([
+      { key: '', value: null },
+    ]);
+  });
+
+  it('offers the add control on the last row only, so a table asks once', () => {
+    const entries = layOutStep(
+      [
+        emission('AmountOfEmissionToAir', 'AlachlorMember'),
+        emission('AmountOfEmissionToAir', 'AsbestosMember'),
+      ],
+      POLLUTANTS,
+    );
+    const rows = entries.filter(
+      (entry): entry is StepClassificationEntry => entry.kind === STEP_ENTRY.CLASSIFICATION,
+    );
+    expect(rows.map((row) => isLastClassificationRow(entries, row))).toEqual([false, true]);
   });
 });

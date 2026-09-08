@@ -231,8 +231,11 @@ test('B2 renders and stores each of its kinds, with no code of its own (UC-20)',
   // the catalogue's business rather than a component's.
   await expect(page.getByText('48 de caractere')).toBeVisible();
 
-  // 2 — `monetary`. It renders as a decimal field and carries NO unit: `unit_code` stays null
-  //     until a module sets one (UX-14, task 91.4), so a currency marker here would be invented.
+  // 2 — `monetary`. It renders as a decimal field and carries NO unit — and since task 91.4 the
+  //     reason is EFRAG's rather than this platform's: `measurementGuidance` reaches 42 elements
+  //     and no monetary one is among them, so `unitCodes` is empty and the anatomy omits the slot.
+  //     A currency marker here would still be invented; what changed is that the taxonomy now says
+  //     so, where before nothing had asked it (UX-14; the currency question itself is task 30.2's).
   const investment = page.getByRole('textbox', {
     name: 'Investiția financiară în capitalul sau activele entităților din economia socială',
   });
@@ -396,6 +399,201 @@ test('B3 reports energy along its breakdown, named by member (UC-21)', async ({ 
   // …and the undimensioned row — the one a breakdown that ignored its members would have written —
   // does not exist. Without this the case passes on exactly the defect it names.
   expect(await disclosureValueOf(stored)).toBeNull();
+});
+
+/**
+ * B4 in a browser (UC-22, FR-24, FR-29; task 36.5) — **the classification, end to end**.
+ *
+ * The third row shape, and the one that spans every layer this task touched: the axis is registered
+ * as a classification in the configuration store, the api serves its 94 members once on the step and
+ * the rows the report holds, `layOutStep` transposes them into one row per pollutant, and the picker
+ * names the row that the amounts are then keyed to. Each is asserted on its own — the shape by
+ * `axis-shape.service.spec.ts`, the rows by `wizard.e2e-spec.ts`, the grouping by
+ * `step-layout.spec.ts` — and only a browser can say that they meet.
+ *
+ * UC-22 step 1 asks for emissions to air, water and soil, which EFRAG's own sheet asks **per
+ * pollutant**: unreportable before this task, since the three elements served one undimensioned row
+ * with nothing naming what it measured.
+ */
+test('B4 reports an emission against a pollutant the reporter names (UC-22)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b4');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B4`);
+
+  // The unassigned row the api serves so the module can be started at all: it names the domain and
+  // asks which member, and — deliberately — shows **no amounts yet**. A value written before a
+  // pollutant is named would be stored under the undimensioned key and never read back.
+  const unassigned = page.getByRole('group', { name: 'Tipul de poluant — de ales' });
+  await expect(unassigned).toBeVisible();
+  await expect(unassigned.getByRole('textbox', { name: 'Cantitatea de emisii în aer' })).toHaveCount(0);
+
+  // 94 pollutants, filtered locally. **Not 94 rows** — the count is what separates a classification
+  // from a breakdown, and getting it wrong is 282 fields on one screen.
+  const picker = unassigned.getByRole('combobox', { name: 'Tipul de poluant' });
+  await picker.fill('Amoniac');
+  await page.getByRole('option', { name: 'Amoniac (NH3)' }).click();
+
+  // Named, the row asks its three amounts — EFRAG's own `Pollutant │ air │ water │ soil`.
+  const ammonia = page.getByRole('group', { name: 'Amoniac (NH3)' });
+  const air = ammonia.getByRole('textbox', { name: 'Cantitatea de emisii în aer' });
+  await air.fill('12');
+  await air.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+    timeout: 15_000,
+  });
+
+  // **The member is the key, and the indicator cannot tell you that** — it reads *Salvat* whichever
+  // dimension was written. The pollutant's row holds the figure…
+  const stored = { organizationId, reportId, elementKey: 'AmountOfEmissionToAir' };
+  await expect
+    .poll(async () => (await disclosureValueOf({ ...stored, dimensionKey: 'AmmoniaNH3Member' }))?.valueNumeric, {
+      timeout: 15_000,
+    })
+    .toBe('12');
+  // …and the undimensioned row — the one a classification that ignored its member would have
+  // written, and which no read would ever show again — does not exist.
+  expect(await disclosureValueOf(stored)).toBeNull();
+
+  // It survives the round trip, which is the half a fresh render cannot fake: the api recomposes
+  // the row from the member the store holds, not from anything the browser remembered.
+  await page.reload();
+  await expect(
+    page.getByRole('group', { name: 'Amoniac (NH3)' }).getByRole('textbox', {
+      name: 'Cantitatea de emisii în aer',
+    }),
+  ).toHaveValue('12');
+  // And the picker is gone from a row the store has named: moving it would strand the answers under
+  // a pollutant nobody reports.
+  await expect(page.getByRole('group', { name: 'Amoniac (NH3)' }).getByRole('combobox', {
+    name: 'Tipul de poluant',
+  })).toHaveCount(0);
+});
+
+/**
+ * UX-15's declaration, in a browser (UC-31, FR-32, D-4; task 36.5).
+ *
+ * *"Every field shall offer the 'not available, with reason' declaration as a first-class action,
+ * not as an alternative discovered after failing to answer."* Built on B4 because UC-22's alternate
+ * flow makes the reasoned non-answer this module's **common** path, and built once for all eleven
+ * modules because every one of them needs it.
+ */
+test('a field can be declared not available, with a reason, and answered after all (UX-15)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b4gap');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B4`);
+  const url = page.getByRole('group', {
+    name: 'Adresa URL sau linkul către informația disponibilă public',
+  });
+
+  // First-class: the action is on the field, before anything has been typed into it.
+  await url.getByRole('button', { name: 'Marcați ca indisponibil' }).click();
+  const reason = url.getByRole('textbox', { name: 'Motivul pentru care valoarea nu este disponibilă' });
+  // §7.4 carries the reason into both export formats, and the interface says so where it is
+  // typed. (UX-30 is the *section* rationale's rule, in §6.5 — not this one.)
+  await expect(url.getByText('Acest text apare în raportul exportat, unde îl va citi un terț.')).toBeVisible();
+  await reason.fill('Raportul de mediu nu este publicat online');
+  await url.getByRole('button', { name: 'Confirmați' }).click();
+
+  const stored = {
+    organizationId,
+    reportId,
+    elementKey: 'URLOrLinkToThePubliclyAvailableDisclosure',
+  };
+  await expect
+    .poll(async () => await disclosureValueOf(stored), { timeout: 15_000 })
+    .toMatchObject({
+      state: 'not_available',
+      notAvailableReason: 'Raportul de mediu nu este publicat online',
+    });
+
+  // The reason is what a reader sees, on the field, in their own language — never the state's key.
+  await expect(url.getByText('Raportul de mediu nu este publicat online')).toBeVisible();
+
+  // **Reversible** (UX-29's word for the section case, and the same expectation here): the field
+  // returns to unanswered rather than to a value the reporter withdrew, and the reason goes with
+  // the state it explained — the store's own `CHECK` pairs the two.
+  await url.getByRole('button', { name: 'Reveniți la completare' }).click();
+  await expect
+    .poll(async () => await disclosureValueOf(stored), { timeout: 15_000 })
+    .toMatchObject({ state: 'missing', notAvailableReason: null, valueText: null });
+});
+
+/**
+ * UX-14's two branches in a browser (task 91.4).
+ *
+ * *"Every quantitative field shall carry an explicit unit, either **fixed by the taxonomy** or
+ * **chosen from a constrained list**. Free-text units are prohibited."* Both branches are real in
+ * EFRAG's data — 25 elements admit one unit and 13 admit several — and only a browser can show that
+ * they render as two different controls off one field, since the api serves one `unitCodes` list
+ * and the difference is `length`.
+ *
+ * **B4 is the module that made this task precede 36.5**: EFRAG's own Digital Template asks its
+ * three emissions in *"either kg or tonne"* on the sheet itself, so shipping B4 with no chooser
+ * would have stored three masses whose unit nothing recorded.
+ */
+test('a unit is shown where the standard fixes it and asked where it admits several (UX-14)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'units');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  // ── Fixed by the taxonomy: B3's total energy admits MWh alone ──────────────────────────────
+  await page.goto(`/reports/${reportId}/B3`);
+  const total = page.getByRole('group', { name: 'Consumul total de energie' });
+  await expect(total.getByText('MWh', { exact: true })).toBeVisible();
+  // Shown, never asked. A chooser over one option is a control that cannot change anything, and
+  // it would put a menu on 25 of the 38 fields that carry a unit at all.
+  await expect(total.getByRole('combobox')).toHaveCount(0);
+
+  // ── Chosen from a constrained list: B4's emissions admit kilograms or tonnes ───────────────
+  //
+  // **The pollutant comes first, and that is task 36.5's shape rather than a setup step**: B4's
+  // amounts are cells of a classification row, so they do not exist until the row is named. An
+  // amount asked before *of what* is exactly what that task removed.
+  await page.goto(`/reports/${reportId}/B4`);
+  await page
+    .getByRole('group', { name: 'Tipul de poluant — de ales' })
+    .getByRole('combobox', { name: 'Tipul de poluant' })
+    .fill('Azbest');
+  await page.getByRole('option', { name: 'Azbest' }).click();
+
+  const air = page.getByRole('group', { name: 'Cantitatea de emisii în aer' });
+  const unit = air.getByRole('combobox');
+  await expect(unit).toHaveCount(1);
+  // **Empty until chosen** (project owner, 8 Sep 2026). `unitCodes` is `[kg, t]` and EFRAG's own
+  // template ships tonnes pre-selected, so nothing makes the list an order of preference — and with
+  // task 91.2's commit rule a default would have filed a unit nobody picked, at a thousandfold
+  // error. UX-14 asks for an *explicit* unit; this is what explicit means.
+  await expect(unit).toHaveText('Alegeți');
+
+  // The unit travels with the value, and 12 kg is not 12 t — so the write has to carry both.
+  await unit.click();
+  await page.getByRole('option', { name: 't', exact: true }).click();
+  const amount = air.getByRole('textbox');
+  await amount.fill('12');
+  await amount.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+    timeout: 15_000,
+  });
+
+  // **The stored row is the fact, not the indicator** — which reads *Salvat* whichever unit was
+  // written. Without this line the case passes on a chooser that changes nothing but the label.
+  await expect
+    .poll(
+      async () =>
+        await disclosureValueOf({
+          organizationId,
+          reportId,
+          elementKey: 'AmountOfEmissionToAir',
+          dimensionKey: 'AsbestosMember',
+        }),
+      { timeout: 15_000 },
+    )
+    .toMatchObject({ valueNumeric: '12', unitCode: 't' });
 });
 
 test('a module the rules ruled out says so on the rail rather than counting to zero (FR-28)', async ({

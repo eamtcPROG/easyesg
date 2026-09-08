@@ -4,6 +4,7 @@ import type { DisclosureLabelResolver } from '@api/contracts/disclosure-label.po
 import {
   ENUMERATION_TAXONOMY,
   type RegisteredTaxonomy,
+  type TaxonomyAxis,
   type TaxonomyElement,
   type TaxonomyEnumeration,
   type TaxonomyRegistry,
@@ -47,6 +48,7 @@ import {
 import type { Report } from '../models/report.model';
 import type {
   DisclosureApplicabilityCause,
+  DisclosureAxis,
   DisclosureDefault,
   DisclosureField,
   DisclosureModuleSummary,
@@ -235,6 +237,7 @@ export class ReadWizardStep {
       taxonomy: this.taxonomy,
       memberLabels,
       breakdownAxes: this.axisShapes.breakdownAxes({ standard: registered.standard }),
+      classificationAxes: this.axisShapes.classificationAxes({ standard: registered.standard }),
     });
 
     // Whether an axis is typed is asked of the registry once per axis, not once per element: B1
@@ -249,6 +252,16 @@ export class ReadWizardStep {
       return typed;
     };
 
+    // Which classification domains this step needs, filled by the walk below (task 36.5).
+    const classifications = new Set<string>();
+    // Every member chosen on each classification axis, across all of its elements — the table's
+    // rows. Built before the walk because an element's rows depend on its NEIGHBOURS' answers.
+    const chosenByAxis = chosenMembers({
+      elements: registered.elements,
+      classificationOf: (element) => members.classificationFor(element),
+      admits: (axis, member) => members.admits(axis, member),
+      byElement,
+    });
     const fields = registered.elements
       // Membership, not equality: eight of B3's seventeen are presented in C3 as well (task 36.4).
       .filter((element) => element.modules.includes(query.module))
@@ -267,10 +280,16 @@ export class ReadWizardStep {
         // Asked once per element and answered to the screen as well as used here: a typed axis is
         // what makes these rows a group the reporter can add to (task 36.2).
         const repeating = element.axes.some(isTyped);
+        // The axis this element is *selected* along, where it has one (task 36.5). Collected as we
+        // go, so the step carries each domain once rather than each field carrying a copy.
+        const classification = members.classificationFor(element);
+        if (classification !== null) classifications.add(classification);
         return rowsOf({
           element,
           repeating,
           members: members.membersFor(element),
+          classification,
+          chosen: classification === null ? [] : (chosenByAxis.get(classification) ?? []),
           stored: byElement.get(element.key) ?? [],
           defaultRows: perOrdinal.length,
         }).map((row) => {
@@ -292,7 +311,19 @@ export class ReadWizardStep {
         });
       });
 
-    return { module: query.module, taxonomyVersion: registered.version, fields };
+    return {
+      module: query.module,
+      taxonomyVersion: registered.version,
+      fields,
+      // Sorted, so two reads of one step agree — a `Set` preserves insertion order and the walk's
+      // order is the taxonomy's, which is stable, but nothing in the type says so.
+      axes: [...classifications]
+        .sort()
+        .flatMap((name) => {
+          const axis = members.domainOf(name);
+          return axis === null ? [] : [axis];
+        }),
+    };
   }
 
   private async stored(reportId: string): Promise<StoredValues> {
@@ -467,6 +498,43 @@ const qualifiedDomainOf = (element: TaxonomyElement): string | null =>
       ? element.domain
       : `${ENUMERATION_TAXONOMY.VSME}:${element.domain}`;
 
+/**
+ * Which members a report has chosen on each classification axis (task 36.5).
+ *
+ * **Axis-wide rather than per element**, because a classification's rows are a *table's* rows: the
+ * reporter names a pollutant once and answers air, water and soil for it. An element with no stored
+ * value under a chosen member still gets its cell, which is the difference between an empty cell and
+ * a pollutant nobody named — and a distinction no client could make from per-element rows.
+ *
+ * Sorted, so the same report renders in the same order twice: the store's rows come back in
+ * whatever order the query's plan chose, which is not an order at all.
+ */
+function chosenMembers(input: {
+  readonly elements: readonly TaxonomyElement[];
+  readonly classificationOf: (element: TaxonomyElement) => string | null;
+  readonly admits: (axis: string, member: string) => boolean;
+  readonly byElement: ReadonlyMap<string, readonly DisclosureValue[]>;
+}): ReadonlyMap<string, readonly string[]> {
+  const gathering = new Map<string, Set<string>>();
+  for (const element of input.elements) {
+    const axis = input.classificationOf(element);
+    if (axis === null) continue;
+    const members = gathering.get(axis) ?? new Set<string>();
+    gathering.set(axis, members);
+    for (const value of input.byElement.get(element.key) ?? []) {
+      // **Checked against the axis's own domain** (spec review, 8 Sep 2026). Before this task a
+      // stored key the axis does not declare was simply never read; a classification derives its
+      // rows FROM the store, so without this an arbitrary string materialises as a visible row on
+      // every element of the axis, labelled *unnamed*. The step read is not the place to repair
+      // such a row — it is the place not to draw one.
+      if (value.dimensionKey !== NO_DIMENSION && input.admits(axis, value.dimensionKey)) {
+        members.add(value.dimensionKey);
+      }
+    }
+  }
+  return new Map([...gathering].map(([axis, members]) => [axis, [...members].sort()]));
+}
+
 /** One row of one element: §7.3's `(element, dimension, ordinal)` minus the element. */
 interface FieldRow {
   readonly dimensionKey: string;
@@ -497,6 +565,9 @@ function rowsOf(input: {
   readonly element: TaxonomyElement;
   readonly repeating: boolean;
   readonly members: readonly string[];
+  readonly classification: string | null;
+  /** The members chosen anywhere on this element's classification axis, in a stable order. */
+  readonly chosen: readonly string[];
   readonly stored: readonly DisclosureValue[];
   readonly defaultRows: number;
 }): readonly FieldRow[] {
@@ -509,6 +580,26 @@ function rowsOf(input: {
   }
   if (input.members.length > 0) {
     return input.members.map((dimensionKey) => ({ dimensionKey, ordinal: 0 }));
+  }
+  if (input.classification !== null) {
+    // **The rows a report HOLDS, not the ones its axis admits** (task 36.5). A breakdown above is
+    // answered for every member; a classification is selected from, so serving 94 pollutant rows
+    // would ask a reporter to answer 94 questions to disclose one.
+    //
+    // **The members are the AXIS's, not this element's**, which is what makes the step a table
+    // rather than three ragged lists. EFRAG's own B4 sheet is headed `Row ID │ Pollutant │ Emission
+    // to air │ Emission to water │ Emission to soil`: a reporter who names ammonia is being asked
+    // for all three amounts, so an element with nothing stored under a chosen member still gets its
+    // cell. Keying on the element instead would serve air one row and water none, and no client
+    // could tell that apart from a pollutant nobody had chosen.
+    //
+    // **One unassigned row where a report holds none**, exactly as the typed-axis branch serves
+    // ordinal 0 for a report with no sites: the step has to *show* the question before it can be
+    // answered, and a module whose fields appear only once something is stored can never be
+    // started. `dimensionKey` empty on a dimensioned element reads as *no member chosen yet*, and
+    // nothing may be written under it — the store learns of a row when a member and a value do.
+    if (input.chosen.length === 0) return [{ dimensionKey: NO_DIMENSION, ordinal: 0 }];
+    return input.chosen.map((dimensionKey) => ({ dimensionKey, ordinal: 0 }));
   }
   return [{ dimensionKey: NO_DIMENSION, ordinal: 0 }];
 }
@@ -570,6 +661,9 @@ function toField(
     valueBoolean: value?.valueBoolean ?? null,
     valueDate: value?.valueDate ?? null,
     unitCode: value?.unitCode ?? null,
+    // What the standard admits, beside what the row holds (task 91.4). Straight off the
+    // element: it is a property of the disclosure, not of this row or this reporter.
+    unitCodes: element.unitCodes,
     state: value?.state ?? DISCLOSURE_STATE.MISSING,
     notAvailableReason: value?.notAvailableReason ?? null,
     carriedForward: value?.carriedForward ?? false,
@@ -603,6 +697,7 @@ class MemberResolver {
       readonly taxonomy: TaxonomyRegistry;
       readonly memberLabels: Readonly<Record<string, DisclosureLabel>> | null;
       readonly breakdownAxes: ReadonlySet<string>;
+      readonly classificationAxes: ReadonlySet<string>;
     },
   ) {}
 
@@ -613,11 +708,7 @@ class MemberResolver {
     const cached = this.cache.get(name);
     if (cached !== undefined) return cached;
 
-    const axis = this.input.taxonomy.axis({
-      standard: this.input.registered.standard,
-      version: this.input.registered.version,
-      key: name,
-    });
+    const axis = this.axis(name);
     // A typed axis registered as a breakdown is a contradiction the registry settles, not this: its
     // rows are identifiers the reporter supplies, so it keeps task 91.2's ordinals.
     const members =
@@ -631,10 +722,68 @@ class MemberResolver {
     return members;
   }
 
+  /**
+   * The **classification** axis this element is reported along, or `null` (task 36.5).
+   *
+   * The complement of `membersFor`, over the same three shapes: an explicit axis nobody registered
+   * as a breakdown is a domain the reporter *selects* from — B4's 94 pollutants, B7's 973 waste
+   * categories — so its rows are the ones a report actually holds rather than one per member.
+   *
+   * **Typed axes are excluded here as well as there**, and for the same reason in the other
+   * direction: a site is not chosen from a domain, it is named.
+   */
+  classificationFor(element: TaxonomyElement): string | null {
+    const name = element.axes.find((axis) => this.input.classificationAxes.has(axis));
+    if (name === undefined) return null;
+    // A typed axis registered as a classification is a contradiction the registry settles, not
+    // this — `membersFor`'s reason in the other direction: its rows are identifiers the reporter
+    // supplies, so there is no domain to select from and it keeps task 91.2's ordinals.
+    const axis = this.axis(name);
+    return axis === null || axis.typed ? null : name;
+  }
+
   /** The member's label in the request's locale; `null` for an undimensioned row. */
   labelFor(dimensionKey: string): string | null {
     if (dimensionKey === NO_DIMENSION) return null;
     return this.input.memberLabels?.[dimensionKey]?.text ?? null;
+  }
+
+  /**
+   * One classification's domain, as the answers a picker offers.
+   *
+   * **The default member is deliberately NOT offered.** On a breakdown it leads, because it is the
+   * total line a fact with no dimension is taken to mean; here it is the domain's own root — *Type
+   * of pollutant* — and offering it would let a reporter file an amount against the category rather
+   * than against a pollutant.
+   */
+  domainOf(name: string): DisclosureAxis | null {
+    const axis = this.axis(name);
+    if (axis === null || axis.typed) return null;
+    return {
+      key: name,
+      label: axis.defaultMember === null ? null : this.labelFor(axis.defaultMember),
+      members: axis.members.map((member) => ({
+        value: member.key,
+        // Its own name where the pinned version has one; never the member key, which is an XBRL
+        // identifier. The published code is the honest middle step, as it is for an enumeration.
+        label: this.labelFor(member.key) ?? member.labels.en ?? null,
+        code: member.code,
+      })),
+    };
+  }
+
+  /** Does this axis declare that member? The domain, never a shape the store happens to hold. */
+  admits(name: string, member: string): boolean {
+    const axis = this.axis(name);
+    return axis !== null && axis.members.some((candidate) => candidate.key === member);
+  }
+
+  private axis(name: string): TaxonomyAxis | null {
+    return this.input.taxonomy.axis({
+      standard: this.input.registered.standard,
+      version: this.input.registered.version,
+      key: name,
+    });
   }
 }
 

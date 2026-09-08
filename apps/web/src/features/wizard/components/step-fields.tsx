@@ -3,6 +3,7 @@
 import {
   DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
+  type DisclosureAxis,
   type DisclosureField as DisclosureFieldShape,
   type DisclosureState,
 } from '@easyesg/contracts';
@@ -13,17 +14,36 @@ import {
   Fieldset,
   FIELD_TONE,
   SAVE_STATE,
+  Select,
   type FieldTone,
   type SaveState,
 } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { TONE_OF_STATE, hasMarker } from '../field-tone';
 import { syncStateOf, writeKey } from '../autosave-state';
-import { STEP_ENTRY, isLastRow, layOutStep, withAddedRows } from '../step-layout';
-import { outstandingDefaults, withCommitted } from '../values';
+import {
+  STEP_ENTRY,
+  isLastClassificationRow,
+  isLastRow,
+  layOutStep,
+  membersTaken,
+  withAddedRows,
+  type StepClassificationEntry,
+} from '../step-layout';
+import {
+  notAvailableWrite,
+  outstandingDefaults,
+  resumeWrite,
+  storedDraftOf,
+  unitOf,
+  withCommitted,
+  writeFor,
+} from '../values';
 import { useAutosaveContext } from './autosave-context';
 import { DisclosureControl } from './disclosure-control';
+import { MemberPicker, memberName } from './member-picker';
+import { NotAvailableDeclaration } from './not-available';
 import styles from './step.module.css';
 
 /**
@@ -71,29 +91,28 @@ import styles from './step.module.css';
  */
 export function StepFields({
   fields,
+  axes,
   readOnly,
   markerLabels,
   carriedLabel,
 }: {
   readonly fields: readonly DisclosureFieldShape[];
+  /**
+   * The step's classification domains (task 36.5) — the rows a reporter may add, served once per
+   * step because every element on an axis shares one list.
+   */
+  readonly axes: readonly DisclosureAxis[];
   readonly readOnly: boolean;
   /** §6.4's label per state, in the reader's language. `ok` carries no marker and is unused. */
   readonly markerLabels: Readonly<Record<DisclosureState, string>>;
   /** UX-32's "carried" mark, shown until the value is edited. */
   readonly carriedLabel: string;
 }) {
-  const t = useTranslations('organization.wizard.field.sync');
-  const tField = useTranslations('organization.wizard.field');
-  const tGroup = useTranslations('organization.wizard.group');
-  // Task 36.4's origin marker. One string, so it is read beside the others rather than in the
-  // branch that uses it — `useTranslations` is a hook and the branch is inside a function.
-  const calculatedLabel = tField('calculated');
-  const { state, change } = useAutosaveContext();
-  const syncLabels: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, string>> = {
-    [SAVE_STATE.QUEUED]: t('queued'),
-    [SAVE_STATE.SAVING]: t('saving'),
-    [SAVE_STATE.FAILED]: t('failed'),
-  };
+  const tField = useTranslations(FIELD_MESSAGES);
+  const tGroup = useTranslations(GROUP_MESSAGES);
+  // Only the defaults' commit is this component's business now; every per-field read moved to
+  // `StepField` with the state it needs (task 91.4).
+  const { change } = useAutosaveContext();
 
   // Axis to the word for one of its rows. Built like `markerLabels` on the page above — the
   // catalogue is indexed by a literal, and an axis it does not name gets a neutral word rather than
@@ -122,7 +141,52 @@ export function StepFields({
   // `reactCompiler` off** — grouping a list, recomputed per render. This component re-renders on
   // every autosave transition (the context), while `fields` and `added` move only when the server
   // re-renders or a row is added, so the grouping ran on every keystroke's acknowledgement.
-  const entries = useMemo(() => withAddedRows(layOutStep(fields), added), [fields, added]);
+  const classificationAxes = useMemo(() => new Set(axes.map((axis) => axis.key)), [axes]);
+  const entries = useMemo(
+    () => withAddedRows(layOutStep(fields, classificationAxes), added),
+    [fields, classificationAxes, added],
+  );
+
+  // **Built once here rather than per row in the JSX** (convention review, 8 Sep 2026). Called
+  // inline, `membersTaken` returns a fresh `Set` on every render — so it would defeat the very
+  // `useMemo` in `MemberPicker` that exists because this component re-renders on every autosave
+  // transition, and it walks every entry per classification row while doing so. Both bullets of
+  // `apps/web/CLAUDE.md`'s manual-memoization list, in one prop.
+  const takenByAxis = useMemo(
+    () => new Map(axes.map((axis) => [axis.key, membersTaken(entries, axis.key)])),
+    [axes, entries],
+  );
+
+  /**
+   * The unit each **element** is answered in, where the reporter has chosen one (task 91.4, scoped
+   * per element by the project owner on 8 Sep 2026 after the spec review).
+   *
+   * **Per element rather than per row**, which is what EFRAG's own template says: its B4 unit cell
+   * is `C78:K78` — one merged cell over all three amount columns and every pollutant row. Held per
+   * row, one filing could carry ammonia in kilogrammes beside asbestos in tonnes down a single
+   * column, which is the unusable data UX-14 exists to prevent. The taxonomy's granularity is the
+   * element too: B7 admits `[utr:kg,utr:t]` on one waste figure and `[utr:kg]` on its neighbour, so
+   * a per-*table* unit is not expressible while a per-element one always is.
+   *
+   * Every row's control edits the same value, so a number keeps its unit beside it and there is
+   * still only one unit to be wrong about.
+   */
+  const [units, setUnits] = useState<Readonly<Record<string, string>>>({});
+
+  /**
+   * A unit change re-commits **every stored row of that element**, not the row it was clicked in.
+   *
+   * 12 kg and 12 t are different facts, so rows already written have to move with the choice — and
+   * a row nobody has answered has nothing to write, exactly as an added row does not.
+   */
+  const chooseUnit = (elementKey: string, next: string) => {
+    setUnits((chosen) => ({ ...chosen, [elementKey]: next }));
+    for (const field of fields) {
+      if (field.elementKey !== elementKey) continue;
+      const stored = storedDraftOf(field);
+      if (stored !== '') change(writeFor({ ...field, unitCode: next }, stored));
+    }
+  };
 
   return (
     <div className={styles.fields}>
@@ -166,6 +230,34 @@ export function StepFields({
           >
             {entry.fields.map((field) => renderField(field, field.dimensionLabel))}
           </Fieldset>
+        ) : entry.kind === STEP_ENTRY.CLASSIFICATION ? (
+          /*
+           * A classification row (task 36.5) — **the same `Fieldset` again**, and for the third
+           * time no inventory addition: a legend over a set of related fields is what this control
+           * is, and UX-89's test is a difference in *anatomy*. What differs is that the legend is
+           * chosen rather than given, so the picker sits inside the group it names.
+           */
+          <ClassificationRow
+            key={`${entry.axis} ${entry.dimensionKey}`}
+            entry={entry}
+            domain={axisOf(entry.axis)}
+            taken={takenByAxis.get(entry.axis) ?? NO_MEMBERS}
+            readOnly={readOnly}
+            action={
+              isLastClassificationRow(entries, entry) && !readOnly ? (
+                <Button
+                  variant={BUTTON_VARIANT.SUBTLE}
+                  type="button"
+                  onClick={() =>
+                    setAdded((rows) => ({ ...rows, [entry.axis]: (rows[entry.axis] ?? 0) + 1 }))
+                  }
+                >
+                  {tGroup('addRow')}
+                </Button>
+              ) : undefined
+            }
+            renderField={renderField}
+          />
         ) : (
           renderField(entry.field)
         ),
@@ -173,49 +265,334 @@ export function StepFields({
     </div>
   );
 
+  /** The domain a classification row picks from — served once per step, never per field. */
+  function axisOf(axis: string): DisclosureAxis | undefined {
+    return axes.find((candidate) => candidate.key === axis);
+  }
+
   /**
    * @param named what to call this field, where the row's own name is not the element's — a
    *   breakdown's member. `undefined` everywhere else, so every other caller is unchanged.
    */
   function renderField(served: DisclosureFieldShape, named?: string | null) {
-    const key = writeKey(served);
-    const field = withCommitted(served, state.committed[key]);
-    const sync = syncStateOf(state, key);
-    const marker =
-      sync === SAVE_STATE.SAVED
-        ? markerFor(field, markerLabels, { carried: carriedLabel, calculated: calculatedLabel })
-        : { label: syncLabels[sync], tone: SYNC_TONE[sync] };
-    const labelId = labelIdFor(key);
     return (
-      <DisclosureField
-        key={key}
-        labelId={labelId}
-        // Never the element key — the user-facing-text rule's own example (found by the convention
-        // review, 3 Sep 2026, at two sites this task did not write and one it did).
-        /*
-         * **`named === null` is not `named === undefined`, and `??` collapsed them** (found by the
-         * spec review). `undefined` means *this row is not a breakdown member, use the element's
-         * label*; `null` means *this IS a member and the pinned version names it nothing*. Falling
-         * through to the element label for the second gave three identically-named rows — the
-         * exact reading this task exists to prevent, and what `wizard-step.model.ts` promises does
-         * not happen: an unnamed member must render as an unnamed column, a visible defect rather
-         * than a plausible-looking wrong word.
-         */
-        label={named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'))}
-        help={field.help}
-        marker={marker?.label}
-        markerTone={marker?.tone}
-        unit={field.unitCode === null ? undefined : <span className={styles.unit}>{field.unitCode}</span>}
-        message={field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? field.notAvailableReason : undefined}
-        messageTone={FIELD_TONE.REASONED}
-        notAvailable={null}
+      <StepField
+        key={writeKey(served)}
+        served={served}
+        named={named}
         readOnly={readOnly}
-      >
-        <DisclosureControl field={field} readOnly={readOnly} labelledBy={labelId} onCommit={change} />
-      </DisclosureField>
+        markerLabels={markerLabels}
+        carriedLabel={carriedLabel}
+        chosenUnit={units[served.elementKey] ?? null}
+        onChooseUnit={(code) => chooseUnit(served.elementKey, code)}
+      />
     );
   }
 }
+
+/**
+ * One row of a classification: the member it reports, and every element reported for it (task 36.5).
+ *
+ * **A component rather than a branch, because a row that has no member yet holds the choice.** The
+ * api serves a row per member the report already names plus one unassigned row; the reporter picks
+ * a pollutant here, and nothing is written until a *value* follows — `blankRow`'s own rule, and the
+ * reason the picked member is state rather than a write of its own. An empty row in the store would
+ * be met on every later visit by whoever never finished filling it in.
+ *
+ * **One `useState`**, per the reducer rule: the chosen member is one value nothing else moves with.
+ * The cells' drafts belong to their own controls, and they meet only in the key each write carries.
+ */
+function ClassificationRow({
+  entry,
+  domain,
+  taken,
+  readOnly,
+  action,
+  renderField,
+}: {
+  readonly entry: StepClassificationEntry;
+  readonly domain: DisclosureAxis | undefined;
+  readonly taken: ReadonlySet<string>;
+  readonly readOnly: boolean;
+  readonly action: ReactNode;
+  readonly renderField: (field: DisclosureFieldShape, named?: string | null) => ReactNode;
+}) {
+  const tGroup = useTranslations(GROUP_MESSAGES);
+  const tField = useTranslations(FIELD_MESSAGES);
+
+  // The reporter's choice for a row the server served without one. `null` means *not chosen here*,
+  // which is not the same as the server's `''` — a row the server DID key stays keyed.
+  const [picked, setPicked] = useState<string | null>(null);
+  const member = entry.dimensionKey !== '' ? entry.dimensionKey : (picked ?? '');
+
+  // **The legend names the member, never the axis key.** A member the pinned version words in no
+  // locale falls back to a neutral word, on `renderField`'s own rule: an XBRL name may not reach a
+  // reader, and an unnamed row is a visible defect rather than a plausible-looking wrong word.
+  const legend =
+    member === ''
+      ? tGroup('unassignedRow', { name: domain?.label ?? tGroup('fallbackName') })
+      : memberName(
+          domain?.members.find((candidate) => candidate.value === member),
+          tField('unnamed'),
+        );
+
+  return (
+    <Fieldset legend={legend} readOnly={readOnly} action={action}>
+      {/* The picker only where the row has no member yet: once a value is stored under one, moving
+          it would leave the old key's answers behind under a pollutant nobody reports. Changing an
+          unanswered row costs nothing, which is why the choice stays open until then. */}
+      {!readOnly && entry.dimensionKey === '' && domain !== undefined ? (
+        <MemberPicker
+          members={domain.members}
+          chosen={member}
+          taken={taken}
+          onChoose={setPicked}
+          labels={{
+            label: domain.label ?? tGroup('fallbackName'),
+            placeholder: tField('choose'),
+            prompt: tField('choicePrompt'),
+            empty: tField('choiceEmpty'),
+            loading: tField('choiceLoading'),
+            unnamed: tField('unnamed'),
+          }}
+        />
+      ) : null}
+      {/*
+       * **The cells appear once the row is named, and that is a correctness rule before it is a
+       * design one.** §7.3 keys a value by `(element, dimension, ordinal)`, and the step read
+       * collects a classification's rows from the members a report *holds* — so an amount written
+       * while `dimensionKey` is `''` would be stored under the undimensioned key and never read
+       * back: a live row under a key nothing looks at, which is exactly the defect the typed facade
+       * exists to prevent one layer down.
+       *
+       * It also matches the order EFRAG's own sheet asks in — `Row ID │ Pollutant │ air │ water │
+       * soil`, filled left to right — so the reporter is never asked *how much* before *of what*.
+       *
+       * **The member reaches each cell through its own key**, so a row the reporter has just named
+       * writes to that member rather than to the row the server served unassigned.
+       */}
+      {member === ''
+        ? null
+        : entry.fields.map((field) => renderField({ ...field, dimensionKey: member }))}
+    </Fieldset>
+  );
+}
+
+/**
+ * One field of a step: §6.2's anatomy, its control, and — since task 91.4 — its unit.
+ *
+ * **A component rather than the closure this was, because a field now holds state of its own.**
+ * UX-14's chosen unit is the reporter's answer and is not stored until a value is (the rule
+ * `blankRow` states for an added row: *the store learns of it when a value does*), so it lives here
+ * — and a `useState` cannot be called from inside a `.map`.
+ *
+ * **One `useState`, deliberately, and the reducer rule is why it is not more.** The unit is a single
+ * value nothing else moves with: the control below owns the draft, this owns the unit, and the two
+ * meet only in the write. `null` means *the reporter has not chosen*, which is different from a
+ * stored `unitCode` and different again from the taxonomy's first admitted code — three sources
+ * with a precedence rather than three states.
+ */
+function StepField({
+  served,
+  named,
+  readOnly,
+  markerLabels,
+  carriedLabel,
+  chosenUnit,
+  onChooseUnit,
+}: {
+  readonly served: DisclosureFieldShape;
+  readonly named?: string | null;
+  readonly readOnly: boolean;
+  readonly markerLabels: Readonly<Record<DisclosureState, string>>;
+  readonly carriedLabel: string;
+  /** The unit this field's ELEMENT is answered in, where the reporter has chosen one. */
+  readonly chosenUnit: string | null;
+  readonly onChooseUnit: (code: string) => void;
+}) {
+  const t = useTranslations(`${FIELD_MESSAGES}.sync`);
+  const tField = useTranslations(FIELD_MESSAGES);
+  const tUnit = useTranslations(`${FIELD_MESSAGES}.units`);
+  // Code to symbol. Built with literal keys like `rowNames` above, so the catalogue lookup is
+  // type-checked: `t(code)` is not, and a missing symbol would be a blank beside a number.
+  const unitNames: Readonly<Record<string, string>> = {
+    [UNIT_CODE.KILOGRAM]: tUnit('kg'),
+    [UNIT_CODE.TONNE]: tUnit('t'),
+    [UNIT_CODE.CUBIC_METRE]: tUnit('m3'),
+    [UNIT_CODE.MEGAWATT_HOUR]: tUnit('MWh'),
+    [UNIT_CODE.TONNE_CO2_EQUIVALENT]: tUnit('tCO2e'),
+    [UNIT_CODE.HECTARE]: tUnit('ha'),
+    [UNIT_CODE.SQUARE_KILOMETRE]: tUnit('sqkm'),
+  };
+  const { state, change } = useAutosaveContext();
+
+  const key = writeKey(served);
+  const field = withCommitted(served, state.committed[key]);
+  const unit = unitOf(field, chosenUnit);
+  // The unit is part of the value, so the control writes with it rather than with what is stored.
+  const withUnit: DisclosureFieldShape = { ...field, unitCode: unit };
+
+  const sync = syncStateOf(state, key);
+  const syncLabels: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, string>> = {
+    [SAVE_STATE.QUEUED]: t('queued'),
+    [SAVE_STATE.SAVING]: t('saving'),
+    [SAVE_STATE.FAILED]: t('failed'),
+  };
+  const marker =
+    sync === SAVE_STATE.SAVED
+      ? markerFor(field, markerLabels, { carried: carriedLabel, calculated: tField('calculated') })
+      : { label: syncLabels[sync], tone: SYNC_TONE[sync] };
+  const labelId = labelIdFor(key);
+
+  return (
+    <DisclosureField
+      labelId={labelId}
+      // Never the element key — the user-facing-text rule's own example (found by the convention
+      // review, 3 Sep 2026, at two sites this task did not write and one it did).
+      /*
+       * **`named === null` is not `named === undefined`, and `??` collapsed them** (found by the
+       * spec review). `undefined` means *this row is not a breakdown member, use the element's
+       * label*; `null` means *this IS a member and the pinned version names it nothing*. Falling
+       * through to the element label for the second gave three identically-named rows — the
+       * exact reading this task exists to prevent, and what `wizard-step.model.ts` promises does
+       * not happen: an unnamed member must render as an unnamed column, a visible defect rather
+       * than a plausible-looking wrong word.
+       */
+      label={named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'))}
+      help={field.help}
+      marker={marker?.label}
+      markerTone={marker?.tone}
+      // **Computed, not passed as an always-truthy element.** The anatomy renders
+      // `{unit ? <div className={styles.unit}>…</div> : null}`, so a `<FieldUnit />` that returned
+      // null would still lay out an empty box beside every text field — the slot has to be
+      // `undefined`, which only the caller can decide. There is something to render when the
+      // standard states a unit AND either one is in force or there is still a choice to offer.
+      unit={
+        field.unitCodes.length > 0 && (unit !== null || (!readOnly && field.unitCodes.length > 1)) ? (
+          <FieldUnit
+            admitted={field.unitCodes}
+            chosen={unit}
+            readOnly={readOnly}
+            label={tField('unitLabel')}
+            placeholder={tField('choose')}
+            nameOf={(code) => unitNames[code] ?? code}
+            onChoose={onChooseUnit}
+          />
+        ) : undefined
+      }
+      message={field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? field.notAvailableReason : undefined}
+      messageTone={FIELD_TONE.REASONED}
+      // **UX-15's declaration, live since task 36.5.** This slot carried `null` from task 35.2 with
+      // task 36.13 named as its owner — the field-level half is built here for every module, and
+      // UC-30's *section* exclusion remains 36.13's (a different act, with storage FR-31 has not
+      // been given yet; `architecture.md` §12.5.6 records the split).
+      notAvailable={
+        <NotAvailableDeclaration
+          declared={field.state === DISCLOSURE_STATE.NOT_AVAILABLE}
+          onDeclare={(reason) => change(notAvailableWrite(field, reason))}
+          onResume={() => change(resumeWrite(field))}
+          labels={{
+            declare: tField('notAvailable.declare'),
+            reason: tField('notAvailable.reason'),
+            reasonHelp: tField('notAvailable.reasonHelp'),
+            confirm: tField('notAvailable.confirm'),
+            cancel: tField('notAvailable.cancel'),
+            resume: tField('notAvailable.resume'),
+          }}
+        />
+      }
+      readOnly={readOnly}
+    >
+      <DisclosureControl field={withUnit} readOnly={readOnly} labelledBy={labelId} onCommit={change} />
+    </DisclosureField>
+  );
+}
+
+
+/**
+ * UX-14's unit, in the anatomy's own slot: *"either fixed by the taxonomy or chosen from a
+ * constrained list"* (task 91.4).
+ *
+ * **The two branches are `length`, not a flag** — one admitted code is a unit to show, several are a
+ * list to ask from — and neither is free text, which UX-14 calls *"the primary source of unusable
+ * ESG data"*. **No inventory addition**: `DisclosureField`'s `unit` slot is documented as taking
+ * *"a fixed label or a constrained control"*, and the control is `Select` off the shelf, so UX-89's
+ * test — a difference in **anatomy** — finds none.
+ */
+function FieldUnit({
+  admitted,
+  chosen,
+  readOnly,
+  label,
+  placeholder,
+  nameOf,
+  onChoose,
+}: {
+  readonly admitted: readonly string[];
+  /** The unit in force, or `null` where several are admitted and nobody has chosen yet. */
+  readonly chosen: string | null;
+  readonly readOnly: boolean;
+  readonly label: string;
+  readonly placeholder: string;
+  readonly nameOf: (code: string) => string;
+  readonly onChoose: (code: string) => void;
+}) {
+  // One admitted unit is UX-14's *fixed by the taxonomy*: shown, never asked. Read-only takes the
+  // same branch — UX-13 keeps the layout and removes the affordance.
+  if (readOnly || admitted.length < 2) {
+    return chosen === null ? null : <span className={styles.unit}>{nameOf(chosen)}</span>;
+  }
+  return (
+    <Select
+      label={label}
+      labelHidden
+      // **Empty until chosen** (project owner, 8 Sep 2026). `unitCodes` is not an order of
+      // preference — EFRAG's own template pre-selects tonnes where the taxonomy lists kilogrammes
+      // first — so a seeded value here would file a unit nobody picked, at a thousandfold error.
+      placeholder={placeholder}
+      value={chosen ?? undefined}
+      onValueChange={onChoose}
+      options={admitted.map((code) => ({ value: code, label: nameOf(code) }))}
+    />
+  );
+}
+
+/**
+ * The unit codes EFRAG's `measurementGuidance` admits across both registered versions (task 91.4).
+ *
+ * Declared here and unexported, exactly as `TYPED_AXIS` below: the values are the standard's own UTR
+ * codes, used as **message keys** and never rendered — `sqkm` is an internal identifier and may not
+ * reach a reader, so the symbols are catalogue content like every other string.
+ *
+ * **The code itself is the fallback**, and that is a decision rather than a shrug: a UTR code is a
+ * *published* identifier a reader can look up — the user-facing-text rule's own exception for a
+ * reference shown on purpose — while the alternative is a quantity with no unit at all, which is
+ * the thing UX-14 exists to prevent. The extractor asserts this set, so a release adding an eighth
+ * fails there rather than arriving here as a bare code.
+ */
+const UNIT_CODE = {
+  KILOGRAM: 'kg',
+  TONNE: 't',
+  CUBIC_METRE: 'm3',
+  MEGAWATT_HOUR: 'MWh',
+  TONNE_CO2_EQUIVALENT: 'tCO2e',
+  HECTARE: 'ha',
+  SQUARE_KILOMETRE: 'sqkm',
+} as const;
+
+
+/** No row of this axis names a member yet. Module-level, so it is one identity rather than many. */
+const NO_MEMBERS: ReadonlySet<string> = new Set();
+
+/**
+ * The catalogue namespaces this file reads, declared once because three components read them.
+ *
+ * `as const` so next-intl still type-checks the keys against the catalogue's shape — the property
+ * that makes a missing string a compile error here rather than a blank on a screen, and the reason
+ * `TYPED_AXIS` below spells its axis keys out.
+ */
+const FIELD_MESSAGES = 'organization.wizard.field' as const;
+const GROUP_MESSAGES = 'organization.wizard.group' as const;
 
 /**
  * The typed axes this product names a row of — B1's two and B7's, at `2026-05-01`.

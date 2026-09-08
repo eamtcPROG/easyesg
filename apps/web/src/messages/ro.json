@@ -1062,7 +1062,25 @@
         "choiceLoading": "Se caută",
         "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}}",
         "unnamed": "Fără denumire",
-        "calculated": "Calculat"
+        "calculated": "Calculat",
+        "unitLabel": "Unitate de măsură",
+        "units": {
+          "kg": "kg",
+          "t": "t",
+          "m3": "m³",
+          "MWh": "MWh",
+          "tCO2e": "tCO₂e",
+          "ha": "ha",
+          "sqkm": "km²"
+        },
+        "notAvailable": {
+          "declare": "Marcați ca indisponibil",
+          "reason": "Motivul pentru care valoarea nu este disponibilă",
+          "reasonHelp": "Acest text apare în raportul exportat, unde îl va citi un terț.",
+          "confirm": "Confirmați",
+          "cancel": "Renunțați",
+          "resume": "Reveniți la completare"
+        }
       },
       "leave": {
         "title": "Ieșiți cu modificări netrimise?",
@@ -1080,7 +1098,9 @@
           "IdentifierOfSubsidiaryTypedAxis": "Filială",
           "IdentifierOfMaterialTypedAxis": "Material"
         },
-        "fallbackName": "Rând"
+        "fallbackName": "Rând",
+        "addRow": "Adăugați un rând",
+        "unassignedRow": "{name} — de ales"
       }
     }
   }

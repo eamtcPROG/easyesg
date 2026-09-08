@@ -184,8 +184,10 @@ Five things about it that are load-bearing:
 - **The artefacts are extracted, never authored.** `tools/extract-vsme-taxonomy.mjs` regenerates
   them from EFRAG's published package; a hand edit is discarded by the next release. A correction
   belongs in the extractor. It **asserts rather than defaults** — an unmapped XBRL item type, a
-  concrete element reaching no presentation role, or an explicit axis resolving no members each fail
-  the run — and all three assertions exist because each caught a real defect on first use.
+  concrete element reaching no presentation role, an explicit axis resolving no members, a
+  reportable element resolving no module, or measurement guidance that stops partitioning into unit
+  lists and the four intensities' prose (task 91.4) each fail the run — and four of the five exist
+  because each caught a real defect on first use.
 - **`pinFor()`, never `max(registeredVersions())`.** The date EFRAG publishes a release and the date
   this platform adopts it are different facts, so adoption is a separate effective-dated entry. It
   answers `null` rather than guessing, because a report pinned to a version invented at a call site
@@ -204,6 +206,16 @@ Five things about it that are load-bearing:
   stay singular and the extractor fails the run if a shared element's placements disagree about
   them. The facade emits such an element under **every** group, because a short `cThree` is the same
   defect one layer up.
+- **`unitCodes` is what the standard ADMITS; `unit_code` on a row is what it holds** (task 91.4).
+  UX-14's two branches are the list's `length` — 25 elements admit one unit and 13 admit several —
+  and **empty means EFRAG states none**, which is not the same as the element taking no unit: the
+  role reaches 42 elements of which 38 state a *unit list*, out of 78 quantitative ones — the other
+  four are the intensities, whose guidance is a ratio in prose. `EnergyConsumptionFromFuels` carries
+  none
+  while its own `TotalEnergyConsumption` carries `[utr:MWh]`. It is on `DisclosureFieldDto` and
+  deliberately **not** on `DisclosureValueResponseDto`, for `origin`'s reason one direction over: a
+  stored value has no business restating the taxonomy's answer.
+
 - **A malformed element is dropped; a malformed version fails whole**, which is the opposite split
   from the NACE classifier's and deliberately so. There, one bad row must not remove 995 good ones
   from a picker. Here, a partial taxonomy would let a report be authored against one shape and

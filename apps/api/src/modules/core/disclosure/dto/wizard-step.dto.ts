@@ -28,6 +28,7 @@ import {
 import type {
   ApplicabilityDriver,
   DisclosureApplicabilityCause,
+  DisclosureAxis,
   DisclosureDefault,
   DisclosureField,
   DisclosureModuleSummary,
@@ -323,6 +324,17 @@ export class DisclosureFieldDto {
   @ApiProperty({ nullable: true, type: String })
   readonly unitCode: string | null;
 
+  @ApiProperty({
+    type: [String],
+    description:
+      'The units the standard admits for this element (UX-14). Empty where EFRAG states none — ' +
+      'which is not the same as the element taking no unit. One entry is a fixed unit to show; ' +
+      'several are the constrained list to choose from. On the field and deliberately not on a ' +
+      'stored value: this is what a row MAY hold, `unitCode` is what it does.',
+    example: ['kg', 't'],
+  })
+  readonly unitCodes: string[];
+
   @ApiProperty({ enum: STATES })
   readonly state: DisclosureState;
 
@@ -368,12 +380,49 @@ export class DisclosureFieldDto {
     this.valueBoolean = field.valueBoolean;
     this.valueDate = field.valueDate;
     this.unitCode = field.unitCode;
+    this.unitCodes = [...field.unitCodes];
     this.state = field.state;
     this.notAvailableReason = field.notAvailableReason;
     this.carriedForward = field.carriedForward;
     this.applicable = field.applicable;
     this.applicabilityCause =
       field.applicabilityCause === null ? null : new ApplicabilityCauseDto(field.applicabilityCause);
+  }
+}
+
+/**
+ * One classification axis and the rows a reporter may add from it (task 36.5).
+ *
+ * Declared above `DisclosureStepDto` because Swagger resolves `type:` by reference at decoration
+ * time, and a class used before its declaration is `undefined` there — the schema then emits as an
+ * empty object with nothing failing.
+ */
+export class DisclosureAxisDto {
+  @ApiProperty({ example: 'TypeOfPollutantAxis' })
+  readonly key: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      "What to call the axis on screen — its default member's label, which is the domain's own " +
+      'name. Null where the pinned version words no label for it in this locale.',
+  })
+  readonly label: string | null;
+
+  @ApiProperty({
+    type: [DisclosureOptionDto],
+    description:
+      'Every member the reporter may report along. The default member is excluded: it is the ' +
+      'domain’s root, and an amount filed against it would be filed against the category rather ' +
+      'than against a member of it.',
+  })
+  readonly members: DisclosureOptionDto[];
+
+  constructor(axis: DisclosureAxis) {
+    this.key = axis.key;
+    this.label = axis.label;
+    this.members = axis.members.map((member) => new DisclosureOptionDto(member));
   }
 }
 
@@ -390,10 +439,21 @@ export class DisclosureStepDto {
   @ApiProperty({ type: [DisclosureFieldDto] })
   readonly fields: DisclosureFieldDto[];
 
+  @ApiProperty({
+    type: [DisclosureAxisDto],
+    description:
+      'The domains this step’s classifications draw their rows from (UC-22). On the step rather ' +
+      'than on each field, because every element on an axis shares one list — B4’s three ' +
+      'emissions share 94 pollutants and B7’s waste elements share 973, so a per-field copy is ' +
+      'the same answer hundreds of times. Empty for a step with no classification.',
+  })
+  readonly axes: DisclosureAxisDto[];
+
   constructor(step: DisclosureStep) {
     this.module = step.module;
     this.taxonomyVersion = step.taxonomyVersion;
     this.fields = step.fields.map((field) => new DisclosureFieldDto(field));
+    this.axes = step.axes.map((axis) => new DisclosureAxisDto(axis));
   }
 }
 

@@ -1958,6 +1958,14 @@ export interface components {
             /** @example 2026-12-31 */
             valueDate: string | null;
             unitCode: string | null;
+            /**
+             * @description The units the standard admits for this element (UX-14). Empty where EFRAG states none — which is not the same as the element taking no unit. One entry is a fixed unit to show; several are the constrained list to choose from. On the field and deliberately not on a stored value: this is what a row MAY hold, `unitCode` is what it does.
+             * @example [
+             *       "kg",
+             *       "t"
+             *     ]
+             */
+            unitCodes: string[];
             /** @enum {string} */
             state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
             notAvailableReason: string | null;
@@ -1968,6 +1976,14 @@ export interface components {
             /** @description Why, for the fields a rule governs; null for the ones no rule names. */
             applicabilityCause: components["schemas"]["ApplicabilityCauseDto"] | null;
         };
+        DisclosureAxisDto: {
+            /** @example TypeOfPollutantAxis */
+            key: string;
+            /** @description What to call the axis on screen — its default member's label, which is the domain's own name. Null where the pinned version words no label for it in this locale. */
+            label: string | null;
+            /** @description Every member the reporter may report along. The default member is excluded: it is the domain’s root, and an amount filed against it would be filed against the category rather than against a member of it. */
+            members: components["schemas"]["DisclosureOptionDto"][];
+        };
         DisclosureStepDto: {
             /** @example B8 */
             module: string;
@@ -1977,6 +1993,8 @@ export interface components {
              */
             taxonomyVersion: string;
             fields: components["schemas"]["DisclosureFieldDto"][];
+            /** @description The domains this step’s classifications draw their rows from (UC-22). On the step rather than on each field, because every element on an axis shares one list — B4’s three emissions share 94 pollutants and B7’s waste elements share 973, so a per-field copy is the same answer hundreds of times. Empty for a step with no classification. */
+            axes: components["schemas"]["DisclosureAxisDto"][];
         };
         DisclosureValueResponseDto: {
             /** Format: uuid */
