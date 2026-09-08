@@ -19,7 +19,9 @@ import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import { APPLICABILITY_CONDITION, type ApplicabilityCondition } from '../models/applicability.model';
 import {
+  DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
+  type DisclosureOrigin,
   type DisclosureState,
   type DisclosureValue,
 } from '../models/disclosure-value.model';
@@ -33,6 +35,7 @@ import type {
   DisclosureStep,
 } from '../models/wizard-step.model';
 
+const ORIGINS = Object.values(DISCLOSURE_ORIGIN);
 const STATES = Object.values(DISCLOSURE_STATE);
 const KINDS = Object.values(DISCLOSURE_KIND);
 const PERIOD_TYPES = Object.values(PERIOD_TYPE);
@@ -215,6 +218,25 @@ export class DisclosureFieldDto {
   @ApiProperty({ description: 'An axis member, or empty where the element is undimensioned.' })
   readonly dimensionKey: string;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'What to call this row where it is one member of a breakdown — “Renewable energy”. Null for ' +
+      'an undimensioned row, and for a member the pinned version names no label for: the member ' +
+      'key is never a fallback, because it is an internal identifier.',
+  })
+  readonly dimensionLabel: string | null;
+
+  @ApiProperty({
+    enum: ORIGINS,
+    description:
+      'Where the stored value came from. `reported` on every row today — the calculator that ' +
+      'writes `calculated` is task 39.2 and the override that writes `overridden` is task 38.5, ' +
+      'so a client may render the other two but will not meet them yet.',
+  })
+  readonly origin: DisclosureOrigin;
+
   @ApiProperty({ description: 'Position within a repeating group; 0 where there is none.' })
   readonly ordinal: number;
 
@@ -331,6 +353,8 @@ export class DisclosureFieldDto {
     this.ordinal = field.ordinal;
     this.kind = field.kind;
     this.periodType = field.periodType;
+    this.dimensionLabel = field.dimensionLabel;
+    this.origin = field.origin;
     this.axes = [...field.axes];
     this.repeating = field.repeating;
     this.order = field.order;

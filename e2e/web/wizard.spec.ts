@@ -194,6 +194,10 @@ test('counts a narrative field’s length, and imposes no limit on it (UX-19)', 
   await expect(narrative).not.toHaveAttribute('maxlength', /.+/u);
 });
 
+/** The three control words this case reads, from `organization.wizard.field` — the catalogue owns
+ *  them, and naming them here keeps the assertions about behaviour rather than about wording. */
+const FIELD_WORDS = { choose: 'Alegeți', yes: 'Da' } as const;
+
 /**
  * B2 end to end (UC-20, FR-24; task 36.3) — **the module that tests whether task 36.2 built B1 or
  * built the anatomy.**
@@ -207,10 +211,6 @@ test('counts a narrative field’s length, and imposes no limit on it (UX-19)', 
  * It asserts one field of each kind, and the store rather than the screen for the two that carry
  * UC-20's own content — *"largely free-text with structured yes/no anchors"*.
  */
-/** The three control words this case reads, from `organization.wizard.field` — the catalogue owns
- *  them, and naming them here keeps the assertions about behaviour rather than about wording. */
-const FIELD_WORDS = { choose: 'Alegeți', yes: 'Da' } as const;
-
 test('B2 renders and stores each of its kinds, with no code of its own (UC-20)', async ({ page }) => {
   const reportId = await signedInWithReport(page, 'b2');
   const organizationId = organizationOf.get(reportId) ?? '';
@@ -334,6 +334,68 @@ test('B2 renders and stores each of its kinds, with no code of its own (UC-20)',
   await expect(
     page.getByRole('textbox', { name: /^Описание фактического участия работников/u }),
   ).toHaveValue('Consiliul consultativ se întrunește trimestrial.');
+});
+
+/**
+ * B3's energy breakdown in a browser (UC-21, FR-24; task 36.4).
+ *
+ * **The one claim that spans everything this task built**: the extractor now emits the axis
+ * members' labels, the api expands a registered breakdown axis into one row per member, and the
+ * step lays them out under one legend. Each of those is asserted on its own — the labels by
+ * `disclosure-catalogues.parity`, the rows by `wizard.e2e-spec.ts`, the layout by
+ * `step-layout.spec.ts` — and only a browser can say they meet.
+ *
+ * UC-21 step 1 asks for consumption *"split by renewable and non-renewable source"*, which was
+ * unreportable before this task: the 34 elements on explicit axes served one undimensioned row.
+ */
+test('B3 reports energy along its breakdown, named by member (UC-21)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b3');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B3`);
+
+  // The element names the group; the members name the rows. **Not the other way round** — the
+  // repeating groups B1 draws put the position in the legend, and reading a breakdown that way
+  // would give three fields all called *Energy consumption from fuels*.
+  const group = page.getByRole('group', { name: 'Consumul de energie din combustibili' });
+  await expect(group).toBeVisible();
+
+  // **`exact`, and the ambiguity it resolves is the standard's own.** The total is *"Total energie
+  // regenerabilă și neregenerabilă"*, which CONTAINS the renewable member's whole name — so a
+  // default substring match resolves two textboxes and strict mode refuses. Nested member names are
+  // a property of the breakdown, not a locator accident, which is why this is exactness rather than
+  // a `.first()` (the root file's rule: a test that works around an ambiguity is its only record).
+  for (const member of [
+    'Total energie regenerabilă și neregenerabilă',
+    'Energie regenerabilă',
+    'Energie neregenerabilă',
+  ]) {
+    await expect(group.getByRole('textbox', { name: member, exact: true })).toBeVisible();
+  }
+  // Exactly three, so a fourth member appearing — or the total being dropped — fails here.
+  await expect(group.getByRole('textbox')).toHaveCount(3);
+
+  // The member is stored, not just displayed: §7.3 keys a value by (element, dimension, ordinal),
+  // and a breakdown that wrote every row to the undimensioned key would look right and hold one.
+  const renewable = group.getByRole('textbox', { name: 'Energie regenerabilă', exact: true });
+  await renewable.fill('120');
+  await renewable.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+    timeout: 15_000,
+  });
+
+  // **Both halves, because the indicator reads *Salvat* whichever key was written** (convention
+  // review, 8 Sep 2026 — the first version of this case asserted only the indicator and claimed the
+  // sentence above). The member row holds the figure…
+  const stored = { organizationId, reportId, elementKey: 'EnergyConsumptionFromFuels' };
+  await expect
+    .poll(async () => (await disclosureValueOf({ ...stored, dimensionKey: 'RenewableEnergyMember' }))?.valueNumeric, {
+      timeout: 15_000,
+    })
+    .toBe('120');
+  // …and the undimensioned row — the one a breakdown that ignored its members would have written —
+  // does not exist. Without this the case passes on exactly the defect it names.
+  expect(await disclosureValueOf(stored)).toBeNull();
 });
 
 test('a module the rules ruled out says so on the rail rather than counting to zero (FR-28)', async ({

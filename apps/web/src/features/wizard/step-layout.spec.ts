@@ -1,4 +1,4 @@
-import { DISCLOSURE_KIND, DISCLOSURE_STATE, type DisclosureField } from '@easyesg/contracts';
+import { DISCLOSURE_ORIGIN, DISCLOSURE_KIND, DISCLOSURE_STATE, type DisclosureField } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   STEP_ENTRY,
@@ -16,6 +16,8 @@ import {
  */
 const field = (over: Partial<DisclosureField> & { elementKey: string }): DisclosureField => ({
   dimensionKey: '',
+  dimensionLabel: null,
+  origin: DISCLOSURE_ORIGIN.REPORTED,
   ordinal: 0,
   kind: DISCLOSURE_KIND.TEXT,
   periodType: 'instant',
@@ -103,9 +105,12 @@ describe('layOutStep (task 36.2)', () => {
     ]);
   });
 
-  it('never groups a fixed member axis, however many elements share it', () => {
-    // Three B3 elements on one *explicit* axis: the case the obvious heuristic gets wrong, and the
-    // reason `repeating` is on the wire at all.
+  it('never gathers an unexpanded axis’s elements into one group, however many share it', () => {
+    // **Retitled 8 Sep 2026 (task 36.4): it used to say "never groups a fixed member axis", which
+    // is now the opposite of what ships.** An axis registered as a breakdown *does* group — that is
+    // this task's deliverable. What stays true, and what this pins, is the case the obvious
+    // heuristic gets wrong: several elements sharing one axis are not one repeating group. Serving
+    // them undimensioned is exactly what an *unregistered* axis produces, which is B4's shape.
     const entries = layOutStep([
       field({ elementKey: 'EnergyConsumptionFromFuels', axes: ['BreakdownOfEnergyConsumptionAxis'] }),
       field({ elementKey: 'EnergyConsumptionFromElectricity', axes: ['BreakdownOfEnergyConsumptionAxis'] }),
@@ -113,6 +118,71 @@ describe('layOutStep (task 36.2)', () => {
     ]);
 
     expect(entries.every((e) => e.kind === STEP_ENTRY.FIELD)).toBe(true);
+  });
+
+  /**
+   * A **breakdown** — the layout half of task 36.4, which had no hermetic case at all until the
+   * gate-integrity review deleted the whole branch from `layOutStep` and watched 301 tests pass.
+   *
+   * The browser journey covers *that a group renders*; what only this level can state is the
+   * positional claim `reorderRows` rests on — that a breakdown's rows are already contiguous, so
+   * unlike a repeating group they are **not** gathered, and the questions the standard placed
+   * around them stay where it put them.
+   */
+  describe('a member-keyed breakdown (task 36.4)', () => {
+    const AXIS = 'BreakdownOfEnergyConsumptionAxis';
+    const member = (elementKey: string, dimensionKey: string, dimensionLabel: string, order = 3) =>
+      field({ elementKey, dimensionKey, dimensionLabel, order, axes: [AXIS] });
+
+    it('gathers one element’s member rows under its own entry, one entry per element', () => {
+      const entries = layOutStep([
+        member('EnergyConsumptionFromFuels', 'TotalRenewableAndNonRenewableEnergyMember', 'Total'),
+        member('EnergyConsumptionFromFuels', 'RenewableEnergyMember', 'Regenerabilă'),
+        member('EnergyConsumptionFromElectricity', 'RenewableEnergyMember', 'Regenerabilă', 4),
+      ]);
+
+      expect(entries.map((e) => e.kind)).toEqual([STEP_ENTRY.BREAKDOWN, STEP_ENTRY.BREAKDOWN]);
+      // The element is the group and the member is the row — never the other way round, which is
+      // what would give three rows all named for the element.
+      expect(
+        entries.map((entry) =>
+          entry.kind === STEP_ENTRY.BREAKDOWN
+            ? [entry.elementKey, entry.fields.map((f) => f.dimensionLabel)]
+            : null,
+        ),
+      ).toEqual([
+        ['EnergyConsumptionFromFuels', ['Total', 'Regenerabilă']],
+        ['EnergyConsumptionFromElectricity', ['Regenerabilă']],
+      ]);
+    });
+
+    it('keeps its element’s position, between the questions the standard placed around it', () => {
+      // **`reorderRows` gathers a repeating group's rows and must not touch these.** Its guard is
+      // `kind !== GROUP`; written as `kind === FIELD` a breakdown falls into the group arm, keys on
+      // an `axis` it does not have and is dropped from the step entirely — so this case fails by
+      // losing the middle entry rather than by reordering, which is the more valuable failure.
+      //
+      // The rows arrive **contiguous**, because that is what `rowsOf` serves for one element; an
+      // interleaved input would pin a shape no server produces, which is the trap the case above
+      // this one was retitled for.
+      const entries = layOutStep([
+        field({ elementKey: 'AmountOfEnergyProduced', order: 2 }),
+        member('EnergyConsumptionFromFuels', 'RenewableEnergyMember', 'Regenerabilă', 3),
+        member('EnergyConsumptionFromFuels', 'NonRenewableEnergyMember', 'Neregenerabilă', 3),
+        field({ elementKey: 'TotalEnergyConsumption', order: 4 }),
+      ]);
+
+      const named = (entry: (typeof entries)[number]): string => {
+        if (entry.kind === STEP_ENTRY.BREAKDOWN) return entry.elementKey;
+        if (entry.kind === STEP_ENTRY.GROUP) return entry.axis;
+        return entry.field.elementKey;
+      };
+      expect(entries.map(named)).toEqual([
+        'AmountOfEnergyProduced',
+        'EnergyConsumptionFromFuels',
+        'TotalEnergyConsumption',
+      ]);
+    });
   });
 
   it('does not collect repeating fields that carry no axis into one group', () => {

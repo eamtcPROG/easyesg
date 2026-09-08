@@ -1,4 +1,4 @@
-import { DISCLOSURE_KIND, DISCLOSURE_STATE } from '@easyesg/contracts';
+import { DISCLOSURE_ORIGIN, DISCLOSURE_KIND, DISCLOSURE_STATE } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
 import type { DisclosureField } from '@easyesg/contracts';
 import {
@@ -14,6 +14,8 @@ import {
 const numeric = {
   elementKey: 'NumberOfEmployees',
   dimensionKey: '',
+  dimensionLabel: null,
+  origin: DISCLOSURE_ORIGIN.REPORTED,
   ordinal: 0,
   kind: DISCLOSURE_KIND.NUMERIC,
   unitCode: null,
@@ -70,6 +72,8 @@ describe('writeFor', () => {
  */
 const shaped = (over: Partial<DisclosureField> & { elementKey: string }): DisclosureField => ({
   dimensionKey: '',
+  dimensionLabel: null,
+  origin: DISCLOSURE_ORIGIN.REPORTED,
   ordinal: 0,
   kind: DISCLOSURE_KIND.TEXT,
   periodType: 'instant',

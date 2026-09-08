@@ -2,7 +2,7 @@ import {
   APPLICABILITY_CONDITION,
   type ApplicabilityRule,
 } from '../models/applicability.model';
-import { DISCLOSURE_STATE, type DisclosureValue } from '../models/disclosure-value.model';
+import { DISCLOSURE_ORIGIN, DISCLOSURE_STATE, type DisclosureValue } from '../models/disclosure-value.model';
 import { evaluateApplicability, soleCause, type MemberAncestry } from './applicability';
 
 /**
@@ -26,6 +26,7 @@ const value = (over: Partial<DisclosureValue> & { elementKey: string }): Disclos
   reportId: '01930000-0000-7000-8000-0000000000ff',
   dimensionKey: '',
   ordinal: 0,
+  origin: DISCLOSURE_ORIGIN.REPORTED,
   valueNumeric: null,
   valueText: null,
   valueBoolean: null,

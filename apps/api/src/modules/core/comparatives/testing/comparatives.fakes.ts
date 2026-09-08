@@ -46,7 +46,7 @@ export class FakePriorPeriodStore implements PriorPeriodStore {
 /** A taxonomy element with only the two fields comparability compares varied by a test. */
 export const element = (over: Partial<TaxonomyElement> = {}): TaxonomyElement => ({
   key: 'NumberOfEmployeesInHeadcount',
-  module: 'B8',
+  modules: ['B8'],
   section: 'B8',
   order: 1,
   parent: null,

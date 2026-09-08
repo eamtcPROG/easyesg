@@ -59,8 +59,27 @@ const xsd = readFileSync(join(dir, 'vsme-all.xsd'), 'utf8');
 const presentation = readFileSync(join(dir, 'vsme-presentation.xml'), 'utf8');
 const definition = readFileSync(join(dir, 'vsme-definition.xml'), 'utf8');
 
-/** The published package every artefact below is derived from. */
-const SOURCE = 'https://xbrl.efrag.org/downloads/vsme/VSME-XBRL-Taxonomy-May-2026.zip';
+/**
+ * The published package these artefacts were derived from — **read off the package, not assumed**
+ * (corrected 8 Sep 2026, task 36.4).
+ *
+ * It was the May URL as a constant, so extracting February wrote an artefact whose own `source`
+ * named a package it had never read. `config/seed/README.md` recorded the truth and the artefact
+ * contradicted it, which is the drift a provenance field exists to prevent. EFRAG names the archive
+ * folder after the archive, so the directory being read IS the statement of where it came from.
+ */
+const archive = (() => {
+  const folder = /VSME-XBRL-Taxonomy-[A-Za-z]+-\d{4}/.exec(dir)?.[0] ?? null;
+  if (!folder) {
+    console.error(
+      `cannot name the source package from ${dir} — expected an unpacked ` +
+        'VSME-XBRL-Taxonomy-<Month>-<Year> directory, and a guessed provenance is worse than none.',
+    );
+    process.exit(1);
+  }
+  return folder;
+})();
+const SOURCE = `https://xbrl.efrag.org/downloads/vsme/${archive}.zip`;
 
 const attribute = (tag, name) => new RegExp(`\\b${name}="([^"]*)"`).exec(tag)?.[1] ?? null;
 
@@ -143,7 +162,30 @@ for (const block of roleTypes) {
   if (uri && definition) moduleByRole.set(uri, { module: canonical, definition });
 }
 
-// ── Presentation: which module an element belongs to, and in what order ─────────────────────────
+// ── Presentation: which modules an element belongs to, and in what order ────────────────────────
+/**
+ * **An element may be presented in more than one module, and recording only the first is how B3
+ * lost eight of its seventeen elements** (task 36.4).
+ *
+ * EFRAG presents one shared hypercube — `EstimatedGreenhouseGasEmissions{Table,LineItems}` over
+ * `ReportingScopesAxis` — under **both** `[1100] B3 - Estimated Greenhouse Gas Emissions` and
+ * `[1240] C3 - Greenhouse Gas Emission Reduction Targets`. This loop used to `continue` on a name
+ * it had already seen, so whichever role the file listed first took the element outright; C3's link
+ * precedes B3's in both pinned releases, and `GrossScope1GreenhouseGasEmissions` and
+ * `GrossLocationBasedScope2GreenhouseGasEmissions` were filed under Comprehensive alone.
+ *
+ * **Nothing could see it.** The element reached *a* presentation role, so the "reached no role"
+ * assertion below passed; it resolved *a* module, so the module-coverage assertion passed; the
+ * reportable count was unchanged at 143, because the element exists either way. What was wrong was
+ * a *relation* recorded as a scalar — and the cost was FR-34's own acceptance criterion ("writing
+ * the results into the B3 fields") being unmeetable, with a Basic-only report unable to record its
+ * Scope 1 and Scope 2 emissions at all.
+ *
+ * So placement is a **list**, and `modules` on the artefact is the ordered set of modules a given
+ * element is presented in. `section`, `order` and `parent` stay scalar because the artefact carries
+ * one of each — which is only faithful while the placements agree, and the assertion below is what
+ * holds that rather than assuming it.
+ */
 const placement = new Map();
 const links = presentation.match(/<link:presentationLink\b[\s\S]*?<\/link:presentationLink>/g) ?? [];
 for (const link of links) {
@@ -159,8 +201,9 @@ for (const link of links) {
 
   for (const arc of link.match(/<link:presentationArc\b[^>]*\/>/g) ?? []) {
     const name = labelToName.get(attribute(arc, 'xlink:to') ?? '');
-    if (!name || placement.has(name)) continue;
-    placement.set(name, {
+    if (!name) continue;
+    if (!placement.has(name)) placement.set(name, []);
+    placement.get(name).push({
       module: role.module,
       section: role.definition,
       order: Number.parseFloat(attribute(arc, 'order') ?? '0'),
@@ -168,6 +211,28 @@ for (const link of links) {
     });
   }
 }
+
+/**
+ * The modules an element is presented in, in the standard's own order rather than the linkbase's
+ * file order — so `modules[0]` is B3 for a disclosure B3 and C3 share, and the artefact does not
+ * change shape because EFRAG reordered a file. Duplicates collapse: an element presented twice
+ * within one module (the hypercube's own scaffolding does this) is in that module once.
+ */
+const modulesOf = (name) =>
+  [...new Set((placement.get(name) ?? []).map((at) => at.module))]
+    .filter((module) => module !== null)
+    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+
+/**
+ * The placement whose `section`, `order` and `parent` the artefact carries: the one in the first of
+ * `modulesOf`'s modules, and the sole placement for the 130 elements presented once. Deterministic
+ * by the standard's order, never by the file's.
+ */
+const primaryOf = (name) => {
+  const all = placement.get(name) ?? [];
+  const first = modulesOf(name)[0];
+  return all.find((at) => at.module === first) ?? all[0];
+};
 
 // ── Dimensions ──────────────────────────────────────────────────────────────────────────────────
 /**
@@ -257,11 +322,26 @@ const definitionLinks = (linkbase) =>
 const definitionArcSets = definitionLinks(definition);
 const everyArc = definitionArcSets.flat();
 
-/** Everything reachable from `root` by `domain-member`. Depth-first, cycle-safe. */
-const descend = (root, arcs, seen = new Set([root])) =>
+/**
+ * Everything reachable from `root` by `domain-member`, keeping the resolved node rather than its
+ * name — **because a domain's members are not necessarily its own taxonomy's** — **because a domain's members are
+ * not necessarily its own taxonomy's** (task 36.4).
+ *
+ * `CountryOfEmploymentContractAxis` is the case that made this visible: its domain
+ * `AllCountriesMember` is a VSME concept, so the `domainTaxonomy` test below correctly says the
+ * domain is VSME's — and its 256 members are declared in
+ * `https://www.xbrl.org/taxonomy/int/country/current/elts.xsd`, the XBRL International country
+ * taxonomy. The artefact claimed 256 `vsme` members that do not exist, and nothing noticed for as
+ * long as nothing tried to label them.
+ */
+const descendNodes = (root, arcs, seen = new Set([root])) =>
   arcs
     .filter((arc) => arc.role === 'domain-member' && arc.from.name === root && !seen.has(arc.to.name))
-    .flatMap((arc) => (seen.add(arc.to.name), [arc.to.name, ...descend(arc.to.name, arcs, seen)]));
+    .flatMap((arc) => (seen.add(arc.to.name), [arc.to, ...descendNodes(arc.to.name, arcs, seen)]));
+
+/** The same walk as names. Depth-first and cycle-safe, like the node form it delegates to. */
+const descend = (root, arcs, seen = new Set([root])) =>
+  descendNodes(root, arcs, seen).map((node) => node.name);
 
 /**
  * Typed axes take an arbitrary identifier rather than a member — a site, a subsidiary, a material.
@@ -282,6 +362,8 @@ for (const arc of everyArc) {
   if (axes.has(axis)) continue;
 
   const domain = everyArc.find((a) => a.role === 'dimension-domain' && a.from.name === axis)?.to ?? null;
+  const memberNodes = domain ? descendNodes(domain.name, everyArc) : [];
+  const memberTaxonomies = new Set(memberNodes.map((node) => node.taxonomy));
   axes.set(axis, {
     typed: typedAxes.has(axis),
     domain: domain?.name ?? null,
@@ -295,7 +377,21 @@ for (const arc of everyArc) {
     // one storing only the total looks undimensioned.
     defaultMember:
       everyArc.find((a) => a.role === 'dimension-default' && a.from.name === axis)?.to.name ?? null,
-    members: domain ? descend(domain.name, everyArc) : [],
+    members: memberNodes.map((node) => node.name),
+    // **Where the MEMBERS are another taxonomy's, say so — separately from the domain.** The two
+    // differ, and only one axis in VSME shows it: `CountryOfEmploymentContractAxis` has a VSME
+    // domain (`AllCountriesMember`) and XBRL International country members. Without this the
+    // artefact asserts 256 VSME members that no VSME label linkbase declares, which is what task
+    // 36.4 found when it first asked for their labels.
+    // `memberVersion` only where the package states one: the country taxonomy is referenced at
+    // `country/current/elts.xsd`, so it genuinely has no dated version to record and an explicit
+    // `null` would read as one that failed to resolve.
+    ...(memberTaxonomies.size === 1 && !memberTaxonomies.has('vsme')
+      ? {
+          memberTaxonomy: memberNodes[0].taxonomy,
+          ...(memberNodes[0].version ? { memberVersion: memberNodes[0].version } : {}),
+        }
+      : {}),
   });
 }
 
@@ -396,7 +492,7 @@ const externalTaxonomy = (taxonomy, taxonomyVersion, root) => {
    * whoever authors the `ro` and `ru` labels, not to a regex here.
    */
   const humanLabel = (raw, code, hazard) => {
-    let text = raw.replace(/\s*\[member\]$/, '');
+    let text = raw.replace(/\s*\[(?:member|abstract)\]$/, '');
     for (const part of [code, hazard]) {
       if (part && text.startsWith(`${part} - `)) text = text.slice(part.length + 3);
     }
@@ -622,7 +718,7 @@ if (dropped.length > 0) {
 const CATCH_ALL_ROLE = /Other and\/or entity specific information/i;
 const unmoduled = reportable.filter(
   ([name]) =>
-    placement.get(name).module === null && !CATCH_ALL_ROLE.test(placement.get(name).section),
+    modulesOf(name).length === 0 && !CATCH_ALL_ROLE.test(primaryOf(name).section),
 );
 if (unmoduled.length > 0) {
   console.error(
@@ -630,7 +726,40 @@ if (unmoduled.length > 0) {
   );
   console.error('This release names its presentation roles in a shape this script does not read:');
   for (const [name] of unmoduled.slice(0, 5)) {
-    console.error(`  ${name} — ${placement.get(name).section}`);
+    console.error(`  ${name} — ${primaryOf(name).section}`);
+  }
+  process.exit(1);
+}
+
+/**
+ * **A shared element's placements must agree on order and parent, because the artefact carries one
+ * of each** (task 36.4).
+ *
+ * `modules` is a list; `section`, `order` and `parent` are not. That is faithful only while every
+ * role presenting an element presents it the same way — true of all eight reportable elements B3
+ * and C3 share, in both pinned releases, and asserted here rather than assumed. A release that
+ * gives one of them a different position under C3 than under B3 needs a decision about what the
+ * artefact should then carry; it must not be taken silently by whichever role sorts first.
+ *
+ * **Scoped to the reportable elements on purpose.** The hypercube's own scaffolding legitimately
+ * differs — `EstimatedGreenhouseGasEmissionsTable` is 9th under B3 and 3rd under C3, hanging off a
+ * different abstract in each — and none of it reaches the artefact.
+ */
+const disagreeing = reportable
+  .map(([name]) => [name, placement.get(name)])
+  .filter(([, all]) => all.length > 1)
+  .filter(
+    ([, all]) =>
+      new Set(all.map((at) => at.order)).size > 1 || new Set(all.map((at) => at.parent)).size > 1,
+  );
+if (disagreeing.length > 0) {
+  console.error(
+    `${disagreeing.length} element(s) are presented in several roles that disagree about order or parent.`,
+  );
+  console.error('The artefact carries one of each, so which one is a decision, not a default:');
+  for (const [name, all] of disagreeing) {
+    console.error(`  ${name}`);
+    for (const at of all) console.error(`    order=${at.order} parent=${at.parent} — ${at.section}`);
   }
   process.exit(1);
 }
@@ -646,9 +775,9 @@ const payload = {
   taxonomy: 'vsme',
   version,
   source: SOURCE,
-  modules: [...new Set(reportable.map(([name]) => placement.get(name).module))]
-    .filter((module) => module !== null)
-    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true })),
+  modules: [...new Set(reportable.flatMap(([name]) => modulesOf(name)))].sort((a, b) =>
+    a.localeCompare(b, 'en', { numeric: true }),
+  ),
   /** Each reporting axis and the members it admits, so a form can offer them without a code change. */
   axes: Object.fromEntries([...axes.entries()].sort(([a], [b]) => a.localeCompare(b))),
   /** Each choice field's domain and the members it offers (task 91.1), keyed by the qualified domain. */
@@ -658,11 +787,13 @@ const payload = {
   elements: Object.fromEntries(
     reportable
       .map(([name, e]) => {
-        const at = placement.get(name);
+        const at = primaryOf(name);
         return [
           name,
           {
-            module: at.module,
+            // Every module this element is presented in, not the first one met (task 36.4). Empty
+            // for the standard's pillar-level catch-alls, which belong to no numbered module.
+            modules: modulesOf(name),
             section: at.section,
             order: at.order,
             parent: at.parent,
@@ -698,7 +829,10 @@ console.log(`  declarations   ${declarations.length}`);
 console.log(`  reportable     ${reportable.length}`);
 console.log(`  modules        ${payload.modules.join(' ')}`);
 console.log(
-  `  unmoduled      ${reportable.filter(([n]) => placement.get(n).module === null).length} (the standard's pillar-level catch-alls)`,
+  `  unmoduled      ${reportable.filter(([n]) => modulesOf(n).length === 0).length} (the standard's pillar-level catch-alls)`,
+);
+console.log(
+  `  shared         ${reportable.filter(([n]) => modulesOf(n).length > 1).length} element(s) presented in more than one module`,
 );
 console.log(`  axes           ${Object.keys(payload.axes).length}`);
 console.log(

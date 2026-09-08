@@ -16,6 +16,8 @@ import { LocalizationModule } from '@api/modules/platform/localization/localizat
 import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
 import { ReportsController } from './controllers/reports.controller';
 import { WizardController } from './controllers/wizard.controller';
+import { AXIS_SHAPES, type AxisShapes } from './interfaces/axis-shape.interface';
+import { AxisShapeService } from './services/axis-shape.service';
 import {
   APPLICABILITY_RULES,
   type ApplicabilityRules,
@@ -81,6 +83,7 @@ const httpProviders: Provider[] = [
   // (§17.5), and a consumer elsewhere would be evaluating a report's shape from outside the module
   // that holds its values.
   { provide: APPLICABILITY_RULES, useClass: ApplicabilityRulesService },
+  { provide: AXIS_SHAPES, useClass: AxisShapeService },
   {
     provide: ReadWizardStep,
     inject: [
@@ -90,6 +93,7 @@ const httpProviders: Provider[] = [
       DISCLOSURE_LABELS,
       ORGANIZATION_VOCABULARY,
       APPLICABILITY_RULES,
+      AXIS_SHAPES,
     ],
     useFactory: (
       reports: ReportStore,
@@ -98,6 +102,7 @@ const httpProviders: Provider[] = [
       labels: DisclosureLabelResolver,
       vocabulary: WizardVocabulary,
       applicability: ApplicabilityRules,
+      axisShapes: AxisShapes,
     ) =>
       new ReadWizardStep(
         reports,
@@ -106,6 +111,7 @@ const httpProviders: Provider[] = [
         labels,
         vocabulary,
         applicability,
+        axisShapes,
         new Logger(ReadWizardStep.name),
       ),
   },

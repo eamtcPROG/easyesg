@@ -1061,7 +1061,8 @@
         "choiceRemoveShort": "Eliminați",
         "choiceLoading": "Se caută",
         "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}}",
-        "unnamed": "Fără denumire"
+        "unnamed": "Fără denumire",
+        "calculated": "Calculat"
       },
       "leave": {
         "title": "Ieșiți cu modificări netrimise?",

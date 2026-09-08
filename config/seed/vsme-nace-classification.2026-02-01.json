@@ -1,7 +1,7 @@
 {
   "taxonomy": "nace",
   "version": "2026-02-01",
-  "source": "https://xbrl.efrag.org/downloads/vsme/VSME-XBRL-Taxonomy-May-2026.zip",
+  "source": "https://xbrl.efrag.org/downloads/vsme/VSME-XBRL-Taxonomy-February-2026.zip",
   "root": "NACE_AllEconomicActivitiesNAMember",
   "members": {
     "NACE_A": {

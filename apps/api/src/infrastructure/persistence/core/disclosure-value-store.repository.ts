@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { DisclosureOrigin } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import type { DisclosureValueStore } from '@api/modules/core/disclosure/interfaces/disclosure-value-store.interface';
 import { ReportNotEditableError } from '@api/modules/core/disclosure/errors/report.errors';
 import type {
@@ -31,13 +32,14 @@ interface DisclosureValueRow {
   state: DisclosureState;
   not_available_reason: string | null;
   carried_forward: boolean;
+  origin: DisclosureOrigin;
   created_at: Date;
   updated_at: Date;
 }
 
 const VALUE_COLUMNS = `id, report_id, element_key, dimension_key, ordinal,
         value_numeric, value_text, value_boolean, value_date::text AS value_date,
-        unit_code, state, not_available_reason, carried_forward, created_at, updated_at`;
+        unit_code, state, not_available_reason, carried_forward, origin, created_at, updated_at`;
 
 const toValue = (row: DisclosureValueRow): DisclosureValue => ({
   id: row.id,
@@ -53,6 +55,7 @@ const toValue = (row: DisclosureValueRow): DisclosureValue => ({
   state: row.state,
   notAvailableReason: row.not_available_reason,
   carriedForward: row.carried_forward,
+  origin: row.origin,
   createdAt: row.created_at.getTime(),
   updatedAt: row.updated_at.getTime(),
 });

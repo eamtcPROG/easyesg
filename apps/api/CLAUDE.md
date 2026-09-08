@@ -179,7 +179,7 @@ draws its domain from; `reporting-taxonomy.vsme.json` says which version a new r
 **OQ-45 closed here** — a version is EFRAG's own `YYYY-MM-DD`, and the config scope for
 `vsme_taxonomy` *is* that version, so registered versions coexist forever as DR-4 requires.
 
-Four things about it that are load-bearing:
+Five things about it that are load-bearing:
 
 - **The artefacts are extracted, never authored.** `tools/extract-vsme-taxonomy.mjs` regenerates
   them from EFRAG's published package; a hand edit is discarded by the next release. A correction
@@ -194,6 +194,16 @@ Four things about it that are load-bearing:
   (task 33.3) and a report pinned to the older one must resolve *its* elements years later; a
   convenience overload answering "the current elements" is the shape that silently re-reads an
   archived report against a taxonomy it was never authored under.
+- **An element belongs to `modules`, not to a module** (task 36.4). Eight disclosures are presented
+  in **B3 and C3** — one shared hypercube, `EstimatedGreenhouseGasEmissions` over
+  `ReportingScopesAxis` — so `TaxonomyElement.modules` is a list and a reader asks
+  `modules.includes(…)`, never `[0]`. The extractor used to keep the first presentation role it met,
+  which filed all eight under Comprehensive alone and left B3 serving 9 elements of 17 with **every
+  assertion green**: each element reached *a* role and resolved *a* module, and 143 is a count of
+  elements, so nothing could see a relation recorded as a scalar. `section`, `order` and `parent`
+  stay singular and the extractor fails the run if a shared element's placements disagree about
+  them. The facade emits such an element under **every** group, because a short `cThree` is the same
+  defect one layer up.
 - **A malformed element is dropped; a malformed version fails whole**, which is the opposite split
   from the NACE classifier's and deliberately so. There, one bad row must not remove 995 good ones
   from a picker. Here, a partial taxonomy would let a report be authored against one shape and

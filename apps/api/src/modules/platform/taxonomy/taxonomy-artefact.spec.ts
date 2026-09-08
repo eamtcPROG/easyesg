@@ -86,6 +86,70 @@ describe('the shipped VSME taxonomy artefacts', () => {
   });
 
   /**
+   * **B3 carries FR-34's own fields, and for two releases it did not** (task 36.4).
+   *
+   * EFRAG presents one hypercube — `EstimatedGreenhouseGasEmissions{Table,LineItems}` over
+   * `ReportingScopesAxis` — under both `[1100] B3 - Estimated Greenhouse Gas Emissions` and
+   * `[1240] C3 - Greenhouse Gas Emission Reduction Targets`. The extractor recorded the first
+   * presentation role it met and C3's link precedes B3's, so eight reportable elements were filed
+   * under Comprehensive alone: a Basic-only report could not record its Scope 1 and Scope 2
+   * emissions at all, and FR-34's criterion — *"the results appear in the B3 fields"* — was
+   * unmeetable.
+   *
+   * **Nothing else could see it.** The elements existed, reached a presentation role and resolved a
+   * module, so every assertion in this file and every one in the extractor stayed green; the
+   * reportable count never moved, because 143 is a count of elements and this was a defect in a
+   * *relation*. So the guard has to name the disclosures rather than count them.
+   *
+   * Asserted on **every registered version**, not on the pin of the day: both shipped artefacts had
+   * it, and a re-extraction that reintroduces it would otherwise be caught only on whichever
+   * version this constant happened to name.
+   */
+  it('files the Scope 1 and Scope 2 disclosures under B3 as well as C3, in every version', () => {
+    const taxonomy = registry();
+    const versions = taxonomy.registeredVersions({ standard: TAXONOMY_STANDARD.VSME });
+    expect(versions.length).toBeGreaterThan(1);
+
+    // **The whole set, not three named members of it** (gate-integrity review, 8 Sep 2026). Naming
+    // three left the other five free to regress to `['C3']` with every gate green — which is the
+    // original defect, on five of the eight elements it was raised for. This is
+    // `APP_IMMUTABLE_COLUMNS`'s rule in another schema: declare the set so that *omission* fails,
+    // never a sample so that only the named ones do.
+    const SHARED_BY_B3_AND_C3 = [
+      'GrossLocationBasedScope2GreenhouseGasEmissions',
+      'GrossMarketBasedScope2GreenhouseGasEmissions',
+      'GrossScope1GreenhouseGasEmissions',
+      'GrossScope3GreenhouseGasEmissions',
+      'TotalGrossLocationBasedGHGEmissions',
+      'TotalGrossLocationBasedScope1AndScope2GHGEmissions',
+      'TotalGrossMarketBasedGHGEmissions',
+      'TotalGrossMarketBasedScope1AndScope2GHGEmissions',
+    ];
+
+    for (const version of versions) {
+      const read = taxonomy.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version });
+      const shared = (read?.elements ?? [])
+        .filter((element) => element.modules.length > 1)
+        .map((element) => element.key)
+        .sort();
+      // Exactly these, so an element that *stops* being shared fails and one that starts being
+      // shared — a release presenting a ninth in two modules — fails too and gets read.
+      expect({ version, shared }).toEqual({ version, shared: SHARED_BY_B3_AND_C3 });
+
+      for (const key of SHARED_BY_B3_AND_C3) {
+        const element = taxonomy.element({ standard: TAXONOMY_STANDARD.VSME, version, key });
+        // Both, and B3 first — `section` and `order` describe the first, so the order is the claim
+        // the registry's sort rests on rather than an incidental spelling.
+        expect({ version, key, modules: element?.modules }).toEqual({
+          version,
+          key,
+          modules: ['B3', 'C3'],
+        });
+      }
+    }
+  });
+
+  /**
    * The B3 case, pinned as a worked example because it is the one §7.3 stated wrongly for months:
    * `EnergyConsumptionFromRenewableSources` does not exist — renewable is a dimension *member*.
    */
@@ -94,7 +158,7 @@ describe('the shipped VSME taxonomy artefacts', () => {
     expect(taxonomy.element({ ...at, key: 'EnergyConsumptionFromRenewableSources' })).toBeNull();
 
     const fuels = taxonomy.element({ ...at, key: 'EnergyConsumptionFromFuels' });
-    expect(fuels).toMatchObject({ module: 'B3', kind: DISCLOSURE_KIND.NUMERIC });
+    expect(fuels).toMatchObject({ modules: ['B3'], kind: DISCLOSURE_KIND.NUMERIC });
     expect(fuels?.axes).toEqual(['BreakdownOfEnergyConsumptionAxis']);
 
     const axis = taxonomy.axis({ ...at, key: 'BreakdownOfEnergyConsumptionAxis' });
@@ -117,7 +181,7 @@ describe('the shipped VSME taxonomy artefacts', () => {
       'NumberOfOtherGenderEmployees',
       'NumberOfNonReportedGenderEmployees',
     ]) {
-      expect(taxonomy.element({ ...at, key })).toMatchObject({ module: 'B8' });
+      expect(taxonomy.element({ ...at, key })).toMatchObject({ modules: ['B8'] });
     }
   });
 

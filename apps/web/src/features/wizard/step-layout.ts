@@ -13,7 +13,7 @@ import type { DisclosureField } from '@easyesg/contracts';
  * §12.5.6, task 36.2).
  */
 
-export const STEP_ENTRY = { FIELD: 'field', GROUP: 'group' } as const;
+export const STEP_ENTRY = { FIELD: 'field', GROUP: 'group', BREAKDOWN: 'breakdown' } as const;
 
 export type StepEntryKind = (typeof STEP_ENTRY)[keyof typeof STEP_ENTRY];
 
@@ -32,7 +32,25 @@ export interface StepGroupEntry {
   readonly fields: readonly DisclosureField[];
 }
 
-export type StepEntry = StepFieldEntry | StepGroupEntry;
+/**
+ * One element reported along every member of a breakdown axis — B3's energy consumption as its
+ * total, its renewable part and its non-renewable part (task 36.4).
+ *
+ * **A third kind rather than a variant of `GROUP`, because the two group different things.** A
+ * repeating group is *one row of several objects* — this site, that site — so its legend names a
+ * position and the reporter may add another. A breakdown is *one question answered several ways*:
+ * its legend names the element, its rows name members, and there is nothing to add, because the
+ * standard fixes the members. Folding them together would need a flag on every branch that reads
+ * one, which is the boolean-prop smell UX-89 names.
+ */
+export interface StepBreakdownEntry {
+  readonly kind: typeof STEP_ENTRY.BREAKDOWN;
+  /** The element these rows all answer — the group's identity and its legend. */
+  readonly elementKey: string;
+  readonly fields: readonly DisclosureField[];
+}
+
+export type StepEntry = StepFieldEntry | StepGroupEntry | StepBreakdownEntry;
 
 /** A group under construction — the one place `fields` is writable. */
 interface Collecting {
@@ -59,7 +77,30 @@ export function layOutStep(fields: readonly DisclosureField[]): readonly StepEnt
   const groups = new Map<string, Collecting>();
   const entries: StepEntry[] = [];
 
+  // Breakdown rows collect by element: every row of one element shares its label and differs only
+  // by member, so the element is the group and the member is the row (task 36.4).
+  const breakdowns = new Map<string, { kind: typeof STEP_ENTRY.BREAKDOWN; elementKey: string; fields: DisclosureField[] }>();
+
   for (const field of fields) {
+    // **Checked before `repeating`, and the two cannot both hold**: the api gives a row either an
+    // ordinal (typed axis) or a member (breakdown axis), never both, because no registered element
+    // carries more than one axis. Reading them in this order means a future element that did would
+    // render as a breakdown rather than as an unreadable half of each.
+    if (field.dimensionKey !== '') {
+      const standing = breakdowns.get(field.elementKey);
+      if (standing === undefined) {
+        const group = {
+          kind: STEP_ENTRY.BREAKDOWN as typeof STEP_ENTRY.BREAKDOWN,
+          elementKey: field.elementKey,
+          fields: [field],
+        };
+        breakdowns.set(field.elementKey, group);
+        entries.push(group);
+      } else {
+        standing.fields.push(field);
+      }
+      continue;
+    }
     // A repeating field with no axis cannot happen — the flag *is* "on a typed axis" — but the
     // wire is data, and a group keyed on `undefined` would collect every such field into one.
     const axis = field.repeating ? field.axes[0] : undefined;
@@ -87,7 +128,11 @@ function reorderRows(entries: readonly StepEntry[]): readonly StepEntry[] {
   const seen = new Set<string>();
   const ordered: StepEntry[] = [];
   for (const entry of entries) {
-    if (entry.kind === STEP_ENTRY.FIELD) {
+    // **Anything that is not a repeating group passes through where it stands.** This reordering
+    // exists because one axis's ordinals interleave in the standard's presentation order; a
+    // breakdown's rows are one element's and arrive contiguous already, so gathering them here
+    // would move a question the standard placed deliberately.
+    if (entry.kind !== STEP_ENTRY.GROUP) {
       ordered.push(entry);
       continue;
     }

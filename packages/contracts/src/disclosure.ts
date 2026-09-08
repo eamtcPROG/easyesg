@@ -102,6 +102,24 @@ export const REPORT_STATUS = {
 export type ReportStatus = (typeof REPORT_STATUS)[keyof typeof REPORT_STATUS];
 
 /**
+ * Where a stored value came from (task 36.4) — the `report_disclosure_value_origin_known` CHECK's
+ * vocabulary, mirrored here like the objects above.
+ *
+ * **Three members and one reachable**, which is `REPORT_STATUS`'s own arrangement and stated for
+ * its reason: a `CHECK` is frozen history the day it ships, so the set is declared once rather than
+ * migrated a member at a time. `CALCULATED` arrives with task 39.2's return from the carbon
+ * calculator (UC-33) and `OVERRIDDEN` with task 38.5's UC-34; until then every row is `REPORTED`
+ * and a client may render the other two without meeting them.
+ */
+export const DISCLOSURE_ORIGIN = {
+  REPORTED: 'reported',
+  CALCULATED: 'calculated',
+  OVERRIDDEN: 'overridden',
+} as const;
+
+export type DisclosureOrigin = (typeof DISCLOSURE_ORIGIN)[keyof typeof DISCLOSURE_ORIGIN];
+
+/**
  * The compile-time hold. `Same<A, B>` is `true` only when the two unions are identical in both
  * directions; assigning it to `true` fails to compile the moment either side gains or loses a
  * member, and the failing line names which mirror drifted.
@@ -111,12 +129,15 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type GeneratedState = components['schemas']['DisclosureFieldDto']['state'];
 type GeneratedKind = components['schemas']['DisclosureFieldDto']['kind'];
 type GeneratedReportStatus = components['schemas']['ReportResponseDto']['status'];
+type GeneratedOrigin = components['schemas']['DisclosureFieldDto']['origin'];
 
 const disclosureStateMirrorsTheApi: Same<DisclosureState, GeneratedState> = true;
 const disclosureKindMirrorsTheApi: Same<DisclosureKind, GeneratedKind> = true;
 const reportStatusMirrorsTheApi: Same<ReportStatus, GeneratedReportStatus> = true;
+const disclosureOriginMirrorsTheApi: Same<DisclosureOrigin, GeneratedOrigin> = true;
 
 // Read once so the holds are not "unused" to the compiler; they exist for their types alone.
 void disclosureStateMirrorsTheApi;
 void disclosureKindMirrorsTheApi;
 void reportStatusMirrorsTheApi;
+void disclosureOriginMirrorsTheApi;

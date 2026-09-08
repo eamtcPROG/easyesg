@@ -1061,7 +1061,8 @@
         "choiceRemoveShort": "Remove",
         "choiceLoading": "Searching",
         "length": "{count, plural, one {One character} other {# characters}}",
-        "unnamed": "Unnamed"
+        "unnamed": "Unnamed",
+        "calculated": "Calculated"
       },
       "leave": {
         "title": "Leave with unsent changes?",

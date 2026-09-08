@@ -62,6 +62,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   interface Field {
     elementKey: string; ordinal: number; kind: string; periodType: string; order: number;
     label: string | null; labelStanding: string | null; repeating: boolean; axes: string[];
+    dimensionKey: string; dimensionLabel: string | null; origin: string;
     valueText: string | null; valueNumeric: string | null; state: string; carriedForward: boolean;
     help: string | null;
     options: { value: string; label: string | null; code: string | null }[] | null;
@@ -272,7 +273,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     const basis = step.fields.find((f) => f.elementKey === 'BasisForReporting');
     expect(basis?.options?.map((o) => o.value).sort()).toEqual(['vsme:ConsolidatedMember', 'vsme:IndividualMember']);
     expect(basis?.options?.every((o) => typeof o.label === 'string' && o.label.length > 0)).toBe(true);
-    expect(basis?.options?.some((o) => /\[member\]/u.test(o.label ?? ''))).toBe(false);
+    expect(basis?.options?.some((o) => /\[(?:member|abstract)\]/u.test(o.label ?? ''))).toBe(false);
 
     // NACE: the classification the package ships, coded as CAEM prints it, named by the platform's
     // own classifier in the request's locale.
@@ -521,6 +522,173 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
       values: [{ elementKey: B1_ELEMENT, valueText: 'late', state: DISCLOSURE_STATE.OK }],
     }).expect(409);
+  });
+
+  /**
+   * A **breakdown axis** renders one row per member (UC-21; task 36.4).
+   *
+   * B3's three energy elements sit on `BreakdownOfEnergyConsumptionAxis`, and UC-21 step 1 asks for
+   * consumption *"split by renewable and non-renewable source"* — which was unreportable until this
+   * task: task 91.2 gave typed axes their ordinals and left the 34 elements on explicit axes at one
+   * undimensioned row.
+   *
+   * **Which axes expand is configuration** (`disclosure_axis_shape`), because EFRAG's package does
+   * not distinguish a breakdown from a classification and rendering them alike is wrong in both
+   * directions — B4's 94 pollutants as 94 rows is not a screen. So the second case here is as much
+   * the deliverable as the first: an axis nobody registered stays exactly as it was.
+   */
+  /**
+   * The eight disclosures EFRAG presents in B3 **and** C3 — one shared hypercube (task 36.4).
+   * Declared as the whole set rather than a sample, so an element dropping out of it fails.
+   */
+  const SHARED_WITH_C3 = [
+    'GrossLocationBasedScope2GreenhouseGasEmissions',
+    'GrossMarketBasedScope2GreenhouseGasEmissions',
+    'GrossScope1GreenhouseGasEmissions',
+    'GrossScope3GreenhouseGasEmissions',
+    'TotalGrossLocationBasedGHGEmissions',
+    'TotalGrossLocationBasedScope1AndScope2GHGEmissions',
+    'TotalGrossMarketBasedGHGEmissions',
+    'TotalGrossMarketBasedScope1AndScope2GHGEmissions',
+  ];
+
+  describe('a breakdown axis renders one row per member (UC-21, task 36.4)', () => {
+    it('gives each energy element the total and both sources, named in the reader’s language', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const step = objectOf<Step>(
+        (await http()
+          .get(`/api/v1/reports/${reportId}/modules/B3`)
+          .set(editor.authorization)
+          .expect(200)).body,
+      );
+
+      const fuels = step.fields.filter((f) => f.elementKey === 'EnergyConsumptionFromFuels');
+      expect(fuels).toHaveLength(3);
+      // The default member leads: it is the member a fact carrying no dimension means — the total —
+      // so a reader meets the whole before its parts. Not UC-21's ordering: it names the split
+      // and no total.
+      expect(fuels.map((f) => f.dimensionKey)).toEqual([
+        'TotalRenewableAndNonRenewableEnergyMember',
+        'RenewableEnergyMember',
+        'NonRenewableEnergyMember',
+      ]);
+      // **The label, not the key.** `RenewableEnergyMember` on a screen is the internal identifier
+      // the user-facing-text rule forbids, and until this task no catalogue named these at all.
+      expect(fuels.map((f) => f.dimensionLabel)).toEqual([
+        'Total energie regenerabilă și neregenerabilă',
+        'Energie regenerabilă',
+        'Energie neregenerabilă',
+      ]);
+      // Not a repeating group: a reporter cannot add a fourth kind of energy (task 91.2's shape).
+      expect(fuels.every((f) => f.repeating === false)).toBe(true);
+      expect(fuels.every((f) => f.ordinal === 0)).toBe(true);
+    });
+
+    /**
+     * **The step read selects by membership, not by equality** (task 36.4).
+     *
+     * Eight disclosures are presented in B3 *and* C3, so `element.module === query.module` served a
+     * B3 step without FR-34's own fields — *"the results appear in the B3 fields"* — while the
+     * artefact, the registry and every hermetic assertion agreed. The sibling case in
+     * `taxonomy-artefact.spec.ts` pins the artefact; this pins the read, and a regression to `===`
+     * fails here and passes there.
+     */
+    it('serves the emissions FR-34 writes into, which B3 shares with C3', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const step = objectOf<Step>(
+        (await http()
+          .get(`/api/v1/reports/${reportId}/modules/B3`)
+          .set(editor.authorization)
+          .expect(200)).body,
+      );
+
+      const served = new Set(step.fields.map((f) => f.elementKey));
+      for (const key of SHARED_WITH_C3) {
+        expect({ key, servedOnB3: served.has(key) }).toEqual({ key, servedOnB3: true });
+      }
+
+      // **And C3, which is the arm that actually breaks** (gate-integrity review, 8 Sep 2026). The
+      // first version of this case read B3 alone and its comment claimed it guarded a reversion to
+      // `===`. It does not: `modules` is sorted, so a shared element's first module is always `B3`
+      // and `modules[0] === query.module` serves this step correctly while emptying C3's of all
+      // eight. The scalar's damage was always on the second module — that is the whole shape of the
+      // defect — so the second module is what has to be read.
+      const comprehensive = objectOf<Step>(
+        (await http()
+          .get(`/api/v1/reports/${reportId}/modules/C3`)
+          .set(editor.authorization)
+          .expect(200)).body,
+      );
+      const onC3 = new Set(comprehensive.fields.map((f) => f.elementKey));
+      for (const key of SHARED_WITH_C3) {
+        expect({ key, servedOnC3: onC3.has(key) }).toEqual({ key, servedOnC3: true });
+      }
+
+      // `ReportingScopesAxis` is baseline / target / currently-stated — C3's framing of the same
+      // figures, and deliberately not a registered breakdown (see `disclosure.constants.ts`). On B3
+      // the reporter states the current figure, which is the default member: one undimensioned row.
+      const scope1 = step.fields.filter((f) => f.elementKey === 'GrossScope1GreenhouseGasEmissions');
+      expect(scope1.map((f) => f.dimensionKey)).toEqual(['']);
+    });
+
+    /**
+     * **`origin` is read back from the column, not defaulted into the response** (gate-integrity
+     * review, 8 Sep 2026).
+     *
+     * Nothing writes anything but `reported` until task 39.2, so every assertion about the seam was
+     * satisfied by the fallback: dropping `origin` from the store's `VALUE_COLUMNS` left `row.origin`
+     * `undefined`, `value?.origin ?? DEFAULT_DISCLOSURE_ORIGIN` recovered `'reported'`, and
+     * typecheck and 63 e2e cases stayed green. The column's whole justification is being the seam
+     * 39.2 writes into, so the seam has to be shown to conduct — which needs a row whose origin is
+     * *not* the default, and the migration's `GRANT UPDATE (origin)` is what makes one reachable.
+     */
+    it('serves a calculated origin the store actually holds, not the column default', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const element = 'TotalEnergyConsumption';
+
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [{ elementKey: element, valueNumeric: '412.5', state: DISCLOSURE_STATE.OK }],
+      }).expect(200);
+
+      const before = objectOf<Step>(
+        (await http().get(`/api/v1/reports/${reportId}/modules/B3`).set(editor.authorization).expect(200)).body,
+      );
+      expect(before.fields.find((f) => f.elementKey === element)?.origin).toBe('reported');
+
+      // What 39.2 will do, standing in for it: the one column `esg_app` may move on a stored value.
+      await asOrganization(owner, ORG, (run) =>
+        run(
+          `UPDATE core.report_disclosure_value SET origin = 'calculated'
+            WHERE report_id = $1 AND element_key = $2`,
+          [reportId, element],
+        ),
+      );
+
+      const after = objectOf<Step>(
+        (await http().get(`/api/v1/reports/${reportId}/modules/B3`).set(editor.authorization).expect(200)).body,
+      );
+      expect(after.fields.find((f) => f.elementKey === element)?.origin).toBe('calculated');
+    });
+
+    it('leaves an axis nobody registered as one undimensioned row', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const step = objectOf<Step>(
+        (await http()
+          .get(`/api/v1/reports/${reportId}/modules/B4`)
+          .set(editor.authorization)
+          .expect(200)).body,
+      );
+
+      // B4's elements are on `TypeOfPollutantAxis` — 94 members, and a classification rather than a
+      // breakdown, so it is absent from the seeded shape. One row each, `dimensionKey` empty.
+      // Exactly three — `AmountOfEmissionTo{Air,Soil,Water}`. A knowable count rather than a
+      // vacuity guard, so registering `TypeOfPollutantAxis` as a breakdown (task 36.5's decision)
+      // fails here and gets read, instead of quietly satisfying `> 0` with 282 rows.
+      const dimensioned = step.fields.filter((f) => f.axes.includes('TypeOfPollutantAxis'));
+      expect(dimensioned).toHaveLength(3);
+      expect(dimensioned.every((f) => f.dimensionKey === '')).toBe(true);
+      expect(dimensioned.every((f) => f.dimensionLabel === null)).toBe(true);
+    });
   });
 
   /**

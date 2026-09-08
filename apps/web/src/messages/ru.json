@@ -1061,7 +1061,8 @@
         "choiceRemoveShort": "Удалить",
         "choiceLoading": "Идёт поиск",
         "length": "{count, plural, one {Один символ} few {# символа} many {# символов} other {# символа}}",
-        "unnamed": "Без названия"
+        "unnamed": "Без названия",
+        "calculated": "Рассчитано"
       },
       "leave": {
         "title": "Выйти с неотправленными изменениями?",

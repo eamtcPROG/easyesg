@@ -12268,3 +12268,320 @@ The whole wizard suite, 7/7, and `pnpm gates:clean` green — 142 browser tests,
 mapped to `VALUE_COLUMN.TEXT` in `@easyesg/contracts` — the shape that still renders a field and
 only moves the column — fails the case at `inputmode`; and removing `investment.blur()` fails the
 store poll, which the reviewer reproduced independently.
+
+## Task 36.4 — B3, and the eight disclosures the extractor had been dropping · 2026-09-08
+
+B3 (UC-21, FR-24, FR-29) ships the first **breakdown axis** — one element answered for every member
+of a fixed domain — and, unplanned, the repair of a defect that had made the module unbuildable
+without anyone noticing: **B3 was serving 9 of its 17 elements**, and the eight missing ones are the
+emissions FR-34 exists to write.
+
+### The defect, and why nothing could see it
+
+EFRAG presents one hypercube — `EstimatedGreenhouseGasEmissions{Table,LineItems}` over
+`ReportingScopesAxis` — under **both** `[1100] B3 - Estimated Greenhouse Gas Emissions` and
+`[1240] C3 - Greenhouse Gas Emission Reduction Targets`. Eight reportable disclosures are therefore
+presented twice, `GrossScope1GreenhouseGasEmissions` and
+`GrossLocationBasedScope2GreenhouseGasEmissions` among them.
+
+`tools/extract-vsme-taxonomy.mjs` walked the presentation linkbase with `if (placement.has(name))
+continue` — **first role wins** — and C3's link precedes B3's in both pinned releases. So all eight
+were filed under Comprehensive alone, in `2026-02-01` and `2026-05-01` alike, since task 33.1.
+
+What that cost is not a cosmetic mis-filing:
+
+- **FR-34's acceptance criterion was unmeetable.** *"…compute Scope 1, location-based Scope 2 and
+  GHG intensity in tCO₂e, **writing the results into the B3 fields**"* — those fields did not exist
+  on B3, so task 39.2 had nowhere to land.
+- **A Basic-only report could not record its emissions at all**, D-A gating C3 behind Comprehensive.
+  That is the product's headline sentence — the root `CLAUDE.md`'s own *"calculate Scope 1 +
+  location-based Scope 2 emissions (feeds B3)"*.
+
+**And every check stayed green**, which is the part worth keeping. The extractor asserts that no
+concrete element reaches *no* presentation role, and that no reportable element resolves *no* module
+outside a catch-all; both passed, because each element reached one role and resolved one module. The
+reportable count never moved — 143 is a count of *elements*, and this was a defect in a **relation**
+recorded as a scalar. No count can detect it, and neither artefact spec named the disclosures.
+
+### How it was found, which was not by looking for it
+
+Task 36.4's spec review reported the opposite: that **B3 carries no absolute Scope 1 or Scope 2
+element**, and that UC-21 step 2, the task row and `CLAUDE.md` were therefore all wrong about the
+product. Verifying that claim against the artefact confirmed it — B3 held nine elements, four of
+them intensities, and the Scope figures sat under C3.
+
+The premise survived one more question: *does the artefact say what the package says?* It did not.
+Reading the presentation linkbase directly — rather than the file extracted from it — put the eight
+elements in both roles, in both releases. **The spec review was right that something was badly
+wrong and wrong about which artefact was lying**, and the value of the finding was entirely in
+where it pointed, not in what it concluded. §12.5.6's task-36.3 row had asked for exactly this
+posture: *do the elements render* is not *is the use case discharged*.
+
+The specification set needed no amendment. FR-34, FR-29, UC-21 and the root `CLAUDE.md` were all
+correct; only the generated data disagreed with them.
+
+### The decision: an element belongs to modules, not to a module
+
+`TaxonomyElement.module: string | null` becomes **`modules: readonly string[]`** (project owner,
+8 Sep 2026 — §12.5.6). Both artefacts regenerated: B3 goes 9 → 17 elements at `2026-05-01` and
+8 → 16 at `2026-02-01` (the one-element difference between releases is genuine and predates this),
+C3 keeps its 13, the total stays 143, and the empty list replaces `null` for the pillar catch-alls.
+
+**Rejected: a `B`-before-`C` tie-break keeping the scalar.** It is a much smaller diff, and D-A's
+*Comprehensive is additive over Basic* is a real argument rather than an invented one — but it
+discards C3's placement, which the Excel export needs, EFRAG's own template being laid out by these
+very presentation roles.
+
+`section`, `order` and `parent` stay singular, which is faithful only while an element's placements
+agree about them. All eight do, in both pins — so the extractor now **fails the run** when they do
+not, rather than letting whichever role sorts first decide. The four placements that legitimately
+disagree are the hypercube's own scaffolding (`…Table` is 9th under B3 and 3rd under C3) and the
+site axis shared by B1 and B5; none reaches the artefact, so the assertion is scoped to the
+reportable elements.
+
+The blast radius was measured before choosing, and it was small: four production readers of
+`.module` — the registry's parse and sort, and the step read's filter and module counts. The step
+read's filter becomes `modules.includes(query.module)`; **an element is counted into every module
+that presents it**, so a Comprehensive reporter filling B3 sees C3's progress move too, which is
+what the taxonomy says.
+
+**The facade forced the same choice one layer down**, which the measurement had missed:
+`tools/generate-disclosure-facade.mjs` groups `DISCLOSURES` by module, so grouping by a single one
+would have left `DISCLOSURES.cThree` silently short — the identical defect, reproduced. It emits a
+shared element under **every** group, and the generated file now reports both numbers, because the
+difference is the point: *143 disclosures as 151 accessors in 21 groups*. The emitted descriptor
+shape never carried `module` and did not change; the generator and its output did.
+
+### What was searched, not just fixed
+
+Per *"a rule is applied where it holds"*: the first-role-wins shape appears once, and the sweep for
+its **consequences** found one more — `IdentifierOfSiteTypedAxis` is presented in B1 and B5, and was
+recorded under B1 alone. The same change fixes it, and task 36.6 inherits a correct axis rather than
+a second instance of this bug. The `[member]` → `[member|abstract]` strip was widened at the three
+remaining sites carrying its shape (`extract-vsme-taxonomy.mjs`'s waste labels,
+`disclosure-label.artefact.spec.ts`, `wizard.e2e-spec.ts`); no waste label carries `[abstract]`
+today, so that one is preventive rather than corrective.
+
+### FR-29's two clauses, and what the taxonomy does and does not say
+
+The spec review's other two findings were real questions with answers neither it nor I had:
+
+**The unit — and this paragraph is the one the second spec review overturned.** Its first version
+said the package *"states no unit anywhere"*, which is false and would have gone into the register
+as a reason. The item types fix a unit **class**, but the label linkbase carries a
+**`measurementGuidance`** role on 41 elements naming the units each admits: `[utr:MWh]` on
+`TotalEnergyConsumption`, `[utr:tCO2e]` on the three Scope figures, `[utr:kg,utr:t]` on B4's
+emissions, and prose on the intensities — *numerator tCO₂e, denominator an ISO 4217 currency*. So
+UX-14's first branch, *"either fixed by the taxonomy"*, is **not** empty for B3, and task 91.1's own
+§12.5.6 row had already recorded that the linkbase carries this.
+
+**The decision survives and its reason is replaced.** B3 sets no `unit_code` because carrying
+`measurementGuidance` into the artefact and onto the field is task **91.4**'s — not because there is
+nothing to carry. What I had was a plausible reason for a correct answer, which is worse than no
+reason: it would have told 91.4 to look for something that is already there.
+
+**And 91.4 inherits a fact this check turned up.** The guidance is not total.
+`EnergyConsumptionFromFuels` and `EnergyConsumptionFromSelfGeneratedElectricity` carry **none**,
+while their own `TotalEnergyConsumption` carries `[utr:MWh]` — so two of B3's three breakdown rows
+have no unit stated anywhere in the package, and UX-14 needs an answer for them that EFRAG does not
+give.
+
+**The intensity.** EFRAG's calculation linkbase defines the sums — `Scope1 + Scope2(location) =
+TotalScope1And2` — and is **silent on all four intensity figures**. §7.2's *"derived intensity
+figures are computed, not typed"* is therefore the platform's own rule with no taxonomy backing,
+and it is not orphaned: FR-29 requires it, FR-34 names the computation, UC-33 is the flow, task
+**39.2** is the row. What 39.2 inherits is a divisor no source names —
+`ghgEmissionsPerMonetaryItemType` says only that it is monetary.
+
+### The module itself
+
+**The breakdown, and why it is configuration.** `disclosure-axis-shape.vsme.json` registers which
+explicit axes a reporter answers for every member. EFRAG's package does not distinguish a
+**breakdown** (B3's energy: total, renewable, non-renewable — fill all three) from a
+**classification** (B4's 94 pollutants, B7's 973 waste categories — pick from these), and rendering
+them alike is wrong in both directions. Member count is an invented threshold and reading the
+default member's English words is not a rule, so it is data: per axis, reviewable, effective-dated,
+no redeploy. `AxisShapeService` **fails closed**, reversing `ApplicabilityRulesService`'s direction
+on purpose — a lost applicability rule must leave a disclosure visible, a lost axis shape that
+guessed *expand* would put 973 rows on a screen.
+
+`ReportingScopesAxis` is the omission worth understanding rather than the one to fix. Its members
+are `BaselineYearMember`, `TargetYearMember`, `CurrentlyStatedMember` — *which year's figure*, not
+which scope, despite the name. On B3 the reporter states the current figure, which is the axis's own
+default member, so one undimensioned row is correct and the fail-closed default happens to agree
+with a decision rather than covering for a missing one.
+
+**The labels were not there.** 355 axis members had never been asked for, because nothing had
+rendered the second kind of member before: the catalogue went 80 → **181** entries per locale per
+version. A group naming its rows from the member key would print `RenewableEnergyMember` at a
+reporter. Two exclusions cover the axes whose members belong to somebody else, and they are
+different facts — `domainTaxonomy` is B7's separately-versioned EU List of Waste; `memberTaxonomy`
+is `CountryOfEmploymentContractAxis`, whose 256 members are XBRL International's country codes and
+whose names are `Intl`'s to give, not EFRAG's (task 36.9's problem).
+
+**Provenance ships before its producer.** `report_disclosure_value.origin` is added with all three
+members declared and only `reported` reachable, because a `CHECK` is frozen history the day it
+ships. It sits on the **read** shape and deliberately not on the write shape: the compiler showed
+every caller would have to supply a value only tasks 39.2 and 38.5 can decide. `overridden` is not
+marked on the field — UX-43 wants the superseded value beside the substituted one with a reason,
+which is a component and 38.5's.
+
+### Two defects in my own diff, from the first pair of reviews
+
+**`null` and `undefined` collapsed through `??`.** `label={named ?? field.label ?? …}` could not
+tell *a member with no label* from *not a breakdown row*, so an unnamed member rendered the
+**element** name — N identically-named rows, which this task's own test comment says must not
+happen. The three-way branch is explicit now.
+
+**`markerFor` grew two adjacent `string` parameters** — `carriedLabel, calculatedLabel` — which is
+the swap hazard the root `CLAUDE.md` names verbatim: swapped, it compiles and every calculated
+figure reads *carried forward*. They are one named object. `DISCLOSURE_ORIGIN`'s default moved to
+`DEFAULT_DISCLOSURE_ORIGIN` beside the vocabulary, rather than `?? DISCLOSURE_ORIGIN.REPORTED` at
+the call site — a second place the column's `DEFAULT` was true, and the one that drifts when 39.2
+makes `CALCULATED` reachable.
+
+### Reviews
+
+All three ran. `spec-review` and `convention-review` went first on **`sonnet`**, before the module
+defect was known; the re-run of both after it, plus `gate-integrity-review`, was routed to
+**`opus`** from the diff per the routing table — a migration, the contract surface and ≥3
+workspaces, three of its five triggers. `gate-integrity-review` ran **alone**, after the gates and
+after the other two had returned, because it executes suites and mutates the working tree.
+
+The first spec review is the one that earned its cost, and not by being right. Its heaviest finding
+was wrong in its conclusion and correct in its aim; two of its remaining three were real questions
+whose answers are recorded above.
+
+Its citation findings split, and I got one of the two backwards. **UX-42 for UX-12 was real** and is
+corrected at three sites: UX-42 is the *calculator's results screen* — derivation in one step, naming
+the factor set version — while UX-12 governs a disclosure field, *"where a value is derived elsewhere
+(B3 from the calculator), the field shall show its provenance and a route to the source"*.
+
+**FR-72 was real too, and this entry's first version argued that it was not.** I quoted the
+requirement — *"maintain conditional-applicability **thresholds** as configuration rather than
+code"* — and then concluded it therefore covered an axis shape, which is neither a threshold nor an
+applicability condition but a decision about how an applicable field is *drawn*. AD-4's own artefact
+table settles it: FR-72 sits on one row, *conditional-applicability thresholds (≥50 turnover, ≥150
+pay gap)*. The property being claimed — data, published, no redeploy — is **DR-3**'s and **AD-4**'s,
+both already cited beside it, so the citation was not even load-bearing. Removed from five sites.
+
+That failure is worth more than the fix. A quoted requirement that does not say what the sentence
+around it needs is harder to catch than an unquoted one, because the quote reads as the check having
+already happened — and the second review caught it by asking what AD-4's table pins FR-72 to,
+which is the question the first version of this paragraph should have asked itself.
+
+Three further citation defects came out of the same pass: the origin row cited **FR-30** (the
+nil-return requirement) where **FR-36** — *"flagging and attributing the override and retaining the
+superseded computed value"* — is what `overridden` exists for; the FR-29 row wrote **§7.2**
+unqualified in `architecture.md`, whose own §7.2 is *The reporting core*, when the quoted sentence
+is `design_spec.md` §7.2's; and `MemberResolver` credited **UC-21** with an ordering it does not
+state — step 1 names the split and no total, so the default member leading is the default member's
+own semantics and nothing else.
+
+**`gate-integrity-review` found five checks that would not fail on their subject, and it proved
+each by breaking the thing and watching them pass.** It is the review that paid best here, and four
+of the five are mine claiming coverage I had not written.
+
+- **The e2e guard was blind to the arm the defect actually breaks.** Its own comment said *"a
+  regression to `===` fails here"*. It does not: `modules` is sorted, so a B3/C3 element's first
+  module is always `B3`, and `modules[0] === query.module` serves the B3 step correctly while
+  emptying C3's of all eight. The scalar's damage was always on the **second** module — that is the
+  whole shape of the defect — and there was no C3 assertion anywhere in the repository. The case
+  reads C3 now.
+- **The artefact guard named three of the eight repaired elements.** Setting the other five back to
+  `['C3']` in both artefacts left 664 hermetic tests green — the original defect, on five of the
+  eight elements it was raised for. It asserts the whole **set** per version now, which is
+  `APP_IMMUTABLE_COLUMNS`'s rule in another schema: declare the set so *omission* fails, never a
+  sample so only the named ones do.
+- **The layout half had no hermetic coverage at all**, while the browser case's docblock claimed
+  `step-layout.spec.ts` held it. Deleting the entire breakdown branch from `layOutStep` left
+  301/301 green; so did reverting `reorderRows`'s guard. Both fail two cases now.
+- **One case had become a claim about a shape no server produces.** *"never groups a fixed member
+  axis, however many elements share it"* was written before breakdowns existed and now asserted the
+  opposite of what ships — green forever, and worse than dead, because a reader takes it as the
+  rule. Retitled to what it actually pins: several elements sharing an axis are not one *repeating*
+  group.
+- **`origin` was guarded everywhere except where it matters.** The grant, the response member and
+  the contract hold are all proven. But removing `origin` from the store's `VALUE_COLUMNS` left
+  typecheck and 63 e2e cases green — `row.origin` becomes `undefined`, the `?? DEFAULT` recovers
+  `'reported'`, and the seam silently stops conducting. Nothing wrote a non-default origin, so
+  nothing could tell. The migration's own `GRANT UPDATE (origin)` is what makes one reachable: the
+  new case stores a value, moves its origin to `calculated` the way 39.2 will, and reads the step
+  back. **The column's whole justification is being that seam, so the seam had to be shown to
+  conduct.**
+
+One more it raised honestly as a one-directional guard: the axis-member labels were checked for
+*staleness* and not for *absence* — deleting `RenewableEnergyMember` from all three catalogues left
+every gate green. That is harmless today and stops being harmless at task 36.5, where
+`TypeOfPollutantAxis` renders 94 columns and a dropped label draws 94 rows reading nothing, because
+`MISSING_MESSAGE` renders empty by design. Both directions are covered now, and the new case reads
+the axes off the **artefact** rather than through the port, so it uses the extractor's own two
+exclusions rather than a second copy of them.
+
+**Every one of these was proven by mutation, and so were the fixes.** The review also verified the
+three mutation claims this entry already made, and reproduced their exact failure counts.
+
+**The convention review's heaviest finding was a gate that was never copied.** `AxisShapeService`
+is `ApplicabilityRulesService`'s shape — validated never cast, cached per revision, failing to a
+conservative answer with a loud line — and that design is only safe under this repository's own
+rule: *"a fail-soft design is only safe when a gate reads the log"*. The sibling carries
+`applicability-rules.service.spec.ts` with a `describe('the shipped rules, against the shipped
+taxonomy versions')` that reads `readSeedEntries()` and holds every key the artefact names against
+every registered version. I copied the shape and not the gate.
+
+`axis-shape.service.spec.ts` now mirrors it in both halves, and the second half is the one that
+matters: `disclosure-axis-shape.vsme.json` names an axis key **EFRAG owns**, so a rename at a
+release or a typo on a republish registers nothing — and the failure is silent *by design*, because
+an unregistered axis is exactly the single undimensioned row every module had before this task. B3
+would quietly return to three fields where the standard asks for nine, with every other gate green.
+Proven to bite by mutation, both ways: renaming the axis in the artefact fails two cases, and
+emptying `breakdown` to `[]` fails one — the case that exists so the whole block cannot pass
+vacuously.
+
+**Four docblocks had come loose from their declarations**, which is the insertion form of the
+codemod hazard this repository already records. The expensive one was in
+`disclosure-value.model.ts`: `DISCLOSURE_STATE`'s block — ending *"Mirrors
+`report_disclosure_value_state_known` in the migration, which is the database's own copy"* — had
+been pushed onto `DISCLOSURE_ORIGIN`, so the sentence that **is** the hand-pairing mechanism
+between an `as const` and its `CHECK` was naming the wrong constraint. The others displaced
+`OptionResolver`'s block onto `MemberResolver`, FR-28's `describe` block onto the breakdown one, and
+`descend`'s onto `descendNodes`. A fifth of the same act: this task's own addition to
+`apps/api/CLAUDE.md` made *"Four things about it that are load-bearing"* introduce five.
+
+**And the B3 browser case claimed a property it could not see.** Its comment said *"the member is
+stored, not just displayed: a breakdown that wrote every row to the undimensioned key would look
+right and hold one"*, and it asserted only that the save indicator read *Salvat* — true whichever
+key was written. The cause was in the helper: `disclosureValueOf` hardcoded `dimension_key = ''`, so
+no browser case could reach a member row at all. It takes an optional `dimensionKey` now, and the
+case asserts both halves — the member row holds 120, **and** the undimensioned row does not exist.
+Without that second line the case passed on precisely the defect it names.
+
+**AD-4's artefact table gained the row it should have had in the same change** — the store's
+contents are enumerated there, one row per artefact with its requirement and whether it is
+effective-dated, and `disclosure_axis_shape` was cited to AD-4 four times without appearing in it.
+`config/seed/README.md` gained its row for the same reason.
+
+### Verified
+
+`pnpm gates:clean` green, run with nothing else on the machine: **666** api unit, **303** web unit,
+**819** api e2e, **143** browser, plus the worker suite and the four package suites. The counts moved
+exactly where guards were added — `axis-shape.service.spec.ts` and the widened label case in the api,
+the two breakdown layout cases in the web, the C3 arm and the `origin` round-trip in the e2e.
+
+Proven to bite, by mutation, each restored afterwards: reverting one shared element to `['C3']` fails
+the artefact guard; reverting **five** used to leave 664 green and now fails it; renaming the axis in
+`disclosure-axis-shape.vsme.json` fails two axis-shape cases and emptying `breakdown` fails one;
+deleting the breakdown branch from `layOutStep` and reverting `reorderRows`'s guard each fail two
+layout cases where both left 301/301 green; deleting `RenewableEnergyMember` from all three
+catalogues fails the widened label case; `REVOKE UPDATE (origin)` fails the schema invariants; a
+fourth `DISCLOSURE_ORIGIN` member fails the contract hold; and the generator emitting only
+`modules[0]` fails the facade's reachability case.
+
+**One gate run went red on `POST /periods/:id/lock` admitting a stranger, and it was the concurrency
+shape this repository has already diagnosed** — a review agent was still sweeping the filesystem
+while `gates:clean` held the Compose stack. Recorded rather than waved away, because it is now the
+second sighting: `route-matrix` alone is **289/289 in 5.5 s**, and the whole set is green with
+nothing else running. The failure has never once been reproducible in isolation, which is the
+property that makes it worth naming every time it appears.
+
+

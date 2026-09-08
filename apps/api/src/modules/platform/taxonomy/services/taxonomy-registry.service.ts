@@ -200,9 +200,9 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
       }
       read.push({
         key: elementKey,
-        // `null` is the artefact's own answer for the standard's three pillar-level catch-alls, so
-        // an absent module is read as that rather than as an unreadable row.
-        module: typeof value.module === 'string' ? value.module : null,
+        // An empty list is the artefact's own answer for the standard's pillar-level catch-alls, so
+        // an absent placement is read as that rather than as an unreadable row.
+        modules: isStringArray(value.modules) ? value.modules : [],
         section: typeof value.section === 'string' ? value.section : '',
         order: typeof value.order === 'number' ? value.order : 0,
         parent: typeof value.parent === 'string' ? value.parent : null,
@@ -222,12 +222,16 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
     }
 
     // The standard's own order: module as `modules` lists it, then presentation order within the
-    // section. An unmoduled element sorts last rather than first, which is where the three
-    // pillar-level catch-alls belong — `indexOf` answering -1 would put them ahead of B1.
-    const moduleRank = (module: string | null): number =>
-      module === null ? modules.length : modules.indexOf(module);
+    // section. An unmoduled element sorts last rather than first, which is where the pillar-level
+    // catch-alls belong — `indexOf` answering -1 would put them ahead of B1.
+    //
+    // **An element in two modules sorts by its first**, which is the module `section` and `order`
+    // describe (task 36.4). The eight B3/C3 disclosures therefore sort inside B3; C3's step selects
+    // them by membership and orders them by the same `order`, which is the value both roles state.
+    const moduleRank = (of: readonly string[]): number =>
+      of.length === 0 ? modules.length : modules.indexOf(of[0]);
     return read.sort(
-      (a, b) => moduleRank(a.module) - moduleRank(b.module) || a.order - b.order,
+      (a, b) => moduleRank(a.modules) - moduleRank(b.modules) || a.order - b.order,
     );
   }
 

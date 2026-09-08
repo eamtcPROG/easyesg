@@ -221,7 +221,7 @@ describe('the pinned names, against the shipped artefacts', () => {
 
     for (const key of Object.values(B1_ELEMENT)) {
       const element = taxonomy.elements.find((candidate) => candidate.key === key);
-      expect({ key, module: element?.module }).toEqual({ key, module: 'B1' });
+      expect({ key, modules: element?.modules }).toEqual({ key, modules: ['B1'] });
     }
 
     const memberKeys = (domain: string): readonly string[] =>

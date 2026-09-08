@@ -53,12 +53,25 @@ export interface TaxonomyElement {
   /** The VSME XBRL element local name — the value of `report_disclosure_value.element_key` (AD-3). */
   readonly key: string;
   /**
-   * `B1` … `B11`, `C1` … `C9`, or **`null`** for the standard's three pillar-level catch-all
-   * disclosures, which belong to Environment / Social / Governance rather than to a numbered
-   * module. Null is a real answer here, not a missing one.
+   * Every module this element is presented in — `B1` … `B11`, `C1` … `C9` — in the standard's own
+   * order, and **empty** for the pillar-level catch-all disclosures, which belong to Environment /
+   * Social / Governance rather than to a numbered module. Empty is a real answer, not a missing one.
+   *
+   * **A list rather than a value, because EFRAG presents eight disclosures in two modules at once**
+   * (task 36.4). `GrossScope1GreenhouseGasEmissions` and its seven neighbours are one shared
+   * hypercube shown under both `[1100] B3` and `[1240] C3`; recorded as a scalar, whichever role
+   * the linkbase happened to list first took the element, and B3 lost eight of its seventeen with
+   * every assertion still green. FR-34 names these as B3 fields, so the scalar was not a simpler
+   * model of the same fact — it was the wrong fact.
+   *
+   * A reader asking "is this element on that step" asks `modules.includes(…)`, never `[0]`.
    */
-  readonly module: string | null;
-  /** EFRAG's own words for the presentation role, e.g. `[1090] B3 - Environment - …`. */
+  readonly modules: readonly string[];
+  /**
+   * EFRAG's own words for the presentation role, e.g. `[1090] B3 - Environment - …`. Where an
+   * element is presented in several modules this is the role in `modules[0]` — the first in the
+   * standard's order, so B3's rather than C3's, and deterministic rather than file-ordered.
+   */
   readonly section: string;
   /** Order within the section, as the standard presents it. */
   readonly order: number;
