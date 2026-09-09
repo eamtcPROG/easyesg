@@ -630,7 +630,15 @@ function StepField({
       // `undefined`, which only the caller can decide. There is something to render when the
       // standard states a unit AND either one is in force or there is still a choice to offer.
       unit={
-        field.unitCodes.length > 0 && (unit !== null || (!readOnly && field.unitCodes.length > 1)) ? (
+        // **The filing's currency, on a monetary field** (task 36.12). It takes UX-14's *fixed by
+        // the taxonomy* branch — shown, never asked — because it is fixed by the **filing** rather
+        // than chosen here: EFRAG's template carries one currency per workbook and `core.report`
+        // pins it, so a chooser would offer a decision this screen does not own. Rendered as the
+        // code itself, which is the reference a reader can cite (ISO 4217), never a symbol: `L`
+        // reads as several currencies and `€` as none of Moldova's.
+        field.currency !== null ? (
+          <span className={styles.unit}>{field.currency}</span>
+        ) : field.unitCodes.length > 0 && (unit !== null || (!readOnly && field.unitCodes.length > 1)) ? (
           <FieldUnit
             admitted={field.unitCodes}
             chosen={unit}

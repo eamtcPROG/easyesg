@@ -238,6 +238,16 @@ export interface DisclosureField {
    * Distinct from `unitCode` beside it, which is what a stored row *holds*: this is what it may.
    */
   readonly unitCodes: readonly string[];
+  /**
+   * The filing's currency, for a `monetary` element; `null` for every other kind (task 36.12).
+   *
+   * **Deliberately not folded into `unitCodes` above**, which task 91.4 measured as *the units the
+   * standard admits* — `measurementGuidance` reaches 42 elements and no monetary one, so an empty
+   * `unitCodes` on a monetary field is EFRAG saying nothing, and putting a currency there would make
+   * that measurement false. A currency is the **filing's** answer, not the standard's, and the two
+   * are different facts that happen to render in the same slot.
+   */
+  readonly currency: string | null;
   readonly state: DisclosureState;
   /** FR-32's reason, required exactly when the state is `not_available`. */
   readonly notAvailableReason: string | null;

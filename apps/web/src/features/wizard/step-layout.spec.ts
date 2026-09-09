@@ -22,6 +22,8 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,
   ordinal: 0,
+  // Null for every kind but `monetary`, which is every field this spec builds (task 36.12).
+  currency: null,
   kind: DISCLOSURE_KIND.TEXT,
   periodType: 'instant',
   axes: [],

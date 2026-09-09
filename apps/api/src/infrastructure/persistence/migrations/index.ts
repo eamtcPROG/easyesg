@@ -33,6 +33,7 @@ import { SessionPersistence1789516800000 } from './1789516800000-session-persist
 import { ProviderIdentityUnlink1788393600000 } from './1788393600000-provider-identity-unlink';
 import { DisclosureValueOrigin1789603200000 } from './1789603200000-disclosure-value-origin';
 import { ReportDerivationInput1789689600000 } from './1789689600000-report-derivation-input';
+import { ReportCurrency1789776000000 } from './1789776000000-report-currency';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -84,4 +85,5 @@ export const migrations = [
   SessionPersistence1789516800000,
   DisclosureValueOrigin1789603200000,
   ReportDerivationInput1789689600000,
+  ReportCurrency1789776000000,
 ];

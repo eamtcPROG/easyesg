@@ -27,6 +27,7 @@ interface ReportRow {
   scope: ReportScope;
   status: ReportStatus;
   template_version: string;
+  reporting_currency: string;
   taxonomy_version: string;
   created_at: Date;
   updated_at: Date;
@@ -51,7 +52,7 @@ interface ReportRow {
  * answering the same shape.
  */
 const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status,
-        r.template_version, r.taxonomy_version, r.created_at, r.updated_at,
+        r.template_version, r.taxonomy_version, r.reporting_currency, r.created_at, r.updated_at,
         p.reporting_entity_id, e.name AS entity_name, p.fiscal_year,
         p.period_start::text AS period_start, p.period_start_tz,
         p.period_end::text   AS period_end,   p.period_end_tz,
@@ -80,6 +81,7 @@ const toReport = (row: ReportRow): Report => ({
   scope: row.scope,
   status: row.status,
   templateVersion: row.template_version,
+  reportingCurrency: row.reporting_currency,
   taxonomyVersion: row.taxonomy_version,
   createdAt: row.created_at,
   updatedAt: row.updated_at,

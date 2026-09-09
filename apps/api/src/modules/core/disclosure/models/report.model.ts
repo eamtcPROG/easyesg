@@ -106,6 +106,19 @@ export interface Report {
    */
   readonly templateVersion: string;
   readonly taxonomyVersion: string;
+  /**
+   * The currency this filing's monetary disclosures are stated in — ISO 4217 alpha-3 (task 36.12).
+   *
+   * **On the report because EFRAG's template carries one per workbook**, not one per figure: four
+   * Basic elements are monetary (B1's `Assets` and `Turnover`, B2's financial investment, B11's
+   * fines) and a currency per value would be finer than the standard's own model, and would let one
+   * filing mix currencies with nothing objecting.
+   *
+   * **Pinned like the two versions above and by the same mechanism**: `esg_app` holds no `UPDATE`
+   * privilege on the column, so nothing in the request tier can move it. A filing whose currency
+   * changed after values were stored would reinterpret every monetary figure already in it.
+   */
+  readonly reportingCurrency: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
   /** Resolved by join on every read. See `ReportSubject`. */

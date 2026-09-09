@@ -413,6 +413,13 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     'created_at',
     'id',
     'organization_id',
+    // The currency a filing's monetary disclosures are stated in (task 36.12). Withheld for the
+    // pins' reason rather than by analogy: EFRAG's template carries one currency for the whole
+    // workbook, so it is a property of the filing, and a filing whose currency moved after values
+    // were stored would reinterpret every monetary figure already in it. Granting `UPDATE` is what
+    // the task making it choosable will do; until then a per-report choice is, in task 30.2's own
+    // words, "an abstraction with one member".
+    'reporting_currency',
     'reporting_period_id',
     // DR-4's pin. The two this table exists to protect.
     'taxonomy_version',

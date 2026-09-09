@@ -355,6 +355,19 @@ export class DisclosureFieldDto {
   })
   readonly unitCodes: string[];
 
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: 'MDL',
+    description:
+      'The filing’s currency for a monetary element, ISO 4217 alpha-3; null for every other kind ' +
+      '(task 36.12). **Not folded into `unitCodes`**, which is what the *standard* admits — ' +
+      '`measurementGuidance` reaches no monetary element, so an empty list there is EFRAG saying ' +
+      'nothing, and a currency in it would make that measurement false. One per filing, as EFRAG’s ' +
+      'own template carries it.',
+  })
+  readonly currency: string | null;
+
   @ApiProperty({ enum: STATES })
   readonly state: DisclosureState;
 
@@ -401,6 +414,7 @@ export class DisclosureFieldDto {
     this.valueDate = field.valueDate;
     this.unitCode = field.unitCode;
     this.unitCodes = [...field.unitCodes];
+    this.currency = field.currency;
     this.state = field.state;
     this.notAvailableReason = field.notAvailableReason;
     this.carriedForward = field.carriedForward;

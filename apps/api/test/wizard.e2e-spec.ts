@@ -65,6 +65,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     dimensionKey: string; dimensionLabel: string | null; origin: string;
     valueText: string | null; valueNumeric: string | null; state: string; carriedForward: boolean;
     unitCode: string | null; unitCodes: string[];
+    /** The filing's currency on a monetary element; null on every other kind (task 36.12). */
+    currency: string | null;
     help: string | null;
     options: { value: string; label: string | null; code: string | null }[] | null;
     defaultValue: {
@@ -1623,6 +1625,65 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       // it into an answer, which is what makes it visible in the audit trail as an answer at all.
       expect(wage?.defaultValue).toMatchObject({ valueBoolean: true });
       expect(wage?.state).toBe(DISCLOSURE_STATE.MISSING);
+    });
+
+    it('states B11’s fine in the filing’s currency, and its count in none (UC-29, task 36.12)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const step = await readStep(reportId, 'B11');
+      const fine = field(step, 'TotalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws');
+      const convictions = field(
+        step,
+        'TotalNumberOfConvictionsForTheViolationOfAntiCorruptionAndAntiBriberyLaws',
+      );
+      expect(fine?.currency).toBe('MDL');
+      // A count has no currency, and answering one would be as wrong as answering none on the fine.
+      expect(convictions?.currency).toBeNull();
+      // And `unitCodes` stays empty: task 91.4 measured that `measurementGuidance` reaches no
+      // monetary element, so the currency is served beside that measurement rather than inside it.
+      expect(fine?.unitCodes).toEqual([]);
+    });
+
+    it('gives the same currency to B1’s and B2’s monetary fields, which shipped without one', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      // The three Basic monetary elements that shipped before task 36.12, on task 30.2's premise
+      // that none existed. Asserted together because the defect was that nobody had counted them.
+      expect(field(await readStep(reportId, 'B1'), 'Turnover')?.currency).toBe('MDL');
+      expect(field(await readStep(reportId, 'B1'), 'Assets')?.currency).toBe('MDL');
+      expect(
+        field(await readStep(reportId, 'B2'), 'FinancialInvestmentInTheCapitalOrAssetsOfSocialEconomyEntities')
+          ?.currency,
+      ).toBe('MDL');
+    });
+
+    it('records B11’s zeros as nil returns — absence as a positive statement (UC-29, FR-30)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await put(reportId, [
+        {
+          elementKey: 'TotalNumberOfConvictionsForTheViolationOfAntiCorruptionAndAntiBriberyLaws',
+          valueNumeric: '0',
+          state: DISCLOSURE_STATE.OK,
+        },
+        {
+          elementKey: 'TotalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws',
+          valueNumeric: '0',
+          state: DISCLOSURE_STATE.OK,
+        },
+      ]);
+      const step = await readStep(reportId, 'B11');
+      // *No convictions and no fines* is the disclosure B11 exists to make. Both must read as
+      // answered, not as a module nobody opened — which is the whole of UC-29's business rule.
+      for (const key of [
+        'TotalNumberOfConvictionsForTheViolationOfAntiCorruptionAndAntiBriberyLaws',
+        'TotalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws',
+      ]) {
+        expect(field(step, key)?.state).toBe(DISCLOSURE_STATE.NIL_RETURN);
+      }
+      // And the module says two answered rather than none outstanding — the progress count is where
+      // a nil return either is an answer or silently is not.
+      const modules = objectsOf<ModuleSummary>(
+        (await http().get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body,
+      );
+      expect(modules.find((m) => m.module === 'B11')?.answered).toBe(2);
     });
 
     it('stops being a nil return when the zero is edited up (FR-30, both directions)', async () => {

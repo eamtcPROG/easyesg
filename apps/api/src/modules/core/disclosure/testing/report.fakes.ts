@@ -38,6 +38,9 @@ export const aReport = (overrides: Partial<Report> = {}): Report => ({
   reportingPeriodId: '00000000-0000-0000-0000-0000000000c1',
   scope: REPORT_SCOPE.BASIC,
   status: REPORT_STATUS.OPEN,
+  // The column's own DEFAULT, mirrored rather than invented: a fake that disagreed with the schema
+  // would make every monetary field's currency a property of the test rather than of the filing.
+  reportingCurrency: 'MDL',
   templateVersion: REGISTERED_VERSION,
   taxonomyVersion: REGISTERED_VERSION,
   createdAt: new Date('2026-08-01T00:00:00.000Z'),

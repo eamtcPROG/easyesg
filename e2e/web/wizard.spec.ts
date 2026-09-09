@@ -1294,3 +1294,60 @@ test('B10 derives the pay gap and the bargaining share, and pre-answers the wage
     )
     .toBeCloseTo(0.15, 6);
 });
+
+/**
+ * B11, where an empty field and a stated zero mean opposite things (UC-29, FR-30) — and where the
+ * currency question that four Basic disclosures had been carrying finally had to be answered.
+ *
+ * The nil return is FR-30's, built in task 36.10 and *reaching a reader* here: B11 is the module
+ * whose whole content is an absence, so *no convictions, no fines* has to read as a disclosure
+ * rather than as a module nobody opened. The currency is task 36.12's: the fine is monetary, and a
+ * monetary figure with no unit is not a filing-grade fact.
+ */
+test('B11 states a nil return as an answer, and its fine in the filing’s currency (UC-29)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b11');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B11`);
+  const convictions = 'Numărul total de condamnări pentru încălcarea legislației anticorupție și antimită';
+  const fines = 'Valoarea totală a amenzilor pentru încălcarea legislației anticorupție și antimită';
+
+  // **The currency, in UX-14's unit slot** — shown and never asked, because it is fixed by the
+  // filing rather than chosen on this screen. `MDL` as the ISO 4217 code rather than a symbol: `L`
+  // reads as several currencies and none of them unambiguously Moldova's.
+  const fineGroup = page.getByRole('group', { name: fines });
+  await expect(fineGroup).toContainText('MDL');
+  // The count beside it carries none, which is the half a single-field assertion would miss.
+  await expect(page.getByRole('group', { name: convictions })).not.toContainText('MDL');
+
+  // Zero on both — the disclosure B11 exists to make.
+  const count = page.getByRole('group', { name: convictions }).getByRole('textbox');
+  await count.fill('0');
+  await count.blur();
+  const amount = fineGroup.getByRole('textbox');
+  await amount.fill('0');
+  await amount.blur();
+
+  for (const elementKey of [
+    'TotalNumberOfConvictionsForTheViolationOfAntiCorruptionAndAntiBriberyLaws',
+    'TotalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws',
+  ]) {
+    await expect
+      .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey }))?.state, {
+        timeout: 15_000,
+      })
+      .toBe('nil_return');
+  }
+
+  // **And the reporter is told it counts.** A nil return that reads as outstanding on the rail is a
+  // reporter being asked again for an answer they have given — the distinction UC-29 turns on, and
+  // the one only a browser can show.
+  await page.reload();
+  await expect(fineGroup.getByRole('textbox')).toHaveValue('0');
+
+  // B1's turnover carries the same currency, which is the shipped field task 30.2's premise missed.
+  await page.goto(`/reports/${reportId}/B1`);
+  await expect(page.getByRole('group', { name: 'Cifra de afaceri' })).toContainText('MDL');
+});

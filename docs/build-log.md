@@ -13875,3 +13875,89 @@ applied, run, and reverted.
 
 Both review agents ran on **`opus`**, per the pin. Task 36's parent close still owes
 `pnpm gates:clean` and the three agents over the whole diff.
+
+## Task 36.12 — B11, and a decision I reopened without knowing it was closed · 2026-09-09
+
+B11 is two elements — convictions and fines — and its stated deliverable was already met: FR-30's
+nil return shipped with task 36.10, and B11's zeros read as answers without a line of new code. What
+the row could not predict is that its fine is the **fourth Basic-module monetary disclosure**, and
+the one that made a long-deferred question unavoidable.
+
+### The process failure first, because it is the more useful record
+
+I put the reporting-currency question to the project owner as though it were open. **It was not.**
+`architecture.md` §12.5.6 has carried a decision on it since 29 Aug, corrected on 7 Sep by task 36.3
+— which had already found the same false premise and named the same four elements I "discovered" —
+and which ends:
+
+> **Declined:** adding the column now on P-11 grounds, since P-11 orders what is expensive to
+> retrofit and does not license a field no FR, UC or NFR asks for.
+
+So the owner answered a question whose standing answer I had not shown them, and the first thing
+they were told about it was wrong.
+
+**The mechanism is worth more than the apology.** I searched `architecture.md` for `currency` and
+piped it through `grep -iv "billing|invoice|plan|price|payment"` to strip the billing context. That
+row contains *billing*, *prices* and *BNM rate* — it argues from them. **The filter I wrote to
+remove noise removed the one row that answered the question**, and a clean search result reads
+exactly like an absent record. The lesson is narrow and mechanical: an exclusion filter over a
+document set is a claim that what it removes cannot be relevant, and here that claim was false in
+the most direct way possible — the row discussed billing *because* it was distinguishing billing's
+currencies from a disclosure's.
+
+Put back to the owner with the standing decision in front of them, the answer was to **keep the
+change and supersede the row**, and both of its supports had in fact gone: the deadline it set was
+*task 31, cheap while no report exists*, which had passed; and its P-11 declination rested on *a
+field no FR, UC or NFR asks for*, which B11 changes — a monetary fact reached a reporter, and XBRL
+admits none without an ISO 4217 unit, so task 46 would have met three shipped disclosures it could
+not emit. What has **not** happened is that row's own trigger, a non-resident filer.
+
+### What shipped
+
+`core.report.reporting_currency`, ISO 4217 alpha-3, `NOT NULL DEFAULT 'MDL'` — **the shape the
+superseded row itself prescribed**, *"a pin on the report beside its template and taxonomy versions
+(DR-4)"*.
+
+- **On the report, not the value.** EFRAG's template carries one `template_currency` per workbook. A
+  currency per disclosure is finer than the standard's own model and would let one filing mix
+  currencies with nothing objecting.
+- **No `UPDATE` grant**, which is task 31.3's mechanism for the version pins. A filing whose
+  currency moved after values were stored would silently reinterpret every monetary figure in it.
+  The absence of a grant is the decision, not an omission: a per-report *choice* is still what task
+  30.2 correctly called *"an abstraction with one member"*, so what ships is the seam.
+- **The `CHECK` is a shape, `^[A-Z]{3}$`, not a list of codes.** Live currencies are data that
+  changes when one is introduced or withdrawn, and a `CHECK` is frozen history the day it ships —
+  `element_key`'s own argument for carrying no key into a taxonomy table.
+- **Served as `DisclosureField.currency`, never folded into `unitCodes`.** That would have made task
+  91.4's measurement false: `measurementGuidance` reaches no monetary element, so an empty
+  `unitCodes` on B11's fine is *EFRAG saying nothing*, and a currency there would be this platform's
+  answer wearing the standard's label. They render in one slot and are two different facts.
+- **Shown, never asked** — UX-14's first branch, because it is fixed by the *filing* rather than
+  chosen on the step. As the code and not a symbol: `L` reads as several currencies and none of them
+  unambiguously Moldova's.
+
+### The gate that made the decision explicit
+
+`schema-invariants` refused the migration until `reporting_currency` was **declared** in the list of
+columns withheld from `esg_app` — the same shape as task 36.10's audit classification. The trigger
+was already right; the invariant wanted the decision on record. It also caught the declaration being
+out of alphabetical order, and then caught a bad edit of mine that dropped `reporting_period_id`
+while fixing the order.
+
+### And the gating question, for the sixth time
+
+EFRAG's B11 block opens with *"has the undertaking incurred in convictions and fines in the reporting
+period?"* — no taxonomy element, after B2's, B4's, B6's, B7's and B8's. The platform does not gate on
+it, and the reason is stronger here than anywhere: with FR-30, answering **0** says *none*
+affirmatively, where EFRAG's *No* leaves two empty cells that say nothing at all. B11 is the module
+whose entire content is an absence, and it is the one where the nil return earns its keep.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm --filter @easyesg/api test` (697), `pnpm --filter @easyesg/web
+test` (318), `pnpm e2e` (858, of which 3 written here), `pnpm openapi:check`, `pnpm docs:check`,
+`pnpm migrations:check` (56 invariants, apply/revert/re-apply), and `pnpm e2e:web --project identity
+--project expansion`.
+
+Both review agents ran on **`opus`**, per the pin. Task 36's parent close still owes
+`pnpm gates:clean` and the three agents over the whole diff — with 36.13 and 36.14 outstanding.

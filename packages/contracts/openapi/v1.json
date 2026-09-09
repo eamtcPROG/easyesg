@@ -5204,6 +5204,12 @@
               "type": "string"
             }
           },
+          "currency": {
+            "type": "string",
+            "nullable": true,
+            "example": "MDL",
+            "description": "The filing’s currency for a monetary element, ISO 4217 alpha-3; null for every other kind (task 36.12). **Not folded into `unitCodes`**, which is what the *standard* admits — `measurementGuidance` reaches no monetary element, so an empty list there is EFRAG saying nothing, and a currency in it would make that measurement false. One per filing, as EFRAG’s own template carries it."
+          },
           "state": {
             "type": "string",
             "enum": [
@@ -5262,6 +5268,7 @@
           "valueDate",
           "unitCode",
           "unitCodes",
+          "currency",
           "state",
           "notAvailableReason",
           "carriedForward",

@@ -858,8 +858,10 @@ their numbers put them.
 - **Preconditions:** An editable report session.
 - **Trigger:** The Contributor reaches the B11 step.
 - **Main success scenario:**
-  1. The Contributor reports the number of convictions and the total value of fines for corruption and bribery during the reporting period.
-- **Business rules:** As with B9, a nil return is an affirmative disclosure and is recorded as such.
+  1. The Contributor reports the number of convictions and the total value of fines for corruption and bribery during the reporting period. **The fine is stated in the filing's own currency**, which the report carries and the step shows beside the field.
+- **Business rules:** As with B9, a nil return is an affirmative disclosure and is recorded as such — and B11 is the module where that matters most, its whole content being an absence: *no convictions and no fines* must reach a reader as something the undertaking stated, not as a module nobody opened.
+- **Amended 9 Sep 2026 (project owner, task 36.12).** Step 1 named the two figures and not the currency, and B11's fine is one of **four monetary disclosures in the Basic module** — with B1's `Assets` and `Turnover` and B2's financial investment — that had shipped or would ship carrying an amount with no stated unit. XBRL admits no monetary fact without an ISO 4217 unit, so task 46 would have met three shipped disclosures it could not emit. **EFRAG's own template carries one currency for the whole workbook**, so the platform does too: it is a property of the report, pinned like its template and taxonomy versions, and `architecture.md` §12.5.6 records the decision and supersedes task 30.2's deferral of it.
+- **Note on the gating question.** EFRAG's B11 block opens with *"has the undertaking incurred in convictions and fines in the reporting period?"*, which carries **no taxonomy element** — the sixth such gate, after B2's, B4's, B6's, B7's and B8's. This platform therefore does not gate on it, and the reason is stronger here than elsewhere: with FR-30's nil return, answering **0** says *none* affirmatively, where EFRAG's *No* leaves two empty cells that say nothing at all.
 - **Related FRs:** FR-24, FR-30
 - **Related UCs:** UC-27
 

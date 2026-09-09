@@ -322,6 +322,9 @@ export class ReadWizardStep {
           // An element no rule names applies, always — the artefact holds conditions, not verdicts.
           applicable: verdict?.applicable ?? true,
           applicabilityCause: toCause(verdict, catalogue),
+          // Off the report rather than off the element: it is the filing's answer, one per workbook
+          // as EFRAG's template carries it, and `toField` gives it only to the monetary kinds.
+          currency: report.reportingCurrency,
         };
         const perOrdinal = defaults.get(element.key) ?? [];
         // Asked once per element and answered to the screen as well as used here: a typed axis is
@@ -797,6 +800,8 @@ function toField(
     readonly options: readonly DisclosureOption[] | null;
     readonly applicable: boolean;
     readonly applicabilityCause: DisclosureApplicabilityCause | null;
+    /** The filing's own currency (task 36.12) — read by monetary elements and by no other kind. */
+    readonly currency: string;
   },
 ): DisclosureField {
   const { catalogue, standing: fallbackStanding } = resolved;
@@ -830,6 +835,10 @@ function toField(
     // What the standard admits, beside what the row holds (task 91.4). Straight off the
     // element: it is a property of the disclosure, not of this row or this reporter.
     unitCodes: element.unitCodes,
+    // A monetary disclosure is stated in the filing's currency, which EFRAG's template carries once
+    // per workbook (task 36.12). Every other kind answers `null` — a count has no currency, and a
+    // ratio's divides out.
+    currency: element.kind === DISCLOSURE_KIND.MONETARY ? resolved.currency : null,
     state: value?.state ?? DISCLOSURE_STATE.MISSING,
     notAvailableReason: value?.notAvailableReason ?? null,
     carriedForward: value?.carriedForward ?? false,

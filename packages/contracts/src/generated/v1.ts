@@ -1988,6 +1988,11 @@ export interface components {
              *     ]
              */
             unitCodes: string[];
+            /**
+             * @description The filing’s currency for a monetary element, ISO 4217 alpha-3; null for every other kind (task 36.12). **Not folded into `unitCodes`**, which is what the *standard* admits — `measurementGuidance` reaches no monetary element, so an empty list there is EFRAG saying nothing, and a currency in it would make that measurement false. One per filing, as EFRAG’s own template carries it.
+             * @example MDL
+             */
+            currency: string | null;
             /** @enum {string} */
             state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
             notAvailableReason: string | null;
