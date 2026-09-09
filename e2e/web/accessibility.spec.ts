@@ -26,16 +26,43 @@ const SCREENS = ['/', '/en', '/ru', '/register', '/en/register', '/ru/register',
 
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
-const scan = async (page: Page) => {
+/**
+ * UX-99's landmark structure, which the tag list above cannot see (added 9 Sep 2026).
+ *
+ * `landmark-one-main` is in axe's **best-practice** set rather than under a WCAG success criterion,
+ * so `WCAG` excludes it — and a screen with chrome and no `main` is exactly what UX-99 forbids and
+ * what 2.4.1's bypass-blocks technique needs. It is run as its own pass rather than by adding
+ * `best-practice` to the tags, because that tag turns on a few dozen unrelated rules at once and
+ * `CLAUDE.md`'s rule is to fix the sites first and then turn the gate on — this one is targeted at
+ * the sites this change fixed.
+ *
+ * **It catches both signs of the defect**: none, which is what the wizard had, and more than one,
+ * which is what a `<main>` added to `IndexShell` or `RecordShell` would produce, those rendering
+ * inside a `(workspace)` layout that already supplies it.
+ */
+const LANDMARK_RULES = ['landmark-one-main', 'landmark-unique'];
+
+/**
+ * `/` is the one screen exempt, and it is a recorded gap rather than a new one: the `(public)`
+ * chrome is the band alone until S-29 fills the body, which the comment above the screen list
+ * already states is **task 74.3's**. Listed here rather than silently skipped, so the exemption
+ * expires by being read.
+ */
+const NO_MAIN_YET = new Set(['/', '/en', '/ru']);
+
+const scan = async (page: Page, options: { readonly landmarks?: boolean } = {}) => {
   await page.waitForLoadState('networkidle');
   const results = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(results.violations).toEqual([]);
+  if (options.landmarks === false) return;
+  const landmarks = await new AxeBuilder({ page }).withRules(LANDMARK_RULES).analyze();
+  expect(landmarks.violations).toEqual([]);
 };
 
 for (const screen of SCREENS) {
   test(`axe finds no violations on ${screen}`, async ({ page }) => {
     await page.goto(screen);
-    await scan(page);
+    await scan(page, { landmarks: !NO_MAIN_YET.has(screen) });
   });
 }
 

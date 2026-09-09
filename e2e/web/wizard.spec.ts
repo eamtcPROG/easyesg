@@ -978,14 +978,19 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
   ]) {
     await expect(page.getByRole('group', { name: label })).toBeVisible();
   }
-  // **Page-wide, and that is a measurement rather than laziness** (convention review, 8 Sep 2026,
-  // which asked for it scoped). `WizardShell` renders `<div className={styles.main}>` — a CSS name,
-  // not a `<main>` landmark — so there is nothing to scope to: `getByRole('main')` finds zero on
-  // this screen, and four of the five archetype shells are the same. Measured here: the wizard
-  // chrome contributes no textbox, so page-wide IS the step's fields today. What it gives up is
-  // stated rather than hidden — a textbox added to the chrome would satisfy this count while
-  // saying nothing about B6.
-  await expect(page.getByRole('textbox')).toHaveCount(4);
+  // **Scoped to the step, which it could not be until 9 Sep 2026** (convention review, 8 Sep, which
+  // asked for exactly this). It was page-wide because there was nothing to scope *to*: `WizardShell`
+  // rendered `<div className={styles.main}>` — a CSS class, not a landmark — so `getByRole('main')`
+  // found zero here. That was a gap against UX-99 rather than a property of the archetype, and it is
+  // fixed; the count now says what it always meant to say, that **B6's step** has four fields, and a
+  // textbox added to the wizard chrome no longer satisfies it.
+  //
+  // The same comment claimed four of the five shells lacked the landmark. That was wrong and the
+  // measurement is recorded in `architecture.md` §12.5.6: `FocusColumn` renders it, `FocusShell`
+  // composes `FocusColumn`, and `IndexShell` and `RecordShell` are used only inside `(workspace)`,
+  // whose layout supplies it — giving those two one of their own produces *two*, which is the same
+  // defect with the opposite sign.
+  await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(4);
 
   // **UX-14's first branch, which B4 never exercises**: `m3` is the only unit the taxonomy admits
   // here, so it is *shown* and never asked — a chooser over one option is a control that cannot
@@ -1141,4 +1146,33 @@ test('B9 computes the accident rate from fields the reporter can see (UC-27)', a
       { timeout: 15_000 },
     )
     .toBe('nil_return');
+});
+
+/**
+ * UX-99's landmark, on the archetype that had none (S-07 … S-12).
+ *
+ * *"Every screen shall have a correct heading hierarchy, **landmark regions**, a skip link, and a
+ * document title reflecting the current object and state."* The wizard had a `<nav>` for its module
+ * rail and a `<div className={styles.main}>` beside it — a CSS class, not a landmark — and nothing
+ * above it in the tree supplies one: `(app)`'s layout renders the global tier and its children, and
+ * the `(wizard)` layout is providers only. So a screen-reader user on the largest screen in the
+ * product had chrome to skip and nothing to skip *to*.
+ *
+ * **`e2e/web/accessibility.spec.ts` could not have caught this two ways over**, which is why the
+ * assertion is here: its tag list is WCAG success criteria and `landmark-one-main` is axe's
+ * *best-practice* set, and no wizard screen is in its list at all.
+ *
+ * Exactly one, not at least one: two `main` landmarks is the same defect wearing the opposite sign,
+ * and it is the one a later change is most likely to introduce — `(workspace)`'s layout renders one
+ * for its own group, so a `<main>` added to a shell used in both places would double it there.
+ */
+test('the wizard step is a main landmark, exactly one (UX-99)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'landmark');
+  await page.goto(`/reports/${reportId}/B2`);
+
+  await expect(page.getByRole('main')).toHaveCount(1);
+  // The module rail stays OUTSIDE it — task 30.1's rule, which is why the landmark replaced the
+  // inner `div` rather than wrapping the shell: a rail inside `main` is not something to skip to.
+  await expect(page.getByRole('main').getByRole('navigation')).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Secțiunile raportului' })).toBeVisible();
 });

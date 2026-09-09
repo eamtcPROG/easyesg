@@ -95,4 +95,15 @@ test('axe finds no violations on A-01', async ({ page }) => {
     .analyze();
 
   expect(results.violations).toEqual([]);
+
+  // UX-99's landmark structure, which those tags cannot see: `landmark-one-main` is axe's
+  // **best-practice** set (added 9 Sep 2026, with the tenant scan's). A-01 is `FocusShell`, which
+  // composes `FocusColumn` and so carries the landmark already — this asserts it rather than
+  // assuming it, and guards the duplicate the route fallbacks could introduce, each rendering a
+  // `<main>` of its own inside whatever layout was matched when they fire.
+  const landmarks = await new AxeBuilder({ page })
+    .withRules(['landmark-one-main', 'landmark-unique'])
+    .analyze();
+
+  expect(landmarks.violations).toEqual([]);
 });

@@ -61,7 +61,28 @@ export function WizardShell({
         <ol className={styles.modules}>{modules}</ol>
       </nav>
 
-      <div className={styles.main}>
+      {/*
+        **`main`, not a `div` whose class happens to be called `main`** (UX-99, 9 Sep 2026). The
+        rail above is this screen's `navigation` and the class name read like a landmark without
+        being one, so `getByRole('main')` found nothing on S-07 … S-12 — a screen-reader user had
+        chrome to skip and nothing to skip *to*, on the largest screen in the product.
+        `accessibility.spec.ts` could not have caught it twice over: its tags are WCAG success
+        criteria and `landmark-one-main` is axe's **best-practice** set, and no wizard screen is in
+        its list.
+
+        **The element goes here rather than around the shell**, which is task 30.1's rule followed
+        rather than restated: the rail must stay outside, and a landmark that swallowed it would
+        give a screen reader a `main` whose first content is the navigation it wanted to skip. That
+        is the same reason `(workspace)`'s layout puts `<main>` around only `{children}` and leaves
+        `WorkspaceNavigation` above it.
+
+        **And it is why the three sibling archetypes are correct with none.** `FocusColumn` renders
+        one and `FocusShell` composes it; `IndexShell` and `RecordShell` are used only inside
+        `(workspace)`, whose layout already supplies it — task 30.1 considered putting it in
+        `RecordShell` and declined, recording that doing so *"would have treated the symptom"*. Two
+        `main` landmarks is this defect wearing the opposite sign.
+      */}
+      <main className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}>
             <h1 className={styles.title}>{title}</h1>
@@ -79,7 +100,7 @@ export function WizardShell({
           <div className={styles.step}>{children}</div>
           {panel ? <aside className={styles.panel}>{panel}</aside> : null}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

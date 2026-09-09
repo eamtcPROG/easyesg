@@ -13710,3 +13710,86 @@ applied, run, and reverted.
 
 Both review agents ran on **`opus`**, per the pin. Task 36's parent close still owes
 `pnpm gates:clean` and the three agents over the whole diff.
+
+## Task 101 — The Wizard archetype renders no `main` landmark · 2026-09-09
+
+**It is a gap, and the sweep it invites is wrong three times over.** Both halves matter; the second
+is the one worth the entry.
+
+### The gap
+
+UX-99: *"Every screen shall have a correct heading hierarchy, **landmark regions**, a skip link, and
+a document title reflecting the current object and state."* `WizardShell` wrapped its step in
+`<div className={styles.main}>` — a CSS class that reads like a landmark and is not one — beside the
+module rail's `<nav>`. Nothing above it supplies one either: `(app)`'s layout renders the global
+tier and its children, and the `(wizard)` layout is providers only. So on S-07 … S-12, the largest
+screens in the product, a screen-reader user had chrome to skip and nothing to skip **to**.
+
+**Measured before it was fixed**, which is also what proved the new assertion bites:
+`getByRole('main')` answered **0** on a wizard step, and **1** after. The defect was its own
+mutation.
+
+### Why nothing saw it, which took three separate misses
+
+- **`e2e/web/accessibility.spec.ts` scans with `wcag2a … wcag22aa`.** `landmark-one-main` is in
+  axe's **best-practice** set rather than under a success criterion, so a green scan said nothing
+  about landmarks at all.
+- **No wizard screen was in its list**, so even with the rule on it would have missed this one.
+- **`packages/ui` had archetype specs for `index-shell` and `record-shell` and none for this one.**
+
+### The part that is not a gap
+
+The obvious fix — give all four landmark-less shells a `<main>` — is wrong for three of them, and
+the repository had already worked out why. **Task 30.1 put `<main>` in `(workspace)`'s layout**
+rather than in `RecordShell`, recording that changing the shell *"would have treated the symptom"*,
+and that the nav must stay outside the landmark because *"a page with chrome and no main is where a
+screen-reader user has nothing to skip TO"*.
+
+So, measured rather than assumed:
+
+| Shell | Landmark | Why |
+| --- | --- | --- |
+| `FocusColumn` | renders `<main>` | its own docblock calls this *"the other half of that lesson"* |
+| `FocusShell` | **composes `FocusColumn`** | so it carries one already — the premise that it renders none was wrong |
+| `IndexShell`, `RecordShell` | correctly none | used only inside `(workspace)`, whose layout supplies it |
+| `WizardShell` | **added here** | used under `(wizard)`, where nothing does |
+
+**Giving `RecordShell` one produces two, and that is proven rather than argued**: the mutation was
+applied, the organization-profile scan failed on `landmark-one-main`, and reverting restored green.
+Two landmarks is this defect wearing the opposite sign.
+
+**The element goes inside the shell, beside the rail, not around it** — 30.1's rule followed rather
+than restated. A `main` wrapping the whole shell satisfies the count and defeats the purpose: the
+reader finds a landmark whose first content is the navigation they wanted to skip.
+
+### The gate
+
+`landmark-one-main` and `landmark-unique` now run as their own `withRules` pass beside the tagged
+scan, in **both** front ends — 14 tenant scans and the admin's A-01. **Declined: adding
+`best-practice` to the tag list.** That turns on dozens of unrelated rules at once, against
+`CLAUDE.md`'s *fix the sites first, then turn the gate on*; a targeted pass starts green, so every
+later finding is new code rather than a backlog nobody can distinguish from a regression.
+
+**One exemption, named rather than skipped.** `/` and its two locales carry no `main` yet — the
+`(public)` chrome is the band alone until S-29 fills the body, which the screen list already records
+as **task 74.3's**. It is listed in a `NO_MAIN_YET` set so the exemption expires by being read
+rather than by being remembered.
+
+### And the comment that started it
+
+`e2e/web/wizard.spec.ts` carried a page-wide `getByRole('textbox')` count with a comment explaining
+that the convention review of 8 Sep had asked for it scoped and that there was nothing to scope to.
+That is now false, so the assertion is scoped to `main` and says what it always meant — that **B6's
+step** has four fields, rather than that the page does. The same comment claimed four of five shells
+lacked the landmark; that was the misreading this task corrects, and the correction is recorded
+where the claim was made as well as in §12.5.6.
+
+### Verified
+
+`pnpm --filter @easyesg/ui test` (113 across 21 files, 3 new), then every dependent's row:
+`pnpm --filter @easyesg/web test`, `pnpm --filter @easyesg/admin test`, `pnpm routes:check`,
+`pnpm lint`, `pnpm typecheck`, and `pnpm e2e:web` across all three projects.
+
+**Proven to bite in both directions.** Reverting `<main>` to `<div>` fails all three new
+`WizardShell` assertions; adding one to `RecordShell` fails the browser landmark scan. Each mutation
+was applied, run, and reverted.
