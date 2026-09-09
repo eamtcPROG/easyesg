@@ -21,6 +21,26 @@ import { OUTBOX_QUEUE } from '../src/infrastructure/queue/queue.constants';
 
 const ORGANIZATION = '01920000-0000-7000-8000-00000000000a';
 
+/**
+ * **This suite's own BullMQ key prefix, so nothing outside this file can reach its queue.**
+ *
+ * The queue *name* stays `OUTBOX_QUEUE`, because what is under test is the dispatcher putting the
+ * idempotency key on the job that BullMQ then deduplicates by — a property of the name and the job
+ * id, not of where the keys live. What the prefix removes is a dependency the test never meant to
+ * assert and could not state: that **no consumer is running anywhere**.
+ *
+ * It is not hypothetical. `pnpm start:worker:dev` registers `OutboxConsumer` on the default prefix,
+ * and a developer with one running turns the dedup test below red: the consumer takes the job off
+ * `waiting`, finds no handler for `report.export.requested` — it routes three `identity.*` names —
+ * and moves it to `failed`, so `waiting + delayed + active` is 0. Nothing in the failure mentions a
+ * worker. Measured 9 Sep 2026: three runs of three red with one up, six of six green with it down.
+ *
+ * The coupling ran the other way too, and that half is worse than a flake: `beforeEach` obliterates,
+ * which on the shared prefix **deletes a developer's own dev queue**. A suite-owned prefix is what
+ * makes that destruction impossible rather than merely unobserved.
+ */
+const QUEUE_PREFIX = 'bull:e2e-outbox';
+
 const required = (key: string): string => {
   const value = process.env[key];
   if (!value) throw new Error(`${key} is not set. Run via \`pnpm test:e2e\` with the stack up.`);
@@ -70,6 +90,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
     owner = await connect('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-outbox-owner');
     app = await connect('DB_USER', 'DB_PASSWORD', 'easyesg-outbox-app');
     queue = new Queue(OUTBOX_QUEUE, {
+      prefix: QUEUE_PREFIX,
       connection: {
         host: process.env.REDIS_HOST ?? 'localhost',
         port: Number.parseInt(process.env.REDIS_PORT ?? '6379', 10),

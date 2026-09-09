@@ -14380,3 +14380,89 @@ have been a guess wearing a proof's clothes.
 `pnpm lint`, `pnpm typecheck`, `pnpm docs:check`, `pnpm --filter @easyesg/api test` (711), and
 `pnpm e2e` four times — 860 of 860 each. Four clean runs do not prove an intermittent fault gone;
 the mutation above is what does.
+
+## A fifth observation, and it was a developer's own worker · 2026-09-09
+
+Found while running `pnpm gates:clean` before the push, so it is not one of the four the entry above
+tabulates — it is a **fifth**, and unlike the other three it is now understood.
+
+### What it was
+
+`outbox.e2e-spec.ts`'s dedup case enqueues `report.export.requested` on the real queue and asserts
+one job is pending:
+
+```ts
+const counts = await queue.getJobCounts('waiting', 'delayed', 'active');
+expect(counts.waiting + counts.delayed + counts.active).toBe(1);
+```
+
+It got **0**. Instrumented, the job was not missing — it was `failed`, and it named its own killer:
+
+```
+failedReason = No handler is registered for job "report.export.requested".
+```
+
+That is `OutboxConsumer`'s message. **A developer's `pnpm start:worker:dev` was running on this
+host** (PID 55014, started 17:59, `MODE=worker` — four Redis connections against the api's two).
+`OutboxConsumer` routes three `identity.*` job names; it took the test's job off `waiting`, found no
+handler, and moved it to `failed`. Nothing in the failure mentions a worker.
+
+### Why it read as cross-suite interference, and was not
+
+It failed inside the full run *and* standalone, which I first recorded as *"decisive — this is not
+cross-suite interference"* and treated as pointing at Redis-resident state. Both halves of that were
+right and the conclusion was still too narrow: the shared state is Redis, and the thing mutating it
+is not a *suite* at all. The worker then died on its own between one probe and the next, which is
+why six consecutive runs went green on no change — a coincidence that would have read as "fixed".
+
+### Proved, both directions
+
+| | worker up | worker down |
+| --- | --- | --- |
+| before the fix | **3 of 3 red** | 6 of 6 green |
+| after the fix | **3 of 3 green** | — |
+| mutation: fix removed, worker up | **2 of 2 red** | — |
+
+The worker was started deliberately for the middle two rows rather than waited for, so the
+mechanism is reproduced on demand and the fix is measured against it.
+
+### The fix, and what it does not weaken
+
+A **suite-owned BullMQ key prefix** — `bull:e2e-outbox` — on the `Queue` this file constructs. The
+queue *name* stays `OUTBOX_QUEUE`, because what is under test is the dispatcher putting the
+idempotency key on the job BullMQ deduplicates by; that is a property of the name and the job id,
+never of where the keys live. What the prefix removes is a precondition the test depended on and
+could not state: **that no consumer is running anywhere**.
+
+The coupling ran the other way too, and that half is worse than a flake. `beforeEach` calls
+`queue.obliterate({ force: true })`, which on the shared prefix **deletes a developer's own dev
+queue** — the outbox suite has been destroying real queued work whenever both were live. The prefix
+makes that unrepresentable rather than merely unobserved. Searched before closing: this is the only
+`new Queue(` and the only `obliterate(` outside `src/`.
+
+### Two machine facts found on the way, neither fixed here
+
+- **A Homebrew `redis-server` has been shadowing the Compose one since 31 Aug.** It binds
+  `127.0.0.1:6379` and `[::1]:6379`; Docker publishes the wildcard `*:6379`, and a specific bind
+  wins for that address — so every local process reaches the host Redis and the container's has been
+  idle for nine days. It cost an hour here: `docker exec … redis-cli` answered about a Redis nothing
+  was using. `CLAUDE.md`'s *"a second PostgreSQL able to shadow the container on 5432"* is the same
+  hazard one port over, and the rule it states — reach a service's client through its container —
+  is what makes the shadow visible instead of silent.
+- **`e2e/playwright.config.ts` sets `reuseExistingServer: !process.env.CI` on all four servers**,
+  so locally Playwright health-checks `http://localhost:3100/health`, finds a running `next dev`,
+  and runs the browser suite against it. Its own docblock promises the opposite — *"served from its
+  standalone bundle — the artefact the image ships, not `next dev`'s approximation of it"* — and
+  `webEnv`'s `SESSION_SECRET`, `HOSTNAME=0.0.0.0` and `NODE_ENV=production` are not applied to a
+  reused process. It is the identical shape to the bug above, on HTTP rather than Redis: a test
+  silently adopting a developer's process.
+
+  **Not changed here, and the reason is not caution.** `reuseExistingServer: false` trades a silent
+  wrong run for a loud port collision, which is the trade this repository makes everywhere else —
+  but it also means a developer cannot run `pnpm e2e:web` without stopping their dev server, and
+  that is a workflow decision with a real cost, not a defect fix. **Task 102**, so the finding
+  outlives this entry — a build-log record of something still to do is a record in the wrong file.
+
+### Verified
+
+`pnpm gates:clean` — the sixteen gates, from a tree with every build output removed.
