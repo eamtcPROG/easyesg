@@ -1,6 +1,7 @@
 import { Logger, Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
+import { DerivationInputStoreRepository } from '@api/infrastructure/persistence/core/derivation-input-store.repository';
 import { DisclosureValueStoreRepository } from '@api/infrastructure/persistence/core/disclosure-value-store.repository';
 import { ReportStoreRepository } from '@api/infrastructure/persistence/core/report-store.repository';
 import { ReportingPeriodStoreRepository } from '@api/infrastructure/persistence/core/reporting-period-store.repository';
@@ -18,6 +19,8 @@ import { ReportsController } from './controllers/reports.controller';
 import { WizardController } from './controllers/wizard.controller';
 import { AXIS_SHAPES, type AxisShapes } from './interfaces/axis-shape.interface';
 import { AxisShapeService } from './services/axis-shape.service';
+import { DerivationCalculator } from './services/derivation-calculator.service';
+import { DerivationService } from './services/derivation.service';
 import {
   APPLICABILITY_RULES,
   type ApplicabilityRules,
@@ -26,6 +29,10 @@ import {
   DISCLOSURE_VALUE_STORE,
   type DisclosureValueStore,
 } from './interfaces/disclosure-value-store.interface';
+import {
+  DERIVATION_INPUT_STORE,
+  type DerivationInputStore,
+} from './interfaces/derivation-input-store.interface';
 import { REPORT_STORE, type ReportStore } from './interfaces/report-store.interface';
 import { ApplicabilityRulesService } from './services/applicability-rules.service';
 import { DisclosureFacade } from './services/disclosure-facade.service';
@@ -33,6 +40,7 @@ import { ReportService } from './services/report.service';
 import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
 import { ReadWizardStep, type WizardVocabulary } from './use-cases/read-wizard-step.use-case';
+import { WriteDerivationInputs } from './use-cases/write-derivation-inputs.use-case';
 import { WriteDisclosureValues } from './use-cases/write-disclosure-values.use-case';
 
 /**
@@ -94,6 +102,8 @@ const httpProviders: Provider[] = [
       ORGANIZATION_VOCABULARY,
       APPLICABILITY_RULES,
       AXIS_SHAPES,
+      DerivationService,
+      DERIVATION_INPUT_STORE,
     ],
     useFactory: (
       reports: ReportStore,
@@ -103,6 +113,8 @@ const httpProviders: Provider[] = [
       vocabulary: WizardVocabulary,
       applicability: ApplicabilityRules,
       axisShapes: AxisShapes,
+      derivations: DerivationService,
+      derivationInputs: DerivationInputStore,
     ) =>
       new ReadWizardStep(
         reports,
@@ -112,14 +124,48 @@ const httpProviders: Provider[] = [
         vocabulary,
         applicability,
         axisShapes,
+        derivations,
+        derivationInputs,
         new Logger(ReadWizardStep.name),
       ),
   },
+  { provide: DERIVATION_INPUT_STORE, useClass: DerivationInputStoreRepository },
+  DerivationService,
+  {
+    provide: DerivationCalculator,
+    inject: [DerivationService, DISCLOSURE_VALUE_STORE, DERIVATION_INPUT_STORE],
+    useFactory: (
+      derivations: DerivationService,
+      values: DisclosureValueStore,
+      inputs: DerivationInputStore,
+    ) => new DerivationCalculator(derivations, values, inputs),
+  },
   {
     provide: WriteDisclosureValues,
-    inject: [REPORT_STORE, DISCLOSURE_VALUE_STORE, TAXONOMY_REGISTRY],
-    useFactory: (reports: ReportStore, values: DisclosureValueStore, taxonomy: TaxonomyRegistry) =>
-      new WriteDisclosureValues(reports, values, taxonomy),
+    inject: [
+      REPORT_STORE,
+      DISCLOSURE_VALUE_STORE,
+      TAXONOMY_REGISTRY,
+      DerivationService,
+      DerivationCalculator,
+    ],
+    useFactory: (
+      reports: ReportStore,
+      values: DisclosureValueStore,
+      taxonomy: TaxonomyRegistry,
+      derivations: DerivationService,
+      calculator: DerivationCalculator,
+    ) => new WriteDisclosureValues(reports, values, taxonomy, derivations, calculator),
+  },
+  {
+    provide: WriteDerivationInputs,
+    inject: [REPORT_STORE, DERIVATION_INPUT_STORE, DerivationService, DerivationCalculator],
+    useFactory: (
+      reports: ReportStore,
+      inputs: DerivationInputStore,
+      derivations: DerivationService,
+      calculator: DerivationCalculator,
+    ) => new WriteDerivationInputs(reports, inputs, derivations, calculator),
   },
   {
     provide: CreateReport,

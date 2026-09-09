@@ -247,7 +247,8 @@ export interface DisclosureField {
    * Whether this field applies to this reporter (task 91.3; FR-28, BR-APP-5).
    *
    * **`false` does not mean empty.** UX-28 requires a value entered before the condition turned to
-   * be retained and the reporter told so, so the value columns above are served exactly as stored —
+   * be retained and **restored if the condition returns**, so the value columns above are served
+   * exactly as stored —
    * a retained answer is `applicable: false` beside a `state` that is not `missing`, and that pair
    * is the whole of the retention signal.
    */
@@ -256,11 +257,46 @@ export interface DisclosureField {
   readonly applicabilityCause: DisclosureApplicabilityCause | null;
 }
 
+/**
+ * One value a derived figure is computed from, which is **not** a disclosure (task 36.10; §7.3).
+ *
+ * **A separate list rather than a `DisclosureField` with a flag.** These carry no state, no unit, no
+ * dimension, no applicability and no carry-forward, and they are not exported as facts — so putting
+ * them among the fields would make every consumer correct only by remembering to exclude them: the
+ * progress count, the validation run, the export. That is the same objection §7.3 records against
+ * storing them in the value table, one layer up.
+ *
+ * **No `label`, and that is not an omission.** EFRAG words these in the Digital Template and not in
+ * the taxonomy, so there is no locale in which the package names them — the wording is authored in
+ * the message catalogues and resolved in the browser, as `TypeOfWasteAxis`'s own name is (task 36.8).
+ * A `label` here would be `null` in all three locales, forever.
+ */
+export interface DerivationInputField {
+  /** The input's key, e.g. `HoursWorkedByOneFullTimeEmployee`. The browser names it from this. */
+  readonly key: string;
+  /** The element this feeds, so a screen can put the input beside the figure it produces (UC-27). */
+  readonly derives: string;
+  /** What the reporter has stored, as a decimal string; `null` where they have answered nothing. */
+  readonly value: string | null;
+  /**
+   * What the platform offers where they have not — EFRAG's published default, `null` where the
+   * artefact registers none. **Distinguishable from `value` by construction**, being a different
+   * property: an offer the reporter has accepted without editing is still an offer, and writing it
+   * on their behalf would put a number they never chose into a filing.
+   */
+  readonly offered: string | null;
+}
+
 /** One wizard step: a module, and the fields the pinned taxonomy puts in it, in its order. */
 export interface DisclosureStep {
   readonly module: string;
   readonly taxonomyVersion: string;
   readonly fields: readonly DisclosureField[];
+  /**
+   * The derivation inputs this step's own derived figures read (task 36.10). Empty for every module
+   * but B8 and B9, which are the two the Digital Template computes a figure for.
+   */
+  readonly derivationInputs: readonly DerivationInputField[];
   /**
    * The domains this step's **classifications** draw their rows from (task 36.5).
    *

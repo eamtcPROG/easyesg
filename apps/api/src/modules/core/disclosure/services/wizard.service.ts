@@ -5,6 +5,10 @@ import type { DisclosureValue } from '../models/disclosure-value.model';
 import type { DisclosureModuleSummary, DisclosureStep } from '../models/wizard-step.model';
 import { ReadWizardStep } from '../use-cases/read-wizard-step.use-case';
 import {
+  WriteDerivationInputs,
+  type DerivationInputWriteInput,
+} from '../use-cases/write-derivation-inputs.use-case';
+import {
   WriteDisclosureValues,
   type DisclosureValueInput,
 } from '../use-cases/write-disclosure-values.use-case';
@@ -22,6 +26,7 @@ export class WizardService {
   constructor(
     private readonly reads: ReadWizardStep,
     private readonly writes: WriteDisclosureValues,
+    private readonly derivationWrites: WriteDerivationInputs,
   ) {}
 
   modules(query: { readonly reportId: string }): Promise<readonly DisclosureModuleSummary[]> {
@@ -41,5 +46,12 @@ export class WizardService {
     readonly values: readonly DisclosureValueInput[];
   }): Promise<DisclosureValue[]> {
     return this.writes.write(command);
+  }
+
+  writeDerivationInputs(command: {
+    readonly reportId: string;
+    readonly inputs: readonly DerivationInputWriteInput[];
+  }): Promise<void> {
+    return this.derivationWrites.write(command);
   }
 }

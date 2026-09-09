@@ -131,6 +131,7 @@ export default async function ReportModuleStepPage({ params }: Props) {
         <StepFields
           fields={fields}
           axes={read.step.axes}
+          derivationInputs={read.step.derivationInputs}
           readOnly={readOnly}
           markerLabels={markerLabels}
           carriedLabel={t('field.carried')}

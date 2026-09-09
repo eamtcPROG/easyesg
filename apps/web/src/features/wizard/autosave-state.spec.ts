@@ -165,7 +165,10 @@ describe('autosaveReducer (UC-35)', () => {
     const state = changed(changed(changed(online(), write('B', '1')), write('A', '2')), write('B', '3'));
     const { writes, sent } = flushSnapshot(state);
     // B was re-written after A, so it carries the later sequence and comes second.
-    expect(writes.map((w) => `${w.elementKey}:${w.valueNumeric}`)).toEqual(['A:2', 'B:3']);
+    expect(writes.map((w) => ('inputKey' in w ? w.inputKey : `${w.elementKey}:${w.valueNumeric}`))).toEqual([
+      'A:2',
+      'B:3',
+    ]);
     expect(sent[writeKey({ elementKey: 'B' })]).toBe(3);
   });
 });

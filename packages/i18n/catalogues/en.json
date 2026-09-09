@@ -206,12 +206,14 @@
       "not_locked": "The period is not locked, so it cannot be reopened. Refresh the page to see its current state."
     },
     "report": {
-      "not_found": "That report does not exist in this organization, so it could not be shown. Refresh the list to see the reports that do.",
       "already_exists": "This reporting period already has a report, and a period can hold only one. Open the report that already exists instead of creating another.",
+      "derived_disclosure_not_writable": "This figure is calculated by the system from the values you enter, so it cannot be filled in directly. Change the values it is worked out from and the figure updates itself.",
       "not_editable": "The reporting period is locked, so the report can no longer be changed by anyone, an administrator included. Reopen the period with a stated reason to carry on — the change stays visible as an amendment.",
+      "not_found": "That report does not exist in this organization, so it could not be shown. Refresh the list to see the reports that do.",
       "taxonomy_version_unavailable": "The version of the standard this report was created under is no longer available on the platform, so its questions cannot be shown. Your saved answers are not affected. Contact support; this is resolved on our side.",
-      "unknown_disclosure_element": "The field submitted is not part of the version of the standard this report was created under, so it could not be saved. Refresh the page to load the current questions.",
-      "unknown_disclosure_dimension": "The category selected is not one the standard admits for this field, so the value could not be saved. Refresh the page and choose again from the list."
+      "unknown_derivation_input": "The value sent does not match anything the system calculates a figure from, so it could not be saved. Refresh the page and enter the value again.",
+      "unknown_disclosure_dimension": "The category selected is not one the standard admits for this field, so the value could not be saved. Refresh the page and choose again from the list.",
+      "unknown_disclosure_element": "The field submitted is not part of the version of the standard this report was created under, so it could not be saved. Refresh the page to load the current questions."
     }
   },
   "notification": {

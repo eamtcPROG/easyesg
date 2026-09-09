@@ -290,6 +290,11 @@ const FIELD_AUDITED_TABLES = [
   'core.reporting_period',
   'core.report',
   'core.report_disclosure_value',
+  // The values EFRAG's derived figures are computed from (task 36.10). Audited for the disclosure
+  // store's own reason rather than by analogy: a number a person entered that moves a figure a
+  // filing carries needs FR-54's trail as much as the figure does — more, arguably, since the
+  // figure itself is `origin = 'calculated'` and says nothing about who changed what.
+  'core.report_derivation_input',
   'identity.membership',
   'identity.invitation',
 ];

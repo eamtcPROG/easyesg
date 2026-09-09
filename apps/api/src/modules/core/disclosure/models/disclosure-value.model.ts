@@ -101,6 +101,46 @@ export const isAnsweredState = (state: DisclosureState | undefined): boolean =>
   state !== undefined && state !== DISCLOSURE_STATE.MISSING;
 
 /**
+ * FR-30, as one function: **an answered numeric zero is a nil return, and anything else is `ok`.**
+ *
+ * *"The system shall record a nil or zero return as an affirmative disclosure, stored and rendered
+ * distinctly from an unanswered field."* `NIL_RETURN` has been in this vocabulary, in the migration's
+ * `CHECK` and in the wizard's tone map since task 34.1, and **nothing ever wrote one** — so P3's
+ * *"a gap is an answer"* was true of the schema and false of the product until task 36.10.
+ *
+ * **Derived from the value rather than taken from the caller** (P-4). A browser that sent `ok` for a
+ * zero would be deciding a disclosure's meaning, and the two would then disagree the first time
+ * anything else wrote a value — the calculator, an import, the derivation beside this. It also
+ * settles the reverse, which a one-way rule would leave: a field edited from 0 to 5 must stop being
+ * a nil return, and a client that remembered to set the state on the way in has no reason to
+ * remember on the way back out.
+ *
+ * **Only these two states are its business.** A deliberate non-answer keeps its own meaning —
+ * `not_available` carries FR-32's reason, `not_material` is FR-31's exclusion — and FR-40's three
+ * validation verdicts are a run's conclusion about a value, not a property of it. Passing those
+ * through untouched is what keeps this from being a second, quieter, validation rule.
+ *
+ * Where it binds is **every numeric kind, not B9's fields**: a zero means the same thing in B4 as in
+ * B9, and a per-module rule would be the per-screen divergence UX-89 exists to prevent. B9 and B11
+ * are merely where a reader most needs it — *no fatalities* and *no corruption incidents* are
+ * exactly the disclosures that must not read as unanswered (UC-27, UC-29).
+ */
+export const answeredState = (contents: {
+  readonly valueNumeric: string | null;
+  readonly state: DisclosureState;
+}): DisclosureState => {
+  if (contents.state !== DISCLOSURE_STATE.OK && contents.state !== DISCLOSURE_STATE.NIL_RETURN) {
+    return contents.state;
+  }
+  if (contents.valueNumeric === null || contents.valueNumeric.trim() === '') return contents.state;
+  const parsed = Number(contents.valueNumeric);
+  // A value that does not parse is not a zero and is not this function's problem — the column is
+  // `numeric` and the database refuses it, which is the layer that should.
+  if (!Number.isFinite(parsed)) return contents.state;
+  return parsed === 0 ? DISCLOSURE_STATE.NIL_RETURN : DISCLOSURE_STATE.OK;
+};
+
+/**
  * What identifies a value within a report — the natural key, and a `UNIQUE` in the schema.
  *
  * **A single object rather than four parameters**, and this is the signature CLAUDE.md's rule was

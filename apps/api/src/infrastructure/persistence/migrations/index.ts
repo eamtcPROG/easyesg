@@ -32,6 +32,7 @@ import { LockedDisclosureDelete1789430400000 } from './1789430400000-locked-disc
 import { SessionPersistence1789516800000 } from './1789516800000-session-persistence';
 import { ProviderIdentityUnlink1788393600000 } from './1788393600000-provider-identity-unlink';
 import { DisclosureValueOrigin1789603200000 } from './1789603200000-disclosure-value-origin';
+import { ReportDerivationInput1789689600000 } from './1789689600000-report-derivation-input';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -82,4 +83,5 @@ export const migrations = [
   LockedDisclosureDelete1789430400000,
   SessionPersistence1789516800000,
   DisclosureValueOrigin1789603200000,
+  ReportDerivationInput1789689600000,
 ];

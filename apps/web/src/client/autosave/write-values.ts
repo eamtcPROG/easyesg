@@ -1,8 +1,10 @@
 import {
   readProblemDocument,
   readResultList,
+  type DerivationInputWrite,
   type DisclosureValueResponse,
   type DisclosureValueWrite,
+  type WriteDerivationInputsRequest,
   type WriteDisclosureValuesRequest,
 } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
@@ -62,4 +64,45 @@ export async function putDisclosureValues(input: {
     // An answer this tier could not read is the same fact, with the same remedy, as no answer.
     return { status: API_OUTCOME.Unreachable };
   }
+}
+
+/** `PUT /api/v1/reports/{id}/derivation-inputs` — the values a derived figure is computed from. */
+const INPUTS_PATH = (reportId: string): string => `/api/v1/reports/${reportId}/derivation-inputs`;
+
+/**
+ * The wizard's second write (task 36.10), through the same pass-through and the same queue.
+ *
+ * **A second endpoint rather than a second mechanism.** These ride the autosave queue exactly as
+ * disclosure values do — the same debounce, the same durable queue, the same indicator — because a
+ * field that lost FR-38's offline queue and UX-36's acknowledgement for no reason a document states
+ * would be the per-screen divergence UX-89 exists to prevent. What differs is only where they land,
+ * and that is `flushSnapshot`'s partition rather than a branch anyone writing a field has to know.
+ *
+ * **204, so there is nothing to read back.** A derivation input has no server-computed properties —
+ * unlike a disclosure, whose state the api settles (FR-30) — so the acknowledgement is the status
+ * code. The queue clears on what it *sent* rather than on what came back, which is what makes an
+ * empty response sufficient here and is already true of the other path.
+ */
+export async function putDerivationInputs(input: {
+  readonly reportId: string;
+  readonly values: readonly DerivationInputWrite[];
+  readonly fetch?: typeof fetch;
+}): Promise<ApiOutcome<null>> {
+  const body: WriteDerivationInputsRequest = { values: [...input.values] };
+  const send = input.fetch ?? fetch;
+  let response: Response;
+  try {
+    response = await send(INPUTS_PATH(input.reportId), {
+      method: 'PUT',
+      headers: { 'content-type': JSON_MEDIA_TYPE, accept: JSON_MEDIA_TYPE },
+      body: JSON.stringify(body),
+      credentials: 'same-origin',
+      cache: 'no-store',
+    });
+  } catch {
+    return { status: API_OUTCOME.Unreachable };
+  }
+  if (response.ok) return { status: API_OUTCOME.Ok, value: null, messages: [] };
+  const parsed: unknown = await response.json().catch(() => null);
+  return { status: API_OUTCOME.Problem, problem: readProblemDocument(parsed, response.status) };
 }

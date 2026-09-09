@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  type DerivationInputWrite,
+  type DerivationInput,
   DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
   type DisclosureAxis,
@@ -18,6 +20,7 @@ import {
   Select,
   type FieldTone,
   type SaveState,
+  TextField,
 } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -40,6 +43,7 @@ import {
   unitOf,
   withCommitted,
   writeFor,
+  parseDecimalInput,
 } from '../values';
 import { useAutosaveContext } from './autosave-context';
 import { DisclosureControl } from './disclosure-control';
@@ -93,6 +97,7 @@ import styles from './step.module.css';
 export function StepFields({
   fields,
   axes,
+  derivationInputs,
   readOnly,
   markerLabels,
   carriedLabel,
@@ -103,6 +108,11 @@ export function StepFields({
    * step because every element on an axis shares one list.
    */
   readonly axes: readonly DisclosureAxis[];
+  /**
+   * The values this step's derived figures are computed from (task 36.10; UC-26, UC-27). Empty for
+   * every module but B8 and B9 — the two EFRAG's own template computes a figure for.
+   */
+  readonly derivationInputs: readonly DerivationInput[];
   readonly readOnly: boolean;
   /** §6.4's label per state, in the reader's language. `ok` carries no marker and is unused. */
   readonly markerLabels: Readonly<Record<DisclosureState, string>>;
@@ -111,6 +121,7 @@ export function StepFields({
 }) {
   const tField = useTranslations(FIELD_MESSAGES);
   const tGroup = useTranslations(GROUP_MESSAGES);
+  const tInput = useTranslations(INPUT_MESSAGES);
   // Only the defaults' commit is this component's business now; every per-field read moved to
   // `StepField` with the state it needs (task 91.4).
   const { change } = useAutosaveContext();
@@ -160,6 +171,37 @@ export function StepFields({
    * the api computes over applicable elements only, disagreed with the screen permanently.
    */
   const asked = useMemo(() => fields.filter((field) => field.applicable), [fields]);
+
+  /**
+   * The elements this step *derives*, which the reporter does not type (FR-29; task 36.10).
+   *
+   * **Read off the inputs rather than off a flag on the field**, so the two cannot disagree: a
+   * figure is derived exactly when something is registered as feeding it, and that is the same fact
+   * the api refuses a write against. A field marked derived with nothing feeding it would render
+   * permanently read-only and permanently empty.
+   */
+  const derived = useMemo(
+    () => new Set(derivationInputs.map((input) => input.derives)),
+    [derivationInputs],
+  );
+
+  /**
+   * The inputs actually worth asking — those feeding a figure this reporter is asked for
+   * (FR-28, BR-APP-5; found by the B8 browser journey, 9 Sep 2026).
+   *
+   * **An input outlives nothing.** B8's three turnover figures exist only to produce
+   * `EmployeeTurnoverRate`, which applies at fifty employees; below it, asking a ten-person
+   * undertaking how many people left in the period is asking a question whose only answer is a
+   * disclosure they do not make. `asked` already carries the api's applicability verdict, so this
+   * is that same verdict followed one step further rather than a second rule.
+   *
+   * **Not filtered in the api**, deliberately: the step serves what the artefact registers, and
+   * *shown or not* is the same screen decision `asked` is — one place, one rule.
+   */
+  const askedInputs = useMemo(() => {
+    const applicable = new Set(asked.map((field) => field.elementKey));
+    return derivationInputs.filter((input) => applicable.has(input.derives));
+  }, [derivationInputs, asked]);
 
   // Once per step, and guarded by a ref rather than by its dependency list: `fields` is a new array
   // on every render of the server component above — so `asked` is too, and the list alone would
@@ -323,6 +365,22 @@ export function StepFields({
           renderField(entry.field)
         ),
       )}
+      {/*
+        The values the step's derived figures are computed from (UC-26 step 4, UC-27 step 2), after
+        the fields rather than among them: EFRAG's own template puts them under the figure they feed,
+        and they are not disclosures — putting them in `entries` would mean every reader of that list
+        excluding them. `DerivationInputControl` reuses `DisclosureField` rather than adding to the
+        inventory, the anatomy being identical (UX-89).
+      */}
+      {askedInputs.map((input) => (
+        <DerivationInputControl
+          key={input.key}
+          input={input}
+          readOnly={readOnly}
+          label={tInput(`names.${input.key}` as never)}
+          help={tInput(`help.${input.key}` as never)}
+        />
+      ))}
     </div>
   );
 
@@ -341,7 +399,11 @@ export function StepFields({
         key={writeKey(served)}
         served={served}
         named={named}
-        readOnly={readOnly}
+        // **A derived figure is read-only even on an editable step** (FR-29, task 36.10). The api
+        // refuses a write to one, so an input here would be a control whose every use is rejected;
+        // UX-13's own rule is that read-only keeps the layout and removes the affordance, which is
+        // exactly what a computed figure wants — it is shown, beside the values it came from.
+        readOnly={readOnly || derived.has(served.elementKey)}
         markerLabels={markerLabels}
         carriedLabel={carriedLabel}
         chosenUnit={units[served.elementKey] ?? null}
@@ -716,6 +778,8 @@ const NO_MEMBERS_BY_VALUE: ReadonlyMap<string, DisclosureOption> = new Map();
  */
 const FIELD_MESSAGES = 'organization.wizard.field' as const;
 const GROUP_MESSAGES = 'organization.wizard.group' as const;
+/** The derivation inputs' own wording — EFRAG words these in the template, not the taxonomy. */
+const INPUT_MESSAGES = 'organization.wizard.derivationInput' as const;
 
 /**
  * The classification axes this product has to name itself — the ones EFRAG's package words nowhere.
@@ -782,4 +846,61 @@ function markerFor(
   if (field.carriedForward) return { label: provenance.carried, tone: FIELD_TONE.NEUTRAL };
   if (!hasMarker(field.state)) return undefined;
   return { label: labels[field.state], tone: TONE_OF_STATE[field.state] };
+}
+
+/**
+ * One value a derived figure is computed from (task 36.10; UC-26, UC-27).
+ *
+ * **`TextField` rather than `DisclosureField`, and the difference is the point.** UX-89 asks whether
+ * the *anatomy* differs, and it does: `DisclosureField` requires UX-15's not-available declaration,
+ * because every disclosure a reader sees may be deliberately unanswered with a reason. This is not a
+ * disclosure — it is not filed, not exported and not validated — so it has no such state, and
+ * passing `null` into that required slot would be asserting it does. What is left is a label, help
+ * and one numeric control, which is `TextField` exactly. No inventory addition either way.
+ *
+ * **The published offer is a placeholder, never a written value.** EFRAG prints 2 000 hours and says
+ * an undertaking may change it; showing it as the field's value would make an offer the reporter has
+ * never looked at indistinguishable from a figure they chose — and the api computes with the offer
+ * either way, so nothing is lost by leaving the box empty. That is the same distinction
+ * `DisclosureField`'s own `defaultValue` draws for an entity-record answer (task 91.2).
+ */
+function DerivationInputControl({
+  input,
+  readOnly,
+  label,
+  help,
+}: {
+  readonly input: DerivationInput;
+  readonly readOnly: boolean;
+  readonly label: string;
+  readonly help: string;
+}) {
+  const { change } = useAutosaveContext();
+  const [draft, setDraft] = useState(input.value ?? '');
+
+  return (
+    <TextField
+      label={label}
+      help={help}
+      inputMode="decimal"
+      value={draft}
+      // The published offer, shown as what the field will mean if left empty — never written. EFRAG
+      // prints 2 000 hours and permits changing it, so filling the box with 2 000 would make an
+      // offer nobody looked at indistinguishable from a figure someone chose. The api computes with
+      // the offer regardless, so the empty box costs nothing and says something true.
+      placeholder={input.offered ?? undefined}
+      readOnly={readOnly}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => {
+        const parsed = parseDecimalInput(draft);
+        // An unparseable draft stays on screen and is not written, exactly as a disclosure's own
+        // numeric control does — the reporter keeps what they typed so they can correct it.
+        if ('invalid' in parsed) return;
+        // Annotated rather than inferred: the queue takes a union, and an inline literal lets
+        // TypeScript match it against the disclosure arm first and report a confusing mismatch.
+        const write: DerivationInputWrite = { inputKey: input.key, valueNumeric: parsed.value };
+        change(write);
+      }}
+    />
+  );
 }

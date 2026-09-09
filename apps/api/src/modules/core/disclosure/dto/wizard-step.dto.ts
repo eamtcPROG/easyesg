@@ -8,6 +8,7 @@ import {
   IsIn,
   IsInt,
   IsISO8601,
+  IsNumberString,
   IsOptional,
   IsString,
   MaxLength,
@@ -29,6 +30,7 @@ import {
 import type {
   ApplicabilityDriver,
   DisclosureApplicabilityCause,
+  DerivationInputField,
   DisclosureAxis,
   DisclosureDefault,
   DisclosureField,
@@ -459,6 +461,48 @@ export class DisclosureAxisDto {
   }
 }
 
+export class DerivationInputDto {
+  @ApiProperty({
+    example: 'HoursWorkedByOneFullTimeEmployee',
+    description:
+      'The input’s key. **The browser names it from this**, because EFRAG words these in the ' +
+      'Digital Template and not in the taxonomy — there is no locale in which the package carries ' +
+      'a label, so a `label` here would be null in all three forever (task 36.10).',
+  })
+  readonly key: string;
+
+  @ApiProperty({
+    example: 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod',
+    description: 'The derived element this feeds, so a screen can show the input beside the figure.',
+  })
+  readonly derives: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'What the reporter stored, as a decimal string; null where they answered nothing.',
+  })
+  readonly value: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '2000',
+    description:
+      'What the platform offers where they have not — EFRAG’s published default. Distinct from ' +
+      '`value` on purpose: an offer accepted without editing is still an offer, and writing it on ' +
+      'the reporter’s behalf would put a number they never chose into a filing.',
+  })
+  readonly offered: string | null;
+
+  constructor(input: DerivationInputField) {
+    this.key = input.key;
+    this.derives = input.derives;
+    this.value = input.value;
+    this.offered = input.offered;
+  }
+}
+
 export class DisclosureStepDto {
   @ApiProperty({ example: 'B8' })
   readonly module: string;
@@ -482,11 +526,22 @@ export class DisclosureStepDto {
   })
   readonly axes: DisclosureAxisDto[];
 
+  @ApiProperty({
+    type: [DerivationInputDto],
+    description:
+      'The values this step’s derived figures are computed from (UC-26, UC-27). **Not fields**: ' +
+      'they carry no state, unit, dimension or applicability and are not exported as facts, so ' +
+      'they are a separate list rather than fields a consumer must remember to exclude. Empty for ' +
+      'every module but B8 and B9.',
+  })
+  readonly derivationInputs: DerivationInputDto[];
+
   constructor(step: DisclosureStep) {
     this.module = step.module;
     this.taxonomyVersion = step.taxonomyVersion;
     this.fields = step.fields.map((field) => new DisclosureFieldDto(field));
     this.axes = step.axes.map((axis) => new DisclosureAxisDto(axis));
+    this.derivationInputs = step.derivationInputs.map((input) => new DerivationInputDto(input));
   }
 }
 
@@ -623,4 +678,35 @@ export class DisclosureValueResponseDto {
     this.carriedForward = value.carriedForward;
     this.updatedAt = value.updatedAt;
   }
+}
+
+/** One derivation input's new value (task 36.10). */
+export class DerivationInputWriteDto {
+  @ApiProperty({ example: 'HoursWorkedByOneFullTimeEmployee' })
+  @IsString()
+  @MaxLength(255)
+  inputKey!: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '1800',
+    description:
+      'A decimal string. **Omit or send null to clear**, which restores the published offer — a ' +
+      'stored zero would instead make the rate undefined, a zero denominator being no answer ' +
+      'rather than a working year of no hours.',
+  })
+  @IsOptional()
+  @IsNumberString()
+  valueNumeric?: string | null;
+}
+
+export class WriteDerivationInputsRequestDto {
+  @ApiProperty({ type: [DerivationInputWriteDto] })
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(MAX_VALUES_PER_WRITE)
+  @ValidateNested({ each: true })
+  @Type(() => DerivationInputWriteDto)
+  values!: DerivationInputWriteDto[];
 }

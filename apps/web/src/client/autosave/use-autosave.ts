@@ -1,6 +1,6 @@
 'use client';
 
-import type { DisclosureValueResponse, DisclosureValueWrite } from '@easyesg/contracts';
+import type { DisclosureValueResponse } from '@easyesg/contracts';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { API_OUTCOME } from '@/lib/api-outcome';
@@ -14,11 +14,13 @@ import {
   flushSnapshot,
   hasUnsynced,
   initialAutosaveState,
+  isDerivationInputWrite,
+  type QueuedWrite,
   type AutosaveState,
   type FlushFailure,
 } from '@/features/wizard/autosave-state';
 import type { PendingWriteStore } from './pending-store';
-import { putDisclosureValues } from './write-values';
+import { putDerivationInputs, putDisclosureValues } from './write-values';
 
 /**
  * The wizard's persistence model, live (task 35.2; AD-9's §4.10, §11.1).
@@ -90,8 +92,14 @@ class FlushError extends Error {
 
 export interface AutosaveHandle {
   readonly state: AutosaveState;
-  /** A field's new value, or its clearing — the reducer's `CHANGED`. */
-  readonly change: (write: DisclosureValueWrite) => void;
+  /**
+   * A field's new value, or its clearing — the reducer's `CHANGED`.
+   *
+   * Takes either kind of queued write since task 36.10: a disclosure, or a value one of EFRAG's
+   * derived figures is computed from. A field author calls one function and never chooses a
+   * transport; the partition happens once, at the flush.
+   */
+  readonly change: (write: QueuedWrite) => void;
   /** Another attempt after a failure — the banner's retry, and the backoff timer's. */
   readonly retry: () => void;
   /** Whether the queue survives this tab — what the memory fallback gives up. */
@@ -127,7 +135,34 @@ export function useAutosave(input: {
     mutationFn: async () => {
       const { writes, sent } = flushSnapshot(latest.current);
       dispatch({ type: AUTOSAVE_EVENT.FLUSH_STARTED, sent });
-      const outcome = await putDisclosureValues({ reportId, values: writes, fetch: input.fetch });
+      // **Partitioned here rather than at every field**, which is what keeps one queue serving two
+      // stores (task 36.10): a derivation input is not a disclosure and lands on its own endpoint,
+      // and nothing above this line had to know which it was writing.
+      const inputs = writes.filter(isDerivationInputWrite);
+      // The predicate is spelled out rather than negated inline: a `!` inside `filter` does not
+      // narrow, and an `as` here would be the cast this codebase refuses on validated data.
+      const values = writes.flatMap((write) => (isDerivationInputWrite(write) ? [] : [write]));
+
+      // Values first, then inputs. The order matters and is not arbitrary: the api recomputes a
+      // derived figure after each write, so sending the inputs last means the last recompute sees
+      // every operand this flush carried. The reverse order computes twice and the first is stale.
+      const outcome =
+        values.length === 0
+          ? { status: API_OUTCOME.Ok, value: [] as DisclosureValueResponse[], messages: [] }
+          : await putDisclosureValues({ reportId, values, fetch: input.fetch });
+      if (outcome.status === API_OUTCOME.Ok && inputs.length > 0) {
+        const written = await putDerivationInputs({ reportId, values: inputs, fetch: input.fetch });
+        if (written.status !== API_OUTCOME.Ok) {
+          if (written.status === API_OUTCOME.Unreachable && !browserOnline()) {
+            dispatch({ type: AUTOSAVE_EVENT.CONNECTION_CHANGED, connection: CONNECTION.OFFLINE });
+          }
+          throw new FlushError(
+            written.status === API_OUTCOME.Problem
+              ? { kind: FLUSH_FAILURE.REFUSED, problem: written.problem }
+              : { kind: FLUSH_FAILURE.UNREACHABLE },
+          );
+        }
+      }
       if (outcome.status === API_OUTCOME.Ok) return outcome.value;
       // The browser's own verdict outranks the event stream: an `offline` event can be missed
       // between a blur and its flush, and a request that failed while `navigator.onLine` is false
@@ -233,7 +268,9 @@ export function useAutosave(input: {
   }, [pending]);
 
   const change = useCallback(
-    (write: DisclosureValueWrite) => dispatch({ type: AUTOSAVE_EVENT.CHANGED, write }),
+    // `QueuedWrite`, so a field author calls one function whichever store its value lands in
+    // (task 36.10). The partition happens once, at the flush.
+    (write: QueuedWrite) => dispatch({ type: AUTOSAVE_EVENT.CHANGED, write }),
     [],
   );
   const retry = useCallback(() => dispatch({ type: AUTOSAVE_EVENT.RETRY_REQUESTED }), []);

@@ -1107,6 +1107,20 @@
         "domainLanguage": "Этот классификатор опубликован только на английском языке, поэтому названия ниже приведены на английском. Код рядом с каждой записью — из официального перечня.",
         "hazardous": "Опасные",
         "nonHazardous": "Неопасные"
+      },
+      "derivationInput": {
+        "names": {
+          "HoursWorkedByOneFullTimeEmployee": "Часов, отработанных одним сотрудником на полной ставке за период",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Сотрудников на начало периода",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Сотрудников на конец периода",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Сотрудники, уволившиеся за период"
+        },
+        "help": {
+          "HoursWorkedByOneFullTimeEmployee": "Стандарт исходит из 2 000 часов в год. Эта величина различается по странам и отраслям — по национальному законодательству или коллективному договору; если у вас она иная, укажите её здесь.",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Численность в первый день периода. Вместе с численностью на конец даёт среднее, по которому считается текучесть.",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Численность в последний день периода.",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Сколько сотрудников уволилось в течение периода, по любой причине."
+        }
       }
     }
   }

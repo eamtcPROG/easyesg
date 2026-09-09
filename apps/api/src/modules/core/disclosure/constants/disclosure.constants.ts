@@ -32,8 +32,11 @@ export const DISCLOSURE_APPLICABILITY_CONFIG_KIND = 'disclosure_applicability';
  * reviewable, effective-dated, and adding one needs no redeploy (DR-3), exactly as
  * `disclosure_applicability` registers FR-28's conditions.
  *
- * **Seeded with the energy axis alone.** B4's pollutants are task 36.5's decision; listing them
- * here now would be deciding how that screen works before anyone has designed it.
+ * **Seeded with one breakdown and three classifications**: `BreakdownOfEnergyConsumptionAxis` is the
+ * breakdown, and `TypeOfPollutantAxis` (36.5), `TypeOfWasteAxis` (36.8) and
+ * `CountryOfEmploymentContractAxis` (36.9) are classifications. This sentence read *"seeded with the
+ * energy axis alone"* until 9 Sep 2026 and had been wrong since 36.5 — prose about a file's contents,
+ * which no gate reads.
  *
  * **`ReportingScopesAxis` is the interesting omission, and B3 reaches it** (amended 8 Sep 2026,
  * same task). Its members are `BaselineYearMember`, `TargetYearMember` and `CurrentlyStatedMember`
@@ -45,3 +48,19 @@ export const DISCLOSURE_APPLICABILITY_CONFIG_KIND = 'disclosure_applicability';
  * task 79.x's, where baseline and target *are* rows a Comprehensive reporter fills.
  */
 export const DISCLOSURE_AXIS_SHAPE_CONFIG_KIND = 'disclosure_axis_shape';
+
+/**
+ * Which Basic-module figures the platform derives, and from what (task 36.10).
+ *
+ * **Data because the offers are thresholds that vary by jurisdiction** — EFRAG prints 2 000 hours
+ * for a full-time working year and says in the cell that it *"may vary by country or sector,
+ * depending on national rules or collective bargaining agreements"*, which for a product serving
+ * Moldovan SMEs is a real difference rather than a formality. The *arithmetic* is not here: it is a
+ * named formula in `models/derivation.model.ts`, because a formula belongs to a template version
+ * and DR-4 pins one per report already (AD-4, and §12.5.6's task-36.10 rows).
+ *
+ * Seeded with the two the Digital Template 1.3.0 computes: B8's `EmployeeTurnoverRate` and B9's
+ * `RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod`. An element named by no derivation is
+ * an ordinary field the reporter answers, which is every other one.
+ */
+export const DISCLOSURE_DERIVATION_CONFIG_KIND = 'disclosure_derivation';

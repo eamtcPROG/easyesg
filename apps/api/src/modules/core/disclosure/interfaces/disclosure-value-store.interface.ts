@@ -36,6 +36,22 @@ export interface DisclosureValueStore {
    * this method, so it holds for every writer (FR-22, P-4).
    */
   write(value: DisclosureValueWrite): Promise<DisclosureValue>;
+  /**
+   * Write a figure the platform computed, marking it `origin = 'calculated'` (task 36.10).
+   *
+   * **A separate method rather than an `origin` on `DisclosureValueContents`**, which is task 36.4's
+   * decision honoured rather than reversed: *"the read tells; the write cannot"* — putting provenance
+   * on the ordinary write shape would oblige `wizard.controller.ts` to send `'reported'` on every
+   * keystroke as though it had chosen. Only the code that actually computed something can reach this,
+   * which is the property that made 36.4 keep it off the shape in the first place.
+   *
+   * `null` clears the figure back to unanswered, for a derivation whose operands are no longer all
+   * present — a stale computed number outliving its inputs is worse than an empty field.
+   */
+  writeDerived(value: {
+    readonly key: DisclosureValueKey;
+    readonly valueNumeric: string | null;
+  }): Promise<DisclosureValue>;
 
   /**
    * Remove one value — a repeating-group row for a site or subsidiary that no longer applies.

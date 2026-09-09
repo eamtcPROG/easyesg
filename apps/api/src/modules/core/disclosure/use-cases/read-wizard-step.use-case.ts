@@ -47,6 +47,9 @@ import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxo
 import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
 import type { ApplicabilityRules } from '../interfaces/applicability-rules.interface';
 import type { AxisShapes } from '../interfaces/axis-shape.interface';
+import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
+import { OPERAND_SOURCE, type Derivation } from '../models/derivation.model';
+import type { DerivationService } from '../services/derivation.service';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import {
@@ -62,6 +65,7 @@ import {
 } from '../models/disclosure-value.model';
 import type { Report } from '../models/report.model';
 import type {
+  DerivationInputField,
   DisclosureApplicabilityCause,
   DisclosureAxis,
   DisclosureDefault,
@@ -155,6 +159,13 @@ export class ReadWizardStep {
      * state, so it is published rather than released (AD-4, DR-3).
      */
     private readonly axisShapes: AxisShapes,
+    /**
+     * Which figures the platform derives, as configuration (task 36.10). The step read needs it to
+     * serve their inputs; the write path needs it to refuse a typed rate.
+     */
+    private readonly derivations: DerivationService,
+    /** Where the reporter's answers to those inputs are kept — `core.report_derivation_input`. */
+    private readonly derivationInputs: DerivationInputStore,
     private readonly warnings: ReadWarnings,
   ) {}
 
@@ -232,6 +243,15 @@ export class ReadWizardStep {
   async step(query: ReadStepQuery): Promise<DisclosureStep> {
     const { report, registered } = await this.pinned(query.reportId);
     const { byKey, byElement } = await this.stored(query.reportId);
+    // Read unconditionally rather than only for B8 and B9: the step does not yet know which of its
+    // fields are derived — that is settled below, off the artefact — and this is one indexed read of
+    // at most four rows against a branch that would have to be kept in step with the artefact.
+    const storedInputs = new Map(
+      (await this.derivationInputs.forReport({ reportId: query.reportId })).map((input) => [
+        input.inputKey,
+        input.valueNumeric,
+      ]),
+    );
     const defaults = await this.defaultsFor(report, registered);
     const applicability = this.applicabilityOf({ registered, byElement });
     const at = { version: registered.version, locale: query.locale };
@@ -354,6 +374,14 @@ export class ReadWizardStep {
       module: query.module,
       taxonomyVersion: registered.version,
       fields,
+      // The inputs of whatever this step's own fields are derived from. Resolved from the elements
+      // actually on the step rather than from the whole artefact, so B9's hours figure appears on
+      // B9 and nowhere else — a report has one of each, but a step is a screen.
+      derivationInputs: derivationInputsFor({
+        elements: fields.map((field) => field.elementKey),
+        derivations: this.derivations.all({ standard: registered.standard }),
+        stored: storedInputs,
+      }),
       // Sorted, so two reads of one step agree — a `Set` preserves insertion order and the walk's
       // order is the taxonomy's, which is stable, but nothing in the type says so.
       axes: [...classifications]
@@ -1091,4 +1119,39 @@ class OptionResolver {
       label: this.input.memberLabels?.[member.key]?.text ?? null,
     }));
   }
+}
+
+/**
+ * The derivation inputs a step should show — the ones feeding a figure this step actually carries.
+ *
+ * **Keyed off the step's own elements, not off the artefact.** A report has one
+ * `HoursWorkedByOneFullTimeEmployee`, and it is B9's question; serving every registered input on
+ * every step would put B8's three turnover figures on B2. A pure function so the ordering and the
+ * offer-versus-answer distinction are unit-testable without a store.
+ *
+ * Sorted by key, so two reads of one step agree on the order — the artefact's own order is an
+ * author's choice and nothing in the type says it is stable.
+ */
+export function derivationInputsFor(query: {
+  readonly elements: readonly string[];
+  readonly derivations: ReadonlyMap<string, Derivation>;
+  readonly stored: ReadonlyMap<string, string>;
+}): readonly DerivationInputField[] {
+  const onThisStep = new Set(query.elements);
+  const fields: DerivationInputField[] = [];
+  for (const derivation of query.derivations.values()) {
+    if (!onThisStep.has(derivation.element)) continue;
+    for (const operand of Object.values(derivation.operands)) {
+      // A disclosure operand is already a field of its own — B9's accident count is on the step
+      // above this list, and B1's headcount is B1's question. Only the keyless ones belong here.
+      if (operand.from !== OPERAND_SOURCE.INPUT) continue;
+      fields.push({
+        key: operand.key,
+        derives: derivation.element,
+        value: query.stored.get(operand.key) ?? null,
+        offered: operand.fallback,
+      });
+    }
+  }
+  return fields.sort((a, b) => a.key.localeCompare(b.key));
 }

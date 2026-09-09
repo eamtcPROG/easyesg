@@ -13580,3 +13580,133 @@ Both review agents ran on **`opus`**, per the pin.
 
 The parent close for task 36 still owes `pnpm gates:clean` and the three agents over the whole
 fourteen-sub-step diff.
+
+## Task 36.10 — B9, and the figures EFRAG computes without telling the taxonomy · 2026-09-09
+
+B9 is three elements, one section, no axes, no units, no applicability rule — on paper the smallest
+module in Basic. The plan gave it the workspace `web` and one sentence of intent: *a computed rate
+beside its inputs, so the derivation is visible rather than asserted.* It cost a migration.
+
+### What the workbook says and the taxonomy does not
+
+Opening `Social Disclosures` before writing anything — the method every module slice since 36.5 has
+used — turned up the whole of this task in five rows:
+
+```
+D140  Number of recordable work-related accidents            (element)
+D141  Number of hours worked by one full-time employee       2000        ← no element
+D142  Total number of hours worked … by all employees        =D141*E284  ← no element
+D143  Rate of recordable work-related accidents  =(D140/D142)*200000     (element)
+D144  Number of fatalities …                                 (element)
+```
+
+**EFRAG computes the rate, and two of the three values it computes from carry no taxonomy element.**
+The taxonomy carries results and is silent on derivations; nothing but the template says this. And
+`E284` is B1's headcount, so B9 is B1-linked in the same way B8's tables are.
+
+**Reading it also found that B8 — closed the day before — has the identical defect.** The template
+computes `EmployeeTurnoverRate` as `departures ÷ ((employees at start + employees at end) ÷ 2)`, and
+**none of those three is a reportable element** either. Task 36.9 shipped it as a field a reporter
+types. FR-29's acceptance criterion has said *"the specified intensity figures are derived rather
+than typed"* the whole time and names no figure, so nothing needed amending — only meeting. The
+project owner chose to fix both here rather than let two rates behave differently in one wizard.
+
+### Three decisions, and the third reversed the cheap answer
+
+**Where the inputs live: a new table.** `core.report_derivation_input`, with the composite tenancy
+FK, four RLS policies, the period lock and FR-54's per-field capture. The cheaper option was real
+and was declined: carrying the template's input concepts in the taxonomy artefact as non-reportable
+elements needs no migration and reuses everything — but it puts two kinds of key in one column and
+makes the export's correctness a property of a filter rather than of a table. What ruled out the
+cheapest option, storing them in `report_disclosure_value` under synthetic keys, is that
+`WriteDisclosureValues` refuses an element key the pinned version does not carry: §7.3 opens by
+recording three invented keys that were all wrong, and that guard is what catches them. Weakening it
+for exactly the class of key it exists to refuse is not a shortcut, it is the defect.
+
+Two of the guarantees came free, and that is worth knowing for the next table:
+`core.refuse_locked_disclosure_write()` was written to read `report_id` off `OLD` or `NEW` rather
+than off a named table, so it attaches unchanged — including task 34.1's measurement that a child
+guard cannot see a locked parent during a cascade. `core.capture_field_change` is generic.
+
+**The 2 000-hour working year is data; the arithmetic is code.** EFRAG prints 2 000 and adds *"the
+undertaking can modify the value… this figure may vary by country or sector, depending on national
+rules or collective bargaining agreements."* That is a threshold varying by jurisdiction — the first
+thing AD-4 names as configuration — and the market here is Moldova, not the EU average the number
+assumes. The formula is not on AD-4's list and belongs to a template version DR-4 already pins.
+**Declined: an expression language in the artefact.** Two derivations do not justify an interpreter,
+and it would make the arithmetic unreviewable; `DERIVATION_FORMULA` has two members and a pure
+function each.
+
+**The derived figure needed nothing new at all.** Task 36.4 shipped `origin` with `calculated` as a
+member no code could yet produce, naming 39.2 and 38.5 as the tasks that would. This is a third, and
+36.4's *"the read tells; the write cannot"* is honoured rather than reversed: `writeDerived` is a
+separate store method, so `wizard.controller.ts` still has no way to claim a provenance.
+
+### FR-30 had a state, a CHECK, a tone — and no writer
+
+`DISCLOSURE_STATE.NIL_RETURN` has existed since task 34.1, in the migration's `CHECK` and in the
+wizard's `field-tone.ts`, and **nothing in the product ever produced one**. P3's *"a gap is an
+answer"* was true of the schema and false of the screen. `answeredState` now decides it from the
+value rather than from the caller (P-4), which also settles the direction a one-way rule leaves
+behind: a field edited from 0 to 5 must stop being a nil return, and a client that remembered to set
+the state on the way in has no reason to remember on the way out. It binds every numeric kind, not
+B9's fields — a zero means the same in B4 — and B9 and B11 are merely where a reader needs it most.
+
+### One queue, two stores
+
+The derivation inputs ride the autosave queue exactly as disclosures do — same debounce, same
+IndexedDB queue, same acknowledgement — because a field that quietly lost FR-38 and UX-36 for no
+stated reason is the per-screen divergence UX-89 exists to prevent. `QueuedWrite` is a union
+discriminated by shape (`inputKey` against `elementKey`, disjoint by construction, so no flag has to
+be kept true), and the partition happens once, in the flush. **Values are sent before inputs**, and
+that is not stylistic: the api recomputes after each write, so inputs last means the final recompute
+sees every operand the flush carried.
+
+**`TextField`, not `DisclosureField`, and the required prop is what settled it.** `DisclosureField`
+requires UX-15's not-available slot, because every disclosure a reader sees may be deliberately
+unanswered with a reason. A derivation input is not filed, not exported and not validated, so it has
+no such state — passing `null` into that slot would be asserting it does. UX-89's test is a
+difference in anatomy, and here there is one.
+
+**The offer is a placeholder, never a value.** Filling the box with 2 000 would make an offer nobody
+looked at indistinguishable from a figure someone chose, and the api computes with the offer either
+way — so the empty box costs nothing and says something true. Same distinction task 91.2 draws for
+an entity-record default.
+
+### What the gates caught
+
+- **The route-permission table** rejected the new endpoint until it was declared — working as built.
+- **`message-keys.spec.ts`** rejected two new `DomainError`s until all three catalogues carried
+  NFR-79's three-part text. Romanian authored first, per the never-machine-translate rule.
+- **`schema-invariants`** rejected the new table until it was **classified** as audited or not. The
+  trigger was already attached; the invariant wanted the decision on record, which is the point.
+- **A pre-existing UX-28 e2e wrote a value to `EmployeeTurnoverRate`** and now gets a 400. Its
+  premise moved rather than its subject: rewritten to produce the rate through its three inputs,
+  which is the path a reporter actually takes.
+- **And its browser twin found a gap the api tests could not.** The B8 journey timed out filling a
+  turnover box that no longer exists — correct, and it surfaced something unbuilt: **the inputs were
+  still shown when the figure they feed does not apply.** A ten-person undertaking was being asked
+  how many employees left in the period, in aid of a disclosure it does not make — BR-APP-5's
+  *presented and later rejected* in everything but the rejection. Inputs now follow their figure's
+  applicability, in the screen, off the verdict the api already computes. **Nothing in the api tests
+  could have caught it**: applicability is a property of the *field list*, and a derivation input is
+  deliberately not in it. The rewritten journey asserts the inputs disappear and return with the
+  rate, so the gap now has a test rather than a fix.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm --filter @easyesg/api test` (687, of which 17 written
+here), `pnpm --filter @easyesg/web test`, `pnpm e2e` (852, of which 11 written here),
+`pnpm openapi:check`, `pnpm migrations:check` (56
+invariants), and `pnpm e2e:web --project identity --project expansion` (148). **The browser suite failed
+the first time and is what found the applicability gap above**; the entry above was written before that
+run finished and briefly claimed a pass it had not earned.
+
+**The formulas are mutation-proven against EFRAG's own cells**, three ways: the accident base
+changed from 200 000 to 100 (the percentage-shaped misreading — the element is `numeric`, not
+`percent`) fails two cases; the turnover denominator reduced from the average to the closing
+headcount fails two; a zero denominator answering `0` instead of `null` fails one. Each mutation was
+applied, run, and reverted.
+
+Both review agents ran on **`opus`**, per the pin. Task 36's parent close still owes
+`pnpm gates:clean` and the three agents over the whole diff.

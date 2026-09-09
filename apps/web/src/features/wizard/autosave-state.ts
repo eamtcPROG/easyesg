@@ -1,5 +1,6 @@
 import type {
   DisclosureValueResponse,
+  DerivationInputWrite,
   DisclosureValueWrite,
   ProblemDocument,
 } from '@easyesg/contracts';
@@ -49,9 +50,33 @@ export type FlushFailure =
   | { readonly kind: typeof FLUSH_FAILURE.REFUSED; readonly problem: ProblemDocument };
 
 /** One unacknowledged change, addressed by the store's natural key. */
+/**
+ * What the queue carries — a disclosure value, or a value a derived figure is computed from
+ * (task 36.10).
+ *
+ * **One queue for both, discriminated by shape rather than by a tag.** A derivation input has an
+ * `inputKey` where a disclosure has an `elementKey`, and they are disjoint by construction, so no
+ * flag has to be kept true. What this buys is that everything the queue already guarantees —
+ * FR-38's durable offline retry, UX-36's acknowledgement, the coalescing on a natural key — applies
+ * to both without a second copy, and a field author never chooses a mechanism.
+ */
+export type QueuedWrite = DisclosureValueWrite | DerivationInputWrite;
+
+/**
+ * Is this queued write a derivation input? **The one place the two shapes are told apart**, so a
+ * reader never repeats the discriminating property and the union never grows a third answer by
+ * accident.
+ *
+ * Typed on the narrowest thing that decides it rather than on `QueuedWrite`, so `writeKey` and the
+ * specs can pass the fields the key actually reads without constructing a whole write.
+ */
+export const isDerivationInputWrite = <T extends object>(
+  write: T,
+): write is T & DerivationInputWrite => 'inputKey' in write;
+
 export interface PendingWrite {
   readonly key: string;
-  readonly write: DisclosureValueWrite;
+  readonly write: QueuedWrite;
   /** Monotonic within this state. A flush compares it to decide whether an acknowledgement still applies. */
   readonly sequence: number;
 }
@@ -96,8 +121,8 @@ export const AUTOSAVE_EVENT = {
 } as const;
 
 export type AutosaveEvent =
-  | { readonly type: typeof AUTOSAVE_EVENT.CHANGED; readonly write: DisclosureValueWrite }
-  | { readonly type: typeof AUTOSAVE_EVENT.RESTORED; readonly writes: readonly DisclosureValueWrite[] }
+  | { readonly type: typeof AUTOSAVE_EVENT.CHANGED; readonly write: QueuedWrite }
+  | { readonly type: typeof AUTOSAVE_EVENT.RESTORED; readonly writes: readonly QueuedWrite[] }
   | { readonly type: typeof AUTOSAVE_EVENT.FLUSH_STARTED; readonly sent: Readonly<Record<string, number>> }
   | {
       readonly type: typeof AUTOSAVE_EVENT.FLUSH_SUCCEEDED;
@@ -115,11 +140,20 @@ export const ACKNOWLEDGEMENT_BUDGET_MS = 250;
  * The store's natural key as one string (§7.3) — the same shape the api's `keyOf` uses, so a value
  * addressed here is the row the api upserts. `\u0000` cannot appear in an element or member key.
  */
-export const writeKey = (write: {
-  readonly elementKey: string;
-  readonly dimensionKey?: string;
-  readonly ordinal?: number;
-}): string => `${write.elementKey}\u0000${write.dimensionKey ?? ''}\u0000${write.ordinal ?? 0}`;
+export const writeKey = (
+  write:
+    | { readonly elementKey: string; readonly dimensionKey?: string; readonly ordinal?: number }
+    | { readonly inputKey: string },
+): string =>
+  // `'inputKey' in write` rather than the guard beside it, because a guard returning an intersection
+  // narrows the true branch and not the false one — and the false branch is where the three parts of
+  // the disclosure key are read.
+  'inputKey' in write
+    ? // Two segments where a disclosure has three, so the two spaces cannot collide however an
+      // element is named — a derivation input is keyed by report and key alone (§7.3), having no
+      // dimension to vary along and no ordinal to repeat at.
+      `input\u0000${write.inputKey}`
+    : `${write.elementKey}\u0000${write.dimensionKey ?? ''}\u0000${write.ordinal ?? 0}`;
 
 export const initialAutosaveState = (input: { readonly online: boolean }): AutosaveState => ({
   pending: {},
@@ -134,7 +168,7 @@ export const initialAutosaveState = (input: { readonly online: boolean }): Autos
 
 const withWrites = (
   state: AutosaveState,
-  writes: readonly DisclosureValueWrite[],
+  writes: readonly QueuedWrite[],
 ): Pick<AutosaveState, 'pending' | 'nextSequence'> => {
   const pending = { ...state.pending };
   let sequence = state.nextSequence;
@@ -224,7 +258,7 @@ export const canFlush = (state: AutosaveState): boolean =>
 /** The dirty writes, in sequence order, for the next flush — and the sequences to remember. */
 export const flushSnapshot = (
   state: AutosaveState,
-): { readonly writes: readonly DisclosureValueWrite[]; readonly sent: Readonly<Record<string, number>> } => {
+): { readonly writes: readonly QueuedWrite[]; readonly sent: Readonly<Record<string, number>> } => {
   const ordered = Object.values(state.pending).sort((a, b) => a.sequence - b.sequence);
   const sent: Record<string, number> = {};
   for (const item of ordered) sent[item.key] = item.sequence;

@@ -72,7 +72,19 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     applicabilityCause: Cause | null;
   }
   interface Axis { key: string; label: string | null; memberLanguage: string | null; members: { value: string; label: string | null; code: string | null; hazardous: boolean | null }[] }
-  interface Step { module: string; taxonomyVersion: string; fields: Field[]; axes: Axis[] }
+  interface DerivationInput {
+    key: string;
+    derives: string;
+    value: string | null;
+    offered: string | null;
+  }
+  interface Step {
+    module: string;
+    taxonomyVersion: string;
+    fields: Field[];
+    axes: Axis[];
+    derivationInputs: DerivationInput[];
+  }
 
   const openPeriod = async (year: number): Promise<string> => {
     const response = await http().post('/api/v1/periods').set(admin.authorization).send({
@@ -1331,7 +1343,15 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     it('retains a value under a field that stops applying, and hands it back marked (UX-28)', async () => {
       const reportId = await createReport(await openPeriod(2026));
       await write(reportId, [headcount('200')]);
-      await write(reportId, [{ elementKey: TURNOVER_RATE, valueNumeric: '12.5', state: DISCLOSURE_STATE.OK }]);
+      // **Through its inputs since task 36.10**: the turnover rate is derived, so this test used to
+      // write a figure the api now refuses (FR-29). The act being tested is unchanged — a field
+      // acquires a value and then stops applying — and it now runs the path a reporter runs.
+      await http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization)
+        .send({ values: [
+          { inputKey: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', valueNumeric: '12' },
+          { inputKey: 'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod', valueNumeric: '100' },
+          { inputKey: 'NumberOfEmployeesAtTheEndOfTheReportingPeriod', valueNumeric: '92' },
+        ] }).expect(204);
       expect((await moduleOf(reportId, 'B8'))?.answered).toBe(1);
 
       await write(reportId, [headcount('40')]);
@@ -1339,14 +1359,18 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       // Retained, not dropped: the value is served exactly as stored, and `applicable: false`
       // beside a state that is not `missing` is the whole of the retention signal.
       expect(retained?.applicable).toBe(false);
-      expect(retained?.valueNumeric).toBe('12.5');
+      // 12 ÷ ((100 + 92) ÷ 2) = 0.125
+      expect(Number(retained?.valueNumeric)).toBeCloseTo(0.125, 6);
       expect(retained?.state).toBe(DISCLOSURE_STATE.OK);
       // And it counts toward nothing while it does not apply, so B8's progress is honest.
       expect((await moduleOf(reportId, 'B8'))?.answered).toBe(0);
 
-      // Writing to it is not refused (BR-APP-5): rejecting a field nobody was shown is the
-      // "presented and later rejected" the rule exists to prevent.
-      await write(reportId, [{ elementKey: TURNOVER_RATE, valueNumeric: '13', state: DISCLOSURE_STATE.OK }]);
+      // Writing to it is not refused *on applicability grounds* (BR-APP-5): rejecting a field
+      // nobody was shown is the "presented and later rejected" the rule exists to prevent. The
+      // equivalent act is now writing an input, since the figure itself is the platform's to set.
+      await http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization)
+        .send({ values: [{ inputKey: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', valueNumeric: '13' }] })
+        .expect(204);
     });
 
     it('takes a threshold change from the store, with no redeploy and no restart (FR-72, UC-81)', async () => {
@@ -1389,4 +1413,162 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       expect(fieldOf(await readStep(reportId, 'B8'), TURNOVER_RATE)?.applicable).toBe(false);
     });
   });
+  /**
+   * The figures EFRAG's template computes rather than asks for (task 36.10; UC-26, UC-27, FR-29).
+   *
+   * Over real HTTP and a real database, because the interesting part is not the arithmetic — that is
+   * unit-tested against the workbook's own cells — but that a value written through one endpoint
+   * changes a figure served by another, with the right provenance and the right state.
+   */
+  describe('derived figures (FR-29, FR-30)', () => {
+    const ACCIDENT_RATE = 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod';
+    const ACCIDENTS = 'NumberOfRecordableWorkRelatedAccidentsInTheReportingPeriod';
+    const FATALITIES = 'NumberOfFatalitiesAsAResultOfWorkRelatedInjuriesAndWorkRelatedIllHealth';
+    const HOURS = 'HoursWorkedByOneFullTimeEmployee';
+
+    const put = async (reportId: string, values: Record<string, unknown>[]): Promise<void> => {
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization)
+        .send({ values }).expect(200);
+    };
+    const putInputs = async (
+      reportId: string,
+      values: Record<string, unknown>[],
+      status = 204,
+    ): Promise<void> => {
+      await http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization)
+        .send({ values }).expect(status);
+    };
+    const field = (step: Step, elementKey: string): Field | undefined =>
+      step.fields.find((f) => f.elementKey === elementKey);
+
+    it('serves B9’s hours input with EFRAG’s published offer and no stored value (UC-27)', async () => {
+      const step = await readStep(await createReport(await openPeriod(2026)), 'B9');
+      const inputs = step.derivationInputs;
+      expect(inputs.map((i) => i.key)).toEqual([HOURS]);
+      // The offer is served; the value is not. A reporter who has never looked at the field is
+      // distinguishable from one who typed 2000, which is the whole reason they are two properties.
+      expect(inputs[0]).toMatchObject({ derives: ACCIDENT_RATE, value: null, offered: '2000' });
+    });
+
+    it('puts B8’s three turnover inputs on B8 and nothing on B2', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      expect((await readStep(reportId, 'B8')).derivationInputs.map((i) => i.key).sort()).toEqual([
+        'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod',
+        'NumberOfEmployeesAtTheEndOfTheReportingPeriod',
+        'NumberOfEmployeesWhoLeftDuringTheReportingPeriod',
+      ]);
+      // A report has one of each input; a step is a screen. B2 derives nothing.
+      expect((await readStep(reportId, 'B2')).derivationInputs).toEqual([]);
+    });
+
+    it('derives B9’s rate from the accident count, the offered hours and B1’s headcount', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await put(reportId, [
+        { elementKey: 'NumberOfEmployees', valueNumeric: '50', state: DISCLOSURE_STATE.OK },
+        { elementKey: ACCIDENTS, valueNumeric: '3', state: DISCLOSURE_STATE.OK },
+      ]);
+      // Nobody touched the hours field, so the published 2 000 is what it computes with — which is
+      // what makes the offer reachable without writing a number on the reporter's behalf.
+      const rate = field(await readStep(reportId, 'B9'), ACCIDENT_RATE);
+      expect(Number(rate?.valueNumeric)).toBeCloseTo(6, 6);
+      expect(rate?.origin).toBe('calculated');
+    });
+
+    it('follows the hours figure when the reporter states their own working year', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await put(reportId, [
+        { elementKey: 'NumberOfEmployees', valueNumeric: '50', state: DISCLOSURE_STATE.OK },
+        { elementKey: ACCIDENTS, valueNumeric: '3', state: DISCLOSURE_STATE.OK },
+      ]);
+      await putInputs(reportId, [{ inputKey: HOURS, valueNumeric: '1500' }]);
+      const step = await readStep(reportId, 'B9');
+      // 3 ÷ (1500 × 50) × 200000 = 8, against 6 at EFRAG's default.
+      expect(Number(field(step, ACCIDENT_RATE)?.valueNumeric)).toBeCloseTo(8, 6);
+      // And the stored answer is served back beside the offer it replaced, not instead of it.
+      expect(step.derivationInputs[0]).toMatchObject({ value: '1500', offered: '2000' });
+    });
+
+    it('clears the input back to the offer when the value is null', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await put(reportId, [
+        { elementKey: 'NumberOfEmployees', valueNumeric: '50', state: DISCLOSURE_STATE.OK },
+        { elementKey: ACCIDENTS, valueNumeric: '3', state: DISCLOSURE_STATE.OK },
+      ]);
+      await putInputs(reportId, [{ inputKey: HOURS, valueNumeric: '1500' }]);
+      await putInputs(reportId, [{ inputKey: HOURS, valueNumeric: null }]);
+      const step = await readStep(reportId, 'B9');
+      expect(step.derivationInputs[0]).toMatchObject({ value: null, offered: '2000' });
+      expect(Number(field(step, ACCIDENT_RATE)?.valueNumeric)).toBeCloseTo(6, 6);
+    });
+
+    it('derives B8’s turnover from its three inputs, none of which is a disclosure', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await put(reportId, [{ elementKey: 'NumberOfEmployees', valueNumeric: '50', state: DISCLOSURE_STATE.OK }]);
+      await putInputs(reportId, [
+        { inputKey: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', valueNumeric: '12' },
+        { inputKey: 'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod', valueNumeric: '100' },
+        { inputKey: 'NumberOfEmployeesAtTheEndOfTheReportingPeriod', valueNumeric: '80' },
+      ]);
+      const rate = field(await readStep(reportId, 'B8'), 'EmployeeTurnoverRate');
+      // 12 ÷ ((100 + 80) ÷ 2)
+      expect(Number(rate?.valueNumeric)).toBeCloseTo(0.13333333, 6);
+      expect(rate?.origin).toBe('calculated');
+    });
+
+    it('clears a derived figure when its operands stop being complete', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await put(reportId, [
+        { elementKey: 'NumberOfEmployees', valueNumeric: '50', state: DISCLOSURE_STATE.OK },
+        { elementKey: ACCIDENTS, valueNumeric: '3', state: DISCLOSURE_STATE.OK },
+      ]);
+      expect(field(await readStep(reportId, 'B9'), ACCIDENT_RATE)?.valueNumeric).not.toBeNull();
+      // The headcount is emptied. A stale rate carrying `origin = calculated` would say the system
+      // stands behind an answer it can no longer produce.
+      await put(reportId, [
+        { elementKey: 'NumberOfEmployees', valueNumeric: null, state: DISCLOSURE_STATE.MISSING },
+      ]);
+      const cleared = field(await readStep(reportId, 'B9'), ACCIDENT_RATE);
+      expect(cleared?.valueNumeric).toBeNull();
+      expect(cleared?.state).toBe(DISCLOSURE_STATE.MISSING);
+    });
+
+    it('refuses a typed rate — derived rather than typed is a rule, not a screen state (FR-29)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization)
+        .send({ values: [{ elementKey: ACCIDENT_RATE, valueNumeric: '99', state: DISCLOSURE_STATE.OK }] })
+        .expect(400);
+    });
+
+    it('refuses an input no registered derivation reads', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await putInputs(reportId, [{ inputKey: 'HoursSpentReadingTheTaxonomy', valueNumeric: '9000' }], 400);
+    });
+
+    it('records an answered zero as a nil return, and a derived zero too (FR-30)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await put(reportId, [
+        { elementKey: 'NumberOfEmployees', valueNumeric: '50', state: DISCLOSURE_STATE.OK },
+        // *No fatalities* is the disclosure a reader most needs to tell from an unfilled field.
+        { elementKey: FATALITIES, valueNumeric: '0', state: DISCLOSURE_STATE.OK },
+        { elementKey: ACCIDENTS, valueNumeric: '0', state: DISCLOSURE_STATE.OK },
+      ]);
+      const step = await readStep(reportId, 'B9');
+      expect(field(step, FATALITIES)?.state).toBe(DISCLOSURE_STATE.NIL_RETURN);
+      // And the rate computed from them: zero accidents is a rate of zero, which is an answer.
+      const rate = field(step, ACCIDENT_RATE);
+      expect(Number(rate?.valueNumeric)).toBe(0);
+      expect(rate?.state).toBe(DISCLOSURE_STATE.NIL_RETURN);
+    });
+
+    it('stops being a nil return when the zero is edited up (FR-30, both directions)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await put(reportId, [{ elementKey: FATALITIES, valueNumeric: '0', state: DISCLOSURE_STATE.OK }]);
+      expect(field(await readStep(reportId, 'B9'), FATALITIES)?.state).toBe(DISCLOSURE_STATE.NIL_RETURN);
+      // The browser sends `ok`; so would a client that never learned about nil returns. The state is
+      // the value's, not the caller's (P-4).
+      await put(reportId, [{ elementKey: FATALITIES, valueNumeric: '2', state: DISCLOSURE_STATE.OK }]);
+      expect(field(await readStep(reportId, 'B9'), FATALITIES)?.state).toBe(DISCLOSURE_STATE.OK);
+    });
+  });
+
 });

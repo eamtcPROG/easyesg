@@ -622,16 +622,32 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
   // for the reason it existed. The sentence presupposes the disappearance rather than forbidding it,
   // and `EmployeeTurnoverRate` is the only field in the product that can currently demonstrate all
   // three parts, because nothing else is answered and then made inapplicable.
-  const rate = turnover.getByRole('textbox');
-  await rate.fill('12');
-  await rate.blur();
+  //
+  // **Answered through its inputs since task 36.10**, which broke this block and is why it reads
+  // differently again: EFRAG derives the turnover rate, so it has no box to type in — the reporter
+  // states the three figures it is computed from and the rate follows. The three claims are
+  // unchanged, and the test is stronger for it: the **inputs** disappear with the figure too, being
+  // questions asked only to produce it.
+  await expect(turnover.getByRole('textbox')).toHaveCount(0);
+  const departures = page.getByRole('textbox', { name: 'Angajați care au plecat în perioadă' });
+  const atStart = page.getByRole('textbox', { name: 'Angajați la începutul perioadei' });
+  const atEnd = page.getByRole('textbox', { name: 'Angajați la sfârșitul perioadei' });
+  await departures.fill('12');
+  await departures.blur();
+  await atStart.fill('100');
+  await atStart.blur();
+  await atEnd.fill('92');
+  await atEnd.blur();
   await expect
     .poll(
       async () =>
-        (await disclosureValueOf({ organizationId, reportId, elementKey: 'EmployeeTurnoverRate' }))?.valueNumeric,
+        Number(
+          (await disclosureValueOf({ organizationId, reportId, elementKey: 'EmployeeTurnoverRate' }))
+            ?.valueNumeric,
+        ),
       { timeout: 15_000 },
     )
-    .toBe('12');
+    .toBeCloseTo(0.125, 6);
 
   // The undertaking shrinks below the threshold. The rule stops applying to the field…
   await page.goto(`/reports/${reportId}/B1`);
@@ -646,16 +662,22 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
     )
     .toBe('10');
 
-  // …so the question goes — §7.3's third condition, which is the half the api cannot show…
+  // …so the question goes — §7.3's third condition, which is the half the api cannot show — and the
+  // three inputs go with it, since a ten-person undertaking has no reason to be asked how many
+  // people left in aid of a figure it does not report (BR-APP-5, task 36.10).
   await page.goto(`/reports/${reportId}/B8`);
   await expect(page.getByRole('group', { name: 'Rata de fluctuație a personalului' })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'Angajați care au plecat în perioadă' })).toHaveCount(0);
 
   // …and the answer is **retained** while the question is gone. Read from the store rather than from
   // the screen, which is the only place it can be read now — and the assertion the "field stays
   // visible" version could never make, because it was reading the same fact twice.
   expect(
-    (await disclosureValueOf({ organizationId, reportId, elementKey: 'EmployeeTurnoverRate' }))?.valueNumeric,
-  ).toBe('12');
+    Number(
+      (await disclosureValueOf({ organizationId, reportId, elementKey: 'EmployeeTurnoverRate' }))
+        ?.valueNumeric,
+    ),
+  ).toBeCloseTo(0.125, 6);
 
   // …and it is **restored** when the condition returns, without the reporter retyping it.
   await page.goto(`/reports/${reportId}/B1`);
@@ -671,9 +693,12 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
     .toBe('50');
 
   await page.goto(`/reports/${reportId}/B8`);
-  await expect(
-    page.getByRole('group', { name: 'Rata de fluctuație a personalului' }).getByRole('textbox'),
-  ).toHaveValue('12');
+  // Restored as a figure rather than as an editable box, the reporter never having typed it.
+  const restored = page.getByRole('group', { name: 'Rata de fluctuație a personalului' });
+  await expect(restored).toBeVisible();
+  await expect(restored).toContainText('0.125');
+  // And the inputs come back carrying what was entered, which is the same claim one layer down.
+  await expect(page.getByRole('textbox', { name: 'Angajați la începutul perioadei' })).toHaveValue('100');
 });
 
 /**
@@ -1007,4 +1032,113 @@ test('a module the rules ruled out says so on the rail rather than counting to z
   // And it is the only module in that state on an untouched B1, which is what makes the assertion
   // above about B6 rather than about the rail.
   await expect(rail.getByText('Nu se aplică')).toHaveCount(1);
+});
+
+/**
+ * B9's derived rate, and the two halves only a browser can show (UC-27, FR-29, FR-30; task 36.10).
+ *
+ * The arithmetic is unit-tested against EFRAG's own workbook cells and the wiring is proven over
+ * HTTP; what is left is what a reporter actually meets — that the rate has **no input to type**,
+ * that the hours field offers 2 000 without claiming the reporter chose it, and that a zero reads
+ * as an answer rather than as a gap.
+ */
+test('B9 computes the accident rate from fields the reporter can see (UC-27)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b9');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  // B1's headcount is the rate's denominator, so it is answered first — UC-27's precondition.
+  await page.goto(`/reports/${reportId}/B1`);
+  const employees = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await employees.fill('50');
+  await employees.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('50');
+
+  await page.goto(`/reports/${reportId}/B9`);
+
+  // **The hours field, offering EFRAG's 2 000 without filling it in.** The placeholder is the offer;
+  // an empty box is a reporter who has not looked, and that is deliberately not the same thing as
+  // one who typed 2000 — the api computes with the offer either way.
+  const hours = page.getByRole('textbox', {
+    name: 'Ore lucrate de un angajat cu normă întreagă în perioadă',
+  });
+  await expect(hours).toHaveValue('');
+  await expect(hours).toHaveAttribute('placeholder', '2000');
+
+  // **The rate has no input at all.** FR-29's "derived rather than typed", as a screen fact rather
+  // than as a refusal the reporter meets after typing.
+  const rateGroup = page.getByRole('group', {
+    name: 'Rata accidentelor de muncă înregistrabile în perioada de raportare',
+  });
+  await expect(rateGroup).toBeVisible();
+  await expect(rateGroup.getByRole('textbox')).toHaveCount(0);
+
+  const accidents = page
+    .getByRole('group', { name: 'Numărul de accidente de muncă înregistrabile în perioada de raportare' })
+    .getByRole('textbox');
+  await accidents.fill('3');
+  await accidents.blur();
+
+  // 3 ÷ (2000 × 50) × 200000 = 6, computed from a field nobody filled in.
+  await expect
+    .poll(
+      async () =>
+        Number(
+          (
+            await disclosureValueOf({
+              organizationId,
+              reportId,
+              elementKey: 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod',
+            })
+          )?.valueNumeric,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeCloseTo(6, 6);
+
+  // The reporter states their own working year, through the autosave queue every other field uses.
+  await hours.fill('1500');
+  await hours.blur();
+  await expect
+    .poll(
+      async () =>
+        Number(
+          (
+            await disclosureValueOf({
+              organizationId,
+              reportId,
+              elementKey: 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod',
+            })
+          )?.valueNumeric,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeCloseTo(8, 6);
+
+  // **FR-30: no fatalities is an answer.** The state, not the emptiness, is what a reader goes on.
+  const fatalities = page
+    .getByRole('group', {
+      name: 'Numărul de decese cauzate de accidente de muncă și de boli profesionale',
+    })
+    .getByRole('textbox');
+  await fatalities.fill('0');
+  await fatalities.blur();
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'NumberOfFatalitiesAsAResultOfWorkRelatedInjuriesAndWorkRelatedIllHealth',
+          })
+        )?.state,
+      { timeout: 15_000 },
+    )
+    .toBe('nil_return');
 });

@@ -1,0 +1,41 @@
+{
+  "derivations": [
+    {
+      "element": "EmployeeTurnoverRate",
+      "formula": "turnover_rate",
+      "operands": {
+        "departures": {
+          "from": "input",
+          "key": "NumberOfEmployeesWhoLeftDuringTheReportingPeriod"
+        },
+        "atStart": {
+          "from": "input",
+          "key": "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod"
+        },
+        "atEnd": {
+          "from": "input",
+          "key": "NumberOfEmployeesAtTheEndOfTheReportingPeriod"
+        }
+      }
+    },
+    {
+      "element": "RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod",
+      "formula": "accident_rate",
+      "operands": {
+        "accidents": {
+          "from": "disclosure",
+          "key": "NumberOfRecordableWorkRelatedAccidentsInTheReportingPeriod"
+        },
+        "hoursPerFullTimeEmployee": {
+          "from": "input",
+          "key": "HoursWorkedByOneFullTimeEmployee",
+          "default": "2000"
+        },
+        "employees": {
+          "from": "disclosure",
+          "key": "NumberOfEmployees"
+        }
+      }
+    }
+  ]
+}

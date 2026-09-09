@@ -206,12 +206,14 @@
       "not_locked": "Perioada nu este blocată, așa că nu poate fi redeschisă. Reîmprospătați pagina pentru a vedea starea curentă."
     },
     "report": {
-      "not_found": "Raportul indicat nu există în această organizație, așa că nu a putut fi afișat. Reîmprospătați lista pentru a vedea rapoartele curente.",
       "already_exists": "Această perioadă de raportare are deja un raport, iar o perioadă poate avea unul singur. Deschideți raportul existent din listă, în loc să creați altul.",
+      "derived_disclosure_not_writable": "Această cifră este calculată de sistem din valorile pe care le-ați introdus, așa că nu poate fi completată direct. Modificați valorile de la care pornește calculul, iar cifra se actualizează singură.",
       "not_editable": "Perioada de raportare este blocată, așa că raportul nu mai poate fi modificat de nimeni, nici de administrator. Redeschideți perioada, indicând motivul, pentru a continua lucrul — modificarea va rămâne vizibilă ca amendament.",
+      "not_found": "Raportul indicat nu există în această organizație, așa că nu a putut fi afișat. Reîmprospătați lista pentru a vedea rapoartele curente.",
       "taxonomy_version_unavailable": "Versiunea standardului sub care a fost creat acest raport nu mai este disponibilă în platformă, așa că întrebările lui nu pot fi afișate. Răspunsurile salvate nu sunt afectate. Contactați echipa de asistență; se rezolvă de partea noastră.",
-      "unknown_disclosure_element": "Câmpul trimis nu face parte din versiunea standardului sub care a fost creat acest raport, așa că nu a putut fi salvat. Reîmprospătați pagina pentru a încărca întrebările curente.",
-      "unknown_disclosure_dimension": "Categoria selectată nu face parte din lista pe care standardul o admite pentru acest câmp, așa că valoarea nu a putut fi salvată. Reîmprospătați pagina și alegeți din nou din listă."
+      "unknown_derivation_input": "Valoarea trimisă nu corespunde niciunui element din care sistemul calculează o cifră, așa că nu a putut fi salvată. Reîmprospătați pagina și introduceți din nou valoarea.",
+      "unknown_disclosure_dimension": "Categoria selectată nu face parte din lista pe care standardul o admite pentru acest câmp, așa că valoarea nu a putut fi salvată. Reîmprospătați pagina și alegeți din nou din listă.",
+      "unknown_disclosure_element": "Câmpul trimis nu face parte din versiunea standardului sub care a fost creat acest raport, așa că nu a putut fi salvat. Reîmprospătați pagina pentru a încărca întrebările curente."
     }
   },
   "notification": {

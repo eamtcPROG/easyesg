@@ -147,3 +147,40 @@ export class UnknownDisclosureDimensionError extends DomainError {
     super('core.report.unknown_disclosure_dimension');
   }
 }
+
+/**
+ * A value was offered for a figure the platform derives (task 36.10).
+ *
+ * FR-29's acceptance criterion is *"the specified intensity figures are **derived rather than
+ * typed**"*, and the two the Digital Template computes — B8's turnover rate and B9's recordable
+ * accident rate — are refused here rather than merely made read-only on the screen. That is P-4 in
+ * the same shape as the two errors above: the browser does not render an input for them, and a
+ * guarantee that lives in one client is not a guarantee. A typed rate would also carry
+ * `origin = 'reported'` while sitting in the slot the calculator writes, so the next recompute would
+ * silently overwrite it — a value accepted, stored, and then lost, which is worse than a refusal.
+ */
+export class DerivedDisclosureNotWritableError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.derived_disclosure_not_writable');
+  }
+}
+
+/**
+ * A value was offered for a derivation input no registered formula reads (task 36.10).
+ *
+ * `UnknownDisclosureElementError`'s argument, one table over: a row under a key nothing reads is a
+ * live value invisible to every read, because a read walks the artefact and would never ask for it.
+ * `core.report_derivation_input` is deliberately not a general key/value store for the report (§7.3),
+ * and this is what keeps it from becoming one.
+ */
+export class UnknownDerivationInputError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.unknown_derivation_input');
+  }
+}

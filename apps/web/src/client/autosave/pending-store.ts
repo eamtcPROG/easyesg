@@ -1,4 +1,4 @@
-import type { DisclosureValueWrite } from '@easyesg/contracts';
+import type { QueuedWrite } from '@/features/wizard/autosave-state';
 
 /**
  * The durable half of FR-38 (task 35.2): where unacknowledged changes wait between one page and the
@@ -30,8 +30,8 @@ import type { DisclosureValueWrite } from '@easyesg/contracts';
  * hook reports through the same indicator rather than hiding.
  */
 export interface PendingWriteStore {
-  load(scope: string): Promise<readonly DisclosureValueWrite[]>;
-  save(scope: string, writes: readonly DisclosureValueWrite[]): Promise<void>;
+  load(scope: string): Promise<readonly QueuedWrite[]>;
+  save(scope: string, writes: readonly QueuedWrite[]): Promise<void>;
 }
 
 /** Whether the store survives the tab — what the fallback gives up, stated rather than hidden. */
@@ -67,7 +67,7 @@ const openDatabase = (indexedDb: IDBFactory): Promise<IDBDatabase> =>
     open.onblocked = () => reject(new Error('IndexedDB open blocked'));
   });
 
-const isWriteList = (value: unknown): value is DisclosureValueWrite[] =>
+const isWriteList = (value: unknown): value is QueuedWrite[] =>
   Array.isArray(value) &&
   value.every(
     (item) =>
@@ -131,7 +131,7 @@ export function indexedDbPendingWriteStore(indexedDb: IDBFactory): PendingWriteS
   const writeTo = (
     db: IDBDatabase,
     scope: string,
-    writes: readonly DisclosureValueWrite[],
+    writes: readonly QueuedWrite[],
   ): Promise<void> => {
     const store = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME);
     const settled =
@@ -176,7 +176,7 @@ export function indexedDbPendingWriteStore(indexedDb: IDBFactory): PendingWriteS
 
 /** The in-memory adapter — the fallback, and what the hook's spec drives. */
 export function memoryPendingWriteStore(): PendingWriteStoreHandle {
-  const queues = new Map<string, readonly DisclosureValueWrite[]>();
+  const queues = new Map<string, readonly QueuedWrite[]>();
   return {
     durable: false,
     load: (scope) => Promise.resolve(queues.get(scope) ?? []),

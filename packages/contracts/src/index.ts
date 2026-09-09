@@ -197,6 +197,17 @@ export type DisclosureValueWrite = components['schemas']['DisclosureValueWriteDt
 export type WriteDisclosureValuesRequest =
   components['schemas']['WriteDisclosureValuesRequestDto'];
 export type DisclosureValueResponse = components['schemas']['DisclosureValueResponseDto'];
+/**
+ * One value a derived figure is computed from (task 36.10; UC-26, UC-27).
+ *
+ * **Not a disclosure**, which is why it is a type of its own rather than a variant: it carries no
+ * state, unit, dimension or applicability, and EFRAG words it in the Digital Template rather than in
+ * the taxonomy — so the browser names it from its own catalogue and the api serves only the key.
+ */
+export type DerivationInput = components['schemas']['DerivationInputDto'];
+export type DerivationInputWrite = components['schemas']['DerivationInputWriteDto'];
+export type WriteDerivationInputsRequest =
+  components['schemas']['WriteDerivationInputsRequestDto'];
 /** The prior-period comparative (task 34.3; UC-45, FR-46). */
 export type PriorPeriodComparatives = components['schemas']['PriorPeriodResponseDto'];
 

@@ -1107,6 +1107,20 @@
         "domainLanguage": "Această clasificare este publicată doar în engleză, așa că denumirile de mai jos sunt în engleză. Codul din dreptul fiecărei intrări este cel din nomenclatorul oficial.",
         "hazardous": "Periculos",
         "nonHazardous": "Nepericulos"
+      },
+      "derivationInput": {
+        "names": {
+          "HoursWorkedByOneFullTimeEmployee": "Ore lucrate de un angajat cu normă întreagă în perioadă",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Angajați la începutul perioadei",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Angajați la sfârșitul perioadei",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Angajați care au plecat în perioadă"
+        },
+        "help": {
+          "HoursWorkedByOneFullTimeEmployee": "Standardul pornește de la 2 000 de ore pe an. Cifra diferă de la o țară sau ramură la alta, după legislația națională ori contractul colectiv — dacă la dumneavoastră este alta, scrieți-o aici.",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Numărul de angajați în prima zi a perioadei. Împreună cu cel de la sfârșit dă media pe care se calculează fluctuația.",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Numărul de angajați în ultima zi a perioadei.",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Câți angajați au încetat raporturile de muncă pe parcursul perioadei, indiferent de motiv."
+        }
       }
     }
   }

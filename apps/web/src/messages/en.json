@@ -1107,6 +1107,20 @@
         "domainLanguage": "This classification is published in English only, so the names below are in English. The code beside each entry is the one from the official list.",
         "hazardous": "Hazardous",
         "nonHazardous": "Non-hazardous"
+      },
+      "derivationInput": {
+        "names": {
+          "HoursWorkedByOneFullTimeEmployee": "Hours worked by one full-time employee in the period",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Employees at the beginning of the period",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Employees at the end of the period",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Employees who left during the period"
+        },
+        "help": {
+          "HoursWorkedByOneFullTimeEmployee": "The standard assumes 2,000 hours a year. This varies by country and sector, following national law or a collective agreement — if yours differs, enter it here.",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "The headcount on the first day of the period. With the closing figure it gives the average the turnover rate is worked out on.",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "The headcount on the last day of the period.",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "How many employees left during the period, for any reason."
+        }
       }
     }
   }

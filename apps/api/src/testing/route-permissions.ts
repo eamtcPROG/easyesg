@@ -245,6 +245,7 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // argument; the write follows edit rights rather than a role, exactly as `PATCH /reports/:id` does.
   'GET /reports/:id/modules': ALL_MEMBERS,
   'GET /reports/:id/modules/:module': ALL_MEMBERS,
+  'PUT /reports/:id/derivation-inputs': WRITING_MEMBERS,
   'PUT /reports/:id/values': WRITING_MEMBERS,
 };
 

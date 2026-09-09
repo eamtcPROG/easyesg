@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { DisclosureOrigin } from '@api/modules/core/disclosure/models/disclosure-value.model';
+import {
+  DISCLOSURE_ORIGIN,
+  DISCLOSURE_STATE,
+  answeredState,
+  type DisclosureOrigin,
+} from '@api/modules/core/disclosure/models/disclosure-value.model';
 import type { DisclosureValueStore } from '@api/modules/core/disclosure/interfaces/disclosure-value-store.interface';
 import { ReportNotEditableError } from '@api/modules/core/disclosure/errors/report.errors';
 import type {
@@ -194,4 +199,56 @@ export class DisclosureValueStoreRepository
       return translate(error);
     }
   }
+  /**
+   * A computed figure, with its provenance (task 36.10).
+   *
+   * **`origin` is written here and nowhere else in this repository**, which is the whole reason this
+   * is a second statement rather than a flag on `write`: `esg_app` holds `UPDATE` on the column, so
+   * nothing but grants stops the ordinary path setting it — what stops it is that the ordinary path
+   * has no way to say it.
+   *
+   * The state is FR-30's, computed from the value by the same function every other write uses: a
+   * derived rate of zero is a **nil return**, an affirmative *no accidents in the period*, and a
+   * derivation whose operands are not all present clears back to `missing` rather than to zero.
+   */
+  async writeDerived(value: {
+    key: DisclosureValueKey;
+    valueNumeric: string | null;
+  }): Promise<DisclosureValue> {
+    const state =
+      value.valueNumeric === null
+        ? DISCLOSURE_STATE.MISSING
+        : answeredState({ valueNumeric: value.valueNumeric, state: DISCLOSURE_STATE.OK });
+    try {
+      const rows = returnedRows<DisclosureValueRow>(
+        await this.manager.query(
+          `INSERT INTO core.report_disclosure_value (
+               organization_id, report_id, element_key, dimension_key, ordinal,
+               value_numeric, state, origin)
+           SELECT r.organization_id, r.id, $2, $3, $4, $5, $6, $7
+             FROM core.report r
+            WHERE r.id = $1
+      ON CONFLICT (report_id, element_key, dimension_key, ordinal) DO UPDATE
+              SET value_numeric = EXCLUDED.value_numeric,
+                  state         = EXCLUDED.state,
+                  origin        = EXCLUDED.origin,
+                  updated_at    = now()
+        RETURNING ${VALUE_COLUMNS}`,
+          [
+            value.key.reportId,
+            value.key.elementKey,
+            value.key.dimensionKey,
+            value.key.ordinal,
+            value.valueNumeric,
+            state,
+            DISCLOSURE_ORIGIN.CALCULATED,
+          ],
+        ),
+      );
+      return toValue(rows[0]);
+    } catch (error) {
+      return translate(error);
+    }
+  }
+
 }

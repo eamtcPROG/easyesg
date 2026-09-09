@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Put } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Put } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
@@ -7,6 +7,7 @@ import {
   DisclosureModuleSummaryDto,
   DisclosureStepDto,
   DisclosureValueResponseDto,
+  WriteDerivationInputsRequestDto,
   WriteDisclosureValuesRequestDto,
 } from '../dto/wizard-step.dto';
 import { NO_SUCH_REPORT } from '../errors/report.errors';
@@ -123,4 +124,34 @@ export class WizardController {
     });
     return written.map((value) => new DisclosureValueResponseDto(value));
   }
+  @Put(':id/derivation-inputs')
+  @RequiresRole(MEMBERSHIP_ROLE.EDITOR, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR)
+  @ApiOperation({
+    summary: 'Persist the values a derived figure is computed from',
+    description:
+      "EFRAG's Digital Template computes B8's turnover rate and B9's recordable-accident rate " +
+      'rather than asking for them, and some of what those formulas read carries no taxonomy ' +
+      'element (UC-26, UC-27; §7.3). This writes those values and recomputes whatever they feed. ' +
+      'Sending null for a value clears it, restoring the published offer. Refused while the ' +
+      "report's period is locked (FR-22), by the database as well as by the use case.",
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 204, description: 'Stored, and the figures they feed recomputed.' })
+  @ApiResponse({ status: 400, description: 'An input no registered derivation reads.' })
+  @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
+  @ApiResponse({ status: 409, description: 'The reporting period is locked (FR-22).' })
+  @HttpCode(204)
+  async writeDerivationInputs(
+    @Param('id', ParseUUIDPipe) reportId: string,
+    @Body() body: WriteDerivationInputsRequestDto,
+  ): Promise<void> {
+    await this.wizard.writeDerivationInputs({
+      reportId,
+      inputs: body.values.map((value) => ({
+        inputKey: value.inputKey,
+        valueNumeric: value.valueNumeric ?? null,
+      })),
+    });
+  }
+
 }

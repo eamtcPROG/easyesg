@@ -935,6 +935,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/derivation-inputs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Persist the values a derived figure is computed from
+         * @description EFRAG's Digital Template computes B8's turnover rate and B9's recordable-accident rate rather than asking for them, and some of what those formulas read carries no taxonomy element (UC-26, UC-27; §7.3). This writes those values and recomputes whatever they feed. Sending null for a value clears it, restoring the published offer. Refused while the report's period is locked (FR-22), by the database as well as by the use case.
+         */
+        put: operations["WizardController_writeDerivationInputs"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/prior-period": {
         parameters: {
             query?: never;
@@ -1991,6 +2011,25 @@ export interface components {
              */
             memberLanguage: "ro" | "en" | "ru" | null;
         };
+        DerivationInputDto: {
+            /**
+             * @description The input’s key. **The browser names it from this**, because EFRAG words these in the Digital Template and not in the taxonomy — there is no locale in which the package carries a label, so a `label` here would be null in all three forever (task 36.10).
+             * @example HoursWorkedByOneFullTimeEmployee
+             */
+            key: string;
+            /**
+             * @description The derived element this feeds, so a screen can show the input beside the figure.
+             * @example RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod
+             */
+            derives: string;
+            /** @description What the reporter stored, as a decimal string; null where they answered nothing. */
+            value: string | null;
+            /**
+             * @description What the platform offers where they have not — EFRAG’s published default. Distinct from `value` on purpose: an offer accepted without editing is still an offer, and writing it on the reporter’s behalf would put a number they never chose into a filing.
+             * @example 2000
+             */
+            offered: string | null;
+        };
         DisclosureStepDto: {
             /** @example B8 */
             module: string;
@@ -2002,6 +2041,8 @@ export interface components {
             fields: components["schemas"]["DisclosureFieldDto"][];
             /** @description The domains this step’s classifications draw their rows from (UC-22). On the step rather than on each field, because every element on an axis shares one list — B4’s three emissions share 94 pollutants and B7’s waste elements share 973, so a per-field copy is the same answer hundreds of times. Empty for a step with no classification. */
             axes: components["schemas"]["DisclosureAxisDto"][];
+            /** @description The values this step’s derived figures are computed from (UC-26, UC-27). **Not fields**: they carry no state, unit, dimension or applicability and are not exported as facts, so they are a separate list rather than fields a consumer must remember to exclude. Empty for every module but B8 and B9. */
+            derivationInputs: components["schemas"]["DerivationInputDto"][];
         };
         DisclosureValueResponseDto: {
             /** Format: uuid */
@@ -2045,6 +2086,18 @@ export interface components {
         WriteDisclosureValuesRequestDto: {
             /** @description One field on blur, or everything a step change or an offline queue accumulated (FR-37, FR-38). The write is an upsert on the natural key, so a retried queue does not double-write. */
             values: components["schemas"]["DisclosureValueWriteDto"][];
+        };
+        DerivationInputWriteDto: {
+            /** @example HoursWorkedByOneFullTimeEmployee */
+            inputKey: string;
+            /**
+             * @description A decimal string. **Omit or send null to clear**, which restores the published offer — a stored zero would instead make the rate undefined, a zero denominator being no answer rather than a working year of no hours.
+             * @example 1800
+             */
+            valueNumeric?: string | null;
+        };
+        WriteDerivationInputsRequestDto: {
+            values: components["schemas"]["DerivationInputWriteDto"][];
         };
         PriorReportPinDto: {
             /** Format: uuid */
@@ -4158,6 +4211,51 @@ export interface operations {
                 };
             };
             /** @description A field the pinned version does not name. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked (FR-22). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WizardController_writeDerivationInputs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WriteDerivationInputsRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Stored, and the figures they feed recomputed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An input no registered derivation reads. */
             400: {
                 headers: {
                     [name: string]: unknown;

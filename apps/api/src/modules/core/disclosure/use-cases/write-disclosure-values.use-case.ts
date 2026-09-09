@@ -2,16 +2,20 @@ import type { TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
 import {
+  DerivedDisclosureNotWritableError,
   UnknownDisclosureDimensionError,
   UnknownDisclosureElementError,
 } from '../errors/report.errors';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
-import type {
-  DisclosureValue,
-  DisclosureValueContents,
-  DisclosureValueKey,
+import {
+  answeredState,
+  type DisclosureValue,
+  type DisclosureValueContents,
+  type DisclosureValueKey,
 } from '../models/disclosure-value.model';
+import type { DerivationCalculator } from '../services/derivation-calculator.service';
+import type { DerivationService } from '../services/derivation.service';
 
 /** One field's new contents, addressed by the store's natural key. */
 export interface DisclosureValueInput extends Omit<DisclosureValueKey, 'reportId'> {
@@ -51,6 +55,8 @@ export class WriteDisclosureValues {
     private readonly reports: ReportStore,
     private readonly values: DisclosureValueStore,
     private readonly taxonomy: TaxonomyRegistry,
+    private readonly derivations: DerivationService,
+    private readonly calculator: DerivationCalculator,
   ) {}
 
   async write(command: WriteDisclosureValuesCommand): Promise<DisclosureValue[]> {
@@ -96,6 +102,15 @@ export class WriteDisclosureValues {
     });
     if (misdimensioned.length > 0) throw new UnknownDisclosureDimensionError();
 
+    // **And a figure the platform derives is not the reporter's to write** (task 36.10, FR-29).
+    // Refused before any write, like the two checks above, so a batch stays all-or-nothing about
+    // what it names — a partially applied autosave leaves the indicator saying `saved` over a step
+    // that is not.
+    const derived = this.derivations.all({ standard: TAXONOMY_STANDARD.VSME });
+    if (command.values.some((value) => derived.has(value.elementKey))) {
+      throw new DerivedDisclosureNotWritableError();
+    }
+
     const written: DisclosureValue[] = [];
     for (const value of command.values) {
       written.push(
@@ -106,10 +121,21 @@ export class WriteDisclosureValues {
             dimensionKey: value.dimensionKey,
             ordinal: value.ordinal,
           },
-          contents: value.contents,
+          // FR-30: an answered zero is a nil return, decided from the value rather than taken from
+          // the caller (P-4). See `answeredState` for why it settles both directions.
+          contents: { ...value.contents, state: answeredState(value.contents) },
         }),
       );
     }
+
+    // Anything a derivation reads may have just moved. Recomputed **after** the batch rather than
+    // per value, because a formula's operands can arrive in one request — B8's three turnover inputs
+    // do — and recomputing between them would write a rate from a half-applied batch.
+    await this.calculator.recompute({
+      reportId: command.reportId,
+      standard: TAXONOMY_STANDARD.VSME,
+      touched: new Set(command.values.map((value) => value.elementKey)),
+    });
     return written;
   }
 }
