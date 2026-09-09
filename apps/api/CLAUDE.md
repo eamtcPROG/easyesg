@@ -713,6 +713,33 @@ and if `pnpm x` needs what `pnpm y` produces that belongs in a `prex` hook, not 
 `pretest:e2e` now runs `config:seed`. **Do not add a seed step to a workflow instead**: the next job
 that forgets it is the same bug again.
 
+**A `new Date()` bound against a database-written column is a cross-clock comparison, and it fails
+intermittently in the direction that looks like a broken feature** (9 Sep 2026, diagnosed from
+`members.e2e-spec.ts`). Every audit and outbox column here defaults to `now()` — PostgreSQL's
+*transaction start time*, on the **container's** clock. A test bounding one with `Date.now()` reads
+the **host's**. Measured on this stack: the container runs **7–8 ms behind**, which is ordinary for
+a Docker VM and not a misconfiguration.
+
+So `WHERE occurred_at >= $since` with a host `since` can exclude the very row the next request
+writes. `members.e2e-spec.ts`'s FR-55 case asserted one audit row and saw **none**, reading as
+*attribution is broken* rather than as a bound that had excluded it.
+
+**The intermittency pointed the wrong way, which is why it survived.** It failed inside the full
+`pnpm e2e` and passed when the suite ran alone — so it read as cross-suite interference, the class
+this section is otherwise about. It is the opposite: a *warm* process answers the `DELETE` in a
+millisecond or two, well inside the 8 ms window, while a cold one takes longer than the skew and
+passes. Running the suite alone is the slow case.
+
+**`databaseNow(connection)` in `support/database.ts` is the fix**, and the rule is one line: *a bound
+on a column the database wrote comes from the database's clock*. Proven by mutation — a `databaseNow`
+returning a host clock 50 ms ahead reproduces the failure exactly, and the real implementation is
+immune.
+
+The same shape is elsewhere and does not bite: three suites assert `expiresAt > Date.now()` against
+challenge and invitation windows measured in minutes and days, where 8 ms is nothing. They are named
+here so the next reader does not have to re-derive that margin — the hazard is the comparison, and
+what makes those safe is only the size of the window.
+
 **`outbox.e2e-spec.ts` still needs the table globally quiet for two of its tests**, and that is not
 something scoping can fix: `dispatchBatch` polls every pending row regardless of tenant, because the
 dispatcher is global by design (§6.7's single producer). Those tests assert the precondition rather

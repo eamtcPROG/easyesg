@@ -8,7 +8,7 @@ import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, databaseNow } from './support/database';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
@@ -320,7 +320,10 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
   // ── UC-63 ─────────────────────────────────────────────────────────────────────────────────────
 
   it('removes access without deleting the row, and attributes it (FR-59, FR-55)', async () => {
-    const since = new Date();
+    // **The database's clock, not this process's** — see `databaseNow`. `occurred_at` defaults to
+    // `now()` on the container, which runs measurably behind the host, so a `new Date()` bound here
+    // excluded the very row the DELETE below writes whenever the request beat the skew.
+    const since = await databaseNow(owner);
     await http()
       .delete(`/api/v1/members/${editor.membershipId}`)
       .set(admin.authorization)

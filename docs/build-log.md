@@ -14308,3 +14308,75 @@ It wants its own task, with the first measurement being which suites ran before 
 
 `pnpm gates:clean` after every fix — the sixteen gates green, with the intermittent failure above
 appearing in one run of three and the suite passing standalone.
+
+## The intermittent e2e failure was a cross-clock comparison · 2026-09-09
+
+Recorded at task 36's parent close as a pattern with a checkable lead and no diagnosis. The lead was
+right and the mechanism is now measured.
+
+### What it was
+
+`core.field_change.occurred_at` defaults to `now()` — PostgreSQL's **transaction start time**, on the
+**container's** clock. `members.e2e-spec.ts`'s FR-55 case bounded it with `const since = new Date()`,
+which is the **host's**. Two clocks, and on this stack they disagree.
+
+**Measured rather than assumed**, through the app's own connection, bracketing each query with host
+timestamps: the container runs **7–8 ms behind the host**. Ordinary for a Docker VM, not a
+misconfiguration, and nothing anyone would notice.
+
+So `WHERE occurred_at >= $since` could exclude the very row the `DELETE` on the next line writes.
+The test asserted one audit row and saw **none** — which reads as *FR-55's attribution is broken*
+rather than as a bound that excluded it.
+
+### Why it survived, and why the intermittency pointed the wrong way
+
+It failed inside the full `pnpm e2e` and passed when the suite ran alone, so it read as cross-suite
+interference — the class `apps/api/CLAUDE.md` is otherwise full of, and the class I assumed at the
+parent close. **It is the opposite.** A warm process answers that `DELETE` in a millisecond or two,
+comfortably inside the 8 ms window; a cold one takes longer than the skew and passes. *Running the
+suite alone is the slow case*, which is exactly the observation that made it look like an isolation
+problem.
+
+### Proved, both directions
+
+- **The mechanism, outside the test**: taking a host bound and a database bound microseconds apart,
+  then a row written immediately after — the host bound excluded it *by 4 ms*; the database bound
+  included it.
+- **The fix is load-bearing**: `databaseNow` mutated to return a host clock 50 ms ahead reproduces
+  the reported failure exactly — 1 failed, the same case — and the real implementation is immune.
+
+`databaseNow(connection)` in `test/support/database.ts` is the whole fix, and the rule is one line:
+**a bound on a column the database wrote comes from the database's clock.**
+
+### The shape, searched rather than assumed
+
+One instance of the database-bound form existed. Three suites assert `expiresAt > Date.now()` against
+challenge and invitation windows measured in minutes and days, where 8 ms is nothing — they are the
+same comparison and are safe **only because of the window size**, which is now stated in
+`apps/api/CLAUDE.md` so the next reader does not re-derive it. Nothing in `apps/api/src` compares a
+JavaScript clock to a database column.
+
+### Two of the three are still unexplained, and are not this
+
+The parent-close entry named four observations. **This diagnosis covers one of them.** The other two
+are single, unreproduced failures with different symptoms in suites this work never touched:
+
+| Suite | Symptom | Ruled out |
+| --- | --- | --- |
+| `periods.e2e-spec.ts` | `401` where the route answers `200` | not a clock bound — the suite has none |
+| `provider-link.e2e-spec.ts` | `404` where the route answers `403` | the only 404 in that module is `SocialIdentityUnknownError`, on the **sign-in** path rather than unlink |
+
+Also checked and dead for both: **cross-suite address collisions**, which would let one suite's
+account cleanup delete another's actor mid-run — every duplicated e2e email is duplicated *within*
+one file, never across two.
+
+**Deliberately not fixed.** Neither reproduces on demand, and after this diagnosis the reason is
+sharper than "reproduce before fixing": the clock hypothesis *looked* like it would explain all
+three, and it explains one. A fix aimed at the other two on the strength of that resemblance would
+have been a guess wearing a proof's clothes.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm docs:check`, `pnpm --filter @easyesg/api test` (711), and
+`pnpm e2e` four times — 860 of 860 each. Four clean runs do not prove an intermittent fault gone;
+the mutation above is what does.

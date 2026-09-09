@@ -69,3 +69,27 @@ export const asOrganization = async <T>(
     await runner.release();
   }
 };
+
+/**
+ * The **database's** clock, for a lower bound on a column the database wrote.
+ *
+ * **A `new Date()` bound is a cross-clock comparison and it is not sound** (9 Sep 2026, diagnosed
+ * from an intermittent failure in `members.e2e-spec.ts`). Every audit and outbox column in this
+ * schema defaults to `now()`, which is PostgreSQL's **transaction start time** on the *container's*
+ * clock; a test process bounding it with `Date.now()` reads the *host's*. Those are two clocks, and
+ * on this stack they disagree — measured at **7–8 ms, with the container behind**, which is
+ * ordinary for a Docker VM and not a misconfiguration.
+ *
+ * So `occurred_at >= new Date()` can exclude a row written *after* that line ran, whenever the
+ * request completes faster than the skew. That is why the failure was intermittent and why it
+ * favoured the **full** run: a warm process answers a `DELETE` in a millisecond or two, well inside
+ * the 8 ms window, where the same suite run alone is cold enough to take longer and pass.
+ *
+ * Taking the bound from the same clock the column is written on removes the comparison entirely.
+ * `now()` is this statement's own transaction start, so it is strictly before any transaction the
+ * test opens afterwards — which is exactly what a lower bound needs to mean.
+ */
+export const databaseNow = async (connection: DataSource): Promise<Date> => {
+  const rows: { at: Date }[] = await connection.query('SELECT now() AS at');
+  return rows[0].at;
+};
