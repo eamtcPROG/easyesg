@@ -36,6 +36,34 @@
           "key": "NumberOfEmployees"
         }
       }
+    },
+    {
+      "element": "PercentageGapInPayBetweenFemaleAndMaleEmployees",
+      "formula": "relative_gap",
+      "operands": {
+        "reference": {
+          "from": "input",
+          "key": "AverageGrossHourlyPayLevelOfMaleEmployees"
+        },
+        "compared": {
+          "from": "input",
+          "key": "AverageGrossHourlyPayLevelOfFemaleEmployees"
+        }
+      }
+    },
+    {
+      "element": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements",
+      "formula": "share_of_headcount",
+      "operands": {
+        "part": {
+          "from": "input",
+          "key": "NumberOfEmployeesCoveredByCollectiveBargainingAgreements"
+        },
+        "whole": {
+          "from": "disclosure",
+          "key": "NumberOfEmployees"
+        }
+      }
     }
   ]
 }

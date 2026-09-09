@@ -64,3 +64,25 @@ export const DISCLOSURE_AXIS_SHAPE_CONFIG_KIND = 'disclosure_axis_shape';
  * an ordinary field the reporter answers, which is every other one.
  */
 export const DISCLOSURE_DERIVATION_CONFIG_KIND = 'disclosure_derivation';
+
+/**
+ * The answers EFRAG's Digital Template ships a field already holding (task 36.11).
+ *
+ * **Data rather than a branch, because it is standard content** (AD-4, DR-3): a value the template
+ * prints in a cell is EFRAG's, changes when the template changes, and a `if (elementKey === …)` in
+ * the api would put it in a release. Measured before building it — every constant in the four
+ * disclosure sheets' answer column — the Basic module ships **one**: B10's minimum-wage affirmation
+ * at `D147`. B9's 2 000 hours is the other, and it is not here: that one is an *offer* the reporter
+ * may accept without it becoming their answer, which is `disclosure-derivation.vsme.json`'s
+ * `default`. The Comprehensive module's C6/C7 sheets carry thirteen more for task 79.x.
+ *
+ * **A template default is committed, and that is the whole difference from an offer.** It arrives
+ * through task 91.2's `DisclosureDefault` and the wizard's existing outstanding-defaults commit, so
+ * it becomes a stored answer with `origin = 'reported'` — the reporter is answering, by not
+ * disagreeing. The project owner chose this over leaving it blank on 9 Sep 2026 with the cost
+ * stated: a reporter who never opens B10 files a positive claim about legal compliance.
+ *
+ * **The entity snapshot outranks it** where both name an element, which none do today: a fact about
+ * *this* undertaking beats an assumption the template makes about every undertaking.
+ */
+export const DISCLOSURE_TEMPLATE_DEFAULT_CONFIG_KIND = 'disclosure_template_default';

@@ -67,7 +67,11 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     unitCode: string | null; unitCodes: string[];
     help: string | null;
     options: { value: string; label: string | null; code: string | null }[] | null;
-    defaultValue: { valueText: string | null; valueNumeric: string | null } | null;
+    defaultValue: {
+      valueText: string | null;
+      valueNumeric: string | null;
+      valueBoolean: boolean | null;
+    } | null;
     applicable: boolean;
     applicabilityCause: Cause | null;
   }
@@ -1558,6 +1562,67 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       const rate = field(step, ACCIDENT_RATE);
       expect(Number(rate?.valueNumeric)).toBe(0);
       expect(rate?.state).toBe(DISCLOSURE_STATE.NIL_RETURN);
+    });
+
+    it('derives B10’s pay gap from two figures the taxonomy does not carry (UC-28)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const step = await readStep(reportId, 'B10');
+      // The taxonomy carries the percentage and neither pay figure — the same shape as B8 and B9.
+      expect(step.derivationInputs.map((i) => i.key).sort()).toEqual([
+        'AverageGrossHourlyPayLevelOfFemaleEmployees',
+        'AverageGrossHourlyPayLevelOfMaleEmployees',
+        'NumberOfEmployeesCoveredByCollectiveBargainingAgreements',
+      ]);
+      // None carries an offer: EFRAG prints no figure for a salary, and a default on one would be
+      // inventing an answer rather than publishing a threshold.
+      expect(step.derivationInputs.every((i) => i.offered === null)).toBe(true);
+
+      await putInputs(reportId, [
+        { inputKey: 'AverageGrossHourlyPayLevelOfMaleEmployees', valueNumeric: '20' },
+        { inputKey: 'AverageGrossHourlyPayLevelOfFemaleEmployees', valueNumeric: '17' },
+      ]);
+      const gap = field(await readStep(reportId, 'B10'), 'PercentageGapInPayBetweenFemaleAndMaleEmployees');
+      expect(Number(gap?.valueNumeric)).toBeCloseTo(0.15, 6);
+      expect(gap?.origin).toBe('calculated');
+    });
+
+    it('derives B10’s collective-bargaining share against B1’s headcount', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await put(reportId, [
+        { elementKey: 'NumberOfEmployees', valueNumeric: '50', state: DISCLOSURE_STATE.OK },
+      ]);
+      await putInputs(reportId, [
+        { inputKey: 'NumberOfEmployeesCoveredByCollectiveBargainingAgreements', valueNumeric: '30' },
+      ]);
+      const share = field(
+        await readStep(reportId, 'B10'),
+        'PercentageOfEmployeesCoveredByCollectiveBargainingAgreements',
+      );
+      expect(Number(share?.valueNumeric)).toBeCloseTo(0.6, 6);
+
+      // And it follows B1, which is the half a unit test cannot show: the headcount is a disclosure
+      // operand, so editing it recomputes a figure two modules away.
+      await put(reportId, [
+        { elementKey: 'NumberOfEmployees', valueNumeric: '60', state: DISCLOSURE_STATE.OK },
+      ]);
+      const followed = field(
+        await readStep(reportId, 'B10'),
+        'PercentageOfEmployeesCoveredByCollectiveBargainingAgreements',
+      );
+      expect(Number(followed?.valueNumeric)).toBeCloseTo(0.5, 6);
+    });
+
+    it('offers EFRAG’s own YES on B10’s minimum-wage affirmation (task 36.11)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const wage = field(
+        await readStep(reportId, 'B10'),
+        'EmployeesReceivePayEqualOrAboveMinimumWageDeterminedByNationalLawOrCollectiveAgreement',
+      );
+      // The template prints YES in the cell, and the project owner chose to carry it. It arrives as
+      // a **default** rather than as a stored value: the wizard's outstanding-defaults commit turns
+      // it into an answer, which is what makes it visible in the audit trail as an answer at all.
+      expect(wage?.defaultValue).toMatchObject({ valueBoolean: true });
+      expect(wage?.state).toBe(DISCLOSURE_STATE.MISSING);
     });
 
     it('stops being a nil return when the zero is edited up (FR-30, both directions)', async () => {

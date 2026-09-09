@@ -1110,15 +1110,21 @@
       },
       "derivationInput": {
         "names": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Средняя валовая почасовая оплата труда женщин",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Средняя валовая почасовая оплата труда мужчин",
           "HoursWorkedByOneFullTimeEmployee": "Часов, отработанных одним сотрудником на полной ставке за период",
           "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Сотрудников на начало периода",
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Сотрудников на конец периода",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Сотрудники, охваченные коллективными договорами",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Сотрудники, уволившиеся за период"
         },
         "help": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "До вычета налогов и взносов, в той же валюте, что и выше.",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "До вычета налогов и взносов. Укажите обе суммы в одной валюте — разрыв считается в процентах, поэтому валюта в результат не входит.",
           "HoursWorkedByOneFullTimeEmployee": "Стандарт исходит из 2 000 часов в год. Эта величина различается по странам и отраслям — по национальному законодательству или коллективному договору; если у вас она иная, укажите её здесь.",
           "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Численность в первый день периода. Вместе с численностью на конец даёт среднее, по которому считается текучесть.",
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Численность в последний день периода.",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Сколько сотрудников подпадает под коллективный договор. Доля считается от численности, указанной в B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Сколько сотрудников уволилось в течение периода, по любой причине."
         }
       }

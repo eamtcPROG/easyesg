@@ -34,6 +34,30 @@ export const DERIVATION_FORMULA = {
    * rather than tuned.
    */
   ACCIDENT_RATE: 'accident_rate',
+  /**
+   * B10's gender pay gap — `(reference − compared) ÷ reference`, where the reference is the male
+   * figure and the compared is the female one.
+   *
+   * **Signed, and the sign is the disclosure.** A negative result is women paid more on average,
+   * which is a real and reportable state; `Math.abs` here would file *a gap of 5%* on an
+   * undertaking that has one in the other direction, and no reader could tell the two apart.
+   *
+   * **The denominator is the reference alone, not the pair's mean.** That is EFRAG's own cell and it
+   * is what makes the figure comparable across filings — a symmetric variant would answer a
+   * different, smaller number for the same two salaries.
+   *
+   * The operands are monetary and this result is not: a currency divides out, which is why the two
+   * pay figures are stored as bare numbers and open no currency question (§7.3).
+   */
+  RELATIVE_GAP: 'relative_gap',
+  /**
+   * B10's collective-bargaining coverage — `part ÷ whole`, the whole being B1's employee count.
+   *
+   * Distinct from `TURNOVER_RATE` despite both being ratios: that one averages its denominator over
+   * two points in time, and this one takes B1's single figure as EFRAG's cell does. Folding them
+   * together would need a flag, and a flag on a formula is a second formula wearing one name.
+   */
+  SHARE_OF_HEADCOUNT: 'share_of_headcount',
 } as const;
 
 export type DerivationFormula = (typeof DERIVATION_FORMULA)[keyof typeof DERIVATION_FORMULA];
@@ -106,6 +130,25 @@ export function computeDerivation(input: {
     // own cell shows "-" for it. Dividing anyway yields Infinity or NaN, which `numeric` refuses.
     if (average === 0) return null;
     return String(departures / average);
+  }
+
+  if (input.formula === DERIVATION_FORMULA.RELATIVE_GAP) {
+    const reference = number('reference');
+    const compared = number('compared');
+    if (reference === null || compared === null) return null;
+    // A zero reference is not a gap of nothing — it is a gap of no defined size, and EFRAG's cell
+    // shows "-". Dividing anyway yields Infinity or NaN, which `numeric` refuses.
+    if (reference === 0) return null;
+    return String((reference - compared) / reference);
+  }
+
+  if (input.formula === DERIVATION_FORMULA.SHARE_OF_HEADCOUNT) {
+    const part = number('part');
+    const whole = number('whole');
+    if (part === null || whole === null) return null;
+    // EFRAG's own cell tests this explicitly — `IF('General Information'!E284=0, "-", …)`.
+    if (whole === 0) return null;
+    return String(part / whole);
   }
 
   const accidents = number('accidents');

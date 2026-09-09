@@ -50,6 +50,7 @@ import type { AxisShapes } from '../interfaces/axis-shape.interface';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
 import { OPERAND_SOURCE, type Derivation } from '../models/derivation.model';
 import type { DerivationService } from '../services/derivation.service';
+import type { TemplateDefaultService } from '../services/template-default.service';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import {
@@ -166,6 +167,8 @@ export class ReadWizardStep {
     private readonly derivations: DerivationService,
     /** Where the reporter's answers to those inputs are kept — `core.report_derivation_input`. */
     private readonly derivationInputs: DerivationInputStore,
+    /** The answers EFRAG's template ships a field already holding (task 36.11). */
+    private readonly templateDefaults: TemplateDefaultService,
     private readonly warnings: ReadWarnings,
   ) {}
 
@@ -421,13 +424,24 @@ export class ReadWizardStep {
       scope: report.scope,
       legalFormMember,
     });
+    // **The template's own answers, under the entity's** (task 36.11). EFRAG ships B10's
+    // minimum-wage affirmation already holding YES, and a value the template prints is EFRAG's
+    // rather than this platform's — so it arrives as a `DisclosureDefault` like the entity record's
+    // and is committed by the same outstanding-defaults path. The snapshot wins where both name an
+    // element, which none do today: a fact about *this* undertaking beats an assumption the template
+    // makes about every undertaking.
+    const merged = new Map(defaults);
+    for (const [element, value] of this.templateDefaults.all({ standard: registered.standard })) {
+      if (!merged.has(element)) merged.set(element, [value]);
+    }
+
     if (unmappedActivityCodes.length > 0) {
       this.warnings.warn(
         `Report ${report.id}: activity code(s) ${unmappedActivityCodes.join(', ')} have no member in ` +
           `${registered.standard} ${registered.version}'s NACE domain and were not pre-filled`,
       );
     }
-    return defaults;
+    return merged;
   }
 
   /**

@@ -21,6 +21,7 @@ import { AXIS_SHAPES, type AxisShapes } from './interfaces/axis-shape.interface'
 import { AxisShapeService } from './services/axis-shape.service';
 import { DerivationCalculator } from './services/derivation-calculator.service';
 import { DerivationService } from './services/derivation.service';
+import { TemplateDefaultService } from './services/template-default.service';
 import {
   APPLICABILITY_RULES,
   type ApplicabilityRules,
@@ -104,6 +105,7 @@ const httpProviders: Provider[] = [
       AXIS_SHAPES,
       DerivationService,
       DERIVATION_INPUT_STORE,
+      TemplateDefaultService,
     ],
     useFactory: (
       reports: ReportStore,
@@ -115,6 +117,7 @@ const httpProviders: Provider[] = [
       axisShapes: AxisShapes,
       derivations: DerivationService,
       derivationInputs: DerivationInputStore,
+      templateDefaults: TemplateDefaultService,
     ) =>
       new ReadWizardStep(
         reports,
@@ -126,11 +129,13 @@ const httpProviders: Provider[] = [
         axisShapes,
         derivations,
         derivationInputs,
+        templateDefaults,
         new Logger(ReadWizardStep.name),
       ),
   },
   { provide: DERIVATION_INPUT_STORE, useClass: DerivationInputStoreRepository },
   DerivationService,
+  TemplateDefaultService,
   {
     provide: DerivationCalculator,
     inject: [DerivationService, DISCLOSURE_VALUE_STORE, DERIVATION_INPUT_STORE],

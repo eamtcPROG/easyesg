@@ -13793,3 +13793,85 @@ where the claim was made as well as in §12.5.6.
 **Proven to bite in both directions.** Reverting `<main>` to `<div>` fails all three new
 `WizardShell` assertions; adding one to `RecordShell` fails the browser landmark scan. Each mutation
 was applied, run, and reverted.
+
+## Task 36.11 — B10, and the measure of whether 36.10's split was drawn in the right place · 2026-09-09
+
+The plan gave B10 the workspace `web` and named its threshold rules: *≥150 employees brings the
+gender pay gap into scope, ≥50 the turnover rate.* Both rules already existed — task 91.3 published
+them — and both renderings shipped with 36.9 and 36.10. So the stated deliverable was met before the
+task started, and the work is what the row could not predict.
+
+### The third module in a row where EFRAG computes and the taxonomy is silent
+
+`D150` derives the pay gap as `(male pay − female pay) ÷ male pay`; `D152` derives collective-
+bargaining coverage as `covered ÷ B1 headcount`. **None of the three values those read is a
+reportable element** — the taxonomy carries the two percentages and neither pay figure nor the
+covered count. B8, B9 and now B10.
+
+**It cost no new machinery, and that is the finding.** Two entries in
+`disclosure-derivation.vsme.json`, two formula kinds, three catalogue names in three locales. No
+migration, no schema change, no new endpoint, no web change at all — `core.report_derivation_input`,
+the queue's `QueuedWrite` union, `writeDerived`, the applicability-follows-the-figure rule and the
+read-only rendering all absorbed it unchanged. That is the measure of whether 36.10's split between
+data and code was drawn in the right place, and it is the only evidence that question can have.
+
+**Two formula kinds rather than reusing `TURNOVER_RATE`.** Both new ones are ratios and neither is
+that one: turnover averages its denominator over two points in time, and these take a single figure
+— the male salary, and B1's headcount. Folding them together needs a flag, and a flag on a formula
+is a second formula wearing one name.
+
+Two properties of the pay gap are decisions rather than arithmetic, and both are mutation-proven:
+
+- **It stays signed.** A negative result is women paid more on average — a real and reportable
+  state. `Math.abs` would file *a gap of 15%* on an undertaking that has one in the other direction,
+  and no reader could tell the two apart.
+- **The denominator is the male figure, not the pair's mean.** EFRAG's own cell, and what makes the
+  number comparable across filings; the symmetric variant answers a different, smaller number for
+  the same two salaries.
+
+The pay figures are monetary and the gap is not, so the currency divides out — they are stored as
+bare numbers and open none of the currency question the **11 monetary elements** still carry, which
+is nobody's yet and was not closed in passing here.
+
+### The one field EFRAG answers for you
+
+`D147` prints `YES` on B10's minimum-wage affirmation. **The project owner chose to carry it**, over
+leaving it blank and over offering it the way B9's 2 000 hours is offered.
+
+**The cost was stated before the choice and is restated here**, because it is the kind that does not
+announce itself: this is an affirmation of *legal compliance*, so a reporter who never opens B10
+files a positive claim about paying the minimum wage that nobody made. What makes it defensible is
+that it reaches the store through task 91.2's existing default-commit path — so it is
+`origin = 'reported'` and lands in FR-54's per-field trail as an answer, which is the only way a
+reader could ever discover it was made.
+
+**Measured before building the mechanism**, which nearly did not get built: every constant in all
+four disclosure sheets' answer column. The Basic module ships **one**. B9's 2 000 is not a second —
+it is an *offer*, which the derivation artefact already carries and which never becomes an answer on
+its own. C6/C7 carry thirteen for task 79.x, and that is what tipped a one-entry artefact from
+over-engineering into the architecture's own answer: a `if (elementKey === …)` would put EFRAG's
+content in a release, against AD-4 and DR-3.
+
+### A gate that was red for one commit
+
+`pnpm docs:check` failed on two counts left stale by **task 101**, one commit earlier: `packages/ui`
+gained a spec file and the plan gained a task, and both are counted claims. It is not in the
+sub-step lookup table for a `packages/ui` change — the table names `lint` and `typecheck` — so the
+run was not skipped against the rule, but the rule is what let it through. Both counts are corrected
+here. Task 101's commit is red on that gate and this entry is the record of it; CI would have caught
+it on the next push, which is the trade the 8 Sep gate policy accepted in writing.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm --filter @easyesg/api test` (697, of which 10 written here),
+`pnpm --filter @easyesg/web test`, `pnpm e2e` (855, of which 3 written here), `pnpm openapi:check`,
+`pnpm docs:check`, and `pnpm e2e:web --project identity --project expansion`. **No migration**, so
+`migrations:check` is not reached — the whole of this task's storage is an artefact and two rows in
+another.
+
+Both new formulas are mutation-proven three ways: the gap losing its sign, the gap dividing by the
+pair's mean, and the coverage share averaging its denominator as the turnover rate does. Each was
+applied, run, and reverted.
+
+Both review agents ran on **`opus`**, per the pin. Task 36's parent close still owes
+`pnpm gates:clean` and the three agents over the whole diff.

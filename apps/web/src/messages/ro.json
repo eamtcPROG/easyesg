@@ -1110,15 +1110,21 @@
       },
       "derivationInput": {
         "names": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Salariul mediu brut pe oră al angajatelor femei",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Salariul mediu brut pe oră al angajaților bărbați",
           "HoursWorkedByOneFullTimeEmployee": "Ore lucrate de un angajat cu normă întreagă în perioadă",
           "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Angajați la începutul perioadei",
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Angajați la sfârșitul perioadei",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Angajați acoperiți de contracte colective de muncă",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Angajați care au plecat în perioadă"
         },
         "help": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Brut, în aceeași monedă ca salariul de mai sus.",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Brut, înainte de impozite și contribuții. Folosiți aceeași monedă la ambele salarii — diferența se calculează procentual, așa că moneda nu apare în rezultat.",
           "HoursWorkedByOneFullTimeEmployee": "Standardul pornește de la 2 000 de ore pe an. Cifra diferă de la o țară sau ramură la alta, după legislația națională ori contractul colectiv — dacă la dumneavoastră este alta, scrieți-o aici.",
           "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Numărul de angajați în prima zi a perioadei. Împreună cu cel de la sfârșit dă media pe care se calculează fluctuația.",
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Numărul de angajați în ultima zi a perioadei.",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Câți dintre angajați intră sub un contract colectiv de muncă. Ponderea se calculează față de numărul de angajați declarat la B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Câți angajați au încetat raporturile de muncă pe parcursul perioadei, indiferent de motiv."
         }
       }

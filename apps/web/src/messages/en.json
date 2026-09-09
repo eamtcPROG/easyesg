@@ -1110,15 +1110,21 @@
       },
       "derivationInput": {
         "names": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Average gross hourly pay of female employees",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Average gross hourly pay of male employees",
           "HoursWorkedByOneFullTimeEmployee": "Hours worked by one full-time employee in the period",
           "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Employees at the beginning of the period",
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Employees at the end of the period",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Employees covered by collective bargaining agreements",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Employees who left during the period"
         },
         "help": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Gross, in the same currency as the figure above.",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Gross, before tax and contributions. Use the same currency for both pay figures — the gap is worked out as a percentage, so the currency does not appear in the result.",
           "HoursWorkedByOneFullTimeEmployee": "The standard assumes 2,000 hours a year. This varies by country and sector, following national law or a collective agreement — if yours differs, enter it here.",
           "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "The headcount on the first day of the period. With the closing figure it gives the average the turnover rate is worked out on.",
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "The headcount on the last day of the period.",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "How many employees fall under a collective agreement. The share is worked out against the employee count reported in B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "How many employees left during the period, for any reason."
         }
       }

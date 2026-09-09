@@ -1,0 +1,8 @@
+{
+  "defaults": [
+    {
+      "element": "EmployeesReceivePayEqualOrAboveMinimumWageDeterminedByNationalLawOrCollectiveAgreement",
+      "valueBoolean": true
+    }
+  ]
+}

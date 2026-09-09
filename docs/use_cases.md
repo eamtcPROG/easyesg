@@ -840,13 +840,14 @@ their numbers put them.
 
 - **Primary actor:** RC
 - **Module:** Basic Module data entry
-- **Preconditions:** An editable report session; B1 headcount recorded (UC-19).
+- **Preconditions:** An editable report session; B1's employee count recorded (UC-19), which is the collective-bargaining percentage's denominator and the 150-employee threshold's subject — without it the coverage figure has no value and the pay gap is not yet asked.
 - **Trigger:** The Contributor reaches the B10 step.
 - **Main success scenario:**
-  1. The Contributor confirms all employees are paid at or above the applicable minimum wage.
-  2. The Contributor reports collective-bargaining coverage and average training hours per employee.
-  3. Where the B1 headcount reaches 150 or more, the Contributor additionally reports the unadjusted gender pay gap.
-- **Business rules:** The gender pay gap field is shown conditionally on the 150-employee threshold, maintained as configuration (UC-81).
+  1. The Contributor confirms all employees are paid at or above the applicable minimum wage. **The field arrives already answered *yes***, which is the value EFRAG's Digital Template prints in the cell.
+  2. The Contributor reports how many employees a collective agreement covers, and the average annual training hours for each of the four genders B10 states separately; **the system derives the coverage percentage** against the B1 employee count.
+  3. Where the B1 headcount reaches 150 or more, the Contributor additionally reports the average gross hourly pay of male and of female employees, and **the system derives the unadjusted gender pay gap** from them.
+- **Business rules:** The gender pay gap is shown conditionally on the 150-employee threshold, maintained as configuration (UC-81) — **and so are the two pay figures it is derived from**, which are asked only to produce it. The pay gap is signed: a negative figure is women paid more on average, which is a reportable state rather than an error.
+- **Amended 9 Sep 2026 (project owner, task 36.11), against EFRAG's package.** Steps 2 and 3 read *"reports collective-bargaining coverage"* and *"reports the unadjusted gender pay gap"* — two figures the Digital Template 1.3.0 **computes** rather than asks for, as `(male pay − female pay) ÷ male pay` and `covered ÷ B1 headcount`. **None of the three values those formulas read is a reportable element**: the taxonomy carries the two percentages and neither pay figure nor the covered count, the same shape found for B8 and B9 on task 36.10, whose mechanism this uses unchanged. Step 1's pre-answer is a **divergence recorded rather than inherited**: EFRAG prints `YES` at `D147` and the project owner chose to carry it, with the cost stated — a reporter who never opens B10 files a positive claim about legal compliance. `architecture.md` §12.5.6 holds both decisions.
 - **Related FRs:** FR-24, FR-28, FR-29
 - **Related UCs:** UC-19, UC-81
 

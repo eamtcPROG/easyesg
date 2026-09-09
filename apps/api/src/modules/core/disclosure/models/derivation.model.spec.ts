@@ -90,6 +90,70 @@ describe('the figures EFRAG derives', () => {
       expect(Number(rate('0', '2000', '50'))).toBe(0);
     });
   });
+
+
+  describe('B10 — the gender pay gap', () => {
+    const gap = (reference: string, compared: string) =>
+      computeDerivation({
+        formula: DERIVATION_FORMULA.RELATIVE_GAP,
+        operands: { reference, compared },
+      });
+
+    it('is the shortfall against the male figure, over the male figure', () => {
+      // EFRAG's D150: (D148 - D149) / D148. (20 - 17) / 20 = 0.15
+      expect(Number(gap('20', '17'))).toBeCloseTo(0.15, 10);
+    });
+
+    it('divides by the reference, not by the pair’s mean', () => {
+      // The symmetric variant answers a different, smaller number for the same two salaries, and
+      // a filing carrying it under this element would not be comparable with anyone else's.
+      expect(Number(gap('20', '17'))).not.toBeCloseTo(3 / 18.5, 6);
+    });
+
+    it('stays signed, because women paid more is a real and reportable state', () => {
+      // `Math.abs` here would file *a gap of 15%* on an undertaking that has one the other way,
+      // and no reader could tell the two apart.
+      expect(Number(gap('17', '20'))).toBeCloseTo(-0.17647059, 6);
+    });
+
+    it('answers zero for equal pay, which is an answer rather than a gap unmeasured', () => {
+      expect(Number(gap('20', '20'))).toBe(0);
+    });
+
+    it('answers null on a zero reference rather than dividing by it', () => {
+      expect(gap('0', '17')).toBeNull();
+    });
+
+    it('answers null while either figure is unstated', () => {
+      expect(gap('20', '')).toBeNull();
+    });
+  });
+
+  describe('B10 — collective bargaining coverage', () => {
+    const share = (part: string, whole: string) =>
+      computeDerivation({
+        formula: DERIVATION_FORMULA.SHARE_OF_HEADCOUNT,
+        operands: { part, whole },
+      });
+
+    it('is the covered count over B1’s employee count', () => {
+      expect(Number(share('30', '50'))).toBeCloseTo(0.6, 10);
+    });
+
+    it('does not average its denominator, which is what separates it from the turnover rate', () => {
+      // Two ratios, two formulas, on purpose: `TURNOVER_RATE` averages two points in time and this
+      // takes B1's single figure, as EFRAG's own two cells do.
+      expect(Number(share('30', '50'))).toBeCloseTo(30 / 50, 10);
+    });
+
+    it('answers null on a zero headcount, which EFRAG’s own cell tests for explicitly', () => {
+      expect(share('0', '0')).toBeNull();
+    });
+
+    it('answers zero where nobody is covered, which is an answer', () => {
+      expect(Number(share('0', '50'))).toBe(0);
+    });
+  });
 });
 
 /** FR-30, which had a state, a CHECK, a tone — and no writer — until this task. */

@@ -1176,3 +1176,121 @@ test('the wizard step is a main landmark, exactly one (UX-99)', async ({ page })
   await expect(page.getByRole('main').getByRole('navigation')).toHaveCount(0);
   await expect(page.getByRole('navigation', { name: 'Secțiunile raportului' })).toBeVisible();
 });
+
+/**
+ * B10, where two more figures are EFRAG's to compute and one answer is EFRAG's to offer (UC-28).
+ *
+ * The pay gap is the interesting one: it is derived **and** conditional, so it exercises both rules
+ * this module slice added — the figure has no box to type in, and its two inputs disappear with it
+ * below the 150-employee threshold, being questions asked only to produce it.
+ */
+test('B10 derives the pay gap and the bargaining share, and pre-answers the wage question (UC-28)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'b10');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  const payGap = 'Diferența procentuală de remunerare între angajatele și angajații întreprinderii';
+  const malePay = 'Salariul mediu brut pe oră al angajaților bărbați';
+  const femalePay = 'Salariul mediu brut pe oră al angajatelor femei';
+  const covered = 'Angajați acoperiți de contracte colective de muncă';
+
+  // ── Below 150: the gap is out of scope, and so are the two questions that feed it ────────────
+  await page.goto(`/reports/${reportId}/B1`);
+  const employees = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await employees.fill('50');
+  await employees.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('50');
+
+  await page.goto(`/reports/${reportId}/B10`);
+  await expect(page.getByRole('group', { name: payGap })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: malePay })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: femalePay })).toHaveCount(0);
+
+  // **EFRAG's own YES, offered and committed** (project owner, 9 Sep 2026). The template prints it
+  // in the cell; this platform carries it as a default, which the wizard commits like any other.
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey:
+              'EmployeesReceivePayEqualOrAboveMinimumWageDeterminedByNationalLawOrCollectiveAgreement',
+          })
+        )?.valueBoolean,
+      { timeout: 15_000 },
+    )
+    .toBe(true);
+
+  // The bargaining share is not threshold-gated, so its input is asked at any size.
+  const coveredField = page.getByRole('textbox', { name: covered });
+  await coveredField.fill('30');
+  await coveredField.blur();
+  await expect
+    .poll(
+      async () =>
+        Number(
+          (
+            await disclosureValueOf({
+              organizationId,
+              reportId,
+              elementKey: 'PercentageOfEmployeesCoveredByCollectiveBargainingAgreements',
+            })
+          )?.valueNumeric,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeCloseTo(0.6, 6);
+
+  // ── At 150: the gap comes into scope, with its two questions ─────────────────────────────────
+  await page.goto(`/reports/${reportId}/B1`);
+  const grown = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await grown.fill('150');
+  await grown.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('150');
+
+  await page.goto(`/reports/${reportId}/B10`);
+  const gap = page.getByRole('group', { name: payGap });
+  await expect(gap).toBeVisible();
+  // Derived, so there is nothing to type into — FR-29 as a screen fact rather than as a refusal
+  // the reporter meets after typing.
+  await expect(gap.getByRole('textbox')).toHaveCount(0);
+
+  const male = page.getByRole('textbox', { name: malePay });
+  await male.fill('20');
+  await male.blur();
+  const female = page.getByRole('textbox', { name: femalePay });
+  await female.fill('17');
+  await female.blur();
+
+  // (20 − 17) ÷ 20 = 0.15, signed against the male figure as EFRAG's own cell computes it.
+  await expect
+    .poll(
+      async () =>
+        Number(
+          (
+            await disclosureValueOf({
+              organizationId,
+              reportId,
+              elementKey: 'PercentageGapInPayBetweenFemaleAndMaleEmployees',
+            })
+          )?.valueNumeric,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeCloseTo(0.15, 6);
+});
