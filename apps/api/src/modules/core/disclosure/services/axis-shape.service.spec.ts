@@ -179,10 +179,11 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
 
     it('registers exactly the axes whose shape somebody has decided', () => {
       // Exact rather than `> 0`: the counts are knowable, and the block below passes vacuously on
-      // empty lists — the shape a mistyped republish leaves behind. **This assertion did its job on
-      // 8 Sep 2026**: it failed when task 36.8 registered B7's waste axis, which is exactly what it
-      // was written to do — a screen changing shape is a decision, and it should not be silent.
-      // B8's countries (36.9) and C3's reporting scopes (79.x) are the two still to come.
+      // empty lists — the shape a mistyped republish leaves behind. **This assertion has now done
+      // its job twice**: it failed when task 36.8 registered B7's waste axis and again when 36.9
+      // registered B8's countries, which is exactly what it was written to do — a screen changing
+      // shape is a decision, and it should not be silent. C3's reporting scopes (79.x) is the one
+      // still to come.
       //
       // **`ReportingScopesAxis` is in NEITHER list and that is the third shape** (task 36.5): its
       // members are baseline year / target year / currently stated, so on B3 the default member is
@@ -190,7 +191,7 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
       // year picker over eight emissions disclosures, and this assertion is what would say so.
       expect(shapesOf(shipped())).toEqual({
         breakdown: ['BreakdownOfEnergyConsumptionAxis'],
-        classification: ['TypeOfPollutantAxis', 'TypeOfWasteAxis'],
+        classification: ['CountryOfEmploymentContractAxis', 'TypeOfPollutantAxis', 'TypeOfWasteAxis'],
       });
       expect(logged).toEqual([]);
     });

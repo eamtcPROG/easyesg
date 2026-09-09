@@ -1098,7 +1098,8 @@
           "IdentifierOfSiteTypedAxis": "Site",
           "IdentifierOfSubsidiaryTypedAxis": "Subsidiary",
           "IdentifierOfMaterialTypedAxis": "Material",
-          "TypeOfWasteAxis": "Type of waste"
+          "TypeOfWasteAxis": "Type of waste",
+          "CountryOfEmploymentContractAxis": "Country of employment contract"
         },
         "fallbackName": "Row",
         "addRow": "Add a row",

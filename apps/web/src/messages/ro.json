@@ -1098,7 +1098,8 @@
           "IdentifierOfSiteTypedAxis": "Amplasament",
           "IdentifierOfSubsidiaryTypedAxis": "Filială",
           "IdentifierOfMaterialTypedAxis": "Material",
-          "TypeOfWasteAxis": "Tipul de deșeu"
+          "TypeOfWasteAxis": "Tipul de deșeu",
+          "CountryOfEmploymentContractAxis": "Țara contractului de muncă"
         },
         "fallbackName": "Rând",
         "addRow": "Adăugați un rând",

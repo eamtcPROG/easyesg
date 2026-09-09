@@ -536,6 +536,147 @@ test('B7 reports waste against an entry of the published list, and says whose la
 });
 
 /**
+ * B8 in a browser (UC-26, FR-24, FR-28, FR-29; task 36.9) — **the countries nobody had named.**
+ *
+ * B8's country table is a classification over `CountryOfEmploymentContractAxis`, whose 256 ISO 3166
+ * codes are worded **nowhere**: EFRAG references the list rather than publishing it, so before this
+ * task the picker would have offered `AD, AE, AF`. The names are the platform's to give and come
+ * from `Intl.DisplayNames` in the request's locale, resolved in the api like every other member
+ * name — which is what this journey shows, because only a browser reads them in Romanian.
+ *
+ * Its other seven fields are the flat labelled list B1 … B7 ship, which is the recorded answer to
+ * the row's *"entered as a table, not eleven fields"*: EFRAG's row label and our field label say the
+ * same thing.
+ */
+test('B8 asks headcount per named country, and turnover only past fifty (UC-26)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'b8');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B8`);
+
+  // The contract and gender counts, each a fully labelled field rather than a table row.
+  await expect(
+    page.getByRole('group', { name: 'Numărul de angajați cu contract pe durată nedeterminată' }),
+  ).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Numărul de angajați de gen masculin' })).toBeVisible();
+
+  // **No turnover below fifty** — BR-APP-1's threshold, and the field is absent rather than shown
+  // and refused (P2). B1 is untouched, so the headcount is unanswered.
+  await expect(
+    page.getByRole('group', { name: 'Rata de fluctuație a personalului' }),
+  ).toHaveCount(0);
+
+  // The country table, named from EFRAG's own column header because its axis and its default member
+  // are both unworded.
+  const unassigned = page.getByRole('group', { name: 'Țara contractului de muncă — de ales' });
+  const picker = unassigned.getByRole('combobox', { name: 'Țara contractului de muncă' });
+
+  // **Romanian, from the platform.** `Republica Moldova` appears in no catalogue and in no EFRAG
+  // file — it is `Intl.DisplayNames` resolved against the request's negotiated locale, which is the
+  // half only a browser can show.
+  await picker.fill('Moldova');
+  await page.getByRole('option', { name: 'Republica Moldova', exact: true }).click();
+
+  const md = page.getByRole('group', { name: 'Republica Moldova' });
+  const headcount = md.getByRole('textbox', { name: 'Numărul de angajați pe țara contractului de muncă' });
+  await headcount.fill('42');
+  await headcount.blur();
+
+  // Keyed to the country, not to the undimensioned row.
+  const stored = { organizationId, reportId, elementKey: 'NumberOfEmployeesForCountryOfEmploymentContract' };
+  await expect
+    .poll(async () => await disclosureValueOf({ ...stored, dimensionKey: 'MD' }), { timeout: 15_000 })
+    .toMatchObject({ valueNumeric: '42' });
+  expect(await disclosureValueOf(stored)).toBeNull();
+
+  // ── The other side of fifty ────────────────────────────────────────────────────────────────
+  //
+  // **The half the api's own BR-APP-1 case cannot show**: that the field is *not rendered* rather
+  // than rendered and refused (§7.3, P2). Answering B1's headcount at 50 brings it in.
+  await page.goto(`/reports/${reportId}/B1`);
+  const employees = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await employees.fill('50');
+  await employees.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('50');
+
+  await page.goto(`/reports/${reportId}/B8`);
+  const turnover = page.getByRole('group', { name: 'Rata de fluctuație a personalului' });
+  await expect(turnover).toBeVisible();
+
+  // ── UX-28, in its three parts ───────────────────────────────────────────────────────────────
+  //
+  // *"Where a conditional field **disappears** after being answered, the entered value shall be
+  // retained and **restored if the condition returns**."* Three claims, and only a browser can make
+  // the first and third: the field **goes**, the answer **stays in storage**, and it **comes back**.
+  //
+  // **This block asserted the opposite until 9 Sep 2026**, and the reason is worth keeping. UX-28
+  // was read as an exception to §7.3's *"Not applicable — Not rendered"* — as though it required the
+  // answered field to stay on screen — so the test asserted a visible box still holding `12`. It
+  // passed against a screen that rendered every field regardless, which is to say it could not fail
+  // for the reason it existed. The sentence presupposes the disappearance rather than forbidding it,
+  // and `EmployeeTurnoverRate` is the only field in the product that can currently demonstrate all
+  // three parts, because nothing else is answered and then made inapplicable.
+  const rate = turnover.getByRole('textbox');
+  await rate.fill('12');
+  await rate.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'EmployeeTurnoverRate' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('12');
+
+  // The undertaking shrinks below the threshold. The rule stops applying to the field…
+  await page.goto(`/reports/${reportId}/B1`);
+  const shrunk = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await shrunk.fill('10');
+  await shrunk.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('10');
+
+  // …so the question goes — §7.3's third condition, which is the half the api cannot show…
+  await page.goto(`/reports/${reportId}/B8`);
+  await expect(page.getByRole('group', { name: 'Rata de fluctuație a personalului' })).toHaveCount(0);
+
+  // …and the answer is **retained** while the question is gone. Read from the store rather than from
+  // the screen, which is the only place it can be read now — and the assertion the "field stays
+  // visible" version could never make, because it was reading the same fact twice.
+  expect(
+    (await disclosureValueOf({ organizationId, reportId, elementKey: 'EmployeeTurnoverRate' }))?.valueNumeric,
+  ).toBe('12');
+
+  // …and it is **restored** when the condition returns, without the reporter retyping it.
+  await page.goto(`/reports/${reportId}/B1`);
+  const regrown = page.getByRole('group', { name: 'Numărul de angajați' }).getByRole('textbox');
+  await regrown.fill('50');
+  await regrown.blur();
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'NumberOfEmployees' }))?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('50');
+
+  await page.goto(`/reports/${reportId}/B8`);
+  await expect(
+    page.getByRole('group', { name: 'Rata de fluctuație a personalului' }).getByRole('textbox'),
+  ).toHaveValue('12');
+});
+
+/**
  * UX-15's declaration, in a browser (UC-31, FR-32, D-4; task 36.5).
  *
  * *"Every field shall offer the 'not available, with reason' declaration as a first-class action,

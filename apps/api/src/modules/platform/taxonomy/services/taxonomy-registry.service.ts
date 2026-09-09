@@ -271,6 +271,14 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
         members:
           external ??
           local.map((member) => ({ key: member, code: null, hazardous: null, parent: null, labels: {} })),
+        // **Carried since task 36.9**, and it was dropped before: the country axis's members are
+        // ISO 3166 codes EFRAG references and does not word, so a caller has to know whose they are
+        // to name them at all. `domainTaxonomy` above is the sibling that resolves *members*; this
+        // one only says who is responsible for naming them.
+        // Narrowed by the vocabulary's own guard, as `readEnumerations` one function below already
+        // does — a `typeof … === 'string'` here admitted any spelling into a field whose entire
+        // purpose is that there are three (task 36.9's review; CLAUDE.md's "applied where it holds").
+        memberTaxonomy: isEnumerationTaxonomy(value.memberTaxonomy) ? value.memberTaxonomy : null,
       });
     }
     // Applied where it holds (task 91.1's review): this reader dropped silently since task 33.1,

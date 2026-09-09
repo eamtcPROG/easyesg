@@ -127,6 +127,24 @@ export interface TaxonomyAxis {
    * from — the alternative is every consumer of B7 knowing about a second seed file.
    */
   readonly members: readonly TaxonomyMember[];
+  /**
+   * Whose members these are, where they are not EFRAG's own to name (task 36.9).
+   *
+   * `country` is the case it exists for: `CountryOfEmploymentContractAxis` carries 256 ISO 3166
+   * codes that EFRAG *references* and does not word — 0 of 257 have a label in any catalogue — so a
+   * caller that did not know this would offer a reporter `AD, AE, AF`. `null` for the axes EFRAG
+   * words itself, which is every other one.
+   *
+   * **Distinct from the `domainTaxonomy` that resolves B7's waste members.** That one says where to
+   * *find* the members and the adapter hides it; this one says who is responsible for *naming* them,
+   * which the adapter cannot hide because it is not the one that can name them.
+   *
+   * Typed as the **vocabulary** rather than as `string`, which is what it was until task 36.9's
+   * review: the whole point of `ENUMERATION_TAXONOMY` is that a reader branches on a member and
+   * never on a spelling, and a `string | null` here left `regionName`'s `!== COUNTRY` comparison
+   * free to be true of a typo forever.
+   */
+  readonly memberTaxonomy: EnumerationTaxonomy | null;
 }
 
 /** One member of an axis's domain. */

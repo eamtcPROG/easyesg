@@ -1098,7 +1098,8 @@
           "IdentifierOfSiteTypedAxis": "Площадка",
           "IdentifierOfSubsidiaryTypedAxis": "Дочерняя компания",
           "IdentifierOfMaterialTypedAxis": "Материал",
-          "TypeOfWasteAxis": "Тип отходов"
+          "TypeOfWasteAxis": "Тип отходов",
+          "CountryOfEmploymentContractAxis": "Страна трудового договора"
         },
         "fallbackName": "Строка",
         "addRow": "Добавить строку",

@@ -129,30 +129,62 @@ export function StepFields({
     // from the workbook's own column header, *Type of waste*, authored in three locales here rather
     // than hand-edited into a members catalogue the extractor regenerates.
     [CLASSIFICATION_AXIS.WASTE]: tGroup('names.TypeOfWasteAxis'),
+    // B8's, and its default member is unworded too — so the name is EFRAG's own column header
+    // again rather than anything the package resolves (task 36.9).
+    [CLASSIFICATION_AXIS.COUNTRY]: tGroup('names.CountryOfEmploymentContractAxis'),
   };
 
   // How many rows the reporter has added to each axis beyond the ones the api served. One value
   // nothing else moves with, which is the case the reducer rule leaves to a single `useState`.
   const [added, setAdded] = useState<Readonly<Record<string, number>>>({});
 
-  // Once per step, and guarded by a ref rather than by a dependency list: `fields` is a new array
-  // on every render of the server component above, so a list would re-fire and re-queue writes the
-  // store has already acknowledged.
+  /**
+   * The fields this reporter is actually asked (FR-28; task 36.9).
+   *
+   * **§7.3's third condition, which nothing implemented**: *"Not applicable — **Not rendered**. The
+   * system never renders a field and then refuses its value on grounds it already knew (P2)."* Until
+   * this task only the *module* carried the verdict, on the rail, so B8's turnover was shown to a
+   * ten-employee company and B10's pay gap to everyone. Task 95's own row assumed the behaviour
+   * already existed — *"a conditional field simply appears and disappears between step reads"* — and
+   * owns **announcing** the change, which is still its.
+   *
+   * **`applicable` alone, and UX-28 is not an exception to it** (convention review, 9 Sep 2026 —
+   * this filter shipped with one, on a misreading of the rule it cited). UX-28 reads *"where a
+   * conditional field **disappears** after being answered, the entered value shall be retained and
+   * **restored if the condition returns**"*: it presupposes the disappearance and asks that the
+   * **value** survive it, which is storage and the wire rather than the screen. §12.5.6's task-91.3
+   * row already settled where that retention lives — *"retained and returned, marked by
+   * `applicable: false` beside a state that is not `missing`"* — and keeping the field on screen
+   * would contradict §7.3 in the same breath as implementing it, leaving a reporter editing a
+   * question the standard does not ask their undertaking while the module's outstanding count, which
+   * the api computes over applicable elements only, disagreed with the screen permanently.
+   */
+  const asked = useMemo(() => fields.filter((field) => field.applicable), [fields]);
+
+  // Once per step, and guarded by a ref rather than by its dependency list: `fields` is a new array
+  // on every render of the server component above — so `asked` is too, and the list alone would
+  // re-fire and re-queue writes the store has already acknowledged. The list still names what the
+  // body reads, because a list that omits a value it uses is the one shape no reader can check.
   const committedDefaults = useRef(false);
   useEffect(() => {
     if (committedDefaults.current || readOnly) return;
     committedDefaults.current = true;
-    for (const write of outstandingDefaults(fields)) change(write);
-  }, [fields, readOnly, change]);
+    // **`asked`, not `fields`** (convention review, 9 Sep 2026): a default committed for a field
+    // the reporter is not shown is an answer filed for a question never displayed — the same rule
+    // the filter above applies, one commit path over. Latent today, since no element carrying an
+    // applicability rule carries an entity default; live the day one does.
+    for (const write of outstandingDefaults(asked)) change(write);
+  }, [asked, readOnly, change]);
 
   // **Memoized deliberately, and this is one of the three cases `apps/web/CLAUDE.md` says bite with
   // `reactCompiler` off** — grouping a list, recomputed per render. This component re-renders on
   // every autosave transition (the context), while `fields` and `added` move only when the server
   // re-renders or a row is added, so the grouping ran on every keystroke's acknowledgement.
   const classificationAxes = useMemo(() => new Set(axes.map((axis) => axis.key)), [axes]);
+
   const entries = useMemo(
-    () => withAddedRows(layOutStep(fields, classificationAxes), added),
-    [fields, classificationAxes, added],
+    () => withAddedRows(layOutStep(asked, classificationAxes), added),
+    [asked, classificationAxes, added],
   );
 
   // **Built once here rather than per row in the JSX** (convention review, 8 Sep 2026). Called
@@ -691,7 +723,10 @@ const GROUP_MESSAGES = 'organization.wizard.group' as const;
  * Declared beside `TYPED_AXIS` and for its reasons: the value is EFRAG's axis key, used as a
  * **message key** and never rendered, written out so the catalogue lookup is type-checked.
  */
-const CLASSIFICATION_AXIS = { WASTE: 'TypeOfWasteAxis' } as const;
+const CLASSIFICATION_AXIS = {
+  WASTE: 'TypeOfWasteAxis',
+  COUNTRY: 'CountryOfEmploymentContractAxis',
+} as const;
 
 /**
  * The typed axes this product names a row of — B1's two and B7's, at `2026-05-01`.

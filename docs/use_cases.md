@@ -88,7 +88,7 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-23 | Complete B5 — Biodiversity | RC | Disclose site proximity to biodiversity-sensitive areas | MVP | FR-24, FR-28 |
 | UC-24 | Complete B6 — Water | RC | Report water withdrawal, high-stress share and consumption | MVP | FR-24, FR-28, FR-29 |
 | UC-25 | Complete B7 — Resource use, circular economy and waste | RC | Report circularity practices and waste quantities | MVP | FR-24, FR-29 |
-| UC-26 | Complete B8 — Workforce characteristics | RC | Report headcount and FTE by contract type, gender and country | MVP | FR-24, FR-28, FR-29 |
+| UC-26 | Complete B8 — Workforce characteristics | RC | Report the number of employees by contract type, by gender, and by country of employment contract | MVP | FR-24, FR-28, FR-29 |
 | UC-27 | Complete B9 — Health and safety | RC | Report recordable accidents, accident rate and fatalities | MVP | FR-24, FR-30 |
 | UC-28 | Complete B10 — Remuneration, collective bargaining and training | RC | Report wage floor compliance, bargaining coverage and training hours | MVP | FR-24, FR-28, FR-29 |
 | UC-29 | Complete B11 — Corruption and bribery | RC | Report convictions and fines for corruption and bribery | MVP | FR-24, FR-30 |
@@ -716,7 +716,7 @@ their numbers put them.
 - **Preconditions:** An editable report session (UC-18); entity master data exists (UC-52 … UC-54).
 - **Trigger:** The Contributor enters the first wizard step.
 - **Main success scenario:**
-  1. The Contributor confirms or completes module choice (Basic at MVP), legal form, NACE code(s), employee headcount and FTE, site geolocations, and consolidation scope.
+  1. The Contributor confirms or completes module choice (Basic at MVP), legal form, NACE code(s), the employee count together with its basis — headcount or full-time equivalent — and whether it is taken at period end or as a period average, site geolocations, and consolidation scope. **Amended 9 Sep 2026 (project owner, task 36.9), twice in one day and the second time to undo the first.** The step read *"employee headcount and FTE"*; an amendment made on a search of element keys and labels alone replaced it with *"employee headcount"*, on the false finding that no FTE exists. It does: `TypeOfNumberOfEmployees` admits `HeadcountMember` and `Full-TimeEquivalentFTEMember`, both labelled in three locales, and `EmployeeCountingMethodology` carries the period-end/average basis — three B1 elements where the step had named one. Found by task 36.9's spec review, which read the enumeration domains the first pass did not.
   2. The Contributor records any sensitive information omitted under the standard's omission provision.
   3. The system uses the answers to drive conditional-applicability logic for every subsequent module.
 - **Business rules:** Values pre-populate from the entity master record (D-2) but remain editable here, because B1 is a disclosure, not master data. B1 is entered first because its answers drive conditional applicability.
@@ -808,12 +808,15 @@ their numbers put them.
 
 - **Primary actor:** RC
 - **Module:** Basic Module data entry
-- **Preconditions:** An editable report session; B1 headcount recorded (UC-19).
+- **Preconditions:** An editable report session; B1's employee count recorded together with its basis — headcount or full-time equivalent — and its counting methodology (UC-19). EFRAG's B8 block declares its tables *"linked from B1"*, so the basis is what B8's own counts are counted on; a B8 filed without one is incomplete against the template even where every B8 field carries a number.
 - **Trigger:** The Contributor reaches the B8 step.
 - **Main success scenario:**
-  1. The Contributor reports headcount and FTE broken down by contract type, gender and country.
-  2. Where the B1 headcount reaches 50 or more, the Contributor additionally reports employee turnover.
+  1. The Contributor reports the number of employees by type of contract — permanent and temporary.
+  2. The Contributor reports the number of employees by gender — male, female, other, and not reported.
+  3. The Contributor selects each country they hold employment contracts in and reports the number of employees for it — one country or many, and the selection is the whole of the condition. **Reworded 9 Sep 2026 (task 36.9)**: the step read *"Where the undertaking employs people in more than one country…"*, which states a conditional the system does not evaluate and cannot — EFRAG's gate for this table carries no element, so there is nothing to store an answer in. See the amendment below.
+  4. Where the B1 headcount reaches 50 or more, the Contributor additionally reports employee turnover.
 - **Business rules:** The system shows or hides the turnover field dynamically on the 50-employee threshold rather than presenting it and rejecting it later. The threshold itself is maintained configuration (UC-81).
+- **Amended 9 Sep 2026 (project owner), against EFRAG's own package rather than by inference**, under the standing rule `architecture.md` §12.5.6 records for module slices. **Step 1 named FTE, and B8 has no FTE figure**: every one of its eight elements is a count, and the Digital Template 1.3.0's B8 sheet asks *Number of employees* in each of its tables. **FTE is not absent from the standard, only from B8** — it is one of the two bases `TypeOfNumberOfEmployees` admits in **B1**, which is why the workbook declares B8's tables *"linked from B1"*; the first version of this amendment said no FTE existed anywhere and was corrected the same day by task 36.9's spec review. UC-26's precondition names that link. The breakdowns are EFRAG's own sections rather than one sentence: *Type of contract* and *Gender* are `[Always to be reported]`, *Country of employment* is `[If applicable]` behind a gating question — *"does the undertaking operate in more than one country?"* — which is itself unreportable, carrying no element, as B2's, B4's, B6's and B7's gates do. **So nothing gates step 3, and no rule is missing**: the condition has no storable answer, and the classification shape already is the answer — a reporter employing in one country selects one country, and one employing in six selects six. This is the **inverse** of B6's divergence and not, as this row first said, the same shape: there the platform gates a disclosure EFRAG marks `[Always to be reported]` (BR-APP-4); here it declines to gate one EFRAG marks `[If applicable]`. Both follow from the same fact — a gating question with no element behind it — and they point in opposite directions, which is why each is recorded rather than inferred from the other.
 - **Related FRs:** FR-24, FR-28, FR-29
 - **Related UCs:** UC-19, UC-81
 

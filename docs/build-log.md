@@ -13443,3 +13443,140 @@ time — scope set by where the last audit was looking.
 
 No new task number was opened. The gate's growth belongs to task 100, and a heading inserted into a
 tracking file is not a slice of the build.
+
+## Task 36.9 — B8, and two documents I amended into being wrong · 2026-09-09
+
+B8 (UC-26, FR-24, FR-28, FR-29) is eight elements: six plain counts, one count over a
+**256-member classification**, and the first field in the product whose applicability actually
+turns. It is a small module, and almost none of what follows is about the module.
+
+### The countries nobody words
+
+`CountryOfEmploymentContractAxis` carries 256 ISO 3166 codes and **not one is worded anywhere** —
+not in the package, not in any of the twelve label linkbases that carry labels, not in the
+catalogues. Task 36.4's member-label extractor had already excluded the axis and left a note calling
+the names *36.9's problem*. Left alone, B8's picker offers `AD, AE, AF`.
+
+They are named from `Intl.DisplayNames` in the api, in the request's negotiated locale. **255 of the
+256 resolve in all three live locales** from data Node already ships; the one that does not is `NT`,
+the Neutral Zone, withdrawn from ISO 3166 in 1993 and still in EFRAG's list. `fallback: 'none'`, so
+it answers nothing rather than answering itself, and the picker shows its bare code — which the
+user-facing-text rule permits as a *reference* and would refuse as a label.
+
+**The row I wrote for this claimed it also fixed B1's country field. It does not, and the claim
+would have been a regression if anyone had acted on it.** Task 91.1 declined "naming countries in
+the api" for a **different set**: `country:CountryDomain`'s members are the handful of countries the
+platform registers legal forms for, named by the client's own authored catalogue, which S-04 already
+does. Making my sentence true would have replaced an authored Romanian name with a CLDR one on the
+field a reporter picks their own country in. Two sets, two naming authorities, and 91.1's row stands
+unamended.
+
+**The standing of the 256 is weaker than anything T-14 describes, and is now written down.** T-14
+says only English VSME labels carry EFRAG standing and RO/RU are platform-authored; here **none of
+the three** has it, because EFRAG words no country in any language. That is an export obligation for
+task 46 — mark them as the platform's, as the Russian labels already are — not a screen one.
+
+### §7.3's third applicability condition, unimplemented since the schema was written
+
+*"Not applicable — **Not rendered**. The system never renders a field and then refuses its value on
+grounds it already knew (P2)."* Only the *module* had ever carried the verdict, on the rail, so B8's
+turnover box sat on screen at twelve employees and B10's pay gap sat on everyone's. The step now
+renders `fields.filter((field) => field.applicable)`, and defaults are committed over the asked
+fields rather than all of them — otherwise a default lands on a question nobody was shown.
+
+**The first version carried an exception for UX-28, and the exception was a misreading I put to the
+project owner as the basis for their decision.** UX-28 reads: *"Where a conditional field
+**disappears** after being answered, the entered value shall be retained and restored if the
+condition returns."* It **presupposes** the disappearance and asks that the **value** survive it —
+storage and the wire, not the screen. Read as an exception it contradicted §7.3 in the same breath
+as implementing it, contradicted BR-APP-5, contradicted §6.2's own field contract — which states the
+retention as *"`applicable: false` beside a `state` that is not `missing`"*, a pair only observable
+if the field is gone — and left the screen permanently at odds with a progress count the api
+computes over applicable elements only. Both reviews found it. The filter is `applicable` alone.
+
+**The browser test asserted the misreading, and could not have failed.** It filled the turnover
+field, shrank the undertaking below fifty, and asserted the box was still visible holding `12` —
+reading the value off the same screen it had typed it into, which is a fact compared to itself. It
+now asserts UX-28's three actual claims: the field **goes**, the answer is **retained** (read from
+the store, the only place left to read it), and it is **restored** when the condition returns.
+`EmployeeTurnoverRate` is the only field in the product that can currently demonstrate all three.
+
+**Proven by two mutations, because the first one proved the wrong thing.** Reverting the filter
+entirely — render every field — fails the journey at its *pre-existing* line 567 assertion, *no
+turnover below fifty*, which had been there since the test was written; the new assertions are never
+reached, so that run says nothing about them. The mutation that isolates them is the misreading
+itself: `field.applicable || field.state !== MISSING`, keeping an inapplicable field that already
+carries an answer. It passes line 567 — the field is unanswered then, so it is still hidden — and
+fails at **line 651**, the new `toHaveCount(0)`, and nowhere else. A mutation that fails at the
+first assertion is not a proof of the last one, and it looks exactly like one.
+
+### The FTE amendment, which replaced an imprecision with an error
+
+FR-29, UX-14, UC-19 and UC-26 all named *headcount and FTE* as **units**. They are not units — task
+91.4 measured the seven the standard states, and B8's eight elements carry none of them. That much
+was right, and it is where I should have stopped.
+
+Instead I amended five sites to say **no full-time-equivalent disclosure exists**: not among the 143
+elements, not in any label, in any locale. Task 36.9's spec review checked and it is false.
+`vsme:TypeOfNumberOfEmployeesMember` admits `HeadcountMember` and `Full-TimeEquivalentFTEMember` —
+labelled *Full-time equivalent (FTE)* / *Echivalent normă întreagă (ENI)* / *Эквивалент полной
+занятости (ЭПЗ)* — and B1 carries `TypeOfNumberOfEmployees` and `EmployeeCountingMethodology`
+alongside `NumberOfEmployees`, all in `[1010]`. The Digital Template's B8 block declares its tables
+*"linked from B1"* for exactly that reason.
+
+**Why the search missed it:** I searched element keys and element labels, and the answer lives in
+the **enumeration domains and member catalogues** — a place the same task had spent the day reading
+for B8's own axis. UC-19 came out of it *less* accurate than it went in: it had named one B1 field
+loosely and I amended it to name one B1 field wrongly, where the truth is three.
+
+All five sites now say the narrow true thing — there is no FTE **figure**; there is an FTE
+**basis** — and each says that its first version was wrong, because a reader who saw the first has
+no other way to learn it moved. UC-26's precondition names the B1 link rather than assuming it.
+
+**And FR-29's acceptance criterion had gone unread while its requirement was amended twice.** It
+said *"Each named quantity is captured in the stated unit"* while the requirement above it now named
+quantities with no stated unit — unverifiable, on the 40-of-78 quantitative elements OQ-22 counts,
+rather than false. It now reads *in the unit the standard states for it, and with no unit where the
+standard states none*, which is what 91.4 built.
+
+### Smaller things, each a rule applied where it was found and not where it holds
+
+- **B8 has four EFRAG sections, not three.** My §12.5.6 row enumerated `[1280]` contract, `[1290]`
+  gender, `[1300]` country — taken from the sheet's visible tables rather than from the taxonomy's
+  presentation roles — and dropped `[1310]` turnover. That is the **only** section this platform
+  gates, so the omission hid the one section the row's argument had to answer for.
+- **`TaxonomyAxis.memberTaxonomy` shipped as `string | null`** with a `typeof === 'string'` guard,
+  in the one field whose whole purpose is that there are three values. `regionName`'s `!== COUNTRY`
+  comparison was free to be true of a typo forever, silently, falling back to bare codes.
+  `readEnumerations` **forty lines below in the same file** already narrowed with
+  `isEnumerationTaxonomy`. Now both do.
+- **`config/seed/README.md` said the axis-shape artefact is "seeded with the energy axis alone".**
+  It holds four axes across tasks 36.4, 36.5, 36.8 and 36.9 — the sentence had been wrong since 36.5
+  and is the kind of claim `docs:check` cannot see, being prose about a file's contents.
+- **An orphaned docblock**: `regionName` had been inserted between `admits` and the docblock
+  describing it, so the paragraph explaining the leaf rule documented the country namer.
+- **`architecture.md`'s task-32.4 row had rendered as six cells since it was written** — an ER
+  cardinality, `REPORTING_PERIOD ||--o| REPORT`, whose pipes broke the table. Pre-existing and not
+  mine, fixed because I had just made the same mistake two rows away and CLAUDE.md asks for the
+  shape to be searched rather than the instance fixed.
+
+### A React Compiler error worth keeping
+
+`asked` was declared *after* the effect that reads it. It works at runtime — the callback runs after
+render — and it cost three lint errors, of which only one was about hooks: `exhaustive-deps` wanted
+`asked` in the list, and `preserve-manual-memoization` refused to compile the component at all
+because a value memoized in source was not memoized in output. The fix is declaration order. The
+effect's own comment had also said *"the same rule the filter above applies"* while the filter was
+sixty lines below it — the comment was describing the code I meant to write.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm --filter @easyesg/api test` (670), `pnpm --filter @easyesg/web
+test` (318), `pnpm e2e`, and `pnpm e2e:web --project identity --project expansion`. **`openapi:check`
+was not run and this is the omission, not a claim**: the diff touches `apps/api/src/contracts/**` —
+the internal port surface — and no controller, DTO or decorator, so nothing reaches the emitted
+document; `typecheck` covers the type change. `migrations:check` is not reached (no migration).
+Both review agents ran on **`opus`**, per the pin.
+
+The parent close for task 36 still owes `pnpm gates:clean` and the three agents over the whole
+fourteen-sub-step diff.

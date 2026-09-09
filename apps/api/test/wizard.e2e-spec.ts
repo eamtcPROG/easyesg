@@ -1102,6 +1102,38 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       expect(step.fields.filter((f) => !f.axes.includes('TypeOfWasteAxis'))).toHaveLength(13);
     });
 
+    it('names B8’s 256 countries in the reader’s language, which EFRAG does not (UC-26)', async () => {
+      const step = await stepOf(await createReport(await openPeriod(2026)), 'B8');
+
+      expect(step.axes.map((a) => a.key)).toEqual(['CountryOfEmploymentContractAxis']);
+      const countries = step.axes[0];
+      // 256 — the axis's own members. `AllCountriesMember` is its default and is excluded, as every
+      // classification's root is: a headcount filed against *all countries* is filed against the
+      // category rather than a member of it.
+      expect(countries.members).toHaveLength(256);
+      expect(countries.members.map((m) => m.value)).not.toContain('AllCountriesMember');
+
+      // **Named by the platform, because nobody else names them.** Not one of the 257 has a label
+      // in any catalogue — EFRAG *references* ISO 3166 rather than wording it — so before this task
+      // the picker would have offered `AD, AE, AF`.
+      const named = new Map(countries.members.map((m) => [m.value, m.label]));
+      expect({ MD: named.get('MD'), FR: named.get('FR') }).toEqual({
+        MD: 'Republica Moldova',
+        FR: 'Franța',
+      });
+      // Romanian, because the read negotiates a locale — which is what shows the name is resolved
+      // per request rather than baked in English somewhere.
+      expect(countries.memberLanguage).toBeNull();
+
+      // **`NT` is the one that does not resolve**: the Neutral Zone, withdrawn from ISO 3166 in
+      // 1993 and still in EFRAG's list. `null` rather than the code echoed back as its own name,
+      // which is the shape the user-facing-text rule refuses; the picker falls back to the code as
+      // a reference, which that rule permits.
+      expect(named.get('NT')).toBeNull();
+      // And every other one is named, so a silently-empty resolver cannot pass this.
+      expect([...named.values()].filter((label) => label === null)).toHaveLength(1);
+    });
+
     it('offers no domain on a step that has no classification', async () => {
       // B3's axis is a registered breakdown and B1's are typed, so neither is selected from. An
       // empty list rather than a missing member: a client reads `axes` unconditionally.

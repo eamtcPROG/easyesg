@@ -3,6 +3,7 @@ import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import type { DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
 import {
   ENUMERATION_TAXONOMY,
+  type EnumerationTaxonomy,
   type RegisteredTaxonomy,
   type TaxonomyAxis,
   type TaxonomyElement,
@@ -817,6 +818,9 @@ class MemberResolver {
   /** A classification's answerable members, per axis — see `answerable`. */
   private readonly leaves = new Map<string, readonly TaxonomyMember[]>();
 
+  /** Built on first use and reused: one resolver for 256 names, not 256 resolvers. */
+  private regions: Intl.DisplayNames | undefined;
+
   constructor(
     private readonly input: {
       readonly registered: RegisteredTaxonomy;
@@ -899,6 +903,11 @@ class MemberResolver {
         // English otherwise, which for the EU List of Waste is every member.
         const own = member.labels[this.input.locale] ?? null;
         if (own !== null) return { ...shape, label: own };
+        // Then the platform's own name, for a domain EFRAG *references* rather than words — B8's
+        // 256 ISO 3166 codes, none of which is worded anywhere in the package (task 36.9). It is
+        // resolved in the request's locale, so nothing is borrowed and the note below stays silent.
+        const region = this.regionName(axis.memberTaxonomy, member.key);
+        if (region !== null) return { ...shape, label: region };
         const english = member.labels[PUBLISHED_CLASSIFICATION_LOCALE] ?? null;
         if (english !== null) borrowed = PUBLISHED_CLASSIFICATION_LOCALE;
         // Never the member key, which is an XBRL identifier. The published code is the honest
@@ -912,6 +921,37 @@ class MemberResolver {
       members,
       memberLanguage: borrowed,
     };
+  }
+
+  /**
+   * A country's name in the reader's language, for an axis whose members EFRAG only references
+   * (task 36.9).
+   *
+   * `CountryOfEmploymentContractAxis` carries 256 ISO 3166 codes and **not one of them is worded**
+   * anywhere in the package or the catalogues — B8's picker would otherwise offer `AD, AE, AF`. The
+   * names are the platform's to give, and `Intl.DisplayNames` is where they already are: 255 of the
+   * 256 resolve in all three live locales, from data every Node ships.
+   *
+   * **This is not the formatting NFR-26 governs, and it is not banned here.** That rule forbids a
+   * *format pattern chosen at a call site*, and its `new Intl.*` selector is scoped to `apps/web`,
+   * `apps/admin` and `packages/ui` — the tiers that render. A display name is a locale-derived
+   * lookup, which is the thing NFR-26 asks for rather than the thing it prohibits, and it is
+   * resolved here for the reason every other member name is: the api names, the screen renders.
+   *
+   * **`fallback: 'none'`, so an unresolvable code answers nothing rather than itself.** One member
+   * needs it — `NT`, the Neutral Zone, withdrawn from ISO 3166 in 1993 and still in EFRAG's list —
+   * and a label that is its own key is the shape the user-facing-text rule refuses. The picker then
+   * falls back to the code as a *reference*, which is that rule's own permitted case.
+   */
+  private regionName(memberTaxonomy: EnumerationTaxonomy | null, code: string): string | null {
+    if (memberTaxonomy !== ENUMERATION_TAXONOMY.COUNTRY) return null;
+    this.regions ??= new Intl.DisplayNames([this.input.locale], { type: 'region', fallback: 'none' });
+    // `of` throws on a structurally invalid code rather than answering `undefined`.
+    try {
+      return this.regions.of(code) ?? null;
+    } catch {
+      return null;
+    }
   }
 
   /**
