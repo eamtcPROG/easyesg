@@ -140,3 +140,24 @@ export type ValueOf<H extends Holds> = H extends Scalar<infer T>
 
 /** The shape a descriptor declares, recovered from the descriptor's own type. */
 export type HoldsOf<D> = D extends Disclosure<infer H> ? H : never;
+
+/**
+ * How an `enumeration_set` answer is written: the chosen members, space-separated.
+ *
+ * **The taxonomy's format rather than a screen's** — `architecture.md` §12.5.6 states it for the
+ * store and the export alike, which is why it belongs to this package and not to a tier. It was
+ * declared in `apps/web` while the browser was the only thing that split one; task 36.13 gave the
+ * api a reader too — B1's omitted-disclosures list decides which modules read as omitted (UX-29) —
+ * and a second spelling of a separator is the class of drift no test would catch.
+ */
+export const MEMBER_SEPARATOR = ' ';
+
+/**
+ * The members a set-valued answer holds, in the order they were chosen.
+ *
+ * Beside the separator rather than at each reader (root `CLAUDE.md`: *"an operation over a
+ * vocabulary lives with the vocabulary"*). Splits on any run of whitespace, so a value that picked
+ * up a newline in transit still reads.
+ */
+export const membersOf = (value: string): readonly string[] =>
+  value.split(/\s+/u).filter((member) => member !== '');

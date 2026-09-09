@@ -994,9 +994,10 @@
       "title": "Raport",
       "exit": "Ieșiți din raport — lucrul este salvat",
       "rail": {
-        "label": "Secțiunile raportului",
         "answered": "{answered} din {total}",
-        "inapplicable": "Nu se aplică"
+        "inapplicable": "Nu se aplică",
+        "label": "Secțiunile raportului",
+        "omitted": "omis"
       },
       "step": {
         "title": "Secțiunea {module}",
@@ -1035,12 +1036,16 @@
         "viewerBody": "Rolul dumneavoastră în această organizație permite citirea raportului, nu completarea lui. Cereți unui administrator al organizației rolul de editor."
       },
       "field": {
-        "unanswered": "Fără răspuns",
-        "yes": "Da",
-        "no": "Nu",
+        "calculated": "Calculat",
+        "carried": "Preluat din perioada anterioară",
+        "choiceEmpty": "Nimic nu corespunde căutării",
+        "choiceLoading": "Se caută",
+        "choicePrompt": "Începeți să scrieți pentru a căuta",
+        "choiceRemove": "Eliminați {member}",
+        "choiceRemoveShort": "Eliminați",
         "choose": "Alegeți",
         "invalidNumber": "Valoarea nu este un număr. Nu a fost salvată. Introduceți doar cifre, cu virgulă sau punct pentru zecimale.",
-        "carried": "Preluat din perioada anterioară",
+        "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}}",
         "markers": {
           "missing": "De completat",
           "inconsistency": "Neconcordanță",
@@ -1050,19 +1055,22 @@
           "not_material": "Nesemnificativ",
           "nil_return": "Zero declarat"
         },
+        "no": "Nu",
+        "notAvailable": {
+          "declare": "Marcați ca indisponibil",
+          "reason": "Motivul pentru care valoarea nu este disponibilă",
+          "reasonHelp": "Acest text apare în raportul exportat, unde îl va citi un terț.",
+          "confirm": "Confirmați",
+          "cancel": "Renunțați",
+          "resume": "Reveniți la completare"
+        },
+        "omissionNotice": "Această declarație intră în raport: cine îl citește vede care informații au fost omise ca fiind clasificate sau sensibile — nu și motivul, pe care standardul nu îl cere.",
         "sync": {
           "queued": "În așteptare",
           "saving": "Se salvează",
           "failed": "Nesalvat"
         },
-        "choicePrompt": "Începeți să scrieți pentru a căuta",
-        "choiceEmpty": "Nimic nu corespunde căutării",
-        "choiceRemove": "Eliminați {member}",
-        "choiceRemoveShort": "Eliminați",
-        "choiceLoading": "Se caută",
-        "length": "{count, plural, one {Un caracter} few {# caractere} other {# de caractere}}",
-        "unnamed": "Fără denumire",
-        "calculated": "Calculat",
+        "unanswered": "Fără răspuns",
         "unitLabel": "Unitate de măsură",
         "units": {
           "kg": "kg",
@@ -1073,14 +1081,8 @@
           "ha": "ha",
           "sqkm": "km²"
         },
-        "notAvailable": {
-          "declare": "Marcați ca indisponibil",
-          "reason": "Motivul pentru care valoarea nu este disponibilă",
-          "reasonHelp": "Acest text apare în raportul exportat, unde îl va citi un terț.",
-          "confirm": "Confirmați",
-          "cancel": "Renunțați",
-          "resume": "Reveniți la completare"
-        }
+        "unnamed": "Fără denumire",
+        "yes": "Da"
       },
       "leave": {
         "title": "Ieșiți cu modificări netrimise?",

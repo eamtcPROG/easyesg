@@ -447,7 +447,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
   - **Exit control**, single, always visible, explicitly labelled, stating that work is saved (UX-5).
   - **Validation panel** (S-08) beside the step content, simultaneously visible at `wide` (§3.3).
 - **Content and data shown:** disclosure field labels, help text, values, units, state markers; prior-period value adjacent to the current input where a prior period exists (UX-31); provenance for values derived elsewhere, such as B3 from the calculator (UX-12); B1 values pre-populated from the entity master record but editable in place (FR-27, UX-109).
-- **Controls and actions:** enter a value; choose a unit from a constrained list; mark a field not available with a reason; declare a section not material with a rationale; carry a prior value forward per field or per module; run validation; open the calculator; open field history; preview; export; exit.
+- **Controls and actions:** enter a value; choose a unit from a constrained list; mark a field not available with a reason; declare a section omitted as classified or sensitive information; carry a prior value forward per field or per module; run validation; open the calculator; open field history; preview; export; exit.
 - **States:** empty — first use (a period newly opened, no answers yet); loading — initial (skeleton matching final layout, no shift on resolve); loading — refresh; partial; error — recoverable; error — permission; **read-only** (a locked period UC-57, a view-only membership, or a suspended entitlement UC-142 — same layout as edit mode with affordances removed and a persistent banner naming which of the three causes applies and what restores editing, UX-13); offline / queued; pending — async (export or calculation in flight); success.
 - **Validation behaviour:** inline at the point of entry and rolled up per module and per report (UX-20); conditional fields appear and disappear live from B1 answers with an announcement naming the cause (UX-26, UX-27); a value entered into a field that subsequently disappears is retained and the user is told so (UX-28); year-over-year movement beyond a configured threshold raises `inconsistency`, not `error`, and states both values and the change (UX-33); B1 shall be completed before any conditional module is presented (UX-9).
 - **Exits:** exit control → S-05 or S-06; S-08; S-09; S-10; S-11; S-12.
@@ -461,7 +461,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Archetype:** Panel.
 - **Entry points:** S-07 (persistent, simultaneously visible at `wide`); a deep link to a specific finding (UX-4).
 - **Layout and regions:** dismissible, non-modal, retains position (Panel fixed elements). Positioned beside the step content.
-- **Content and data shown:** findings grouped and rolled up per module and per report; the rule explanation for each finding; the roll-up discounting modules declared not material (UX-21).
+- **Content and data shown:** findings grouped and rolled up per module and per report; the rule explanation for each finding; the roll-up discounting modules declared omitted as classified or sensitive (UX-21).
 - **Controls and actions:** run or re-run validation — the primary control is *check my report*, not *submit* (UX-24); select a finding.
 - **States:** empty — first use; empty — filtered; loading — initial; pending — async (validation in flight, with inline progress on the roll-up while the wizard stays interactive, §8.5); error — recoverable; read-only.
 - **Validation behaviour:** this screen *is* the validation surface. Validation is runnable at any completeness and is idempotent (UX-24). Every finding shall be a link that moves focus to the originating field, scrolls it into view, and displays the rule explanation (UX-22); silent scroll without focus movement is an accessibility failure (§10.4).
@@ -1296,7 +1296,7 @@ Eight design states, **six colour roles** — `error` and `invalid_url` share on
 
 **UX-20** Validation state shall be shown inline at the point of entry *and* rolled up per module and per report (UC-37, UC-38). Neither presentation replaces the other.
 
-**UX-21** The roll-up shall discount modules declared not material, so a legitimately excluded module does not depress the completion figure (UC-38).
+**UX-21** The roll-up shall discount modules declared omitted as classified or sensitive information, so a legitimate omission does not depress the completion figure (UC-38). *(Ground realigned 9 Sep 2026 with FR-31; the rule is unchanged.)*
 
 **UX-22** Every finding shall be a link that moves focus to the originating field, scrolls it into view, and displays the rule explanation (UC-39). Silent scroll without focus movement is a failure of §10.
 
@@ -1320,9 +1320,9 @@ Eight design states, **six colour roles** — `error` and `invalid_url` share on
 
 ### 6.5 Not material, not applicable, not available
 
-**UX-29** Declaring a section not material (UC-30) shall require a rationale, shall be reversible, and shall visibly change the module's state in the module list to a distinct third value — neither complete nor incomplete.
+**UX-29** Declaring a section omitted as classified or sensitive information (UC-30) shall be reversible, and shall visibly change the module's state in the module list to a distinct third value — neither complete nor incomplete. **Amended 9 Sep 2026 (project owner, task 36.13):** this read *"Declaring a section not material … shall require a rationale"*. VSME permits no omission on materiality grounds (¶19, ¶21) and asks for no rationale — ¶24(b) requires the undertaking to indicate *which* disclosure was omitted, which the declaration itself does. The third state and the reversibility are unchanged and are what this rule is for.
 
-**UX-30** The rationale shall be presented as text a third party will read in the export, and the interface shall say so at the point of entry. This is the difference between a considered exclusion and an evasion.
+**UX-30** The declaration shall be presented as a statement a third party will read in the export, and the interface shall say so at the point of entry. This is the difference between a stated omission and an evasion. **Amended 9 Sep 2026 (project owner, task 36.13):** it read *"the rationale shall be presented as text"*, and there is no rationale — what a reader sees is the omission itself, listed in B1 under ¶24(b), which is a stronger claim than a sentence the undertaking wrote about itself. The obligation this rule carries — *say so at the point of entry* — is unchanged and is the half that had to be built.
 
 ### 6.6 Prior-period comparatives and carry-forward
 
@@ -1894,7 +1894,7 @@ The PDF is what a bank, buyer or auditor reads. It is a designed artefact, not a
 
 **UX-118** Print structure shall be controlled explicitly — page breaks, running headers, page counters, table header repetition, orphan and widow control, and no table split that separates a figure from its unit.
 
-**UX-119** Gaps shall be marked visibly and consistently: `not available` with its stated reason, `not material` with its rationale, and unresolved findings shown rather than omitted (UC-42, UX-25). A reader shall never be unable to tell the difference between a zero, a gap and an omission.
+**UX-119** Gaps shall be marked visibly and consistently: `not available` with its stated reason, a section omitted as classified or sensitive named as such, and unresolved findings shown rather than omitted (UC-42, UX-25). A reader shall never be unable to tell the difference between a zero, a gap and an omission.
 
 **UX-120** Structure shall be tagged for accessibility — reading order, heading levels, table header scope, alternative text, artefact marking — and validated against PDF/UA-1 and PDF/A-2a in the export regression suite.
 

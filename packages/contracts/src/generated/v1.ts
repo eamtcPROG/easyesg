@@ -1906,6 +1906,8 @@ export interface components {
             lastAnsweredAt: number | null;
             /** @description Whether the module has anything to answer (FR-28). True while any one of its elements applies; answered and total above count applicable elements only. */
             applicable: boolean;
+            /** @description The reporter has declared this module omitted as classified or sensitive information — UX-29’s distinct third value, neither complete nor incomplete (FR-31, UC-30). **Derived, never stored per module**: it is true when B1’s omitted-disclosures list carries the module’s own member or every one of its sections (VSME ¶19, ¶24(b)). The counts beside it stay honest — FR-31 has the declaration *satisfy* validation rather than suppress it. */
+            omitted: boolean;
             /** @description Why the module does not apply, where its elements agree on one reason; null otherwise, including whenever the module applies. */
             applicabilityCause: components["schemas"]["ApplicabilityCauseDto"] | null;
         };

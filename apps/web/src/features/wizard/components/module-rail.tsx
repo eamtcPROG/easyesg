@@ -29,6 +29,7 @@ export function ModuleRail({
   current,
   answeredLabel,
   inapplicableLabel,
+  omittedLabel,
 }: {
   readonly reportId: string;
   readonly modules: readonly DisclosureModuleSummary[];
@@ -37,6 +38,8 @@ export function ModuleRail({
   readonly answeredLabel: (summary: DisclosureModuleSummary) => string;
   /** What a module the rules ruled out shows instead of a count. */
   readonly inapplicableLabel: string;
+  /** What a module the reporter declared omitted shows instead — UX-29's third value. */
+  readonly omittedLabel: string;
 }) {
   return (
     <>
@@ -45,8 +48,20 @@ export function ModuleRail({
           key={module.module}
           current={module.module === current}
           indicator={
-            <span className={module.applicable ? styles.count : styles.inapplicable}>
-              {module.applicable ? answeredLabel(module) : inapplicableLabel}
+            /*
+             * Three states, and the order between them is a decision (task 36.13). **Omitted is
+             * read first**, before applicability: a reporter who has declared a module withheld has
+             * said something, and a rule that later rules the module out must not silently replace
+             * their statement with the platform's. The counts are still served and still honest —
+             * FR-31 has the declaration *satisfy* validation rather than suppress it — so nothing
+             * here is lost when the declaration is reversed.
+             */
+            <span className={indicatorStyle(module)}>
+              {module.omitted
+                ? omittedLabel
+                : module.applicable
+                  ? answeredLabel(module)
+                  : inapplicableLabel}
             </span>
           }
         >
@@ -57,4 +72,10 @@ export function ModuleRail({
       ))}
     </>
   );
+}
+
+/** Which of the three the indicator wears, in the order the rail reads them. */
+function indicatorStyle(module: DisclosureModuleSummary): string {
+  if (module.omitted) return styles.omitted;
+  return module.applicable ? styles.count : styles.inapplicable;
 }

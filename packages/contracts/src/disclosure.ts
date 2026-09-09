@@ -141,3 +141,17 @@ void disclosureStateMirrorsTheApi;
 void disclosureKindMirrorsTheApi;
 void reportStatusMirrorsTheApi;
 void disclosureOriginMirrorsTheApi;
+
+/**
+ * How an `enumeration_set` answer is written: the chosen members, space-separated.
+ *
+ * **A mirror of `@easyesg/vsme`'s, kept by hand like `COLUMN_OF_KIND` above and for its reason**:
+ * that package dual-builds for its Node consumers and carries the generated 143-descriptor facade,
+ * and a browser bundle needs one character. The api reads the original directly (task 36.13); this
+ * copy is what the two front ends read.
+ */
+export const MEMBER_SEPARATOR = ' ';
+
+/** The members a set-valued value holds, in the order they were chosen. Beside the separator. */
+export const membersOf = (value: string): readonly string[] =>
+  value.split(/\s+/u).filter((member) => member !== '');

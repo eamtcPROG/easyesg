@@ -13961,3 +13961,104 @@ test` (318), `pnpm e2e` (858, of which 3 written here), `pnpm openapi:check`, `p
 
 Both review agents ran on **`opus`**, per the pin. Task 36's parent close still owes
 `pnpm gates:clean` and the three agents over the whole diff — with 36.13 and 36.14 outstanding.
+
+## Task 36.13 — Not material, which the standard does not have · 2026-09-09
+
+The plan gave this task *"a reasoned **section** exclusion"* and the workspace `web`. Reading the
+VSME standard text — rather than EFRAG's template, which nine module slices had used as the source
+of truth — found that the requirement specified a non-conformant filing.
+
+### What the standard says
+
+| ¶ | |
+| --- | --- |
+| **19** | omission is permitted on **one** ground: *"when the provision of the disclosures in this Standard requires disclosing **classified or sensitive information**, the undertaking may omit such information"* |
+| **24(b)** | the undertaking shall *"indicate the disclosure that has omitted"* — in **B1**, and never why |
+| **13** | the *if applicable* principle: certain disclosures apply only in stated circumstances, and when they do not, **no explanation is required** |
+| **21** | undertakings **shall report** on B1–B11 |
+
+**VSME has no materiality assessment at all** — double materiality was judged too burdensome for
+SMEs. So FR-31's *"declared not material or not applicable with a recorded rationale"* was wrong in
+all three parts: the first ground would make a filing non-conformant, the second is ¶13's
+instruction-driven applicability that already ships as FR-28's configuration (task 91.3), and the
+rationale is asked for by nothing.
+
+**Reading the template would not have found this.** The template's validation legend does carry
+*CLASSIFIED OR SENSITIVE INFORMATION* and no materiality status, which is a hint — but a template
+is an illustration, and the absence of a thing in an illustration is weak evidence. Four paragraphs
+of the Recommendation settled what no amount of spreadsheet archaeology could.
+
+### The mechanism was already in the product
+
+`ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation` is an ordinary
+`enumeration_set` in B1 over a 51-member domain of sections — exactly EFRAG's checkbox rows — and
+task 91.1's picker has rendered it since. It exports natively to both formats. So **the store was
+never the problem**: `§7.1`'s `core.section_declaration` is withdrawn unbuilt, and task 34.1's open
+question about where the rationale lives is answered by there being none.
+
+What survives is UX-29 and UX-30, and that is what this task built: the module's distinct third
+state, its reversibility, and saying at the point of entry that a third party reads the declaration.
+
+**Thirteen sites across five documents said the old thing** — FR-31, FR-41, FR-167, BR-DIS-2,
+BR-VAL-2, UC-30 and its index row, UC-38, UX-21, UX-29, UX-30, UX-119, actors.md's permission
+matrix — plus five in `architecture.md`. All amended together, because a requirement realigned in
+one place and quoted in twelve others is a requirement that has not moved.
+
+### The module state, and EFRAG's own roll-up
+
+A module reads omitted when its `<CODE>-…Member` is selected or **every one of its sections** is.
+The structure is in the keys: a hyphen after the module code marks the module-level entry, its
+absence a section, and four members belong to no module (the *any other* disclosures).
+
+**EFRAG derives the same thing and its B7 formula is wrong.** `D32` reads `COUNTIF(D34:D35)` while
+B7 has three section checkboxes at rows 33, 34 and 35 — so under the template's own rule a reporter
+who omits the last two gets a module marked omitted while B7's circular-economy description is still
+being answered. That is a false statement in a filing, so it is not replicated; the divergence is
+recorded as B6's was at task 36.7.
+
+### The defect the api test could not find
+
+The derivation matched nothing: an enumeration answer is stored **taxonomy-qualified** —
+`vsme:B7-…Member`, the form the export must emit — while the registry's domain carries raw keys.
+
+**The api e2e passed throughout**, because it wrote `valueText: 'B7-…Member'` by hand: a form the
+product never produces. Only the browser journey, driving the real picker, could fail — and it did,
+on the first run. The lesson is narrower than *test through the UI*: **an end-to-end case that
+constructs a stored value by hand is asserting its author's model of the wire**, and where that
+model is the thing under test, the case cannot fail. Both are fixed, and the unit spec now covers
+the qualified form as the one that actually occurs.
+
+A second, smaller version of the same shape: the domain lookup used `element.domain` raw where every
+other lookup in that file goes through `qualifiedDomainOf`, which is the trap that helper exists for.
+
+### Two things moved that were not the subject
+
+- **`MEMBER_SEPARATOR` moved to `@easyesg/vsme`.** It was declared in `apps/web` while the browser
+  was the only thing that split one; the api reads it now, and §12.5.6 already called it *the
+  taxonomy's*. `packages/contracts` mirrors it by hand, as it mirrors `COLUMN_OF_KIND` and for the
+  same stated reason — the api produces that package and must never import it.
+- **A `.first()` in this file's rail locators is a recorded ambiguity**, per `CLAUDE.md`. The new
+  case scopes to the navigation and matches the module link exactly instead, which resolves to one.
+  The pre-existing uses are left alone and named here rather than quietly copied.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm --filter @easyesg/api test` (707, of which 12 written here),
+`pnpm --filter @easyesg/web test` (318), `pnpm --filter @easyesg/ui test` (113), `pnpm e2e` (860),
+`pnpm openapi:check`, `pnpm docs:check`, and `pnpm e2e:web --project identity --project expansion`
+(152). No migration — the whole of this task's storage is a field that already existed.
+
+**One flake, recorded rather than shrugged at.** `periods.e2e-spec.ts` failed once with a **401** on
+`GET /api/v1/periods` — *"reports the report's status as the reopening left it"* — and passed on a
+re-run of the same suite set. It is not this task's code: that suite touches nothing here. The
+plausible cause is session expiry, AD-12's access token being ≤15 minutes and that case running late
+in a chain that had already spent minutes on lint, typecheck and two unit suites; the same suite run
+earlier in the session passed every time. **Named here so a second occurrence is a pattern rather
+than a surprise** — if it recurs, the fix is a fixture that refreshes rather than a longer token.
+
+The derivation is mutation-proven three ways: a section-less module made vacuously omitted, *some*
+section instead of *every*, and the hyphen test inverted. Each was applied, run and reverted.
+
+Both review agents ran on **`opus`**, per the pin. Task 36 has one sub-step left — 36.14, prior-period
+carry-forward — and its parent close then owes `pnpm gates:clean` and the three agents over the
+whole diff.

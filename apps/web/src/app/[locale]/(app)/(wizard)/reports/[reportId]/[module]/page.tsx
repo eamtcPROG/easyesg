@@ -111,6 +111,7 @@ export default async function ReportModuleStepPage({ params }: Props) {
             current={module}
             answeredLabel={(m) => t('rail.answered', { answered: m.answered, total: m.total })}
             inapplicableLabel={t('rail.inapplicable')}
+            omittedLabel={t('rail.omitted')}
           />
         }
         title={t('step.title', { module })}

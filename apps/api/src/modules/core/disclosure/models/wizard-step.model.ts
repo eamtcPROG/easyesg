@@ -93,6 +93,20 @@ export interface DisclosureModuleSummary {
    * would be a wrong announcement, and UX-27 asks for the cause, not for a cause.
    */
   readonly applicabilityCause: DisclosureApplicabilityCause | null;
+  /**
+   * The reporter has declared this module omitted as classified or sensitive information — UX-29's
+   * *distinct third value, neither complete nor incomplete* (task 36.13; FR-31, UC-30).
+   *
+   * **Derived, never stored as a module fact**: the declaration is B1's
+   * `ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation`, and this is true when that
+   * field carries the module's own member or every one of its sections (VSME ¶19, ¶24(b)).
+   *
+   * **Beside `answered`/`total` rather than replacing them.** FR-31 requires the declaration to
+   * *satisfy* validation rather than suppress it, so the counts stay honest and the rail decides
+   * what to show — a module that is omitted and half-answered is a real state, and one a reporter
+   * who changes their mind needs to see.
+   */
+  readonly omitted: boolean;
 }
 
 /**

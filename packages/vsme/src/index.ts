@@ -6,7 +6,7 @@
  * *typing* the element-keyed store gave up, generated per version from the registered artefact, so
  * a caller writes a descriptor the compiler supplies rather than an element key it can misspell.
  */
-export { COLUMN_OF_KIND, DISCLOSURE_KIND, VALUE_COLUMN } from './shape.js';
+export { COLUMN_OF_KIND, DISCLOSURE_KIND, MEMBER_SEPARATOR, VALUE_COLUMN, membersOf } from './shape.js';
 export type {
   Dimensioned,
   Disclosure,

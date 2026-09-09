@@ -56,6 +56,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     answer: string | null;
   }
   interface ModuleSummary {
+    omitted: boolean;
     module: string; answered: number; total: number; lastAnsweredAt: number | null;
     applicable: boolean; applicabilityCause: Cause | null;
   }
@@ -1684,6 +1685,65 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
         (await http().get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body,
       );
       expect(modules.find((m) => m.module === 'B11')?.answered).toBe(2);
+    });
+
+    it('reads a module omitted when B1 declares its own member (UC-30, VSME ¶19/¶24(b))', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const modulesOf = async () =>
+        objectsOf<ModuleSummary>(
+          (await http().get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body,
+        );
+      expect((await modulesOf()).find((m) => m.module === 'B7')?.omitted).toBe(false);
+
+      await put(reportId, [
+        {
+          elementKey: 'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation',
+          // Qualified, as the wizard writes it — the form the store actually holds (task 91.1).
+          valueText: 'vsme:B7-ResourceUseCircularEconomyAndWasteManagementMember',
+          state: DISCLOSURE_STATE.OK,
+        },
+      ]);
+      const after = await modulesOf();
+      expect(after.find((m) => m.module === 'B7')?.omitted).toBe(true);
+      // **Only that module.** The declaration is per section, so a neighbour must not follow it.
+      expect(after.find((m) => m.module === 'B8')?.omitted).toBe(false);
+      // And the counts stay honest: FR-31 has the declaration *satisfy* validation, not suppress it.
+      expect(after.find((m) => m.module === 'B7')?.total).toBeGreaterThan(0);
+    });
+
+    it('reads a module omitted when every one of its sections is, and not on two of three', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const declare = async (members: string[]) => {
+        await put(reportId, [
+          {
+            elementKey: 'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation',
+            // Qualified, as the wizard writes them; the unqualified form this case first used
+            // is one the product never produces, and it hid a real defect until a browser caught it.
+            valueText: members.map((m) => `vsme:${m}`).join(' '),
+            state: members.length === 0 ? DISCLOSURE_STATE.MISSING : DISCLOSURE_STATE.OK,
+          },
+        ]);
+        return objectsOf<ModuleSummary>(
+          (await http().get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body,
+        ).find((m) => m.module === 'B7')?.omitted;
+      };
+
+      // EFRAG's own roll-up reads `COUNTIF(D34:D35)` and would mark B7 omitted on these two while
+      // its circular-economy description is still answered. Deliberately not replicated (§12.5.6).
+      expect(
+        await declare(['B7WasteGeneratedMember', 'B7AnnualMassFlowOfRelevantMaterialsUsedMember']),
+      ).toBe(false);
+
+      expect(
+        await declare([
+          'B7DescriptionOfCircularEconomyPrinciplesMember',
+          'B7WasteGeneratedMember',
+          'B7AnnualMassFlowOfRelevantMaterialsUsedMember',
+        ]),
+      ).toBe(true);
+
+      // UX-29's reversibility, at the api: clearing the field restores the module.
+      expect(await declare([])).toBe(false);
     });
 
     it('stops being a nil return when the zero is edited up (FR-30, both directions)', async () => {

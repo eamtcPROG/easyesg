@@ -1351,3 +1351,81 @@ test('B11 states a nil return as an answer, and its fine in the filing’s curre
   await page.goto(`/reports/${reportId}/B1`);
   await expect(page.getByRole('group', { name: 'Cifra de afaceri' })).toContainText('MDL');
 });
+
+/**
+ * UC-30's section omission — the standard's own, and the two rules that survived FR-31's
+ * realignment (UX-29, UX-30; task 36.13).
+ *
+ * VSME permits omission on **one** ground (¶19, classified or sensitive information), stated in B1
+ * (¶24(b)). The declaration is an ordinary B1 choice field that has rendered since task 91.1 and
+ * that nothing recognised; what is new is that the module list answers for it, and that the screen
+ * says what the declaration means before it is made.
+ */
+test('a section declared omitted reads as a third state on the rail (UC-30, UX-29)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'omit');
+  const organizationId = organizationOf.get(reportId) ?? '';
+
+  await page.goto(`/reports/${reportId}/B1`);
+  const declaration = page.getByRole('group', {
+    name: 'Lista informațiilor omise, considerate clasificate sau sensibile',
+  });
+  await expect(declaration).toBeVisible();
+
+  // **UX-30, at the point of entry**: the interface says a third party reads this, before it is
+  // made. EFRAG publishes no help for this element, so the words are the platform's.
+  await expect(declaration).toContainText('intră în raport');
+
+  // Before: B7 counts like any other module.
+  //
+  // **Scoped to the rail, not page-wide.** `getByRole('listitem').filter({ hasText: 'B7' })` matches
+  // two elements — B7's own item and B10's, whose text contains `B1` … and `B7` is a substring of
+  // nothing here, but `hasText` is a substring match over the item's whole text including its count.
+  // The pre-existing cases in this file reach for `.first()`, which CLAUDE.md calls a finding rather
+  // than locator style; scoping to the navigation and matching the link exactly removes the
+  // ambiguity instead of stepping around it.
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  const railB7 = rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B7', exact: true }) });
+  await expect(railB7).toHaveCount(1);
+  await expect(railB7).not.toContainText('omis');
+
+  // **The module-level member, named exactly.** `.first()` after a loose filter picked a *section*
+  // of B7, and one section of three is correctly not an omission — the test was asserting the
+  // derivation was wrong when it was right.
+  await declaration.getByRole('combobox').fill('Utilizarea resurselor');
+  await page
+    .getByRole('option', {
+      name: 'B7 – Utilizarea resurselor, economia circulară și gestionarea deșeurilor',
+      exact: true,
+    })
+    .click();
+
+  // The store is the fact (NFR-56), and it is asserted before the rail so a failure says which half
+  // broke — the declaration, or the state derived from it.
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    // **Qualified**, which is how an enumeration answer is stored and what the export emits
+    // (task 91.1). Asserted as the whole value rather than a substring: the api derivation compared
+    // this against the registry's raw keys and matched nothing, and only a browser writing a real
+    // answer could show it — the api case had fabricated the unqualified form.
+    .toBe('vsme:B7-ResourceUseCircularEconomyAndWasteManagementMember');
+
+  // **UX-29's distinct third value** — neither the count nor the inapplicable mark. Reloaded first:
+  // the rail is a Server Component fed by the step read, so it reflects a write on the next render
+  // rather than optimistically — which is the honest thing for a state the api derives.
+  await page.reload();
+  await expect(railB7).toContainText('omis', { timeout: 15_000 });
+  // And only that module: the declaration is per section and must not spread to its neighbour.
+  await expect(
+    rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B8', exact: true }) }),
+  ).not.toContainText('omis');
+});

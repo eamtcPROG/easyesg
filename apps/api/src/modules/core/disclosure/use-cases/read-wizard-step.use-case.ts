@@ -48,7 +48,9 @@ import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/
 import type { ApplicabilityRules } from '../interfaces/applicability-rules.interface';
 import type { AxisShapes } from '../interfaces/axis-shape.interface';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
+import { MEMBER_SEPARATOR } from '@easyesg/vsme';
 import { OPERAND_SOURCE, type Derivation } from '../models/derivation.model';
+import { OMITTED_DISCLOSURES_ELEMENT, omittedModules } from '../models/omission.model';
 import type { DerivationService } from '../services/derivation.service';
 import type { TemplateDefaultService } from '../services/template-default.service';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
@@ -178,6 +180,9 @@ export class ReadWizardStep {
     const { byElement } = await this.stored(query.reportId);
     const applicability = this.applicabilityOf({ registered, byElement });
     const catalogue = this.labels.labels({ version: registered.version, locale: query.locale });
+    // UX-29's third state, derived from B1's own declaration rather than stored per module — VSME's
+    // only omission ground, stated where ¶24(b) requires it (task 36.13).
+    const omitted = this.omittedModules({ registered, byElement });
 
     const counts = new Map<string, ModuleCount>();
     for (const element of registered.elements) {
@@ -237,6 +242,7 @@ export class ReadWizardStep {
           lastAnsweredAt: count.lastAnsweredAt,
           applicable: count.applicable,
           applicabilityCause: toCause(only, catalogue),
+          omitted: omitted.has(module),
         },
       ];
     });
@@ -445,6 +451,39 @@ export class ReadWizardStep {
       );
     }
     return merged;
+  }
+
+  /**
+   * The modules this report has declared omitted (task 36.13; FR-31, UC-30, UX-29).
+   *
+   * Reads B1's `ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation` — an ordinary
+   * `enumeration_set`, so the selection is the stored value split on the member separator — and asks
+   * the pure `omittedModules` what that makes omitted. **The domain comes from the registry rather
+   * than from the stored answer**: *every section of this module is omitted* is a claim about the
+   * standard's list, and computing it from what happens to be selected would make it vacuously true.
+   */
+  private omittedModules(input: {
+    readonly registered: RegisteredTaxonomy;
+    readonly byElement: ReadonlyMap<string, readonly DisclosureValue[]>;
+  }): ReadonlySet<string> {
+    const element = input.registered.elements.find((e) => e.key === OMITTED_DISCLOSURES_ELEMENT);
+    // **Qualified, like every other domain lookup in this file.** The element names its domain
+    // unqualified (`ListOfDisclosuresMember`) and the registry keys it by taxonomy
+    // (`vsme:ListOfDisclosuresMember`) — the same trap `qualifiedDomainOf` exists for.
+    const key = element === undefined ? null : qualifiedDomainOf(element);
+    const domain = key === null
+      ? null
+      : this.taxonomy.enumeration({
+          standard: input.registered.standard,
+          version: input.registered.version,
+          key,
+        });
+    if (domain === null) return new Set();
+    const stored = input.byElement.get(OMITTED_DISCLOSURES_ELEMENT) ?? [];
+    const selected = stored.flatMap((value) =>
+      (value.valueText ?? '').split(MEMBER_SEPARATOR).filter((member) => member !== ''),
+    );
+    return omittedModules({ selected, domain: domain.members.map((member) => member.key) });
   }
 
   /**

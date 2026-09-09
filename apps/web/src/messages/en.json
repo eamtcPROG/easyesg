@@ -994,9 +994,10 @@
       "title": "Report",
       "exit": "Leave the report — your work is saved",
       "rail": {
-        "label": "Report sections",
         "answered": "{answered} of {total}",
-        "inapplicable": "Does not apply"
+        "inapplicable": "Does not apply",
+        "label": "Report sections",
+        "omitted": "omitted"
       },
       "step": {
         "title": "Section {module}",
@@ -1035,12 +1036,16 @@
         "viewerBody": "Your role in this organization allows reading the report, not filling it in. Ask an organization administrator for the editor role."
       },
       "field": {
-        "unanswered": "Not answered",
-        "yes": "Yes",
-        "no": "No",
+        "calculated": "Calculated",
+        "carried": "Carried from the prior period",
+        "choiceEmpty": "Nothing matches that search",
+        "choiceLoading": "Searching",
+        "choicePrompt": "Start typing to search",
+        "choiceRemove": "Remove {member}",
+        "choiceRemoveShort": "Remove",
         "choose": "Choose",
         "invalidNumber": "The value is not a number. It was not saved. Enter digits only, with a comma or a point for decimals.",
-        "carried": "Carried from the prior period",
+        "length": "{count, plural, one {One character} other {# characters}}",
         "markers": {
           "missing": "To answer",
           "inconsistency": "Inconsistent",
@@ -1050,19 +1055,22 @@
           "not_material": "Not material",
           "nil_return": "Declared zero"
         },
+        "no": "No",
+        "notAvailable": {
+          "declare": "Mark as not available",
+          "reason": "Why the value is not available",
+          "reasonHelp": "This text appears in the exported report, where a third party will read it.",
+          "confirm": "Confirm",
+          "cancel": "Cancel",
+          "resume": "Answer this field after all"
+        },
+        "omissionNotice": "This declaration goes into the report: whoever reads it sees which disclosures were omitted as classified or sensitive — not why, which the standard does not ask for.",
         "sync": {
           "queued": "Queued",
           "saving": "Saving",
           "failed": "Not saved"
         },
-        "choicePrompt": "Start typing to search",
-        "choiceEmpty": "Nothing matches that search",
-        "choiceRemove": "Remove {member}",
-        "choiceRemoveShort": "Remove",
-        "choiceLoading": "Searching",
-        "length": "{count, plural, one {One character} other {# characters}}",
-        "unnamed": "Unnamed",
-        "calculated": "Calculated",
+        "unanswered": "Not answered",
         "unitLabel": "Unit of measurement",
         "units": {
           "kg": "kg",
@@ -1073,14 +1081,8 @@
           "ha": "ha",
           "sqkm": "km²"
         },
-        "notAvailable": {
-          "declare": "Mark as not available",
-          "reason": "Why the value is not available",
-          "reasonHelp": "This text appears in the exported report, where a third party will read it.",
-          "confirm": "Confirm",
-          "cancel": "Cancel",
-          "resume": "Answer this field after all"
-        }
+        "unnamed": "Unnamed",
+        "yes": "Yes"
       },
       "leave": {
         "title": "Leave with unsent changes?",

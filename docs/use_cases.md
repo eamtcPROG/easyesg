@@ -92,7 +92,7 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-27 | Complete B9 — Health and safety | RC | Report recordable accidents, accident rate and fatalities | MVP | FR-24, FR-30 |
 | UC-28 | Complete B10 — Remuneration, collective bargaining and training | RC | Report wage floor compliance, bargaining coverage and training hours | MVP | FR-24, FR-28, FR-29 |
 | UC-29 | Complete B11 — Corruption and bribery | RC | Report convictions and fines for corruption and bribery | MVP | FR-24, FR-30 |
-| UC-30 | Declare a section not material or not applicable | RC | Record a reasoned exclusion that satisfies validation | MVP | FR-31 |
+| UC-30 | Declare a section omitted as classified or sensitive information | RC | State the standard's own omission so it satisfies validation and reads as an omission | MVP | FR-31 |
 | UC-31 | Declare an individual field not available, with reason | RC | Record an explained gap as a valid terminal field state | MVP | FR-32 |
 | UC-32 | Enter energy and fuel consumption data | RC | Capture consumption by source and site in invoice units | MVP | FR-33 |
 | UC-33 | Calculate Scope 1 and location-based Scope 2 emissions | RC | Obtain computed emissions written into B3 | MVP | FR-34, FR-35 |
@@ -865,18 +865,20 @@ their numbers put them.
 - **Related FRs:** FR-24, FR-30
 - **Related UCs:** UC-27
 
-### UC-30 — Declare a section not material or not applicable
+### UC-30 — Declare a section omitted as classified or sensitive information
 
 - **Primary actor:** RC
 - **Module:** Basic Module data entry
-- **Stakeholders and interests:** Contributor — needs a legitimate way to exclude a module; report reader — should see a reasoned exclusion rather than an unexplained gap.
-- **Preconditions:** An editable report session on a module the Contributor judges not material or not applicable.
-- **Trigger:** The Contributor marks a module not material or not applicable rather than leaving it empty.
+- **Stakeholders and interests:** Contributor — needs the standard's own legitimate way to withhold a disclosure; report reader — should see a stated omission rather than an unexplained gap, and should be able to trust the ground it is stated on.
+- **Preconditions:** An editable report session, and a disclosure section whose content the Contributor deems classified or sensitive.
+- **Trigger:** The Contributor withholds a section rather than leaving it empty.
 - **Main success scenario:**
-  1. The Contributor marks the module not material or not applicable.
-  2. The Contributor records a short rationale.
-  3. The declaration is carried into both exports.
-- **Business rules:** The declaration satisfies validation rather than suppressing it, and is discounted in the completion rollup (UC-38).
+  1. The Contributor selects the section among B1's omitted disclosures, which is where the standard requires the omission to be stated (¶24(b)).
+  2. The interface says, at the point of entry, that this is a statement a third party reads in the export.
+  3. The section's module shows a distinct third state in the module list — neither complete nor incomplete — and stops counting as outstanding.
+  4. The declaration is carried into both exports, natively in the Excel template.
+- **Business rules:** The declaration satisfies validation rather than suppressing it, and is discounted in the completion rollup (UC-38). It is reversible: deselecting the section restores it. **A module reads as omitted when its own member is selected or when every one of its sections is** — EFRAG's template derives the module checkbox the same way, and the divergence is recorded in `architecture.md` §12.5.6.
+- **Renamed and amended 9 Sep 2026 (project owner, task 36.13), against the VSME standard text.** This use case was *"Declare a section not material or not applicable"* and asked the Contributor to record a rationale. **The standard permits neither ground and asks for no rationale**: ¶19 allows omission only for classified or sensitive information, ¶21 requires B1–B11 to be reported, ¶13's *if applicable* principle is instruction-driven and needs no explanation, and ¶24(b) asks only *which* disclosure was omitted. **The mechanism was already in the product and unrecognised**: `ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation` is an ordinary B1 choice field over a 51-section domain, rendered since task 91.1 — so what this task builds is UX-29 and UX-30 on top of it, not a store. `§7.1`'s unbuilt `core.section_declaration` is withdrawn with the requirement that needed it.
 - **Related FRs:** FR-31
 - **Related UCs:** UC-22, UC-24, UC-31, UC-38, UC-42, UC-43
 
@@ -983,7 +985,7 @@ their numbers put them.
 - **Main success scenario:**
   1. The Contributor sees validation states rolled up per module and across the whole report.
   2. The rollup gives a single readiness signal before export.
-- **Business rules:** The rollup accounts for declared not-material sections (UC-30) so a legitimately excluded module does not depress the completion figure. The rollup also supplies the named outstanding items used by UC-169.
+- **Business rules:** The rollup accounts for sections declared omitted as classified or sensitive (UC-30) so a legitimate omission does not depress the completion figure. The rollup also supplies the named outstanding items used by UC-169.
 - **Related FRs:** FR-41
 - **Related UCs:** UC-30, UC-37, UC-67, UC-169
 

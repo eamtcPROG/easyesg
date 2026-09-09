@@ -103,16 +103,16 @@ export function outstandingDefaults(fields: readonly DisclosureField[]): readonl
 }
 
 /**
- * How an `enumeration_set` answer is written: the chosen members, space-separated (task 91.1).
+ * How an `enumeration_set` answer is written — **re-exported, not declared** (task 36.13).
  *
- * The separator is the taxonomy's, not this screen's — `architecture.md` §12.5.6 states it for the
- * store and the export alike — so it is declared once here and never spelled at a call site.
+ * It was declared here while the browser was the only thing that split one. The api reads it too
+ * since B1's omitted-disclosures list decides which modules read as omitted (UX-29), so it moved to
+ * `@easyesg/contracts` — the place both tiers already share — rather than becoming two spellings of
+ * one fact. Re-exported so every call site in this feature is unchanged.
  */
-export const MEMBER_SEPARATOR = ' ';
+import { MEMBER_SEPARATOR } from '@easyesg/contracts';
 
-/** The members a set-valued draft holds, in the order the reporter chose them. */
-export const membersOf = (draft: string): readonly string[] =>
-  draft.split(/\s+/u).filter((member) => member !== '');
+export { MEMBER_SEPARATOR, membersOf } from '@easyesg/contracts';
 
 /** Those members back as one draft. Empty is the empty string, which clears the field. */
 export const draftOfMembers = (members: readonly string[]): string => members.join(MEMBER_SEPARATOR);

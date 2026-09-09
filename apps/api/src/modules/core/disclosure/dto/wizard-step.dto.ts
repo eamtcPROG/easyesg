@@ -145,6 +145,16 @@ export class DisclosureModuleSummaryDto {
   readonly applicable: boolean;
 
   @ApiProperty({
+    description:
+      'The reporter has declared this module omitted as classified or sensitive information — ' +
+      'UX-29’s distinct third value, neither complete nor incomplete (FR-31, UC-30). **Derived, ' +
+      'never stored per module**: it is true when B1’s omitted-disclosures list carries the ' +
+      'module’s own member or every one of its sections (VSME ¶19, ¶24(b)). The counts beside it ' +
+      'stay honest — FR-31 has the declaration *satisfy* validation rather than suppress it.',
+  })
+  readonly omitted: boolean;
+
+  @ApiProperty({
     nullable: true,
     type: ApplicabilityCauseDto,
     description:
@@ -159,6 +169,7 @@ export class DisclosureModuleSummaryDto {
     this.total = summary.total;
     this.lastAnsweredAt = summary.lastAnsweredAt;
     this.applicable = summary.applicable;
+    this.omitted = summary.omitted;
     this.applicabilityCause =
       summary.applicabilityCause === null ? null : new ApplicabilityCauseDto(summary.applicabilityCause);
   }

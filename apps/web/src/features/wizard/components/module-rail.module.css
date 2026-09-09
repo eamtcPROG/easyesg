@@ -50,3 +50,20 @@
   color: var(--text-muted);
   font-style: italic;
 }
+
+/*
+ * UX-29's *distinct third value, neither complete nor incomplete* — a module the reporter has
+ * declared omitted as classified or sensitive information (task 36.13; FR-31, UC-30).
+ *
+ * **Distinct from `.inapplicable` and deliberately so.** That one is a statement the *rules* make
+ * about scope; this is a statement the *undertaking* makes about a disclosure it could have given,
+ * and it goes into the filing under the reporter's name (VSME ¶24(b)). Reading as the same muted
+ * italic would collapse the two, which is the one thing UX-119 asks a reader never to have to guess
+ * at. Upright and toned rather than muted, because it is an answer rather than an absence.
+ */
+.omitted {
+  composes: count;
+  color: var(--text-reasoned, var(--text-muted));
+  font-variant: all-small-caps;
+  letter-spacing: 0.04em;
+}

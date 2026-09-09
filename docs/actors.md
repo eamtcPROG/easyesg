@@ -212,7 +212,7 @@ Legend: **Y** granted; **—** not granted; **R** read-only; **T** time-boxed an
 | In-app notification centre (view, open, mark read) | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — |
 | View accessible reporting entities and periods | — | Y | R (org-wide overview) | — | — | — | — |
 | Edit report field data (B1–B11) | — | Y | — | — | — | — | — |
-| Declare a section not material / a field not available | — | Y | — | — | — | — | — |
+| Declare a section omitted as classified or sensitive / a field not available | — | Y | — | — | — | — | — |
 | Run the carbon calculator; override a computed figure | — | Y (override flagged and attributed) | — | — | — | S (computation) | — |
 | View validation state and re-run validation | — | Y | R (rollup) | — | — | S (rollup input) | — |
 | Export PDF / EFRAG Excel Digital Template; re-download exports | — | Y | — | — | — | — | — |

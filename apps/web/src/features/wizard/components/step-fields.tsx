@@ -621,7 +621,19 @@ function StepField({
        * than a plausible-looking wrong word.
        */
       label={named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'))}
-      help={field.help}
+      /*
+       * **UX-30, at the point of entry** (task 36.13): *"the declaration shall be presented as a
+       * statement a third party will read in the export, and the interface shall say so"*. It rides
+       * the `help` slot because UX-17 already puts one to two visible sentences there, which is
+       * exactly the visibility UX-30 asks for — not a new affordance.
+       *
+       * **Keyed to one element, and that is the rule's own shape rather than a screen special
+       * case**: UX-30 governs a single act, stating an omission under VSME ¶24(b), and the standard
+       * gives it a single field. It is a *fallback*, so the day task 94 authors help for this
+       * element EFRAG's own words win — the notice is this platform's, not a stand-in for the 121
+       * missing texts that task owns.
+       */
+      help={field.help ?? (field.elementKey === OMITTED_DISCLOSURES_ELEMENT ? tField('omissionNotice') : null)}
       marker={marker?.label}
       markerTone={marker?.tone}
       // **Computed, not passed as an always-truthy element.** The anatomy renders
@@ -788,6 +800,12 @@ const FIELD_MESSAGES = 'organization.wizard.field' as const;
 const GROUP_MESSAGES = 'organization.wizard.group' as const;
 /** The derivation inputs' own wording — EFRAG words these in the template, not the taxonomy. */
 const INPUT_MESSAGES = 'organization.wizard.derivationInput' as const;
+/**
+ * VSME's omission is stated in this one field (¶24(b)), and UX-30 attaches a notice to it.
+ * Named here rather than spelled at the site, per the closed-vocabulary rule.
+ */
+const OMITTED_DISCLOSURES_ELEMENT =
+  'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation';
 
 /**
  * The classification axes this product has to name itself — the ones EFRAG's package words nowhere.

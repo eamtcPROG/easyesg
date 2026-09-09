@@ -46,6 +46,7 @@ describe('resumeModule', () => {
     // no elements on either side, which is what the `total` argument stands in for below.
     applicable: total > 0,
     applicabilityCause: null,
+    omitted: false,
   });
 
   it('prefers the module with the most recent answer, wherever it sits in the order', () => {
