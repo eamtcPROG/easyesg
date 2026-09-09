@@ -1038,6 +1038,7 @@
       "field": {
         "calculated": "Calculat",
         "carried": "Preluat din perioada anterioară",
+        "carryForward": "Preluați valoarea",
         "choiceEmpty": "Nimic nu corespunde căutării",
         "choiceLoading": "Se caută",
         "choicePrompt": "Începeți să scrieți pentru a căuta",
@@ -1065,6 +1066,7 @@
           "resume": "Reveniți la completare"
         },
         "omissionNotice": "Această declarație intră în raport: cine îl citește vede care informații au fost omise ca fiind clasificate sau sensibile — nu și motivul, pe care standardul nu îl cere.",
+        "prior": "Perioada precedentă: {value}",
         "sync": {
           "queued": "În așteptare",
           "saving": "Se salvează",

@@ -14062,3 +14062,106 @@ section instead of *every*, and the hyphen test inverted. Each was applied, run 
 Both review agents ran on **`opus`**, per the pin. Task 36 has one sub-step left — 36.14, prior-period
 carry-forward — and its parent close then owes `pnpm gates:clean` and the three agents over the
 whole diff.
+
+## Task 36.14 — Prior-period values and carry-forward · 2026-09-09
+
+The last of task 36's fourteen sub-steps, and the one with the least new machinery: task 34.3 had
+built the comparative read — including the hard part — and §6.2's field anatomy had carried both
+slots unused since it was drawn.
+
+### Almost everything was already there
+
+- `GET /reports/{id}/prior-period` (34.3), with **comparability already resolved across the two
+  version pins**: `comparable`, `element_absent`, `shape_changed`.
+- `DisclosureField`'s `priorPeriod` and `carryForward` slots, built with the anatomy that draws them.
+- `report_disclosure_value.carried_forward` (34.1) and the wizard's `carried` marker.
+
+34.3 even anticipated this task in its own port header: *"FR-47's carry-forward writes into this
+year's report through the disclosure store, marked `carried_forward` — it is an ordinary value with
+a flag, not a comparative."* That is exactly what shipped.
+
+What was missing was the join: the wizard never read the endpoint.
+
+### The indexing is where this goes wrong quietly
+
+**Keyed by §7.3's whole natural key, using `writeKey` — the same function the autosave queue
+addresses a field with**, so the two cannot disagree about what *the same field* means. B8's Moldova
+row and its Romania row are different answers to one element; an element-keyed index puts one
+country's headcount beside another's, which renders as a plausible number in the wrong place. That
+is the failure FR-46 exists to catch, caused rather than caught. Mutation-proven.
+
+**Only `comparable` values are shown**, and the filter is the requirement rather than tidiness.
+FR-46 exists so *"an implausible year-over-year movement is visible while it can still be checked"*,
+and a comparison is only a comparison when both sides measure the same thing. `element_absent` has
+no field to sit beside; `shape_changed` has one whose kind or period type moved, and a duration that
+became an instant is not last year's figure. Also mutation-proven.
+
+### VSME does the opposite, and both are right
+
+B1 carries **three** elements for the standard's version of *nothing changed*: a boolean, a list of
+sections over the same 51-member domain as 36.13's omission list, and a **link to the previous
+report**. So VSME's answer is *say so, list the sections, and point the reader at last year* — it
+does not repeat the value.
+
+**All three already ship** as ordinary B1 fields, exactly as the omission list did. Neither
+mechanism is amended and they are not alternatives: carrying forward produces a value that is *this
+year's disclosure*, which is what a standalone report needs and what FR-46 compares against, while
+the standard's is a filing statement that spares repeating an unchanged narrative. The
+`carried_forward` mark is not exported — VSME has no element for it, and FR-47's stated purpose is
+that the value *"is reviewed rather than accumulating unnoticed"*, which is a reader's obligation on
+this platform rather than a disclosure.
+
+That is the third module slice in a row where the standard turned out to have its own mechanism
+already shipping unrecognised — B11's omission at 36.13, and this. The pattern is worth naming: an
+`enumeration_set` in B1 over `ListOfDisclosuresMember` is how VSME says things *about* the report,
+and the product had been reading those as ordinary fields.
+
+### Two judgements, recorded rather than defaulted
+
+- **Carry-forward is offered on an empty field only.** UC-46's trigger is *the Contributor judges
+  that a value has not changed*; offering to overwrite an answer already given is a different act.
+- **UX-32's module-level bulk action is not built.** That rule calls it *optional*, and one action
+  marking a whole module carried is the *accumulating unnoticed* FR-47 exists to prevent — it wants
+  its own review rather than a line in this task.
+
+### The fixture met two guards, and both were right
+
+`seedPriorPeriod` builds what the product cannot: two periods of one entity with the later linked to
+the earlier. It failed twice before it worked, and both failures were the schema defending itself —
+a `template_version` that must be **copied from the period** rather than hard-coded (task 31.3's
+rule that a report never resolves the pin twice), and `refuse_locked_write` refusing values written
+into a report already marked locked. Values first, then the lock, is also the order the product
+takes.
+
+### Verified
+
+`pnpm lint`, `pnpm typecheck`, `pnpm --filter @easyesg/web test` (326, of which 8 written here),
+`pnpm --filter @easyesg/api test`, `pnpm openapi:check`, `pnpm docs:check`, and `pnpm e2e:web
+--project identity --project expansion`. No migration and no api change — the whole of this task is
+a browser reading an endpoint that existed.
+
+`COMPARABILITY` is mirrored into `packages/contracts` and **held against the generated union at
+compile time**, as the four mirrors beside it are: the wizard is its first browser reader, and a
+verdict about two taxonomy versions is the api's to make rather than the browser's to re-derive.
+
+### Task 36's parent close
+
+`pnpm gates:clean` — the full sixteen, from a tree with every build output removed — **passed on the
+second run**. The first failed one case in `provider-link.e2e-spec.ts`, *"refuses to unlink without
+the current password"*, with a **404** where the route answers 403; the same suite passed inside
+`pnpm e2e` twice before it and passed inside `gates:clean` immediately after, 860 of 860.
+
+**That is the second unrelated flake this session and the pair is worth naming**, because one is
+noise and two is a shape: `periods.e2e-spec.ts` failed once with a **401** on task 36.12's close,
+also late in a long chain, also passing on a re-run. Both are in suites the work did not touch, both
+are HTTP status mismatches rather than assertion failures, and both appeared only when the suite ran
+late in a long command. The common suspect is session lifetime — AD-12's access token is ≤15
+minutes and these cases authenticate once at suite start — but **two observations are not a
+diagnosis**, and guessing at a fix would be worse than recording the evidence. If a third appears,
+the thing to measure first is elapsed time from sign-in to the failing request, and the likely fix
+is a fixture that refreshes rather than a longer token.
+
+**This closes task 36** — fourteen sub-steps, its parent row `DONE` by the roll-up rule. The three
+review agents over the whole parent diff are the remaining obligation and have not been run: this
+session is configured not to spawn agents unless asked, so it is stated here as owed rather than
+quietly skipped.

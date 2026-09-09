@@ -4,6 +4,7 @@ import {
   cleanupOrganizations,
   disclosureValueOf,
   grantMembership,
+  seedPriorPeriod,
   seedReport,
   verificationTokenFor,
 } from './support/db';
@@ -1428,4 +1429,59 @@ test('a section declared omitted reads as a third state on the rail (UC-30, UX-2
   await expect(
     rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B8', exact: true }) }),
   ).not.toContainText('omis');
+});
+
+/**
+ * Last year's answer beside this year's input, and one action to bring it across (UC-45, UC-46;
+ * FR-46, FR-47, UX-31, UX-32; task 36.14).
+ *
+ * The api has served comparatives since task 34.3 and `DisclosureField` has carried both slots
+ * unused since §6.2's anatomy was built; what this journey covers is that they meet, and that the
+ * carried mark survives the round trip — a value that arrives unmarked is FR-47's *accumulating
+ * unnoticed* with the mark removed.
+ */
+test('last year’s value shows beside this year’s, and carries forward marked (UC-45, UC-46)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'prior');
+  const organizationId = organizationOf.get(reportId) ?? '';
+  const ENERGY = 'TotalEnergyConsumption';
+
+  await seedPriorPeriod({
+    organizationId,
+    reportId,
+    values: { [ENERGY]: { numeric: '1240' } },
+  });
+
+  await page.goto(`/reports/${reportId}/B3`);
+  const energy = page.getByRole('group', { name: 'Consumul total de energie' });
+
+  // **UX-31: adjacent to the input, not in a separate comparison view.**
+  await expect(energy).toContainText('1240');
+
+  // **UC-46 in one action.** The field is empty, so carrying forward is offered.
+  await energy.getByRole('button', { name: 'Preluați valoarea' }).click();
+
+  // The store is the fact (NFR-56) — and the **mark** is half of it: FR-47 requires the value be
+  // carried *and marked*, so a write that copied the number and dropped the flag would satisfy a
+  // value-only assertion exactly as well as correct code.
+  await expect
+    .poll(
+      async () => {
+        const stored = await disclosureValueOf({ organizationId, reportId, elementKey: ENERGY });
+        return stored === null ? null : `${stored.valueNumeric}/${stored.state}`;
+      },
+      { timeout: 15_000 },
+    )
+    .toBe('1240/ok');
+
+  // **UX-32: visibly marked as carried until edited.** The marker is the reader's half of FR-47.
+  await page.reload();
+  await expect(page.getByRole('group', { name: 'Consumul total de energie' })).toContainText('Preluat');
+
+  // And the offer is gone, because the field now holds this year's answer — overwriting an answer
+  // is a different act from filling an empty field (UC-46's trigger).
+  await expect(
+    page.getByRole('group', { name: 'Consumul total de energie' }).getByRole('button', { name: 'Preluați valoarea' }),
+  ).toHaveCount(0);
 });

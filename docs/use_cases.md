@@ -1089,7 +1089,8 @@ their numbers put them.
 - **Main success scenario:**
   1. The Contributor copies the prior-year value into the current period — for fields that genuinely have not changed, such as a policy statement or site list.
   2. The system marks the value as carried forward.
-- **Business rules:** Carried-forward values are marked as such so they can be reviewed rather than accumulating unnoticed across years.
+- **Business rules:** Carried-forward values are marked as such so they can be reviewed rather than accumulating unnoticed across years. The action is offered on an **empty** field only: this use case's trigger is *the Contributor judges that a value has not changed*, and overwriting an answer already given is a different act.
+- **Note on VSME's own mechanism, added 9 Sep 2026 (task 36.14).** The standard does not carry a value forward — it lets an undertaking **not repeat** it: B1 holds *"report contains disclosures from the previous reporting period that remain unchanged"*, the list of which sections, and a **link to the previous report** where a reader finds them. All three are ordinary B1 fields and already ship. The two are not alternatives: carrying forward produces a value that is *this year's disclosure*, which is what a standalone report needs and what UC-45's plausibility check compares against, while the standard's is a filing statement that spares repeating an unchanged narrative. The `carried_forward` mark is this platform's and is not exported — VSME has no element for it, and FR-47's purpose is review rather than disclosure.
 - **Related FRs:** FR-47
 - **Related UCs:** UC-20, UC-45
 

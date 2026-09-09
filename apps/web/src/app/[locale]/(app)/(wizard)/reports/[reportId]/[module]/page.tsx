@@ -6,6 +6,7 @@ import { AutosaveBanner } from '@/features/wizard/components/autosave-banner';
 import { AutosaveProvider } from '@/features/wizard/components/autosave-context';
 import { ModuleRail } from '@/features/wizard/components/module-rail';
 import { SaveState } from '@/features/wizard/components/save-state';
+import { priorValuesOf } from '@/features/wizard/comparatives';
 import { StepFields } from '@/features/wizard/components/step-fields';
 import { WizardExit } from '@/features/wizard/components/wizard-exit';
 import { READ_ONLY_CAUSE, readWizardStep, type ReadOnlyCause } from '@/server/data/wizard';
@@ -133,6 +134,7 @@ export default async function ReportModuleStepPage({ params }: Props) {
           fields={fields}
           axes={read.step.axes}
           derivationInputs={read.step.derivationInputs}
+          priorValues={priorValuesOf(read.prior)}
           readOnly={readOnly}
           markerLabels={markerLabels}
           carriedLabel={t('field.carried')}

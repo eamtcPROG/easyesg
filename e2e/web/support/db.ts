@@ -521,3 +521,81 @@ export async function disclosureValueOf(input: {
     await client.end();
   }
 }
+
+/**
+ * A prior year for a report that already exists — FR-45's linkage, with something in it (task 36.14).
+ *
+ * **Built here rather than through the product** because the product cannot: `seedFiling` opens one
+ * period per entity, and UC-45's subject is two periods of the *same* entity with the later linked
+ * to the earlier. Opening a second period through the API would exercise task 31.1's linkage rather
+ * than this task's display, and would put a fixture's correctness inside the thing under test.
+ *
+ * The prior report is pinned to the **same** taxonomy version as the current one, so every value it
+ * holds is `comparable` — task 34.3's other two verdicts are unit-tested against the vocabulary, and
+ * contriving a version skew in a browser fixture would test 34.3 rather than the screen.
+ */
+export async function seedPriorPeriod(input: {
+  readonly organizationId: string;
+  readonly reportId: string;
+  /** Element key to value — written into the prior year's report, in the text or numeric column. */
+  readonly values: Readonly<Record<string, { readonly numeric?: string; readonly text?: string }>>;
+}): Promise<{ readonly priorReportId: string }> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+
+    const current = await client.query<{ reporting_entity_id: string; fiscal_year: number; period_id: string }>(
+      `SELECT p.reporting_entity_id, p.fiscal_year, p.id AS period_id
+         FROM core.report r JOIN core.reporting_period p ON p.id = r.reporting_period_id
+        WHERE r.id = $1`,
+      [input.reportId],
+    );
+    const { reporting_entity_id: entityId, fiscal_year: year, period_id: periodId } = current.rows[0];
+    const priorPeriodId = randomUUID();
+    const priorReportId = randomUUID();
+
+    await client.query(
+      `INSERT INTO core.reporting_period
+         (id, organization_id, reporting_entity_id, fiscal_year,
+          period_start, period_start_tz, period_end, period_end_tz,
+          template_version, taxonomy_version)
+       VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau', '2026-05-01', '2026-05-01')`,
+      [priorPeriodId, input.organizationId, entityId, year - 1, `${year - 1}-01-01`, `${year - 1}-12-31`],
+    );
+    await client.query(
+      // The pin is copied from the period, as `ReportStoreRepository.create` does — DR-4's rule
+      // that a report never resolves it a second time (task 31.3). A fixture that hard-coded it
+      // would be a second place the pin is decided.
+      `INSERT INTO core.report
+         (id, organization_id, reporting_period_id, scope, status, template_version, taxonomy_version)
+       SELECT $1, $2, p.id, 'basic', 'open', p.template_version, p.taxonomy_version
+         FROM core.reporting_period p WHERE p.id = $3`,
+      [priorReportId, input.organizationId, priorPeriodId],
+    );
+    // The linkage FR-45 resolves from, set after both exist.
+    await client.query(`UPDATE core.reporting_period SET prior_period_id = $2 WHERE id = $1`, [
+      periodId,
+      priorPeriodId,
+    ]);
+
+    for (const [elementKey, value] of Object.entries(input.values)) {
+      await client.query(
+        `INSERT INTO core.report_disclosure_value
+           (organization_id, report_id, element_key, value_numeric, value_text, state)
+         VALUES ($1, $2, $3, $4, $5, 'ok')`,
+        [input.organizationId, priorReportId, elementKey, value.numeric ?? null, value.text ?? null],
+      );
+    }
+    // **Locked last, and the order is the guard's** (task 34.1's `refuse_locked_write`): a prior
+    // year is a filed year, and writing into it while locked is refused by the database — which is
+    // what this fixture met on its first run. Values first, then the lock, is also the order the
+    // product itself takes.
+    await client.query(`UPDATE core.report SET status = 'locked' WHERE id = $1`, [priorReportId]);
+    await client.query('COMMIT');
+    return { priorReportId };
+  } finally {
+    await client.end();
+  }
+}

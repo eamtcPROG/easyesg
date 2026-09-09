@@ -45,6 +45,7 @@ import {
   writeFor,
   parseDecimalInput,
 } from '../values';
+import { priorDraftOf, type PriorValue } from '../comparatives';
 import { useAutosaveContext } from './autosave-context';
 import { DisclosureControl } from './disclosure-control';
 import { MemberPicker, memberName } from './member-picker';
@@ -98,6 +99,7 @@ export function StepFields({
   fields,
   axes,
   derivationInputs,
+  priorValues,
   readOnly,
   markerLabels,
   carriedLabel,
@@ -113,6 +115,8 @@ export function StepFields({
    * every module but B8 and B9 — the two EFRAG's own template computes a figure for.
    */
   readonly derivationInputs: readonly DerivationInput[];
+  /** Last year's comparable answers, by §7.3's natural key (FR-46, UC-45; task 36.14). */
+  readonly priorValues: ReadonlyMap<string, PriorValue>;
   readonly readOnly: boolean;
   /** §6.4's label per state, in the reader's language. `ok` carries no marker and is unused. */
   readonly markerLabels: Readonly<Record<DisclosureState, string>>;
@@ -408,6 +412,7 @@ export function StepFields({
         carriedLabel={carriedLabel}
         chosenUnit={units[served.elementKey] ?? null}
         onChooseUnit={(code) => chooseUnit(served.elementKey, code)}
+        prior={priorValues.get(writeKey(served)) ?? null}
       />
     );
   }
@@ -562,6 +567,7 @@ function StepField({
   carriedLabel,
   chosenUnit,
   onChooseUnit,
+  prior,
 }: {
   readonly served: DisclosureFieldShape;
   readonly named?: string | null;
@@ -571,6 +577,8 @@ function StepField({
   /** The unit this field's ELEMENT is answered in, where the reporter has chosen one. */
   readonly chosenUnit: string | null;
   readonly onChooseUnit: (code: string) => void;
+  /** Last year's comparable answer for this exact row, or `null` (FR-46). */
+  readonly prior: PriorValue | null;
 }) {
   const t = useTranslations(`${FIELD_MESSAGES}.sync`);
   const tField = useTranslations(FIELD_MESSAGES);
@@ -604,6 +612,8 @@ function StepField({
     sync === SAVE_STATE.SAVED
       ? markerFor(field, markerLabels, { carried: carriedLabel, calculated: tField('calculated') })
       : { label: syncLabels[sync], tone: SYNC_TONE[sync] };
+  // Last year's answer in this field's own value column, or '' where it holds none there.
+  const priorDraft = prior === null ? '' : priorDraftOf({ field, prior });
   const labelId = labelIdFor(key);
 
   return (
@@ -661,6 +671,35 @@ function StepField({
             onChoose={onChooseUnit}
           />
         ) : undefined
+      }
+      /*
+       * UX-31: *"adjacent to the current input at the point of entry, not in a separate comparison
+       * view"* — §6.2's anatomy draws the row and `DisclosureField` has carried the slot unused
+       * since it was built. Shown only where last year actually holds a figure in this kind's own
+       * column: a field answered *not available* last year has a state and a reason and no value,
+       * and *"Prior period:"* followed by nothing is worse than no row (task 36.14).
+       */
+      priorPeriod={priorDraft === '' ? undefined : tField('prior', { value: priorDraft })}
+      /*
+       * FR-47 and UX-32's **per-field** action. The module-level bulk action that rule calls
+       * *optional* is not built here and is named in `architecture.md` §12.5.6 — one action that
+       * marks a whole module carried is the *accumulating unnoticed* this requirement exists to
+       * prevent, and it wants its own review rather than a line in this one.
+       *
+       * Absent when the step is read-only, when there is nothing to copy, and when the field
+       * already holds this year's answer — offering to overwrite an answer with last year's is a
+       * different act from filling an empty field, and UC-46's trigger is *the Contributor judges
+       * that a value has not changed*.
+       */
+      carryForward={
+        readOnly || priorDraft === '' || storedDraftOf(field) !== '' ? undefined : (
+          <Button
+            variant={BUTTON_VARIANT.SUBTLE}
+            onClick={() => change({ ...writeFor(field, priorDraft), carriedForward: true })}
+          >
+            {tField('carryForward')}
+          </Button>
+        )
       }
       message={field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? field.notAvailableReason : undefined}
       messageTone={FIELD_TONE.REASONED}

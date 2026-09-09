@@ -5,6 +5,7 @@ import {
   type DisclosureModuleSummary,
   type DisclosureStep,
   type MembershipRole,
+  type PriorPeriodComparatives,
   type Report,
 } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
@@ -47,6 +48,12 @@ export type WizardStepRead =
       readonly modules: readonly DisclosureModuleSummary[];
       readonly step: DisclosureStep;
       readonly report: Report;
+      /**
+       * Last year's answers for this report (FR-45, FR-46; task 34.3's read). `null` where the
+       * comparative read was unavailable — the step still renders, a comparative being an aid
+       * rather than a precondition for answering.
+       */
+      readonly prior: PriorPeriodComparatives | null;
       /** `null` where the reader may write. */
       readonly readOnly: ReadOnlyCause | null;
     }
@@ -59,12 +66,16 @@ export async function readWizardStep(input: {
 }): Promise<WizardStepRead> {
   // Independent, so they do not queue (`async-parallel`). All tenant-scoped by the session; the
   // membership read is React-`cache()`d and shared with the global tier's own call.
-  const [modules, step, report, membership] = await Promise.all([
+  const [modules, step, report, prior, membership] = await Promise.all([
     api.getList<DisclosureModuleSummary>(`/reports/${input.reportId}/modules`),
     api.get<DisclosureStep>(
       `/reports/${input.reportId}/modules/${encodeURIComponent(input.module)}`,
     ),
     api.get<Report>(`/reports/${input.reportId}`),
+    // FR-46's comparatives (task 34.3's read, consumed here at 36.14). **Alongside the others
+    // rather than after them**: it is independent, and a serial call would put last year's values
+    // behind this year's on every step change.
+    api.get<PriorPeriodComparatives>(`/reports/${input.reportId}/prior-period`),
     readActiveMembership(),
   ]);
 
@@ -84,6 +95,11 @@ export async function readWizardStep(input: {
     modules: modules.value.items,
     step: step.value,
     report: report.value,
+    // **A failed comparative is not a failed step.** UX-31 puts last year's value beside this
+    // year's input; a step that refused to render because the *prior* read was unavailable would
+    // make a second year's report un-editable over a convenience — so this degrades to none, and
+    // the step is answerable exactly as a first-year report's is.
+    prior: prior.status === API_OUTCOME.Ok ? prior.value : null,
     readOnly: readOnlyCauseOf({ report: report.value, role: membership?.role ?? null }),
   };
 }
