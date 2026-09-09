@@ -59,8 +59,8 @@ export const DISCLOSURE_AXIS_SHAPE_CONFIG_KIND = 'disclosure_axis_shape';
  * named formula in `models/derivation.model.ts`, because a formula belongs to a template version
  * and DR-4 pins one per report already (AD-4, and §12.5.6's task-36.10 rows).
  *
- * Seeded with the two the Digital Template 1.3.0 computes: B8's `EmployeeTurnoverRate` and B9's
- * `RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod`. An element named by no derivation is
+ * Seeded with the figures the Digital Template 1.3.0 computes rather than asks for — B8's and B9's
+ * rates at task 36.10, B10's pay gap and bargaining share at 36.11. An element named by no derivation is
  * an ordinary field the reporter answers, which is every other one.
  */
 export const DISCLOSURE_DERIVATION_CONFIG_KIND = 'disclosure_derivation';

@@ -945,7 +945,7 @@ export interface paths {
         get?: never;
         /**
          * Persist the values a derived figure is computed from
-         * @description EFRAG's Digital Template computes B8's turnover rate and B9's recordable-accident rate rather than asking for them, and some of what those formulas read carries no taxonomy element (UC-26, UC-27; §7.3). This writes those values and recomputes whatever they feed. Sending null for a value clears it, restoring the published offer. Refused while the report's period is locked (FR-22), by the database as well as by the use case.
+         * @description EFRAG's Digital Template computes several Basic-module figures rather than asking for them, and some of what those formulas read carries no taxonomy element (UC-26, UC-27; §7.3). This writes those values and recomputes whatever they feed. Sending null for a value clears it, restoring the published offer. Refused while the report's period is locked (FR-22), by the database as well as by the use case.
          */
         put: operations["WizardController_writeDerivationInputs"];
         post?: never;
@@ -1940,7 +1940,7 @@ export interface components {
             elementKey: string;
             /** @description An axis member, or empty where the element is undimensioned. */
             dimensionKey: string;
-            /** @description What to call this row. A member-keyed row is named by its member (“Renewable energy”, “Ammonia (NH3)”); a typed-axis row by what the report shows for that ordinal — B1’s address for the site B5 is asking about, which is the stored answer where there is one and the entity snapshot’s default otherwise. Null where neither answers, and where answers; the key is never a fallback, because it is an internal identifier, and the screen keeps the position, so an unnamed row is still “site 2”. */
+            /** @description What to call this row. A member-keyed row is named by its member (“Renewable energy”, “Ammonia (NH3)”); a typed-axis row by what the report shows for that ordinal — B1’s address for the site B5 is asking about, which is the stored answer where there is one and the entity snapshot’s default otherwise. Null where neither answers, and null where the pinned version names the member nothing; the key is never a fallback, because it is an internal identifier, and the screen keeps the position, so an unnamed row is still “site 2”. */
             dimensionLabel: string | null;
             /**
              * @description Where the stored value came from. `reported` on every row today — the calculator that writes `calculated` is task 39.2 and the override that writes `overridden` is task 38.5, so a client may render the other two but will not meet them yet.
@@ -2048,7 +2048,7 @@ export interface components {
             fields: components["schemas"]["DisclosureFieldDto"][];
             /** @description The domains this step’s classifications draw their rows from (UC-22). On the step rather than on each field, because every element on an axis shares one list — B4’s three emissions share 94 pollutants and B7’s waste elements share 973, so a per-field copy is the same answer hundreds of times. Empty for a step with no classification. */
             axes: components["schemas"]["DisclosureAxisDto"][];
-            /** @description The values this step’s derived figures are computed from (UC-26, UC-27). **Not fields**: they carry no state, unit, dimension or applicability and are not exported as facts, so they are a separate list rather than fields a consumer must remember to exclude. Empty for every module but B8 and B9. */
+            /** @description The values this step’s derived figures are computed from (UC-26, UC-27). **Not fields**: they carry no state, unit, dimension or applicability and are not exported as facts, so they are a separate list rather than fields a consumer must remember to exclude. Empty for every module the template computes no figure for. */
             derivationInputs: components["schemas"]["DerivationInputDto"][];
         };
         DisclosureValueResponseDto: {

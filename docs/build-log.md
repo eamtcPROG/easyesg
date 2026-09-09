@@ -14165,3 +14165,146 @@ is a fixture that refreshes rather than a longer token.
 review agents over the whole parent diff are the remaining obligation and have not been run: this
 session is configured not to spawn agents unless asked, so it is stated here as owed rather than
 quietly skipped.
+
+## Task 36 — the parent close's three reviews, and what they found · 2026-09-09
+
+`pnpm gates:clean` passed and the three agents ran on **`opus`** over the whole parent diff —
+`dc7e881..HEAD`, 105 files, ~10,700 insertions, fourteen sub-steps plus tasks 91.4, 100 and 101.
+They returned **5 convention violations, 8 specification findings and 3 gate-integrity gaps**. Of
+the sixteen, **fifteen were real**; one was wrong and is recorded as wrong below. Everything green
+before the reviews, which is the point of them.
+
+### The one that could have filed a wrong number
+
+`computeDerivation`'s accident-rate guard — `if (totalHours === 0) return null` — had **no test at
+either layer**: replacing it with `if (false)` left 39 unit and 62 e2e cases green. Its three
+siblings each had a case; B9's did not.
+
+Worse, the comment beside all four named a backstop that does not exist: *"Dividing anyway yields
+Infinity or NaN, which `numeric` refuses."* **It does not.** Verified against the running stack —
+`SELECT 'Infinity'::numeric` returns `Infinity`, and `report_disclosure_value` carries no `CHECK` on
+`value_numeric`, only the three on `state`, `not_available_reason` and `origin`. A reporter can enter
+`0` for the hours figure, which `WriteDerivationInputs` accepts. So the guard was the only thing
+between that and an **infinite accident rate stored with `origin = 'calculated'`** — and nothing
+tested it while its stated justification was false.
+
+The behaviour was always right. What was wrong was the reasoning recorded beside it and the absence
+of a check. Both fixed, and the new case fails without the guard.
+
+### Two more things that could not fail
+
+- **`blankRow`'s `dimensionLabel: null`** — added by a convention review on 8 Sep for a real defect
+  (*"Amplasament 3 — Orhei, a site nobody has described wearing site 2's name"*) — had no assertion.
+  Deleting it left every web test green. **And the first assertion I wrote for it was also vacuous**:
+  the fixture's template row had no name, so it could not tell a cleared name from an inherited one.
+  The fixture now names the row, and the case fails without the line.
+- **`NO_MAIN_YET`** was an exemption list with no complement. Adding `/register` to it silently
+  narrowed the landmark pass and the suite stayed green — the `.first()` move exactly. Each exempt
+  screen is now asserted to *actually* violate `landmark-one-main`, so the set cannot grow to quieten
+  a failure, and `/` gaining a `main` at task 74.3 fails here the day it does. Proved both ways.
+
+### The three that were mine to have caught
+
+- **Three use cases imported `@Injectable` services directly** — the first imports from `use-cases/`
+  into `services/` anywhere in `apps/api`, against the dependency rule the root `CLAUDE.md` states
+  and the module anatomy repeats. `AxisShapeService` is the exact precedent, same module, same AD-4
+  mechanism. Three ports added (`Derivations`, `DerivationRecalculator`, `TemplateDefaults`), the
+  module rewired to tokens. No gate saw it: `domain-free-of-frameworks` matches npm packages reached
+  from `use-cases/`, so a hop through a first-party service is invisible.
+- **The leaf rule was implemented twice**, and `admits`' own docblock — written by task 36.8 —
+  claims *"One answer for three readers"*. The write path had a byte-identical copy in another file.
+  Now `models/axis-leaves.ts`, called by both; the read path keeps its cache, which is its own
+  business.
+- **`tInput(`names.${input.key}` as never)`** — a dynamic catalogue key in the file that forbids
+  exactly that twice in its own docblocks, for `rowNames` and `unitNames`, and had then declined it
+  where it matters most: `disclosure-derivation.vsme.json` is publishable under DR-3, so a fifth
+  derivation would have rendered a field with a blank label and blank help, everything green. Seven
+  literal keys now, with the neutral-word fallback `rowNames` already uses.
+
+Plus a `useMemo` defeated by a fresh object literal in its dependency array — the case
+`apps/web/CLAUDE.md` names in those words — recomputing a filter over **842 waste entries** on every
+autosave acknowledgement.
+
+### I claimed a sweep I did not run
+
+The 36.13 entry says *"Thirteen sites across five documents said the old thing… **All amended
+together**"*. Twelve more said it, and two are in the document that **owns FR-31**: §6's entity
+inventory still declared the withdrawn `core.section_declaration` *with its rationale attribute*,
+and §7's export table still promised those declarations in both formats. `design_spec.md` §6.4 still
+specified a field treatment that *"keeps the rationale visible"* — three screens below UX-30, which
+this diff amended to say there is no rationale.
+
+**Two acceptance criteria were falsified in cells I was editing** — FR-41 and FR-167 — the same
+failure I caught on FR-29 during 36.9 and did not then check the siblings for.
+
+All corrected. The lesson is not "search harder": it is that **the claim of completeness is the
+defect**. Saying *all amended together* converted an unfinished sweep into a record that it was
+finished, and only a reader running `grep` could tell.
+
+### And a decision whose justification this diff deleted
+
+§12.5.6's task-36.7 row accepted B6's divergence — hiding a disclosure EFRAG marks `[Always to be
+reported]` — explicitly because *"UC-30's immateriality determination remains the reporter's route to
+say so where the rule is wrong about them."* **Task 36.13 removed that route one day later.** The row
+still offered it, and UC-24 routes readers straight there.
+
+The divergence itself stands, on a better mechanism: BR-APP-4's sector list is *published
+configuration* (FR-72, UC-81), so a rule that is wrong is corrected **for every undertaking it is
+wrong about**, without a redeploy — a stronger recourse than letting one reporter opt out. What is
+genuinely lost is the case where the rule is right about the sector and wrong about the undertaking;
+that reporter now has none, which is this divergence's honest cost and was obscured by the clause.
+
+### One finding was wrong
+
+The spec review reported §12.5.6's task-30.2 currency row as lacking its supersede annotation. It
+carries one — *"…asks for. **Superseded 9 Sep 2026 by task 36.12**…"* — and the agent read a stale
+line number after this diff's own edits shifted the table. Recorded because a review's misses and its
+false positives are both worth knowing: fifteen of sixteen is the measurement.
+
+### Also fixed
+
+A garbled clause that had reached `openapi/v1.json` (*"Null where neither answers, and where
+answers"* — a phrase dropped mid-edit); `computeDerivation`'s implicit `else`, which answered every
+formula kind and would have computed an accident rate for a fifth; `COMPARABILITY` orphaning the
+`Same<A, B>` docblock it was inserted above; the *"two derivations"* count, stale in eleven places
+including the published contract, which is the same shape this range had already diagnosed and fixed
+**once** without running the search; and task 100's unrecorded authoring of a fifth `CLAUDE.md`.
+
+### An intermittent e2e failure that is now a pattern, not a flake
+
+Four observations this session, across **three** suites the work never touched, every one passing in
+isolation or on a re-run:
+
+| Suite | Symptom | When |
+| --- | --- | --- |
+| `periods.e2e-spec.ts` | `401` where the route answers `200` | task 36.12's close |
+| `provider-link.e2e-spec.ts` | `404` where the route answers `403` | first `gates:clean` |
+| `members.e2e-spec.ts` | an FR-55 audit row invisible to its own query | twice consecutively, then green |
+| `wizard.e2e-spec.ts` | 1 of 62, unattributed | reported by the gate-integrity review |
+
+**What is established.** `members` passes alone — 33 of 33 through the ESM entry — and failed twice
+running inside `pnpm e2e`, then passed a third time on no change. So it is intermittent rather than
+deterministic, and it is an **isolation** failure rather than a defect in the code under test. That
+is the class `CLAUDE.md` already documents: *"a previous command includes a previous test suite
+inside the same command"*, with jest's size-ordered sequencer meaning the order is a habit rather
+than a rule.
+
+**What is ruled out.** Clock skew in the direction that would matter: measured against the running
+container, PostgreSQL reads *ahead* of Node by about the round-trip, which would make the audit row
+*more* visible, not less. And my own diff: the three suites are `identity` and `core.reporting_period`,
+which task 36 does not touch, and the same failures appeared before this fix round as well as after.
+
+**The one concrete lead, stated because it is checkable rather than because it is proven.**
+`members`' assertion bounds `core.field_change` with `occurred_at >= $2` where `$2` is a JavaScript
+`new Date()` — a **cross-clock comparison** between the test process and the database, on a table
+whose rows a trigger writes with the database's `now()`. It is a real hazard whether or not it is
+this one; a lower bound taken from the database would remove it without weakening the assertion.
+
+**Deliberately not fixed here.** `CLAUDE.md` says reproduce before fixing, and I could not make it
+fail on demand — a change made against a hypothesis would be indistinguishable from one that worked.
+It wants its own task, with the first measurement being which suites ran before the failing one.
+
+### Verified
+
+`pnpm gates:clean` after every fix — the sixteen gates green, with the intermittent failure above
+appearing in one run of three and the suite passing standalone.

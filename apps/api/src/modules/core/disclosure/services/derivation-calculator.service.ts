@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import type { DerivationRecalculator } from '../interfaces/derivation.interface';
+
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
 import { OPERAND_SOURCE, computeDerivation, type Derivation } from '../models/derivation.model';
-import type { DerivationService } from './derivation.service';
+import type { Derivations } from '../interfaces/derivation.interface';
 
 /**
  * Recompute the figures EFRAG derives, after something they are computed from moves (task 36.10).
  *
  * **Only the derivations a write actually touched.** Autosave writes on every settled field, and
- * recomputing both rates on a B2 narrative keystroke would be two reads and two writes for an answer
+ * recomputing every registered derivation on a B2 narrative keystroke would be two reads and two writes for an answer
  * that cannot have changed. `touchedBy` is a set membership test over the operand keys, which is the
  * whole of the optimisation and needs no invalidation to go stale.
  *
@@ -22,9 +24,9 @@ import type { DerivationService } from './derivation.service';
  * `origin = 'calculated'` says the system stands behind an answer it can no longer produce.
  */
 @Injectable()
-export class DerivationCalculator {
+export class DerivationCalculator implements DerivationRecalculator {
   constructor(
-    private readonly derivations: DerivationService,
+    private readonly derivations: Derivations,
     private readonly values: DisclosureValueStore,
     private readonly inputs: DerivationInputStore,
   ) {}
@@ -47,7 +49,7 @@ export class DerivationCalculator {
     if (registered.length === 0) return;
 
     // One read of each store for however many derivations qualify, rather than one per derivation:
-    // both rates read B1's headcount today, so a per-derivation read would fetch it twice.
+    // three of the four registered derivations read B1's headcount today, so a per-derivation read would fetch it repeatedly.
     const [values, inputs] = await Promise.all([
       this.values.forReport({ reportId: command.reportId }),
       this.inputs.forReport({ reportId: command.reportId }),

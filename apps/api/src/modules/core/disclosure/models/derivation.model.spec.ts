@@ -1,4 +1,4 @@
-import { DERIVATION_FORMULA, computeDerivation } from './derivation.model';
+import { DERIVATION_FORMULA, computeDerivation, type DerivationFormula } from './derivation.model';
 import { DISCLOSURE_STATE, answeredState } from './disclosure-value.model';
 
 /**
@@ -80,6 +80,28 @@ describe('the figures EFRAG derives', () => {
       // EFRAG: "the undertaking can modify the value… this figure may vary by country or sector."
       // A shorter working year concentrates the same accidents into fewer hours.
       expect(Number(rate('3', '1800', '50'))).toBeGreaterThan(Number(rate('3', '2000', '50')));
+    });
+
+    it('answers null on a zero working year rather than filing an infinite rate', () => {
+      // **The only guard between a reporter and Infinity** (gate-integrity review, 9 Sep 2026). The
+      // hours figure is one `WriteDerivationInputs` accepts a `0` for, and PostgreSQL's `numeric`
+      // holds `Infinity` — verified against the running stack — with no `CHECK` on the column to
+      // refuse it. Its three sibling formulas each had this case and B9's did not, so removing the
+      // guard left every test green while a filing could carry an infinite accident rate marked
+      // `origin = 'calculated'`.
+      expect(rate('3', '0', '50')).toBeNull();
+      expect(rate('3', '2000', '0')).toBeNull();
+    });
+
+    it('answers null for a formula kind it does not implement', () => {
+      // The branch was an implicit `else` and answered every kind, so a fifth formula whose branch
+      // was forgotten computed an accident rate from operands it does not have.
+      expect(
+        computeDerivation({
+          formula: 'not_a_formula' as DerivationFormula,
+          operands: { accidents: '3', hoursPerFullTimeEmployee: '2000', employees: '50' },
+        }),
+      ).toBeNull();
     });
 
     it('answers null while the headcount is unanswered — B1 is where that comes from', () => {

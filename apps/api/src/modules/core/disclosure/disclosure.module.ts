@@ -34,6 +34,16 @@ import {
   DERIVATION_INPUT_STORE,
   type DerivationInputStore,
 } from './interfaces/derivation-input-store.interface';
+import {
+  DERIVATIONS,
+  DERIVATION_RECALCULATOR,
+  type DerivationRecalculator,
+  type Derivations,
+} from './interfaces/derivation.interface';
+import {
+  TEMPLATE_DEFAULTS,
+  type TemplateDefaults,
+} from './interfaces/template-default.interface';
 import { REPORT_STORE, type ReportStore } from './interfaces/report-store.interface';
 import { ApplicabilityRulesService } from './services/applicability-rules.service';
 import { DisclosureFacade } from './services/disclosure-facade.service';
@@ -103,9 +113,9 @@ const httpProviders: Provider[] = [
       ORGANIZATION_VOCABULARY,
       APPLICABILITY_RULES,
       AXIS_SHAPES,
-      DerivationService,
+      DERIVATIONS,
       DERIVATION_INPUT_STORE,
-      TemplateDefaultService,
+      TEMPLATE_DEFAULTS,
     ],
     useFactory: (
       reports: ReportStore,
@@ -115,9 +125,9 @@ const httpProviders: Provider[] = [
       vocabulary: WizardVocabulary,
       applicability: ApplicabilityRules,
       axisShapes: AxisShapes,
-      derivations: DerivationService,
+      derivations: Derivations,
       derivationInputs: DerivationInputStore,
-      templateDefaults: TemplateDefaultService,
+      templateDefaults: TemplateDefaults,
     ) =>
       new ReadWizardStep(
         reports,
@@ -134,13 +144,13 @@ const httpProviders: Provider[] = [
       ),
   },
   { provide: DERIVATION_INPUT_STORE, useClass: DerivationInputStoreRepository },
-  DerivationService,
-  TemplateDefaultService,
+  { provide: DERIVATIONS, useClass: DerivationService },
+  { provide: TEMPLATE_DEFAULTS, useClass: TemplateDefaultService },
   {
-    provide: DerivationCalculator,
-    inject: [DerivationService, DISCLOSURE_VALUE_STORE, DERIVATION_INPUT_STORE],
+    provide: DERIVATION_RECALCULATOR,
+    inject: [DERIVATIONS, DISCLOSURE_VALUE_STORE, DERIVATION_INPUT_STORE],
     useFactory: (
-      derivations: DerivationService,
+      derivations: Derivations,
       values: DisclosureValueStore,
       inputs: DerivationInputStore,
     ) => new DerivationCalculator(derivations, values, inputs),
@@ -151,25 +161,25 @@ const httpProviders: Provider[] = [
       REPORT_STORE,
       DISCLOSURE_VALUE_STORE,
       TAXONOMY_REGISTRY,
-      DerivationService,
-      DerivationCalculator,
+      DERIVATIONS,
+      DERIVATION_RECALCULATOR,
     ],
     useFactory: (
       reports: ReportStore,
       values: DisclosureValueStore,
       taxonomy: TaxonomyRegistry,
-      derivations: DerivationService,
-      calculator: DerivationCalculator,
+      derivations: Derivations,
+      calculator: DerivationRecalculator,
     ) => new WriteDisclosureValues(reports, values, taxonomy, derivations, calculator),
   },
   {
     provide: WriteDerivationInputs,
-    inject: [REPORT_STORE, DERIVATION_INPUT_STORE, DerivationService, DerivationCalculator],
+    inject: [REPORT_STORE, DERIVATION_INPUT_STORE, DERIVATIONS, DERIVATION_RECALCULATOR],
     useFactory: (
       reports: ReportStore,
       inputs: DerivationInputStore,
-      derivations: DerivationService,
-      calculator: DerivationCalculator,
+      derivations: Derivations,
+      calculator: DerivationRecalculator,
     ) => new WriteDerivationInputs(reports, inputs, derivations, calculator),
   },
   {

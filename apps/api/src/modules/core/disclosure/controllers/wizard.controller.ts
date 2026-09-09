@@ -129,8 +129,8 @@ export class WizardController {
   @ApiOperation({
     summary: 'Persist the values a derived figure is computed from',
     description:
-      "EFRAG's Digital Template computes B8's turnover rate and B9's recordable-accident rate " +
-      'rather than asking for them, and some of what those formulas read carries no taxonomy ' +
+      "EFRAG's Digital Template computes several Basic-module figures rather than asking for them, " +
+      'and some of what those formulas read carries no taxonomy ' +
       'element (UC-26, UC-27; §7.3). This writes those values and recomputes whatever they feed. ' +
       'Sending null for a value clears it, restoring the published offer. Refused while the ' +
       "report's period is locked (FR-22), by the database as well as by the use case.",

@@ -217,9 +217,12 @@ describe('nextOrdinal', () => {
 
 describe('blankRow', () => {
   it('carries the group’s questions at the new ordinal, holding nothing', () => {
+    // **The template row is NAMED**, which is what makes the last assertion below mean anything:
+    // a fixture whose source row is already anonymous cannot tell an inherited name from a cleared
+    // one, and the first version of that assertion could not fail (gate-integrity review).
     const [group] = layOutStep([
-      site('AddressOfSite', 0, 2),
-      site('CityOfSite', 0, 3),
+      { ...site('AddressOfSite', 0, 2), dimensionLabel: 'Amplasament 2 — Orhei' },
+      { ...site('CityOfSite', 0, 3), dimensionLabel: 'Amplasament 2 — Orhei' },
     ]) as StepGroupEntry[];
     const added = blankRow(group, 1);
 
@@ -227,6 +230,12 @@ describe('blankRow', () => {
     expect(added.fields.map((f) => f.elementKey)).toEqual(['AddressOfSite', 'CityOfSite']);
     expect(added.fields.every((f) => f.ordinal === 1)).toBe(true);
     expect(added.fields.every((f) => f.valueText === null)).toBe(true);
+    // **And it holds no *name*** (gate-integrity review, 9 Sep 2026). `dimensionLabel: null` was
+    // added by a convention review on 8 Sep for a defect its own comment describes — an added row
+    // inheriting the template row's name, *"Amplasament 3 — Orhei, a site nobody has described
+    // wearing site 2's name"* — and deleting that line left every web test green. The sibling half
+    // of the same fix, `blankCell`'s `dimensionKey: ''`, was covered; this half was not.
+    expect(added.fields.every((f) => f.dimensionLabel === null)).toBe(true);
   });
 
   it('offers no default on an added row, so the snapshot’s site is not shown twice', () => {

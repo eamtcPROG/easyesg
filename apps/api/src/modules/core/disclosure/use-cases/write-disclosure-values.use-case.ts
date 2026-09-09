@@ -8,14 +8,17 @@ import {
 } from '../errors/report.errors';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
+import { admitsMember } from '../models/axis-leaves';
 import {
   answeredState,
   type DisclosureValue,
   type DisclosureValueContents,
   type DisclosureValueKey,
 } from '../models/disclosure-value.model';
-import type { DerivationCalculator } from '../services/derivation-calculator.service';
-import type { DerivationService } from '../services/derivation.service';
+import type {
+  DerivationRecalculator,
+  Derivations,
+} from '../interfaces/derivation.interface';
 
 /** One field's new contents, addressed by the store's natural key. */
 export interface DisclosureValueInput extends Omit<DisclosureValueKey, 'reportId'> {
@@ -55,8 +58,8 @@ export class WriteDisclosureValues {
     private readonly reports: ReportStore,
     private readonly values: DisclosureValueStore,
     private readonly taxonomy: TaxonomyRegistry,
-    private readonly derivations: DerivationService,
-    private readonly calculator: DerivationCalculator,
+    private readonly derivations: Derivations,
+    private readonly calculator: DerivationRecalculator,
   ) {}
 
   async write(command: WriteDisclosureValuesCommand): Promise<DisclosureValue[]> {
@@ -89,15 +92,16 @@ export class WriteDisclosureValues {
           key,
         });
         if (axis === null) return false;
-        // **A category is not an answer** (task 36.8, convention review): EFRAG's own workbook says
-        // a reporter must select a type of waste rather than a category, so a member with children
-        // is refused here for the same reason an undeclared one is — the step read offers only the
-        // leaves, and a row under a category would draw on every element of the axis while
-        // rendering *unnamed*, since the picker no longer carries it.
-        const parents = new Set(axis.members.flatMap((m) => (m.parent === null ? [] : [m.parent])));
-        return axis.members.some(
-          (member) => member.key === value.dimensionKey && !parents.has(member.key),
-        );
+        // **A category is not an answer** (task 36.8): EFRAG's own workbook says a reporter must
+        // select a type of waste rather than a category, so a member with children is refused here
+        // for the same reason an undeclared one is — the step read offers only the leaves, and a row
+        // under a category would draw on every element of the axis while rendering *unnamed*.
+        //
+        // **The rule is `models/axis-leaves.ts`'s, not this file's** (convention review, 9 Sep
+        // 2026). 36.8's fix wrote *"one answer for three readers"* and then left a second copy of it
+        // here — locally correct, and free to drift from the picker's the day the leaf definition
+        // moves.
+        return admitsMember(axis, value.dimensionKey);
       });
     });
     if (misdimensioned.length > 0) throw new UnknownDisclosureDimensionError();

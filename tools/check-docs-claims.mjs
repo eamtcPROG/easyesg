@@ -4,7 +4,8 @@
  *
  * ## Why this exists
  *
- * A CLAUDE.md audit on 8 Sep 2026 found fourteen wrong statements across four files. Eight were
+ * A CLAUDE.md audit on 8 Sep 2026 found fourteen wrong statements across the four files that then
+ * existed — the same task authored `packages/ui/CLAUDE.md`, so this gate reads five. Eight were
  * counts, and — this is the part that decided the design — **three were wrong on the day they were
  * written**, not decayed since: "36 registered" was authored in a commit where the real figure was
  * already 39, and "36 route files" in one where `page.tsx` numbered 35. So this is not a staleness

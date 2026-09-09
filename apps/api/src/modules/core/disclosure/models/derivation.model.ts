@@ -9,7 +9,7 @@
  * *arithmetic* is here, because a formula belongs to a template version and DR-4 already pins one
  * per report — a changed formula arrives with a release however it is stored.
  *
- * **Two members, and no expression language.** CLAUDE.md's *"never widen a question by coding around
+ * **A closed set, and no expression language.** CLAUDE.md's *"never widen a question by coding around
  * it"* names this shape exactly: an interpreter for two formulas is an abstraction nobody asked for,
  * and it would make the arithmetic unreviewable in the bargain. A third rate that reuses one of
  * these shapes is a line of data; a genuinely new shape is a release, and should be.
@@ -62,7 +62,7 @@ export const DERIVATION_FORMULA = {
 
 export type DerivationFormula = (typeof DERIVATION_FORMULA)[keyof typeof DERIVATION_FORMULA];
 
-/** Is this unvalidated value one of the two? Beside the set, not retyped at each reader (CLAUDE.md). */
+/** Is this unvalidated value one of them? Beside the set, not retyped at each reader (CLAUDE.md). */
 export const isDerivationFormula = (value: unknown): value is DerivationFormula =>
   typeof value === 'string' && (Object.values(DERIVATION_FORMULA) as string[]).includes(value);
 
@@ -127,7 +127,7 @@ export function computeDerivation(input: {
     if (departures === null || atStart === null || atEnd === null) return null;
     const average = (atStart + atEnd) / 2;
     // A zero average workforce is not a rate of zero — it is a question with no answer, and EFRAG's
-    // own cell shows "-" for it. Dividing anyway yields Infinity or NaN, which `numeric` refuses.
+    // own cell shows "-" for it. Dividing anyway yields Infinity or NaN, and **nothing below this catches that** — verified 9 Sep 2026: PostgreSQL's `numeric` accepts both, and `report_disclosure_value` carries no `CHECK` on `value_numeric`. So this guard is the only thing between a zero denominator and an infinite rate filed with `origin = 'calculated'`. Earlier versions of this comment claimed the database refused it; it does not.
     if (average === 0) return null;
     return String(departures / average);
   }
@@ -137,7 +137,7 @@ export function computeDerivation(input: {
     const compared = number('compared');
     if (reference === null || compared === null) return null;
     // A zero reference is not a gap of nothing — it is a gap of no defined size, and EFRAG's cell
-    // shows "-". Dividing anyway yields Infinity or NaN, which `numeric` refuses.
+    // shows "-". Dividing anyway yields Infinity or NaN, and **nothing below this catches that** — verified 9 Sep 2026: PostgreSQL's `numeric` accepts both, and `report_disclosure_value` carries no `CHECK` on `value_numeric`. So this guard is the only thing between a zero denominator and an infinite rate filed with `origin = 'calculated'`. Earlier versions of this comment claimed the database refused it; it does not.
     if (reference === 0) return null;
     return String((reference - compared) / reference);
   }
@@ -151,13 +151,23 @@ export function computeDerivation(input: {
     return String(part / whole);
   }
 
-  const accidents = number('accidents');
-  const hours = number('hoursPerFullTimeEmployee');
-  const employees = number('employees');
-  if (accidents === null || hours === null || employees === null) return null;
-  const totalHours = hours * employees;
-  if (totalHours === 0) return null;
-  return String((accidents / totalHours) * ACCIDENT_RATE_BASE);
+  if (input.formula === DERIVATION_FORMULA.ACCIDENT_RATE) {
+    const accidents = number('accidents');
+    const hours = number('hoursPerFullTimeEmployee');
+    const employees = number('employees');
+    if (accidents === null || hours === null || employees === null) return null;
+    const totalHours = hours * employees;
+    // A zero working year or an empty workforce is no rate, not a rate of infinity. The reporter
+    // can produce both: `WriteDerivationInputs` accepts a `0` for the hours figure.
+    if (totalHours === 0) return null;
+    return String((accidents / totalHours) * ACCIDENT_RATE_BASE);
+  }
+
+  // **Named rather than fallen through to** (gate-integrity review, 9 Sep 2026). As an implicit
+  // `else` this branch answered every formula, so a fifth kind whose own branch was forgotten would
+  // silently compute an *accident rate* from operands it does not have — `null`, because the names
+  // would not resolve, which reads as "not enough answers yet" rather than as the mistake it is.
+  return null;
 }
 
 /**

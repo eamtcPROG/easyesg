@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { TemplateDefaults } from '../interfaces/template-default.interface';
+
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { DISCLOSURE_TEMPLATE_DEFAULT_CONFIG_KIND } from '../constants/disclosure.constants';
 import type { DisclosureDefault } from '../models/wizard-step.model';
@@ -24,7 +26,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * invalidation logic — a new revision is a new key.
  */
 @Injectable()
-export class TemplateDefaultService {
+export class TemplateDefaultService implements TemplateDefaults {
   private readonly logger = new Logger(TemplateDefaultService.name);
   private readonly cache = new Map<
     string,

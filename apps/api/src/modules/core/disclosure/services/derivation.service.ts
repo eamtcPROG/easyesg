@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { Derivations } from '../interfaces/derivation.interface';
+
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { DISCLOSURE_DERIVATION_CONFIG_KIND } from '../constants/disclosure.constants';
 import {
@@ -30,7 +32,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * invalidation logic — a new revision is a new key.
  */
 @Injectable()
-export class DerivationService {
+export class DerivationService implements Derivations {
   private readonly logger = new Logger(DerivationService.name);
   private readonly cache = new Map<
     string,

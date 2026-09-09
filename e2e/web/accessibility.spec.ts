@@ -67,6 +67,29 @@ for (const screen of SCREENS) {
 }
 
 /**
+ * **The exemption is asserted, not just declared** (gate-integrity review, 9 Sep 2026).
+ *
+ * `NO_MAIN_YET` was a list with no complement: adding `/register` to it silently narrowed the check
+ * and the suite stayed green — the same move the root `CLAUDE.md` names for `.first()` locators,
+ * *"resolved it locally and made the defect permanently invisible"*. And its docblock claimed the
+ * exemption *"expires by being read"*, which is the one property `LOCK_GUARD_EXEMPT_TABLES` and
+ * `APP_IMMUTABLE_COLUMNS` both refuse to rely on: there the complement is computed, and every table
+ * or column is accounted for by one list or the other.
+ *
+ * This closes both directions at once. A screen that gains a `main` — which is what task 74.3 does
+ * to `/` when S-29 fills the public body — fails here the day it does, and a screen added to the set
+ * to quieten a real failure fails immediately.
+ */
+for (const screen of NO_MAIN_YET) {
+  test(`${screen} is exempt from the landmark pass because it genuinely has no main`, async ({ page }) => {
+    await page.goto(screen);
+    await page.waitForLoadState('networkidle');
+    const landmarks = await new AxeBuilder({ page }).withRules(LANDMARK_RULES).analyze();
+    expect(landmarks.violations.map((violation) => violation.id)).toContain('landmark-one-main');
+  });
+}
+
+/**
  * S-16, which is a different kind of screen and therefore a different kind of scan (task 26.4).
  *
  * Every screen above is a Focus form: labels, a summary, one primary action. S-16 is the first

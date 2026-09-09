@@ -254,9 +254,9 @@ export class DisclosureFieldDto {
       'What to call this row. A member-keyed row is named by its member (“Renewable energy”, ' +
       '“Ammonia (NH3)”); a typed-axis row by what the report shows for that ordinal — B1’s ' +
       'address for the site B5 is asking about, which is the stored answer where there is one and ' +
-      'the entity snapshot’s default otherwise. Null where neither answers, and where ' +
-      'answers; the key is never a fallback, because it is an internal identifier, and the screen ' +
-      'keeps the position, so an unnamed row is still “site 2”.',
+      'the entity snapshot’s default otherwise. Null where neither answers, and null where the ' +
+      'pinned version names the member nothing; the key is never a fallback, because it is an ' +
+      'internal identifier, and the screen keeps the position, so an unnamed row is still “site 2”.',
   })
   readonly dimensionLabel: string | null;
 
@@ -557,7 +557,7 @@ export class DisclosureStepDto {
       'The values this step’s derived figures are computed from (UC-26, UC-27). **Not fields**: ' +
       'they carry no state, unit, dimension or applicability and are not exported as facts, so ' +
       'they are a separate list rather than fields a consumer must remember to exclude. Empty for ' +
-      'every module but B8 and B9.',
+      'every module the template computes no figure for.',
   })
   readonly derivationInputs: DerivationInputDto[];
 

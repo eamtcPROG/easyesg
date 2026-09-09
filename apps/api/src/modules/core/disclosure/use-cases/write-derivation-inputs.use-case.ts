@@ -3,8 +3,10 @@ import { ReportNotFoundError, UnknownDerivationInputError } from '../errors/repo
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import { OPERAND_SOURCE } from '../models/derivation.model';
-import type { DerivationCalculator } from '../services/derivation-calculator.service';
-import type { DerivationService } from '../services/derivation.service';
+import type {
+  DerivationRecalculator,
+  Derivations,
+} from '../interfaces/derivation.interface';
 
 /** One input's new value; `null` clears it back to the published offer. */
 export interface DerivationInputWriteInput {
@@ -39,8 +41,8 @@ export class WriteDerivationInputs {
   constructor(
     private readonly reports: ReportStore,
     private readonly inputs: DerivationInputStore,
-    private readonly derivations: DerivationService,
-    private readonly calculator: DerivationCalculator,
+    private readonly derivations: Derivations,
+    private readonly calculator: DerivationRecalculator,
   ) {}
 
   async write(command: WriteDerivationInputsCommand): Promise<void> {

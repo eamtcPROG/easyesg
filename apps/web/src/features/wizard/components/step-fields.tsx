@@ -112,7 +112,7 @@ export function StepFields({
   readonly axes: readonly DisclosureAxis[];
   /**
    * The values this step's derived figures are computed from (task 36.10; UC-26, UC-27). Empty for
-   * every module but B8 and B9 — the two EFRAG's own template computes a figure for.
+   * every module EFRAG's own template computes no figure for.
    */
   readonly derivationInputs: readonly DerivationInput[];
   /** Last year's comparable answers, by §7.3's natural key (FR-46, UC-45; task 36.14). */
@@ -152,6 +152,29 @@ export function StepFields({
   // How many rows the reporter has added to each axis beyond the ones the api served. One value
   // nothing else moves with, which is the case the reducer rule leaves to a single `useState`.
   const [added, setAdded] = useState<Readonly<Record<string, number>>>({});
+
+  /**
+   * The derivation inputs' wording, by **literal** key so the catalogue lookup is type-checked.
+   *
+   * **This was `tInput(`names.${input.key}` as never)` until 9 Sep 2026** (convention review at task
+   * 36's parent close), which is the shape this file forbids twice in its own docblocks — for
+   * `rowNames` and for `unitNames` — and had then declined for the case where it matters most.
+   * `config/seed/disclosure-derivation.vsme.json` is publishable data under DR-3, so a fifth
+   * derivation published with a new input key rendered a field with a **blank label and blank help**
+   * and every gate green; the `as never` is precisely what turned the compile error into that blank.
+   *
+   * A key with no wording now falls back to the neutral word, as `rowNames` does — visible, rather
+   * than an unlabelled box.
+   */
+  const inputWords: Readonly<Record<string, { label: string; help: string }>> = {
+    AverageGrossHourlyPayLevelOfFemaleEmployees: { label: tInput('names.AverageGrossHourlyPayLevelOfFemaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfFemaleEmployees') },
+    AverageGrossHourlyPayLevelOfMaleEmployees: { label: tInput('names.AverageGrossHourlyPayLevelOfMaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfMaleEmployees') },
+    HoursWorkedByOneFullTimeEmployee: { label: tInput('names.HoursWorkedByOneFullTimeEmployee'), help: tInput('help.HoursWorkedByOneFullTimeEmployee') },
+    NumberOfEmployeesAtTheBeginningOfTheReportingPeriod: { label: tInput('names.NumberOfEmployeesAtTheBeginningOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheBeginningOfTheReportingPeriod') },
+    NumberOfEmployeesAtTheEndOfTheReportingPeriod: { label: tInput('names.NumberOfEmployeesAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheEndOfTheReportingPeriod') },
+    NumberOfEmployeesCoveredByCollectiveBargainingAgreements: { label: tInput('names.NumberOfEmployeesCoveredByCollectiveBargainingAgreements'), help: tInput('help.NumberOfEmployeesCoveredByCollectiveBargainingAgreements') },
+    NumberOfEmployeesWhoLeftDuringTheReportingPeriod: { label: tInput('names.NumberOfEmployeesWhoLeftDuringTheReportingPeriod'), help: tInput('help.NumberOfEmployeesWhoLeftDuringTheReportingPeriod') },
+  };
 
   /**
    * The fields this reporter is actually asked (FR-28; task 36.9).
@@ -381,8 +404,8 @@ export function StepFields({
           key={input.key}
           input={input}
           readOnly={readOnly}
-          label={tInput(`names.${input.key}` as never)}
-          help={tInput(`help.${input.key}` as never)}
+          label={inputWords[input.key]?.label ?? tField('unnamed')}
+          help={inputWords[input.key]?.help ?? ''}
         />
       ))}
     </div>
@@ -478,6 +501,37 @@ function ClassificationRow({
       ? tGroup('unassignedRow', { name: axisName })
       : memberName(byValue.get(member), tField('unnamed'));
 
+  /**
+   * **Memoized, or it defeats the memo it feeds** (convention review at task 36's parent close,
+   * 9 Sep 2026). `MemberPicker`'s filter has `labels` in its dependency array, and this object was
+   * a fresh literal on every render — so the memo whose own docblock says it exists because
+   * `reactCompiler` is off recomputed a filter, a `toLocaleLowerCase` and a `slice` over **842 waste
+   * entries** on every autosave acknowledgement. `apps/web/CLAUDE.md` names this exact case: *"a
+   * non-primitive passed as a prop into a `memo()`'d child, or into a `useEffect`/`useMemo`
+   * dependency array — recreated each render, it defeats the thing it feeds"*.
+   */
+  const pickerLabels = useMemo(
+    () => ({
+      label: axisName,
+      placeholder: tField('choose'),
+      prompt: tField('choicePrompt'),
+      empty: tField('choiceEmpty'),
+      loading: tField('choiceLoading'),
+      unnamed: tField('unnamed'),
+      hazardous: tGroup('hazardous'),
+      nonHazardous: tGroup('nonHazardous'),
+      // **The wire decides whether to say it, and the catalogue says what** (task 36.8).
+      // `memberLanguage` is `null` wherever the names are in the reader's own — B4's
+      // pollutants are worded in the catalogues — so the note appears only where a domain is
+      // published in a language the reader did not ask for, and stops appearing on its own
+      // the day one is translated.
+      language: domain?.memberLanguage == null ? null : tGroup('domainLanguage'),
+    }),
+    // `domain.memberLanguage` rather than `domain`: the object identity of the axis is not what
+    // the wording depends on, and the axes list is itself memoized upstream.
+    [axisName, tField, tGroup, domain?.memberLanguage],
+  );
+
   return (
     <Fieldset
       // **The legend is marked too, not just the listbox** (WCAG 2.2 SC 3.1.2): once a member is
@@ -506,22 +560,7 @@ function ClassificationRow({
           // WCAG 2.2 SC 3.1.2: the api answers which language the names are in, so the listbox is
           // marked rather than left for a screen reader to pronounce as Romanian (task 36.8).
           memberLang={domain.memberLanguage}
-          labels={{
-            label: axisName,
-            placeholder: tField('choose'),
-            prompt: tField('choicePrompt'),
-            empty: tField('choiceEmpty'),
-            loading: tField('choiceLoading'),
-            unnamed: tField('unnamed'),
-            hazardous: tGroup('hazardous'),
-            nonHazardous: tGroup('nonHazardous'),
-            // **The wire decides whether to say it, and the catalogue says what** (task 36.8).
-            // `memberLanguage` is `null` wherever the names are in the reader's own — B4's
-            // pollutants are worded in the catalogues — so the note appears only where a domain is
-            // published in a language the reader did not ask for, and stops appearing on its own
-            // the day one is translated.
-            language: domain.memberLanguage === null ? null : tGroup('domainLanguage'),
-          }}
+          labels={pickerLabels}
         />
       ) : null}
       {/*
@@ -842,6 +881,12 @@ const INPUT_MESSAGES = 'organization.wizard.derivationInput' as const;
 /**
  * VSME's omission is stated in this one field (¶24(b)), and UX-30 attaches a notice to it.
  * Named here rather than spelled at the site, per the closed-vocabulary rule.
+ *
+ * **A second declaration of the api's own** (`models/omission.model.ts`), and it is a mirror rather
+ * than a duplicate for `DISCLOSURE_STATE`'s stated reason: the api produces `packages/contracts` and
+ * must never import it, so nothing can hold the two together at compile time. What *does* hold them
+ * is the browser journey — a screen naming a different element renders no notice and
+ * `wizard.spec.ts`'s omission case fails on the missing text.
  */
 const OMITTED_DISCLOSURES_ELEMENT =
   'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation';

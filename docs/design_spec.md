@@ -1238,9 +1238,9 @@ The eleven Basic Module steps, with their conditional dependencies, are:
 | B1 | Basis for preparation | Drives applicability for every subsequent module; pre-populated from entity master data (FR-27) and editable in place |
 | B2 | Practices, policies and future initiatives | Principal narrative module with structured yes/no anchors |
 | B3 | Energy and GHG emissions | Normally derived from the carbon calculator (§6.8); completable by direct entry |
-| B4 | Pollution | Commonly resolves to not-applicable, recorded explicitly with rationale (§6.5) |
+| B4 | Pollution | Commonly resolves to not-applicable **by rule** (FR-28, VSME ¶13), which asks for no rationale (§6.5) |
 | B5 | Biodiversity | Applicability is site-driven from the B1 site geolocations |
-| B6 | Water | Sector-driven relevance; supports a documented immateriality determination |
+| B6 | Water | Sector-driven relevance, resolved by rule; VSME carries no materiality assessment, so there is no determination to document (amended 9 Sep 2026, task 36.13) |
 | B7 | Resource use, circular economy and waste | Narrative and quantitative content captured together |
 | B8 | Workforce characteristics | Employee turnover appears once B1 headcount reaches 50 or more |
 | B9 | Health and safety | Zero is an affirmative disclosure (`nil_return`) |
@@ -1289,7 +1289,7 @@ Marks and colour roles below are from the delivered visual layer (18 Aug 2026, �
 | `error` | × | Violates a rule outright | Error, blocking within the field | `state.error` | No |
 | `invalid_url` | × | Reference does not resolve | Error role, failing URL shown verbatim | `state.error` | No |
 | `not_available` | — | Declared unavailable with reason | Reasoned marker, reason shown inline | `state.reasoned` | Yes — reasoned |
-| `not_material` | ⊘ | Section declared immaterial with rationale | Section-level; collapses the module body, keeps the rationale visible | `state.reasoned` | Yes — reasoned |
+| `not_material` | ⊘ | **Unreachable since 9 Sep 2026** (task 36.13): VSME permits no omission on materiality grounds, so nothing writes this state. It remains in the vocabulary and the migration's `CHECK` because a `CHECK` is frozen history. The section omission it used to describe is now a **B1 disclosure** (FR-31), not a field state | — | `state.reasoned` | Yes — reasoned |
 | `nil_return` | 0 | Affirmatively zero | Neutral, labelled as an affirmative zero — **never an empty box** | `state.neutral` | Yes |
 
 Eight design states, **six colour roles** — `error` and `invalid_url` share one, `not_available` and `not_material` share another. That is deliberate: colour carries severity, the mark and label carry identity.
@@ -1313,12 +1313,12 @@ Eight design states, **six colour roles** — `error` and `invalid_url` share on
 > | Design state | Canonical home |
 > |---|---|
 > | `ok` · `missing` · `inconsistency` · `error` · `invalid_url` · `not_available` | `ValidationState` — `OK`, `MISSING_VALUE`, `VALUE_INCONSISTENCY`, `ERROR`, `INVALID_URL`, `NOT_AVAILABLE`. Six field-level validation outcomes (UC-37, FR-40) |
-> | `not_material` | **Not a field validation state.** Section-level materiality (FR-41, UX-21), which the roll-up discounts. Its own enum, on the module, not the field |
+> | `not_material` | **Not a field validation state, and since 9 Sep 2026 not a state at all** (task 36.13) — what the roll-up discounts is a section declared omitted as classified or sensitive, which is a B1 disclosure. Historically: section-level materiality (FR-41, UX-21). Its own enum, on the module, not the field |
 > | `nil_return` | **Not a validation state.** An affirmative zero is a property of the *answer*, not of its validation — a field carrying `nil_return` is `OK`. Belongs to answer semantics (UX-119's zero-versus-gap distinction) |
 >
-> The practical consequence is that a field can be `OK` *and* an affirmative zero *inside* a module declared immaterial, which the flat eight-state enum could not express — it forced one of the three to win. §6.4's table stands as the design's presentation contract; §10's requirement that each state carry an icon, a label and a colour role applies to all eight as displayed, across all three axes.
+> The practical consequence is that a field can be `OK` *and* an affirmative zero *inside* a module declared omitted, which the flat eight-state enum could not express — it forced one of the three to win. §6.4's table stands as the design's presentation contract; §10's requirement that each state carry an icon, a label and a colour role applies to all eight as displayed, across all three axes.
 
-### 6.5 Not material, not applicable, not available
+### 6.5 Omitted, not applicable, not available
 
 **UX-29** Declaring a section omitted as classified or sensitive information (UC-30) shall be reversible, and shall visibly change the module's state in the module list to a distinct third value — neither complete nor incomplete. **Amended 9 Sep 2026 (project owner, task 36.13):** this read *"Declaring a section not material … shall require a rationale"*. VSME permits no omission on materiality grounds (¶19, ¶21) and asks for no rationale — ¶24(b) requires the undertaking to indicate *which* disclosure was omitted, which the declaration itself does. The third state and the reversibility are unchanged and are what this rule is for.
 
@@ -1745,7 +1745,7 @@ Steps at 600 and above pass 4.5:1 on `surface.default`; 300 and below are surfac
 | `state.ok` · `state.attention` · `state.warning` · `state.error` · `state.reasoned` · `state.neutral` | The eight disclosure states of §6.4, mapped onto six roles |
 | `state.pending` | Asynchronous work in flight — export, payment, reconciliation |
 
-**UX-81** `state.reasoned` — covering `not_available`, `not_material` and `nil_return` — shall be visually distinct from both `ok` and `missing`. A reasoned gap is neither a completed answer nor an omission, and conflating it with either misrepresents the report.
+**UX-81** `state.reasoned` — covering `not_available` and `nil_return`, and historically `not_material`, which task 36.13 made unreachable — shall be visually distinct from both `ok` and `missing`. A reasoned gap is neither a completed answer nor an omission, and conflating it with either misrepresents the report.
 
 ### 11.4 Responsive strategy and density
 

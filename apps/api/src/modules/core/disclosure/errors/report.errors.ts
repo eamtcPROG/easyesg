@@ -152,8 +152,7 @@ export class UnknownDisclosureDimensionError extends DomainError {
  * A value was offered for a figure the platform derives (task 36.10).
  *
  * FR-29's acceptance criterion is *"the specified intensity figures are **derived rather than
- * typed**"*, and the two the Digital Template computes — B8's turnover rate and B9's recordable
- * accident rate — are refused here rather than merely made read-only on the screen. That is P-4 in
+ * typed**"*, and the figures the Digital Template computes rather than asks for are refused here rather than merely made read-only on the screen. That is P-4 in
  * the same shape as the two errors above: the browser does not render an input for them, and a
  * guarantee that lives in one client is not a guarantee. A typed rate would also carry
  * `origin = 'reported'` while sitting in the slot the calculator writes, so the next recompute would

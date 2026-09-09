@@ -50,9 +50,10 @@ import type { AxisShapes } from '../interfaces/axis-shape.interface';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
 import { MEMBER_SEPARATOR } from '@easyesg/vsme';
 import { OPERAND_SOURCE, type Derivation } from '../models/derivation.model';
+import { answerableMembers } from '../models/axis-leaves';
 import { OMITTED_DISCLOSURES_ELEMENT, omittedModules } from '../models/omission.model';
-import type { DerivationService } from '../services/derivation.service';
-import type { TemplateDefaultService } from '../services/template-default.service';
+import type { Derivations } from '../interfaces/derivation.interface';
+import type { TemplateDefaults } from '../interfaces/template-default.interface';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import {
@@ -166,11 +167,11 @@ export class ReadWizardStep {
      * Which figures the platform derives, as configuration (task 36.10). The step read needs it to
      * serve their inputs; the write path needs it to refuse a typed rate.
      */
-    private readonly derivations: DerivationService,
+    private readonly derivations: Derivations,
     /** Where the reporter's answers to those inputs are kept — `core.report_derivation_input`. */
     private readonly derivationInputs: DerivationInputStore,
     /** The answers EFRAG's template ships a field already holding (task 36.11). */
-    private readonly templateDefaults: TemplateDefaultService,
+    private readonly templateDefaults: TemplateDefaults,
     private readonly warnings: ReadWarnings,
   ) {}
 
@@ -1074,8 +1075,10 @@ class MemberResolver {
   private answerable(axis: TaxonomyAxis): readonly TaxonomyMember[] {
     const cached = this.leaves.get(axis.key);
     if (cached !== undefined) return cached;
-    const parents = new Set(axis.members.flatMap((m) => (m.parent === null ? [] : [m.parent])));
-    const answerable = axis.members.filter((member) => !parents.has(member.key));
+    // The rule itself is `models/axis-leaves.ts`'s; what stays here is the **cache**, which is this
+    // resolver's business — `admits` is asked once per stored row and would otherwise rebuild the
+    // parent set each time.
+    const answerable = answerableMembers(axis);
     this.leaves.set(axis.key, answerable);
     return answerable;
   }

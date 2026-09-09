@@ -318,7 +318,7 @@ export interface DisclosureStep {
   readonly fields: readonly DisclosureField[];
   /**
    * The derivation inputs this step's own derived figures read (task 36.10). Empty for every module
-   * but B8 and B9, which are the two the Digital Template computes a figure for.
+   * the Digital Template computes no figure for, which is every one but B8, B9 and B10.
    */
   readonly derivationInputs: readonly DerivationInputField[];
   /**

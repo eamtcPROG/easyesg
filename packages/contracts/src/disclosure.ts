@@ -124,25 +124,6 @@ export type DisclosureOrigin = (typeof DISCLOSURE_ORIGIN)[keyof typeof DISCLOSUR
  * directions; assigning it to `true` fails to compile the moment either side gains or loses a
  * member, and the failing line names which mirror drifted.
  */
-/**
- * Whether last year's answer can stand beside this year's input (FR-46; task 34.3's vocabulary,
- * mirrored here at 36.14 when the wizard became its first browser reader).
- *
- * A comparison is only a comparison when both sides measure the same thing, and the two reports may
- * be pinned to different taxonomy versions (DR-4). This is the api's answer to that question, not
- * the browser's to re-derive.
- */
-export const COMPARABILITY = {
-  /** The element is in both pinned versions with the same kind and period type. */
-  COMPARABLE: 'comparable',
-  /** Not in *this* report's version — last year reported something this year's taxonomy drops. */
-  ELEMENT_ABSENT: 'element_absent',
-  /** In both, but its kind or period type moved. A duration that became an instant is not it. */
-  SHAPE_CHANGED: 'shape_changed',
-} as const;
-
-export type Comparability = (typeof COMPARABILITY)[keyof typeof COMPARABILITY];
-
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
 type GeneratedState = components['schemas']['DisclosureFieldDto']['state'];
@@ -163,6 +144,25 @@ void disclosureKindMirrorsTheApi;
 void reportStatusMirrorsTheApi;
 void disclosureOriginMirrorsTheApi;
 void comparabilityMirrorsTheApi;
+
+/**
+ * Whether last year's answer can stand beside this year's input (FR-46; task 34.3's vocabulary,
+ * mirrored here at 36.14 when the wizard became its first browser reader).
+ *
+ * A comparison is only a comparison when both sides measure the same thing, and the two reports may
+ * be pinned to different taxonomy versions (DR-4). This is the api's answer to that question, not
+ * the browser's to re-derive.
+ */
+export const COMPARABILITY = {
+  /** The element is in both pinned versions with the same kind and period type. */
+  COMPARABLE: 'comparable',
+  /** Not in *this* report's version — last year reported something this year's taxonomy drops. */
+  ELEMENT_ABSENT: 'element_absent',
+  /** In both, but its kind or period type moved. A duration that became an instant is not it. */
+  SHAPE_CHANGED: 'shape_changed',
+} as const;
+
+export type Comparability = (typeof COMPARABILITY)[keyof typeof COMPARABILITY];
 
 /**
  * How an `enumeration_set` answer is written: the chosen members, space-separated.
