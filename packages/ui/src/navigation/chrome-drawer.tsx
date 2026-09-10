@@ -44,8 +44,14 @@ export interface ChromeDrawerProps<TItem extends WorkspaceNavItem = WorkspaceNav
   readonly sectionsLabel: string;
   /** The wordmark, at the head of the panel beside the close control. */
   readonly brand: ReactNode;
-  readonly items: readonly TItem[];
-  readonly isActive: (item: TItem) => boolean;
+  /**
+   * The tier's destinations. **Optional, because the public chrome has none yet**: the marketing
+   * page's section nav is the list its own hamburger exists to hold and does not exist, so that
+   * drawer carries only the block below. An empty list renders no `nav` at all rather than an
+   * empty landmark for a screen reader to walk into.
+   */
+  readonly items?: readonly TItem[];
+  readonly isActive?: (item: TItem) => boolean;
   readonly linkComponent?: NavLinkComponent;
   /**
    * The global tier's own entries at this frame — below the rule the specimen draws. The account
@@ -60,8 +66,8 @@ export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
   closeLabel,
   sectionsLabel,
   brand,
-  items,
-  isActive,
+  items = [],
+  isActive = () => false,
   linkComponent,
   actions,
 }: ChromeDrawerProps<TItem>) {
@@ -86,25 +92,29 @@ export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
             </Dialog.Close>
           </div>
 
-          <nav aria-label={sectionsLabel}>
-            <ul className={styles.list}>
-              {items.map((item) => {
-                const active = isActive(item);
-                return (
-                  <li key={item.key} className={active ? styles.current : undefined}>
-                    <Link
-                      href={item.href}
-                      {...(active ? ({ 'aria-current': ARIA_CURRENT.PAGE } as const) : {})}
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+          {items.length > 0 ? (
+            <nav aria-label={sectionsLabel}>
+              <ul className={styles.list}>
+                {items.map((item) => {
+                  const active = isActive(item);
+                  return (
+                    <li key={item.key} className={active ? styles.current : undefined}>
+                      <Link
+                        href={item.href}
+                        {...(active ? ({ 'aria-current': ARIA_CURRENT.PAGE } as const) : {})}
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          ) : null}
 
-          {actions ? <div className={styles.actions}>{actions}</div> : null}
+          {actions ? (
+            <div className={items.length > 0 ? styles.actions : styles.actionsOnly}>{actions}</div>
+          ) : null}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

@@ -34,26 +34,37 @@
 
 /* Full-height and inline-start, which is where the specimen puts it — the panel replaces the
    band it stands in for, so it reads as the same tier rather than as a dialogue. */
+/* **Full width** (project owner, 10 Sep 2026). The specimen is a documentation fragment in a
+   bordered box, so it states the drawer's anatomy and not its measure; the frame it belongs to is
+   390, where a panel that leaves a strip of dimmed page beside it is a peek at content the reader
+   cannot use rather than context they can. It exists only below 40rem, so `100%` is the whole
+   viewport and no wider frame has an opinion. */
 .panel {
   position: fixed;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: min(20rem, calc(100vw - var(--space-9)));
+  inset: 0;
+  inline-size: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-5) 0;
   overflow-y: auto;
   background: var(--surface-default);
-  box-shadow: var(--elevation-3, 0 0 var(--space-6) rgb(0 0 0 / 25%));
 }
 
+/* **The head IS the global bar continuing, not a panel header** — 56px of the same pine, the
+   wordmark and the close control in the band's own text colour, exactly as the specimen draws it.
+   The first version of this file made it a white panel head, and that is what made the brand look
+   wrong rather than anything about the brand: `BrandMark` colours itself from `currentColor` and
+   carries no variant prop on purpose, so on white it correctly inherited dark ink and read as a
+   different logo. Putting the head back on the band fixes the mark by fixing its surface. */
 .head {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-5);
+  min-block-size: 56px;
   padding-inline: var(--page-gutter);
+  background: var(--globalbar-surface);
+  color: var(--globalbar-text);
 }
 
 .close {
@@ -66,7 +77,8 @@
   border: 0;
   border-radius: var(--radius-1);
   background: none;
-  color: var(--text-default);
+  /* Inherited from the head rather than named, so the band's contrast pairing stays one decision. */
+  color: inherit;
   cursor: pointer;
 }
 
@@ -88,7 +100,8 @@
   display: flex;
   flex-direction: column;
   margin: 0;
-  padding: 0;
+  /* The specimen's `8px 0` around the rows, which the panel no longer supplies. */
+  padding: var(--space-3) 0;
   list-style: none;
 }
 
@@ -115,6 +128,14 @@
 .actions {
   display: flex;
   flex-direction: column;
-  padding-block-start: var(--space-5);
+  padding-block: var(--space-3);
   border-block-start: 1px solid var(--border-default);
+}
+
+/* The same block with no rule above it: with no sections, the specimen'''s divider would be a
+   division with nothing on one side. */
+.actionsOnly {
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--space-3);
 }

@@ -32,9 +32,12 @@
    padding is here because `.bar`'s is `0` — correct for a single 68px row, and not survivable by a
    second one.
 
-   The prototype answers the 390 frame with a disclosure menu instead. That is task 74.3's, with the
-   section nav it exists to hold; a menu built now would collapse three items into a control that
-   costs a tap to reveal what currently fits. */
+   **Superseded below 40rem by task 109.** The paragraph above described this region wrapping to two
+   rows at 390, and the prototype does not: `EasyESG Public Home.dc.html`'s compact frame is brand
+   and a hamburger, with *Start your report* and *Sign in* carried by the hero as content. So the
+   three collapse into `PublicDrawer` there and this region is `display: none`. What stays task
+   74.3's is the **section nav** the menu exists to hold — the marketing page's own headings, which
+   do not exist while `/` is unbuilt. */
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -46,6 +49,6 @@
 
 @media (max-width: 639px) {
   .actions {
-    gap: var(--space-4);
+    display: none;
   }
 }

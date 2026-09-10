@@ -15065,3 +15065,72 @@ computes `display: none` at 375 and the trigger is absent above 40rem.
 
 `pnpm e2e:web` is still unrun for the port-3100 reason recorded since task 104, and the `expansion`
 project remains the one this and task 107 most want.
+
+## Task 109 — the drawer finished, and a deferral the prototype had already answered · 2026-09-10
+
+Three corrections to task 108, all of them mine.
+
+### The logo was a surface, not a mark
+
+The specimen's drawer head is **56px of the same pine as the global bar**, with the wordmark and the
+`×` in white — the band continuing behind the panel rather than a header belonging to it. Task 108
+made it a white panel head, and `BrandMark` did exactly what it says it does: it colours itself from
+`currentColor` and carries **no variant prop on purpose**, so on white it inherited dark ink and
+read as a different logo. Nothing about the mark was wrong. Putting the head back on the band fixes
+it, and the close control now takes `color: inherit` so the pairing stays one decision.
+
+Worth keeping because of how it presented: *"the logo does not correspond with the design"* is a
+report about a mark, and the defect was three lines away in a background colour. A component that
+adapts to its surface will always accuse itself when the surface is wrong.
+
+**One detail of the specimen not matched, deliberately.** Its drawer head shows the wordmark
+*without* the ring — where the compact bar above it has both. `BrandMark` is one component with no
+variant, and adding a wordmark-only mode to satisfy one head is an API for a detail; on the band the
+full mark reads as the bar continuing, which is what the head is. Recorded rather than silently
+diverged.
+
+### The width was never in the specimen
+
+The panel was `min(20rem, calc(100vw - var(--space-9)))`. The specimen is a documentation fragment
+in a bordered box, so it states the drawer's **anatomy and not its measure** — I had read a
+container's width as a design value. Full width (project owner): at 390 a panel that leaves a strip
+of dimmed page beside it is a peek at content the reader cannot use rather than context they can.
+It exists only below 40rem, so `inset: 0` has no wider frame to be wrong at.
+
+### `/`'s drawer, and a deferral the artboards had already settled
+
+`public-header.module.css` carried a reasoned deferral to task 74.3: a menu *"would collapse three
+items into a control that costs a tap to reveal what currently fits"*. **The prototype collapses
+them anyway.** `EasyESG Public Home.dc.html`'s compact frame is brand and a hamburger with nothing
+else in the band, because the hero below carries *Start your report* and *Sign in* as content. So
+the premise — that the three fit at 390 and therefore should stay — was a reading of the region
+rather than of the artboard.
+
+**Half of 74.3 is superseded and half is not**, and separating them is the point. The header
+collapse is settled by the artboards and ships here. The **section nav** the hamburger exists to
+hold is still 74.3's: those are the marketing page's own headings, and `/` renders task 103's
+*not yet available* surface. `ChromeDrawer`'s `items` and `isActive` are optional now, so a
+section-less drawer renders **no `nav` at all** rather than an empty landmark for a screen reader to
+walk into — and it gains the list when the page above it has one, with `sectionsLabel` already
+passed so that is a one-place change.
+
+**The cost the deferral named is real, and it moved rather than vanished.** `/help` and `/legal/*`
+render, are not the marketing home, and have no hero to carry a sign-in — so at `compact` their
+sign-in now costs a tap. That is the design's trade at this frame, not this file's, and UX-76 is
+satisfied because nothing became unavailable.
+
+### Verified
+
+`packages/ui` **129 tests**, `apps/web` **330**, both typechecks, `pnpm lint`, `pnpm boundaries`
+(1007 modules), `pnpm docs:check` (26 claims).
+
+Against the production bundle at 375: the workspace drawer measures **375 = viewport** for panel,
+head and nav alike, its head computes `rgb(27, 64, 49)` with white text, and the brand renders
+white. On `/` the desktop actions compute `display: none`, the drawer opens full width with the
+pine head, **no `nav` element**, and the rows *Create an account · Sign in · Interface language ·
+Română · English · Русский*.
+
+One measurement worth recording as a method note: the panel *looked* narrower than the viewport in
+the pane capture, and `getBoundingClientRect` on the panel, head and nav all answered 375. The
+apparent edge was a capture artefact at 2× device pixel ratio. Third time this session a screenshot
+has suggested a layout defect that measurement disproved.

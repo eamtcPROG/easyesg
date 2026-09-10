@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { LocaleChoice } from './locale-choice';
+import { PublicDrawer } from './public-drawer';
 import styles from './public-header.module.css';
 
 /**
@@ -48,22 +49,38 @@ export async function PublicHeader() {
         </Link>
       }
       actions={
-        <div className={styles.actions}>
-          <LocaleChoice
-            label={t('language')}
+        <>
+          <div className={styles.actions}>
+            <LocaleChoice
+              label={t('language')}
+              locale={locale}
+              locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
+            />
+            <Link className={styles.link} href={ROUTES.SIGN_IN}>
+              {t('publicHeader.signIn')}
+            </Link>
+            {/* The screen's primary action is a navigation, so `asChild` over this app's
+                locale-aware `Link` — the seam task 26.3 added to `Button` for S-03, for the same
+                reason. `tone="band"` because `--accent` on `--globalbar-surface` is pine on pine. */}
+            <Button asChild tone={BUTTON_TONE.BAND}>
+              <Link href={ROUTES.REGISTER}>{t('publicHeader.register')}</Link>
+            </Button>
+          </div>
+          {/* The 390 frame's own band: brand and a hamburger, the three above collapsed into it
+              (task 109). One of the two regions is always `display: none`, so neither offers the
+              same destination twice. */}
+          <PublicDrawer
             locale={locale}
             locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
+            labels={{
+              menu: t('drawer.label'),
+              close: t('drawer.close'),
+              signIn: t('publicHeader.signIn'),
+              register: t('publicHeader.register'),
+              language: t('language'),
+            }}
           />
-          <Link className={styles.link} href={ROUTES.SIGN_IN}>
-            {t('publicHeader.signIn')}
-          </Link>
-          {/* The screen's primary action is a navigation, so `asChild` over this app's
-              locale-aware `Link` — the seam task 26.3 added to `Button` for S-03, for the same
-              reason. `tone="band"` because `--accent` on `--globalbar-surface` is pine on pine. */}
-          <Button asChild tone={BUTTON_TONE.BAND}>
-            <Link href={ROUTES.REGISTER}>{t('publicHeader.register')}</Link>
-          </Button>
-        </div>
+        </>
       }
     />
   );
