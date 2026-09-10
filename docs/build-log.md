@@ -14612,3 +14612,76 @@ main success scenario step 2 and its postconditions were rewritten. **Whether S-
 distinct screen or folds into the cookie policy is deliberately left to task 75.1** — the close
 removes the choice, not necessarily the screen, and deleting an `S-nn` would move §4.4's count and
 UC-179's coverage, which is a bigger decision than the one asked for.
+
+## Task 104 — the tier's first tab was missing, and I had argued from the wrong source · 2026-09-10
+
+The project owner selected the nav in the running app and said the design has a Home tab first.
+I had told them, one turn earlier, that the workspace tier matched its specification. It did match
+**§4.2's table**; it did not match the design.
+
+### What was actually true
+
+`design/screens/EasyESG Workspace.dc.html` renders the tier as a 52 px band on every artboard at
+every width:
+
+    Home · Reports · Entities & periods · Organization · Users & access · Plan & billing
+
+Six items, **Home first**, and on the home artboard Home carries `box-shadow: inset 0 -2px 0
+#2E6A4F` — the current-item underline the implementation already draws for `current`. At the narrow
+width it abbreviates to `Home · Reports · Entities · Organization · Users · Billing`.
+
+§4.2's table listed five, without Home. The five match the prototype's own **annotation caption**
+(`"Workspace tier · outside the wizard only · Reports · Entities & periods · …"`), which omits Home
+while the artboards beneath it include it. So the prototype disagrees with itself, and §4.2 had
+copied the half that was wrong. OQ-10 settles which governs — the artboards are the delivered
+design — and §4.2 now says so rather than leaving the next reader to find the caption first.
+
+**A second defect fell out of reading the table properly.** §4.2 orders the tier *Entities &
+periods* then *Organization*, and so do the artboards; `SECTIONS` had put Organization first since
+task 30.3. Its comment even cited §4.2 — *"It sits before Users & access because §4.2 lists it
+there"* — which is true and was never the question. Checking the clause that was written is not
+checking the ordering that was not.
+
+### Why four tasks missed it
+
+**Nothing asserted the tier's contents.** There is no `workspace-nav.spec.tsx` in `packages/ui`,
+`WorkspaceNavigation` had no spec, and the one test that touches the band —
+`e2e/web/reports.spec.ts` — reaches into it to click *Rapoarte* and then asserts a heading. That
+passes with a missing tab, with two tabs swapped, and with *Plan & billing* arriving before its
+screens do. Tasks 26.4, 30.3, 30.4.2 and 32.2.2 each edited this file and each left the gap.
+
+`workspace-navigation.spec.tsx` closes it with an **exact ordered list** rather than per-item
+`toBeVisible` calls, which is the distinction that matters: a per-item check cannot fail on order or
+on an extra entry, and those are two of the three ways this has gone wrong. Proven to bite on both
+defects separately — Home deleted, then the swap restored — with the file put back each time.
+
+### What I got wrong, in the shape worth remembering
+
+I read §4.2's table, found five entries, saw five in the code, and reported agreement. The rule this
+repository already carries is that the artboards are the rendered reference and prose is checked
+against them; I applied it in the same session to the *legal* prototype, where I found ten false
+claims by reading the code instead of the copy — and then, one turn later, trusted a table over the
+artboard it was derived from. **The direction of the check is the whole of it: a spec sentence is
+evidence about intent, not about what the design shows.**
+
+### Not changed, and raised instead
+
+`WorkspaceNav` puts `aria-current="page"` on the wrapping `<span>` rather than on the caller's
+anchor, with its docblock stating why (the caller owns the anchor, and asking every caller to
+remember the attribute is how one screen ends up without it). A screen reader focusing the link does
+not inherit an `aria-current` from a generic ancestor, so the current section may be conveyed
+visually only — which UX-102 is the rule about. The spec asserts the attribute where it actually
+sits and says so in a comment; moving it is a `packages/ui` decision with every caller's markup in
+scope, not a side effect of adding a tab.
+
+### Verified
+
+`pnpm --filter @easyesg/web typecheck`, `pnpm lint`, `pnpm docs:check`, and
+`pnpm --filter @easyesg/web test` — **330 tests, four of them new**. `docs:check` caught the task
+count as it changed, 103 → 104. The rendered band was read in the browser at `/en/home`: five tabs,
+Home first, Home underlined.
+
+`e2e:web` was **not** run. The change is a catalogue key plus an array order, and the four new unit
+tests assert the rendered DOM of the component that owns both; the browser suite would re-prove the
+same claim through a slower surface. Stated rather than skipped silently, per the gate policy.
+

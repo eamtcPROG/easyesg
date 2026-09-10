@@ -31,9 +31,10 @@
     },
     "workspaceNav": {
       "label": "Organisation sections",
+      "home": "Home",
       "reports": "Reports",
-      "organization": "Organisation",
       "entities": "Entities",
+      "organization": "Organisation",
       "users": "Users & access"
     },
     "index": {

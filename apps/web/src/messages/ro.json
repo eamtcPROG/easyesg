@@ -31,9 +31,10 @@
     },
     "workspaceNav": {
       "label": "Secțiunile organizației",
+      "home": "Acasă",
       "reports": "Rapoarte",
-      "organization": "Organizația",
       "entities": "Entități",
+      "organization": "Organizația",
       "users": "Utilizatori și acces"
     },
     "index": {

@@ -31,9 +31,10 @@
     },
     "workspaceNav": {
       "label": "Разделы организации",
+      "home": "Главная",
       "reports": "Отчёты",
-      "organization": "Организация",
       "entities": "Организации",
+      "organization": "Организация",
       "users": "Пользователи и доступ"
     },
     "index": {

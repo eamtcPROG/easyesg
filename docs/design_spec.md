@@ -177,8 +177,22 @@ Three tiers, and no fourth.
 | Tier | Contains | Persistence |
 |---|---|---|
 | **Global** | Active organization switcher, notification centre, user menu (profile, language, sign out), help | Present on every authenticated screen |
-| **Workspace** | Reports · Entities & periods · Organization · Users & access · Plan & billing | Present outside the wizard; collapsed or hidden inside it |
+| **Workspace** | Home · Reports · Entities & periods · Organization · Users & access · Plan & billing | Present outside the wizard; collapsed or hidden inside it |
 | **Contextual** | Module list within a report; tab set within a record; step sequence within a flow | Scoped to the current object |
+
+**Amended 10 Sep 2026 (project owner) — the workspace tier opens with `Home`, and this table had
+five entries where the prototype draws six.** `EasyESG Workspace.dc.html` renders the tier as a
+52 px band of six items on every artboard at every width — `Home · Reports · Entities & periods ·
+Organization · Users & access · Plan & billing` — with **Home first and carrying the current-item
+underline** on the home artboard, and abbreviated to `Home · Reports · Entities · Organization ·
+Users · Billing` at the narrow width. The five above came from the prototype's own annotation
+caption, which omits Home; the artboards it annotates do not. Where the two disagree the artboards
+govern, per OQ-10 — they are the delivered design.
+
+**Home is a tab as well as a hub, and §4.3 is not contradicted.** That flow diagram shows Home as
+the branch point a signed-in reader lands on; the tier makes all six peers reachable from any of
+them, which is what a persistent tier means. The brand mark also links Home (a web convention the
+artboards keep) and that is not a duplicate: the tier states where you are, the brandmark does not.
 
 **UX-5** The wizard shall suppress the workspace tier and replace it with the module list, so that the user's only navigational choice inside a report is *which module*. Exit from the wizard shall be a single, always-visible, explicitly labelled control that states that work is saved.
 
