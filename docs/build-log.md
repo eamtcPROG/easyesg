@@ -15134,3 +15134,75 @@ One measurement worth recording as a method note: the panel *looked* narrower th
 the pane capture, and `getBoundingClientRect` on the panel, head and nav all answered 375. The
 apparent edge was a capture artefact at 2× device pixel ratio. Third time this session a screenshot
 has suggested a layout defect that measurement disproved.
+
+## Task 110 — the bill for six deferred browser runs · 2026-09-10
+
+Tasks 103 through 109 each closed with `e2e:web` recorded as unrun — first for a stated judgement
+(103, 104: the change could not reach a browser journey), then for a mechanical one (105–109: the
+browser projects bind port 3100 and a dev server was live on it). The owner cleared it. The suite
+came back **red: 4 failed, 166 passed**, and both causes were regressions no unit suite could see.
+
+### The exemption that fired exactly as written
+
+Three failures were `accessibility.spec.ts`'s `NO_MAIN_YET` assertions. Its docblock, added by a
+gate-integrity review on 9 Sep:
+
+> *"A screen that gains a `main` — which is what task 74.3 does to `/` when S-29 fills the public
+> body — fails here the day it does, and a screen added to the set to quieten a real failure fails
+> immediately."*
+
+**Task 103** gave `/` a `main`: the `error — not yet available` state is drawn in a `FocusColumn`,
+which emits the landmark. The mechanism named task 74.3 as the future cause and was wrong about
+which task — and did not need to be right, because it asserts the *property* rather than watching a
+suspect. That is the whole argument for computing a complement instead of maintaining a list, and it
+is the second time this repo has been paid by it.
+
+The one thing it got wrong is *when*. "The day it does" was seven tasks and six deferred runs later.
+`NO_MAIN_YET` is now empty, `/`, `/en` and `/ru` take the landmark pass with every other screen, and
+the set stays so the next exemption is asserted rather than declared.
+
+### The assertion that followed the wrong element, twice
+
+`wizard.spec.ts` asserted `aria-current="step"` on the `<li>`, which **task 106** deliberately moved
+onto the anchor — an ancestor's `aria-current` is not announced to a reader moving link-to-link,
+which is how anyone crosses twenty modules. So a test went red against improved code, correctly.
+
+**Task 106's entry claims the e2e locators were read rather than assumed safe, and that claim was
+false in a specific way.** Three sites were read — two `filter({ has: … })` forms and the visibility
+checks — and all three survive. The fourth, the one asserting the attribute itself, was never
+opened. Reading three of four and reporting the file safe is the shape this repository names
+repeatedly, and it produced a wrong sentence in a build-log entry, which is worse than a missed
+test because it is evidence someone will later trust.
+
+**Then the fix repeated the error inside itself.** The first pass corrected the site the failure
+named, line 86, and missed the identical assertion at line 110 — same test, twenty-four lines below,
+found only by the next run. *"Is this one right?"* answered correctly, *"are there others?"* not
+asked, in the change made for exactly that.
+
+The sweep afterwards is what should have happened first, and it is two greps: **two** `aria-current`
+assertions exist in the suite and both now read the anchor; **one** ambiguous
+`getByRole('listitem').filter({ hasText })` + `.first()` site remained and was the same line.
+
+**The `.first()` was not style, and this is the sharpest form of that rule seen here.**
+`filter({ hasText: 'B1' })` matches **B1, B10 and B11**. So the locator had three answers, `.first()`
+picked one, and with the attribute on the `<li>` the assertion was checking an element it never
+named — it could not have failed on B1 specifically even when B1 was wrong. Fixing the ambiguity and
+the attribute's location is one change, not two.
+
+### A method note that cost a wrong report
+
+The first run was invoked as `pnpm e2e:web 2>&1 | tail -120`, and the harness reported **exit code
+0** for a run with four failures: the pipe hands back `tail`'s status, not Playwright's. It happened
+twice before being noticed. Every later run redirects to a file and reads `$?` directly, and the
+verdict quoted below is Playwright's own.
+
+### Verified
+
+**`pnpm e2e:web` — 167 passed, PLAYWRIGHT EXIT: 0**, all three projects: the tenant journeys with
+their axe scan, the +40% expansion check, and the admin console cross-origin against its built
+bundle. 170 before, less the three exemption tests that no longer exist.
+
+Worth stating for tasks 107–109 specifically, since each recorded the expansion project as the one
+it most wanted: **`expansion` passed clean at 1440, 834 and 390** across S-05, S-07, S-13, S-15,
+`/register` and `/verify`. The `--page-gutter` scale, the full-viewport drawer and the public
+header's collapse all survive +40% text at every frame.

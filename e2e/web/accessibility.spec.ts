@@ -18,10 +18,10 @@ import { enrolFactor, presentPassword } from './support/second-factor';
  * All three locales on the register screen: the axe pass is mostly locale-independent, but
  * `lang` correctness and accessible names are precisely what varies.
  */
-// `/` is the `(public)` chrome (task 74.1) — the band alone until S-29 fills the body, and worth
-// the three locales for the same reason the register screen gets them: `lang` correctness and
-// accessible names are exactly what varies. It is also the only screen here with no `<main>` yet,
-// which is a fact about task 74.3 rather than a violation of the tags below.
+// `/` is the `(public)` chrome (task 74.1) — worth the three locales for the same reason the
+// register screen gets them: `lang` correctness and accessible names are exactly what varies. It
+// **has** a `<main>` since task 103, which gave the address §8.1's `error — not yet available`
+// state in a `FocusColumn` rather than the blank page it used to return.
 const SCREENS = ['/', '/en', '/ru', '/register', '/en/register', '/ru/register', '/verify'];
 
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -43,12 +43,20 @@ const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 const LANDMARK_RULES = ['landmark-one-main', 'landmark-unique'];
 
 /**
- * `/` is the one screen exempt, and it is a recorded gap rather than a new one: the `(public)`
- * chrome is the band alone until S-29 fills the body, which the comment above the screen list
- * already states is **task 74.3's**. Listed here rather than silently skipped, so the exemption
- * expires by being read.
+ * **Empty since 10 Sep 2026, and the mechanism is kept rather than deleted.**
+ *
+ * `/`, `/en` and `/ru` were exempt while the `(public)` body was blank. Task 103 gave the address a
+ * `main` — §8.1's `error — not yet available` state, drawn in a `FocusColumn` — so all three now
+ * take the landmark pass with every other screen, and the loop below produces no tests because
+ * nothing is exempt.
+ *
+ * **The exemption failed exactly as designed, seven tasks late.** Its docblock predicted that a
+ * screen gaining a `main` would fail here *"the day it does"*, and it did — the day the suite next
+ * ran, which was not the day task 103 shipped. It named task 74.3 as the cause and task 103 was;
+ * the mechanism did not care which, and that is the property worth keeping. The set stays so the
+ * next exemption is asserted rather than declared.
  */
-const NO_MAIN_YET = new Set(['/', '/en', '/ru']);
+const NO_MAIN_YET = new Set<string>();
 
 const scan = async (page: Page, options: { readonly landmarks?: boolean } = {}) => {
   await page.waitForLoadState('networkidle');
@@ -76,9 +84,9 @@ for (const screen of SCREENS) {
  * `APP_IMMUTABLE_COLUMNS` both refuse to rely on: there the complement is computed, and every table
  * or column is accounted for by one list or the other.
  *
- * This closes both directions at once. A screen that gains a `main` — which is what task 74.3 does
- * to `/` when S-29 fills the public body — fails here the day it does, and a screen added to the set
- * to quieten a real failure fails immediately.
+ * This closes both directions at once, and both have now fired. A screen that gains a `main` fails
+ * here the day it does — task 103 gave `/` one and these three tests went red on the next run — and
+ * a screen added to the set to quieten a real failure fails immediately.
  */
 for (const screen of NO_MAIN_YET) {
   test(`${screen} is exempt from the landmark pass because it genuinely has no main`, async ({ page }) => {

@@ -83,7 +83,18 @@ test('opens at a step, moves between modules, and every step restores from its U
 
   // The current step is announced, not merely coloured — a rail that showed position visually only
   // would leave a screen-reader user unable to tell which of twenty modules they are in (NFR-75).
-  await expect(page.getByRole('listitem').filter({ hasText: 'B1' }).first()).toHaveAttribute(
+  //
+  // **On the LINK, which task 106 moved it to and this assertion followed a run later.** It read
+  // the `<li>` before, where an ancestor's `aria-current` is not announced to a reader moving
+  // link-to-link — the way anyone crosses twenty modules — so the claim in the sentence above was
+  // only half delivered. Asserting the role as well as the attribute is what fails if it drifts
+  // back onto a wrapper.
+  //
+  // And `{ name: 'B1', exact: true }` rather than the `filter({ hasText: 'B1' }).first()` this
+  // line used: `hasText` matches B1, B10 and B11, so the `.first()` was disambiguating a locator
+  // that had three answers — `CLAUDE.md`'s *".first() is a finding, not locator style"*, and the
+  // same shape the B6 and B7 assertions in this file were already corrected to.
+  await expect(rail.getByRole('link', { name: 'B1', exact: true })).toHaveAttribute(
     'aria-current',
     'step',
   );
@@ -96,7 +107,12 @@ test('opens at a step, moves between modules, and every step restores from its U
   // passes every assertion above and fails this one.
   await page.goto(`/reports/${reportId}/B7`);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('B7');
-  await expect(page.getByRole('listitem').filter({ hasText: 'B7' }).first()).toHaveAttribute(
+  // **The second of the two, and the one the first fix missed.** Both sites read the `<li>`; only
+  // this one was still doing so when the suite ran again, because the fix followed the failure
+  // rather than the shape — `CLAUDE.md`'s *"'is this one right?' and 'are there others?' are
+  // different questions"*, demonstrated inside the change made for it. Scoped to the rail and
+  // named exactly for the reason stated above.
+  await expect(rail.getByRole('link', { name: 'B7', exact: true })).toHaveAttribute(
     'aria-current',
     'step',
   );
