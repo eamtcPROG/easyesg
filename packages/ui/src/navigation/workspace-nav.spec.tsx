@@ -1,10 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import {
-  WorkspaceNav,
-  type NavLinkComponent,
-  type WorkspaceNavItemState,
-} from './workspace-nav';
+import { WorkspaceNav, type WorkspaceNavItemState } from './workspace-nav';
+import type { NavLinkComponent } from './nav-link';
 
 /**
  * The component's own guarantees (task 105) — and this file could not exist before it.

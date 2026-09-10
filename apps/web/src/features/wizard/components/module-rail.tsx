@@ -46,7 +46,14 @@ export function ModuleRail({
       {modules.map((module) => (
         <WizardModuleItem
           key={module.module}
+          href={reportStepRoute({ reportId, module: module.module })}
+          label={module.module}
           current={module.module === current}
+          // The locale-aware `Link`, injected: `packages/ui` holds no router, and the component
+          // builds the anchor so that `aria-current="step"` lands where a screen reader reads it
+          // (task 106). It used to receive a finished `<Link>` as children, which is why the
+          // attribute could only reach the `<li>`.
+          linkComponent={Link}
           indicator={
             /*
              * Three states, and the order between them is a decision (task 36.13). **Omitted is
@@ -64,11 +71,7 @@ export function ModuleRail({
                   : inapplicableLabel}
             </span>
           }
-        >
-          <Link href={reportStepRoute({ reportId, module: module.module })} className={styles.link}>
-            {module.module}
-          </Link>
-        </WizardModuleItem>
+        />
       ))}
     </>
   );

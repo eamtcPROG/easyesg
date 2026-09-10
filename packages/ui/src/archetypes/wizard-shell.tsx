@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { Anchor, type NavLinkComponent } from '../navigation/nav-link';
+import { ARIA_CURRENT } from '../navigation/nav-link-vocabulary';
 import styles from './wizard-shell.module.css';
 
 /**
@@ -110,24 +112,57 @@ export function WizardShell({
  *
  * **`current` drives `aria-current="step"`, not just a colour.** The Wizard's whole subject is
  * position in an ordered progression, and a rail that showed position only visually would leave a
- * screen-reader user unable to tell which of eleven modules they are in — a WCAG 2.2 AA failure that
- * renders identically (NFR-75).
+ * screen-reader user unable to tell which of eleven modules they are in — a WCAG 2.2 AA failure
+ * that renders identically (NFR-75).
  *
- * **The link is the caller's**, so this stays out of the router. The app passes its `Link`; this
- * owns the list item, the state and the indicator's placement.
+ * **That claim was only half true until task 106, and this is what it took to deliver it.** The
+ * attribute sat on this `<li>` while the anchor came in as `children`, because the app owns the
+ * router and the component could not reach a finished element. An `<li>` is `role="listitem"`, so
+ * it is at least in the accessibility tree — better than the `<span>` the workspace tier had (task
+ * 105) — but neither is announced when a reader moves **link-to-link**, which is how anyone
+ * navigates a rail of eleven steps. So this now takes `href` and `label` and builds the anchor,
+ * with the router injected through `linkComponent`; the package still holds no router and no text.
+ *
+ * **The anchor is the styled element, not a span inside one.** It carries the padding, the radius
+ * and the current background directly, which removes a wrapper and makes the whole padded box the
+ * click target — before this, only the text was clickable and the padding around it was dead.
  */
 export interface WizardModuleItemProps {
-  /** The app's own link to this step. */
-  children: ReactNode;
-  current?: boolean;
+  /** The step's address. */
+  readonly href: string;
+  /**
+   * What the reader sees — the module's own reference, `B1` … `C9`. A `ReactNode` rather than a
+   * string because the plain-language name arrives beside it once task 36 has one per module.
+   */
+  readonly label: ReactNode;
+  readonly current?: boolean;
   /** The per-module state indicator UX-5 requires the list to carry. */
-  indicator?: ReactNode;
+  readonly indicator?: ReactNode;
+  /**
+   * The app's own link. Optional — a plain anchor otherwise, which is correct for a
+   * server-rendered rail and wrong visibly rather than silently if the app needed its router.
+   */
+  readonly linkComponent?: NavLinkComponent;
 }
 
-export function WizardModuleItem({ children, current = false, indicator }: WizardModuleItemProps) {
+export function WizardModuleItem({
+  href,
+  label,
+  current = false,
+  indicator,
+  linkComponent,
+}: WizardModuleItemProps) {
+  const Link = linkComponent ?? Anchor;
+
   return (
-    <li className={styles.module} aria-current={current ? 'step' : undefined}>
-      <span className={current ? styles.moduleCurrent : styles.moduleLink}>{children}</span>
+    <li className={styles.module}>
+      <Link
+        href={href}
+        className={current ? styles.moduleCurrent : styles.moduleLink}
+        {...(current ? ({ 'aria-current': ARIA_CURRENT.STEP } as const) : {})}
+      >
+        {label}
+      </Link>
       {indicator ? <span className={styles.indicator}>{indicator}</span> : null}
     </li>
   );

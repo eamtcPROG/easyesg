@@ -106,11 +106,12 @@ export {
 export { Pagination, type PaginationProps } from './navigation/pagination';
 export {
   WorkspaceNav,
-  type NavLinkComponent,
   type WorkspaceNavItem,
   type WorkspaceNavItemState,
   type WorkspaceNavProps,
 } from './navigation/workspace-nav';
+export { type NavLinkComponent } from './navigation/nav-link';
+export { ARIA_CURRENT, type AriaCurrent } from './navigation/nav-link-vocabulary';
 
 // Data display — §11.5
 export {

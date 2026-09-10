@@ -14786,3 +14786,94 @@ five tabs in order, and the `/en` prefix intact — which is the injected `Link`
 regexes over `src/index.ts` answer 54 and 65, so the figure's definition is unknown and replacing it
 with a guess would be worse than leaving it. It belongs in `docs:check` or it should stop being a
 number — task 100's subject, raised rather than patched.
+
+## Task 106 — the wizard rail, and the counts that caught me · 2026-09-10
+
+*"Fix `WizardModuleItem` the same way."* Task 105 had recorded it as the sibling defect and left it;
+this closes it, and the interesting part is not the fix but what the gates found on the way.
+
+### The fix
+
+Same shape, same cause: `aria-current="step"` sat on the `<li>` because the anchor arrived as
+`children` and the component could not reach a finished element. An `<li>` is `role="listitem"`, so
+it is in the accessibility tree — genuinely less broken than the workspace tier's `<span>` — and
+still not announced when a reader moves link-to-link, which is how anyone crosses eleven modules.
+The docblock's claim that the attribute prevents *"a WCAG 2.2 AA failure"* is now true rather than
+half-true.
+
+`WizardModuleItem` takes `href`, `label`, `current`, `indicator` and an optional `linkComponent`.
+**The anchor became the styled element** rather than a `<span>` wrapping one: it carries the
+padding, the radius and the current background directly, which removed a wrapper and made the whole
+padded box the click target — before this, only the text was live and the padding around it was
+dead space. That was not the goal; it fell out of putting the element under the component's control.
+
+`.link` moved out of `apps/web`'s `module-rail.module.css` into `wizard-shell.module.css` with the
+anchor it styles. The app had been styling an element it passed in, which is the same confusion of
+ownership one layer down.
+
+### The seam, widened exactly where its own note said to
+
+`workspace-nav.tsx`'s `NavLinkComponent` typed `'aria-current'?: 'page'` and its docblock said
+*"widening it is a decision taken when a consumer actually needs an anchor prop it does not cover."*
+The wizard needs `step`. So the type and the `Anchor` fallback moved to `navigation/nav-link.tsx`,
+shared by `navigation/` and `archetypes/`, and the two values became `ARIA_CURRENT` in a
+`nav-link-vocabulary.ts` sibling.
+
+### Three findings from the gates, and none from me
+
+- **ESLint caught the vocabulary.** I wrote `type AriaCurrent = 'page' | 'step'` and
+  `no-restricted-syntax` rejected it by name: a closed vocabulary is an `as const` with the union
+  derived. The sibling module is `packages/ui/CLAUDE.md`'s own rule — `nav-link.tsx` carries no
+  directive today, and the point is that it exports a component, so a vocabulary beside it would
+  reach a Server Component as `undefined` the day someone adds `'use client'`.
+- **`docs:check` caught four counts** — components 44 → 45, barrel exports 42 → 44, the use-client
+  sentence's denominator, and "the **four** vocabularies" → five. **The barrel figure is the one
+  worth recording**, because task 105's entry says I left it alone on the grounds that its
+  definition was unknown and a guess would be worse. It was gated all along: the checker counts
+  `/export/g` in `index.ts`. Two regexes of mine answered 54 and 65 and both were wrong, and the
+  honest move I did not make was to read `tools/check-docs-claims.mjs` — which is the file that
+  knows. *Not being able to measure something is a reason to find the measurement, not to leave the
+  number.*
+- **ESLint caught an abstraction I had destroyed.** `module-rail.tsx` already had an
+  `indicatorStyle(module)` helper with its own docblock, and when I rewrote the caller I inlined a
+  nested ternary and orphaned it — surfaced only as `'indicatorStyle' is defined but never used`.
+  This is CLAUDE.md's *"after a codemod, read the diff for comment lines"* in the form where the
+  codemod is a hand-rewrite: I replaced a JSX block from memory of its shape rather than of its
+  content, and lost a named function in the process.
+
+And one of my own, in the spec: `expect(...).toBeUndefined` without the call — a no-op that asserts
+nothing and passes. It failed for the other reason in the same line (`getByRole` throws when it
+finds nothing), which is the only reason I saw it. Replaced with a direct
+`querySelectorAll('li[aria-current]')` count, since there is no role-based way to ask for an absent
+attribute.
+
+### Not changed
+
+The rail's items are still mapped by the caller with `current` computed per item, where the
+workspace tier moved that to an `isActive` predicate on a container. That difference is structural
+rather than an omission: `WizardShell` owns the `<nav>` and the `<ol>` and takes the items as a
+slot, so there is no container here to hold a predicate. Introducing one would mean changing
+`WizardShell`'s API and moving the app's three-state indicator logic behind a `renderIndicator`
+prop — the caller's `.map` relocated, not removed.
+
+### Verified
+
+`packages/ui` typecheck and **123 tests** (four new), `apps/web` typecheck and **330**,
+`apps/admin` **7**, `pnpm lint`, `pnpm eslint:prove` (every selector still rejects its violation),
+`pnpm boundaries` (998 modules), `pnpm docs:check` (26 claims).
+
+**Proven to bite**: putting `aria-current` back on the `<li>` fails two cases with *"Unable to find
+an accessible element with the role link"*.
+
+**The e2e locators were read rather than assumed safe.** `wizard.spec.ts` reaches rail items as
+`rail.getByRole('listitem').filter({ has: getByRole('link', { name: 'B7', exact: true }) })` and
+asserts text on the `<li>` — both survive losing the inner `<span>`, because the `<li>` and the link
+both remain. Nothing in the browser suite matched on the wrapper.
+
+**And the running app**: `/en/reports/<id>/B2` renders
+`<a aria-current="step" href="…/B2">B2</a>`, zero `aria-current` on any `<li>`, the indicator beside
+the link rather than inside its accessible name, twenty modules, the `/en` prefix intact.
+
+`pnpm e2e:web` remains outstanding for the same mechanical reason as tasks 104 and 105: the browser
+projects bind port 3100 and a dev server is live on it, so `reuseExistingServer` would test
+`next dev` rather than the standalone bundle (task 102).

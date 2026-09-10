@@ -1,4 +1,6 @@
-import type { ComponentType, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { Anchor, type NavLinkComponent } from './nav-link';
+import { ARIA_CURRENT } from './nav-link-vocabulary';
 import styles from './workspace-nav.module.css';
 
 /**
@@ -55,18 +57,6 @@ export interface WorkspaceNavItem {
   readonly label: string;
 }
 
-/**
- * The shape of a link this nav can render. Deliberately narrow rather than a polymorphic `as`:
- * these four props are all the component sets, and widening it is a decision taken when a consumer
- * actually needs an anchor prop it does not cover.
- */
-export type NavLinkComponent = ComponentType<{
-  href: string;
-  children: ReactNode;
-  className?: string;
-  'aria-current'?: 'page';
-}>;
-
 /** What `renderItem` is told, so a custom rendering can carry the same semantics. */
 export interface WorkspaceNavItemState {
   readonly isActive: boolean;
@@ -102,12 +92,6 @@ export interface WorkspaceNavProps<TItem extends WorkspaceNavItem = WorkspaceNav
   readonly linkComponent?: NavLinkComponent;
 }
 
-const Anchor: NavLinkComponent = ({ href, children, ...rest }) => (
-  <a href={href} {...rest}>
-    {children}
-  </a>
-);
-
 export function WorkspaceNav<TItem extends WorkspaceNavItem = WorkspaceNavItem>({
   label,
   items,
@@ -126,7 +110,7 @@ export function WorkspaceNav<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
           // cannot disagree about what "current" means on the wire.
           const state: WorkspaceNavItemState = {
             isActive: active,
-            linkProps: active ? { 'aria-current': 'page' } : {},
+            linkProps: active ? { 'aria-current': ARIA_CURRENT.PAGE } : {},
           };
 
           return (
