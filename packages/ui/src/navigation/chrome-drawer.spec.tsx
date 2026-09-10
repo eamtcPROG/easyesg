@@ -98,6 +98,29 @@ describe('ChromeDrawer', () => {
     expect(trigger).toHaveFocus();
   });
 
+  it('closes when a destination is chosen', async () => {
+    drawer();
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    await userEvent.click(screen.getByRole('link', { name: 'Reports' }));
+
+    // **Radix has no reason to close on its own here.** A `Link` inside the panel is a client-side
+    // navigation: the route changes and nothing unmounts, so without this the panel stays open on
+    // top of the screen the reader just asked for — every tap costing a second one to dismiss it.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('closes on an action too, including one that is not a link', async () => {
+    drawer();
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    // Sign-out is a submit button, not an anchor — it leaves the screen by a form action rather
+    // than an href, so a rule written only for links would leave the panel open behind it.
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('renders its sections through an injected link component', async () => {
     const Localized: NavLinkComponent = ({ href, children, ...rest }) => (
       <a href={`/ru${href}`} {...rest}>

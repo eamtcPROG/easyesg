@@ -1,7 +1,7 @@
 'use client';
 
 import { Menu, X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Dialog } from 'radix-ui';
 import { Anchor, type NavLinkComponent } from './nav-link';
 import { ARIA_CURRENT } from './nav-link-vocabulary';
@@ -72,15 +72,41 @@ export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
   actions,
 }: ChromeDrawerProps<TItem>) {
   const Link = linkComponent ?? Anchor;
+  const [open, setOpen] = useState(false);
 
   return (
-    <Dialog.Root>
+    <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger className={styles.trigger} aria-label={label}>
         <Menu aria-hidden="true" />
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className={styles.overlay} />
-        <Dialog.Content className={styles.panel}>
+        <Dialog.Content
+          className={styles.panel}
+          /*
+           * **Choosing a destination closes the panel**, and nothing else here would do it.
+           * Radix closes on its own control, on Escape and on the overlay; a `Link` inside the
+           * content is a client-side navigation, so the route changes underneath and nothing
+           * unmounts — the panel stays open on top of the screen the reader just asked for, and
+           * every tap costs a second one to dismiss it.
+           *
+           * **Delegated, and matching `button` as well as `a`**, because the entries that leave
+           * this panel are not all links: sign-out is a submit button driven by a form action.
+           * A rule written for anchors alone would leave the panel standing behind it.
+           *
+           * **A listener rather than wrapping each entry in `Dialog.Close asChild`**: that would
+           * work for the sections this component builds and would introspect the caller's nodes in
+           * `actions`, which is `account-menu.tsx`'s recorded hazard — a Server Component's
+           * children arrive as a Flight reference and cloning one throws. Delegation reads the
+           * event, never the element it was given.
+           *
+           * Re-tapping the section already open closes it too, which a route-change listener would
+           * miss: the pathname does not change, and the reader still expects the panel to go.
+           */
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest('a, button')) setOpen(false);
+          }}
+        >
           {/* Required by Radix and hidden by design: the wordmark below already names the panel,
               so a visible heading would be its second copy. */}
           <Dialog.Title className={styles.name}>{label}</Dialog.Title>

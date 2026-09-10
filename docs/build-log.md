@@ -15206,3 +15206,50 @@ Worth stating for tasks 107–109 specifically, since each recorded the expansio
 it most wanted: **`expansion` passed clean at 1440, 834 and 390** across S-05, S-07, S-13, S-15,
 `/register` and `/verify`. The `--page-gutter` scale, the full-viewport drawer and the public
 header's collapse all survive +40% text at every frame.
+
+## Task 111 — the drawer stayed open on the screen it had just opened · 2026-09-10
+
+Choosing a section navigated and left the panel standing on top of the result. Radix `Dialog` closes
+on its own control, on Escape and on the overlay — and a `Link` inside the content is a
+**client-side navigation**, so the route changes underneath and nothing unmounts. Every tap cost a
+second one to dismiss what the first had asked for.
+
+**The two failing cases were written first**, which is the only reason the fix has a gate: the
+mechanism is a listener, and a listener that silently stops matching is indistinguishable from one
+that never fires.
+
+### Three ways to close it, and why this one
+
+- **`Dialog.Close asChild` around each entry** — idiomatic Radix, and wrong here. It would work for
+  the sections this component builds and would *introspect the caller's nodes* in `actions`, which
+  is `account-menu.tsx`'s recorded hazard: a Server Component's children arrive as a Flight
+  reference and cloning one throws. Delegation reads the event and never the element it was handed,
+  so the caller's block stays opaque to it.
+- **A route-change effect** — misses a case the browser confirmed: re-tapping the section already
+  `aria-current="page"`. The path does not change, so a `usePathname` listener sees nothing, and the
+  reader still expects the panel to go.
+- **A delegated `onClick` matching `a, button`** — and the `button` half is not incidental.
+  Sign-out leaves by a form action rather than an href, so a rule written for anchors would have
+  left the panel standing behind exactly the entry that ends the session. It has its own case.
+
+### The risk the fix carried, and why it does not bite
+
+`setOpen(false)` unmounts the anchor, which is precisely the race `account-corner.tsx` documents for
+sign-out inside a portalled menu — the element disappearing before the click's default action runs.
+It survives because next-intl's `Link` calls `router.push()` and `preventDefault()`s in **its own**
+handler during the target phase, before this one fires on bubble.
+
+**That is a reason to verify rather than to reason**, and it was verified against the production
+bundle: `/en/entities` → tap *Reports* → panel closed, path `/en/reports`, heading *Reports*, scroll
+lock released. A fix that closed the drawer and swallowed the navigation would have passed every
+unit test in this package, since jsdom does not navigate.
+
+The fallback `Anchor` has no such handler and would rely on the browser's default action, so a
+consumer that injects no `linkComponent` is the one place this could still race. Not reachable
+today — both drawers inject next-intl's `Link` — and recorded here rather than discovered later.
+
+### Verified
+
+`packages/ui` **131 tests** (two new), `apps/web` **330**, both typechecks, `pnpm lint`,
+`pnpm docs:check`, and **`pnpm e2e:web` — 167 passed, PLAYWRIGHT EXIT: 0**, all three projects,
+which a `packages/ui` change gets no narrow run out of.
