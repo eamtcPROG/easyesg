@@ -48,15 +48,28 @@
   --space-10: 96px;
 
   /* ── Tier 1 · layout ────────────────────────────────────────────
-     Added 18 Aug 2026 to close design_spec.md OQ-2. Standard conventions,
-     drawn from the space scale rather than invented: 24px desktop gutter
-     and a 1200px shell are the common desktop defaults, and both already
-     exist as space steps. The grid is fluid — 12 columns of 1fr — so no
-     integer column width is needed or implied. */
+     Added 18 Aug 2026 to close design_spec.md OQ-2. The COLUMN gutter and the
+     shell ceiling are standard conventions drawn from the space scale; the grid
+     is fluid — 12 columns of 1fr — so no integer column width is needed.
+
+     The PAGE gutter is a different value and was measured rather than chosen
+     (task 107): `EasyESG Workspace.dc.html` insets its content and both chrome
+     bands by 16px at the 390 frame, 32px at 834 and 56px at 1440. The wide step
+     is 48px rather than 56px because §11 requires a gutter to be a space step —
+     UX-85 applied to layout — and 56px is not one; the artboards' other two
+     values are exact steps, which is what made 56 read as an eyeball rather
+     than a considered exception. Project owner, 10 Sep 2026. */
   --content-max: 1200px;        /* shell maximum; regions inside may be narrower */
   --grid-columns: 12;
-  --grid-gutter: var(--space-6);        /* 24px at >= 1024 */
-  --grid-gutter-narrow: var(--space-5); /* 16px below 1024, and the page margin */
+  --grid-gutter: var(--space-6);        /* 24px — the COLUMN gutter, at >= 1024 */
+  --grid-gutter-narrow: var(--space-5); /* 16px — the column gutter below 1024 */
+
+  /* The page's own insets, applied in exactly three places — the global bar, the
+     workspace nav and `(workspace)`'s `<main>` — so all three share one edge.
+     Before task 107 those used 48px, 24px and 16px and the page had three
+     different left edges, while four screens each declared the third value. */
+  --page-gutter: var(--space-5);        /* 16px — compact, the 390 artboard */
+  --page-block: var(--space-6);         /* 24px — compact */
   --measure-text: 68ch;         /* UX-74 reading measure, ~700px at body 15/24 */
 
   /* ── Tier 1 · radius ────────────────────────────────────────────── */
@@ -168,6 +181,24 @@
      §11.7's MUD-approximating theme is a real deliverable, and a tick hardcoded white would be
      invisible on a light accent with nothing failing. */
   --checkbox-tick: var(--text-on-accent);
+}
+
+/* The page inset grows with the frame, at UX-73's three widths and on the boundaries the global
+   bar already used (task 107). `wide` at 1024px is §3.3's one stated threshold; the middle step
+   reuses the 640px boundary `global-bar.module.css` had rather than introducing a value, since
+   `medium` has no specified pixel width — OQ-13, open. */
+@media (min-width: 40rem) {
+  :root {
+    --page-gutter: var(--space-7); /* 32px — the 834 artboard */
+    --page-block: var(--space-8);  /* 48px */
+  }
+}
+
+@media (min-width: 64rem) {
+  :root {
+    /* 48px, the nearest space step to the 1440 artboard's 56px — see the layout note above. */
+    --page-gutter: var(--space-8);
+  }
 }
 
 /* ── Type roles (§11.6 — the ten-role scale; UX-82, UX-83) ─────────────

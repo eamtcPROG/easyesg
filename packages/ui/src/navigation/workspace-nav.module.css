@@ -7,7 +7,13 @@
   display: flex;
   gap: var(--space-2);
   margin: 0;
-  padding: 0 var(--space-6);
+  /* **The gutter, less the item's own inset**, so the first section's TEXT lands on the page edge
+     rather than 12px inside it (task 107). An item pads 4px and its anchor 8px more — the hover
+     pill, sized for the 40px target — and those 12px would otherwise push the band out of line
+     with the global bar above and the content below, which is the alignment this token exists to
+     hold. The pill extending into the gutter on hover is the intended trade and is how a tab bar
+     normally resolves it; the artboards have no pill and so need no correction. */
+  padding-inline: calc(var(--page-gutter) - var(--space-4));
   list-style: none;
   /* The tier scrolls rather than wrapping: a second row of sections reads as a second tier, and
      §4.2 says there are three. */

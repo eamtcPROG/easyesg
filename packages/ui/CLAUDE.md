@@ -13,7 +13,7 @@ restating it here would create the second copy that drifts. This file carries wh
 
 ## Current state
 
-45 components in nine folders, 22 spec files, `src/styles/tokens.css` at 198 lines. Not every
+45 components in nine folders, 22 spec files, `src/styles/tokens.css` at 229 lines. Not every
 component has its own spec — `forms/forms.spec.tsx` covers several together — so per-file absence
 is not itself a gap.
 

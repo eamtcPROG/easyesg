@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { WorkspaceNavigation } from '@/shared/workspace-navigation';
+import styles from './layout.module.css';
 
 /**
  * Screens that carry the **workspace** navigation tier (§4.2): Reports, Entities & periods,
@@ -41,7 +42,7 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
         two banners the moment a real one appeared above it. Nesting is the fix the HTML spec
         itself names; changing `RecordShell` would have treated the symptom.
       */}
-      <main>{children}</main>
+      <main className={styles.main}>{children}</main>
     </>
   );
 }

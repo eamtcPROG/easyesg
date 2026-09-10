@@ -9,7 +9,7 @@
   /* 68px at the 1440 frame, from the artboard; the padding is what changes at 390, not the height,
      because a shorter band would put the account corner below the 40px target size (NFR-75). */
   min-block-size: 68px;
-  padding: 0 var(--space-8);
+  padding: 0 var(--page-gutter);
   background: var(--globalbar-surface);
   color: var(--globalbar-text);
 }
@@ -74,7 +74,6 @@
 @media (max-width: 1023px) {
   .bar {
     gap: var(--space-5);
-    padding: 0 var(--space-6);
   }
 
   .identity,
@@ -86,7 +85,6 @@
 @media (max-width: 639px) {
   .bar {
     min-block-size: 56px;
-    padding: 0 var(--space-5);
   }
 
   .identity,

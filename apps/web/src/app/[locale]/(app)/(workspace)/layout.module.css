@@ -1,0 +1,23 @@
+/*
+ * The workspace content column's own frame (task 107).
+ *
+ * **The page's insets live here because they are the workspace's, not the archetype's.** Every
+ * screen in this group sits at the same distance from the chrome above it whether it is an Index, a
+ * Record or a bespoke column, which is exactly why four screens had each declared it — and why two
+ * (`/reports`, `/account/credentials`) had declared nothing and sat flush against the edge. Both of
+ * those files carried a comment saying "the archetype owns the frame"; `IndexShell` and
+ * `RecordShell` never did, and now nothing needs them to.
+ *
+ * `FocusColumn` keeps its own padding and is not a contradiction: it renders in `(public)`,
+ * `(identity)` and `(app)`'s two organization-free screens, where there is no workspace layout to
+ * supply one.
+ *
+ * **No `max-inline-size`.** The column is fluid, per the 10 Sep 2026 decision — the artboards draw
+ * it edge to edge at every frame, and `--content-max` remains §11's ceiling for surfaces that want
+ * one rather than a default this group applies. Regions inside still bound themselves: `RecordShell`
+ * holds 78ch and UX-74's reading measure is `--measure-text`.
+ */
+
+.main {
+  padding: var(--page-block) var(--page-gutter);
+}

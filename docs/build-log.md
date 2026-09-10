@@ -14877,3 +14877,93 @@ the link rather than inside its accessible name, twenty modules, the `/en` prefi
 `pnpm e2e:web` remains outstanding for the same mechanical reason as tasks 104 and 105: the browser
 projects bind port 3100 and a dev server is live on it, so `reuseExistingServer` would test
 `next dev` rather than the standalone bundle (task 102).
+
+## Task 107 — the page margin nobody owned, and a rule that changed the answer · 2026-09-10
+
+*"Global styles like margins and paddings are not defined and every page should reimplement them,
+for example `/reports` and `/account/credentials`."* Correct, and the two named screens turned out
+to be the sharpest possible examples: they reimplement nothing, because they declare **no page
+inset at all** and sit flush against the frame.
+
+### What was actually there
+
+`(workspace)/layout.tsx` rendered a bare `<main>{children}</main>`. `FocusColumn` and `WizardShell`
+pad themselves; `IndexShell` and `RecordShell` do not. So the inset was every screen's own problem:
+
+| Screen | Block | Inline | ≥1024 | Cap |
+| --- | --- | --- | --- | --- |
+| S-05 Home | `--space-8` | 16px | — | `--content-max` |
+| S-15 Organization | `--space-8` | 16px | — | `--content-max` |
+| S-13 Entities | `--space-8` | 16px | — | `--content-max` |
+| S-16 Users & access | `--space-7` | 16px | **24px** | `72rem` |
+| **S-06 Reports** | — | — | — | — |
+| **S-28 Credentials** | — | — | — | — |
+
+Four copies, one with a different block value, one with a different cap, only one growing the inset
+on a wide screen — and two with nothing. **Both of the empty ones carry a comment stating that the
+archetype owns the frame**: `reports.module.css` says *"the archetype owns the frame"* and
+`credentials.module.css` *"the archetype owns the frame and the card"*. Two authors wrote down a
+contract that was never implemented, which is a better record of the gap than any of the drift.
+
+**And the page had three left edges.** Global bar 48px, workspace nav 24px, content 16px — visible
+as a stagger in the screenshot that opened this task, and wrong under any choice of gutter, since
+the artboards align all three.
+
+### The value, and the rule that changed the answer
+
+`tokens.css` indicted itself: the layout tokens were added *"to close OQ-2"* with the comment
+*"Standard conventions, drawn from the space scale rather than invented: 24px desktop gutter and a
+1200px shell are the **common desktop defaults**."* Derived from convention, not measured from the
+delivered artboards — which inset content and both bands by **16px at 390, 32px at 834 and 56px at
+1440**, fluid and uncapped. §3.3 is no help: *"Values live in tokens; the source specifies no pixel
+values other than the `wide` entry threshold of 1024 px."*
+
+The owner chose the artboards. **Then §11 changed the answer, and asking again was the right call.**
+Its normative table is followed by *"The gutter is not a free value — it is a space step, so a
+layout cannot introduce a gutter the scale does not contain, which is UX-85 applied to layout."*
+56px is not a step (… 32, 48, 64, 96). What made that decidable rather than a stalemate is that the
+artboards' *other two* gutters are exact steps — 16px is `--space-5`, 32px is `--space-7` — so 56
+reads as the artboard author's eyeball rather than a considered exception. The wide step is **48px**,
+the deviation recorded in §11 rather than left to surface as a mismatch.
+
+Worth noting where 48px already was: `global-bar.module.css` had `padding: 0 var(--space-8)` at wide
+all along. The one surface with the right value was the one nothing else agreed with.
+
+### Two things the implementation forced
+
+**The middle step could not invent a breakpoint.** Three values need two thresholds and only `wide`
+(1024px) is specified — `medium` is **OQ-13**, open. Rather than close it in passing, the change
+reuses the 640px boundary `global-bar.module.css` already carried. If OQ-13 closes on a different
+value, one token's media query moves and nothing else does.
+
+**Aligning the nav needed a negative inset, and the claim is what forced it.** With the token
+applied, the brand and the `h1` measured 48px and the nav's first link 52px: an item pads 4px and
+its anchor 8px more — the hover pill, sized for the 40px target — so the band's text sat 12px
+inside the edge. The tokens comment and the layout stylesheet both claim the three share one edge,
+so the choice was to make it true or stop saying it. `.list` now insets by
+`calc(var(--page-gutter) - var(--space-4))`, and the pill extends into the gutter on hover, which is
+how a tab bar normally resolves this. The artboards have no pill and need no correction.
+
+### Verified by measurement, not by looking
+
+At 1440: brand, nav text and `h1` all at **48px**. At 375: all at **16px**, `--page-block` 24px,
+symmetric right inset, `documentElement.scrollWidth` not exceeding the viewport. At 576: 16px on
+both sides. All five workspace screens — including S-06, S-28 and task 103's `/billing` stub —
+inherit the layout's `main`.
+
+`pnpm --filter @easyesg/ui test` (123), `--filter @easyesg/web test` (330), web typecheck,
+`pnpm lint`, `pnpm boundaries` (999 modules), `pnpm docs:check` — which caught the token-cascade
+line count at 198 against 229 as the file grew.
+
+### Outstanding, and this one matters more than usual
+
+`pnpm e2e:web` is unrun for the same port-3100 reason as tasks 104–106, and **the `expansion`
+project is the one to want here**: it serves the app with `EASYESG_PSEUDOLOCALE=1` and asserts no
+horizontal overflow at +40% text. A change to the page's insets at three widths is exactly what that
+project exists to check, and the compact measurement above was taken at ordinary Romanian rather
+than padded. Treat the layout as verified at real text and unverified at +40% until it runs.
+
+Also unimplemented and recorded rather than deferred silently: the artboard's `medium` inset of
+32px arrives at 640px here, where the artboard draws it at 834px; and the 1440 artboard's block
+inset is 40px top / 48px bottom where `--page-block` is 48px symmetric. Both are within the same
+8px class of deviation as the gutter and neither is worth a token of its own today.

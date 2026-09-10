@@ -1708,7 +1708,36 @@ This exceeds the WCAG 2.1 baseline of the Moldovan Unified Design Model (§11.7)
 | `--content-max` | **1200px** | Shell maximum. Regions inside may be narrower and are — the delivered screens use an ~1080px content card and a ~700px reading column |
 | `--grid-columns` | **12** | Fluid: each column is `1fr`, so no integer column width is implied or needed |
 | `--grid-gutter` | **24px** (`--space-6`) | At ≥ 1024, the `wide` threshold of §3.3 |
-| `--grid-gutter-narrow` | **16px** (`--space-5`) | Below 1024, and the page margin at every width |
+| `--grid-gutter-narrow` | **16px** (`--space-5`) | The column gutter below 1024. ~~And the page margin at every width~~ — amended 10 Sep 2026, see below |
+| `--page-gutter` | **16px** (`--space-5`) · **32px** (`--space-7`) · **48px** (`--space-8`) | The page's inline inset at compact · medium · wide. Added 10 Sep 2026 |
+| `--page-block` | **24px** (`--space-6`) · **48px** (`--space-8`) | The page's block inset at compact · medium and above |
+
+**Amended 10 Sep 2026 (project owner) — the page margin is its own token, and it is not 16px at
+every width.** `--grid-gutter-narrow` is the gutter *between columns*; the distance from the frame
+to the content is a different value, and conflating them is what left it unowned. `(workspace)`'s
+`<main>`, the global bar and the workspace nav are the only three places `--page-gutter` is applied,
+so the page has one edge — before this they used 48px, 24px and 16px respectively and the three
+staggered visibly, while **four screens had each declared the content value** (three at `--space-8`
+vertical, one at `--space-7`, only one bumping the gutter at ≥ 1024) and **two — S-06 and S-28 —
+declared none at all** and sat flush against the frame. Both of those carried a comment stating that
+the archetype owned the frame; `IndexShell` and `RecordShell` never did.
+
+**The values are measured, not conventional.** `EasyESG Workspace.dc.html` insets content and both
+bands by 16px at the 390 frame, 32px at 834 and **56px** at 1440. The wide step is **48px**, the
+nearest space step, because the rule below forbids a gutter the scale does not contain and 56px is
+not one — while the artboards' other two values are exact steps, which is what made 56 read as an
+eyeball rather than a considered exception. The 8px deviation is recorded here rather than left to
+be rediscovered as a mismatch.
+
+**The workspace column is fluid.** No `max-inline-size` is applied to it: the artboards draw the
+content edge to edge at every frame, so `--content-max` remains a ceiling available to surfaces that
+want one — the public tier uses it — and is not a default this group imposes. Regions inside still
+bound themselves; `RecordShell` holds 78ch and prose holds `--measure-text`.
+
+**The middle step reuses an existing boundary rather than inventing one.** `medium` has no specified
+pixel width — that is **OQ-13**, still open — so the 640px boundary already in
+`global-bar.module.css` carries the change of step, and `wide` uses §3.3's stated 1024px. If OQ-13
+closes on a different value, this token's breakpoint moves with it and nothing else does.
 
 Two consequences worth stating rather than leaving to be rediscovered. **The gutter is not a free value** — it is a space step, so a layout cannot introduce a gutter the scale does not contain, which is UX-85 applied to layout. And **`--content-max` is a ceiling, not a target**: it bounds the shell, while UX-74's reading measure independently bounds text at `--measure-text` (68ch, ≈ 700px at body 15/24). A screen that stretches prose to 1200px satisfies this rule and violates UX-74.
 
