@@ -1,0 +1,17 @@
+/* Which half of the global tier's actions a frame gets (task 108).
+
+   `display: contents` rather than `block` at the wider frames, so the account corner's own layout
+   participates in the bar's flex row exactly as it did before this wrapper existed — the element is
+   a switch, not a box. And `display: none` below the boundary rather than `visibility`, because the
+   drawer carries the same entries there: a hidden-but-present corner would offer a screen reader
+   sign-out twice, and the artboards draw no avatar in the compact bar at all. */
+
+.wide {
+  display: contents;
+}
+
+@media (max-width: 39.9375rem) {
+  .wide {
+    display: none;
+  }
+}

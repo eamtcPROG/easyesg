@@ -9,11 +9,11 @@ component that only works in one of them is a defect here, not a variant.
 `'use client'` vocabulary rule, the `Slot` rule, UX-89's "reuse or add to the inventory", the four
 homes of state — it is written at root because it holds for `apps/web` and `apps/admin` too, and
 restating it here would create the second copy that drifts. This file carries what is true of
-*these 45 files*: where things are, what has already bitten someone, and what finishing looks like.
+*these 46 files*: where things are, what has already bitten someone, and what finishing looks like.
 
 ## Current state
 
-45 components in nine folders, 22 spec files, `src/styles/tokens.css` at 229 lines. Not every
+46 components in nine folders, 23 spec files, `src/styles/tokens.css` at 229 lines. Not every
 component has its own spec — `forms/forms.spec.tsx` covers several together — so per-file absence
 is not itself a gap.
 
@@ -23,7 +23,7 @@ is not itself a gap.
 | `form/` | 11 | The presentational controls — `value`/`onChange`/`ref`, no form library |
 | `forms/` | 7 | The react-hook-form binding. **A separate entry point** — see the traps |
 | `feedback/` | 4 | Banner, Callout, EmptyState, ConsequenceDialogue |
-| `navigation/` | 6 | GlobalBar, AccountMenu, WorkspaceNav, LanguageSwitcher, Pagination, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
+| `navigation/` | 7 | GlobalBar, AccountMenu, WorkspaceNav, ChromeDrawer, LanguageSwitcher, Pagination, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
 | `data-display/` | 2 | DataTable, StatusChip |
 | `disclosure/` | 1 | DisclosureField — the anatomy every B1–B11 module reuses (task 36.1) |
 | `domain/` | 3 | ReportingPeriodPicker, SaveStateIndicator, VersionPinIndicator |
@@ -54,7 +54,7 @@ something quiet, and a stale `dist/` is one failure mode this package cannot hav
 
 ```
 src/
-├─ index.ts        The barrel — 44 exports. `@easyesg/ui`
+├─ index.ts        The barrel — 45 exports. `@easyesg/ui`
 ├─ forms/index.ts  The react-hook-form binding. `@easyesg/ui/forms`, NOT in the barrel
 ├─ styles/         tokens.css — reached as `@easyesg/ui/src/styles/tokens.css`
 ├─ archetypes/     The nine §4.6 page templates. README.md is the map
@@ -93,7 +93,7 @@ src/
   Server Component as `undefined`, a button in the wrong colours, every gate green). When you add a
   vocabulary, add the sibling module — not an `as const` at the top of the component.
 
-- **24 of the 45 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
+- **25 of the 46 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
   or a handler of its own. `Button` carried it from task 20 without needing it, and the day it
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never

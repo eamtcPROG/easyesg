@@ -110,6 +110,7 @@ export {
   type WorkspaceNavItemState,
   type WorkspaceNavProps,
 } from './navigation/workspace-nav';
+export { ChromeDrawer, type ChromeDrawerProps } from './navigation/chrome-drawer';
 export { type NavLinkComponent } from './navigation/nav-link';
 export { ARIA_CURRENT, type AriaCurrent } from './navigation/nav-link-vocabulary';
 

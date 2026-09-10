@@ -61,6 +61,10 @@
       "body": "This section is planned but has not been published yet. You have not mistyped the address and there is nothing for you to fix — please come back later.",
       "actionHome": "Back to your home page",
       "actionSignIn": "Go to sign in"
+    },
+    "drawer": {
+      "label": "Menu",
+      "close": "Close the menu"
     }
   },
   "forms": {

@@ -3,6 +3,18 @@
   background: var(--surface-default);
 }
 
+/* **The band has no compact form; the drawer is it** (task 108). `EasyESG Workspace.dc.html` draws
+   these destinations inline at 834 and 1440 and as a panel at 390, captioned "390 · workspace tier
+   as a drawer" — one tier at two frames rather than two components. So this hides below the same
+   40rem boundary `ChromeDrawer`'s trigger appears at, and `display: none` keeps the five links out
+   of the accessibility tree entirely rather than offering them twice. Before this the band scrolled
+   horizontally on a phone, which worked and was not the design. */
+@media (max-width: 39.9375rem) {
+  .nav {
+    display: none;
+  }
+}
+
 .list {
   display: flex;
   gap: var(--space-2);

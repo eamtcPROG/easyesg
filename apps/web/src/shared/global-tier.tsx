@@ -6,6 +6,9 @@ import { ROUTES } from '@/lib/routes';
 import { readActiveMembership } from '@/server/memberships';
 import { readSession } from '@/server/session';
 import { AccountCorner } from './account-corner';
+import { WorkspaceDrawer } from './workspace-drawer';
+import { WORKSPACE_SECTIONS } from './workspace-sections';
+import styles from './global-tier.module.css';
 
 /**
  * §4.2's **global** tier, wired (task 30.1) — and the replacement for task 22's interim
@@ -58,17 +61,41 @@ export async function GlobalTier() {
         active ? { label: t('globalBar.organization'), name: active.organizationName } : undefined
       }
       actions={
-        <AccountCorner
-          email={session.account.email}
-          locale={locale}
-          locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
-          labels={{
-            account: t('accountMenu.label'),
-            credentials: t('accountMenu.credentials'),
-            signOut: t('accountMenu.signOut'),
-            language: t('language'),
-          }}
-        />
+        <>
+          {/* The account corner at `medium` and `wide`; the drawer carries its entries at
+              `compact`, where the artboards draw no avatar in the bar. One of the two is always
+              `display: none`, so neither is offered twice. */}
+          <span className={styles.wide}>
+            <AccountCorner
+              email={session.account.email}
+              locale={locale}
+              locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
+              labels={{
+                account: t('accountMenu.label'),
+                credentials: t('accountMenu.credentials'),
+                signOut: t('accountMenu.signOut'),
+                language: t('language'),
+              }}
+            />
+          </span>
+          <WorkspaceDrawer
+            locale={locale}
+            locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
+            labels={{
+              menu: t('drawer.label'),
+              close: t('drawer.close'),
+              // The band's own accessible name, reused: the drawer IS the workspace tier at this
+              // frame, so a second name for it would describe two navigations.
+              sections: t('workspaceNav.label'),
+              credentials: t('accountMenu.credentials'),
+              signOut: t('accountMenu.signOut'),
+              language: t('language'),
+            }}
+            sectionLabels={Object.fromEntries(
+              WORKSPACE_SECTIONS.map((section) => [section.key, t(`workspaceNav.${section.key}`)]),
+            )}
+          />
+        </>
       }
     />
   );

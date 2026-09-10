@@ -14967,3 +14967,101 @@ Also unimplemented and recorded rather than deferred silently: the artboard's `m
 32px arrives at 640px here, where the artboard draws it at 834px; and the 1440 artboard's block
 inset is 40px top / 48px bottom where `--page-block` is 48px symmetric. Both are within the same
 8px class of deviation as the gutter and neither is worth a token of its own today.
+
+## Task 108 — the compact chrome, and two hours lost to a stale dev server · 2026-09-10
+
+*"The header is not responsive as the design stated, no hamburger and so on, no mobile menu."*
+Correct. `EasyESG Workspace.dc.html` carries a specimen captioned **"390 · workspace tier as a
+drawer"** — wordmark and a close control, the six workspace sections, a rule, then Notifications,
+Help centre and Sign out — over a compact bar of brand · bell · hamburger and an organization
+strip. None of it existed.
+
+**Worth stating precisely: this was not a UX-76 violation.** That rule prohibits *silently hiding
+functionality by viewport*, and nothing was hidden — the band scrolled horizontally, so every
+destination was reachable. It was an unbuilt frame, not a broken one, and the distinction is the
+difference between a defect and a gap.
+
+### What shipped, and what the rule let in
+
+`ChromeDrawer` over Radix `Dialog`. The four things a drawer gets wrong on its own — focus trap,
+focus return, Escape, scroll lock — are the library's, and the fifth, hiding the rest of the
+document, comes with them.
+
+**Task 106 paid for itself here.** A drawer needs `'use client'` for its open state, which is
+exactly the shape `account-menu.tsx` records as an uncoverable hazard: caller-supplied children
+wrapped in a Radix part's `asChild` arrive from a Server Component as a Flight reference and take
+the route down with a 500. Because the nav seam now takes `{ key, href, label }` plus an injected
+`linkComponent`, the drawer builds its own anchors and nothing slotted crosses the boundary. The
+API change made this safe by construction rather than by remembering — which is the argument the
+owner made for it three tasks ago.
+
+**Two additions to the specimen, both cited rather than chosen.** The **language choice** is in the
+drawer: the compact bar drops the account menu, so a locale switch omitted there would be a task
+made unavailable by viewport, which UX-76 prohibits without an explicit statement. And the drawer
+**carries only what renders** — *Plan & billing* is Phase 7's, *Notifications* task 50.2's, *Help
+centre* task 77.5's — which is `GlobalTier`'s standing rule, not a new one.
+
+### The two hours, and what they were
+
+**A stale dev server.** The drawer threw `TypeError: isActive is not a function` on every load, in a
+tree whose source typechecked and read correctly. The cause was the commit split three tasks
+earlier: reconstructing task 104's state checked out the *pre-105* `workspace-navigation.tsx` — the
+caller that passes `link` and `current` and no predicate — ran the suite against it, then restored
+it. Turbopack kept serving the old caller module. `pnpm build` and the standalone bundle were clean
+on the first try, and there were CSS-chunk load failures in the same console, which is the tell.
+
+**The lesson is narrow and worth keeping**: after checking out an older revision of a module the dev
+server has compiled, that server's state is a lie about the tree. Task 102 already records the
+reverse — a *test* adopting a live dev server — and this is the same coupling read from the other
+end. Reproduce against the bundle before believing the browser.
+
+**Radix triggers open on `pointerdown`.** After the build was clean, the drawer still "did not
+open": `computer left_click` timed out and `element.click()` did nothing, while focus moved to the
+button. Neither dispatches a pointer event, and Radix's trigger listens for one. The control that
+settled it was the **account menu** — a component nobody had touched, which failed the same way to
+the same probe. A full `pointerdown` → `pointerup` → `click` sequence opened the drawer immediately.
+Both of those made a working component look broken, and only one of them is about this code.
+
+**And a third confound, briefly**: the first production check ran with `SESSION_SECRET` set to the
+e2e value while the browser held a cookie sealed by the dev server's, so `GlobalTier` correctly
+returned `null` and the header was simply absent. Reading `apps/web/.env.local` fixed it. An
+unsealable cookie is indistinguishable from no cookie by design (`session.ts` says so); it is also
+indistinguishable from a bug you have just introduced.
+
+### One spec assertion rewritten, and the reason generalises
+
+The modal test first asserted `aria-hidden="true"` on `<main>`. That passes in a browser and fails
+in jsdom: Radix hides the *siblings of the portal*, and Testing Library renders into a container
+div, so in jsdom the attribute lands on that container with `main` inside it. **Where the attribute
+sits is environment-dependent; that the landmark leaves the accessibility tree is not.** The
+assertion is now `queryByRole('main')`, which excludes `aria-hidden` subtrees and states the same
+guarantee in a form both environments agree on. `aria-modal` is deliberately not asserted at all —
+Radix 1.x does not set it, and a test demanding it would fail a correct implementation while
+passing a hand-rolled panel that traps nothing.
+
+### Not built, and recorded rather than implied
+
+- **The organization strip.** The compact artboard moves the org name out of the bar into its own
+  white band with a *Switch* control. The switch is task 83's, and the strip is the other half of
+  this frame — worth doing, because the plate still truncates in the bar for a long name
+  (`Fabrica Verde SRL` renders as `Fa…` at 375, which does not satisfy UX-2's *visible at all
+  times*). `Neotec SRL` fits, which is why it is not visible today.
+- **The notification bell** in the compact bar is task 50.2's, with the drawer's row.
+- **The medium frame's abbreviated labels** — the artboards draw *Entities & periods* at 1440 and
+  *Entities* at 834, where this app uses the short form at every width. That predates this task and
+  has its own recorded reason (task 104).
+
+### Verified
+
+`packages/ui` typecheck and **129 tests** (six new), `apps/web` typecheck and **330**, `pnpm lint`,
+`pnpm boundaries` (1006 modules), `pnpm docs:check` — which caught five counts in
+`packages/ui/CLAUDE.md` as the package grew.
+
+Against the **production bundle**, not the dev server: the panel names itself *Menu*, names its
+section list with the band's own accessible name, carries the five sections that render with
+`aria-current="page"` on the current anchor, hides `main` and `header` from the accessibility tree
+while open, closes on Escape, releases the scroll lock and returns focus to the trigger. The band
+computes `display: none` at 375 and the trigger is absent above 40rem.
+
+`pnpm e2e:web` is still unrun for the port-3100 reason recorded since task 104, and the `expansion`
+project remains the one this and task 107 most want.

@@ -1,0 +1,120 @@
+/* §4.2's chrome at `compact`, drawn as `EasyESG Workspace.dc.html`'s
+   "390 · workspace tier as a drawer" specimen (task 108). Tier 3 tokens only. */
+
+/* The trigger lives in the global bar and exists only below the drawer's own boundary — 40rem,
+   the same step `--page-gutter` changes on, because the artboards draw the inline nav at 834 and
+   the drawer at 390. `display: none` rather than visibility: the inline nav carries the identical
+   destinations at wider frames, so a hidden trigger must leave the accessibility tree entirely
+   or a screen reader is offered the same five links twice. */
+.trigger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--space-9);
+  block-size: var(--space-9);
+  margin-inline-end: calc(-1 * var(--space-4));
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  color: var(--globalbar-text);
+  cursor: pointer;
+}
+
+@media (max-width: 39.9375rem) {
+  .trigger {
+    display: inline-flex;
+  }
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+}
+
+/* Full-height and inline-start, which is where the specimen puts it — the panel replaces the
+   band it stands in for, so it reads as the same tier rather than as a dialogue. */
+.panel {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: min(20rem, calc(100vw - var(--space-9)));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) 0;
+  overflow-y: auto;
+  background: var(--surface-default);
+  box-shadow: var(--elevation-3, 0 0 var(--space-6) rgb(0 0 0 / 25%));
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-inline: var(--page-gutter);
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--space-9);
+  block-size: var(--space-9);
+  margin-inline-end: calc(-1 * var(--space-4));
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  color: var(--text-default);
+  cursor: pointer;
+}
+
+/* Visually hidden but present: Radix requires a Title on Dialog.Content, and the panel's own
+   name is already carried by the brand beside the close control, so a visible heading would be
+   the second copy of it. */
+.name {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 14px inline, 16px block in the specimen; the block value is a step and the inline one is the
+   page gutter, so a row's text lands on the same edge as the content behind the panel. */
+.list :is(a) {
+  display: block;
+  padding: var(--space-5) var(--page-gutter);
+  color: var(--text-default);
+  font: 400 15px/24px var(--font-text);
+  text-decoration: none;
+}
+
+.list :is(a):hover {
+  background: var(--surface-sunken);
+}
+
+.current :is(a) {
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* The rule the specimen draws between the workspace sections and the global tier's own entries. */
+.actions {
+  display: flex;
+  flex-direction: column;
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--border-default);
+}

@@ -61,6 +61,10 @@
       "body": "Secțiunea este prevăzută, însă nu a fost încă publicată. Nu ați greșit adresa și nu aveți nimic de corectat — reveniți mai târziu.",
       "actionHome": "Înapoi la pagina principală",
       "actionSignIn": "Mergeți la autentificare"
+    },
+    "drawer": {
+      "label": "Meniu",
+      "close": "Închideți meniul"
     }
   },
   "forms": {

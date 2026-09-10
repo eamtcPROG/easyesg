@@ -1,0 +1,30 @@
+/* The drawer's secondary block. The rows match the section rows above the rule — the panel reads
+   as one list with a division in it, which is what the specimen draws. */
+
+.action {
+  padding: var(--space-5) var(--page-gutter);
+  border: 0;
+  background: none;
+  color: var(--text-default);
+  font: 400 15px/24px var(--font-text);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.action:hover {
+  background: var(--surface-sunken);
+}
+
+.action[aria-current] {
+  font-weight: 600;
+}
+
+/* Names the locale rows that follow it. Not a heading: the panel's landmark is the section list
+   above, and a second heading level here would imply a structure the specimen does not draw. */
+.group {
+  margin: 0;
+  padding: var(--space-4) var(--page-gutter) var(--space-2);
+  color: var(--text-muted);
+  font: 500 12.5px/18px var(--font-text);
+}

@@ -1861,7 +1861,23 @@ Six additions the delivered set makes to this inventory, each recorded because i
 
 **Feedback** — Inline field message · Callout (info · attention · warning · error · success) · Banner (persistent, page-level) · Toast (UX-67) · Empty state · Error state · Confirmation dialogue · Consequence dialogue (§6.14).
 
-**Navigation** — Global bar · Organization switcher · Workspace nav · Wizard step list · Tabs · Breadcrumb · Pagination · Back-to-context control.
+**Navigation** — Global bar · Organization switcher · Workspace nav · **Chrome drawer** · Wizard step list · Tabs · Breadcrumb · Pagination · Back-to-context
+
+**Chrome drawer added 10 Sep 2026 (task 108)** — §4.2's chrome at `compact`, drawn as
+`EasyESG Workspace.dc.html`'s specimen captioned *"390 · workspace tier as a drawer"*: the
+wordmark and a close control, the workspace sections, a rule, then the global tier's own entries.
+UX-73 draws every screen at 1440 · 834 · 390 and this is the third frame's answer to a band of
+five destinations that does not fit one; the band itself has no compact form and hides below the
+same boundary the trigger appears at. **It is a row of its own rather than the Workspace nav's
+compact variant** because it carries both tiers: §4.2's workspace sections *and* the user menu's
+entries, the compact bar having no avatar. Its applicable §8.1 states are closed · open · rest ·
+hover · focus · current — no loading or error, since every destination is a link it already holds.
+
+**It carries what renders** (`GlobalTier`'s standing rule): the specimen's *Plan & billing* is
+Phase 7's, *Notifications* task 50.2's and *Help centre* task 77.5's, and each arrives with its
+screen. **The language choice is in it although the specimen omits it**, which is UX-76 rather
+than a preference — the compact bar drops the account menu, so a locale switch left out here
+would be a task made unavailable by viewport with no statement of why. control.
 
 **Data display** — Data table (sortable, filterable, selectable) · Definition list · Key figure · Comparison table · Timeline / history list · Status chip · Chart (admin only at MVP).
 
