@@ -1,6 +1,7 @@
 import 'server-only';
 import type { Locale } from '@easyesg/i18n';
 import { redirect } from '@/i18n/navigation';
+import { targetLocale } from '@/features/identity/post-sign-in';
 import { resolvePostSignIn } from './post-sign-in';
 import { readSession } from './session';
 
@@ -51,5 +52,5 @@ export const redirectWhenSignedIn = async (input: {
   // a `?return=` arriving here is a leftover from a bounce something else has since answered, not
   // UX-38's mid-work expiry — that reader has no session and never reaches this line.
   const target = await resolvePostSignIn();
-  redirect({ href: target.href, locale: target.locale ?? input.locale });
+  redirect({ href: target.href, locale: targetLocale(target, input.locale) });
 };

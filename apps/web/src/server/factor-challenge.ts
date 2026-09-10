@@ -72,7 +72,7 @@ export async function consumeFactorChallenge(): Promise<HeldChallenge | null> {
   const sealed = jar.get(FACTOR_CHALLENGE_COOKIE)?.value;
   if (!sealed) return null;
   jar.delete(FACTOR_CHALLENGE_COOKIE);
-  return readHeld(unsealJson(sealed, env.sessionSecret));
+  return readHeld(unsealJson({ sealed, secret: env.sessionSecret }));
 }
 
 /**
@@ -85,5 +85,5 @@ export async function consumeFactorChallenge(): Promise<HeldChallenge | null> {
 export async function peekFactorChallenge(): Promise<HeldChallenge | null> {
   const jar = await cookies();
   const sealed = jar.get(FACTOR_CHALLENGE_COOKIE)?.value;
-  return sealed ? readHeld(unsealJson(sealed, env.sessionSecret)) : null;
+  return sealed ? readHeld(unsealJson({ sealed, secret: env.sessionSecret })) : null;
 }

@@ -196,6 +196,34 @@ const CLAIMS = [
     actual: () => walk('apps/web/src/app').filter((f) => f.endsWith('/page.tsx')).length,
   },
   {
+    // **Third stale count in one session, so it graduates** (task 112's convention review, 11 Sep
+    // 2026). The route-group count is stated in four places across three files and two of them were
+    // left behind — including `apps/web/CLAUDE.md`'s enumeration table, which is where a new screen
+    // is added from, and where a missing `(session-issuing)` row means a screen that issues a
+    // session and is never gated. Counting directories rather than table rows is deliberate: the
+    // filesystem is the thing the guard actually reads.
+    what: 'apps/web route groups',
+    file: 'CLAUDE.md',
+    pattern: /\| `apps\/web` \| \d+ `page\.tsx` routes across (\w+) route groups/,
+    actual: () =>
+      walk('apps/web/src/app')
+        .map((f) => f.split('/').slice(0, -1))
+        .flat()
+        .filter((segment) => segment.startsWith('(') && segment.endsWith(')'))
+        .filter((segment, index, all) => all.indexOf(segment) === index).length,
+  },
+  {
+    what: 'apps/web route groups, as counted by apps/web',
+    file: 'apps/web/CLAUDE.md',
+    pattern: /Route groups carry no URL segment, which is the whole reason there are (\w+)\./,
+    actual: () =>
+      walk('apps/web/src/app')
+        .map((f) => f.split('/').slice(0, -1))
+        .flat()
+        .filter((segment) => segment.startsWith('(') && segment.endsWith(')'))
+        .filter((segment, index, all) => all.indexOf(segment) === index).length,
+  },
+  {
     what: '§7 schema invariants',
     file: 'CLAUDE.md',
     pattern: /(\w+) §7 invariants each proving its own rule bites \(\d+ cases\)/,

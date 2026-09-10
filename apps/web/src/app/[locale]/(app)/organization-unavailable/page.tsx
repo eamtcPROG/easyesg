@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { Callout, CALLOUT_INTENT, FocusColumn, TextLink } from '@easyesg/ui';
 import { redirect } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
-import { POST_SIGN_IN } from '@/features/identity/post-sign-in';
+import { POST_SIGN_IN, targetLocale } from '@/features/identity/post-sign-in';
 import { resolvePostSignIn } from '@/server/post-sign-in';
 
 /**
@@ -40,7 +40,7 @@ export default async function OrganizationUnavailablePage({ params }: { params: 
   const locale = await activateRequestLocale(params);
   const target = await resolvePostSignIn();
   if (target.href !== POST_SIGN_IN.ORGANIZATION_UNAVAILABLE) {
-    redirect({ href: target.href, locale: target.locale ?? locale });
+    redirect({ href: target.href, locale: targetLocale(target, locale) });
   }
 
   // Awaited after the redirect check, not before it: on the arm that redirects, the catalogue is

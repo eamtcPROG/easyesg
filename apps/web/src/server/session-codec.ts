@@ -64,7 +64,8 @@ export function sealJson(value: unknown, secret: string): string {
 }
 
 /** `null` for anything `sealJson` under this secret did not produce — never a throw. */
-export function unsealJson(sealed: string, secret: string): unknown {
+export function unsealJson(input: { readonly sealed: string; readonly secret: string }): unknown {
+  const { sealed, secret } = input;
   try {
     const raw = Buffer.from(sealed, 'base64url');
     if (raw.length <= GCM_IV_LENGTH + GCM_TAG_LENGTH) return null;
@@ -133,8 +134,11 @@ function readPayload(parsed: unknown): SessionPayload | null {
  * truncation, a rotated `SESSION_SECRET`, garbage. All of them are the same fact — there is no
  * session — and none of them may throw, because this runs on every request carrying the cookie.
  */
-export function unsealSession(sealed: string, secret: string): SessionPayload | null {
-  return readPayload(unsealJson(sealed, secret));
+export function unsealSession(input: {
+  readonly sealed: string;
+  readonly secret: string;
+}): SessionPayload | null {
+  return readPayload(unsealJson(input));
 }
 
 /**
@@ -152,7 +156,10 @@ export function unsealSession(sealed: string, secret: string): SessionPayload | 
  * `Max-Age` should make the expired case unreachable — the browser drops the cookie — but a
  * declined session carries none (OQ-35) and a skewed client clock is not a security boundary.
  */
-export function unsealLiveSession(sealed: string, secret: string): SessionPayload | null {
-  const payload = readPayload(unsealJson(sealed, secret));
+export function unsealLiveSession(input: {
+  readonly sealed: string;
+  readonly secret: string;
+}): SessionPayload | null {
+  const payload = readPayload(unsealJson(input));
   return payload && payload.refreshTokenExpiresAt > Date.now() ? payload : null;
 }

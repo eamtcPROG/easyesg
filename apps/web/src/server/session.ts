@@ -145,7 +145,7 @@ export function accessTokenIsStale(payload: SessionPayload): boolean {
  * of the sign-in screen that would have given them one.
  */
 export function liveSession(sealed: string | undefined): SessionPayload | null {
-  return sealed ? unsealLiveSession(sealed, env.sessionSecret) : null;
+  return sealed ? unsealLiveSession({ sealed, secret: env.sessionSecret }) : null;
 }
 
 /** The same fact, read from the request scope a Server Component or action runs in. */

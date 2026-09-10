@@ -111,7 +111,7 @@ export async function readPendingLink(): Promise<{ provider: SocialProvider } | 
   const jar = await cookies();
   const sealed = jar.get(PENDING_LINK_COOKIE)?.value;
   if (!sealed) return null;
-  const pending = readPending(unsealJson(sealed, env.sessionSecret));
+  const pending = readPending(unsealJson({ sealed, secret: env.sessionSecret }));
   if (!pending) return null;
 
   const session = await readSession();
@@ -133,7 +133,7 @@ export async function completePendingLink(input: {
 }): Promise<ApiOutcome<null>> {
   const jar = await cookies();
   const sealed = jar.get(PENDING_LINK_COOKIE)?.value;
-  const pending = sealed ? readPending(unsealJson(sealed, env.sessionSecret)) : null;
+  const pending = sealed ? readPending(unsealJson({ sealed, secret: env.sessionSecret })) : null;
 
   jar.delete(PENDING_LINK_COOKIE);
 

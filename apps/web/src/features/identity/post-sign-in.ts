@@ -68,6 +68,33 @@ export interface PostSignInTarget {
 }
 
 /**
+ * The locale a `PostSignInTarget` is reached in — the honoured `?return=` path's own where it named
+ * one, and the caller's fallback otherwise.
+ *
+ * **Five call sites wrote this `??` themselves, with two different fallbacks and nothing anywhere
+ * saying there were two** (task 112's parent-close convention review, 11 Sep 2026). It is the shape
+ * the root file's `LOCALES` / `toLocale` case describes exactly: the vocabulary was shared and the
+ * *operation over it* was retyped per caller, so every copy was locally correct and no test could
+ * see the divergence.
+ *
+ * Both fallbacks are right, and the test that separates them is **whether a session is being issued
+ * by this very call**:
+ *
+ * - **The account's profile locale**, where this is the exit from sign-in — the password action,
+ *   the factor step, the provider callback. A branch destination carries no locale of its own, so
+ *   OQ-32's profile preference decides, and it is the preference `establishSession` has just
+ *   written to `NEXT_LOCALE` in the same breath.
+ * - **The address's own locale**, where no session is issued — S-35 re-resolving on render, and
+ *   UX-136's guard turning a signed-in reader away. That reader is already navigating, in a
+ *   language they chose; answering in their profile's instead would move them mid-journey, and on
+ *   the guard's path there is no fresh `NEXT_LOCALE` write to agree with.
+ *
+ * A sixth caller picks by that test rather than by copying whichever neighbour it happened to read.
+ */
+export const targetLocale = (target: PostSignInTarget, fallback: Locale): Locale =>
+  target.locale ?? fallback;
+
+/**
  * The branch itself: pure, so every arm is a line of spec rather than a browser journey.
  *
  * `memberships` is `null` when the read failed — distinct from `[]`, which is the real and ordinary

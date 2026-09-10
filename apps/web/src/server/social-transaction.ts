@@ -89,7 +89,7 @@ export async function consumeSocialTransaction(): Promise<SocialTransaction | nu
   const sealed = store.get(SOCIAL_TRANSACTION_COOKIE)?.value;
   if (!sealed) return null;
   store.delete({ name: SOCIAL_TRANSACTION_COOKIE, path: COOKIE_PATH });
-  const transaction = readTransaction(unsealJson(sealed, env.sessionSecret));
+  const transaction = readTransaction(unsealJson({ sealed, secret: env.sessionSecret }));
   if (!transaction || transaction.issuedAt + TRANSACTION_TTL_MS <= Date.now()) return null;
   return transaction;
 }

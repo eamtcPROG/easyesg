@@ -139,7 +139,7 @@ describe('proxy · page-load rotation', () => {
     expect(fetchMock).toHaveBeenCalled();
     const forwarded = forwardedCookie(response);
     const sealed = forwarded?.split(`${REFRESH_COOKIE}=`)[1]?.split(';')[0] ?? '';
-    expect(unsealSession(sealed, SECRET)?.accessToken).toBe('rotated-access-token');
+    expect(unsealSession({ sealed, secret: SECRET })?.accessToken).toBe('rotated-access-token');
   });
 
   /** And an anonymous visitor to that same screen still pays nothing: no cookie, no unseal, no
@@ -164,7 +164,7 @@ describe('proxy · page-load rotation', () => {
     const forwarded = forwardedCookie(response);
     expect(forwarded).toContain(REFRESH_COOKIE);
     const sealed = forwarded?.split(`${REFRESH_COOKIE}=`)[1]?.split(';')[0] ?? '';
-    expect(unsealSession(sealed, SECRET)?.accessToken).toBe('rotated-access-token');
+    expect(unsealSession({ sealed, secret: SECRET })?.accessToken).toBe('rotated-access-token');
   });
 
   /**
@@ -192,7 +192,7 @@ describe('proxy · page-load rotation', () => {
 
     // And the successor the seal carries, so the NEXT rotation makes the same decision.
     const sealed = header.split(`${REFRESH_COOKIE}=`)[1]?.split(';')[0] ?? '';
-    expect(unsealSession(sealed, SECRET)?.remembered).toBe(false);
+    expect(unsealSession({ sealed, secret: SECRET })?.remembered).toBe(false);
   });
 
   it('also sets the successor on the response, with OQ-33 attributes', async () => {
@@ -248,6 +248,21 @@ describe('proxy · page-load rotation', () => {
     expect(response.headers.get('location')).toContain('/en/sign-in');
     // And it stops being sent: nothing cleared an unsealable cookie before this task.
     expect(setCookie(response)).toContain(`${REFRESH_COOKIE}=;`);
+  });
+
+  /**
+   * **The `if` in `if (presented)`, which nothing held** (task 112's second gate review: making the
+   * delete unconditional left all 362 web tests green).
+   *
+   * The consequence of losing it is small — a redundant `Set-Cookie` deletion on a bounce from a
+   * browser that never had one — and that is exactly why it needs a case: the reasoning behind the
+   * condition runs to nine lines of comment and the condition itself was worth nothing.
+   */
+  it('sends no cookie header when the bounced request carried none', async () => {
+    const response = await proxy(requestFor('/en/organization/users', null));
+
+    expect(response.headers.get('location')).toContain('/en/sign-in');
+    expect(setCookie(response)).not.toContain(REFRESH_COOKIE);
   });
 
   /** The same fact from the far end of the session's life: past the refresh bound, the cookie is

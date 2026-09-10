@@ -15336,14 +15336,11 @@ Guarding them would have made password recovery impossible for anyone holding a 
 worse failure than the one being fixed, shipped as a tidy-up.
 
 `SESSION_ISSUING_SEGMENTS` is therefore its own vocabulary of two, and the relationship between the
-sets is **asserted rather than commented**: `route-access.spec.ts` iterates the issuing members and
-requires each to be refused by `isReturnableAfterSignIn`, so a third entry point added to one set
-and not the other fails there. `/verify` and `/invitation/{token}` are in neither, because a
-signed-in reader confirming an address or accepting an invitation is the ordinary case.
-
-`?return=` rides through the guard for the same reason it rides through sign-in. The case that makes
-it load-bearing is `/register?invitation=…`: dropping it would send someone who signed in between
-clicking the invitation and arriving here to their home with the invitation lost.
+sets is **asserted rather than commented**: `route-access.spec.ts` requires the issuing set to be
+contained in `SESSION_ENTRY_SEGMENTS`, so a third entry point added to one and not the other fails
+there. (The first draft asserted it through `isReturnableAfterSignIn` and was green for exactly that
+change — see the gate review below.) `/verify` and `/invitation/{token}` are in neither set, because
+a signed-in reader confirming an address or accepting an invitation is the ordinary case.
 
 ### The half that already worked was two readings of one sentence
 
@@ -15498,7 +15495,8 @@ current tree rather than the diff it was handed, having noticed the refactor lan
 - **`api-client.ts`'s new liveness reading had no check at all** — reverting it left 361/361 green,
   which is what a fix with no failing case looks like, on the one seam every Server Component's API
   call goes through. Only a unit case can reach it: the proxy's gate turns such a request away
-  before render, so no browser journey can arrive with a dead session in hand.
+  before render, so no browser journey can arrive with a dead session in hand. That sentence is now
+  history: the second gate review re-ran the same revert and it fails, by exactly the one case.
 - **The cross-set invariant passed vacuously for exactly the change it claimed to catch.** Adding
   `magic-link` to `SESSION_ISSUING_SEGMENTS` alone stayed green, because `isReturnableAfterSignIn`
   refuses a path for two reasons and the *other* one answered first; it only went red once the
@@ -15528,11 +15526,75 @@ accurately and left it in, on the grounds that a gate for it would have to enume
 The route group removes the need for a gate by removing the call sites — which is what *"fix the
 sites first, then turn the gate on"* looks like when there is nothing left to gate.
 
+### The second round, over the committed diff
+
+The three reviews ran again on `opus` after the commit, because none of them had seen the final
+shape: the route-group refactor landed after the two document reviews read the code, and each of the
+gate review's six findings produced a change it never got to check. Eight more findings, and the
+pattern in them is one thing — **the "are there others?" question, asked of the wrong noun.**
+
+- **My sweep asked which *readers* reach `/sign-in` and never which *controls point at it*.** Four
+  do, from surfaces a signed-in reader can be on. Two are fine and now say so in UX-136: the public
+  header and drawer are session-blind by §5.1b's own requirement, so the gate answering with the
+  reader's own destination is the right outcome. Two are not: S-03's unusable-invitation exit and
+  the acceptance-problem callout both read *"Go to sign in"*, and the second is reached **only** when
+  `signedInAs !== null` — signed-in by construction, offering a door that now leads back to where
+  the reader already is. **Task 114**, because the fix is a destination that depends on the session
+  plus three-locale copy, not a label swap.
+- **The route-group count is stated four times and I updated two** — including, left stale,
+  `apps/web/CLAUDE.md`'s enumeration table, which is *the* place a new screen is added from and
+  therefore the place `(session-issuing)`'s absence would ship an ungated screen. That is task 112's
+  defect arriving through task 112's fix. The two I did write disagreed with each other, five against
+  six, counting different things. All four now say six, the table has a row per directory, and
+  **the count graduates into `docs:check`** — third stale count in one session, which is the
+  threshold the root file sets for a finding becoming a gate.
+- **`unsealLiveSession(sealed, secret)` is two adjacent `string`s**, and swapped it returns `null` —
+  which this task has just spent a commit establishing means *there is no session*. A silent sign-out
+  at the gate and a missing bearer at the seam, never an error. Converted to a named input, and the
+  sweep the rule asks for took `unsealSession` and `unsealJson` with it; `sealSession` and `sealJson`
+  keep positional parameters because the compiler rejects those swaps.
+- **`target.locale ?? …` was written at five call sites with two different fallbacks** and nothing
+  anywhere saying there were two. It is `LOCALES`/`toLocale`'s shape exactly: the vocabulary shared,
+  the operation over it retyped per caller, every copy locally correct. `targetLocale` now sits beside
+  `PostSignInTarget` with both semantics stated and the test that separates them — *is this call
+  issuing the session?* — so a sixth caller picks rather than copies.
+- **UX-136 cited UX-38 over a wider class than UX-38 covers**, and handed task 92 a scope it does not
+  have. UX-38 is *session expiry* (UC-07's precondition says so) and task 92 owns *the wizard*; the
+  first clause reaches a visitor who has never signed in and has no context for anything to be inline
+  over. Rewritten so the two compose, with the unowned remainder — the same gap on a cold `/home` —
+  named rather than implied.
+- **The entry contradicted itself twice**, on the two things a reader would come here for: it still
+  described the invariant in the form the gate review rejected, and still said `?return=` rides
+  through the guard, which is the opposite of what shipped and the opposite of its own *"what the
+  shape costs"* paragraph twenty lines above. Both were paragraphs that did not move when the code
+  did. A wrong record is worse than no record, and this file is the record.
+- Two counts were wrong again — one directory-reading case, not two; three new browser cases plus one
+  strengthened, not four — and an e2e comment cited FR-7's second clause for something that is
+  neither of FR-7's clauses.
+- **The check I wrote to close the last round's finding was itself inert for the shape it names.**
+  The directory comparison dropped every `(`-prefixed entry, on the true observation that a route
+  group adds no URL segment of its own. Its **children** do, and the guarding layout is still their
+  ancestor — so a `(session-issuing)/(passwordless)/magic-link/` route was guarded by the layout,
+  not rotated by the proxy, and all 27 cases passed. That is the 401 → S-35 failure the check's own
+  docblock names, arriving through the check written to prevent it, one level deeper than the fix it
+  replaced. It recurses now, and the nested shape goes red.
+- **The `if` in `if (presented)` held nothing** — making the delete unconditional left all 362 tests
+  green. The consequence is small, a redundant `Set-Cookie` on an anonymous bounce, which is why it
+  needed a case: nine lines of comment argued for a condition worth nothing.
+- **Two of the three containments were asserted and the third was not.** A session-issuing segment
+  left out of `UNAUTHENTICATED_SEGMENTS` is *gated*, so an anonymous visitor is bounced to
+  `/sign-in?return=/…` from the screen meant to hand them a session — and on `/sign-in` itself, to
+  itself. It fails closed and loudly, which is why it went unnoticed rather than unpunished.
+- **The fourth reader's behaviour change was recorded only here.** `sessionAuthorization` withholding
+  a bearer past the refresh bound narrows a rationale that has stood since task 22, on the AD-9
+  boundary; `build-log.md` owns no decisions, so §12.5.6 now carries it with the half of that
+  rationale which still holds.
+
 ### Verified
 
-`apps/web` **362 tests** — 27 new in `route-access.spec.ts` (two of them reading the route group's
-own directory), one new in `api-client.spec.ts`, four added, one re-pointed and one strengthened in
-`proxy.spec.ts` — plus **three new browser cases** in `post-sign-in.spec.ts` and one existing
+`apps/web` **364 tests** — 28 new in `route-access.spec.ts` (the two pathname tables, the two set
+containments, and one comparing the route group's directory **tree** to the vocabulary), one new in
+`api-client.spec.ts`, five added, one re-pointed and one strengthened in `proxy.spec.ts` — plus **three new browser cases** in `post-sign-in.spec.ts` and one existing
 `credentials.spec.ts` case given the assertion its name had always promised. Every one proven to
 bite by mutation, and the table above says on what.
 

@@ -146,7 +146,7 @@ async function readBody<T>(
  */
 async function sessionAuthorization(): Promise<Record<string, string>> {
   const sealed = (await cookies()).get(REFRESH_COOKIE)?.value;
-  const session = sealed ? unsealLiveSession(sealed, env.sessionSecret) : null;
+  const session = sealed ? unsealLiveSession({ sealed, secret: env.sessionSecret }) : null;
   return session ? { authorization: `Bearer ${session.accessToken}` } : {};
 }
 

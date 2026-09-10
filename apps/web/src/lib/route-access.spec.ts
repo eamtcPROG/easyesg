@@ -6,6 +6,7 @@ import {
   requiresSession,
   SESSION_ENTRY_SEGMENTS,
   SESSION_ISSUING_SEGMENTS,
+  UNAUTHENTICATED_SEGMENTS,
 } from './route-access';
 
 /**
@@ -106,13 +107,44 @@ describe('the route group and the vocabulary are one list', () => {
     '(session-issuing)',
   );
 
-  it('names exactly the segments `issuesSession` answers true for', () => {
-    const directories = readdirSync(GROUP, { withFileTypes: true })
+  /**
+   * **It recurses through nested route groups, and the first draft did not** — which made it inert
+   * for the one shape it exists to catch (task 112's second gate review, proved). That draft
+   * dropped every `(`-prefixed entry, on the true observation that a route group adds no URL
+   * segment of its own. Its children do, and the guarding layout is still their ancestor: a
+   * `(session-issuing)/(passwordless)/magic-link/` route was **guarded by the layout and not
+   * rotated by the proxy** with all 27 cases green — the 401 → S-35 failure named three paragraphs
+   * up, arriving through the check written to prevent it.
+   *
+   * The realistic path there is not exotic. Anyone adding a passwordless or SSO sign-in screen
+   * would group it, and would certainly add it to `UNAUTHENTICATED_SEGMENTS`, because forgetting
+   * *that* is loud.
+   */
+  const segmentsUnder = (directory: string): string[] =>
+    readdirSync(directory, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      // A nested route group would add no URL segment, so it is not a segment to compare.
-      .filter((name) => !name.startsWith('('));
+      .flatMap((entry) =>
+        entry.name.startsWith('(') ? segmentsUnder(join(directory, entry.name)) : [entry.name],
+      );
 
-    expect(directories.sort()).toEqual([...SESSION_ISSUING_SEGMENTS].sort());
+  it('names exactly the segments `issuesSession` answers true for', () => {
+    expect(segmentsUnder(GROUP).sort()).toEqual([...SESSION_ISSUING_SEGMENTS].sort());
+  });
+});
+
+/**
+ * The third link of the chain, which nothing held (task 112's second gate review).
+ *
+ * Two containments make the three sets coherent, and only one was asserted. A session-issuing
+ * segment left out of `UNAUTHENTICATED_SEGMENTS` is **gated** — so an anonymous visitor is bounced
+ * to `/sign-in?return=/…` from the very screen meant to hand them a session, and on `/sign-in`
+ * itself that is a redirect to itself. It fails closed and it fails loudly, which is why it went
+ * unnoticed rather than unpunished; it is still one `.filter(…).toEqual([])` beside the other.
+ */
+describe('a screen that issues a session must be reachable without one', () => {
+  it('every session-issuing segment is unauthenticated', () => {
+    expect(
+      [...SESSION_ISSUING_SEGMENTS].filter((segment) => !UNAUTHENTICATED_SEGMENTS.has(segment)),
+    ).toEqual([]);
   });
 });

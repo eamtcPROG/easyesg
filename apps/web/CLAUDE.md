@@ -276,12 +276,17 @@ src/
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice
 ```
 
-Route groups carry no URL segment, which is the whole reason there are four:
+Route groups carry no URL segment, which is the whole reason there are six. **The table is the
+enumeration, and `docs:check` compares its count to the directories on disk** — a group missing a row
+here is a group a new screen is not added to, which for `(session-issuing)` means a screen that
+issues a session and is never gated:
 
 | Group | Layout it establishes | Screens |
 | --- | --- | --- |
 | `(public)` | None. **The only zone where `"use cache"` is legal** (§14.2) | Marketing, legal, help |
 | `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03 |
+| `(identity)/(session-issuing)` | None of its own. **UX-136's gate, once for the group** (task 112) — membership of the directory *is* what makes a screen refuse a caller who already holds a session | S-01 sign in and its factor step, S-01 register |
+| `(app)` | Global tier | S-04 and S-35 — the two authenticated screens in no inner group |
 | `(app)/(workspace)` | Global tier + workspace tier | S-05, S-06, S-13…S-28 |
 | `(app)/(wizard)` | Global tier only; module rail replaces the workspace tier | S-07…S-12 |
 

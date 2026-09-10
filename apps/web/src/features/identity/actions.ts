@@ -19,7 +19,7 @@ import type {
 import { getLocale } from 'next-intl/server';
 import { API_OUTCOME, mapOutcome } from '@/lib/api-outcome';
 import { resolvePostSignIn } from '@/server/post-sign-in';
-import { POST_SIGN_IN } from './post-sign-in';
+import { POST_SIGN_IN, targetLocale } from './post-sign-in';
 import { api } from '@/server/api-client';
 import { destroySession, establishSession, readSession } from '@/server/session';
 import { redirect } from '@/i18n/navigation';
@@ -117,7 +117,7 @@ export async function completeFactorAction(command: {
   // lifetime; this applies ours to the cookie's persistence.
   const session = await establishSession({ session: outcome.value, remembered: held.remember });
   const target = await resolvePostSignIn(held.returnTo ?? undefined);
-  redirect({ href: target.href, locale: target.locale ?? session.account.locale });
+  redirect({ href: target.href, locale: targetLocale(target, session.account.locale) });
 }
 
 export interface SignInCommand {
@@ -189,7 +189,7 @@ export async function signInAction(command: SignInCommand): Promise<SignInFailur
   const target = await resolvePostSignIn(command.returnTo);
   // An unprefixed return path IS the source locale's form (`localePrefix: 'as-needed'`); a
   // branch destination has no locale of its own, so the profile preference decides (OQ-32).
-  redirect({ href: target.href, locale: target.locale ?? session.account.locale });
+  redirect({ href: target.href, locale: targetLocale(target, session.account.locale) });
 }
 
 /**

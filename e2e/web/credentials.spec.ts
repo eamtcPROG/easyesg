@@ -94,9 +94,12 @@ test('changing the password works, and the old one stops working (FR-7)', async 
 
   // **"and the old one stops working" — the half this test is named for and never asserted**
   // (found by task 112's gate review, which read the block the sign-out was added to). Everything
-  // above proves the NEW password works; an API that went on accepting the old one left it green,
-  // so FR-7's second clause had no check anywhere. Three sign-in attempts on one account, inside
-  // §12.5.6's five-per-fifteen-minutes budget.
+  // above proves the NEW password works; an API that went on accepting the old one left it green.
+  //
+  // **It is not FR-7's second clause**, which is *"with optional termination of their other active
+  // sessions"* and is a different behaviour — this is the unstated property a password change is
+  // for at all, which the test's own name claims and no check anywhere held. Three sign-in attempts
+  // on one account, inside §12.5.6's five-per-fifteen-minutes budget.
   await signOut(page, email);
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);

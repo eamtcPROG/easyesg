@@ -164,7 +164,7 @@ describe('the /api/[...path] pass-through (task 22)', () => {
     );
 
     // The successor pair is sealed back into the cookie — the single-use predecessor is gone.
-    const resealed = unsealSession(cookieJar.get(REFRESH_COOKIE) ?? '', SECRET);
+    const resealed = unsealSession({ sealed: cookieJar.get(REFRESH_COOKIE) ?? '', secret: SECRET });
     expect(resealed?.refreshToken).toBe('refresh-token-2');
     expect(response.status).toBe(204);
   });

@@ -18,6 +18,7 @@ import { API_OUTCOME } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
 import { sanitizeReturnPath } from '@/lib/locale-path';
 import { resolvePostSignIn } from '@/server/post-sign-in';
+import { targetLocale } from './post-sign-in';
 import { LOCALE_COOKIE } from '@/lib/session-cookie';
 import { getPathname } from '@/i18n/navigation';
 import { api } from '@/server/api-client';
@@ -209,7 +210,7 @@ export async function completeSocialFlow(
     // than through a copy of it.
     const target = await resolvePostSignIn(transaction.returnPath ?? undefined);
     const pathname = getPathname({
-      locale: target.locale ?? session.account.locale,
+      locale: targetLocale(target, session.account.locale),
       href: target.href,
     });
     return NextResponse.redirect(new URL(pathname, env.publicOrigin), 302);
