@@ -1,0 +1,15 @@
+/* The two §8.1 address states — `error — not found` and `error — not yet available` — share one
+   stack because they are one shape with two messages (design_spec.md §4.5, task 103). Spacing is
+   the Focus screens' own, extracted through the token cascade rather than chosen here (OQ-10). */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.body {
+  color: var(--text-muted);
+  max-width: 64ch;
+}

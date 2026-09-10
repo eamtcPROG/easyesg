@@ -48,6 +48,18 @@
         "next": "Pagina următoare",
         "position": "{from}–{to} din {total}"
       }
+    },
+    "notFound": {
+      "title": "Această adresă nu există",
+      "body": "Linkul pe care l-ați deschis nu duce nicăieri în easyESG. Este posibil să fi fost scris greșit sau pagina să fi fost mutată între timp.",
+      "actionHome": "Înapoi la pagina principală",
+      "actionSignIn": "Mergeți la autentificare"
+    },
+    "notYetAvailable": {
+      "title": "Această parte nu este încă disponibilă",
+      "body": "Secțiunea este prevăzută, însă nu a fost încă publicată. Nu ați greșit adresa și nu aveți nimic de corectat — reveniți mai târziu.",
+      "actionHome": "Înapoi la pagina principală",
+      "actionSignIn": "Mergeți la autentificare"
     }
   },
   "forms": {

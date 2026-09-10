@@ -333,7 +333,7 @@ Added 24 Aug 2026 with the Visitor actor, closing `design_spec.md` OQ-12. These 
 |---|---|---|
 | Public tier | UC-177 … UC-182 | VI |
 
-Two of them carry an open question rather than a settled mechanism, stated in their §5 entries rather than resolved here: **UC-179** does not decide whether the cookie choice is *recorded* server-side or implied (`design_spec.md` OQ-16), and **UC-182** does not decide by what channel support is reached (`task.md` task 77). Both are registered because the goal is real and the screen exists; neither is specified past what the sources support.
+Two of them carry an open question rather than a settled mechanism, stated in their §5 entries rather than resolved here: **UC-179**'s cookie question is settled — `design_spec.md` **OQ-23**, closed 10 Sep 2026: no non-essential storage is set, so no consent is required, and **UC-182** does not decide by what channel support is reached (`task.md` task 77). Both are registered because the goal is real and the screen exists; neither is specified past what the sources support.
 
 
 ### 4.5 Comprehensive Module (UC-183 … UC-192)
@@ -2843,9 +2843,9 @@ their numbers put them.
 - **Trigger:** First arrival, or the reader returning to the cookie policy to change a previous answer.
 - **Main success scenario:**
   1. The visitor is shown what the site sets and what it does not.
-  2. The visitor accepts or declines the non-essential categories.
-  3. The site honours the answer.
-- **Postconditions:** **Undecided — `design_spec.md` OQ-16.** Whether the answer is *recorded* server-side as a consent record, or applied client-side as an implied-consent preference, is open; the two produce different postconditions and the second needs no API. Recorded rather than assumed, because deciding it here would close a legal question by UI default — which is what OQ-16 says about it.
+  2. There are no non-essential categories to accept or decline (OQ-23).
+  3. The visitor continues, or opens the cookie policy for the detail.
+- **Postconditions:** **Settled — `design_spec.md` OQ-23**, closed 10 Sep 2026. No consent record is written and no client-side preference is stored, because the platform sets no non-essential storage: every one of its seven cookies is strictly necessary, and strictly necessary cookies require information rather than consent. The postcondition is that the reader has been *told*. This re-opens as a new question the moment any non-essential storage is added, and the consent mechanism must ship in the same change as the storage
 - **Business rules:** What the application actually sets is a factual claim the screen makes about shipped code, not a template sentence; the prototype's "What we do not set" section has to be true of the build.
 - **Related FRs:** —
 - **Related UCs:** UC-178

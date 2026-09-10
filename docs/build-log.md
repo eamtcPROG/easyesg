@@ -14466,3 +14466,149 @@ makes that unrepresentable rather than merely unobserved. Searched before closin
 ### Verified
 
 `pnpm gates:clean` — the sixteen gates, from a tree with every build output removed.
+
+## Task 103 — Sixteen addresses that rendered nothing · 2026-09-09
+
+Opened by the project owner reporting that the platform is hard to navigate, that screens do not
+respect proportions, and that buttons are missing. Two of those three turned out to be one defect
+and the third could not be reproduced, so the shape of the answer is worth recording before the
+work is.
+
+### What was measured, and what was wrong about the report
+
+**Proportions: not reproduced, and twice the screenshot lied.** At 1440×900 and 375×812 every
+screen that renders is well-proportioned. The global bar looked clipped in a screenshot and
+`getBoundingClientRect` answered `top: -35` — the page was scrolled. The mobile workspace nav
+looked cut off at *Users & access* and the `<ul>` has `overflow-x: auto` with `scrollWidth: 462`
+against a 375 viewport, so it scrolls inside its own container and `documentElement.scrollWidth`
+never exceeds the viewport. Both would have been filed as layout bugs against correct components
+by an eye alone. Nothing was changed for this half of the report.
+
+**Missing buttons: worse than missing.** Sixteen addresses answered **HTTP 200 with an empty
+`<main>`** — no heading, no text, no control — because their `page.tsx` returned `null`. A blank
+200 is indistinguishable from a working page to every gate in the set: the files compile, the types
+check, and `return null` is valid React.
+
+**Navigation: the rule existed and stopped at a boundary.** `WorkspaceNavigation` and `GlobalTier`
+each carry, in a comment, the rule that *a nav item leading to a blank page is worse than an absent
+one* — and `/home` and `/entities` have zero dead links because of it. The public and identity
+chrome never got the rule: every one of the seven identity screens links to five blank addresses,
+of six links it has. That is CLAUDE.md's *"A rule is applied where it holds, not where it was
+found"*, and the dead links themselves are **task 75's**, already recorded there with NFR-5's
+instrument (Law No. 195/2024) — so this task removed no link and added no screen.
+
+### The decisions, taken before any code
+
+Both were put to the project owner as decision questions, because different answers produced
+materially different work and OQ-21 is open on the neighbouring question.
+
+- **Patterns, not screens** (§4.5). UX-7 governs *destinations serving a use case*; these are the
+  answer when no destination applies, so there is nothing to trace to and nothing worth inventing.
+  §4.4's count stays at 52 and **OQ-21 is explicitly not closed** — it asks when a destination needs
+  an `S-nn`, which a rule about the absence of one does not touch.
+- **Two surfaces, not one state with a flag.** A wrong address is corrected by going somewhere
+  real; a deferred one is corrected by waiting.
+
+**A live spec inconsistency was closed on the way.** §4.6 has named `error — not found` as a
+**Content** state since OQ-17 closed on 24 Aug 2026, while §8.1's table defined no such state — so
+UX-90, which makes an undefined state a defect, was being violated by the specification itself.
+§8.1 now carries both states.
+
+### What the framework does that the code cannot
+
+**A not-found boundary does not server-render.** Production HTML for a 404 is an empty shell —
+`<div hidden><!--$--><!--/$--></div>` — with the markup arriving in the Flight payload, so the page
+is blank without JavaScript. This was **measured rather than assumed**: `not-found.tsx` was
+replaced with a synchronous `<h1>` marker, rebuilt, and produced the same empty shell, which rules
+out the `await`s in `AddressNotice` as the cause. Recorded in the file so the next reader does not
+try to fix it by desugaring the component — that change has already been tried.
+
+**Two files are one mechanism.** A nested not-found boundary fires only on an explicit
+`notFound()`; an unmatched path otherwise falls past it to Next's default. `[locale]/[...rest]`
+is what converts "no route matched" into that call.
+
+**A docblock claim was written, tested and found false.** The first draft said an unrecognised
+locale reaches the boundary through `[locale]/layout.tsx`'s own `hasLocale` refusal. It does not:
+under `localePrefix: 'as-needed'` next-intl rewrites `/xx/home` to the source locale, so that
+branch is unreachable and `xx` becomes an unknown *route* segment. The e2e test asserting it failed,
+which is how it was caught; the corrected pair now asserts what actually happens — 307 to sign-in
+signed out, 404 once a session exists, because `proxy.ts`'s closed-by-default gate runs before
+routing.
+
+### Deliberately not done
+
+- **Three wizard stubs stay blank** — calculator, preview, export. UX-5 makes the wizard's exit *"a
+  single, always-visible, explicitly labelled control"*, and a notice carrying only a link to Home
+  would strand the reader inside a flow whose chrome suppresses the workspace tier.
+- **The five dead links on the identity screens are still dead**, now pointing at an honest page
+  instead of a blank one. Task 75 owns them and must land before task 48.
+
+### Verified
+
+`pnpm typecheck`, `pnpm lint`, `pnpm --filter @easyesg/web test` (326), `pnpm docs:check`,
+`pnpm --filter @easyesg/web build`, and `pnpm e2e:web --project identity` over the new
+`address-states.spec.ts` — **11 passed** against the standalone bundle, with the dev servers
+stopped first so task 102's `reuseExistingServer` trap could not silently substitute `next dev`.
+
+`docs:check` caught two stale counts as they were created — `apps/web` page routes 42 → 43 and the
+plan's task count 102 → 103 — which is the gate doing precisely what task 100 built it for.
+
+**The spec is proven to bite.** `notifications/page.tsx` was reverted to `return null`, rebuilt, and
+the workspace test failed on the missing heading; the file was then restored.
+
+**Not run, and not claimed: `pnpm gates:clean` and the three review agents.** Task 103 is a parent
+row, so the 8 Sep policy asks for both. The session this was built in is configured not to dispatch
+subagents, so the reviews are outstanding rather than passed — they should be run over this diff
+before it is pushed, on `opus` per the pin, and this diff is squarely in the routing table's range
+(three workspaces plus the contract-adjacent catalogue set).
+
+## The cookie-consent question had been citing another question's number · 2026-09-10
+
+Asked to close `design_spec.md` OQ-16 with the finding that every cookie the platform sets is
+strictly necessary. **OQ-16 is not that question.** Its register row reads *"The Register prototype
+captures more than S-01 specifies and the API accepts"* — the Register artboard's full-name field
+and consent checkbox — and it is still open. `build-log.md` describes it that way in three earlier
+entries.
+
+The cookie question had **no row of its own** and was citing OQ-16 in five places across three
+documents: `design_spec.md`'s S-31 entry, `use_cases.md` §4.4's note and UC-179's postconditions,
+and `task.md`'s task 75 parent, 75.1 and 75.5. Closing "OQ-16" as asked would have written a cookie
+decision onto an S-01 question and destroyed a live one.
+
+**What that changes about how to read a citation here.** A number that appears consistently in
+several places still proves nothing — five sites agreed, and all five were wrong, because they were
+copied from each other rather than from the register. The register row is the only authority, and
+the check is one `grep` of it. Cheap, and it was never run.
+
+Four registers use the identifier `OQ-16` for four different questions —
+`non_functional_requirements.md`'s (closed 25 Aug, NFR-27's enumeration), `architecture.md`'s
+(closed, test tooling), `design_spec.md`'s (open, the Register artboard) and the cookie question
+that had borrowed the number. Per-document registers are the design and are not the defect; reading
+a bare `OQ-nn` without its document is.
+
+### The close itself
+
+**`design_spec.md` OQ-23**, appended and closed the same day, on the OQ-17 precedent. The decision
+is *neither recorded nor implied*: seven cookies platform-wide and every one strictly necessary —
+five on the tenant surface, plus `easyesg_admin_session` and `easyesg_admin_challenge` on the
+operator console's origin — with no analytics, advertising or third-party code in any of the three
+front-end workspaces and self-hosted fonts, so the public pages make no external request at all.
+Strictly necessary cookies require information rather than consent.
+
+**Established from the code, and the prototype disagrees with it on every count.**
+`EasyESG Public Legal.dc.html` draws five cookies of which not one name matches the build, an
+optional `esg_stats` analytics cookie that was never built, a `localStorage` draft cache that is
+actually IndexedDB, an `esg_csrf` cookie that does not exist (the proxy uses a same-origin proof),
+a font service that is not used, and Law 133/2011, which Law 195/2024 repealed on 23 August 2026.
+That is task 75's third recorded unknown — *"what the application actually sets"* — answered, and
+the answer is that the prototype's legal copy is placeholder.
+
+### Amended in the same edit, because the decision falsified them
+
+S-31 lost its accept/decline controls, its *ready — answered* state, its "changing a previous
+answer" entry point and the "must still be able to answer" clause in its layout note — four sites,
+and the last two were found only by re-reading the entry after the first two were fixed. UC-179's
+main success scenario step 2 and its postconditions were rewritten. **Whether S-31 survives as a
+distinct screen or folds into the cookie policy is deliberately left to task 75.1** — the close
+removes the choice, not necessarily the screen, and deleting an `S-nn` would move §4.4's count and
+UC-179's coverage, which is a bigger decision than the one asked for.

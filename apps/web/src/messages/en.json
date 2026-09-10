@@ -48,6 +48,18 @@
         "next": "Next page",
         "position": "{from}–{to} of {total}"
       }
+    },
+    "notFound": {
+      "title": "This address does not exist",
+      "body": "The link you opened does not lead anywhere in easyESG. It may have been mistyped, or the page may have moved since it was shared with you.",
+      "actionHome": "Back to your home page",
+      "actionSignIn": "Go to sign in"
+    },
+    "notYetAvailable": {
+      "title": "This part is not available yet",
+      "body": "This section is planned but has not been published yet. You have not mistyped the address and there is nothing for you to fix — please come back later.",
+      "actionHome": "Back to your home page",
+      "actionSignIn": "Go to sign in"
     }
   },
   "forms": {

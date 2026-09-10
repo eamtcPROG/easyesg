@@ -10,8 +10,8 @@ every screen. Cite them; do not re-derive them.
 
 ## Current state
 
-Scaffold plus the first screens. What exists: 36 route files across four route groups, 6 layouts,
-2 route handlers, the next-intl wiring, 10 feature folders, 5 boundary rules with fixtures — and,
+Scaffold plus the first screens. What exists: 43 page routes across four route groups, 6 layouts, a
+not-found boundary, 4 route handlers, the next-intl wiring, 10 feature folders, 5 boundary rules with fixtures — and,
 from task 20, **S-01 register and S-02 verify/resend live end to end**: `features/identity/`
 (server actions, RHF forms, the sessionStorage hand-off store), the `(identity)` layout on
 `@easyesg/ui`'s FocusShell, self-hosted fonts in `globals.css`, and `e2e/web/` at the repo root
@@ -224,6 +224,30 @@ what replaces FR-64's runtime queue now that every locale is present at build ti
 `pnpm typecheck`. Component specs run against the real RO catalogue with
 `src/test/setup.ts` registering jest-dom matchers and the explicit `cleanup()` that
 `globals: false` withholds.
+
+**Every address answers something (task 103).** `shared/address-notice.tsx` holds §8.1's two
+address states — `error — not yet available` for the sixteen routes whose screens have not
+shipped, and `error — not found` for an address that does not exist. `design_spec.md` §4.5
+records them as **patterns, not screens**: UX-7 governs destinations serving a use case, and
+these are the answer when none applies, so §4.4's count stays at 52 and neither gained an
+`S-nn`. Three things to know before touching them:
+
+- **Neither renders a landmark.** `(workspace)`'s layout already emits `<main>`; `(public)`'s
+  emits none, so a public caller wraps the notice in `FocusColumn`. Getting this wrong
+  duplicates the landmark in one group and drops it in the other, and nothing but an axe scan
+  would say so.
+- **`[locale]/not-found.tsx` needs the `[...rest]` catch-all to fire at all.** A nested
+  not-found boundary reacts only to an explicit `notFound()`; an unmatched path otherwise falls
+  past it to Next's unstyled English-only default. The two files are one mechanism.
+- **The 404's markup is client-rendered and the not-yet-available pages are not.** Next serves
+  an empty shell for a not-found boundary and streams the content in the Flight payload —
+  measured against a synchronous probe component, so it is the framework's behaviour and not
+  the `await`s in `AddressNotice`. Do not "fix" it by desugaring the component.
+
+Reaching the 404 signed out depends on the segment, which is `proxy.ts`'s rule rather than the
+page's: an unknown address under an authenticated segment answers 307 to sign-in with a
+`?return=` and never reaches the catch-all, so only `route-access.ts`'s unauthenticated
+segments 404 without a session. `e2e/web/address-states.spec.ts` asserts both halves.
 
 ## Commands
 
