@@ -106,7 +106,9 @@ export {
 export { Pagination, type PaginationProps } from './navigation/pagination';
 export {
   WorkspaceNav,
+  type NavLinkComponent,
   type WorkspaceNavItem,
+  type WorkspaceNavItemState,
   type WorkspaceNavProps,
 } from './navigation/workspace-nav';
 

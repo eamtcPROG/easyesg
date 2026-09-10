@@ -13,7 +13,7 @@ restating it here would create the second copy that drifts. This file carries wh
 
 ## Current state
 
-44 components in nine folders, 21 spec files, `src/styles/tokens.css` at 198 lines. Not every
+44 components in nine folders, 22 spec files, `src/styles/tokens.css` at 198 lines. Not every
 component has its own spec — `forms/forms.spec.tsx` covers several together — so per-file absence
 is not itself a gap.
 
@@ -97,6 +97,18 @@ src/
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never
   had the directive, has worked from a Server Component throughout.
+
+- **A component that needs the app's router takes it as a prop; it does not take the app's
+  finished markup** (task 105). `WorkspaceNav` used to accept a rendered `link` per item, which
+  read as maximal flexibility and was the opposite: the anchor arrived opaque, so the component
+  could not set `aria-current` on it — the attribute sat on a wrapping `<span>`, `role="generic"`,
+  where no screen reader announces it — and every consumer had to build JSX in a `.map` before it
+  could render a nav. It now takes `items` as data, `isActive` as a predicate and an optional
+  `linkComponent`, and builds the anchor itself. **The test is the tell:** under the old shape the
+  only spec of the current-section semantics lived in `apps/web`, against one caller, so a second
+  consumer inherited no guard; `workspace-nav.spec.tsx` can assert it here because the anchor is
+  now the component's. Reach for injection (`linkComponent`, `renderItem`) over a `ReactNode`
+  prop whenever the component has semantics of its own to put on the element.
 
 - **Presentational by rule: no text, no router.** Strings and `href`s arrive as props. This is not
   tidiness — the same component renders in three locales and in two apps with different routers,

@@ -22,8 +22,21 @@ import { WorkspaceNavigation } from './workspace-navigation';
 const nav = vi.hoisted(() => ({ pathname: '/home' }));
 
 vi.mock('@/i18n/navigation', () => ({
-  Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <a href={String(href)}>{children}</a>
+  // **It must forward the rest of its props**, which the first version of this double did not —
+  // it destructured `href` and `children` only, so it silently swallowed the `aria-current` the
+  // component passes and failed two tests that were right. The real `Link` forwards anchor props;
+  // a double that models behaviour has to model that too, or it tests itself.
+  Link: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+  } & Record<string, unknown>) => (
+    <a href={String(href)} {...rest}>
+      {children}
+    </a>
   ),
   usePathname: () => nav.pathname,
 }));
@@ -40,13 +53,11 @@ const renderedTier = () =>
     .getAllByRole('link')
     .map((link) => [link.textContent, link.getAttribute('href')] as const);
 
-/** The sections carrying `aria-current="page"`, in rendered order. */
+/** The section carrying `aria-current="page"`, which task 105 moved onto the anchor itself. */
 const currentSections = () =>
-  [
-    ...screen
-      .getByRole('navigation', { name: 'Secțiunile organizației' })
-      .querySelectorAll('[aria-current="page"]'),
-  ].map((element) => element.textContent);
+  // `queryAllByRole`, not `getAllByRole`: the empty answer is a case this suite asserts, and the
+  // `get*` family throws rather than returning it.
+  screen.queryAllByRole('link', { current: 'page' }).map((link) => link.textContent);
 
 beforeEach(() => {
   nav.pathname = '/home';
@@ -80,10 +91,10 @@ describe('the workspace tier', () => {
 
     render(withIntl(<WorkspaceNavigation />));
 
-    // **Queried by attribute rather than by `getByRole('link', { current: 'page' })`**, because
-    // `WorkspaceNav` puts `aria-current` on the wrapping span and not on the anchor — its docblock
-    // states why (the caller owns the anchor). A role-based query finds nothing here, which is a
-    // fact about the component and not about this tier.
+    // A role-based query, which only became possible in task 105: `WorkspaceNav` now builds the
+    // anchor and puts `aria-current` on it, where a screen reader moving link-to-link reads it.
+    // `packages/ui`'s own spec holds the component to that; this asserts the tier resolves the
+    // right section as active.
     expect(currentSections()).toEqual(['Entități']);
   });
 

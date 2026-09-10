@@ -14685,3 +14685,104 @@ Home first, Home underlined.
 tests assert the rendered DOM of the component that owns both; the browser suite would re-prove the
 same claim through a slower surface. Stated rather than skipped silently, per the gate policy.
 
+## Task 105 — the flexible-looking prop that held a defect in place · 2026-09-10
+
+The project owner rejected the fix I proposed one turn earlier and named the real problem:
+`WorkspaceNav` "is not reusable at all and it requires reimplementation and remapping always."
+That is correct, and it subsumes the accessibility bug rather than sitting beside it.
+
+### Why the old API was the defect, not just around it
+
+It took `items: { key, link, current }` — a **rendered anchor** and a **resolved boolean** per
+entry. Two consequences, and the second is the one I had missed:
+
+- Every consumer had to build JSX inside a `.map` and compute its own active state before it could
+  render a nav. Nothing was reused but the markup, which is not UX-89's *reviewed once and reused*.
+- Because the anchor arrived finished, **the component could not put `aria-current` on it**. It went
+  on the wrapping `<span>` instead — `role="generic"`, so a screen reader moving link-to-link
+  announces the current section exactly as it announces every other. The underline reached sighted
+  readers; §8.1's `current` state reached nobody else.
+
+The docblock's defence of that placement was *"the caller owns the anchor, and asking every caller
+to remember the attribute is how one screen ends up without it."* The premise was true and the
+conclusion did not follow: the answer to "the caller owns the anchor" is to stop handing the
+component a finished anchor.
+
+### The argument I got wrong, twice
+
+I first proposed setting `aria-current` at the call site, guarded by the spec written in task 104.
+Two flaws, and the owner's push-back found both.
+
+**I cited a rule that does not govern.** CLAUDE.md's warning against "an interface with one
+implementation" sits inside *"Never widen a question by coding around it"* — it is about
+abstracting to defer an open decision. Nothing here was undecided. A design-system component exists
+for consumers that do not exist yet; that is what `packages/ui` is.
+
+**And "the spec catches it" was hollow.** `workspace-navigation.spec.tsx` asserts the **caller's**
+output. A second consumer of `WorkspaceNav` inherits no guard, so the protection was per-caller —
+the identical weakness to the convention it was defending. The reusability question and the
+accessibility question had the same answer and I had treated them as a trade.
+
+### What it takes now
+
+`items` (generic over `TItem extends { key, href, label }`, so a consumer's richer objects pass
+through still typed), `isActive: (item) => boolean`, optional `renderItem`, optional
+`linkComponent`. The predicate rather than an active key because the matching rule belongs to the
+consumer — this tier compares the pathname exactly, a nav over nested routes needs a prefix match,
+and a component that guessed would be wrong for one of them. The package still holds no router and
+no text: `Link` is injected and `label` arrives localized.
+
+`apps/web`'s caller keeps exactly one `.map`, for the label, which cannot move — UX-79 gives this
+package no text.
+
+### The gate this unlocked
+
+**`packages/ui/src/navigation/workspace-nav.spec.tsx` is new and could not have existed before.**
+Under the old API the anchor was opaque to the component, so its own accessibility claim had nowhere
+to be tested at its own boundary. Six cases now, including the injected-link path and the generic
+pass-through. Proven to bite by moving `aria-current` back onto the wrapper: two cases fail with
+*"Unable to find an accessible element with the role link"* — because a `{ current: 'page' }` query
+on role `link` matches only the anchor, which is exactly the regression it must catch.
+
+### Two things found while verifying
+
+**My own test double was lying.** The mocked `Link` in `workspace-navigation.spec.tsx`
+destructured `href` and `children` only, so it silently swallowed the `aria-current` the component
+now passes, and two correct tests failed. The real `Link` forwards anchor props; a double that
+models behaviour has to model that too. Fixed to spread, with the reason in the file.
+
+**`getAllByRole` throws where `queryAllByRole` returns `[]`**, and one of these cases asserts the
+empty answer. Both are the same class as the defect above: a test that cannot express the state it
+is checking.
+
+### Not changed, and recorded rather than deferred silently
+
+`WizardModuleItem` has the same shape — `aria-current="step"` on an `<li>` wrapping the caller's
+anchor. Less broken (a `listitem` is announced while browsing a list) and still silent when the
+reader moves link-to-link, which is how a rail of eleven modules is navigated. Its docblock claims
+it prevents "a WCAG 2.2 AA failure"; that claim is not fully delivered. It is a separate change:
+`module-rail.tsx` passes `className` on its anchor and the item carries an indicator, so the
+injection shape needs a pass-through the nav did not.
+
+`packages/ui/CLAUDE.md` gains the pattern as a trap, since it is now the precedent for any
+navigation component: take the router as a prop, never the app's finished markup.
+
+### Verified
+
+`pnpm --filter @easyesg/ui typecheck` and `test` (**119**, six new), `pnpm --filter @easyesg/web
+typecheck` and `test` (**330**), `pnpm --filter @easyesg/admin test` (7), `pnpm lint`,
+`pnpm boundaries` (996 modules), `pnpm routes:check`, `pnpm docs:check` — which caught
+`packages/ui/CLAUDE.md`'s spec-file count at 21 against 22.
+
+The **running app** was read rather than only the specs: `/en/entities` renders
+`<a aria-current="page" href="/en/entities">Entities</a>`, zero `aria-current` on any `<span>`, the
+five tabs in order, and the `/en` prefix intact — which is the injected `Link` doing its job.
+
+**`pnpm e2e:web` is outstanding**, and not for a judgement reason: the browser projects bind port
+3100 and a dev server is live on it, so `reuseExistingServer` would run the suite against
+`next dev` instead of the standalone bundle — task 102's recorded trap. It needs that port free.
+
+**One count left alone deliberately.** `packages/ui/CLAUDE.md` says "The barrel — 42 exports"; two
+regexes over `src/index.ts` answer 54 and 65, so the figure's definition is unknown and replacing it
+with a guess would be worse than leaving it. It belongs in `docs:check` or it should stop being a
+number — task 100's subject, raised rather than patched.

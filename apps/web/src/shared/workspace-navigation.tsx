@@ -62,11 +62,18 @@ export function WorkspaceNavigation() {
   return (
     <WorkspaceNav
       label={t('label')}
-      items={SECTIONS.map((section) => ({
-        key: section.key,
-        current: pathname === section.href,
-        link: <Link href={section.href}>{t(section.key)}</Link>,
-      }))}
+      // The locale-aware `Link`, injected: `packages/ui` holds no router, and a raw `next/link`
+      // would drop the prefix. The component builds the anchor and owns `aria-current` with it.
+      linkComponent={Link}
+      // **The only mapping left is the label**, and it cannot be removed: this package owns no text
+      // (UX-79), so the localized string has to arrive from here. `key` and `href` pass through
+      // untouched, which is what task 105's API change was for — the previous shape needed a
+      // rendered anchor and a resolved boolean per entry, built in this `.map` on every render.
+      items={SECTIONS.map((section) => ({ ...section, label: t(section.key) }))}
+      // Exact comparison, because every section in this tier is a leaf address. A nav whose
+      // sections had children would pass a prefix match instead, which is why the component takes
+      // the predicate rather than an active key.
+      isActive={(item) => item.href === pathname}
     />
   );
 }
