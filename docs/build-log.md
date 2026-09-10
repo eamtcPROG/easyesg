@@ -15253,3 +15253,297 @@ today — both drawers inject next-intl's `Link` — and recorded here rather th
 `packages/ui` **131 tests** (two new), `apps/web` **330**, both typechecks, `pnpm lint`,
 `pnpm docs:check`, and **`pnpm e2e:web` — 167 passed, PLAYWRIGHT EXIT: 0**, all three projects,
 which a `packages/ui` change gets no narrow run out of.
+
+## Task 112 — the gate had one direction, and the direction it had was weaker than it read · 2026-09-10
+
+*"If the user is logged in he should not be able to access the sign in page — he should be
+redirected to `/home`; the same applies when he is not logged, if he tries to access protected
+routes like `/home` he should be redirected to sign in."*
+
+The second half has held since task 22 and is proven three times over — `session.spec.ts`,
+`routing.spec.ts`, `address-states.spec.ts`. Measuring it before building anything is what turned
+one request into two findings, because the half that existed turned out to be **stating a different
+fact from the one it claimed**, and the half that did not exist turned out not to belong where the
+existing one lives.
+
+### What the missing half actually costs
+
+Not tidiness. `/sign-in` and `/register` both end in `establishSession`, so a reader served the form
+again and submitting it **replaces their live session in place** — and on `/register`, as a
+different account, with nothing on screen saying that is what happened. The reachable paths are
+ordinary: a typed address, a bookmark, the back button after signing in, a second tab.
+
+### The guard is not in the proxy, and the reason is the destination
+
+The symmetry argument is seductive and wrong. `proxy.ts` owns the outbound gate, `route-access.ts`
+already holds the vocabulary both directions need, and the reverse redirect would have been four
+lines there. But the two gates answer differently shaped questions: the outbound one's answer is
+**one address**, and this one's is **§4.3's branch** — none → S-04, one or several → S-05, a failed
+membership read → S-35.
+
+Redirecting everyone to `/home` was the shortcut, and task 25.4 had already refused it for this
+exact case: a member of nothing lands in an empty workspace that states they belong to an
+organization nobody can name. Resolving the branch instead needs `api-client`, which reads the
+request's cookies through `next/headers` — a scope the proxy does not have, and `proxy.spec.ts`
+asserts precisely that by mocking `cookies()` to reject with *"the proxy has no request scope —
+that is the point"*.
+
+So `server/session-entry.ts` runs during render, on the two pages, through the same
+`resolvePostSignIn` the sign-in action uses. It is legal there because `api-client` never rotates —
+the property `organization-unavailable/page.tsx` already leans on to re-resolve the branch on every
+render — and it cannot loop, because every destination the branch can answer is inside `(app)` and
+no `(app)` route issues a session.
+
+### The guard was written twice before it was written once
+
+The first draft called `redirectWhenSignedIn` from `sign-in/page.tsx` and `register/page.tsx`. The
+project owner rejected it in the same words that rebuilt `WorkspaceNav` in task 105 — *"it is
+repeating itself … this should be done in one place"* — and was right for the same reason: **a rule
+every consumer has to remember is not one rule, it is N copies of it**, and the copy that goes
+missing is the one nothing can see. A screen added to `(identity)` without the line would simply not
+be guarded, and no gate, spec or type would say so. The convention review had reached the same place
+independently and I had filed it as *disclosed rather than fixed*, which was the wrong call: the
+disclosure describes the defect accurately and leaves it in.
+
+**The answer is a route group, `(identity)/(session-issuing)/`, whose layout runs the guard.** Route
+groups add no URL segment, so `/sign-in`, `/sign-in/factor` and `/register` are unmoved, and
+membership of that directory **is** the predicate — the filesystem's own copy of
+`SESSION_ISSUING_SEGMENTS`, which the proxy reads for the same two routes when it decides whether to
+rotate. There is nothing left to forget.
+
+**The proxy was considered again first and is still not the place**, and this time the reason is
+mechanical rather than architectural: resolving §4.3 needs a *read* of `/memberships`, and the only
+client that works outside a request scope is `detachedApi` — which exposes `post` alone, on a
+recorded decision whose stated reason is *"a `get` here would be a read whose tenant nobody bound"*,
+and which strips the bearer entirely, so the call would be answered 401 even if the verb existed.
+
+**What the shape costs, stated rather than discovered later:** a layout cannot see `searchParams`,
+so `?return=` is no longer honoured by the guard and the branch's destination wins. That is small
+and it is not UX-38: a `?return=` arriving on a request that *already* carries a session is a
+leftover from a bounce something else has since answered, and UX-38's mid-work expiry never reaches
+this code because that reader has no session. The one case it costs is a registration handed off
+from S-03 whose visitor signed in elsewhere between the hand-off and the reload — they land on their
+own home instead of the invitation, and the emailed link still works.
+
+### Issuing a session is a narrower set than task 26.3's, and this is the clause a sweep removes
+
+`SESSION_ENTRY_SEGMENTS` holds four segments and reads like the answer. It is not. It answers *where
+must a post-sign-in branch never send someone* — about a destination this app chose — where this
+task asks *where must a signed-in reader not be*, about an address they typed or opened from an
+email. `/reset` and `/set-password` are where the two part company: they recover a **credential**,
+and a reset link is followed on whatever device is to hand, frequently one already signed in.
+Guarding them would have made password recovery impossible for anyone holding a live session — a
+worse failure than the one being fixed, shipped as a tidy-up.
+
+`SESSION_ISSUING_SEGMENTS` is therefore its own vocabulary of two, and the relationship between the
+sets is **asserted rather than commented**: `route-access.spec.ts` iterates the issuing members and
+requires each to be refused by `isReturnableAfterSignIn`, so a third entry point added to one set
+and not the other fails there. `/verify` and `/invitation/{token}` are in neither, because a
+signed-in reader confirming an address or accepting an invitation is the ordinary case.
+
+`?return=` rides through the guard for the same reason it rides through sign-in. The case that makes
+it load-bearing is `/register?invitation=…`: dropping it would send someone who signed in between
+clicking the invitation and arriving here to their home with the invitation lost.
+
+### The half that already worked was two readings of one sentence
+
+`readSession`'s docblock has said since task 22 that *absent, unsealable and past its refresh bound
+are all the same fact*. The proxy's gate asked `request.cookies.has(REFRESH_COOKIE)`.
+
+So a cookie that failed the ciphertext's authentication tag — a rotated `SESSION_SECRET`, a
+truncated value, a tampered one — **passed the closed-by-default gate**. The screen rendered
+authenticated, `api-client` had no token to attach, and the reader met an error state standing
+exactly where the sign-in screen that would have fixed it belonged. Not a tenancy hole (RLS and
+`AuthGuard` are below this), and squarely inside what the request asked for: *not logged in* was
+true and the gate said otherwise.
+
+The two copies could not be shared until the predicate took the **cookie value** rather than the
+store — Next's two cookie surfaces share no API, which is the same asymmetry `SessionJar` exists for
+on the writing side. `liveSession` is now the one statement and `readSession` is a two-line wrapper
+over it.
+
+### Rotation had to widen with it, and that is a consequence rather than an extra
+
+`rotateIfDue` ran only on routes that *require* a session. The moment `/sign-in` resolves the branch
+during render, a caller arriving with a sixteen-minute-old access token gets a 401, the branch reads
+the failure as *we could not find out*, and the reader is sent to **S-35 — organization
+unavailable**: a wrong answer stated as a fact, and unfixable downstream, since a Server Component
+may not write the successor cookie. So the rotation gate is now `requiresSession || issuesSession` —
+*rotate wherever the request is about to read the session*. An anonymous visitor to `/sign-in` still
+pays nothing, not even an unseal, and there is a case asserting it.
+
+`proxy.spec.ts`'s *"does not unseal anything on a route that needs no session"* was re-pointed to
+`/en/legal/terms` rather than deleted: the property it guards is still true, and it was only ever
+using `/en/sign-in` as an example of a route that had become the wrong example.
+
+### One consequence caught by reading the diff rather than by a test
+
+`rotateIfDue` now reads `liveSession`, so it no longer attempts a refresh past the refresh bound —
+which silently removed the only thing that **cleared** a dead cookie, since that clearing had been a
+side effect of the api refusing the refresh. So the gate clears it directly, and that covers the
+unsealable case too, which nothing had ever cleared. It is not cosmetic for one session in
+particular: a reader who declined *keep me signed in* gets a cookie with no `Max-Age` (OQ-35), so
+the browser holds it for the life of the tab and would present a dead value on every navigation
+until it closed. Both new cases assert the `Set-Cookie`, and both go red without the line.
+
+### What was proven to bite, and how
+
+`route-access.ts` had **no spec at all** before this task, which its own `routeSegment` docblock
+makes uncomfortable reading: it records a **security bug that shipped** — reading segment 1 as the
+locale was correct under `localePrefix: 'always'` and made every authenticated Romanian route
+public the day it became `'as-needed'`, invisibly, *"because every test URL was prefixed"*. A
+browser suite cannot cover that cheaply. A table of pathnames can, and now does.
+
+| Mutation | What went red |
+| --- | --- |
+| `routeSegment` returns segment 2 unconditionally (the shipped bug) | `gates /home`, `gates /reports`, `admits /legal/terms`, `admits /invitation/tok` |
+| `verify` added to `SESSION_ISSUING_SEGMENTS` | `leaves /verify reachable`, and the set-relationship invariant |
+| gate restored to `cookies.has` | `turns away a cookie that does not unseal`, `turns away a session past its refresh bound` |
+| rotation gate restored to `requiresSession` alone | `rotates on a route that issues a session` |
+
+Three browser cases in `post-sign-in.spec.ts`, which is where they belong — that file already owns
+*"§4.3's branch in a real browser, arm by arm"*, and the new rule is that the branch runs for an
+**address** and not only for a submission. One of the three is the member-of-nothing landing on S-04
+rather than an empty home, which is the case that says why this is not a redirect to `/home`; one is
+`/reset` staying reachable, which is the clause a future sweep would otherwise delete.
+
+### The browser suite found what the unit suites could not, and it was the guard working
+
+First run: **5 failed, 162 passed** — four in `credentials.spec.ts`, one in `accessibility.spec.ts`,
+every one of them a `locator.fill` timing out on *Adresa de e-mail*. The cause is the change
+behaving exactly as designed on journeys that had assumed otherwise: both suites reach `/sign-in`
+**while still signed in** — to prove the old password stops working after a change (FR-7), and to
+re-present a password against a freshly enrolled factor (UC-194) — so the guard sent them to the
+reader's home and the form was never rendered.
+
+**The fix is a sign-out, not a smaller guard**, and the distinction is the whole of it. Neither
+journey is something a person does: a reader who wants the sign-in form leaves first, and that is
+the control §4.2 puts in the account corner. The tests had reached the screen by a route the product
+does not offer, and the guard is what made that visible. `e2e/web/support/session.ts`'s `signOut`
+is now the one copy — `presentPassword` calls it, `credentials.spec.ts` calls it before its second
+sign-in, and `session.spec.ts` reads through it too rather than keeping the third copy of the two
+clicks, so a renamed menu item fails every journey that leaves a session at once instead of one.
+
+The five failures are also the sweep, and the ratio is the reassuring part: the suite makes **73**
+navigations to `/sign-in` or `/register`, and exactly **two sites** were reached from a signed-in
+browser — `credentials.spec.ts`'s second sign-in, and `presentPassword`, whose five callers account
+for the other four failures. Every other one starts from the fresh browser context Playwright gives
+each test, which is why nothing else moved.
+
+### Searched, per "a rule is applied where it holds"
+
+- **Other readers of the session-presence fact. My sweep named three and got the third wrong**, and
+  the convention review found it — the entry below records what that cost. `readSession` was
+  correct, the proxy gate was fixed, and the third I named was `/api/[...path]`, which reaches the
+  fact through `readSession` and was never the site: the module that *"reads the sealed cookie to
+  attach a bearer"* is **`api-client.ts`**, and it unsealed without the refresh-bound clause. So a
+  session past its absolute end still produced a bearer, from the one seam every Server Component's
+  API call goes through. Naming the wrong file is how a sweep closes on *"no fourth"* while the
+  fourth is open.
+
+  The fix moved the clause into `session-codec.ts` as `unsealLiveSession`, because
+  `api-client.ts` and `session.ts` **may not import each other** — the codec's own header records
+  that split as what keeps the graph acyclic, and it is also the mechanical reason the clause had
+  drifted into three readings in the first place. `liveSession` is now that function with
+  `SESSION_SECRET` bound.
+- **Other `(identity)` screens.** Six routes. Two guarded, two deliberately not (above), and
+  `/verify` and `/invitation/{token}` legitimate with a session. `/sign-in/factor` answers
+  `issuesSession` true through its first segment, which is right on both readings — it is a step of
+  sign-in, and the token the proxy rotates for it is the one the guard above it reads. It keeps its
+  own challenge guard and gains nothing.
+- **`apps/admin`.** `_realm.tsx` has the same shape of gate and the same missing direction —
+  `A-01` is reachable with a live realm session. **Not fixed here and not silently left**: the
+  console has no membership branch, so its answer is a fixed address and the reasoning above does
+  not transfer — and the realm cookie is opaque to the console by OQ-17, so its guard has no local
+  fact to test and would put an api round trip on every anonymous load of the console's only public
+  screen. That is a decision, not a copy, so it is **task 113** rather than a paragraph in this
+  one.
+
+### What the reviews found, and the one that pays for all three
+
+They ran on **`opus`**, per the pin, over the whole diff. Nine findings between them, and the
+expensive one is above: **the sweep I wrote named the wrong file and closed on "no fourth"**. Every
+other finding is a document that did not follow the code.
+
+- **`apps/web/CLAUDE.md` had already written the rule the gate broke.** Its session paragraph says
+  *"unsealable is indistinguishable from absent, and that is the correct failure"* — and three lines
+  below it, *"the gate here checks the sealed cookie exists"*. Both sentences, in the same file,
+  saying opposite things about the same cookie. So the file's claim that rotating `SESSION_SECRET`
+  signs everyone out **was false**: it signed nobody out, it gave everyone an authenticated render
+  with no token. Fixed, and the history kept.
+- **`architecture.md` now said both things about rotation.** Task 26.4's paragraph states in the
+  present tense that rotation runs on *"the request the gate already admits"*; this task widened it
+  and recorded the widening in a new §12.5.6 row without amending the row it contradicted.
+- **UX-136's first clause wrote a redirect into the spec that UX-38 forbids.** *"Re-authentication
+  shall be presented inline over the preserved context, never as a redirect to a blank sign-in
+  screen"* is live and unmet, and **task 92** owns it. The rule now says *that* the gate answers and
+  *what it preserves*, leaves the presentation to UX-38, and names task 92 — so shipping 92
+  satisfies UX-136 unchanged instead of contradicting it.
+- **The register that owns UX numbers was not amended; `CLAUDE.md` was.** §1.5 still read
+  `UX-1 … UX-135`, which by this repository's own precedence meant UX-136 formally did not exist.
+  `architecture.md`'s copy said `UX-134` and had been stale before this diff; both fixed.
+- **`'sign-in'` was spelled as a literal in three sets in one file** — the closed-vocabulary rule,
+  and in the worst place for it: two of the three sets are the gate and its reverse. An unexported
+  `SEGMENT` now declares all eight once.
+- **Two of the three new §12.5.6 rows carried no date and no authority**, including the `/reset`
+  carve-out this entry calls *the clause a sweep removes* — the one judgement most needing a name
+  against it. And **NFR-64 was a weak citation** for the gate row (it is about rate limits, token
+  entropy and uniform answers); dropped rather than stretched.
+- **The case count was wrong in two artefacts** — 27, not 28. Both reviews caught it
+  independently, and the build-log's own arithmetic proved it: 330 + 27 + 4 = 361.
+
+**The gate review's six findings, four of which are gates that would not have failed.** It ran on the
+current tree rather than the diff it was handed, having noticed the refactor land under it.
+
+- **`api-client.ts`'s new liveness reading had no check at all** — reverting it left 361/361 green,
+  which is what a fix with no failing case looks like, on the one seam every Server Component's API
+  call goes through. Only a unit case can reach it: the proxy's gate turns such a request away
+  before render, so no browser journey can arrive with a dead session in hand.
+- **The cross-set invariant passed vacuously for exactly the change it claimed to catch.** Adding
+  `magic-link` to `SESSION_ISSUING_SEGMENTS` alone stayed green, because `isReturnableAfterSignIn`
+  refuses a path for two reasons and the *other* one answered first; it only went red once the
+  segment was also public. Restated as containment, so it is true in one clause.
+- **The route group and the vocabulary are a second copy of one list** — which the refactor above
+  created, and `route-access.ts`'s own header says was never an option. Drift has a direction and it
+  is the bad one: a screen added to the directory under a new segment is **guarded but not rotated**,
+  which is the 401 → S-35 failure this task exists to prevent, arriving through the fix for it. A
+  spec now reads the directory and compares it to the set; nothing else can see that relationship,
+  because one side of it is a directory name.
+- **`clears the cookie … when the refresh is refused` had never asserted the cookie.** The clearing
+  rode the i18n response, which `return redirected` discards, so the commonest arrival at the gate —
+  a session the api judged dead — answered no `Set-Cookie` at all. My two new assertions covered the
+  two rarer paths and made the class *look* guarded. Keying off the value the request **presented**,
+  read before rotation can delete it, makes all three clear alike; all three go red without the line.
+- **`changing the password works, and the old one stops working (FR-7)` never presented the old
+  password.** Pre-existing, and the diff had edited that exact block — my added comment described an
+  assertion that did not exist. It presents it now and expects the refusal.
+- One finding stands as a note rather than a fix: `/` in the `leaves %s reachable` table cannot
+  distinguish `issuesSession`'s `segment !== undefined` guard, since `Set.has(undefined)` is false
+  either way. It still fails under an inverted predicate, so it is thin rather than inert.
+
+**The one finding I filed as *disclosed rather than fixed* was the one the owner then rejected**, and
+that is worth keeping. It read: nothing ties the two page call sites to `SESSION_ISSUING_SEGMENTS`,
+so a third member would rotate in the proxy and guard nothing, with no spec going red. I recorded it
+accurately and left it in, on the grounds that a gate for it would have to enumerate route files.
+The route group removes the need for a gate by removing the call sites — which is what *"fix the
+sites first, then turn the gate on"* looks like when there is nothing left to gate.
+
+### Verified
+
+`apps/web` **362 tests** — 27 new in `route-access.spec.ts` (two of them reading the route group's
+own directory), one new in `api-client.spec.ts`, four added, one re-pointed and one strengthened in
+`proxy.spec.ts` — plus **three new browser cases** in `post-sign-in.spec.ts` and one existing
+`credentials.spec.ts` case given the assertion its name had always promised. Every one proven to
+bite by mutation, and the table above says on what.
+
+**`pnpm gates:clean` — the sixteen gates from a tree with every build output removed, exit 0.**
+`pnpm e2e:web` at **170 passed** (167 before, plus the three new browser cases), all three projects
+including `admin` cross-origin and `expansion` at +40% across the three frames; `apps/api` at 860 e2e
+and the worker suite at 56; `migrations:check` against the Compose stack. This is the run that sees
+the warm-eslint-cache class — a verdict that depends on files the cache key never hashes — and this
+diff's type changes are exactly its shape.
+
+**The three review agents ran on `opus`**, per the pin, over the whole diff — and much of the entry
+above is theirs. Nine findings from the two document reviews and six from the gate review; four of
+the six were checks that would not have failed on their subject, and one of those was the fix's own
+central line.

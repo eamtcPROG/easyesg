@@ -5,7 +5,7 @@ import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { LOCALE_COOKIE, REFRESH_COOKIE } from '@/lib/session-cookie';
 import { env } from '@/lib/env';
 import { detachedApi } from './api-client';
-import { sealSession, unsealSession, type SessionPayload } from './session-codec';
+import { sealSession, unsealLiveSession, type SessionPayload } from './session-codec';
 
 /**
  * The session tier — the one file that touches credentials (AD-9, AD-12; task 22).
@@ -131,17 +131,27 @@ export function accessTokenIsStale(payload: SessionPayload): boolean {
 }
 
 /**
- * The session as the request presented it, or `null` — absent, unsealable and past its
- * refresh bound are all the same fact. `Max-Age` should make the expired case unreachable
- * (the browser drops the cookie), but a skewed client clock is not a security boundary.
+ * The session a sealed cookie value carries, or `null` — absent, unsealable and past its refresh
+ * bound are all the same fact. `Max-Age` should make the expired case unreachable (the browser
+ * drops the cookie), but a skewed client clock is not a security boundary.
+ *
+ * **It takes the value rather than reading the store, because the proxy has no store** — Next's
+ * two cookie surfaces share no API, exactly as `SessionJar` exists for on the writing side. That
+ * asymmetry is why this sentence used to be written twice and disagreed with itself (task 112):
+ * `readSession` said *absent, unsealable or expired*, and `proxy.ts`'s gate said only *absent*, so
+ * a cookie that failed to unseal — a rotated `SESSION_SECRET`, a corrupted value, a tampered
+ * one — passed the closed-by-default gate and rendered an authenticated screen with no token to
+ * call the API with. The reader met an error state holding a session they did not have, in place
+ * of the sign-in screen that would have given them one.
  */
+export function liveSession(sealed: string | undefined): SessionPayload | null {
+  return sealed ? unsealLiveSession(sealed, env.sessionSecret) : null;
+}
+
+/** The same fact, read from the request scope a Server Component or action runs in. */
 export async function readSession(): Promise<SessionPayload | null> {
   const store = await cookies();
-  const sealed = store.get(REFRESH_COOKIE)?.value;
-  if (!sealed) return null;
-  const payload = unsealSession(sealed, env.sessionSecret);
-  if (!payload || payload.refreshTokenExpiresAt <= Date.now()) return null;
-  return payload;
+  return liveSession(store.get(REFRESH_COOKIE)?.value);
 }
 
 /**

@@ -10,7 +10,7 @@ import { API_OUTCOME, type ApiFailure, type ApiOutcome, type ListResult } from '
 import { buildListQuery, type ListQuery } from '@/lib/pagination';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
 import { env } from '@/lib/env';
-import { unsealSession } from './session-codec';
+import { unsealLiveSession } from './session-codec';
 
 /**
  * The typed client for the public API. **The only place that knows the wire conventions — and
@@ -133,12 +133,20 @@ async function readBody<T>(
  * the access token from the sealed session cookie (task 22, OQ-33). Read-only on purpose —
  * this seam serves Server Components, where cookie writes throw, so it must never rotate;
  * `session.ts` owns rotation and the callers that may. Attached whenever a session exists,
- * expiry included: the API is the authority on token liveness, and withholding a token this
- * tier merely *believes* expired would turn clock skew into a 401 the API never issued.
+ * **access-token expiry included**: the API is the authority on token liveness, and withholding a
+ * token this tier merely *believes* expired would turn clock skew into a 401 the API never issued.
+ *
+ * **That reasoning is about the access token and was reading one clause too few** (task 112). This
+ * unsealed without checking the *refresh* bound, so a session past its absolute end still produced
+ * a bearer — one the API would refuse anyway, from a session this tier already knows is over. It
+ * was the last of four readings of *does this request carry a session*, and the one nobody had
+ * looked at: the sweep that found the other three named `/api/[...path]` and that route reaches
+ * this through `readSession`, already correct. `unsealLiveSession` is now the single reading, and
+ * it lives in the codec rather than in `session.ts` because this module may not import that one.
  */
 async function sessionAuthorization(): Promise<Record<string, string>> {
   const sealed = (await cookies()).get(REFRESH_COOKIE)?.value;
-  const session = sealed ? unsealSession(sealed, env.sessionSecret) : null;
+  const session = sealed ? unsealLiveSession(sealed, env.sessionSecret) : null;
   return session ? { authorization: `Bearer ${session.accessToken}` } : {};
 }
 

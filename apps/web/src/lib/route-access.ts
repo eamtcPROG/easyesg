@@ -15,23 +15,50 @@ import { isLocale } from '@easyesg/i18n';
  */
 
 /**
+ * Every first path segment this module has an opinion about, spelled once.
+ *
+ * **Three sets below are drawn from these eight members and each used to spell its own literals**
+ * — `'sign-in'` appeared in all three and `'register'` in two, so a renamed route desynchronised
+ * them silently and in the worst direction: two of the three are the closed-by-default gate and its
+ * reverse, and a drifted copy either stops bouncing an authenticated route or stops bouncing a
+ * signed-in reader off `/register`. Declared here and **unexported**, per the root file's clause
+ * that a vocabulary internal to one file is declared in that file rather than promoted to a
+ * `constants/` directory.
+ *
+ * It is deliberately *not* derived from `ROUTES`: that module owns the addresses this app links to,
+ * complete with query strings and id parameters, and this one answers a predicate over arbitrary
+ * incoming pathnames — `legal` and `help` are route *families* with no single address, which is the
+ * reason `routes.ts` already gives for keeping the two apart.
+ */
+const SEGMENT = {
+  // (public) — Phase 10
+  LEGAL: 'legal',
+  HELP: 'help',
+  // (identity) — Phase 2
+  SIGN_IN: 'sign-in',
+  REGISTER: 'register',
+  VERIFY: 'verify',
+  RESET: 'reset',
+  SET_PASSWORD: 'set-password',
+  INVITATION: 'invitation',
+} as const;
+
+/**
  * First path segment after the locale that does **not** require a session. Route groups carry no
  * URL segment, so `(public)` and `(identity)` are invisible here and the list is explicit.
  *
  * The default is closed: anything not named is authenticated. Adding a public screen means adding
  * it here, which is the direction that fails safe.
  */
-export const UNAUTHENTICATED_SEGMENTS = new Set([
-  // (public) — Phase 10
-  'legal',
-  'help',
-  // (identity) — Phase 2
-  'sign-in',
-  'register',
-  'verify',
-  'reset',
-  'set-password',
-  'invitation',
+export const UNAUTHENTICATED_SEGMENTS = new Set<string>([
+  SEGMENT.LEGAL,
+  SEGMENT.HELP,
+  SEGMENT.SIGN_IN,
+  SEGMENT.REGISTER,
+  SEGMENT.VERIFY,
+  SEGMENT.RESET,
+  SEGMENT.SET_PASSWORD,
+  SEGMENT.INVITATION,
 ]);
 
 /**
@@ -70,7 +97,12 @@ export function requiresSession(pathname: string): boolean {
  * whose purpose is *obtaining* a session, as against the ones that merely tolerate not having one
  * (`/invitation`, `/verify`) and are legitimate destinations.
  */
-const SESSION_ENTRY_SEGMENTS = new Set(['sign-in', 'register', 'reset', 'set-password']);
+export const SESSION_ENTRY_SEGMENTS = new Set<string>([
+  SEGMENT.SIGN_IN,
+  SEGMENT.REGISTER,
+  SEGMENT.RESET,
+  SEGMENT.SET_PASSWORD,
+]);
 
 /**
  * May a post-sign-in branch honour this deep link, whatever the caller's memberships? (Task 26.3,
@@ -91,4 +123,47 @@ export const isReturnableAfterSignIn = (pathname: string): boolean => {
   const segment = routeSegment(pathname);
   if (segment === undefined) return false; // the marketing home is not a destination worth honouring
   return !requiresSession(pathname) && !SESSION_ENTRY_SEGMENTS.has(segment);
+};
+
+/**
+ * The screens whose completion **hands out a session** — the narrower half of the set above, and
+ * the one a caller who already holds a session must be turned away from (task 112).
+ *
+ * **Not `SESSION_ENTRY_SEGMENTS` itself, and the difference is a live remedy rather than a
+ * nuance.** That set answers *where must a post-sign-in branch never send someone*, which is a
+ * question about a destination this app chose. This one answers *where must a signed-in reader not
+ * be*, which is a question about an address they typed, bookmarked or reached from an email — and
+ * `/reset` and `/set-password` are exactly where the two questions part company. A reset link
+ * arrives by email and is followed on whatever device is to hand, frequently one already signed
+ * in; bouncing it would make password recovery impossible for anyone holding a live session, which
+ * is a worse failure than the one being fixed. Those two recover a **credential**; these two issue
+ * a **session**.
+ *
+ * Both members earn their place for the same reason, and it is not tidiness: `/sign-in` and
+ * `/register` each end in `establishSession`, so completing either while signed in **replaces the
+ * current session in place** — silently, and on `/register` as a different account entirely.
+ *
+ * `/verify` and `/invitation/{token}` are in neither set and stay reachable: a signed-in reader
+ * verifying an address or accepting an invitation is the ordinary case, not an edge one.
+ */
+export const SESSION_ISSUING_SEGMENTS = new Set<string>([SEGMENT.SIGN_IN, SEGMENT.REGISTER]);
+
+/**
+ * Does this address issue a session? — **the predicate `proxy.ts` rotates on.**
+ *
+ * It said *"and the two screens guard with"* until the guard moved into
+ * `(identity)/(session-issuing)/layout.tsx`, and the correction matters more than the wording: the
+ * guard's predicate is now *membership of that directory*, so this set and that directory are **two
+ * statements of one list** — exactly the second copy the header of this file says was never an
+ * option. A screen added there under a new first segment would be guarded and not rotated, which is
+ * the 401 → S-35 failure task 112 exists to prevent. `route-access.spec.ts` compares the two and
+ * fails when they disagree, so the copy is checked rather than trusted.
+ *
+ * `/sign-in/factor` answers **true** through its first segment, which is right on both readings:
+ * it is a step of sign-in, and the token it makes the proxy rotate is the one the layout above it
+ * is about to read.
+ */
+export const issuesSession = (pathname: string): boolean => {
+  const segment = routeSegment(pathname);
+  return segment !== undefined && SESSION_ISSUING_SEGMENTS.has(segment);
 };

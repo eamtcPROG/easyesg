@@ -113,8 +113,39 @@ describe('proxy · page-load rotation', () => {
     expect(setCookie(response)).not.toContain(REFRESH_COOKIE);
   });
 
-  it('does not unseal anything on a route that needs no session', async () => {
+  /** An address that neither needs a session nor issues one pays nothing, not even an unseal.
+   *  It named `/en/sign-in` until task 112 moved that route into the rotating set — see the case
+   *  below, which is the same property from the other side. */
+  it('does not unseal anything on a route that neither needs nor issues a session', async () => {
+    const response = await proxy(requestFor('/en/legal/terms', staleSession()));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.headers.get('location')).toBeNull();
+  });
+
+  /**
+   * **`/sign-in` rotates too since task 112**, and this is the case that makes the guard on that
+   * screen work rather than an optimisation. A signed-in reader landing there resolves §4.3's
+   * branch during render; with a sixteen-minute-old access token that read is answered 401, the
+   * branch reads the failure as *we could not find out*, and the reader is sent to S-35 —
+   * *organization unavailable* — which is a wrong answer stated as a fact. Nothing downstream can
+   * fix it, because a Server Component may not write the successor cookie.
+   */
+  it('rotates on a route that issues a session, so the guard there reads a live token', async () => {
+    refreshAnswers(sessionWith({ accessToken: 'rotated-access-token' }));
+
     const response = await proxy(requestFor('/en/sign-in', staleSession()));
+
+    expect(fetchMock).toHaveBeenCalled();
+    const forwarded = forwardedCookie(response);
+    const sealed = forwarded?.split(`${REFRESH_COOKIE}=`)[1]?.split(';')[0] ?? '';
+    expect(unsealSession(sealed, SECRET)?.accessToken).toBe('rotated-access-token');
+  });
+
+  /** And an anonymous visitor to that same screen still pays nothing: no cookie, no unseal, no
+   *  call. This is what keeps the widening above from taxing the product's busiest public page. */
+  it('does not reach the api on a session-issuing route with no cookie', async () => {
+    const response = await proxy(requestFor('/en/sign-in', null));
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(response.headers.get('location')).toBeNull();
@@ -188,6 +219,49 @@ describe('proxy · page-load rotation', () => {
 
     expect(response.headers.get('location')).toContain('/en/sign-in');
     expect(response.headers.get('location')).toContain('return=');
+    // **The half this test's own name promised and never asserted** (task 112's gate review). The
+    // clearing rode the i18n response, which the redirect discards, so the commonest way to reach
+    // the gate with a dead session answered no `Set-Cookie` at all.
+    expect(setCookie(response)).toContain(`${REFRESH_COOKIE}=;`);
+  });
+
+  /**
+   * **A cookie that will not unseal is not a session** (task 112).
+   *
+   * The gate asked `request.cookies.has(REFRESH_COOKIE)` until this task, so a value that failed
+   * the ciphertext's authentication tag — a rotated `SESSION_SECRET`, a truncated cookie, a
+   * tampered one — walked straight through it. The screen then rendered authenticated with no
+   * token for `api-client` to attach, and the reader met an error state where the sign-in screen
+   * that would have fixed it belonged. `readSession` had always answered this correctly; the gate
+   * was the copy that disagreed.
+   *
+   * Proven to bite by restoring `cookies.has`, under which this redirects nowhere.
+   */
+  it('turns away a cookie that does not unseal, as if it were absent', async () => {
+    const request = new NextRequest('http://web.test/en/organization/users', {
+      headers: { cookie: `${REFRESH_COOKIE}=not-a-sealed-session` },
+    });
+
+    const response = await proxy(request);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.headers.get('location')).toContain('/en/sign-in');
+    // And it stops being sent: nothing cleared an unsealable cookie before this task.
+    expect(setCookie(response)).toContain(`${REFRESH_COOKIE}=;`);
+  });
+
+  /** The same fact from the far end of the session's life: past the refresh bound, the cookie is
+   *  worthless whatever it unseals to. `Max-Age` should make it unreachable; a skewed client clock
+   *  is not a security boundary, which is the sentence `liveSession` carries. */
+  it('turns away a session past its refresh bound', async () => {
+    const expired = sessionWith({ refreshTokenExpiresAt: Date.now() - 1_000 });
+
+    const response = await proxy(requestFor('/en/organization/users', expired));
+
+    expect(response.headers.get('location')).toContain('/en/sign-in');
+    // A declined session's cookie carries no `Max-Age` (OQ-35), so the browser would keep
+    // presenting this dead value for the rest of the tab's life if the gate did not clear it.
+    expect(setCookie(response)).toContain(`${REFRESH_COOKIE}=;`);
   });
 
   /** A network blip must not sign anyone out — the session may be perfectly alive. */

@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { signOut } from './session';
 
 /**
  * Driving the second factor through the shipped screens — shared by `credentials.spec.ts` (which
@@ -101,11 +102,19 @@ export async function enrolFactor(
   return { secret, recovery };
 }
 
-/** The password half of S-01, which for an enrolled account ends on the staged factor step. */
+/**
+ * The password half of S-01, which for an enrolled account ends on the staged factor step.
+ *
+ * **It signs out first, and that is the journey rather than a workaround** (task 112). Every caller
+ * arrives holding the session enrolment left behind, and a screen that issues a session now refuses
+ * a caller who has one — so `goto('/sign-in')` from here used to render the form and now lands on
+ * the reader's home. A person re-presenting their password leaves first; so does this.
+ */
 export async function presentPassword(
   page: Page,
   { email, password }: Credentials,
 ): Promise<void> {
+  await signOut(page, email);
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(password);

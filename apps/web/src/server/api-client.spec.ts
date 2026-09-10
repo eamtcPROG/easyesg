@@ -124,6 +124,42 @@ describe('the api client (§6.8 wire conventions, in one place)', () => {
     expect(lastCall().init.headers).toMatchObject({ authorization: 'Bearer live-access-token' });
   });
 
+  /**
+   * **The refusal half of the rule above, which shipped with only its success proven** (task 112,
+   * added by that task's gate review).
+   *
+   * This seam unsealed without checking the *refresh* bound until task 112, so a session past its
+   * absolute end still produced a bearer — from the one place every Server Component's API call
+   * goes through. Reverting `unsealLiveSession` to `unsealSession` left all 361 web tests green,
+   * which is what a fix with no failing case looks like.
+   *
+   * **Only a unit case can reach it.** The proxy's gate turns such a request away before render, so
+   * a browser journey cannot arrive here with a dead session in hand — the cookie jar above is the
+   * only seat from which the question can be asked.
+   *
+   * The access token's own expiry is deliberately *not* the subject: the docblock on
+   * `sessionAuthorization` attaches an expired access token on purpose, because the API is the
+   * authority on token liveness and withholding one would turn clock skew into a 401 nobody issued.
+   * The refresh bound is a different clause, and past it there is no session to speak for.
+   */
+  it('sends no bearer from a session past its refresh bound (task 112)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ htmlcode: 200, object: null, messages: [] }));
+
+    const ended: SessionPayload = {
+      accessToken: 'access-token-of-a-dead-session',
+      accessTokenExpiresAt: Date.now() + 10 * 60 * 1000,
+      refreshToken: 'refresh-token-1',
+      refreshTokenExpiresAt: Date.now() - 1_000,
+      remembered: true,
+      account: { id: 'a', email: 'ana@example.md', locale: 'ro' },
+    };
+    cookieJar.set(REFRESH_COOKIE, sealSession(ended, 'spec-secret-0000000000000000000000000000'));
+
+    await api.get('/things/x');
+
+    expect(lastCall().init.headers).not.toHaveProperty('authorization');
+  });
+
   it('sends a body on delete when one is given — sign-out authenticates by the token it carries', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
 

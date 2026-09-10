@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-135`, `S-01` … `S-28`, `A-01` … `A-18` |
+| `design_spec.md` (this file) | `UX-1` … `UX-136`, `S-01` … `S-28`, `A-01` … `A-18` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -214,6 +214,12 @@ graph LR
     W --> V["Validation panel"]
     W --> P["Preview"] --> X["Export<br/>UC-41…44"]
 ```
+
+**UX-136** *(Added 10 Sep 2026 with task 112. The second clause is the project owner's instruction; the destination rule and both carve-outs below were argued from §4.3 and task 25.4 and are the author's.)* **The diagram above is entered by an address as well as by a submission, and it is a gate in both directions.** A request for a screen that requires a session and carries none shall be answered by re-authentication that preserves the address as the return destination (UX-38); a request for a screen whose completion **issues** a session, from a caller who already holds one, shall be answered by resolving the branch above — never by the form. The second half is the one this rule was written for: served the form again, a signed-in reader who submits it replaces their live session in place, and on the registration screen does so as a different account, with nothing on screen saying that this is what happened.
+
+Two clauses bound it, and each is a remedy rather than a nuance. **The destination is the branch, not the home screen** — a member of nothing sent to S-05 lands in an empty workspace stating that they belong to an organization no one can name, which is the failure S-04 exists to distinguish (§4.3, UC-49). And **issuing a session is narrower than the credential set**: password reset and set-password *recover a credential* and shall stay reachable to a signed-in reader, because a reset link is opened on whatever device is to hand and that device is frequently one already signed in (UC-08, UC-09). Confirming an address and accepting an invitation are likewise ordinary things for a signed-in reader to do (UC-03, UC-15) and are not gated.
+
+**The first clause says *that* the gate answers and *what it must preserve*; how it answers is UX-38's, and today it is answered the way UX-38 forbids.** The session tier redirects to a sign-in screen carrying `?return=`, which is precisely the *"never as a redirect to a blank sign-in screen"* that UX-38's second sentence rules out — **task 92** owns replacing it with the inline dialogue over the preserved context, and `resume.spec.ts`'s redirect assertion is scheduled to invert with it. This rule takes no position on the presentation, so task 92 satisfies it unchanged; what it adds is that the *other* direction is a gate at all, which nothing said before.
 
 **UX-6** The authenticated home screen shall answer three questions above the fold, in this order: *what needs my attention*, *where did I leave off*, *what is the state of everything*. For a single-entity organization this reduces to one resumable report and its completion state; the same template shall scale to a multi-entity organization without a different screen (UC-67).
 

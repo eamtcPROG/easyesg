@@ -6,6 +6,7 @@ import {
   passwordResetTokenFor,
   verificationTokenFor,
 } from './support/db';
+import { signOut } from './support/session';
 
 /**
  * Task 22's stated deliverable, literally: **browser sign-in/out against the public API** —
@@ -90,9 +91,7 @@ test('a user signs in, holds an httpOnly session, and signs out (UC-04, UC-06)',
   // extra one is the deliverable: §4.2 puts sign-out behind the account corner on every
   // authenticated screen, so a journey that could still reach it directly would mean the interim
   // strip was left behind rather than replaced.
-  await page.getByRole('button', { name: `Contul dumneavoastră: ${email}` }).click();
-  await page.getByRole('menuitem', { name: 'Ieșiți din cont' }).click();
-  await page.waitForURL('**/sign-in');
+  await signOut(page, email);
 
   // The session is gone server-side too: the guarded route bounces straight back.
   await page.goto('/home');

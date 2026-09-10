@@ -32,6 +32,8 @@ type Props = {
 export const generateMetadata = localizedPageTitle('identity.signIn');
 
 export default async function SignInPage({ params, searchParams }: Props) {
+  // A caller who already holds a session never reaches here — `(session-issuing)/layout.tsx` is
+  // the gate, once, for every screen in this group (UX-136, task 112).
   await activateRequestLocale(params);
   const t = await getTranslations('identity.signIn');
   const { return: returnTo, notice } = await searchParams;

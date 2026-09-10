@@ -3,11 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { toLocale, type Locale } from '@easyesg/i18n';
 import { routing } from '@/i18n/routing';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
-import { requiresSession } from '@/lib/route-access';
-import { env } from '@/lib/env';
-import { unsealSession } from '@/server/session-codec';
+import { issuesSession, requiresSession } from '@/lib/route-access';
 import {
   accessTokenIsStale,
+  liveSession,
   refreshSession,
   type SessionCookie,
   type SessionJar,
@@ -28,9 +27,9 @@ import { ROUTES } from '@/lib/routes';
  * database directly was considered and rejected.
  *
  * **Since task 26.4 it has a third job: rotating the access token on a page load**
- * (architecture.md §12.5.6). The gate below checks that the sealed cookie *exists* — the 7-day
- * idle bound — which says nothing about the ≤15-minute access token inside it. That gap was
- * invisible while every API call came from an action or the `/api/[...path]` pass-through, both
+ * (architecture.md §12.5.6). The gate below checks that the cookie carries a **live** session —
+ * the 7-day idle bound — which says nothing about the ≤15-minute access token inside it. That gap
+ * was invisible while every API call came from an action or the `/api/[...path]` pass-through, both
  * of which may write cookies and both of which already rotate. S-16 is the first Server Component
  * to read the API during render, where a cookie write throws, so without this a member returning
  * after twenty minutes met a 401 and an error screen holding a session with six days left on it.
@@ -60,10 +59,10 @@ function localePath(locale: Locale, path: string): string {
  * mutation is forwarded downstream and the Server Component reads the rotated token. Reordering
  * this to run after `handleI18nRouting` would silently restore the defect.
  *
- * Only for routes the gate already admits: an anonymous page pays nothing, not even an unseal.
- * A failed refresh is not an error here — a dead session falls through to the redirect below,
- * which is the same answer as no cookie at all, and an unreachable API keeps the cookie so a
- * network blip signs nobody out.
+ * Only for routes that read the session — the gated ones, and since task 112 the two that issue
+ * one. An address that does neither pays nothing, not even an unseal. A failed refresh is not an
+ * error here — a dead session falls through to the redirect below, which is the same answer as no
+ * cookie at all, and an unreachable API keeps the cookie so a network blip signs nobody out.
  */
 const ROTATION = {
   /** A successor was issued. The response must carry it too, so the browser holds it next time. */
@@ -77,10 +76,7 @@ type RotationOutcome =
   | { readonly kind: typeof ROTATION.Ended };
 
 async function rotateIfDue(request: NextRequest): Promise<RotationOutcome | null> {
-  const sealed = request.cookies.get(REFRESH_COOKIE)?.value;
-  if (!sealed) return null;
-
-  const current = unsealSession(sealed, env.sessionSecret);
+  const current = liveSession(request.cookies.get(REFRESH_COOKIE)?.value);
   if (!current || !accessTokenIsStale(current)) return null;
 
   let outcome: RotationOutcome | null = null;
@@ -101,7 +97,19 @@ async function rotateIfDue(request: NextRequest): Promise<RotationOutcome | null
 
 export default async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
-  const rotated = requiresSession(pathname) ? await rotateIfDue(request) : null;
+  // **Read before rotation, because rotation may delete it.** A refused refresh clears the cookie
+  // from `request.cookies` so the render sees no session, which also erases the fact the gate below
+  // needs — *did this request arrive carrying one* — and that is the difference between clearing a
+  // dead cookie and sending a `Set-Cookie` to a browser that never had it.
+  const presented = request.cookies.get(REFRESH_COOKIE)?.value;
+  // **Rotate wherever the request is about to READ the session, which is two sets of routes and
+  // not one.** The gated ones have always been here; `/sign-in` and `/register` joined them in
+  // task 112, because a signed-in caller landing on either now resolves §4.3's branch during
+  // render — and a branch resolved with a sixteen-minute-old access token is answered 401 and
+  // reads as *organization unavailable*, which is the wrong screen stated as a fact. An address
+  // that does neither still pays nothing, not even an unseal.
+  const rotated =
+    requiresSession(pathname) || issuesSession(pathname) ? await rotateIfDue(request) : null;
 
   // Locale first: it may return a redirect (bare path → negotiated locale) or a rewrite, and
   // either way it establishes the locale the sign-in redirect below has to preserve.
@@ -115,12 +123,32 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   // A redirect from locale negotiation is terminal — the request will arrive again, resolved.
   if (response.headers.has('location')) return response;
 
-  if (requiresSession(pathname) && !request.cookies.has(REFRESH_COOKIE)) {
+  // **`liveSession`, not `cookies.has`** (task 112). The gate and `readSession` are two readings
+  // of one fact — *does this request carry a session* — and while this one asked only whether a
+  // cookie was present, a value that failed to unseal passed it: the screen rendered
+  // authenticated, `api-client` had no token, and the reader met an error state instead of the
+  // sign-in that would have fixed it. Failing closed here is what makes the two agree.
+  if (requiresSession(pathname) && !liveSession(request.cookies.get(REFRESH_COOKIE)?.value)) {
     const signIn = new URL(localePath(localeOf(pathname), ROUTES.SIGN_IN), request.url);
     // UX-38: session expiry returns the user to the exact screen they were on, with queued
     // changes submitted — never to a blank sign-in that loses their place.
     signIn.searchParams.set('return', pathname + request.nextUrl.search);
-    return NextResponse.redirect(signIn);
+    const redirected = NextResponse.redirect(signIn);
+    // **A cookie the gate just refused is worthless, so stop sending it** — on every path that
+    // reaches this redirect, which is the correction task 112's gate review found. `rotateIfDue`
+    // clears `request.cookies` when the api refuses a refresh, and the `Ended` branch above clears
+    // it on the *i18n* response — the one `return redirected` discards. So the commonest arrival
+    // here, a dead session the api judged, was answered with no `Set-Cookie` at all while the test
+    // named *"clears the cookie and redirects to sign-in when the refresh is refused"* asserted
+    // only the `location`. Keying off `presented` rather than the post-rotation value is what makes
+    // all three paths — refused, unsealable, past the refresh bound — clear alike, and still sends
+    // nothing to a browser that arrived with no cookie.
+    //
+    // It matters most for a session the reader declined to keep: that cookie carries no `Max-Age`
+    // (OQ-35), so the browser holds it until the tab closes and would present a dead value on every
+    // navigation until then.
+    if (presented) redirected.cookies.delete(REFRESH_COOKIE);
+    return redirected;
   }
 
   return response;

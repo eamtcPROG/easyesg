@@ -302,7 +302,7 @@ changing anything — `gh run view <id> --log-failed` — and fix the cause rath
 | [functional_requirements.md](docs/functional_requirements.md) | What it does | FR-1…173 |
 | [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93 (+94…105 deferred) |
 | [architecture.md](docs/architecture.md) | How it's built | AD-1…14, DR-1…11 |
-| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…135, S-01…28, A-01…18 |
+| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…136, S-01…28, A-01…18 |
 
 **Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
 column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.
@@ -313,7 +313,7 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | The execution plan — §15.4's nine-step build order as 111 tasks, each with its scope and deliverables. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | Read before starting work to find the next task; update its `Status` when one closes. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments |
+| [task.md](docs/task.md) | The execution plan — §15.4's nine-step build order as 113 tasks, each with its scope and deliverables. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | Read before starting work to find the next task; update its `Status` when one closes. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
 **`task.md`'s Status column holds exactly one of four words: `DONE`, `TODO`, `IN PROGRESS`,

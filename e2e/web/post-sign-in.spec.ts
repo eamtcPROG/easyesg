@@ -93,3 +93,68 @@ test('a deep link is overridden when no organization resolves', async ({ page })
 
   await page.waitForURL('**/create-organization');
 });
+
+/**
+ * **The branch runs for an ADDRESS, not only for a submission** (task 112).
+ *
+ * `proxy.ts` has turned an anonymous caller away from an authenticated address since task 22 and
+ * nothing did the reverse, so a reader who typed `/sign-in`, followed a bookmark or pressed back
+ * after signing in was served the form again — and submitting it replaced their live session in
+ * place. The four tests above prove the branch from a form; these prove it from a URL bar, which
+ * is the half that was missing.
+ */
+test('a signed-in member of one organization is turned away from the screens that issue a session', async ({
+  page,
+}) => {
+  const email = addressFor('held-one');
+  await registerAndVerify(page, email);
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} Gamma` }));
+  await signIn(page, email);
+  await page.waitForURL('**/home');
+
+  await page.goto('/sign-in');
+  await page.waitForURL('**/home');
+
+  // **In the reader's own language, and the prefix is what makes this assertion non-vacuous.**
+  // The guard redirects through `@/i18n/navigation` with the locale `activateRequestLocale`
+  // returned, so an English address answers an English destination — and `**/en/home` cannot be
+  // satisfied by the page simply not having navigated, which `**/home` could be.
+  await page.goto('/en/register');
+  await page.waitForURL('**/en/home');
+});
+
+/**
+ * **The case that says why this is not a redirect to `/home`.** A member of nothing sent there
+ * lands in the empty workspace task 25.4 refused for exactly this reason — a screen stating they
+ * belong to an organization nobody can name. The destination is the branch's, so the arm that
+ * applies to them applies here too.
+ */
+test('a signed-in member of nothing is turned away to S-04, not to an empty home', async ({
+  page,
+}) => {
+  const email = addressFor('held-none');
+  await registerAndVerify(page, email);
+  await signIn(page, email);
+  await page.waitForURL('**/create-organization');
+
+  await page.goto('/sign-in');
+  await page.waitForURL('**/create-organization');
+});
+
+/**
+ * **And the boundary of the rule, which is the half a sweep would remove.** `/reset` and
+ * `/set-password` sit beside the two above in `SESSION_ENTRY_SEGMENTS` and are deliberately not
+ * guarded: a reset link arrives by email and is opened on whatever device is to hand, frequently
+ * one already signed in. Turning that reader away would make password recovery impossible for
+ * anyone holding a live session — a worse failure than the one this task fixes.
+ */
+test('credential recovery stays reachable while signed in', async ({ page }) => {
+  const email = addressFor('held-reset');
+  await registerAndVerify(page, email);
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} Delta` }));
+  await signIn(page, email);
+  await page.waitForURL('**/home');
+
+  await page.goto('/reset');
+  await expect(page.getByRole('heading', { name: 'Resetați-vă parola' })).toBeVisible();
+});

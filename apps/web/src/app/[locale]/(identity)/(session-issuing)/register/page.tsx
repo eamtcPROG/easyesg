@@ -36,6 +36,8 @@ type Props = {
 export const generateMetadata = localizedPageTitle('identity.register');
 
 export default async function RegisterPage({ params, searchParams }: Props) {
+  // A signed-in reader never reaches here: `(session-issuing)/layout.tsx` gates the whole group,
+  // so completing this form cannot silently swap their session to a second account (UX-136).
   await activateRequestLocale(params);
   const t = await getTranslations('identity.register');
   const { notice, invitation, return: returnTo } = await searchParams;

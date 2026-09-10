@@ -10,7 +10,7 @@ every screen. Cite them; do not re-derive them.
 
 ## Current state
 
-Scaffold plus the first screens. What exists: 43 page routes across four route groups, 6 layouts, a
+Scaffold plus the first screens. What exists: 43 page routes across six route groups, 7 layouts, a
 not-found boundary, 4 route handlers, the next-intl wiring, 10 feature folders, 5 boundary rules with fixtures — and,
 from task 20, **S-01 register and S-02 verify/resend live end to end**: `features/identity/`
 (server actions, RHF forms, the sessionStorage hand-off store), the `(identity)` layout on
@@ -321,10 +321,18 @@ conditional render, which is how it ends up half-suppressed on one screen.
 
   **The page-load rotation point is `proxy.ts`, and it is built (task 26.4).** This paragraph used
   to end "planned there, not rediscovered" and name task 29+; S-16 is the first Server Component to
-  read the API during render, so it arrived early. The gate here checks the sealed cookie *exists* —
-  the 7-day idle bound — which says nothing about the ≤15-minute access token inside it, so without
-  rotation a member returning after twenty minutes met a 401 holding a session with six days left.
-  Three things to know before touching `rotateIfDue`:
+  read the API during render, so it arrived early. The gate here checks the cookie carries a **live**
+  session — the 7-day idle bound — which says nothing about the ≤15-minute access token inside it, so
+  without rotation a member returning after twenty minutes met a 401 holding a session with six days
+  left. **It said *exists* until task 112, and the paragraph above is what that cost**: *"unsealable
+  is indistinguishable from absent, and that is the correct failure"* was written here and the gate
+  did not implement it, so rotating `SESSION_SECRET` signed nobody out — it gave everyone an
+  authenticated render with no token to call the API with. Four things to know before touching
+  `rotateIfDue`:
+
+  - **It runs on routes that READ the session, which is two sets** (task 112): the gated ones, and
+    `/sign-in` and `/register`, which resolve §4.3's branch during render for a caller who already
+    holds a session. A route that does neither still pays nothing, not even an unseal.
 
   - **The `request.cookies.set` must happen BEFORE `handleI18nRouting`.** A cookie on the response
     reaches the browser and nothing else; the render of *this* request would still read the stale

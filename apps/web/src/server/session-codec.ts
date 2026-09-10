@@ -136,3 +136,23 @@ function readPayload(parsed: unknown): SessionPayload | null {
 export function unsealSession(sealed: string, secret: string): SessionPayload | null {
   return readPayload(unsealJson(sealed, secret));
 }
+
+/**
+ * The same unseal plus the one clause that makes a payload a **session** rather than a record of
+ * one: it is live only while its refresh bound is still in the future.
+ *
+ * **It lives here because three modules need it and two of them may not import each other.** The
+ * header above states that split — `session.ts` and `api-client.ts` both consume this codec and
+ * neither may consume the other, which is what keeps the graph acyclic — and it is exactly why the
+ * clause had drifted into three readings by task 112: `readSession` had it, `proxy.ts`'s gate
+ * checked only that a cookie was present, and `sessionAuthorization` unsealed without it and
+ * attached a bearer from a session whose refresh bound had passed. The pure half belongs in the
+ * pure module; `session.ts`'s `liveSession` is this function with `SESSION_SECRET` bound.
+ *
+ * `Max-Age` should make the expired case unreachable — the browser drops the cookie — but a
+ * declined session carries none (OQ-35) and a skewed client clock is not a security boundary.
+ */
+export function unsealLiveSession(sealed: string, secret: string): SessionPayload | null {
+  const payload = readPayload(unsealJson(sealed, secret));
+  return payload && payload.refreshTokenExpiresAt > Date.now() ? payload : null;
+}

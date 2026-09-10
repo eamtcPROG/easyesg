@@ -6,6 +6,7 @@ import {
   verificationTokenFor,
 } from './support/db';
 import { PASSWORD, enrolFactor, presentPassword, totp } from './support/second-factor';
+import { signOut } from './support/session';
 
 /**
  * S-28 — credentials and linked identities (task 27.7), from the browser.
@@ -82,11 +83,27 @@ test('changing the password works, and the old one stops working (FR-7)', async 
   // The session that made the change survives — FR-7's "other", seen from the browser.
   await expect(page).toHaveURL(/\/account\/credentials/);
 
+  // **And leaving is how the form is reached** (task 112): a screen that issues a session refuses a
+  // caller who holds one, so this used to arrive at the reader's home with nothing to fill.
+  await signOut(page, email);
   await page.goto('/sign-in');
   await page.getByLabel('Adresa de e-mail').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(NEXT_PASSWORD);
   await page.getByRole('button', { name: 'Intrați în cont' }).click();
   await page.waitForURL('**/home');
+
+  // **"and the old one stops working" — the half this test is named for and never asserted**
+  // (found by task 112's gate review, which read the block the sign-out was added to). Everything
+  // above proves the NEW password works; an API that went on accepting the old one left it green,
+  // so FR-7's second clause had no check anywhere. Three sign-in attempts on one account, inside
+  // §12.5.6's five-per-fifteen-minutes budget.
+  await signOut(page, email);
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+
+  await expect(page.getByText('Autentificare nereușită')).toBeVisible();
+  await expect(page).toHaveURL(/\/sign-in/);
 });
 
 test('a wrong current password is refused in the API’s own words', async ({ page }) => {
