@@ -10,7 +10,7 @@ const { getList } = vi.hoisted(() => ({
   getList: vi.fn<(path: string) => Promise<unknown>>(),
 }));
 
-vi.mock('../api-client', () => ({ api: { getList } }));
+vi.mock('../api/api-client', () => ({ api: { getList } }));
 
 import { PROBLEM_TYPE } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';

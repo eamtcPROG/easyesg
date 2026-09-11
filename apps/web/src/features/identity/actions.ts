@@ -18,10 +18,10 @@ import type {
 } from '@easyesg/contracts';
 import { getLocale } from 'next-intl/server';
 import { API_OUTCOME, mapOutcome } from '@/lib/api-outcome';
-import { resolvePostSignIn } from '@/server/post-sign-in';
+import { resolvePostSignIn } from '@/server/session/post-sign-in';
 import { POST_SIGN_IN, targetLocale } from './post-sign-in';
-import { api } from '@/server/api-client';
-import { destroySession, establishSession, readSession } from '@/server/session';
+import { api } from '@/server/api/api-client';
+import { destroySession, establishSession, readSession } from '@/server/session/session';
 import { redirect } from '@/i18n/navigation';
 import { sanitizeReturnPath } from '@/lib/locale-path';
 import type {
@@ -38,7 +38,7 @@ import type {
 import { ROUTES, withQuery } from '@/lib/routes';
 import { SIGN_IN_OUTCOME } from '@easyesg/contracts';
 import { FACTOR_LAPSED, type CompleteFactorFailure } from './factor';
-import { consumeFactorChallenge, holdFactorChallenge } from '@/server/factor-challenge';
+import { consumeFactorChallenge, holdFactorChallenge } from '@/server/sealed/factor-challenge';
 
 /**
  * Server Actions for S-01/S-02 — the decided transport for unauthenticated identity calls

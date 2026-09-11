@@ -5,10 +5,10 @@ import {
   applyReportView,
   readReportView,
   reportFilterOptions,
-} from '@/features/reports/reports';
+} from '@/features/reports/tools/reports';
 import styles from '@/features/reports/components/reports.module.css';
 import { readReportList, type ReportListRead } from '@/server/data/reports';
-import { mayWrite, readActiveMembership } from '@/server/memberships';
+import { mayWrite, readActiveMembership } from '@/server/data/memberships';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';

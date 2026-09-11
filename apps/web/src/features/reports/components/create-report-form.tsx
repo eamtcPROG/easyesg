@@ -7,7 +7,7 @@ import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 import { failureNotice } from '@/lib/notice';
 import { Link, useRouter } from '@/i18n/navigation';
 import { ROUTES, reportRoute } from '@/lib/routes';
-import { createReportAction } from '../actions';
+import { createReportAction } from '../actions/actions';
 import styles from './reports.module.css';
 
 /**

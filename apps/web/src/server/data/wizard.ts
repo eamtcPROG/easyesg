@@ -9,8 +9,8 @@ import {
   type Report,
 } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
-import { api } from '../api-client';
-import { readActiveMembership } from '../memberships';
+import { api } from '../api/api-client';
+import { readActiveMembership } from './memberships';
 import { TENANT_READ, isPermissionRefusal } from './tenant-read';
 
 /**

@@ -1,4 +1,4 @@
-import { readActiveMembership } from '@/server/memberships';
+import { readActiveMembership } from '@/server/data/memberships';
 import { readOrganizationPeriods } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { toOverviewRows } from '../../../tools/overview';

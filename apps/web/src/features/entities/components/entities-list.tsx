@@ -26,7 +26,7 @@ import {
   type EntitySort,
   type EntityStanding,
   type EntityView,
-} from '../entities';
+} from '../tools/entities';
 import styles from './entities.module.css';
 
 /**

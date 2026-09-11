@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { readActiveMembership } from '@/server/memberships';
+import { readActiveMembership } from '@/server/data/memberships';
 import styles from '../styles/home.module.css';
 
 /**

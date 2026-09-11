@@ -6,8 +6,8 @@ import {
   type LinkedProvider,
   type SectionRead,
   type TotpState,
-} from '@/features/credentials/credentials';
-import { api } from '../api-client';
+} from '@/features/credentials/tools/credentials';
+import { api } from '../api/api-client';
 
 /**
  * S-28's read — the seam that fetches, beside the module that says what a credential *is*

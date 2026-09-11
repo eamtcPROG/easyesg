@@ -1,7 +1,7 @@
 import { Button, Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { EntitiesList } from '@/features/entities/components/entities-list';
-import { applyEntityView, readEntityView } from '@/features/entities/entities';
+import { applyEntityView, readEntityView } from '@/features/entities/tools/entities';
 import styles from '@/features/entities/components/entities.module.css';
 import { readEntityList, type EntityListRead } from '@/server/data/entities';
 import { TENANT_READ } from '@/server/data/tenant-read';

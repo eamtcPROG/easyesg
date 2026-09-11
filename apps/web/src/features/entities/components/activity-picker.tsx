@@ -3,7 +3,7 @@
 import { Button, BUTTON_VARIANT, Combobox, type ComboboxOption } from '@easyesg/ui';
 import { useState, useTransition } from 'react';
 import type { NaceCodeMatch } from '@easyesg/contracts';
-import { searchActivityCodesAction } from '../actions';
+import { searchActivityCodesAction } from '../actions/actions';
 import styles from './entities.module.css';
 
 /**

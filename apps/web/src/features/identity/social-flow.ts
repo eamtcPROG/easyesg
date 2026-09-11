@@ -12,21 +12,21 @@ import {
   type SocialSignInIntent,
 } from '@easyesg/contracts';
 import { toLocale, type Locale } from '@easyesg/i18n';
-import { holdPendingLink } from '@/server/pending-link';
-import { readSession } from '@/server/session';
+import { holdPendingLink } from '@/server/sealed/pending-link';
+import { readSession } from '@/server/session/session';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
 import { sanitizeReturnPath } from '@/lib/locale-path';
-import { resolvePostSignIn } from '@/server/post-sign-in';
+import { resolvePostSignIn } from '@/server/session/post-sign-in';
 import { targetLocale } from './post-sign-in';
 import { LOCALE_COOKIE } from '@/lib/session-cookie';
 import { getPathname } from '@/i18n/navigation';
-import { api } from '@/server/api-client';
-import { establishSession } from '@/server/session';
+import { api } from '@/server/api/api-client';
+import { establishSession } from '@/server/session/session';
 import {
   consumeSocialTransaction,
   persistSocialTransaction,
-} from '@/server/social-transaction';
+} from '@/server/sealed/social-transaction';
 import { SOCIAL_NOTICE, type SocialNotice } from './social';
 import { ROUTES } from '@/lib/routes';
 

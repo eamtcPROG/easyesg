@@ -11,7 +11,7 @@ import {
   type AccessView,
 } from '@/features/organization/access/tools/access';
 import { MEMBERSHIP_ROLE, type MembershipRole } from '@easyesg/contracts';
-import { api } from '../api-client';
+import { api } from '../api/api-client';
 
 /**
  * S-16's read — the seam that fetches, beside the rule that decides (task 26.4).

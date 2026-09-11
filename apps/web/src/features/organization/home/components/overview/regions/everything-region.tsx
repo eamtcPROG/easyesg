@@ -1,6 +1,6 @@
 import type { AccountMembership } from '@easyesg/contracts';
 import { getTranslations } from 'next-intl/server';
-import { mayWrite } from '@/server/memberships';
+import { mayWrite } from '@/server/data/memberships';
 import { everythingRows, type OverviewRow } from '../../../tools/overview';
 import { FilingList } from './filing-list';
 import { HomeRegion } from '../../shared/home-region';

@@ -9,9 +9,9 @@ import {
   confirmTotpEnrolmentAction,
   disableTotpAction,
   reissueRecoveryCodesAction,
-} from '../actions';
-import { SECTION_READ, type TotpState } from '../credentials';
-import { CREDENTIALS_EVENT, CREDENTIALS_SECTION, CREDENTIALS_STAGE } from '../credentials-state';
+} from '../actions/actions';
+import { SECTION_READ, type TotpState } from '../tools/credentials';
+import { CREDENTIALS_EVENT, CREDENTIALS_SECTION, CREDENTIALS_STAGE } from '../tools/credentials-state';
 import { useCredentials, useSectionBusy } from './credentials-context';
 import { SectionUnavailable } from './section-unavailable';
 import styles from './credentials.module.css';

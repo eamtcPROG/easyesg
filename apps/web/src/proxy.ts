@@ -10,7 +10,7 @@ import {
   refreshSession,
   type SessionCookie,
   type SessionJar,
-} from '@/server/session';
+} from '@/server/session/session';
 import { ROUTES } from '@/lib/routes';
 
 /**

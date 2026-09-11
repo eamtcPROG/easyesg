@@ -1,8 +1,8 @@
 import 'server-only';
 import type { CountryLegalForms, NaceCodeMatch, ReportingEntity } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
-import { toEntityRows, type EntityRow } from '@/features/entities/entities';
-import { api } from '../api-client';
+import { toEntityRows, type EntityRow } from '@/features/entities/tools/entities';
+import { api } from '../api/api-client';
 import { TENANT_READ, isPermissionRefusal } from './tenant-read';
 
 /**

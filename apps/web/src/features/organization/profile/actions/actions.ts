@@ -4,7 +4,7 @@ import type { Organization, UpdateOrganizationRequest } from '@easyesg/contracts
 import { revalidatePath } from 'next/cache';
 import { mapOutcome, type ApiOutcome } from '@/lib/api-outcome';
 import { APP_LAYOUT_PATH } from '@/lib/revalidate-paths';
-import { api } from '@/server/api-client';
+import { api } from '@/server/api/api-client';
 
 /**
  * UC-50 — edit the organization profile (FR-15, FR-16).

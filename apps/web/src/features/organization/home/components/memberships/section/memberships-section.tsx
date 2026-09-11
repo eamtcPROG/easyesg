@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { readMemberships } from '@/server/memberships';
+import { readMemberships } from '@/server/data/memberships';
 import { HomeRegion } from '../../shared/home-region';
 import { MembershipsList } from '../list/memberships-list';
 import { MembershipsUnreachable } from '../states/memberships-unreachable';

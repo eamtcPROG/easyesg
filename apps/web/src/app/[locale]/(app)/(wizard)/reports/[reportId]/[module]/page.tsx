@@ -11,7 +11,7 @@ import { StepFields } from '@/features/wizard/components/step-fields';
 import { WizardExit } from '@/features/wizard/components/wizard-exit';
 import { READ_ONLY_CAUSE, readWizardStep, type ReadOnlyCause } from '@/server/data/wizard';
 import { TENANT_READ } from '@/server/data/tenant-read';
-import { readSession } from '@/server/session';
+import { readSession } from '@/server/session/session';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { periodRoute } from '@/lib/routes';

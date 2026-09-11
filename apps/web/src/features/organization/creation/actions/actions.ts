@@ -4,7 +4,7 @@ import type { CreateOrganizationRequest, Organization } from '@easyesg/contracts
 import { revalidatePath } from 'next/cache';
 import { mapOutcome, type ApiOutcome } from '@/lib/api-outcome';
 import { APP_LAYOUT_PATH } from '@/lib/revalidate-paths';
-import { api } from '@/server/api-client';
+import { api } from '@/server/api/api-client';
 
 /**
  * UC-49 — create an organization and become its Organization Administrator (FR-13, D-1).

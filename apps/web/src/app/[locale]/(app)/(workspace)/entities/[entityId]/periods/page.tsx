@@ -1,7 +1,7 @@
 import { Button, CALLOUT_INTENT, Callout, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { PeriodsList } from '@/features/periods/components/periods-list';
-import { applyPeriodView, readPeriodView, toPeriodRows } from '@/features/periods/periods';
+import { applyPeriodView, readPeriodView, toPeriodRows } from '@/features/periods/tools/periods';
 import styles from '@/features/periods/components/periods.module.css';
 import { readPeriodList, type PeriodListRead } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';

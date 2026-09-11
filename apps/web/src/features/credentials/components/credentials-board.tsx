@@ -3,7 +3,7 @@
 import type { SocialProvider } from '@easyesg/contracts';
 import { RecordShell } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import type { CredentialsRead } from '../credentials';
+import type { CredentialsRead } from '../tools/credentials';
 import { CredentialsNotice } from './credentials-notice';
 import { CredentialsProvider } from './credentials-context';
 import { FactorSection } from './factor-section';

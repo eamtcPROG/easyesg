@@ -2,7 +2,7 @@ import { PROBLEM_TYPE, type ProblemDocument } from '@easyesg/contracts';
 import { NextResponse, type NextRequest } from 'next/server';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
-import { readSession, withFreshAccessToken } from '@/server/session';
+import { readSession, withFreshAccessToken } from '@/server/session/session';
 
 /**
  * The token-attaching pass-through — **the only path from the browser to the API** (task 22).

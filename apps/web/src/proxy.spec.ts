@@ -32,7 +32,7 @@ vi.mock('next/headers', () => ({
 }));
 
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
-import { sealSession, unsealSession, type SessionPayload } from '@/server/session-codec';
+import { sealSession, unsealSession, type SessionPayload } from '@/server/session/session-codec';
 import proxy from './proxy';
 
 const SECRET = 'spec-secret-0000000000000000000000000000';

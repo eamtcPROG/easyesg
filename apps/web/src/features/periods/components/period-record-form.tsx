@@ -26,13 +26,13 @@ import {
   PERIOD_DIALOGUE,
   PERIOD_RECORD_EVENT,
   periodRecordReducer,
-} from '../record-state';
+} from '../tools/record-state';
 import {
   lockPeriodAction,
   openPeriodAction,
   reopenPeriodAction,
   updatePeriodAction,
-} from '../actions';
+} from '../actions/actions';
 import styles from './periods.module.css';
 
 /**

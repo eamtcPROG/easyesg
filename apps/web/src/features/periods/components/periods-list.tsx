@@ -27,7 +27,7 @@ import {
   type PeriodSort,
   type PeriodStanding,
   type PeriodView,
-} from '../periods';
+} from '../tools/periods';
 import styles from './periods.module.css';
 
 /**

@@ -1,8 +1,8 @@
 import 'server-only';
 import type { Report, ReportingEntity, ReportingPeriod } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
-import { toReportRows, type ReportRow } from '@/features/reports/reports';
-import { api } from '../api-client';
+import { toReportRows, type ReportRow } from '@/features/reports/tools/reports';
+import { api } from '../api/api-client';
 import { TENANT_READ, isPermissionRefusal } from './tenant-read';
 
 /**

@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 import ro from '@/messages/ro.json';
 import { formats } from '@/i18n/formats';
 import { API_OUTCOME } from '@/lib/api-outcome';
-import { SECTION_READ, type CredentialsRead } from '../credentials';
-import { changePasswordAction, disableTotpAction } from '../actions';
+import { SECTION_READ, type CredentialsRead } from '../tools/credentials';
+import { changePasswordAction, disableTotpAction } from '../actions/actions';
 import { CredentialsBoard } from './credentials-board';
 
 /**
@@ -17,7 +17,7 @@ import { CredentialsBoard } from './credentials-board';
  * account and sees one screen, so it never meets a half-failed read, and it cannot tell a refusal
  * carrying one remedy from the same refusal carrying two.
  */
-vi.mock('../actions', () => ({
+vi.mock('../actions/actions', () => ({
   changePasswordAction: vi.fn(),
   beginTotpEnrolmentAction: vi.fn(),
   confirmTotpEnrolmentAction: vi.fn(),

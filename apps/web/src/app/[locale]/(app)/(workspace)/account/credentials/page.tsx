@@ -1,6 +1,6 @@
 import { CredentialsBoard } from '@/features/credentials/components/credentials-board';
 import { readCredentials } from '@/server/data/credentials';
-import { readPendingLink } from '@/server/pending-link';
+import { readPendingLink } from '@/server/sealed/pending-link';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**

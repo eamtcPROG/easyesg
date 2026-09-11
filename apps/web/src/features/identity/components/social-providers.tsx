@@ -7,7 +7,7 @@ import type {
   SocialSignInIntent,
 } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
-import { api } from '@/server/api-client';
+import { api } from '@/server/api/api-client';
 import styles from './identity-screens.module.css';
 
 /**

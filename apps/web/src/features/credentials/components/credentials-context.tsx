@@ -7,7 +7,7 @@ import type { SocialProvider } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 import { failureNotice, successNotice, type Notice, type NoticeCopy } from '@/lib/notice';
-import type { CredentialsRead } from '../credentials';
+import type { CredentialsRead } from '../tools/credentials';
 import {
   CREDENTIALS_EVENT,
   credentialsReducer,
@@ -15,7 +15,7 @@ import {
   type CredentialsEvent,
   type CredentialsSection,
   type CredentialsState,
-} from '../credentials-state';
+} from '../tools/credentials-state';
 
 /**
  * S-28's screen state, in one place its sections read from (28 Aug 2026, project owner's review).

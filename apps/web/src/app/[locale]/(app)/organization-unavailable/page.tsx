@@ -3,7 +3,7 @@ import { Callout, CALLOUT_INTENT, FocusColumn, TextLink } from '@easyesg/ui';
 import { redirect } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { POST_SIGN_IN, targetLocale } from '@/features/identity/post-sign-in';
-import { destinationForHeldSession } from '@/server/post-sign-in';
+import { destinationForHeldSession } from '@/server/session/post-sign-in';
 
 /**
  * S-35 — Organization unavailable · CA · UC-16 (failure path) · Focus

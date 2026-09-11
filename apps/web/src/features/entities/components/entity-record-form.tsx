@@ -21,8 +21,8 @@ import type {
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { useRouter } from '@/i18n/navigation';
 import { ROUTES, entityRoute } from '@/lib/routes';
-import { archiveEntityAction, createEntityAction, updateEntityAction } from '../actions';
-import { CONSOLIDATION_BASIS, ENTITY_STANDING } from '../entities';
+import { archiveEntityAction, createEntityAction, updateEntityAction } from '../actions/actions';
+import { CONSOLIDATION_BASIS, ENTITY_STANDING } from '../tools/entities';
 import { ActivityPicker } from './activity-picker';
 import styles from './entities.module.css';
 

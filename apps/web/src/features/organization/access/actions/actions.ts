@@ -8,7 +8,7 @@ import type {
 } from '@easyesg/contracts';
 import { revalidatePath } from 'next/cache';
 import { mapOutcome } from '@/lib/api-outcome';
-import { api } from '@/server/api-client';
+import { api } from '@/server/api/api-client';
 import type { AccessActionResult } from './action-results';
 
 /**

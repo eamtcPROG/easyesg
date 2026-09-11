@@ -26,7 +26,7 @@ import {
   type ReportRow,
   type ReportSort,
   type ReportView,
-} from '../reports';
+} from '../tools/reports';
 import styles from './reports.module.css';
 
 /**

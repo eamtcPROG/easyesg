@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { redirectWhenSignedIn } from '@/server/session-entry';
+import { redirectWhenSignedIn } from '@/server/session/session-entry';
 import { activateRequestLocale, type LocaleParams } from '@/i18n/page';
 
 /**

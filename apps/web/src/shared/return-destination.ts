@@ -1,5 +1,5 @@
 import { ROUTES, type RoutePath } from '@/lib/routes';
-import { readSession } from '@/server/session';
+import { readSession } from '@/server/session/session';
 
 /**
  * Where a reader who has arrived at no screen is sent back to.

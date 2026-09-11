@@ -3,7 +3,7 @@ import { hasLocale, IntlErrorCode } from 'next-intl';
 import type { Locale } from '@easyesg/i18n';
 import { routing } from './routing';
 import { formats } from './formats';
-import { messageLoader } from '@/server/messages';
+import { messageLoader } from '@/server/messages/messages';
 
 /**
  * Per-request i18n configuration. next-intl memoises this with React's `cache`, so the

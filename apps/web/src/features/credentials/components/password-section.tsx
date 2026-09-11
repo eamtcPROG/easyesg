@@ -4,8 +4,8 @@ import { Button, RecordSection } from '@easyesg/ui';
 import { FormPasswordField, FormSummary } from '@easyesg/ui/forms';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
-import { changePasswordAction } from '../actions';
-import { CREDENTIALS_SECTION } from '../credentials-state';
+import { changePasswordAction } from '../actions/actions';
+import { CREDENTIALS_SECTION } from '../tools/credentials-state';
 import { useCredentials, useSectionBusy } from './credentials-context';
 import styles from './credentials.module.css';
 

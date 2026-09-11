@@ -16,7 +16,7 @@ import {
   type UsableInvitation,
 } from '@/features/identity/invitation';
 import styles from '@/features/identity/components/identity-screens.module.css';
-import { readSession } from '@/server/session';
+import { readSession } from '@/server/session/session';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { ROUTES } from '@/lib/routes';

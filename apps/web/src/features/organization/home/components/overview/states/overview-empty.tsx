@@ -1,7 +1,7 @@
 import { Button, EmptyState } from '@easyesg/ui';
 import type { AccountMembership } from '@easyesg/contracts';
 import { getTranslations } from 'next-intl/server';
-import { mayWrite } from '@/server/memberships';
+import { mayWrite } from '@/server/data/memberships';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { HomeRegion } from '../../shared/home-region';

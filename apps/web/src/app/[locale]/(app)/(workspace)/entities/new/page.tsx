@@ -3,7 +3,7 @@ import type { CountryLegalForms, Organization } from '@easyesg/contracts';
 import { EntityRecordForm } from '@/features/entities/components/entity-record-form';
 import styles from '@/features/entities/components/entities.module.css';
 import { API_OUTCOME } from '@/lib/api-outcome';
-import { api } from '@/server/api-client';
+import { api } from '@/server/api/api-client';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
