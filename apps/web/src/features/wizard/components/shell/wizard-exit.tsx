@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState, type MouseEvent } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { useAutosaveContext } from './autosave-context';
+import { useAutosaveContext } from '../providers/autosave-context';
 
 /**
  * UX-5's single, always-visible way out — and UX-37's second half (task 35.2): *"warned again — with

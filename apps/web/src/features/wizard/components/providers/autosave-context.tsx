@@ -3,7 +3,7 @@
 import type { SaveState } from '@easyesg/ui';
 import { createContext, use, useMemo, useState, type ReactNode } from 'react';
 import { browserPendingWriteStore, pendingWriteScope, useAutosave } from '@/client/autosave';
-import { hasUnsynced, saveStateOf, unsyncedCount, type AutosaveState } from '../autosave-state';
+import { hasUnsynced, saveStateOf, unsyncedCount, type AutosaveState } from '../../tools/autosave-state';
 
 /**
  * S-07's draft-integrity state, in one place every region of the step reads from (task 35.2).

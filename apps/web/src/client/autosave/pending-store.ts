@@ -1,4 +1,4 @@
-import type { QueuedWrite } from '@/features/wizard/autosave-state';
+import type { QueuedWrite } from '@/features/wizard/tools/autosave-state';
 
 /**
  * The durable half of FR-38 (task 35.2): where unacknowledged changes wait between one page and the

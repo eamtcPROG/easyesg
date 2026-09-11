@@ -3,8 +3,8 @@
 import { Button, BUTTON_VARIANT, Combobox, type ComboboxOption } from '@easyesg/ui';
 import { useMemo, useState } from 'react';
 import type { DisclosureOption } from '@easyesg/contracts';
-import { membersOf, draftOfMembers } from '../values';
-import styles from './step.module.css';
+import { membersOf, draftOfMembers } from '../../../tools/values';
+import styles from '../styles/step.module.css';
 
 /**
  * An `enumeration_set` answer — the members chosen, from a domain that may hold a thousand of them

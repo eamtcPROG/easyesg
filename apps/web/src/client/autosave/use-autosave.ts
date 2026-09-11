@@ -18,7 +18,7 @@ import {
   type QueuedWrite,
   type AutosaveState,
   type FlushFailure,
-} from '@/features/wizard/autosave-state';
+} from '@/features/wizard/tools/autosave-state';
 import type { PendingWriteStore } from './pending-store';
 import { putDerivationInputs, putDisclosureValues } from './write-values';
 

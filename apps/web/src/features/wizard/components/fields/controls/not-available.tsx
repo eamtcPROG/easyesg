@@ -2,7 +2,7 @@
 
 import { Button, BUTTON_VARIANT, TextField } from '@easyesg/ui';
 import { useState } from 'react';
-import styles from './step.module.css';
+import styles from '../styles/step.module.css';
 
 const DECLARING = { CLOSED: 'closed', DRAFTING: 'drafting' } as const;
 

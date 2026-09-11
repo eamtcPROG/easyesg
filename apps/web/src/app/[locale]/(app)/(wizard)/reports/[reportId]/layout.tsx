@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { WizardProviders } from '@/features/wizard/components/wizard-providers';
+import { WizardProviders } from '@/features/wizard/components/providers/wizard-providers';
 
 /**
  * The wizard shell - S-07 and everything reached from inside a report.

@@ -2,7 +2,7 @@
 
 import { SAVE_STATE, SaveStateIndicator } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { useAutosaveContext } from './autosave-context';
+import { useAutosaveContext } from '../providers/autosave-context';
 
 /**
  * UX-35's indicator, in the shell's one fixed location, reading the screen's own state (task 35.2).

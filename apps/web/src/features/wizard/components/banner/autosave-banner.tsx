@@ -4,8 +4,8 @@ import { BUTTON_VARIANT, Banner, Button, CALLOUT_INTENT } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { failureNotice } from '@/lib/notice';
-import { CONNECTION, FLUSH_FAILURE } from '../autosave-state';
-import { useAutosaveContext } from './autosave-context';
+import { CONNECTION, FLUSH_FAILURE } from '../../tools/autosave-state';
+import { useAutosaveContext } from '../providers/autosave-context';
 
 /**
  * UX-37's standing warning: *"The user shall be warned while anything is unsynced"* (task 35.2).

@@ -16,9 +16,9 @@ import {
   parseDecimalInput,
   storedDraftOf,
   writeFor,
-} from '../values';
+} from '../../../tools/values';
 import { ChoiceSet } from './choice-set';
-import styles from './step.module.css';
+import styles from '../styles/step.module.css';
 
 /**
  * The control for one field's kind — the slot §6.2's anatomy leaves open (task 35.2).
