@@ -34,6 +34,10 @@ export {
 export { Button, type ButtonProps } from './primitives/button';
 export { Panel } from './primitives/panel';
 export { ProviderButton, type ProviderButtonProps } from './primitives/provider-button';
+export { Skeleton, type SkeletonProps } from './primitives/skeleton';
+// Directly, never through `skeleton.tsx` — a re-export routed through a component module is still
+// a client reference the day that module gains a directive.
+export { SKELETON_SHAPE, type SkeletonShape } from './primitives/skeleton-vocabulary';
 export { Spinner } from './primitives/spinner';
 export { TextLink, type TextLinkProps } from './primitives/text-link';
 

@@ -362,6 +362,28 @@ conditional render, which is how it ends up half-suppressed on one screen.
   Server Action needs to share — a constant, a type guard, a plain helper — belongs beside it, not
   in it.
 
+- **A Suspense fallback may not be an async component** (11 Sep 2026, task 115). It would suspend
+  against the *parent* boundary, so the shell waits for exactly what the boundary below it exists to
+  stop waiting for. Resolve the strings in the page and pass them: S-05's route file keeps one
+  `getTranslations` after its split for precisely this, and `OverviewLoading` takes its label as a
+  prop rather than awaiting one.
+
+  **And a boundary is worth adding only where a slow read would otherwise hold up a shell worth
+  painting.** Parallel fetching is what *composition* buys — sibling async Server Components start
+  together, which is what replaced S-05's single `Promise.all` — and Suspense only decides what
+  blocks the flush. Three of S-05's four regions read memberships, which is React-`cache()`d and
+  already in flight for the global tier in the `(app)` layout, so the page cannot paint ahead of them
+  whatever the page does; wrapping the heading would buy nothing and cost the layout shift
+  `async-suspense-boundaries`' own *"when NOT to use"* list names, since the `h1` is the
+  organization's name.
+
+  **Nothing but a served-HTML assertion can see a boundary being deleted.** Every region renders
+  identically once the stream settles, so the suite stays green and the screen simply gets slower —
+  `home.spec.ts` reads the positions of the fallback's markup and the filings in the response body.
+  Assert on the **markup** (`role="status"`), never on the fallback's label: next-intl ships the
+  whole catalogue in the same payload, so the sentence is in the HTML either way, and the first
+  draft of that check passed against a build with the boundary removed.
+
 - **Never import `next/link` or `next/navigation`'s locale-aware members.** Use
   `@/i18n/navigation`. A raw `next/link` renders a working-looking anchor that drops the locale
   prefix: nothing throws, nothing logs, and it survives review. Lint-enforced.

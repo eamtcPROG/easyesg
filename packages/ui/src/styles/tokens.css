@@ -128,6 +128,20 @@
   --state-neutral: var(--slate-700);    --state-neutral-tint: var(--slate-50);
 
   /* ── Tier 3 · component tokens (the ONLY tier components may read) ── */
+
+  /* The skeleton's two greys — §11.5 names the token `skeleton.bg` and the specimen draws both:
+     the stronger one carries a heading's line, the quiet one every other bar. Tier 1 directly, as
+     fourteen tier-3 tokens here already do, because neither grey has a tier-2 role: they are not a
+     surface a reader reads on, they are the absence of one. */
+  --skeleton-surface: var(--slate-100);
+  --skeleton-surface-quiet: var(--slate-50);
+
+  /* Both stated by §11.5 and the specimen rather than chosen here, which is why they are not on
+     tier 1's motion scale: that scale times an *interaction* — hover, toast, panel — and these time
+     a **wait**. `--skeleton-delay` is the inventory's *"no loading affordance appears below
+     300 ms"*; `--skeleton-pulse` is the specimen's own 1.4 s shimmer. */
+  --skeleton-delay: 300ms;
+  --skeleton-pulse: 1400ms;
   --field-border-rest: var(--border-strong);
   --field-border-focus: var(--border-focus);
   --field-border-missing: var(--state-attention);

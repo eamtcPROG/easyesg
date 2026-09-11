@@ -1,0 +1,57 @@
+.bar {
+  display: block;
+  background: var(--skeleton-surface-quiet);
+  border-radius: var(--radius-1);
+
+  /*
+    **Invisible until the wait is worth acknowledging** — §11.5: *"No loading affordance appears
+    below 300 ms."* A delayed animation rather than a transition, because nothing changes to trigger
+    one: the bar is server-rendered already in its waiting state, so there is no "before" for a
+    transition to run from. During the delay no keyframe applies and the declared `opacity: 0`
+    holds, which is why the animation deliberately carries no `fill-mode`.
+  */
+  opacity: 0;
+  animation: skeletonWait var(--skeleton-pulse) var(--motion-ease) var(--skeleton-delay) infinite;
+}
+
+.text {
+  block-size: 12px;
+}
+
+.heading {
+  block-size: 15px;
+  background: var(--skeleton-surface);
+}
+
+.block {
+  block-size: 40px;
+  border-radius: var(--radius-2);
+}
+
+@keyframes skeletonWait {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/*
+  **This module opts out of the global reduction rather than inheriting it**, and the reason is that
+  the global rule is wrong for this one shape. `tokens.css` collapses every animation to `1ms
+  !important`, which for a *finite* animation means "arrive instantly" — the intended effect — and
+  for an `infinite` opacity cycle means a strobe at the frame rate, which is the opposite of what
+  the preference asks for. `animation-name` is not what the global rule sets, so naming it `none`
+  here wins without fighting an `!important`.
+
+  The 300 ms restraint goes with it, and that is the right trade: a reader who has asked for less
+  motion is better served by a bar that is simply there than by one that appears out of nothing.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    animation-name: none;
+    opacity: 1;
+  }
+}

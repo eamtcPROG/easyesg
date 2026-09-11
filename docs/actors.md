@@ -59,6 +59,7 @@ The sources use two orthogonal classifications. Neither is invented here.
 | **BO** | Billing Operator | Human — platform-side | Primary — MVP (new actor: recommended addition to the System Actors doc) | Internal finance role: plan catalogue and pricing, invoice issuance and correction, bank reconciliation, collections, refunds, and fiscal reporting. Separated from PA because issuing a credit note and running a taxonomy migration are different privileges that should not sit in one account. | Bill correctly and fiscally compliantly under Moldovan rules; collect; keep an evidential ledger; keep the plan catalogue out of code | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164 |
 | **SYS** | System (scheduled/event-driven) | System | Primary — MVP | Automated behaviour with no human initiator: recurring charge execution, dunning runs, entitlement evaluation, metering, e-Factura transmission, notification dispatch. Registered as use cases because each has a defined trigger, outcome, and failure path that must be specified and tested. | Execute on schedule and on event, idempotently, and terminate every run in something a human can see | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174 |
 | **VI** | Visitor | Human — unauthenticated | Primary — MVP (added 24 Aug 2026, `design_spec.md` OQ-12) | A person who has not identified themselves, reading the surfaces that exist to be read before an account does: the marketing home, the three legal documents and the cookie choice, the help centre and its articles, and the route to support. Holds no session, no organization and no data of the platform's; every capability is a public read plus one outbound message. | Decide whether the platform is worth an account; know what is being agreed to and how personal data is handled, before agreeing to it; get an answer to a question without signing up | UC-177 … UC-182 |
+| **AD** | Advisor Administrator | Human — tenant-side (cross-organization) | Primary — MVP (added 11 Sep 2026, promoting Advisor portfolio management out of §6.1) | Manages an advisor organization — an accounting or consulting firm reporting on behalf of client companies: its profile and subscription, the staff it employs and the clients each of them may reach, and the roster of client organizations that have granted it access. Holds no rights inside a client organization by virtue of this role; an advisor user working on a client's report acts as `RC` within that client's own context, under the scope the client granted. | Carry a portfolio of clients through a filing season without entering each organization in turn to find out who is behind; hold one subscription and one invoice for the firm rather than being drawn into each client's billing; keep engagements separated from one another inside the firm | UC-196 … UC-200, UC-205 … UC-207, UC-209 |
 
 Forward-looking actors are registered separately in §6; they carry no MVP permissions and no MVP use cases.
 
@@ -200,58 +201,103 @@ every registration, and none of them is counted anywhere in the platform, since 
 of analytics and no session exists to attribute a visit to. 6 of the 182 registered use cases belong to this
 actor.
 
+### AD — Advisor Administrator
+
+**Description.** The administrator of an advisor organization — an accounting or consulting firm that reports on behalf of
+client companies. Registered as an actor on 11 Sep 2026, promoting **Advisor portfolio management** out of §6.1 and out of
+`use_cases.md` §7.1 into MVP scope as UC-196 … UC-211. The deferral rationale recorded against it was about demand rather
+than capability: FR-14 has always modelled typed organization relationships expressly so the Advisor type could be activated
+without a schema change, and UC-16 has always resolved a user's memberships and switched the active organization. What was
+missing was the decomposition, which §6.1 said in as many words — "named so that schema and permissions anticipate them".
+
+**Responsibilities.** Create and administer the advisor organization; employ staff and set which clients each of them may
+enter; request access to a client organization and carry the roster of those granted; end an engagement; enter a granted
+client and work on its report; read the consolidated status of the whole portfolio and export it; hold the firm's own plan
+and invoices.
+
+**Goals and motivations.** Carry twenty-five clients through an April–May filing season without opening twenty-five
+organizations in turn to discover which of them is behind. Hold one subscription and receive one invoice for the firm,
+rather than being drawn into each client's billing. Keep engagements separated from one another inside the firm, which is
+frequently a contractual obligation and not a preference.
+
+**Permissions and authority.** None over any client organization by virtue of this role. Every capability inside a client is
+exercised as `RC`, under a scope that client's Organization Administrator selected and can withdraw at any time (UC-201,
+UC-203), and is attributed to the advisor user in that client's change history (UC-47). The firm requests; the client grants
+— **there is no path by which an advisor attaches itself to an organization** (D-15). Two properties follow, and they are
+what keep this actor from being the cross-tenant reader §6.2 still excludes:
+
+- **A session resolves to exactly one tenant.** Entering a client (UC-205) sets the tenant context to that single
+  organization, so the row-level isolation predicate applies unmodified and the cross-tenant probe in the delivery pipeline
+  keeps its meaning. This actor introduces **no exception to tenant isolation**.
+- **The firm's plan never reaches its clients.** Advisor entitlement keys are evaluated on the advisor organization alone
+  (D-16); a client on Free exhibits Free entitlements even while an advisor on a paid plan is working inside it.
+
+The consolidated board (UC-206) is the only surface presenting several clients at once, and it is assembled by iterating the
+roster with one scoped query per client rather than by a query spanning organizations. Its export carries status and
+deadline metadata only, never disclosure content (UC-207).
+
+---
+
 ## 5. Roles and permissions matrix
 
-Legend: **Y** granted; **—** not granted; **R** read-only; **T** time-boxed and audited on request; **S** granted through the system rather than a human action. Every cell traces to a statement in the sources; nothing is inferred where the sources are silent, and silence is recorded in §10.
+Legend: **Y** granted; **—** not granted; **R** read-only; **T** time-boxed and audited on request; **S** granted through the system rather than a human action. An `AD` cell reading *as RC in a granted client* means the capability is exercised inside a client organization the firm has been granted access to, under that client's scope and plan, never against the advisor organization itself (D-15, D-16). Every cell traces to a statement in the sources; nothing is inferred where the sources are silent, and silence is recorded in §10.
 
-| Capability | CA | RC | OA | PA | BO | SYS | VI |
-|---|---|---|---|---|---|---|---|
-| Own account, credentials, identity links | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — |
-| Own profile, interface language, notification preferences | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — |
-| Accept invitation; view memberships; switch active organization | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — |
-| In-app notification centre (view, open, mark read) | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — |
-| View accessible reporting entities and periods | — | Y | R (org-wide overview) | — | — | — | — |
-| Edit report field data (B1–B11) | — | Y | — | — | — | — | — |
-| Declare a section omitted as classified or sensitive / a field not available | — | Y | — | — | — | — | — |
-| Run the carbon calculator; override a computed figure | — | Y (override flagged and attributed) | — | — | — | S (computation) | — |
-| View validation state and re-run validation | — | Y | R (rollup) | — | — | S (rollup input) | — |
-| Export PDF / EFRAG Excel Digital Template; re-download exports | — | Y | — | — | — | — | — |
-| View report change history | — | Y | — | — | — | — | — |
-| Select export language independently of interface language | — | Y | — | — | — | — | — |
-| Organization profile and entity identifiers | — | — | Y | R (account metadata only) | — | S (identifier validation) | — |
-| Reporting entities: create, edit, consolidation scope, archive | — | — | Y | — | — | — | — |
-| Reporting periods: open, lock, reopen | — | — | Y | — | — | — | — |
-| Organization users: invite, re-role, remove, promote to OA | — | — | Y | — | — | — | — |
-| Plan and entitlement status; usage counters | — | — | R | — | Y (catalogue side) | S (evaluation) | — |
-| Subscription lifecycle: trial, start, upgrade, downgrade, cancel, reactivate | — | — | Y | — | Y (Enterprise provisioning only) | S (renewal, lapse) | — |
-| Orders, checkout, discount application, terms acceptance | — | — | Y | — | — | — | — |
-| Payment execution (card, MIA, bank transfer, saved instruments) | — | — | Y | — | — | S (recurring charge) | — |
-| Billing account and fiscal identifiers | — | — | Y | — | — | S (validation) | — |
-| View and download own invoices | — | — | Y | — | Y (all) | — | — |
-| Plan catalogue, entitlements, pricing, versioning, discounts, trials | — | — | — | — | Y | — | — |
-| Fiscal invoice issuance | — | — | — | — | — | S | — |
-| Credit notes and corrective invoices; refunds; chargebacks | — | — | — | — | Y | S (entitlement reversal) | — |
-| Invoice numbering series; statutory archiving | — | — | — | — | Y | — | — |
-| Bank statement import; reconciliation exceptions; manual mark-paid; write-off | — | — | — | — | Y | S (automatic matching) | — |
-| VAT rates and tax rules | — | — | — | — | Y | S (application) | — |
-| Revenue dashboard, VAT/accounting export, billing audit ledger, settlement reconciliation | — | — | — | — | Y | — | — |
-| Enterprise quote, contract record, custom billing schedule, renewal | — | — | R (request, PO reference) | — | Y | — | — |
-| e-Factura transmission | — | — | — | — | Y (failure resolution) | S (transmission) | — |
-| Translatable content, translation publication, locales, untranslated-key queue | — | — | — | Y | — | — | — |
-| Taxonomy/template versions, field mapping, exposure view, migration runs | — | — | — | Y | — | — | — |
-| Emission factor set, applicability thresholds, validation rule definitions | — | — | — | Y | — | — | — |
-| Social identity provider configuration and credential rotation | — | — | — | Y | — | — | — |
-| Organization register (account metadata, not report content) | — | — | — | Y | — | — | — |
-| Access to a specific organization's report data | — | Y (own org) | — (no direct field edit) | T (UC-85, logged UC-86) | — | — | — |
-| Adoption/usage metrics and metrics export | — | — | R (own org only) | Y | R (read alongside revenue) | S (metering) | — |
-| Platform administrator accounts and privilege levels; platform audit log | — | — | — | Y | — | — | — |
-| Notification categories and templates | — | — | — | Y | — | — | — |
-| Send a manual reminder to a user | — | — | Y | — | — | S (scheduled notices) | — |
-| Entitlement evaluation, quota handling, metering emission | — | — | — | — | — | S | — |
-| Read the public marketing surface | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | — | Y |
-| Read the published legal documents and set the cookie choice | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | — | Y |
-| Browse the help centre and read a published help article | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | Y |
-| Contact support | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | Y |
+| Capability | CA | RC | OA | PA | BO | SYS | VI | AD |
+|---|---|---|---|---|---|---|---|---|
+| Own account, credentials, identity links | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — | Y (via CA) |
+| Own profile, interface language, notification preferences | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — | Y (via CA) |
+| Accept invitation; view memberships; switch active organization | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — | Y (via CA) |
+| In-app notification centre (view, open, mark read) | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | — | Y (via CA) |
+| View accessible reporting entities and periods | — | Y | R (org-wide overview) | — | — | — | — | Y (in a granted client) |
+| Edit report field data (B1–B11) | — | Y | — | — | — | — | — | Y (as RC in a granted client) |
+| Declare a section omitted as classified or sensitive / a field not available | — | Y | — | — | — | — | — | Y (as RC in a granted client) |
+| Run the carbon calculator; override a computed figure | — | Y (override flagged and attributed) | — | — | — | S (computation) | — | Y (as RC in a granted client) |
+| View validation state and re-run validation | — | Y | R (rollup) | — | — | S (rollup input) | — | Y (as RC in a granted client) |
+| Export PDF / EFRAG Excel Digital Template; re-download exports | — | Y | — | — | — | — | — | Y (as RC in a granted client) |
+| View report change history | — | Y | — | — | — | — | — | Y (as RC in a granted client) |
+| Select export language independently of interface language | — | Y | — | — | — | — | — | Y (as RC in a granted client) |
+| Organization profile and entity identifiers | — | — | Y | R (account metadata only) | — | S (identifier validation) | — | — |
+| Reporting entities: create, edit, consolidation scope, archive | — | — | Y | — | — | — | — | — |
+| Reporting periods: open, lock, reopen | — | — | Y | — | — | — | — | — |
+| Organization users: invite, re-role, remove, promote to OA | — | — | Y | — | — | — | — | — |
+| Plan and entitlement status; usage counters | — | — | R | — | Y (catalogue side) | S (evaluation) | — | Y (own firm only) |
+| Subscription lifecycle: trial, start, upgrade, downgrade, cancel, reactivate | — | — | Y | — | Y (Enterprise provisioning only) | S (renewal, lapse) | — | Y (own firm only) |
+| Orders, checkout, discount application, terms acceptance | — | — | Y | — | — | — | — | Y (own firm only) |
+| Payment execution (card, MIA, bank transfer, saved instruments) | — | — | Y | — | — | S (recurring charge) | — | Y (own firm only) |
+| Billing account and fiscal identifiers | — | — | Y | — | — | S (validation) | — | Y (own firm only) |
+| View and download own invoices | — | — | Y | — | Y (all) | — | — | Y (own firm only) |
+| Plan catalogue, entitlements, pricing, versioning, discounts, trials | — | — | — | — | Y | — | — | — |
+| Fiscal invoice issuance | — | — | — | — | — | S | — | — |
+| Credit notes and corrective invoices; refunds; chargebacks | — | — | — | — | Y | S (entitlement reversal) | — | — |
+| Invoice numbering series; statutory archiving | — | — | — | — | Y | — | — | — |
+| Bank statement import; reconciliation exceptions; manual mark-paid; write-off | — | — | — | — | Y | S (automatic matching) | — | — |
+| VAT rates and tax rules | — | — | — | — | Y | S (application) | — | — |
+| Revenue dashboard, VAT/accounting export, billing audit ledger, settlement reconciliation | — | — | — | — | Y | — | — | — |
+| Enterprise quote, contract record, custom billing schedule, renewal | — | — | R (request, PO reference) | — | Y | — | — | — |
+| e-Factura transmission | — | — | — | — | Y (failure resolution) | S (transmission) | — | — |
+| Translatable content, translation publication, locales, untranslated-key queue | — | — | — | Y | — | — | — | — |
+| Taxonomy/template versions, field mapping, exposure view, migration runs | — | — | — | Y | — | — | — | — |
+| Emission factor set, applicability thresholds, validation rule definitions | — | — | — | Y | — | — | — | — |
+| Social identity provider configuration and credential rotation | — | — | — | Y | — | — | — | — |
+| Organization register (account metadata, not report content) | — | — | — | Y | — | — | — | — |
+| Access to a specific organization's report data | — | Y (own org) | — (no direct field edit) | T (UC-85, logged UC-86) | — | — | — | — |
+| Adoption/usage metrics and metrics export | — | — | R (own org only) | Y | R (read alongside revenue) | S (metering) | — | — |
+| Platform administrator accounts and privilege levels; platform audit log | — | — | — | Y | — | — | — | — |
+| Notification categories and templates | — | — | — | Y | — | — | — | — |
+| Send a manual reminder to a user | — | — | Y | — | — | S (scheduled notices) | — | — |
+| Entitlement evaluation, quota handling, metering emission | — | — | — | — | — | S | — | — |
+| Read the public marketing surface | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | — | Y | Y (via CA) |
+| Read the published legal documents and set the cookie choice | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | Y (via VI) | — | Y | Y (via CA) |
+| Browse the help centre and read a published help article | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | Y | Y (via CA) |
+| Contact support | Y | Y (via CA) | Y (via CA) | Y (via CA) | Y (via CA) | — | Y | Y (via CA) |
+| Advisor organization profile and staff; per-staff client scope | — | — | — | — | — | — | — | Y |
+| Request access to a client organization | — | — | — | — | — | — | — | Y |
+| Grant, decline or revoke an advisor's access to the organization | — | — | Y | — | — | — | — | — |
+| View advisor access alongside direct members | — | — | Y | — | — | — | — | — |
+| Client roster; switch into a granted client organization | — | — | — | — | — | — | — | Y |
+| Consolidated client status board and its export | — | — | — | — | — | — | — | Y |
+| Advisor plan definition and its entitlement keys | — | — | — | — | Y | — | — | — |
+| Automatic expiry of an advisor relationship; request/outcome notices | — | — | — | — | — | S | — | — |
 
 Supporting requirements: FR-25, FR-57, FR-58 (more than one user within an org may view/edit a shared report — the accessible-report list honouring per-report permissions, invitation with an edit or view-only role, and role change on an existing membership), FR-14 (typed organization relationships so Advisor/Buyer/Licensee types need no schema change), FR-99, FR-100, FR-105 (central entitlement/plan-check service and metering events), NFR-13 (RBAC per org/role, secure auth, authenticated API surface), NFR-9 (relationship model extensible to Advisor, Buyer, Licensee), NFR-7 (every disclosure field change attributable to user and timestamp).
 
@@ -265,12 +311,12 @@ Named so that schema and permissions anticipate them. Not built at MVP. Source: 
 
 | Actor | Description | Monetization model it enables | Rationale for MVP exclusion |
 |---|---|---|---|
-| **Advisor / Accountant** | Manages ESG reporting on behalf of multiple client SME orgs from one login | Model 3 (B2B2B) | Which of Models 3/4/6 activates first after MVP is a demand-driven decision gated on MVP success metrics. Deliberately excluded from MVP capability; the generic org-relationship model (FR-14, NFR-9) is what keeps it addable without a schema migration. |
+| ~~**Advisor / Accountant**~~ — **promoted into MVP 11 Sep 2026** | Manages ESG reporting on behalf of multiple client SME orgs from one login | Model 3 (B2B2B) | **No longer forward-looking.** Registered as the `AD` actor and decomposed as UC-196 … UC-211, FR-190 … FR-203, profiled in §4. The provision this row always pointed at — the generic org-relationship model (FR-14, NFR-9) — is what made the promotion a decomposition rather than a migration. Advisor entitlement *sponsorship* remains deferred (D-16). |
 | **Corporate Buyer / Enterprise User** | Large, CSRD-obligated company monitoring VSME data submitted by its SME suppliers; consumes aggregated dashboards and benchmarking | Model 4 (value-chain monitoring) | As above. Requires consented cross-organization data sharing and aggregation, neither of which is an MVP concern for a single-tenant SME report. |
 | **Institution / Licensee Admin** | Administers a white-labeled instance on behalf of a government, chamber of commerce or association — where the original Moldova/MDED scenario now sits | Model 6 (licensing / white-label) | As above. White-labelling (branding, domain, language pack, sub-org management) is a distinct product surface, re-scoped out of the direct-to-SME MVP. |
 | **Assurance / Referral Partner** | Auditor, carbon-offset provider, or financing program receiving consented referrals from the platform | Model 5 (marketplace / referral) | Named but not use-cased. Needs its own pass once a referral-partner list exists. |
 
-Also deliberately excluded at MVP, per the design decisions document: Advisor, Buyer and Licensee capability generally, enterprise SSO, and tenant MFA (MFA is required for PA on the administrative surface under UC-68, but is not offered to tenant actors).
+Also deliberately excluded at MVP, per the design decisions document: Buyer and Licensee capability generally, and enterprise SSO. *Advisor capability was promoted into MVP on 11 Sep 2026 (see the struck row above), and tenant MFA on 18 Aug 2026 as NFR-95, decomposed as UC-193 … UC-195; MFA remains mandatory for PA on the administrative surface under UC-68 and opt-in for tenant actors.*
 
 ### 6.2 Public disclosure portal reader
 
@@ -308,19 +354,20 @@ The Use Case Register adds further MVP-active external counterparties not listed
 
 ## 8. Actor-to-use-case coverage summary
 
-Against "ESG Platform Use Case Register (MVP)" — **182** use cases across 38 modules. UC-177 … UC-182 and the Public tier module were added 24 Aug 2026 with the Visitor actor (`design_spec.md` OQ-12); the register ran to 176 across 37 before that.
+Against `use_cases.md` — **211** use cases across 45 modules. *Reconciled 11 Sep 2026:* this summary stood at 182 across 38 while the register stood at 195 across 40, because UC-183 … UC-192 (Comprehensive Module, 25 Aug) and UC-193 … UC-195 (second factor, 26 Aug) were never propagated here. UC-196 … UC-211 and the five advisor modules were added 11 Sep 2026 with the `AD` actor. UC-177 … UC-182 and the Public tier module were added 24 Aug 2026 with the Visitor actor (`design_spec.md` OQ-12); the register ran to 176 across 37 before that.
 
 | ID | Actor | Use cases | Share | Ranges | Domain concentration |
 |---|---|---|---|---|---|
-| CA | Common Access | 20 | 11% | UC-01 … UC-16, UC-165 … UC-168 | Account, authentication, credentials, profile, membership, notification consumption |
-| RC | Reporting Contributor | 32 | 18% | UC-17 … UC-48 | Report access, B1–B11 entry, carbon calculator, drafts, validation, export, comparatives, traceability |
-| OA | Organization Administrator | 49 | 28% | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175 | Organization profile, entities, periods, users and access, plan oversight, subscription lifecycle, orders, payment, invoices, enterprise contracting |
-| PA | Platform Administrator | 22 | 13% | UC-68 … UC-88, UC-176 | Admin access, identity providers, content and localization, taxonomy and versioning, calculation rules, metrics, support and audit, notification templates |
-| BO | Billing Operator | 27 | 15% | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164 | Plan catalogue, invoicing corrections, reconciliation and collections, refunds and disputes, enterprise contracting, financial reporting and audit |
-| SYS | System | 26 | 15% | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174 | Recurring charges, invoicing automation, reconciliation matching, dunning and restriction, entitlement enforcement and metering, notification generation and delivery |
+| CA | Common Access | 23 | 11% | UC-01 … UC-16, UC-165 … UC-168, UC-193 … UC-195 | Account, authentication, credentials, profile, membership, notification consumption |
+| RC | Reporting Contributor | 42 | 20% | UC-17 … UC-48, UC-183 … UC-192 | Report access, B1–B11 entry, carbon calculator, drafts, validation, export, comparatives, traceability |
+| OA | Organization Administrator | 53 | 25% | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175, UC-201 … UC-204 | Organization profile, entities, periods, users and access, plan oversight, subscription lifecycle, orders, payment, invoices, enterprise contracting |
+| PA | Platform Administrator | 22 | 10% | UC-68 … UC-88, UC-176 | Admin access, identity providers, content and localization, taxonomy and versioning, calculation rules, metrics, support and audit, notification templates |
+| BO | Billing Operator | 28 | 13% | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164, UC-208 | Plan catalogue, invoicing corrections, reconciliation and collections, refunds and disputes, enterprise contracting, financial reporting and audit |
+| SYS | System | 28 | 13% | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174, UC-210, UC-211 | Recurring charges, invoicing automation, reconciliation matching, dunning and restriction, entitlement enforcement and metering, notification generation and delivery |
 
 | VI | Visitor | 6 | 3% | UC-177 … UC-182 | Public marketing surface, legal documents and the cookie choice, help centre and articles, the route to support |
-Structural split of the register: UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, UC-177 … UC-182 the public tier.
+| AD | Advisor Administrator | 9 | 4% | UC-196 … UC-200, UC-205 … UC-207, UC-209 | Advisor organization and staff scope, client relationship lifecycle, granted-client entry, consolidated portfolio board and its export, the firm's own plan and invoices |
+Structural split of the register: UC-01 … UC-88 and UC-183 … UC-195 cover the reporting platform and identity, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, UC-177 … UC-182 the public tier, and UC-196 … UC-211 the advisor domain.
 
 **Forward-looking actor coverage.** The combined doc §2.4 maps forward-looking actors to legacy use case identifiers: **UC-17** (Advisor — manage a portfolio of client orgs), **UC-18** (Buyer — invite/monitor supplier orgs, aggregated dashboards, consented data requests), **UC-19** (Licensee Admin — brand an instance, manage sub-orgs). These legacy identifiers collide numerically with RC use cases in the current register (see §9.3). No forward-looking actor has coverage in the current MVP register, which is correct: they are design targets, not build items.
 

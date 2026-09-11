@@ -209,3 +209,38 @@ test('offers a viewer no way to start a report', async ({ page }) => {
   await expect(page.getByText(`${RUN_PREFIX}-Vizitator`)).toHaveCount(2);
   await expect(page.getByRole('link', { name: 'Începeți raportul' })).toHaveCount(0);
 });
+
+/**
+ * **The overview's Suspense boundary, asserted rather than described** (11 Sep 2026).
+ *
+ * S-05's four regions are sibling Server Components; three read memberships, which is
+ * React-`cache()`d and already in flight for the global tier, and one makes the `GET /periods` call
+ * nothing else on the screen makes. Only that one is wrapped, so the heading and the membership list
+ * flush while the filings stream in. Nothing else could catch the boundary being deleted: every
+ * region renders identically once the stream settles, so the whole suite stays green and the screen
+ * simply gets slower.
+ *
+ * **It reads positions, and the first draft read the label alone and was inert.** next-intl ships
+ * the message catalogue to the client in the same payload, so *"Se încarcă starea raportărilor"* is
+ * in the HTML whether the fallback rendered or not — the boundary-deleted build scored a hit on it
+ * at byte 38,390 and the check passed. `role="status"` is the fallback as **markup**, and its
+ * position before the filings is the actual claim: the shell was flushed before the overview
+ * resolved. Proven both ways — with the boundary the fallback precedes the content, without it the
+ * content arrives first and the markup appears nowhere.
+ */
+test('the overview streams behind its boundary, so the shell does not wait for it', async ({
+  page,
+}) => {
+  const { organizationId } = await signedIn(page, 'streaming');
+  await seedReport({ organizationId, name: `${RUN_PREFIX}-streaming-Brutăria` });
+
+  const response = await page.goto('/home');
+  const html = (await response?.text()) ?? '';
+
+  const fallback = html.indexOf('role="status"');
+  const filings = html.indexOf(`${RUN_PREFIX}-streaming-Brutăria`);
+
+  expect(fallback, 'the fallback rendered into the shell').toBeGreaterThan(-1);
+  expect(filings, 'the filings arrived in the same response').toBeGreaterThan(-1);
+  expect(fallback, 'the shell flushed before the overview resolved').toBeLessThan(filings);
+});

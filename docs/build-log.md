@@ -15641,3 +15641,104 @@ diff's type changes are exactly its shape.
 above is theirs. Nine findings from the two document reviews and six from the gate review; four of
 the six were checks that would not have failed on their subject, and one of those was the fix's own
 central line.
+
+## Task 115 — S-05 was a route file doing a feature's job, and the inventory had a hole · 2026-09-11
+
+*"Refactor `home/page.tsx`, it's messy. First it should be in smaller file components with its own
+folder for components. For achieving the same parallel fetching you can use Suspense."*
+
+320 lines, the largest route file in the app, holding two screen-sized components and every region's
+copy — against `apps/web/CLAUDE.md`'s own *"`app/` — routes only, thin. No logic, no data access."*
+The tell was already on disk: `filing-list.tsx`, one region of this same screen, sat in
+`features/organization/components/` with a docblock arguing the move in general terms, and the page
+had kept the other four.
+
+It is 81 lines now and reads nothing.
+
+### Suspense is not what makes the fetching parallel, and getting that backwards would have been easy
+
+The instruction pairs "Suspense" with "the same parallel fetching", and the two are separable.
+**Composition is what parallelises**: sibling async Server Components start together in one render
+pass, which is `server-parallel-fetching`'s worked example and is what replaced the single
+`Promise.all`. **Suspense decides what blocks the flush**, which is a different question with a
+different answer per region.
+
+So there is **one boundary**, not four. Three of the four regions read memberships — React-`cache()`d
+and already in flight for the global tier in the `(app)` layout — so the page cannot paint ahead of
+them whatever this file does, and a boundary around them would be a streaming hole over a read that
+costs nothing. The overview makes the `GET /periods` call nothing else on the screen makes, sits
+below the fold and defines no layout, which is where `async-suspense-boundaries` says the trade
+pays. Wrapping the heading would have bought nothing and cost the layout shift that rule's own *"when
+NOT to use"* list names: the `h1` is the organization's name.
+
+**The three UX-6 regions stay one component**, which looks like the split left something undone and
+did not. They derive from one `toOverviewRows({ periods, now })`, and the comment that was already
+there says why: *"reading the clock in each would let one region call a filing overdue while the
+other did not."* Three boundaries would be three clocks — the same defect wearing a refactor's
+clothes.
+
+### What the split made visible
+
+The page awaited `readActiveMembership()` **and** recomputed the same value inline as
+`memberships?.find((m) => m.active)`, in the same `Promise.all`. One value, two spellings, and the
+inline one is what `server/memberships.ts` refuses in as many words: *"a second answer derived
+here … would be right until the day someone holds two, and wrong invisibly."* Nothing was wrong
+today — the two expressions are identical — and nothing would have been until a reader held a second
+membership. Splitting the region out is what made it a line you could see.
+
+### A state the spec had specified and nothing had built
+
+S-05's row and §8.1 both define `loading — initial` as *"skeleton matching final layout"*. I built a
+spinner, reasoned from UX-115's second sentence, and wrote the reasoning into a docblock — which
+would have been a screen quietly deviating from its own spec row with an argument nobody had
+reviewed. Put to the owner as a decision; the answer was the skeleton.
+
+**And `Skeleton` turned out to be enumerated, not missing.** §11.5 has listed it among the primitives
+since the inventory was written, `Spinner`'s docblock has depended on it since task 20 —
+*"skeletons cover everything whose final layout is known"* is only a rule if the known-shape case has
+somewhere to go — and `EasyESG Components.dc.html` renders the specimen with its token named. So this
+is UX-89's second step already discharged and the first instance catching up, not an addition.
+Values extracted from the specimen (`#E8ECF0`/`#F4F6F8` are `--slate-100`/`--slate-50`; the shimmer
+is an opacity pulse), markup never copied (OQ-10).
+
+Three things in it are decisions rather than defaults:
+
+- **The 300 ms restraint is a delayed animation, not a transition.** §11.5 says no loading affordance
+  appears below 300 ms, and a server-rendered fallback has no "before" for a transition to run from —
+  it arrives already in its waiting state. A keyframe with a delay and no `fill-mode` leaves the
+  declared `opacity: 0` standing until the wait is worth acknowledging.
+- **It opts out of the global reduced-motion rule**, which is the first module here to. `tokens.css`
+  collapses every animation to `1ms !important`; for a *finite* animation that means "arrive
+  instantly", and for an **infinite** opacity cycle it means a strobe at the frame rate — the
+  opposite of what the preference asks for. `animation-name` is not what the global rule sets, so
+  naming it `none` wins without fighting an `!important`. The 300 ms restraint goes with it, which is
+  the right trade for a reader who has asked for less motion. **`Spinner` has the same shape and was
+  left alone** — an infinite rotation at 1 ms samples a random angle per frame — because changing it
+  is a separate judgement about a shipped component, and this entry is where it is written down.
+- **The skeleton matches the region's commonest shape, not its widest.** Three filing panels is what
+  an organization with filings gets and what every reader sees after their first visit; the empty,
+  permission and recoverable-error arms are each a panel too, so the shift on those is a panel's
+  height rather than a screen's.
+
+### The check that was green for the wrong reason, again
+
+Nothing but the served HTML can see a Suspense boundary being deleted: every region renders
+identically once the stream settles, so the whole suite stays green and the screen simply gets
+slower. The first draft asserted the fallback's *label* appeared in the response — and passed
+against a build with the boundary removed, because **next-intl ships the entire message catalogue in
+the same payload**, so the sentence is in the HTML either way. The mutation is what said so, and it
+also handed over the real discriminator: with the boundary the fallback's markup sits at byte 5,923
+and the filings at 7,523; without it the filings arrive at 6,137 and `role="status"` appears nowhere.
+The check now reads the markup and its position, and fails on the first assertion.
+
+**That mutation only worked on the second attempt, which is its own note.** `pnpm exec playwright
+test` skips the `pree2e:web` build hook, so the first run tested the previous bundle and "passed" —
+a gate proving nothing about the code on disk. Any mutation against the browser suite has to go
+through `pnpm e2e:web`.
+
+### Verified
+
+`packages/ui` **135 tests** (four new), `apps/web` **364**, both typechecks, `pnpm lint` uncached,
+`pnpm docs:check` **28 claims** — which caught all five `packages/ui` counts this change moved, and
+is the third time this session it has earned its place. A `packages/*` change has no narrow run, so
+the close is `pnpm gates:clean`.

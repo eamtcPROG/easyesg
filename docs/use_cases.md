@@ -16,7 +16,7 @@ This document is the canonical use case specification for the ESG Platform MVP. 
 
 A use case here is a single, distinct outcome an actor sets out to achieve in the platform, stated from the actor's point of view rather than the system's. Each one stands on its own: registering an account, verifying it, and logging in are three use cases, not one, because they have different preconditions, different failure modes, and can be designed, built, and tested independently. A use case is not a screen and not a feature — one screen may serve several use cases, and one use case may span several screens or run with no interface at all.
 
-**In scope.** The 176 MVP use cases covering the reporting platform (UC-01 … UC-88), the billing, payment and subscription domain (UC-89 … UC-164), and notifications (UC-165 … UC-176); the design decisions `D-1` … `D-14` that resolve contradictions and gaps between them; the external Moldovan payment and fiscal constraints the billing use cases are shaped around; traceability from use case to actor and to functional requirement.
+**In scope.** The 211 MVP use cases covering the reporting platform (UC-01 … UC-88, UC-183 … UC-195), the billing, payment and subscription domain (UC-89 … UC-164), notifications (UC-165 … UC-176), the public tier (UC-177 … UC-182) and the advisor domain (UC-196 … UC-211); the design decisions `D-1` … `D-16` that resolve contradictions and gaps between them; the external Moldovan payment and fiscal constraints the billing use cases are shaped around; traceability from use case to actor and to functional requirement.
 
 **Out of scope of this document.** The functional requirement statements themselves, held in `functional_requirements.md`; non-functional requirements, held in `non_functional_requirements.md`; interface and interaction design, held in `design_spec.md`; system decomposition, held in `architecture.md`. FR definitions and the FR → UC source mapping are held in `functional_requirements.md`.
 
@@ -43,6 +43,7 @@ A use case here is a single, distinct outcome an actor sets out to achieve in th
 | **BO** | Billing Operator | Internal finance role: plan catalogue and pricing, invoice issuance and correction, bank reconciliation, collections, refunds, and fiscal reporting. Separated from PA because issuing a credit note and running a taxonomy migration are different privileges that should not sit in one account. | Use case register — recommended addition to the System Actors doc |
 | **SYS** | System (scheduled/event-driven) | Automated behaviour with no human initiator: recurring charge execution, dunning runs, entitlement evaluation, metering, e-Factura transmission, notification dispatch. | Use case register |
 | **VI** | Visitor | A person who has not identified themselves, reading what the platform publishes for unidentified readers: the marketing home, the legal documents and the cookie choice, the help centre and its articles, and the route to support. Holds no session and reaches no tenant data. | Added 24 Aug 2026 by `design_spec.md` OQ-12; profiled in `actors.md` §4 |
+| **AD** | Advisor Administrator | Manages an advisor organization — an accounting or consulting firm reporting on behalf of client companies: its profile and subscription, the roster of client organizations that have granted it access, and which of its own staff may reach which clients. Holds no rights inside a client organization by virtue of this role; an advisor user working on a client's report acts as `RC` within that client's context. | Added 11 Sep 2026 with the promotion of Advisor portfolio management out of §7.1; profiled in `actors.md` §4 |
 
 **Module.** The module groups each use case with those it is functionally adjacent to. Modules are an organizing aid for reading, estimating, and assigning work; they are not a system boundary and carry no permission meaning of their own.
 
@@ -258,8 +259,24 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-193 | Enrol a second factor | CA | Add time-based one-time codes to an account already held, and be given recovery codes for the day the authenticator is lost | MVP | NFR-95 |
 | UC-194 | Answer the second-factor challenge at sign-in | CA | Complete sign-in on an enrolled account by presenting a current code | MVP | NFR-95 |
 | UC-195 | Recover access without the authenticator | CA | Sign in using one of the issued recovery codes when the device holding the secret is unavailable | MVP | NFR-95 |
+| UC-196 | Create an advisor organization | AD | Obtain an organization of the advisor type and administer it | MVP | FR-190 |
+| UC-197 | Manage advisor staff and their client scope | AD | Control which of the firm's own people may enter which client | MVP | FR-191 |
+| UC-198 | Request access to a client organization | AD | Ask a client company for permission to report on its behalf | MVP | FR-192 |
+| UC-199 | View the client roster and relationship status | AD | See every client the firm has requested or been granted access to | MVP | FR-193 |
+| UC-200 | End an engagement from the advisor side | AD | Remove a client from the roster when the engagement ends | MVP | FR-194 |
+| UC-201 | Review and grant an advisor access request | OA | Let a named firm into a chosen scope of the organization's reporting | MVP | FR-195 |
+| UC-202 | Decline an advisor access request | OA | Refuse a firm that asked for access | MVP | FR-196 |
+| UC-203 | Revoke advisor access | OA | Withdraw a firm's access with immediate effect | MVP | FR-197 |
+| UC-204 | View advisor access alongside direct members | OA | Obtain one complete answer to who can reach the organization's data | MVP | FR-198 |
+| UC-205 | Switch into a client organization | AD | Work on a client's report in that client's own context | MVP | FR-199 |
+| UC-206 | View the consolidated client status board | AD | See which clients are behind, across the whole portfolio, on one screen | MVP | FR-200 |
+| UC-207 | Export the consolidated client status board | AD | Take the portfolio status out for internal planning and client correspondence | MVP | FR-201 |
+| UC-208 | Define the Advisor plan and its entitlement keys | BO | Make the advisor capability sellable without touching client entitlements | MVP | FR-202 |
+| UC-209 | View the advisor plan, client quota and invoices | AD | Know what the firm holds, what it has used, and what it owes | MVP | FR-202 |
+| UC-210 | Expire an advisor relationship at its end date | SYS | End an engagement on the date the client set, without anyone acting | MVP | FR-203 |
+| UC-211 | Notify the client administrator of an advisor request and its outcome | SYS | Ensure no firm gains or loses access silently | MVP | FR-203 |
 
-**Count:** 195 use cases — 23 CA, 42 RC, 49 OA, 22 PA, 27 BO, 26 SYS, 6 VI, across 40 modules. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. **UC-193 … UC-195 added 26 Aug 2026** (task 27.2's open-question batch), and they are the register catching up with a decision taken eight days earlier: `non_functional_requirements.md` C-3 promoted **opt-in TOTP for tenant users** into MVP as NFR-95 on 18 Aug 2026, closing `actors.md` OQ-8 — and no use case, no MVP requirement row and no screen content was written for it, so the behaviour existed as an availability statement with nothing saying what it does. They are CA use cases and belong beside UC-10 … UC-12 in the identity group despite their numbers; **their requirement column cites NFR-95 rather than an FR**, because the promotion put the obligation in the non-functional register and FR-181 remains the *deferred* enforced-MFA row. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7.
+**Count:** 211 use cases — 23 CA, 42 RC, 53 OA, 22 PA, 28 BO, 28 SYS, 6 VI, 9 AD, across 45 modules. **UC-196 … UC-211 added 11 Sep 2026** with the promotion of Advisor portfolio management out of section 7.1 into MVP scope, and the registration of the `AD` actor. The promotion follows the precedent of the two before it: the capability was already provided for — FR-14 models typed organization relationships precisely so the Advisor type can be activated without a schema change — and what was missing was the decomposition, not the foundation. They introduce five modules (Advisor organization, Client relationship, Advisor access, Advisor workspace, Advisor billing) and one addition to the existing Plan catalogue module. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. **UC-193 … UC-195 added 26 Aug 2026** (task 27.2's open-question batch), and they are the register catching up with a decision taken eight days earlier: `non_functional_requirements.md` C-3 promoted **opt-in TOTP for tenant users** into MVP as NFR-95 on 18 Aug 2026, closing `actors.md` OQ-8 — and no use case, no MVP requirement row and no screen content was written for it, so the behaviour existed as an availability statement with nothing saying what it does. They are CA use cases and belong beside UC-10 … UC-12 in the identity group despite their numbers; **their requirement column cites NFR-95 rather than an FR**, because the promotion put the obligation in the non-functional register and FR-181 remains the *deferred* enforced-MFA row. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7.
 
 ---
 
@@ -343,6 +360,21 @@ Added 25 Aug 2026 with the Comprehensive Module's promotion into MVP scope (`pro
 | Module | Use cases | Primary actor |
 |---|---|---|
 | Comprehensive Module | UC-183 … UC-192 | RC |
+
+### 4.6 Advisor domain (UC-196 … UC-211)
+
+Added 11 Sep 2026, promoting **Advisor portfolio management** out of section 7.1. The deferral rationale recorded there — "belongs to a Phase 2/3 actor" — was a statement about demand, not about capability: FR-14 already models typed organization relationships so the Advisor type can be activated without a schema change, and UC-16 already resolves a user's memberships and switches the active organization. What these sixteen add is the decomposition that was deliberately not made while the capability sat deferred.
+
+| Module | Use cases | Primary actor |
+|---|---|---|
+| Advisor organization | UC-196, UC-197 | AD |
+| Client relationship | UC-198 … UC-200 | AD |
+| Advisor access | UC-201 … UC-204, UC-210, UC-211 | OA, SYS |
+| Advisor workspace | UC-205 … UC-207 | AD |
+| Plan catalogue | UC-208 | BO |
+| Advisor billing | UC-209 | AD |
+
+**The architectural property that makes this group cheap.** An advisor session never holds a context spanning two organizations. Entering a client (UC-205) sets the tenant context to exactly that client, so the existing row-level isolation predicate applies unmodified and the cross-tenant isolation probe in the delivery pipeline keeps its meaning. This group therefore introduces **no exception to tenant isolation**, which is what distinguishes it from the Corporate Buyer monitoring still deferred in section 7.1. The one surface that presents several clients at once — the consolidated board, UC-206 — is assembled by iterating the roster and running an ordinary scoped query per client, not by a query that spans tenants and not through a privilege that bypasses the predicate. D-15 states the rule.
 
 ---
 
@@ -2895,6 +2927,221 @@ their numbers put them.
 - **Related FRs:** —
 - **Related UCs:** UC-85, UC-180, UC-181
 
+### UC-196 — Create an advisor organization
+
+- **Primary actor:** AD
+- **Module:** Advisor organization
+- **Preconditions:** The user holds a verified account.
+- **Trigger:** An accounting or consulting firm sets itself up on the platform.
+- **Main success scenario:**
+  1. The verified user creates an organization of the advisor type.
+  2. The system grants the creating user the Advisor Administrator role over it.
+- **Business rules:** Mirrors D-1 — the founding user administers what they create. The organization is created against the same generic relationship model as a direct SME organization (FR-14, UC-49); what differs is the relationship type it may hold, not its schema. An advisor organization produces no reports of its own and therefore holds no reporting entities and no reporting periods.
+- **Related FRs:** FR-190
+- **Related UCs:** UC-49, UC-197, UC-198
+
+### UC-197 — Manage advisor staff and their client scope
+
+- **Primary actor:** AD
+- **Module:** Advisor organization
+- **Preconditions:** An advisor organization exists.
+- **Trigger:** The firm adds a colleague, or changes which clients an existing colleague handles.
+- **Main success scenario:**
+  1. The Advisor Administrator invites a colleague into the advisor organization.
+  2. The Administrator sets, per staff member, which clients on the roster that person may enter.
+  3. The scope is enforced when the staff member attempts to switch into a client.
+- **Business rules:** A firm with fifteen accountants does not give each of them access to all twenty-five clients, and confidentiality between engagements is frequently a contractual obligation rather than a preference. Scope is enforced at the point of switching (UC-205), not by hiding entries in the interface.
+- **Related FRs:** FR-191
+- **Related UCs:** UC-15, UC-60, UC-199, UC-205
+
+### UC-198 — Request access to a client organization
+
+- **Primary actor:** AD
+- **Module:** Client relationship
+- **Preconditions:** An advisor organization exists.
+- **Trigger:** The firm begins an engagement with a client company.
+- **Main success scenario:**
+  1. The Advisor Administrator identifies the client by registered email or by a code the client supplied.
+  2. The system creates a relationship in `pending` state.
+  3. The system notifies the client's Organization Administrator (UC-211).
+- **Business rules:** A pending relationship confers no access of any kind; nothing of the client's is readable until the request is granted. Per D-15 the advisor requests and the client grants — there is no path by which a firm attaches itself to an organization.
+- **Related FRs:** FR-192
+- **Related UCs:** UC-201, UC-202, UC-211
+
+### UC-199 — View the client roster and relationship status
+
+- **Primary actor:** AD
+- **Module:** Client relationship
+- **Preconditions:** An advisor organization exists.
+- **Trigger:** The firm reviews its portfolio.
+- **Main success scenario:**
+  1. The Advisor Administrator sees every client organization the firm has requested or been granted access to.
+  2. Each entry shows relationship state — `pending`, `active`, `revoked`, `expired` — the granted entity scope, the expiry date where one was set, and the client's own plan.
+- **Business rules:** This roster is what the Advisor plan's client quota is counted against (UC-209).
+- **Related FRs:** FR-193
+- **Related UCs:** UC-197, UC-205, UC-209
+
+### UC-200 — End an engagement from the advisor side
+
+- **Primary actor:** AD
+- **Module:** Client relationship
+- **Preconditions:** An active or pending relationship exists with the client.
+- **Trigger:** The engagement ends.
+- **Main success scenario:**
+  1. The Advisor Administrator removes the client from the roster.
+  2. The system terminates the relationship without requiring an action from the client.
+- **Business rules:** The advisor's historical contributions inside that client remain attributed in the client's change history (UC-47). Ending an engagement must not erase who entered which figure, for the same reason removing a member does not (UC-63).
+- **Related FRs:** FR-194
+- **Related UCs:** UC-47, UC-63, UC-203
+
+### UC-201 — Review and grant an advisor access request
+
+- **Primary actor:** OA
+- **Module:** Advisor access
+- **Preconditions:** A pending advisor relationship exists against the organization.
+- **Trigger:** The Organization Administrator is notified that a firm has requested access.
+- **Main success scenario:**
+  1. The Administrator reviews the request — which firm, requested by whom, when.
+  2. The Administrator selects which reporting entities the grant covers.
+  3. The Administrator optionally sets a date on which the grant expires automatically.
+  4. The system activates the relationship within that scope.
+- **Business rules:** **The default scope is no entities.** The Administrator selects what to open rather than deselecting what to withhold, so a grant made carelessly is an empty grant rather than a total one. D-15 governs.
+- **Related FRs:** FR-195
+- **Related UCs:** UC-198, UC-204, UC-210
+
+### UC-202 — Decline an advisor access request
+
+- **Primary actor:** OA
+- **Module:** Advisor access
+- **Preconditions:** A pending advisor relationship exists against the organization.
+- **Trigger:** The Administrator does not want the requesting firm to have access.
+- **Main success scenario:**
+  1. The Administrator declines the request, optionally stating a reason.
+  2. The system records the decline and returns the outcome to the requesting firm (UC-211).
+- **Business rules:** A declined request is recorded rather than deleted, so repeated unsolicited requests from the same firm are visible as a pattern rather than as a series of isolated events.
+- **Related FRs:** FR-196
+- **Related UCs:** UC-198, UC-211
+
+### UC-203 — Revoke advisor access
+
+- **Primary actor:** OA
+- **Module:** Advisor access
+- **Preconditions:** An active advisor relationship exists.
+- **Trigger:** The organization ends the engagement, or withdraws access mid-engagement.
+- **Main success scenario:**
+  1. The Administrator revokes the relationship.
+  2. The system withdraws access at the advisor's next request.
+  3. Any advisor session currently inside the organization is terminated at its next action, with the reason shown.
+- **Business rules:** Revocation takes effect on the next request rather than at the next login, matching the immediacy rule already applied to a role downgrade (UC-62). A firm removed mid-engagement loses access at once.
+- **Related FRs:** FR-197
+- **Related UCs:** UC-62, UC-63, UC-200, UC-204
+
+### UC-204 — View advisor access alongside direct members
+
+- **Primary actor:** OA
+- **Module:** Advisor access
+- **Preconditions:** The user administers the organization.
+- **Trigger:** The Administrator asks who can reach the organization's data.
+- **Main success scenario:**
+  1. The Administrator sees direct members as in UC-59.
+  2. The Administrator sees, in the same place, any advisor organizations holding access, with granted scope, expiry, and the individual advisor users currently able to enter.
+- **Business rules:** "Who can see our ESG data" must have a single, complete answer; an access path that does not appear on this screen is an access path the client cannot govern. Advisor access is presented distinctly from direct membership rather than merged into UC-59's list, because a firm and a person are revoked by different actions.
+- **Related FRs:** FR-198
+- **Related UCs:** UC-59, UC-201, UC-203
+
+### UC-205 — Switch into a client organization
+
+- **Primary actor:** AD
+- **Module:** Advisor workspace
+- **Preconditions:** An active, unexpired relationship exists with the client, and the acting staff member is within its scope (UC-197).
+- **Trigger:** An advisor user opens a client's report.
+- **Main success scenario:**
+  1. The advisor user selects a client from the roster.
+  2. The system verifies the relationship is active, unexpired, and within the staff member's own scope.
+  3. The system sets the tenant context to that single client organization.
+  4. The user works in that client's context with Reporting Contributor rights over the entities the grant covers.
+- **Business rules:** Mechanically this is UC-16 with membership resolved through the relationship rather than through a direct membership record — the single extension point on which the whole advisor group rests. The tenant context resolves to **exactly one** organization, so no isolation exception arises (D-15). Actions taken here are attributed to the advisor user in the client's change history (UC-47), not to the client.
+- **Related FRs:** FR-199
+- **Related UCs:** UC-16, UC-18, UC-47, UC-197
+
+### UC-206 — View the consolidated client status board
+
+- **Primary actor:** AD
+- **Module:** Advisor workspace
+- **Preconditions:** At least one active client relationship exists.
+- **Trigger:** The firm plans its work across the filing season.
+- **Main success scenario:**
+  1. The Advisor Administrator opens the board.
+  2. The system presents, for every active client, each reporting entity and open period with its due date, days remaining, completion percentage and validation state.
+- **Business rules:** This is the capability the Advisor plan is sold on: a firm carrying twenty-five clients through a filing season needs one screen answering which of them is behind, and reaching that answer by entering twenty-five organizations in turn is precisely the work the plan removes. **Assembled by iterating the roster and running an ordinary scoped query per client, aggregated in the application** — never by a query spanning tenants and never through a privilege that bypasses the isolation predicate (D-15). Completion and validation figures are the same rollup UC-38 already computes.
+- **Related FRs:** FR-200
+- **Related UCs:** UC-38, UC-56, UC-67, UC-170, UC-199
+
+### UC-207 — Export the consolidated client status board
+
+- **Primary actor:** AD
+- **Module:** Advisor workspace
+- **Preconditions:** The board is available to the acting user.
+- **Trigger:** The firm wants the portfolio status outside the platform.
+- **Main success scenario:**
+  1. The Advisor Administrator exports the board as a spreadsheet.
+- **Business rules:** The export carries **status and deadline metadata only — never disclosure content**, so a single file cannot become an unintended aggregation of several clients' report data. Exporting a client's report itself remains UC-42 and UC-43, performed inside that client's context.
+- **Related FRs:** FR-201
+- **Related UCs:** UC-42, UC-43, UC-206
+
+### UC-208 — Define the Advisor plan and its entitlement keys
+
+- **Primary actor:** BO
+- **Module:** Plan catalogue
+- **Preconditions:** The plan catalogue is available.
+- **Trigger:** The advisor capability is made sellable.
+- **Main success scenario:**
+  1. The Billing Operator defines the Advisor plan as a plan version (UC-89, UC-92).
+  2. The Operator sets its advisor-scoped entitlement keys: maximum clients on the roster, advisor staff seats, access to the consolidated board and its export.
+  3. The Operator sets its price per currency and cycle (UC-91).
+- **Business rules:** Per **D-16**, every key in this plan is evaluated on the advisor organization. **No key in this plan raises the entitlements of any client organization**: a client on Free remains on Free, including while the advisor is working inside it. Sponsorship — an advisor plan lifting its clients' entitlements — would require the entitlement resolver to accept a relationship as a further override source, and is deferred (section 7.1).
+- **Related FRs:** FR-202
+- **Related UCs:** UC-89, UC-90, UC-91, UC-92, UC-148
+
+### UC-209 — View the advisor plan, client quota and invoices
+
+- **Primary actor:** AD
+- **Module:** Advisor billing
+- **Preconditions:** The advisor organization holds a subscription.
+- **Trigger:** The firm checks what it holds, has used, and owes.
+- **Main success scenario:**
+  1. The Advisor Administrator sees the plan version in force, the roster count against the client quota, and staff seats used.
+  2. The Administrator sees the firm's own invoice history.
+- **Business rules:** The firm receives **one invoice for its own subscription** rather than being drawn into its clients' billing, which is the practical reason an accounting firm holds an account at all. Subscription lifecycle actions themselves reuse UC-96 onward unchanged; nothing in the advisor domain duplicates them.
+- **Related FRs:** FR-202
+- **Related UCs:** UC-65, UC-66, UC-96, UC-132, UC-199
+
+### UC-210 — Expire an advisor relationship at its end date
+
+- **Primary actor:** SYS
+- **Module:** Advisor access
+- **Preconditions:** The relationship carries an expiry date set under UC-201.
+- **Trigger:** The expiry date is reached.
+- **Main success scenario:**
+  1. The system ends the relationship on that date without any human action.
+  2. The system notifies both the client and the firm in advance and on expiry.
+- **Business rules:** An engagement that quietly outlives its contract is the most likely way advisor access becomes stale access, and an expiry that has to be remembered by a person is an expiry that will not happen. Runs on the common notification mechanism (UC-172, UC-173) like every other producer.
+- **Related FRs:** FR-203
+- **Related UCs:** UC-201, UC-172, UC-173
+
+### UC-211 — Notify the client administrator of an advisor request and its outcome
+
+- **Primary actor:** SYS
+- **Module:** Advisor access
+- **Preconditions:** An advisor relationship changes state.
+- **Trigger:** A firm requests access, or a request is granted, declined or revoked.
+- **Main success scenario:**
+  1. The system notifies the client's Organization Administrator that a firm has requested access.
+  2. The system notifies the requesting firm of the grant, decline or revocation.
+- **Business rules:** Classified **transactional**, so it is never suppressed by a notification preference (UC-168): a person cannot opt out of being told that an outside firm asked to read their company's data. Runs on the common notification mechanism (UC-172, UC-173).
+- **Related FRs:** FR-203
+- **Related UCs:** UC-168, UC-172, UC-173, UC-198, UC-201, UC-202, UC-203
+
 ---
 
 ## 6. Use case design decisions and constraints
@@ -2938,6 +3185,10 @@ Every `D-n` reference in section 5 resolves here. Decision identifiers are prese
 
 **D-14 — MDL is the ledger currency; foreign-currency invoices record the BNM rate.** Prices are set per plan per currency rather than converted at display time (UC-91). Where an invoice is issued in EUR or USD, the National Bank of Moldova official rate for the invoice date is stored on the invoice record itself and reproduced on the document (UC-136), because the MDL equivalent is what the fiscal return and the accounting ledger are built from.
 
+**D-15 — Advisor access is granted by the client and resolves to exactly one tenant.** Added 11 Sep 2026 with UC-196 … UC-211. Two rules, and the second is why the first is affordable. *Granted, never self-asserted:* the advisor requests (UC-198) and the client's Organization Administrator grants (UC-201), with an explicit entity scope defaulting to none and an optional expiry; the client revokes at any time with immediate effect (UC-203) and sees the access alongside direct members (UC-204). A self-service attach path is precisely the vector that per-organization isolation exists to prevent. *Exactly one tenant:* entering a client (UC-205) sets the tenant context to that single organization, so the isolation predicate applies unmodified and the cross-tenant probe in the delivery pipeline keeps its meaning. The consolidated board (UC-206) is therefore assembled by iterating the roster with one scoped query per client, never by a query spanning tenants and never through a privilege that bypasses the predicate. This is the whole distinction between the Advisor domain and the Corporate Buyer monitoring still deferred in section 7.1: the advisor *enters* organizations one at a time, whereas a buyer would *read across* them, and only the second needs an exception to the guarantee everything else depends on.
+
+**D-16 — Advisor entitlements are evaluated on the advisor organization only.** Added 11 Sep 2026 with UC-208. The Advisor plan grants capability that exists in the firm's own context — the client roster, the consolidated board, its export, consolidated invoicing. It does **not** raise the entitlements of the client organizations the firm works in: a client on Free remains on Free, and an advisor working inside that client is bound by the client's plan, not the firm's. Sponsorship — an advisor plan lifting its clients' entitlements — is the commercially stronger model and is deliberately not taken at MVP, because it is the one change that would require the entitlement resolver (UC-148) to accept a relationship as a further override source alongside plan version and per-subscription override. It is recorded in section 7.1 and gated on roster data showing that firms actually accumulate clients.
+
 ### 6.2 Moldova payment and fiscal constraints driving the billing design
 
 These are the external facts the billing use cases are shaped around. They are recorded because they are the reason the design departs from a conventional third-party-hosted SaaS billing stack, and because several of them carry dates.
@@ -2972,13 +3223,13 @@ These are the external facts the billing use cases are shaped around. They are r
 
 ## 7. Use cases deferred beyond the MVP
 
-These are out of MVP scope by prior decision, recorded so the register reads as complete. No use case IDs are assigned to them; assigning IDs now would fix a decomposition that has not been made.
+These are out of MVP scope by prior decision, recorded so the register reads as complete. No use case IDs are assigned to them; assigning IDs now would fix a decomposition that has not been made. Where a capability listed here is later promoted, it leaves this section and is decomposed in section 3 — as **Advisor portfolio management** was on 11 Sep 2026, becoming UC-196 … UC-211.
 
 ### 7.1 Platform and reporting scope
 
 | Deferred capability | Phase | Rationale |
 |---|---|---|
-| Advisor portfolio management — managing a portfolio of client organizations from one login, completing or reviewing a report on a client's behalf | P2/P3 | Belongs to a Phase 2/3 actor. The organization-relationship model created in UC-49 is built to accept it without a schema change. |
+| Advisor entitlement sponsorship — an Advisor plan raising the entitlements of the client organizations on its roster | P2 | The advisor domain itself was promoted into MVP on 11 Sep 2026 as UC-196 … UC-211; **this** remains deferred because it is the one part requiring the entitlement resolver (UC-148) to accept a relationship as a further override source. D-16 states the boundary. Gated on roster data showing that firms accumulate clients. |
 | Corporate buyer supplier monitoring — inviting and monitoring supplier organizations, aggregated and benchmarked dashboards, consented data requests | P2/P3 | Same actor-arrival rationale; the generic relationship model is the MVP provision for it. |
 | Licensee white-label administration — branding an instance (logo, domain, language pack) and managing sub-orgs under it | P2/P3 | This is where the original Moldova/MDED scenario now sits; it arrives with the licensing model, not with the MVP. |
 | Enterprise SSO — federated SAML or OIDC against a customer's own directory, with domain claiming, just-in-time provisioning and directory-driven deprovisioning | Deferred | Distinct from the social sign-in that is in scope (D-6). Becomes relevant when Advisor and Corporate Buyer organizations arrive; the provider-agnostic identity model keeps it additive. |
@@ -3018,14 +3269,17 @@ There is no per-notification ownership or assignment model and no escalation cha
 
 | Actor code | Actor | Use cases | Count |
 |---|---|---|---|
-| CA | Common Access | UC-01 … UC-16, UC-165 … UC-168 | 20 |
-| RC | Reporting Contributor | UC-17 … UC-48 | 32 |
-| OA | Organization Administrator | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175 | 49 |
+| CA | Common Access | UC-01 … UC-16, UC-165 … UC-168, UC-193 … UC-195 | 23 |
+| RC | Reporting Contributor | UC-17 … UC-48, UC-183 … UC-192 | 42 |
+| OA | Organization Administrator | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175, UC-201 … UC-204 | 53 |
 | PA | Platform Administrator | UC-68 … UC-88, UC-176 | 22 |
-| BO | Billing Operator | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164 | 27 |
-| SYS | System (scheduled/event-driven) | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174 | 26 |
+| BO | Billing Operator | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164, UC-208 | 28 |
+| SYS | System (scheduled/event-driven) | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174, UC-210, UC-211 | 28 |
 | VI | Visitor | UC-177 … UC-182 | 6 |
-| | | **Total** | **182** |
+| AD | Advisor Administrator | UC-196 … UC-200, UC-205 … UC-207, UC-209 | 9 |
+| | | **Total** | **211** |
+
+*Corrected 11 Sep 2026.* This table stood at 182 while section 3 stood at 195: UC-183 … UC-192 (RC) and UC-193 … UC-195 (CA) were appended to the register on 25 and 26 Aug 2026 without being propagated here. The counts above are reconciled against section 3's own count line, which is authoritative.
 
 Note that OA is the primary actor of UC-108 while UC-109 in the same module is SYS-initiated, and that the Invoicing module mixes SYS (issuance, transmission, delivery, exchange rate), BO (correction, numbering, archiving) and OA (viewing) initiators. The module is not an actor boundary.
 

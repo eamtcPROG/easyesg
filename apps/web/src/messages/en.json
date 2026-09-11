@@ -425,6 +425,7 @@
           "body": "A filing covers one entity and one year. Once you open the first reporting period for an entity, this is where you will see what needs attention, where you left off, and how everything stands.",
           "action": "Go to entities"
         },
+        "loading": "Loading the reporting status…",
         "unreachable": {
           "title": "The reporting status could not be loaded",
           "body": "The service did not answer, so we do not know how your filings stand. The rest of the page works.",

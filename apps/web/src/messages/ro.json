@@ -425,6 +425,7 @@
           "body": "O raportare acoperă o entitate și un an. După ce deschideți prima perioadă de raportare pentru o entitate, aici veți vedea ce necesită atenție, unde ați rămas și cum stau lucrurile în ansamblu.",
           "action": "Vedeți entitățile"
         },
+        "loading": "Se încarcă starea raportărilor…",
         "unreachable": {
           "title": "Nu am putut încărca starea raportărilor",
           "body": "Serviciul nu a răspuns, așa că nu știm cum stau raportările dumneavoastră. Restul paginii funcționează.",

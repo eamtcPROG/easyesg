@@ -95,3 +95,35 @@
 .filingAction {
   margin-inline-start: auto;
 }
+
+/*
+  The overview's `loading — initial` (§8.1) — the widths and rhythm that make the skeleton match
+  what resolves into it. `packages/ui`'s `Skeleton` owns the height, the greys and the 300 ms
+  restraint; a screen's measurements are the screen's, which is what keeps the primitive free of a
+  `width` prop per caller.
+*/
+.loadingLabel {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.loadingHeading {
+  inline-size: 14rem;
+  margin-block-end: var(--space-4);
+}
+
+.loadingLede {
+  inline-size: 22rem;
+  max-inline-size: 100%;
+  margin-block-end: var(--space-6);
+}
+
+.loadingRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
