@@ -2,7 +2,7 @@ import { STATUS_TONE, StatusChip, TextLink, type StatusTone } from '@easyesg/ui'
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ROUTES, reportRoute, withQuery } from '@/lib/routes';
-import { OVERVIEW_STANDING, type OverviewRow, type OverviewStanding } from '../overview';
+import { OVERVIEW_STANDING, type OverviewRow, type OverviewStanding } from '../../overview';
 import styles from './home.module.css';
 
 /**

@@ -7,8 +7,8 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
 import {
   CreateOrganizationForm,
   type CountryOption,
-} from '@/features/organization/components/create-organization-form';
-import styles from '@/features/organization/components/create-organization.module.css';
+} from '@/features/organization/components/creation/create-organization-form';
+import styles from '@/features/organization/components/creation/create-organization.module.css';
 
 /**
  * S-04 — Create organization · OA · UC-49 · Focus

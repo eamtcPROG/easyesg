@@ -14,7 +14,7 @@ import { ROUTES, reportRoute } from '@/lib/routes';
 import { mayWrite, readActiveMembership } from '@/server/memberships';
 import { readOrganizationPeriods } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
-import { attentionRows, everythingRows, resumableRow, toOverviewRows } from '../overview';
+import { attentionRows, everythingRows, resumableRow, toOverviewRows } from '../../overview';
 import { FilingList } from './filing-list';
 import styles from './home.module.css';
 

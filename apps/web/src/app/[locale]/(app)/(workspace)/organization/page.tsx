@@ -1,12 +1,12 @@
 import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getMessages, getTranslations } from 'next-intl/server';
-import { OrganizationProfileForm } from '@/features/organization/components/organization-profile-form';
+import { OrganizationProfileForm } from '@/features/organization/components/profile/organization-profile-form';
 import { readOrganizationProfile, type OrganizationProfileRead } from '@/server/data/organization-profile';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { ROUTES } from '@/lib/routes';
-import styles from '@/features/organization/components/organization-profile.module.css';
+import styles from '@/features/organization/components/profile/organization-profile.module.css';
 
 /**
  * S-15 — Organization profile and identifiers · OA · UC-50, UC-51 · Record

@@ -270,6 +270,7 @@ src/
 ├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
 ├─ features/       14 domains, mirroring apps/api/src/modules names
+│                 └─ components/ splits per SCREEN once a domain serves more than one — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter)
 ├─ server/         server-only: session, api-client, data/
 ├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), polling
@@ -361,6 +362,26 @@ conditional render, which is how it ends up half-suppressed on one screen.
   not in `lib/routes.ts`, where something would eventually hand it to a `Link` and 404. Anything a
   Server Action needs to share — a constant, a type guard, a plain helper — belongs beside it, not
   in it.
+
+- **A `features/*/components/` folder splits per screen, not per kind** (11 Sep 2026, task 122).
+  `organization/` was the first domain to serve four screens — S-04, S-05, S-15, S-16 — and 21 flat
+  files gave no way to tell which belonged together. They are `home/`, `access/`, `profile/` and
+  `creation/` now, and the axis was **verified rather than chosen**: no file was reached by two
+  groups, so the folders could not introduce a coupling that was not already there. Splitting by
+  kind (`forms/`, `lists/`, `context/`) was the alternative and is the wrong one — it separates the
+  files that change together, which is the only thing a folder can usefully keep.
+
+  **File names keep their prefix.** `access/access-list.tsx` stutters and stays: this app relies on
+  component file names that survive out of context — `entities-list.tsx`, `reports-list.tsx`,
+  `periods-list.tsx`, `access-list.tsx` are deliberately parallel across four features, and a
+  `list.tsx` inside a folder reads well in a tree and badly in a stack trace, a test report or a
+  tab bar.
+
+  **A `vi.mock()` path is a string, so a file move does not typecheck.** `access-board.spec.tsx`
+  carried `vi.mock('../actions')` through the move with `pnpm typecheck` and `pnpm lint` both
+  clean; it failed only on the run, and it failed as *"This module cannot be imported from a Client
+  Component module"* rather than as a missing module — a `'use server'` file reached through a
+  stale path. Grep the mocks when you move a spec.
 
 - **A Suspense fallback may not be an async component** (11 Sep 2026, task 115). It would suspend
   against the *parent* boundary, so the shell waits for exactly what the boundary below it exists to

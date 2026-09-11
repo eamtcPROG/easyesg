@@ -6,8 +6,8 @@ import { useCallback } from 'react';
 import { IndexView } from '@/shared/index-view';
 import { useAccess } from './access-context';
 import { useAccessColumns } from './access-columns';
-import type { AccessColumnKey } from '../access';
-import { ACCESS_FILTER_ANY, accessRowKey, type AccessRow, type AccessSort } from '../access';
+import type { AccessColumnKey } from '../../access';
+import { ACCESS_FILTER_ANY, accessRowKey, type AccessRow, type AccessSort } from '../../access';
 
 /**
  * S-16's list, as an instance of the Index archetype (§4.6).

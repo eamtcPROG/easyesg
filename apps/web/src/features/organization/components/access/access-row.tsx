@@ -5,9 +5,9 @@ import { MEMBERSHIP_ROLE, type MembershipRole } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { useAccess, useRowBusy } from './access-context';
-import { CONFIRMATION } from '../access-state';
-import { changeMemberRoleAction, resendInvitationAction } from '../actions';
-import { ACCESS_ROW_KIND, isLastAdministrator, type AccessRow } from '../access';
+import { CONFIRMATION } from '../../access-state';
+import { changeMemberRoleAction, resendInvitationAction } from '../../actions';
+import { ACCESS_ROW_KIND, isLastAdministrator, type AccessRow } from '../../access';
 import styles from './access.module.css';
 
 /**

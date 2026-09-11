@@ -1,10 +1,10 @@
 import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import { AccessBoard } from '@/features/organization/components/access-board';
-import { AccessProvider } from '@/features/organization/components/access-context';
-import { InviteMember } from '@/features/organization/components/invite-member';
+import { AccessBoard } from '@/features/organization/components/access/access-board';
+import { AccessProvider } from '@/features/organization/components/access/access-context';
+import { InviteMember } from '@/features/organization/components/access/invite-member';
 import { applyAccessView, readAccessView } from '@/features/organization/access';
-import styles from '@/features/organization/components/access.module.css';
+import styles from '@/features/organization/components/access/access.module.css';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';

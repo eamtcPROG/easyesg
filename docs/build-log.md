@@ -15742,3 +15742,72 @@ through `pnpm e2e:web`.
 `pnpm docs:check` **28 claims** — which caught all five `packages/ui` counts this change moved, and
 is the third time this session it has earned its place. A `packages/*` change has no narrow run, so
 the close is `pnpm gates:clean`.
+
+## Task 122 — a components folder serving four screens, and a phase that arrived in the tree · 2026-09-11
+
+*"A better and cleaner structure for `features/organization/components` — it should be split into
+sub-folders, it is not clear at the moment."*
+
+21 flat files. Task 115 had just added four to a folder already holding S-04's form, S-15's form and
+S-16's nine, and a listing said nothing about which belonged with which. It is the first
+`features/*/components/` in this app to serve more than one screen, so the answer is also the
+precedent the next one reads.
+
+### The axis was verified, not chosen
+
+Before moving anything: which files does each screen import, and does any file serve two? The answer
+is a clean partition — `home/page.tsx`, `organization/users/page.tsx` (+ its `loading.tsx`),
+`organization/page.tsx` and `create-organization/page.tsx` reach four disjoint sets, and **no file is
+reached by two groups**. That is what makes per-screen right rather than plausible: the folders
+cannot introduce a coupling that was not already there, because there is no cross-group edge to cut.
+
+Per-kind — `forms/`, `lists/`, `context/` — was the alternative and is the wrong one for the
+opposite reason: it separates the files that change together, which is the only thing a folder can
+usefully keep.
+
+**File names keep their prefix**, so `access/access-list.tsx` stutters. That is deliberate: this app
+leans on component names that survive out of context, and `entities-list.tsx`, `reports-list.tsx`,
+`periods-list.tsx` and `access-list.tsx` are deliberately parallel across four features. A bare
+`list.tsx` reads well in a tree and badly in a stack trace, a test report or a tab bar — and
+`features/entities/components/entities-list.tsx` shows the repo already tolerates the stutter where
+the path repeats the name.
+
+### The trap: a `vi.mock()` path is a string
+
+`pnpm typecheck` and `pnpm lint` both passed with `access-board.spec.tsx` still mocking
+`'../actions'` after the file moved a level deeper. Neither tool resolves a string argument, so the
+only thing that caught it was running the suite — and it failed as **"This module cannot be imported
+from a Client Component module"** rather than as a missing module, because the stale path resolved
+to nothing, the mock never registered, and the real `'use server'` module was imported for real.
+Recorded in `apps/web/CLAUDE.md`: grep the mocks when you move a spec.
+
+### And a phase appeared in the tree mid-task
+
+`docs/task.md` carried 55 uncommitted lines that were not mine — **Phase 11, the Advisor domain**,
+tasks 116 … 121, written at 12:07 while task 115 was closing. Its supporting specification was
+already committed at `79fbeed` (UC-196 … UC-211, FR-190 … FR-203, D-15, D-16, and the `AD` actor),
+so these are rows catching up with specs that exist rather than a draft. Two consequences, and the
+first is why this entry mentions it at all:
+
+- **The number collided.** This task was going to be 116. Numbers here are appended and cited from
+  `architecture.md`, migrations and source comments, so 116 … 121 are spent and this is 122. Two
+  references had already been written and were corrected before the commit.
+- **`docs:check` went red on someone else's work**, which is the gate behaving exactly as task 100
+  intended: `CLAUDE.md` claimed 115 tasks and the plan held 121. It is also why the two changes could
+  not be committed separately — committing mine alone would have left the count claim true of a tree
+  nobody had, and CI red.
+
+**One claim in that phase was wrong and is corrected here rather than committed.** Its argument for
+why the phase is small rested twice on *"task 83 built that switch three weeks ago"* — and task 83 is
+`TODO`. The global tier renders the organization as a **plate** precisely because the switch is 83's
+and unbuilt, which this session has recorded three times. The dependency line in the same paragraph
+was already right (117 and 118 *follow* 83), so only the tense was wrong; the argument survives
+intact, since what it needs is that the mechanism is specified and scheduled, not that it has
+shipped. Every other task number the phase cites — 12, 29, 32, 42, 49, 53, 54, 63, 68 — was checked
+and is accurate.
+
+### Verified
+
+`apps/web` **364 tests**, `pnpm typecheck`, `pnpm lint` uncached, `pnpm boundaries` (1,018 modules),
+`pnpm docs:check` **28 claims**. A pure move with no behaviour change, so the close is the `apps/web`
+row plus the browser suite.

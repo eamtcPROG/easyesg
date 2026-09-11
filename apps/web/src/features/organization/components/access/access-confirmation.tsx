@@ -3,8 +3,8 @@
 import { ConsequenceDialogue } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useAccess } from './access-context';
-import { CONFIRMATION } from '../access-state';
-import { removeMemberAction, revokeInvitationAction } from '../actions';
+import { CONFIRMATION } from '../../access-state';
+import { removeMemberAction, revokeInvitationAction } from '../../actions';
 
 /**
  * UC-61 and UC-63's confirmations — one dialogue, two consequences.
