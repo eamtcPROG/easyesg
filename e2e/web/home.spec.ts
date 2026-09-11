@@ -250,21 +250,40 @@ test('the overview streams behind its boundary, so the shell does not wait for i
     UX-90 requires the state to be defined — but neither can be seen: both read memberships, which
     is React-`cache()`d and awaited by `GlobalTier` **outside any boundary** in the `(app)` layout,
     so the shell cannot flush before their content exists and React inlines it instead of emitting a
-    fallback. Measured at bytes 2,260 and 6,652 against the overview's fallback at 5,850 and its
-    content at 8,474.
+    fallback.
 
-    Pinned in the positive form — their content is in the **shell**, ahead of the streamed filings —
-    because that is what changes the day the global tier gains a boundary of its own. When it does,
-    this goes red and the next reader learns why rather than wondering whether the skeletons ever
-    worked.
+    **Both assertions below replaced ones that could not fail on their subject** (task 126, found by
+    the gate-integrity review, which measured rather than read).
+
+    The first was `indexOf(`${'${RUN_PREFIX}'}-streaming`) < fallback`, called *the heading*. That string's
+    first occurrence is at byte **2,260** and the 320 bytes before it are `GlobalTier`'s organization
+    **plate** — the band, not this screen's `h1`, which sits at 5,540. So it measured a region in the
+    layout and would have stayed green with `OrganizationHeading` streaming. `<hgroup` is this
+    region's own markup, it occurs exactly **once** in the response (asserted, so the marker cannot
+    silently acquire a second source), and it is here because task 124 corrected the element.
+
+    The second was `memberships < filings`, called *inlined, not streamed*. The memberships read
+    resolves before `GET /periods` returns whichever way the region renders, so React flushes it
+    first either way: the assertion said "resolves before the periods call", which is
+    unconditionally true. What actually distinguishes the two states is **how many boundaries were
+    still pending when the shell flushed** — React SSR writes `<!--$?-->` for each one. Exactly one
+    is the claim this screen makes, and the day the global tier gains a boundary of its own it
+    becomes two and this goes red.
 
     **Markers that can only be markup.** A first draft measured the skeletons' own CSS-module class
     names and found them at byte 15,785 — in the **stylesheet**, which carries every class whether or
-    not the element rendered. The same shape as the fallback-label check task 115 had to correct.
+    not the element rendered. The same shape as the fallback-label check task 115 had to correct —
+    and the 2,260 above is the third instance of that family: a marker that is real markup, but not
+    the markup the sentence names.
   */
-  const heading = html.indexOf(`${RUN_PREFIX}-streaming`);
-  const memberships = html.indexOf('Organizațiile dumneavoastră');
+  const occurrences = (needle: string) => html.split(needle).length - 1;
+  const hgroup = html.indexOf('<hgroup');
 
-  expect(heading, 'the heading was inlined, not streamed').toBeLessThan(fallback);
-  expect(memberships, 'the membership list was inlined, not streamed').toBeLessThan(filings);
+  expect(
+    occurrences('<!--$?-->'),
+    'exactly one boundary was still pending when the shell flushed — the overview\'s',
+  ).toBe(1);
+  expect(occurrences('<hgroup'), 'S-05 draws exactly one hgroup, so it marks this region alone')
+    .toBe(1);
+  expect(hgroup, "the heading's own markup was inlined, not streamed").toBeLessThan(fallback);
 });

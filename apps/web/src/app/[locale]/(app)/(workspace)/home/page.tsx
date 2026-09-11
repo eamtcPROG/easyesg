@@ -1,12 +1,14 @@
 import { Suspense } from 'react';
-import { ArrivalNotice } from '@/features/organization/home/components/arrival-notice';
-import { HeadingLoading } from '@/features/organization/home/components/heading-loading';
-import { MembershipsLoading } from '@/features/organization/home/components/memberships-loading';
-import { MembershipsSection } from '@/features/organization/home/components/memberships-section';
-import { OrganizationHeading } from '@/features/organization/home/components/organization-heading';
-import { OverviewLoading } from '@/features/organization/home/components/overview-loading';
-import { OverviewSection } from '@/features/organization/home/components/overview-section';
-import styles from '@/features/organization/home/components/home.module.css';
+// Grouped by region rather than alphabetically, so each fallback sits beside the thing it stands
+// in for — the folders below `components/` are this list, one per child rendered here.
+import { ArrivalNotice } from '@/features/organization/home/components/arrival/arrival-notice';
+import { HeadingLoading } from '@/features/organization/home/components/heading/heading-loading';
+import { OrganizationHeading } from '@/features/organization/home/components/heading/organization-heading';
+import { OverviewLoading } from '@/features/organization/home/components/overview/section/overview-loading';
+import { OverviewSection } from '@/features/organization/home/components/overview/section/overview-section';
+import { MembershipsLoading } from '@/features/organization/home/components/memberships/memberships-loading';
+import { MembershipsSection } from '@/features/organization/home/components/memberships/memberships-section';
+import styles from '@/features/organization/home/components/styles/home.module.css';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -26,10 +28,24 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * components in their own folder, and Suspense for the same parallel fetching*). It was 320 lines
  * and the largest route file in the app — two screen-sized components and every region's copy,
  * against `apps/web/CLAUDE.md`'s *"`app/` — routes only, thin. No logic, no data access"*. The four
- * regions now sit in `features/organization/home/components/` beside `filing-list.tsx`, whose own
- * docblock had already argued the move for itself. **The feature is per screen** (tasks 122, 123): it serves
- * four of them, and everything under `home/` — this screen's rules as well as its components — is
- * reached by this route and no other.
+ * regions now sit under `features/organization/home/components/`, with `filing-list.tsx` — whose own
+ * docblock had already argued the move for itself — beside the two regions that draw it. **The
+ * feature is per screen** (tasks 122, 123): it serves four of them, and everything under `home/` —
+ * this screen's rules as well as its components — is reached by this route and no other.
+ *
+ * **And `components/` is one folder per child rendered below** (task 126): `arrival/`, `heading/`,
+ * `overview/`, `memberships/`. The four children of this `return` are four folders of the same
+ * names in the same order, which is what keeps a screen's folder legible as it grows — task 122's per-screen
+ * partition applied one level down and verified the same way, by asking whether any file serves two
+ * of the groups.
+ *
+ * **One file did, and the rule the owner then gave is what settled where it goes:** *a directory
+ * holds files or folders, never both.* `home.module.css` is read by all four regions, so it belongs
+ * to none of them — and under that rule it cannot sit above them either. It is `styles/`, a fifth
+ * leaf. The same rule empties `home/`'s own root into `components/` and `tools/`, and splits
+ * `overview/` — the one region with arms — into `section/`, `regions/`, `states/` and `shared/`.
+ * Every directory under `home/` now answers *files or folders?* with one of the two, and what
+ * decides which leaf a file lands in is always the same question: how many of the siblings read it.
  *
  * **Parallelism survives the split because composition is what provides it, not `Promise.all`.**
  * The four regions were one `await Promise.all([...])` in this file; they are now sibling async
@@ -39,7 +55,7 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  *
  * **Every region that reads has a boundary and a skeleton; exactly one of them currently streams.**
  * The overview makes an HTTP call (`GET /periods`) nothing else on the screen makes, and its
- * fallback is emitted into the shell — measured in `home.spec.ts` against the served HTML. The
+ * fallback is emitted into the shell — measured in `e2e/web/home.spec.ts` against the served HTML. The
  * heading and the membership list read memberships, which is React-`cache()`d and awaited by
  * `GlobalTier` **outside any boundary** in the `(app)` layout: the shell therefore cannot flush
  * before their content is ready, so React inlines it and their skeletons never appear. The same spec

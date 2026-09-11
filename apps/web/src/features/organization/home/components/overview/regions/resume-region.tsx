@@ -2,10 +2,10 @@ import { TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { reportRoute } from '@/lib/routes';
-import { resumableRow, type OverviewRow } from '../overview';
-import { OverviewRegion } from './overview-region';
-import { OVERVIEW_MESSAGES } from './overview-messages';
-import styles from './home.module.css';
+import { resumableRow, type OverviewRow } from '../../../tools/overview';
+import { OverviewRegion } from '../shared/overview-region';
+import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
+import styles from '../../styles/home.module.css';
 
 /**
  * UX-6's second question — *where did I leave off* (UC-67).

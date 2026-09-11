@@ -1,5 +1,5 @@
 import { Skeleton, SKELETON_SHAPE } from '@easyesg/ui';
-import styles from './home.module.css';
+import styles from '../styles/home.module.css';
 
 /**
  * `OrganizationHeading`'s §8.1 `loading — initial`.
@@ -14,9 +14,16 @@ import styles from './home.module.css';
  * today is no: `readActiveMembership` is React-`cache()`d and `GlobalTier` awaits the same promise
  * **outside** any boundary in the `(app)` layout, so the shell cannot flush before this region's
  * content is ready and React inlines it rather than emitting a fallback. Measured, not assumed —
- * `home.spec.ts` asserts the served HTML carries no skeleton here while it does carry the
+ * `e2e/web/home.spec.ts` asserts the served HTML carries no skeleton here while it does carry the
  * overview's. It exists so the state is defined (UX-90) and so the day the global tier gains a
  * boundary of its own, this screen already behaves.
+ *
+ * **What the suite actually asserts is the positive form, not this fallback's absence** (task 126,
+ * correcting a sentence above that claimed otherwise). `e2e/web/home.spec.ts` counts React's
+ * pending-boundary markers in the shell and requires exactly **one** — the overview's — and finds
+ * this region's `hgroup` inlined ahead of it. Nothing looks for the skeleton's absence, and a
+ * class-name marker could not: the stylesheet carries every class whether or not the element
+ * rendered, which is the trap that file records twice.
  */
 export function HeadingLoading() {
   return (

@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { readMemberships } from '@/server/memberships';
-import styles from './home.module.css';
+import styles from '../styles/home.module.css';
 
 /**
  * UC-16's *view memberships* half (FR-12) — task 30.5.
@@ -24,9 +24,18 @@ import styles from './home.module.css';
  * heading, the global tier and this region share one HTTP call in the render pass. Threading the
  * array down from the page would have re-created the single `Promise.all` the split removed.
  *
- * **Not behind a Suspense boundary**, for the same reason: the promise it awaits is already in
- * flight for the chrome above it, so a boundary here would buy a streaming hole over a read that
- * costs nothing and cannot be the page's critical path.
+ * **It has a boundary whose fallback never renders** — the same correction as the heading's, for the
+ * same reason. This read *"not behind a Suspense boundary"* until task 125's fourth pass added one,
+ * and outlived the fact by a commit. The promise it awaits is already in flight for the chrome above
+ * it, so the shell has this region's content the moment it can flush at all; `memberships-loading.tsx`
+ * holds the state.
+ *
+ * **The spec pins that by counting pending boundaries, not by position** (task 126). The check that
+ * used to stand here compared this region's heading to the filings — and was true whichever way this
+ * region renders, because its read resolves before `GET /periods` returns either way. What
+ * distinguishes inlined from streamed is how many boundaries were still pending when the shell
+ * flushed, which React writes into the HTML as `<!--$?-->`; `e2e/web/home.spec.ts` requires exactly
+ * one, so this region gaining a real wait turns it red.
  */
 export async function MembershipsSection() {
   // Independent, so they do not queue (`async-parallel`).
@@ -54,7 +63,7 @@ export async function MembershipsSection() {
           <ul className={styles.memberships}>
             {memberships.map((membership) => (
               <li key={membership.id} className={styles.membership}>
-                <span className={styles.membershipName}>{membership.organizationName}</span>
+                <span className={styles.rowName}>{membership.organizationName}</span>
                 <span className={`t-caption ${styles.sub}`}>{tRoles(membership.role)}</span>
                 {/* The active one is marked in words as well as by the chip: colour is never the
                     sole carrier (UX-102), and this list has no other way to say which is which

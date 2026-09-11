@@ -4,8 +4,8 @@ import { getTranslations } from 'next-intl/server';
 import { mayWrite } from '@/server/memberships';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { OverviewRegion } from './overview-region';
-import { OVERVIEW_MESSAGES } from './overview-messages';
+import { OverviewRegion } from '../shared/overview-region';
+import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
 
 /**
  * §8.1's `empty — first use` for the whole overview: the organization has no reporting period at

@@ -15820,7 +15820,7 @@ region that reads now has a boundary and a skeleton. Exactly one of them streams
 
 | marker in the served HTML | byte |
 | --- | --- |
-| organization name (the `h1`) | 2,260 |
+| organization name — **the global bar's plate, not the `h1`** (corrected by task 126; the `h1` is at 5,540) | 2,260 |
 | the overview's fallback (`role="status"`) | 5,850 |
 | the membership region's heading and lede | 6,652 · 6,728 |
 | the filings — the overview's real content | 8,474 |
@@ -16126,3 +16126,184 @@ the full set on push. `web`-only and behaviour-preserving, so the sub-step run i
 close; one stray import placement was caught by reading the diff rather than by a gate — the
 re-pointed namespace landed where the deleted `const` had been, mid-file, and no rule here orders
 imports.
+
+## Task 126 — a directory that held files and folders at once · 2026-09-11
+
+*"`home/components` requires to be split in more folders."* Then, mid-task: *"files should not be on
+the same level with folders — for `home.module.css` you can create a `styles` folder, and also one
+for `home.ts` and `overview.ts` with their test files."* Then: *"maybe a better naming would be
+`tools`."*
+
+Three passes, and the second is the one that changed the shape rather than the size. My first answer
+was the obvious continuation of tasks 122 and 123 — group by region — and it left a stylesheet and
+six overview files sitting beside the new folders. That is a listing a reader has to check entry by
+entry to learn what kind of thing each one is, and it is what the owner's rule refuses.
+
+### The axis was verified, then the rule placed the file the verification found
+
+Task 122's test, applied one level down: which region does each file serve, and does any file serve
+two? Every `.tsx` partitions cleanly onto the four children of S-05's `return` — `arrival/`,
+`heading/`, `overview/`, `memberships/` — in that order. A listing shows a fifth, `styles/`, which is
+the next paragraph's subject; the property worth having is that a listing is never *shorter* than the
+`return`.
+
+**One file failed the test, and it is the one the owner's second rule then placed.** `home.module.css`
+is read by all four regions, so it belongs to none of them; under the first shape it sat above them,
+which the *files or folders, never both* rule forbids. It is `styles/`, a fifth leaf — and that is
+the whole tree's deciding question, at every level: **how many siblings read this file?** One, and it
+lives with that sibling. More than one, and it gets its own leaf.
+
+```
+home/
+├─ components/
+│  ├─ arrival/       arrival-notice
+│  ├─ heading/       organization-heading · heading-loading
+│  ├─ overview/      section/ · regions/ · states/ · shared/
+│  ├─ memberships/   memberships-section · memberships-loading
+│  └─ styles/        home.module.css
+└─ tools/            home.ts · overview.ts · their two specs
+```
+
+`overview/` is the only region with arms, so it is the only one that splits: `section/` is what the
+route renders — the section and the fallback `page.tsx` pairs with it, which is the same shape
+`heading/` and `memberships/` each hold as a pair of two; `regions/` is UX-6's three questions and
+the row two of them draw; `states/` is §8.1's arms that *replace* the regions; `shared/` is the two
+files more than one of those reads. The loading state sits with the section rather than with the
+other §8.1 arms because it is not an arm the section returns — it is the boundary's fallback, and
+`page.tsx` is what hands it over.
+
+**`shared/` carries its admission test in its own docblock**, because a folder named for sharing
+becomes a junk drawer the first time something is put there for being hard to place. Two files are in
+it and both earn it: `overview-region.tsx` is worn by all three regions *and* by `OverviewEmpty` in
+`states/`, and `overview-messages.ts` is read by all three sibling folders.
+
+**`tools/` is the owner's name for what `apps/web/CLAUDE.md` calls a screen's *rules*.** That
+sentence — "its own rules, its own actions and its own `components/`" — describes what a screen
+folder contains, not what its directories are called, so there is nothing to reconcile; the relation
+is noted in `tools/home.ts` so a reader who knows the sentence finds out in one place which folder it
+means. One `tools/` rather than a folder per module: four files are a leaf, and every extra level
+lengthens the `../` chain four components under `components/overview/` walk to reach them.
+
+### What the split surfaced, which is the reason to do it at all
+
+**A class name that had stopped being true.** `filing-list.tsx` styled a filing's entity name with
+`.membershipName`, borrowed from the memberships list. Flat in one folder that reads as reuse; across
+two folders it is a filings region reaching into a memberships region's class, and restyling a
+membership row would have silently restyled a filing — or left one behind. Renamed `.rowName`, which
+is what it styles. This is the mechanism `organization-heading.tsx` already records for a different
+duplicate: *"Splitting the region out is what made the duplicate visible."*
+
+**Three docblocks the previous commit had left lying.** `organization-heading.tsx` and
+`memberships-section.tsx` both still read *"Not behind a Suspense boundary"*, and
+`overview-section.tsx` read *"This is the screen's one Suspense boundary"* — all three false since
+task 125's fourth pass wrapped every reading region. The sentences survived the change they
+described by one commit. Each now states the correction rather than quietly dropping the old claim,
+and names the class: **a docblock that asserts a fact about its own caller is the kind that rots
+first**, because nothing in the file changes when the caller does. The *read the diff for comment
+lines* habit is what should have caught it, and did not, because that pass added files rather than
+editing the ones that lied.
+
+**`.loadingHeading`, `.loadingLede` and `.loadingRows`** were commented as *"the overview's
+`loading — initial`"* while `memberships-loading.tsx` had been reading them since the same pass. The
+comment now says both panels share them deliberately — two skeletons of the same anatomy measured
+differently would read as two different waits.
+
+### The rule is S-05's, not the repository's
+
+`access/`, `profile/` and `creation/` do not follow it: each has an `actions.ts` beside `components/`,
+and `access/` its four rule modules as well. That is recorded in `apps/web/CLAUDE.md` as an outstanding case,
+the treatment task 123 gave `identity/`, rather than swept in here — and deliberately, because
+`actions.ts` carries `'use server'` and where a directive-bearing module lands is a decision rather
+than a move. Writing the rule as though it were general would misreport three folders that are
+correct as they stand.
+
+**It is not a repo-wide gate, and could not be one today** — measured after the gate-integrity
+review asked: **16 of the 18 directories under `features/`** mix files with folders, `access/`,
+`profile/` and `creation/` among them. A selector would start red, inverting *"fix the sites first,
+then turn the gate on"*.
+
+**So it is a spec, scoped to the subtree that satisfies it.** `home/tools/folder-shape.spec.ts`
+walks `home/` and asserts every directory answers zero to one of *files* or *folders*, naming the
+offender when it does not — proven by dropping a stray file beside `components/`'s folders, which
+failed with *"components holds files [stray.ts] beside folders [arrival, heading, memberships,
+overview, styles]"*. The first draft of this entry argued the rule needed no check because it was
+"checkable in one line"; the review's answer is the right one, and it is this repository's own:
+**a rule asserted in three documents and checked by nothing is a rule that decays silently** — the
+`domain-free-of-frameworks` shape, which shipped inert. A spec with no subject module sits in
+`tools/` because its subject is the directory tree.
+
+### Two assertions this task's docblocks cited, and neither could fail on its subject
+
+The gate-integrity review measured rather than read, and found that the streaming case task 125 left
+behind proves less than it says — which matters here because **three docblocks this task corrected
+now cite it as their evidence**.
+
+- **`heading < fallback` measured the wrong region.** The marker was the organization's name, whose
+  first occurrence in the served HTML is byte **2,260** — `GlobalTier`'s organization **plate** in
+  the band. `OrganizationHeading`'s `h1` is at 5,540, 322 bytes ahead of the fallback at 5,862. So
+  the check would have stayed green with this screen's heading streaming, and **the 2,260 recorded
+  in task 125's entry above, in `apps/web/CLAUDE.md` and in my report to the owner as "the heading,
+  inlined" is the band's number**. Corrected in both documents rather than quietly dropped.
+- **`memberships < filings` was unconditionally true.** The memberships read resolves before
+  `GET /periods` returns whichever way the region renders, so React flushes it first either way. It
+  asserted "resolves before the periods call", not "is in the shell".
+
+**What replaced them is a count, and counts are what this claim actually is.** React SSR writes
+`<!--$?-->` for each boundary still pending when the shell flushes, so
+`occurrences('<!--$?-->') === 1` *is* "exactly one region streams". Alongside it, `<hgroup` — which
+occurs **exactly once** in the response, asserted so the marker cannot acquire a second source, and
+which exists there because task 124 corrected the element.
+
+**Both proven to bite**, by making `OrganizationHeading` suspend on a 400 ms timer and running
+through `pnpm e2e:web` so the bundle was actually rebuilt (the recorded trap: `playwright test`
+alone skips `pree2e:web`). The count went **1 → 2**; `<hgroup` moved from 5,532 to **86,967**, out
+of the shell entirely. Restored, green.
+
+**And `heading-loading.tsx` cited an assertion that does not exist** — *"asserts the served HTML
+carries no skeleton here"*. Nothing in the suite looks for that, and a class-name marker could not
+provide it. This task corrected three docblocks about this exact boundary change and walked past the
+fourth with an import-path edit, which is the *"is this one right?" and "are there others?"*
+distinction failing inside the change made for it.
+
+### Verified
+
+**`pnpm gates:clean`, exit 0** — the full set from a clean tree, which is the parent-row obligation:
+`docs:check` 28 claims over 5 documents, `apps/web` 364 unit tests (**377** after this entry's spec),
+`apps/api` 711, `boundaries` clean over 1,029 modules with all 23 rules proven to reject,
+`migrations:check`, `pnpm e2e` 860, `e2e:worker` 2, and `e2e:web` **171 passed** including the 14
+axe scans. `docs:check` went red first and correctly: `CLAUDE.md` claimed 125 tasks against a plan
+holding 126.
+
+**It took three runs, and the first two failures were mine, not the tree's.** Worth recording
+because both looked exactly like defects:
+
+- Run 1 died in `pnpm e2e` — one wizard case, `401 Unauthorized`. Run 2 died in `pnpm lint` with
+  `ENOENT … e2e/web/zzprobe.spec.ts`, a file that does not exist. **Both were the review agents**,
+  which I had launched to run *concurrently* with the gates: one of them writes probe specs and
+  mutates files to prove checks bite, and it deleted that probe mid-`eslint`-enumeration. The 401
+  (and a 404 on an isolated re-run) sat in the same window, against the one shared dev database.
+- I had already written "the api e2e suite is flaky" and was about to file a row for it. It is not:
+  run 3, serial, was 860/860. **I had ruled out my diff as the cause and not my own concurrency** —
+  the gate set and a tree-mutating agent must not run at the same time, and the root `CLAUDE.md`
+  rule this sits under (*"a gate must not depend on state a previous command left behind"*) has a
+  concurrent form that is worse, because it produces a different failure each time.
+- Run 1's output was also lost to a `tail -60` of my own, so it could not even say which gates had
+  passed. A gate run's output is evidence; truncating it discards the evidence and keeps the verdict.
+
+**`vercel-react-best-practices`, read against the diff** (the app's own checklist, which has no
+exception for a move). Nothing in it bites, and one rule was declined deliberately:
+`bundle-barrel-imports` — the reflex when paths get deep is an `overview/index.ts` re-exporting the
+four subfolders so callers keep short specifiers, which is the barrel that rule forbids and which
+task 123 deleted a copy of. So `page.tsx` carries seven long literal paths instead. Verified
+mechanically rather than asserted: no `index.ts` under `home/`, no `'use client'` among the moved
+files, no non-literal specifier in the diff (`bundle-analyzable-paths`). Categories 4–8 do not apply
+— every moved file is a Server Component or a plain module — and the `async-`/`server-` sites
+(`Promise.all`, `cache()`, the Suspense composition) are byte-identical.
+
+**What stands behind the rename is narrower than the first draft of this line claimed**, and the
+gate-integrity review proved it: Next's `declare module '*.module.css'` types the import as
+`{ readonly [key: string]: string }`, so `styles.doesNotExist` **typechecks and lints clean** — put
+back, `typecheck` and `eslint` both exit 0. The eight rewritten module paths are seen by
+`next build`; the class names are seen by nobody. So the rename rests on the search (`membershipName`
+survives nowhere but in this entry and the stylesheet's own history comment) and on the browser
+suite, not on the compiler. Worth knowing before the next CSS-module rename is called safe.

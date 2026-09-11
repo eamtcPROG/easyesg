@@ -1,7 +1,7 @@
 import { Panel, Skeleton, SKELETON_SHAPE } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import { OVERVIEW_MESSAGES } from './overview-messages';
-import styles from './home.module.css';
+import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
+import styles from '../../styles/home.module.css';
 
 /**
  * The boundary's fallback — §8.1's `loading — initial`, which the model defines as *"skeleton

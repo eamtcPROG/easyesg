@@ -8,5 +8,10 @@
  *
  * A plain module rather than a member of some larger object: a namespace is not a closed vocabulary
  * with alternatives to choose between, it is one value several files must spell identically.
+ *
+ * **In `shared/` because all three sibling folders read it** — `section/`, `regions/` and
+ * `states/` — which is the folder's whole admission test (`overview-region.tsx` states it). Seven
+ * files import it; that they share one declaration is the point, and where that declaration sits
+ * follows from who reads it rather than from what kind of thing it is.
  */
 export const OVERVIEW_MESSAGES = 'organization.home.overview';

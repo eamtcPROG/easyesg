@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { readActiveMembership } from '@/server/memberships';
-import styles from './home.module.css';
+import styles from '../styles/home.module.css';
 
 /**
  * S-05's heading: the organization the reader is acting for, and the role they hold in it.
@@ -32,10 +32,18 @@ import styles from './home.module.css';
  * until the day someone holds two, and wrong invisibly."* Splitting the region out is what made the
  * duplicate visible.
  *
- * **Not behind a Suspense boundary.** This is the screen's layout anchor and sits above the fold, so
- * a fallback that resolved into a different-length organization name would shift everything under
- * it; and the read costs nothing here, because it is React-`cache()`d and the global tier in the
- * `(app)` layout is awaiting the same promise in the same pass.
+ * **It has a boundary, and the fallback never renders.** This paragraph read *"not behind a Suspense
+ * boundary"* until task 125's fourth pass wrapped it — the sentence survived the change it described
+ * and was wrong for one commit, which is what a docblock stating a *fact about its caller* costs.
+ * The reason it was written still holds and is now the reason the fallback is inert: this read is
+ * React-`cache()`d and `GlobalTier` awaits the same promise **outside any boundary** in the `(app)`
+ * layout, so the shell cannot flush before this content exists and React inlines it.
+ * `heading-loading.tsx` carries the state UX-90 requires either way, and `e2e/web/home.spec.ts`
+ * asserts it: the `hgroup` this function returns is in the shell ahead of the overview's fallback,
+ * and exactly one boundary was pending when that shell flushed. **Both of those replaced checks that
+ * could not fail here** (task 126) — the old one located the organization's *name*, whose first
+ * occurrence is `GlobalTier`'s plate in the band 3,280 bytes earlier, so it measured the layout and
+ * would have stayed green with this region streaming.
  */
 export async function OrganizationHeading() {
   const [active, t, tRoles] = await Promise.all([

@@ -1,6 +1,6 @@
 import { Panel } from '@easyesg/ui';
 import type { ReactNode } from 'react';
-import styles from './home.module.css';
+import styles from '../../styles/home.module.css';
 
 /**
  * The anatomy every region of S-05's overview shares: a `Panel` and the `h2` that names its
@@ -12,6 +12,13 @@ import styles from './home.module.css';
  * (*"an `<h2>` because the shell owns the `<h1>` — the level is not the caller's to choose"*). Before
  * the split the incantation `t-heading-3 ${styles.regionHeading}` was written out four times, which
  * is four places for a heading to become an `h3` by accident.
+ *
+ * **`shared/` admits a file on one test: is it read by more than one of the sibling folders?**
+ * (task 126). This one is read by all three of `regions/`' questions and by `states/`'
+ * `OverviewEmpty`, which is exactly why it could not live in either. `overview-messages.ts` is here
+ * for the same reason and there is nothing else — a folder named for sharing becomes a junk drawer
+ * the first time something is put in it for being hard to place, so the test is written down rather
+ * than assumed.
  *
  * **Not an inventory addition, and the distinction is UX-89's own.** §11.5's `Panel` is the
  * component; this is one screen's composition of it with a heading, so it belongs beside the screen

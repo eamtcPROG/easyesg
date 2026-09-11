@@ -1,12 +1,12 @@
 import { readActiveMembership } from '@/server/memberships';
 import { readOrganizationPeriods } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
-import { toOverviewRows } from '../overview';
-import { AttentionRegion } from './attention-region';
-import { EverythingRegion } from './everything-region';
-import { OverviewEmpty } from './overview-empty';
-import { OverviewUnavailable } from './overview-unavailable';
-import { ResumeRegion } from './resume-region';
+import { toOverviewRows } from '../../../tools/overview';
+import { AttentionRegion } from '../regions/attention-region';
+import { EverythingRegion } from '../regions/everything-region';
+import { OverviewEmpty } from '../states/overview-empty';
+import { OverviewUnavailable } from '../states/overview-unavailable';
+import { ResumeRegion } from '../regions/resume-region';
 
 /**
  * UX-6's three questions, in UX-6's order — UC-67 and FR-23 (task 32.4).
@@ -17,6 +17,14 @@ import { ResumeRegion } from './resume-region';
  * *read* — the whole row set, the whole membership — and derives what it needs from it:
  * `attentionRows`, `resumableRow`, `everythingRows` and FR-25's `mayWrite` each live with the
  * question they answer. Adding a region is a line here; changing what one of them means is one file.
+ *
+ * **Four folders under `overview/`, and this is the only file that reaches three of them** (task
+ * 126). `section/` is what S-05's route renders — this and the fallback it is paired with;
+ * `regions/` is UX-6's three questions and the row two of them draw; `states/` is §8.1's arms that
+ * *replace* the regions; `shared/` is the two files more than one of those reads. The loading state
+ * sits here rather than with the other §8.1 arms because it is not an arm this function returns —
+ * it is the boundary's fallback, and `page.tsx` is what hands it over, which is the same seam
+ * `heading/` and `memberships/` each hold as a pair of two.
  *
  * **`canWrite` was a prop in the first draft and `membership` replaced it**, which is the same
  * move and the better one: a boolean is a lossy projection of the object, so a region that later
@@ -33,12 +41,15 @@ import { ResumeRegion } from './resume-region';
  * where the clock enters and it is called exactly once, here. The selectors below it are pure
  * functions over rows that are already dated, which is what made moving them safe.
  *
- * **This is the screen's one Suspense boundary, and it is the only region that earns one.** S-05's
- * other three regions read memberships, which is React-`cache()`d and already in flight for the
- * global tier; this one makes an HTTP call nothing else on the page makes. Wrapping it lets the
- * heading and the membership list paint while the filings stream in, which is
- * `async-suspense-boundaries` applied where its own "when NOT to use" list does not bite: below the
- * fold, not layout-defining, and a genuinely slow read.
+ * **This is the screen's one boundary that *streams*, and the qualifier is the correction.** It read
+ * *"the screen's one Suspense boundary"* until task 125's fourth pass gave the heading and the
+ * membership list one each, and outlived the fact by a commit — the hazard of a docblock that states
+ * a count of something outside its own file. Three regions have boundaries; only this one makes an
+ * HTTP call (`GET /periods`) nothing else on the page makes, so only this one's fallback reaches the
+ * shell — one pending boundary in the flushed shell, which is what `e2e/web/home.spec.ts` counts.
+ * That is `async-suspense-boundaries` applied
+ * where its own "when NOT to use" list does not bite: below the fold, not layout-defining, and a
+ * genuinely slow read.
  *
  * **No `DataTable`, and that is not an omission.** It exists for the Index archetype — sortable,
  * filterable, paginated — and takes `cell` render functions, which a Server Component cannot hand

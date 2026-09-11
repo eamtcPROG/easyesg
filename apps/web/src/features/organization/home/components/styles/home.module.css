@@ -1,5 +1,22 @@
 /* S-05. The Workspace composition's content column; the global and workspace tiers are the
-   layout's and are not restated here. */
+   layout's and are not restated here.
+
+   **One stylesheet for four region folders, in `styles/` of its own** (task 126). Every `.tsx`
+   under `components/` belongs to exactly one region; these classes do not, which is why it could
+   not simply sit beside them — and why it could not sit *above* them either, once the rule became
+   *a directory holds files or folders, never both*. The region rhythm (`.regionHeading`), the
+   shared typography resets, the row idiom `.membership` and `.filing` are two spellings of, and the
+   skeleton widths two panels measure alike are the screen's *visual language*: split per folder
+   they would be duplicated and free to drift, and a cross-file `composes:` chain would be a new
+   idiom bought for four declarations. Its being shared is also what makes `.rowName` below the
+   finding it is.
+
+   **`.regionHeading` is the one class left whose readers straddle a folder boundary, and it is kept
+   deliberately** — `memberships/memberships-section.tsx` and `overview/shared/overview-region.tsx`.
+   That is not `.membershipName`'s defect wearing another name: both readers *are* regions of S-05
+   and the class names the screen's region rhythm, which is exactly the shared decision this file
+   exists to hold. The tell for the other one was a name that had stopped describing what it styled;
+   this one still does. */
 
 .screen {
   display: flex;
@@ -47,7 +64,12 @@
   border-radius: var(--radius-1);
 }
 
-.membershipName {
+/* The bold name at the head of a row — an organization in the memberships region, an entity in the
+   filings one. It was `.membershipName` and the filings list borrowed it: flat in one folder that
+   read as reuse, but task 126 put the two regions in different folders and a filing is not a
+   membership. Renamed for what it styles, so restyling a membership row cannot silently restyle a
+   filing — or leave one behind. */
+.rowName {
   font: 600 15px/24px var(--font-text);
   color: var(--text-default);
 }
@@ -97,10 +119,11 @@
 }
 
 /*
-  The overview's `loading — initial` (§8.1) — the widths and rhythm that make the skeleton match
-  what resolves into it. `packages/ui`'s `Skeleton` owns the height, the greys and the 300 ms
-  restraint; a screen's measurements are the screen's, which is what keeps the primitive free of a
-  `width` prop per caller.
+  `loading — initial` (§8.1) for the two regions drawn as a panel — the overview's and the
+  memberships list's — which share these widths deliberately: two skeletons of the same anatomy that
+  measured differently would read as two different waits. `.loadingLabel` is the overview's alone.
+  `packages/ui`'s `Skeleton` owns the height, the greys and the 300 ms restraint; a screen's
+  measurements are the screen's, which is what keeps the primitive free of a `width` prop per caller.
 */
 .loadingLabel {
   position: absolute;

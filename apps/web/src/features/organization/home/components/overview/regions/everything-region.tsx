@@ -1,11 +1,11 @@
 import type { AccountMembership } from '@easyesg/contracts';
 import { getTranslations } from 'next-intl/server';
 import { mayWrite } from '@/server/memberships';
-import { everythingRows, type OverviewRow } from '../overview';
+import { everythingRows, type OverviewRow } from '../../../tools/overview';
 import { FilingList } from './filing-list';
-import { OverviewRegion } from './overview-region';
-import { OVERVIEW_MESSAGES } from './overview-messages';
-import styles from './home.module.css';
+import { OverviewRegion } from '../shared/overview-region';
+import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
+import styles from '../../styles/home.module.css';
 
 /**
  * UX-6's third question — *what is the state of everything* (UC-67, FR-23).

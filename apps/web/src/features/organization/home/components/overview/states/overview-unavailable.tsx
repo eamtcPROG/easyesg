@@ -1,7 +1,7 @@
 import { Callout, CALLOUT_INTENT, Panel } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { TENANT_READ } from '@/server/data/tenant-read';
-import { OVERVIEW_MESSAGES } from './overview-messages';
+import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
 
 /**
  * The two arms of `TENANT_READ` that are not `READY`, as §8.1 states them: `error — permission` and

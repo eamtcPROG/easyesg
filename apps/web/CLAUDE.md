@@ -371,7 +371,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   ```
   organization/
   ├─ access/     S-16   access.ts · access-state.ts · action-results.ts · actions.ts · components/
-  ├─ home/       S-05   home.ts · overview.ts · components/
+  ├─ home/       S-05   tools/ · components/ — and see the next rule, which went further
   ├─ profile/    S-15   actions.ts · components/
   └─ creation/   S-04   actions.ts · components/
   ```
@@ -399,6 +399,54 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `list.tsx` inside a folder reads well in a tree and badly in a stack trace, a test report or a
   tab bar.
 
+- **Inside a screen folder, a directory holds files or folders — never both** (11 Sep 2026, task
+  126, project owner). S-05 is the worked example and, today, the only one. `home/components/` had
+  grown to 16 flat files; splitting it per **region** left a stylesheet and six overview files
+  sitting beside the new folders, which is the shape this rule refuses — a listing that mixes the
+  two makes a reader check every entry to learn what kind of thing it is.
+
+  ```
+  home/
+  ├─ components/
+  │  ├─ arrival/       arrival-notice
+  │  ├─ heading/       organization-heading · heading-loading
+  │  ├─ overview/      section/ · regions/ · states/ · shared/
+  │  ├─ memberships/   memberships-section · memberships-loading
+  │  └─ styles/        home.module.css
+  └─ tools/            home.ts · overview.ts · their two specs
+  ```
+
+  **The top level is what the route renders** — one folder per child of S-05's `return`, in the same
+  order, **plus `styles/` for what belongs to none of them**. So the page tells you four of the five
+  and the fifth is the exception the next paragraph is about; a listing is never shorter than the
+  `return`, which is the property worth having. **Below it the question is
+  always the same one:** how many siblings read this file? One, and it lives with that sibling; more
+  than one, and it gets its own leaf. That is what puts the stylesheet in `styles/` rather than above
+  the regions, and `overview-region.tsx` in `shared/` rather than in `regions/` — `OverviewEmpty`, in
+  `states/`, wears it too. `shared/` carries that admission test in its own docblock, because a
+  folder named for sharing becomes a junk drawer the first time something is put there for being
+  hard to place.
+
+  **`tools/` is the rule above's *rules* under a different name.** That sentence — "its own rules,
+  its own actions and its own `components/`" — describes what a screen folder contains, not what its
+  directories are called, so there is nothing to reconcile; the name is the owner's, and it is noted
+  in `tools/home.ts` so a reader who knows the sentence finds out in one place which folder it means.
+
+  **It has a failing state, scoped to where it holds.** `home/tools/folder-shape.spec.ts` walks the
+  subtree and names the offender (*"components holds files [stray.ts] beside folders […]"*), proven
+  by adding one. It is a spec rather than a repo-wide selector because **16 of the 18 directories
+  under `features/` mix files with folders** — a gate would start red, which inverts *"fix the sites
+  first, then turn the gate on"*. Widen it when another subtree qualifies. Without it the rule would
+  be asserted in three documents and checked by nothing, which is this repository's own recorded
+  failure shape.
+
+  **`access/`, `profile/` and `creation/` do not follow this yet**, and are named here rather than
+  done in passing — the same treatment `identity/` gets above. Each has an `actions.ts` beside
+  `components/` (and `access/` its four rule modules as well), and `actions.ts` carries `'use
+  server'`, so where it lands is a decision about a directive-bearing module rather than a move. **The rule is therefore S-05's, not
+  the repository's**, and writing it as though it were general would misreport three folders that
+  are correct as they stand.
+
   **A `vi.mock()` path is a string, so a file move does not typecheck.** `access-board.spec.tsx`
   carried `vi.mock('../actions')` through the move with `pnpm typecheck` and `pnpm lint` both
   clean; it failed only on the run, and it failed as *"This module cannot be imported from a Client
@@ -413,7 +461,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `GET /periods` round trip its boundary exists to stream past. The first rule here conflated the two
   and cost S-05's route file a translator it did not need.
 
-  **Measured, not reasoned**: `home.spec.ts`'s streaming case reads the served HTML and still finds
+  **Measured, not reasoned**: `e2e/web/home.spec.ts`'s streaming case reads the served HTML and still finds
   the fallback's markup ahead of the filings with the fallback async. A fallback that reads anything
   over the wire is the real defect — it blocks the shell on exactly the thing the boundary was added
   to stop blocking on — and nothing will tell you, because the boundary still *looks* like it is
@@ -426,18 +474,31 @@ conditional render, which is how it ends up half-suppressed on one screen.
   in the shell ahead of the content.
 
   S-05 is the worked example in both directions. Its three region boundaries all have skeletons, and
-  exactly **one** streams: the overview's fallback lands at byte 5,850 with its filings at 8,474,
-  while the heading and the membership list are *inlined* at 2,260 and 6,652 — they read memberships,
-  which is React-`cache()`d and awaited by `GlobalTier` **outside any boundary** in the `(app)`
-  layout, so the shell cannot flush before their content exists. The inert two are kept because
-  UX-90 wants the `loading` state defined and because the global tier may yet gain a boundary, and
-  `home.spec.ts` asserts their inertness in the positive form so that day is visible rather than
-  silent. **A boundary that buys nothing is not a defect; a boundary silently claiming to buy
-  something is.**
+  exactly **one** streams: the overview's fallback lands at byte 5,862 with its filings at 8,482,
+  while the heading's `hgroup` (5,532) and the membership region's heading (6,664) are *inlined* —
+  they read memberships, which is React-`cache()`d and awaited by `GlobalTier` **outside any
+  boundary** in the `(app)` layout, so the shell cannot flush before their content exists. The inert
+  two are kept because UX-90 wants the `loading` state defined and because the global tier may yet
+  gain a boundary. **A boundary that buys nothing is not a defect; a boundary silently claiming to
+  buy something is.**
+
+  **How to count what streamed, and why the obvious markers do not** (task 126, from the
+  gate-integrity review). React SSR writes **`<!--$?-->` per boundary still pending when the shell
+  flushes**, so `occurrences('<!--$?-->') === 1` *is* the claim "exactly one region streams" — and it
+  is what `e2e/web/home.spec.ts` asserts, proven to bite by making the heading suspend, which took it
+  to 2. The two position checks it replaced could not fail on their subjects. One located the
+  organization's name and called it the heading; the name's first occurrence is at byte **2,260**,
+  which is `GlobalTier`'s organization **plate** in the band — the `h1` is at 5,540, and the check
+  would have stayed green with the heading streaming. (That 2,260 was recorded in this file and in
+  `build-log.md` as the heading's; it is the band's.) The other compared the membership heading's
+  position to the filings' — true whichever way the region renders, since its read resolves before
+  `GET /periods` either way. **A position check needs a marker that belongs to the region and to
+  nothing else**: `<hgroup` occurs exactly once in this response, and the spec asserts that too so
+  the marker cannot quietly acquire a second source.
 
   **Nothing but a served-HTML assertion can see a boundary being deleted.** Every region renders
   identically once the stream settles, so the suite stays green and the screen simply gets slower —
-  `home.spec.ts` reads the positions of the fallback's markup and the filings in the response body.
+  `e2e/web/home.spec.ts` reads the positions of the fallback's markup and the filings in the response body.
   Assert on the **markup** (`role="status"`), never on the fallback's label: next-intl ships the
   whole catalogue in the same payload, so the sentence is in the HTML either way, and the first
   draft of that check passed against a build with the boundary removed.

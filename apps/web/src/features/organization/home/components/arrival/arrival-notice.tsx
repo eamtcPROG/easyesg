@@ -1,6 +1,6 @@
 import { Callout, CALLOUT_INTENT } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import { readArrival } from '../home';
+import { readArrival } from '../../tools/home';
 
 /**
  * S-05's arrival sentence — UC-15's outcome, stated (task 30.5).

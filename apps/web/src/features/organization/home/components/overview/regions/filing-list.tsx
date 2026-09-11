@@ -2,11 +2,11 @@ import { STATUS_TONE, StatusChip, TextLink, type StatusTone } from '@easyesg/ui'
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ROUTES, reportRoute, withQuery } from '@/lib/routes';
-import { OVERVIEW_STANDING, type OverviewRow, type OverviewStanding } from '../overview';
+import { OVERVIEW_STANDING, type OverviewRow, type OverviewStanding } from '../../../tools/overview';
 // Aliased to `MESSAGES` so every reader below is unchanged: the namespace was written privately
 // here and in `overview-section.tsx`, and task 125's region split would have made that six copies.
-import { OVERVIEW_MESSAGES as MESSAGES } from './overview-messages';
-import styles from './home.module.css';
+import { OVERVIEW_MESSAGES as MESSAGES } from '../shared/overview-messages';
+import styles from '../../styles/home.module.css';
 
 /**
  * S-05's filing row (UC-67, FR-23; task 32.4).
@@ -14,9 +14,15 @@ import styles from './home.module.css';
  * **Here rather than in the route file**, which is `apps/web/CLAUDE.md`'s *"`app/` — routes only,
  * thin"* and the third step of UX-89: a component living in a screen has no state set, no dark
  * map, no expansion coverage and no accessibility review, and the next screen that needs it copies
- * all four omissions. Every sibling list in this app is already here — `periods-list.tsx`,
- * `reports-list.tsx`, `entities-list.tsx`, `access-list.tsx` — and the stylesheet it reads was in
- * this folder while the component was not, which was the tell.
+ * all four omissions. Every sibling list in this app is already under `features/` —
+ * `periods-list.tsx`, `reports-list.tsx`, `entities-list.tsx`, `access-list.tsx` — and the
+ * stylesheet it reads was there while the component was not, which was the tell.
+ *
+ * **In `regions/` rather than in `shared/`** (task 126), and the two folders are told apart by one
+ * question: *does more than one of these sibling folders read it?* The *attention* and *everything*
+ * regions draw this row and nothing else on the screen does — the overview's other arms replace the
+ * regions rather than compose them, so they never reach a row. `OverviewRegion` is the
+ * counter-example and why `shared/` exists: `OverviewEmpty`, in `states/`, wears it too.
  *
  * **It is not an inventory addition either, and that is UX-89's second step answered rather than
  * skipped.** §11.5's Data table is the Index archetype's — sortable, filterable, paginated, and a
@@ -85,7 +91,7 @@ export async function FilingList({
       {rows.map((row) => (
         <li key={row.periodId} className={styles.filing}>
           <div className={styles.filingSubject}>
-            <span className={styles.membershipName}>{row.entityName}</span>
+            <span className={styles.rowName}>{row.entityName}</span>
             <span className="t-numeric">
               {t('period', { start: row.periodStart, end: row.periodEnd })}
             </span>
