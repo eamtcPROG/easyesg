@@ -17275,3 +17275,154 @@ clean over 1,121 modules and 3,624 dependencies with all 23 rules proven, `build
 `e2e:web` **171 of 171** in 4.1 minutes. Three runs of the full set in all: the first red on a
 boundary proof a move had switched off, the second red on one timeout under load that a
 whole-suite re-run and two standalone runs did not reproduce, the third green.
+
+## Task 138 — one icon set, two conventions, and a merge that cancels · 2026-09-12
+
+*"Add the favicons respecting the framework conventions on admin and web."* The design's favicon
+artboard and its assets arrived as a zip after `DesignSync` could not authorize in a
+non-interactive session — worth recording only because the zip carried three things the request's
+file list did not: a `favicon/README.md` that is the design's own specification, a
+`site.webmanifest`, and `icon-192.png` / `icon-512.png`.
+
+### The finding that chose the architecture
+
+Next 16 offers two ways to put an icon in the head: the filename convention (`app/icon.svg`,
+`app/apple-icon.png`) and `metadata.icons`. The documentation says file-based metadata "has higher
+priority and will override any config-based metadata". **The resolver does the opposite.**
+`dist/lib/metadata/resolve-metadata.js` merges the filename-convention icons under
+
+    if (leafSegmentStaticIcons.icon.length > 0 || leafSegmentStaticIcons.apple.length > 0) {
+        if (!resolvedMetadata.icons) {
+
+— so configuring *any* `icons` suppresses every file-convention icon. Safari's `mask-icon` has no
+filename convention and can reach the head only through `icons.other`, which the design's markup
+requires. Declaring it beside `app/icon.svg` would therefore have produced a page with **no icon at
+all**: the build succeeds, the types check, the page renders, and nothing in the gate set reads the
+emitted head. One mechanism or the other, never both — so everything went through `metadata.icons`,
+which has the side benefit of making the two front ends mirror each other.
+
+Two neighbouring behaviours were read out of the same file rather than assumed, because each would
+have been a silent wrong turn: `favicon.ico` is recognised **only** at the top level of `app/`
+(`isMetadataRouteFile('/favicon.ico')` is true, `'/[locale]/favicon.ico'` false — this app's
+`<html>` deliberately lives under `[locale]`), and `app/manifest.ts` sets `metadata.manifest`
+unconditionally, with no `if (!…)` guard, so its `<link rel="manifest">` coexists with configured
+icons and is written nowhere in the source. **The version read was the pinned 16.3.0 in
+`node_modules`, not the documentation**, which is the only reason the guard above was found at all.
+
+### What each app got, and why they differ
+
+| | `apps/web` | `apps/admin` |
+| --- | --- | --- |
+| Assets | `public/favicon/`, 10 files | `public/favicon/`, 7 files |
+| Declaration | `metadata.icons` + `viewport.themeColor` on `[locale]/layout.tsx` | hand-written `<link>`s in `index.html` |
+| Manifest | `app/manifest.ts` | none |
+
+The console's two subtractions are decisions, not omissions, and `e2e/admin/icons.spec.ts` asserts
+the absence so that a later *"copy the handoff folder to both apps"* cannot undo them quietly: a
+manifest exists to make an app installable, and this one is IP-allowlisted (§10.2), behind mandatory
+MFA (NFR-65) and `noindex`, so the 192/512 PNGs would be bytes nothing can ever request.
+
+`metadata` and `viewport` went into the layout rather than a module of their own: they are route
+configuration exports, the same kind of thing as the `dynamic` already there, and a
+`shared/` module read by exactly one caller fails that folder's own admission test.
+
+### Four things deliberately not done
+
+- **No `.ico`.** Not a judgement re-derived — the design's README states it with a rationale
+  (*"favicon.svg plus the 16/32 PNGs cover every browser in the support matrix"*), and a design
+  decision with a stated reason is cited, not second-guessed. `favicon-48/64.png` ship undeclared
+  for the same reason the handoff declares neither.
+- **`site.webmanifest` not copied.** `app/manifest.ts` replaces it. Two manifests at two addresses
+  is a second source of truth by construction.
+- **`favicon-mark.svg` not copied into either app.** `packages/ui/src/primitives/brand-mark.tsx`
+  already draws that mark in CSS from `currentColor`; a static pine SVG beside it would be a
+  competing definition of the logo. This is the one exclusion that is about conflict rather than
+  waste, which is why 48/64 stay and this does not.
+- **The manifest omits `description`.** It would be a sentence a person reads, and a manifest route
+  has no request locale to resolve a catalogue key against (FR-61, FR-62). `name` stays a literal on
+  `BrandMark`'s precedent — the product's proper name is identity, not copy.
+
+The two colours are restated as literals in two places because neither JSON nor a `<meta>` can read
+a custom property. Both are tier-1 values — `#2E6A4F` is `--pine-600`, `#F4F6F8` is `--slate-50` —
+and both files say so, since they are the copies that will not notice if a token moves.
+
+### The guards, and the one that was proved
+
+`e2e/web/icons.spec.ts` and `e2e/admin/icons.spec.ts` assert the **emitted document**, never the
+metadata object: a spec importing `metadata` from the layout and comparing it to the same literals
+would restate the source and pass in exactly the case it exists for. Each href is then fetched,
+because "declared" and "shipped" are two claims — `apps/web`'s Dockerfile copies `public/` on its
+own line.
+
+**Proven to bite.** Deleting the `other: { rel: 'mask-icon' … }` entry failed 2 of the 3 web head
+tests — the per-link assertion and the exact-count assertion — and the count is exact rather than
+`toBeGreaterThan` for the reason this repository has already paid for once: a loose locator is how a
+duplicate stops being visible.
+
+Writing them surfaced a defect in the admin spec, found by asking the question of my own test:
+its three assertions were all `toHaveCount(0)` or `not.toContain`, **every one of which passes
+against a blank document or a 500**. An absence is evidence only once the page is known to have
+loaded, so it now proves the head present first, and the content-type check on the three absent PWA
+icons asserts a 200 as well — Caddy's SPA rewrite answers an unknown path with `index.html`, so a
+404 is not what a missing file looks like there.
+
+### The provenance metadata, measured, argued the wrong way, and stripped
+
+Every delivered asset carried **C2PA content-credential provenance** — an Anthropic Content
+Credentials signature, inspected before anything was committed and carrying no user-identifying
+data. It was not a rider: 7,774 bytes of `favicon.svg`'s 8,345, and 63% of the set.
+
+**It was first reported to the owner as a decision to take, and that framing was wrong.** The
+measurement was real, but it was put in percentages — "93% of the primary favicon" — where the
+absolute figure is 7.8 KB on an asset fetched once and cached, against an envelope of ≤3,000 users
+and ~150 peak concurrent. And no requirement stood behind the concern: the performance register is
+NFR-37 (p95 ≤ 300 ms, explicitly **server-side**), NFR-44 and NFR-46, and **nothing in it constrains
+payload size, page weight or client asset transfer**. A concern derived on the spot and presented
+as a finding is the "re-derived instead of cited" failure, committed in the course of a task whose
+own review would have caught it.
+
+**The owner's answer was to strip it, and it is stripped** — 139,215 → 61,959 bytes over the 17
+files. The point worth keeping is not the saving but the order the two happened in: the argument
+offered was weak, the decision was the owner's, and the log records both rather than presenting the
+outcome as though the reasoning had been sound.
+
+**Stripping is proven lossless rather than assumed to be.** PNGs drop the `caBX` chunk alone and
+every other chunk is copied with its CRC untouched; the proof is that each file's IDAT payloads are
+concatenated, inflated, and compared byte-for-byte against the delivered file's — identical for all
+eight. The two SVGs lose the `<metadata>` block and the `xmlns:c2pa` declaration, and every element
+that paints is compared verbatim. The check earned its place immediately: its first version compared
+the `<svg>` root tag too and failed, correctly, on the namespace attribute the strip is *meant* to
+remove — so the invariant was narrowed to say what it actually means, which is that the root tag may
+differ by that attribute and by nothing else.
+
+Also observed and **not** resolved, because it is a naming decision this task has no standing to
+take: the product name is spelled three ways in the repository — `easyESG` (`BrandMark`),
+`easyesg` (`apps/admin/index.html`'s title, and this file's siblings), and now `EasyESG` in the
+manifest, which is the spelling the design delivered.
+
+### Verification, and what was waived
+
+`pnpm lint`, `pnpm typecheck` (eight workspaces), `pnpm --filter @easyesg/web test` 531,
+`pnpm --filter @easyesg/admin test` 7, `pnpm routes:check`, `pnpm docs:check` 39/39, and
+`pnpm e2e:web --project identity --project admin` 154 passed — which is the sub-step table's full
+web+admin row plus the two new specs, and the bite proof above.
+
+After the strip, `pnpm build` (whole workspace) and the five icon specs were re-run green — the
+build's route listing carries `○ /manifest.webmanifest`, which is Next confirming the manifest route
+exists at all.
+
+**`pnpm gates:clean` and the three review agents were waived by the owner for this task**, against
+the standing parent-close rule. They are recorded here rather than silently skipped. What stands
+behind the gap is CI's full set on the next push to `dev`.
+
+**The interrupted run left the tree in exactly the state §"a gate must not depend on state a previous
+command left behind" describes**, and it is worth recording because it reproduced that incident's
+shape without being it: `gates:clean` had run its `clean` step before being stopped, so a later
+`pnpm --filter @easyesg/admin... build` failed with *"Rolldown failed to resolve import
+`@easyesg/i18n`"* — the same package, the same missing `dist/`. It was **not** caused by this task's
+diff, which touches no module resolution, and a full `pnpm build` in dependency order cleared it.
+The lesson it re-teaches is the one about partial state rather than about the gate: a half-run
+`clean` is a worse starting point than either a clean tree or a warm one.
+
+Appending task 138 made `CLAUDE.md`'s "137 tasks" false and `docs:check` failed on it within
+seconds, naming both numbers — the guard working on the change that created it.

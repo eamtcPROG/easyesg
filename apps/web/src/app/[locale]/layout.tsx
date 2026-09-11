@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -49,6 +50,59 @@ export const dynamic = 'force-dynamic';
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
+
+/**
+ * The tab icon, the home-screen icon and the pinned-tab glyph, from the set the design delivered
+ * on 11 Sep 2026 — `favicon/README.md` carries the geometry it was cut to: white on pine, the arc
+ * locked at 266° from twelve o'clock, the mark at 60% of the tile, the corner radius at 25% of the
+ * tile's width.
+ *
+ * **Declared here rather than as `app/icon.svg` and `app/apple-icon.png`, and the choice is forced
+ * rather than stylistic.** Next 16.3.0 folds the filename convention into the head only when no
+ * `icons` was configured at all — `resolve-metadata.js` guards that merge with
+ * `if (!resolvedMetadata.icons)`. Safari's `mask-icon` has no filename convention and can reach the
+ * head only through `icons.other`, so declaring it beside file-convention icons would have dropped
+ * every one of them: no tab icon anywhere, no warning, and nothing a typecheck or a build could
+ * see. It is one mechanism or the other, never both, and the documentation's "file-based metadata
+ * has higher priority" describes the opposite of what the resolver does.
+ *
+ * `e2e/web/icons.spec.ts` asserts the emitted tags and fetches each href, so a link lost to that
+ * guard fails a run rather than shipping.
+ *
+ * A page's `generateMetadata` returns `{ title }` alone (`src/i18n/page.ts`) and metadata merges
+ * field by field, so every screen keeps this icon set.
+ */
+export const metadata: Metadata = {
+  icons: {
+    // The handoff's own head markup, in its order: the SVG for anything that takes one, then the
+    // two raster fallbacks for anything that does not. 16 and 32 are a *different drawing* from
+    // the SVG — the README calls them the tightened variant, a 9-unit band with the centre dot
+    // closed up, because at those sizes the dot fills in and reads as a blot.
+    //
+    // `favicon-48.png` and `favicon-64.png` ship in `public/favicon/` undeclared, exactly as the
+    // handoff declares them: a browser that understands the SVG needs no raster at those sizes,
+    // and one that does not is asking for 16 or 32.
+    icon: [
+      { url: '/favicon/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon/favicon-32.png', sizes: '32x32' },
+      { url: '/favicon/favicon-16.png', sizes: '16x16' },
+    ],
+    apple: '/favicon/apple-touch-icon.png',
+    other: { rel: 'mask-icon', url: '/favicon/safari-pinned-tab.svg', color: '#2E6A4F' },
+  },
+};
+
+/**
+ * `theme_color`'s head half, colouring the browser chrome on Android and the title bar of an
+ * installed window.
+ *
+ * **It belongs to `viewport` and not to `metadata`.** Next moved it, and a `themeColor` left on
+ * `metadata` is not an error — it warns at build and emits nothing, which is the quiet half of
+ * the same failure mode as the icons above. The value is `--pine-600`, restated because a
+ * `<meta>` tag cannot read a custom property; `app/manifest.ts` holds the manifest's copy and
+ * the two must move together.
+ */
+export const viewport: Viewport = { themeColor: '#2E6A4F' };
 
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;

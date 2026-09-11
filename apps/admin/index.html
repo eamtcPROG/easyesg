@@ -9,6 +9,28 @@
     -->
     <meta name="robots" content="noindex, nofollow" />
     <!--
+      The favicon set, from the design handoff of 11 Sep 2026. Vite has no metadata API — `public/`
+      is copied to `dist/` verbatim and every tag is written by hand here, which is the whole of the
+      difference from `apps/web`, where the same assets are declared through `metadata.icons` on the
+      root layout. The hrefs are root-absolute because that is how Vite serves `public/` in dev and
+      in the built bundle alike.
+
+      **No `<link rel="manifest">`, and no PWA icons in `public/favicon/`.** A manifest exists to make
+      an app installable to a home screen, and this one is reachable only from an IP allowlist
+      (§10.2) behind mandatory MFA (NFR-65) and is `noindex` above — so the three 192/512 PNGs the
+      handoff ships for that purpose would be bytes in the bundle that nothing can ever request.
+
+      `color` on the mask icon is `--pine-600`, the single accent. Safari draws the pinned-tab glyph
+      from the SVG's silhouette and takes the colour from this attribute, so it cannot be read from
+      the token the way every other surface reads it.
+    -->
+    <link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon/favicon-32.png" sizes="32x32" />
+    <link rel="icon" href="/favicon/favicon-16.png" sizes="16x16" />
+    <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/favicon/safari-pinned-tab.svg" color="#2E6A4F" />
+    <meta name="theme-color" content="#2E6A4F" />
+    <!--
       A product name, not copy — the one string here that is not a message key. Everything a
       person reads inside the app resolves through the catalogue (FR-61, FR-62); a sentence in
       this file would need a release to change, which is what NFR-85 forbids.
