@@ -8,7 +8,7 @@ import { useState, useTransition } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import type { Organization, UpdateOrganizationRequest } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
-import { updateOrganizationProfileAction } from '../../actions';
+import { updateOrganizationProfileAction } from '../actions';
 import styles from './organization-profile.module.css';
 
 /**

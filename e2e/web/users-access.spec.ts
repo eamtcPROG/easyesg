@@ -17,7 +17,7 @@ import {
  * What is seeded is only what no route can create: the organization and its first administrator
  * (task 29 founds an organization; until then a membership has no UI).
  *
- * The filter, sort and page arithmetic are a unit spec — `features/organization/access.spec.ts`,
+ * The filter, sort and page arithmetic are a unit spec — `features/organization/access/access.spec.ts`,
  * arm by arm, because the module is pure. What this proves is the wiring those arms cannot: that
  * the address carries the view, that the actions reach the API, and that the refusals a person can
  * actually provoke reach the screen as sentences rather than as an error page.

@@ -8,9 +8,9 @@ import { useForm } from 'react-hook-form';
 import type { InvitedRole } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { failureNotice, successNotice } from '@/lib/notice';
-import { inviteMemberAction } from '../../actions';
-import { INVITABLE_ROLES } from '../../access';
-import { NOTICE_REGION } from '../../access-state';
+import { inviteMemberAction } from '../actions';
+import { INVITABLE_ROLES } from '../access';
+import { NOTICE_REGION } from '../access-state';
 import { useAccess } from './access-context';
 import styles from './access.module.css';
 

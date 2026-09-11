@@ -270,7 +270,7 @@ src/
 ├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
 ├─ features/       14 domains, mirroring apps/api/src/modules names
-│                 └─ components/ splits per SCREEN once a domain serves more than one — see below
+│                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter)
 ├─ server/         server-only: session, api-client, data/
 ├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), polling
@@ -363,13 +363,35 @@ conditional render, which is how it ends up half-suppressed on one screen.
   Server Action needs to share — a constant, a type guard, a plain helper — belongs beside it, not
   in it.
 
-- **A `features/*/components/` folder splits per screen, not per kind** (11 Sep 2026, task 122).
-  `organization/` was the first domain to serve four screens — S-04, S-05, S-15, S-16 — and 21 flat
-  files gave no way to tell which belonged together. They are `home/`, `access/`, `profile/` and
-  `creation/` now, and the axis was **verified rather than chosen**: no file was reached by two
-  groups, so the folders could not introduce a coupling that was not already there. Splitting by
-  kind (`forms/`, `lists/`, `context/`) was the alternative and is the wrong one — it separates the
-  files that change together, which is the only thing a folder can usefully keep.
+- **A domain serving several screens splits per screen, all the way down** (11 Sep 2026, tasks 122
+  and 123). `organization/` was the first to serve four — S-04, S-05, S-15, S-16 — and it had 21 flat
+  component files plus 10 loose rule files at its root, with nothing saying which belonged together.
+  It is four folders now, each holding **its own rules, its own actions and its own `components/`**:
+
+  ```
+  organization/
+  ├─ access/     S-16   access.ts · access-state.ts · action-results.ts · actions.ts · components/
+  ├─ home/       S-05   home.ts · overview.ts · components/
+  ├─ profile/    S-15   actions.ts · components/
+  └─ creation/   S-04   actions.ts · components/
+  ```
+
+  **The axis was verified rather than chosen**: no file was reached by two screens, so the folders
+  could not introduce a coupling that was not already there. Splitting by kind (`forms/`, `lists/`,
+  `context/`) was the alternative and is the wrong one — it separates the files that change together,
+  which is the only thing a folder can usefully keep.
+
+  **A domain serving ONE screen stays flat** — `periods/`, `reports/`, `wizard/`, `entities/` and
+  `credentials/` are correct as they are, and so is the scaffolded `components/ hooks/ queries/
+  schema/ types/` set in a domain that has not been built yet. What this rule answers is the shape a
+  domain grows into, not a shape to impose on arrival. `identity/` is the outstanding case: 13 root
+  files across S-01, S-02, S-03 and the provider flow, and the same treatment when someone is in it.
+
+  **`index.ts` and empty scaffold folders go when the domain is built.** `organization/index.ts` was
+  `export {}`, imported nowhere, and its docblock still read *"Not built. Folders are `components/
+  hooks/ schema/ queries/ types/`"* — false on both counts, naming only two of the four screens it
+  serves. `hooks/`, `queries/` and `schema/` held nothing but `.gitkeep`. A scaffold that outlives
+  the scaffolding is a file that lies to the next reader.
 
   **File names keep their prefix.** `access/access-list.tsx` stutters and stays: this app relies on
   component file names that survive out of context — `entities-list.tsx`, `reports-list.tsx`,

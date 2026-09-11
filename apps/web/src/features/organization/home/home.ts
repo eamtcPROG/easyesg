@@ -2,7 +2,7 @@ import { MEMBERSHIP_GRANT_KIND, type MembershipGrantKind } from '@easyesg/contra
 
 /**
  * S-05's own rules (UC-16, UC-67; FR-12, FR-23) — pure, so both are unit specs rather than browser
- * journeys. The same split `features/organization/access.ts` makes.
+ * journeys. The same split `../access/access.ts` makes.
  */
 
 /**

@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Panel, Spinner } from '@easyesg/ui';
-import styles from '@/features/organization/components/access/access.module.css';
+import styles from '@/features/organization/access/components/access.module.css';
 
 /**
  * S-16's **loading — initial** (§8.1, UX-90).

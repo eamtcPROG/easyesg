@@ -1,13 +1,13 @@
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
-import { ArrivalNotice } from '@/features/organization/components/home/arrival-notice';
-import { MembershipsSection } from '@/features/organization/components/home/memberships-section';
-import { OrganizationHeading } from '@/features/organization/components/home/organization-heading';
+import { ArrivalNotice } from '@/features/organization/home/components/arrival-notice';
+import { MembershipsSection } from '@/features/organization/home/components/memberships-section';
+import { OrganizationHeading } from '@/features/organization/home/components/organization-heading';
 import {
   OverviewLoading,
   OverviewSection,
-} from '@/features/organization/components/home/overview-section';
-import styles from '@/features/organization/components/home/home.module.css';
+} from '@/features/organization/home/components/overview-section';
+import styles from '@/features/organization/home/components/home.module.css';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -27,9 +27,10 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * components in their own folder, and Suspense for the same parallel fetching*). It was 320 lines
  * and the largest route file in the app — two screen-sized components and every region's copy,
  * against `apps/web/CLAUDE.md`'s *"`app/` — routes only, thin. No logic, no data access"*. The four
- * regions now sit in `features/organization/components/home/` beside `filing-list.tsx`, whose own
- * docblock had already argued the move for itself. **The folder is per screen** (task 122): this
- * feature serves four of them, and every file under `home/` is reached by this route and no other.
+ * regions now sit in `features/organization/home/components/` beside `filing-list.tsx`, whose own
+ * docblock had already argued the move for itself. **The feature is per screen** (tasks 122, 123): it serves
+ * four of them, and everything under `home/` — this screen's rules as well as its components — is
+ * reached by this route and no other.
  *
  * **Parallelism survives the split because composition is what provides it, not `Promise.all`.**
  * The four regions were one `await Promise.all([...])` in this file; they are now sibling async

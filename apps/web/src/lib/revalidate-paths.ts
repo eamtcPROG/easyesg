@@ -20,6 +20,18 @@
  * leave one of them behind.
  */
 
+/**
+ * The authenticated shell, whose global tier names the active organization on every screen below it
+ * (task 30.1). Revalidated as a `layout` rather than a `page`, so every segment under it is
+ * refetched rather than only the one the caller happens to be on.
+ *
+ * **Moved here 11 Sep 2026 (task 123)** when `features/organization/actions.ts` split per screen:
+ * founding an organization and editing its profile are two screens now, they both go stale in the
+ * same band, and a `'use server'` module may export only async functions — which is the whole
+ * reason this file exists.
+ */
+export const APP_LAYOUT_PATH = '/[locale]/(app)';
+
 /** S-06's index. Creating a report changes what it shows. */
 export const REPORTS_PATH = '/[locale]/(app)/(workspace)/reports';
 

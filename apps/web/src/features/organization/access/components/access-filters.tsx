@@ -4,7 +4,7 @@ import { Select } from '@easyesg/ui';
 import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { useAccess } from './access-context';
-import { ACCESS_FILTER_ANY, ACCESS_STANDING, type AccessView } from '../../access';
+import { ACCESS_FILTER_ANY, ACCESS_STANDING, type AccessView } from '../access';
 import styles from './access.module.css';
 
 /**

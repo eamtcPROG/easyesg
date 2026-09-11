@@ -15811,3 +15811,72 @@ and is accurate.
 `apps/web` **364 tests**, `pnpm typecheck`, `pnpm lint` uncached, `pnpm boundaries` (1,018 modules),
 `pnpm docs:check` **28 claims**. A pure move with no behaviour change, so the close is the `apps/web`
 row plus the browser suite.
+
+## Task 123 — the feature root, and a scaffold that had outlived its own docblock · 2026-09-11
+
+*"Improve the file/folder organisation of `features/organization` — the files have no folder, it is
+not clear."*
+
+Task 122 had grouped the components and stopped at the folder it was asked about. The root still
+held ten loose files — `access.ts`, `access-state.ts`, `home.ts`, `overview.ts`, their four specs,
+`actions.ts` and `index.ts` — beside `hooks/`, `queries/` and `schema/` containing nothing but
+`.gitkeep`.
+
+### The shape was the owner's decision, and it was worth asking for
+
+Three answers were real, and they differ by more than effort: carry the per-screen split all the way
+down; add one folder for the loose rules and leave `components/` as committed; or prune the dead
+scaffolding and stay flat, which is what **every other built feature actually looks like** —
+`credentials/`, `periods/`, `reports/` and `wizard/` each pruned their scaffolding and kept a flat
+root with just `components/`. That last one is the answer most consistent with the repository today
+and the one that does not address the complaint, which is why it was put to the owner rather than
+decided. The answer was the per-screen tree.
+
+So each screen folder holds **its own rules, its own actions and its own `components/`** — and the
+rule recorded in `apps/web/CLAUDE.md` carries both halves, because only stating the first would read
+as an instruction to restructure five features that are correct as they are:
+
+> A domain serving several screens splits per screen. **A domain serving one stays flat.**
+
+`identity/` is named there as the outstanding case — 13 root files across S-01, S-02, S-03 and the
+provider flow — rather than done in passing here.
+
+### `actions.ts` split along a seam it already had
+
+It looked shared and was not: five access writes, one founding, one profile edit. What needed care
+was the three module-level constants, and each went somewhere different for a stated reason.
+`ACCESS_PATH` stays private to the one file that uses it — the root file's clause that a vocabulary
+internal to a single file is declared in that file, unexported. `revalidateAccess` goes with it.
+**`APP_LAYOUT_PATH` moves to `lib/revalidate-paths.ts`**, which exists for precisely this case and
+records why in its own docblock: founding an organization and editing its profile are two screens
+now, both stale the same band, and a `'use server'` module may export only async functions — so a
+shared constant cannot simply be exported from wherever it was first written. Task 32.3 paid for
+that lesson with a build failure that `typecheck`, `lint` and 286 unit tests all passed.
+
+`AccessActionResult` moved into `access/` on the strength of its own docblock: *"what every S-16
+write returns to the screen"*.
+
+### The scaffold was not merely empty, it was wrong
+
+`index.ts` was `export {}`, imported nowhere in the app, and its docblock read *"Not built. Folders
+are `components/ hooks/ schema/ queries/ types/`"* — false on both counts, and naming S-15 and S-16
+while the feature serves S-04 and S-05 as well. An empty folder is harmless; a scaffold file that
+still describes the feature as unbuilt is a file that lies to the next reader, and it survived four
+screens shipping because nothing imports it and nothing counts it.
+
+### Seven docblocks moved without their paths
+
+The codemod habit this repository records is *"after a codemod, read the diff for comment lines"*,
+and it was written about a regex. A `git mv` needs it just as much: `home.ts` still pointed at
+`features/organization/access.ts`, `creation/actions.ts` explained itself as differing from *"the
+four above"* that are now a sibling file, `entities.ts` and `server/data/organization-access.ts`
+cited the old path from other features entirely, and an e2e docblock named the old spec path. None of
+them is reachable by `typecheck` or `lint`; all seven were corrected.
+
+### Verified
+
+`apps/web` **364 tests**, `pnpm typecheck`, `pnpm lint` uncached — which caught the one thing the
+mechanical split got wrong, an `ApiOutcome` import left behind in `access/actions.ts` once the five
+writes all returned the aliased type — `pnpm boundaries` (1,019 modules), `pnpm docs:check` 28
+claims, and `pnpm e2e:web --project identity --project expansion` at **168 passed**. A pure move with
+no behaviour change.
