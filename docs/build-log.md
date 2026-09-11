@@ -17075,3 +17075,203 @@ over the one `.mjs` this task changed; `git status` read against what was writte
 reaches a test, a build or a browser, so nothing else was run. The review agents were not run: the
 diff is documentation and one gate script, and `convention-review`'s own reading list is what this
 task rewrote.
+
+## Task 134 — the tenant app against the two skills, in five sub-steps · 2026-09-11
+
+*"Now bring the refactor web to correspond to standards."* Both skills, loaded and read against the
+tree rather than recalled — which was the first thing this task did, the day after writing them.
+
+### Four decisions before a file moved, and what the measurement had already overturned
+
+The row filed by task 132 was written from a count of mixed directories; reading the files behind
+the count changed two of its deliverables before work began, and the owner took four decisions in
+one batch:
+
+- **`identity/` splits per journey, not per `S-nn`.** Its one 293-line `actions.ts` held ten
+  Server Actions for six journeys — register, sign-in with its factor step, verify, reset,
+  invitation, and sign-out, whose readers are the chrome — and `post-sign-in.ts` was read by two
+  `server/` seams and a page. The per-screen axis the skill says to *verify* was not clean the way
+  `organization/`'s had been; the axis that keeps together what changes together is the journey.
+- **The unbuilt scaffolds keep their `index.ts`.** The row said delete them;
+  `tools/prove-boundaries.sh` proves `web-not-to-commerce` with a fixture that imports
+  `'../commerce'`, which resolves to that file. Deleting the `.gitkeep` folders alone satisfies
+  *files or folders*, and the docblocks carrying each domain's FR range stay where a reader looks.
+- **`one-idea-per-file` reaches every file defining two or more components**, plus the row's two:
+  the two route files that held components (a CRITICAL rule in the skill, and not on the row at
+  all), the two credentials sections and their bodies, the glyphs, S-16's row cells, the address
+  states.
+- **The parent closes per the rule** — `gates:clean` and the three review agents — rather than on
+  the sub-step runs alone.
+
+### The mover, and what a move's risk is
+
+Every sub-step was a set of file moves plus every specifier that reached the old paths, so one
+resolver did all five: it snapshots each import, `export … from`, `import()`, `vi.mock()` and
+`require()` in `src/` and `e2e/web/`, resolves it (`@/` and relative, `.ts`/`.tsx`/`.css`/index)
+to a file, maps the file through the move table, and rewrites the specifier — absolute kept
+absolute, relative recomputed from the importer's *new* location — before `git mv`. Five runs:
+29, 30, 23, 2 and 4 files; 92, 82, 31, 8 and 14 specifiers, in 63, 34, 13, 3 and 6 files. It is
+what made `move-grep-the-mocks`'s first kind of path — the `vi.mock` string — a non-event here,
+where task 127 met it as a failing suite.
+
+**The splits were cut, not retyped.** `step-fields.tsx` (1,016 lines, five components), the two
+route files, the two credentials sections, the glyphs, the row cells and the address states were
+chunked at their column-0 declarations — a docblock staying attached to the declaration under it —
+and reassembled under hand-written import headers; typecheck and lint were the check on the
+headers, and both were green on the first run for every file but one (`factor-form.tsx`, whose
+import used double quotes). The chunker needed three corrections before it cut cleanly — a
+declaration under a docblock is one chunk, a single-line docblock ends in `*/` too, and a constant
+declared beneath another's docblock is its own chunk — each a wrong assumption about the file's
+shape rather than about the code.
+
+### One sub-step at a time
+
+- **134.1** — `server/` foldered by what its own docblocks say each file is: `session/` (the tier,
+  its codec, the entry gate and its pair `post-sign-in` — *"there are two of these"* — and the
+  cookie spec), `api/`, `sealed/` (three sealed httpOnly cookies each holding an in-flight step),
+  `data/` gaining the cached memberships read, `messages/`. The four single-screen roots hold
+  `actions/ · components/ · tools/` directly; `entities/` and the seven scaffolds lose 40
+  `.gitkeep` folders and one empty barrel.
+- **134.2** — `identity/` per journey; the ten actions and their result types cut by function into
+  six modules and their readers repointed; `AccountSummary` and its projection to `shared/tools/`
+  on the two-readers test; the provider flow's Route-Handler logic under `social/handlers/`, a
+  fourth kind for the one folder whose wire half is neither an action nor a query.
+- **134.3** — the wizard's nine root files to `tools/`; `components/` mirrors what the route
+  renders (`providers/`, `shell/`, `banner/`, `fields/`) and `fields/` has the region anatomy;
+  `markerFor` — a pure rule over origin, carry-forward and state — to `tools/field-marker.ts` with
+  its first spec, beside the tone table it reads. The section that remains is 470 lines and one
+  component.
+- **134.4a** — S-03's route and report creation's route are shells; each screen's read moved into a
+  section, the arms into `states/`, the address parse into `tools/report-creation.ts` with a spec;
+  seven two-component files are one component each; every namespace a split would have multiplied
+  is declared once.
+- **134.4b** — S-13's form on S-15's precedent: `form/ · sections/ · controls/ · shared/ ·
+  styles/`, the conversions in `tools/entity-fields.ts`, the four `useState`s in
+  `tools/entity-record-state.ts`, both with specs; the three hand-written callouts were the fourth
+  copy of the outcome-to-notice rule and are one caller. **A success clears the moment anything
+  differs from what was saved** — the owner's S-15 decision, applied where it holds, and named in
+  the docblock as that rather than as this task's.
+- **134.5** — the invariant rooted at `src/`, in `src/test/` beside the setup file, with the two
+  exemptions listed one path each, and proven to bite at the new root.
+
+### What was declined, and what this task did not reach
+
+- **`reports/` serves two routes and was not split per screen.** The creation surface has no
+  `S-nn` (`design_spec.md` OQ-21) and is S-06's exit; the folder is treated as one screen's, and
+  its two new components sit flat beside the list's.
+- **The `'use client'` count moved 59 → 70 and the `@easyesg/ui/forms` import-site count 20 → 23**,
+  both guarded and both moved by the splits rather than by new behaviour; the sentences carry the
+  reason.
+- **The three `Task 27.x adds` paragraphs** in `apps/api/CLAUDE.md` and the second cut of the two
+  app files' Current-state sections (task 136's note) remain as they were — outside this task.
+
+### Verified
+
+Per sub-step: web typecheck, lint and the unit suite after each — 408 → 412 (`markerFor`) → 415
+(`creationChoice`) → 427 (`toFields`, `toRequest`, the entity reducer) — and `e2e:web`
+identity+expansion after 134.2, 134.3 and 134.4, **168 passed** each time. **134.1's browser run
+was skipped and this says so**: a pure move's risks are three kinds of path, and all three were
+checked — the specifiers by `typecheck`, the one `vi.mock` string by the mover itself, and no CSS
+class was renamed — with 134.2's run one sub-step later over the same tree. 134.5's spec was proven to bite by a stray file in `server/` (*"server holds files [stray.ts] beside
+folders [api, data, messages, sealed, session]"*) and proven not to enter `app/` by a probe
+directory under a route; 128 cases over 126 directories, then 124 after `git mv`'s emptied
+directories were removed — untracked, so a fresh clone would have counted three fewer.
+
+### Parent close: `gates:clean` twice, red for two different reasons, both findings
+
+**Run one went red at `boundaries:prove`: `client-not-to-server did NOT reject its violation — the
+rule matches nothing`.** The fixture in `tools/prove-boundaries.sh` imports `'../server/session'`,
+which 134.1 had made a directory with no index; the import stopped resolving, dependency-cruiser
+had nothing to match, and a rule this repository counts on was inert. No sub-step run includes
+`boundaries:prove`, which is precisely the gap the closing rule says the parent close covers — and
+it did. Fixed by repointing the fixture (`fb05201`), re-proven, and recorded as the fourth kind of
+path a move has to grep, in `move-grep-the-mocks` and the web file's trap: a specifier
+(`typecheck`), a `vi.mock` string (the run), a CSS class (nothing), a fixture import in a shell
+script (nothing a sub-step runs).
+
+**Run two went red at `e2e:web`, the last gate, on one case of 171**: `autosave.spec.ts`'s
+*offline changes queue* timed out at 30 s waiting for the turnover field, at case 28 under the
+full set. Everything before it was green on the clean tree — `docs:check` 39, `eslint:prove`,
+`typecheck`, `image:check`, api **721** unit and **880** e2e, web **516** unit, `boundaries` over
+1,102 modules with all 23 rules proven, `build`, `openapi:check`, `facade:check`, `routes:check`,
+`migrations:check`, the worker's 2. The case had passed in all three sub-step runs of the same
+project; re-run standalone against the very bundle the gate run built it passed twice, in 13.5 s
+and 12.5 s; and `pnpm e2e:web` whole — all three projects — then passed **171 of 171** in 3.9
+minutes. That is task 85's recorded shape, a timeout under the full run rather than a regression,
+and it is recorded as observed rather than diagnosed: the failing step is `context.setOffline(true)`
+followed immediately by a `fill`, which under load can precede the step's hydration, and nothing
+here changed the wizard's client bundle deliberately.
+
+### The three reviews, on `opus`, and what they found
+
+**`convention-review` — ten findings, all applied.** The largest was a miss of my own: **six more
+route files** held a second component beside their read (S-06, S-13's index, S-14's index, S-15,
+S-16, the wizard's step) — my two-component grep had covered `features/` and never `app/`, so the
+sweep the owner scoped stopped at the two I had happened to read. They are shells now, each over a
+section in its feature and each with a `loading.tsx` where the whole body waits on the read, on
+S-16's precedent; report creation's route got the same boundary the review found it lacking. Then:
+seven scaffold barrels still described the folders 134.1 deleted; three pure selectors — which
+questions a reporter is asked — had stayed inside `StepFields` while `markerFor` left, and are
+`tools/step-applicability.ts` with a spec; `EntityNotice` was a byte-for-byte copy of
+`ProfileNotice`, and one `RecordNotice` in `src/shared/` reads for both; the credentials split had
+multiplied two namespace literals where the other four splits extracted theirs; four files moved
+into `identity/shared/` stated no admission test; the `src/` root was exempted as a path where the
+rule exempts one file, so the gate now asserts the root holds exactly `proxy.ts` and its spec; five
+docblock sentences had travelled with the wrong half of a cut; and the activity picker sat in a
+leaf with one reader.
+
+**`spec-review` — six findings and four inherited citations, all applied.** The success-clears-
+when-dirty rule now governed two screens with no sentence in `design_spec.md` behind it — it is
+§8.1's Success row now, with the owner's authority and date, and both docblocks cite it rather than
+S-15's precedent; and S-14's form had the same shape and had been moved by this task without the
+question being asked, so its reducer carries a `kind`, its notice is derived through
+`visibleNotice`, and its spec asserts the asymmetry both ways. Four paths in `architecture.md`
+§12.5.6 named files this task moved; the scaffold-barrel correction lived only in a commit body
+while two places still stated the old premise — the skill rule and the web file now carry the
+fixture clause, and task 135's row no longer proposes deleting fifteen barrels four of which are
+fixture targets; `one-idea-per-file`'s scope is written into `file-one-idea.md`; the root table's
+"largest file" cell measures again (470 lines); the sites section cited FR-18 for FR-17's fields.
+The four carried citations — an archive as a fourth UX-13 cause, `GET /periods`' scope, UX-108 for
+a password check, §11.5 for a toast the inventory enumerates and `packages/ui` lacks — are
+corrected in the files that restated them.
+
+**`gate-integrity-review` — four inert clauses, proven by mutation, all given a failing state.**
+`codesChanged`'s content comparison passed a length-only implementation (a swapped activity code
+would have left Save disabled and a stale success standing) — one case; *drops the id of a new
+row* passed an unconditional `id: site.id`, because `toEqual` forgives `undefined` — `toStrictEqual`;
+`markerFor`'s tone assertion read the same table the rule reads — the literal; origin-before-
+carry-forward was stated as a decision and not pinned — one case. The review also proved the new
+folder gate bites deep and stops exactly at `app/`, and named the floor of eighty as slack by
+forty — so every feature folder on disk must now be among what was walked. Twenty-one mutations,
+every one reverted; the review states which claims it reasoned rather than proved.
+
+**Recorded from the reviews' notes rather than their findings.** There are two behaviour changes,
+not one: `served` replacing the `activity` prop as `codesChanged`'s baseline means the list stops
+counting as dirty the moment a save is acknowledged, and a discard restores the last *confirmed*
+list rather than the one the page opened with. `reports/` serves two routes and one `S-nn` and was
+not split per screen. Seven route files still read in one component — a recorded deferral, task
+137, since the owner's scope was files declaring two components. And the sub-steps have rows now.
+
+### 134.6 — the findings, as one sub-step
+
+Twenty findings applied in one pass: the six shells and their sections and loading states, with six
+*loading* strings authored into the three catalogues; the selectors and the two new specs
+(`step-applicability`, `step-words`); `RecordNotice`; the namespaces; the admission sentences; the
+cross-references; the gate strengthenings; §8.1 and S-14; the document paths. Verified: web
+typecheck, lint, **531** unit tests over 45 files, `boundaries:prove` 23 of 23, `docs:check` 39
+of 39, and `e2e:web` whole — **170 of 171 on its first run, and the one was real.** `wizard.spec.ts`'s stale-deep-link
+case asserts a 404 for a module the pinned taxonomy does not carry, and the route answered 200: the
+`notFound()` had moved into the section — correct — and the route had gained a `loading.tsx` on
+S-16's precedent, which flushes the shell before the section has read anything. **A route that can
+404 on its data cannot stream a loading shell.** The file went, with its string in the three
+catalogues; the constraint is recorded on the route and in the web file's `loading.tsx` trap; the
+case passed again standalone against the rebuilt bundle (`8ef79be`). Nothing but a browser
+assertion on the status code could have seen it, and one did. — which is the reason the parent close runs the suite whole.
+
+**The parent close, third `gates:clean`, exit 0.** `lint`, `eslint:prove`, `typecheck`,
+`image:check`, `docs:check` 39, `test` — api **721**, web **531** over 45 files — `boundaries`
+clean over 1,121 modules and 3,624 dependencies with all 23 rules proven, `build`, `openapi:check`,
+`facade:check`, `routes:check` 56, `migrations:check`, `e2e` **880**, `e2e:worker` 2, and
+`e2e:web` **171 of 171** in 4.1 minutes. Three runs of the full set in all: the first red on a
+boundary proof a move had switched off, the second red on one timeout under load that a
+whole-suite re-run and two standalone runs did not reproduce, the third green.
