@@ -16504,3 +16504,147 @@ What that waives specifically: the 14 axe scans, and `home.spec.ts`'s streaming 
 naming because this diff touches the region that case's pending-boundary count is about. The count is
 unchanged by construction (no boundary added or removed, and `MembershipsSection` still awaits the
 same memoized promise), but unchanged-by-construction is an argument, not a measurement.
+
+## Task 129 — three `useState`s that were never three states · 2026-09-11
+
+*"Refactor `organization-profile-form.tsx`."*
+
+430 lines and the largest component in `apps/web`: four `RecordSection`s of fields, an attribution
+line, a controls row, three outcome callouts, two conversions between the form and the wire, and the
+screen's state. Twelve files over five folders now — but the files are the least interesting part,
+because splitting it surfaced **two rules this repository has written down and this screen was
+breaking**.
+
+### The reducer rule, whose tell is mechanical
+
+`apps/web`'s rule states it without judgement: **two different setters called in one handler**. Every
+handler here called two or three.
+
+```ts
+// submit                      // discard                    // the transition's success arm
+setFailure(null);              setFailure(null);             setCurrent(result.value);
+setSaved(false);               setSaved(false);              reset(toFields(result.value));
+                               reset(toFields(current));     setSaved(true);
+```
+
+`failure`, `saved` and `current` are now `tools/profile-state.ts`: a `PROFILE_EVENT` vocabulary
+(`SUBMITTED`, `SAVED`, `REFUSED`, `DISCARDED` — named for what happened, never for the field they
+write), four branches each naming the whole next state, and seven unit cases. Two of them a browser
+journey could not reach without contriving the timing: *save, then fail, then discard* must leave the
+record the API confirmed rather than the one the screen opened with.
+
+**`saved` and `failure` were also mutually exclusive and separately representable.** `{ saved: true,
+failure: <problem> }` was a state the types allowed and nothing produced — the impossible pair the
+rule says to make unrepresentable. One `notice` holds either.
+
+### The outcome-to-notice rule, and why adopting it took care
+
+`@/lib/notice` exists because S-16 and S-28 had *two* copies of the same block and they had drifted —
+S-28 put *"Încercați din nou."* under a refusal whose `detail` ends with that very sentence. The root
+`CLAUDE.md` records that the extraction "was left in a third that had it hidden inside a bespoke
+union". **This screen was a fourth**, spelled in JSX as three `Callout` blocks rather than hidden
+anywhere.
+
+The careful part is that a naive adoption would have changed copy. `failureNotice` falls back **per
+member**, using its `unreachable` copy for whichever members a problem document omits — so one call
+with one copy would answer a problem document missing a title with *"Serverul nu poate fi contactat"*,
+which is **false**: the server answered, it refused. The screen's own fallback says *"Modificarea nu a
+putut fi salvată"*, which is what happened.
+
+So both arms go through `failureNotice`, and the branch is over **which fallback copy applies** rather
+than over the rendering:
+
+- `Unreachable` — nothing reached the server, so the screen owns the whole sentence including the
+  "what now" the API could not compose (NFR-79), and passes `action`.
+- otherwise — the API's three-part text wins member by member, the fallbacks say *the change was not
+  saved*, and no `action`, because NFR-79 has the API compose the next step into `detail`.
+
+Behaviour is byte-identical and the rule is no longer restated here. That the shared helper needed
+per-arm copy is worth knowing before the next screen adopts it.
+
+### The conversions got the spec they could never have had
+
+`toFields` was a module constant and the patch was an object literal built inside the submit handler,
+so the one invariant that matters — **`''` and `null` are the same absence and round-trip** — was
+reachable only by driving a browser through thirteen fields. `tools/profile-fields.ts` holds both
+directions and `toPatch` now owns the `lei` upper-casing, which matters because `isDirty` is computed
+against `defaultValues` re-seeded from the API's answer: send a lower-cased LEI, get the canonical one
+back, and the field reads as permanently dirty with nothing the reader can do.
+
+The spec asserts **whole objects**, because the failure mode is one field forgotten in one direction
+out of thirteen — a spec naming three fields would pass with the other ten wrong. Both new specs were
+proven to bite: dropping `.toUpperCase()` and making `SUBMITTED` keep the previous notice each turned
+exactly one case red.
+
+### What the reducer surfaced, raised as a decision, and then closed
+
+**A success notice survived later edits.** Save, then type: *"Profilul a fost salvat"* sat at the head
+of the record while the foot read *"Modificări nesalvate"*. Writing every branch out is what made it
+visible — it was always true, and with three setters nobody had to decide.
+
+It was put to the owner rather than fixed in passing, because whether a success notice clears itself
+is a UX question and `access-notice.tsx` records the complication: §11.5 confirms a reader's own
+action with a **toast**, the inventory has none, and a `Callout` is standing in. A toast dismisses
+itself; a callout does not. **Decided the same day: it clears.**
+
+**The two reports are not symmetrical, and that is the whole design.** A refusal **stands until the
+next attempt**, edits included — the reader is editing *because* it was refused, and clearing the
+reason mid-correction is the opposite of helpful. A success is true only while nothing differs from
+what was stored. So `PROFILE_REPORT` puts the kind **in the state** rather than leaving the component
+to read it off `CALLOUT_INTENT.SUCCESS`, which would make a presentational value load-bearing and let
+the two part company the first time a success wanted a different intent.
+
+**Derived during render, never cleared by an effect** (`rerender-derived-state-no-effect`).
+`visibleNotice(state, dirty)` is a pure function, so the asymmetry is a unit spec rather than a
+browser journey — asserted at **both** values of `dirty` for **both** kinds, which is the pair a
+single "it clears when dirty" case would have left half-tested. Proven by mutation in both
+directions: removing the clause fails two cases, and inverting it so the *refusal* clears fails three.
+
+The alternative was an `EDITED` event dispatched from the form's `onChange`. Rejected on two counts:
+it fires per keystroke, and it is a second place that can disagree with what react-hook-form believes
+— `isDirty` is already the answer, and it is correct for every bound control whether or not that
+control emits a DOM change event.
+
+**One consequence is stated rather than hidden: the notice returns if the reader undoes every edit.**
+That reads odd until the sentence is read precisely — it says *the record on screen is what was
+saved*, and after a full revert that is true again. A one-way dismissal would need the per-keystroke
+event above. Pinned by its own case, so making it one-way later is a deliberate change to a test that
+states today's behaviour.
+
+### It falsified a sentence task 127 wrote
+
+That task recorded *"A screen has the kinds it has: S-05 reads, so it has no `actions/`; S-04 and
+S-15 are a form each, so they have no `tools/`."* S-15 has one now, and the correction is the more
+useful half: **no `tools/` is a fact about a screen at a moment, not a property of forms.** S-15's
+pure half existed all along — a form shape, two conversions, a state machine — sitting inside a
+430-line component where no unit spec could reach it. If a form folder has no `tools/`, the question
+is whether nothing is pure or whether nothing has been extracted yet.
+
+`docs:check` also went red on a claim in `packages/ui/CLAUDE.md`: `@easyesg/ui/forms` import sites
+went 16 → 20, because four section components over one `control` is five sites where one form was.
+The number now carries the clause that it counts files, not forms.
+
+### Verified
+
+**Narrowly, at the owner's instruction.** `pnpm --filter @easyesg/web typecheck`, `pnpm lint`
+uncached, `pnpm docs:check` at 28 claims, and **415** unit tests over 39 files — 394 before this task,
+which added seven reducer cases, five conversion cases, four for `visibleNotice` and five directories
+to `folder-shape.spec.ts`.
+
+**Every new assertion was proven to bite**, which is the part that matters on a task whose deliverable
+is mostly tests: dropping `.toUpperCase()` from `toPatch` and making `SUBMITTED` keep the previous
+report each turned exactly one case red; removing the clause in `visibleNotice` failed two, and
+inverting it so the *refusal* cleared instead failed three.
+
+**The browser suite is waived and not claimed.** `pnpm gates:clean` was started twice and stopped
+both times on the owner's instruction. What that leaves unexercised is real and worth naming rather
+than glossing: S-15 has a journey in `organization-profile.spec.ts` and an axe scan, and this diff
+changes a live Client Component's state handling — not a move. The unit specs cover the reducer, the
+derivation and both conversions as pure functions; what they cannot see is the wiring between them
+and react-hook-form, which is exactly what a journey exercises. CI runs the full set on push.
+
+**Two claims outside `apps/web` moved with it.** `packages/ui/CLAUDE.md`'s `@easyesg/ui/forms` import
+sites went 16 → 20, caught by `docs:check` rather than by reading — four sections over one `control`
+is five sites where one form was, and the number now carries the clause that it counts files, not
+forms. And task 127's sentence that S-04 and S-15 "have no `tools/`" was corrected where it was
+written, in both `apps/web/CLAUDE.md` and the plan.

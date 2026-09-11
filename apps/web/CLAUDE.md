@@ -372,7 +372,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   organization/
   ├─ access/     S-16   actions/ · components/ · tools/
   ├─ home/       S-05   components/ · tools/
-  ├─ profile/    S-15   actions/ · components/
+  ├─ profile/    S-15   actions/ · components/ · tools/
   └─ creation/   S-04   actions/ · components/
   ```
 
@@ -411,8 +411,14 @@ conditional render, which is how it ends up half-suppressed on one screen.
   directive is what makes it a kind rather than a file: the module may export only async functions,
   its exports become callable endpoints, and the constraint bites at the **build** — `typecheck`,
   `lint` and 286 unit tests all missed it once (see `lib/revalidate-paths.ts`). Folding it into
-  `tools/` would put that among modules with neither property. A screen has the kinds it has: S-05
-  reads, so it has no `actions/`; S-04 and S-15 are a form each, so they have no `tools/`.
+  `tools/` would put that among modules with neither property. **A screen has the kinds it has**:
+  S-05 reads, so it has no `actions/`; S-04 is a form with nothing pure to extract, so it has no
+  `tools/`. That last clause named S-15 too until task 129, and the correction is the more useful
+  half of the rule: *having no `tools/`* is a fact about a screen at a moment, not a property of
+  forms. S-15's had a form shape, two conversions between it and the wire, and a reducer sitting
+  **inside** a 430-line component — all pure, none of it reachable by a unit spec until it moved out.
+  If a form folder has no `tools/`, the question is whether nothing is pure or whether nothing has
+  been extracted yet.
 
   ```
   home/
