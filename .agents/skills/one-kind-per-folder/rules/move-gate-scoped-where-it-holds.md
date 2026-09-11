@@ -13,34 +13,40 @@ A rule written in three documents and checked by nothing decays silently: the ne
 file beside four folders and the tree slides back with every gate green. So the invariant is a spec
 that walks the tree and **names the offender**, guards its own guard (named directories it must find,
 so a moved root fails rather than checking nothing), and is proven to bite by dropping a stray file
-once.
+once at every root it has had.
 
 It is **scoped to the sites that comply** — a gate that starts red inverts *fix the sites first,
-then turn the gate on* — and its root moves up as each sweep lands, never ahead of one. The spec
-lives in a `tools/` of its own rather than at the feature root, because a file there would fail the
-rule it asserts.
+then turn the gate on* — and its root moves up as each sweep lands, never ahead of one. In `apps/web`
+it was rooted at `features/organization/` from task 126 to task 134, while thirteen directories
+under `features/` and `server/` still mixed; it reached `src/` when the last of them was fixed. The
+spec lives in `src/test/` beside the test setup, a files-only leaf that is nobody's feature, because
+a spec whose subject is the tree cannot sit at a root the rule governs without failing on its own
+placement.
 
-**Incorrect (the rule asserted in prose; or a gate rooted where thirteen sites are still wrong):**
+**Incorrect (the rule asserted in prose; or a gate rooted where sites are still wrong):**
 
 ```text
 apps/web/CLAUDE.md:   "a directory holds files or folders, never both"     — checked by nothing
-tools/folder-shape.spec.ts rooted at src/ today                            — red on thirteen directories
+folder-shape.spec.ts rooted at src/ before the sweep                       — red on thirteen directories
 ```
 
-**Correct (a failing state, scoped, with the message a reader can act on):**
+**Correct (a failing state at the widest root that complies, with the exemptions named, one path each):**
 
 ```ts
-const FEATURE_ROOT = join(import.meta.dirname, '..');
+const SRC = join(import.meta.dirname, '..');
+
+/** Next's route tree, and the root that holds its entrypoints — the two places a framework lays out. */
+const EXEMPT: ReadonlySet<string> = new Set(['.', 'app']);
 
 it('walks the tree it means to', () => {
-  expect(directories.length).toBeGreaterThanOrEqual(17);
-  for (const screen of ['access', 'creation', 'home', 'profile']) {
-    expect(directories).toContain(join('.', screen, 'components'));
+  expect(directories.length).toBeGreaterThanOrEqual(80);
+  for (const named of ['features/identity/sign-in/actions', 'server/session', 'shared']) {
+    expect(directories).toContain(named);
   }
 });
 
-it.each(directoriesUnder(FEATURE_ROOT))('holds files or folders, never both: %s', (relative) => {
-  const entries = readdirSync(join(FEATURE_ROOT, relative), { withFileTypes: true });
+it.each(directories)('holds files or folders, never both: %s', (relative) => {
+  const entries = readdirSync(join(SRC, relative), { withFileTypes: true });
   const files = entries.filter((e) => e.isFile()).map((e) => e.name);
   const folders = entries.filter((e) => e.isDirectory()).map((e) => e.name);
   expect(
@@ -50,5 +56,6 @@ it.each(directoriesUnder(FEATURE_ROOT))('holds files or folders, never both: %s'
 });
 ```
 
-When the root reaches `src/`, the framework exemptions (`app/`, `proxy.ts`; `routes/`,
-`route-tree.gen.ts`) are encoded in the spec and each is proven to be the only thing it exempts.
+An exemption is a listed path, never a pattern: `app/` and the root are the two places Next decides
+the layout, and a third arriving as a convenience is the rule being switched off one folder at a
+time. In `apps/admin` the same spec exempts `routes/` and `route-tree.gen.ts` for TanStack's reasons.

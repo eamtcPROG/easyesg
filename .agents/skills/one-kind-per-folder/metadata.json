@@ -5,7 +5,7 @@
   "abstract": "How a feature tree is shaped in the two front ends: a directory holds files or folders and never both, a domain serving several screens splits per screen into components/ tools/ and the wire half, components/ mirrors the route's return, a shared/ leaf admits a file on one test, names keep their prefix, and the invariant has a failing state. Twelve rules in five categories, binding apps/web and apps/admin in every directory under src/.",
   "references": [
     "apps/web/src/features/organization/",
-    "apps/web/src/features/organization/tools/folder-shape.spec.ts",
+    "apps/web/src/test/folder-shape.spec.ts",
     "apps/web/CLAUDE.md",
     "apps/admin/CLAUDE.md"
   ]

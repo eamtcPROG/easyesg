@@ -45,4 +45,4 @@ No compiled document, on purpose: it would be a second copy of the rules, free t
 ## The worked example
 
 `apps/web/src/features/organization/` meets every rule here; `apps/web/CLAUDE.md` keeps its numbers
-and the traps each move found, and `organization/tools/folder-shape.spec.ts` is the failing state.
+and the traps each move found, and `src/test/folder-shape.spec.ts` — rooted at `src/` — is the failing state.

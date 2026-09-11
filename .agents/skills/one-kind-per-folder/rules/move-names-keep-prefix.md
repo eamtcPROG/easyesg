@@ -28,7 +28,7 @@ access/
 ```text
 access/
 ├─ actions/      actions.ts
-└─ components/   access-list.tsx · access-row.tsx · access-filters.tsx · access-board.tsx
+└─ components/   access-list.tsx · role-cell.tsx · row-actions.tsx · access-filters.tsx
 ```
 
 **The one collision the rule accepts.** A unit spec and a browser suite named for the same screen —

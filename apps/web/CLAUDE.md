@@ -24,7 +24,7 @@ the seam it sits on rather than by the task that built it.
 
 **Transport decision (task 20):** unauthenticated identity calls travel by **Server Action** —
 the Next server tier calls the public API as the ordinary client AD-9 says it is.
-`src/server/api-client.ts` is the full client seam: `api.get / getList / post / patch / delete`,
+`src/server/api/api-client.ts` is the full client seam: `api.get / getList / post / patch / delete`,
 each returning one `ApiOutcome<T>` (envelope unwrapped — `messages[]` included, because
 `WARNING` is how AD-5's `allow_with_warning` reaches a caller — problem+json as received,
 202/204 as Ok-with-no-value, network/timeout/gateway failures as `unreachable`). List queries
@@ -94,7 +94,7 @@ carries the general form.
 
 **Read a provider through the contract's enum, never as a `string`.** `providerLabel` and
 `providerGlyph` take `SocialProvider`, so an unnamed provider is a compile error at their `Record`
-rather than a raw slug rendered into a sentence. `features/credentials/credentials.ts` **re-exports**
+rather than a raw slug rendered into a sentence. `features/credentials/tools/credentials.ts` **re-exports**
 `LinkedProvider` and `TotpState` from `@easyesg/contracts` rather than restating them: the
 hand-written copy had widened `provider` to `string`, which is exactly the drift that package exists
 to prevent, and it is what let the slug through.
@@ -106,16 +106,16 @@ through Server Actions like registration does; sign-in seals the whole AD-12 ses
 tokens, expiries, the identity block — into ONE httpOnly `easyesg_session` cookie
 (`Secure; SameSite=Lax; Path=/`, AES-256-GCM under `SESSION_SECRET` — OQ-33, closed
 21 Aug 2026, architecture.md §12.5.6) and writes `NEXT_LOCALE` from the profile preference
-(OQ-32). `src/server/session-codec.ts` is the pure seal/unseal; `src/server/session.ts` is the
+(OQ-32). `src/server/session/session-codec.ts` is the pure seal/unseal; `src/server/session/session.ts` is the
 request-scoped tier (read, establish, destroy, single-flighted refresh);
 `src/app/api/[...path]` is the real pass-through — same-origin proof on writes, 401 without a
 session, rotate-if-expiring, then forward with the bearer and stream both bodies untouched.
 The one interim this left — the `(app)` layout's `SessionStrip`, carrying sign-out until the real
 global tier existed — is **gone since task 30.1**, deleted rather than left dead.
 
-**§4.3's post-sign-in branch** (task 25.4). `features/identity/post-sign-in.ts` holds the
+**§4.3's post-sign-in branch** (task 25.4). `features/identity/shared/tools/post-sign-in.ts` holds the
 rule — none → S-04, one → S-05, several → S-05 where the switcher chooses (OQ-6) — and
-`server/post-sign-in.ts` the seam that reads `/memberships` and applies it. Both sign-in flows exit
+`server/session/post-sign-in.ts` the seam that reads `/memberships` and applies it. Both sign-in flows exit
 through it; a provider session is the same session (UC-05). Three things to know before touching
 it: **`?return=` is honoured where the destination can actually render** — refined 25 Aug 2026 by
 task 26.3, from "only where an organization resolves". The override exists because a route inside
@@ -131,9 +131,9 @@ API client there would make every arm untestable outside a browser.
 Handlers OUTSIDE `[locale]` — they are the redirect URIs registered at the providers, so they
 cannot vary by language, and they are excluded from `proxy.ts`'s matcher (locale negotiation
 would rewrite them; the session gate would bounce the sessionless callback). The flow logic lives
-in `features/identity/social-flow.ts`; the in-flight OAuth transaction (state, nonce, PKCE
+in `features/identity/social/handlers/social-flow.ts`; the in-flight OAuth transaction (state, nonce, PKCE
 verifier, intent, return path) rides in its own sealed httpOnly cookie
-(`src/server/social-transaction.ts`, over the codec's generic `sealJson`/`unsealJson`), and a
+(`src/server/sealed/social-transaction.ts`, over the codec's generic `sealJson`/`unsealJson`), and a
 successful completion calls `establishSession` exactly as password sign-in does. Two traps with
 scars: **every redirect this flow issues is based on `env.publicOrigin`, never `request.url`** —
 the standalone server binds `0.0.0.0`, and a redirect built from the bind address lands the
@@ -141,7 +141,7 @@ browser on a host the session cookie was never set on; and the transaction cooki
 `SameSite=Lax` by necessity — the provider callback is a cross-site top-level GET, which `Strict`
 would strip the cookie from. S-01's provider buttons (`SocialProviders`, a Server Component
 streamed behind the form) and the `?notice=` callout (`SocialNoticeCallout`, closed vocabulary in
-`features/identity/social.ts`) are the screen surface; FR-8 link/unlink is task 27's, on S-28.
+`features/identity/social/tools/social.ts`) are the screen surface; FR-8 link/unlink is task 27's, on S-28.
 
 **A pending provider link is bound to the account that began it** (27 Aug 2026, review).
 `beginSocialFlow` refuses to start a link without a session, and that proves nothing about the
@@ -154,16 +154,16 @@ pending state the reader can see but never complete is worse than none at all.
 
 **S-28 and S-01's staged factor step** (tasks 27.7, 27.8). `features/credentials/` holds
 the Record screen over `RecordShell` — extracted to `packages/ui` at this first instance, not
-deferred — and `features/identity/`'s `factor.ts` / `factor-state.ts` / `components/factor-form.tsx`
+deferred — and `features/identity/sign-in/`'s `tools/factor.ts` / `tools/factor-state.ts` / `components/factor-form.tsx`
 hold `/sign-in/factor`. Three things to know before touching either. **The factor challenge lives
-in `server/factor-challenge.ts`'s sealed httpOnly cookie and only `expiresAt` reaches the browser**
+in `server/sealed/factor-challenge.ts`'s sealed httpOnly cookie and only `expiresAt` reaches the browser**
 — `peekFactorChallenge` reads without clearing because a render cannot write cookies, and
 `consumeFactorChallenge`'s caller puts it back on a refusal, since the API's challenge is
 deliberately not single-use. **`signInAction` branches on `kind`, never on the presence of
 `accessToken`** — probing for a field is writing the discriminator a second time, and the absence of
 that branch is what made enrolling a factor crash the next sign-in for four tasks (build-log,
 27 Aug 2026). And **`FACTOR_LAPSED` is a fourth `status` beside `API_OUTCOME`'s three**, declared in
-`features/identity/factor.ts` and deliberately not a member of the wire vocabulary: no server can
+`features/identity/sign-in/tools/factor.ts` and deliberately not a member of the wire vocabulary: no server can
 send it.
 
 ### The chrome
@@ -174,7 +174,7 @@ S-04 and S-35, where it renders its designed empty state and names no organizati
 every string with `getTranslations` and hands them down, because `shared/account-corner.tsx` is a
 Client Component only for `usePathname`/`useSearchParams` (a language choice is a link to this
 address in another locale) and giving it `useTranslations` would put the `chrome` catalogue in the
-bundle. `server/memberships.ts` is the read, wrapped in React `cache()` — the band and S-05 read the
+bundle. `server/data/memberships.ts` is the read, wrapped in React `cache()` — the band and S-05 read the
 same collection in one render pass.
 
 Three things to know before touching it:
@@ -191,8 +191,8 @@ Three things to know before touching it:
   `SubContent` portals as a sibling of the layer that gets `auto` back — so the language submenu is
   unclickable. It is also the right semantics for chrome hanging off a header.
 
-**Every address answers something (task 103).** `shared/address-notice.tsx` holds §8.1's two
-address states — `error — not yet available` for the sixteen routes whose screens have not
+**Every address answers something (task 103).** `shared/address-notice.tsx` is the anatomy under §8.1's two
+address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the sixteen routes whose screens have not
 shipped, and `error — not found` for an address that does not exist. `design_spec.md` §4.5
 records them as **patterns, not screens**: UX-7 governs destinations serving a use case, and
 these are the answer when none applies, so §4.4's count stays at 52 and neither gained an
@@ -218,10 +218,10 @@ segments 404 without a session. `e2e/web/address-states.spec.ts` asserts both ha
 ### The wizard
 
 **S-07's draft-integrity pattern** (task 35.2). `client/autosave/` is built — `useAutosave`
-over `features/wizard/autosave-state.ts`'s reducer, the IndexedDB `PendingWriteStore` with its
+over `features/wizard/tools/autosave-state.ts`'s reducer, the IndexedDB `PendingWriteStore` with its
 memory fallback, and `putDisclosureValues`, the **first browser-originated write** through
-`app/api/[...path]`. The step page renders §6.2's anatomy through `features/wizard/components/`
-(`StepFields` → `DisclosureControl`, one control per kind), with the indicator in `WizardShell`'s
+`app/api/[...path]`. The step page renders §6.2's anatomy through `features/wizard/components/fields/`
+(`StepFields` → `StepField` → `DisclosureControl`, one control per kind), with the indicator in `WizardShell`'s
 `saveState` slot, the unsynced banner above the fields, and the exit control's consequence dialogue.
 Four things to know before touching it:
 
@@ -286,7 +286,7 @@ src/
 ├─ features/       14 domains, mirroring apps/api/src/modules names
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter)
-├─ server/         server-only: session, api-client, data/
+├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
 ├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), polling
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths
 ```
@@ -368,7 +368,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
     single-use token exactly once, and reading a failure are one implementation in `session.ts`.
 
 - **A `'use server'` module may export ONLY async functions, and no gate but the build says so.**
-  Task 32.3 moved a shared `revalidatePath` pattern into `features/periods/actions.ts`'s exports so a
+  Task 32.3 moved a shared `revalidatePath` pattern into `features/periods/actions/actions.ts`'s exports so a
   second action could reuse it — *"Only async functions are allowed to be exported in a 'use server'
   file"*, ten Turbopack errors, and `pnpm typecheck`, `pnpm lint` and 286 unit tests all green. The
   constant is a **route pattern**, not a route: it carries `[locale]` and the route groups
@@ -396,15 +396,20 @@ conditional render, which is how it ends up half-suppressed on one screen.
   which is the only thing a folder can usefully keep.
 
   **A domain serving ONE screen does not split per screen** — there is no second screen to split
-  by — **and since task 132 that is all this clause says.** It used to add that `periods/`,
-  `reports/`, `wizard/`, `entities/` and `credentials/` *"are correct as they are"*, and under the
-  `one-kind-per-folder` skill's `folder-files-or-folders` — which holds in every directory under
-  `src/` — they are not: each holds files beside `components/`,
-  and each becomes `components/ · tools/ · actions/` directly, which is task 134's. The scaffolded
-  `components/ hooks/ queries/ schema/ types/` set in an unbuilt domain goes when the domain is
-  built, per the next paragraph. What this rule answers is the shape a domain grows into, not a
-  shape to impose on arrival. `identity/` is the outstanding case for **both** halves: 13 root
-  files across S-01, S-02, S-03 and the provider flow.
+  by — **but its root is a directory like any other** (task 132), so it holds `components/ ·
+  tools/ · actions/` directly rather than files beside `components/`. Task 134 gave `periods/`,
+  `entities/`, `reports/`, `credentials/` and `wizard/` that shape; the seven unbuilt scaffolds are
+  one `index.ts` each, their empty folders gone. What this rule answers is the shape a domain grows
+  into, not a shape to impose on arrival.
+
+  **`identity/` was the outstanding case for both halves and is split per journey, not per
+  `S-nn`** (task 134, owner's decision). Its ten actions divided by journey — register, sign-in with
+  its factor step, verify, reset, invitation — and sign-out's readers are the chrome, so the axis
+  the per-screen rule verifies was not `S-01`/`S-02`/`S-03`: `register/`, `sign-in/`, `verify/`,
+  `reset/` and `invitation/` each hold their own `actions/ · components/ · tools/`, `social/` holds
+  the provider flow with `handlers/` for what the two Route Handlers call, and `shared/` holds what
+  more than one journey reads — sign-out, §4.3's branch, the register→verify hand-off store, the
+  `(identity)` chrome and the stylesheet.
 
   **`index.ts` and empty scaffold folders go when the domain is built.** `organization/index.ts` was
   `export {}`, imported nowhere, and its docblock still read *"Not built. Folders are `components/
@@ -475,22 +480,21 @@ conditional render, which is how it ends up half-suppressed on one screen.
   directories are called, so there is nothing to reconcile; the name is the owner's, and it is noted
   in `tools/home.ts` so a reader who knows the sentence finds out in one place which folder it means.
 
-  **It has a failing state, scoped to where it holds.** `organization/tools/folder-shape.spec.ts`
-  walks the feature and names the offender (*"access holds files [stray.ts] beside folders […]"*),
-  proven by adding one at both scopes it has had. It is a spec rather than a repo-wide selector, and
-  the reason is *fix the sites first, then turn the gate on*. Measured after task 127: **thirteen
-  directories under `features/` still mix them, and all thirteen are feature roots** of
-  single-screen or unbuilt domains. Until task 132 this paragraph called them *right* — the rule two
-  bullets up exempted single-screen roots — and now they are task 134's backlog, with `server/` (13
-  files beside `data/`), because `folder-files-or-folders` holds in every directory under `src/`.
-  The spec's root moves up as each site is fixed, never ahead of one. Without the spec the rule
-  would be asserted in three documents and checked by nothing, which is this repository's own
-  recorded failure shape.
+  **It has a failing state, rooted at `src/` since task 134.** `src/test/folder-shape.spec.ts`
+  walks every directory under `src/` and names the offender (*"server holds files [stray.ts]
+  beside folders [api, data, …]"*), proven to bite at each root it has had by dropping a stray
+  file once. **Two exemptions, each exactly one path**: `app/`, which is Next's route tree, and the
+  `src/` root, which holds the entrypoints Next places by name beside every folder. It was scoped to
+  `features/organization/` from task 126 to task 134 because thirteen directories under `features/`
+  and `server/` still mixed, and a gate that starts red inverts *fix the sites first, then turn the
+  gate on*; the root moved up when the last site was fixed, not before. Without the spec the rule
+  would be asserted in three documents and a skill and checked by nothing, which is this
+  repository's own recorded failure shape.
 
-  **The spec lives in a `tools/` of the feature's own, not at `organization/`'s root** — a file there
-  would sit beside the four screen folders and the check would fail on its own placement. `identity/`
-  remains the outstanding case for the *per-screen* rule above, and since task 132 this rule reaches
-  it too; the *spec* does not until task 134 fixes it.
+  **The spec lives in `src/test/`, beside the setup file** — a files-only leaf that is nobody's
+  feature — because a spec whose subject is the tree cannot sit at a root the rule governs without
+  failing on its own placement. `organization/tools/` was its first home and became one folder
+  among four the day the root moved.
 
   **A `vi.mock()` path is a string, so a file move does not typecheck.** `access-board.spec.tsx`
   carried `vi.mock('../actions')` through the move with `pnpm typecheck` and `pnpm lint` both
@@ -747,8 +751,9 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **59 files here are Client Components** (11 Sep 2026: ten under `wizard/components/`, nine under
-  `organization/access/components/`, eight each under `identity/` and `credentials/`), so the three
+  **70 files here are Client Components** (11 Sep 2026: ten each under
+  `organization/access/components/` and `credentials/components/`, six under `shared/`, the rest
+  across the wizard's controls and the two record forms' sections), so the three
   cases above are live questions in every one of them — `access-context.tsx` is the worked example,
   where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two
   consumers per row. When this paragraph was written there were seven, all under `identity/`, and

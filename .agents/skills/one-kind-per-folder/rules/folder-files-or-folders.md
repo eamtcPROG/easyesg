@@ -51,5 +51,5 @@ home/components/
 
 The stylesheet is read by four regions, so it belongs to none of them — and under this rule it cannot
 sit above them either: `styles/` is a fifth leaf. A spec with no subject module (one that walks the
-tree) lives in a `tools/` of its own, because a file at the feature's root would fail the rule it
-asserts.
+tree) lives in `src/test/` beside the test setup — a files-only leaf that is nobody's feature —
+because a file at a root the rule governs would fail the rule it asserts.

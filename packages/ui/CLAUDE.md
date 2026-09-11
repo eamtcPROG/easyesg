@@ -82,9 +82,9 @@ src/
   the graph of every consumer, including the PDF worker and the email renderer, which read this
   package for UX-127's values and have no DOM. It is a **peer** dependency: the apps own the §12.1
   catalog pin (7.85.0), and a second resolved copy would give a field a different `Control` type
-  than the form that created it. **20 import sites across the two apps today** — 16 until task 129,
+  than the form that created it. **23 import sites across the two apps today** — 16 until task 129,
   which split S-15's form into four section components over one `control` and so multiplied one site
-  into five. Worth knowing when reading this number: it counts *files that import the binding*, not
+  into five, and 20 until task 134 did the same to S-13's form with three. Worth knowing when reading this number: it counts *files that import the binding*, not
   forms, and splitting a form raises it without adding a form.
 
 - **The six vocabularies live in directive-free sibling modules and are exported from the barrel
