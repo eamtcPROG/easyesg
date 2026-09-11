@@ -1,4 +1,4 @@
-import { NotYetAvailable } from '@/shared/address-notice';
+import { NotYetAvailable } from '@/shared/not-yet-available';
 
 /**
  * S-17 — Plan, entitlements and usage · OA · UC-65, UC-66 · Status

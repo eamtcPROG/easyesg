@@ -1,17 +1,15 @@
 'use client';
 
-import { Button, BUTTON_VARIANT, Select } from '@easyesg/ui';
+import { Select } from '@easyesg/ui';
 import { MEMBERSHIP_ROLE, type MembershipRole } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { useAccess, useRowBusy } from './access-context';
-import { CONFIRMATION } from '../tools/access-state';
-import { changeMemberRoleAction, resendInvitationAction } from '../actions/actions';
+import { changeMemberRoleAction } from '../actions/actions';
 import { ACCESS_ROW_KIND, isLastAdministrator, type AccessRow } from '../tools/access';
-import styles from './access.module.css';
 
 /**
- * The two cells that act on a row.
+ * One of the two cells that act on a row — `row-actions.tsx` is the other.
  *
  * Both take **only the row**. Everything else — the other rows FR-60's rule needs, whether an
  * action is running, how to run one — comes from `useAccess()`, which is what a cell five levels
@@ -64,62 +62,5 @@ export function RoleCell({ row }: { readonly row: AccessRow }) {
         label: tRoles(role),
       }))}
     />
-  );
-}
-
-/**
- * What can be done to this row — different verbs on different objects, chosen by the union's own
- * discriminator rather than by a flag. A single actions menu parameterised by booleans is the shape
- * UX-89 warns about, and would have had to decide what "change role" means for someone who has not
- * accepted.
- */
-export function RowActions({ row }: { readonly row: AccessRow }) {
-  const t = useTranslations('organization.access.actions');
-  const tAccess = useTranslations('organization.access');
-  const { page, ask, perform } = useAccess();
-  const busy = useRowBusy(row);
-
-  const resend = useCallback(
-    () =>
-      perform({
-        row,
-        action: () => resendInvitationAction({ invitationId: row.id }),
-        success: tAccess('resent', { email: row.email }),
-      }),
-    [perform, row, tAccess],
-  );
-
-  const confirmRevoke = useCallback(
-    () => ask({ kind: CONFIRMATION.REVOKE, row }),
-    [ask, row],
-  );
-  const confirmRemove = useCallback(
-    () => ask({ kind: CONFIRMATION.REMOVE, row }),
-    [ask, row],
-  );
-
-  if (row.kind === ACCESS_ROW_KIND.INVITATION) {
-    return (
-      <div className={styles.rowActions}>
-        <Button variant={BUTTON_VARIANT.SUBTLE} disabled={busy} onClick={resend}>
-          {t('resend')}
-        </Button>
-        <Button variant={BUTTON_VARIANT.SUBTLE} disabled={busy} onClick={confirmRevoke}>
-          {t('revoke')}
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.rowActions}>
-      <Button
-        variant={BUTTON_VARIANT.DESTRUCTIVE}
-        disabled={busy || isLastAdministrator({ administrators: page.administrators, row })}
-        onClick={confirmRemove}
-      >
-        {t('remove')}
-      </Button>
-    </div>
   );
 }

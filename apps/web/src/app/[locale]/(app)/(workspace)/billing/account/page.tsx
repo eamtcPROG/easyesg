@@ -1,4 +1,4 @@
-import { NotYetAvailable } from '@/shared/address-notice';
+import { NotYetAvailable } from '@/shared/not-yet-available';
 
 /**
  * S-23 — Billing account · OA · UC-108 · Record

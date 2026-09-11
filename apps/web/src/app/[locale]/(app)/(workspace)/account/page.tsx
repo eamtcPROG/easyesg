@@ -1,4 +1,4 @@
-import { NotYetAvailable } from '@/shared/address-notice';
+import { NotYetAvailable } from '@/shared/not-yet-available';
 
 /**
  * S-27 — Profile, language, notification preferences · CA · UC-13, UC-14, UC-168 · Record

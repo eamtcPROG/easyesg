@@ -1,5 +1,5 @@
 import { FocusColumn } from '@easyesg/ui';
-import { NotYetAvailable } from '@/shared/address-notice';
+import { NotYetAvailable } from '@/shared/not-yet-available';
 
 /**
  * Help centre · signed in and guest

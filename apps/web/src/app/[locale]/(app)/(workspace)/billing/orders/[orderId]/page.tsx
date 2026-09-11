@@ -1,4 +1,4 @@
-import { NotYetAvailable } from '@/shared/address-notice';
+import { NotYetAvailable } from '@/shared/not-yet-available';
 
 /**
  * S-19 — Order, summary and confirmation · OA · UC-110…115 · Wizard

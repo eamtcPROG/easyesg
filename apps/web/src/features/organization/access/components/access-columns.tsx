@@ -11,7 +11,8 @@ import {
   type AccessRow,
   type AccessStanding,
 } from '../tools/access';
-import { RoleCell, RowActions } from './access-row';
+import { RoleCell } from './role-cell';
+import { RowActions } from './row-actions';
 
 /**
  * S-16's four columns and its action column.

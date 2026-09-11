@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { TextLink } from '@easyesg/ui';
-import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { RETURN_DESTINATION, returnDestination } from './return-destination';
 import styles from './address-notice.module.css';
@@ -13,7 +12,8 @@ import styles from './address-notice.module.css';
  * why these are patterns rather than `S-nn` rows: UX-7 governs destinations serving a use case,
  * and these are the answer when no destination applies, so there is nothing to trace to.
  *
- * **Two exports rather than one component with a flag**, which is §4.5's decision and not a
+ * **Two states rather than one component with a flag** — `not-yet-available.tsx` and
+ * `address-not-found.tsx`, over this anatomy — which is §4.5's decision and not a
  * styling choice: the reader's next step differs. A wrong address is corrected by going somewhere
  * real; a deferred one is corrected by waiting, and telling someone their bookmark is broken when
  * it is merely early would be the wrong sentence in the one place they are already lost.
@@ -28,7 +28,7 @@ import styles from './address-notice.module.css';
  * §11.5 is for a message *inside* a screen that has its own title; these two ARE the screen, and
  * borrowing the inline vehicle would leave the page with no `h1` at all.
  */
-async function AddressNotice({
+export async function AddressNotice({
   title,
   body,
   actionHome,
@@ -51,31 +51,5 @@ async function AddressNotice({
         </Link>
       </TextLink>
     </div>
-  );
-}
-
-/** `error — not yet available` — a real route whose screen has not shipped. */
-export async function NotYetAvailable() {
-  const t = await getTranslations('chrome.notYetAvailable');
-  return (
-    <AddressNotice
-      title={t('title')}
-      body={t('body')}
-      actionHome={t('actionHome')}
-      actionSignIn={t('actionSignIn')}
-    />
-  );
-}
-
-/** `error — not found` — the address resolves to nothing. */
-export async function AddressNotFound() {
-  const t = await getTranslations('chrome.notFound');
-  return (
-    <AddressNotice
-      title={t('title')}
-      body={t('body')}
-      actionHome={t('actionHome')}
-      actionSignIn={t('actionSignIn')}
-    />
   );
 }

@@ -1,4 +1,4 @@
-import { NotYetAvailable } from '@/shared/address-notice';
+import { NotYetAvailable } from '@/shared/not-yet-available';
 
 /**
  * S-25 — Enterprise request · OA · UC-153 · Focus

@@ -1,4 +1,4 @@
-import { NotYetAvailable } from '@/shared/address-notice';
+import { NotYetAvailable } from '@/shared/not-yet-available';
 
 /**
  * S-18 — Plan comparison and selection · OA · UC-96…98 · Comparison (composes Index/Status)

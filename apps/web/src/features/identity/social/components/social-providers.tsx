@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { providerGlyph } from './provider-glyphs';
+import { providerGlyph } from './provider-glyph';
 import { providerLabel } from '../tools/social';
 import { ProviderButton } from '@easyesg/ui';
 import type {

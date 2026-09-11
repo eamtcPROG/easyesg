@@ -5,10 +5,10 @@ import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { Link } from '@/i18n/navigation';
-import { acceptInvitationAction } from '../actions/actions';
-import type { UsableInvitation } from '../tools/invitation';
-import type { AcceptInvitationFailure } from '../actions/action-results';
-import styles from '../../shared/styles/identity-screens.module.css';
+import { acceptInvitationAction } from '../../actions/actions';
+import type { UsableInvitation } from '../../tools/invitation';
+import type { AcceptInvitationFailure } from '../../actions/action-results';
+import styles from '../../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
 
 /**

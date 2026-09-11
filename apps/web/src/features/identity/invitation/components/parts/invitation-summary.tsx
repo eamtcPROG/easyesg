@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import type { UsableInvitation } from '../tools/invitation';
-import styles from '../../shared/styles/identity-screens.module.css';
+import type { UsableInvitation } from '../../tools/invitation';
+import styles from '../../../shared/styles/identity-screens.module.css';
 
 /**
  * S-03's "Content and data shown", verbatim: **the inviting organization; the role being granted;

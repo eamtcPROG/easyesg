@@ -1,5 +1,5 @@
 import { FocusColumn } from '@easyesg/ui';
-import { AddressNotFound } from '@/shared/address-notice';
+import { AddressNotFound } from '@/shared/address-not-found';
 
 /**
  * §8.1's `error — not found`, as the localized 404 (task 103).
