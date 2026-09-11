@@ -25,9 +25,12 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * loading states, with task 36's content; partial, with S-08 (task 42).
  *
  * **This file is a shell** (task 134, `shell-composes-only`): it pins the locale and renders
- * `WizardStep`, which reads, decides the arm and draws the shell over the fields. `loading.tsx`
- * beside it is the step's `loading — initial`, which the states list above had named as still to
- * arrive.
+ * `WizardStep`, which reads, decides the arm and draws the shell over the fields. **It has no
+ * `loading.tsx`, and cannot**: a stale deep link to a module the pinned taxonomy does not carry is
+ * answered with `notFound()` from the section, and a route-level boundary would flush a 200 before
+ * the section knows — `wizard.spec.ts` asserts the 404 and caught exactly that when one was added.
+ * The states list above still names `loading — initial` as to arrive; it arrives as a boundary
+ * *inside* the shell, below the point where the module is known, not as a route file.
  */
 type Props = { params: Promise<{ locale: string; reportId: string; module: string }> };
 

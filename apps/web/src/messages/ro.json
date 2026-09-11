@@ -1154,8 +1154,7 @@
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Câți dintre angajați intră sub un contract colectiv de muncă. Ponderea se calculează față de numărul de angajați declarat la B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Câți angajați au încetat raporturile de muncă pe parcursul perioadei, indiferent de motiv."
         }
-      },
-      "loading": "Se încarcă pasul…"
+      }
     }
   }
 }

@@ -1154,8 +1154,7 @@
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "How many employees fall under a collective agreement. The share is worked out against the employee count reported in B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "How many employees left during the period, for any reason."
         }
-      },
-      "loading": "Loading the step…"
+      }
     }
   }
 }

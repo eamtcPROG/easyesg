@@ -622,6 +622,12 @@ conditional render, which is how it ends up half-suppressed on one screen.
   locale to a Russian reader while the page beneath it renders correctly. Nothing would catch it: a
   loading state is transient, so no browser test asserts one.
 
+  **And a route that can `notFound()` on its data cannot have one at all** (task 134, found by
+  `wizard.spec.ts`): a route-level `loading.tsx` flushes the shell with a 200 before the section has
+  read anything, so the 404 the stale deep link deserves never reaches the wire. The wizard's step is
+  that route; its loading state, when it comes, is a boundary inside the shell below the point where
+  the module is known.
+
 - **There is exactly ONE `NextIntlClientProvider`, in `[locale]/layout.tsx`, and it takes no
   props** (task 99, 7 Sep 2026). Rendered from a Server Component it inherits `locale`, `messages`,
   `formats` and `timeZone` from `i18n/request.ts`, so every client component in every route group

@@ -1154,8 +1154,7 @@
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Сколько сотрудников подпадает под коллективный договор. Доля считается от численности, указанной в B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Сколько сотрудников уволилось в течение периода, по любой причине."
         }
-      },
-      "loading": "Загружается шаг…"
+      }
     }
   }
 }
