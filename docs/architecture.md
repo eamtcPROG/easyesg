@@ -1165,10 +1165,17 @@ TypeORM: all tenant queries run on the request's `QueryRunner`, resolved from `A
 CREATE POLICY membership_tenant_select ON identity.membership   -- UC-59: this organization's members
   FOR SELECT USING (organization_id = <bound org>);
 CREATE POLICY membership_self_select ON identity.membership     -- UC-16, and the bootstrap above
-  FOR SELECT USING (account_id = <bound account>);
+  FOR SELECT USING (account_id = <bound account>
+                    AND <no organization bound>);              -- amended 11 Sep 2026, task 130
 ```
 
 The second grants **read and nothing else** — `INSERT` and `UPDATE` stay scoped to `app.current_org` alone — so an account sees where it belongs from anywhere and can alter a membership only in the organization whose context it actually holds. The general rule this is the first instance of: *a table the tenant binding is derived from cannot be scoped solely by that binding*, and the escape is the second setting, which is already bound and already trusted to the same degree.
+
+**The second conjunct was missing until 11 Sep 2026 (task 130), and its absence was a live FR-60 bypass.** Read the next decision below before this paragraph: task 25.3 added exactly this conjunct to `organization_directory_select` two tasks later, gave the reason in full — *"every later reader would then need an explicit `WHERE id = <active org>` to stay correct, which is the filtering-at-call-sites AD-2 rejects"* — and did not carry it back to the policy it had been modelled on. The measurement recorded there, *"a request bound to Alpha by a member of Alpha and Beta sees two organizations"*, is the same sentence one table over.
+
+What it cost, reproduced before anything was changed: `identity.membership`'s policy set answered *"rows this account may see"* rather than *"rows of the bound tenant"*, so on a tenant request — where `app.current_user` is bound as well as `app.current_org` — every untenanted query over the table quietly received the caller's memberships elsewhere. `listActiveMembers()` put a second row for the caller into S-16's list, carrying a role held in another organization and offering actions `membership_tenant_update` then refuses. `countActiveAdministrators()` is FR-60's lockout counter and counted an administrator role held **elsewhere** toward it: an account administering two organizations demoted itself in one and the API answered **204**, leaving that organization with no administrator and no self-service route back.
+
+Neither query is at fault and neither was changed. `MembershipStoreRepository` is right that naming an organization in a statement would be a second source of tenancy; the policy is the only correct site, which is P-4 and AD-2 working as intended once the policy says what it meant. **Nothing needed the widening while an organization is bound** — UC-16's picker binds only the account, and `AuthGuard` reads before any organization exists, so both keep their rows. Measured: the narrowing moved 4 of 862 api e2e cases and all four were direct policy probes in `tenant-isolation.e2e-spec.ts`, which had constructed the two-organization account and **asserted the widening deliberately**. Those assertions are updated; no consumer path moved.
 
 **The tenant root needs the mirror of that, and it is narrower than the obvious version. Decided 25 Aug 2026 (task 25.3).** Knowing *where* you belong is useless without knowing what those organizations are called: FR-12's switcher and S-05's membership list render names, and `core.organization` is readable only as the bound tenant — so a member of three organizations read three membership rows and zero names. The fix is a third policy, on the tenant root:
 

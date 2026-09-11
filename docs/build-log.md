@@ -16648,3 +16648,110 @@ sites went 16 → 20, caught by `docs:check` rather than by reading — four sec
 is five sites where one form was, and the number now carries the clause that it counts files, not
 forms. And task 127's sentence that S-04 and S-15 "have no `tools/`" was corrected where it was
 written, in both `apps/web/CLAUDE.md` and the plan.
+
+## Task 130 — a conjunct written on one table and not on the one it was modelled on · 2026-09-11
+
+Found while investigating the project owner's *"sort, filter and pagination must be server side"* for
+S-16 — which turned out to rest on a false premise (those controls write to the URL and the
+arithmetic runs in a Server Component, not the browser) and to need an API union read model, since
+the screen is one list across two tables. Reading the API side for that is what surfaced this.
+
+### Reproduced before anything was changed
+
+```
+PROBE rows: [["oa","organization_administrator"],["editor","editor"],["viewer","viewer"],
+             ["oa","organization_administrator"]]   ← the caller's row in ANOTHER organization
+PROBE self-demotion status: 204                     ← FR-60 defeated
+```
+
+An account holding `organization_administrator` in two organizations, acting for one, demoted itself
+and the API allowed it. That organization was left with **no administrator**: nobody able to invite,
+change a role or remove a member, and no self-service route back. The probe was written, run,
+and reverted before a line of the fix existed.
+
+**The mechanism.** `identity.membership` carries two permissive `SELECT` policies and permissive
+policies are OR'd, which task 25.1 recorded as the intent. `membership_self_select` was
+unconditional — *"an account's own memberships, in every organization, whether or not one is bound"*
+— and on a tenant request `app.current_user` is bound **alongside** `app.current_org`. So the table
+answered *"rows this account may see"* where every caller reads it as *"rows of the bound tenant"*,
+and every query in `MembershipStoreRepository` reads it that way **by design**: that file's docblock
+is right that a `WHERE organization_id` there would be a second source of tenancy.
+
+Two shipped reads were wrong and only one was cosmetic. `listActiveMembers()` put a second row for
+the caller into S-16's list, carrying a role held elsewhere, whose row actions then fail because
+`membership_tenant_update` correctly refuses them. `countActiveAdministrators()` is the same shape
+and is FR-60's counter.
+
+### The fix was already written, on a different table
+
+§7.6's next decision — task 25.3, two tasks after the policy was created — adds exactly this conjunct
+to `organization_directory_select`, and states the reason in full:
+
+> **The first conjunct is the decision.** … every later reader would then need an explicit
+> `WHERE id = <active org>` to stay correct, which is the filtering-at-call-sites AD-2 rejects …
+> Measured rather than argued: without the conjunct, a request bound to Alpha by a member of Alpha
+> and Beta sees **two** organizations.
+
+That is this defect, one table over, in the words of the task that fixed the other instance and did
+not carry it back to the policy it had been modelled on. The root `CLAUDE.md` has a section for this
+exact failure — *"A rule is applied where it holds, not where it was found"* — and its own worked
+example is a sweep where six of seven findings were conventions applied incompletely. This is the
+seventh, on the tenancy surface.
+
+So the change is one conjunct, `AND <no organization bound>`, and the migration's `down()` restores
+task 25.1's original **verbatim** rather than a corrected version: a revert is an undo, not a second
+migration.
+
+### The interesting part: the behaviour was asserted on purpose
+
+`tenant-isolation.e2e-spec.ts` is not a suite with a blind spot. It **built the two-organization
+account** and asserted the widening deliberately, with a reason — *"UC-16's picker, and the bootstrap
+`AuthGuard` depends on: an account can always see where it belongs"*. Four of its cases went red.
+
+That reason does not hold, and the spec's own neighbouring case is the evidence: UC-16's picker binds
+**only the account** (task 25.3's second store) and `AuthGuard` reads **before** any organization is
+bound, so both are covered by *"answers the pre-tenant lookup from the account alone"*, which is
+untouched and still green. The design was broader than any reader needed.
+
+**Measured, not argued.** With the narrowing applied, **858 of 862** api e2e cases passed unchanged
+and all four that moved were direct policy probes — no consumer path among them. Those two probes
+(run for both `esg_app` and `esg_migrator`, hence four) are rewritten to state the narrowed behaviour
+and why it changed. The write half of the asymmetry case is **kept rather than dropped as redundant**:
+it is `membership_tenant_update`'s `USING` that refuses the write, not the select policy, so the two
+can change independently and a future widening of the read must not quietly restore the write.
+
+### Two new cases, and the claim they replace
+
+`members.e2e-spec.ts` gains an account in two organizations — the actor every existing case in that
+suite is structurally unable to be, since all five hold exactly one membership. That is why a case
+literally named *"admits an administrator of another organization, scoped to their own"* passed
+throughout. Both new cases were **proven to bite by reverting the migration**: both red, everything
+else green.
+
+The list case asserts an **exact count** of rows carrying the administrator's address rather than a
+`not.toContain`, because the leaked row carries the *same email* as a legitimate one — the only thing
+that distinguishes them is that there are two.
+
+And `MembershipStoreRepository`'s docblock claimed `tenant-isolation.e2e-spec.ts` *"issues exactly
+these queries with no `WHERE` clause and **proves they cannot cross**"*. It proves the **policies**
+behave as designed; for this table those were different sentences, and the gap between them is where
+the bypass lived. Corrected, with the rule above it left standing — because after this migration the
+rule finally has the property it always claimed.
+
+### Verified
+
+`pnpm migrations:check` — apply, revert, re-apply, then §7's **56** schema invariants. `pnpm e2e`
+**862 passed** over 34 suites. `pnpm --filter @easyesg/api test` 711, `typecheck`, `pnpm lint`
+uncached, `pnpm docs:check` 28.
+
+**Not run: the browser suites and the rest of the gate set.** The diff is api-only — one policy, two
+spec files, three docblocks and the plan — and `apps/web` reads this through HTTP, where the change is
+that a row S-16 should never have shown stops arriving. The web's own assertion of the union list is
+`users-access.spec.ts`, which builds single-membership actors and is therefore indifferent to it. CI
+runs the full set on push.
+
+**S-16's server-side filtering is not done and is not started.** It was the request that led here;
+this task is the thing found on the way. What remains for it: an API union read model over
+`identity.membership` ∪ `identity.invitation` with filter, sort and pagination in one query — the
+screen cannot page correctly by adding parameters to the two existing endpoints, because page 2 of
+members unioned with page 2 of invitations is not page 2 of the union.

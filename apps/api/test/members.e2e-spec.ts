@@ -214,6 +214,93 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
     expect(emails).not.toContain(EMAILS.admin);
   });
 
+  /**
+   * The case every actor above is structurally unable to reach, and the one a confirmed FR-60 bypass
+   * lived behind (task 130).
+   *
+   * Each actor in this suite holds **exactly one** membership, so `membership_self_select` — which
+   * OR'd in *"an account's own memberships, in every organization"* — could never contribute a row
+   * the tenant policy had not already returned. It takes an account in **two** organizations at
+   * once to make the union produce anything, which nothing here constructed until now. The case
+   * above named *"scoped to their own"* and passed throughout.
+   *
+   * Both halves are asserted because they failed differently. The list was cosmetic-looking and was
+   * not: a second row for the same person, carrying a role held somewhere else, whose row actions
+   * then fail because `membership_tenant_update` correctly refuses them. The count is FR-60's
+   * lockout, and inflating it let the sole administrator of this organization demote themselves —
+   * **204**, measured before the fix.
+   */
+  describe('an account who also belongs to another organization (task 130)', () => {
+    /** Restored by `beforeEach`'s `resetMemberships` for ORG; the Beta row is withdrawn here. */
+    const withAdminAlsoInOtherOrg = async (role: string): Promise<void> => {
+      await asOrganization(owner, OTHER_ORG, (run) =>
+        run(
+          `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1,$2,$3)
+             ON CONFLICT (account_id, organization_id)
+             DO UPDATE SET role = EXCLUDED.role, status = 'active', removed_at = NULL`,
+          [admin.accountId, OTHER_ORG, role],
+        ),
+      );
+      // With two memberships and no stated preference UX-2 resolves none, so the request would be
+      // refused for a reason that has nothing to do with what this asserts. Pinning the session is
+      // the state a reader who has chosen an organization is actually in.
+      await owner.query(
+        `UPDATE identity.session SET active_organization_id = $1 WHERE account_id = $2`,
+        [ORG, admin.accountId],
+      );
+    };
+
+    const withdrawOtherOrgMembership = async (): Promise<void> => {
+      await asOrganization(owner, OTHER_ORG, (run) =>
+        run(
+          `UPDATE identity.membership SET status = 'removed', removed_at = now()
+            WHERE account_id = $1 AND organization_id = $2`,
+          [admin.accountId, OTHER_ORG],
+        ),
+      );
+    };
+
+    afterEach(withdrawOtherOrgMembership);
+
+    it('does not put their other organization’s membership in this organization’s list', async () => {
+      await withAdminAlsoInOtherOrg(MEMBERSHIP_ROLE.VIEWER);
+
+      const res = await http().get('/api/v1/members').set(admin.authorization).expect(200);
+      const objects = (res.body as { objects: { email: string; role: string }[] }).objects;
+
+      // An exact count rather than a `not.toContain`: the leaked row carries the *same* email as a
+      // legitimate one, so the only thing that distinguishes them is that there are two.
+      expect(objects.filter((m) => m.email === EMAILS.admin)).toHaveLength(1);
+      expect(objects.map((m) => [m.email, m.role]).sort()).toEqual(
+        [
+          [EMAILS.admin, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR],
+          [EMAILS.editor, MEMBERSHIP_ROLE.EDITOR],
+          [EMAILS.viewer, MEMBERSHIP_ROLE.VIEWER],
+        ].sort(),
+      );
+    });
+
+    it('refuses FR-60’s last-administrator demotion, counting only this organization’s administrators', async () => {
+      // The bypass exactly: administrator here AND there, so a count with no tenant scope reads 2
+      // where this organization has 1.
+      await withAdminAlsoInOtherOrg(MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR);
+
+      await http()
+        .patch(`/api/v1/members/${admin.membershipId}`)
+        .set(admin.authorization)
+        .send({ role: MEMBERSHIP_ROLE.VIEWER })
+        .expect(409);
+
+      // The organization still has the administrator it started with — the state FR-60 exists to
+      // preserve, asserted rather than inferred from the status code.
+      const res = await http().get('/api/v1/members').set(admin.authorization).expect(200);
+      const roles = (res.body as { objects: { email: string; role: string }[] }).objects;
+      expect(roles.find((m) => m.email === EMAILS.admin)?.role).toBe(
+        MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+      );
+    });
+  });
+
   it('answers 404 when they reach for a membership in the organization they do not hold', async () => {
     const res = await http()
       .delete(`/api/v1/members/${editor.membershipId}`)

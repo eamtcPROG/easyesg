@@ -43,7 +43,21 @@ interface MemberRow extends MembershipRow {
  * transaction and the policies do the scoping; a `WHERE organization_id = $1` here would read as
  * prudence and would in fact be a second source of tenancy, drifting from the policy the moment
  * either changed. The one place that is asserted is `tenant-isolation.e2e-spec.ts`, which issues
- * exactly these queries with no `WHERE` clause and proves they cannot cross.
+ * exactly these queries with no `WHERE` clause.
+ *
+ * **That sentence was load-bearing and was not true until task 130.** It said the isolation spec
+ * *"proves they cannot cross"*; what that spec proves is that the **policies** behave as designed,
+ * and for this table those were different statements — its policy set deliberately answered *"rows
+ * this account may see"*, which with an organization bound OR'd in the caller's memberships
+ * elsewhere. `listActiveMembers()` therefore put a second row for the caller into S-16's list, and
+ * `countActiveAdministrators()` counted an administrator role held in **another** organization
+ * toward FR-60's lockout — measured: the sole administrator of an organization demoted themselves
+ * and the API answered 204.
+ *
+ * The fix went into the policy rather than into these queries, so the rule above still holds and now
+ * has the property it always claimed: with an organization bound, RLS answers *this organization's
+ * rows* and nothing else, so a query written here tomorrow cannot reintroduce it by forgetting a
+ * predicate.
  *
  * Every statement is schema-qualified, as the baseline requires: TypeORM's postgres driver sets no
  * `search_path`.

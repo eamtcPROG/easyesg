@@ -252,15 +252,23 @@ describe.each([
       ]);
     });
 
-    // UC-16's picker, and the bootstrap `AuthGuard` depends on: an account can always see where it
-    // belongs. Note what it still cannot see — Beta's *other* member — which is the line between
-    // "my memberships" and "Beta's members".
-    it('shows an account its own memberships elsewhere, and nobody else’s', async () => {
+    /**
+     * **Narrowed by task 130, and the previous assertion is why the bug existed.** This case used to
+     * expect the ORG_B row here too, on the reasoning that *"UC-16's picker and the bootstrap
+     * `AuthGuard` depend on it"* — and both of those run with **no organization bound**, which the
+     * next case covers and which is unchanged. Nothing needed the widening while an organization was
+     * bound; what it produced instead was a confirmed FR-60 bypass, because
+     * `countActiveAdministrators()` counts with no `WHERE organization_id` and correctly relies on
+     * the policies to say what "this organization's administrators" means.
+     *
+     * So with an organization bound the answer is that organization's members, whoever is asking.
+     * The account binding no longer widens it, and the line between *"my memberships"* and
+     * *"Beta's members"* is now drawn by which bindings are set rather than by remembering a
+     * predicate at every call site (AD-2, P-4).
+     */
+    it('does not widen a bound organization’s read with the caller’s memberships elsewhere', async () => {
       await bind(runner, { organizationId: ORG_A, accountId: ACCOUNT_BOTH });
-      expect(await visibleMemberships()).toEqual([
-        { account: ACCOUNT_BOTH, org: ORG_A },
-        { account: ACCOUNT_BOTH, org: ORG_B },
-      ]);
+      expect(await visibleMemberships()).toEqual([{ account: ACCOUNT_BOTH, org: ORG_A }]);
     });
 
     // The same read with no organization bound at all — which is the state the guard is actually in
@@ -299,18 +307,24 @@ describe.each([
     });
 
     /**
-     * The asymmetry, asserted directly: `membership_self_select` grants **read** and nothing more.
-     * Without this test the pair would look identical to one that let a viewer in Beta promote
-     * themselves from a session scoped to Alpha — visible in the first probe, writable in neither.
+     * **Both halves now, where task 130 left one.** This used to assert the asymmetry —
+     * `membership_self_select` grants *read* and nothing more, so the row was visible from a session
+     * scoped to Alpha and not writable. Narrowing the policy removes the read as well, so the
+     * assertion becomes the stronger one: from a session acting for Alpha, the caller's own Beta
+     * membership is neither readable nor writable.
+     *
+     * The write half is kept rather than dropped as redundant. It is `membership_tenant_update`'s
+     * `USING` clause that refuses it, not the select policy, so the two could be changed
+     * independently — and a future widening of the read must not quietly restore the write with it.
      */
-    it('cannot edit its own membership in an organization it is not acting for', async () => {
+    it('can neither see nor edit its own membership in an organization it is not acting for', async () => {
       await bind(runner, { organizationId: ORG_A, accountId: ACCOUNT_BOTH });
 
       const visible = (await runner.query(
         `SELECT role FROM identity.membership WHERE account_id = $1 AND organization_id = $2`,
         [ACCOUNT_BOTH, ORG_B],
       )) as { role: string }[];
-      expect(visible).toEqual([{ role: 'viewer' }]);
+      expect(visible).toEqual([]);
 
       const { affected } = writeResult(
         await runner.query(
