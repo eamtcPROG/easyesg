@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import { RequestResetForm } from '@/features/identity/components/request-reset-form';
-import styles from '@/features/identity/components/identity-screens.module.css';
+import { RequestResetForm } from '@/features/identity/reset/components/request-reset-form';
+import styles from '@/features/identity/shared/styles/identity-screens.module.css';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**

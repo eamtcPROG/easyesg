@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { SOCIAL_SIGN_IN_INTENT } from '@easyesg/contracts';
-import { SignInForm } from '@/features/identity/components/sign-in-form';
-import { SocialNoticeCallout } from '@/features/identity/components/social-notice';
-import { SocialProviders } from '@/features/identity/components/social-providers';
-import styles from '@/features/identity/components/identity-screens.module.css';
+import { SignInForm } from '@/features/identity/sign-in/components/sign-in-form';
+import { SocialNoticeCallout } from '@/features/identity/social/components/social-notice';
+import { SocialProviders } from '@/features/identity/social/components/social-providers';
+import styles from '@/features/identity/shared/styles/identity-screens.module.css';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**

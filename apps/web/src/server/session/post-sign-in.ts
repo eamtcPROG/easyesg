@@ -2,7 +2,7 @@ import 'server-only';
 import type { AccountMembership } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { sanitizeReturnPath } from '@/lib/locale-path';
-import { postSignInTarget, type PostSignInTarget } from '@/features/identity/post-sign-in';
+import { postSignInTarget, type PostSignInTarget } from '@/features/identity/shared/tools/post-sign-in';
 import { api } from '../api/api-client';
 import { readMemberships } from '../data/memberships';
 

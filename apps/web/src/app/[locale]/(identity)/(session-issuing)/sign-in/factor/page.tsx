@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import { FactorForm } from '@/features/identity/components/factor-form';
-import styles from '@/features/identity/components/identity-screens.module.css';
+import { FactorForm } from '@/features/identity/sign-in/components/factor-form';
+import styles from '@/features/identity/shared/styles/identity-screens.module.css';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { peekFactorChallenge } from '@/server/sealed/factor-challenge';
 import { redirect } from '@/i18n/navigation';

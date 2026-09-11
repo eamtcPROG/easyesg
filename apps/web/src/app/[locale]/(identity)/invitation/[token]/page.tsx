@@ -3,10 +3,11 @@ import { getTranslations } from 'next-intl/server';
 import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { SOCIAL_SIGN_IN_INTENT } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
-import { AcceptInvitation } from '@/features/identity/components/accept-invitation';
-import { InvitationSummary } from '@/features/identity/components/invitation-summary';
-import { SocialProviders } from '@/features/identity/components/social-providers';
-import { previewInvitationAction, signOutAction } from '@/features/identity/actions';
+import { AcceptInvitation } from '@/features/identity/invitation/components/accept-invitation';
+import { InvitationSummary } from '@/features/identity/invitation/components/invitation-summary';
+import { SocialProviders } from '@/features/identity/social/components/social-providers';
+import { previewInvitationAction } from '@/features/identity/invitation/actions/actions';
+import { signOutAction } from '@/features/identity/shared/actions/actions';
 import {
   INVITATION_VIEW,
   invitationHandOff,
@@ -14,8 +15,8 @@ import {
   type InvitationView,
   type UnusableStanding,
   type UsableInvitation,
-} from '@/features/identity/invitation';
-import styles from '@/features/identity/components/identity-screens.module.css';
+} from '@/features/identity/invitation/tools/invitation';
+import styles from '@/features/identity/shared/styles/identity-screens.module.css';
 import { readSession } from '@/server/session/session';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';

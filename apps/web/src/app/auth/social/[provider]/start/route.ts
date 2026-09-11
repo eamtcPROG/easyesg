@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { beginSocialFlow } from '@/features/identity/social-flow';
+import { beginSocialFlow } from '@/features/identity/social/handlers/social-flow';
 
 /**
  * The OAuth start (task 24) — a GET because S-01's provider choice is a plain anchor that must

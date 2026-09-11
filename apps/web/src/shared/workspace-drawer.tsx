@@ -5,7 +5,7 @@ import type { Locale } from '@easyesg/i18n';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { signOutAction } from '@/features/identity/actions';
+import { signOutAction } from '@/features/identity/shared/actions/actions';
 import { WORKSPACE_SECTIONS } from './workspace-sections';
 import styles from './workspace-drawer.module.css';
 

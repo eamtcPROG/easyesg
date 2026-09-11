@@ -5,7 +5,7 @@ import type { Locale } from '@easyesg/i18n';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { signOutAction } from '@/features/identity/actions';
+import { signOutAction } from '@/features/identity/shared/actions/actions';
 
 /**
  * The global tier's account corner (task 30.1) — §4.2's *user menu (profile, language, sign out)*.

@@ -1,7 +1,7 @@
 import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import { SetPasswordForm } from '@/features/identity/components/set-password-form';
-import styles from '@/features/identity/components/identity-screens.module.css';
+import { SetPasswordForm } from '@/features/identity/reset/components/set-password-form';
+import styles from '@/features/identity/shared/styles/identity-screens.module.css';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { ROUTES } from '@/lib/routes';

@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { Callout, CALLOUT_INTENT, FocusColumn, TextLink } from '@easyesg/ui';
 import { redirect } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
-import { POST_SIGN_IN, targetLocale } from '@/features/identity/post-sign-in';
+import { POST_SIGN_IN, targetLocale } from '@/features/identity/shared/tools/post-sign-in';
 import { destinationForHeldSession } from '@/server/session/post-sign-in';
 
 /**

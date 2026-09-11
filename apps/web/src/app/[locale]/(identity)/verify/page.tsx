@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
-import { ConfirmEmail } from '@/features/identity/components/confirm-email';
-import { VerificationPending } from '@/features/identity/components/verification-pending';
-import styles from '@/features/identity/components/identity-screens.module.css';
+import { ConfirmEmail } from '@/features/identity/verify/components/confirm-email';
+import { VerificationPending } from '@/features/identity/verify/components/verification-pending';
+import styles from '@/features/identity/shared/styles/identity-screens.module.css';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**

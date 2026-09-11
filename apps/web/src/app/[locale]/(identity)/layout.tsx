@@ -1,7 +1,7 @@
 import { BrandMark, FocusShell } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { IdentityHeaderActions } from '@/features/identity/components/identity-chrome';
+import { IdentityHeaderActions } from '@/features/identity/shared/components/identity-chrome';
 import { SiteFooter } from '@/shared/site-footer';
 import { Link } from '@/i18n/navigation';
 

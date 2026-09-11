@@ -3,8 +3,8 @@
 import { BUTTON_VARIANT, Button, ProviderButton, RecordSection } from '@easyesg/ui';
 import { SOCIAL_PROVIDER, type SocialProvider } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
-import { providerGlyph } from '@/features/identity/components/provider-glyphs';
-import { providerLabel } from '@/features/identity/social';
+import { providerGlyph } from '@/features/identity/social/components/provider-glyphs';
+import { providerLabel } from '@/features/identity/social/tools/social';
 import { linkProviderAction, unlinkProviderAction } from '../actions/actions';
 import { SECTION_READ, type LinkedProvider } from '../tools/credentials';
 import { CREDENTIALS_SECTION, CREDENTIALS_STAGE } from '../tools/credentials-state';

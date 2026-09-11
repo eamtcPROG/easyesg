@@ -1,7 +1,7 @@
 import 'server-only';
 import type { Locale } from '@easyesg/i18n';
 import { redirect } from '@/i18n/navigation';
-import { targetLocale } from '@/features/identity/post-sign-in';
+import { targetLocale } from '@/features/identity/shared/tools/post-sign-in';
 import { destinationForHeldSession } from './post-sign-in';
 import { readSession } from './session';
 

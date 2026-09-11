@@ -1,0 +1,52 @@
+'use server';
+
+import type { SignOutRequest } from '@easyesg/contracts';
+import { getLocale } from 'next-intl/server';
+import { api } from '@/server/api/api-client';
+import { destroySession, readSession } from '@/server/session/session';
+import { redirect } from '@/i18n/navigation';
+import { sanitizeReturnPath } from '@/lib/locale-path';
+import { ROUTES } from '@/lib/routes';
+
+/**
+ * Server Actions for the identity journeys — the decided transport for unauthenticated identity
+ * calls (task 20): the browser posts to the Next server tier, which calls the public API as the
+ * ordinary client AD-9 says it is. The `/api/[...path]` pass-through stays scoped to traffic that
+ * cannot go through this tier (wizard PATCH, offline drain, polls).
+ *
+ * An action is a projection and nothing more: the `api` client owns the wire conventions AND the
+ * ambient context (the locale rides `Accept-Language` from inside the seam), `mapOutcome` owns the
+ * failure passthrough, and what remains is the one per-endpoint fact — which members of the wire
+ * DTO the screen needs. The API stays authoritative for every rule; the password policy is checked
+ * client-side for UX-108's at-entry feedback, but a bypassed form still meets the same policy as a
+ * 400 here.
+ *
+ * **One `actions/` per journey** (task 134): this file kept sign-out, whose readers are the chrome
+ * and S-03's permission state rather than any one journey; `register/`, `sign-in/`, `verify/`,
+ * `reset/` and `invitation/` each carry their own beside the components that call them.
+ */
+/**
+ * FR-5, UC-06. The API call authenticates by the refresh token itself (task 21: possession is
+ * the proof, and it works after the access token expired). The cookie is cleared whatever the
+ * API answered: the person asked to leave THIS browser, and refusing because of a network blip
+ * would strand them signed in; a termination the API never heard leaves a row its idle and
+ * absolute lifetimes still bound (OQ-35).
+ */
+export async function signOutAction(returnTo?: string): Promise<void> {
+  const session = await readSession();
+  if (session) {
+    await api.delete<SignOutRequest>('/auth/session', { refreshToken: session.refreshToken });
+  }
+  await destroySession();
+
+  // `returnTo` is S-03's permission state (task 26.3): someone opened an invitation while signed
+  // in as a different address, and the way out is to sign out and come back to THIS invitation
+  // rather than to a generic sign-in that loses the link. Sanitised like every other return path,
+  // because it reaches this action through the browser and an unchecked one turns sign-out into an
+  // open redirect — `proxy.ts` writes its own and this is the second writer.
+  const back = sanitizeReturnPath(returnTo);
+  const href = back
+    ? `${ROUTES.SIGN_IN}?return=${encodeURIComponent(back.href)}`
+    : ROUTES.SIGN_IN;
+  redirect({ href, locale: back?.locale ?? (await getLocale()) });
+}

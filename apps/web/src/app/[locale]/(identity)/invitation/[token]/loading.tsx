@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Panel, Spinner } from '@easyesg/ui';
-import styles from '@/features/identity/components/identity-screens.module.css';
+import styles from '@/features/identity/shared/styles/identity-screens.module.css';
 
 /**
  * S-03's **loading — initial** (§8.1, UX-90) — the first identity screen that needs one.

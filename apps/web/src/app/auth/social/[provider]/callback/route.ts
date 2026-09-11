@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { completeSocialFlow } from '@/features/identity/social-flow';
+import { completeSocialFlow } from '@/features/identity/social/handlers/social-flow';
 
 /**
  * The OAuth callback (task 24) — the exact URI registered at the provider, which is why it is
