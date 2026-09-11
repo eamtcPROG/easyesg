@@ -1,7 +1,7 @@
 import { getMessages } from 'next-intl/server';
 import type { CountryLegalForms, Organization } from '@easyesg/contracts';
-import { EntityRecordForm } from '@/features/entities/components/entity-record-form';
-import styles from '@/features/entities/components/entities.module.css';
+import { EntityRecordForm } from '@/features/entities/components/form/entity-record-form';
+import styles from '@/features/entities/components/styles/entities.module.css';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '@/server/api/api-client';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';

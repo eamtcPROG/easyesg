@@ -1,7 +1,7 @@
 import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getMessages, getTranslations } from 'next-intl/server';
-import { EntityRecordForm } from '@/features/entities/components/entity-record-form';
-import styles from '@/features/entities/components/entities.module.css';
+import { EntityRecordForm } from '@/features/entities/components/form/entity-record-form';
+import styles from '@/features/entities/components/styles/entities.module.css';
 import { readEntityRecord } from '@/server/data/entities';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { Link } from '@/i18n/navigation';

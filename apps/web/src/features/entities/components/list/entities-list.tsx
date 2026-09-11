@@ -26,8 +26,8 @@ import {
   type EntitySort,
   type EntityStanding,
   type EntityView,
-} from '../tools/entities';
-import styles from './entities.module.css';
+} from '../../tools/entities';
+import styles from '../styles/entities.module.css';
 
 /**
  * S-13's list, as an instance of the Index archetype (§4.6).
