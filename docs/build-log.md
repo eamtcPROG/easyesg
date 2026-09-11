@@ -16859,7 +16859,219 @@ the cause. **Three waived suites is how far a wrong "by construction" travels.**
 
 `apps/api` 721 unit and **880 e2e** over 35 suites (run three times: one early failure was fixture
 state left by my own standalone runs of the new suite, not the committed one). `apps/web` **408**
-unit. `pnpm lint` uncached, `typecheck`, `pnpm boundaries` 1,059 modules, `pnpm routes:check`,
+unit. `pnpm lint` uncached — **and that sentence was false of the committed tree** (task 132, the
+next task's first lint run): `access.controller.ts` at `61d6a9d` imports `DEFAULT_ON_PAGE` and uses
+it nowhere, so `pnpm lint` is red on this commit. The run this sentence reports either preceded the
+edit that orphaned the import or did not happen; the entry cannot say which, which is the reason to
+record it rather than quietly fix it. Fixed in task 132 by using the constant where the import was
+for — the `onpage` description now states the default — with the contract regenerated.
+`typecheck`, `pnpm boundaries` 1,059 modules, `pnpm routes:check`,
 `pnpm docs:check` 28, and `pnpm e2e:web --project identity --project expansion` **168 passed**
 including S-16's journey against the rewired screen. `migrations:check` not re-run: this task adds no
 migration.
+
+## Task 132 — one screen's refactor, stated as the rule for three workspaces · 2026-09-11
+
+*"Analyse the way `home/page.tsx` and `features/organization` were refactored — small component
+files, folder structure and so on — and define rules, because this is the way I expect the code to
+be written across api, web and admin."*
+
+### What was analysed, and where each rule was already written
+
+Eight tasks in one day (115, 122, 123, 125 … 129) took S-05 and `features/organization/` from a
+320-line route and 31 flat files to a tree of 60 in which no directory mixes files with folders, no
+component holds both a read and a render arm, and every pure rule has a spec beside it. Each task
+was a correction the owner made to the previous one's result, so the rules the shape embodies were
+recorded where each correction landed — two bullets in `apps/web/CLAUDE.md` and the docblocks of the
+files each move touched. Twenty-four rules came out of reading those against the tree; none was invented
+here, and each cites the task that produced it.
+
+### The owner's correction: skills, not prose
+
+The first draft wrote them into the root `CLAUDE.md` as a twelve-point section. *"I was expecting
+you to write them as skills."* The repository's own sentence says why that is the right shape and
+the draft was the wrong one: *a skill is loaded and read against the diff, not recalled* — and a
+paragraph in `CLAUDE.md` is precisely what gets recalled, approximately, which the root file records
+as the observed failure mode. So the rules are two skills in `.agents/skills/`, symlinked from
+`.claude/skills/` like the three that exist, in the same shape: a `SKILL.md` with categories by
+prefix and a quick reference, one rule per file with frontmatter and an incorrect/correct pair drawn
+from the refactor, a short `README.md`, a `metadata.json`.
+
+- **`one-idea-per-file`** — twelve rules, five categories (`shell-`, `section-`, `file-`, `pure-`,
+  `reason-`). Every workspace.
+- **`one-kind-per-folder`** — twelve rules, five categories (`folder-`, `screen-`, `components-`,
+  `shared-`, `move-`). `apps/web` and `apps/admin`.
+
+**No compiled `AGENTS.md`, on purpose.** The `nestjs` skill compiles one with its own ts-node project
+and the vercel skills ship one from upstream; a compiled copy is a second copy of the rules, free to
+drift, and gating it would mean a root script and a workflow line for twenty-four short files that
+read in one pass. Both `SKILL.md`s say so. The root section shrank to what a skill cannot carry —
+the two scoping decisions, the measured table, and which app loads which — and every place that had
+cited *the root `CLAUDE.md`'s section* now cites the rule that holds the text
+(`folder-files-or-folders`, `file-one-behaviour-api`). `convention-review` reads five skills now, and
+its count of `CLAUDE.md` files was stale at four — it is five — and is corrected in passing.
+
+### Four questions before anything was written, and the clarification that narrowed two of them
+
+Raised in one batch, per *Open questions are not debt*, because each answer changed the wording
+materially:
+
+- **Scope of *files or folders, never both*** — every directory under `src/`, not only feature
+  folders; framework-dictated layouts are the exemption.
+- **The one file that defines a directory** as a unit the framework composes is exempt; nothing
+  else is.
+- **One thing per file on the api** — one *behaviour* per file; a vocabulary (an errors file, a DTO
+  file) stays whole.
+- **The backlog** — one task per workspace.
+
+The third answer carried a clarification: *"the api's structure is good; when I was talking about
+folders I was referring to web and admin."* So the folder rules bind `apps/web` and `apps/admin`,
+`apps/api/CLAUDE.md`'s "Module anatomy" is unchanged, and two things the first question had named
+as backlog — `apps/api/src/contracts/` and `infrastructure/persistence/` — are not. The
+definition-file exemption was answered for the api's `<name>.module.ts`; with the api out of the
+folder rules' scope it has no instance in the two apps outside the framework exemption, and it is
+recorded as answered rather than dropped.
+
+**One consequence stated rather than left implicit.** With the scope at every directory, *"a domain
+serving one screen stays flat"* keeps its per-screen half and loses its folder half: `periods/`,
+`reports/`, `wizard/`, `entities/`, `credentials/` and `identity/` do not split per screen, and their
+roots can no longer hold files beside `components/`. `apps/web/CLAUDE.md` said they *"are correct as
+they are"*; it now says why they are not, and `folder-shape.spec.ts`'s docblock no longer gives the
+old clause as the reason for its scope.
+
+**One naming this task took on its own.** `apps/admin`'s wire kind is `queries/`, on the scaffold's
+existing name and the app's recorded data path (TanStack Query, `apps/admin/CLAUDE.md`). If the
+owner wants a different word it is one line in two files.
+
+### Measured, not described
+
+Every number in the section's table was taken from the tree on the day:
+
+- **Directories mixing files and folders**, by walking each `src/` and counting every directory's
+  immediate files and folders. `apps/web`: `server/` and six single-screen feature roots, plus seven
+  unbuilt scaffolds; `apps/admin`: `realm/`, `app/` and fifteen scaffolds; `apps/api`: 17 of 17
+  module roots, `contracts/`, `persistence/` — measured before the clarification took the api out of
+  scope, and kept here because it is what the question was asked against.
+- **The largest file and what it holds**: `step-fields.tsx` 1,016 lines, five components;
+  `read-wizard-step.use-case.ts` 1,222 lines, one use case beside two private resolver classes and
+  nine helpers; `manage-totp.use-case.ts`, two exported use cases. **Six repositories declare two
+  classes and are not listed**: the second is a private transaction adapter, the same behaviour's
+  second face — the reading *vocabularies stay whole* implies, and one a count of `class` lines
+  would have got wrong.
+- **A count that was wrong before it was written, caught by re-measuring.** `grep -c useState` gave
+  nine for `step-fields.tsx`; it has one `useState(` call, and the rest are the import and the
+  generic form. The draft said *nine `useState`s*; the section says nothing about `useState` there.
+  `docs:check` exists for exactly this class and would not have seen this sentence.
+
+### What was searched
+
+The *are there others?* half of the root file's rule, run before writing: the mixed-directory walk
+over all three `src/` trees; every `.tsx` in three workspaces for more than one exported component
+(three in `apps/web`, one in `apps/admin`, two in `packages/ui` — all pairs, none a
+section-and-parts); every api file outside `dto/`, `errors/` and `testing/` for more than one
+class; every feature `index.ts` in both apps for an importer (none); and the `docs:check` claim list
+for a pattern the new prose could satisfy by accident or a count it moves — one, *"nine-step build
+order as N tasks"*, 131 → 135.
+
+### What was not done, deliberately
+
+No file moved and no gate widened. The rules are written and the backlog is three `TODO` rows with
+their sites named, because *fix the sites first, then turn the gate on* — a `folder-shape.spec.ts`
+rooted at `src/` today would fail on thirteen web directories the previous rule called correct.
+
+### Found by this task's own verification: `61d6a9d` is lint-red
+
+`pnpm lint`, run here for one docblock edit, failed on `identity/access/controllers/access.controller.ts`
+— `DEFAULT_ON_PAGE` imported and never used. The committed file has it, so task 131's *"`pnpm lint`
+uncached"* was false of the tree it describes; that entry is corrected in place rather than
+overwritten. The fix uses the constant where the import was for: the `onpage` description now
+states the default, per `apps/api/CLAUDE.md`'s *state the default in the description, where a
+reader needs it* — which changes one string in the emitted spec and its generated client, both
+regenerated and staged.
+
+### Verified
+
+Docs, two skills, one docblock, one description string. `git check-ignore` on every new path under
+`.agents/skills/` and both symlinks: nothing ignored, and `git status` lists them all — the S-28
+lesson, checked rather than assumed. `pnpm docs:check` **28 claims across 5 documents**, the
+task count moved to 135; `pnpm --filter @easyesg/web test` **408 over 39 files**, `folder-shape.spec.ts`
+among them; `pnpm lint` red then green as above; `pnpm --filter @easyesg/api typecheck` clean;
+`pnpm openapi:check` exit 0 with the regenerated contract staged. **Skipped, and why**: the browser
+suite (no markup changed); `gates:clean` (no build input changed beyond one description string,
+which `openapi:check` covers); the api's unit and e2e suites (no behaviour changed — a decorator
+description is not exercised by either). **The three review agents were not run**: the diff is
+prose, and the two that would apply — `convention-review` and `spec-review` — are worth a separate
+decision on a rules change rather than being paid for by default; the owner can ask for them.
+
+## Task 136 — the five `CLAUDE.md` files re-audited · 2026-09-11
+
+Run as `/claude-md-management:claude-md-improver`: discover, score, report, then apply what the owner
+approved. All three proposed sets were approved.
+
+### The finding that shapes the entry
+
+Task 100's premise held exactly. Its 28 guarded counts were all right on the day; the twelve stale
+claims this audit found were all unguarded, and two pairs were contradicted **one sentence apart in
+the same file** — `packages/ui/CLAUDE.md`'s *"these 46 files"* beside its guarded *"47 components"*,
+and `apps/api/CLAUDE.md`'s *"seven boundary rules"* on line 12 against its own *"Nine"* on line 1218.
+A count in prose reads as authoritative precisely because it is specific, and nothing but a
+measurement can see it drift. The full list is in the task row; the worst by distance were the
+root's *"Foundation scaffolding, no features. Two applications and four packages"* (three, five, and
+thirty tasks of behaviour described in the table beneath it) and `apps/web`'s *"Only seven files here
+are Client Components"* (59).
+
+### Three sets, and what each turned out to be
+
+**Set 1 — fifteen currency edits**, each backed by a command whose output is in this session, not by
+reading. Verified accurate and left alone: the root's "Not started" list, the reference-repo paths,
+the admin file's every count, `packages/ui`'s per-folder counts.
+
+**Set 3 — eleven new `docs:check` claims** (28 → 39): apps and packages at the root; all four api
+context counts and the leaf total on the "Where things live" tree line (the one that bit was
+`identity/`, but the other three drift the same way); web's feature-folder count and the built
+subset (a folder holding nothing but `index.ts` and `.gitkeep`s is scaffolding, per
+`folder-scaffolds-go-when-built`); web's `'use client'` file count; ui's component total as
+restated in its opening paragraph. **One bit within the hour**: the Set 2 rewrite of `apps/web`'s
+opening sentence wrapped a line inside *(seven built)*, and two claims reported *"the pattern
+matches nothing — the prose changed"*. Fixed by re-wrapping; the gate did its job on the first
+prose edit after it was written.
+
+**Set 2 — the three Current-state narratives.** The root table is a real collapse: the `apps/api`
+row went from a 10,743-character cell — task by task, and **stopping at task 31.4** with nothing
+since — to 1,741 characters of *live by area* with task numbers as pointers; `packages/vsme` gained
+the row it never had. The four phrasings `docs:check` matches inside the table were kept verbatim,
+and the gate is what proved it. **The two app files did not get shorter, and the entry says so
+rather than the summary implying it**: api 308 → 338 lines, web 242 → 255. Their sections were
+already mostly trap paragraphs — the kind this repository keeps deliberately — so the reassembly
+kept those verbatim (pulled from the file by paragraph index, not retyped), replaced only the
+*"Task N adds …"* leads with a *live by area* block, and regrouped by the seam a reader is standing
+on (the api seam, the session tier, the chrome, the wizard, copy). What a reader gains is finding a
+slice's traps in one place; what they do not gain is fewer lines. Three *"Task 27.x adds"* paragraphs
+sit outside the section this task was scoped to (`apps/api/CLAUDE.md` around the
+configuration-artefact section) and were left.
+
+### An open deferral with a closed owner
+
+`apps/api/CLAUDE.md` said a revoked admin session's last access token is honoured ≤15 min *"until
+task 28's guard adds a lookup"*. Task 28 is `DONE`. `resolve-admin-session.use-case.ts`'s docblock
+carries the identical sentence, and the use case's current-token path returns without a store read.
+The sentence now says the deferral is still open; where it is picked up is the owner's call — it is
+not filed as a task here, because deciding whether a ≤15-minute window on an IP-allowlisted realm is
+a defect is a decision, not a refactor.
+
+### What was searched
+
+Every countable claim in all five files against the tree — apps and packages, workflow jobs, the
+gates chain, the contract's path count, the cruiser's rules by prefix, api modules per context and
+the `app/` and `infrastructure/` subdirectories, web layouts, route handlers, features, `'use
+client'` files, catalogue namespaces and `lib/`'s contents, admin route files and which return
+`null`, ui's per-folder counts and its two cruiser rules — plus the existence of everything the root
+lists as not started, and both reference repositories.
+
+### Verified
+
+`pnpm docs:check` **39 claims across 5 documents**, red once on the wrap and green after; `pnpm lint`
+over the one `.mjs` this task changed; `git status` read against what was written. Nothing here
+reaches a test, a build or a browser, so nothing else was run. The review agents were not run: the
+diff is documentation and one gate script, and `convention-review`'s own reading list is what this
+task rewrote.

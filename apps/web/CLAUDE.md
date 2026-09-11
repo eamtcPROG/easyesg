@@ -10,12 +10,17 @@ every screen. Cite them; do not re-derive them.
 
 ## Current state
 
-Scaffold plus the first screens. What exists: 43 page routes across six route groups, 7 layouts, a
-not-found boundary, 4 route handlers, the next-intl wiring, 10 feature folders, 5 boundary rules with fixtures — and,
-from task 20, **S-01 register and S-02 verify/resend live end to end**: `features/identity/`
-(server actions, RHF forms, the sessionStorage hand-off store), the `(identity)` layout on
-`@easyesg/ui`'s FocusShell, self-hosted fonts in `globals.css`, and `e2e/web/` at the repo root
-driving the journey in a real browser (`pnpm e2e:web`).
+Identity, organization, periods, reports, entities and the wizard are live; the calculator,
+validation, preview and export, notifications, checkout and billing and the public tier are the
+sixteen addresses `AddressNotice` answers for. What exists: 43 page routes across six route groups,
+7 layouts, a not-found boundary, 4 route handlers, the next-intl wiring, 14 feature folders (seven built),
+5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
+fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
+browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/task.md` says
+what each task shipped. What follows is what a reader needs in hand for each live slice, grouped by
+the seam it sits on rather than by the task that built it.
+
+### The seam to the API
 
 **Transport decision (task 20):** unauthenticated identity calls travel by **Server Action** —
 the Next server tier calls the public API as the ordinary client AD-9 says it is.
@@ -57,118 +62,12 @@ Two rules hold around that seam (post-close review, 20 Aug 2026 — iftamaster's
   may still pin the literals — they are the RSC wire values, and must break if a constant's
   value is renamed.
 
-**The session tier is live (task 22).** S-01 sign-in and S-02 reset/set-password reach the API
-through Server Actions like registration does; sign-in seals the whole AD-12 session — both
-tokens, expiries, the identity block — into ONE httpOnly `easyesg_session` cookie
-(`Secure; SameSite=Lax; Path=/`, AES-256-GCM under `SESSION_SECRET` — OQ-33, closed
-21 Aug 2026, architecture.md §12.5.6) and writes `NEXT_LOCALE` from the profile preference
-(OQ-32). `src/server/session-codec.ts` is the pure seal/unseal; `src/server/session.ts` is the
-request-scoped tier (read, establish, destroy, single-flighted refresh);
-`src/app/api/[...path]` is the real pass-through — same-origin proof on writes, 401 without a
-session, rotate-if-expiring, then forward with the bearer and stream both bodies untouched.
-The one interim this left — the `(app)` layout's `SessionStrip`, carrying sign-out until the real
-global tier existed — is **gone since task 30.1**, deleted rather than left dead.
-
-**§4.2's global tier is live (task 30.1).** `shared/global-tier.tsx` is a Server Component in the
-`(app)` layout — so it is on every authenticated screen including the two outside `(workspace)`,
-S-04 and S-35, where it renders its designed empty state and names no organization. It resolves
-every string with `getTranslations` and hands them down, because `shared/account-corner.tsx` is a
-Client Component only for `usePathname`/`useSearchParams` (a language choice is a link to this
-address in another locale) and giving it `useTranslations` would put the `chrome` catalogue in the
-bundle. `server/memberships.ts` is the read, wrapped in React `cache()` — the band and S-05 read the
-same collection in one render pass.
-
-Three things to know before touching it:
-
-- **The organization region is a plate, not a switcher.** Switching writes the session and its route
-  is **task 83**'s; the band names what `GET /memberships` marks `active`, which is `AuthGuard`'s own
-  `selectActiveMembership` answer projected onto the read. Never derive it here — "the only
-  membership" is right until someone holds two.
-- **Sign-out submits explicitly.** The menu item is a `type="submit"` button associated by `form=`
-  with a form outside the Radix portal, and its `onClick` cancels the default and calls
-  `requestSubmit()`. Without that the menu's close unmounts the button before the click's default
-  action runs, and sign-out silently does nothing. `e2e/web/global-tier.spec.ts` is what holds it.
-- **`AccountMenu` is `modal={false}`.** A modal Radix root puts `pointer-events: none` on `body`, and
-  `SubContent` portals as a sibling of the layer that gets `auto` back — so the language submenu is
-  unclickable. It is also the right semantics for chrome hanging off a header.
-
-**§4.3's post-sign-in branch is live (task 25.4).** `features/identity/post-sign-in.ts` holds the
-rule — none → S-04, one → S-05, several → S-05 where the switcher chooses (OQ-6) — and
-`server/post-sign-in.ts` the seam that reads `/memberships` and applies it. Both sign-in flows exit
-through it; a provider session is the same session (UC-05). Three things to know before touching
-it: **`?return=` is honoured where the destination can actually render** — refined 25 Aug 2026 by
-task 26.3, from "only where an organization resolves". The override exists because a route inside
-`(app)` needs a bound organization, which says nothing about one outside it: S-03's
-`/invitation/<token>` renders perfectly for a member of nothing and is the one deep link such a
-person must be returned to. `rendersWithoutOrganization` reads `lib/route-access.ts`, which is the
-proxy's own list — the gate and the branch must not disagree about which routes need a session;
-**`null` memberships and `[]` are different answers** — could not read (S-35) versus belongs to
-nothing (S-04); and **the rule carries no `server-only`** deliberately, since importing the
-API client there would make every arm untestable outside a browser.
-
-**The provider flow is live (task 24).** `/auth/social/{provider}/start|callback` are Route
-Handlers OUTSIDE `[locale]` — they are the redirect URIs registered at the providers, so they
-cannot vary by language, and they are excluded from `proxy.ts`'s matcher (locale negotiation
-would rewrite them; the session gate would bounce the sessionless callback). The flow logic lives
-in `features/identity/social-flow.ts`; the in-flight OAuth transaction (state, nonce, PKCE
-verifier, intent, return path) rides in its own sealed httpOnly cookie
-(`src/server/social-transaction.ts`, over the codec's generic `sealJson`/`unsealJson`), and a
-successful completion calls `establishSession` exactly as password sign-in does. Two traps with
-scars: **every redirect this flow issues is based on `env.publicOrigin`, never `request.url`** —
-the standalone server binds `0.0.0.0`, and a redirect built from the bind address lands the
-browser on a host the session cookie was never set on; and the transaction cookie is
-`SameSite=Lax` by necessity — the provider callback is a cross-site top-level GET, which `Strict`
-would strip the cookie from. S-01's provider buttons (`SocialProviders`, a Server Component
-streamed behind the form) and the `?notice=` callout (`SocialNoticeCallout`, closed vocabulary in
-`features/identity/social.ts`) are the screen surface; FR-8 link/unlink is task 27's, on S-28.
-
-**S-07's draft-integrity pattern is live (task 35.2).** `client/autosave/` is built — `useAutosave`
-over `features/wizard/autosave-state.ts`'s reducer, the IndexedDB `PendingWriteStore` with its
-memory fallback, and `putDisclosureValues`, the **first browser-originated write** through
-`app/api/[...path]`. The step page renders §6.2's anatomy through `features/wizard/components/`
-(`StepFields` → `DisclosureControl`, one control per kind), with the indicator in `WizardShell`'s
-`saveState` slot, the unsynced banner above the fields, and the exit control's consequence dialogue.
-Four things to know before touching it:
-
-- **The reducer owns what is unacknowledged; Query owns only the wire.** `FLUSH_SUCCEEDED` is
-  dispatched from `onSuccess` with the rows as committed, and nothing leaves `pending` before that
-  (NFR-56). A key is acknowledged only if its sequence still equals the one sent — edit a field while
-  its previous value is in flight and the newer edit survives. `architecture.md` §12.5.6 records why
-  Query's mutation cache could not be the queue.
-- **The `QueryClientProvider` lives in the `[reportId]` layout, not in `(app)`.** Autosave is the
-  first Query consumer and lives entirely under `(wizard)`; the provider moves up when the
-  notification unread count (task 50.2) needs it on every screen. Do not create a second client.
-- **A step change persists and does not fire.** Unmount writes nothing; the queue is in IndexedDB and
-  the next step's mount restores and flushes it. The exit control warns (UX-37); the rail does not,
-  because a step change abandons nothing. The queue's key carries the **account id** from the sealed
-  session — `pending-store.ts` says why a report-scoped key would let the next sign-in drain it.
-- **Two required slots are `null` with their owners named**: `help` (OQ-59 — no source for UX-17's
-  sentences exists) and `notAvailable` (task 36.13). `enumeration` kinds render as text until task
-  36.2 brings the domain to the browser; `text_block` is a plain `TextArea` until 36.2's narrative
-  control. Every one of these is a different control arriving with its module, not a boolean prop.
-
-**S-28 and S-01's staged factor step are live (tasks 27.7, 27.8).** `features/credentials/` holds
-the Record screen over `RecordShell` — extracted to `packages/ui` at this first instance, not
-deferred — and `features/identity/`'s `factor.ts` / `factor-state.ts` / `components/factor-form.tsx`
-hold `/sign-in/factor`. Three things to know before touching either. **The factor challenge lives
-in `server/factor-challenge.ts`'s sealed httpOnly cookie and only `expiresAt` reaches the browser**
-— `peekFactorChallenge` reads without clearing because a render cannot write cookies, and
-`consumeFactorChallenge`'s caller puts it back on a refusal, since the API's challenge is
-deliberately not single-use. **`signInAction` branches on `kind`, never on the presence of
-`accessToken`** — probing for a field is writing the discriminator a second time, and the absence of
-that branch is what made enrolling a factor crash the next sign-in for four tasks (build-log,
-27 Aug 2026). And **`FACTOR_LAPSED` is a fourth `status` beside `API_OUTCOME`'s three**, declared in
-`features/identity/factor.ts` and deliberately not a member of the wire vocabulary: no server can
-send it.
-
-**A pending provider link is bound to the account that began it** (27 Aug 2026, review).
-`beginSocialFlow` refuses to start a link without a session, and that proves nothing about the
-session five minutes later at the *confirmation* — the re-sealed cookie is path-wide, so a session
-that ends in between leaves it standing, `/account/credentials` bounces to sign-in, and whoever
-signs in next is offered a confirmation that would attach someone else's Google account to theirs.
-`PendingLink` therefore carries `accountId`, the callback refuses when no session remains, and
-`readPendingLink` and `completePendingLink` both require it to match. **The two must agree**: a
-pending state the reader can see but never complete is worse than none at all.
+**The outcome-to-notice translation itself lives in `src/lib/notice.ts`** — `successNotice`,
+`failureNotice` and `noticeFromOutcome`, pure and copy-free. It exists because three screens had
+grown their own copy of the same per-member RFC 9457 fallback and two had already drifted. Reach
+for it whenever a screen holds an outcome in state; render `problem.title ?? …` inline only where
+the "what now" is a **node** that navigates, which `Notice.action: string | null` deliberately
+cannot hold.
 
 **A refusal's "what now" comes from the API, not from the screen** (same review, extended 27 Aug
 2026). `Callout`'s `action` is required by §11.5 — feedback ships with three parts — so every screen
@@ -193,13 +92,6 @@ formal register applied either. When a rule here is about `Callout`, `ApiOutcome
 it is a rule about the console too; the root `CLAUDE.md`'s "A rule is applied where it holds"
 carries the general form.
 
-**The outcome-to-notice translation itself lives in `src/lib/notice.ts`** — `successNotice`,
-`failureNotice` and `noticeFromOutcome`, pure and copy-free. It exists because three screens had
-grown their own copy of the same per-member RFC 9457 fallback and two had already drifted. Reach
-for it whenever a screen holds an outcome in state; render `problem.title ?? …` inline only where
-the "what now" is a **node** that navigates, which `Notice.action: string | null` deliberately
-cannot hold.
-
 **Read a provider through the contract's enum, never as a `string`.** `providerLabel` and
 `providerGlyph` take `SocialProvider`, so an unnamed provider is a compile error at their `Record`
 rather than a raw slug rendered into a sentence. `features/credentials/credentials.ts` **re-exports**
@@ -207,23 +99,97 @@ rather than a raw slug rendered into a sentence. `features/credentials/credentia
 hand-written copy had widened `provider` to `string`, which is exactly the drift that package exists
 to prevent, and it is what let the slug through.
 
-**Romanian addresses the reader formally, everywhere — UX-135** (27 Aug 2026, project owner).
-*Dumneavoastră*, no exceptions; Russian was already uniformly *вы* and English has no T-V
-distinction. Before this, RO was split almost evenly and the two registers met **inside one
-viewport**: S-01 rendered *"Intră în contul tău"* beside *"Continuați cu Google"*, because the
-provider buttons are a different namespace from the form they sit under. Seventy strings across
-seven `identity` namespaces were rewritten, and seventy test selectors with them — the e2e specs
-match on Romanian labels, which is the intended coupling and is why a catalogue edit is never
-just a catalogue edit here. `design_spec.md` §3.4 carries the rule and the reasoning.
+### The session tier
 
-**The message catalogues have their first content.** `src/messages/{ro,en,ru}.json` carry
-`chrome` and `identity`; all three separately authored, RO the source. Adding a string is a JSON
-edit — and adding it to `ro.json` alone fails `src/messages/messages.parity.spec.ts`, which is
-what replaces FR-64's runtime queue now that every locale is present at build time
-(architecture.md OQ-43). `global.d.ts` derives key types from `ro.json`, so a typo'd key fails
-`pnpm typecheck`. Component specs run against the real RO catalogue with
-`src/test/setup.ts` registering jest-dom matchers and the explicit `cleanup()` that
-`globals: false` withholds.
+**The session tier** (task 22). S-01 sign-in and S-02 reset/set-password reach the API
+through Server Actions like registration does; sign-in seals the whole AD-12 session — both
+tokens, expiries, the identity block — into ONE httpOnly `easyesg_session` cookie
+(`Secure; SameSite=Lax; Path=/`, AES-256-GCM under `SESSION_SECRET` — OQ-33, closed
+21 Aug 2026, architecture.md §12.5.6) and writes `NEXT_LOCALE` from the profile preference
+(OQ-32). `src/server/session-codec.ts` is the pure seal/unseal; `src/server/session.ts` is the
+request-scoped tier (read, establish, destroy, single-flighted refresh);
+`src/app/api/[...path]` is the real pass-through — same-origin proof on writes, 401 without a
+session, rotate-if-expiring, then forward with the bearer and stream both bodies untouched.
+The one interim this left — the `(app)` layout's `SessionStrip`, carrying sign-out until the real
+global tier existed — is **gone since task 30.1**, deleted rather than left dead.
+
+**§4.3's post-sign-in branch** (task 25.4). `features/identity/post-sign-in.ts` holds the
+rule — none → S-04, one → S-05, several → S-05 where the switcher chooses (OQ-6) — and
+`server/post-sign-in.ts` the seam that reads `/memberships` and applies it. Both sign-in flows exit
+through it; a provider session is the same session (UC-05). Three things to know before touching
+it: **`?return=` is honoured where the destination can actually render** — refined 25 Aug 2026 by
+task 26.3, from "only where an organization resolves". The override exists because a route inside
+`(app)` needs a bound organization, which says nothing about one outside it: S-03's
+`/invitation/<token>` renders perfectly for a member of nothing and is the one deep link such a
+person must be returned to. `rendersWithoutOrganization` reads `lib/route-access.ts`, which is the
+proxy's own list — the gate and the branch must not disagree about which routes need a session;
+**`null` memberships and `[]` are different answers** — could not read (S-35) versus belongs to
+nothing (S-04); and **the rule carries no `server-only`** deliberately, since importing the
+API client there would make every arm untestable outside a browser.
+
+**The provider flow** (task 24). `/auth/social/{provider}/start|callback` are Route
+Handlers OUTSIDE `[locale]` — they are the redirect URIs registered at the providers, so they
+cannot vary by language, and they are excluded from `proxy.ts`'s matcher (locale negotiation
+would rewrite them; the session gate would bounce the sessionless callback). The flow logic lives
+in `features/identity/social-flow.ts`; the in-flight OAuth transaction (state, nonce, PKCE
+verifier, intent, return path) rides in its own sealed httpOnly cookie
+(`src/server/social-transaction.ts`, over the codec's generic `sealJson`/`unsealJson`), and a
+successful completion calls `establishSession` exactly as password sign-in does. Two traps with
+scars: **every redirect this flow issues is based on `env.publicOrigin`, never `request.url`** —
+the standalone server binds `0.0.0.0`, and a redirect built from the bind address lands the
+browser on a host the session cookie was never set on; and the transaction cookie is
+`SameSite=Lax` by necessity — the provider callback is a cross-site top-level GET, which `Strict`
+would strip the cookie from. S-01's provider buttons (`SocialProviders`, a Server Component
+streamed behind the form) and the `?notice=` callout (`SocialNoticeCallout`, closed vocabulary in
+`features/identity/social.ts`) are the screen surface; FR-8 link/unlink is task 27's, on S-28.
+
+**A pending provider link is bound to the account that began it** (27 Aug 2026, review).
+`beginSocialFlow` refuses to start a link without a session, and that proves nothing about the
+session five minutes later at the *confirmation* — the re-sealed cookie is path-wide, so a session
+that ends in between leaves it standing, `/account/credentials` bounces to sign-in, and whoever
+signs in next is offered a confirmation that would attach someone else's Google account to theirs.
+`PendingLink` therefore carries `accountId`, the callback refuses when no session remains, and
+`readPendingLink` and `completePendingLink` both require it to match. **The two must agree**: a
+pending state the reader can see but never complete is worse than none at all.
+
+**S-28 and S-01's staged factor step** (tasks 27.7, 27.8). `features/credentials/` holds
+the Record screen over `RecordShell` — extracted to `packages/ui` at this first instance, not
+deferred — and `features/identity/`'s `factor.ts` / `factor-state.ts` / `components/factor-form.tsx`
+hold `/sign-in/factor`. Three things to know before touching either. **The factor challenge lives
+in `server/factor-challenge.ts`'s sealed httpOnly cookie and only `expiresAt` reaches the browser**
+— `peekFactorChallenge` reads without clearing because a render cannot write cookies, and
+`consumeFactorChallenge`'s caller puts it back on a refusal, since the API's challenge is
+deliberately not single-use. **`signInAction` branches on `kind`, never on the presence of
+`accessToken`** — probing for a field is writing the discriminator a second time, and the absence of
+that branch is what made enrolling a factor crash the next sign-in for four tasks (build-log,
+27 Aug 2026). And **`FACTOR_LAPSED` is a fourth `status` beside `API_OUTCOME`'s three**, declared in
+`features/identity/factor.ts` and deliberately not a member of the wire vocabulary: no server can
+send it.
+
+### The chrome
+
+**§4.2's global tier** (task 30.1). `shared/global-tier.tsx` is a Server Component in the
+`(app)` layout — so it is on every authenticated screen including the two outside `(workspace)`,
+S-04 and S-35, where it renders its designed empty state and names no organization. It resolves
+every string with `getTranslations` and hands them down, because `shared/account-corner.tsx` is a
+Client Component only for `usePathname`/`useSearchParams` (a language choice is a link to this
+address in another locale) and giving it `useTranslations` would put the `chrome` catalogue in the
+bundle. `server/memberships.ts` is the read, wrapped in React `cache()` — the band and S-05 read the
+same collection in one render pass.
+
+Three things to know before touching it:
+
+- **The organization region is a plate, not a switcher.** Switching writes the session and its route
+  is **task 83**'s; the band names what `GET /memberships` marks `active`, which is `AuthGuard`'s own
+  `selectActiveMembership` answer projected onto the read. Never derive it here — "the only
+  membership" is right until someone holds two.
+- **Sign-out submits explicitly.** The menu item is a `type="submit"` button associated by `form=`
+  with a form outside the Radix portal, and its `onClick` cancels the default and calls
+  `requestSubmit()`. Without that the menu's close unmounts the button before the click's default
+  action runs, and sign-out silently does nothing. `e2e/web/global-tier.spec.ts` is what holds it.
+- **`AccountMenu` is `modal={false}`.** A modal Radix root puts `pointer-events: none` on `body`, and
+  `SubContent` portals as a sibling of the layer that gets `auto` back — so the language submenu is
+  unclickable. It is also the right semantics for chrome hanging off a header.
 
 **Every address answers something (task 103).** `shared/address-notice.tsx` holds §8.1's two
 address states — `error — not yet available` for the sixteen routes whose screens have not
@@ -248,6 +214,54 @@ Reaching the 404 signed out depends on the segment, which is `proxy.ts`'s rule r
 page's: an unknown address under an authenticated segment answers 307 to sign-in with a
 `?return=` and never reaches the catch-all, so only `route-access.ts`'s unauthenticated
 segments 404 without a session. `e2e/web/address-states.spec.ts` asserts both halves.
+
+### The wizard
+
+**S-07's draft-integrity pattern** (task 35.2). `client/autosave/` is built — `useAutosave`
+over `features/wizard/autosave-state.ts`'s reducer, the IndexedDB `PendingWriteStore` with its
+memory fallback, and `putDisclosureValues`, the **first browser-originated write** through
+`app/api/[...path]`. The step page renders §6.2's anatomy through `features/wizard/components/`
+(`StepFields` → `DisclosureControl`, one control per kind), with the indicator in `WizardShell`'s
+`saveState` slot, the unsynced banner above the fields, and the exit control's consequence dialogue.
+Four things to know before touching it:
+
+- **The reducer owns what is unacknowledged; Query owns only the wire.** `FLUSH_SUCCEEDED` is
+  dispatched from `onSuccess` with the rows as committed, and nothing leaves `pending` before that
+  (NFR-56). A key is acknowledged only if its sequence still equals the one sent — edit a field while
+  its previous value is in flight and the newer edit survives. `architecture.md` §12.5.6 records why
+  Query's mutation cache could not be the queue.
+- **The `QueryClientProvider` lives in the `[reportId]` layout, not in `(app)`.** Autosave is the
+  first Query consumer and lives entirely under `(wizard)`; the provider moves up when the
+  notification unread count (task 50.2) needs it on every screen. Do not create a second client.
+- **A step change persists and does not fire.** Unmount writes nothing; the queue is in IndexedDB and
+  the next step's mount restores and flushes it. The exit control warns (UX-37); the rail does not,
+  because a step change abandons nothing. The queue's key carries the **account id** from the sealed
+  session — `pending-store.ts` says why a report-scoped key would let the next sign-in drain it.
+- **Two required slots are `null` with their owners named**: `help` (OQ-59 — no source for UX-17's
+  sentences exists) and `notAvailable` (task 36.13). `enumeration` kinds render as text until task
+  36.2 brings the domain to the browser; `text_block` is a plain `TextArea` until 36.2's narrative
+  control. Every one of these is a different control arriving with its module, not a boolean prop.
+
+### Copy
+
+**Romanian addresses the reader formally, everywhere — UX-135** (27 Aug 2026, project owner).
+*Dumneavoastră*, no exceptions; Russian was already uniformly *вы* and English has no T-V
+distinction. Before this, RO was split almost evenly and the two registers met **inside one
+viewport**: S-01 rendered *"Intră în contul tău"* beside *"Continuați cu Google"*, because the
+provider buttons are a different namespace from the form they sit under. Seventy strings across
+seven `identity` namespaces were rewritten, and seventy test selectors with them — the e2e specs
+match on Romanian labels, which is the intended coupling and is why a catalogue edit is never
+just a catalogue edit here. `design_spec.md` §3.4 carries the rule and the reasoning.
+
+**The message catalogues have their first content.** `src/messages/{ro,en,ru}.json` carry
+`chrome`, `forms`, `identity` and `organization`; all three separately authored, RO the source. Adding a string is a JSON
+edit — and adding it to `ro.json` alone fails `src/messages/messages.parity.spec.ts`, which is
+what replaces FR-64's runtime queue now that every locale is present at build time
+(architecture.md OQ-43). `global.d.ts` derives key types from `ro.json`, so a typo'd key fails
+`pnpm typecheck`. Component specs run against the real RO catalogue with
+`src/test/setup.ts` registering jest-dom matchers and the explicit `cleanup()` that
+`globals: false` withholds.
+
 
 ## Commands
 
@@ -274,7 +288,7 @@ src/
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter)
 ├─ server/         server-only: session, api-client, data/
 ├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), polling
-└─ lib/            env, pagination, session-cookie, routes, route-access, notice
+└─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths
 ```
 
 Route groups carry no URL segment, which is the whole reason there are six. **The table is the
@@ -381,11 +395,16 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `context/`) was the alternative and is the wrong one — it separates the files that change together,
   which is the only thing a folder can usefully keep.
 
-  **A domain serving ONE screen stays flat** — `periods/`, `reports/`, `wizard/`, `entities/` and
-  `credentials/` are correct as they are, and so is the scaffolded `components/ hooks/ queries/
-  schema/ types/` set in a domain that has not been built yet. What this rule answers is the shape a
-  domain grows into, not a shape to impose on arrival. `identity/` is the outstanding case: 13 root
-  files across S-01, S-02, S-03 and the provider flow, and the same treatment when someone is in it.
+  **A domain serving ONE screen does not split per screen** — there is no second screen to split
+  by — **and since task 132 that is all this clause says.** It used to add that `periods/`,
+  `reports/`, `wizard/`, `entities/` and `credentials/` *"are correct as they are"*, and under the
+  `one-kind-per-folder` skill's `folder-files-or-folders` — which holds in every directory under
+  `src/` — they are not: each holds files beside `components/`,
+  and each becomes `components/ · tools/ · actions/` directly, which is task 134's. The scaffolded
+  `components/ hooks/ queries/ schema/ types/` set in an unbuilt domain goes when the domain is
+  built, per the next paragraph. What this rule answers is the shape a domain grows into, not a
+  shape to impose on arrival. `identity/` is the outstanding case for **both** halves: 13 root
+  files across S-01, S-02, S-03 and the provider flow.
 
   **`index.ts` and empty scaffold folders go when the domain is built.** `organization/index.ts` was
   `export {}`, imported nowhere, and its docblock still read *"Not built. Folders are `components/
@@ -401,10 +420,12 @@ conditional render, which is how it ends up half-suppressed on one screen.
 
 - **Inside a screen folder, a directory holds files or folders — never both** (11 Sep 2026, tasks
   126 and 127, project owner). S-05 was the worked example; task 127 carried it to the other three,
-  so it is `features/organization/`'s shape rather than one screen's. `home/components/` had grown
-  to 16 flat files; splitting it per **region** left a stylesheet and six overview files sitting
-  beside the new folders, which is the shape this rule refuses — a listing that mixes the two makes
-  a reader check every entry to learn what kind of thing it is.
+  so it is `features/organization/`'s shape rather than one screen's — and, since task 132, every
+  directory under `src/`'s: the general form is the `one-kind-per-folder` skill (twelve rules; the
+  two exemptions are in `folder-files-or-folders`), and this bullet keeps the worked example. `home/components/` had grown to 16 flat files; splitting it per
+  **region** left a stylesheet and six overview files sitting beside the new folders, which is the
+  shape this rule refuses — a listing that mixes the two makes a reader check every entry to learn
+  what kind of thing it is.
 
   **A screen folder holds up to three kinds, and the third is what task 126 deferred.**
   `components/` renders, `tools/` is pure, **`actions/`** is the half carrying `'use server'`. That
@@ -457,18 +478,19 @@ conditional render, which is how it ends up half-suppressed on one screen.
   **It has a failing state, scoped to where it holds.** `organization/tools/folder-shape.spec.ts`
   walks the feature and names the offender (*"access holds files [stray.ts] beside folders […]"*),
   proven by adding one at both scopes it has had. It is a spec rather than a repo-wide selector, and
-  the reason is the rule two bullets up: **a domain serving one screen stays flat**, so `periods/`,
-  `reports/`, `wizard/`, `entities/` and `credentials/` mix files with folders *correctly*. Measured
-  after task 127: **thirteen directories under `features/` still mix them, and all thirteen are
-  feature roots** of single-screen or unbuilt domains — so a `features/`-wide gate would be red on
-  thirteen folders that are right, and green on nothing that is wrong. Widen the root when another
-  domain grows into the per-screen shape. Without the spec the rule would be asserted in three
-  documents and checked by nothing, which is this repository's own recorded failure shape.
+  the reason is *fix the sites first, then turn the gate on*. Measured after task 127: **thirteen
+  directories under `features/` still mix them, and all thirteen are feature roots** of
+  single-screen or unbuilt domains. Until task 132 this paragraph called them *right* — the rule two
+  bullets up exempted single-screen roots — and now they are task 134's backlog, with `server/` (13
+  files beside `data/`), because `folder-files-or-folders` holds in every directory under `src/`.
+  The spec's root moves up as each site is fixed, never ahead of one. Without the spec the rule
+  would be asserted in three documents and checked by nothing, which is this repository's own
+  recorded failure shape.
 
   **The spec lives in a `tools/` of the feature's own, not at `organization/`'s root** — a file there
   would sit beside the four screen folders and the check would fail on its own placement. `identity/`
-  remains the outstanding case for the *per-screen* rule above; this one does not reach it until it
-  splits.
+  remains the outstanding case for the *per-screen* rule above, and since task 132 this rule reaches
+  it too; the *spec* does not until task 134 fixes it.
 
   **A `vi.mock()` path is a string, so a file move does not typecheck.** `access-board.spec.tsx`
   carried `vi.mock('../actions')` through the move with `pnpm typecheck` and `pnpm lint` both
@@ -725,10 +747,12 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  Only seven files here are Client Components, all under `features/identity/`, and none currently
-  has a case — Server Components have no render loop to optimise, which is why this has cost
-  nothing yet. It starts to bite at the wizard (S-07…S-12), autosave's IndexedDB queue and the
-  three polls. `eslint-plugin-react-hooks` 7.1.1 already runs the compiler's static analysis and
+  **59 files here are Client Components** (11 Sep 2026: ten under `wizard/components/`, nine under
+  `organization/access/components/`, eight each under `identity/` and `credentials/`), so the three
+  cases above are live questions in every one of them — `access-context.tsx` is the worked example,
+  where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two
+  consumers per row. When this paragraph was written there were seven, all under `identity/`, and
+  none had a case; the wizard, autosave's queue and the polls were where it was going to bite. `eslint-plugin-react-hooks` 7.1.1 already runs the compiler's static analysis and
   will tell you when a component is *un*-compilable (`react-hooks/incompatible-library` fires on
   RHF's `watch()` in two forms today) — advisory while the compiler is off, and worth reading as
   the signal it is.
@@ -806,12 +830,16 @@ Run it against **the diff**, not from memory, and in this order:
    `'use client'` files, where the memoization trap above says the work is manual.
 2. **Load `vercel-composition-patterns`** when the change adds a component API or a third boolean
    prop to an existing one — that prop is the smell UX-89 names, and the skill is installed for it.
-3. **Re-read this file's traps and the checklist above** against what you actually wrote. They are
+3. **Load `one-idea-per-file` and `one-kind-per-folder`** whenever the diff adds, splits or moves a
+   file under `src/` (task 132) — the first for how each file is cut, the second for where it landed.
+   The folder skill holds in every directory under `src/`, and `features/organization/` is the tree
+   that meets both.
+4. **Re-read this file's traps and the checklist above** against what you actually wrote. They are
    not background reading: each one is a defect that already happened here once.
-4. **Re-read the screen's own source** — `design_spec.md` §4.4's `S-nn` row and the artboard in
+5. **Re-read the screen's own source** — `design_spec.md` §4.4's `S-nn` row and the artboard in
    `design/screens/` — and check the built screen against it. "I read it before starting" is how
    A-01 shipped without its staged flow; the check is against the finished thing.
-5. **Say what you did not apply, and why.** A rule considered and declined with a reason is a
+6. **Say what you did not apply, and why.** A rule considered and declined with a reason is a
    decision; a rule never opened is an omission wearing the same clothes.
 
 <!-- BEGIN:nextjs-agent-rules -->

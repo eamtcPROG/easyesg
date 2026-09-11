@@ -1492,7 +1492,7 @@
             "name": "onpage",
             "required": false,
             "in": "query",
-            "description": "Rows per page. `-1` (all rows) is refused on this route.",
+            "description": "Rows per page, 25 unless given. `-1` (all rows) is refused on this route.",
             "schema": {
               "type": "number"
             }

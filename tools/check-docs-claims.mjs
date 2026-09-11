@@ -99,6 +99,18 @@ const isSpec = (f) => f.endsWith('.spec.tsx');
 
 const boundaryRules = () => require('../.dependency-cruiser.cjs').forbidden;
 
+const directoriesIn = (dir) =>
+  readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => join(dir, d.name));
+
+/**
+ * A feature folder that holds nothing but an `index.ts` and `.gitkeep`s is scaffolding — the shape
+ * `one-kind-per-folder`'s `folder-scaffolds-go-when-built` says goes when the domain is built.
+ */
+const isScaffold = (dir) => walk(dir).every((f) => /\/(index\.ts|\.gitkeep)$/.test(f));
+
+const apiContexts = ['core', 'identity', 'billing', 'platform'];
+const apiModulesIn = (context) => directoriesIn(join('apps/api/src/modules', context)).length;
+
 const gatesChain = () =>
   JSON.parse(read('package.json')).scripts.gates.split('&&').map((s) => s.trim());
 
@@ -162,6 +174,14 @@ const CLAIMS = [
         .flatMap((d) => walk(d))
         .filter((f) => /\.tsx?$/.test(f))
         .reduce((n, f) => n + countIn(f, /@easyesg\/ui\/forms/g), 0),
+  },
+  {
+    // The opening paragraph said "these 46 files" beside a guarded "47 components" — the two
+    // sentences were one line apart and only one of them could fail.
+    what: 'packages/ui component total, as restated in the opening paragraph',
+    file: 'packages/ui/CLAUDE.md',
+    pattern: /\*these (\d+) components\*/,
+    actual: () => componentsOf('packages/ui/src', (f) => uiTsx(f) && !isSpec(f)).length,
   },
 
   // ── CLAUDE.md (root) ──
@@ -274,6 +294,22 @@ const CLAIMS = [
       ).size,
   },
 
+  // The 11 Sep 2026 audit found twelve stale numbers across the five files, and every one was
+  // unguarded while every guarded one was right. These are the countable ones, added with the
+  // sentences they pin rewritten to carry a figure a reader would act on.
+  {
+    what: 'applications, as counted by the root Current state',
+    file: 'CLAUDE.md',
+    pattern: /\*\*(\w+) applications and \w+ packages;/,
+    actual: () => directoriesIn('apps').length,
+  },
+  {
+    what: 'packages, as counted by the root Current state',
+    file: 'CLAUDE.md',
+    pattern: /\*\*\w+ applications and (\w+) packages;/,
+    actual: () => directoriesIn('packages').length,
+  },
+
   // ── apps/web/CLAUDE.md ──
   //
   // This document had **no entry at all** until the second audit of 8 Sep 2026, and it was the one
@@ -313,6 +349,28 @@ const CLAIMS = [
       readdirSync('apps/web/src/features', { withFileTypes: true }).filter((d) => d.isDirectory())
         .length,
   },
+  {
+    what: 'apps/web feature folders, as counted by its opening sentence',
+    file: 'apps/web/CLAUDE.md',
+    pattern: /(\d+) feature folders \(\w+ built\)/,
+    actual: () => directoriesIn('apps/web/src/features').length,
+  },
+  {
+    what: 'apps/web feature folders that are built rather than scaffolded',
+    file: 'apps/web/CLAUDE.md',
+    pattern: /\d+ feature folders \((\w+) built\)/,
+    actual: () => directoriesIn('apps/web/src/features').filter((d) => !isScaffold(d)).length,
+  },
+  {
+    // "Only seven files here are Client Components" was true on 24 Aug 2026 and 59 by the time
+    // anyone re-counted — the memoization paragraph it opens was describing a future that had
+    // arrived, and nothing measured it.
+    what: "apps/web modules carrying 'use client'",
+    file: 'apps/web/CLAUDE.md',
+    pattern: /\*\*(\d+) files here are Client Components\*\*/,
+    actual: () =>
+      walk('apps/web/src').filter((f) => /\.tsx?$/.test(f) && /^'use client'/m.test(read(f))).length,
+  },
 
   // ── apps/api/CLAUDE.md ──
   {
@@ -328,6 +386,20 @@ const CLAIMS = [
     pattern: /All (\w+) have a fixture in `tools\/prove-boundaries\.sh`/,
     actual: () =>
       boundaryRules().filter((r) => /apps\/api/.test(r.from.path ?? '') || !r.from.path).length,
+  },
+  // The tree line in "Where things live" said `identity/(5) … 35 total` for a day after task 131
+  // added `identity/access` — the root's `40 modules` was guarded and moved; this line was not.
+  ...apiContexts.map((context) => ({
+    what: `apps/api modules under ${context}/, as drawn in Where things live`,
+    file: 'apps/api/CLAUDE.md',
+    pattern: new RegExp(`├─ modules/\\s+(?:\\w+/\\(\\d+\\) )*${context}/\\((\\d+)\\)`),
+    actual: () => apiModulesIn(context),
+  })),
+  {
+    what: 'apps/api leaf modules in total, as drawn in Where things live',
+    file: 'apps/api/CLAUDE.md',
+    pattern: /platform\/\(\d+\) — (\d+), plus the four context modules/,
+    actual: () => apiContexts.reduce((n, context) => n + apiModulesIn(context), 0),
   },
 
   // ── apps/admin/CLAUDE.md ──

@@ -75,7 +75,7 @@ export class AccessController {
     name: 'onpage',
     required: false,
     type: Number,
-    description: 'Rows per page. `-1` (all rows) is refused on this route.',
+    description: `Rows per page, ${DEFAULT_ON_PAGE} unless given. \`-1\` (all rows) is refused on this route.`,
   })
   @ApiListResponse(AccessRowResponseDto, {
     status: 200,

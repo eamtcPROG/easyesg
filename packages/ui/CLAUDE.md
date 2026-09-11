@@ -9,7 +9,7 @@ component that only works in one of them is a defect here, not a variant.
 `'use client'` vocabulary rule, the `Slot` rule, UX-89's "reuse or add to the inventory", the four
 homes of state — it is written at root because it holds for `apps/web` and `apps/admin` too, and
 restating it here would create the second copy that drifts. This file carries what is true of
-*these 46 files*: where things are, what has already bitten someone, and what finishing looks like.
+*these 47 components*: where things are, what has already bitten someone, and what finishing looks like.
 
 ## Current state
 

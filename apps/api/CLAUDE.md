@@ -9,131 +9,152 @@ user-facing-text conventions. This file carries only what you need in your hands
 
 ## Current state
 
-Foundation only. What works: the module tree, the response envelope, the problem+json filter,
-`TenantRepository`, the `contracts/` ports, OpenAPI emission, seven boundary rules, message
-resolution (`app/messages/`) — locale negotiation plus catalogue lookup, with the catalogues
-themselves still empty — the migration runner (§7.1's five schemas plus `btree_gist`, and
-`core.organization` as the tenant root, applying and reverting cleanly from an empty database), and
-the tenant transaction: both `DataSource`s registered, `TenantTransactionGuard` binding
-`app.current_org` / `app.current_user` transaction-locally, commit in `TransactionInterceptor` and
-rollback in `ProblemDetailsFilter`.
+Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91, 130, 131); the
+calculator, validation, export, notifications, billing, the console's screens, edge and deploy, the
+public tier and the Comprehensive Module are not (37 onward). `docs/task.md` says what each task
+shipped, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
+follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
+traps each one left — grouped by area rather than by the task that built it.
 
-RLS is `ENABLED` and `FORCED` on `core.organization`, proven isolated as both `esg_app` and the
-owning role, with a test that drops `FORCE` in a rolled-back transaction and watches isolation
-collapse. `audit.system_audit_log` is the first append-only table: partitioned, privilege-denied to
-the application, and trigger-guarded against the owner. `core.field_change` carries per-field audit,
-written only by a `SECURITY DEFINER` trigger — the application can read its trail and holds no
-privilege to author, alter or erase one. `audit.outbox_event` and its worker dispatcher are wired
-onto BullMQ; `MODE=worker` boots, polls and dispatches. The configuration store publishes, reverts
-and propagates by version poll.
+### The foundation, and what each piece guarantees
 
-Task 19 adds the first behaviour: `identity.{account,credential,verification_token}`,
-`POST /api/v1/auth/{register,verify-email,verification-email}`, `contracts/email.port.ts` with a
-logging adapter, and `OutboxConsumer` — the queue's single `@Processor`, routing by job name to
-whatever claimed it with `@HandlesJob`.
+- **The request pipeline**: the response envelope, the problem+json filter, `TenantTransactionGuard`
+  binding `app.current_org` / `app.current_user` transaction-locally, commit in
+  `TransactionInterceptor` and rollback in `ProblemDetailsFilter`, both `DataSource`s registered —
+  "The request pipeline" below.
+- **The port surface** in `contracts/`, OpenAPI emission diffed by `pnpm openapi:check`, and message
+  resolution (`app/messages/`) — locale negotiation plus catalogue lookup over `packages/i18n`'s
+  committed catalogues (OQ-43); the api resolves wording because the worker has no client.
+- **The migration runner**: §7.1's five schemas plus `btree_gist`, `core.organization` as the tenant
+  root, applying and reverting cleanly from an empty database, with §7's schema invariants asserted
+  by `migrations:check` — each proving its own rule bites.
+- **RLS `ENABLED` and `FORCED`** from `core.organization` down, proven isolated as both `esg_app`
+  and the owning role, with a test that drops `FORCE` in a rolled-back transaction and watches
+  isolation collapse.
+- **The append-only substrate**: `audit.enforce_append_only(regclass)`; `audit.system_audit_log`
+  partitioned, privilege-denied to the application and trigger-guarded against the owner;
+  `core.field_change` per-field audit written only by a `SECURITY DEFINER` trigger — the application
+  can read its trail and holds no privilege to author, alter or erase one.
+- **The outbox**: `audit.outbox_event` and its worker dispatcher onto BullMQ; `MODE=worker` boots,
+  polls and dispatches; `OutboxConsumer` is the queue's single `@Processor`, routing by job name to
+  whatever claimed it with `@HandlesJob`.
+- **The configuration store**: one generic versioned store with a `WITHOUT OVERLAPS` schedule and a
+  ≤5 s replica poll, seeded from `config/seed`; it publishes, reverts and propagates by version poll.
+- **Secrets at rest**: `SecretCipher` — AES-256-GCM under HKDF from its own `SECRET_ENCRYPTION_KEY`,
+  sealed as `v<n>.<base64url>` — applied at the persistence boundary, with the
+  `identity.encrypted_secret` domain making plaintext unrepresentable ("Adding a column that holds
+  a secret" below).
 
-Task 21 adds sessions, sign-in and password reset (FR-4, FR-5, FR-6 per OQ-56):
-`identity.{session,refresh_token,password_reset_token,auth_attempt}` plus lockout columns on
-`credential`; `POST/DELETE /auth/session`, `POST /auth/session/refresh`,
-`POST /auth/{password-reset-email,password-reset}`. AD-12 as shipped: HS256 JWT (`sub` = session
-id, nothing else) behind `AccessTokenSigner`, opaque refresh rows rotated by conditional consume
-with a 30 s race grace and reuse-revocation, 7 d idle / 30 d absolute computed at the point of
-use (OQ-35). Two traps recorded: **sign-in's use case runs several short transactions and throws
-only after commit** — folding it into one `run` rolls back the very counters FR-4 requires (the
-port header explains); and the throttle's per-(IP, account) key reads `req.ip`, which is the
-proxy's address until task 71 sets `trust proxy` — degraded to per-account, not broken.
-`AUTH_JWT_SECRET` joins the HTTP tier's secrets; the worker still holds neither it nor the pepper.
+### Live, by area
 
-Task 23 adds the admin realm (FR-75, UC-68, OQ-17): `identity.{admin_account,admin_session,
-admin_refresh_token}`, the two-step handshake `POST /auth/admin/session/challenge` →
-`POST/GET/DELETE /auth/admin/session` in `modules/platform/admin` (A-01's drawn flow, chosen
-24 Aug 2026 — a stateless sealed five-minute challenge cookie whose `kind` discriminator keeps
-it unconfusable with the session under the shared key) — mandatory TOTP (`domain/totp.ts`, a
-thin wrapper over `otpauth` — §12.1; it was hand-rolled until 24 Aug 2026 and the header
-records why that was wrong), the
-session pair sealed AES-256-GCM into an httpOnly `SameSite=Strict` cookie the api itself sets
-and rotates (keys HKDF-derived from `AUTH_ADMIN_SECRET` under distinct labels), CORS pinned to
-`ADMIN_ORIGIN` with credentials, an Origin proof on the realm's writes, and the
-`admin:provision` CLI (runs from `dist/` so `tsc-alias` has resolved `@api/*` — the alias ban on
-ts-node-loaded CLI graphs does not bite it). §12.5.6's task-23 rows carry the decisions; the
-recorded costs: a revoked admin session's last access token is honoured ≤15 min until task 28's
-guard adds a lookup. `totp_secret` is **encrypted at rest since task 27.1**: the column's type is
-`identity.encrypted_secret`, a domain whose constraint refuses anything but `v<n>.<base64url>`, so
-plaintext is unrepresentable rather than discouraged. The store adapter opens it on the way out and
-`admin:provision` seals it on the way in — see "Adding a column that holds a secret" below.
+- **Identity** (`modules/identity/*` and `platform/admin`; tasks 19 … 28, 130, 131): accounts and
+  verification (`POST /auth/{register,verify-email,verification-email}`, Argon2id behind a port,
+  `EmailPort` with a logging adapter); sessions and sign-in (`POST/DELETE /auth/session`,
+  `POST /auth/session/refresh` — AD-12 as shipped: an HS256 JWT carrying `sub` = session id and
+  nothing else, opaque refresh rows rotated by conditional consume with a 30 s race grace and
+  reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
+  §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
+  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI);
+  social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`);
+  opt-in TOTP and password change (27); memberships and roles (`GET/PATCH/DELETE /members`,
+  `GET /memberships`); invitations and acceptance (`GET/POST /invitations`,
+  `POST /invitations/{id}/email`, `DELETE /invitations/{id}`,
+  `POST /invitations/{preview,acceptance}`); and S-16's union read model (`GET /access`, 131).
+- **Organization** (`core/organization`, `core/entity`; task 29): organizations and reporting
+  entities, with the country's legal forms and NACE classifier as configuration artefacts.
+- **Reporting core** (`platform/taxonomy`, `core/period`, `core/disclosure`, `core/comparatives`;
+  tasks 31, 33, 34, 89, 91): the taxonomy registry (`TAXONOMY_REGISTRY` over three `config/seed`
+  artefacts per registered version) and its typed facade in `packages/vsme`; reporting periods
+  (`GET/POST /periods`, `GET/PATCH /periods/{id}`) with the lock
+  (`POST /periods/{id}/{lock,reopening}`, `GET /periods/{id}/reopenings`); the report
+  (`GET/POST /reports`, `GET/PATCH /reports/{id}`) carrying its pinned taxonomy; the disclosure
+  store and the wizard's step read with applicability, derivations, template defaults and omissions;
+  and `GET /reports/{id}/prior-period` (34.3).
+- **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
+  notifications (49 … 52), billing (53 … 66), the console's screens (67 … 70), edge and deploy
+  (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
+  (116 … 121).
 
-Task 24 adds social sign-in (FR-2, FR-4, FR-82; D-6): `identity.provider_identity` — matched on
-`(provider, subject)`, never email (§9.1 calls the email-match variant an account-takeover path) —
-`contracts/identity-provider.port.ts` with the `openid-client` 6.8.7 adapter (ESM-only; a plain
-static import, because on `module: nodenext`/Node 26 `require(esm)` loads it — the OQ-48 revisit,
-proven for Node and Jest alike), and `modules/identity/provider` serving
-`POST /auth/social/{provider}/{challenge,session}` + `GET /auth/social/providers` as the back
-channel of `apps/web`'s redirect endpoints (§12.5.6's task-24 rows — no passport middleware, the
-recorded deviation from the task row). Provider behaviour is config-store data (kind
-`identity_provider`, scope per provider — enable/disable with no redeploy); client secrets are
-env (`AUTH_SOCIAL_*_CLIENT_SECRET`, missing ⇒ that ONE provider unavailable, logged, never
-boot-fatal). Traps recorded: the completion use case returns outcomes and throws AFTER commit
-(the unverified-registration path must commit account + challenge while answering 403), and the
-social throttle key is per (IP, provider) — the account is unknowable before the exchange — so
-suites sharing a stack share ONE §12.5.6 window; both e2e suites drain
-`attempt_key LIKE 'social-sign-in:%'` for that reason. `test/support/oidc-provider-stub.ts` is a
-minimal Authorization Server both e2e suites (and the browser suite, by relative import) drive a
-real code flow against; `AUTH_SOCIAL_ALLOW_INSECURE=true` is what lets discovery hit its http
-issuer, and is never set in production.
+### Traps and load-bearing facts, by area
 
-Task 25.1 adds `identity.membership` — the first tenant-scoped table outside `core` (FR-12,
-FR-56 … FR-60). `MEMBERSHIP_ROLE` is `editor` / `viewer` / `organization_administrator` (CA is not a
-role — actors.md); FR-59's removal is a `status` change and **no runtime role holds `DELETE`**, so
-the row leaves only on the cascade from its account or its organization. Two `SELECT` policies, for
-the bootstrap reason above; `core.capture_field_change` attached with `last_active_at` ignored;
-`identity.session.active_organization_id` added as the expand half task 21 recorded. Nothing writes
-either new column until tasks 28 and 25.4.
+**Identity**
 
-Task 25.2 adds the members API (UC-59, UC-62, UC-63, UC-64): `GET/PATCH/DELETE /api/v1/members`,
-`MembershipStoreRepository` — the **first repository that actually extends `TenantRepository`**, so
-every statement runs on the request's `QueryRunner` and none names an organization — and
-`@RequiresRole`, which composes `SetMetadata` **with** `UseGuards` so a route cannot carry the
-metadata and miss the gate. `wouldLeaveNoAdministrator` is a domain predicate shared by the role
-change and the removal, because FR-60's lockout arrives by both. Three refusals with three
-resolutions: 401 `authentication-required`, 403 `membership-required`, 403 `insufficient-role`.
-**These routes answer 401 in production until task 28** — fail-closed, and why they could ship ahead
-of `AuthGuard` rather than wait for it. The task-11 identity fixture moved to
-`test/support/request-identity.fixture.ts` and now carries `role`.
-
-Task 25.3 adds UC-16's view half: `GET /api/v1/memberships` behind `@RequiresAccount` (which
-`@RequiresRole` cannot express — it refuses the member-of-nothing, who is exactly this route's
-caller), a **second** store `AccountMembershipStore` that opens its own transaction and binds only
-`app.current_user`, and `selectActiveMembership` — the pure function task 28's guard resolves an
-active organization with, so a stale or revoked preference is a unit spec rather than an integration
-test. `organization_directory_select` makes the tenant root readable across memberships **only while
-no organization is bound**; see the tenancy note below before touching it.
-
-Task 28.1 adds **`AuthGuard`**, done ahead of 25.4 because that task could not branch on
-memberships while nothing resolved a bearer token (the reordering is recorded on both `task.md`
-rows). The surface is now **closed by default**: an `APP_GUARD` registered before
-`TenantTransactionGuard`, resolving token → session → memberships → `selectActiveMembership` into
-the request context, with `@Public()` the only exception and each use carrying its reason.
-`AccessTokenVerifier` is a sibling port on the same adapter. **The e2e identity fixture is deleted**;
-`test/support/signed-in-account.ts` signs actors in for real.
-
-Task 26.1 adds invitations (UC-60, UC-61; FR-11, FR-57): `identity.invitation` — the second
-tenant-scoped table outside `core`, under 25.1's pattern — and `GET/POST /api/v1/invitations`,
-`POST /api/v1/invitations/{id}/email`, `DELETE /api/v1/invitations/{id}`, all
-`@RequiresRole(organization_administrator)`. Three §12.5.6 decisions shape it: a **resend rotates the
-token and restarts the seven days on the same row** (one live link per invitation, ever — OQ-55's
-precedent for the third token kind, which is why the resend endpoint is `POST .../email` rather than
-`.../resend`); the **email language** is the invitee's account locale where one exists and the
-inviter's negotiated locale otherwise, resolved at issue and stored; and **both collisions are
-refused** — an active member, or a pending invitation, the latter by the partial unique index
-`invitation_pending_address_key` over `(organization_id, lower(invited_email)) WHERE status =
-'pending'`. Two things follow from that index and are stated at three call sites each because they
-read as tidyable: **`GET /invitations` lists lapsed invitations too**, since the collection must
-publish exactly what the index constrains or an administrator gets a 409 on a row they cannot see;
-and **nothing in 26.1 consults the clock** — expiry is derived at the point of use and lands with
-26.2's acceptance. `TenantRepository` gained a `protected get runner()`, because `writeOutboxEvent`
-needs the request's `QueryRunner` and an `EntityManager` cannot express P-8. Recorded deferrals: no
-entitlement gate (task 54), and the two write routes are an authenticated mail amplifier bounded
-only by task 71's edge limit (§12.5.6's task-26.1 amplification row).
+- **Sign-in's use case runs several short transactions and throws only after commit** (task 21) —
+  folding it into one `run` rolls back the very counters FR-4 requires; the port header explains.
+  The throttle's per-(IP, account) key reads `req.ip`, which is the proxy's address until task 71
+  sets `trust proxy` — degraded to per-account, not broken. `AUTH_JWT_SECRET` is the HTTP tier's;
+  the worker holds neither it nor the pepper.
+- **The admin realm's session is a cookie the api itself sets and rotates** (task 23): the pair
+  sealed AES-256-GCM into an httpOnly `SameSite=Strict` cookie, keys HKDF-derived from
+  `AUTH_ADMIN_SECRET` under distinct labels; a stateless sealed five-minute challenge cookie whose
+  `kind` discriminator keeps it unconfusable with the session under the shared key; CORS pinned to
+  `ADMIN_ORIGIN` with credentials and an Origin proof on the realm's writes. TOTP is a thin wrapper
+  over `otpauth` — it was hand-rolled until 24 Aug 2026 and `domain/totp.ts`'s header records why
+  that was wrong. `admin:provision` runs from `dist/` so `tsc-alias` has resolved `@api/*`. Recorded
+  cost, **still open**: a revoked admin session's last access token is honoured ≤15 min — the
+  lookup was deferred to task 28's guard, task 28 closed without it, and
+  `resolve-admin-session.use-case.ts`'s docblock carries the same deferral. `totp_secret` is **encrypted at rest** (27.1): its type is `identity.encrypted_secret`,
+  a domain whose constraint refuses anything but `v<n>.<base64url>`, so plaintext is unrepresentable
+  rather than discouraged; the store adapter opens it on the way out and `admin:provision` seals it
+  on the way in.
+- **Social sign-in matches on `(provider, subject)`, never email** (task 24; §9.1 calls the
+  email-match variant an account-takeover path). `openid-client` 6.8.7 is a plain static import —
+  ESM-only, and on `module: nodenext`/Node 26 `require(esm)` loads it, the OQ-48 revisit, proven for
+  Node and Jest alike. No passport middleware (§12.5.6's task-24 rows, the recorded deviation from
+  the task row). Provider behaviour is config-store data (kind `identity_provider`, scope per
+  provider — enable/disable with no redeploy); client secrets are env
+  (`AUTH_SOCIAL_*_CLIENT_SECRET`, missing ⇒ that ONE provider unavailable, logged, never
+  boot-fatal). The completion use case returns outcomes and throws AFTER commit — the
+  unverified-registration path must commit account + challenge while answering 403. The social
+  throttle key is per (IP, provider), the account being unknowable before the exchange, so suites
+  sharing a stack share ONE §12.5.6 window; both e2e suites drain
+  `attempt_key LIKE 'social-sign-in:%'` for that reason. `test/support/oidc-provider-stub.ts` is a
+  minimal Authorization Server both e2e suites (and the browser suite, by relative import) drive a
+  real code flow against; `AUTH_SOCIAL_ALLOW_INSECURE=true` is what lets discovery hit its http
+  issuer, and is never set in production.
+- **`identity.membership` is `identity`, not `core`** (25.1 — §7.1's one permitted cross-schema
+  FK, correcting the task row). `MEMBERSHIP_ROLE` is `editor` / `viewer` /
+  `organization_administrator` (CA is not a role — actors.md); FR-59's removal is a `status` change
+  and **no runtime role holds `DELETE`**, so the row leaves only on the cascade from its account or
+  its organization. Two `SELECT` policies, because AD-2's binding is *derived from* this table and a
+  single policy would answer the pre-tenant lookup with zero rows forever (architecture.md §7.6) —
+  and the self-select one is narrowed to *no organization bound* since task 130 found the
+  unconditional form was a live FR-60 bypass. `core.capture_field_change` is attached with
+  `last_active_at` ignored; `identity.session.active_organization_id` is task 21's expand half.
+- **`@RequiresRole` composes `SetMetadata` with `UseGuards`** (25.2), so a route cannot carry the
+  metadata and miss the gate; `@RequiresAccount` is for the member-of-nothing, whom `@RequiresRole`
+  refuses by definition. `MembershipStoreRepository` is the first repository that actually extends
+  `TenantRepository` — every statement runs on the request's `QueryRunner` and none names an
+  organization. `wouldLeaveNoAdministrator` is one domain predicate shared by the role change and
+  the removal, because FR-60's lockout arrives by both; since task 130 it counts the bound
+  organization's administrators only. Three refusals with three resolutions: 401
+  `authentication-required`, 403 `membership-required`, 403 `insufficient-role`.
+- **`AccountMembershipStore` opens its own transaction and binds only `app.current_user`** (25.3);
+  `selectActiveMembership` is the pure function `AuthGuard` resolves an active organization with,
+  so a stale or revoked preference is a unit spec rather than an integration test, and
+  `GET /memberships` projects its answer as `active` per row (30.1). `organization_directory_select`
+  makes the tenant root readable across memberships **only while no organization is bound** — see
+  the tenancy note below before touching it.
+- **`AuthGuard` closes the surface by default** (28.1, done ahead of 25.4 because that task could
+  not branch on memberships while nothing resolved a bearer token): an `APP_GUARD` registered before
+  `TenantTransactionGuard`, resolving token → session → memberships → `selectActiveMembership` into
+  the request context, with `@Public()` the only exception and each use carrying its reason.
+  `AccessTokenVerifier` is a sibling port on the same adapter. The e2e identity fixture is deleted —
+  `test/support/signed-in-account.ts` signs actors in for real.
+- **An invitation has one live link, ever** (26.1): a resend rotates the token and restarts the
+  seven days on the same row (OQ-55's precedent for the third token kind, which is why the endpoint
+  is `POST …/email` rather than `…/resend`); the email language is the invitee's account locale
+  where one exists and the inviter's negotiated locale otherwise, resolved at issue and stored; and
+  both collisions are refused — an active member, or a pending invitation, the latter by the partial
+  unique index `invitation_pending_address_key` over `(organization_id, lower(invited_email)) WHERE
+  status = 'pending'`. Two things follow from that index and are stated at three call sites each
+  because they read as tidyable: **`GET /invitations` lists lapsed invitations too**, since the
+  collection must publish exactly what the index constrains or an administrator gets a 409 on a row
+  they cannot see; and **nothing in 26.1 consults the clock** — expiry is derived at the point of
+  use. `TenantRepository` gained a `protected get runner()`, because `writeOutboxEvent` needs the
+  request's `QueryRunner` and an `EntityManager` cannot express P-8. Deferred: no entitlement gate
+  (task 54), and the two write routes are an authenticated mail amplifier bounded only by task 71's
+  edge limit (§12.5.6's task-26.1 amplification row).
 
 **A cleanup that deletes from a table with no `DELETE` policy removes nothing and says so quietly**
 (task 26.1, and the stronger form of the memberships note above). `DELETE FROM identity.invitation`
@@ -143,20 +164,20 @@ organization is not the missing part. It cost twelve e2e failures, all presentin
 `409`s two tests later. Clean up the way the product does (revoke), or drop the parent row and let
 the cascade do it — referential actions bypass row security by design.
 
-Task 26.2 adds acceptance (UC-15, FR-11): `POST /api/v1/invitations/{preview,acceptance}` on a
-**second controller at the same path prefix**, because `InvitationsController` is
-`@RequiresRole(OA)` at the class and the invitee is by definition not a member — `preview` is
-`@Public()`, `acceptance` is `@RequiresAccount()`. Two new policies, both keyed on a **third
-transaction-local binding, `app.current_invitation`** (the presented token's SHA-256, hex):
-`invitation_bearer_select` on `identity.invitation` and `organization_invitation_select` on
-`core.organization`, the latter because S-03 names the inviting organization to a signed-out
-visitor. `InvitationBearerStoreRepository` is the only binder; it hashes the raw token, and no route
-accepts a hash. Acceptance is **one transaction** — consume, grant, point the session — and it
-returns an outcome, throwing after the commit. **Registering with a live invitation for the same
-address creates a verified account and sends no challenge** (FR-3's third route, §12.5.6): one
-optional field on `POST /auth/register`, validated with `invitationIsAcceptable` and
-`emailIdentityKey`, the same two functions acceptance uses. `RequestContext` gains `sessionId`, for
-one reader. Both bearer routes are throttled (§12.5.6): accept per (IP, account), preview per IP.
+- **Acceptance is a second controller at the same path prefix** (26.2), because
+  `InvitationsController` is `@RequiresRole(OA)` at the class and the invitee is by definition not a
+  member — `preview` is `@Public()`, `acceptance` is `@RequiresAccount()`. Two policies, both keyed
+  on a **third transaction-local binding, `app.current_invitation`** (the presented token's
+  SHA-256, hex): `invitation_bearer_select` on `identity.invitation` and
+  `organization_invitation_select` on `core.organization`, the latter because S-03 names the
+  inviting organization to a signed-out visitor. `InvitationBearerStoreRepository` is the only
+  binder; it hashes the raw token, and no route accepts a hash. Acceptance is **one transaction** —
+  consume, grant, point the session — and it returns an outcome, throwing after the commit.
+  **Registering with a live invitation for the same address creates a verified account and sends
+  no challenge** (FR-3's third route, §12.5.6): one optional field on `POST /auth/register`,
+  validated with `invitationIsAcceptable` and `emailIdentityKey`, the same two functions acceptance
+  uses. `RequestContext` gains `sessionId`, for one reader. Both bearer routes are throttled
+  (§12.5.6): accept per (IP, account), preview per IP.
 
 **A store may need its own transaction because the request's is bound to the WRONG tenant**
 (task 26.2 — the third and sharpest reason an identity store opens its own). The acceptor is signed
@@ -170,7 +191,17 @@ member — is true on every ordinary request. `invitation_bearer_select`'s is *k
 which no ordinary request does; adding the conjunct buys nothing and breaks the bookkeeper accepting
 their second client's invitation with a tenant already bound.
 
-Task 33.1 adds **the taxonomy registry** (FR-65, FR-66; AD-3, AD-4): three `config/seed` artefacts
+- **S-16's list is a union read model** (131): `identity/access` computes members and pending
+  invitations as one CTE and applies the filter, the order and the window to the merged set, with
+  the standing derived from `now()` in the same statement. It is the first route to opt into §6.8's
+  compact list format — `@UseInterceptors(new ListQueryInterceptor())`, and **the `new` is
+  required**: passing the class makes Nest inject its `(bounded, maxOnPage)` primitives and the
+  application does not boot, which the interceptor's own docblock prescribed for three weeks
+  because nothing had ever opted in.
+
+**Reporting core**
+
+**The taxonomy registry** (task 33.1 — FR-65, FR-66; AD-3, AD-4): three `config/seed` artefacts
 and `TAXONOMY_REGISTRY` in the port surface — no table, no migration, no code per artefact, which is
 what task 16's store being generic is for. `vsme-taxonomy.2026-05-01.json` carries 143 reportable
 elements over B1–B11 and C1–C9 with their kinds, period types, presentation order and dimensions;
@@ -223,7 +254,7 @@ Five things about it that are load-bearing:
   `modules/platform/taxonomy/taxonomy-artefact.spec.ts` asserts the shipped artefacts produce no such
   line — a fail-soft design is only safe when a gate reads the log.
 
-Task 34.2 adds **the typed facade over that registry** (AD-3, T-3), in `packages/vsme` — the
+**The typed facade over that registry** (task 34.2 — AD-3, T-3), in `packages/vsme` — the
 disclosure store is element-keyed, so `DISCLOSURES.bThree.grossScopeOneGreenhouseGasEmissions` is
 what buys back the compile-time typing a generic store never had. Two rules about it, and both are
 DR-4's:
@@ -241,7 +272,7 @@ DR-4's:
   kind, an axis the version does not declare, an element carrying more than one axis, or an
   identifier that would carry a digit each fail the run with a message.
 
-Task 31.1 adds **the reporting period** (UC-56; FR-21, FR-45, FR-66): `core.reporting_period` with
+**The reporting period** (task 31.1 — UC-56; FR-21, FR-45, FR-66): `core.reporting_period` with
 `GET/POST /api/v1/periods` and `GET/PATCH /periods/{id}`, reads open to every member and writes
 `@RequiresRole(OA)`. Four things about it are load-bearing:
 
@@ -271,7 +302,7 @@ modelling them were not, until this task.
 `[rows, count]` where `SELECT`/`INSERT` answer rows. It had been written four times — twice as a
 declaration, twice hand-rolled inline — before task 31.1 needed a fifth.
 
-Task 31.2 adds **the lock** (UC-57, UC-58; FR-22): `locked_at`/`locked_by` on the period,
+**The lock** (task 31.2 — UC-57, UC-58; FR-22): `locked_at`/`locked_by` on the period,
 `core.period_reopening`, and `POST /periods/{id}/{lock,reopening}` plus `GET /periods/{id}/reopenings`.
 Four things to know before touching it:
 
@@ -292,7 +323,7 @@ Four things to know before touching it:
   (UX-72), and it is immutable by grant like `core.entity_snapshot`. The record is written **before**
   the unlock: there is no ordering in which the lock is gone and the reason was never captured.
 
-Task 31.3 adds **the report** (UC-17, UC-18; FR-24 … FR-32, FR-66, FR-177) — in
+**The report** (task 31.3 — UC-17, UC-18; FR-24 … FR-32, FR-66, FR-177) — in
 **`core/disclosure`**, which §17.5 gives FR-24 … FR-32 and §7's component table already listed
 `core.report` under. `GET/POST /api/v1/reports` and `GET/PATCH /reports/{id}`. Five things to know:
 
@@ -313,6 +344,7 @@ Task 31.3 adds **the report** (UC-17, UC-18; FR-24 … FR-32, FR-66, FR-177) —
 - **The writes admit the editor**, which is the opposite of the split `EntitiesController` and
   `PeriodsController` carry — master data is OA-owned (D-2), a report is the Contributor's workspace
   (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.
+
 
 ### Withholding a column from the application
 
@@ -376,7 +408,7 @@ Two things came out of that and both are load-bearing:
 **`emit-openapi.ts` uses `preview: true`, and that is load-bearing.** `PersistenceModule` opens
 connections at boot, so a full boot would make `openapi:check` require Docker. Preview mode builds
 the module graph without instantiating providers and emits a byte-identical document, because
-Swagger reads decorator metadata. Eight of the nine gates run with no database and it is worth
+Swagger reads decorator metadata. Twelve of the sixteen gates run with no database and it is worth
 keeping that true. The accepted cost: emission no longer proves the DI graph resolves, so a missing
 provider surfaces at startup instead of at the gate.
 
@@ -436,11 +468,11 @@ be broken while `build` is green.
 src/
 ├─ main.ts · main.http.ts · main.worker.ts   one image, MODE picks the entrypoint (AD-1, §5.4)
 ├─ app.module.ts                             composition root — NOT in app/, see below
-├─ app/          cross-cutting only: dto/ filters/ interceptors/ guards/ decorators/ constants/
+├─ app/          cross-cutting only: dto/ filters/ interceptors/ guards/ decorators/ constants/ interfaces/ messages/
 ├─ config/       ConfigService schema. Never process.env in business logic
 ├─ contracts/    the ONLY cross-context surface: ports, events/, types/
-├─ modules/      core/(9) identity/(5) billing/(13) platform/(8) — 35 total
-└─ infrastructure/  persistence/ outbox/ queue/ adapters/ openapi/ observability/
+├─ modules/      core/(9) identity/(6) billing/(13) platform/(8) — 36, plus the four context modules: 40 `*.module.ts`
+└─ infrastructure/  persistence/ outbox/ queue/ adapters/ openapi/ observability/ configuration/ provisioning/
 ```
 
 `app.module.ts` sits at `src/`, not in `app/`, because `app/` carries a rule that it may not import
@@ -480,6 +512,18 @@ so it never reaches `dist`, while `tsconfig.json` keeps it in the program so `pn
 a fake to the interface it claims to implement. A fake worth writing models **rollback**, not just
 return values: `FakeAccountStore.run` restores its snapshot when the callback throws, which is what
 lets a spec assert P-8's "all of it or none of it" instead of only that an error was raised.
+
+**One behaviour per file; a vocabulary stays whole** (11 Sep 2026, task 132 —
+`file-one-behaviour-api` in the `one-idea-per-file` skill; the companion `one-kind-per-folder` does
+not reach this app: *"the api's structure is good"*, so the anatomy above is unchanged). A use
+case, a service, a controller, a repository or a consumer is one file each. `<module>.errors.ts` —
+the module's closed set of refusals — and a `dto/` file — one wire object with its parts — are
+vocabularies and stay whole; a repository's private transaction adapter (`AccountTransactionAdapter`
+beside `AccountStoreRepository`, five such) is the same behaviour's second face and stays beside
+it. Two files do not meet it, both task 133's: `core/disclosure/use-cases/read-wizard-step.use-case.ts`
+— 1,222 lines, one use case beside two private resolver classes and nine helpers — and
+`identity/account/use-cases/manage-totp.use-case.ts`, where `ManageTotp` and `ConsumeRecoveryCode`
+are two use cases in one file.
 
 A module is a unit of ownership, not a URL prefix. Several own no routes at all
 (`platform/configuration`, `billing/entitlement`); that is correct. **`core/comparatives` left
@@ -1184,7 +1228,10 @@ pass baked into finishing a task since 24 Aug 2026, and `apps/api` — the works
 
 - **Load `nestjs-best-practices` and read it against the diff.** Not recalled — opened. The gates
   prove code runs; they say nothing about whether it belongs, and every finding a review has raised
-  here was invisible to all nine of them.
+  here was invisible to all sixteen of them.
+- **Load `one-idea-per-file` too** (task 132) whenever a use case, service, controller, repository
+  or consumer is added or grows — one behaviour per file, a vocabulary whole. The folder skill does
+  not reach this app.
 - **A rule considered and declined with a reason is a decision. A rule never opened is an omission
   wearing the same clothes.** Record both in the build-log entry, with the rule's own id, so the next
   reader can tell which happened.

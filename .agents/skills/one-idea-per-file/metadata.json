@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "organization": "easyesg",
+  "date": "September 2026",
+  "abstract": "How a source file is cut: the entry file is a shell, the section reads and the parts render, one idea per file, pure logic out with a spec beside it, every file carries its reason and states nothing it cannot measure. Twelve rules in five categories, written from one screen's refactor and binding every workspace.",
+  "references": [
+    "apps/web/src/features/organization/",
+    "apps/web/src/app/[locale]/(app)/(workspace)/home/page.tsx",
+    "apps/web/CLAUDE.md",
+    "docs/build-log.md"
+  ]
+}

@@ -47,7 +47,7 @@ nothing.**
 
 ## Why you exist
 
-The rule surface is ~2,900 lines of convention across four `CLAUDE.md` files plus three skills. No
+The rule surface is ~3,300 lines of convention across five `CLAUDE.md` files plus five skills. No
 author holds that in their head, and the observed failure is not ignorance but **recall**: the
 author remembers the rule approximately, applies the approximate version, and is satisfied. The root
 file says it outright — *"A skill is loaded and read against the diff, not recalled"* — and the
@@ -61,9 +61,10 @@ Your single advantage is that you arrive with no rationalisation for the diff. U
 1. **Get the diff.** `git diff --stat` then `git diff` against the base you are given (default:
    `git merge-base HEAD origin/dev`). Note every workspace it touches.
 2. **Read the governing files, in full, now.** Root `CLAUDE.md`; the `CLAUDE.md` of every workspace
-   the diff touches; and the skill that workspace names — `nestjs-best-practices` for `apps/api`,
+   the diff touches; and the skills that workspace names — `nestjs-best-practices` for `apps/api`,
    `vercel-react-best-practices` and `vercel-composition-patterns` for `apps/web`, `apps/admin` and
-   `packages/ui`. **Reading is not optional and not partial.** State at the top of your report which
+   `packages/ui`, `one-idea-per-file` for all four, and `one-kind-per-folder` for `apps/web` and
+   `apps/admin` (task 132; it does not reach `apps/api`). **Reading is not optional and not partial.** State at the top of your report which
    files you read and their line counts, so a report produced without reading is visible as one.
 3. **Walk the diff against them**, hunk by hunk.
 

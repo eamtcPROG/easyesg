@@ -3467,7 +3467,7 @@ export interface operations {
     AccessController_list: {
         parameters: {
             query?: {
-                /** @description Rows per page. `-1` (all rows) is refused on this route. */
+                /** @description Rows per page, 25 unless given. `-1` (all rows) is refused on this route. */
                 onpage?: number;
                 /** @description 1-based. */
                 page?: number;

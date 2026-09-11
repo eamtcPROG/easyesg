@@ -151,6 +151,18 @@ src/
   operator-driven and cross-tenant, so a stale queue is a wrong decision rather than a slow one.
   Retry is capped at 2 against §12.5.6's rate budget.
 
+- **The folder rules bind this app, and it does not yet meet them** (11 Sep 2026, task 132 — the
+  `one-kind-per-folder` skill; the owner scoped it to *web and admin*). Three sites, all task 135's. `realm/` holds `api-client.ts`, `session.ts` and an
+  `index.ts` that exports nothing beside `components/`. `app/` holds `providers.tsx` and
+  `route-fallbacks.tsx` beside `routes/` and `styles/` — `routes/` itself and `route-tree.gen.ts`
+  are the router's layout and exempt, since `_realm.tsx` beside `_realm/` *is* how TanStack spells
+  a pathless layout. And fifteen unbuilt feature scaffolds each hold an `index.ts` reading *"Not
+  built"* beside five `.gitkeep` folders, which go when the domain is built. A built feature here
+  takes the tenant app's three kinds with the wire half named for how data arrives: `components/`
+  renders, `tools/` is pure, **`queries/`** holds the TanStack Query definitions where `apps/web`
+  has `actions/`. `hooks/`, `schema/` and `types/` are the scaffold's names from before the rule; a
+  screen has the kinds it has.
+
 - **Nothing here is memoized, and no compiler is doing it for you.** `reactCompiler` is off across
   the repo with a recorded reason (AD-9). This app is ~33 Client Components with **no server tier to
   absorb a render**, which is where the `vercel-react-best-practices` skill's `rerender-` and
@@ -162,7 +174,8 @@ src/
 The root `CLAUDE.md`'s "Closing a task" says which run applies — a sub-step gets only the gates its
 change reaches, the parent gets `pnpm gates:clean`. Everything in `apps/web/CLAUDE.md`'s "Before you call it
 done" applies here too — load `vercel-react-best-practices` and read the diff against it, load
-`vercel-composition-patterns` when a component API grows, re-read these traps against what you
+`vercel-composition-patterns` when a component API grows, load `one-idea-per-file` and
+`one-kind-per-folder` whenever a file is added, split or moved under `src/`, re-read these traps against what you
 wrote, check the screen against its `A-nn` row in `design_spec.md` §5.2 and its artboard in
 `design/screens/EasyESG Admin Console Screens.dc.html`, and say what you did not apply and why.
 

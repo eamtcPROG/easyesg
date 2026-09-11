@@ -12,8 +12,10 @@ import { join } from 'node:path';
  * folders, three of them this feature's — so a repo-wide selector would have started red, inverting
  * *"fix the sites first, then turn the gate on"*. Task 127 fixed `access/`, `creation/` and
  * `profile/`, so the root moves up one level and the assertion covers all four screens. The
- * remaining features keep their flat roots on purpose: **a domain serving one screen stays flat**,
- * which is the rule above this one in `apps/web/CLAUDE.md` and is why this is not `features/`-wide.
+ * remaining features still mix, and since task 132 that is a backlog rather than a shape they are
+ * entitled to: the rule holds in every directory under `src/` (`folder-files-or-folders`, in the
+ * `one-kind-per-folder` skill), and this root moves up as task 134 fixes each site — never ahead of
+ * one, because a gate that starts red inverts *fix the sites first*.
  *
  * **Why it exists at all.** The rule was written into three documents and checked by nothing, which
  * is the shape this repository has been bitten by before — `domain-free-of-frameworks` shipping
