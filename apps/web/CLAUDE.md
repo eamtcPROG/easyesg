@@ -405,11 +405,19 @@ conditional render, which is how it ends up half-suppressed on one screen.
   Component module"* rather than as a missing module — a `'use server'` file reached through a
   stale path. Grep the mocks when you move a spec.
 
-- **A Suspense fallback may not be an async component** (11 Sep 2026, task 115). It would suspend
-  against the *parent* boundary, so the shell waits for exactly what the boundary below it exists to
-  stop waiting for. Resolve the strings in the page and pass them: S-05's route file keeps one
-  `getTranslations` after its split for precisely this, and `OverviewLoading` takes its label as a
-  prop rather than awaiting one.
+- **A Suspense fallback may not do I/O. It may await** (11 Sep 2026; task 115 wrote the blunt version
+  of this and task 125 corrected it after the project owner pushed back). The mechanism is real: a
+  fallback that suspends is resolved against the **parent** boundary, so the shell does wait for it.
+  What matters is *what for*. `OverviewLoading` awaits `getTranslations` — a catalogue the request has
+  already resolved for the page, the heading and the membership list — which is a microtask, not the
+  `GET /periods` round trip its boundary exists to stream past. The first rule here conflated the two
+  and cost S-05's route file a translator it did not need.
+
+  **Measured, not reasoned**: `home.spec.ts`'s streaming case reads the served HTML and still finds
+  the fallback's markup ahead of the filings with the fallback async. A fallback that reads anything
+  over the wire is the real defect — it blocks the shell on exactly the thing the boundary was added
+  to stop blocking on — and nothing will tell you, because the boundary still *looks* like it is
+  working.
 
   **And a boundary is worth adding only where a slow read would otherwise hold up a shell worth
   painting.** Parallel fetching is what *composition* buys — sibling async Server Components start

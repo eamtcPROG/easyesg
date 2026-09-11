@@ -16044,6 +16044,28 @@ expressions of one rule — `membership?.role !== VIEWER && membership !== null`
 opposite conjunct order on S-06 — which is what a shared predicate exists to prevent. Calling the
 shared predicate from three places is using it, not copying it.
 
+### A rule of mine was overstated, and it had already reached `apps/web/CLAUDE.md`
+
+Third pass, same shape as the other two: *"`OverviewLoading` has a prop of label — cleaner if it
+awaits the label itself."*
+
+Task 115 wrote **"a Suspense fallback may not be an async component"** into this app's working notes,
+and that is where rules get followed. The mechanism behind it is real — a fallback which suspends is
+resolved against the **parent** boundary, so the shell does wait for it. What the rule got wrong is
+*what for*. `OverviewLoading` awaits `getTranslations`: a catalogue the request has already resolved
+for the page, the heading and the membership list. That is a microtask. The `GET /periods` round trip
+the boundary exists to stream past is not, and the sentence conflated them — which cost S-05's route
+file a translator it never needed.
+
+**Measured rather than argued, because the first version was argued.** `home.spec.ts`'s streaming
+case reads the served HTML and still finds the fallback's markup ahead of the filings with the
+fallback async — the boundary streams exactly as before. The rule in `apps/web/CLAUDE.md` now reads
+*a fallback may not do **I/O***, which is the version that catches the defect worth catching: a
+fallback that reads over the wire blocks the shell on precisely the thing the boundary was added to
+unblock, and nothing says so, because the boundary still looks like it is working.
+
+S-05's route file resolves no strings at all now. `MESSAGES` survives for `generateMetadata` alone.
+
 **The reversal worth keeping** is `ResumeRegion`. Its first docblock argued the caller must hold the
 conditional, *"because a decision made here is invisible to a reader of the section"*. That is true
 and it is smaller than what it cost: `resumableRow` living apart from the only region that asks it,
@@ -16054,8 +16076,9 @@ rather than quietly dropping the argument.
 
 `apps/web` **364 tests**, `pnpm typecheck`, `pnpm lint` uncached,
 `pnpm e2e:web --project identity --project expansion` at **168 passed** with its 14 axe scans — run
-once on the first shape and again on the final one, since the first run was not a claim about the
-code that shipped. `web`-only and behaviour-preserving, so the sub-step run is the
+three times, once per shape, because the owner reshaped this twice after the first run and a suite
+green on a shape that did not ship is not a claim about the one that did. The streaming case was
+additionally run on its own against the rebuilt bundle to measure the async fallback. `web`-only and behaviour-preserving, so the sub-step run is the
 close; one stray import placement was caught by reading the diff rather than by a gate — the
 re-pointed namespace landed where the deleted `const` had been, mid-file, and no rule here orders
 imports.

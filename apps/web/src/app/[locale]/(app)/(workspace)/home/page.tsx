@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { getTranslations } from 'next-intl/server';
 import { ArrivalNotice } from '@/features/organization/home/components/arrival-notice';
 import { MembershipsSection } from '@/features/organization/home/components/memberships-section';
 import { OrganizationHeading } from '@/features/organization/home/components/organization-heading';
@@ -44,9 +43,10 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * heading would buy nothing and cost the layout shift that rule's own "when NOT to use" list names
  * — the H1 is the organization's name.
  *
- * **The one translator left here is the boundary's fallback**, and it has to be: a fallback may not
- * await, or it suspends against the parent boundary and the shell waits for exactly what the
- * boundary exists to stop waiting for.
+ * **This file resolves no strings at all.** `MESSAGES` survives for `generateMetadata` alone; the
+ * fallback resolves its own sentence like every other region, which it may because what it awaits is
+ * a catalogue the request has already read rather than anything over the wire (`overview-loading.tsx`
+ * carries the distinction the earlier, blunter rule here got wrong).
  *
  * States (§8.1): ready · read-only (view-only membership) · loading (the overview's boundary) ·
  * empty — first use · partial (the two reads fail independently, each with its own message) ·
@@ -62,17 +62,17 @@ type Props = {
 export const generateMetadata = localizedPageTitle(MESSAGES);
 
 export default async function HomePage({ params, searchParams }: Props) {
-  // Sequential on purpose: `activateRequestLocale` pins the locale that `getTranslations` below and
-  // every region's own reads resolve against. Nothing here touches the network — `searchParams` is
-  // the request's own, and the catalogue is already resolved for the request.
+  // Sequential on purpose: `activateRequestLocale` pins the locale every region's own reads and
+  // translators resolve against. Neither line touches the network — `searchParams` is the request's
+  // own.
   await activateRequestLocale(params);
-  const [query, t] = await Promise.all([searchParams, getTranslations(MESSAGES)]);
+  const query = await searchParams;
 
   return (
     <div className={styles.screen}>
       <ArrivalNotice joined={query.joined} />
       <OrganizationHeading />
-      <Suspense fallback={<OverviewLoading label={t('overview.loading')} />}>
+      <Suspense fallback={<OverviewLoading />}>
         <OverviewSection />
       </Suspense>
       <MembershipsSection />
