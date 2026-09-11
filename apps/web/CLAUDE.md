@@ -502,6 +502,12 @@ conditional render, which is how it ends up half-suppressed on one screen.
   Component module"* rather than as a missing module — a `'use server'` file reached through a
   stale path. Grep the mocks when you move a spec.
 
+  **And a boundary fixture is a string in a shell script** (task 134, found by `gates:clean` at the
+  parent close). `tools/prove-boundaries.sh` proves `client-not-to-server` with an import of
+  `'../server/session'`; 134.1 made that a directory with no index, the import stopped resolving,
+  the rule matched nothing, and `boundaries:prove` said *"did NOT reject its violation"* — a proof
+  switched off by a move, and the one path kind no sub-step run reads. Grep the prove script too.
+
 - **A Suspense fallback may not do I/O. It may await** (11 Sep 2026; task 115 wrote the blunt version
   of this and task 125 corrected it after the project owner pushed back). The mechanism is real: a
   fallback that suspends is resolved against the **parent** boundary, so the shell does wait for it.

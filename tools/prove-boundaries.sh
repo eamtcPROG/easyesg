@@ -117,7 +117,7 @@ prove web-not-to-api-src \
 
 prove client-not-to-server \
   "$WEB/client/__boundary_fixture.ts" \
-  "import { refreshCookieName } from '../server/session';
+  "import { refreshCookieName } from '../server/session/session';
 export const violation = refreshCookieName;"
 
 prove ui-is-presentational \

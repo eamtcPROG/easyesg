@@ -72,7 +72,7 @@ The wire kind is named for how data arrives: `actions/` in `apps/web` (Server Ac
 ### 5. Moves and gates (MEDIUM)
 
 - `move-names-keep-prefix` - File names keep their prefix; `access-list.tsx` stutters and stays
-- `move-grep-the-mocks` - A move's risk is a path, and three kinds of path are seen by three different things or by nothing
+- `move-grep-the-mocks` - A move's risk is a path, and four kinds of path are seen by four different things or by nothing
 - `move-gate-scoped-where-it-holds` - The folder invariant has a failing state, scoped to where it holds, widened as sites are fixed
 
 ## How to Use
