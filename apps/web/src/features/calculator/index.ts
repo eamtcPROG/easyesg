@@ -8,7 +8,7 @@
  * Every run pins its factor-set version, raw inputs are retained permanently in invoice units,
  * and an override keeps the superseded computed value beside the substituted one (UC-34).
  *
- * Not built. Folders are `components/ hooks/ schema/ queries/ types/`, tests colocated as
- * `*.spec.tsx`.
+ * Not built. When it is, it holds the kinds its screens have — `components/ · tools/ · actions/`
+ * (`one-kind-per-folder`); the scaffold folders went in task 134, and this barrel stays until then.
  */
 export {};

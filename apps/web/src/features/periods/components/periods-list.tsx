@@ -28,6 +28,7 @@ import {
   type PeriodStanding,
   type PeriodView,
 } from '../tools/periods';
+import { PERIODS_MESSAGES } from './periods-messages';
 import styles from './periods.module.css';
 
 /**
@@ -62,7 +63,7 @@ export interface PeriodsListProps {
 }
 
 export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
-  const t = useTranslations('organization.periods');
+  const t = useTranslations(PERIODS_MESSAGES);
   const router = useRouter();
   const [, startNavigation] = useTransition();
 

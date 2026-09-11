@@ -1,6 +1,7 @@
 'use client';
 
 import { Select } from '@easyesg/ui';
+import { ACCESS_MESSAGES } from './access-messages';
 import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { useAccess } from './access-context';
@@ -19,7 +20,7 @@ import styles from './access.module.css';
  * (UX-4), so a browser Back button moves the filter, and there is nothing here to keep in step.
  */
 export function AccessFilters() {
-  const t = useTranslations('organization.access');
+  const t = useTranslations(ACCESS_MESSAGES);
   const { view, setView } = useAccess();
 
   return (

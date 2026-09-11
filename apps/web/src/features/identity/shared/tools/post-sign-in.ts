@@ -5,6 +5,8 @@ import type { Locale } from '@easyesg/i18n';
 import { ROUTES } from '@/lib/routes';
 
 /**
+ * **In `identity/shared/tools/` on one test — read by more than one journey: `sign-in/`, `invitation/` and `social/`, and by two `server/session/` seams.**
+ *
  * §4.3's post-sign-in branch (FR-12, UC-16) — task 25.4.
  *
  * The flow chart is three arrows from one decision: **no memberships → S-04**, create the first

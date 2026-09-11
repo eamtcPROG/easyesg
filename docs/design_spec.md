@@ -1542,7 +1542,7 @@ The form controls a component library must supply, each with every applicable st
 | **Read-only** | Names which of the three causes applies and what restores editing (UX-13). |
 | **Offline / queued** | Explicit, persistent, non-alarming; states what is queued and what happens next. |
 | **Pending — async** | Names the job, where the result appears, and roughly when. |
-| **Success** | Confirms *what* happened and offers the next step; never a bare toast for a consequential action. |
+| **Success** | Confirms *what* happened and offers the next step; never a bare toast for a consequential action. **It shows only while nothing on screen differs from what was stored, and a refusal stands until the next attempt, edits included** — the reader is editing *because* it was refused (project owner, 11 Sep 2026; decided on S-15 in task 129, written here and applied to S-13 and S-14 by task 134). |
 | **Error — not found** | The address resolves to nothing and never will. Names the address as what is wrong rather than the reader, and offers a route back into the product. |
 | **Error — not yet available** | The address is a real route whose screen has not shipped. Says so plainly — never an error, never a bare `404` — and names where the reader can go instead. |
 

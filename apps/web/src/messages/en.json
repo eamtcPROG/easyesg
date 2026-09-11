@@ -554,7 +554,8 @@
           "body": "The service did not answer, so the organisation’s details are not shown.",
           "action": "Reload the page in a few moments."
         }
-      }
+      },
+      "loading": "Loading the organisation profile…"
     },
     "entities": {
       "title": "Reporting entities",
@@ -682,7 +683,8 @@
           "confirm": "Archive the entity",
           "cancel": "Cancel"
         }
-      }
+      },
+      "loading": "Loading the reporting entities…"
     },
     "periods": {
       "title": "Reporting periods",
@@ -792,7 +794,8 @@
           "body": "No answer came back from the server, so the list cannot be shown right now.",
           "action": "Reload the page"
         }
-      }
+      },
+      "loading": "Loading the reporting periods…"
     },
     "reports": {
       "title": "Reports",
@@ -899,8 +902,10 @@
         },
         "comprehensive": "You will start on B1. The Comprehensive module can be added later if a customer asks for it.",
         "submit": "Create the report",
-        "cancel": "Cancel"
-      }
+        "cancel": "Cancel",
+        "loading": "Loading the entities and periods…"
+      },
+      "loading": "Loading the reports…"
     },
     "access": {
       "title": "Users & access",
@@ -1149,7 +1154,8 @@
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "How many employees fall under a collective agreement. The share is worked out against the employee count reported in B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "How many employees left during the period, for any reason."
         }
-      }
+      },
+      "loading": "Loading the step…"
     }
   }
 }

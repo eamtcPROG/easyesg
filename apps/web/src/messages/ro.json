@@ -554,7 +554,8 @@
           "body": "Serviciul nu a răspuns, așa că datele organizației nu sunt afișate.",
           "action": "Reîncărcați pagina peste câteva momente."
         }
-      }
+      },
+      "loading": "Se încarcă profilul organizației…"
     },
     "entities": {
       "title": "Entități raportoare",
@@ -682,7 +683,8 @@
           "confirm": "Arhivați entitatea",
           "cancel": "Renunțați"
         }
-      }
+      },
+      "loading": "Se încarcă lista entităților…"
     },
     "periods": {
       "title": "Perioade de raportare",
@@ -792,7 +794,8 @@
           "body": "Nu am primit răspuns de la server, așa că lista nu poate fi afișată acum.",
           "action": "Reîncărcați pagina"
         }
-      }
+      },
+      "loading": "Se încarcă perioadele de raportare…"
     },
     "reports": {
       "title": "Rapoarte",
@@ -899,8 +902,10 @@
         },
         "comprehensive": "Veți începe cu B1. Modulul Comprehensive poate fi adăugat mai târziu, dacă vi-l cere un client.",
         "submit": "Creați raportul",
-        "cancel": "Renunțați"
-      }
+        "cancel": "Renunțați",
+        "loading": "Se încarcă entitățile și perioadele…"
+      },
+      "loading": "Se încarcă lista rapoartelor…"
     },
     "access": {
       "title": "Utilizatori și acces",
@@ -1149,7 +1154,8 @@
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Câți dintre angajați intră sub un contract colectiv de muncă. Ponderea se calculează față de numărul de angajați declarat la B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Câți angajați au încetat raporturile de muncă pe parcursul perioadei, indiferent de motiv."
         }
-      }
+      },
+      "loading": "Se încarcă pasul…"
     }
   }
 }

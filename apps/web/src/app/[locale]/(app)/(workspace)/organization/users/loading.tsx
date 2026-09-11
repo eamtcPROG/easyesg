@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Panel, Spinner } from '@easyesg/ui';
+import { ACCESS_MESSAGES } from '@/features/organization/access/components/access-messages';
 import styles from '@/features/organization/access/components/access.module.css';
 
 /**
@@ -20,7 +21,7 @@ import styles from '@/features/organization/access/components/access.module.css'
  * `loading.tsx` as the first file to check when §14.2's caching decision is taken.
  */
 export default async function UsersAndAccessLoading() {
-  const t = await getTranslations('organization.access');
+  const t = await getTranslations(ACCESS_MESSAGES);
 
   return (
     <div className={styles.screen}>

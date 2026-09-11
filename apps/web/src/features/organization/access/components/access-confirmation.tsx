@@ -1,6 +1,7 @@
 'use client';
 
 import { ConsequenceDialogue } from '@easyesg/ui';
+import { ACCESS_MESSAGES } from './access-messages';
 import { useTranslations } from 'next-intl';
 import { useAccess } from './access-context';
 import { CONFIRMATION } from '../tools/access-state';
@@ -15,7 +16,7 @@ import { removeMemberAction, revokeInvitationAction } from '../actions/actions';
  * for a withdrawn invitation, since an invitation never entered anything.
  */
 export function AccessConfirmation() {
-  const t = useTranslations('organization.access');
+  const t = useTranslations(ACCESS_MESSAGES);
   const { confirming, dismiss, perform, pendingRowKey } = useAccess();
   if (!confirming) return null;
 

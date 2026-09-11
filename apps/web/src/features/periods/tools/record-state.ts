@@ -1,3 +1,4 @@
+import type { ReportingPeriodValue } from '@easyesg/ui';
 import type { Notice } from '@/lib/notice';
 
 /**
@@ -29,16 +30,49 @@ export type PeriodDialogue = (typeof PERIOD_DIALOGUE)[keyof typeof PERIOD_DIALOG
  */
 export type PeriodNotice = Notice;
 
+/**
+ * Which side settled — two members rather than a boolean, because they differ in **how long they
+ * stay true** (`design_spec.md` §8.1's Success row; task 134, applying the S-15 decision here): a
+ * success is true only while nothing on screen differs from what was stored, a refusal until the
+ * next attempt.
+ */
+export const PERIOD_REPORT = { SAVED: 'saved', REFUSED: 'refused' } as const;
+
+export type PeriodReportKind = (typeof PERIOD_REPORT)[keyof typeof PERIOD_REPORT];
+
+export interface PeriodReport {
+  readonly kind: PeriodReportKind;
+  readonly notice: PeriodNotice;
+}
+
 export interface PeriodRecordState {
   readonly pending: boolean;
   readonly dialogue: PeriodDialogue | null;
-  readonly notice: PeriodNotice | null;
+  /** The last settled outcome, or nothing attempted and nothing to report. */
+  readonly report: PeriodReport | null;
 }
 
 export const INITIAL_PERIOD_RECORD_STATE: PeriodRecordState = {
   pending: false,
   dialogue: null,
-  notice: null,
+  report: null,
+};
+
+/** Whether the picker's value differs from the stored period's — the half of "dirty" this record has. */
+export const periodValueDiffers = (
+  value: ReportingPeriodValue,
+  stored: ReportingPeriodValue,
+): boolean =>
+  value.fiscalYear !== stored.fiscalYear ||
+  value.start !== stored.start ||
+  value.end !== stored.end ||
+  value.due !== stored.due;
+
+/** What the screen should actually show: a success only while nothing differs, a refusal until the next attempt. */
+export const visibleNotice = (state: PeriodRecordState, dirty: boolean): PeriodNotice | null => {
+  if (state.report === null) return null;
+  if (state.report.kind === PERIOD_REPORT.SAVED && dirty) return null;
+  return state.report.notice;
 };
 
 /**
@@ -55,7 +89,7 @@ export const PERIOD_RECORD_EVENT = {
 
 export type PeriodRecordAction =
   | { readonly type: typeof PERIOD_RECORD_EVENT.SUBMITTED }
-  | { readonly type: typeof PERIOD_RECORD_EVENT.SETTLED; readonly notice: PeriodNotice }
+  | { readonly type: typeof PERIOD_RECORD_EVENT.SETTLED; readonly report: PeriodReport }
   | {
       readonly type: typeof PERIOD_RECORD_EVENT.DIALOGUE_REQUESTED;
       readonly dialogue: PeriodDialogue;
@@ -70,15 +104,15 @@ export function periodRecordReducer(
     case PERIOD_RECORD_EVENT.SUBMITTED:
       // The previous notice goes now rather than when the answer arrives: a success message sitting
       // above an action in flight tells the reader the wrong thing for as long as the request takes.
-      return { ...state, pending: true, notice: null };
+      return { ...state, pending: true, report: null };
     case PERIOD_RECORD_EVENT.SETTLED:
       // Whichever dialogue asked closes on the answer, success or refusal — a confirmation left
       // open over a rendered result invites confirming twice.
-      return { pending: false, dialogue: null, notice: action.notice };
+      return { pending: false, dialogue: null, report: action.report };
     case PERIOD_RECORD_EVENT.DIALOGUE_REQUESTED:
       // Opening a confirmation clears a stale notice too: the reader is asking about the next
       // action, and the last one's outcome above the question reads as being about this one.
-      return { ...state, dialogue: action.dialogue, notice: null };
+      return { ...state, dialogue: action.dialogue, report: null };
     case PERIOD_RECORD_EVENT.DISMISSED:
       return { ...state, dialogue: null };
     default:

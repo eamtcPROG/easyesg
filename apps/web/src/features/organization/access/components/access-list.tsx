@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, BUTTON_VARIANT, EmptyState } from '@easyesg/ui';
+import { ACCESS_MESSAGES } from './access-messages';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { IndexView } from '@/shared/index-view';
@@ -23,7 +24,7 @@ import { ACCESS_FILTER_ANY, accessRowKey, type AccessRow, type AccessSort } from
  * it. A shared component could only have offered a shrug.
  */
 export function AccessList() {
-  const t = useTranslations('organization.access');
+  const t = useTranslations(ACCESS_MESSAGES);
   const { page, view, inviteAnchorId, setView } = useAccess();
   const columns = useAccessColumns();
 

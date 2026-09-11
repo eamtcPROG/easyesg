@@ -8,6 +8,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import type { Organization } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { failureNotice, successNotice } from '@/lib/notice';
+import { RecordNotice } from '@/shared/record-notice';
 import { updateOrganizationProfileAction } from '../../actions/actions';
 import { toFields, toPatch, type ProfileFields } from '../../tools/profile-fields';
 import {
@@ -24,7 +25,6 @@ import { PROFILE_MESSAGES } from '../shared/profile-messages';
 import type { CountryOption } from '../shared/vocabulary';
 import { ProfileAttribution } from './profile-attribution';
 import { ProfileControls } from './profile-controls';
-import { ProfileNotice } from './profile-notice';
 
 /**
  * S-15's body — UC-50 and UC-51 on the Record archetype (FR-15, FR-16).
@@ -175,7 +175,7 @@ export function OrganizationProfileForm({
             stops being true the moment a field differs — while a refusal stands until the next
             attempt, because the reader is editing in response to it. `visibleNotice` holds that
             asymmetry in one place and is a unit spec. */}
-        <ProfileNotice notice={visibleNotice(state, formState.isDirty)} />
+        <RecordNotice notice={visibleNotice(state, formState.isDirty)} />
 
         <IdentitySection control={control} countries={countries} legalForms={legalForms} />
         <IdentifiersSection control={control} />

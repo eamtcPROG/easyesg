@@ -7,6 +7,8 @@ import { ROUTES } from '@/lib/routes';
 import { LocaleChoice } from '@/shared/locale-choice';
 
 /**
+ * **In `identity/shared/components/` on a different test from its siblings: one reader, the `(identity)` layout — which is why it is chrome shared by every journey rather than any journey's part, and why it is here and not in `src/shared/`, whose chrome is the authenticated tier's.**
+ *
  * The Focus header's actions (IMPLEMENTATION_PLAN Phase 2: the language switcher lands here
  * because identity is the first surface that has one). The legal footer used to live here too
  * and now lives in `src/shared/site-footer.tsx` — it is shared with the public surfaces, and it

@@ -1,6 +1,7 @@
 'use client';
 
 import { StatusChip, STATUS_TONE, type DataTableColumn, type StatusTone } from '@easyesg/ui';
+import { ACCESS_MESSAGES } from './access-messages';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import {
@@ -38,7 +39,7 @@ const STANDING_TONE: Record<AccessStanding, StatusTone> = {
 };
 
 export function useAccessColumns(): readonly DataTableColumn<AccessRow, AccessColumnKey>[] {
-  const t = useTranslations('organization.access');
+  const t = useTranslations(ACCESS_MESSAGES);
   const format = useFormatter();
 
   // Memoised on the two things that can actually change it, both locale-bound. Without it the

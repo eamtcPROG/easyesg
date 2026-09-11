@@ -1,12 +1,6 @@
-import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
-import { getMessages, getTranslations } from 'next-intl/server';
-import { OrganizationProfileForm } from '@/features/organization/profile/components/form/organization-profile-form';
-import { readOrganizationProfile, type OrganizationProfileRead } from '@/server/data/organization-profile';
-import { TENANT_READ } from '@/server/data/tenant-read';
-import { Link } from '@/i18n/navigation';
+import { ProfileSection } from '@/features/organization/profile/components/section/profile-section';
+import { PROFILE_MESSAGES } from '@/features/organization/profile/components/shared/profile-messages';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
-import { ROUTES } from '@/lib/routes';
-import styles from '@/features/organization/profile/components/styles/organization-profile.module.css';
 
 /**
  * S-15 — Organization profile and identifiers · OA · UC-50, UC-51 · Record
@@ -30,88 +24,18 @@ import styles from '@/features/organization/profile/components/styles/organizati
  * **The catalogue reaches the browser from the root layout, once** (task 99) — this screen used to
  * mount its own scoped provider, which is what that paragraph described.
  *
- * States (§8.1): error — permission · error — recoverable · ready. The form owns the rest.
+ * States (§8.1): error — permission · error — recoverable · ready. The form owns the rest. *
+ * **This file is a shell** (task 134, `shell-composes-only`): it pins the locale and renders the
+ * section, which reads, decides the arm and draws. `loading.tsx` beside it is the screen's
+ * `loading — initial`, on S-16's precedent — the whole body waits on the read, so there is no
+ * shell worth streaming ahead of it.
  */
-const MESSAGES = 'organization.profile';
-
-export const generateMetadata = localizedPageTitle(MESSAGES);
+export const generateMetadata = localizedPageTitle(PROFILE_MESSAGES);
 
 export default async function OrganizationProfilePage({ params }: { params: LocaleParams }) {
-  // Sequential, and a data dependency rather than the waterfall `async-parallel` names:
-  // `activateRequestLocale` pins the locale `api-client` resolves for `Accept-Language`, so a read
-  // hoisted above it would bring back problem text in the wrong language.
+  // Sequential, and a data dependency rather than the waterfall `async-parallel` names: pinning
+  // the locale is what `api-client` resolves `Accept-Language` from, so the section's read must
+  // not be hoisted above it.
   await activateRequestLocale(params);
-  const [read, t, messages] = await Promise.all([
-    readOrganizationProfile(),
-    getTranslations(MESSAGES),
-    getMessages(),
-  ]);
-
-  return (
-    <div className={styles.screen}>
-      <ProfileScreenBody read={read} messages={messages} />
-      {read.status === TENANT_READ.READY ? null : (
-        <p className={`t-caption ${styles.footnote}`}>{t('lede')}</p>
-      )}
-    </div>
-  );
-}
-
-/**
- * The read's three arms, as a top-level component rather than a closure — the shape
- * `rerender-no-inline-components` names, and S-16's page makes the same move for the same reason.
- */
-async function ProfileScreenBody({
-  read,
-  messages,
-}: {
-  readonly read: OrganizationProfileRead;
-  readonly messages: Awaited<ReturnType<typeof getMessages>>;
-}) {
-  const t = await getTranslations(MESSAGES);
-
-  if (read.status === TENANT_READ.FORBIDDEN) {
-    return (
-      <Callout
-        intent={CALLOUT_INTENT.WARNING}
-        title={t('error.permission.title')}
-        action={
-          <TextLink asChild>
-            <Link href={ROUTES.HOME}>{t('error.permission.action')}</Link>
-          </TextLink>
-        }
-      >
-        {t('error.permission.body')}
-      </Callout>
-    );
-  }
-
-  if (read.status === TENANT_READ.UNREACHABLE) {
-    return (
-      <Callout
-        intent={CALLOUT_INTENT.ERROR}
-        title={t('error.unreachable.title')}
-        action={t('error.unreachable.action')}
-      >
-        {t('error.unreachable.body')}
-      </Callout>
-    );
-  }
-
-  // Keys resolved to words here, where the catalogue object can be indexed — see
-  // `VocabularyOption`'s docblock for why a translator call cannot take these values.
-  const countryLabels: Readonly<Record<string, string>> = messages.organization.countries;
-  const formLabels: Readonly<Record<string, string>> = messages.organization.legalForms;
-  const countries = read.countries.map((country) => ({
-    value: country.countryCode,
-    label: countryLabels[country.countryCode] ?? country.countryCode,
-    legalForms: country.legalForms.map((form) => ({
-      value: form,
-      label: formLabels[form] ?? form,
-    })),
-  }));
-
-  return (
-    <OrganizationProfileForm organization={read.organization} countries={countries} />
-  );
+  return <ProfileSection />;
 }

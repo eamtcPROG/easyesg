@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Callout, Panel } from '@easyesg/ui';
+import { ACCESS_MESSAGES } from './access-messages';
 import { FormSelect, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
@@ -40,9 +41,9 @@ interface InviteFields {
 }
 
 export function InviteMember({ id }: { id: string }) {
-  const t = useTranslations('organization.access.invite');
-  const tRoles = useTranslations('organization.access.roles');
-  const tRoleHelp = useTranslations('organization.access.roleDescriptions');
+  const t = useTranslations(`${ACCESS_MESSAGES}.invite`);
+  const tRoles = useTranslations(`${ACCESS_MESSAGES}.roles`);
+  const tRoleHelp = useTranslations(`${ACCESS_MESSAGES}.roleDescriptions`);
   const tCommon = useTranslations('identity');
   // The form-level error summary's heading — `forms`, because it says what happened to a
   // FORM and no screen owns it. See `factor-form.tsx` for the one that is not shared.

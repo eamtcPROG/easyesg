@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import type { Control } from 'react-hook-form';
 import type { NaceCodeMatch } from '@easyesg/contracts';
 import type { EntityFields } from '../../tools/entity-fields';
-import { ActivityPicker } from '../controls/activity-picker';
+import { ActivityPicker } from './activity-picker';
 import { ENTITY_RECORD_MESSAGES } from '../shared/entity-messages';
 
 /**

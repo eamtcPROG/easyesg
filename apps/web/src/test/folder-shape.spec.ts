@@ -19,7 +19,7 @@ import { join } from 'node:path';
  * placement; `organization/tools/` was its first home and became one folder among four the day the
  * root moved.
  *
- * **Why it exists at all.** A rule written into three documents and a skill and checked by nothing
+ * **Why it exists at all.** A rule written into two `CLAUDE.md` files and a skill and checked by nothing
  * decays silently: the next task drops one file beside folders and the tree slides back with every
  * gate green. Proven to bite at each root it has had by dropping a stray file once.
  */
@@ -43,10 +43,11 @@ const directoriesUnder = (root: string, prefix = '.'): readonly string[] => {
 describe("the tenant app's folder shape", () => {
   const directories = directoriesUnder(SRC).filter((relative) => !EXEMPT.has(relative));
 
-  // Guards the guard: a `readdirSync` against a path that has moved answers an empty list, and an
-  // empty list satisfies every assertion below without testing anything. Named directories rather
-  // than a count alone, so moving the root — or losing a feature — fails here rather than quietly
-  // reducing what is checked.
+  // Guards the guard. A root pointed at a path that does not exist throws at collection; the case
+  // this protects against is a root pointed at a *narrower* real directory, which still yields a
+  // long list. Named directories rather than a count, because the floor has forty directories of
+  // slack; and every feature folder on disk must be among what was walked, so an early return added
+  // for one subtree cannot exempt it silently.
   it('walks the tree it means to', () => {
     expect(directories.length).toBeGreaterThanOrEqual(80);
     for (const named of [
@@ -59,6 +60,11 @@ describe("the tenant app's folder shape", () => {
     ]) {
       expect(directories).toContain(named);
     }
+    const features = readdirSync(join(SRC, 'features'), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => join('features', entry.name));
+    expect(features.length).toBeGreaterThanOrEqual(14);
+    for (const feature of features) expect(directories).toContain(feature);
   });
 
   // The exemptions are exactly two, and the walk stops at `app/` rather than entering it: a route

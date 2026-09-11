@@ -70,7 +70,9 @@ describe('toRequest', () => {
       },
       [{ code: '10.71', label: 'Fabricarea pâinii' }],
     );
-    expect(request).toEqual({
+    // Strict, so a `{ id: undefined }` on the new row — which `toEqual` would forgive — fails the
+    // name of this case: the row is sent *without* an id, not with an empty one.
+    expect(request).toStrictEqual({
       name: 'Brutăria',
       legalForm: null,
       naceCodes: ['10.71'],

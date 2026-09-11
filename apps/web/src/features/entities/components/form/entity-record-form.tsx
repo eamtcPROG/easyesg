@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import type { NaceCodeMatch, ReportingEntity } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 import { failureNotice, successNotice } from '@/lib/notice';
+import { RecordNotice } from '@/shared/record-notice';
 import { useRouter } from '@/i18n/navigation';
 import { ROUTES, entityRoute } from '@/lib/routes';
 import { archiveEntityAction, createEntityAction, updateEntityAction } from '../../actions/actions';
@@ -25,7 +26,6 @@ import { IdentitySection } from '../sections/identity-section';
 import { SitesSection } from '../sections/sites-section';
 import { ENTITY_RECORD_MESSAGES } from '../shared/entity-messages';
 import { EntityControls } from './entity-controls';
-import { EntityNotice } from './entity-notice';
 
 /**
  * S-13's Record — UC-52, UC-53, UC-54 and UC-55 on one screen (FR-17 … FR-20).
@@ -47,8 +47,9 @@ import { EntityNotice } from './entity-notice';
  *
  * States (§5's list): loading — initial and refresh are the page's · error — recoverable is the
  * API's problem document as received · success re-seeds and says so · **read-only** is the archived
- * entity, which UX-13 requires to name its cause and what restores editing — here nothing does,
- * and the screen says that rather than implying a reversal exists.
+ * entity — a fourth cause beside UX-13's three (a locked period, a view-only membership, a
+ * suspended entitlement), so its banner is this screen's own: it names the cause and says nothing
+ * restores editing, rather than implying a reversal exists.
  */
 export interface EntityRecordFormProps {
   /** Null in create mode. §4.6's Record has no identity header until the object exists. */
@@ -169,7 +170,7 @@ export function EntityRecordForm({ entity, activity, legalForms }: EntityRecordF
           </Callout>
         ) : null}
 
-        <EntityNotice notice={visibleNotice(state, dirty)} />
+        <RecordNotice notice={visibleNotice(state, dirty)} />
 
         <IdentitySection
           control={control}

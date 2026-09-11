@@ -21,7 +21,8 @@ import type { Notice } from '@/lib/notice';
  * **Writing the whole next state surfaced a contradiction, and the owner closed it.** A success
  * notice used to survive subsequent edits: save, then type, and *"your changes were saved"* sat at
  * the head of the record while the foot read *"unsaved changes"*. Raised as a UX decision rather
- * than taken as a refactor's, and decided (project owner, 11 Sep 2026): it clears.
+ * than taken as a refactor's, and decided (project owner, 11 Sep 2026): it clears — `design_spec.md`
+ * §8.1's Success row states it.
  *
  * **The two reports are not symmetrical, which is why `kind` is in the state rather than read off
  * the `intent`.** A refusal **stands until the next attempt**, edits included — the reader is

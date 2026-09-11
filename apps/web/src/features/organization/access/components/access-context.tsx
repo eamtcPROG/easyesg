@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { ACCESS_MESSAGES } from './access-messages';
 import {
   createContext,
   useCallback,
@@ -125,7 +126,7 @@ export function AccessProvider({
   readonly inviteAnchorId: string;
   readonly children: ReactNode;
 }) {
-  const t = useTranslations('organization.access');
+  const t = useTranslations(ACCESS_MESSAGES);
   const tCommon = useTranslations('identity');
   const router = useRouter();
   const [navigating, startNavigation] = useTransition();

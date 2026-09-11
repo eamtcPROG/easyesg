@@ -415,7 +415,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `export {}`, imported nowhere, and its docblock still read *"Not built. Folders are `components/
   hooks/ schema/ queries/ types/`"* — false on both counts, naming only two of the four screens it
   serves. `hooks/`, `queries/` and `schema/` held nothing but `.gitkeep`. A scaffold that outlives
-  the scaffolding is a file that lies to the next reader.
+  the scaffolding is a file that lies to the next reader. **One exception, and it is a gate's**: a barrel
+  a boundary fixture imports — `commerce/index.ts` and `reporting/index.ts`, which
+  `prove-boundaries.sh` reaches as `'../commerce'` and `'../reporting'` — goes only when the fixture
+  is repointed, or the proof goes inert (task 134). The seven unbuilt domains keep theirs.
 
   **File names keep their prefix.** `access/access-list.tsx` stutters and stays: this app relies on
   component file names that survive out of context — `entities-list.tsx`, `reports-list.tsx`,
@@ -488,7 +491,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `features/organization/` from task 126 to task 134 because thirteen directories under `features/`
   and `server/` still mixed, and a gate that starts red inverts *fix the sites first, then turn the
   gate on*; the root moved up when the last site was fixed, not before. Without the spec the rule
-  would be asserted in three documents and a skill and checked by nothing, which is this
+  would be asserted in two `CLAUDE.md` files and a skill and checked by nothing, which is this
   repository's own recorded failure shape.
 
   **The spec lives in `src/test/`, beside the setup file** — a files-only leaf that is nobody's
@@ -557,6 +560,17 @@ conditional render, which is how it ends up half-suppressed on one screen.
   Assert on the **markup** (`role="status"`), never on the fallback's label: next-intl ships the
   whole catalogue in the same payload, so the sentence is in the HTML either way, and the first
   draft of that check passed against a build with the boundary removed.
+
+- **Seven route files still hold their read, and that is a recorded deferral, not a rule** (task
+  134's parent-close review; task 137). `shell-composes-only` makes a route a shell and its read a
+  section's; task 134 gave that shape to the eight routes that also held a second component
+  (S-05 and S-03 first, then S-06, S-13's index, S-14's index, S-15, S-16, S-07 and report creation),
+  each with a `loading.tsx` where the whole body waits on the read. Still reading in one component:
+  `(wizard)/reports/[reportId]` (the redirector), `account/credentials`, `entities/[entityId]`,
+  `entities/[entityId]/periods/[periodId]`, `entities/new`, `create-organization` and
+  `organization-unavailable`. The owner's scope for 134 was files declaring two components, which
+  these do not; they are the next sweep, and until it lands a new route should follow the shells,
+  not these.
 
 - **Never import `next/link` or `next/navigation`'s locale-aware members.** Use
   `@/i18n/navigation`. A raw `next/link` renders a working-looking anchor that drops the locale
@@ -757,8 +771,8 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **70 files here are Client Components** (11 Sep 2026: ten each under
-  `organization/access/components/` and `credentials/components/`, six under `shared/`, the rest
+  **69 files here are Client Components** (11 Sep 2026: ten each under
+  `organization/access/components/` and `credentials/components/`, seven under `shared/`, the rest
   across the wizard's controls and the two record forms' sections), so the three
   cases above are live questions in every one of them — `access-context.tsx` is the worked example,
   where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two

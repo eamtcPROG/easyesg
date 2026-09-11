@@ -10,7 +10,7 @@
  * they share the token layer and the primitives and depend on nothing from phases 4-9. Nothing
  * later depends on them either." The rule is what keeps that sentence true.
  *
- * Not built. Folders are `components/ hooks/ schema/ queries/ types/`, tests colocated as
- * `*.spec.tsx`.
+ * Not built. When it is, it holds the kinds its screens have — `components/ · tools/ · actions/`
+ * (`one-kind-per-folder`); the scaffold folders went in task 134, and this barrel stays until then.
  */
 export {};

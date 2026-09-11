@@ -8,12 +8,13 @@ import { providerLabel } from '@/features/identity/social/tools/social';
 import { linkProviderAction, unlinkProviderAction } from '../actions/actions';
 import type { LinkedProvider } from '../tools/credentials';
 import { CREDENTIALS_SECTION, CREDENTIALS_STAGE } from '../tools/credentials-state';
+import { PROVIDERS_MESSAGES } from './credentials-messages';
 import { useCredentials, useSectionBusy } from './credentials-context';
 import styles from './credentials.module.css';
 
 /** Module-level for the reason `FactorBody` is; its one prop is the narrowed read. */
 export function ProvidersBody({ linked }: { readonly linked: readonly LinkedProvider[] }) {
-  const t = useTranslations('identity.credentials.providers');
+  const t = useTranslations(PROVIDERS_MESSAGES);
   const { stage, perform, succeeded, password } = useCredentials();
   const busy = useSectionBusy(CREDENTIALS_SECTION.PROVIDERS);
 

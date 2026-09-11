@@ -11,7 +11,7 @@
  * UX-22: every finding is a link that moves FOCUS to the originating field and scrolls it into
  * view. A silent scroll without focus movement is an accessibility failure, not a near miss.
  *
- * Not built. Folders are `components/ hooks/ schema/ queries/ types/`, tests colocated as
- * `*.spec.tsx`.
+ * Not built. When it is, it holds the kinds its screens have — `components/ · tools/ · actions/`
+ * (`one-kind-per-folder`); the scaffold folders went in task 134, and this barrel stays until then.
  */
 export {};

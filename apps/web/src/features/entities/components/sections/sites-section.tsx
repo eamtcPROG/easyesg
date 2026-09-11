@@ -8,7 +8,7 @@ import { EMPTY_SITE, type EntityFields } from '../../tools/entity-fields';
 import { ENTITY_RECORD_MESSAGES } from '../shared/entity-messages';
 import styles from '../styles/entities.module.css';
 
-/** The sites (FR-18): a whole-collection save, so the list is held and sent as it stands. */
+/** The sites (FR-17): a whole-collection save, so the list is held and sent as it stands. */
 export function SitesSection({
   control,
   archived,

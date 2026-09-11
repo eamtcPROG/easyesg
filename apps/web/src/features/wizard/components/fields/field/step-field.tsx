@@ -71,7 +71,7 @@ export function StepField({
   const t = useTranslations(`${FIELD_MESSAGES}.sync`);
   const tField = useTranslations(FIELD_MESSAGES);
   const tUnit = useTranslations(`${FIELD_MESSAGES}.units`);
-  // Code to symbol. Built with literal keys like `rowNames` above, so the catalogue lookup is
+  // Code to symbol. Built with literal keys like `rowNames` in `section/step-fields.tsx`, so the catalogue lookup is
   // type-checked: `t(code)` is not, and a missing symbol would be a blank beside a number.
   const unitNames: Readonly<Record<string, string>> = {
     [UNIT_CODE.KILOGRAM]: tUnit('kg'),
@@ -220,7 +220,7 @@ export function StepField({
 /**
  * The unit codes EFRAG's `measurementGuidance` admits across both registered versions (task 91.4).
  *
- * Declared here and unexported, exactly as `TYPED_AXIS` below: the values are the standard's own UTR
+ * Declared here and unexported, exactly as `TYPED_AXIS` in `section/step-fields.tsx`: the values are the standard's own UTR
  * codes, used as **message keys** and never rendered — `sqkm` is an internal identifier and may not
  * reach a reader, so the symbols are catalogue content like every other string.
  *

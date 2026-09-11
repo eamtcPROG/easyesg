@@ -1,13 +1,6 @@
-import { Button, Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
-import { getMessages, getTranslations } from 'next-intl/server';
-import { EntitiesList } from '@/features/entities/components/list/entities-list';
-import { applyEntityView, readEntityView } from '@/features/entities/tools/entities';
-import styles from '@/features/entities/components/styles/entities.module.css';
-import { readEntityList, type EntityListRead } from '@/server/data/entities';
-import { TENANT_READ } from '@/server/data/tenant-read';
-import { Link } from '@/i18n/navigation';
+import { EntitiesSection } from '@/features/entities/components/list/entities-section';
+import { ENTITIES_MESSAGES } from '@/features/entities/components/shared/entity-messages';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
-import { ROUTES } from '@/lib/routes';
 
 /**
  * S-13 — Entities index · OA · UC-52 … UC-55 · Index
@@ -24,93 +17,20 @@ import { ROUTES } from '@/lib/routes';
  *
  * States (§8.1): ready · empty — first use · empty — filtered · error — permission · error —
  * recoverable. The two empty states are `EntitiesList`'s, because §4.6 requires them to teach and
- * teaching means naming this object.
+ * teaching means naming this object. *
+ * **This file is a shell** (task 134, `shell-composes-only`): it pins the locale and renders the
+ * section, which reads, decides the arm and draws. `loading.tsx` beside it is the screen's
+ * `loading — initial`, on S-16's precedent — the whole body waits on the read, so there is no
+ * shell worth streaming ahead of it.
  */
-const MESSAGES = 'organization.entities';
-
 type Props = {
   params: LocaleParams;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export const generateMetadata = localizedPageTitle(MESSAGES);
+export const generateMetadata = localizedPageTitle(ENTITIES_MESSAGES);
 
 export default async function EntitiesIndexPage({ params, searchParams }: Props) {
   await activateRequestLocale(params);
-  const t = await getTranslations(MESSAGES);
-  // Independent: the query string is already in hand and the read is an API round trip, so the
-  // parse does not wait on the fetch (`async-parallel`).
-  const [query, read, messages] = await Promise.all([searchParams, readEntityList(), getMessages()]);
-
-  return (
-    <div className={styles.screen}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-          <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-        </div>
-        {read.status === TENANT_READ.READY ? (
-          <Button asChild>
-            <Link href={ROUTES.ENTITY_NEW}>{t('add')}</Link>
-          </Button>
-        ) : null}
-      </header>
-
-      <EntitiesScreenBody read={read} query={query} messages={messages} />
-    </div>
-  );
-}
-
-/**
- * The read's three arms, as a top-level component rather than a closure — the shape
- * `rerender-no-inline-components` names, and S-15's and S-16's pages make the same move.
- */
-async function EntitiesScreenBody({
-  read,
-  query,
-  messages,
-}: {
-  readonly read: EntityListRead;
-  readonly query: Record<string, string | string[] | undefined>;
-  readonly messages: Awaited<ReturnType<typeof getMessages>>;
-}) {
-  const t = await getTranslations(MESSAGES);
-
-  if (read.status === TENANT_READ.FORBIDDEN) {
-    return (
-      <Callout
-        intent={CALLOUT_INTENT.WARNING}
-        title={t('error.permission.title')}
-        action={
-          <TextLink asChild>
-            <Link href={ROUTES.HOME}>{t('error.permission.action')}</Link>
-          </TextLink>
-        }
-      >
-        {t('error.permission.body')}
-      </Callout>
-    );
-  }
-
-  if (read.status === TENANT_READ.UNREACHABLE) {
-    return (
-      <Callout
-        intent={CALLOUT_INTENT.ERROR}
-        title={t('error.unreachable.title')}
-        action={t('error.unreachable.action')}
-      >
-        {t('error.unreachable.body')}
-      </Callout>
-    );
-  }
-
-  const view = readEntityView(query);
-  const page = applyEntityView({ rows: read.rows, view });
-  // Keys to words on the server, where the catalogue object can be indexed — S-04's page records
-  // why a translator call cannot take a value configuration supplies.
-  const legalForms: Readonly<Record<string, string>> = messages.organization.legalForms;
-
-  return (
-    <EntitiesList page={page} view={view} legalForms={legalForms} />
-  );
+  return <EntitiesSection searchParams={searchParams} />;
 }

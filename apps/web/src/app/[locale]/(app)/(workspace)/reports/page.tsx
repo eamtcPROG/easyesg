@@ -1,18 +1,6 @@
-import { Button, Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
-import { getTranslations } from 'next-intl/server';
-import { ReportsList } from '@/features/reports/components/reports-list';
-import {
-  applyReportView,
-  readReportView,
-  reportFilterOptions,
-} from '@/features/reports/tools/reports';
-import styles from '@/features/reports/components/reports.module.css';
-import { readReportList, type ReportListRead } from '@/server/data/reports';
-import { mayWrite, readActiveMembership } from '@/server/data/memberships';
-import { TENANT_READ } from '@/server/data/tenant-read';
-import { Link } from '@/i18n/navigation';
+import { ReportsSection } from '@/features/reports/components/reports-section';
+import { REPORTS_MESSAGES } from '@/features/reports/components/reports-messages';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
-import { ROUTES } from '@/lib/routes';
 
 /**
  * S-06 — Reports index · RC, OA · UC-17 · Index (task 32.2.2)
@@ -45,110 +33,20 @@ import { ROUTES } from '@/lib/routes';
  *
  * States (§8.1): ready · read-only (view-only membership) · empty — first use · empty — filtered ·
  * error — permission · error — recoverable. The two empty states are `ReportsList`'s, because §4.6
- * requires them to teach and teaching means naming this object.
+ * requires them to teach and teaching means naming this object. *
+ * **This file is a shell** (task 134, `shell-composes-only`): it pins the locale and renders the
+ * section, which reads, decides the arm and draws. `loading.tsx` beside it is the screen's
+ * `loading — initial`, on S-16's precedent — the whole body waits on the read, so there is no
+ * shell worth streaming ahead of it.
  */
-const MESSAGES = 'organization.reports';
-
 type Props = {
   params: LocaleParams;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export const generateMetadata = localizedPageTitle(MESSAGES);
+export const generateMetadata = localizedPageTitle(REPORTS_MESSAGES);
 
 export default async function ReportsIndexPage({ params, searchParams }: Props) {
   await activateRequestLocale(params);
-  const t = await getTranslations(MESSAGES);
-  // Independent: the query string is already in hand and the read is an API round trip, so the
-  // parse does not wait on the fetch (`async-parallel`).
-  const [query, read, membership] = await Promise.all([
-    searchParams,
-    readReportList(),
-    // Independent of all three — and free, because `readMemberships` is React-`cache()`d and the
-    // global tier has already read it this render pass.
-    readActiveMembership(),
-  ]);
-  // FR-25's clause. The predicate — including why an absent membership reads as view-only — lives
-  // beside the membership read, so S-05 and this screen cannot answer it differently (task 32.4).
-  const canCreate = mayWrite(membership);
-
-  return (
-    <div className={styles.screen}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-          <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-        </div>
-        {read.status === TENANT_READ.READY && canCreate ? (
-          <Button asChild>
-            <Link href={ROUTES.REPORT_NEW}>{t('add')}</Link>
-          </Button>
-        ) : null}
-      </header>
-
-      <ReportsScreenBody read={read} query={query} canCreate={canCreate} />
-    </div>
-  );
-}
-
-/**
- * The read's three arms, as a top-level component rather than a closure — the shape
- * `rerender-no-inline-components` names, and every other Index page here makes the same move.
- */
-async function ReportsScreenBody({
-  read,
-  query,
-  canCreate,
-}: {
-  readonly read: ReportListRead;
-  readonly query: Record<string, string | string[] | undefined>;
-  /** FR-25: a view-only member sees the same entries and no edit affordances. */
-  readonly canCreate: boolean;
-}) {
-  const t = await getTranslations(MESSAGES);
-
-  if (read.status === TENANT_READ.FORBIDDEN) {
-    return (
-      <Callout
-        intent={CALLOUT_INTENT.WARNING}
-        title={t('error.permission.title')}
-        action={
-          <TextLink asChild>
-            <Link href={ROUTES.HOME}>{t('error.permission.action')}</Link>
-          </TextLink>
-        }
-      >
-        {t('error.permission.body')}
-      </Callout>
-    );
-  }
-
-  if (read.status === TENANT_READ.UNREACHABLE) {
-    return (
-      <Callout
-        intent={CALLOUT_INTENT.ERROR}
-        title={t('error.unreachable.title')}
-        action={t('error.unreachable.action')}
-      >
-        {t('error.unreachable.body')}
-      </Callout>
-    );
-  }
-
-  const view = readReportView(query);
-  const page = applyReportView({ rows: read.rows, view });
-  // **The filter's options come from the rows, not from a second read.** A filter that offered an
-  // entity with no report would answer *nothing matches* for a value the reader was invited to
-  // choose, which is the filtered empty state used as a dead end rather than as a remedy.
-  const options = reportFilterOptions(read.rows);
-
-  return (
-    <ReportsList
-      page={page}
-      view={view}
-      entities={options.entities}
-      years={options.years}
-      canCreate={canCreate}
-    />
-  );
+  return <ReportsSection searchParams={searchParams} />;
 }

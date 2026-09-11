@@ -1,6 +1,7 @@
 'use client';
 
 import { Select } from '@easyesg/ui';
+import { ACCESS_MESSAGES } from './access-messages';
 import { MEMBERSHIP_ROLE, type MembershipRole } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
@@ -24,8 +25,8 @@ import { ACCESS_ROW_KIND, isLastAdministrator, type AccessRow } from '../tools/a
  * administrator revoke and re-invite, which is the honest way to change that promise.
  */
 export function RoleCell({ row }: { readonly row: AccessRow }) {
-  const t = useTranslations('organization.access');
-  const tRoles = useTranslations('organization.access.roles');
+  const t = useTranslations(ACCESS_MESSAGES);
+  const tRoles = useTranslations(`${ACCESS_MESSAGES}.roles`);
   const { page, perform } = useAccess();
   const busy = useRowBusy(row);
 

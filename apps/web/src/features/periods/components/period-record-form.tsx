@@ -19,13 +19,17 @@ import { useReducer, useState, useTransition } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { noticeFromOutcome } from '@/lib/notice';
+import { RecordNotice } from '@/shared/record-notice';
 import { legalDate } from '@/lib/legal-date';
 import { periodRoute } from '@/lib/routes';
 import {
   INITIAL_PERIOD_RECORD_STATE,
   PERIOD_DIALOGUE,
   PERIOD_RECORD_EVENT,
+  PERIOD_REPORT,
   periodRecordReducer,
+  periodValueDiffers,
+  visibleNotice,
 } from '../tools/record-state';
 import {
   lockPeriodAction,
@@ -33,6 +37,7 @@ import {
   reopenPeriodAction,
   updatePeriodAction,
 } from '../actions/actions';
+import { PERIODS_MESSAGES } from './periods-messages';
 import styles from './periods.module.css';
 
 /**
@@ -65,7 +70,7 @@ const toValue = (period?: ReportingPeriod): ReportingPeriodValue => ({
 });
 
 export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordFormProps) {
-  const t = useTranslations('organization.periods');
+  const t = useTranslations(PERIODS_MESSAGES);
   const router = useRouter();
   const [, startNavigation] = useTransition();
   const [state, dispatch] = useReducer(periodRecordReducer, INITIAL_PERIOD_RECORD_STATE);
@@ -81,11 +86,14 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
   const settle = (outcome: Parameters<typeof noticeFromOutcome>[0]['outcome']): boolean => {
     dispatch({
       type: PERIOD_RECORD_EVENT.SETTLED,
-      notice: noticeFromOutcome({
+      report: {
+        kind: outcome.status === API_OUTCOME.Ok ? PERIOD_REPORT.SAVED : PERIOD_REPORT.REFUSED,
+        notice: noticeFromOutcome({
         outcome,
         success: { title: t('saved.title'), body: t('saved.body') },
         unreachable: { title: t('error.unreachable.title'), body: t('error.unreachable.body') },
-      }),
+        }),
+      },
     });
     return outcome.status === API_OUTCOME.Ok;
   };
@@ -191,15 +199,10 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
           </Callout>
         ) : null}
 
-        {state.notice ? (
-          <Callout
-            intent={state.notice.intent}
-            title={state.notice.title}
-            action={state.notice.action}
-          >
-            {state.notice.body}
-          </Callout>
-        ) : null}
+        {/* Derived, not stored: a success says *the record on screen is what was saved*, which stops
+            being true the moment the picker differs — while a refusal stands until the next attempt
+            (§8.1's Success row; the S-15 decision, applied here by task 134). */}
+        <RecordNotice notice={visibleNotice(state, periodValueDiffers(value, toValue(period)))} />
 
         <ReportingPeriodPicker
           value={value}

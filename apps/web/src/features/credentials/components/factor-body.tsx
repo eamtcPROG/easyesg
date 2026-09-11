@@ -12,6 +12,7 @@ import {
 } from '../actions/actions';
 import type { TotpState } from '../tools/credentials';
 import { CREDENTIALS_EVENT, CREDENTIALS_SECTION, CREDENTIALS_STAGE } from '../tools/credentials-state';
+import { FACTOR_MESSAGES } from './credentials-messages';
 import { useCredentials, useSectionBusy } from './credentials-context';
 import styles from './credentials.module.css';
 
@@ -29,7 +30,7 @@ interface FactorForm {
  * surface this file was rewritten to remove.
  */
 export function FactorBody({ factor }: { readonly factor: TotpState }) {
-  const t = useTranslations('identity.credentials.factor');
+  const t = useTranslations(FACTOR_MESSAGES);
   // The form-level error summary's heading — `forms`, because it says what happened to a
   // FORM and no screen owns it. See `factor-form.tsx` for the one that is not shared.
   const tForms = useTranslations('forms');

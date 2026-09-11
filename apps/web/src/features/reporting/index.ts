@@ -9,7 +9,7 @@
  * (IMPLEMENTATION_PLAN Phase 4) because everything downstream inherits its decisions. Its
  * presentational half belongs to `packages/ui`; what lives here is the data binding.
  *
- * Not built. Folders are `components/ hooks/ schema/ queries/ types/`, tests colocated as
- * `*.spec.tsx`.
+ * Not built. When it is, it holds the kinds its screens have — `components/ · tools/ · actions/`
+ * (`one-kind-per-folder`); the scaffold folders went in task 134, and this barrel stays until then.
  */
 export {};

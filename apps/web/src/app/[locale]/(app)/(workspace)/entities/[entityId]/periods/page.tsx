@@ -1,13 +1,6 @@
-import { Button, CALLOUT_INTENT, Callout, TextLink } from '@easyesg/ui';
-import { getTranslations } from 'next-intl/server';
-import { PeriodsList } from '@/features/periods/components/periods-list';
-import { applyPeriodView, readPeriodView, toPeriodRows } from '@/features/periods/tools/periods';
-import styles from '@/features/periods/components/periods.module.css';
-import { readPeriodList, type PeriodListRead } from '@/server/data/periods';
-import { TENANT_READ } from '@/server/data/tenant-read';
-import { Link } from '@/i18n/navigation';
+import { PeriodsSection } from '@/features/periods/components/periods-section';
+import { PERIODS_MESSAGES } from '@/features/periods/components/periods-messages';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
-import { ROUTES, newPeriodRoute } from '@/lib/routes';
 
 /**
  * S-14 — Reporting periods · OA · UC-56 … UC-58 · Index
@@ -22,95 +15,21 @@ import { ROUTES, newPeriodRoute } from '@/lib/routes';
  * renders what it is given and the record's own refusal names the boundary.
  *
  * States (§8.1): ready · empty — first use · empty — filtered · error — permission · error —
- * recoverable. The two empty states are `PeriodsList`'s, because §4.6 requires them to teach.
+ * recoverable. The two empty states are `PeriodsList`'s, because §4.6 requires them to teach. *
+ * **This file is a shell** (task 134, `shell-composes-only`): it pins the locale and renders the
+ * section, which reads, decides the arm and draws. `loading.tsx` beside it is the screen's
+ * `loading — initial`, on S-16's precedent — the whole body waits on the read, so there is no
+ * shell worth streaming ahead of it.
  */
-const MESSAGES = 'organization.periods';
-
 type Props = {
   params: Promise<{ locale: string; entityId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export const generateMetadata = localizedPageTitle(MESSAGES);
+export const generateMetadata = localizedPageTitle(PERIODS_MESSAGES);
 
 export default async function ReportingPeriodsPage({ params, searchParams }: Props) {
   const { entityId } = await params;
   await activateRequestLocale(params as unknown as LocaleParams);
-  const t = await getTranslations(MESSAGES);
-  // Independent: the query string is in hand and the read is an API round trip, so the parse does
-  // not wait on the fetch (`async-parallel`).
-  const [query, read] = await Promise.all([
-    searchParams,
-    readPeriodList(entityId),
-  ]);
-
-  return (
-    <div className={styles.screen}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-          <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-        </div>
-        {read.status === TENANT_READ.READY ? (
-          <Button asChild>
-            <Link href={newPeriodRoute(entityId)}>{t('open')}</Link>
-          </Button>
-        ) : null}
-      </header>
-
-      <PeriodsScreenBody entityId={entityId} read={read} query={query} />
-    </div>
-  );
-}
-
-/** The read's three arms, as a top-level component rather than a closure — the shape
- *  `rerender-no-inline-components` names, and every other Index page makes the same move. */
-async function PeriodsScreenBody({
-  entityId,
-  read,
-  query,
-}: {
-  readonly entityId: string;
-  readonly read: PeriodListRead;
-  readonly query: Record<string, string | string[] | undefined>;
-}) {
-  const t = await getTranslations(MESSAGES);
-
-  if (read.status === TENANT_READ.FORBIDDEN) {
-    return (
-      <Callout
-        intent={CALLOUT_INTENT.WARNING}
-        title={t('error.permission.title')}
-        action={
-          <TextLink asChild>
-            <Link href={ROUTES.HOME}>{t('error.permission.action')}</Link>
-          </TextLink>
-        }
-      >
-        {t('error.permission.body')}
-      </Callout>
-    );
-  }
-
-  if (read.status === TENANT_READ.UNREACHABLE) {
-    return (
-      <Callout
-        intent={CALLOUT_INTENT.ERROR}
-        title={t('error.unreachable.title')}
-        action={t('error.unreachable.action')}
-      >
-        {t('error.unreachable.body')}
-      </Callout>
-    );
-  }
-
-  const view = readPeriodView(query);
-  const page = applyPeriodView({ rows: toPeriodRows(read.periods), view });
-
-  return (
-    <>
-      <p className="t-caption">{read.entity.name}</p>
-      <PeriodsList entityId={entityId} page={page} view={view} />
-    </>
-  );
+  return <PeriodsSection entityId={entityId} searchParams={searchParams} />;
 }

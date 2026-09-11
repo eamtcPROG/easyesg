@@ -21,8 +21,8 @@ import type { Notice } from '@/lib/notice';
  * prop read at the moment of discarding.
  *
  * **A success is true only while nothing differs from what was stored; a refusal stands until the
- * next attempt.** The owner decided that asymmetry for S-15 (11 Sep 2026) and it holds here for
- * the same reason: the reader is editing *because* it was refused. `visibleNotice` is the whole of
+ * next attempt.** `design_spec.md` §8.1's Success row states it (project owner, 11 Sep 2026, decided
+ * on S-15), and it holds here for the same reason: the reader is editing *because* it was refused. `visibleNotice` is the whole of
  * it, derived during render (`rerender-derived-state-no-effect`).
  */
 export const ENTITY_EVENT = {

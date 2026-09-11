@@ -42,6 +42,9 @@ organization/
 └─ tools/
 ```
 
-The **unbuilt** scaffolds — an `index.ts` reading *"Not built"* beside five `.gitkeep` folders — are
-the same shape and go the same way, when each domain is built. Until then they are the recorded
-backlog, not an exemption.
+The **unbuilt** scaffolds keep their `index.ts` until they are built — one file, no folders — and
+lose their `.gitkeep` folders now. **A barrel that a boundary fixture imports goes only when the
+fixture is repointed**: `tools/prove-boundaries.sh` proves `web-not-to-commerce` and
+`web-public-is-a-leaf` by importing `'../commerce'` and `'../reporting'`, and in `apps/admin` four
+feature barrels the same way; deleting one makes its proof inert (task 134's parent close found
+exactly that shape for `client-not-to-server`).

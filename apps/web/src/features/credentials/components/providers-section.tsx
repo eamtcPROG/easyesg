@@ -4,6 +4,7 @@ import { RecordSection } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { SECTION_READ } from '../tools/credentials';
 import { CREDENTIALS_SECTION } from '../tools/credentials-state';
+import { PROVIDERS_MESSAGES } from './credentials-messages';
 import { useCredentials } from './credentials-context';
 import { ProvidersBody } from './providers-body';
 import { SectionUnavailable } from './section-unavailable';
@@ -26,7 +27,7 @@ import { SectionUnavailable } from './section-unavailable';
  * password may have been set or removed, so the server's answer is the only authoritative one.
  */
 export function ProvidersSection() {
-  const t = useTranslations('identity.credentials.providers');
+  const t = useTranslations(PROVIDERS_MESSAGES);
   const { read } = useCredentials();
 
   return (

@@ -77,3 +77,10 @@ export async function MembershipsSection() {
 
 A part that renames when the copy changes owns its own translator; `getTranslations` against a
 catalogue the request has already read is a microtask, not a round trip.
+
+**What the rule reaches, stated so a sweep can be checked against it** (owner's scope for task 134):
+a file that declares more than one component; an entry file that holds a read or a component
+(`shell-composes-only`); a component that holds both a read and a render arm; a reducer or a
+conversion inside a component. **What it does not reach**: a single-component file, whatever its
+length — `fields/section/step-fields.tsx` at 470 lines is one idea, the step's fields, and its size
+is the size of that idea.

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, BUTTON_VARIANT } from '@easyesg/ui';
+import { ACCESS_MESSAGES } from './access-messages';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { useAccess, useRowBusy } from './access-context';
@@ -16,8 +17,8 @@ import styles from './access.module.css';
  * accepted.
  */
 export function RowActions({ row }: { readonly row: AccessRow }) {
-  const t = useTranslations('organization.access.actions');
-  const tAccess = useTranslations('organization.access');
+  const t = useTranslations(`${ACCESS_MESSAGES}.actions`);
+  const tAccess = useTranslations(ACCESS_MESSAGES);
   const { page, ask, perform } = useAccess();
   const busy = useRowBusy(row);
 

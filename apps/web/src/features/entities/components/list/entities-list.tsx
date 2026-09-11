@@ -27,6 +27,7 @@ import {
   type EntityStanding,
   type EntityView,
 } from '../../tools/entities';
+import { ENTITIES_MESSAGES } from '../shared/entity-messages';
 import styles from '../styles/entities.module.css';
 
 /**
@@ -66,7 +67,7 @@ export interface EntitiesListProps {
 }
 
 export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
-  const t = useTranslations('organization.entities');
+  const t = useTranslations(ENTITIES_MESSAGES);
   const router = useRouter();
   const [, startNavigation] = useTransition();
 

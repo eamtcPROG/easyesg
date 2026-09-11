@@ -4,7 +4,10 @@ import {
   INITIAL_PERIOD_RECORD_STATE,
   PERIOD_DIALOGUE,
   PERIOD_RECORD_EVENT,
+  PERIOD_REPORT,
   periodRecordReducer,
+  periodValueDiffers,
+  visibleNotice,
   type PeriodRecordState,
 } from './record-state';
 
@@ -12,8 +15,14 @@ import {
  * S-14's Record transitions (task 32.1.2) — every one of these is a state a browser journey can
  * only reach by contriving the timing, which is what the reducer rule says a pure module buys.
  */
-const SAVED = { intent: CALLOUT_INTENT.SUCCESS, title: 'Saved', body: 'Recorded.', action: null };
-const FAILED = { intent: CALLOUT_INTENT.ERROR, title: 'Refused', body: 'Locked.', action: null };
+const SAVED = {
+  kind: PERIOD_REPORT.SAVED,
+  notice: { intent: CALLOUT_INTENT.SUCCESS, title: 'Saved', body: 'Recorded.', action: null },
+};
+const FAILED = {
+  kind: PERIOD_REPORT.REFUSED,
+  notice: { intent: CALLOUT_INTENT.ERROR, title: 'Refused', body: 'Locked.', action: null },
+};
 
 const after = (state: PeriodRecordState, ...actions: Parameters<typeof periodRecordReducer>[1][]) =>
   actions.reduce(periodRecordReducer, state);
@@ -27,14 +36,14 @@ describe('periodRecordReducer', () => {
   it('clears the previous notice when a new action starts', () => {
     const settled = after(INITIAL_PERIOD_RECORD_STATE, {
       type: PERIOD_RECORD_EVENT.SETTLED,
-      notice: SAVED,
+      report: SAVED,
     });
-    expect(settled.notice).toEqual(SAVED);
+    expect(settled.report).toEqual(SAVED);
 
     expect(after(settled, { type: PERIOD_RECORD_EVENT.SUBMITTED })).toEqual({
       pending: true,
       dialogue: null,
-      notice: null,
+      report: null,
     });
   });
 
@@ -48,13 +57,13 @@ describe('periodRecordReducer', () => {
     const refused = after(
       confirming,
       { type: PERIOD_RECORD_EVENT.SUBMITTED },
-      { type: PERIOD_RECORD_EVENT.SETTLED, notice: FAILED },
+      { type: PERIOD_RECORD_EVENT.SETTLED, report: FAILED },
     );
 
     // A confirmation left open over a rendered refusal invites confirming twice.
     expect(refused.dialogue).toBeNull();
     expect(refused.pending).toBe(false);
-    expect(refused.notice).toEqual(FAILED);
+    expect(refused.report).toEqual(FAILED);
   });
 
   /**
@@ -65,7 +74,7 @@ describe('periodRecordReducer', () => {
   it('clears a stale notice when the next confirmation opens', () => {
     const saved = after(INITIAL_PERIOD_RECORD_STATE, {
       type: PERIOD_RECORD_EVENT.SETTLED,
-      notice: SAVED,
+      report: SAVED,
     });
 
     const asking = after(saved, {
@@ -73,7 +82,7 @@ describe('periodRecordReducer', () => {
       dialogue: PERIOD_DIALOGUE.REOPEN,
     });
 
-    expect(asking.notice).toBeNull();
+    expect(asking.report).toBeNull();
     expect(asking.dialogue).toBe(PERIOD_DIALOGUE.REOPEN);
   });
 
@@ -88,5 +97,29 @@ describe('periodRecordReducer', () => {
     expect(after(asking, { type: PERIOD_RECORD_EVENT.DISMISSED })).toEqual(
       INITIAL_PERIOD_RECORD_STATE,
     );
+  });
+});
+
+describe('visibleNotice', () => {
+  const saved = after(INITIAL_PERIOD_RECORD_STATE, { type: PERIOD_RECORD_EVENT.SETTLED, report: SAVED });
+  const refused = after(INITIAL_PERIOD_RECORD_STATE, { type: PERIOD_RECORD_EVENT.SETTLED, report: FAILED });
+
+  it('hides a success the moment the picker differs from what was stored (§8.1)', () => {
+    expect(visibleNotice(saved, false)).toBe(SAVED.notice);
+    expect(visibleNotice(saved, true)).toBeNull();
+  });
+
+  it('keeps a refusal while the reader corrects it', () => {
+    expect(visibleNotice(refused, true)).toBe(FAILED.notice);
+  });
+});
+
+describe('periodValueDiffers', () => {
+  const stored = { fiscalYear: '2026', start: '2026-01-01', end: '2026-12-31', due: '' };
+
+  it('sees a change in any of the four fields, and none where they all agree', () => {
+    expect(periodValueDiffers({ ...stored }, stored)).toBe(false);
+    expect(periodValueDiffers({ ...stored, due: '2027-04-30' }, stored)).toBe(true);
+    expect(periodValueDiffers({ ...stored, fiscalYear: '2027' }, stored)).toBe(true);
   });
 });

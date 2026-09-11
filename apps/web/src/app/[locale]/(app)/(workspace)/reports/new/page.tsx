@@ -1,5 +1,5 @@
 import { NewReportSection } from '@/features/reports/components/new-report-section';
-import { REPORT_CREATION_MESSAGES } from '@/features/reports/components/report-creation-messages';
+import { REPORT_CREATION_MESSAGES } from '@/features/reports/components/reports-messages';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**

@@ -2,7 +2,7 @@
 
 /**
  * The provider marks S-01's `ProviderButton`s carry (task 24). Content, not components: no
- * state, no text, sized by the button's glyph slot. Both are the providers' own sign-in marks
+ * state, no text, sized by the button's glyph slot. This and `microsoft-glyph.tsx` are the providers' own sign-in marks
  * used for their sanctioned purpose — identifying the sign-in option — with their brand colors
  * literal, since a brand mark recolored by our theme would misidentify the provider.
  */

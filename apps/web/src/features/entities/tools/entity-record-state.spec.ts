@@ -36,6 +36,11 @@ describe('entityRecordReducer', () => {
     expect(codesChanged(after)).toBe(false);
   });
 
+  it('sees a code swapped for another, which the length alone cannot', () => {
+    const swapped = entityRecordReducer(initial, { kind: ENTITY_EVENT.CODES_CHANGED, codes: [pastry] });
+    expect(codesChanged(swapped)).toBe(true);
+  });
+
   it('closes the archive dialogue on a refusal, whichever action was refused', () => {
     const asking = entityRecordReducer(initial, { kind: ENTITY_EVENT.ARCHIVE_REQUESTED });
     expect(asking.confirmingArchive).toBe(true);

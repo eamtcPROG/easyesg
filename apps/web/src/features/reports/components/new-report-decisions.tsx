@@ -5,7 +5,7 @@ import { TENANT_READ } from '@/server/data/tenant-read';
 import { Link } from '@/i18n/navigation';
 import { ROUTES, entityPeriodsRoute, withQuery } from '@/lib/routes';
 import { CreateReportForm } from './create-report-form';
-import { REPORT_CREATION_MESSAGES } from './report-creation-messages';
+import { REPORT_CREATION_MESSAGES } from './reports-messages';
 import styles from './reports.module.css';
 
 /** The read once it answered: the section narrows it and this part takes the narrowed shape. */
@@ -17,8 +17,9 @@ type ReadyCreation = Extract<ReportCreationRead, { readonly status: typeof TENAN
  * **Both choices are links, not state.** The entity and the period ride the address, so a half-made
  * choice is something the reader can reload, share or come back to (UX-4) — and the whole part is a
  * Server Component except the confirm. That is also what lets the period list depend on the entity:
- * `GET /periods` is scoped to one entity by design (FR-21), so the second decision cannot be offered
- * until the first is made. **The pins are the deliverable, not decoration** — they are the chosen
+ * the period list is read for the chosen entity — `GET /periods` answers the organization and takes
+ * the entity as a filter since 7 Sep 2026 (`architecture.md` §12.5.6) — so the second decision
+ * cannot be offered until the first is made. **The pins are the deliverable, not decoration** — they are the chosen
  * period's, what the report will copy at creation (FR-66), and nothing here can change them.
  */
 export async function NewReportDecisions({

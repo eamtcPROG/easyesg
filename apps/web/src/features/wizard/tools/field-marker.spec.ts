@@ -8,7 +8,6 @@ import {
 import { FIELD_TONE } from '@easyesg/ui';
 import { describe, expect, it } from 'vitest';
 import { markerFor } from './field-marker';
-import { TONE_OF_STATE } from './field-tone';
 
 /**
  * What a field says about itself (tasks 36.4, 36.10) — a pure rule that lived inside the field
@@ -68,6 +67,15 @@ describe('markerFor', () => {
     expect(marker).toEqual({ label: 'Calculat', tone: FIELD_TONE.NEUTRAL });
   });
 
+  it('reads origin before carry-forward — the seam task 39.2 writes into', () => {
+    const marker = markerFor(
+      field({ origin: DISCLOSURE_ORIGIN.CALCULATED, carriedForward: true }),
+      labels,
+      provenance,
+    );
+    expect(marker).toEqual({ label: 'Calculat', tone: FIELD_TONE.NEUTRAL });
+  });
+
   it('names a carried-forward value before its state', () => {
     const marker = markerFor(
       field({ carriedForward: true, state: DISCLOSURE_STATE.MISSING }),
@@ -79,7 +87,9 @@ describe('markerFor', () => {
 
   it('reads the state where it carries a marker, in §6.4’s tone', () => {
     const marker = markerFor(field({ state: DISCLOSURE_STATE.MISSING }), labels, provenance);
-    expect(marker).toEqual({ label: 'Lipsă', tone: TONE_OF_STATE[DISCLOSURE_STATE.MISSING] });
+    // The literal, not `TONE_OF_STATE[…]`: read from the same table the rule reads, the assertion
+    // could not see a wrong entry in it, and `field-tone.ts` has no other reader and no spec.
+    expect(marker).toEqual({ label: 'Lipsă', tone: FIELD_TONE.ATTENTION });
   });
 
   it('answers nothing for ok — the absence of a marker', () => {

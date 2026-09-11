@@ -18,7 +18,7 @@ import { ROUTES } from '@/lib/routes';
  * ambient context (the locale rides `Accept-Language` from inside the seam), `mapOutcome` owns the
  * failure passthrough, and what remains is the one per-endpoint fact — which members of the wire
  * DTO the screen needs. The API stays authoritative for every rule; the password policy is checked
- * client-side for UX-108's at-entry feedback, but a bypassed form still meets the same policy as a
+ * client-side for feedback at the point of entry, but a bypassed form still meets the same policy as a
  * 400 here.
  *
  * **One `actions/` per journey** (task 134): this file kept sign-out, whose readers are the chrome

@@ -27,6 +27,7 @@ import {
   type ReportSort,
   type ReportView,
 } from '../tools/reports';
+import { REPORTS_MESSAGES } from './reports-messages';
 import styles from './reports.module.css';
 
 /**
@@ -88,7 +89,7 @@ export interface ReportsListProps {
 }
 
 export function ReportsList({ page, view, entities, years, canCreate }: ReportsListProps) {
-  const t = useTranslations('organization.reports');
+  const t = useTranslations(REPORTS_MESSAGES);
   const format = useFormatter();
   const router = useRouter();
   const [, startNavigation] = useTransition();

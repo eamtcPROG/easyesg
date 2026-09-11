@@ -7,6 +7,8 @@ import {
 } from '../tools/constants';
 
 /**
+ * **In `identity/shared/store/` on one test — read by more than one journey: `register/` writes it, `verify/` reads it, `sign-in/` clears it. `store/` rather than `tools/` because a `sessionStorage` store is not pure.**
+ *
  * The S-01 → S-02 hand-off as a tiny external store over `sessionStorage`, shaped for
  * `useSyncExternalStore`: the server snapshot is always empty (there is no session storage to
  * read), the client snapshot is the stored value, and React swaps them after hydration without

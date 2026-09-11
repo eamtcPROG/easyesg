@@ -4,6 +4,7 @@ import { RecordSection } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { SECTION_READ } from '../tools/credentials';
 import { CREDENTIALS_SECTION } from '../tools/credentials-state';
+import { FACTOR_MESSAGES } from './credentials-messages';
 import { useCredentials } from './credentials-context';
 import { FactorBody } from './factor-body';
 import { SectionUnavailable } from './section-unavailable';
@@ -22,12 +23,12 @@ import { SectionUnavailable } from './section-unavailable';
  * that; this section simply supplies the record's gate on the routes that carry one.
  *
  * **No outcome is read here** (28 Aug 2026). Each action says what to run and what a success
- * *means*; `perform` owns the refusal. The handlers below used to end by passing success copy to
+ * *means*; `perform` owns the refusal. The handlers in `factor-body.tsx` used to end by passing success copy to
  * `onSettled` on a branch where the outcome was provably a failure — three dead arguments, which
  * is what a signature conflating "the outcome" with "what success says" produces.
  */
 export function FactorSection() {
-  const t = useTranslations('identity.credentials.factor');
+  const t = useTranslations(FACTOR_MESSAGES);
   const { read } = useCredentials();
 
   return (

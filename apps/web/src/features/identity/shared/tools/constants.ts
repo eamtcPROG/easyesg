@@ -1,4 +1,6 @@
 /**
+ * **In `identity/shared/tools/` on one test — read by more than one journey: `register/` and `verify/` through the hand-off store, and both journeys' specs directly.**
+ *
  * Client-side pacing for the resend control on S-02 (`architecture.md` OQ-55 added the route;
  * the prototype draws a cooldown countdown beside the button).
  *

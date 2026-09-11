@@ -20,6 +20,7 @@ import {
   membersTaken,
   withAddedRows,
 } from '../../../tools/step-layout';
+import { askedFields, askedInputsOf, derivedElements } from '../../../tools/step-applicability';
 import { outstandingDefaults, storedDraftOf, writeFor } from '../../../tools/values';
 import { useAutosaveContext } from '../../providers/autosave-context';
 import { DerivationInputControl } from '../field/derivation-input-control';
@@ -133,8 +134,8 @@ export function StepFields({
    * The derivation inputs' wording, by **literal** key so the catalogue lookup is type-checked.
    *
    * **This was `tInput(`names.${input.key}` as never)` until 9 Sep 2026** (convention review at task
-   * 36's parent close), which is the shape this file forbids twice in its own docblocks — for
-   * `rowNames` and for `unitNames` — and had then declined for the case where it matters most.
+   * 36's parent close), which is the shape this region forbids twice — for `rowNames`
+   * here and for `unitNames` in `field/step-field.tsx` — and had then declined for the case where it matters most.
    * `config/seed/disclosure-derivation.vsme.json` is publishable data under DR-3, so a fifth
    * derivation published with a new input key rendered a field with a **blank label and blank help**
    * and every gate green; the `as never` is precisely what turned the compile error into that blank.
@@ -152,59 +153,16 @@ export function StepFields({
     NumberOfEmployeesWhoLeftDuringTheReportingPeriod: { label: tInput('names.NumberOfEmployeesWhoLeftDuringTheReportingPeriod'), help: tInput('help.NumberOfEmployeesWhoLeftDuringTheReportingPeriod') },
   };
 
-  /**
-   * The fields this reporter is actually asked (FR-28; task 36.9).
-   *
-   * **§7.3's third condition, which nothing implemented**: *"Not applicable — **Not rendered**. The
-   * system never renders a field and then refuses its value on grounds it already knew (P2)."* Until
-   * this task only the *module* carried the verdict, on the rail, so B8's turnover was shown to a
-   * ten-employee company and B10's pay gap to everyone. Task 95's own row assumed the behaviour
-   * already existed — *"a conditional field simply appears and disappears between step reads"* — and
-   * owns **announcing** the change, which is still its.
-   *
-   * **`applicable` alone, and UX-28 is not an exception to it** (convention review, 9 Sep 2026 —
-   * this filter shipped with one, on a misreading of the rule it cited). UX-28 reads *"where a
-   * conditional field **disappears** after being answered, the entered value shall be retained and
-   * **restored if the condition returns**"*: it presupposes the disappearance and asks that the
-   * **value** survive it, which is storage and the wire rather than the screen. §12.5.6's task-91.3
-   * row already settled where that retention lives — *"retained and returned, marked by
-   * `applicable: false` beside a state that is not `missing`"* — and keeping the field on screen
-   * would contradict §7.3 in the same breath as implementing it, leaving a reporter editing a
-   * question the standard does not ask their undertaking while the module's outstanding count, which
-   * the api computes over applicable elements only, disagreed with the screen permanently.
-   */
-  const asked = useMemo(() => fields.filter((field) => field.applicable), [fields]);
-
-  /**
-   * The elements this step *derives*, which the reporter does not type (FR-29; task 36.10).
-   *
-   * **Read off the inputs rather than off a flag on the field**, so the two cannot disagree: a
-   * figure is derived exactly when something is registered as feeding it, and that is the same fact
-   * the api refuses a write against. A field marked derived with nothing feeding it would render
-   * permanently read-only and permanently empty.
-   */
-  const derived = useMemo(
-    () => new Set(derivationInputs.map((input) => input.derives)),
-    [derivationInputs],
+  // Which questions this reporter is asked, which figures are derived, and which inputs are worth
+  // asking — three pure rules in `tools/step-applicability.ts`, each with its spec. Memoized here
+  // because this component re-renders on every autosave transition while `fields` and
+  // `derivationInputs` move only when the server re-renders.
+  const asked = useMemo(() => askedFields(fields), [fields]);
+  const derived = useMemo(() => derivedElements(derivationInputs), [derivationInputs]);
+  const askedInputs = useMemo(
+    () => askedInputsOf({ inputs: derivationInputs, asked }),
+    [derivationInputs, asked],
   );
-
-  /**
-   * The inputs actually worth asking — those feeding a figure this reporter is asked for
-   * (FR-28, BR-APP-5; found by the B8 browser journey, 9 Sep 2026).
-   *
-   * **An input outlives nothing.** B8's three turnover figures exist only to produce
-   * `EmployeeTurnoverRate`, which applies at fifty employees; below it, asking a ten-person
-   * undertaking how many people left in the period is asking a question whose only answer is a
-   * disclosure they do not make. `asked` already carries the api's applicability verdict, so this
-   * is that same verdict followed one step further rather than a second rule.
-   *
-   * **Not filtered in the api**, deliberately: the step serves what the artefact registers, and
-   * *shown or not* is the same screen decision `asked` is — one place, one rule.
-   */
-  const askedInputs = useMemo(() => {
-    const applicable = new Set(asked.map((field) => field.elementKey));
-    return derivationInputs.filter((input) => applicable.has(input.derives));
-  }, [derivationInputs, asked]);
 
   // Once per step, and guarded by a ref rather than by its dependency list: `fields` is a new array
   // on every render of the server component above — so `asked` is too, and the list alone would

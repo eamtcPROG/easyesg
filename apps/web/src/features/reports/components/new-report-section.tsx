@@ -6,7 +6,7 @@ import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { creationChoice } from '../tools/report-creation';
 import { NewReportDecisions } from './new-report-decisions';
-import { REPORT_CREATION_MESSAGES } from './report-creation-messages';
+import { REPORT_CREATION_MESSAGES } from './reports-messages';
 import styles from './reports.module.css';
 
 /**
