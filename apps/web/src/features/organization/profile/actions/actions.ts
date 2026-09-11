@@ -9,7 +9,7 @@ import { api } from '@/server/api-client';
 /**
  * UC-50 — edit the organization profile (FR-15, FR-16).
  *
- * **It revalidates the `(app)` layout, like the founding action in `../creation/actions.ts` and for
+ * **It revalidates the `(app)` layout, like the founding action in `../../creation/actions/actions.ts` and for
  * a subset of its reason.**
  * The global tier names the active organization on every authenticated screen, so a change to
  * `name` goes stale everywhere at once rather than on this page. Revalidating the page as well

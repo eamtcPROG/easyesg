@@ -370,10 +370,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
 
   ```
   organization/
-  ├─ access/     S-16   access.ts · access-state.ts · action-results.ts · actions.ts · components/
-  ├─ home/       S-05   tools/ · components/ — and see the next rule, which went further
-  ├─ profile/    S-15   actions.ts · components/
-  └─ creation/   S-04   actions.ts · components/
+  ├─ access/     S-16   actions/ · components/ · tools/
+  ├─ home/       S-05   components/ · tools/
+  ├─ profile/    S-15   actions/ · components/
+  └─ creation/   S-04   actions/ · components/
   ```
 
   **The axis was verified rather than chosen**: no file was reached by two screens, so the folders
@@ -399,11 +399,20 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `list.tsx` inside a folder reads well in a tree and badly in a stack trace, a test report or a
   tab bar.
 
-- **Inside a screen folder, a directory holds files or folders — never both** (11 Sep 2026, task
-  126, project owner). S-05 is the worked example and, today, the only one. `home/components/` had
-  grown to 16 flat files; splitting it per **region** left a stylesheet and six overview files
-  sitting beside the new folders, which is the shape this rule refuses — a listing that mixes the
-  two makes a reader check every entry to learn what kind of thing it is.
+- **Inside a screen folder, a directory holds files or folders — never both** (11 Sep 2026, tasks
+  126 and 127, project owner). S-05 was the worked example; task 127 carried it to the other three,
+  so it is `features/organization/`'s shape rather than one screen's. `home/components/` had grown
+  to 16 flat files; splitting it per **region** left a stylesheet and six overview files sitting
+  beside the new folders, which is the shape this rule refuses — a listing that mixes the two makes
+  a reader check every entry to learn what kind of thing it is.
+
+  **A screen folder holds up to three kinds, and the third is what task 126 deferred.**
+  `components/` renders, `tools/` is pure, **`actions/`** is the half carrying `'use server'`. That
+  directive is what makes it a kind rather than a file: the module may export only async functions,
+  its exports become callable endpoints, and the constraint bites at the **build** — `typecheck`,
+  `lint` and 286 unit tests all missed it once (see `lib/revalidate-paths.ts`). Folding it into
+  `tools/` would put that among modules with neither property. A screen has the kinds it has: S-05
+  reads, so it has no `actions/`; S-04 and S-15 are a form each, so they have no `tools/`.
 
   ```
   home/
@@ -432,20 +441,21 @@ conditional render, which is how it ends up half-suppressed on one screen.
   directories are called, so there is nothing to reconcile; the name is the owner's, and it is noted
   in `tools/home.ts` so a reader who knows the sentence finds out in one place which folder it means.
 
-  **It has a failing state, scoped to where it holds.** `home/tools/folder-shape.spec.ts` walks the
-  subtree and names the offender (*"components holds files [stray.ts] beside folders […]"*), proven
-  by adding one. It is a spec rather than a repo-wide selector because **16 of the 18 directories
-  under `features/` mix files with folders** — a gate would start red, which inverts *"fix the sites
-  first, then turn the gate on"*. Widen it when another subtree qualifies. Without it the rule would
-  be asserted in three documents and checked by nothing, which is this repository's own recorded
-  failure shape.
+  **It has a failing state, scoped to where it holds.** `organization/tools/folder-shape.spec.ts`
+  walks the feature and names the offender (*"access holds files [stray.ts] beside folders […]"*),
+  proven by adding one at both scopes it has had. It is a spec rather than a repo-wide selector, and
+  the reason is the rule two bullets up: **a domain serving one screen stays flat**, so `periods/`,
+  `reports/`, `wizard/`, `entities/` and `credentials/` mix files with folders *correctly*. Measured
+  after task 127: **thirteen directories under `features/` still mix them, and all thirteen are
+  feature roots** of single-screen or unbuilt domains — so a `features/`-wide gate would be red on
+  thirteen folders that are right, and green on nothing that is wrong. Widen the root when another
+  domain grows into the per-screen shape. Without the spec the rule would be asserted in three
+  documents and checked by nothing, which is this repository's own recorded failure shape.
 
-  **`access/`, `profile/` and `creation/` do not follow this yet**, and are named here rather than
-  done in passing — the same treatment `identity/` gets above. Each has an `actions.ts` beside
-  `components/` (and `access/` its four rule modules as well), and `actions.ts` carries `'use
-  server'`, so where it lands is a decision about a directive-bearing module rather than a move. **The rule is therefore S-05's, not
-  the repository's**, and writing it as though it were general would misreport three folders that
-  are correct as they stand.
+  **The spec lives in a `tools/` of the feature's own, not at `organization/`'s root** — a file there
+  would sit beside the four screen folders and the check would fail on its own placement. `identity/`
+  remains the outstanding case for the *per-screen* rule above; this one does not reach it until it
+  splits.
 
   **A `vi.mock()` path is a string, so a file move does not typecheck.** `access-board.spec.tsx`
   carried `vi.mock('../actions')` through the move with `pnpm typecheck` and `pnpm lint` both

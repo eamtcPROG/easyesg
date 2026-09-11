@@ -14,6 +14,24 @@ import type { AccessActionResult } from './action-results';
 /**
  * S-16's five writes (UC-60 … UC-64), as Server Actions.
  *
+ * **In `actions/`, which is the decision task 126 deferred** (task 127). That task put S-05 under
+ * *a directory holds files or folders, never both* and left these three screens alone with a stated
+ * reason: this module carries `'use server'`, so where it lands is a decision about a
+ * **directive-bearing** module rather than a move. The decision is that the directive is what makes
+ * it a third kind. A screen folder holds up to three: `components/` renders, `tools/` is pure, and
+ * `actions/` is the half that may export only async functions and whose exports the bundler turns
+ * into callable endpoints. Folding it into `tools/` would put a module with a hard export
+ * constraint — and a public surface — among modules with neither, and `lib/revalidate-paths.ts`
+ * exists precisely because that constraint bites at the *build*, which `typecheck`, `lint` and 286
+ * unit tests all missed once already.
+ *
+ * **`actions/actions.ts` stutters and stays**, on the rule task 123 recorded for
+ * `access/access-list.tsx`: this app leans on file names that survive out of context, and a path is
+ * what disambiguates `actions.ts` in a stack trace either way — seven features already have one.
+ *
+ * `action-results.ts` is here rather than in `tools/` because it is these actions' return type and
+ * nothing else's, which is what its own docblock has said since task 123.
+ *
  * Same transport decision as task 20's identity actions and for the same reason: the browser posts
  * to the Next server tier, which calls the public API as the ordinary client AD-9 says it is. The
  * `/api/[...path]` pass-through stays scoped to traffic that cannot come through here — the

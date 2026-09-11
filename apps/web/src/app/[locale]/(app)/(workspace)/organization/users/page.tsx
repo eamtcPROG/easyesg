@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { AccessBoard } from '@/features/organization/access/components/access-board';
 import { AccessProvider } from '@/features/organization/access/components/access-context';
 import { InviteMember } from '@/features/organization/access/components/invite-member';
-import { applyAccessView, readAccessView } from '@/features/organization/access/access';
+import { applyAccessView, readAccessView } from '@/features/organization/access/tools/access';
 import styles from '@/features/organization/access/components/access.module.css';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
 import { Link } from '@/i18n/navigation';

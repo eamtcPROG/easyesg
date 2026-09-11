@@ -4,7 +4,7 @@ import type { ReportingEntity } from '@easyesg/contracts';
 /**
  * S-13's read model — the entities an organization reports on (FR-17 … FR-20, UC-52 … UC-55).
  *
- * **Pure, and carrying no `server-only`**, which is `features/organization/access/access.ts`'s split and
+ * **Pure, and carrying no `server-only`**, which is `features/organization/access/tools/access.ts`'s split and
  * the same reason: the filter, the sort and the page arithmetic are rules over data somebody else
  * fetched, and importing the API client would make every branch but the happy one reachable only
  * through a browser.

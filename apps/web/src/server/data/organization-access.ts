@@ -2,14 +2,14 @@ import 'server-only';
 import type { Invitation, Member } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { TENANT_READ, isPermissionRefusal } from './tenant-read';
-import { toAccessRows, type AccessRow } from '@/features/organization/access/access';
+import { toAccessRows, type AccessRow } from '@/features/organization/access/tools/access';
 import { api } from '../api-client';
 
 /**
  * S-16's read — the seam that fetches, beside the rule that decides (task 26.4).
  *
  * The same split `server/post-sign-in.ts` makes: this file knows the two routes and what their
- * failures mean, and `features/organization/access/access.ts` knows what a list of people *is*. Keeping
+ * failures mean, and `features/organization/access/tools/access.ts` knows what a list of people *is*. Keeping
  * the API client out of that module is what lets the filter, the sort, the page arithmetic and the
  * standing rule be a unit spec rather than four browser journeys.
  *

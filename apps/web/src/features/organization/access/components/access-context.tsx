@@ -19,7 +19,7 @@ import {
   type AccessPage,
   type AccessRow,
   type AccessView,
-} from '../access';
+} from '../tools/access';
 import {
   ACCESS_EVENT,
   INITIAL_ACCESS_STATE,
@@ -28,8 +28,8 @@ import {
   type AccessState,
   type Confirmation,
   type PlacedNotice,
-} from '../access-state';
-import type { AccessActionResult } from '../action-results';
+} from '../tools/access-state';
+import type { AccessActionResult } from '../actions/action-results';
 
 /**
  * S-16's screen state, in one place its regions read from (26 Aug 2026, project owner's review of

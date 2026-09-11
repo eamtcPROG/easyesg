@@ -11,7 +11,7 @@ import {
   type AccessColumnKey,
   type AccessRow,
   type AccessStanding,
-} from '../access';
+} from '../tools/access';
 import { RoleCell, RowActions } from './access-row';
 
 /**

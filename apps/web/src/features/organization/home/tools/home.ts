@@ -2,7 +2,7 @@ import { MEMBERSHIP_GRANT_KIND, type MembershipGrantKind } from '@easyesg/contra
 
 /**
  * S-05's own rules (UC-16, UC-67; FR-12, FR-23) — pure, so both are unit specs rather than browser
- * journeys. The same split `../../access/access.ts` makes.
+ * journeys. The same split `../../access/tools/access.ts` makes.
  *
  * **In `tools/` with `overview.ts` and both specs** (task 126, project owner: *files should not sit
  * at the same level as folders*, and the folder's name is theirs). They were loose at `home/`'s root

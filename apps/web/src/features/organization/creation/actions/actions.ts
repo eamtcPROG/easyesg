@@ -10,7 +10,7 @@ import { api } from '@/server/api-client';
  * UC-49 — create an organization and become its Organization Administrator (FR-13, D-1).
  *
  * **It revalidates the `(app)` LAYOUT, not a page, and that is the whole difference from S-16's five
- * writes** (`../access/actions.ts`, a sibling since task 123 rather than the four lines above this
+ * writes** (`../../access/actions/actions.ts`, a sibling since task 123 rather than the four lines above this
  * one). Those change a list the caller is looking at; this one creates the tenant the entire
  * session is about to be scoped to — the API grants the founding membership and points
  * `identity.session.active_organization_id` at it in the same transaction (task 29.1). So what

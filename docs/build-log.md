@@ -16307,3 +16307,111 @@ back, `typecheck` and `eslint` both exit 0. The eight rewritten module paths are
 `next build`; the class names are seen by nobody. So the rename rests on the search (`membershipName`
 survives nowhere but in this entry and the stylesheet's own history comment) and on the browser
 suite, not on the compiler. Worth knowing before the next CSS-module rename is called safe.
+
+## Task 127 — the decision task 126 deferred, which was about a directive · 2026-09-11
+
+*"Refactor `access/` · `profile/` · `creation/`."*
+
+Task 126 put S-05 under *a directory holds files or folders, never both* and named these three as
+outstanding rather than sweeping them in, with a reason that was not effort: each has an `actions.ts`
+beside `components/`, and **`actions.ts` carries `'use server'`**, so where it lands is a decision
+about a directive-bearing module. This row takes it.
+
+### The directive is what makes `actions/` a kind rather than a file
+
+The lazy answer is "a folder per remaining file", which would have produced `actions/` by accident
+and taught the next reader nothing. The answer that holds is that a screen folder has **up to three
+kinds**, distinguished by what is true of the modules in them:
+
+| Folder | What is true of everything in it |
+| --- | --- |
+| `components/` | Renders. May be a client boundary. |
+| `tools/` | Pure. Its specs run with no DOM, no server, no network. |
+| `actions/` | Carries `'use server'`: **may export only async functions**, and its exports become callable endpoints. |
+
+That third row is a real constraint, not a label — and it is one this repository has already paid
+for. Task 32.3 exported a constant from a `'use server'` module and the **build** failed with *"Only
+async functions are allowed to be exported in a 'use server' file"* while `typecheck`, `lint` and 286
+unit tests were all green; `lib/revalidate-paths.ts` exists because of it. Folding these modules into
+`tools/` would file something with a hard export constraint and a public surface among modules with
+neither.
+
+**A screen has the kinds it has.** S-05 reads, so it has no `actions/`. S-04 and S-15 are a form
+each, so they have no `tools/`. The shape is not a template to fill in:
+
+```
+organization/
+├─ access/     S-16   actions/ · components/ · tools/
+├─ creation/   S-04   actions/ · components/
+├─ home/       S-05   components/ · tools/
+├─ profile/    S-15   actions/ · components/
+└─ tools/             folder-shape.spec.ts
+```
+
+`action-results.ts` goes to `actions/` on the strength of its own docblock — *what every S-16 write
+returns to the screen* — which is the same sentence that moved it into `access/` in task 123.
+`actions/actions.ts` stutters and stays, on task 123's rule for `access/access-list.tsx`: a path is
+what disambiguates `actions.ts` in a stack trace, and seven other features already have one.
+
+### `access/components/` stays a leaf of eleven, deliberately
+
+It satisfies the invariant — files only, no folders — so nothing forced the question, and the answer
+is still worth stating because S-05's precedent invites the opposite. **S-16 is one board and its
+parts**, not several regions: a board, its columns, filters, list, row, notice, confirmation, context
+and the invite form. Splitting those into folders would group them by *kind*, which is precisely the
+axis task 122 measured and rejected, because it separates the files that change together. S-05 split
+cleanly because its four children are four independent reads composed by one route file; S-16 has one.
+
+### The `vi.mock()` trap fired exactly where task 122 said it would
+
+`access-board.spec.tsx` mocks `'../actions'`. Neither `typecheck` nor `lint` resolves a string
+argument, so a stale path there survives both and fails at run time as *"cannot be imported from a
+Client Component module"* — the real `'use server'` module getting imported for real because the mock
+never registered. Task 122 paid for that lesson and wrote *"grep the mocks when you move a spec"* into
+`apps/web/CLAUDE.md`; this time the grep came **before** the move, and it was the only occurrence.
+
+### The spec widened, which is the clause task 126 wrote into it
+
+That task scoped `folder-shape.spec.ts` to `home/` and said why with a number, adding *"widen it the
+day another subtree qualifies"*. Three did, so the spec moves to `organization/tools/` and asserts
+all four screens — 12 more directories, 389 unit tests, and the guard extended to name each screen's
+`components/` so that moving the root again fails here rather than quietly checking less.
+
+**It is in a `tools/` of the feature's own rather than at `organization/`'s root**, and the reason is
+the invariant itself: a file there would sit beside the four screen folders, and the spec would fail
+on its own placement.
+
+**It stays a spec rather than a `features/`-wide gate, and the reason is now measured rather than
+inherited.** Thirteen directories under `features/` still mix files with folders — `calculator`,
+`commerce`, `credentials`, `entities`, `export`, `identity`, `notifications`, `periods`, `public`,
+`reporting`, `reports`, `validation`, `wizard` — and **all thirteen are feature roots** of
+single-screen or unbuilt domains, which *a domain serving one screen stays flat* says are correct. A
+`features/`-wide gate would be red on thirteen folders that are right and green on nothing that is
+wrong. Widen the root when a domain grows into the per-screen shape; `identity/`, at 13 root files
+across four screens, is still the outstanding case for the rule above this one.
+
+### Verified
+
+**`pnpm gates:clean`, exit 0**, serially and with nothing else touching the tree — which task 126's
+entry records as a lesson rather than a habit. `docs:check` 28 claims over 5 documents, `apps/web`
+**389** unit tests over 37 files (376 before this task's 12 extra directories), `apps/api` 711,
+`boundaries` clean over 1,030 modules and 3,278 dependencies with all 23 rules proven to reject,
+`migrations:check`, `pnpm e2e` 860, `e2e:worker` 2, and `e2e:web` **171 passed** including the 14 axe
+scans.
+
+**The two checks that could actually have caught this diff, and what stands behind each.** A pure
+move's risk is a path, and the paths here divide in three. The eight TypeScript specifiers are seen
+by `typecheck`. The one `vi.mock()` string is seen by **nothing** — grepped before the move, and the
+suite ran green afterwards, which is the confirmation rather than the check. The three CSS-module
+imports were untouched, which matters because task 126 established that a wrong *class name* inside
+one passes `typecheck` and `eslint` both.
+
+**The invariant proven to bite at its new scope**, by dropping a stray file in `access/`:
+*"access holds files [stray.ts] beside folders [actions, components, tools]"*. Proven at the old
+scope in task 126 the same way.
+
+**`vercel-react-best-practices` read against the diff.** Nothing bites and nothing was declined that
+task 126 did not already decline: no barrel added (`bundle-barrel-imports` — the reflex here would be
+`access/index.ts` re-exporting the three folders), every specifier a static literal
+(`bundle-analyzable-paths`), and no Client Component's behaviour touched — `access/components/` holds
+eight of them and the diff changes only which path their imports name.

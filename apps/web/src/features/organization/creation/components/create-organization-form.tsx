@@ -9,7 +9,7 @@ import type { CreateOrganizationRequest } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { useRouter } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { createOrganizationAction } from '../actions';
+import { createOrganizationAction } from '../actions/actions';
 import styles from './create-organization.module.css';
 
 /**

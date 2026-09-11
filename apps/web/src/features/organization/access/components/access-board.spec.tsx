@@ -12,8 +12,8 @@ import {
   DEFAULT_ACCESS_VIEW,
   toAccessRows,
   type AccessRow,
-} from '../access';
-import { resendInvitationAction } from '../actions';
+} from '../tools/access';
+import { resendInvitationAction } from '../actions/actions';
 import { AccessBoard } from './access-board';
 import { AccessProvider } from './access-context';
 
@@ -30,7 +30,7 @@ import { AccessProvider } from './access-context';
  * The empty states are here for the same reason — `matched` and `total` are two numbers because
  * they are two screens, and a browser test that seeds one organization only ever sees one of them.
  */
-vi.mock('../actions', () => ({
+vi.mock('../actions/actions', () => ({
   changeMemberRoleAction: vi.fn(),
   removeMemberAction: vi.fn(),
   resendInvitationAction: vi.fn(),

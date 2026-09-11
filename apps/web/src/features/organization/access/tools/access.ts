@@ -11,6 +11,12 @@ import {
 /**
  * S-16's read model — "who can see our ESG data", as one list (FR-56, UC-59 … UC-64).
  *
+ * **In `tools/` since task 127**, the third screen of this feature to take the shape S-05 took in
+ * task 126: `components/` renders, `tools/` is pure, `actions/` writes, and no directory holds files
+ * and folders at once. These four files are the pure half — their specs run with no DOM, no server
+ * and no network, which is what the paragraph below already said about them before they had a
+ * folder to say it from.
+ *
  * **The union is the screen.** `identity.membership` and `identity.invitation` are two tables with
  * two lifecycles, and task 25.1's migration recorded in advance that FR-56's *"active or pending
  * invitation"* is one list assembled across them in the read model. That is why task 26.4 owns the
