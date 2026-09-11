@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
 import { ArrivalNotice } from '@/features/organization/home/components/arrival-notice';
+import { HeadingLoading } from '@/features/organization/home/components/heading-loading';
+import { MembershipsLoading } from '@/features/organization/home/components/memberships-loading';
 import { MembershipsSection } from '@/features/organization/home/components/memberships-section';
 import { OrganizationHeading } from '@/features/organization/home/components/organization-heading';
 import { OverviewLoading } from '@/features/organization/home/components/overview-loading';
@@ -35,13 +37,19 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * worked example, and the reason no read got slower. What the split removed is the *coupling*: the
  * screen no longer blocks on its slowest read before drawing any of itself.
  *
- * **One Suspense boundary, and only the overview earns it.** Of the four regions, three read
- * memberships — React-`cache()`d, and already in flight for the global tier in the `(app)` layout,
- * so the page cannot paint ahead of them whatever this file does. The overview makes an HTTP call
- * (`GET /periods`) that nothing else on the screen makes, sits below the fold and defines no
- * layout, which is precisely where `async-suspense-boundaries` says the trade pays. Wrapping the
- * heading would buy nothing and cost the layout shift that rule's own "when NOT to use" list names
- * — the H1 is the organization's name.
+ * **Every region that reads has a boundary and a skeleton; exactly one of them currently streams.**
+ * The overview makes an HTTP call (`GET /periods`) nothing else on the screen makes, and its
+ * fallback is emitted into the shell — measured in `home.spec.ts` against the served HTML. The
+ * heading and the membership list read memberships, which is React-`cache()`d and awaited by
+ * `GlobalTier` **outside any boundary** in the `(app)` layout: the shell therefore cannot flush
+ * before their content is ready, so React inlines it and their skeletons never appear. The same spec
+ * asserts that too, so the day the global tier gains a boundary of its own the change in behaviour
+ * is visible rather than silent.
+ *
+ * **They are here anyway, and the reason is UX-90 rather than optimism**: a region that can wait has
+ * a `loading` state whether or not this composition lets it be seen, and an undefined state is a
+ * defect rather than an omission. What that rule does not license is pretending the boundary buys
+ * something today — hence the measurement, in both directions.
  *
  * **This file resolves no strings at all.** `MESSAGES` survives for `generateMetadata` alone; the
  * fallback resolves its own sentence like every other region, which it may because what it awaits is
@@ -62,20 +70,25 @@ type Props = {
 export const generateMetadata = localizedPageTitle(MESSAGES);
 
 export default async function HomePage({ params, searchParams }: Props) {
-  // Sequential on purpose: `activateRequestLocale` pins the locale every region's own reads and
-  // translators resolve against. Neither line touches the network — `searchParams` is the request's
-  // own.
+  // The one thing this file still does: pin the locale every region's reads and translators resolve
+  // against. `searchParams` is handed on unawaited — the component that reads it awaits it, which is
+  // the same rule the regions follow with `rows` and `membership`.
   await activateRequestLocale(params);
-  const query = await searchParams;
 
   return (
     <div className={styles.screen}>
-      <ArrivalNotice joined={query.joined} />
-      <OrganizationHeading />
+      {/* No boundary: it awaits `searchParams` and a catalogue, neither of which is I/O, and it
+          renders above the heading — a fallback here would push the H1 down after paint. */}
+      <ArrivalNotice searchParams={searchParams} />
+      <Suspense fallback={<HeadingLoading />}>
+        <OrganizationHeading />
+      </Suspense>
       <Suspense fallback={<OverviewLoading />}>
         <OverviewSection />
       </Suspense>
-      <MembershipsSection />
+      <Suspense fallback={<MembershipsLoading />}>
+        <MembershipsSection />
+      </Suspense>
     </div>
   );
 }

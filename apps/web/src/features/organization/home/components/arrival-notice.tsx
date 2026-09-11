@@ -9,10 +9,15 @@ import { readArrival } from '../home';
  * organization they were already in sees exactly the landing a new member sees, having clicked a
  * link that told them nothing.
  *
- * **It takes the resolved value rather than `searchParams`**, which keeps it a pure render and keeps
- * the page the only place that awaits the address. Reading the parameter here would put a second
- * `searchParams` await on the screen for a value the page has already unwrapped, and `readArrival`
- * is where the "unrecognised is no sentence" rule lives.
+ * **It awaits the address itself** (project owner), which is the screen's rule applied to its last
+ * prop: a component takes what the route *has* and derives what it needs. The page handed it a
+ * resolved `joined` until then, which made the route file unwrap a value only this component reads
+ * and meant a second parameter here would have to be threaded from there. `readArrival` is still
+ * where the "unrecognised is no sentence" rule lives.
+ *
+ * **`searchParams` is not I/O**, so awaiting it costs a microtask rather than a round trip — the
+ * same distinction `overview-loading.tsx` draws for a Suspense fallback, and the reason this needs
+ * no boundary of its own.
  *
  * **Not behind a Suspense boundary, deliberately.** It renders above the heading, so streaming it in
  * late would push the H1 down after paint — the layout shift `async-suspense-boundaries` names as
@@ -20,11 +25,11 @@ import { readArrival } from '../home';
  * own, already resolved for every other region.
  */
 export async function ArrivalNotice({
-  joined,
+  searchParams,
 }: {
-  readonly joined: string | string[] | undefined;
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const arrival = readArrival(joined);
+  const arrival = readArrival((await searchParams).joined);
   if (arrival === null) return null;
 
   // Its own translator, scoped to the three grants. A `t(`arrival.${grant}.title`)` against the

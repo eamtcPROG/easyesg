@@ -419,14 +419,21 @@ conditional render, which is how it ends up half-suppressed on one screen.
   to stop blocking on — and nothing will tell you, because the boundary still *looks* like it is
   working.
 
-  **And a boundary is worth adding only where a slow read would otherwise hold up a shell worth
-  painting.** Parallel fetching is what *composition* buys — sibling async Server Components start
-  together, which is what replaced S-05's single `Promise.all` — and Suspense only decides what
-  blocks the flush. Three of S-05's four regions read memberships, which is React-`cache()`d and
-  already in flight for the global tier in the `(app)` layout, so the page cannot paint ahead of them
-  whatever the page does; wrapping the heading would buy nothing and cost the layout shift
-  `async-suspense-boundaries`' own *"when NOT to use"* list names, since the `h1` is the
-  organization's name.
+  **Parallel fetching is what *composition* buys, not Suspense.** Sibling async Server Components
+  start together — which is what replaced S-05's single `Promise.all` — and a boundary only decides
+  what blocks the flush. Adding one where nothing slow sits behind it changes nothing, and **whether
+  it does is measurable rather than arguable**: read the served HTML and see whether the fallback is
+  in the shell ahead of the content.
+
+  S-05 is the worked example in both directions. Its three region boundaries all have skeletons, and
+  exactly **one** streams: the overview's fallback lands at byte 5,850 with its filings at 8,474,
+  while the heading and the membership list are *inlined* at 2,260 and 6,652 — they read memberships,
+  which is React-`cache()`d and awaited by `GlobalTier` **outside any boundary** in the `(app)`
+  layout, so the shell cannot flush before their content exists. The inert two are kept because
+  UX-90 wants the `loading` state defined and because the global tier may yet gain a boundary, and
+  `home.spec.ts` asserts their inertness in the positive form so that day is visible rather than
+  silent. **A boundary that buys nothing is not a defect; a boundary silently claiming to buy
+  something is.**
 
   **Nothing but a served-HTML assertion can see a boundary being deleted.** Every region renders
   identically once the stream settles, so the suite stays green and the screen simply gets slower —

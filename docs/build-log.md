@@ -15806,6 +15806,44 @@ intact, since what it needs is that the mechanism is specified and scheduled, no
 shipped. Every other task number the phase cites — 12, 29, 32, 42, 49, 53, 54, 63, 68 — was checked
 and is accurate.
 
+### A fourth pass, and the first request this session that measured out inert
+
+*"Pass `searchParams` to `ArrivalNotice` and let the await be there — and add skeletons with Suspense
+for the other components of the home page."*
+
+The first half is the screen's own rule reaching its last prop: a component takes what the route
+*has* and derives what it needs. `ArrivalNotice` awaits `searchParams` itself now, and S-05's route
+file does exactly one thing — pin the locale.
+
+The second half I had argued against twice, so this time I built it and **measured** instead. Every
+region that reads now has a boundary and a skeleton. Exactly one of them streams:
+
+| marker in the served HTML | byte |
+| --- | --- |
+| organization name (the `h1`) | 2,260 |
+| the overview's fallback (`role="status"`) | 5,850 |
+| the membership region's heading and lede | 6,652 · 6,728 |
+| the filings — the overview's real content | 8,474 |
+
+The heading and the membership list are **inlined into the shell**; their skeletons never render.
+Both read memberships, which is React-`cache()`d and awaited by `GlobalTier` **outside any boundary**
+in the `(app)` layout — so the shell cannot flush before their content exists, and React inlines it
+rather than emitting a fallback. The prediction was right and is now a number rather than an
+argument.
+
+**They stay, and the inertness is asserted rather than tolerated.** UX-90 wants a region that can
+wait to have a defined `loading` state, and the global tier may yet gain a boundary of its own.
+`home.spec.ts` therefore pins the *positive* form — their content is in the shell, ahead of the
+streamed filings — so the day that changes it goes red and the next reader learns why, instead of
+wondering whether the skeletons ever worked. A boundary that buys nothing is not a defect; a boundary
+silently claiming to buy something is.
+
+**The probe was wrong before it was right, in a shape this session has now seen twice.** It first
+measured the skeletons' own CSS-module class names and found them at byte 15,785 — in the
+**stylesheet**, which carries every class whether or not the element rendered. That is the same trap
+as task 115's fallback-label check, which matched next-intl's shipped catalogue rather than any
+markup. Two different bundled assets, one lesson: a marker must be something only markup can contain.
+
 ### Verified
 
 `apps/web` **364 tests**, `pnpm typecheck`, `pnpm lint` uncached, `pnpm boundaries` (1,018 modules),
@@ -16075,10 +16113,16 @@ rather than quietly dropping the argument.
 ### Verified
 
 `apps/web` **364 tests**, `pnpm typecheck`, `pnpm lint` uncached,
-`pnpm e2e:web --project identity --project expansion` at **168 passed** with its 14 axe scans — run
-three times, once per shape, because the owner reshaped this twice after the first run and a suite
-green on a shape that did not ship is not a claim about the one that did. The streaming case was
-additionally run on its own against the rebuilt bundle to measure the async fallback. `web`-only and behaviour-preserving, so the sub-step run is the
+`pnpm e2e:web --project identity --project expansion` at **168 passed** with its 14 axe scans, run
+once per shape for the first three — a suite green on a shape that did not ship is not a claim about
+the one that did.
+
+**The fourth pass was verified narrowly at the owner's instruction** (*"no need for the full suite"*):
+`typecheck`, `lint` uncached, the 364 unit tests, `docs:check`, and `home.spec.ts`'s streaming case
+run on its own against the rebuilt bundle — which is the case this pass is about and the only one
+that could see it. What that waives is the rest of the browser suite, including the 14 axe scans;
+the change adds two skeletons and moves one `await`, touches no landmark and no copy, and CI runs
+the full set on push. `web`-only and behaviour-preserving, so the sub-step run is the
 close; one stray import placement was caught by reading the diff rather than by a gate — the
 re-pointed namespace landed where the deleted `const` had been, mid-file, and no rule here orders
 imports.

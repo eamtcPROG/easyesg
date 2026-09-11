@@ -127,3 +127,16 @@
   flex-direction: column;
   gap: var(--space-3);
 }
+
+/* `OrganizationHeading`'s own `loading — initial`. The bars carry the heading's two heights; the
+   widths are a typical organization name and role rather than the longest, since both vary. */
+.loadingTitle {
+  inline-size: 17rem;
+  max-inline-size: 100%;
+}
+
+.loadingRole {
+  inline-size: 11rem;
+  max-inline-size: 100%;
+  margin-block-start: var(--space-3);
+}

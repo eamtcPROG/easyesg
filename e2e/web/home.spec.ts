@@ -243,4 +243,28 @@ test('the overview streams behind its boundary, so the shell does not wait for i
   expect(fallback, 'the fallback rendered into the shell').toBeGreaterThan(-1);
   expect(filings, 'the filings arrived in the same response').toBeGreaterThan(-1);
   expect(fallback, 'the shell flushed before the overview resolved').toBeLessThan(filings);
+
+  /*
+    **And the other two boundaries are inert today, which is asserted rather than assumed.**
+    `OrganizationHeading` and `MembershipsSection` have boundaries and skeletons of their own —
+    UX-90 requires the state to be defined — but neither can be seen: both read memberships, which
+    is React-`cache()`d and awaited by `GlobalTier` **outside any boundary** in the `(app)` layout,
+    so the shell cannot flush before their content exists and React inlines it instead of emitting a
+    fallback. Measured at bytes 2,260 and 6,652 against the overview's fallback at 5,850 and its
+    content at 8,474.
+
+    Pinned in the positive form — their content is in the **shell**, ahead of the streamed filings —
+    because that is what changes the day the global tier gains a boundary of its own. When it does,
+    this goes red and the next reader learns why rather than wondering whether the skeletons ever
+    worked.
+
+    **Markers that can only be markup.** A first draft measured the skeletons' own CSS-module class
+    names and found them at byte 15,785 — in the **stylesheet**, which carries every class whether or
+    not the element rendered. The same shape as the fallback-label check task 115 had to correct.
+  */
+  const heading = html.indexOf(`${RUN_PREFIX}-streaming`);
+  const memberships = html.indexOf('Organizațiile dumneavoastră');
+
+  expect(heading, 'the heading was inlined, not streamed').toBeLessThan(fallback);
+  expect(memberships, 'the membership list was inlined, not streamed').toBeLessThan(filings);
 });
