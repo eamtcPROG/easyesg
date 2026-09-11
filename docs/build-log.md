@@ -16755,3 +16755,111 @@ this task is the thing found on the way. What remains for it: an API union read 
 `identity.membership` ∪ `identity.invitation` with filter, sort and pagination in one query — the
 screen cannot page correctly by adding parameters to the two existing endpoints, because page 2 of
 members unioned with page 2 of invitations is not page 2 of the union.
+
+## Task 131 — a list across two tables, paged in one statement · 2026-09-11
+
+*"In `access-list` and `access-filters` the filtering and sorting is on client — this is wrong, the
+sort and filter and pagination must be server side. Refactor."*
+
+### The premise needed one correction, and the correction changed the work
+
+Those two components filter nothing. `setView` calls `router.push` and writes the facets to the URL
+(UX-4); the page re-renders on the server and `applyAccessView` ran in a **Server Component**. No
+array was ever filtered in a browser.
+
+What was true is the part underneath: `GET /members` and `GET /invitations` took **no query
+parameters at all** — confirmed against `openapi/v1.json`, `parameters: NONE` on both — so the web
+tier fetched both collections whole and did the arithmetic.
+
+**And adding parameters to those two could not have fixed it.** S-16 is one list across two tables.
+Page 2 of members unioned with page 2 of invitations is not page 2 of the union, and an order
+spanning both cannot be resolved from two separately-ordered responses. That is why this is a third
+resource rather than two new query strings, and it was worth putting to the owner as a decision
+rather than assuming.
+
+### What the union bought, beyond paging
+
+- **The standing moved with the filter.** It is derived from `now()` in the same statement that
+  filters and orders on it. Split across two clocks — the database's and the browser's `Date.now()`
+  — a row sitting on its expiry could be *admitted* to the "invited" facet and *drawn* as expired on
+  one response. The browser tier lost a clock; `access-columns.tsx` no longer takes `now` at all.
+- **Ordering that spans the union**, which is the claim `members.e2e-spec.ts` and
+  `invitations.e2e-spec.ts` are structurally unable to make. `access.e2e-spec.ts` proves it with
+  fixtures whose alphabetical order **interleaves** the two kinds, so an implementation that ordered
+  each collection and concatenated them fails. A suite whose fixtures happened to group by kind would
+  have passed either way.
+- **Role and standing order by product rank, not alphabetically** — widest access first,
+  needing-attention first — and `email` is the tie-break on every ordering, so the order is total and
+  a re-render cannot reshuffle equal rows across a page boundary.
+
+`ORDER_BY` is a closed map from `ACCESS_SORT` to SQL the repository owns; no caller string reaches a
+statement.
+
+### The house convention existed and had never been used
+
+`ListQueryInterceptor`, `RequestListDto`, `ResultListDto`'s `total`/`totalpages` and
+`pagination.constants.ts` shipped with task 11. `apps/web`'s `buildListQuery` shipped with them, and
+its docblock has promised since: *"The URL→`ListQuery` parse arrives with the first index screen."*
+**No route had ever opted in.** This is that screen, and the parse is `accessListQuery`.
+
+**Which is how a defect in the interceptor's own instructions surfaced.** Its docblock said to opt in
+with `@UseInterceptors(ListQueryInterceptor)`. Passing the **class** makes Nest resolve it through DI,
+and its constructor takes `(bounded, maxOnPage)` — two primitives with no provider. The application
+does not boot: `Nest can't resolve dependencies of the ListQueryInterceptor (?, Object)`, and because
+the emitter runs with `logger: false` it exits 1 in silence. An instance is required. Three weeks old,
+never executed, corrected where it was written.
+
+### Three things that had to change or break quietly
+
+- **`isLastAdministrator` counted the rows it held.** That was every row while the browser tier held
+  the whole list; under paging it is one page, so an organization whose only administrator sits on
+  page 2 would be offered a demotion on page 1 that the API refuses. It takes the organization's
+  count now, asked for directly — the same route, filtered to administrators, one row wide, in
+  parallel with the page.
+- **`ResultListDto` gained an optional `unfiltered`.** `IndexShell` chooses between *nobody has been
+  invited yet* and *your filter matched nobody* from rows **before** the filter, and the web cannot
+  honestly derive that once a filter is set. Additive, and absent rather than equal to `total` on
+  routes that do not filter, so "no filter applied" stays distinguishable from "the filter admitted
+  everything".
+- **The page's `Promise.all` became sequential**, because the dependency is now real: the request
+  cannot be made until the view is parsed. `async-parallel` is about *independent* work.
+
+**Task 130 was a prerequisite, not a detour.** This repository issues no `WHERE organization_id` by
+rule, so before the policy narrowing this union would have merged in the caller's memberships from
+other organizations — the same mechanism, one query wider.
+
+### Two thirds of a spec deleted, and that is the deliverable
+
+`access.spec.ts` lost the union, the standing, the ordering, the tie-break and the page arithmetic.
+They were asserted there against a fabricated `now`; they are SQL now, asserted against a database.
+What remains is what this tier still decides: the URL, and FR-60's mirror.
+
+### The repository's own gates found three convention violations
+
+All three in code that typechecked: `../../` climbs that must use the `@api/*` alias; a
+`direction === 'desc'` comparison against a string literal where `SORT_DIRECTION.DESC` exists; and
+`controllers-not-to-use-cases`, which is why `AccessService` exists — a controller may not reach a
+use case, and the rule was right that *which* facets exist is the read model's decision rather than
+the HTTP layer's. The committed route→permission table refused the new route until it had a row.
+
+### The browser run found something else, on a different screen
+
+`home.spec.ts`'s pending-boundary count went **1 → 2**: S-05's membership region streams now. The data
+is still ready before the shell flushes — the heading is inlined and proves it — but **task 128 split
+that one async component into a section, a list and N async rows, each awaiting its own translators**,
+so the subtree is still resolving when the shell goes out. Its skeleton renders, which is UX-90's
+state finally being used rather than defined and inert.
+
+Task 128's commit said the count was *"unchanged by construction rather than by measurement"*. The
+construction argument was wrong, in precisely the place it was flagged, and this is the first browser
+run since — 128, 129 and 130 all waived the suite. The assertion now states what the screen does, with
+the cause. **Three waived suites is how far a wrong "by construction" travels.**
+
+### Verified
+
+`apps/api` 721 unit and **880 e2e** over 35 suites (run three times: one early failure was fixture
+state left by my own standalone runs of the new suite, not the committed one). `apps/web` **408**
+unit. `pnpm lint` uncached, `typecheck`, `pnpm boundaries` 1,059 modules, `pnpm routes:check`,
+`pnpm docs:check` 28, and `pnpm e2e:web --project identity --project expansion` **168 passed**
+including S-16's journey against the rewired screen. `migrations:check` not re-run: this task adds no
+migration.

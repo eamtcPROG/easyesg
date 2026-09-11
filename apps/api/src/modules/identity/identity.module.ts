@@ -4,6 +4,7 @@ import { SessionModule } from './session/session.module';
 import { ProviderModule } from './provider/provider.module';
 import { MembershipModule } from './membership/membership.module';
 import { InvitationModule } from './invitation/invitation.module';
+import { AccessModule } from './access/access.module';
 
 /**
  * Namespace barrel for `modules/identity/*` (architecture.md §5.2, §6.7).
@@ -22,6 +23,7 @@ import { InvitationModule } from './invitation/invitation.module';
     ProviderModule,
     MembershipModule,
     InvitationModule,
+    AccessModule,
   ],
   exports: [SessionModule],
 })

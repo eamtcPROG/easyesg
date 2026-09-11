@@ -1,10 +1,8 @@
 import type { IndexPage } from '@easyesg/ui';
+import type { ListQuery } from '@/lib/pagination';
 import {
   INVITED_ROLE,
   MEMBERSHIP_ROLE,
-  type Invitation,
-  type InvitedRole,
-  type Member,
   type MembershipRole,
 } from '@easyesg/contracts';
 
@@ -66,6 +64,15 @@ interface AccessRowShared {
   readonly id: string;
   readonly email: string;
   readonly role: MembershipRole;
+  /**
+   * **Derived by the server, never recomputed here** (task 131).
+   *
+   * It was `accessStanding(row, now)` in this module until the filter moved to the API. Keeping
+   * that function would have left two clocks deciding one fact: the database's `now()` admitting a
+   * row to the *"invited"* facet and the browser's `Date.now()` drawing it as expired, on the same
+   * response. The screen renders what the filter matched on.
+   */
+  readonly standing: AccessStanding;
 }
 
 export interface MemberRow extends AccessRowShared {
@@ -78,7 +85,17 @@ export interface MemberRow extends AccessRowShared {
 
 export interface InvitationRow extends AccessRowShared {
   readonly kind: typeof ACCESS_ROW_KIND.INVITATION;
-  readonly role: InvitedRole;
+  /**
+   * **`MembershipRole`, not `InvitedRole`, since task 131** — and the widening is the wire being
+   * honest rather than the screen giving something up. A merged list publishes **one** role
+   * vocabulary, because a flat row cannot carry a different enum per `kind`; what keeps an
+   * invitation's role inside the invitable subset is `invitation_role_known` on the table, which is
+   * a fact about the database that the wire has no way to state per-kind.
+   *
+   * Nothing on this screen reads it more narrowly — the cell renders a label. `INVITABLE_ROLES`
+   * below is what the invite *form* offers, and that is where the narrower set actually belongs.
+   */
+  readonly role: MembershipRole;
   /** The most recent issue or resend — a resend moves this and restarts the window. */
   readonly issuedAt: number;
   readonly expiresAt: number;
@@ -100,50 +117,6 @@ export type AccessRow = MemberRow | InvitationRow;
  * later selection without three functions that must agree.
  */
 export const accessRowKey = (row: AccessRow): string => `${row.kind}:${row.id}`;
-
-export const accessStanding = (row: AccessRow, now: number): AccessStanding => {
-  if (row.kind === ACCESS_ROW_KIND.MEMBER) return ACCESS_STANDING.ACTIVE;
-  return row.expiresAt <= now ? ACCESS_STANDING.INVITATION_EXPIRED : ACCESS_STANDING.INVITED;
-};
-
-/**
- * The instant the activity column shows and sorts on.
- *
- * A member's is their last request, falling back to when they joined — a member who has never
- * signed in is not undated, they are dated from the grant, and sorting them to the bottom of a
- * list ordered by recency would be a lie about when they appeared. An invitation's is when it was
- * last sent, which a resend moves; that is the same fact the column means for both, which is what
- * lets one column head cover the union honestly.
- */
-export const accessActivityAt = (row: AccessRow): number =>
-  row.kind === ACCESS_ROW_KIND.MEMBER ? (row.lastActiveAt ?? row.joinedAt) : row.issuedAt;
-
-export const toAccessRows = (input: {
-  readonly members: readonly Member[];
-  readonly invitations: readonly Invitation[];
-}): AccessRow[] => [
-  ...input.members.map(
-    (member): MemberRow => ({
-      kind: ACCESS_ROW_KIND.MEMBER,
-      id: member.id,
-      accountId: member.accountId,
-      email: member.email,
-      role: member.role,
-      lastActiveAt: member.lastActiveAt ?? null,
-      joinedAt: member.joinedAt,
-    }),
-  ),
-  ...input.invitations.map(
-    (invitation): InvitationRow => ({
-      kind: ACCESS_ROW_KIND.INVITATION,
-      id: invitation.id,
-      email: invitation.email,
-      role: invitation.role,
-      issuedAt: invitation.issuedAt,
-      expiresAt: invitation.expiresAt,
-    }),
-  ),
-];
 
 /**
  * The filter's "no filter" value.
@@ -257,91 +230,47 @@ export const accessViewQuery = (view: AccessView): string => {
   return params.toString();
 };
 
-/** Role order for sorting: the widest access first, so "who can change things" reads off the top. */
-const ROLE_RANK: Record<MembershipRole, number> = {
-  [MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR]: 0,
-  [MEMBERSHIP_ROLE.EDITOR]: 1,
-  [MEMBERSHIP_ROLE.VIEWER]: 2,
-};
-
-/** Standing order: the rows needing attention first, which is the order the chips' tones imply. */
-const STANDING_RANK: Record<AccessStanding, number> = {
-  [ACCESS_STANDING.INVITATION_EXPIRED]: 0,
-  [ACCESS_STANDING.INVITED]: 1,
-  [ACCESS_STANDING.ACTIVE]: 2,
-};
-
 /**
- * What one page of the list is — **`IndexPage` from `packages/ui`, plus the page count.**
+ * What one page of the list is — **`IndexPage` from `packages/ui`, plus the administrator count.**
  *
  * The five members the shell reads are its contract rather than this module's invention, so the
  * read model produces them by name instead of the screen translating between two shapes. Adopted
- * 26 Aug 2026 with the Index archetype; `pageCount` stays local because only the clamp below uses
- * it — the pager derives its own from `matched` and `pageSize`.
+ * 26 Aug 2026 with the Index archetype; since task 131 every member is **answered by the API**
+ * rather than computed here, which is what moving the filter, the order and the window server-side
+ * means in practice.
+ *
+ * `administrators` is the one addition, and it is here because **server-side paging broke the rule
+ * that used to be derivable**: `isLastAdministrator` counted administrators among the rows it was
+ * given, which was every row while the browser held the whole list. Under paging those rows are one
+ * page, so an organization whose only administrator sits on page 2 would be offered a demotion on
+ * page 1 that the API then refuses. The count is a fact about the organization, not about the page.
  */
 export interface AccessPage extends IndexPage<AccessRow> {
-  readonly pageCount: number;
+  /** How many active administrators the organization has — FR-60's rule needs the whole set. */
+  readonly administrators: number;
 }
 
 /**
- * Filter, sort and page — in the read model, because the API does neither.
+ * The view, as the API's compact list query (§6.8; task 131).
  *
- * Both collections are unpaginated by design: their use cases record that the set is bounded by
- * the plan's seat entitlement, so the whole list arrives and there is nothing to ask the server
- * for. The Index archetype still owes its reader a filter, a sort and a pager (§4.6), and task
- * 26.4's batch decided to ship them in full rather than the subset the API happens to make free.
+ * **The exact inverse of `ListQueryInterceptor`, through `buildListQuery`** — which has existed
+ * since task 11 with its docblock promising *"the URL→`ListQuery` parse arrives with the first
+ * index screen"*. This is that screen, and this function is the parse.
  *
- * `page` is clamped rather than validated: a reader who filters while on page 3 must land on the
- * last page that exists, not on an empty one that reads as "no matches".
+ * A facet equal to `ACCESS_FILTER_ANY` is **omitted rather than sent**: the API reads a missing
+ * facet as unset, and sending the sentinel would make `any` a value the server has to know about.
+ * That keeps `ACCESS_FILTER_ANY` what it is — this screen's spelling of "no filter" in a URL, where
+ * UX-4 requires even the unset state to be addressable.
  */
-export const applyAccessView = (input: {
-  readonly rows: readonly AccessRow[];
-  readonly view: AccessView;
-  readonly now: number;
-}): AccessPage => {
-  const { rows, view, now } = input;
-
-  const matched = rows.filter((row) => {
-    const roleMatches = view.role === ACCESS_FILTER_ANY || row.role === view.role;
-    const standingMatches =
-      view.standing === ACCESS_FILTER_ANY || accessStanding(row, now) === view.standing;
-    return roleMatches && standingMatches;
-  });
-
-  const ordered = matched.toSorted((left, right) => {
-    const by = compareBy(left, right, view.sort, now);
-    // Email is the tie-break everywhere, so the order is total and a re-render cannot reshuffle
-    // equal rows under the reader's cursor.
-    const settled = by !== 0 ? by : left.email.localeCompare(right.email);
-    return view.direction === ACCESS_SORT_DIRECTION.ASCENDING ? settled : -settled;
-  });
-
-  const pageCount = Math.max(1, Math.ceil(ordered.length / ACCESS_PAGE_SIZE));
-  const page = Math.min(Math.max(1, view.page), pageCount);
-  const from = (page - 1) * ACCESS_PAGE_SIZE;
-
-  return {
-    rows: ordered.slice(from, from + ACCESS_PAGE_SIZE),
-    matched: ordered.length,
-    total: rows.length,
-    page,
-    pageCount,
-    pageSize: ACCESS_PAGE_SIZE,
-  };
-};
-
-function compareBy(left: AccessRow, right: AccessRow, sort: AccessSort, now: number): number {
-  switch (sort) {
-    case ACCESS_SORT.PERSON:
-      return left.email.localeCompare(right.email);
-    case ACCESS_SORT.ROLE:
-      return ROLE_RANK[left.role] - ROLE_RANK[right.role];
-    case ACCESS_SORT.STANDING:
-      return STANDING_RANK[accessStanding(left, now)] - STANDING_RANK[accessStanding(right, now)];
-    default:
-      return accessActivityAt(left) - accessActivityAt(right);
-  }
-}
+export const accessListQuery = (view: AccessView): ListQuery => ({
+  filters: [
+    ...(view.role === ACCESS_FILTER_ANY ? [] : [{ field: 'role', values: [view.role] }]),
+    ...(view.standing === ACCESS_FILTER_ANY ? [] : [{ field: 'standing', values: [view.standing] }]),
+  ],
+  order: [{ field: view.sort, direction: view.direction }],
+  page: view.page,
+  onpage: ACCESS_PAGE_SIZE,
+});
 
 /**
  * FR-60's lockout rule, on the screen's side of the wire.
@@ -353,15 +282,13 @@ function compareBy(left: AccessRow, right: AccessRow, sort: AccessSort, now: num
  * because between this render and that request someone else may have been demoted.
  */
 export const isLastAdministrator = (input: {
-  readonly rows: readonly AccessRow[];
+  /** The organization's count, from the read — **not** the rows on screen. See `AccessPage`. */
+  readonly administrators: number;
   readonly row: AccessRow;
 }): boolean =>
+  input.row.kind === ACCESS_ROW_KIND.MEMBER &&
   input.row.role === MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR &&
-  input.rows.filter(
-    (candidate) =>
-      candidate.kind === ACCESS_ROW_KIND.MEMBER &&
-      candidate.role === MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
-  ).length <= 1;
+  input.administrators <= 1;
 
 /** The roles an invitation may carry, in the order the form offers them. */
 export const INVITABLE_ROLES = Object.values(INVITED_ROLE);

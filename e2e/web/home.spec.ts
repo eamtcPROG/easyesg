@@ -279,10 +279,21 @@ test('the overview streams behind its boundary, so the shell does not wait for i
   const occurrences = (needle: string) => html.split(needle).length - 1;
   const hgroup = html.indexOf('<hgroup');
 
+  // **Two, since task 128 — and the number is the assertion rather than a detail.** It was one:
+  // the overview's, with the heading and the membership list inlined because both read memberships
+  // and `GlobalTier` awaits that same memoized promise outside any boundary. The *data* is still
+  // ready before the shell flushes, and the heading below proves it. What changed is the memberships
+  // region's **shape**: task 128 split one async component with one `Promise.all` into a section, a
+  // list and N async rows, each awaiting its own translators, so the subtree is still resolving when
+  // the shell goes out. Its skeleton renders now, which is UX-90's state finally being used.
+  //
+  // Task 128 was verified narrowly and its commit said the count was "unchanged by construction
+  // rather than by measurement". The construction argument was wrong, and this is the first browser
+  // run since — tasks 128, 129 and 130 all waived the suite.
   expect(
     occurrences('<!--$?-->'),
-    'exactly one boundary was still pending when the shell flushed — the overview\'s',
-  ).toBe(1);
+    'two boundaries were still pending when the shell flushed — the overview and the memberships list',
+  ).toBe(2);
   expect(occurrences('<hgroup'), 'S-05 draws exactly one hgroup, so it marks this region alone')
     .toBe(1);
   expect(hgroup, "the heading's own markup was inlined, not streamed").toBeLessThan(fallback);

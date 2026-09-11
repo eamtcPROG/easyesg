@@ -174,6 +174,10 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
 
   // ── Organization users and access — actors.md §5: "Organization users: invite, re-role, remove,
   // promote to OA" is OA alone. RC and viewer are refused, which is what the matrix e2e proves.
+  // The union of the two collections below, read-only (task 131). Same permission as its halves and
+  // necessarily so: it publishes exactly the rows `GET /members` and `GET /invitations` publish, so
+  // a weaker gate here would be a way around both.
+  'GET /access': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'GET /members': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'PATCH /members/:membershipId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'DELETE /members/:membershipId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,

@@ -1483,6 +1483,82 @@
         ]
       }
     },
+    "/api/v1/access": {
+      "get": {
+        "description": "Answers \"who can see our ESG data\" as a single ordered list across active memberships and pending invitations, with the filter, the order and the page applied to the merged set. The standing is derived server-side from now(), so a row cannot be admitted by the filter as live and rendered as expired on the same request.",
+        "operationId": "AccessController_list",
+        "parameters": [
+          {
+            "name": "onpage",
+            "required": false,
+            "in": "query",
+            "description": "Rows per page. `-1` (all rows) is refused on this route.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "One ordering: `<person|role|standing|activity>,<asc|desc>`. Defaults to `activity,desc` — an administrator opening this screen is looking at who is here now. Role and standing order by rank rather than alphabetically: widest access first, needing-attention first.",
+            "schema": {}
+          },
+          {
+            "name": "filters",
+            "required": false,
+            "in": "query",
+            "description": "Compact facets: `role,<role>` and `standing,<standing>`, pipe-separated. A value outside the published enum, or a field this route does not define, is ignored rather than refused.",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the merged list. `total` counts rows surviving the filter and is what pages are counted from; `unfiltered` counts rows before it, which is what tells an empty result whether nobody has been invited yet or the filter matched nobody.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AccessRowResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller holds no membership in an active organization (problem type membership-required), or holds one in a role that is not organization_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "List everyone with access to the active organization, members and invitations as one",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/organizations": {
       "post": {
         "description": "FR-13 and D-1: the creating user is granted the organization_administrator role by the act of creating, in the same transaction — an organization committed without its founding membership would be unreachable by everyone including its creator. The caller keeps every membership they already held, and the new organization becomes the calling session’s active one, so the response is the organization the next request will be scoped to. That is not a convenience: an account holding two memberships with no stated preference has no active organization at all, so founding a second without pointing the session would refuse the caller access to the one they were already using.",
@@ -3542,6 +3618,10 @@
             "items": {
               "$ref": "#/components/schemas/MessageDto"
             }
+          },
+          "unfiltered": {
+            "type": "number",
+            "description": "Rows before any filter was applied. Present only on routes that accept filters; `total` is the count after filtering and is what pages are counted from."
           }
         },
         "required": [
@@ -3887,6 +3967,84 @@
           "organizationName",
           "role",
           "grant"
+        ]
+      },
+      "AccessRowResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "member",
+              "invitation"
+            ],
+            "description": "Which collection this row came from, and the discriminator for the fields below. A member holds access now; an invitation has been sent and not accepted."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The handle this row’s actions need — a membership id for a member, an invitation id for an invitation. Unique within its own collection only, so a caller keying rows must qualify it with `kind`."
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "editor",
+              "viewer",
+              "organization_administrator"
+            ],
+            "description": "The role held, or for an invitation the role it will grant when accepted."
+          },
+          "standing": {
+            "type": "string",
+            "enum": [
+              "active",
+              "invited",
+              "invitation_expired"
+            ],
+            "description": "Derived server-side from now(): a member is always active, and a pending invitation is invited or invitation_expired according to its own expiry. Expired invitations are published rather than hidden — an expired one is what refuses a re-invite with a 409, so hiding it would leave an administrator holding a conflict they cannot see or resend."
+          },
+          "accountId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The account holding the membership. Null when kind is invitation — nobody holds it yet."
+          },
+          "joinedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds when access was granted. Null when kind is invitation, which has not been accepted and so granted nothing."
+          },
+          "lastActiveAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds of this member’s last request. Null when they have not returned since being granted access, and null for an invitation."
+          },
+          "issuedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds when the invitation was last issued — a resend moves this and restarts the window. Null when kind is member."
+          },
+          "expiresAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds when the invitation lapses. Null when kind is member."
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "email",
+          "role",
+          "standing",
+          "accountId",
+          "joinedAt",
+          "lastActiveAt",
+          "issuedAt",
+          "expiresAt"
         ]
       },
       "OrganizationChangeAttributionDto": {

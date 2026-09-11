@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { AccessBoard } from '@/features/organization/access/components/access-board';
 import { AccessProvider } from '@/features/organization/access/components/access-context';
 import { InviteMember } from '@/features/organization/access/components/invite-member';
-import { applyAccessView, readAccessView } from '@/features/organization/access/tools/access';
+import { readAccessView, type AccessView } from '@/features/organization/access/tools/access';
 import styles from '@/features/organization/access/components/access.module.css';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
 import { Link } from '@/i18n/navigation';
@@ -51,9 +51,13 @@ export default async function UsersAndAccessPage({ params, searchParams }: Props
   await activateRequestLocale(params);
   const t = await getTranslations(MESSAGES);
 
-  // Independent: the query string is already in hand and the read is an API round trip, so the
-  // parse does not wait on the fetch (`async-parallel`).
-  const [query, read] = await Promise.all([searchParams, readOrganizationAccess()]);
+  // **Sequential now, and the dependency is real** (task 131). These used to be a `Promise.all`,
+  // because the read fetched both collections whole and the query string only decided what to do
+  // with them afterwards. The filter, the order and the page are the API's now, so the request
+  // cannot be made until the view is parsed. `async-parallel` is about *independent* work; forcing
+  // these to overlap would mean fetching a page nobody asked for.
+  const view = readAccessView(await searchParams);
+  const read = await readOrganizationAccess(view);
 
   return (
     <div className={styles.screen}>
@@ -62,7 +66,7 @@ export default async function UsersAndAccessPage({ params, searchParams }: Props
         <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
       </hgroup>
 
-      <AccessScreenBody read={read} query={query} />
+      <AccessScreenBody read={read} view={view} />
     </div>
   );
 }
@@ -74,10 +78,10 @@ export default async function UsersAndAccessPage({ params, searchParams }: Props
  */
 async function AccessScreenBody({
   read,
-  query,
+  view,
 }: {
   readonly read: Awaited<ReturnType<typeof readOrganizationAccess>>;
-  readonly query: Record<string, string | string[] | undefined>;
+  readonly view: AccessView;
 }) {
   const t = await getTranslations(MESSAGES);
 
@@ -109,12 +113,10 @@ async function AccessScreenBody({
     );
   }
 
-  // The clock comes from the read, not from here: one tick for the whole page, so a row sitting on
-  // its expiry cannot be filtered as live and labelled as lapsed. It is also the honest instant —
-  // the standing is a fact about the data as read, not about when React got round to rendering it.
-  const view = readAccessView(query);
-  const page = applyAccessView({ rows: read.rows, view, now: read.readAt });
-
+  // **No clock here any more.** The standing used to be judged against the instant of the read, so
+  // a row sitting on its expiry could not be filtered as live and labelled as lapsed. It is now
+  // derived by the database in the same statement that filters and orders on it, which is the same
+  // guarantee with one fewer place to keep it — and one fewer clock in this tier.
   return (
     <>
       {/* One provider over BOTH regions (28 Aug 2026). It used to sit inside `AccessBoard`, which
@@ -122,7 +124,7 @@ async function AccessScreenBody({
           settled invite notice survived a row action starting, and two callouts could show at
           once. The screen holds one notice; each region renders it only when it is theirs. */}
       {/* Its own provider since task 99 — see `i18n/client-messages.ts`. */}
-      <AccessProvider page={page} view={view} now={read.readAt} inviteAnchorId={INVITE_ANCHOR}>
+      <AccessProvider page={read.page} view={view} inviteAnchorId={INVITE_ANCHOR}>
         <AccessBoard />
         <InviteMember id={INVITE_ANCHOR} />
       </AccessProvider>

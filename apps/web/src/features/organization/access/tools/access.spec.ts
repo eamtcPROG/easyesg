@@ -1,4 +1,4 @@
-import { MEMBERSHIP_ROLE, type Invitation, type Member } from '@easyesg/contracts';
+import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   ACCESS_FILTER_ANY,
@@ -8,236 +8,63 @@ import {
   ACCESS_SORT_DIRECTION,
   ACCESS_STANDING,
   DEFAULT_ACCESS_VIEW,
-  accessActivityAt,
-  accessStanding,
+  accessListQuery,
+  accessRowKey,
   accessViewQuery,
-  applyAccessView,
   isLastAdministrator,
   readAccessView,
-  toAccessRows,
   type AccessRow,
 } from './access';
 
 /**
- * S-16's read model. Pure by design, so all of this is a spec rather than a browser journey —
- * which is the whole reason `server/data/organization-access.ts` holds the fetching and this holds
- * the rules (`features/identity/post-sign-in.ts` makes the same split).
+ * S-16's read model, after task 131 moved the filter, the sort and the page to the API.
  *
- * The cases that matter are the ones a happy-path browser test would never reach: the lapsed
- * invitation the API deliberately publishes, a filter that empties the current page, a URL someone
- * hand-edited, and FR-60's lockout seen from the screen's side.
+ * **Two thirds of this file went with them, and that is the deliverable rather than a loss.** The
+ * union, the standing derivation, the ordering, the tie-break and the page arithmetic were all
+ * asserted here against a fabricated `now`; they are now SQL, and `apps/api/test/access.e2e-spec.ts`
+ * asserts them against a real database — including the case this file could not reach at all, that
+ * ordering spans the union rather than running per collection.
+ *
+ * What is left is what this tier still decides: **the URL**, which is UX-4's addressable state and
+ * belongs to the screen, and **FR-60's mirror**, which exists so the screen does not offer a control
+ * the API will refuse.
  */
-const DAY = 24 * 60 * 60 * 1000;
-const NOW = 1_780_000_000_000;
-
-const member = (over: Partial<Member> = {}): Member => ({
-  id: `m-${over.email ?? 'ana'}`,
-  accountId: 'acc-1',
+const member = (over: Partial<AccessRow> = {}): AccessRow => ({
+  kind: ACCESS_ROW_KIND.MEMBER,
+  id: 'm-1',
   email: 'ana@example.md',
   role: MEMBERSHIP_ROLE.EDITOR,
-  status: 'active',
-  lastActiveAt: NOW - DAY,
-  joinedAt: NOW - 30 * DAY,
+  standing: ACCESS_STANDING.ACTIVE,
+  accountId: 'acc-1',
+  lastActiveAt: null,
+  joinedAt: 0,
   ...over,
-});
-
-const invitation = (over: Partial<Invitation> = {}): Invitation => ({
-  id: `i-${over.email ?? 'bogdan'}`,
-  email: 'bogdan@example.md',
-  role: MEMBERSHIP_ROLE.VIEWER,
-  issuedAt: NOW - DAY,
-  expiresAt: NOW + 6 * DAY,
-  ...over,
-});
-
-const rowsOf = (members: Member[], invitations: Invitation[]): AccessRow[] =>
-  toAccessRows({ members, invitations });
+} as AccessRow);
 
 const view = (over: Partial<typeof DEFAULT_ACCESS_VIEW> = {}) => ({
   ...DEFAULT_ACCESS_VIEW,
   ...over,
 });
 
-describe('access · the union', () => {
-  it('makes one list from two collections, keeping each side identifiable', () => {
-    const rows = rowsOf([member()], [invitation()]);
-
-    expect(rows).toHaveLength(2);
-    expect(rows.map((row) => row.kind)).toEqual([
-      ACCESS_ROW_KIND.MEMBER,
-      ACCESS_ROW_KIND.INVITATION,
-    ]);
-  });
-
-  it('reads a member who has never signed in as dated from the grant, not as undated', () => {
-    const [row] = rowsOf([member({ lastActiveAt: null })], []);
-    expect(accessActivityAt(row)).toBe(NOW - 30 * DAY);
-  });
-});
-
-describe('access · standing', () => {
-  it('calls a member active', () => {
-    const [row] = rowsOf([member()], []);
-    expect(accessStanding(row, NOW)).toBe(ACCESS_STANDING.ACTIVE);
-  });
-
-  it('tells a live invitation from a lapsed one', () => {
-    const [live, lapsed] = rowsOf(
-      [],
-      [invitation({ email: 'live@example.md' }), invitation({ email: 'old@example.md', expiresAt: NOW - DAY })],
-    );
-
-    expect(accessStanding(live, NOW)).toBe(ACCESS_STANDING.INVITED);
-    expect(accessStanding(lapsed, NOW)).toBe(ACCESS_STANDING.INVITATION_EXPIRED);
-  });
-
+describe('access · row identity', () => {
   /**
-   * The reason this distinction exists at all. `GET /invitations` publishes every pending row,
-   * expired ones included, because an expired invitation is what refuses a re-invite with a 409 —
-   * so hiding it, or showing it as an ordinary "invited", leaves an administrator holding a
-   * conflict they cannot see, cannot resend and cannot revoke.
+   * The two halves come from different tables, so an id alone is unique only within its own — and
+   * qualifying it is what lets one key serve the table's `rowKey`, the per-row pending state and any
+   * later selection without three functions that must agree.
    */
-  it('keeps a lapsed invitation in the list rather than dropping it', () => {
-    const rows = rowsOf([], [invitation({ expiresAt: NOW - DAY })]);
-    const page = applyAccessView({ rows, view: view(), now: NOW });
-
-    expect(page.rows).toHaveLength(1);
-    expect(page.matched).toBe(1);
-  });
-});
-
-describe('access · the view', () => {
-  it('filters by role', () => {
-    const rows = rowsOf(
-      [
-        member({ email: 'ana@example.md', role: MEMBERSHIP_ROLE.EDITOR }),
-        member({ email: 'ion@example.md', role: MEMBERSHIP_ROLE.VIEWER }),
-      ],
-      [],
-    );
-
-    const page = applyAccessView({
-      rows,
-      view: view({ role: MEMBERSHIP_ROLE.VIEWER }),
-      now: NOW,
+  it('qualifies an id with its kind, so the two collections cannot collide', () => {
+    const asMember = accessRowKey(member({ id: 'shared' }));
+    const asInvitation = accessRowKey({
+      kind: ACCESS_ROW_KIND.INVITATION,
+      id: 'shared',
+      email: 'b@example.md',
+      role: MEMBERSHIP_ROLE.VIEWER,
+      standing: ACCESS_STANDING.INVITED,
+      issuedAt: 0,
+      expiresAt: 1,
     });
 
-    expect(page.rows.map((row) => row.email)).toEqual(['ion@example.md']);
-    expect(page.matched).toBe(1);
-    expect(page.total).toBe(2);
-  });
-
-  it('filters by standing', () => {
-    const rows = rowsOf([member()], [invitation({ expiresAt: NOW - DAY })]);
-
-    const page = applyAccessView({
-      rows,
-      view: view({ standing: ACCESS_STANDING.INVITATION_EXPIRED }),
-      now: NOW,
-    });
-
-    expect(page.matched).toBe(1);
-    expect(page.rows[0].kind).toBe(ACCESS_ROW_KIND.INVITATION);
-  });
-
-  /** `total` is what tells first use apart from a filter with no hits — two different screens. */
-  it('reports the unfiltered total beside the matched count', () => {
-    const rows = rowsOf([member()], []);
-    const page = applyAccessView({
-      rows,
-      view: view({ role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
-      now: NOW,
-    });
-
-    expect(page.matched).toBe(0);
-    expect(page.total).toBe(1);
-  });
-
-  it('sorts by person, and reverses on direction', () => {
-    const rows = rowsOf(
-      [member({ email: 'zeta@example.md' }), member({ email: 'alpha@example.md' })],
-      [],
-    );
-
-    const ascending = applyAccessView({
-      rows,
-      view: view({ sort: ACCESS_SORT.PERSON, direction: ACCESS_SORT_DIRECTION.ASCENDING }),
-      now: NOW,
-    });
-    const descending = applyAccessView({
-      rows,
-      view: view({ sort: ACCESS_SORT.PERSON, direction: ACCESS_SORT_DIRECTION.DESCENDING }),
-      now: NOW,
-    });
-
-    expect(ascending.rows.map((row) => row.email)).toEqual([
-      'alpha@example.md',
-      'zeta@example.md',
-    ]);
-    expect(descending.rows.map((row) => row.email)).toEqual([
-      'zeta@example.md',
-      'alpha@example.md',
-    ]);
-  });
-
-  it('puts the widest access first when sorting by role', () => {
-    const rows = rowsOf(
-      [
-        member({ email: 'v@example.md', role: MEMBERSHIP_ROLE.VIEWER }),
-        member({ email: 'a@example.md', role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
-        member({ email: 'e@example.md', role: MEMBERSHIP_ROLE.EDITOR }),
-      ],
-      [],
-    );
-
-    const page = applyAccessView({
-      rows,
-      view: view({ sort: ACCESS_SORT.ROLE, direction: ACCESS_SORT_DIRECTION.ASCENDING }),
-      now: NOW,
-    });
-
-    expect(page.rows.map((row) => row.role)).toEqual([
-      MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
-      MEMBERSHIP_ROLE.EDITOR,
-      MEMBERSHIP_ROLE.VIEWER,
-    ]);
-  });
-
-  /** A total order, so a re-render cannot reshuffle equal rows under the reader's cursor. */
-  it('breaks ties on email so the order is stable', () => {
-    const rows = rowsOf(
-      [
-        member({ email: 'b@example.md', lastActiveAt: NOW }),
-        member({ email: 'a@example.md', lastActiveAt: NOW }),
-      ],
-      [],
-    );
-
-    const page = applyAccessView({
-      rows,
-      view: view({ sort: ACCESS_SORT.ACTIVITY, direction: ACCESS_SORT_DIRECTION.ASCENDING }),
-      now: NOW,
-    });
-
-    expect(page.rows.map((row) => row.email)).toEqual(['a@example.md', 'b@example.md']);
-  });
-
-  it('pages, and clamps a page beyond the end onto the last one that exists', () => {
-    const rows = rowsOf(
-      Array.from({ length: ACCESS_PAGE_SIZE + 3 }, (_, index) =>
-        member({ email: `person-${String(index).padStart(2, '0')}@example.md` }),
-      ),
-      [],
-    );
-
-    const second = applyAccessView({ rows, view: view({ page: 2 }), now: NOW });
-    expect(second.rows).toHaveLength(3);
-    expect(second.pageCount).toBe(2);
-
-    // The case that matters: a filter applied from page 9 must not render "no matches".
-    const beyond = applyAccessView({ rows, view: view({ page: 9 }), now: NOW });
-    expect(beyond.page).toBe(2);
-    expect(beyond.rows).toHaveLength(3);
+    expect(asMember).not.toBe(asInvitation);
   });
 });
 
@@ -290,50 +117,83 @@ describe('access · the URL', () => {
   });
 });
 
-describe('access · FR-60 seen from the screen', () => {
-  it('locks the sole administrator', () => {
-    const rows = rowsOf(
-      [
-        member({ email: 'sole@example.md', role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
-        member({ email: 'other@example.md', role: MEMBERSHIP_ROLE.EDITOR }),
-      ],
-      [],
-    );
+/**
+ * The other direction: the same view, as the API's compact list query (§6.8).
+ *
+ * Two different encodings of one state, which is exactly the pair worth testing together — the URL
+ * is the reader's and the compact query is the wire's, and nothing but these functions keeps them
+ * describing the same list.
+ */
+describe('access · the API query', () => {
+  it('sends no facet for a filter that is unset', () => {
+    // `ACCESS_FILTER_ANY` is this screen's spelling of "no filter" **in a URL**, where UX-4 needs
+    // even the unset state to be addressable. On the wire an unset facet is an absent one; sending
+    // `any` would make it a value the server has to know about.
+    expect(accessListQuery(DEFAULT_ACCESS_VIEW).filters).toEqual([]);
+  });
 
-    expect(isLastAdministrator({ rows, row: rows[0] })).toBe(true);
-    expect(isLastAdministrator({ rows, row: rows[1] })).toBe(false);
+  it('sends each facet it has, by the field name the API defines', () => {
+    expect(
+      accessListQuery(
+        view({ role: MEMBERSHIP_ROLE.VIEWER, standing: ACCESS_STANDING.INVITATION_EXPIRED }),
+      ).filters,
+    ).toEqual([
+      { field: 'role', values: [MEMBERSHIP_ROLE.VIEWER] },
+      { field: 'standing', values: [ACCESS_STANDING.INVITATION_EXPIRED] },
+    ]);
+  });
+
+  it('always sends the ordering and the window, because the API defaults are not this screen’s', () => {
+    // The API's own default is `activity,desc` and happens to match, but the screen states its
+    // order rather than relying on that: the two defaults live in different repositories' heads,
+    // and a list that silently reordered when the server changed its mind would be very hard to see.
+    const query = accessListQuery(view({ sort: ACCESS_SORT.PERSON, direction: ACCESS_SORT_DIRECTION.ASCENDING, page: 4 }));
+
+    expect(query.order).toEqual([{ field: ACCESS_SORT.PERSON, direction: ACCESS_SORT_DIRECTION.ASCENDING }]);
+    expect(query.page).toBe(4);
+    expect(query.onpage).toBe(ACCESS_PAGE_SIZE);
+  });
+});
+
+/**
+ * FR-60 seen from the screen — and **the count is the organization's, not the page's** (task 131).
+ *
+ * It counted administrators among the rows it was handed, which was every row while this tier held
+ * the whole list. Under server-side paging those rows are one page, so an organization whose only
+ * administrator sits on page 2 would have been offered a demotion on page 1 that the API refuses.
+ * `readOrganizationAccess` asks for the count directly.
+ */
+describe('access · FR-60 seen from the screen', () => {
+  const administrator = member({ role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR });
+
+  it('locks the sole administrator', () => {
+    expect(isLastAdministrator({ administrators: 1, row: administrator })).toBe(true);
+  });
+
+  it('leaves everyone else alone, whatever the count', () => {
+    expect(isLastAdministrator({ administrators: 1, row: member() })).toBe(false);
   });
 
   it('unlocks once a second administrator exists', () => {
-    const rows = rowsOf(
-      [
-        member({ email: 'a@example.md', role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
-        member({ email: 'b@example.md', role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
-      ],
-      [],
-    );
-
-    expect(isLastAdministrator({ rows, row: rows[0] })).toBe(false);
+    expect(isLastAdministrator({ administrators: 2, row: administrator })).toBe(false);
   });
 
   /**
    * An invitation at administrator level cannot exist (FR-57 admits edit and view-only only), but
-   * the predicate counts *members* explicitly rather than relying on that — the rule it mirrors is
-   * about who can administer the organization now, and someone who has not accepted cannot.
+   * the predicate checks the kind explicitly rather than relying on that — the rule it mirrors is
+   * about who can administer the organization **now**, and someone who has not accepted cannot.
    */
-  it('does not count an unaccepted invitation as an administrator', () => {
-    const rows: AccessRow[] = [
-      ...rowsOf([member({ role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR })], []),
-      {
-        kind: ACCESS_ROW_KIND.INVITATION,
-        id: 'i-1',
-        email: 'pending@example.md',
-        role: MEMBERSHIP_ROLE.EDITOR,
-        issuedAt: NOW,
-        expiresAt: NOW + DAY,
-      },
-    ];
+  it('does not treat an unaccepted invitation as an administrator', () => {
+    const invited: AccessRow = {
+      kind: ACCESS_ROW_KIND.INVITATION,
+      id: 'i-1',
+      email: 'pending@example.md',
+      role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+      standing: ACCESS_STANDING.INVITED,
+      issuedAt: 0,
+      expiresAt: 1,
+    };
 
-    expect(isLastAdministrator({ rows, row: rows[0] })).toBe(true);
+    expect(isLastAdministrator({ administrators: 1, row: invited })).toBe(false);
   });
 });

@@ -7,7 +7,6 @@ import {
   ACCESS_COLUMN,
   ACCESS_ROW_KIND,
   ACCESS_STANDING,
-  accessStanding,
   type AccessColumnKey,
   type AccessRow,
   type AccessStanding,
@@ -37,15 +36,14 @@ const STANDING_TONE: Record<AccessStanding, StatusTone> = {
   [ACCESS_STANDING.INVITATION_EXPIRED]: STATUS_TONE.ATTENTION,
 };
 
-export function useAccessColumns(
-  now: number,
-): readonly DataTableColumn<AccessRow, AccessColumnKey>[] {
+export function useAccessColumns(): readonly DataTableColumn<AccessRow, AccessColumnKey>[] {
   const t = useTranslations('organization.access');
   const format = useFormatter();
 
-  // Memoised on the three things that can actually change it: the clock the standings are judged
-  // against, and the two locale-bound helpers. Without it the array is a new object every render
-  // and `DataTable` re-renders its whole body on any state change in the provider.
+  // Memoised on the two things that can actually change it, both locale-bound. Without it the
+  // array is a new object every render and `DataTable` re-renders its whole body on any state
+  // change in the provider. **The clock was the third until task 131** — the standing is the
+  // server's now, so this hook no longer depends on when it ran.
   return useMemo(
     () => [
       {
@@ -64,18 +62,18 @@ export function useAccessColumns(
         key: ACCESS_COLUMN.STANDING,
         header: t('columns.standing'),
         sortable: true,
-        cell: (row: AccessRow) => {
-          const standing = accessStanding(row, now);
-          return (
-            <StatusChip tone={STANDING_TONE[standing]}>{t(`standings.${standing}`)}</StatusChip>
-          );
-        },
+        // The server derived it, in the statement that filtered on it (task 131). Reading it off
+        // the row is what makes "admitted as invited" and "drawn as invited" the same fact rather
+        // than two evaluations that agree most of the time.
+        cell: (row: AccessRow) => (
+          <StatusChip tone={STANDING_TONE[row.standing]}>{t(`standings.${row.standing}`)}</StatusChip>
+        ),
       },
       {
         key: ACCESS_COLUMN.ACTIVITY,
         header: t('columns.activity'),
         sortable: true,
-        cell: (row: AccessRow) => activityText({ row, now, t, format }),
+        cell: (row: AccessRow) => activityText({ row, t, format }),
       },
       {
         key: ACCESS_COLUMN.ACTIONS,
@@ -83,7 +81,7 @@ export function useAccessColumns(
         cell: (row: AccessRow) => <RowActions row={row} />,
       },
     ],
-    [format, now, t],
+    [format, t],
   );
 }
 
@@ -96,12 +94,10 @@ export function useAccessColumns(
  */
 function activityText({
   row,
-  now,
   t,
   format,
 }: {
   readonly row: AccessRow;
-  readonly now: number;
   readonly t: ReturnType<typeof useTranslations<'organization.access'>>;
   readonly format: ReturnType<typeof useFormatter>;
 }): string {
@@ -110,7 +106,7 @@ function activityText({
       ? t('activity.never')
       : t('activity.lastActive', { date: format.dateTime(row.lastActiveAt, 'short') });
   }
-  return accessStanding(row, now) === ACCESS_STANDING.INVITATION_EXPIRED
+  return row.standing === ACCESS_STANDING.INVITATION_EXPIRED
     ? t('activity.expiredOn', { date: format.dateTime(row.expiresAt, 'short') })
     : t('activity.invited', { date: format.dateTime(row.issuedAt, 'short') });
 }

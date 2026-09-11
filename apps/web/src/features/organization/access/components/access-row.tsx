@@ -49,7 +49,7 @@ export function RoleCell({ row }: { readonly row: AccessRow }) {
 
   // FR-60: the last administrator cannot be demoted. The API refuses it and stays authoritative —
   // this only avoids OFFERING the action, and states why rather than showing a dead control.
-  const locked = isLastAdministrator({ rows: page.rows, row });
+  const locked = isLastAdministrator({ administrators: page.administrators, row });
 
   return (
     <Select
@@ -115,7 +115,7 @@ export function RowActions({ row }: { readonly row: AccessRow }) {
     <div className={styles.rowActions}>
       <Button
         variant={BUTTON_VARIANT.DESTRUCTIVE}
-        disabled={busy || isLastAdministrator({ rows: page.rows, row })}
+        disabled={busy || isLastAdministrator({ administrators: page.administrators, row })}
         onClick={confirmRemove}
       >
         {t('remove')}

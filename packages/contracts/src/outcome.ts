@@ -49,6 +49,16 @@ export interface ListResult<T> {
   items: T[];
   total: number;
   totalpages: number;
+  /**
+   * Rows **before** the filter, on routes that filter (task 131).
+   *
+   * `total` counts rows surviving the filter and is what the pager divides. This is what an empty
+   * result needs instead: §4.6 requires an Index's empty state to teach, and *"nobody has been
+   * invited yet"* and *"your filter matched nobody"* teach opposite things. Absent — not zero, and
+   * not equal to `total` — on every route that accepts no filters, so the two cases stay
+   * distinguishable.
+   */
+  unfiltered?: number;
 }
 
 /**
@@ -107,6 +117,9 @@ export function readResultList<TObject>(
     items: body.objects as TObject[],
     total: body.total,
     totalpages: body.totalpages,
+    // Passed through only when the route sent one and it is a number. Not validated like `total`
+    // above, because absent is a legitimate answer here and a route that omits it must not throw.
+    ...(typeof body.unfiltered === 'number' ? { unfiltered: body.unfiltered } : {}),
     messages: body.messages as Message[],
   };
 }

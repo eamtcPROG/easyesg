@@ -73,8 +73,6 @@ import type { AccessActionResult } from '../actions/action-results';
 interface AccessContextValue extends AccessState {
   readonly page: AccessPage;
   readonly view: AccessView;
-  /** The server's clock, so a row's standing is the one the server filtered on. */
-  readonly now: number;
   /** Where the first-use empty state sends a reader. */
   readonly inviteAnchorId: string;
   /** True while a navigation this screen started is in flight. */
@@ -119,13 +117,11 @@ export function useAccess(): AccessContextValue {
 export function AccessProvider({
   page,
   view,
-  now,
   inviteAnchorId,
   children,
 }: {
   readonly page: AccessPage;
   readonly view: AccessView;
-  readonly now: number;
   readonly inviteAnchorId: string;
   readonly children: ReactNode;
 }) {
@@ -203,7 +199,6 @@ export function AccessProvider({
       ...state,
       page,
       view,
-      now,
       inviteAnchorId,
       navigating,
       setView,
@@ -217,7 +212,6 @@ export function AccessProvider({
       state,
       page,
       view,
-      now,
       inviteAnchorId,
       navigating,
       setView,

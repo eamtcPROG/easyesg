@@ -24,8 +24,16 @@ declare module 'express' {
  *
  *   ?filters=field,v1,v2|field2,v3 & order=field,asc|other,desc & page=1 & onpage=25
  *
- * Opt-in per handler with `@UseInterceptors(ListQueryInterceptor)` — routes that do
+ * Opt-in per handler with `@UseInterceptors(new ListQueryInterceptor())` — routes that do
  * not list should not silently accept list parameters.
+ *
+ * **The `new` is required, and this line said otherwise until task 131 used it.** The constructor
+ * takes `(bounded, maxOnPage)`; both have defaults, but Nest resolves a *class* through DI and has
+ * no provider for a boolean or a number, so `@UseInterceptors(ListQueryInterceptor)` fails at boot
+ * with `can't resolve dependencies of the ListQueryInterceptor (?, Object)`. The interceptor and
+ * its parser shipped with task 11 and no route opted in until S-16's union read model, so the
+ * instruction was never executed — which is the only reason a sentence this wrong could survive in
+ * a file whose every other claim is exercised.
  *
  * Deliberate trade, recorded because it will look like an oversight later: OpenAPI
  * describes this encoding only as three strings, so the generated client in

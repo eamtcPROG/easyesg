@@ -1,7 +1,7 @@
 import { CALLOUT_INTENT } from '@easyesg/ui';
 import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
-import { ACCESS_ROW_KIND, type AccessRow } from './access';
+import { ACCESS_ROW_KIND, ACCESS_STANDING, type AccessRow } from './access';
 import {
   ACCESS_EVENT,
   CONFIRMATION,
@@ -21,6 +21,7 @@ import {
  */
 const ROW: AccessRow = {
   kind: ACCESS_ROW_KIND.INVITATION,
+  standing: ACCESS_STANDING.INVITED,
   id: 'i-1',
   email: 'bogdan@example.md',
   role: MEMBERSHIP_ROLE.EDITOR,

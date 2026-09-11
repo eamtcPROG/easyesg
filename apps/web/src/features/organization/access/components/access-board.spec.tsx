@@ -8,10 +8,11 @@ import { formats } from '@/i18n/formats';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import {
   ACCESS_PAGE_SIZE,
-  applyAccessView,
+  ACCESS_ROW_KIND,
+  ACCESS_STANDING,
   DEFAULT_ACCESS_VIEW,
-  toAccessRows,
   type AccessRow,
+  type AccessPage,
 } from '../tools/access';
 import { resendInvitationAction } from '../actions/actions';
 import { AccessBoard } from './access-board';
@@ -64,24 +65,57 @@ const TIME_ZONE = 'Europe/Chisinau';
 const NOW = 1_780_000_000_000;
 const DAY = 24 * 60 * 60 * 1000;
 
-const rows = (): AccessRow[] =>
-  toAccessRows({
-    members: [
-      {
-        id: 'm-1',
-        accountId: 'a-1',
-        email: 'ana@example.md',
-        role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
-        status: 'active',
-        lastActiveAt: NOW - DAY,
-        joinedAt: NOW - 30 * DAY,
-      },
-    ],
-    invitations: [
-      { id: 'i-1', email: 'bogdan@example.md', role: MEMBERSHIP_ROLE.EDITOR, issuedAt: NOW - DAY, expiresAt: NOW + 6 * DAY },
-      { id: 'i-2', email: 'corina@example.md', role: MEMBERSHIP_ROLE.VIEWER, issuedAt: NOW - DAY, expiresAt: NOW + 6 * DAY },
-    ],
-  });
+/**
+ * **Rows as the API answers them** (task 131). They were built by `toAccessRows` from two
+ * collections and then run through `applyAccessView` here, which meant this file was rendering the
+ * output of the browser tier's filter and sort. Those are the database's now, so the fixture is what
+ * arrives on the wire: already merged, already ordered, already carrying the standing the server
+ * derived. That makes this spec about the board and nothing else, which is what it was always for.
+ */
+const rows = (): AccessRow[] => [
+  {
+    kind: ACCESS_ROW_KIND.MEMBER,
+    id: 'm-1',
+    accountId: 'a-1',
+    email: 'ana@example.md',
+    role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+    standing: ACCESS_STANDING.ACTIVE,
+    lastActiveAt: NOW - DAY,
+    joinedAt: NOW - 30 * DAY,
+  },
+  {
+    kind: ACCESS_ROW_KIND.INVITATION,
+    id: 'i-1',
+    email: 'bogdan@example.md',
+    role: MEMBERSHIP_ROLE.EDITOR,
+    standing: ACCESS_STANDING.INVITED,
+    issuedAt: NOW - DAY,
+    expiresAt: NOW + 6 * DAY,
+  },
+  {
+    kind: ACCESS_ROW_KIND.INVITATION,
+    id: 'i-2',
+    email: 'corina@example.md',
+    role: MEMBERSHIP_ROLE.VIEWER,
+    standing: ACCESS_STANDING.INVITED,
+    issuedAt: NOW - DAY,
+    expiresAt: NOW + 6 * DAY,
+  },
+];
+
+/** One page of them, as `readOrganizationAccess` assembles it from the envelope. */
+const pageOf = (given: readonly AccessRow[]): AccessPage => ({
+  rows: given,
+  matched: given.length,
+  total: given.length,
+  page: 1,
+  pageSize: ACCESS_PAGE_SIZE,
+  // The organization's count, not the page's — see `isLastAdministrator`. One administrator is what
+  // this fixture holds, which is what makes the lockout cases below reachable.
+  administrators: given.filter(
+    (row) => row.kind === ACCESS_ROW_KIND.MEMBER && row.role === MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
+  ).length,
+});
 
 /**
  * The provider the app actually gives this island, restated because a jsdom test cannot inherit it.
@@ -107,12 +141,7 @@ const board = (given: readonly AccessRow[] = rows()) => (
     timeZone={TIME_ZONE}
     messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
   >
-    <AccessProvider
-      page={applyAccessView({ rows: given, view: DEFAULT_ACCESS_VIEW, now: NOW })}
-      view={DEFAULT_ACCESS_VIEW}
-      now={NOW}
-      inviteAnchorId="invite"
-    >
+    <AccessProvider page={pageOf(given)} view={DEFAULT_ACCESS_VIEW} inviteAnchorId="invite">
       <AccessBoard />
     </AccessProvider>
   </NextIntlClientProvider>
@@ -230,16 +259,8 @@ describe('AccessBoard · the two empty states', () => {
         messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
       >
         <AccessProvider
-          page={{
-            rows: [],
-            matched: 0,
-            total: given.length,
-            page: 1,
-            pageCount: 1,
-            pageSize: ACCESS_PAGE_SIZE,
-          }}
+          page={{ ...pageOf(given), rows: [], matched: 0 }}
           view={DEFAULT_ACCESS_VIEW}
-          now={NOW}
           inviteAnchorId="invite"
         >
           <AccessBoard />

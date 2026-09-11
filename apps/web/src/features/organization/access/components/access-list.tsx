@@ -24,8 +24,8 @@ import { ACCESS_FILTER_ANY, accessRowKey, type AccessRow, type AccessSort } from
  */
 export function AccessList() {
   const t = useTranslations('organization.access');
-  const { page, view, now, inviteAnchorId, setView } = useAccess();
-  const columns = useAccessColumns(now);
+  const { page, view, inviteAnchorId, setView } = useAccess();
+  const columns = useAccessColumns();
 
   const clearFilters = useCallback(
     () => setView({ role: ACCESS_FILTER_ANY, standing: ACCESS_FILTER_ANY }),

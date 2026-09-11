@@ -576,6 +576,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List everyone with access to the active organization, members and invitations as one
+         * @description Answers "who can see our ESG data" as a single ordered list across active memberships and pending invitations, with the filter, the order and the page applied to the merged set. The standing is derived server-side from now(), so a row cannot be admitted by the filter as live and rendered as expired on the same request.
+         */
+        get: operations["AccessController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations": {
         parameters: {
             query?: never;
@@ -1294,6 +1314,8 @@ export interface components {
             /** @example 6 */
             totalpages: number;
             messages: components["schemas"]["MessageDto"][];
+            /** @description Rows before any filter was applied. Present only on routes that accept filters; `total` is the count after filtering and is what pages are counted from. */
+            unfiltered?: number;
         };
         LinkedProviderResponseDto: {
             /** @enum {string} */
@@ -1457,6 +1479,43 @@ export interface components {
              * @enum {string}
              */
             grant: "created" | "reactivated" | "already_member";
+        };
+        AccessRowResponseDto: {
+            /**
+             * @description Which collection this row came from, and the discriminator for the fields below. A member holds access now; an invitation has been sent and not accepted.
+             * @enum {string}
+             */
+            kind: "member" | "invitation";
+            /**
+             * Format: uuid
+             * @description The handle this row’s actions need — a membership id for a member, an invitation id for an invitation. Unique within its own collection only, so a caller keying rows must qualify it with `kind`.
+             */
+            id: string;
+            /** Format: email */
+            email: string;
+            /**
+             * @description The role held, or for an invitation the role it will grant when accepted.
+             * @enum {string}
+             */
+            role: "editor" | "viewer" | "organization_administrator";
+            /**
+             * @description Derived server-side from now(): a member is always active, and a pending invitation is invited or invitation_expired according to its own expiry. Expired invitations are published rather than hidden — an expired one is what refuses a re-invite with a 409, so hiding it would leave an administrator holding a conflict they cannot see or resend.
+             * @enum {string}
+             */
+            standing: "active" | "invited" | "invitation_expired";
+            /**
+             * Format: uuid
+             * @description The account holding the membership. Null when kind is invitation — nobody holds it yet.
+             */
+            accountId: Record<string, never> | null;
+            /** @description Unix epoch milliseconds when access was granted. Null when kind is invitation, which has not been accepted and so granted nothing. */
+            joinedAt: number | null;
+            /** @description Unix epoch milliseconds of this member’s last request. Null when they have not returned since being granted access, and null for an invitation. */
+            lastActiveAt: number | null;
+            /** @description Unix epoch milliseconds when the invitation was last issued — a resend moves this and restarts the window. Null when kind is member. */
+            issuedAt: number | null;
+            /** @description Unix epoch milliseconds when the invitation lapses. Null when kind is member. */
+            expiresAt: number | null;
         };
         OrganizationChangeAttributionDto: {
             /**
@@ -3396,6 +3455,46 @@ export interface operations {
             };
             /** @description The link cannot be used (problem type invitation-not-acceptable). The document carries a standing member saying which: expired, consumed, revoked, or unknown. None is retryable — ask an administrator for a new invitation. */
             410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AccessController_list: {
+        parameters: {
+            query?: {
+                /** @description Rows per page. `-1` (all rows) is refused on this route. */
+                onpage?: number;
+                /** @description 1-based. */
+                page?: number;
+                /** @description One ordering: `<person|role|standing|activity>,<asc|desc>`. Defaults to `activity,desc` — an administrator opening this screen is looking at who is here now. Role and standing order by rank rather than alphabetically: widest access first, needing-attention first. */
+                order?: unknown;
+                /** @description Compact facets: `role,<role>` and `standing,<standing>`, pipe-separated. A value outside the published enum, or a field this route does not define, is ignored rather than refused. */
+                filters?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the merged list. `total` counts rows surviving the filter and is what pages are counted from; `unfiltered` counts rows before it, which is what tells an empty result whether nobody has been invited yet or the filter matched nobody. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["AccessRowResponseDto"][];
+                    };
+                };
+            };
+            /** @description The caller holds no membership in an active organization (problem type membership-required), or holds one in a role that is not organization_administrator (problem type insufficient-role). */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
