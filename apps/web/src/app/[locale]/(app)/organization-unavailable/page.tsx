@@ -3,7 +3,7 @@ import { Callout, CALLOUT_INTENT, FocusColumn, TextLink } from '@easyesg/ui';
 import { redirect } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { POST_SIGN_IN, targetLocale } from '@/features/identity/post-sign-in';
-import { resolvePostSignIn } from '@/server/post-sign-in';
+import { destinationForHeldSession } from '@/server/post-sign-in';
 
 /**
  * S-35 — Organization unavailable · CA · UC-16 (failure path) · Focus
@@ -38,7 +38,9 @@ export default async function OrganizationUnavailablePage({ params }: { params: 
   // would send the request before the locale exists and bring back problem text in the wrong
   // language. It looks like the waterfall `async-parallel` names; it is a data dependency.
   const locale = await activateRequestLocale(params);
-  const target = await resolvePostSignIn();
+  // The **held-session** read, so this page and the global tier above it share one call to
+  // `/memberships` rather than making the same one twice in a single render pass (11 Sep 2026).
+  const target = await destinationForHeldSession();
   if (target.href !== POST_SIGN_IN.ORGANIZATION_UNAVAILABLE) {
     redirect({ href: target.href, locale: targetLocale(target, locale) });
   }

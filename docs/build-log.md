@@ -15590,6 +15590,38 @@ pattern in them is one thing — **the "are there others?" question, asked of th
   boundary; `build-log.md` owns no decisions, so §12.5.6 now carries it with the half of that
   rationale which still holds.
 
+### A follow-on the same day: "every page fetches `readActiveMembership()`"
+
+The project owner asked whether the repeated call was a smell, and whether a provider and hook would
+be cleaner. **No, and the rule was already closed** — the four homes of state put the active
+organization server-side and never in client state, because a store holding it is the second source
+of tenancy UX-2 forbids from the URL, wearing a different hat; an org-switch race then renders one
+tenant's chrome around another's data *above* the RLS boundary, where AD-2's probes never look.
+React Context also does not exist in an RSC render, so the provider would force `global-tier.tsx`
+client-side and put the `chrome` catalogue back into the bundle task 30.1 kept it out of. And
+`cache()` is request-scoped memoization rather than a cache in §14.2's sense: five call sites make
+one HTTP call.
+
+**The question surfaced a real duplicate anyway, and it was the seam rather than the pattern.**
+`/organization-unavailable` sits inside `(app)`, whose layout renders the global tier — so the page's
+`resolvePostSignIn` and the tier's `readActiveMembership` were issuing **two identical `/memberships`
+calls in one render pass**, which is precisely what `server/memberships.ts` says its `cache()` exists
+to prevent, arriving through the one screen that was not using it. The seam is now two functions
+named for the distinction that matters: `resolvePostSignIn` asks about the session this request
+**created**, `destinationForHeldSession` about the one it **arrived with**, and only the second reads
+through the memoization.
+
+**Two things kept me honest here, and the second is the one worth carrying.** The establishing
+callers keep the uncached read because `cache()` memoizes on the function and its arguments and
+cannot see the cookie change underneath it — but no caller can reach that today, since a Server
+Action's body runs before Next re-renders and the provider callback renders nothing at all, so this
+is a guard against a fourth caller rather than a fixed bug, and the docblock says which. And **the
+spec I set out to write cannot exist**: React's `cache()` is a pass-through without a request
+dispatcher, measured at two invocations for two calls under vitest, so a test asserting the two
+seams disagree would have been green whether or not they did. The first draft of the docblock
+already claimed *"`post-sign-in.spec.ts` holds that"* — a sentence that would have shipped a fake
+gate and read as reassurance. It is recorded as an uncoverable gap instead, like `account-menu.tsx`.
+
 ### Verified
 
 `apps/web` **364 tests** — 28 new in `route-access.spec.ts` (the two pathname tables, the two set
