@@ -1,5 +1,5 @@
 import { Panel, Skeleton, SKELETON_SHAPE } from '@easyesg/ui';
-import styles from '../styles/home.module.css';
+import styles from '../../styles/home.module.css';
 
 /**
  * `MembershipsSection`'s §8.1 `loading — initial`.

@@ -420,21 +420,28 @@ conditional render, which is how it ends up half-suppressed on one screen.
   │  ├─ arrival/       arrival-notice
   │  ├─ heading/       organization-heading · heading-loading
   │  ├─ overview/      section/ · regions/ · states/ · shared/
-  │  ├─ memberships/   memberships-section · memberships-loading
+  │  ├─ memberships/   section/ · list/ · states/ · shared/
+  │  ├─ shared/        home-region
   │  └─ styles/        home.module.css
   └─ tools/            home.ts · overview.ts · their two specs
   ```
 
   **The top level is what the route renders** — one folder per child of S-05's `return`, in the same
-  order, **plus `styles/` for what belongs to none of them**. So the page tells you four of the five
-  and the fifth is the exception the next paragraph is about; a listing is never shorter than the
-  `return`, which is the property worth having. **Below it the question is
-  always the same one:** how many siblings read this file? One, and it lives with that sibling; more
-  than one, and it gets its own leaf. That is what puts the stylesheet in `styles/` rather than above
-  the regions, and `overview-region.tsx` in `shared/` rather than in `regions/` — `OverviewEmpty`, in
-  `states/`, wears it too. `shared/` carries that admission test in its own docblock, because a
-  folder named for sharing becomes a junk drawer the first time something is put there for being
-  hard to place.
+  order, **plus a leaf for each thing that belongs to none of them**: `styles/` and, since task 128,
+  `shared/`. A listing is never *shorter* than the `return`, which is the property worth having.
+  **Below it the question is always the same one:** how many siblings read this file? One, and it
+  lives with that sibling; more than one, and it gets its own leaf at the level where all its readers
+  can see it.
+
+  **That question is what moves a file up, and it has now moved one twice.** `home-region.tsx` — a
+  `Panel` and the `h2` that names a region — began as four copies of an incantation inside the
+  overview, became `overview/shared/overview-region.tsx` when three regions and an empty state read
+  it, and became `components/shared/home-region.tsx` when splitting the memberships region found the
+  fifth copy. It lost `Overview` from its name at that point, because a region's heading **level**
+  follows from the screen having one `h1` and was never the overview's business. A `shared/` folder
+  at two levels is the same rule asked about different siblings, which is why they share a name —
+  and each carries its admission test in a docblock, because a folder named for sharing becomes a
+  junk drawer the first time something is put there for being hard to place.
 
   **`tools/` is the rule above's *rules* under a different name.** That sentence — "its own rules,
   its own actions and its own `components/`" — describes what a screen folder contains, not what its

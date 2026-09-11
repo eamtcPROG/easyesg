@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { mayWrite } from '@/server/memberships';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { OverviewRegion } from '../shared/overview-region';
+import { HomeRegion } from '../../shared/home-region';
 import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
 
 /**
@@ -31,7 +31,7 @@ export async function OverviewEmpty({
   const canWrite = mayWrite(membership);
 
   return (
-    <OverviewRegion heading={t('everything.heading')}>
+    <HomeRegion heading={t('everything.heading')}>
       <EmptyState
         title={t('empty.title')}
         action={
@@ -45,6 +45,6 @@ export async function OverviewEmpty({
       >
         {t('empty.body')}
       </EmptyState>
-    </OverviewRegion>
+    </HomeRegion>
   );
 }

@@ -10,8 +10,13 @@
  * with alternatives to choose between, it is one value several files must spell identically.
  *
  * **In `shared/` because all three sibling folders read it** — `section/`, `regions/` and
- * `states/` — which is the folder's whole admission test (`overview-region.tsx` states it). Seven
- * files import it; that they share one declaration is the point, and where that declaration sits
- * follows from who reads it rather than from what kind of thing it is.
+ * `states/` — which is the folder's whole admission test. Seven files import it; that they share
+ * one declaration is the point, and where that declaration sits follows from who reads it rather
+ * than from what kind of thing it is.
+ *
+ * **It is the only file here since task 128**, when the region shell it used to sit beside rose to
+ * `components/shared/` — two regions read that, and only the overview reads this. The test is the
+ * same at both levels and that is why the folders share a name: *is it read by more than one
+ * sibling?* — answered against different siblings.
  */
 export const OVERVIEW_MESSAGES = 'organization.home.overview';

@@ -21,8 +21,11 @@ import styles from '../../styles/home.module.css';
  * **In `regions/` rather than in `shared/`** (task 126), and the two folders are told apart by one
  * question: *does more than one of these sibling folders read it?* The *attention* and *everything*
  * regions draw this row and nothing else on the screen does — the overview's other arms replace the
- * regions rather than compose them, so they never reach a row. `OverviewRegion` is the
- * counter-example and why `shared/` exists: `OverviewEmpty`, in `states/`, wears it too.
+ * regions rather than compose them, so they never reach a row. `HomeRegion` was the
+ * counter-example that made `shared/` necessary — `OverviewEmpty`, in `states/`, wears it too — and
+ * task 128 moved it one level further out again, to `components/shared/`, once the memberships
+ * region turned out to wear it as well. The test never changed, only which siblings it was asked
+ * about.
  *
  * **It is not an inventory addition either, and that is UX-89's second step answered rather than
  * skipped.** §11.5's Data table is the Index archetype's — sortable, filterable, paginated, and a

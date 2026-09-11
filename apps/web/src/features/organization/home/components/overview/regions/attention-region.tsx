@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { mayWrite } from '@/server/memberships';
 import { attentionRows, type OverviewRow } from '../../../tools/overview';
 import { FilingList } from './filing-list';
-import { OverviewRegion } from '../shared/overview-region';
+import { HomeRegion } from '../../shared/home-region';
 import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
 import styles from '../../styles/home.module.css';
 
@@ -42,7 +42,7 @@ export async function AttentionRegion({
   const needingAttention = attentionRows(rows);
 
   return (
-    <OverviewRegion heading={t('attention.heading')}>
+    <HomeRegion heading={t('attention.heading')}>
       {needingAttention.length === 0 ? (
         <EmptyState title={t('attention.empty.title')} action={null}>
           {t('attention.empty.body')}
@@ -53,6 +53,6 @@ export async function AttentionRegion({
           <FilingList rows={needingAttention} canWrite={canWrite} />
         </>
       )}
-    </OverviewRegion>
+    </HomeRegion>
   );
 }

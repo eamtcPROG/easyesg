@@ -6,8 +6,8 @@ import { HeadingLoading } from '@/features/organization/home/components/heading/
 import { OrganizationHeading } from '@/features/organization/home/components/heading/organization-heading';
 import { OverviewLoading } from '@/features/organization/home/components/overview/section/overview-loading';
 import { OverviewSection } from '@/features/organization/home/components/overview/section/overview-section';
-import { MembershipsLoading } from '@/features/organization/home/components/memberships/memberships-loading';
-import { MembershipsSection } from '@/features/organization/home/components/memberships/memberships-section';
+import { MembershipsLoading } from '@/features/organization/home/components/memberships/section/memberships-loading';
+import { MembershipsSection } from '@/features/organization/home/components/memberships/section/memberships-section';
 import styles from '@/features/organization/home/components/styles/home.module.css';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
@@ -42,8 +42,10 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * **One file did, and the rule the owner then gave is what settled where it goes:** *a directory
  * holds files or folders, never both.* `home.module.css` is read by all four regions, so it belongs
  * to none of them — and under that rule it cannot sit above them either. It is `styles/`, a fifth
- * leaf. The same rule empties `home/`'s own root into `components/` and `tools/`, and splits
- * `overview/` — the one region with arms — into `section/`, `regions/`, `states/` and `shared/`.
+ * leaf; `shared/` is a sixth, holding the `Panel`-and-`h2` anatomy two of the regions wear. The same
+ * rule empties `home/`'s own root into `components/` and `tools/`, and splits the two regions that
+ * have parts — `overview/` into `section/`, `regions/`, `states/` and `shared/`, and `memberships/`
+ * into `section/`, `list/`, `states/` and `shared/`.
  * Every directory under `home/` now answers *files or folders?* with one of the two, and what
  * decides which leaf a file lands in is always the same question: how many of the siblings read it.
  *

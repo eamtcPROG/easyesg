@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { mayWrite } from '@/server/memberships';
 import { everythingRows, type OverviewRow } from '../../../tools/overview';
 import { FilingList } from './filing-list';
-import { OverviewRegion } from '../shared/overview-region';
+import { HomeRegion } from '../../shared/home-region';
 import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
 import styles from '../../styles/home.module.css';
 
@@ -37,9 +37,9 @@ export async function EverythingRegion({
   const canWrite = mayWrite(membership);
 
   return (
-    <OverviewRegion heading={t('everything.heading')}>
+    <HomeRegion heading={t('everything.heading')}>
       <p className={`t-body ${styles.lede}`}>{t('everything.lede')}</p>
       <FilingList rows={everythingRows(rows)} canWrite={canWrite} />
-    </OverviewRegion>
+    </HomeRegion>
   );
 }

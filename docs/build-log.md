@@ -16415,3 +16415,92 @@ task 126 did not already decline: no barrel added (`bundle-barrel-imports` — t
 `access/index.ts` re-exporting the three folders), every specifier a static literal
 (`bundle-analyzable-paths`), and no Client Component's behaviour touched — `access/components/` holds
 eight of them and the diff changes only which path their imports name.
+
+## Task 128 — the region that was still building its own Panel · 2026-09-11
+
+*"Refactor `memberships-section.tsx` into smaller component files."*
+
+Task 125 split the overview, 126 gave S-05 its folders, 127 carried them to the sibling screens. This
+region was the one left whole: 91 lines holding a read, a heading, an error arm, a list, a row and a
+footer.
+
+### Six files over four folders, shaped like `overview/` on purpose
+
+```
+memberships/
+├─ section/   memberships-section · memberships-loading · memberships-switch-note
+├─ list/      memberships-list · membership-row
+├─ states/    memberships-unreachable
+└─ shared/    memberships-messages
+```
+
+A reader who has learned `overview/` can read this without learning anything new: `section/` is what
+the route renders plus the fallback `page.tsx` pairs with it, the ready arm has its own folder, the
+non-ready arms have theirs, and `shared/` is what more than one of them reads.
+
+Three placements are decisions rather than symmetry:
+
+- **The switch note is the section's child, not the list's.** It renders in the failure arm too — a
+  reader whose list did not load still needs to be told where switching happens, and arguably needs
+  it more. That is the whole reason it is a file instead of three lines inside the list.
+- **`states/` holds one file, and that is the honest count.** There is no `empty` arm to write:
+  §4.3's post-sign-in branch sends a reader who belongs to nothing to S-04, so anyone who can see
+  S-05 holds at least one membership by construction. A folder of one beats a folder waiting to be
+  filled.
+- **`MembershipRow` takes the whole membership, not three strings.** That is task 125's rule — the
+  section reads, the parts derive — and also the root file's ban on adjacent same-typed parameters:
+  `(name, role, active)` is two adjacent `string`s that compile swapped and render a plausible wrong
+  answer.
+
+**`MEMBERSHIPS_MESSAGES` narrows the namespace to `organization.home.memberships`.** The section
+spelled `'organization.home'` and reached its keys through a `memberships.` prefix; five files would
+have spelled it five times. Narrowing drops the prefix from every key as well, so `membership-row.tsx`
+reads `t('active')` and cannot reach a sibling region's copy by accident. Exactly
+`overview-messages.ts`'s history, applied before the duplication rather than after it.
+
+### The split found the fifth copy of the region shell
+
+`overview/shared/overview-region.tsx` exists because `` `t-heading-3 ${styles.regionHeading}` `` had
+been written four times inside the overview — four places for an `h2` to become an `h3`. **This file
+was the copy that survived that consolidation**, and splitting it was about to write a sixth into a
+brand-new file.
+
+So the component rose one level, to `components/shared/home-region.tsx`, and **lost `Overview` from
+its name**: a region's heading *level* follows from the screen having one `h1`, and was never the
+overview's business. Five callers now — three overview regions, the overview's empty state, and this
+one.
+
+**Two `shared/` folders now exist at two levels, and they share a name because they are the same
+rule.** *Is this read by more than one sibling?* — asked about the overview's four folders in one
+case and about the screen's six in the other. Each carries the test in a docblock, because a folder
+named for sharing becomes a junk drawer the first time something lands there for being hard to place.
+
+This is the project owner's first correction of this session reaching its last site: *"it is
+repeating itself, it does not respect DRY conventions — this should be done in one place."*
+
+### Task 126's invariant spec caught a real mistake on its first live use
+
+I wrote the new section into `section/` and did not delete the original. `typecheck` passed — the old
+file still compiled, imported by nothing — and the browser suite would have passed too, since the
+route points at the new path. What failed was `folder-shape.spec.ts`, naming it exactly:
+
+> `home/components/memberships` holds files [memberships-section.tsx] beside folders [list, section,
+> shared, states]
+
+That is the case the spec was written for two tasks ago, arriving unprompted: a file left at a level
+that now holds folders. Worth recording because the argument for adding it was speculative — *"the
+next task adds one file beside `overview/`'s four folders and the tree drifts back with every gate
+green"* — and the next task did precisely that.
+
+### Verified
+
+**Narrowly, at the owner's instruction** (*"no need to run the gate"*): `pnpm --filter @easyesg/web
+typecheck` and **394** unit tests, plus `docs:check` at 28 claims for the task-count change this
+entry's row makes. The browser suite is **waived and not claimed** — this is a move plus a component
+rename with no change to markup, copy or behaviour, and `page.tsx` renders the same four children in
+the same order. CI runs the full set on push.
+
+What that waives specifically: the 14 axe scans, and `home.spec.ts`'s streaming case — which is worth
+naming because this diff touches the region that case's pending-boundary count is about. The count is
+unchanged by construction (no boundary added or removed, and `MembershipsSection` still awaits the
+same memoized promise), but unchanged-by-construction is an argument, not a measurement.

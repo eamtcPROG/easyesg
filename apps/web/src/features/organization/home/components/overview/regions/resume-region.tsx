@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { reportRoute } from '@/lib/routes';
 import { resumableRow, type OverviewRow } from '../../../tools/overview';
-import { OverviewRegion } from '../shared/overview-region';
+import { HomeRegion } from '../../shared/home-region';
 import { OVERVIEW_MESSAGES } from '../shared/overview-messages';
 import styles from '../../styles/home.module.css';
 
@@ -27,7 +27,7 @@ import styles from '../../styles/home.module.css';
  *
  * The behaviour is unchanged and is still UX-6's: **no row, no box.** A region headed *where did I
  * leave off* over an empty panel answers a question nobody asked, and UX-6 orders three questions
- * rather than requiring three boxes — so this returns `null` rather than an empty `OverviewRegion`.
+ * rather than requiring three boxes — so this returns `null` rather than an empty `HomeRegion`.
  *
  * **It takes rows, not the read**, for the reason its two siblings do: `resumableRow` is a pure
  * selector over rows that are already dated, and the clock stays in `overview-section.tsx`.
@@ -39,7 +39,7 @@ export async function ResumeRegion({ rows }: { readonly rows: readonly OverviewR
   const t = await getTranslations(OVERVIEW_MESSAGES);
 
   return (
-    <OverviewRegion heading={t('resume.heading')}>
+    <HomeRegion heading={t('resume.heading')}>
       <p className={`t-body ${styles.lede}`}>
         {t('resume.body', {
           entity: row.entityName,
@@ -53,6 +53,6 @@ export async function ResumeRegion({ rows }: { readonly rows: readonly OverviewR
       <TextLink asChild>
         <Link href={reportRoute(row.reportId)}>{t('resume.action')}</Link>
       </TextLink>
-    </OverviewRegion>
+    </HomeRegion>
   );
 }
