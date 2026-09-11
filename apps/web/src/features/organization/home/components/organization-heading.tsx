@@ -3,7 +3,23 @@ import { readActiveMembership } from '@/server/memberships';
 import styles from './home.module.css';
 
 /**
- * S-05's header: the organization the reader is acting for, and the role they hold in it.
+ * S-05's heading: the organization the reader is acting for, and the role they hold in it.
+ *
+ * **`hgroup`, not `header`** (11 Sep 2026, project owner). The two are not interchangeable and this
+ * content is the second one's: `header` represents *"a group of introductory or navigational
+ * aids"* — a logo, a search box, an action beside a title — while `hgroup` is defined as a heading
+ * plus one or more `p` elements carrying *"a subheading, alternative title, or tagline"*, and only
+ * the heading contributes to the document outline. An organization's name with the reader's role
+ * beneath it is a title and its tagline exactly.
+ *
+ * **The duplicate-banner worry is not the reason, and saying so matters.** HTML-AAM lists `main`
+ * among the ancestors that suppress `header`'s `banner` role, and `(workspace)`'s layout relies on
+ * that deliberately — so the old element was no second landmark. It was worse than wrong in an
+ * interesting way: bare, inside `main`, it mapped to `role="generic"` and carried no class, so it
+ * asserted a semantic it did not have and did nothing at all.
+ *
+ * Four siblings shared the shape and changed with it; the screens whose heading sits beside a
+ * **control** — S-06, S-13, S-14 — keep `header`, which is what that element is for.
  *
  * **The heading names the organization, not the reader** (task 30.5, unchanged): the artboard's
  * *"Good afternoon, Ana"* needs a display name registration does not collect (OQ-16, open) and a
@@ -29,11 +45,11 @@ export async function OrganizationHeading() {
   ]);
 
   return (
-    <header>
+    <hgroup>
       <h1 className={`t-heading-1 ${styles.title}`}>
         {active ? active.organizationName : t('title')}
       </h1>
       <p className={`t-body ${styles.lede}`}>{active ? tRoles(active.role) : t('lede')}</p>
-    </header>
+    </hgroup>
   );
 }

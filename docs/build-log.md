@@ -15880,3 +15880,85 @@ mechanical split got wrong, an `ApiOutcome` import left behind in `access/action
 writes all returned the aliased type — `pnpm boundaries` (1,019 modules), `pnpm docs:check` 28
 claims, and `pnpm e2e:web --project identity --project expansion` at **168 passed**. A pure move with
 no behaviour change.
+
+## Task 124 — `<header>` where the markup meant `<hgroup>` · 2026-09-11
+
+*"Use `<header>` — this is wrong from the point of the structure of html."*
+
+Pointed at `organization-heading.tsx`. It was right, and checking the **wrong** objection first is what
+made the finding precise rather than a capitulation.
+
+### The obvious reason is not the reason
+
+The reflex is *"a second `<header>` means a second `banner` landmark"*. It does not: HTML-AAM lists
+`main` among the ancestors that suppress it, `(workspace)`'s layout relies on that deliberately, and
+this repository had already written the mechanism down. So there was no duplicate landmark and no
+axe violation — which is also why nothing had ever caught it.
+
+What was actually wrong is the element. `header` represents *"a group of introductory or
+navigational aids"* — a logo, a search box, an action beside a title. `hgroup` is a heading plus one
+or more `p` elements carrying *"a subheading, alternative title, or tagline"*, and only the heading
+contributes to the outline. An organization's name with the reader's role beneath it is the second
+thing, exactly. Verified against the spec rather than recalled, because `hgroup` is one of the few
+elements whose definition genuinely moved — dropped in HTML5.1, returned to the Living Standard in
+2022 with the content model above.
+
+And the instance was worse than merely imprecise: **bare** inside `main`, it mapped to
+`role="generic"` and carried no class. It asserted a semantic it did not have and did nothing at all.
+
+### The line the sweep splits on
+
+Five sites shared the shape, four besides the one named. The split is not a judgement call, which is
+what makes it worth writing down:
+
+| | |
+| --- | --- |
+| **`hgroup`** — a heading and its tagline | `organization-heading.tsx`, S-16's screen and its `loading.tsx`, `reports/new/page.tsx`, `RecordShell` |
+| **`header`** — a heading **beside a control** | S-06, S-13, S-14, `WizardShell` |
+| **`header`** — the real page banner | `FocusShell` |
+
+`reports/new` lost a wrapper `<div>` with the change, because `hgroup`'s content model admits only a
+heading and `p`s — and it lost `styles.header` too, since that class is the two-column flex row for a
+title beside an action and this screen has none. `.screen`'s own gap was always what spaced it, so
+the rendering is unchanged.
+
+### The one that pays for itself
+
+`RecordShell` is in `packages/ui`, and changing it **retires a fragility `(workspace)`'s layout was
+absorbing**. That `<main>` exists partly to suppress this element's banner role — recorded there as
+*"S-28 would have had two banners the moment a real one appeared above it. Nesting is the fix the
+HTML spec itself names; changing `RecordShell` would have treated the symptom."* That was a fair call
+at the time and the diagnosis was half right: the symptom was the banner, and the disease was the
+element. An `hgroup` has no banner role to suppress, so the shell is now correct wherever it is
+mounted rather than correct because of what encloses it. The comment keeps the history and marks it
+as history, because the layout's **first** reason — the bypass-blocks landmark — never depended on
+any of this and is still load-bearing.
+
+### Why nothing caught it, and why nothing will
+
+No gate can. The ARIA tree is identical before and after — `generic` either way — so the 14 axe scans
+pass on both, and they are what stands behind the change rather than what found it. `typecheck` and
+`lint` see a valid intrinsic element in both cases. A rule that flagged `<header>` inside `<main>`
+would fire on S-06, S-13, S-14 and `WizardShell`, which are correct, so the shape is not decidable by
+a selector — it turns on whether the group contains a control. Recorded as a judgement with its line
+drawn, which is the honest form.
+
+### Verified
+
+`apps/web` **364 tests**, `packages/ui` **135**, both typechecks, `pnpm lint` uncached,
+`pnpm e2e:web --project identity --project expansion` at **168 passed** including its 14 axe scans.
+No CSS depended on the element name — every rule in both workspaces is a module class.
+
+**`pnpm gates:clean` was started and stopped at the owner's instruction** — *"no need for the full
+gate in this case"* — so it is **not** claimed. What that waives, specifically, is the
+`packages/ui`-touching half the sub-step table asks for: `apps/admin`'s unit suite, `routes:check`,
+`e2e:web --project admin`, plus `boundaries`, `image:check`, `facade:check`, the two `*:prove` gates
+and the cross-workspace half of `typecheck`. The assumption meanwhile is the one the 8 Sep policy
+already records — CI runs the full set on every push to `dev` — and it is a reasonable call on this
+diff in particular, and the risk was **measured rather than reasoned about**. The one thing that
+could bite is `RecordShell` being rendered outside a `<main>`, where the old `<header>` *was* a
+`banner` and the new `hgroup` is not — a landmark silently removed. It has exactly two importers,
+`organization-profile-form.tsx` (S-15) and `credentials-board.tsx` (S-28), both inside
+`(workspace)`'s `<main>`, and **`apps/admin` does not import it at all** — which is also the half of
+the sub-step run the waiver skips. Five elements changed name, and no CSS selector or test locator in
+either workspace names an element.

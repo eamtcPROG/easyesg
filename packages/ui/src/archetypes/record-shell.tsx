@@ -16,6 +16,15 @@ import styles from './record-shell.module.css';
  * per-section action lives on the section, where the screen that has six of them needs it.
  *
  * **What it owns is the heading structure, and that is the rule worth extracting.** A Record is a
+ * **The identity block is an `hgroup`, not a `header`** (11 Sep 2026): a title and its summary are a
+ * heading plus a tagline, which is `hgroup`'s whole definition, where `header` means introductory or
+ * navigational *aids* — and this shell keeps `actions` as a separate sibling below, so there are
+ * none in the group. It also retires a fragility the `(workspace)` layout had to absorb: that
+ * layout's `<main>` exists partly to suppress this element's `banner` role, recorded there as
+ * *"S-28 would have had two banners the moment a real one appeared above it"*. An `hgroup` has no
+ * banner role to suppress, so the shell is now correct wherever it is mounted rather than correct
+ * because of what encloses it.
+ *
  * page-level object with named groups beneath it, so it is one `<h1>` and an `<h2>` per section,
  * with each section labelled by its own heading via `aria-labelledby`. Written by hand six times
  * that becomes six chances to nest a `<h3>` under nothing, or to give a section a heading the
@@ -49,10 +58,10 @@ export interface RecordShellProps {
 export function RecordShell({ title, summary, actions, attribution, children }: RecordShellProps) {
   return (
     <div className={styles.record}>
-      <header className={styles.identity}>
+      <hgroup className={styles.identity}>
         <h1 className={styles.title}>{title}</h1>
         {summary ? <p className={styles.summary}>{summary}</p> : null}
-      </header>
+      </hgroup>
 
       <div className={styles.sections}>{children}</div>
 

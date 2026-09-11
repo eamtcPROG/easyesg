@@ -57,10 +57,10 @@ export default async function UsersAndAccessPage({ params, searchParams }: Props
 
   return (
     <div className={styles.screen}>
-      <header>
+      <hgroup>
         <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
         <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-      </header>
+      </hgroup>
 
       <AccessScreenBody read={read} query={query} />
     </div>

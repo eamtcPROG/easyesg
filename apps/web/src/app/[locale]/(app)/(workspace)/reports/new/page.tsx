@@ -64,12 +64,14 @@ export default async function NewReportPage({ params, searchParams }: Props) {
 
   return (
     <div className={styles.screen}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-          <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-        </div>
-      </header>
+      {/* No `styles.header`: that class is the two-column row for a screen with an action beside
+          its title, and this screen has none. `hgroup` admits only a heading and `p`s, so the
+          wrapper that used to be the row's left column goes with it — `.screen`'s own gap was
+          always what spaced this, and the rendering is unchanged. */}
+      <hgroup>
+        <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
+        <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
+      </hgroup>
 
       <NewReportBody read={read} entityId={entityId} periodId={single(query, 'period')} />
     </div>

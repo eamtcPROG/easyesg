@@ -36,11 +36,18 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
 
         It gives every workspace screen the landmark 2.4.1's bypass-blocks technique relies on —
         the global tier is a `banner` now, and a page with chrome and no main is where a
-        screen-reader user has nothing to skip TO. And it repairs a duplicate this task would
+        screen-reader user has nothing to skip TO. And it repaired a duplicate this task would
         otherwise have created: `<header>` maps to `banner` unless it descends from `article`,
-        `aside`, `main`, `nav` or `section`, and `RecordShell` renders one — so S-28 would have had
-        two banners the moment a real one appeared above it. Nesting is the fix the HTML spec
-        itself names; changing `RecordShell` would have treated the symptom.
+        `aside`, `main`, `nav` or `section`, and `RecordShell` rendered one — so S-28 would have had
+        two banners the moment a real one appeared above it. Nesting was the fix the HTML spec
+        itself names, and the alternative was recorded here as treating the symptom.
+
+        **That second reason is history since 11 Sep 2026 and the paragraph keeps it on purpose.**
+        `RecordShell`'s identity block is an `hgroup` now — a heading and its tagline, which is what
+        it always was — so there is no `banner` role left for this element to suppress. The screens
+        that still render a `<header>` inside here are the ones whose title sits beside a control
+        (S-06, S-13, S-14), and they are correct: that is what `header` means. What remains
+        load-bearing above is the **first** reason, which never depended on any of this.
       */}
       <main className={styles.main}>{children}</main>
     </>

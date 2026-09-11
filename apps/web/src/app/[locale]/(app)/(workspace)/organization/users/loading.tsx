@@ -24,10 +24,10 @@ export default async function UsersAndAccessLoading() {
 
   return (
     <div className={styles.screen}>
-      <header>
+      <hgroup>
         <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
         <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-      </header>
+      </hgroup>
       <Panel>
         <p className="t-body" role="status">
           <Spinner /> {t('loading')}
