@@ -15962,3 +15962,100 @@ could bite is `RecordShell` being rendered outside a `<main>`, where the old `<h
 `(workspace)`'s `<main>`, and **`apps/admin` does not import it at all** — which is also the half of
 the sub-step run the waiver skips. Five elements changed name, and no CSS selector or test locator in
 either workspace names an element.
+
+## Task 125 — six states in one file, and a docblock arguing against its own refactor · 2026-09-11
+
+*"Refactor `overview-section.tsx` into smaller file components."*
+
+Task 115 split S-05 into four regions and left the largest of them whole: 221 lines holding the read,
+the branch, UX-6's three questions, a first-use empty, two refusal arms and the skeleton fallback.
+Eight files now, the orchestrator at 82.
+
+### The file argued against being split, and the argument was half right
+
+Its docblock said the three regions were **"one component and not three boundaries"** because `now`
+is read once and threaded into the rules — *"reading the clock in each would let one region call a
+filing overdue while the other did not, on a request that happens to straddle midnight in the
+period's zone."*
+
+That is a real constraint and it was written by me four hours earlier, which is exactly the situation
+where the temptation is to obey it and stop. Re-read, it constrains **where the clock lives**, not
+how many files there are. The three regions are three components now, still one Suspense boundary,
+still one clock, still one `toOverviewRows`: each receives rows already derived and asks the time of
+nothing. The sentence now says that, rather than continuing to argue against the shape it describes.
+
+**The distinction worth keeping:** splitting a component into files is not splitting it into
+boundaries, and not splitting it into independent reads. The defect that docblock was guarding
+against would have come back the moment a region called `new Date()` — and none can, because none
+receives anything but rows.
+
+### Two things the split made unavoidable
+
+**`OverviewRegion`.** Every panel here is a `Panel` and the `h2` naming its question, and the
+incantation `t-heading-3 ${styles.regionHeading}` was written out four times — four places for a
+level-2 heading to become an `h3` by accident. UX-6 orders three questions beneath the screen's one
+`h1`, so the level is not a per-region choice; `RecordShell` makes the identical argument for its
+sections in `packages/ui`. It is not an inventory addition: §11.5's `Panel` is the component, this is
+one screen's composition of it, and it has no states, no variants and no props but its two slots.
+
+**`OverviewUnavailable` is one component, not two.** `forbidden` and `unreachable` differ by three
+values and are already discriminated by `TENANT_READ`, so the arms map through a `Record` keyed on
+that vocabulary — a third arm added to it fails to compile rather than falling through whichever
+branch an `if` reached. Two near-identical files would have been the alternative, and a boolean prop
+would have been the wrong one.
+
+### The duplicate that was already there
+
+`'organization.home.overview'` was written privately in **two** files before this — here and in
+`filing-list.tsx` — and the split would have made six. Six is also where
+`sonarjs/no-duplicate-string` would finally have noticed: the literal carries separators, so it is
+not one of the bare `\w`-only tokens that rule is blind to at any repetition count, and it fires at
+three. Declared once in `overview-messages.ts`, which `filing-list.tsx` now reads too.
+
+The orchestrator resolves **no strings at all** as a result — no `getTranslations`, no namespace,
+nothing but the read, the branch and the clock. That is the clearest signal available that the split
+landed on the right seam: a file that decides which state the screen is in has no business knowing
+what any of them says.
+
+### The owner reshaped it twice before it shipped, and both were right
+
+The first draft had the section pre-select for each region — `attentionRows(rows)`,
+`everythingRows(rows)`, and a `resume === null ? null :` conditional around a region that took a
+non-null row. **"They should get the raw read object and the parsing inside — one prop, and easier to
+add new things."** Then: **"they can get the membership object and compose `canWrite` themselves."**
+
+Both are the same rule and it is worth naming, because it is the one the first draft missed: **the
+section reads; the regions derive.** What the section hands down is what it *read* — the whole row
+set, the whole membership — and every region derives what it needs from it. `attentionRows`,
+`resumableRow`, `everythingRows` and FR-25's `mayWrite` each live with the question they answer.
+Adding a region is a line; changing what *needs attention* means is one file. `canWrite` in
+particular was a lossy projection: a region that later wants the role it holds or the organization it
+names would have had to be re-threaded from the section.
+
+**One correction to the instruction, and it is the whole reason this file spent two paragraphs on the
+clock.** The regions take `rows`, not the read. A region parsing the read would call
+`toOverviewRows({ periods, now: new Date() })` itself — three clocks — and on a request straddling
+midnight in the period's zone the *attention* region could call a filing overdue while *everything*
+did not. `toOverviewRows` is where time enters and it is called exactly once; every selector below it
+is pure over rows that are already dated, which is precisely what made moving them safe.
+
+**And three call sites of `mayWrite` are not the drift task 32.4 recorded.** That was two *different*
+expressions of one rule — `membership?.role !== VIEWER && membership !== null` on S-05 against the
+opposite conjunct order on S-06 — which is what a shared predicate exists to prevent. Calling the
+shared predicate from three places is using it, not copying it.
+
+**The reversal worth keeping** is `ResumeRegion`. Its first docblock argued the caller must hold the
+conditional, *"because a decision made here is invisible to a reader of the section"*. That is true
+and it is smaller than what it cost: `resumableRow` living apart from the only region that asks it,
+and one region reading differently from its two siblings. The docblock now records the reversal
+rather than quietly dropping the argument.
+
+### Verified
+
+`apps/web` **364 tests**, `pnpm typecheck`, `pnpm lint` uncached,
+`pnpm e2e:web --project identity --project expansion` at **168 passed** with its 14 axe scans — run
+once on the first shape and again on the final one, since the first run was not a claim about the
+code that shipped. `web`-only and behaviour-preserving, so the sub-step run is the
+close; one stray import placement was caught by reading the diff rather than by a gate — the
+re-pointed namespace landed where the deleted `const` had been, mid-file, and no rule here orders
+imports.

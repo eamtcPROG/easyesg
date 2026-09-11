@@ -3,6 +3,9 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ROUTES, reportRoute, withQuery } from '@/lib/routes';
 import { OVERVIEW_STANDING, type OverviewRow, type OverviewStanding } from '../overview';
+// Aliased to `MESSAGES` so every reader below is unchanged: the namespace was written privately
+// here and in `overview-section.tsx`, and task 125's region split would have made that six copies.
+import { OVERVIEW_MESSAGES as MESSAGES } from './overview-messages';
 import styles from './home.module.css';
 
 /**
@@ -24,7 +27,6 @@ import styles from './home.module.css';
  * the membership region on the same screen has had since task 30.5.
  */
 
-const MESSAGES = 'organization.home.overview';
 
 /**
  * The tone says **what this row asks of the reader**, and it agrees with S-06's map wherever the

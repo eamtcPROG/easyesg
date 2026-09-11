@@ -3,10 +3,8 @@ import { getTranslations } from 'next-intl/server';
 import { ArrivalNotice } from '@/features/organization/home/components/arrival-notice';
 import { MembershipsSection } from '@/features/organization/home/components/memberships-section';
 import { OrganizationHeading } from '@/features/organization/home/components/organization-heading';
-import {
-  OverviewLoading,
-  OverviewSection,
-} from '@/features/organization/home/components/overview-section';
+import { OverviewLoading } from '@/features/organization/home/components/overview-loading';
+import { OverviewSection } from '@/features/organization/home/components/overview-section';
 import styles from '@/features/organization/home/components/home.module.css';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
