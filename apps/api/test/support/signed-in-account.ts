@@ -21,6 +21,13 @@ import { EMAIL_VERIFICATION_REQUESTED } from '@api/modules/identity/account/cons
  * needs a role that may SELECT the outbox, which `esg_app` deliberately may not: the worker
  * connection is the one to pass here.
  */
+/**
+ * The two name parts every registration needs since task 139. Exported so a suite posting to
+ * `/auth/register` directly spreads the same pair rather than inventing one — the values are
+ * irrelevant to every assertion that uses them, and a suite asserting ON a name says so locally.
+ */
+export const REGISTERED_NAME = { givenName: 'Ana', familyName: 'Popescu' } as const;
+
 export const PASSWORD = 'Str0ng-Passphrase!';
 
 /**
@@ -61,7 +68,9 @@ export const registerFreshAccount = async (input: {
   const call = request(input.server).post('/api/v1/auth/register');
   if (input.acceptLanguage !== undefined) call.set('Accept-Language', input.acceptLanguage);
 
-  const created = await call.send({ email: input.email, password: PASSWORD }).expect(201);
+  const created = await call
+    .send({ email: input.email, password: PASSWORD, ...REGISTERED_NAME })
+    .expect(201);
   registered.add(input.email);
   return { accountId: (created.body as { object: { id: string } }).object.id };
 };

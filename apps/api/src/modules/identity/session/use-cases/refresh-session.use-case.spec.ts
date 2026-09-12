@@ -26,6 +26,8 @@ describe('RefreshSession (AD-12)', () => {
     email: 'ana.popescu@example.md',
     status: ACCOUNT_STATUS.ACTIVE,
     locale: 'ro',
+    givenName: null,
+    familyName: null,
     verifiedAt: new Date('2026-08-01T00:00:00Z'),
     createdAt: new Date('2026-08-01T00:00:00Z'),
     updatedAt: new Date('2026-08-01T00:00:00Z'),

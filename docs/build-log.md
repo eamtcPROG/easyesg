@@ -17857,3 +17857,91 @@ one `EMAIL_PROVIDER=smtp` run away, by whoever holds it.
 `nodemailer` pinned at **10.0.7** where the registry showed 10.0.9 as `latest`: pnpm's release-age
 supply-chain policy holding the newest release back, accepted and recorded on the precedent §12.1
 set for `lucide-react` 1.32.0.
+
+## Task 139 — the account's name, and three tests that were asserting the wrong thing · 2026-09-12
+
+FR-9's profile had never had a schema. `identity.account` held id, email, status, locale and three
+timestamps; the `displayName` an OIDC provider asserts was parsed and thrown away, with
+`identity-provider.port.ts` recording it as *"Never persisted today"* since task 24. Every surface
+that wanted a person — S-05's greeting, the account menu's monogram, S-16's member list — rendered
+an address and carried a docblock predicting this task.
+
+### Two corrections before any code, and the first was to a deliverable written four days earlier
+
+**`capture_field_change` cannot be attached to `identity.account`, and this row's deliverable said
+it must.** The trigger writes `core.field_change`, whose `organization_id` is `NOT NULL`; an account
+belongs to no organization, so `TG_ARGV[0]` resolves NULL and **every account write would fail** —
+registration included. That deliverable was written on 12 Sep with the rest of Part 4 and was wrong
+on the day it was written, which is the class `docs:check` exists for and which prose about
+behaviour has no equivalent of.
+
+The decision (project owner): **no audit trail on the name columns.** It is also right on the
+merits rather than merely available. FR-54 and FR-55 govern *disclosure* attribution inside an
+organization; those rows carry `actor_id` and the name is resolved at read time, so a rename never
+damages historical attribution. And auditing a person's edits to their own profile cuts against
+NFR-28's erasure obligations rather than serving them. `audit.system_audit_log` was the alternative
+— its `organization_id` is nullable precisely for platform events — and was declined for the same
+reason.
+
+**Neither 139 nor 140 owned S-01's register form.** 139 was scoped `api+pkg:contracts`; 140 is the
+three display surfaces and says so in its own row. But OQ-16 closed with *both fields required on
+S-01*, so making the DTO require two fields no producer sends would have broken registration the
+moment it landed. Scope widened to `api+pkg:contracts+web` on task 82's precedent, recorded on the
+row rather than discovered in the diff.
+
+### What the schema says, and what it refuses to guess
+
+Two columns rather than one `full_name`: a monogram, a sort and a salutation each need to know which
+part is which. **Both nullable although the form requires both** — the table has rows no backfill
+can name, and a provider assertion carries one string with no guarantee of two parts. So the form
+requires what the schema must tolerate the absence of, which is why UX-137 specifies a fallback for
+one part missing, for both, and for the monogram in each case.
+
+**No split heuristic over the provider's claim, deliberately.** It seeds `given_name` alone.
+Moldovan and Russian naming makes guessing a boundary unreliable, and a wrong split is confidently
+incorrect and invisible where an absent family name is obvious and one edit away on S-27.
+
+**And no `GRANT`.** The first version wrote `GRANT UPDATE (given_name, family_name)`, which task 19's
+table-level grant already covers — a statement that reads as a decision and does nothing. Removed
+with the reason in place, because this repository has now caught that shape four times.
+
+### Three tests that passed, failed, or pointed at the wrong thing
+
+The type system found every `Account` construction site the moment the model gained two fields —
+twelve fixtures and three repositories, all mechanical. The interesting failures were elsewhere.
+
+**The api e2e suite: 667 failures from one contract change.** Every suite registers an account as
+setup, and the DTO now requires two more fields. Mechanical once seen — but a regex that added the
+pair to `.send({ … password … })` also hit `POST /auth/session`, where the sign-in DTO correctly
+rejected them. Caught by the suite; worth recording because the fix for a cascade is itself a place
+to cause one.
+
+**The browser suite: 120 failures, and an hour of wall clock.** 34 fill-sites across 23 specs, all
+registering through S-01. The run cost 1 hour against a normal 3.7 minutes because each failure
+burned a 30-second `waitForURL` timeout — which is why the fix was validated on one journey for 15
+seconds before the full suite was paid for again.
+
+**And one failure that was not mechanical at all.** `social.spec.ts` seeds a colliding account by
+posting straight to `/auth/register`, then asserts the provider flow refuses it (BR-ID-3). The seed
+began returning 400 and the test **never checked its status** — so no account existed, no collision
+occurred, the provider registration *succeeded*, and the failure read
+`expected /sign-in?notice=social-email-in-use, received /create-organization`. That looks exactly
+like a broken redirect in the code under test. The cause was three lines above, in setup that could
+not fail loudly. The status is now asserted, with the reasoning in place: **a setup call that can
+fail silently makes every assertion after it untrustworthy, and it fails pointing at the wrong
+thing** — which costs more than the failure.
+
+That is the third instance today of one defect class: the vacuous `form.evaluate` submit in task 96,
+the `toHaveAttribute` assertion that short-circuited ahead of its own leak check, and this. Tests
+that do not fail, or fail for the wrong reason, have been the dominant finding of this stage.
+
+### Verified
+
+`migrations:check` (56 schema invariants, including the new columns); `apps/api` 753 unit tests
+across 80 suites, 12 of them the derivation's; `e2e` 880/880; `e2e:worker` 2/2; `apps/web` 531;
+`e2e:web` 181/181 across all three projects; `openapi:check`, `facade:check`, `routes:check`,
+`boundaries`, `docs:check`, `lint`, `typecheck`.
+
+**Twice today a task notification reported exit code 0 for a run that had failed** — the shell
+wrapper's status, not the gate's. Both were caught by reading the log. Neither is a finding about
+the gates; it is a finding about which line to trust.

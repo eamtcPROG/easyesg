@@ -119,6 +119,8 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   const email = `${RUN_PREFIX}@example.md`;
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
@@ -164,6 +166,8 @@ test('axe finds no violations on the create-organization screen', async ({ page 
   const email = `${RUN_PREFIX}-found@example.md`;
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
@@ -195,6 +199,8 @@ test('axe finds no violations on the organization profile screen', async ({ page
   const email = `${RUN_PREFIX}-profile@example.md`;
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
@@ -230,6 +236,8 @@ test('axe finds no violations on the entity record', async ({ page }) => {
   const email = `${RUN_PREFIX}-entity@example.md`;
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
@@ -274,6 +282,8 @@ test('axe finds no violations on the home screen', async ({ page }) => {
   const email = `${RUN_PREFIX}-home@example.md`;
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
@@ -316,6 +326,8 @@ test('axe finds no violations on the credentials screen', async ({ page }) => {
   const email = `${RUN_PREFIX}-credentials@example.md`;
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
@@ -355,6 +367,8 @@ test('axe finds no violations on the second-factor step', async ({ page }) => {
   const email = `${RUN_PREFIX}-factor@example.md`;
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();

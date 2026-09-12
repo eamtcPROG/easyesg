@@ -25,6 +25,8 @@ describe('ResendVerificationEmail (FR-3, OQ-55)', () => {
     new RegisterAccount(store, new FakePasswordHasher(), () => now).execute({
       email,
       password: 'Parola123!',
+      givenName: 'Ana',
+      familyName: 'Popescu',
       locale: 'ro',
     });
 

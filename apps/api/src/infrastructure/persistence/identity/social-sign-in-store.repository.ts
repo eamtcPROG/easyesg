@@ -60,6 +60,8 @@ interface AccountRow {
   email: string;
   status: string;
   locale: string;
+  given_name: string | null;
+  family_name: string | null;
   verified_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -87,6 +89,8 @@ const toAccount = (row: AccountRow): Account => ({
   email: row.email,
   status: row.status as Account['status'],
   locale: toLocale(row.locale),
+  givenName: row.given_name,
+  familyName: row.family_name,
   verifiedAt: row.verified_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -102,7 +106,7 @@ const toProviderIdentity = (row: ProviderIdentityRow): ProviderIdentity => ({
   emailVerifiedAsserted: row.email_verified_asserted,
 });
 
-const ACCOUNT_COLUMNS = 'id, email, status, locale, verified_at, created_at, updated_at';
+const ACCOUNT_COLUMNS = 'id, email, status, locale, given_name, family_name, verified_at, created_at, updated_at';
 
 const PROVIDER_IDENTITY_COLUMNS =
   'id, account_id, provider, subject, asserted_email, email_verified_asserted';
@@ -308,14 +312,18 @@ class SocialSignInTransactionAdapter implements SocialSignInTransaction {
       // credential, NO row in `identity.credential` ("no password set" needs no null).
       const rows = returnedRows<AccountRow>(
         await this.queryRunner.query(
-          `INSERT INTO identity.account (email, locale, status, verified_at)
-           VALUES ($1, $2, $3, $4)
+          `INSERT INTO identity.account (email, locale, status, verified_at, given_name)
+           VALUES ($1, $2, $3, $4, $5)
            RETURNING ${ACCOUNT_COLUMNS}`,
           [
             account.email,
             account.locale,
             account.verifiedAt ? ACCOUNT_STATUS.ACTIVE : ACCOUNT_STATUS.UNVERIFIED,
             account.verifiedAt,
+            // Trimmed to the column's bound rather than rejected: a provider's claim is not a form
+            // field and failing a sign-up over its length would be the platform's problem made the
+            // person's. `null` where the claim is absent, which UX-137's fallback covers.
+            account.givenName?.trim().slice(0, 100) || null,
           ],
         ),
       );

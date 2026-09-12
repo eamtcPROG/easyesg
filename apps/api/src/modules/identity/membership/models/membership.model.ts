@@ -97,6 +97,9 @@ export interface OrganizationMember {
   readonly membershipId: string;
   readonly accountId: string;
   readonly email: string;
+  /** FR-9's parts, joined from `identity.account`. S-16 renders the person, not the address. */
+  readonly givenName: string | null;
+  readonly familyName: string | null;
   readonly role: MembershipRole;
   readonly status: MembershipStatus;
   readonly lastActiveAt: Date | null;

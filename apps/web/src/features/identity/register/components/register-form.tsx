@@ -29,6 +29,8 @@ import { ROUTES } from '@/lib/routes';
  * password manager.
  */
 interface RegisterInput {
+  givenName: string;
+  familyName: string;
   email: string;
   password: string;
 }
@@ -150,6 +152,26 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
 
       <Panel className={styles.formPanel}>
         <div className={styles.fields}>
+          {/* FR-9's two parts, required since `design_spec.md` OQ-16's name half closed. Two fields
+              rather than the artboard's one `full name`, because a monogram, a sort and a
+              salutation each need to know which part is which (UX-137). `autoComplete` is the
+              standard token pair, so a password manager fills both without being taught. */}
+          <FormTextField
+            control={control}
+            name="givenName"
+            label={t('givenNameLabel')}
+            autoComplete="given-name"
+            rules={{ required: t('givenNameMissing'), maxLength: { value: 100, message: t('nameTooLong') } }}
+          />
+
+          <FormTextField
+            control={control}
+            name="familyName"
+            label={t('familyNameLabel')}
+            autoComplete="family-name"
+            rules={{ required: t('familyNameMissing'), maxLength: { value: 100, message: t('nameTooLong') } }}
+          />
+
           <FormTextField
             control={control}
             name="email"

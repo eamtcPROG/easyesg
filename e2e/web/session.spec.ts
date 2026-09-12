@@ -33,6 +33,8 @@ test.afterAll(async () => {
 /** UC-01 + UC-03 through the screens, as the registration suite proved them. */
 async function registerAndVerify(page: Page, email: string): Promise<void> {
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
@@ -134,6 +136,8 @@ test('a correct password on an unverified account names verification as the bloc
 }) => {
   const email = addressFor('unverified');
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();

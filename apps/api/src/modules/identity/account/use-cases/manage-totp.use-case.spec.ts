@@ -37,6 +37,8 @@ describe('ManageTotp (UC-193, NFR-95)', () => {
         email: `${id}@example.md`,
         status: ACCOUNT_STATUS.ACTIVE,
         locale: 'ro',
+        givenName: null,
+        familyName: null,
         verifiedAt: now,
         createdAt: now,
         updatedAt: now,

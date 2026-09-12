@@ -1083,6 +1083,8 @@ export interface components {
              * @example 1787360400000
              */
             verifiedAt?: number | null;
+            /** @example Ana Popescu */
+            displayName: string;
         };
         RegisterAccountRequestDto: {
             /**
@@ -1096,6 +1098,10 @@ export interface components {
              * @description Minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character. Letters are matched by Unicode property, so Romanian and Russian letters count as letters.
              */
             password: string;
+            /** @example Ana */
+            givenName: string;
+            /** @example Popescu */
+            familyName: string;
             /** @description An organization invitation being acted on. When it is still usable and was sent to this same address, the account is created already confirmed and no confirmation email is sent — the invitation link is itself proof the address was reached. Anything else is ignored and registration proceeds normally. */
             invitationToken?: string;
         };
@@ -1375,6 +1381,8 @@ export interface components {
             status: "active" | "removed";
             /** @description Unix epoch milliseconds of the last request this member made against the organization, or null if they have not returned since being granted access. */
             lastActiveAt: number | null;
+            /** @example Ana Popescu */
+            displayName: string;
             /** @description Unix epoch milliseconds when access was granted. */
             joinedAt: number;
         };

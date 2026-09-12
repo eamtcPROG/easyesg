@@ -26,6 +26,8 @@ interface MembershipRow {
 
 interface MemberRow extends MembershipRow {
   email: string;
+  given_name: string | null;
+  family_name: string | null;
 }
 
 /**
@@ -79,7 +81,8 @@ export class MembershipStoreRepository extends TenantRepository<never> implement
   async listActiveMembers(): Promise<OrganizationMember[]> {
     const rows = await this.manager.query<MemberRow[]>(
       `SELECT m.id, m.account_id, m.organization_id, m.role, m.status,
-              m.removed_at, m.last_active_at, m.created_at, a.email
+              m.removed_at, m.last_active_at, m.created_at, a.email,
+              a.given_name, a.family_name
          FROM identity.membership m
          JOIN identity.account a ON a.id = m.account_id
         WHERE m.status = $1
@@ -91,6 +94,8 @@ export class MembershipStoreRepository extends TenantRepository<never> implement
       membershipId: row.id,
       accountId: row.account_id,
       email: row.email,
+      givenName: row.given_name,
+      familyName: row.family_name,
       role: row.role,
       status: row.status,
       lastActiveAt: row.last_active_at,

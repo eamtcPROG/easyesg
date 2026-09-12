@@ -81,6 +81,11 @@
     "register": {
       "title": "Create your account",
       "subtitle": "One account can hold several organizations. You will add the first one after you confirm your email address.",
+      "givenNameLabel": "First name",
+      "familyNameLabel": "Last name",
+      "givenNameMissing": "The first name is missing, so nothing in the application can address you by name. Fill it in before continuing.",
+      "familyNameMissing": "The last name is missing, so your profile stays incomplete. Fill it in before continuing.",
+      "nameTooLong": "The name is longer than 100 characters, which the field cannot hold. Shorten it.",
       "emailLabel": "Work email",
       "emailHelp": "We send the confirmation link here. Notifications will arrive here too.",
       "emailMissing": "The email address is missing, so there is nowhere to send the confirmation link. Fill in the address before continuing.",

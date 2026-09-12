@@ -41,6 +41,8 @@ async function anOrganization(label: string): Promise<{ id: string; name: string
 
 async function registerAndVerify(page: Page, email: string): Promise<void> {
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
@@ -124,6 +126,10 @@ test('a signed-out invitee registers and joins with one email (FR-3, UC-15)', as
 
   await page.getByRole('link', { name: 'Creați un cont' }).click();
   await page.waitForURL('**/register**');
+
+  await page.getByLabel('Prenume').fill('Ana');
+
+  await page.getByLabel('Nume de familie').fill('Popescu');
 
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);

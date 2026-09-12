@@ -35,6 +35,7 @@ import { DisclosureValueOrigin1789603200000 } from './1789603200000-disclosure-v
 import { ReportDerivationInput1789689600000 } from './1789689600000-report-derivation-input';
 import { ReportCurrency1789776000000 } from './1789776000000-report-currency';
 import { MembershipSelfSelectScope1789862400000 } from './1789862400000-membership-self-select-scope';
+import { AccountName1789948800000 } from './1789948800000-account-name';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -88,4 +89,5 @@ export const migrations = [
   ReportDerivationInput1789689600000,
   ReportCurrency1789776000000,
   MembershipSelfSelectScope1789862400000,
+  AccountName1789948800000,
 ];

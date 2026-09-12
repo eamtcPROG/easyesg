@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { EpochMillis } from '@api/contracts/types/time';
+import { displayName } from '../domain/display-name';
 import { ACCOUNT_STATUS, type Account, type AccountStatus } from '../models/account.model';
 
 /**
@@ -49,6 +50,16 @@ export class AccountResponseDto {
   readonly verifiedAt: EpochMillis | null;
 
   /**
+   * **Derived, never stored** (`design_spec.md` UX-137). The client receives the string it should
+   * render and does not compose one — which is what keeps a single order in a single place rather
+   * than in three front-end call sites that could disagree. Falls back to the address for an
+   * account whose parts are absent, which is every account created before task 139 and every
+   * provider sign-up whose assertion carried no name.
+   */
+  @ApiProperty({ example: 'Ana Popescu' })
+  readonly displayName: string;
+
+  /**
    * A constructor rather than a static factory plus definite-assignment assertions. `strict` mode
    * requires every field to be assigned, and `!` on each would turn off exactly the check that
    * catches a field forgotten here when the model gains one.
@@ -56,6 +67,7 @@ export class AccountResponseDto {
   constructor(account: Account) {
     this.id = account.id;
     this.email = account.email;
+    this.displayName = displayName(account, account.email);
     this.status = account.status;
     this.createdAt = account.createdAt.getTime();
     this.verifiedAt = account.verifiedAt ? account.verifiedAt.getTime() : null;

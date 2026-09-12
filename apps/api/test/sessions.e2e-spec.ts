@@ -102,7 +102,7 @@ describe('sessions and sign-in (UC-04, UC-06, FR-4, FR-5, AD-12)', () => {
 
   /** Registration → verification, through the API, so every account here took the real path. */
   const createActiveAccount = async (email: string): Promise<void> => {
-    await http().post('/api/v1/auth/register').send({ email, password: PASSWORD }).expect(201);
+    await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu' }).expect(201);
     const rows = await worker.query<{ payload: { token: string } }[]>(
       `SELECT payload FROM audit.outbox_event
         WHERE event_type = $1 AND payload->>'email' = $2
@@ -219,7 +219,7 @@ describe('sessions and sign-in (UC-04, UC-06, FR-4, FR-5, AD-12)', () => {
     const email = addressFor('unverified');
 
     beforeAll(async () => {
-      await http().post('/api/v1/auth/register').send({ email, password: PASSWORD }).expect(201);
+      await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu' }).expect(201);
     }, 30_000);
 
     it('names verification only for the correct password; a wrong one stays uniform', async () => {

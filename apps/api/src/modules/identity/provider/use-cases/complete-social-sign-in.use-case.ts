@@ -205,6 +205,15 @@ export class CompleteSocialSignIn {
       emailVerifiedAsserted: assertion.emailVerified,
       // UC-03 satisfied by the provider's assertion, or an ordinary unverified account otherwise.
       verifiedAt: assertion.emailVerified ? now : null,
+      // FR-2's `displayName` acquires its home here (task 139). `identity-provider.port.ts` has
+      // carried it as "Never persisted today" since task 24 — received, parsed, discarded.
+      //
+      // **It seeds `given_name` and nothing else, and is deliberately not split.** The claim is one
+      // string and a provider makes no promise about its shape; Moldovan and Russian naming makes
+      // guessing a boundary unreliable, and a wrong split is confidently incorrect and invisible
+      // where an absent family name is obvious and one edit away on S-27. UX-137's fallback covers
+      // exactly this account: a given name alone stands alone.
+      givenName: assertion.displayName,
     });
 
     if (!assertion.emailVerified) {

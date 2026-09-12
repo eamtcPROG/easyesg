@@ -10,6 +10,8 @@ describe('unverified account expiry (FR-3, OQ-52)', () => {
     email: 'ana@example.md',
     status,
     locale: 'ro',
+    givenName: null,
+    familyName: null,
     verifiedAt: status === 'active' ? at : null,
     createdAt: at,
     updatedAt: at,

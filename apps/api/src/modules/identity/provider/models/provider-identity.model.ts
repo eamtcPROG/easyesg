@@ -78,4 +78,6 @@ export interface NewProviderAccount {
   readonly assertedEmail: string;
   readonly emailVerifiedAsserted: boolean;
   readonly verifiedAt: Date | null;
+  /** FR-2's asserted name, seeding `given_name` only — the use case records why it is not split. */
+  readonly givenName: string | null;
 }

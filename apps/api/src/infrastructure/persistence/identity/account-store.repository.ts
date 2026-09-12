@@ -86,6 +86,8 @@ interface AccountRow {
   email: string;
   status: string;
   locale: string;
+  given_name: string | null;
+  family_name: string | null;
   verified_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -104,6 +106,8 @@ const toAccount = (row: AccountRow): Account => ({
   // rather than re-validated because a status the database rejects cannot be in a row.
   status: row.status as Account['status'],
   locale: toLocale(row.locale),
+  givenName: row.given_name,
+  familyName: row.family_name,
   verifiedAt: row.verified_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -134,7 +138,8 @@ const isEmailUniqueViolation = (error: unknown): boolean => {
   );
 };
 
-const ACCOUNT_COLUMNS = 'id, email, status, locale, verified_at, created_at, updated_at';
+const ACCOUNT_COLUMNS =
+  'id, email, status, locale, given_name, family_name, verified_at, created_at, updated_at';
 
 class AccountTransactionAdapter implements AccountTransaction {
   constructor(
@@ -148,10 +153,10 @@ class AccountTransactionAdapter implements AccountTransaction {
       // is never in the row an account read maps to a DTO (see the migration).
       const rows = returnedRows<AccountRow>(
         await this.queryRunner.query(
-          `INSERT INTO identity.account (email, locale)
-           VALUES ($1, $2)
+          `INSERT INTO identity.account (email, locale, given_name, family_name)
+           VALUES ($1, $2, $3, $4)
            RETURNING ${ACCOUNT_COLUMNS}`,
-          [account.email, account.locale],
+          [account.email, account.locale, account.givenName, account.familyName],
         ),
       );
 

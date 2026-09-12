@@ -68,6 +68,8 @@ describe('S-01 · register form', () => {
     const user = userEvent.setup();
     renderForm();
 
+    await user.type(screen.getByLabelText('Prenume'), 'Ana');
+    await user.type(screen.getByLabelText('Nume de familie'), 'Popescu');
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), 'parola123!'); // no uppercase
     await user.click(screen.getByRole('button', { name: 'Creați contul' }));
@@ -92,12 +94,19 @@ describe('S-01 · register form', () => {
     });
     renderForm();
 
+    await user.type(screen.getByLabelText('Prenume'), 'Ana');
+    await user.type(screen.getByLabelText('Nume de familie'), 'Popescu');
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
     await user.click(screen.getByRole('button', { name: 'Creați contul' }));
 
     await waitFor(() =>
-      expect(action).toHaveBeenCalledWith({ email: VALID_EMAIL, password: VALID_PASSWORD }),
+      expect(action).toHaveBeenCalledWith({
+        givenName: 'Ana',
+        familyName: 'Popescu',
+        email: VALID_EMAIL,
+        password: VALID_PASSWORD,
+      }),
     );
     await waitFor(() => expect(push).toHaveBeenCalledWith('/verify'));
     expect(sessionStorage.getItem(PENDING_EMAIL_STORAGE_KEY)).toBe(VALID_EMAIL);
@@ -119,6 +128,8 @@ describe('S-01 · register form', () => {
     // Before the refusal: the standing footer prompt is the screen's one sign-in link.
     expect(screen.getAllByRole('link', { name: 'Autentificați-vă' })).toHaveLength(1);
 
+    await user.type(screen.getByLabelText('Prenume'), 'Ana');
+    await user.type(screen.getByLabelText('Nume de familie'), 'Popescu');
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
     await user.click(screen.getByRole('button', { name: 'Creați contul' }));
@@ -141,6 +152,8 @@ describe('S-01 · register form', () => {
     action.mockResolvedValue({ status: 'unreachable' });
     renderForm();
 
+    await user.type(screen.getByLabelText('Prenume'), 'Ana');
+    await user.type(screen.getByLabelText('Nume de familie'), 'Popescu');
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
     await user.click(screen.getByRole('button', { name: 'Creați contul' }));

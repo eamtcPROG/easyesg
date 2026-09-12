@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { displayName } from '@api/modules/identity/account/domain/display-name';
 import { MEMBERSHIP_ROLE, MEMBERSHIP_STATUS } from '../models/membership.model';
 import type { OrganizationMember } from '../models/membership.model';
 
@@ -43,6 +44,14 @@ export class MemberResponseDto {
   })
   lastActiveAt: number | null;
 
+  /**
+   * **Derived, never stored** (UX-137). S-16 renders the person rather than the address, and falls
+   * back to the address for a member whose account carries no name — which is every member who
+   * joined before task 139.
+   */
+  @ApiProperty({ example: 'Ana Popescu' })
+  displayName: string;
+
   @ApiProperty({ type: Number, description: 'Unix epoch milliseconds when access was granted.' })
   joinedAt: number;
 
@@ -50,6 +59,7 @@ export class MemberResponseDto {
     this.id = member.membershipId;
     this.accountId = member.accountId;
     this.email = member.email;
+    this.displayName = displayName(member, member.email);
     this.role = member.role;
     this.status = member.status;
     this.lastActiveAt = member.lastActiveAt?.getTime() ?? null;

@@ -40,6 +40,8 @@ describe('CompleteSocialSignIn (UC-02, UC-05; FR-2, FR-4)', () => {
     email: 'Ana.Popescu@example.md',
     status: ACCOUNT_STATUS.ACTIVE,
     locale: 'ro',
+    givenName: null,
+    familyName: null,
     verifiedAt: new Date('2026-08-01T00:00:00Z'),
     createdAt: new Date('2026-08-01T00:00:00Z'),
     updatedAt: new Date('2026-08-01T00:00:00Z'),

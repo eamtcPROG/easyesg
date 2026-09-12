@@ -101,7 +101,7 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
   const http = () => request(app.getHttpServer());
 
   const createActiveAccount = async (email: string): Promise<void> => {
-    await http().post('/api/v1/auth/register').send({ email, password: PASSWORD }).expect(201);
+    await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu' }).expect(201);
     const rows = await worker.query<{ payload: { token: string } }[]>(
       `SELECT payload FROM audit.outbox_event
         WHERE event_type = $1 AND payload->>'email' = $2
@@ -228,7 +228,7 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
 
     it('issues nothing for an unverified account — verification is the only activation path', async () => {
       const email = addressFor('unverified');
-      await http().post('/api/v1/auth/register').send({ email, password: PASSWORD }).expect(201);
+      await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu' }).expect(201);
 
       await requestReset(email).expect(202);
 

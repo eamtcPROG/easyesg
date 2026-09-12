@@ -42,6 +42,28 @@ export class RegisterAccountRequestDto {
   password!: string;
 
   /**
+   * FR-9's two parts, required since `design_spec.md` OQ-16's name half closed (12 Sep 2026). The
+   * **columns are nullable and these are not**, which is not a contradiction: the table holds rows
+   * that predate the field and a provider sign-up seeds them from a single `displayName` claim, so
+   * the form requires what the schema must tolerate the absence of (UX-137 specifies the fallbacks).
+   *
+   * Bounded here rather than in the domain, unlike the password: a length is a *shape*, and the
+   * `CHECK` on the column is the database's own copy of the same bound. The password's policy is
+   * different in kind — it is a rule a person must be told about in their own language (NFR-79).
+   */
+  @ApiProperty({ example: 'Ana', minLength: 1, maxLength: 100 })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  givenName!: string;
+
+  @ApiProperty({ example: 'Popescu', minLength: 1, maxLength: 100 })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  familyName!: string;
+
+  /**
    * S-03's "create an account by password" path (UC-15 step 2), and optional everywhere else.
    *
    * `@IsOptional` rather than a required field with a nullable type: a registration that never saw

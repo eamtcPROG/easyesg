@@ -13,6 +13,12 @@ import type { Clock } from '@api/contracts/clock.port';
 export interface RegisterAccountCommand {
   readonly email: string;
   readonly password: string;
+  /**
+   * FR-9's two parts, required at registration since `design_spec.md` OQ-16's name half closed.
+   * The display name is derived from them at every read and never stored (UX-137).
+   */
+  readonly givenName: string;
+  readonly familyName: string;
   /** Negotiated from `Accept-Language` for this request; seeds FR-10's persisted preference. */
   readonly locale: Locale;
   /**
@@ -80,6 +86,8 @@ export class RegisterAccount {
         email,
         locale: command.locale,
         passwordHash,
+        givenName: command.givenName,
+        familyName: command.familyName,
       });
 
       // FR-3's third route to a verified account, added 25 Aug 2026 (§12.5.6's task-26.2 row).

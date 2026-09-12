@@ -190,6 +190,8 @@ export class FakeSocialSignInStore implements SocialSignInStore {
           email: account.email,
           status: account.verifiedAt ? ACCOUNT_STATUS.ACTIVE : ACCOUNT_STATUS.UNVERIFIED,
           locale: account.locale,
+          givenName: null,
+          familyName: null,
           verifiedAt: account.verifiedAt,
           createdAt: account.verifiedAt ?? new Date(0),
           updatedAt: account.verifiedAt ?? new Date(0),

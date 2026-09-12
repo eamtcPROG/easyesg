@@ -81,6 +81,11 @@
     "register": {
       "title": "Creați-vă contul",
       "subtitle": "Un cont poate ține mai multe organizații. Pe prima o adăugați după ce vă confirmați adresa de e-mail.",
+      "givenNameLabel": "Prenume",
+      "familyNameLabel": "Nume de familie",
+      "givenNameMissing": "Prenumele lipsește, deci nicăieri în aplicație nu vă putem adresa pe nume. Completați-l înainte de a continua.",
+      "familyNameMissing": "Numele de familie lipsește, deci profilul dumneavoastră rămâne incomplet. Completați-l înainte de a continua.",
+      "nameTooLong": "Numele depășește 100 de caractere, iar câmpul nu poate păstra mai mult. Scurtați-l.",
       "emailLabel": "E-mail de serviciu",
       "emailHelp": "Aici trimitem linkul de confirmare. Tot aici vor ajunge și notificările.",
       "emailMissing": "Adresa de e-mail lipsește, deci nu avem unde trimite linkul de confirmare. Completați adresa înainte de a continua.",

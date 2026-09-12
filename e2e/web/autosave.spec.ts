@@ -47,6 +47,8 @@ async function signedInWithReport(
   const email = addressFor(label);
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();

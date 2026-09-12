@@ -23,6 +23,8 @@ describe('VerifyEmail (UC-03, FR-3)', () => {
     await new RegisterAccount(store, new FakePasswordHasher(), () => REGISTERED_AT).execute({
       email: 'ana.popescu@example.md',
       password: 'Parola123!',
+      givenName: 'Ana',
+      familyName: 'Popescu',
       locale: 'ro',
     });
     token = (store.effects[0].payload as unknown as EmailVerificationRequested).token;

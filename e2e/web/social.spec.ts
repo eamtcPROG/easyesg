@@ -124,9 +124,16 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     request,
   }) => {
     const email = addressFor('collision');
-    await request.post(`${API_URL}/api/v1/auth/register`, {
-      data: { email, password: 'Parola123!' },
+    // **The status is asserted, and that is the point of this line rather than tidiness.** This
+    // call is setup: it creates the account the provider flow must then collide with. When task 139
+    // made the two name parts required, it began returning 400 — so no account existed, no collision
+    // occurred, and the test asserted the *opposite* scenario while still looking like a real
+    // failure of the thing under test. A setup call that can fail silently makes every assertion
+    // after it untrustworthy.
+    const seeded = await request.post(`${API_URL}/api/v1/auth/register`, {
+      data: { email, password: 'Parola123!', givenName: 'Ana', familyName: 'Popescu' },
     });
+    expect(seeded.status(), 'seeding the colliding account failed').toBe(201);
     stub.nextClaims = {
       sub: `${PREFIX}collision-${run}`,
       email,

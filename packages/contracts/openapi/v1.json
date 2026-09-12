@@ -3127,13 +3127,18 @@
             "nullable": true,
             "description": "Unix epoch milliseconds, UTC. Null while the account is unverified.",
             "example": 1787360400000
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Ana Popescu"
           }
         },
         "required": [
           "id",
           "email",
           "status",
-          "createdAt"
+          "createdAt",
+          "displayName"
         ]
       },
       "RegisterAccountRequestDto": {
@@ -3150,6 +3155,18 @@
             "format": "password",
             "description": "Minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character. Letters are matched by Unicode property, so Romanian and Russian letters count as letters."
           },
+          "givenName": {
+            "type": "string",
+            "example": "Ana",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "familyName": {
+            "type": "string",
+            "example": "Popescu",
+            "minLength": 1,
+            "maxLength": 100
+          },
           "invitationToken": {
             "type": "string",
             "minLength": 43,
@@ -3159,7 +3176,9 @@
         },
         "required": [
           "email",
-          "password"
+          "password",
+          "givenName",
+          "familyName"
         ]
       },
       "VerifyEmailRequestDto": {
@@ -3739,6 +3758,10 @@
             "nullable": true,
             "description": "Unix epoch milliseconds of the last request this member made against the organization, or null if they have not returned since being granted access."
           },
+          "displayName": {
+            "type": "string",
+            "example": "Ana Popescu"
+          },
           "joinedAt": {
             "type": "number",
             "description": "Unix epoch milliseconds when access was granted."
@@ -3751,6 +3774,7 @@
           "role",
           "status",
           "lastActiveAt",
+          "displayName",
           "joinedAt"
         ]
       },

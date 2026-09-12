@@ -471,7 +471,7 @@ describe('invitation acceptance (UC-15)', () => {
 
     await http()
       .post('/api/v1/auth/register')
-      .send({ email: NEWCOMER, password: PASSWORD, invitationToken: token })
+      .send({ givenName: 'Ana', familyName: 'Popescu', email: NEWCOMER, password: PASSWORD, invitationToken: token })
       .expect(201);
 
     // The observable half: no verification challenge was queued at all.
@@ -498,7 +498,7 @@ describe('invitation acceptance (UC-15)', () => {
 
     await http()
       .post('/api/v1/auth/register')
-      .send({ email: NEWCOMER, password: PASSWORD, invitationToken: token })
+      .send({ givenName: 'Ana', familyName: 'Popescu', email: NEWCOMER, password: PASSWORD, invitationToken: token })
       .expect(201);
 
     // The ordinary challenge was issued, so the registration is unaffected rather than refused —
@@ -517,7 +517,7 @@ describe('invitation acceptance (UC-15)', () => {
 
     await http()
       .post('/api/v1/auth/register')
-      .send({ email: NEWCOMER, password: PASSWORD, invitationToken: token })
+      .send({ givenName: 'Ana', familyName: 'Popescu', email: NEWCOMER, password: PASSWORD, invitationToken: token })
       .expect(201);
 
     expect(await verificationEmailCount(NEWCOMER)).toBe(1);

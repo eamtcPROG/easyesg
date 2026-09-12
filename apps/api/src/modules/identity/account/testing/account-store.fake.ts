@@ -222,6 +222,8 @@ export class FakeAccountStore implements AccountStore {
           email: account.email,
           status: ACCOUNT_STATUS.UNVERIFIED,
           locale: account.locale,
+          givenName: null,
+          familyName: null,
           verifiedAt: null,
           createdAt: now,
           updatedAt: now,

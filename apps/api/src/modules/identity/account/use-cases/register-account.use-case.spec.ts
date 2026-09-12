@@ -26,6 +26,8 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
     registerAccount.execute({
       email: 'Ana.Popescu@example.md',
       password: 'Parola123!',
+      givenName: 'Ana',
+      familyName: 'Popescu',
       locale: 'ro',
       ...overrides,
     });
@@ -51,6 +53,8 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
       const account = await registerAccount.execute({
         email: 'ivan@example.md',
         password: 'Parola123!',
+        givenName: 'Ana',
+        familyName: 'Popescu',
         locale: 'ru',
       });
       expect(account.locale).toBe('ru');
@@ -128,6 +132,8 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
       const abandoned = await stale.execute({
         email: 'ana.popescu@example.md',
         password: 'Parola123!',
+        givenName: 'Ana',
+        familyName: 'Popescu',
         locale: 'ro',
       });
 

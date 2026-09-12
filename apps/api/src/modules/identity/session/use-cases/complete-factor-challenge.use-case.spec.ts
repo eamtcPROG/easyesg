@@ -52,6 +52,8 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
       email: EMAIL,
       status: ACCOUNT_STATUS.ACTIVE,
       locale: 'ro',
+      givenName: null,
+      familyName: null,
       verifiedAt: now,
       createdAt: now,
       updatedAt: now,

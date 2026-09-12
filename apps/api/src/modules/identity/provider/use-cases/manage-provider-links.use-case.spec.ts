@@ -79,6 +79,8 @@ describe('ManageProviderLinks (UC-11, UC-12, FR-8)', () => {
     email: `${id}@example.md`,
     status: ACCOUNT_STATUS.ACTIVE,
     locale: 'ro',
+    givenName: null,
+    familyName: null,
     verifiedAt: now,
     createdAt: now,
     updatedAt: now,

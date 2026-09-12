@@ -40,6 +40,14 @@ export interface Account {
    * recipient from their own record, and the worker sending that email has no request to read.
    */
   readonly locale: Locale;
+  /**
+   * FR-9's two name parts. **Nullable in the model because they are nullable in the schema** — the
+   * rows that predate task 139 have none, and a provider sign-up seeds them from an assertion that
+   * carries no guarantee of two parts. The presentation string is derived by
+   * `domain/display-name.ts` and is deliberately not stored (UX-137).
+   */
+  readonly givenName: string | null;
+  readonly familyName: string | null;
   readonly verifiedAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -64,6 +72,9 @@ export interface NewAccount {
   readonly email: string;
   readonly locale: Locale;
   readonly passwordHash: string;
+  /** Required by S-01 and by the register DTO; optional here, because the provider path has none. */
+  readonly givenName: string | null;
+  readonly familyName: string | null;
 }
 
 export interface NewVerificationToken {

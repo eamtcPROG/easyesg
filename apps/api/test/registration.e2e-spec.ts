@@ -134,7 +134,7 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
   });
 
   const register = (email: string, password = PASSWORD) =>
-    request(app.getHttpServer()).post('/api/v1/auth/register').send({ email, password });
+    request(app.getHttpServer()).post('/api/v1/auth/register').send({ email, password, givenName: 'Ana', familyName: 'Popescu' });
 
   /** The outbox row for an address, read as the only role permitted to read one. */
   const queuedVerification = async (email: string) => {

@@ -58,6 +58,8 @@ interface AccountRow {
   email: string;
   status: string;
   locale: string;
+  given_name: string | null;
+  family_name: string | null;
   verified_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -94,12 +96,14 @@ const toAccount = (row: AccountRow): Account => ({
   email: row.email,
   status: row.status as Account['status'],
   locale: toLocale(row.locale),
+  givenName: row.given_name,
+  familyName: row.family_name,
   verifiedAt: row.verified_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
 
-const ACCOUNT_COLUMNS = 'id, email, status, locale, verified_at, created_at, updated_at';
+const ACCOUNT_COLUMNS = 'id, email, status, locale, given_name, family_name, verified_at, created_at, updated_at';
 
 
 class SessionTransactionAdapter implements SessionTransaction {

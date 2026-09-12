@@ -28,6 +28,10 @@ test('a user registers and verifies from the browser (UC-01, UC-03)', async ({ p
   // The policy is displayed before entry (S-02 §5) and answers itself while typing.
   await expect(page.getByText('încă neîndeplinit —').or(page.getByText('Între 8 și 128 de caractere'))).toBeVisible();
 
+  await page.getByLabel('Prenume').fill('Ana');
+
+  await page.getByLabel('Nume de familie').fill('Popescu');
+
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await expect(page.getByText('— îndeplinit').first()).toBeAttached();
@@ -59,6 +63,8 @@ test('a spent link explains itself and offers the resend route (S-02 error state
   const email = addressFor('spent');
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
@@ -82,12 +88,16 @@ test('a duplicate registration surfaces the 409 with sign-in as the way out (OQ-
   const email = addressFor('duplicate');
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
 
   await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Creați contul' }).click();

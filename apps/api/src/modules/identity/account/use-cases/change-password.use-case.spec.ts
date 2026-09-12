@@ -45,6 +45,8 @@ describe('ChangePassword (UC-10, FR-7)', () => {
       email: 'ana.popescu@example.md',
       status: ACCOUNT_STATUS.ACTIVE,
       locale: 'ro',
+      givenName: null,
+      familyName: null,
       verifiedAt: now,
       createdAt: now,
       updatedAt: now,

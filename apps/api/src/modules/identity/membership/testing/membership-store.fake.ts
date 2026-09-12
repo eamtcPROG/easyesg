@@ -36,6 +36,8 @@ export class FakeMembershipStore implements MembershipStore {
           membershipId: row.id,
           accountId: row.accountId,
           email: `${row.accountId}@example.md`,
+          givenName: null,
+          familyName: null,
           role: row.role,
           status: row.status,
           lastActiveAt: row.lastActiveAt,
