@@ -17768,3 +17768,92 @@ and that limitation is written in the file rather than left for someone to notic
 five-block spread matrix); `apps/web` 531; `apps/admin` 7; `routes:check`; `e2e:web` 181/181 across
 all three projects; `docs:check` 40 claims. No `gates:clean`: nothing moved, renamed or deleted a
 file, changed a type, or touched a generated artefact — and `pree2e:web` rebuilt both apps anyway.
+
+## Task 51.1 — the SMTP adapter, and an exception taken with its cost stated · 2026-09-12
+
+The row that moves identity from built to usable. No mail had ever left the platform: the only
+`EmailPort` adapter wrote recipient addresses and verification links into the application log, which
+NFR-30 forbids of a production pipeline, and which is why `EMAIL_PROVIDER` has no default. Register,
+verify, forgot-password, reset and invitations were all complete and all unusable — the 71%-built /
+48%-operational split, in one file's absence.
+
+### The vendor is Gmail, and that contradicts a requirement the owner closed himself
+
+Asked for Gmail "for now". NFR-27 requires customer data at rest in the EU/EEA *"wherever it rests
+and whoever holds it, sub-processors included — at providers not subject to third-country access
+law, relying on no adequacy decision and no standard contractual clauses"*. **OQ-16 closed that on
+25 Aug 2026, on this owner's authority, while planning this very task**, confirming sub-processors
+are bound and that the position is stricter than GDPR by design. Gmail is Google LLC: subject to
+FISA 702 and the CLOUD Act, which is the third-country access law NFR-27 names, and verification and
+reset mail carries an address and a single-use link.
+
+The conflict was put in front of the owner **before** the work, with the three options priced — dev
+and staging only with the check binding in production; amend NFR-27; or ship with no check. The
+owner chose to amend. That is recorded rather than argued with, and recorded in full: **OQ-17**
+carries the decision, its authority, its scope and what reverses it, and NFR-27 carries a carve-out
+sentence naming the mail channel and nothing else. The primary store, replicas, backups, exports,
+logs and every other sub-processor stay bound.
+
+**Two ceilings, and the second is the one nobody would have looked for.** Free Gmail caps at 500
+messages per day and Workspace at 2,000. NFR-108 requires ≥99% accepted delivery, and a hard daily
+cap is not a thing that requirement can be met through — against a filing season concentrated in
+April–May and a ≤2,000-organization envelope. That is in OQ-17 beside the legal half, because an
+exception with one stated cost reads as fully priced when it is not.
+
+### Enumerating the exception rather than skipping the check
+
+The row already required a deployment check asserting `EMAIL_HOST` against a permitted set, and gave
+the reason: *a config-driven provider is exactly as easy to point somewhere non-compliant as
+somewhere compliant*. The cheap way to ship Gmail was to skip it.
+
+Gmail is in the set instead, with `standing: NON_COMPLIANT` and a `because` that names OQ-17 and the
+access law. The factory warns on every boot, a spec asserts the standing is non-compliant — so
+anyone later "tidying" it to compliant turns the suite red — and a second spec pins the set at
+exactly two members, which makes adding a third the moment someone is made to write a rationale.
+
+The difference is not defensive coding. An exception written into a list is one a reader meets; a
+disabled check is one nobody sees again.
+
+### The adapter is SMTP, which is what makes the exception reversible
+
+`SmtpEmailAdapter` holds no vendor type because none enters it. §12.5.2 requires a provider swap to
+be *"a configuration change, not a code change"*, and SMTP is the one interface every candidate
+exposes — so Mailjet, Gmail and any permitted EU host are the same `case` and the same class. A
+provider SDK would have made reversing OQ-17 a rewrite instead of an environment value, which is
+the difference between an interim and a commitment.
+
+Three details worth their lines. **Timeouts are configured rather than defaulted**, because the
+outbox dispatcher awaits each send while holding the row's lock — an unbounded transport holds a
+database row open for as long as it hangs. **`secure` is derived from the port** rather than taken
+as a third setting, removing a combination that is wrong in one direction and silently insecure in
+the other. And **a failed send throws**: the consumer is a BullMQ job, so a throw is a retry with the
+outbox row unacknowledged, where swallowing it would turn an undelivered verification mail into a
+silently successful one and leave an account waiting forever for a link nobody sent. That last one
+has its own test, and it is the most valuable assertion in the file.
+
+### One design change, made for the test rather than discovered by it
+
+`createEmailAdapter` was lifted out of the `useFactory`. The first version of the factory spec went
+through `Test.createTestingModule` and failed on Nest's injector rather than on the guard —
+`overrideProvider` cannot reach a dependency the module does not own. Rather than wire an injector
+to test a switch statement, the selection became a function. The point is not convenience: **a guard
+reachable only through a testing harness has a spec that proves the harness**, and the two specs now
+split cleanly — one that the list refuses, one that the factory consults it.
+
+### Verified, and what is not
+
+`lint`; `typecheck`; `apps/api` 735 unit tests across 78 suites, including 14 new; `e2e` 880/880;
+`e2e:worker` 2/2, so both entrypoints still boot with a third adapter registered; `openapi:check`;
+`boundaries` (1,128 modules) — the last of which matters here, since the whole claim is that no
+vendor type crosses the port.
+
+**No live send has been made, and that is not an omission this entry glosses.** Sending needs a
+16-character Gmail app password, which belongs to the owner and not in this repository or in an
+agent's hands. What is proven is everything up to the socket: the adapter renders, addresses,
+authenticates and reports as specified against a stubbed transport, and refuses to boot on an
+unpermitted host or a missing credential. What is unproven is that Gmail accepts the credential —
+one `EMAIL_PROVIDER=smtp` run away, by whoever holds it.
+
+`nodemailer` pinned at **10.0.7** where the registry showed 10.0.9 as `latest`: pnpm's release-age
+supply-chain policy holding the newest release back, accepted and recorded on the precedent §12.1
+set for `lucide-react` 1.32.0.

@@ -119,9 +119,21 @@ export interface AppConfig {
      * Which `EmailPort` adapter to register. **No default, on purpose.** `log` is a development
      * stand-in that writes the rendered message to the application log, which NFR-30 forbids of a
      * production logging pipeline — so the choice is made per environment or the process does not
-     * start. Mailjet (OQ-12) is registered here by task 51.
+     * start. `smtp` is the production adapter, and the provider behind it is `host` below.
      */
     provider: string | undefined;
+    /**
+     * SMTP settings, present only when `provider` is `smtp`. The provider is an environment value
+     * rather than a class (§12.5.2), which is what makes an EU host a config change — and is
+     * exactly why `host` is checked against a permitted set rather than taken as an open field.
+     */
+    smtp: {
+      host: string | undefined;
+      port: number;
+      user: string | undefined;
+      password: string | undefined;
+      from: string | undefined;
+    };
   };
   web: {
     /**
@@ -176,7 +188,16 @@ export default (): AppConfig => ({
   // 3200 is `apps/admin`'s dev port, so a host run works with no .env entry (same convention
   // as `web.publicUrl` below).
   admin: { origin: process.env.ADMIN_ORIGIN ?? 'http://localhost:3200' },
-  email: { provider: process.env.EMAIL_PROVIDER },
+  email: {
+    provider: process.env.EMAIL_PROVIDER,
+    smtp: {
+      host: process.env.EMAIL_HOST,
+      port: Number.parseInt(process.env.EMAIL_PORT ?? '587', 10),
+      user: process.env.EMAIL_USER,
+      password: process.env.EMAIL_PASSWORD,
+      from: process.env.EMAIL_FROM,
+    },
+  },
   // 3100 is `apps/web`'s dev port (`next dev --port 3100`), so a host run works with no .env entry.
   web: { publicUrl: process.env.PUBLIC_WEB_URL ?? 'http://localhost:3100' },
 });

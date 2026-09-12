@@ -1,0 +1,115 @@
+import { Logger } from '@nestjs/common';
+import type { EmailMessage } from '@api/contracts/email.port';
+import { EMAIL_VERIFICATION_TEMPLATE } from '@api/modules/identity/account/constants/account.constants';
+import { initialiseCatalogue } from '@api/app/messages/catalogue';
+
+const sendMail = jest.fn();
+const createTransport = jest.fn((options: unknown) => ({ sendMail, options }));
+
+jest.mock('nodemailer', () => ({ createTransport: (options: unknown) => createTransport(options) }));
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { SmtpEmailAdapter } = require('./smtp-email.adapter') as typeof import('./smtp-email.adapter');
+
+/**
+ * What this adapter owes the port, asserted against a stubbed transport.
+ *
+ * The transport is stubbed rather than a real SMTP server on purpose: what is worth pinning here is
+ * the **boundary** — that rendering happens on this side, that a failure propagates, and that the
+ * message the provider receives carries what §8.4 says it should. Whether nodemailer can speak SMTP
+ * is nodemailer's test, and a local mail catcher would prove that rather than any of this.
+ */
+const SETTINGS = {
+  host: 'smtp.gmail.com',
+  port: 587,
+  user: 'sender@example.md',
+  password: 'app-password',
+  from: 'easyESG <sender@example.md>',
+};
+
+const MESSAGE: EmailMessage = {
+  to: 'recipient@example.md',
+  locale: 'ro',
+  templateKey: EMAIL_VERIFICATION_TEMPLATE,
+  params: { verificationUrl: 'https://example.md/verify?token=abc' },
+  idempotencyKey: 'outbox-row-1',
+};
+
+describe('SmtpEmailAdapter', () => {
+  // The renderer reads the committed catalogues (OQ-43); without this a template key resolves to
+  // nothing and every send throws for a reason that has nothing to do with this adapter.
+  beforeAll(async () => {
+    await initialiseCatalogue();
+  });
+
+  beforeEach(() => {
+    sendMail.mockReset().mockResolvedValue({ messageId: '<provider-handle@smtp>' });
+    createTransport.mockClear();
+  });
+
+  it('derives implicit TLS from the port rather than taking a third setting', () => {
+    new SmtpEmailAdapter({ ...SETTINGS, port: 465 });
+    expect(createTransport).toHaveBeenCalledWith(expect.objectContaining({ secure: true }));
+
+    createTransport.mockClear();
+    new SmtpEmailAdapter({ ...SETTINGS, port: 587 });
+    expect(createTransport).toHaveBeenCalledWith(expect.objectContaining({ secure: false }));
+  });
+
+  /** The outbox dispatcher awaits each send while holding the row's lock, so an unbounded
+   *  transport holds a database row open for as long as it hangs. */
+  it('bounds every timeout rather than accepting the library defaults', () => {
+    new SmtpEmailAdapter(SETTINGS);
+    const options = createTransport.mock.calls[0][0] as Record<string, unknown>;
+    for (const key of ['connectionTimeout', 'greetingTimeout', 'socketTimeout']) {
+      expect(typeof options[key]).toBe('number');
+    }
+  });
+
+  it('renders through the shared renderer and sends what it rendered', async () => {
+    await new SmtpEmailAdapter(SETTINGS).send(MESSAGE);
+
+    const [sent] = sendMail.mock.calls[0] as [Record<string, unknown>];
+    expect(sent.to).toBe(MESSAGE.to);
+    expect(sent.from).toBe(SETTINGS.from);
+    // Rendered, not passed through: the caller supplies a catalogue key and the subject is prose.
+    expect(sent.subject).toEqual(expect.any(String));
+    expect(sent.subject).not.toBe(MESSAGE.templateKey);
+    expect(String(sent.text)).toContain(String(MESSAGE.params.verificationUrl));
+  });
+
+  /** §8.4: the key travels so a provider-side duplicate is traceable to the outbox row. */
+  it('carries the idempotency key to the provider', async () => {
+    await new SmtpEmailAdapter(SETTINGS).send(MESSAGE);
+    const [sent] = sendMail.mock.calls[0] as [{ headers: Record<string, string> }];
+    expect(sent.headers['X-Idempotency-Key']).toBe(MESSAGE.idempotencyKey);
+  });
+
+  it("returns the provider's handle, which is what bounce matching will join on", async () => {
+    const result = await new SmtpEmailAdapter(SETTINGS).send(MESSAGE);
+    expect(result.providerMessageId).toBe('<provider-handle@smtp>');
+  });
+
+  /**
+   * The assertion that matters most. The consumer is a BullMQ job, so a throw is a retry and the
+   * outbox row stays unacknowledged — swallowing this would turn an undelivered verification mail
+   * into a silently successful one, and the account would wait forever for a link nobody sent.
+   */
+  it('propagates a send failure instead of reporting success', async () => {
+    sendMail.mockRejectedValue(new Error('535 authentication failed'));
+    await expect(new SmtpEmailAdapter(SETTINGS).send(MESSAGE)).rejects.toThrow(/535/);
+  });
+
+  /** NFR-30: an operational log line carries no recipient address. */
+  it('never writes the recipient address to the log', async () => {
+    const written: string[] = [];
+    const spy = jest
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation((...args: unknown[]) => void written.push(String(args[0])));
+
+    await new SmtpEmailAdapter(SETTINGS).send(MESSAGE);
+    expect(written.join('\n')).not.toContain(MESSAGE.to);
+    expect(written.join('\n')).toContain(MESSAGE.idempotencyKey);
+    spy.mockRestore();
+  });
+});

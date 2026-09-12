@@ -28,7 +28,10 @@ const config: AppConfig = {
   },
   secrets: { encryptionKey: 'not-a-real-encryption-key' },
   admin: { origin: 'http://localhost:3200' },
-  email: { provider: 'log' },
+  email: {
+    provider: 'log',
+    smtp: { host: undefined, port: 587, user: undefined, password: undefined, from: undefined },
+  },
   web: { publicUrl: 'http://localhost:3100' },
 };
 
