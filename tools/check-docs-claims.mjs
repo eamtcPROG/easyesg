@@ -277,21 +277,41 @@ const CLAIMS = [
   },
 
   {
-    // The plan's size, claimed by `CLAUDE.md` and computed from `task.md`. It read 77 for the
+    // The plan's size, claimed by `CLAUDE.md` and computed from the plan. It read 77 for the
     // 23 tasks appended after that sentence was written — the first claim found that this gate
     // covered neither file for, because the manifest checked counts about *code* and this one is
     // about a tracking file.
-    what: 'top-level tasks in the plan',
+    //
+    // **It counts the union of the two plan files, and that is not an accident of the split.**
+    // The claim exists to notice the plan *growing*. Counting only `task.md` would make the number
+    // fall every time a task closes and its row moves to the archive — turning a staleness gate
+    // into a churn gate that demands a `CLAUDE.md` edit per closed task. The union is invariant
+    // under closing and moves only when work is appended, which is the event this was written for.
+    what: 'top-level tasks across the two plan files',
     file: 'CLAUDE.md',
-    pattern: /nine-step build order as (\d+) tasks/,
+    pattern: /(\d+) tasks across the two plan files/,
     actual: () =>
       new Set(
-        read('docs/task.md')
-          .split('\n')
+        ['docs/task.md', 'docs/archived_tasks.md']
+          .flatMap((p) => read(p).split('\n'))
           .map((l) => /^\|\s*\*{0,2}(\d+)(?:\.\d+)*\*{0,2}\s*\|/.exec(l))
           .filter(Boolean)
           .map((m) => m[1]),
       ).size,
+  },
+
+  {
+    // **The split's failing state.** `task.md` holding only remaining work is an invariant, and
+    // nothing stopped a row being marked `DONE` in place — which would rebuild, one row at a
+    // time, exactly the file the split was made to end. A rule with no failing state is not one
+    // (`boundaries:prove`, `eslint:prove`, and this manifest's own size claim above).
+    //
+    // It reads naturally at zero because `WORDS` maps `zero` → 0 and the prover mutates with
+    // `actual + 1`, so the proof pass rewrites the sentence to `one` and the claim correctly fails.
+    what: 'DONE rows left in the active plan',
+    file: 'docs/task.md',
+    pattern: /\*\*(\w+) rows here carry `DONE`\*\*/,
+    actual: () => countIn('docs/task.md', /^\|.*\|\s*DONE\s*\|\s*$/gm),
   },
 
   // The 11 Sep 2026 audit found twelve stale numbers across the five files, and every one was

@@ -16,8 +16,8 @@ sixteen addresses `AddressNotice` answers for. What exists: 43 page routes acros
 7 layouts, a not-found boundary, 4 route handlers, the next-intl wiring, 14 feature folders (seven built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
-browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/task.md` says
-what each task shipped. What follows is what a reader needs in hand for each live slice, grouped by
+browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/archived_tasks.md`
+says what each closed task shipped and `docs/task.md` what each remaining one must. What follows is what a reader needs in hand for each live slice, grouped by
 the seam it sits on rather than by the task that built it.
 
 ### The seam to the API

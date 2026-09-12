@@ -16,8 +16,8 @@ Peak season is April–May (statutory filing window).
 
 **Three applications and five packages; identity, organization and the reporting core are live end to
 end, billing, export, notifications and the public tier are structure without behaviour.** The rows
-below are each workspace's shipped state by task; `docs/task.md` is the plan and `docs/build-log.md`
-is why each landed as it did.
+below are each workspace's shipped state by task; `docs/task.md` is what is left, in Stage order,
+`docs/archived_tasks.md` is what has closed, and `docs/build-log.md` is why each landed as it did.
 
 | Workspace | What is live, and what is not |
 | --- | --- |
@@ -47,7 +47,7 @@ Working commands: `pnpm gates:scoped` (the dependency-graph run — see "Closing
 for which run applies when),
 `pnpm lint`, `pnpm eslint:prove` (14 `no-restricted-syntax` selectors, each with a fixture
 proving it rejects a real violation, plus the four config blocks' spread matrix),
-`pnpm typecheck`, `pnpm image:check`, `pnpm docs:check` (39 countable claims these
+`pnpm typecheck`, `pnpm image:check`, `pnpm docs:check` (40 countable claims these
 files make, each checked against the repository and each proven to notice a changed number),
 `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (23 rules, each with a fixture proving it rejects a real violation),
@@ -310,14 +310,20 @@ changing anything — `gh run view <id> --log-failed` — and fix the cause rath
 **Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
 column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.
 
-**Two tracking files sit beside them and are not part of the set.** They own no decisions and no
-identifiers; where either disagrees with a document, the document wins and the tracking file is
+**Three tracking files sit beside them and are not part of the set.** They own no decisions and no
+identifiers; where any of them disagrees with a document, the document wins and the tracking file is
 what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | The execution plan — §15.4's nine-step build order as 138 tasks, each with its scope and deliverables. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | Read before starting work to find the next task; update its `Status` when one closes. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1 is Identity and closes when accounts, authentication, authorisation, admin user management and security are *fully functional*; **151 tasks across the two plan files**, of which 78 groups are here and 73 have closed — Stage 1 holding sixteen existing groups plus the thirteen appended as 139–151 | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 73 numbers, 150 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
+
+**Closing a task is a three-part edit: set the Status, move the row into `archived_tasks.md`, write the
+build-log entry.** The row travels with its group — parent included — under the phase heading it was
+sliced under, and `docs:check` fails on a `DONE` row left in `task.md`, because the split's whole
+value is that the active file is only remaining work.
 
 **`task.md`'s Status column holds exactly one of four words: `DONE`, `TODO`, `IN PROGRESS`,
 `BLOCKED`.** Nothing else — no reasoning, no deviation, no decision, and **no date**. Why a task
@@ -379,7 +385,7 @@ How to do it:
   becomes *Closed — < decision >*, with the authority and the date; the normative text it changes
   is amended in the same edit; every place it is cross-logged is updated. A decision with no
   obvious owner goes in the closest section of `architecture.md` — not a new file and not a new
-  folder; the specification set is seven files and stays seven, and the two tracking files beside
+  folder; the specification set is seven files and stays seven, and the three tracking files beside
   it hold no decisions. Only then is the code written — a decision that exists only in a chat
   transcript has not been made.
 - **A deferral is recorded too**, with what was assumed meanwhile and what has to change if the

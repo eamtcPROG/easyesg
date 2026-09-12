@@ -3,10 +3,12 @@
 The record of completed work: per task, what was done, the decisions taken, the deviations
 from the plan, and how each was verified.
 
-Deliberately separate from [task.md](task.md), which is the forward-looking plan and carries
-only a status per task. Three layers, narrowing:
+Deliberately separate from the two plan files — [task.md](task.md), the forward-looking half, and
+[archived_tasks.md](archived_tasks.md), where a row moves when it closes — both of which carry only a
+status per task. Three layers, narrowing:
 
-- **`task.md`** — what is left, in what order, and what each task must deliver.
+- **`task.md`** and **`archived_tasks.md`** — what is left, in what order, what each task must
+  deliver, and what has already closed.
 - **This file** — why a completed task ended up shaped the way it did.
 - **Commit messages** — the exhaustive version, tied to the actual diff.
 
@@ -17426,3 +17428,94 @@ The lesson it re-teaches is the one about partial state rather than about the ga
 
 Appending task 138 made `CLAUDE.md`'s "137 tasks" false and `docs:check` failed on it within
 seconds, naming both numbers — the guard working on the change that created it.
+
+## Plan revision — the closed half archived, the remainder re-cut into nine Stages · 2026-09-12
+
+*"I think we have to rewrite and to clean the `docs/task.md`… to create `archived_tasks.md` for done
+ones, and to create a new order, the phases — first phase should be Identity, and at the end of the
+phase everything related to user account, authentication, authorisation, admin user management,
+security should be done and should be fully functional."*
+
+### What prompted it, and the number that made the case
+
+An audit of identity's actual state, asked for in the same session. The plan reported Phase 2 as
+`DONE` — thirty rows, all closed 27 Aug 2026 — and that was true and useless: identity measured
+**71% built and 48% operational**, the difference being fourteen feature×surface cells that pass
+their tests and cannot be used by a person. No mail leaves the platform (`logging-email.adapter.ts`
+is the only `EmailPort` adapter); no name is stored anywhere; the `otpauth://` URI the API has
+returned since task 27.2 reaches `credentials-state.ts` and is read by nothing; an operator cannot
+change their own password; a multi-membership account cannot switch organization.
+
+**None of that was identity debt anywhere in this file**, because it was filed under notifications
+(51.1), under operations (67.4, 67.9, 67.11) and under work found outside the plan (83). That is the
+finding the re-cut exists to fix: a phase can be 100% closed and the capability it names can be
+half-dead, because the plan is sliced by build order and the question people ask is *does it work*.
+
+### What was decided rather than discovered
+
+Four decisions were taken by the owner before anything moved, because each changes what gets built:
+
+- **Task numbers never move.** Measured rather than assumed: **3,537 citations across 768 files**
+  outside `task.md`, 34 of the 36 migration docblocks, 38 commit subjects already in history, and
+  §12.5.6 is *keyed* by task number — 182 of its 203 rows are titled `— task N.M`, with other
+  sections citing those rows back by that key. Renumbering breaks a bidirectional index, not prose.
+  So the Stage sequence re-orders **presentation** and the archive keeps the §15.4 phase headings;
+  §15.4 itself is unamended.
+- **Names are `given_name` + `family_name` with a derived display name** — an amendment to FR-9's
+  field list, so UX-137 carries the derivation rule and it is written before task 139's migration.
+- **The seat gate is an interim configured ceiling**, not EntitlementPort pulled forward, which
+  would drag a billing dependency into identity against DR-1.
+- **The realtime gateway is in scope**, for notifications and for S-16 updating when an invitation
+  is accepted — and it is an **architecture amendment first**. `architecture.md` §11.1 rejects a
+  push transport by name and states the procedure; AD-15 is that change.
+
+**The gateway resolution is the part worth recording**, because the first framing was wrong. It
+looked like a reversal of "nothing pushes, everything polls" and it is not: AD-4 already runs exactly
+this pattern server-to-server — a Redis pub/sub hint as a latency optimisation over a version poll
+that stays **the authority**, chosen *because* `NOTIFY` is lossy. Extending it one hop to the browser
+answers every collision at once. A frame carries no tenant data, so AD-2's transaction-local binding
+is untouched; it carries no authorization consequence, so AD-12 still binds FR-58 and FR-5/6/7 on the
+next request; a dropped frame degrades to the poll, so nothing correct depends on delivery. Hence
+**no new FR and no new UC**, deliberately: a requirement obliging the interface to reflect something
+without the reader acting would rest correctness on a delivered frame, which is the one thing the
+design refuses. That refusal is recorded in AD-15's alternatives rather than left implicit.
+
+### The mechanical fact that made the split safe
+
+Counted with the regex `docs:check` itself uses: **421 rows, 138 numbers, 150 `DONE`, 73 fully-DONE
+groups, 65 with work remaining — and zero mixed groups.** Not one task has some sub-steps closed and
+others open, so every group travels whole and no parent row had to be duplicated or its roll-up
+recomputed. Phases 1–3 are 100% closed and 4–11 are 0%, which is why the archive carries five
+sections and the empty headings are omitted rather than carried: a heading with no rows claims
+something closed there.
+
+The split was done by script rather than by hand, and the reconciliation is the reason: every
+archived row was proven **byte-identical** to its source line, and the only pre-existing row whose
+text changed is task 83's, deliberately — it claimed `active_organization_id` has three writers when
+it has two, the post-sign-in branch only *selecting* an active membership through
+`select-active-membership.ts`. 421 source rows + 15 new = 436 across the two files; 151 numbers; zero
+rows lost.
+
+### The gate the split needed, and why it was added rather than assumed
+
+`task.md` holding only remaining work is an invariant and nothing enforced it — a row marked `DONE`
+in place would rebuild the old file one row at a time, invisibly. So `docs:check` gained a 40th
+claim counting `DONE` rows in the active file against the preamble's *"**Zero rows here carry
+`DONE`**"*. It reads naturally at zero because `WORDS` maps `zero` → 0 and the prover mutates with
+`actual + 1`. Proven by flipping one row: *"the document says Zero (0); the repository has 1"*.
+
+The existing task-count claim was **edited rather than replaced, and it counts the union of both
+files**. Counting only the active file would make the number fall on every close, turning a staleness
+gate into a churn gate demanding a `CLAUDE.md` edit per closed task. The union is invariant under
+closing and moves only when work is appended — which is the event that claim was written to catch,
+its own docblock recording that it read 77 for 23 appended tasks.
+
+### Verified
+
+`pnpm docs:check` (40 claims, 6 documents, each proven to notice a changed number), `pnpm lint`,
+`pnpm typecheck`, `pnpm boundaries` (1,122 modules), `pnpm image:check` — the five that always run
+whole-repo, which is the whole reach of a docs-and-tooling change. No e2e: nothing here is reachable
+from a browser journey, and saying so is the difference between a judgement and an omission.
+
+`git check-ignore -v docs/archived_tasks.md` returns nothing — run because of the S-28 lesson, where
+a bare `credentials/` pattern silently excluded twelve files from a commit that every gate passed.

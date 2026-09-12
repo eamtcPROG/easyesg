@@ -11,8 +11,8 @@ user-facing-text conventions. This file carries only what you need in your hands
 
 Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91, 130, 131); the
 calculator, validation, export, notifications, billing, the console's screens, edge and deploy, the
-public tier and the Comprehensive Module are not (37 onward). `docs/task.md` says what each task
-shipped, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
+public tier and the Comprehensive Module are not (37 onward). `docs/archived_tasks.md` says what each closed task
+shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
 traps each one left — grouped by area rather than by the task that built it.
 
