@@ -10,6 +10,22 @@
    exactly what UX-127 calls a defect. */
 @import '@easyesg/ui/src/styles/tokens.css';
 
+/* Base typography and ground, from the cascade — mirroring `apps/web` exactly, for the reason the
+   comment above gives: the two front ends consume one cascade and must not diverge in how they
+   load it.
+
+   **Added 12 Sep 2026 with task 82, and it was a latent defect rather than a new requirement.**
+   This app painted no ground at all; it looked correct only because the browser's default canvas
+   is white and `--surface-default` was white too. The dark scheme is what separated the two — a
+   dark-token console on a white page — and `color-scheme: light dark` in the cascade would have
+   masked it by making the UA's own canvas dark, which is a coincidence to rely on rather than a
+   rule. The page is painted from the token in both schemes because the token is the authority. */
+body {
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-default);
+  background: var(--surface-default);
+}
+
 /* ── Compact density (design_spec.md §11.4, §12) ─────────────────────────────────────────────
    ASSUMPTION, RECORDED — the selector below is a hook with nothing behind it yet.
 

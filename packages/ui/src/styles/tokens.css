@@ -23,8 +23,15 @@
   --slate-100: #E8ECF0;
   --slate-200: #D5DBE2;
   --slate-300: #B4BDC7;
-  --slate-400: #8B96A3;
-  --slate-500: #67737F;
+  /* #8B96A3 until 12 Sep 2026, when task 82's contrast spec measured it at **2.77:1** on
+     `--surface-sunken` — below UX-101's 3:1 for a non-text UI component, and `--border-strong`
+     is the input boundary §11.5 requires to look enterable. A light-scheme defect the dark work
+     found, not one it caused: nothing had ever measured the pairing. */
+  --slate-400: #838D99;
+  /* #67737F until 12 Sep 2026, measured at **4.47:1** on `--surface-sunken` against UX-101's
+     4.5:1 — the tier-2 comment below claimed this step was safe there, and it was three
+     hundredths short. Also a pre-existing defect. */
+  --slate-500: #65717C;
   --slate-700: #3A434C;
   --slate-900: #161B20;
 
@@ -34,6 +41,54 @@
   --crimson-600: #B32318; --crimson-tint: #FDEDEB; /* error     */
   --iris-600: #5A4FA3;    --iris-tint: #F0EFF9;    /* reasoned  */
   --azure-600: #0E6FA8;   --azure-tint: #E9F3FA;   /* pending   */
+
+  /* ── Tier 1 · colour · the dark palette (UX-80, task 82) ──────────
+     A second palette rather than the light one re-pointed — the project owner's call on 12 Sep
+     2026, over a recommendation to re-point tier 2 at the existing ramps. The reason it is the
+     right call is the state tints: `--amber-tint` and its four siblings are near-white by
+     construction and have no usable dark counterpart at any step, so *some* second palette was
+     unavoidable and a partial one would have been the worst of both.
+
+     **Index direction is preserved: a higher number is a darker colour, in both palettes.** That
+     is what lets tier 2 read structurally the same in either scheme — it selects the opposite end
+     of the ramp, not a differently-shaped one. Distribution is not a mirror: dark UI needs its
+     steps compressed toward the dark end, where light UI needs them near white.
+
+     Both palettes live on tier 1 so UX-127's single source stays true and UX-79's "re-skinning
+     edits tier 1 only" covers the dark scheme as well. `tokens.spec.ts` measures every semantic
+     pairing in BOTH schemes against UX-101, which is what stops two palettes drifting apart. */
+  --pine-dark-50: #E4F5EC;
+  --pine-dark-100: #C6E9D6;
+  --pine-dark-200: #A2D9BC;
+  --pine-dark-300: #7CC6A0;
+  --pine-dark-400: #58B085;   /* the accent, on dark */
+  --pine-dark-500: #45976E;
+  --pine-dark-600: #377C5A;
+  --pine-dark-700: #2B6247;
+  --pine-dark-800: #1D4433;
+  --pine-dark-900: #132C22;
+
+  --slate-dark-0: #F5F7F9;
+  --slate-dark-25: #E6EBF0;
+  --slate-dark-50: #D2DAE2;
+  --slate-dark-100: #AEB9C5;
+  /* #8B97A5 until the review of 12 Sep 2026 measured it at **4.32:1** on `--surface-raised` —
+     the account menu's address line and every select/combobox item description sit exactly
+     there. Light never separated `--surface-raised` from `--surface-default`, so the pairing
+     could not fail until dark pulled them apart. */
+  --slate-dark-200: #919DAC;
+  --slate-dark-300: #707F90;
+  --slate-dark-400: #3E4954;
+  --slate-dark-500: #2A333C;
+  --slate-dark-700: #1B222A;
+  --slate-dark-900: #0F1419;
+
+  /* One legible step per state hue, and a tint dark enough to sit under text. */
+  --amber-dark: #E2A84E;    --amber-dark-tint: #2B2114;
+  --rust-dark: #E88C58;     --rust-dark-tint: #2F1E13;
+  --crimson-dark: #F27F72;  --crimson-dark-tint: #301816;
+  --iris-dark: #A99DEA;     --iris-dark-tint: #211E34;
+  --azure-dark: #5CB0E2;    --azure-dark-tint: #13252F;
 
   /* ── Tier 1 · space (4px base; arbitrary values prohibited) ─────── */
   --space-1: 2px;
@@ -100,11 +155,14 @@
 
   --text-default: var(--slate-900);     /* 16.4:1 */
   --text-body: var(--slate-700);        /* 10.3:1 */
-  /* 5.1:1 on `--surface-default`, and never the sole carrier.
-     **It is only safe on `--surface-default` and `--surface-sunken`.** 5.1:1 leaves 0.6 of margin
-     over WCAG's 4.5:1, and any tinted surface spends it: on `--accent-tint` — the highlight every
-     menu and listbox row takes — it measures 4.36:1 and fails 1.4.3. Secondary text on a
-     highlighted row uses `--text-body` instead. Found 29 Aug 2026 by the axe scan on S-13's
+  /* **4.99:1 on `--surface-default`** (restated 12 Sep 2026 — this comment read 5.1:1, 0.6 of
+     margin and 4.36:1, all computed from the superseded `#67737F`; the step moved with task 82 and
+     the numbers did not, which is the defect this very comment had been describing). Never the sole
+     carrier. **Safe on the three untinted surfaces and not on a tinted one:** 0.49 of margin over
+     WCAG's 4.5:1 is what any tint spends — on `--accent-tint`, the highlight every menu and listbox
+     row takes, it measures 4.50:1, which is the floor to two decimals and no margin at all.
+     Secondary text on a highlighted row uses `--text-body` instead. The live figures are in
+     `contrast-record.md`; prefer it to this paragraph. Found 29 Aug 2026 by the axe scan on S-13's
      combobox, and fixed at all three sites that could reach it (Combobox, Select, AccountMenu)
      rather than at the one that was caught. */
   --text-muted: var(--slate-500);
@@ -195,6 +253,97 @@
      §11.7's MUD-approximating theme is a real deliverable, and a tick hardcoded white would be
      invisible on a light accent with nothing failing. */
   --checkbox-tick: var(--text-on-accent);
+
+  /* The scrim behind a modal dialogue and the chrome drawer. A token as of task 82 because it
+     was the only colour any component defined outside this cascade — twice, as a literal
+     `rgb(0 0 0 / 45%)` — and because 45 % black over an already-dark page separates nothing.
+     Alpha over black rather than a slate step, so it composites correctly on any surface. */
+  --scrim: rgb(0 0 0 / 45%);
+
+  /* Tells the browser which schemes this document supports, so form controls, scrollbars and
+     the canvas behind the page follow the scheme rather than staying light under dark tokens. */
+  color-scheme: light dark;
+}
+
+/* ── The dark scheme (UX-80, UX-101, task 82) ──────────────────────────
+   Only tier 2 moves, plus the handful of tier-3 tokens that read tier 1 directly. Everything
+   else — `--field-*`, `--wizard-*`, `--module-*`, `--savestate-*`, `--checkbox-tick` — resolves
+   through tier 2 and therefore needs nothing here, which is the cascade doing its job.
+
+   **`prefers-color-scheme` and nothing else** (project owner, 12 Sep 2026). UX-80 obliges the
+   tokens "whether or not the toggle ships at MVP", and no requirement or screen specifies a
+   toggle; a `[data-theme]` override would be an abstraction for a feature nobody has asked for.
+   Adding one later is one extra selector on this block, because tier 2 is the only layer that
+   moves — so this defers the toggle without making it more expensive.
+
+   Every pairing below is measured by `tokens.spec.ts` against UX-101 in BOTH schemes. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Surfaces invert which end of the ramp they take: the page ground is the darkest thing on
+       screen and a card sits above it, where in light the page is the grey and the card is white. */
+    --surface-default: var(--slate-dark-700);
+    --surface-sunken: var(--slate-dark-900);
+    --surface-raised: var(--slate-dark-500);
+
+    --text-default: var(--slate-dark-0);
+    --text-body: var(--slate-dark-50);
+    --text-muted: var(--slate-dark-200);
+    /* Dark text on a light accent — the inversion the light scheme's `--button-band-*` family
+       already had to make for a pine button on a pine band, here as the ordinary case. */
+    --text-on-accent: var(--slate-dark-900);
+
+    --border-default: var(--slate-dark-400);
+    --border-strong: var(--slate-dark-300);
+    --border-focus: var(--pine-dark-300);
+    --border-focus-halo: var(--pine-dark-700);
+
+    --accent: var(--pine-dark-400);
+    --accent-hover: var(--pine-dark-300);   /* lighter on hover, where light goes darker */
+    --accent-tint: var(--pine-dark-900);
+
+    --state-ok: var(--pine-dark-300);        --state-ok-tint: var(--pine-dark-900);
+    --state-attention: var(--amber-dark);    --state-attention-tint: var(--amber-dark-tint);
+    --state-warning: var(--rust-dark);       --state-warning-tint: var(--rust-dark-tint);
+    --state-error: var(--crimson-dark);      --state-error-tint: var(--crimson-dark-tint);
+    --state-reasoned: var(--iris-dark);      --state-reasoned-tint: var(--iris-dark-tint);
+    --state-pending: var(--azure-dark);      --state-pending-tint: var(--azure-dark-tint);
+    --state-neutral: var(--slate-dark-100);  --state-neutral-tint: var(--slate-dark-500);
+
+    /* Tier 3 that reads tier 1 directly, and therefore cannot inherit the above. */
+    --skeleton-surface: var(--slate-dark-500);
+    --skeleton-surface-quiet: var(--slate-dark-700);
+
+    /* The two dark bands stay bands. In light they are pine-800 against white; here the page is
+       already dark, so they must sit ABOVE it rather than below — the band is lighter than the
+       ground it is on, which is the same intent expressed in the opposite direction. */
+    --focus-header-surface: var(--pine-dark-800);
+    --focus-header-text: var(--slate-dark-0);
+    --focus-header-text-muted: var(--pine-dark-200);
+    --focus-header-border: var(--pine-dark-600);
+    --focus-footer-surface: var(--slate-dark-700);
+    --focus-footer-border: var(--slate-dark-500);
+
+    --globalbar-surface: var(--pine-dark-800);
+    --globalbar-text: var(--slate-dark-0);
+    --globalbar-text-muted: var(--pine-dark-200);
+    --globalbar-avatar-surface: var(--pine-dark-600);
+    --globalbar-avatar-text: var(--slate-dark-0);
+
+    --button-band-surface: var(--pine-dark-300);
+    --button-band-surface-hover: var(--pine-dark-200);
+    --button-band-text: var(--slate-dark-900);
+
+    /* Heavier, because 45 % black over a near-black page separates nothing. */
+    --scrim: rgb(0 0 0 / 65%);
+
+    /* UX-86 makes elevation carry **transience**, and the light values are `--slate-900` at low
+       alpha — a near-black shadow on a near-black ground, which carries nothing here. Pure black
+       at higher alpha instead. Note that dark does not rely on shadow alone: `--surface-raised`
+       is *lighter* than `--surface-default` in this scheme where in light the two are identical,
+       so lift is carried by surface and shadow together rather than by shadow only. */
+    --elevation-1: 0 1px 2px rgb(0 0 0 / 40%), 0 2px 6px rgb(0 0 0 / 32%);
+    --elevation-2: 0 4px 12px rgb(0 0 0 / 48%), 0 12px 32px rgb(0 0 0 / 44%);
+  }
 }
 
 /* The page inset grows with the frame, at UX-73's three widths and on the boundaries the global

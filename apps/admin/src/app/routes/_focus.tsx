@@ -31,7 +31,7 @@ function FocusLayout() {
       brand={
         <span className="flex items-center gap-[var(--space-3)]">
           <BrandMark />
-          <span className="t-code rounded-[2px] border border-[var(--pine-400)] px-[6px] py-[2px] text-[9.5px] uppercase tracking-[0.16em] text-[var(--focus-header-text-muted)]">
+          <span className="t-code rounded-[2px] border border-[var(--focus-header-border)] px-[6px] py-[2px] text-[9.5px] uppercase tracking-[0.16em] text-[var(--focus-header-text-muted)]">
             {REALM_CHIP}
           </span>
         </span>

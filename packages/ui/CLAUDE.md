@@ -13,7 +13,11 @@ restating it here would create the second copy that drifts. This file carries wh
 
 ## Current state
 
-47 components in nine folders, 24 spec files, `src/styles/tokens.css` at 243 lines. Not every
+47 components in nine folders, 24 spec files, `src/styles/tokens.css` at 392 lines — **light and
+dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
+schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
+`.spec.ts` rather than a `.spec.tsx` and so is *not* in the 24: it renders nothing, it parses the
+stylesheet. Not every
 component has its own spec — `forms/forms.spec.tsx` covers several together — so per-file absence
 is not itself a gap.
 
@@ -75,6 +79,24 @@ src/
   primitives (ramps, the 4px space scale, radius, motion), tier 2 the semantic roles designers and
   reviewers speak, tier 3 the component tokens. A component reading a tier 1 ramp directly is what
   makes UX-79's "re-skinning edits tier 1 only" false, and nothing fails when it happens.
+
+- **The dark scheme is `prefers-color-scheme` only, and only tier 2 moves.** Task 82 authored a
+  second tier-1 palette (`--pine-dark-*`, `--slate-dark-*`, a legible step and a dark tint per state
+  hue) and re-points tier 2 inside one media block. **A component needs no dark styles** — everything
+  that reads tier 3 or tier 2 inherits. The tier-3 tokens that read tier 1 *directly* are the
+  exception and are re-pointed by hand in that block, as are the tier-3 tokens that hold their own
+  literal — `--scrim` and the three elevation levels. **Do not trust an enumeration here; the first
+  version of this bullet listed four families and was already wrong on the day it was written.**
+  `tokens.spec.ts` asserts the real rule instead: any token carrying colour that resolves to the
+  *same* literal in both schemes fails, unless it is named in that spec's `SCHEME_INDEPENDENT` set
+  with a reason. The three white-over-brand alphas on the global bar are the only members, because
+  the band is dark in both schemes. So adding a tier-3 token that reads tier 1 no longer relies on
+  anyone remembering — it goes red.
+
+- **No colour may be written outside `tokens.css`, and as of task 82 none is.** The last two were
+  `rgb(0 0 0 / 45%)` in `consequence-dialogue.module.css` and `chrome-drawer.module.css`; they are
+  now `--scrim`, which also fixed a real dark defect — 45 % black over a near-black page separates
+  nothing, so the dark value is 65 %.
 
 - **`forms/` is the only place in this package that may import a form library**, and
   `ui-forms-out-of-the-barrel` in `.dependency-cruiser.cjs` fails the build if anything else does —
@@ -149,7 +171,10 @@ is where the work lands:
   rather than noise. A rule considered and declined with a reason is a decision; a rule never
   opened is an omission wearing the same clothes.
 - **Both themes, and both apps.** The cascade is theme-aware and this package has two consumers;
-  checking one is checking half.
+  checking one is checking half. Since task 82 the theme half is measured rather than eyeballed —
+  `pnpm test` fails if any pairing drops below UX-101 in either scheme — but the spec only knows
+  the pairings it lists. A new surface-and-text combination is a new entry in it, and adding the
+  component without the entry leaves it unmeasured with everything green.
 - **A new vocabulary is a sibling module**, and a new `'use client'` has a reason you can name.
 - **Then the run the root file's "Closing a task" calls for.** A change confined here still reaches
   `apps/web` and `apps/admin` through the dependency graph — `pnpm --filter "...[<base>]"` says so

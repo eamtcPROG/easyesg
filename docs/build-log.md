@@ -17519,3 +17519,111 @@ from a browser journey, and saying so is the difference between a judgement and 
 
 `git check-ignore -v docs/archived_tasks.md` returns nothing — run because of the S-28 lesson, where
 a bare `credentials/` pattern silently excluded twelve files from a commit that every gate passed.
+
+## Task 82 — the dark scheme, and a gate that passed on a 1.75:1 stylesheet · 2026-09-12
+
+UX-80 has been unmet since Phase 0 — *"every semantic token shall be defined for both light and
+dark and shall satisfy §10.2 contrast in both, whether or not the toggle ships at MVP"* — with
+`tokens.css` carrying no dark map at all. `design_spec.md` OQ-14 tracked it as unbuilt work rather
+than as a question, and the row said why it was its own task: the contrast verification is the
+deliverable, and a screen task would bury it.
+
+### Three decisions, one taken against the recommendation
+
+**`prefers-color-scheme` and no toggle.** UX-80 obliges the tokens, not a control, and no
+requirement or screen specifies one. Adding `[data-theme]` would be an abstraction for a feature
+nobody asked for; because only tier 2 moves, adding it later is one selector on the same block.
+
+**A full second palette, over a recommendation to re-point the light ramps.** The owner's call, and
+the right one for a reason the recommendation had half-seen: the five state tints are near-white by
+construction and have no counterpart at any step of the light ramps, so a partial palette was never
+on offer. The cost — two palettes that can disagree — is paid by the spec measuring both.
+
+**Verification is a gate, not a table.** A table of ratios describes the file on the day it was
+written. `tokens.spec.ts` parses the stylesheet, resolves each token through its `var()` chain per
+scheme, and measures 54 pairings in both.
+
+### What the measurement found before anyone reviewed anything
+
+Two defects in the **light** palette that had shipped, invisible because nothing had ever measured
+the pairing: `--border-strong` at **2.77:1** on the page ground, under UX-101's 3:1 for a non-text
+UI component, where §11.5 requires a field at rest to look enterable; and `--text-muted` at
+**4.47:1** on the same surface, three hundredths under, against a tier-2 comment asserting the step
+was safe there. Each step had exactly one consumer, so both were corrected at tier 1.
+
+### What the reviews found, and why this entry exists
+
+The three agents ran on **opus** and were worth every token. The short version is that the first
+version of this task shipped a live accessibility defect and a gate that could not see it.
+
+**The gate passed on a 1.75:1 stylesheet.** `declarationsOf` ran its regex over raw block text,
+comments included, into a `Map` where later writes win — and this file's own house style records
+superseded values in comments. `gate-integrity-review` proved it: a commented-out override made
+muted text render at 1.75:1 on a dark card with all 76 assertions green. Comments are now stripped
+before anything is parsed.
+
+**Nineteen of forty-five dark declarations could be deleted silently.** Proved by deleting each in
+turn. The whole Focus-header, global-bar and band-button families were among them, and the reason
+is subtle enough to be worth recording: when *both* sides of a pairing revert to light together,
+the measured ratio is exactly the light ratio, which passes. A pairing list can only catch an
+omission that breaks a pairing internally. The fix asserts the other direction — a colour-bearing
+token that resolves to the same literal in both schemes fails unless it is named, with a reason, in
+`SCHEME_INDEPENDENT`. Proven to bite by deleting `--focus-header-surface`.
+
+**`--text-muted` on `--surface-raised` measured 4.32:1 in dark** — the account menu's address line,
+and every select and combobox item description. Light made `--surface-raised` *identical* to
+`--surface-default`, so the pairing could not fail and was never listed; dark pulled them apart.
+This is the same shape as the light defects above, one surface further in.
+
+**`apps/admin/.../_focus.tsx` read `--pine-400` directly** — the repository's last tier-1 read from
+a component, 2.85:1 against the dark header, and unreachable by any dark block because tier 1 is
+scheme-independent by construction. `convention-review` found it by applying the root file's own
+*"a rule is applied where it holds, not where it was found"*: the sweep had stopped at
+`packages/ui` while the deliverable says repo-wide.
+
+**The record test was a tautology** — `expect(report).toContain('| Pairing |')` on a literal the
+test had just pushed into the array, which passes on a table with no rows. Worse, the writer was a
+separate `it` that still ran when pairings failed, so the artefact for "contrast verified and
+recorded" could record a failing ratio as compliant. It now carries a verdict per row, asserts one
+row per pairing, and fails when the committed copy is stale — `openapi:check`'s shape folded into
+the spec, because a generated artefact with no freshness check drifts silently.
+
+**And §11.3 still stated the superseded ramp values** while its own preamble says *"§11 governs"* —
+the most expensive finding, because a reader amending a screen would have read `#8B96A3` and
+re-derived the defect this task had just fixed.
+
+### One review finding was wrong about the design, and right about the instinct
+
+Adding focus-halo-against-surface assertions failed in **both** schemes — 1.66:1 in light, on a
+design that has shipped and is correct. The halo is the *outer* layer; its job is separating the
+inner ring from the ground, so the pairing carrying UX-80a's *"two are legible on both"* is halo
+against **ring** (3.84:1 light, 3.55:1 dark). This file's own docblock warns about exactly that
+over-assertion — for `--border-default` — three functions above where the mistake was made.
+
+### The last pairings came from looking at a screen, not at a list
+
+With everything green, a rendered dark screen showed the Callout painting `--text-default` and
+`--text-body` over `--state-*-tint`. Neither pairing was listed: the list had been written from the
+tokens' *names*, where a tint looks like something only its own state sits on. Fourteen pairings
+added; all pass. The lesson is that a pairing list derived from token names has a blind spot that
+only a rendered surface reveals — which is why 54 is the count and not 40.
+
+### Verified
+
+Thirteen hermetic gates cold; `e2e` 880/880; `e2e:worker` 2/2 (both entrypoints boot); `e2e:web`
+178/178 across all three projects; `packages/ui` 248 tests including 108 contrast assertions.
+Visual check in both schemes against the running app.
+
+**The cold run reported exit 0 through a shell wrapper and had actually failed** — one e2e suite,
+`provider-link`, on a 400 where a 201 was expected. Recorded because reading the exit code rather
+than the log nearly closed this task on a red run. It did not reproduce: 9/9 in isolation and
+880/880 in four subsequent full runs.
+
+**A hypothesis about that failure was formed and falsified, which is worth more than the
+hypothesis.** Running `pnpm e2e` at HEAD with this task's work stashed produced **62** failures,
+and `migrations:check` followed by the identical command produced 880 passes — which looked exactly
+like the suite depending on a migrated database it does not create, the third instance of a rule
+this repository already records twice. It is not: two consecutive `pnpm e2e` runs with no migration
+in between both pass 880/880. The 62 failures followed an *aborted* run, not a completed one. What
+is left is an observation without a mechanism, deliberately not written up as a defect and not
+given a task number.
