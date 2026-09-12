@@ -72,7 +72,7 @@ export function PasswordSection() {
       heading={t('heading')}
       description={t('description')}
     >
-      <form onSubmit={(event) => void submit(event)} noValidate className={styles.form}>
+      <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.form}>
         <FormSummary control={control} title={tForms('summaryTitle')} />
 
         <FormPasswordField

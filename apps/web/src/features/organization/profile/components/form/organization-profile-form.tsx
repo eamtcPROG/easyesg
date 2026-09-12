@@ -154,7 +154,7 @@ export function OrganizationProfileForm({
   });
 
   return (
-    <form onSubmit={(event) => void submit(event)} noValidate>
+    <form method="post" onSubmit={(event) => void submit(event)} noValidate>
       <RecordShell
         title={t('title')}
         summary={t('lede')}

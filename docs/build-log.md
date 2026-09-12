@@ -17693,3 +17693,78 @@ typecheck; `docs:check` 40 claims. The dependents' runs are the `packages/*` row
 table — a shared package has no narrow run. No `gates:clean`: nothing here moved, renamed or
 deleted a file, changed a type, or touched a generated artefact or build input, and `pree2e:web`
 rebuilt both apps from the changed stylesheet anyway.
+
+## Task 96 — a one-attribute fix, and a test that proved nothing twice · 2026-09-12
+
+Every form in both front ends was `<form onSubmit={…} noValidate>` with no `method` and no
+`action` — fourteen of them, eight carrying a credential or a one-time code. The handler exists
+only once React has hydrated; the markup is interactive before that, so Enter submits with the
+browser's own default: a GET to the current URL with every field in the query string. Observed
+while diagnosing task 36.2's browser run as `/register?email=…&password=Parola123%21`.
+
+### The remedy, and why the cheaper one was right
+
+The row named two and left the choice to the task. `method="post"` moves the fields into a request
+body; a React form `action` makes the flow work with no JavaScript at all, which is the progressive
+enhancement `signOutAction` already uses here. The owner took the first.
+
+It meets this row's deliverable exactly — *"no form can submit its fields into a URL"* — for one
+attribute on fourteen forms, and it changes nothing once hydrated, because every form submits
+through react-hook-form's `handleSubmit`, which calls `preventDefault` internally. Verified before
+relying on it rather than assumed: only four `preventDefault` calls exist in either app and none is
+in a form handler, so the guarantee comes from the library rather than from the call sites.
+
+The second remedy is **task 153**, and separating them is the substance rather than the paperwork.
+Stopping a leak and making a flow work without JavaScript are different goals; rewriting sign-in and
+register as server actions is a significant identity change to ride inside a security fix, and
+`apps/admin` cannot follow at all — a Vite SPA has no server tier for a form to post to, so its two
+credential forms need a stated limitation or a different answer.
+
+What the fix leaves is a 405 where a pre-hydration submit used to leak. That is a trade rather than
+an end state, and worth naming as one: a visible failure a person can report, where the leak was an
+invisible one nobody sees.
+
+### The test proved nothing, twice, and only the reversion proof said so
+
+Both versions passed. Both were vacuous.
+
+**The first called `form.evaluate(el => el.submit())`.** With `javaScriptEnabled: false` Playwright
+cannot evaluate in the page, so nothing submitted at all — the URL stayed clean because no
+navigation ever happened, and all three assertions passed **with the fix reverted**.
+
+**The second clicked the submit button and waited for the URL to change.** It never changes: a POST
+to the same path leaves the address bar identical, which is the remedy working. The test timed out
+on correct behaviour, and the log is what said so — *"navigated to http://localhost:3100/sign-in"*
+told me the submit had happened and my signal was wrong, where the timeout alone would have sent me
+looking at the button's label.
+
+**The third asserts the outgoing request**, which settles all three questions at once: that a submit
+occurred, which verb it used, and where the fields actually went. Reverting one form now fails with
+the defect verbatim — `?email=…&password=Parola123%21`.
+
+There is a fourth thing worth recording, because it nearly hid the third. The first reversion proof
+failed on `toHaveAttribute('method')`, which sat **before** the URL assertions and short-circuited
+them — so it proved the test noticed a missing attribute, not that it noticed a credential in a URL.
+The attribute assertion now sits last, as the mechanism behind the claim rather than a substitute
+for it. A proof that fires on the wrong assertion is a proof of the wrong thing.
+
+### Two guards, because one of them cannot see a new form
+
+`eslint:prove` gains a fifteenth selector, `form-method`: a `<form>` with neither `method` nor
+`action`, in the browser tier and `apps/web`, with specs exempt on the same reasoning the text
+selectors carry. It has a fixture and an anchor like every other, and the block matrix now reads
+7 / 14 / 15 / 5 / 14. `action` satisfies it deliberately, so task 153 removes no gate when it
+arrives.
+
+`e2e/web/form-method.spec.ts` is the other half and answers a question the selector cannot: whether
+the attribute actually stops the leak in a browser. It drives three credential screens with
+scripting disabled. The remaining five of the eight sit behind a session or inside the admin realm
+and are covered by the selector alone — reaching them needs the scripting this suite switches off,
+and that limitation is written in the file rather than left for someone to notice.
+
+### Verified
+
+`lint`; `typecheck`; `eslint:prove` (15 selectors, each rejecting its own violation, plus the
+five-block spread matrix); `apps/web` 531; `apps/admin` 7; `routes:check`; `e2e:web` 181/181 across
+all three projects; `docs:check` 40 claims. No `gates:clean`: nothing moved, renamed or deleted a
+file, changed a type, or touched a generated artefact — and `pree2e:web` rebuilt both apps anyway.

@@ -140,7 +140,7 @@ export function EntityRecordForm({ entity, activity, legalForms }: EntityRecordF
   };
 
   return (
-    <form onSubmit={(event) => void submit(event)} noValidate>
+    <form method="post" onSubmit={(event) => void submit(event)} noValidate>
       <RecordShell
         title={entity ? entity.name : t('createTitle')}
         summary={entity ? t('lede') : t('createLede')}

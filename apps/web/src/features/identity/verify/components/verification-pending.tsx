@@ -131,7 +131,7 @@ export function VerificationPending() {
             </p>
           </>
         ) : (
-          <form
+          <form method="post"
             onSubmit={(event) => void submitNewAddress(event)}
             noValidate
             className={styles.fields}

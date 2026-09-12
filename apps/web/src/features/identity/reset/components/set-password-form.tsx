@@ -90,7 +90,7 @@ export function SetPasswordForm({ token }: { token: string }) {
   }
 
   return (
-    <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+    <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {result?.status === API_OUTCOME.Problem ? (

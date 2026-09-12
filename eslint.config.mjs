@@ -129,6 +129,35 @@ const restrictedSyntaxCacheComponents = [
   },
 ];
 
+/**
+ * A `<form>` with no `method` submits its fields into the URL (task 96, NFR-30).
+ *
+ * Every form in both front ends is `<form onSubmit={…}>`, and the handler exists only once React
+ * has hydrated. Before that the markup is already interactive, so Enter on a field submits with the
+ * **browser's** default — a GET to the current URL with every field in the query string. Observed
+ * rather than reasoned: a register submit landed on `/register?email=…&password=Parola123%21`, and
+ * a password in a URL reaches the access log, the browser history and the `Referer` of whatever
+ * loads next. Eight of the fourteen forms carry a credential or a one-time code.
+ *
+ * `method="post"` puts the fields in a request body instead. It changes nothing once hydrated —
+ * react-hook-form's `handleSubmit` calls `preventDefault` — so this governs only the window before
+ * hydration, which a fast typist, a chunk that 404s, or scripting switched off all open.
+ *
+ * **`action` satisfies it too**, because a React form action owns the submit outright; that is the
+ * progressive-enhancement shape `signOutAction` already uses here, and task 153 is where the rest
+ * of the forms may follow it.
+ */
+const restrictedSyntaxForms = [
+  {
+    selector:
+      'JSXOpeningElement[name.name="form"]:not(:has(JSXAttribute[name.name="method"]))' +
+      ':not(:has(JSXAttribute[name.name="action"]))',
+    message:
+      'A <form> needs method="post", or a React form `action`: without one a submit that beats ' +
+      'hydration falls back to the browser default and puts every field in the URL (task 96, NFR-30).',
+  },
+];
+
 const restrictedSyntaxVocabulary = [
   // Anchored on the two parents that mean "this union IS the vocabulary" — a type alias, and a
   // property's type. Matching `TSUnionType` alone was the first draft and it was wrong: it also
@@ -478,6 +507,7 @@ export default tseslint.config(
         ...restrictedSyntaxText,
         ...restrictedSyntaxVocabulary,
         ...restrictedSyntaxClientBoundary,
+        ...restrictedSyntaxForms,
       ],
     },
   },
@@ -504,6 +534,7 @@ export default tseslint.config(
         ...restrictedSyntaxText,
         ...restrictedSyntaxVocabulary,
         ...restrictedSyntaxClientBoundary,
+        ...restrictedSyntaxForms,
       ],
 
       /**
@@ -689,6 +720,7 @@ export default tseslint.config(
         ...restrictedSyntaxText,
         ...restrictedSyntaxVocabulary,
         ...restrictedSyntaxClientBoundary,
+        ...restrictedSyntaxForms,
       ],
     },
   },

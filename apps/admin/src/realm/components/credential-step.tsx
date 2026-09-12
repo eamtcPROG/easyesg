@@ -36,7 +36,7 @@ export function CredentialStep({
   const submit = handleSubmit(onSubmit);
 
   return (
-    <form
+    <form method="post"
       onSubmit={(event) => void submit(event)}
       noValidate
       className="flex flex-col gap-[var(--space-4)]"

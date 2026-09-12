@@ -65,7 +65,8 @@ const SELECTORS = {
   'text-attribute': `JSXAttribute[name.name=/^(title|placeholder|aria-label|aria-description|aria-placeholder|aria-valuetext|aria-roledescription)$/] > Literal`,
   'text-alt': `JSXAttribute[name.name='alt'] > Literal[value!='']`,
   'use-cache': `ExpressionStatement > Literal[value="use cache"]`,
-};
+  'form-method': `JSXOpeningElement[name.name="form"]:not(:has(JSXAttribute[name.name="method"])):not(:has(JSXAttribute[name.name="action"]))`,
+}
 
 const ID_BY_SELECTOR = new Map(Object.entries(SELECTORS).map(([id, sel]) => [sel, id]));
 
@@ -85,6 +86,7 @@ const ANCHOR = {
   'text-attribute': 'an attribute is still text a person reads',
   'text-alt': 'alt text is read aloud',
   'use-cache': 'Cache Components are disabled as a security rule',
+  'form-method': 'puts every field in the URL',
 };
 
 // ── The spread: which selectors each config block must carry ─────────────────────────────────
@@ -117,6 +119,12 @@ const TEXT = ['text-jsx-text', 'text-attribute', 'text-alt'];
  */
 const CACHE = ['use-cache'];
 
+/**
+ * Task 96's selector. Browser tier and `apps/web` only — `<form>` exists nowhere else, and specs
+ * are exempt for the reason the text selectors are: a spec's JSX fixture is not a shipped form.
+ */
+const FORMS = ['form-method'];
+
 const EXPECTED_BLOCKS = [
   {
     name: 'every workspace',
@@ -126,12 +134,12 @@ const EXPECTED_BLOCKS = [
   {
     name: 'browser tier',
     files: ['apps/web/**/*.{ts,tsx}', 'apps/admin/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
-    selectors: [...FORMATTING, ...TEXT, ...VOCABULARY, ...CLIENT_BOUNDARY],
+    selectors: [...FORMATTING, ...TEXT, ...VOCABULARY, ...CLIENT_BOUNDARY, ...FORMS],
   },
   {
     name: 'apps/web (Next only)',
     files: ['apps/web/**/*.{ts,tsx}'],
-    selectors: [...CACHE, ...FORMATTING, ...TEXT, ...VOCABULARY, ...CLIENT_BOUNDARY],
+    selectors: [...CACHE, ...FORMATTING, ...TEXT, ...VOCABULARY, ...CLIENT_BOUNDARY, ...FORMS],
   },
   {
     // Specs keep the formatting bans (a spec asserting a formatted value is still an NFR-26
@@ -170,6 +178,7 @@ const EXPECTED_BLOCKS = [
       ...TEXT,
       ...VOCABULARY,
       ...CLIENT_BOUNDARY,
+      ...FORMS,
     ],
   },
 ];
@@ -219,6 +228,16 @@ const FIXTURES = [
     content: `export const isWorker = String(process.env.MODE) === 'worker';\n`,
   },
   // ── the browser tier: apps/admin, packages/ui ──────────────────────────────────────────────
+  {
+    id: 'form-method',
+    block: 'browser tier',
+    file: 'apps/admin/src/__eslint_fixture_form_method.tsx',
+    content:
+      `export const fixture = (\n` +
+      `  <form onSubmit={() => undefined}>\n` +
+      `    <input name="password" type="password" />\n` +
+      `  </form>\n);\n`,
+  },
   {
     id: 'vocab-jsx-attribute',
     block: 'browser tier',

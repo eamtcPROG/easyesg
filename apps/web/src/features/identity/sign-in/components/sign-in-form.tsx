@@ -101,7 +101,7 @@ export function SignInForm({
   const isLocked = problem?.type === PROBLEM_TYPE.AccountLocked;
 
   return (
-    <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+    <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {problem ? (

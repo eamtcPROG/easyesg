@@ -113,7 +113,7 @@ export function InviteMember({ id }: { id: string }) {
         </Callout>
       ) : null}
 
-      <form onSubmit={(event) => void submit(event)} noValidate className={styles.inviteForm}>
+      <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.inviteForm}>
         <FormSummary control={control} title={tForms('summaryTitle')} />
         <FormTextField
           control={control}

@@ -114,7 +114,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
   const isConflict = failure?.status === API_OUTCOME.Problem && failure.problem.status === 409;
 
   return (
-    <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+    <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {failure?.status === API_OUTCOME.Problem ? (

@@ -113,7 +113,7 @@ export function CreateOrganizationForm({ countries }: CreateOrganizationFormProp
   });
 
   return (
-    <form onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+    <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {failure?.status === API_OUTCOME.Problem ? (

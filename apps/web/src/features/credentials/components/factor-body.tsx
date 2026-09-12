@@ -106,7 +106,7 @@ export function FactorBody({ factor }: { readonly factor: TotpState }) {
 
   if (stage.kind === CREDENTIALS_STAGE.ENROLLING) {
     return (
-      <form onSubmit={(event) => void confirm(event)} noValidate className={styles.form}>
+      <form method="post" onSubmit={(event) => void confirm(event)} noValidate className={styles.form}>
         <FormSummary control={control} title={tForms('summaryTitle')} />
         <p className="t-label">{t('secretHeading')}</p>
         <p className={`t-code ${styles.secret}`} translate="no">{stage.secret}</p>

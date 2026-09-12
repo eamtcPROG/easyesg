@@ -148,7 +148,7 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
   const locked = isLockout(standing);
 
   return (
-    <form
+    <form method="post"
       onSubmit={(event) => void submit(event)}
       noValidate
       className={styles.stack}
