@@ -527,7 +527,8 @@ training data lags, so a remembered version is routinely a major behind, and the
 code is written against an API that has since changed.
 
 **Stable means stable** — no alpha, beta, RC or canary, and no Node Current channel.
-NestJS 12 being in alpha is why the pin is 11.
+**NestJS is pinned at 11 and 12 is stable — the reason is ESM, not maturity** (re-verified 12 Sep 2026; this line said *"NestJS 12 being in alpha"* until then, which had stopped being true). NestJS 12 ships
+`"type": "module"` and requires the consuming app to be ESM; `apps/api` emits CommonJS, and moving it is a module-system migration — 1,571 relative imports across 350 files — not a version bump. architecture.md §12.1 carries the measurement. The rule this illustrates is the one below about exceptions outliving their conditions: the pin was right and its stated reason was not.
 
 **Existing pins in architecture.md §12 govern.** That table is the build contract, verified
 on a date and reviewed quarterly with the regulatory watch (NFR-12). Bumping a pinned
