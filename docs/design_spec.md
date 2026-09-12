@@ -846,7 +846,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Archetype:** Record.
 - **Entry points:** the global tier user menu; S-27.
 - **Layout and regions:** identity header, grouped fields, save/cancel affordance.
-- **Content and data shown:** password state; linked provider identities; **second-factor state, and how many recovery codes remain unspent**.
+- **Content and data shown:** password state; linked provider identities; **second-factor state, and how many recovery codes remain unspent**; **during enrolment, the Enrolment code component — the QR symbol beside the base32 secret it encodes** (§11.5, added 12 Sep 2026 with task 143; the API has returned the `otpauth://` Key Uri since task 27.2 and nothing drew it, leaving this screen's own copy — *"Scan or enter this code"* — offering a scan that was not there).
 - **Controls and actions:** change password; link a provider; unlink a provider; **enrol a second factor; turn it off; re-issue recovery codes**.
 - **States:** loading — initial; **pending confirmation** (returned from a provider with a link awaiting the password); error — recoverable; error — permission; success.
 - **Validation behaviour:** changing a password requires the current one (FR-7). A link is established only after authentication by an existing credential — a provider assertion alone is never sufficient (UC-11, FR-8). The system refuses to remove the last remaining credential and prompts the user to set a password first, with the consequence stated: an account with no usable credential is unrecoverable and takes its organization memberships down with it (UC-12, UX-70). **Enrolling or turning off a second factor requires the current password**, for the reason the link rule already gives — a second factor is the control that survives a compromised session, so a compromised session must not be able to install or strip one (UC-193). **Enrolment is not complete until a current code is returned**, and the recovery codes are shown exactly once, which the screen must say before it shows them rather than after.
@@ -1864,6 +1864,10 @@ Breakpoint names and capabilities are in §3.3.
 
 **Density.** Two density modes sharing one token set: **comfortable** (tenant default — infrequent users, high stakes per field) and **compact** (admin queues — trained operators, high volume). No third mode, and no per-user density switching at MVP.
 
+**The steps, set 12 Sep 2026 (project owner), closing `architecture.md` OQ-44.** Under `[data-density="compact"]` the tier-1 space scale's **steps 4 through 8 each take the value of the step below** — `--space-4` becomes 8 px, `--space-5` 12 px, `--space-6` 16 px, `--space-7` 24 px, `--space-8` 32 px. Steps 1–3 and 9–10 do not move, type roles do not move, and radius, colour, elevation and motion do not move. It is authored once in `packages/ui/src/styles/tokens.css`, which is what UX-127 requires and what `apps/admin` has been waiting on since it declared the attribute and deliberately authored no values.
+
+**Why the scale itself rather than a semantic layer.** The textbook shape is a tier-2 role — `--pad-control`, `--gap-stack` — that the density selector remaps, and it was declined on a count: the delivered library holds **172 direct `var(--space-N)` references across 32 files** against four tier-2 spacing roles, so a role-based remap is a 32-file sweep before the selector does anything, where redefining the scale changes no component at all. The cost is that `--space-6` does not mean 24 px inside the console — which is what a density mode is, rather than a side-effect of one.
+
 ### 11.5 Component inventory
 
 The contract a component library must satisfy. Each entry requires every applicable state from §8.1. **Every specimen is rendered in every variant and state in `design/screens/EasyESG Components.dc.html`**, which is the reference for anything ambiguous below.
@@ -1929,7 +1933,9 @@ screen. **The language choice is in it although the specimen omits it**, which i
 than a preference — the compact bar drops the account menu, so a locale switch left out here
 would be a task made unavailable by viewport with no statement of why. control.
 
-**Data display** — Data table (sortable, filterable, selectable) · Definition list · Key figure · Comparison table · Timeline / history list · Status chip · Chart (admin only at MVP).
+**Data display** — Data table (sortable, filterable, selectable) · Definition list · Key figure · Comparison table · Timeline / history list · Status chip · Chart (admin only at MVP) · **Enrolment code** (a QR symbol beside the secret it encodes).
+
+**Enrolment code was added 12 Sep 2026** (task 143), the second true addition to this inventory after One-time code and recorded for the same reason UX-89 gives. It renders an `otpauth://` Key Uri as an SVG symbol **beside**, never instead of, the base32 secret: the scan is the fast path and the typed secret is the one that works on a desktop authenticator, a screen reader and a printed recovery sheet, so neither is a fallback for the other. Its applicable §8.1 states are the ones a symbol can actually be in — **the URI absent** (the secret and its instructions stand alone), and **loading**, since the offer is fetched. There is no error state: an encoder that cannot encode a URI this product minted is a defect, not a state to design. Both consumers are credential screens — S-28 and A-19 — and a one-off in either is the defect UX-89 names.
 
 **Domain components** — the ones that carry the product:
 
