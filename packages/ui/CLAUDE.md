@@ -13,7 +13,7 @@ restating it here would create the second copy that drifts. This file carries wh
 
 ## Current state
 
-47 components in nine folders, 24 spec files, `src/styles/tokens.css` at 392 lines — **light and
+47 components in nine folders, 24 spec files, `src/styles/tokens.css` at 429 lines — **light and
 dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
 schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
 `.spec.ts` rather than a `.spec.tsx` and so is *not* in the 24: it renders nothing, it parses the

@@ -17627,3 +17627,69 @@ this repository already records twice. It is not: two consecutive `pnpm e2e` run
 in between both pass 880/880. The 62 failures followed an *aborted* run, not a completed one. What
 is left is an observation without a mechanism, deliberately not written up as a defect and not
 given a task number.
+
+## Task 67.2 — the compact density, and a rule that was wrong on its second day · 2026-09-12
+
+`architecture.md` OQ-44 closed on 12 Sep 2026 with task 82's batch: under `[data-density="compact"]`
+the tier-1 space scale's steps 4 through 8 each take the value of the step below; steps 1–3 and
+9–10 do not move, and neither do type, radius, colour, elevation or motion. This is that decision
+authored. The row had been `BLOCKED` since it was written, with *"the block is the deliverable"* —
+so what shipped is five declarations and the two things that keep them honest.
+
+`apps/admin` needed no change at all, which is the point: it has declared the hook on `<html>`
+since its scaffold and deliberately authored no values, because a second token file in an app is
+what UX-127 calls a defect. Measured in the running console — `12/16/24/32/48` comfortable against
+`8/12/16/24/32` compact — and A-01 renders correctly at the tighter scale.
+
+### The obvious implementation is silently wrong
+
+The first version expressed the shift as a chain: `--space-4: var(--space-3)`, `--space-5:
+var(--space-4)`, and so on down. It reads as the cleanest possible statement of *"each step takes
+the value of the step below"* and it collapses every step to 8px.
+
+`:root` and `[data-density='compact']` both match `<html>`, so the cascade yields **one** computed
+value per property. Inside the compact block `var(--space-4)` therefore reads the value declared
+*there* — 8px — not the 12px on `:root`. Each subsequent step reads the already-shifted one.
+
+Measured in a browser before the block shipped rather than reasoned about: a `:root` of
+`--a: 8px; --b: 12px; --c: 16px` with an override of `--b: var(--a); --c: var(--b)` computes
+`--b: 8px, --c: 8px`. So the block carries literals, and the comment carries the trap — this is
+precisely the class of defect that would otherwise be found later as *"why is everything 8px in the
+console"*, with the cause three abstraction layers from the symptom.
+
+Literals are a copy the code cannot delete, so `tokens.spec.ts` gained two assertions: each compact
+step equals the scale's step below it, and **nothing else appears in the block**. The second matters
+more than it looks — a density chooses steps of the space scale and nothing else, so a colour or a
+font-size appearing there is a different decision wearing this one's clothes. Proven to bite by
+drifting `--space-6` to 14px.
+
+### The split rule was wrong, and closing this task is what showed it
+
+`docs/task.md`'s preamble said, from 12 Sep 2026: *"**Zero rows here carry `DONE`** — a closed row
+moves to `archived_tasks.md`"*, with `docs:check` counting `DONE` rows in the active file. Setting
+67.2 to `DONE` turned that gate red, and the gate was right to fire — at a rule that was wrong.
+
+**A sub-step closing before its siblings is the ordinary case**, not an exception. 67.2 is closed
+while 67.1 and nine others are not, and a group cannot be split across the two files: the archive's
+own preamble says every group travels whole, and half a group in each file would put a parent's
+roll-up in a different file from the rows it rolls up. A closed sub-step therefore *belongs* in the
+active plan, where a reader needs to see which parts of an open task are done.
+
+The claim is now **groups, not rows**: zero fully closed groups remain in `task.md`. Verified by
+computing it three ways rather than trusting the prover — 0 as committed, 1 when group 67 is faked
+fully closed, and 74 for the archive, which independently matches the count its own preamble states.
+The superseded sentence is quoted in the amendment rather than replaced silently, because it is what
+a reader who saw the first version would otherwise still believe.
+
+Worth stating plainly: this rule was written two days ago, by the same author, with a failing state
+deliberately attached — and the failing state is the only reason it was caught on the first task
+that exercised it rather than on the tenth.
+
+### Verified
+
+`packages/ui` 251 tests (including the two new density assertions and 108 contrast assertions);
+`apps/web` 531; `apps/admin` 7; `routes:check`; `e2e:web` 178/178 across all three projects; lint;
+typecheck; `docs:check` 40 claims. The dependents' runs are the `packages/*` row of the sub-step
+table — a shared package has no narrow run. No `gates:clean`: nothing here moved, renamed or
+deleted a file, changed a type, or touched a generated artefact or build input, and `pree2e:web`
+rebuilt both apps from the changed stylesheet anyway.

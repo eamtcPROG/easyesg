@@ -194,6 +194,43 @@ const measure = (p: Pairing, scheme: Scheme) => ratio(resolve(p.fg, scheme), res
  *  here: these are measurements, and 4.5 is everything 4.50 knew. */
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+/** The compact density's block, parsed the same way the dark block is. */
+const compactBlocks = [...BARE.matchAll(/:root\[data-density='compact'\]\s*\{([\s\S]*?)\n\}/g)];
+
+describe("tokens.css — §11.4's compact density (architecture.md OQ-44, task 67.2)", () => {
+  it('declares the compact block once', () => {
+    expect(compactBlocks).toHaveLength(1);
+  });
+
+  /**
+   * **The shift, asserted rather than trusted.** OQ-44 closed on *"steps 4 through 8 each take the
+   * value of the step below"*, and the block writes that as five literals — because chaining it as
+   * `--space-5: var(--space-4)` reads the value declared in the same block and collapses every step
+   * to 8px (measured in a browser before the block shipped). Literals that cannot be derived at
+   * runtime are exactly the copy this repository guards with a gate rather than deletes, as the
+   * migrations' `CHECK` constraints already are.
+   */
+  it('shifts steps 4 through 8 down exactly one rung of the same scale', () => {
+    const compact = declarationsOf(compactBlocks[0][1]);
+    for (const step of [4, 5, 6, 7, 8]) {
+      expect(
+        compact.get(`--space-${step}`),
+        `compact --space-${step} must equal the scale's --space-${step - 1}`,
+      ).toBe(LIGHT.get(`--space-${step - 1}`));
+    }
+  });
+
+  /** Steps 1–3 are optical and 9–10 are page rhythm; §11.4 records why neither moves. Type, radius,
+   *  colour, elevation and motion are not a density's business at all — a density chooses steps of
+   *  the space scale and nothing else, so anything else appearing here is a different decision. */
+  it('moves nothing else', () => {
+    const compact = declarationsOf(compactBlocks[0][1]);
+    expect([...compact.keys()].sort()).toEqual([
+      '--space-4', '--space-5', '--space-6', '--space-7', '--space-8',
+    ]);
+  });
+});
+
 describe('tokens.css — UX-80 and UX-101', () => {
   it('defines a dark scheme at all', () => {
     expect(darkBlock).not.toBeNull();

@@ -308,10 +308,25 @@ const CLAIMS = [
     //
     // It reads naturally at zero because `WORDS` maps `zero` → 0 and the prover mutates with
     // `actual + 1`, so the proof pass rewrites the sentence to `one` and the claim correctly fails.
-    what: 'DONE rows left in the active plan',
+    // **Groups, not rows — corrected 12 Sep 2026, the first time a sub-step closed.** The claim
+    // began as "zero rows here carry DONE" and was wrong on its second day: task 67.2 closed while
+    // 67.1 and its siblings stayed open, and a group travels whole (the archive's preamble says so,
+    // and splitting one across the two files would put a parent's roll-up in a different file from
+    // the rows it rolls up). A closed sub-step therefore BELONGS here, in the active plan, where a
+    // reader needs to see which parts of an open task are done. What must never linger is a group
+    // whose every row is closed — that is the archive's, and it is what this counts.
+    what: 'fully closed groups left in the active plan',
     file: 'docs/task.md',
-    pattern: /\*\*(\w+) rows here carry `DONE`\*\*/,
-    actual: () => countIn('docs/task.md', /^\|.*\|\s*DONE\s*\|\s*$/gm),
+    pattern: /\*\*(\w+) fully closed groups remain here\*\*/,
+    actual: () => {
+      const status = new Map();
+      for (const line of read('docs/task.md').split('\n')) {
+        const m = /^\|\s*\*{0,2}(\d+)(?:\.\d+)*\*{0,2}\s*\|.*\|\s*([A-Z ]+?)\s*\|\s*$/.exec(line);
+        if (!m) continue;
+        (status.get(m[1]) ?? status.set(m[1], []).get(m[1])).push(m[2]);
+      }
+      return [...status.values()].filter((s) => s.every((v) => v === 'DONE')).length;
+    },
   },
 
   // The 11 Sep 2026 audit found twelve stale numbers across the five files, and every one was
