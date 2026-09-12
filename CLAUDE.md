@@ -301,11 +301,11 @@ changing anything — `gh run view <id> --log-failed` — and fix the cause rath
 | --- | --- | --- |
 | [problem_overview.md](docs/problem_overview.md) | Problem framing, scope boundary, closed decisions | — |
 | [actors.md](docs/actors.md) | Actors and permissions | CA, RC, OA, PA, BO, SYS |
-| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…192, D-1…14 |
-| [functional_requirements.md](docs/functional_requirements.md) | What it does | FR-1…173 |
-| [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93 (+94…105 deferred) |
-| [architecture.md](docs/architecture.md) | How it's built | AD-1…14, DR-1…11 |
-| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…136, S-01…28, A-01…18 |
+| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…212, D-1…16 |
+| [functional_requirements.md](docs/functional_requirements.md) | What it does | FR-1…203 |
+| [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93, 106…110 (+94…105 deferred) |
+| [architecture.md](docs/architecture.md) | How it's built | AD-1…15, DR-1…11 |
+| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…138, S-01…35, A-01…19 |
 
 **Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
 column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.

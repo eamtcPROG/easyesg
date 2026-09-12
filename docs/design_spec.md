@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-136`, `S-01` … `S-28`, `A-01` … `A-18` |
+| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-34`, `A-01` … `A-19` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -312,8 +312,9 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-16 | Revenue, VAT export, billing audit ledger | BO | UC-160 … 164 | Dashboard + Index |
 | A-17 | Notification categories and templates | PA | UC-176 | Editor + Publish |
 | A-18 | Identity provider configuration | PA | UC-70 | Editor |
+| A-19 | My credentials (operator's own password, second factor, recovery codes) | PA | UC-212 | Record |
 
-**Count:** 52 screens — 34 tenant (`S-01 … S-34`) and 18 administrative (`A-01 … A-18`). `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
+**Count:** 54 screens — 35 tenant (`S-01 … S-35`) and 19 administrative (`A-01 … A-19`). *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -652,7 +653,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Archetype:** Index.
 - **Entry points:** workspace navigation; S-05.
 - **Layout and regions:** Index fixed elements — filter, sort, empty state, row action, pagination or progressive load.
-- **Content and data shown:** every user with access, their role, status (active or pending invitation) and last activity (UC-59); pending invitations; seat consumption against the plan's entitlement (§6.10). **The list is one union across two collections** — `/members` and `/invitations` — assembled in the read model, which is what task 25.1's schema records in advance: a pending invitation is not a member, and the single list is what the screen makes of them. **Seat consumption is deferred (26 Aug 2026, task 26.4's batch):** UX-50 requires the limit, the allowance, current consumption and the upgrade path *in that order*, and only consumption is knowable before `EntitlementPort` has an implementation — so the region and the gate state below ship with task 54.2 rather than as one value in four. A partial region would invite the reader to infer a ceiling nothing is checking.
+- **Content and data shown:** every user with access, their role, status (active or pending invitation) and last activity (UC-59); pending invitations; seat consumption against the plan's entitlement (§6.10). **The list is one union across two collections** — `/members` and `/invitations` — assembled in the read model, which is what task 25.1's schema records in advance: a pending invitation is not a member, and the single list is what the screen makes of them. **Seat consumption was deferred on 26 Aug 2026 (task 26.4's batch) and is undeferred here (12 Sep 2026, task 142).** The deferral's reason was exact: UX-50 requires the limit, the allowance, current consumption and the upgrade path *in that order*, only consumption was knowable before `EntitlementPort` had an implementation, and a partial region would invite the reader to infer a ceiling nothing was checking. **Task 142 makes the ceiling real without waiting for entitlements** — a configured `seat_allowance` artefact (AD-4) enforced at invitation and at membership creation, counted over the same union this screen renders — so three of the four values become knowable and the fourth, the upgrade path, is the one UX-50 allows to be absent while no plan exists to upgrade to. The region and the gate state ship here rather than at 54.2, and what 54.2 changes is the *source* of the allowance, not this screen.
 - **Controls and actions:** invite by email with an edit or view-only role; resend an invitation; revoke an invitation; change a role; remove a member; promote a member to Organization Administrator; send a manual reminder to a user about an outstanding report (UC-175).
 - **States:** empty — first use; empty — filtered; loading — initial; loading — refresh; error — recoverable; error — permission; success. Entitlement gate state where an invitation would exceed the seat allowance (§6.10, UX-50).
 - **Validation behaviour:** email format on invite. Revocation invalidates the outstanding link immediately. Removing a member is a consequence-disclosing action naming the specific user (UX-70), and the interface shall state at the point of removal that their historical contributions remain attributed in the change history (UX-69). An invitation beyond the seat entitlement follows the quota path and states the limit, the allowance, current consumption and the upgrade path in that order (UX-50).
@@ -1280,6 +1281,23 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **FRs:** FR-82.
 
 ---
+
+### A-19 — My credentials
+
+- **Purpose:** let an operator rotate their own password, second factor and recovery codes without another operator acting.
+- **Primary actors:** PA.
+- **Archetype:** Record.
+- **Entry points:** console navigation; the account menu; a lost or replaced authenticator device.
+- **Layout and regions:** Record archetype — identity header, grouped sections per credential, explicit save per section, change attribution.
+- **Content and data shown:** password state; second-factor state; how many recovery codes remain unspent; **during re-enrolment, the Enrolment code component — the QR symbol beside the base32 secret it encodes** (§11.5).
+- **Controls and actions:** change password, optionally terminating other sessions; re-enrol a second factor; issue or re-issue recovery codes. **Every one of them asks for the current password**, on the rule task 27.5 established for the tenant realm: a route that changes a credential from behind a session must not let a stolen session outlive the password its owner reaches for.
+- **States:** loading — initial; error — recoverable; success; **enrolling** — the staged state holding the secret and its QR until a current code confirms it.
+- **Validation behaviour:** re-enrolment activates only on a confirming code, so a scan that silently failed cannot lock the operator out. A recovery code is single-use and the remaining count is shown rather than the codes themselves. Consequence disclosure on *terminate my other sessions* (UX-70).
+- **Exits:** back to the console home. A password change that terminates other sessions leaves this one live — FR-7's *other*, applied here.
+- **Use cases:** UC-212.
+- **FRs:** FR-80.
+
+**Not on A-08, and not a variant of S-28.** A-08 manages other administrators (UC-87); this screen is the operator's own credentials, and the two answer different questions about different people. S-28 is the tenant equivalent and shares its *shape* but not its realm — NFR-65 keeps the credentials, tables and session disjoint, so the two screens are siblings rather than one screen with a flag.
 
 ## 6. Key interaction patterns
 
@@ -2149,6 +2167,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | A-16 | Revenue, VAT export, billing audit ledger | BO | UC-160 … 164 | FR-148, FR-149, FR-150, FR-151, FR-152 |
 | A-17 | Notification categories and templates | PA | UC-176 | FR-173 |
 | A-18 | Identity provider configuration | PA | UC-70 | FR-82 |
+| A-19 | My credentials | PA | UC-212 | FR-80 |
 | *(global tier)* | User menu — log out | CA | UC-06 | FR-5 |
 | *(inline)* | Re-authentication over preserved context | CA | UC-07 | FR-5 |
 | *(global tier)* | Organization switcher | CA | UC-16 | FR-12 |
