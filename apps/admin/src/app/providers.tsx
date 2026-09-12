@@ -10,11 +10,17 @@ import { RouteError, RouteNotFound } from '~/app/route-fallbacks';
  * here — a provider added at this level is global by definition, and this app's global surface
  * is deliberately two things.
  *
- * TanStack Query is the data layer because §11.2 settles the transport question: nothing
- * pushes. Order state, migration runs, export jobs and every exception queue poll, so
- * `refetchInterval` is the shape of every screen in `features/`. SSE and WebSockets appear
- * nowhere in §5.4, §10.4 or the edge configuration; adding one is an amendment to those
- * sections, not a ticket.
+ * TanStack Query is the data layer because §11.2 settles the transport question for the console:
+ * nothing pushes here. Order state, migration runs, export jobs and every exception queue poll,
+ * so `refetchInterval` is the shape of every screen in `features/`.
+ *
+ * **AD-15 added a push accelerator on 12 Sep 2026 and deliberately does not serve this app.** It
+ * accelerates two tenant surfaces by fanning out contentless hints; the console is a static SPA
+ * with no proxy tier to mint the handshake ticket, and NFR-65's network restriction is not a
+ * surface to reopen for a latency gain. So the sentence that used to read "SSE and WebSockets
+ * appear nowhere" is now false of the platform and still true of `apps/admin` — which is the only
+ * reason it is worth restating rather than deleting. Extending the gateway here is an amendment
+ * to AD-15's scope, not a ticket.
  */
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -353,6 +353,24 @@ Ratified 18 Aug 2026 from `architecture.md` §17.3. FR-160 … FR-173 previously
 
 ---
 
+### 4.17 Push acceleration (NFR-110)
+
+Added 12 Sep 2026 with `architecture.md` **AD-15**, which put a WebSocket gateway in front of surfaces that until
+then only polled. It is its own subsection rather than a fifth notification quality because it is not one: the
+accelerator carries no notification and no content, and the FR-161 unread count is one of its two consumers rather
+than its subject.
+
+**The requirement is written as a pair on purpose.** A latency target alone would let an implementation meet it by
+making delivery load-bearing — removing or slowing the poll, so that the connected path is the only path that works.
+Naming the disconnected interval as the *guaranteed ceiling* is what makes AD-15's floor a verifiable property rather
+than an intention, and it is why the verification column requires two assertions per surface rather than one.
+
+| NFR ID | Requirement | Metric / target | Verification | Pri | Related FR / UC / D |
+|---|---|---|---|---|---|
+| NFR-110 | An accelerated surface shall reflect a committed change **within p95 ≤ 3 s of commit while the push connection is live**, and **within that surface's poll interval whenever it is not** — the disconnected interval being the guaranteed ceiling rather than a degraded mode. No accelerated surface's poll interval shall be lengthened on the grounds that the accelerator covers it | p95 ≤ 3 s connected, measured commit → client refetch issued; with the socket disabled, the surface still updates within its `architecture.md` OQ-36 interval (unread count 60 s, S-16 30 s) | **T** — each accelerated surface asserted twice, connected and disabled; a surface carrying only the connected assertion fails this requirement by construction | MVP | AD-15, FR-161, FR-58 |
+
+---
+
 ## 5. Cross-cutting quality scenarios
 
 Six scenarios in which several qualities are exercised at once. Each is drawn from a source statement or verification method; none introduces a new threshold. They exist because the requirements most likely to be individually satisfied and jointly violated are the ones that meet at these points.
