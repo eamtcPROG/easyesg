@@ -67,8 +67,8 @@ claim checkable by reading rather than by trusting.
 Playwright browser run, three projects since task 23: the tenant journeys with their axe scan,
 the +40% expansion check, and the admin console driven cross-origin against its built bundle;
 it needs the migrated Compose stack plus `pnpm exec playwright install chromium` once per
-machine), in CI's order — a local runner that omitted either suite would not be the same check. `pnpm gates:clean` removes every
-build output first, and the difference between the two is the subject of the next section. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
+machine), in CI's order — a local runner that omitted either suite would not be the same check. `pnpm gates:clean` runs the same set over a cleaned
+tree, and when that is the run to reach for is the subject of the next section. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
 applies, reverts, re-applies and then asserts §7's schema invariants against the Compose stack,
 because neither "the baseline applies from an empty database" nor "no foreign key crosses the
 core/billing boundary" is a property any hermetic test can assert. **Four need the stack** —
@@ -94,7 +94,7 @@ something closed:
 | Closing | Run |
 | --- | --- |
 | A sub-step — 36.4, 36.5 … | Only what the change reaches, per the table below |
-| The parent — 36, when its last sub-step goes `DONE` | `pnpm gates:clean`, then the three review agents over the **whole parent diff** |
+| The parent — 36, when its last sub-step goes `DONE` | The gate set, **the boot proof**, then the three review agents over the **whole parent diff**. Whether that run is `gates` or `gates:clean` is yours to judge — see *When `gates:clean` is the required run* |
 | Whenever asked | Either, on request |
 
 The parent trigger is the roll-up rule this file already carries — *"closing the last child closes
@@ -124,7 +124,8 @@ judgement and an omission.
 the two `*:prove` gates and the cross-workspace half of `typecheck` now run once per parent rather
 than once per sub-step. Two things cover it: **CI runs the full set on every push to `dev`**, so a
 sub-step pushed alone is still checked — a couple of minutes later, and not by this machine; and the
-parent close runs `gates:clean`, which is the only run that sees stale build state at all. What is
+parent close runs the full set, cold where the cases above call for it — and `gates:clean` is the only run that
+sees stale build state at all. What is
 assumed meanwhile is that a defect CI finds shortly after a push costs less than the local minutes
 spent finding it first. What falsifies it is a sub-step's break surviving to the parent close and
 costing more to unpick there than the skipped run would have cost — record that in `build-log.md`
@@ -149,8 +150,8 @@ and `docs:check`. (This sentence said *three* until task 100 and listed the firs
 file-reading checks always ran too, and the count was one of the claims `docs:check` was written
 because of.)
 
-**`pnpm gates` is what CI runs, in CI's order, and `pnpm gates:clean` wraps it** — so running
-`gates` on its own before a push you are about to make is paying for the same set twice. The gate
+**`pnpm gates` is what CI runs, in CI's order, and `pnpm gates:clean` is the same set over a cleaned tree** — so
+the two are never both worth running, and choosing between them is the judgement recorded below. The gate
 set is thirteen root scripts plus three e2e suites; writing this rule surfaced that its first draft
 stopped at the hermetic ones and would have missed the very defect that prompted it.
 
@@ -158,8 +159,8 @@ stopped at the hermetic ones and would have missed the very defect that prompted
 added 31 Aug 2026; moved from every task close to the parent's on 8 Sep 2026, with the gate split
 above). The diff they read is the whole parent — every sub-step's commits together — which is wider
 than any one of them used to carry, and is the shape the routing table below was written for. Note
-that `gates:clean` prints no routing line where `gates:scoped` does, so at parent close the model is
-read off that table from the diff itself, before any agent runs.
+that neither `gates` nor `gates:clean` prints the routing line `gates:scoped` does, so at parent close the model
+is read off that table from the diff itself, before any agent runs.
 
 They exist because the gate set proves code *runs* and says nothing about whether it
 *belongs* — this file already records that every finding a review has raised on the front ends was
@@ -231,10 +232,51 @@ exactly one rule **no gate enforces**, with the answer key in `EXPECTED.md` that
 agent's context. Re-run them when an agent's instructions change, or when a clean report starts
 feeling too easy.
 
-**Run `pnpm gates:clean` at parent-task close, and before pushing that parent.** A sub-step pushed
-on its own no longer waits for it — CI's full set is what stands in, per the trade recorded above.
-It removes every build output first, and that is not belt-and-braces — it is the only local run that
-can see a whole class of defect:
+**When `gates:clean` is the required run — a judgement, with the cases stated.** Standing decision by the owner,
+12 Sep 2026. It replaces *"run `pnpm gates:clean` at parent-task close, and before pushing that parent"*, which
+made a five-to-ten-minute cold run unconditional on every parent regardless of what the diff touched. **Decide it
+from the diff.** `gates:clean` is required when the change could make a *previously built* artefact wrong or
+absent — and a warm run cannot see either:
+
+- a file **moved, renamed or deleted** — the stale copy in `dist/` still satisfies an import that no longer has a
+  source, which a fresh clone will not;
+- a **type** changed rather than a file — `pnpm lint` runs `--cache --cache-strategy content`, so a file whose own
+  bytes are unchanged is skipped while `@typescript-eslint`'s type-aware rules read the whole program (the task 33.2
+  case below);
+- a **generated artefact** or its generator — the contract, the facade, the event catalogue, a seed;
+- a **`prex` hook, script or build input** — the thing that decides what a later command finds;
+- **anything in `packages/*`**, whose `dist/` every app resolves against.
+
+Otherwise `pnpm gates` is the parent-close run and the cold one is waste. **Say in the response which you ran and
+why**, because that sentence is the difference between a judgement and a habit — and record a case where the warm
+run passed and CI did not, since that is what would falsify this.
+
+**Before that, and not negotiable: the tests run, and the application is proven to boot and to serve without
+runtime errors.** A gate that compiles, lints and type-checks says nothing about whether the thing starts — that is
+not a hypothetical, it is `docs/build-log.md`'s *"The worker had not booted since task 28.1, and only CI could say
+so"*: nine green gates, four tasks shipped on top, and `MODE=worker` refusing to start the whole time because
+`openapi:check` boots the graph in preview and instantiates no provider while every other suite booted HTTP. What
+proves it now:
+
+| Entrypoint | What boots it |
+| --- | --- |
+| `api` (HTTP) | `pnpm e2e` — `test/entrypoint-boot.e2e-spec.ts` in HTTP mode, plus every other suite |
+| `api` (`MODE=worker`) | `pnpm e2e:worker` — the same spec, launched in worker mode |
+| `web`, `admin` | `pnpm e2e:web` — builds the standalone bundle and drives it in a real browser |
+
+**The mode is read at module-definition time, so one process cannot exercise two branches** — which is why the pair
+of runs is the proof and neither alone is. **A new entrypoint owes this spec a case**: AD-15 makes AD-1 three roles
+rather than two, so task 147's `MODE=gateway` extends `entrypoint-boot.e2e-spec.ts` and adds its own run, or the
+gateway ships with exactly the hole the worker shipped with.
+
+**And a boot that logs is not a boot that works.** Read what the run actually printed — an unhandled rejection, a
+Nest dependency warning, a browser console error — rather than only whether the assertions passed. The `Slot`
+defect this file records is the worked example: a 500 on the live arm, a clean 200 on the failed-read arm, so the
+screen looked healthiest exactly when its data was broken, and no assertion anywhere was red.
+
+**What `gates:clean` is still the only thing that can see**, and the reason the cases above are drawn where they
+are. It removes every build output first, which is not belt-and-braces — it is the one local run that catches a
+whole class of defect:
 
 > **A gate must not depend on state a previous command left behind.**
 
@@ -266,10 +308,11 @@ Two things follow, and both are cheap:
   the key never hashes. Task 32.2.1 made five `ReportingPeriod` members precise in the generated
   contract, which turned an `as ReportingPeriod` in a spec written one commit earlier into a no-op;
   `no-unnecessary-type-assertion` had already passed that file and never looked again. The commit
-  shipped red and every warm run agreed it was green. `gates:clean` deletes the cache, which is why
-  it is the run the parent close turns on — and why a warm `pnpm lint` after changing a *type*
-  rather than a *file* proves less than it appears to. A sub-step's `pnpm lint` is always warm by
-  construction, so this is precisely the class the parent close exists to catch up on.
+  shipped red and every warm run agreed it was green. `gates:clean` deletes the cache, and this is
+  the case that puts *a type changed rather than a file* on the required-cold list above — a warm
+  `pnpm lint` after changing a **type** proves less than it appears to, while after changing a
+  **file** it proves what it looks like it proves. A sub-step's `pnpm lint` is always warm by
+  construction, so the parent close is where the distinction has to be made rather than assumed.
 
 **`gates:clean` removes build outputs. It cannot see the index — check that separately.**
 Added 27 Aug 2026, after a review found that the S-28 commit shipped **no S-28**: `.gitignore`
