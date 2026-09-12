@@ -1493,6 +1493,7 @@ graph TB
         ADMC["admin (static)"]
         APIC["api × 2–4<br/><i>scaled for filing window</i>"]
         WKC["worker × 1–3"]
+        GWC["gateway × 1–2<br/><i>WebSocket fan-out (AD-15)</i>"]
         RENC["renderer × 1–2"]
         REDC["redis 8.10"]
         PGB["pgbouncer<br/>transaction pooling"]
