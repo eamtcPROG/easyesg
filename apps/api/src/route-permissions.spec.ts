@@ -52,11 +52,20 @@ describe('every route states its permission (task 28.2, actors.md §5)', () => {
     expect(undeclared).toEqual([]);
   });
 
-  /** Every declared kind is one of the three; a fourth would mean a guard nothing here knows about. */
-  it('uses only the three declarations the guard chain implements', () => {
+  /**
+   * Every declared kind is one the guards implement; another would mean a guard nothing here knows
+   * about. Three until task 67.3, whose `admin` kind is the realm's — `AdminRealmGuard`, reached
+   * through `@RequiresAdminRole` — and which this assertion is now what makes deliberate.
+   */
+  it('uses only the four declarations the guards implement', () => {
     const kinds = new Set(
       Object.values(actual).map((permission) => permission?.split(':')[0] as PermissionKind),
     );
-    expect([...kinds].sort()).toEqual([PERMISSION.ACCOUNT, PERMISSION.PUBLIC, PERMISSION.ROLE]);
+    expect([...kinds].sort()).toEqual([
+      PERMISSION.ACCOUNT,
+      PERMISSION.ADMIN,
+      PERMISSION.PUBLIC,
+      PERMISSION.ROLE,
+    ]);
   });
 });

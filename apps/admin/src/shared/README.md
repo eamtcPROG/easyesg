@@ -1,6 +1,10 @@
 # `src/shared/` — cross-context primitives
 
-Empty on purpose, and provisional on purpose.
+**Provisional on purpose — and no longer empty.** Since task 67.3 it holds `index-view.tsx`, the
+Index archetype with the console's chrome labels bound once: A-02 is its first reader, and the
+billing exception queues (A-10 … A-14) are Index screens too, so it is what **both** contexts need —
+this folder's admission test, met. What follows is the reason the folder was created, and it still
+holds for the generic editor it describes.
 
 Five screens are the user interface for config-as-data — `A-03`, `A-04`, `A-05`, `A-09` and
 `A-17` — and `design/IMPLEMENTATION_PLAN.md` Phase 11 is explicit about how they must be built:

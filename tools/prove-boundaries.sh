@@ -157,7 +157,7 @@ prove admin-billing-not-to-platform \
 # was missing until task 135, when this fixture imported relatively and every `~/` violation passed.
 prove admin-realm-is-a-leaf \
   "$ADMIN/realm/__boundary_fixture.ts" \
-  "export * from '~/features/platform/admin';"
+  "export * from '~/features/platform/metering';"
 
 prove admin-shared-is-a-leaf \
   "$ADMIN/shared/__boundary_fixture.ts" \

@@ -249,3 +249,5 @@ export type AdminFactorRequest = components['schemas']['AdminFactorRequestDto'];
 export type AdminSessionResponse = components['schemas']['AdminSessionResponseDto'];
 export type AdminAccount = components['schemas']['AdminAccountDto'];
 export { ADMIN_ROLE, type AdminRole } from './admin';
+/** One organization in A-02's register (task 67.3) — account-level metadata, never report content. */
+export type OrganizationRegisterRow = components['schemas']['OrganizationRegisterRowResponseDto'];

@@ -56,6 +56,12 @@ export interface RequestContext {
    * `@RequiresRole` is closed rather than open while the resolver does not exist.
    */
   role?: MembershipRole;
+  /**
+   * The operator an admin-realm request acts for — written by `AdminRealmGuard` (task 67.3), and
+   * **never** into `actorId`, which is the tenant actor `core.capture_field_change` attributes
+   * writes to. The two realms keep separate tables (NFR-65); their actors keep separate fields.
+   */
+  adminAccountId?: string;
   /** Opened by TenantTransactionGuard. Every tenant query runs on this (AD-14). */
   queryRunner?: QueryRunner;
 }

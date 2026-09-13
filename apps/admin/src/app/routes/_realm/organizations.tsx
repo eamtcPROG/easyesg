@@ -1,22 +1,35 @@
 /**
- * A-02 — Organization register · PA · UC-69 · Index
+ * A-02 — Organization register · PA · UC-69 · Index (task 67.3)
  *
- * Searchable register of every organization at account-metadata level — registration date, entity count, plan, activity.
+ * Every organization on the platform at account-metadata level — name, IDNO, registration date,
+ * active entity count, report count and the most recent member sign-in — and never report content
+ * (FR-76, FR-77, D-5). A Platform Administrator's console home (A-01's exit) and the first
+ * destination in the console nav. The screen is
+ * `features/platform/admin/organization-register/`; this route owns only its addressable state.
  *
- * FR-76 is explicit that this screen "shall never expose report content", and FR-77 forbids any
- * standing access to it. Report data reaches an operator only through A-07's time-boxed grant.
+ * **Every part of the view is in the URL** (UX-4): the search, the order, the page and the open
+ * record, read by `validateSearch` and written by navigating — so a link pasted into a support ticket
+ * reopens exactly what the operator was looking at.
  *
- * Not built. `design_spec.md` §5.2 owns this screen's content, controls and states;
- * `design/IMPLEMENTATION_PLAN.md` owns when it lands. Prototypes in
- * `design/screens/EasyESG Admin Console Screens.dc.html` are the rendered reference — read them
- * for values, never copy their markup (design_spec.md OQ-10).
+ * **The realm guard admits any operator; the api decides who reads.** A Billing Operator who follows a
+ * link here reaches the route, and `AdminRealmGuard` refuses the read — which the screen draws as
+ * §5.2's permission state rather than hiding behind a client-side role check that would be a second,
+ * weaker copy of the api's.
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { OrganizationRegister } from '~/features/platform/admin/organization-register/components/section/organization-register';
+import { readRegisterSearch } from '~/features/platform/admin/organization-register/tools/register-search';
 
 export const Route = createFileRoute('/_realm/organizations')({
+  validateSearch: readRegisterSearch,
   component: OrganizationRegisterRoute,
 });
 
 function OrganizationRegisterRoute() {
-  return null;
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+
+  return (
+    <OrganizationRegister search={search} onSearchChange={(next) => void navigate({ search: next })} />
+  );
 }

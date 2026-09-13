@@ -1,10 +1,12 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import configuration, { type AppConfig } from '@api/config/configuration';
+import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
 import {
+  ADMIN_READONLY_DATA_SOURCE,
   BILLING_DATA_SOURCE,
   CORE_DATA_SOURCE,
+  adminReadOnlyDataSourceOptions,
   billingDataSourceOptions,
   coreDataSourceOptions,
 } from './data-source';
@@ -30,7 +32,7 @@ import {
  * the same `configuration()` factory `ConfigModule` is given, so there is one parse of the
  * environment shape and not two readings of `process.env` that could disagree.
  */
-const { billingEnabled } = configuration();
+const { billingEnabled, mode } = configuration();
 
 @Global()
 @Module({
@@ -48,6 +50,19 @@ const { billingEnabled } = configuration();
             inject: [ConfigService],
             useFactory: (config: ConfigService<AppConfig, true>) =>
               billingDataSourceOptions(configFrom(config)),
+          }),
+        ]
+      : []),
+    // `esg_admin_ro`, for `admin-readonly.ts` (task 67.3). HTTP only: the worker serves no console,
+    // and holding the BYPASSRLS credential where nothing reads through it would be a credential
+    // with no caller — the secrets split's rule.
+    ...(mode === APP_MODE.HTTP
+      ? [
+          TypeOrmModule.forRootAsync({
+            name: ADMIN_READONLY_DATA_SOURCE,
+            inject: [ConfigService],
+            useFactory: (config: ConfigService<AppConfig, true>) =>
+              adminReadOnlyDataSourceOptions(configFrom(config)),
           }),
         ]
       : []),

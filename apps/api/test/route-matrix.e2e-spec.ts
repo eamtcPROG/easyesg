@@ -38,7 +38,8 @@ import {
  *    by a sealed `SameSite=Strict` cookie, an Origin proof and mandatory TOTP that its own handlers
  *    verify (NFR-65). A tenant bearer token has nothing to say to them, so a tenant matrix asserting
  *    anything here would be asserting about a mechanism it does not exercise. `AdminRealmGuard` —
- *    task 67.3 — is what turns that into a chain, and its own matrix arrives with it.
+ *    task 67.3 — is what turns that into a chain, and its own matrix is
+ *    `admin-route-matrix.e2e-spec.ts`, which drives every `admin:` row as that realm's actors.
  *  - **Business outcomes.** That an administrator can actually invite somebody is
  *    `invitations.e2e-spec.ts`'s claim; that a *viewer* cannot reach the route at all is this one's.
  */
@@ -125,8 +126,11 @@ const concreteUrl = (route: string): { method: string; url: string } => {
   };
 };
 
-/** The tenant surface: the admin realm is excluded above, with its reason. */
-const TENANT_ROUTES = Object.entries(SURFACE).filter(([route]) => !route.includes('/auth/admin'));
+/** The tenant surface: the admin realm — its handshake and its own routes — is excluded above, with its reason. */
+const TENANT_ROUTES = Object.entries(SURFACE).filter(
+  ([route, permission]) =>
+    !route.includes('/auth/admin') && !permission.startsWith(`${PERMISSION.ADMIN}:`),
+);
 
 /** The three ways the guard chain refuses on the tenant surface. */
 const REFUSALS = [

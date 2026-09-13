@@ -18,6 +18,8 @@ import type { AppConfig } from '@api/config/configuration';
 /** Connection names, which are also the injection tokens `@InjectDataSource` resolves against. */
 export const CORE_DATA_SOURCE = 'core';
 export const BILLING_DATA_SOURCE = 'billing';
+/** `esg_admin_ro`'s connection (task 67.3) — reached only through `admin-readonly.ts`. */
+export const ADMIN_READONLY_DATA_SOURCE = 'admin_readonly';
 
 /**
  * `DataSourceOptions` plus the `name` TypeORM 1.1 removed from it — and it has to come back,
@@ -112,3 +114,30 @@ export const billingDataSourceOptions = (config: AppConfig): NamedDataSourceOpti
   schema: 'billing',
   applicationName: `easyesg-${config.mode}-billing`,
 });
+
+/**
+ * `esg_admin_ro` — the `BYPASSRLS` role, for the console's reads across organizations (§7.6; task 67.3).
+ *
+ * **Registered in HTTP mode only, with a pool of two**: its caller is an operator paging a register,
+ * not a tenant tier, and `base`'s budget above already counted this role among the connections left
+ * outside the four application pools. **It throws without both credentials**, which is the point: a
+ * deployment missing them fails at boot with the variable named, rather than at an operator's first
+ * read. No `schema`, because every statement through it is schema-qualified.
+ */
+export const adminReadOnlyDataSourceOptions = (config: AppConfig): NamedDataSourceOptions => {
+  const { user, password } = config.database.adminReadOnly;
+  if (!user || !password) {
+    throw new Error(
+      'DB_ADMIN_RO_USER and DB_ADMIN_RO_PASSWORD must be set: the HTTP tier reads across ' +
+        'organizations as esg_admin_ro (architecture.md §7.6, task 67.3).',
+    );
+  }
+  return {
+    ...base(config),
+    name: ADMIN_READONLY_DATA_SOURCE,
+    username: user,
+    password,
+    poolSize: 2,
+    applicationName: `easyesg-${config.mode}-admin-readonly`,
+  };
+};

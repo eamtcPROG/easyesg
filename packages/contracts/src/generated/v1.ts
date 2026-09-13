@@ -1063,6 +1063,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search the register of every organization on the platform
+         * @description UC-69. Account-level metadata for every registered organization — name, IDNO, registration date, active entity count, report count and the most recent member sign-in — and never report content. Every read is recorded in the support access log before it runs.
+         */
+        get: operations["OrganizationRegisterController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2320,6 +2340,25 @@ export interface components {
              * @example 287082
              */
             totpCode: string;
+        };
+        OrganizationRegisterRowResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** @example Brutăria Lina SRL */
+            name: string;
+            /**
+             * @description The organization’s IDNO. Null until its profile records one.
+             * @example 1009600041284
+             */
+            idno: string | null;
+            /** @description Unix epoch milliseconds when the organization was registered on the platform. */
+            registeredAt: number;
+            /** @description Active reporting entities. An archived entity is not counted. */
+            entityCount: number;
+            /** @description Reports the organization holds, in any status — a count only. What a report contains, its stage and its findings are report content and are not published here. */
+            reportCount: number;
+            /** @description Unix epoch milliseconds of the most recent sign-in by any active member. Null when no member has signed in. */
+            lastSignInAt: number | null;
         };
     };
     responses: never;
@@ -4692,6 +4731,55 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    OrganizationRegisterController_list: {
+        parameters: {
+            query?: {
+                /** @description Rows per page, 25 unless given, at most 200. `-1` is refused. */
+                onpage?: number;
+                /** @description 1-based. */
+                page?: number;
+                /** @description One ordering: `<name|registered|entities|reports|activity>,<asc|desc>`. Defaults to `name,asc`. An ordering this route does not offer falls back to the default. */
+                order?: unknown;
+                /** @description Matched against the organization’s name anywhere in it, case-insensitively, and against its IDNO as a prefix. Its own parameter rather than a filter, because a name may contain the filter grammar’s separators. Trimmed; blank means no search. */
+                search?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the register. `total` counts organizations the search admitted and is what pages are counted from; `unfiltered` counts every organization, which is what tells an empty result whether nothing has registered or nothing matched. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["OrganizationRegisterRowResponseDto"][];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
             };
         };
     };

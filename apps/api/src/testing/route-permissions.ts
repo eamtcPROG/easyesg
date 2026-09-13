@@ -8,6 +8,8 @@ import {
   REQUIRES_ACCOUNT,
 } from '@api/modules/identity/membership/constants/membership.constants';
 import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
+import { REQUIRED_ADMIN_ROLES } from '@api/modules/platform/admin/constants/admin-realm.constants';
+import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.model';
 
 /**
  * **Every route on the surface states its permission, and the statement is committed** (task 28.2).
@@ -61,7 +63,11 @@ import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
  * Every role, as `computeSurface` renders a multi-role declaration: sorted and joined, so the
  * table's spelling cannot depend on the order the decorator happened to list them in.
  */
-/** The three ways a route may state who reaches it. There is no fourth, and no default. */
+/**
+ * The ways a route may state who reaches it, and no default. There were three until task 67.3 gave the
+ * admin realm a route beyond its handshake; the fourth is that realm's, and it is not a variant of
+ * `role` — a different credential, a different guard and a different vocabulary of roles.
+ */
 export const PERMISSION = {
   /**
    * No session. Every use carries its own reason at the call site — see `public.decorator.ts`,
@@ -73,6 +79,11 @@ export const PERMISSION = {
   ACCOUNT: 'account',
   /** An authenticated account holding one of these roles in the bound organization (FR-158). */
   ROLE: 'role',
+  /**
+   * A live admin-realm session holding one of these operator roles (task 67.3) — `@RequiresAdminRole`,
+   * judged by `AdminRealmGuard` from the realm's sealed cookie, never by the tenant guard.
+   */
+  ADMIN: 'admin',
 } as const;
 
 type PermissionKind = (typeof PERMISSION)[keyof typeof PERMISSION];
@@ -81,7 +92,8 @@ type PermissionKind = (typeof PERMISSION)[keyof typeof PERMISSION];
 type Permission =
   | typeof PERMISSION.PUBLIC
   | typeof PERMISSION.ACCOUNT
-  | `${typeof PERMISSION.ROLE}:${string}`;
+  | `${typeof PERMISSION.ROLE}:${string}`
+  | `${typeof PERMISSION.ADMIN}:${string}`;
 
 /**
  * Every role, as `computeSurface` renders a multi-role declaration: sorted and joined, so the
@@ -142,11 +154,18 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // surface carries no bearer, and NFR-65 gives it a separate credential store, a sealed
   // `SameSite=Strict` cookie its own handler verifies, an Origin proof and mandatory TOTP.
   // `AdminRealmGuard` — task 67.3, which is the first task that gives it a route to protect — is
-  // what will make that a chain rather than a controller checking for itself.
+  // what will make that a chain rather than a controller checking for itself — and since task 67.3
+  // does, for every admin-realm route below; these four stay public because they are how a realm
+  // session comes to exist.
   'POST /auth/admin/session/challenge': PERMISSION.PUBLIC,
   'POST /auth/admin/session': PERMISSION.PUBLIC,
   'GET /auth/admin/session': PERMISSION.PUBLIC,
   'DELETE /auth/admin/session': PERMISSION.PUBLIC,
+
+  // ── The admin realm's own surface (task 67.3) — reached with the realm's sealed cookie through
+  // `AdminRealmGuard`, never through the tenant guard. The register is a Platform Administrator's:
+  // actors.md §5 gives *Organization register* PA `Y` and BO `—`.
+  'GET /admin/organizations': `${PERMISSION.ADMIN}:${ADMIN_ROLE.PLATFORM_ADMINISTRATOR}`,
 
   // ── A person's own account: credentials, second factor, linked identities (actors.md §5's first
   // row — CA, held by every other human actor "via CA"). `account` and not `role`, because these
@@ -311,6 +330,9 @@ function permissionOf(controller: Constructor, handler: object): Permission | nu
     (Reflect.getMetadata(key, controller) as T | undefined);
 
   if (read<boolean>(IS_PUBLIC) === true) return PERMISSION.PUBLIC;
+
+  const adminRoles = read<string[]>(REQUIRED_ADMIN_ROLES);
+  if (adminRoles !== undefined) return `${PERMISSION.ADMIN}:${[...adminRoles].sort().join('+')}`;
 
   const roles = read<string[]>(REQUIRED_ROLES);
   if (roles !== undefined && roles.length > 0) return `${PERMISSION.ROLE}:${[...roles].sort().join('+')}`;

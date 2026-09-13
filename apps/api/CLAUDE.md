@@ -54,7 +54,7 @@ traps each one left — grouped by area rather than by the task that built it.
   nothing else, opaque refresh rows rotated by conditional consume with a 30 s race grace and
   reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
   §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
-  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI);
+  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3);
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`);
   opt-in TOTP and password change (27); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`); invitations and acceptance (`GET/POST /invitations`,
@@ -71,7 +71,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  notifications (49 … 52), billing (53 … 66), the console's screens (67 … 70), edge and deploy
+  notifications (49 … 52), billing (53 … 66), the console's screens beyond A-02's register (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -100,6 +100,18 @@ traps each one left — grouped by area rather than by the task that built it.
   a domain whose constraint refuses anything but `v<n>.<base64url>`, so plaintext is unrepresentable
   rather than discouraged; the store adapter opens it on the way out and `admin:provision` seals it
   on the way in.
+- **The admin realm's own routes go through `AdminRealmGuard`** (task 67.3; §12.5.6's task-67.3 row).
+  `@RequiresAdminRole(...)` marks a route `IS_ADMIN_REALM` — which the tenant `AuthGuard` stands aside
+  for — and applies the guard, which resolves the sealed cookie through task 145's per-request read,
+  re-sets it when it rotates, and answers `insufficient-role` for a role the route does not name. The
+  operator is `adminAccountId` in the request context, **never `actorId`**, which is the tenant actor
+  field-change capture attributes to. **Reads across organizations go through
+  `infrastructure/persistence/admin-readonly.ts`**: `esg_admin_ro` in `READ ONLY` transactions, each
+  acquisition written to `audit.support_access_log` first and the read refused if it cannot be — so
+  the HTTP tier does not start without `DB_ADMIN_RO_USER` / `DB_ADMIN_RO_PASSWORD`, and CI's image
+  job and the browser suite pass them. `test/admin-route-matrix.e2e-spec.ts` is the realm's half of
+  the route matrix, derived from `admin:` rows in `src/testing/route-permissions.ts`;
+  `test/support/signed-in-operator.ts` signs an operator in through the real handshake.
 - **Social sign-in matches on `(provider, subject)`, never email** (task 24; §9.1 calls the
   email-match variant an account-takeover path). `openid-client` 6.8.7 is a plain static import —
   ESM-only, and on `module: nodenext`/Node 26 `require(esm)` loads it, the OQ-48 revisit, proven for
@@ -398,10 +410,8 @@ believing the invariants.
 
 **Not built yet, and do not assume otherwise** (rewritten 31 Aug 2026 — the previous version was
 taken 25 Aug and had been overtaken by tasks 29, 30, 31 and 33, which is the failure mode a
-current-state list has): **two of the four edge guards** — `EntitlementGuard` (task 54) and
-`AdminRealmGuard` (**task 67.3**, assigned 27 Aug 2026: it guards nothing until A-02 exists, since
-the only admin routes today are task 23's sign-in handshake and that is already behind a sealed
-cookie, an Origin proof and mandatory TOTP) — and `AuditInterceptor` (task 67.4). No **disclosure
+current-state list has): **one of the four edge guards** — `EntitlementGuard` (task 54; `AdminRealmGuard` shipped with
+task 67.3, under Identity above) — and `AuditInterceptor` (task 67.4). No **disclosure
 value** store (task 34), no calculator, validation, comparatives, export or trace body, and no
 `billing` or `platform` body beyond `admin`, `configuration`, `localization` and `taxonomy`.
 

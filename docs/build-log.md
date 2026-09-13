@@ -19436,3 +19436,148 @@ suites — did not run, and **the cold run was not restarted**, on the owner's c
   cases — the three the review found passing for the wrong reason among them. The sixth, the absolute
   bound, answers `session-expired` from rotation too, which is correct rather than a gap: both tiers
   judge the same anchor.
+
+## Task 67.3 — A-02's register, and the realm guard it was waiting for · 2026-09-13
+
+A Platform Administrator now lands on a working organization register: every organization at
+account-metadata level, searched, ordered and paged, with an account-level record beside the table
+that states the tenant-data boundary. Behind it sit the two things no row owned until this one:
+**`AdminRealmGuard`**, which the admin realm's routes are reached through, and **the `esg_admin_ro`
+read path**, which every cross-organization read goes through with its acquisition logged. **The row
+said `admin`, and the work reached `api`, `pkg:contracts`, `e2e`, `tools` and CI** — the guard and the
+read path are api work the screen could not exist without, which is why 145 was ordered before it.
+
+### Four decisions, the owner's, written before any code
+
+Raised as one batch (13 Sep 2026) after a brief found that the guard was specified nowhere, the read
+path did not exist, three of FR-76's four fields had no source, and the artboard drew report progress,
+billing state and owner details:
+
+- **The guard is a decorator per route** — `@RequiresAdminRole(...)`, `@RequiresRole`'s shape.
+  `architecture.md` §6.2 gained its row and §12.5.6 a task-67.3 row carrying the rest.
+- **The register shows name, IDNO, registration date, active entity count, report count, and
+  activity** as the most recent sign-in by any active member. **Plan is a recorded deferral**, not an
+  empty column — no plan records exist until billing, and PA holds no billing authority.
+  `design_spec.md` §5.2 A-02 carries the columns, the deferral and its assumption.
+- **`audit.support_access_log` is created now with its acquisition half**, the table §9.2 names;
+  task 67.9 adds the grant half to the same table.
+- **§5.2's controls only**: search, sort, pagination and the record — no saved views (their questions
+  are billing and report state), no CSV export, column picker or keyboard model, and the support-access
+  request arrives with A-07 itself.
+
+### Settled in the building, and where each is written
+
+All in §12.5.6's task-67.3 row, which owns them:
+
+- **The guard sets the successor cookie before it compares the role.** Rotation has already consumed
+  the presented refresh token, so a refused request must still deliver the successor or the operator's
+  next request fails as signed out.
+- **The operator is `adminAccountId` in the request context, never `actorId`** — the tenant actor
+  field-change capture attributes writes to.
+- **The acquisition is logged first and the read fails closed** — the opposite of the system audit
+  log's never-rethrow, deliberately: there the log records a refusal that has already happened; here
+  §7.6 makes logging the condition on which the role may be used.
+- **`esg_admin_ro` is a third data source**, HTTP only, a pool of two, and **the api does not start
+  without its credentials** — which is why CI's image job and the browser suite's api now pass them.
+- **Search is its own `search` parameter**, because a name may contain the compact grammar's
+  separators; the name matches anywhere, IDNO as a prefix, with `!`, `%` and `_` escaped.
+- **`esg_admin_ro` reads `identity.session` only as `(account_id, created_at)`** — a column grant.
+
+### What shipped
+
+- **`apps/api`** — `IS_ADMIN_REALM` (`app/decorators/`), which the tenant `AuthGuard` stands aside for;
+  `@RequiresAdminRole` and `AdminRealmGuard`; `AdminInsufficientRoleError` with its key in all three
+  catalogues; `admin-readonly.ts` with a spec of its ordering and fail-closed branch; the
+  `support-access-log` migration; the register as `platform/admin`'s FR-76 slice — model, query
+  narrowing with its spec, port, use case, service, controller, DTO, and the store over `AdminReadOnly`;
+  the permission table's `admin` kind; `test/admin-route-matrix.e2e-spec.ts`,
+  `test/organization-register.e2e-spec.ts` and `test/support/signed-in-operator.ts`.
+- **`packages/contracts`** — regenerated, and `OrganizationRegisterRow`.
+- **`apps/admin`** — the client's list verb; `shared/index-view.tsx`; the feature at
+  `features/platform/admin/organization-register/` (two tools with specs, the query, the section, three
+  states, the board, search, list, columns and record); the route holding search, order, page and the
+  open record in the URL; A-02 as the console nav's first destination; `platform.organizations` in the
+  catalogue. The `platform/admin` scaffold barrel went, and `admin-realm-is-a-leaf`'s fixture now
+  imports `platform/metering`'s.
+- **`e2e/admin`** — the register as a Platform Administrator (search, record, a reload restoring both),
+  a Billing Operator's permission state, and axe with a record open.
+
+### Measured, not reasoned
+
+`EXPLAIN` of the register's page query as `esg_admin_ro`, with `enable_seqscan = off`: the three
+per-organization subqueries each use an index — `reporting_entity_id_organization_id_key`,
+`report_organization_id_reporting_period_id_key` (index-only) and `membership_organization_idx`
+joined to `session_account_idx`. **The organizations themselves are scanned and sorted per page**, and
+that stays: the order is an ICU collation and the search matches anywhere in the name, which no btree
+serves, and §1's envelope bounds the table at about two thousand rows.
+
+### Found on the way
+
+- **`INSERT … RETURNING` into an RLS table with no tenant bound is refused**, and the error reads as
+  though the insert were: *"new row violates row-level security policy for table organization"*.
+  `RETURNING` makes the new row pass the table's SELECT policies, which admit nothing with no
+  organization bound — so the INSERT policy admitted the row and the returning refused it. It cost the
+  register e2e's whole first run, eight failures from one `beforeAll`. Both seed helpers now generate
+  the id, and `e2e/admin/support/organizations.ts` says why.
+- **Every `<form>` needs `method="post"` or an `action`** (task 96's selector). The search form takes a
+  React form `action`: a POST before hydration would answer 405 from the static host for a search.
+- **Stale claims, fixed where found**: `app.module.ts` said `AdminRealmGuard` *"waits for its phase"*
+  and would join the `APP_GUARD` list, which it does not; `public.decorator.ts` and
+  `route-matrix.e2e-spec.ts` said it *"will make"* the realm a chain; the admin feature barrel promised
+  `/api/v1/admin/*` and now has a route; the api, admin and root `CLAUDE.md` rows. Searched
+  `AdminRealmGuard`, `admin-readonly`, `support_access_log` and `task 67.3` across `apps`, `docs`,
+  `tools` and every `CLAUDE.md`.
+
+### Considered and not applied
+
+- **No Origin proof on the register**: it is a GET, and `AdminOriginGuard` guards the realm's writes.
+- **No client-side role check before the read**: the api decides, and a second, weaker copy in the
+  browser would be the one that drifts. A Billing Operator reaching the address sees §5.2's permission
+  state, drawn from the api's 403.
+- **No poll** (UX-116): the register changes when an organization registers; refetch on focus is
+  the client's default.
+- **No record route**: the panel re-reads the row the table holds, so no second route exists that could
+  publish more than the register does.
+- **Skills**: `security-use-guards` — met, a guard and a decorator that cannot be half-applied;
+  `db-use-transactions` — each acquisition is one read-only transaction; `perf-optimize-database` —
+  measured above; `file-one-behaviour-api` — one behaviour per file, the transaction adapter's shape;
+  `one-kind-per-folder` — the feature is split per screen under `platform/admin/`, the scaffold barrel
+  went when the domain was built, and `shared/index-view.tsx` meets `shared/`'s admission test;
+  `rerender-*` — the columns and the index labels are memoised and `onOpen` is stable, since
+  `reactCompiler` is off.
+
+### Verification
+
+**What the change reaches, and nothing cold** — the owner's standing correction (13 Sep 2026): no
+review agents and no `gates:clean` by reflex. This change reaches `apps/api`, `apps/admin`,
+`packages/contracts` and so `apps/web`'s compile, `tools/prove-boundaries.sh` and CI:
+
+- `pnpm migrations:check` — the new migration applies, reverts and re-applies, and all 56 schema
+  invariants pass, including the append-only and unclassified-audit-table rules the log joined.
+- `pnpm --filter @easyesg/api typecheck`, `pnpm --filter @easyesg/admin typecheck`,
+  `pnpm --filter @easyesg/contracts typecheck`, `pnpm --filter @easyesg/web typecheck` — clean.
+- Unit: the api suite 822 of 823 on the first run — the one failure the permission-kinds spec asserting
+  three kinds — then green with the touched specs re-run; the console 80; the tenant app 560.
+- `pnpm lint` — clean after five unnecessary type assertions in test code were removed.
+- `pnpm boundaries` and `pnpm boundaries:prove` — clean, with `admin-realm-is-a-leaf`'s fixture
+  repointed and still rejected.
+- `pnpm routes:check` — the route tree unchanged. `pnpm openapi:check` — green with the regenerated
+  contract staged, which carries the route, its row and the new refusal.
+- `pnpm docs:check` — 40 claims.
+- The api e2e suites for the realm ran before the full run: the admin route matrix, the tenant route
+  matrix and the admin session suite green on the first run; the register suite's eight on the second,
+  after the seeding fix above.
+- `pnpm e2e` — **930 across 40 suites**, which is the HTTP entrypoint's boot proof, and the run that
+  matters for `AuthGuard`'s change: every tenant route's matrix row still answers as declared.
+- `pnpm e2e:web --project=admin` — **10 of 10**, the register's three journeys among them, with no
+  server error in the log.
+- `pnpm e2e:worker` — **2 of 2**: the worker still boots, which is the proof that the third data
+  source's HTTP-only registration holds — a worker holds no `esg_admin_ro` credential and needs none.
+
+**Not run, and why.** `pnpm e2e:web --project identity --project expansion`: nothing in the tenant
+app's markup or journeys changed — its tie to this task is the regenerated contract, which its
+typecheck and 560 unit tests already read. **The three review agents and `gates:clean` were not run**,
+on the owner's correction: this is a sub-step of group 67, and the diff is new files, one migration and
+additive changes rather than moves, a changed generator or a cold-build hazard. It does touch the
+admin realm's authorization and a `BYPASSRLS` read path — the surface where a review earns the most —
+so that judgement is stated here and put to the owner rather than taken silently.

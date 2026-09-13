@@ -35,8 +35,9 @@ import { PlatformModule } from './modules/platform/platform.module';
  *    last swallows every specific filter.
  *
  * TenantTransactionGuard is registered here as of task 11, AuthGuard as of task 28.1.
- * EntitlementGuard and AdminRealmGuard still wait for their phases — a guard that cannot do its
- * job is worse than one that is not yet installed.
+ * EntitlementGuard still waits for its phase — a guard that cannot do its job is worse than one
+ * that is not yet installed. AdminRealmGuard is not registered here at all: `@RequiresAdminRole`
+ * applies it per route (task 67.3), as `@RequiresRole` applies its guard.
  *
  * **The request pipeline is registered in HTTP mode only, and that is one fact rather than four**
  * (26 Aug 2026, after CI). `main.worker.ts` builds an *application context* — no HTTP server, no
@@ -65,7 +66,8 @@ const { mode } = configuration();
  * `useExisting` because `SessionModule` constructs `AuthGuard`: it needs the JWT secret and the
  * request-identity store, and a `useClass` here would ask Nest to build a second one from this
  * module's empty provider scope. That is also why this list is HTTP-only — see the header.
- * Task 28.2's `EntitlementGuard` and `AdminRealmGuard` join it in order.
+ * Task 54's `EntitlementGuard` joins it in order; `AdminRealmGuard` does not, being applied per
+ * route by `@RequiresAdminRole` (task 67.3).
  */
 const requestPipeline: Provider[] = [
   { provide: APP_GUARD, useExisting: AuthGuard },

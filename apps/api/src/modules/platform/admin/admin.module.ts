@@ -3,7 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
 import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
 import { JwtAdminTokens } from '@api/infrastructure/adapters/token-signer/jwt-admin-tokens';
+import { AdminReadOnly } from '@api/infrastructure/persistence/admin-readonly';
 import { AdminSessionStoreRepository } from '@api/infrastructure/persistence/platform/admin-session-store.repository';
+import { OrganizationRegisterStoreRepository } from '@api/infrastructure/persistence/platform/organization-register-store.repository';
 import { SYSTEM_AUDIT_LOG, type SystemAuditLog } from '@api/contracts/system-audit-log.port';
 import { SystemAuditLogRepository } from '@api/infrastructure/persistence/platform/system-audit-log.repository';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
@@ -11,15 +13,23 @@ import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import type { PasswordHasher } from '@api/modules/identity/account/interfaces/password-hasher.interface';
 import { AdminSessionController } from './controllers/admin-session.controller';
+import { OrganizationRegisterController } from './controllers/organization-register.controller';
 import { AdminOriginGuard } from './guards/admin-origin.guard';
+import { AdminRealmGuard } from './guards/admin-realm.guard';
 import {
   ADMIN_SESSION_STORE,
   type AdminSessionStore,
 } from './interfaces/admin-session-store.interface';
 import { ADMIN_TOKENS, type AdminTokens } from './interfaces/admin-token.interface';
+import {
+  ORGANIZATION_REGISTER_STORE,
+  type OrganizationRegisterStore,
+} from './interfaces/organization-register-store.interface';
 import { AdminSessionService } from './services/admin-session.service';
+import { OrganizationRegisterService } from './services/organization-register.service';
 import { BeginAdminSignIn } from './use-cases/begin-admin-sign-in.use-case';
 import { CompleteAdminSignIn } from './use-cases/complete-admin-sign-in.use-case';
+import { ListOrganizationRegister } from './use-cases/list-organization-register.use-case';
 import { ResolveAdminSession } from './use-cases/resolve-admin-session.use-case';
 import { SignOutAdmin } from './use-cases/sign-out-admin.use-case';
 
@@ -29,7 +39,10 @@ import { SignOutAdmin } from './use-cases/sign-out-admin.use-case';
  * Platform administration behind the separate admin realm (NFR-65). Task 23 fills in FR-75:
  * the realm's token handler (OQ-17 — `/auth/admin/session` on this api, sealed-cookie
  * sessions, mandatory TOTP per §12.5.6's task-23 rows; reshaped to A-01's two-step credential →
- * factor handshake by the 24 Aug 2026 review). FR-76/80/82/83 are tasks 67–68.
+ * factor handshake by the 24 Aug 2026 review). **Task 67.3 fills in FR-76** — A-02's organization
+ * register, the realm's first route beyond its handshake, reached through `AdminRealmGuard` and read
+ * through `esg_admin_ro` with every acquisition logged (§12.5.6's task-67.3 row). FR-80/82/83 are
+ * tasks 67.4 and 67.11.
  *
  * **What this module deliberately borrows from `identity`, and why that is not a boundary
  * breach:** the Argon2id hasher port, the refresh-token mint/hash, and the throttle domain
@@ -51,6 +64,18 @@ const ADMIN_PASSWORD_HASHER = Symbol('ADMIN_PASSWORD_HASHER');
 const httpProviders: Provider[] = [
   AdminSessionService,
   AdminOriginGuard,
+  // Applied per route by `@RequiresAdminRole`; provided here so its `AdminSessionService` resolves
+  // from this module's scope rather than being constructed from an empty one.
+  AdminRealmGuard,
+  // `esg_admin_ro`'s one door (task 67.3), and the register's store behind it.
+  AdminReadOnly,
+  { provide: ORGANIZATION_REGISTER_STORE, useClass: OrganizationRegisterStoreRepository },
+  OrganizationRegisterService,
+  {
+    provide: ListOrganizationRegister,
+    inject: [ORGANIZATION_REGISTER_STORE],
+    useFactory: (store: OrganizationRegisterStore) => new ListOrganizationRegister(store),
+  },
   { provide: CLOCK, useValue: (() => new Date()) as Clock },
   { provide: ADMIN_SESSION_STORE, useClass: AdminSessionStoreRepository },
   // FR-81's log, written from this realm's sign-in path (task 28.4). Registered here rather than
@@ -116,7 +141,8 @@ const httpProviders: Provider[] = [
 ];
 
 @Module({
-  controllers: mode === APP_MODE.WORKER ? [] : [AdminSessionController],
+  controllers:
+    mode === APP_MODE.WORKER ? [] : [AdminSessionController, OrganizationRegisterController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
 })
 export class AdminModule {}

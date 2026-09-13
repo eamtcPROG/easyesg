@@ -6,12 +6,13 @@ import { CONSOLE_DESTINATIONS, consoleSectionsFor, type ConsoleDestinations } fr
  * The console nav's two rules (task 67.1): an operator sees their own realm's section, and a section
  * is drawn only when it has a destination that renders.
  *
- * **The labels are cast**, because a destination's label is typed as a catalogue key that does not
- * exist yet — the guarantee `console-sections.ts` states. Section keys are asserted as literals: they
+ * **The billing label is cast**, because a destination's label is typed as a catalogue key and no
+ * billing destination has one yet — the guarantee `console-sections.ts` states. The platform label
+ * needs no cast since task 67.3 gave `organizations` its words. Section keys are asserted as literals: they
  * are the catalogue's `sections.*` keys, and a renamed value must fail here.
  */
 const DESTINATIONS: ConsoleDestinations = {
-  platform: [{ href: '/organizations', label: 'destinations.organizations' as never }],
+  platform: [{ href: '/organizations', label: 'destinations.organizations' }],
   billing: [{ href: '/billing/reconciliation', label: 'destinations.reconciliation' as never }],
 };
 
@@ -38,13 +39,19 @@ describe('consoleSectionsFor (§5.2)', () => {
   });
 
   /**
-   * **The chrome carries what renders, pinned as of today.** No console screen behind the realm has
-   * shipped, so no operator has a destination. Task 67.3 changes this assertion when A-02 lands —
-   * deliberately, rather than a destination entering the navigation ahead of its screen.
+   * **The chrome carries what renders, pinned as of today.** A-02 is the first console screen to
+   * ship (task 67.3), so a Platform Administrator has one destination and a Billing Operator still
+   * none — the section a BO would see is empty, and an empty section is not drawn. The next screen to
+   * ship changes this assertion deliberately, with its own destination.
    */
-  it('draws nothing for anyone until the first console screen ships', () => {
-    for (const role of Object.values(ADMIN_ROLE)) {
-      expect(consoleSectionsFor({ role, destinations: CONSOLE_DESTINATIONS })).toEqual([]);
-    }
+  it('shows a Platform Administrator the register and a Billing Operator nothing, as shipped', () => {
+    expect(
+      consoleSectionsFor({ role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR, destinations: CONSOLE_DESTINATIONS }),
+    ).toEqual([
+      { key: 'platform', items: [{ href: '/organizations', label: 'destinations.organizations' }] },
+    ]);
+    expect(
+      consoleSectionsFor({ role: ADMIN_ROLE.BILLING_OPERATOR, destinations: CONSOLE_DESTINATIONS }),
+    ).toEqual([]);
   });
 });

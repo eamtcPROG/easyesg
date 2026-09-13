@@ -189,7 +189,7 @@ const tablesMissingRowLevelSecurity = (x: Executor) =>
  * default-deny posture and each table declares itself, with the lists below forcing a decision
  * whenever a new audit table appears rather than letting it default to unprotected.
  */
-const APPEND_ONLY_TABLES = ['audit.system_audit_log', 'core.field_change'];
+const APPEND_ONLY_TABLES = ['audit.system_audit_log', 'core.field_change', 'audit.support_access_log'];
 
 /** Named, with the reason, so task 15 did not have to rediscover why these are exempt. */
 const MUTABLE_AUDIT_TABLES = ['audit.outbox_event', 'audit.inbound_event'];
@@ -311,6 +311,13 @@ const UNAUDITED_TABLES = [
   'core.field_change',
   'audit.system_audit_log',
   'audit.outbox_event',
+  /**
+   * `audit.support_access_log` (task 67.3) is `audit.system_audit_log`'s argument once more: every
+   * row records that something happened — an acquisition of the `BYPASSRLS` role today, a support
+   * grant from task 67.9 — and it is append-only by `audit.enforce_append_only`, so a per-field
+   * trail of it would record the writing of a record.
+   */
+  'audit.support_access_log',
   /**
    * `core.entity_snapshot` is immutable by grant — no runtime role holds UPDATE or DELETE, and it
    * carries no policy for either — so capturing per-field changes to it would record the writing of

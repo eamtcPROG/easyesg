@@ -320,6 +320,7 @@ jobs:
           # without its own is what proves the split is real (task 19).
           docker run -d --name api --network easyesg_easyesg-net -p 3000:3000 \
             -e DB_HOST=postgres -e DB_USER=esg_app -e DB_PASSWORD=devonly-app -e DB_NAME=esg \
+            -e DB_ADMIN_RO_USER=esg_admin_ro -e DB_ADMIN_RO_PASSWORD=devonly-admin-ro \
             -e REDIS_HOST=redis -e AUTH_PASSWORD_PEPPER=devonly-pepper \
             -e AUTH_JWT_SECRET=devonly-jwt-secret \
             -e AUTH_ADMIN_SECRET=devonly-admin-secret \

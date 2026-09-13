@@ -20,7 +20,9 @@ invisible because nothing in this directory said the rules applied.
 
 ## Current state
 
-**A-01 and the chrome.** 26 route files cover all eighteen screens (`A-01` … `A-18`) and every one behind the
+**A-01, the chrome and A-02.** 26 route files cover all eighteen screens (`A-01` … `A-18`). **A-02's
+organization register is live since task 67.3** — `features/platform/admin/organization-register/`,
+reading `GET /admin/organizations` through `AdminRealmGuard` — and every other screen behind the
 realm still returns `null`. What is live, from task 23: `src/realm/` — the API client, the session
 query and the two-step sign-in screen — plus `_realm`'s closed-by-default guard, and a third
 Playwright project driving the journey **cross-origin against the built bundle**. **From task 67.1,
@@ -90,8 +92,9 @@ src/
 ├─ realm/       api/ (the one API client) · components/ (sign-in/ A-01's screen · chrome/ the realm
 │               layout's chrome · shared/ the realm chip both draw) · queries/ (the session) ·
 │               tools/ (A-01's reducer, each role's home, the navigation's sections). A LEAF (see below)
-├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until built
-├─ shared/      what BOTH contexts need. A LEAF
+├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until
+│               built; platform/admin/organization-register/ (A-02, task 67.3) is the first built
+├─ shared/      what BOTH contexts need — index-view.tsx, the Index archetype's chrome bound once. A LEAF
 ├─ i18n/        use-intl wiring, the console locale, formats, the expansion harness, global.d.ts
 ├─ lib/         env (build-time only) and vite-env.d.ts beside it, pagination
 ├─ messages/    ro.json — one catalogue, by decision

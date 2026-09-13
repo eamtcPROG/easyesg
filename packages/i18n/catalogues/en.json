@@ -249,7 +249,8 @@
       "account_locked": "This account is locked after too many failed attempts, so signing in is not possible right now. Ask another platform administrator to unlock it.",
       "factor_invalid": "That code is not valid right now, so sign-in did not complete. Open your authenticator app and enter the code it is showing now.",
       "session_expired": "The administration session has expired, so the request was not processed. Sign in again to continue.",
-      "session_invalid": "The administration session is no longer valid, so the request was not processed. Sign in again to continue."
+      "session_invalid": "The administration session is no longer valid, so the request was not processed. Sign in again to continue.",
+      "insufficient_role": "Your operator role does not include this part of the console, so the request was not processed. Ask a platform administrator to take the request or to change your role."
     }
   }
 }

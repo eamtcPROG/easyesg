@@ -67,3 +67,19 @@ export class AdminSessionExpiredError extends DomainError {
     super('platform.admin.session_expired');
   }
 }
+
+/**
+ * A live operator session whose role the route does not name (task 67.3) — a Billing Operator at the
+ * organization register. The tenant refusal's slug, `insufficient-role`, because the slug says what
+ * happened and a client reads it the same way in either realm; its own message key, because the
+ * *what now* differs — the tenant answer names an organization's administrator, this one a
+ * platform administrator.
+ */
+export class AdminInsufficientRoleError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.InsufficientRole;
+  readonly status = 403;
+
+  constructor() {
+    super('platform.admin.insufficient_role');
+  }
+}

@@ -9,6 +9,19 @@
       "title": "Ceva nu a funcționat",
       "body": "Acțiunea nu a fost finalizată și nicio modificare nu a fost salvată. Reîncărcați pagina; dacă problema persistă, contactați echipa tehnică.",
       "action": "Reîncărcați pagina"
+    },
+    "index": {
+      "sort": {
+        "sortBy": "Sortați după {column}",
+        "ascending": "crescător",
+        "descending": "descrescător"
+      },
+      "pagination": {
+        "region": "Paginare",
+        "previous": "Pagina anterioară",
+        "next": "Pagina următoare",
+        "position": "{from}–{to} din {total}"
+      }
     }
   },
   "realm": {
@@ -53,7 +66,9 @@
         "platform": "Platformă",
         "billing": "Facturare"
       },
-      "destinations": {},
+      "destinations": {
+        "organizations": "Organizații"
+      },
       "account": "Contul dumneavoastră",
       "signOut": "Ieșiți din consolă"
     },
@@ -61,6 +76,61 @@
       "title": "Serverul nu poate fi contactat",
       "body": "Cererea nu a ajuns la server, așa că nimic nu s-a trimis și nimic nu s-a schimbat.",
       "action": "Verificați-vă conexiunea la internet și încercați din nou peste câteva momente."
+    }
+  },
+  "platform": {
+    "organizations": {
+      "title": "Organizații",
+      "lede": "Registrul tuturor organizațiilor de pe platformă, cu date la nivel de cont — niciodată conținutul rapoartelor.",
+      "summary": "{total, plural, one {# organizație înregistrată} few {# organizații înregistrate} other {# de organizații înregistrate}}",
+      "search": {
+        "label": "Căutați după nume sau IDNO",
+        "submit": "Căutați"
+      },
+      "table": {
+        "caption": "Organizațiile înregistrate pe platformă",
+        "name": "Organizație",
+        "idno": "IDNO",
+        "registered": "Înregistrată",
+        "entities": "Entități",
+        "reports": "Rapoarte",
+        "activity": "Ultima autentificare",
+        "idnoMissing": "Nespecificat",
+        "neverSignedIn": "Nicio autentificare"
+      },
+      "empty": {
+        "firstUse": {
+          "title": "Nicio organizație înregistrată încă",
+          "body": "O organizație apare aici din momentul în care este creată în aplicația pentru companii; din consolă nu se creează organizații.",
+          "action": "Reîncărcați registrul"
+        },
+        "filtered": {
+          "title": "Nicio organizație nu corespunde căutării",
+          "body": "Căutarea „{search}” nu a găsit nicio organizație după nume sau după începutul IDNO.",
+          "action": "Ștergeți căutarea"
+        }
+      },
+      "record": {
+        "region": "Fișa organizației",
+        "close": "Închideți fișa",
+        "idno": "IDNO",
+        "registered": "Înregistrată",
+        "entities": "Entități active",
+        "reports": "Rapoarte",
+        "activity": "Ultima autentificare a unui membru",
+        "boundaryTitle": "Conținutul rapoartelor nu este afișat",
+        "boundaryBody": "Fișa cuprinde doar date la nivel de cont. Pentru a citi conținutul unei organizații este nevoie de un acces de suport, acordat cu un motiv și referința tichetului, care expiră singur și este înregistrat în jurnal."
+      },
+      "loading": "Se încarcă registrul organizațiilor",
+      "unavailable": {
+        "title": "Registrul nu a putut fi încărcat",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio organizație. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Registrul este accesibil administratorilor de platformă",
+        "body": "Rolul contului dumneavoastră de operator nu include registrul organizațiilor. Un administrator de platformă îl poate consulta în locul dumneavoastră sau vă poate schimba rolul."
+      }
     }
   }
 }

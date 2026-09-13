@@ -1,6 +1,7 @@
 import {
   API_OUTCOME,
   readProblemDocument,
+  readResultList,
   readResultObject,
   type ApiFailure,
   type ApiOutcome,
@@ -133,13 +134,28 @@ async function requestObject<TObject>(
 }
 
 /**
- * The verb surface, mirroring the web seam. List calls arrive with the first Index screen
- * (task 67) — declared then, not speculatively now; `ListResult` is already imported by the
- * envelope reader the moment they do.
+ * A list envelope, read whole — `objects`, `total`, `totalpages` and, on a route that filters,
+ * `unfiltered` — through the contracts package's reader, so the pager and an Index's two empty
+ * states read numbers that were checked rather than cast. Arrived with the first Index screen, A-02
+ * (task 67.3), which is when this file said it would.
  */
+async function requestList<TRow>(path: string): Promise<ApiOutcome<ListResult<TRow>>> {
+  const sent = await send(METHOD.Get, path);
+  if (!('response' in sent)) return sent;
+
+  const envelope = await readBody(sent.response, path, (parsed) => readResultList<TRow>(parsed, path));
+  if (!envelope) return { status: API_OUTCOME.Unreachable };
+
+  const { messages, ...list } = envelope;
+  return { status: API_OUTCOME.Ok, value: list, messages };
+}
+
+/** The verb surface, mirroring the web seam. */
 export const api = {
   get: <TObject>(path: string): Promise<ApiOutcome<TObject>> =>
     requestObject<TObject>(METHOD.Get, path),
+
+  list: <TRow>(path: string): Promise<ApiOutcome<ListResult<TRow>>> => requestList<TRow>(path),
 
   post: <TBody, TObject>(path: string, body: TBody): Promise<ApiOutcome<TObject>> =>
     requestObject<TObject>(METHOD.Post, path, body),

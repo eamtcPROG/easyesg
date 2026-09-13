@@ -50,6 +50,13 @@ export interface AppConfig {
     /** Non-superuser, non-owner, RLS NOT bypassable (AD-2). */
     user: string;
     password: string;
+    /**
+     * `esg_admin_ro` — the one role holding `BYPASSRLS` (§7.6), for the console's reads across
+     * organizations (task 67.3). HTTP tier only and undefaulted: `adminReadOnlyDataSourceOptions`
+     * refuses to build without both, so a deployment that has not supplied the role does not start,
+     * rather than serving a console that fails on its first read.
+     */
+    adminReadOnly: { user: string | undefined; password: string | undefined };
   };
   redis: { host: string; port: number };
   auth: {
@@ -169,6 +176,10 @@ export default (): AppConfig => ({
           user: process.env.DB_USER ?? 'esg_app',
           password: process.env.DB_PASSWORD ?? '',
         }),
+    adminReadOnly: {
+      user: process.env.DB_ADMIN_RO_USER,
+      password: process.env.DB_ADMIN_RO_PASSWORD,
+    },
   },
   redis: {
     host: process.env.REDIS_HOST ?? 'redis',

@@ -3101,6 +3101,88 @@
           "platform"
         ]
       }
+    },
+    "/api/v1/admin/organizations": {
+      "get": {
+        "description": "UC-69. Account-level metadata for every registered organization — name, IDNO, registration date, active entity count, report count and the most recent member sign-in — and never report content. Every read is recorded in the support access log before it runs.",
+        "operationId": "OrganizationRegisterController_list",
+        "parameters": [
+          {
+            "name": "onpage",
+            "required": false,
+            "in": "query",
+            "description": "Rows per page, 25 unless given, at most 200. `-1` is refused.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "One ordering: `<name|registered|entities|reports|activity>,<asc|desc>`. Defaults to `name,asc`. An ordering this route does not offer falls back to the default.",
+            "schema": {}
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Matched against the organization’s name anywhere in it, case-insensitively, and against its IDNO as a prefix. Its own parameter rather than a filter, because a name may contain the filter grammar’s separators. Trimmed; blank means no search.",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the register. `total` counts organizations the search admitted and is what pages are counted from; `unfiltered` counts every organization, which is what tells an empty result whether nothing has registered or nothing matched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/OrganizationRegisterRowResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Search the register of every organization on the platform",
+        "tags": [
+          "platform"
+        ]
+      }
     }
   },
   "info": {
@@ -6104,6 +6186,51 @@
         },
         "required": [
           "totpCode"
+        ]
+      },
+      "OrganizationRegisterRowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Brutăria Lina SRL"
+          },
+          "idno": {
+            "type": "string",
+            "nullable": true,
+            "example": "1009600041284",
+            "description": "The organization’s IDNO. Null until its profile records one."
+          },
+          "registeredAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when the organization was registered on the platform."
+          },
+          "entityCount": {
+            "type": "number",
+            "description": "Active reporting entities. An archived entity is not counted."
+          },
+          "reportCount": {
+            "type": "number",
+            "description": "Reports the organization holds, in any status — a count only. What a report contains, its stage and its findings are report content and are not published here."
+          },
+          "lastSignInAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds of the most recent sign-in by any active member. Null when no member has signed in."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "idno",
+          "registeredAt",
+          "entityCount",
+          "reportCount",
+          "lastSignInAt"
         ]
       }
     }

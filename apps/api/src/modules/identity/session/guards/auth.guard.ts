@@ -1,6 +1,7 @@
 import { Injectable, type CanActivate, type ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
+import { IS_ADMIN_REALM } from '@api/app/decorators/admin-realm.marker';
 import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
 import { selectActiveMembership } from '@api/modules/identity/membership/domain/select-active-membership';
 import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
@@ -58,14 +59,15 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (
-      this.reflector.getAllAndOverride<boolean | undefined>(IS_PUBLIC, [
+    const marked = (key: string) =>
+      this.reflector.getAllAndOverride<boolean | undefined>(key, [
         context.getHandler(),
         context.getClass(),
-      ]) === true
-    ) {
-      return true;
-    }
+      ]) === true;
+
+    // Public, or the admin realm's — the second is not an exemption from authentication but a
+    // different realm's, judged by `AdminRealmGuard` from its own sealed cookie (task 67.3).
+    if (marked(IS_PUBLIC) || marked(IS_ADMIN_REALM)) return true;
 
     const presented = BEARER.exec(
       context.switchToHttp().getRequest<Request>().header('authorization') ?? '',

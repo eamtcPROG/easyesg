@@ -111,6 +111,10 @@ export default defineConfig({
         PORT: String(API_PORT),
         DB_USER: process.env.DB_USER ?? 'esg_app',
         DB_PASSWORD: process.env.DB_PASSWORD ?? 'devonly-app',
+        // Task 67.3 — the HTTP tier refuses to start without `esg_admin_ro`, the console's reader
+        // across organizations (`admin-readonly.ts`).
+        DB_ADMIN_RO_USER: process.env.DB_ADMIN_RO_USER ?? 'esg_admin_ro',
+        DB_ADMIN_RO_PASSWORD: process.env.DB_ADMIN_RO_PASSWORD ?? 'devonly-admin-ro',
         REDIS_HOST: process.env.REDIS_HOST ?? 'localhost',
         REDIS_PORT: process.env.REDIS_PORT ?? '6379',
         AUTH_PASSWORD_PEPPER: process.env.AUTH_PASSWORD_PEPPER ?? 'devonly-pepper',
