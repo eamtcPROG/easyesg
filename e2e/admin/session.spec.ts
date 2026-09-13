@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { cleanupOperators, provisionOperator } from './support/provision';
+import { OPERATOR_ROLE, cleanupOperators, provisionOperator, type OperatorRole } from './support/provision';
 import { currentTotpCode } from './support/totp';
 
 /**
@@ -14,6 +14,11 @@ import { currentTotpCode } from './support/totp';
  * posture is exercised for real: CORS with credentials, the `SameSite=Strict` cookie flowing
  * same-site cross-origin, the Origin proof on the sign-in POST. What the browser never holds,
  * asserted from inside it: no token, no readable session cookie.
+ *
+ * **Task 67.1 puts the chrome in the journey.** Sign-out goes through the account menu rather than
+ * task 23's strip; the root answers with the home for the operator's privilege level; and a Billing
+ * Operator is proven to land on A-10 under their own realm's label with no navigation drawn — the
+ * chrome carries what renders, and nothing behind the realm renders yet.
  */
 const RUN_PREFIX = `e2e-admin-${process.pid}-${Date.now()}`;
 const emailFor = (label: string) => `${RUN_PREFIX}-${label}@easyesg.md`;
@@ -40,11 +45,21 @@ async function signIn(page: Page, email: string, code = currentTotpCode(TOTP_SEC
   await page.getByRole('button', { name: 'Continuați în consolă' }).click();
 }
 
+const provision = (email: string, role: OperatorRole) =>
+  provisionOperator({ email, password: PASSWORD, totpSecret: TOTP_SECRET, role });
+
+/** The chrome's banner, by the name the console gives it. */
+const consoleBar = (page: Page) => page.getByRole('banner', { name: 'Consola de administrare' });
+
+/** The account corner's trigger, named by its label and the address (WCAG 2.5.3). */
+const accountMenu = (page: Page, email: string) =>
+  page.getByRole('button', { name: `Contul dumneavoastră: ${email}` });
+
 test('the realm is closed by default, admits credential + code, and signs out (UC-68)', async ({
   page,
 }) => {
   const email = emailFor('happy');
-  provisionOperator(email, PASSWORD, TOTP_SECRET);
+  provision(email, OPERATOR_ROLE.PLATFORM_ADMINISTRATOR);
 
   // Closed by default: the guarded screen bounces to A-01 with the destination carried.
   await page.goto('/organizations');
@@ -55,13 +70,20 @@ test('the realm is closed by default, admits credential + code, and signs out (U
 
   // …and returns where the operator was headed (the console's UX-38).
   await page.waitForURL('**/organizations');
-  await expect(page.getByText(email)).toBeVisible();
+  // The chrome (task 67.1): the bar names the realm, the account corner carries the address.
+  await expect(consoleBar(page)).toContainText('Administrator de platformă');
+  await expect(accountMenu(page, email)).toBeVisible();
 
   // OQ-17's whole point, from inside the browser: nothing readable holds the session.
   const readable = await page.evaluate(() => document.cookie);
   expect(readable).not.toContain('easyesg_admin_session');
 
-  await page.getByRole('button', { name: 'Ieșiți din consolă' }).click();
+  // The root answers with this operator's home — A-02 for a Platform Administrator (task 67.1).
+  await page.goto('/');
+  await page.waitForURL('**/organizations');
+
+  await accountMenu(page, email).click();
+  await page.getByRole('menuitem', { name: 'Ieșiți din consolă' }).click();
   await page.waitForURL('**/sign-in');
 
   // The session ended server-side too: the realm is closed again.
@@ -73,7 +95,7 @@ test('a wrong code refuses distinctly and the challenge survives for the retype'
   page,
 }) => {
   const email = emailFor('factor');
-  provisionOperator(email, PASSWORD, TOTP_SECRET);
+  provision(email, OPERATOR_ROLE.PLATFORM_ADMINISTRATOR);
 
   await page.goto('/sign-in');
   await signIn(page, email, '000000');
@@ -84,6 +106,51 @@ test('a wrong code refuses distinctly and the challenge survives for the retype'
   await page.getByLabel('Cod de verificare').fill(currentTotpCode(TOTP_SECRET));
   await page.getByRole('button', { name: 'Continuați în consolă' }).click();
   await page.waitForURL('**/organizations');
+});
+
+test('a Billing Operator lands on A-10, under their own realm, with no navigation drawn', async ({
+  page,
+}) => {
+  const email = emailFor('billing');
+  provision(email, OPERATOR_ROLE.BILLING_OPERATOR);
+
+  // Signed out, the root carries no destination: which home is right depends on who signs in.
+  await page.goto('/');
+  await page.waitForURL('**/sign-in');
+  await signIn(page, email);
+
+  // A-01's exit for this privilege level (design_spec.md §5.2, task 67.1).
+  await page.waitForURL('**/billing/reconciliation');
+  await expect(consoleBar(page)).toContainText('Operator de facturare');
+  await expect(accountMenu(page, email)).toBeVisible();
+  // The chrome carries what renders: no console screen has shipped, so there is no navigation to
+  // draw. Task 67.3 turns this into a platform section when A-02 lands — for a PA only.
+  await expect(page.getByRole('navigation')).toHaveCount(0);
+});
+
+test('axe finds no violations on the console chrome', async ({ page }) => {
+  const email = emailFor('axe');
+  provision(email, OPERATOR_ROLE.PLATFORM_ADMINISTRATOR);
+
+  await page.goto('/sign-in');
+  await signIn(page, email);
+  await page.waitForURL('**/organizations');
+  await expect(consoleBar(page)).toBeVisible();
+  await page.waitForLoadState('networkidle');
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+
+  expect(results.violations).toEqual([]);
+
+  // The chrome is where the realm's landmarks come from: one banner at the top level, one main for
+  // the screen to render into — best-practice rules the tags above do not select.
+  const landmarks = await new AxeBuilder({ page })
+    .withRules(['landmark-one-main', 'landmark-unique', 'landmark-banner-is-top-level'])
+    .analyze();
+
+  expect(landmarks.violations).toEqual([]);
 });
 
 test('axe finds no violations on A-01', async ({ page }) => {

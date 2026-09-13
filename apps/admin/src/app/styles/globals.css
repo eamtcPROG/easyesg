@@ -26,17 +26,9 @@ body {
   background: var(--surface-default);
 }
 
-/* ── Compact density (design_spec.md §11.4, §12) ─────────────────────────────────────────────
-   ASSUMPTION, RECORDED — the selector below is a hook with nothing behind it yet.
-
-   §11.4 specifies two density modes over one token set, and §12 makes `compact` the admin
-   default. `packages/ui/src/styles/tokens.css` currently defines a single scale and no density
-   selector, so the compact steps do not exist to reference. They belong in packages/ui, not
-   here: authoring them in apps/admin would create the second token file UX-127 forbids.
-
-   `[data-density="compact"]` is declared on <html> in index.html so the attribute contract is
-   fixed and every admin screen is already inside it. When packages/ui grows the compact steps,
-   they attach to this selector and nothing in this app changes. Until then admin renders at the
-   tenant scale, which is a known, stated divergence from §12 — not an oversight.
-
-   Logged in architecture.md §18 and apps/admin/CLAUDE.md. */
+/* ── Compact density (design_spec.md §11.4, §12) ──────────────────────────────────────────────
+   `[data-density="compact"]` is declared on <html> in index.html, and since task 67.2 it has steps
+   behind it: `packages/ui/src/styles/tokens.css` redefines space steps 4 through 8 under
+   `:root[data-density='compact']` (architecture.md OQ-44, closed 12 Sep 2026). This block said the
+   selector was a hook with nothing behind it until task 67.1 found it stale. Nothing is authored
+   here, and nothing may be — a density value in this app is the second token file UX-127 forbids. */

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AccountMenu, type AccountMenuProps } from './account-menu';
+import { GLOBAL_BAR_TONE } from './global-bar-vocabulary';
 
 /**
  * The user menu's contract (task 30.1) — three things, each of which renders identically when
@@ -159,5 +160,35 @@ describe('AccountMenu', () => {
     // what an assertion can see.
     expect(items[0]).toHaveAttribute('data-current');
     expect(items[1]).not.toHaveAttribute('data-current');
+  });
+});
+
+/**
+ * The console's corner (task 67.1): one locale, so no language row, and a band of its own. Both are
+ * props of this menu rather than a second one, so both are asserted here rather than in the console.
+ *
+ * `data-tone` is asserted as the literal: the stylesheet selects `[data-tone='console']`, so a value
+ * renamed in the vocabulary must fail here rather than move along with the component.
+ */
+describe('AccountMenu on a single-locale surface (task 67.1)', () => {
+  it('offers the caller’s items and no language row where `language` is null', async () => {
+    const user = userEvent.setup();
+    menu({ language: null });
+    await user.click(trigger());
+
+    // Exact, as the case above is: the language row absent, not merely unlabelled.
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Sign-in details',
+      'Sign out',
+    ]);
+  });
+
+  it('marks the band the trigger stands on — brand unless the caller says console', () => {
+    const { unmount } = menu();
+    expect(trigger()).toHaveAttribute('data-tone', 'brand');
+    unmount();
+
+    menu({ tone: GLOBAL_BAR_TONE.CONSOLE });
+    expect(trigger()).toHaveAttribute('data-tone', 'console');
   });
 });

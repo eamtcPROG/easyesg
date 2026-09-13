@@ -9,14 +9,14 @@ component that only works in one of them is a defect here, not a variant.
 `'use client'` vocabulary rule, the `Slot` rule, UX-89's "reuse or add to the inventory", the four
 homes of state — it is written at root because it holds for `apps/web` and `apps/admin` too, and
 restating it here would create the second copy that drifts. This file carries what is true of
-*these 51 components*: where things are, what has already bitten someone, and what finishing looks like.
+*these 52 components*: where things are, what has already bitten someone, and what finishing looks like.
 
 ## Current state
 
-51 components in nine folders, 27 spec files, `src/styles/tokens.css` at 439 lines — **light and
+52 components in nine folders, 28 spec files, `src/styles/tokens.css` at 460 lines — **light and
 dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
 schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
-`.spec.ts` rather than a `.spec.tsx` and so is *not* in the 27: it renders nothing, it parses the
+`.spec.ts` rather than a `.spec.tsx` and so is *not* in the 28: it renders nothing, it parses the
 stylesheet. Not every
 component has its own spec — `forms/forms.spec.tsx` covers several together — so per-file absence
 is not itself a gap.
@@ -27,7 +27,7 @@ is not itself a gap.
 | `form/` | 11 | The presentational controls — `value`/`onChange`/`ref`, no form library |
 | `forms/` | 7 | The react-hook-form binding. **A separate entry point** — see the traps |
 | `feedback/` | 4 | Banner, Callout, EmptyState, ConsequenceDialogue |
-| `navigation/` | 7 | GlobalBar, AccountMenu, WorkspaceNav, ChromeDrawer, LanguageSwitcher, Pagination, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
+| `navigation/` | 8 | GlobalBar — the console's band too, through a tone — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
 | `data-display/` | 4 | DataTable, StatusChip, and task 143's EnrolmentCode with its loading arm |
 | `disclosure/` | 1 | DisclosureField — the anatomy every B1–B11 module reuses (task 36.1) |
 | `domain/` | 5 | ReportingPeriodPicker, SaveStateIndicator, VersionPinIndicator, and §6.10's two from task 142 — UsageCounter beside an action, EntitlementGate after a refused one |
@@ -58,7 +58,7 @@ something quiet, and a stale `dist/` is one failure mode this package cannot hav
 
 ```
 src/
-├─ index.ts        The barrel — 53 exports. `@easyesg/ui`
+├─ index.ts        The barrel — 55 exports. `@easyesg/ui`
 ├─ forms/index.ts  The react-hook-form binding. `@easyesg/ui/forms`, NOT in the barrel
 ├─ styles/         tokens.css — reached as `@easyesg/ui/src/styles/tokens.css`
 ├─ archetypes/     The nine §4.6 page templates. README.md is the map
@@ -91,7 +91,9 @@ src/
   *same* literal in both schemes fails, unless it is named in that spec's `SCHEME_INDEPENDENT` set
   with a reason, and the reasons differ by member: the global bar's white-over-brand alphas sit on a
   band that is dark in both schemes, and since task 143 the Enrolment code's plate pair holds dark on
-  light because a camera reads that symbol and a reversed QR is one a scanner may be unable to decode.
+  light because a camera reads that symbol and a reversed QR is one a scanner may be unable to
+  decode. Since task 67.1 the console's chrome (`--consolebar-*`, `--consolenav-*`) is dark in both
+  schemes for the global bar's reason, in a second realm that says so by its surface.
   The spec's own set is the enumeration; this sentence names the reasons. So adding a tier-3 token that reads tier 1 no longer relies on
   anyone remembering — it goes red.
 
@@ -111,16 +113,17 @@ src/
   into five, and 20 until task 134 did the same to S-13's form with three. Worth knowing when reading this number: it counts *files that import the binding*, not
   forms, and splitting a form raises it without adding a form.
 
-- **The seven vocabularies live in directive-free sibling modules and are exported from the barrel
+- **The eight vocabularies live in directive-free sibling modules and are exported from the barrel
   *directly*.** `button-vocabulary.ts`, `data-table-vocabulary.ts`,
   `language-switcher-vocabulary.ts`, `version-pin-indicator-vocabulary.ts`,
-  `nav-link-vocabulary.ts`, `skeleton-vocabulary.ts`, `usage-counter-vocabulary.ts` — none carries
+  `nav-link-vocabulary.ts`, `skeleton-vocabulary.ts`, `usage-counter-vocabulary.ts`,
+  `global-bar-vocabulary.ts` — none carries
   `'use client'`, and a re-export routed through the component module would still be a client
   reference. The root file records what this cost when it was wrong (`BUTTON_TONE` reaching a
   Server Component as `undefined`, a button in the wrong colours, every gate green). When you add a
   vocabulary, add the sibling module — not an `as const` at the top of the component.
 
-- **25 of the 51 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
+- **25 of the 52 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
   or a handler of its own. `Button` carried it from task 20 without needing it, and the day it
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never
@@ -144,8 +147,9 @@ src/
 
 - **`account-menu.tsx` is a known, uncoverable gap.** It wraps caller-supplied `items[].node` in
   Radix's own `DropdownMenu.Item asChild`, so its rule is the **caller's**: do not pass slotted
-  children across the boundary. No syntax selector can see that. Safe today only because its one
-  caller, `apps/web/src/shared/account-corner.tsx`, is itself a Client Component.
+  children across the boundary. No syntax selector can see that. Safe today only because both its
+  callers are Client Components: `apps/web/src/shared/account-corner.tsx`, and since task 67.1 the
+  console's `realm/components/chrome/console-account.tsx`, in an app with no server tier at all.
 
 ## Before you add a component
 

@@ -115,6 +115,15 @@ export {
   type WorkspaceNavProps,
 } from './navigation/workspace-nav';
 export { ChromeDrawer, type ChromeDrawerProps } from './navigation/chrome-drawer';
+// Task 67.1: the console's side navigation, and the Global bar's tone that draws the console's band.
+export {
+  ConsoleNav,
+  type ConsoleNavItem,
+  type ConsoleNavItemState,
+  type ConsoleNavProps,
+  type ConsoleNavSection,
+} from './navigation/console-nav';
+export { GLOBAL_BAR_TONE, type GlobalBarTone } from './navigation/global-bar-vocabulary';
 export { type NavLinkComponent } from './navigation/nav-link';
 export { ARIA_CURRENT, type AriaCurrent } from './navigation/nav-link-vocabulary';
 

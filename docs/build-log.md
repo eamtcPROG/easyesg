@@ -19114,3 +19114,144 @@ suite at 47 and the web suite at 560 — with **`pnpm e2e` (910), `pnpm e2e:work
 both front ends boot and serve. Its log carried the two known kinds and nothing new:
 `problem-details.filter.spec.ts`'s catalogue line and leak fixture, and three client-abandoned
 streams.
+
+
+## Task 67.1 — the console chrome, and a navigation that draws nothing yet · 2026-09-13
+
+Task 23's interim strip is gone and the console has its chrome: the Global bar in a console tone, a
+side navigation, and the account menu holding sign-out — on every screen behind `_realm`, with each
+privilege level landing on its own home. **The row said `admin`, and the work reached three more
+workspaces**: `pkg:ui` for an inventory addition and a tone, `pkg:contracts` for the first front-end
+reader of the admin role, and `e2e` for a journey whose sign-out control and landing both moved. The
+owner's second answer is what widened it — following the artboard made the navigation an inventory
+component rather than markup in a route.
+
+### Four decisions, each written where it belongs before any code
+
+Raised as one batch before starting (13 Sep 2026, project owner):
+
+- **Task 135 first**, as its own commit (`c5f39d9`), so `realm/` moved once rather than twice.
+- **The artboard's anatomy**: the Global bar serves the console through `GLOBAL_BAR_TONE`, and
+  *Console nav* is a new §11.5 row — headed sections, a vertical list, a count slot — which is
+  UX-89's anatomy test rather than a `WorkspaceNav` skin. `design_spec.md` §11.5.
+- **Built screens only, own realm only.** `GlobalTier`'s *carries what renders*, applied to the
+  console, and actors.md's PA/BO split. Recorded as presentation, not a boundary: `AdminRealmGuard`
+  stays task 67.3's. `design_spec.md` §5.2's chrome paragraph.
+- **Homes: A-02 for a Platform Administrator, A-10 for a Billing Operator.** A-01's exit in §5.2, and
+  the consequence written into rows 67.3 (now *every PA's* landing, and the nav's first destination)
+  and 68.8 (every BO's home, empty until it ships).
+
+### What shipped, by workspace
+
+- **`packages/contracts`** — `ADMIN_ROLE` (`admin.ts`), the api's vocabulary mirrored on
+  `PROBLEM_TYPE`'s stated reason, **and held to the generated enum at compile time**: a `SameSet`
+  check against `AdminAccountDto['role']` that stops type-checking if either side gains or loses a
+  member. The api model's docblock now names the mirror.
+- **`packages/ui`** — `ConsoleNav` with its spec (anatomy, empty section omitted, nothing rendered
+  when empty, `aria-current` on the anchor only, `renderItem` state, injected link), on
+  `WorkspaceNav`'s task-105 API. `GLOBAL_BAR_TONE` in a sibling module, read by `GlobalBar` (no
+  directive) and `AccountMenu` (`'use client'`) — the case the sibling rule exists for. `AccountMenu`
+  gained `tone` and a **required-nullable** `language`, on `Callout`'s `action={null}` precedent: the
+  console says it has no language choice; it cannot forget one. Fourteen `--consolebar-*` /
+  `--consolenav-*` tokens, all in `SCHEME_INDEPENDENT` with the global bar's reason.
+- **`apps/admin`** — `realm/components/` is `sign-in/ · chrome/ · shared/` (the realm chip, read by
+  `_focus.tsx` and the chrome, moved out of the Focus layout by its second reader); `session-strip.tsx`
+  deleted; `realm/tools/console-home.ts` and `console-sections.ts`, each with a spec; `_realm.tsx`
+  renders the chrome from the account its guard resolved; `index.tsx` now resolves the session before
+  it can answer, and sends a signed-out arrival to A-01 **without** `?redirect=`, since a carried
+  destination would guess a privilege level the credentials have not proven; `sign-in.tsx` falls back
+  to the role's home. `realm.strip` became `realm.chrome` in formal Romanian.
+- **`e2e`** — `provisionOperator` takes one object with a required role (three adjacent strings
+  before); `session.spec.ts` signs out through the menu, proves `/` answers with the PA's home, adds a
+  Billing Operator landing on A-10 with no navigation landmark, and an axe scan of the chrome with
+  `landmark-one-main`, `landmark-unique` and `landmark-banner-is-top-level`.
+
+### An empty key set is `never`, and two gates said so
+
+The destination table's type requires a label from `realm.chrome.destinations`, which is empty, so
+no destination can be declared before its words exist. The first cut built the key in the chrome as
+`` `destinations.${item.key}` `` — over an empty key set that expression is `never`, and **`tsc`
+(argument not assignable) and `restrict-template-expressions` refused it independently**. A
+destination now carries the full key path and the chrome calls `t(item.label)`, typed with
+`Extract<keyof …, string>` — the first rewrite's `keyof … & string` is `never & string` over the same
+empty set, and `no-redundant-type-constituents` refused that too. Runtime behaviour was
+identical either way, with no destination to render — which is exactly why only the type-aware gates
+could see it.
+
+### Measured, not reasoned
+
+- **Every text the chrome draws, in `tokens.spec.ts`'s pairings**: bar text 17.24:1, muted 6.72:1,
+  hovered 14.94:1, avatar glyph 8.55:1; nav heading 5.82:1, destination 8.06:1, hovered and current
+  11.94:1; the current rule 6.38:1 against its 3:1 floor — the same in both schemes, by design. **The
+  heading is `--slate-dark-200` and not the `-300` the artboard's grey maps nearest to**, because
+  `-300` on the nav surface measures 3.92:1. The spec regenerated `contrast-record.md` on its first
+  run and failed as stale, which is its designed behaviour; the second run passed.
+- **The focus ring on dark surfaces the spec cannot express.** The page-wide ring is two layers, and a
+  pairing there holds one floor for both schemes, where on these surfaces the working layer changes
+  with the scheme. Measured by hand instead: in light the outer halo (`--pine-200`) is 11.14 / 9.66 /
+  7.72:1 on the bar, the nav and the current row, while the inner ring alone would be 2.90 / 2.51 /
+  2.01; in dark the inner ring (`--pine-dark-300`) is 9.21 / 7.98 / 6.38:1. One layer clears 3:1 on
+  every console surface in each scheme. The tenant band has had the same unmeasured shape since task
+  30.1; not taken further here.
+
+### Stale claims this task walked into, fixed where they were found
+
+- **`apps/admin/src/app/styles/globals.css` and `apps/admin/CLAUDE.md` still called compact density a
+  hook with nothing behind it** — stale since task 67.2, whose entry records that *"`apps/admin` needed
+  no change at all"*. True of the code; not of the two places that described it.
+- `apps/admin/CLAUDE.md` named `route-fallbacks.tsx`, split by task 135.
+- The root and `packages/ui` `CLAUDE.md` said `AccountMenu`'s slotted items were safe because *its
+  only caller* was a Client Component; there are two now, both client-side.
+- Row 67.3 said A-02 was *"the screen every admin sign-in currently lands on"*.
+
+Searched for the move's old names — `session-strip`, `SessionStrip`, `realm.strip`,
+`components/sign-in-screen`, `credential-step`, `factor-step`, `REALM_CHIP` — across `apps`, `e2e`,
+`tools`, `packages`, `docs` and every `CLAUDE.md`: what remains is the tenant app's own historical
+`SessionStrip` notes, the 67.1 row's description of what it replaced, and the chip's new home.
+
+### Considered and not applied
+
+- **No monogram** in the console's corner: an admin account has no name, and UX-137 derives one only
+  from a name. **No A-19 row**: task 151. **No environment chip, command hint, build line or queue
+  badges** from the artboard — each arrives with what it points at.
+- **No memoization.** The sections computed per render are at most one section of an empty list;
+  `ConsoleLink` is module-level (`rerender-no-inline-components`), and `ConsoleNav` builds each item's
+  state once for both render paths.
+- **UX-77's narrow-viewport notice** stays in `_realm`'s docblock, blocked on OQ-13 as before.
+- **No review agents**: a sub-step closes on the gates its change reaches; the three run over group
+  67's whole diff at its close.
+
+### Verification
+
+**The two new type-level guarantees were proven to bite**, each mutation on the real tree with the
+files restored from byte copies afterwards (`cmp` confirmed, and both typechecks green again):
+
+- **A destination declared before its label exists** — `{ href: '/organizations', label:
+  'destinations.organizations' }` added to `CONSOLE_DESTINATIONS` — fails the admin typecheck with
+  `TS2322` at `console-sections.ts`.
+- **The `ADMIN_ROLE` mirror gaining a member the wire lacks** (`SUPPORT: 'support'`) and **losing one
+  the wire has** (`BILLING_OPERATOR` removed) each fail the contracts typecheck with `TS2322` at
+  `ADMIN_ROLE_MIRRORS_WIRE` — both directions of `SameSet`, not only the one a single `extends` checks.
+
+The sub-step's gates, per the root file's table for a change reaching `packages/*` and so every
+dependent: `packages/ui` 305 tests (29 files, the contrast record regenerated on the first run and
+green on the second); `apps/admin` 57 tests with `typecheck` and `routes:check`; `apps/web` 560 tests
+with `typecheck`; `packages/contracts` `typecheck`; `pnpm lint` green after the two findings above;
+`docs:check` at 40 claims.
+
+**The browser half**: `pnpm e2e:web --project=identity --project=expansion --project=admin`, **184
+passed in 5.8 minutes** — the admin project's seven among them: sign-in and sign-out through the
+account menu with `/` answering the PA's home, the wrong-code retype, the Billing Operator landing on
+A-10 with no navigation landmark, and axe over the chrome and over A-01. The web server's log carried
+one `⨯ Error: The destination stream closed early.`, the client-abandoned stream `apps/web/CLAUDE.md`
+records as a trap, and nothing else. That run's bundle predates the last type fix, which changed no
+rendered output.
+
+**On the final code**: `pnpm e2e:web --project=admin` rebuilt the bundle and passed its **7 in 21.8
+seconds**. Then a scratch probe — copied into `e2e/admin/` for one run against that build and deleted
+after, never committed — signed in a Platform Administrator in the light scheme and a Billing Operator
+in the dark one and measured the rendered bar: **46px, `rgb(15, 20, 25)` behind `rgb(245, 247, 249)`
+in both schemes, `data-tone="console"`**, no navigation landmark, and a menu holding only
+*Ieșiți din consolă* — no language row. The screenshots matched the artboard's band. Not the in-app
+browser pane, which holds the owner's own session: every sign-in here was a provisioned test operator
+through Playwright, cleaned up afterwards.

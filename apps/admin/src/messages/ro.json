@@ -41,8 +41,20 @@
       "realmNote": "Conturile de platformă sunt create de un alt administrator — aici nu există înregistrare. Conturile companiilor se autentifică în aplicația pentru companii și nu pot fi folosite pe această consolă.",
       "auditNote": "Fiecare încercare este înregistrată în jurnalul de sistem, indiferent dacă reușește: momentul, contul și o amprentă a adresei introduse — nu adresa în sine."
     },
-    "strip": {
-      "signedInAs": "Operator:",
+    "chrome": {
+      "bar": "Consola de administrare",
+      "home": "Ecranul principal al consolei",
+      "realm": {
+        "platform_administrator": "Administrator de platformă",
+        "billing_operator": "Operator de facturare"
+      },
+      "nav": "Secțiunile consolei",
+      "sections": {
+        "platform": "Platformă",
+        "billing": "Facturare"
+      },
+      "destinations": {},
+      "account": "Contul dumneavoastră",
       "signOut": "Ieșiți din consolă"
     },
     "unreachable": {

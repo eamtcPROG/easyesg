@@ -7,7 +7,7 @@ both; UX-101 sets the floors. This table is the record that deliverable asks for
 spec that generates it is the gate — so a token change that breaks a floor fails the build
 rather than silently making this file wrong.
 
-55 pairings, each measured in both schemes.
+64 pairings, each measured in both schemes.
 
 | Pairing | Tokens | Light | Dark | Floor | Verdict |
 | --- | --- | --- | --- | --- | --- |
@@ -28,6 +28,14 @@ rather than silently making this file wrong.
 | avatar initials | `--globalbar-avatar-text` on `--globalbar-avatar-surface` | 9.02:1 | 4.66:1 | 4.5:1 | pass |
 | band button label | `--button-band-text` on `--button-band-surface` | 11.51:1 | 9.21:1 | 4.5:1 | pass |
 | band button label, hovered | `--button-band-text` on `--button-band-surface-hover` | 10.37:1 | 11.63:1 | 4.5:1 | pass |
+| console bar text | `--consolebar-text` on `--consolebar-surface` | 17.24:1 | 17.24:1 | 4.5:1 | pass |
+| console bar muted text | `--consolebar-text-muted` on `--consolebar-surface` | 6.72:1 | 6.72:1 | 4.5:1 | pass |
+| console bar text, hovered | `--consolebar-text` on `--consolebar-hover` | 14.94:1 | 14.94:1 | 4.5:1 | pass |
+| console bar avatar glyph | `--consolebar-avatar-text` on `--consolebar-avatar-surface` | 8.55:1 | 8.55:1 | 4.5:1 | pass |
+| console nav section heading | `--consolenav-heading` on `--consolenav-surface` | 5.82:1 | 5.82:1 | 4.5:1 | pass |
+| console nav destination | `--consolenav-text` on `--consolenav-surface` | 8.06:1 | 8.06:1 | 4.5:1 | pass |
+| console nav destination, hovered | `--consolenav-text-strong` on `--consolenav-hover` | 11.94:1 | 11.94:1 | 4.5:1 | pass |
+| console nav current destination | `--consolenav-text-strong` on `--consolenav-current-surface` | 11.94:1 | 11.94:1 | 4.5:1 | pass |
 | ok text on its tint | `--state-ok` on `--state-ok-tint` | 7.73:1 | 7.4:1 | 4.5:1 | pass |
 | attention text on its tint | `--state-attention` on `--state-attention-tint` | 4.53:1 | 7.48:1 | 4.5:1 | pass |
 | warning text on its tint | `--state-warning` on `--state-warning-tint` | 4.58:1 | 6.32:1 | 4.5:1 | pass |
@@ -66,3 +74,4 @@ rather than silently making this file wrong.
 | accent as an active marker | `--accent` on `--surface-default` | 6.38:1 | 6.08:1 | 3:1 | pass |
 | accent on its own tint | `--accent` on `--accent-tint` | 5.75:1 | 5.64:1 | 3:1 | pass |
 | enrolment code modules on their plate | `--enrolment-code-module` on `--enrolment-code-ground` | 17.33:1 | 17.33:1 | 4.5:1 | pass |
+| console nav current rule | `--consolenav-current-rule` on `--consolenav-current-surface` | 6.38:1 | 6.38:1 | 3:1 | pass |

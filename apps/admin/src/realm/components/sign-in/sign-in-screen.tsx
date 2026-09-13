@@ -7,8 +7,8 @@ import {
   PROBLEM_TYPE,
   type AdminAccount,
 } from '@easyesg/contracts';
-import { beginSignIn, completeSignIn } from '../queries/session';
-import { INITIAL_SIGN_IN_STATE, SIGN_IN_EVENT, STEP, signInReducer } from '../tools/sign-in-state';
+import { beginSignIn, completeSignIn } from '../../queries/session';
+import { INITIAL_SIGN_IN_STATE, SIGN_IN_EVENT, STEP, signInReducer } from '../../tools/sign-in-state';
 import { CredentialStep } from './credential-step';
 import { FactorStep } from './factor-step';
 

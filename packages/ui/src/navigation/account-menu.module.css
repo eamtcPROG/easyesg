@@ -154,3 +154,19 @@
 .item[data-state='open'] .itemValue {
   color: var(--text-body);
 }
+
+/* The console's band (task 67.1). The trigger stands on `--consolebar-*`; the menu it opens stays the
+   raised surface every other menu is. Selected by the attribute, so the wire value is what a spec
+   pins and what this stylesheet reads. */
+.trigger[data-tone='console'] {
+  color: var(--consolebar-text);
+}
+
+.trigger[data-tone='console']:hover {
+  background: var(--consolebar-hover);
+}
+
+.trigger[data-tone='console'] .avatar {
+  background: var(--consolebar-avatar-surface);
+  color: var(--consolebar-avatar-text);
+}

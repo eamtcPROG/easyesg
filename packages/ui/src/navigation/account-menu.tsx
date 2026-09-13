@@ -3,6 +3,7 @@
 import { ChevronDown, ChevronRight, UserRound } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import type { ReactNode } from 'react';
+import { GLOBAL_BAR_TONE, type GlobalBarTone } from './global-bar-vocabulary';
 import type { SwitcherLocale } from './language-switcher';
 import styles from './account-menu.module.css';
 
@@ -32,6 +33,13 @@ import styles from './account-menu.module.css';
  * from an email address are an identity the product never captured, shown to the person it is
  * wrong about, so `monogram` is `null` rather than a letter wherever no name exists — and the
  * glyph, not a fallback initial, is what renders there.
+ *
+ * **The console's corner too, since task 67.1**, and the two differences are props rather than a second
+ * menu. `tone` is the band the trigger stands on — `GlobalBar`'s own vocabulary, since this is part of
+ * that bar's anatomy. And `language` is `null` where the surface has one locale: the console is
+ * Romanian-only (architecture.md OQ-42), so a submenu offering one choice would be a control with
+ * nothing to decide. Required-nullable rather than optional, on `Callout`'s `action={null}`
+ * precedent: a surface says it has no language choice; it cannot forget one.
  *
  * States (§8.1 and §8.1-adjacent control states): rest · hover · focus · open · item highlighted ·
  * language item **current**, each in both of the avatar's two forms. There is no disabled state —
@@ -75,7 +83,10 @@ export interface AccountMenuProps<Code extends string = string> {
    */
   readonly monogram: string | null;
   readonly items: readonly AccountMenuItem[];
-  readonly language: AccountMenuLanguage<Code>;
+  /** The locale submenu, or `null` on a single-locale surface — see the docblock. */
+  readonly language: AccountMenuLanguage<Code> | null;
+  /** The band the trigger stands on. The tenant and public bands are `brand`, the console's `console`. */
+  readonly tone?: GlobalBarTone;
 }
 
 export function AccountMenu<Code extends string = string>({
@@ -85,6 +96,7 @@ export function AccountMenu<Code extends string = string>({
   monogram,
   items,
   language,
+  tone = GLOBAL_BAR_TONE.BRAND,
 }: AccountMenuProps<Code>) {
   return (
     // `modal={false}` because this is chrome, not a dialogue: the page behind it stays scrollable
@@ -107,6 +119,7 @@ export function AccountMenu<Code extends string = string>({
           fault rather than as two facts, the identity block's rule one element down. */}
       <DropdownMenu.Trigger
         className={styles.trigger}
+        data-tone={tone}
         aria-label={
           displayName === email ? `${label}: ${email}` : `${label}: ${displayName}, ${email}`
         }
@@ -137,29 +150,31 @@ export function AccountMenu<Code extends string = string>({
               {item.node}
             </DropdownMenu.Item>
           ))}
-          <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger className={styles.item}>
-              <span>{language.label}</span>
-              <span className={styles.itemValue}>
-                {language.current.label}
-                <ChevronRight aria-hidden="true" className={styles.chevron} />
-              </span>
-            </DropdownMenu.SubTrigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.SubContent sideOffset={4} className={styles.menu}>
-                {language.locales.map((locale) => (
-                  <DropdownMenu.Item
-                    key={locale.code}
-                    asChild
-                    className={styles.item}
-                    data-current={locale.code === language.current.code || undefined}
-                  >
-                    {language.renderItem(locale)}
-                  </DropdownMenu.Item>
-                ))}
-              </DropdownMenu.SubContent>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Sub>
+          {language === null ? null : (
+            <DropdownMenu.Sub>
+              <DropdownMenu.SubTrigger className={styles.item}>
+                <span>{language.label}</span>
+                <span className={styles.itemValue}>
+                  {language.current.label}
+                  <ChevronRight aria-hidden="true" className={styles.chevron} />
+                </span>
+              </DropdownMenu.SubTrigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.SubContent sideOffset={4} className={styles.menu}>
+                  {language.locales.map((locale) => (
+                    <DropdownMenu.Item
+                      key={locale.code}
+                      asChild
+                      className={styles.item}
+                      data-current={locale.code === language.current.code || undefined}
+                    >
+                      {language.renderItem(locale)}
+                    </DropdownMenu.Item>
+                  ))}
+                </DropdownMenu.SubContent>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Sub>
+          )}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

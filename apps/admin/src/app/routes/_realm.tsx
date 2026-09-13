@@ -1,7 +1,6 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { ADMIN_SESSION_QUERY_KEY, adminSessionQuery, signOut } from '~/realm/queries/session';
-import { SessionStrip } from '~/realm/components/session-strip';
+import { Outlet, createFileRoute, redirect } from '@tanstack/react-router';
+import { ConsoleChrome } from '~/realm/components/chrome/console-chrome';
+import { adminSessionQuery } from '~/realm/queries/session';
 
 /**
  * Realm layout — the signed-in console chrome for every screen behind the administrative realm.
@@ -10,7 +9,7 @@ import { SessionStrip } from '~/realm/components/session-strip';
  * (task 23): every route below resolves the session probe — the api judging the sealed cookie,
  * rotation included (OQ-17) — and an unauthenticated arrival is redirected to A-01 with the
  * intended destination carried in `?redirect=`, the console's UX-38. The probe is server state
- * in the router's query client, so the strip and any later screen read the same answer.
+ * in the router's query client, so the chrome and any later screen read the same answer.
  *
  * Two properties are stated once here rather than repeated on all eighteen screens, per
  * `design_spec.md` §5.2's own preamble: compact density, and `wide`/`extra` viewports only
@@ -23,8 +22,10 @@ import { SessionStrip } from '~/realm/components/session-strip';
  * organization selector in this chrome would be that standing access, arriving as a
  * convenience.
  *
- * The strip is task 23's interim rendering of the chrome's account corner — task 67's row in
- * docs/task.md owns replacing it.
+ * **The chrome is task 67.1's** (`realm/components/chrome/`), replacing task 23's interim strip. It
+ * takes the account the guard resolved, so the bar's realm and the navigation's section are chosen
+ * from the same answer that let the operator in. It is presentation, never the boundary:
+ * `AdminRealmGuard` (task 67.3) is what refuses a route to the wrong privilege level.
  */
 export const Route = createFileRoute('/_realm')({
   beforeLoad: async ({ context, location }) => {
@@ -39,27 +40,10 @@ export const Route = createFileRoute('/_realm')({
 
 function RealmLayout() {
   const { account } = Route.useRouteContext();
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
-  const signOutMutation = useMutation({
-    mutationFn: signOut,
-    // Settled, not success: the cookie is cleared even when the api was unreachable (the
-    // service's own stance), so the console's view follows suit and the operator leaves.
-    onSettled: async () => {
-      queryClient.setQueryData(ADMIN_SESSION_QUERY_KEY, null);
-      await navigate({ to: '/sign-in' });
-    },
-  });
 
   return (
-    <>
-      <SessionStrip
-        email={account.email}
-        busy={signOutMutation.isPending}
-        onSignOut={() => signOutMutation.mutate()}
-      />
+    <ConsoleChrome account={account}>
       <Outlet />
-    </>
+    </ConsoleChrome>
   );
 }

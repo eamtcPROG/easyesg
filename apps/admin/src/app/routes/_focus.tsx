@@ -1,5 +1,6 @@
 import { BrandMark, FocusShell } from '@easyesg/ui';
 import { Outlet, createFileRoute } from '@tanstack/react-router';
+import { RealmChip } from '~/realm/components/shared/realm-chip';
 
 /**
  * Focus layout — one task, no navigation (design_spec.md §4.6), on the same `FocusShell`
@@ -21,19 +22,13 @@ export const Route = createFileRoute('/_focus')({
   component: FocusLayout,
 });
 
-/** "ADMIN" is the realm's proper name on this chip, like the wordmark: identity, not copy,
- *  and no catalogue owns it (BrandMark's own precedent for the untranslated wordmark). */
-const REALM_CHIP = 'ADMIN';
-
 function FocusLayout() {
   return (
     <FocusShell
       brand={
         <span className="flex items-center gap-[var(--space-3)]">
           <BrandMark />
-          <span className="t-code rounded-[2px] border border-[var(--focus-header-border)] px-[6px] py-[2px] text-[9.5px] uppercase tracking-[0.16em] text-[var(--focus-header-text-muted)]">
-            {REALM_CHIP}
-          </span>
+          <RealmChip className="border-[var(--focus-header-border)] text-[var(--focus-header-text-muted)]" />
         </span>
       }
       actions={

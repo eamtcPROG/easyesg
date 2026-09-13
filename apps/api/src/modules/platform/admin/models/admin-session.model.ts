@@ -10,7 +10,9 @@
  * The two platform-side actors (actors.md: PA, BO), as the migration's
  * `admin_account_role_known` CHECK mirrored in the house `as const` pattern. FR-80's separable
  * privilege levels WITHIN the PA role are task 67's to model; this is the actor split that
- * exists today, extended there by expand→migrate.
+ * exists today, extended there by expand→migrate. `packages/contracts/src/admin.ts` mirrors it for the
+ * front ends since task 67.1 and changes with it; a compile-time check there fails when the two
+ * disagree through the generated contract.
  */
 export const ADMIN_ROLE = {
   PLATFORM_ADMINISTRATOR: 'platform_administrator',

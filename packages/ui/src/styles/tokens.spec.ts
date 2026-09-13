@@ -133,6 +133,15 @@ const TEXT: Pairing[] = [
   { what: 'avatar initials', fg: '--globalbar-avatar-text', bg: '--globalbar-avatar-surface', floor: 4.5 },
   { what: 'band button label', fg: '--button-band-text', bg: '--button-band-surface', floor: 4.5 },
   { what: 'band button label, hovered', fg: '--button-band-text', bg: '--button-band-surface-hover', floor: 4.5 },
+  // The console's chrome (task 67.1) — every text it draws, on the surface it draws it on.
+  { what: 'console bar text', fg: '--consolebar-text', bg: '--consolebar-surface', floor: 4.5 },
+  { what: 'console bar muted text', fg: '--consolebar-text-muted', bg: '--consolebar-surface', floor: 4.5 },
+  { what: 'console bar text, hovered', fg: '--consolebar-text', bg: '--consolebar-hover', floor: 4.5 },
+  { what: 'console bar avatar glyph', fg: '--consolebar-avatar-text', bg: '--consolebar-avatar-surface', floor: 4.5 },
+  { what: 'console nav section heading', fg: '--consolenav-heading', bg: '--consolenav-surface', floor: 4.5 },
+  { what: 'console nav destination', fg: '--consolenav-text', bg: '--consolenav-surface', floor: 4.5 },
+  { what: 'console nav destination, hovered', fg: '--consolenav-text-strong', bg: '--consolenav-hover', floor: 4.5 },
+  { what: 'console nav current destination', fg: '--consolenav-text-strong', bg: '--consolenav-current-surface', floor: 4.5 },
 ];
 
 const STATES = ['ok', 'attention', 'warning', 'error', 'reasoned', 'pending', 'neutral'] as const;
@@ -186,6 +195,8 @@ const NON_TEXT: Pairing[] = [
   // no WCAG floor is written for a camera, and of the two this file knows the stricter is the nearer
   // to what one needs. The pair's comment in `tokens.css` is why it is the same in both schemes.
   { what: 'enrolment code modules on their plate', fg: '--enrolment-code-module', bg: '--enrolment-code-ground', floor: 4.5 },
+  // The console nav's current-destination rule (task 67.1) against the surface it marks.
+  { what: 'console nav current rule', fg: '--consolenav-current-rule', bg: '--consolenav-current-surface', floor: 3 },
 ];
 
 const ALL = [...TEXT, ...STATE_TEXT, ...TEXT_ON_TINT, ...STATE_ON_SURFACE, ...NON_TEXT];
@@ -272,13 +283,30 @@ describe('tokens.css — UX-80 and UX-101', () => {
      *    it composites correctly against any brand colour, which is what makes it correct here too.
      *  - **The Enrolment code's plate** (task 143) is dark modules on a light ground in both schemes
      *    because a camera reads it, and decoding a reversed QR symbol is optional in ISO/IEC 18004 —
-     *    a symbol that inverted with the scheme would be unreadable to any scanner omitting it. */
+     *    a symbol that inverted with the scheme would be unreadable to any scanner omitting it.
+     *  - **The console's chrome** (task 67.1) is a dark neutral bar and side navigation in both
+     *    schemes, the global bar's reasoning for a second realm: the console says it is not the
+     *    tenant application by its surface, and a light console in the light scheme would not. */
     const SCHEME_INDEPENDENT = new Set([
       '--globalbar-divider',
       '--globalbar-plate-border',
       '--globalbar-plate-hover',
       '--enrolment-code-module',
       '--enrolment-code-ground',
+      '--consolebar-surface',
+      '--consolebar-text',
+      '--consolebar-text-muted',
+      '--consolebar-divider',
+      '--consolebar-hover',
+      '--consolebar-avatar-surface',
+      '--consolebar-avatar-text',
+      '--consolenav-surface',
+      '--consolenav-heading',
+      '--consolenav-text',
+      '--consolenav-text-strong',
+      '--consolenav-hover',
+      '--consolenav-current-surface',
+      '--consolenav-current-rule',
     ]);
 
     const unmoved = [...LIGHT.keys()]

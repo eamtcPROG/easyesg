@@ -248,3 +248,4 @@ export type AdminChallengeResponse = components['schemas']['AdminChallengeRespon
 export type AdminFactorRequest = components['schemas']['AdminFactorRequestDto'];
 export type AdminSessionResponse = components['schemas']['AdminSessionResponseDto'];
 export type AdminAccount = components['schemas']['AdminAccountDto'];
+export { ADMIN_ROLE, type AdminRole } from './admin';

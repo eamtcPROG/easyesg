@@ -12,8 +12,32 @@ import { Client } from 'pg';
  */
 const CLI = 'apps/api/dist/infrastructure/provisioning/provision-admin.main.js';
 
-export function provisionOperator(email: string, password: string, totpSecret: string): void {
-  execFileSync('node', [CLI, '--email', email, '--password', password, '--totp-secret', totpSecret], {
+/**
+ * The CLI's `--role` values, written as the literals it accepts: they are the wire this helper
+ * drives, so a renamed value must fail the provisioning rather than follow along. Added with task
+ * 67.1, when where an operator lands started to depend on which of the two they are.
+ */
+export const OPERATOR_ROLE = {
+  PLATFORM_ADMINISTRATOR: 'platform_administrator',
+  BILLING_OPERATOR: 'billing_operator',
+} as const;
+
+export type OperatorRole = (typeof OPERATOR_ROLE)[keyof typeof OPERATOR_ROLE];
+
+/**
+ * One object, and the role required: three adjacent strings were swappable with nothing failing
+ * but the sign-in, and a spec must now say which privilege level it signs in as.
+ */
+export interface OperatorToProvision {
+  readonly email: string;
+  readonly password: string;
+  readonly totpSecret: string;
+  readonly role: OperatorRole;
+}
+
+export function provisionOperator({ email, password, totpSecret, role }: OperatorToProvision): void {
+  const args = [CLI, '--email', email, '--password', password, '--role', role, '--totp-secret', totpSecret];
+  execFileSync('node', args, {
     // Playwright executes specs as ESM, so the repo root is anchored off `import.meta.url`,
     // never `__dirname` (undefined there).
     cwd: fileURLToPath(new URL('../../..', import.meta.url)),

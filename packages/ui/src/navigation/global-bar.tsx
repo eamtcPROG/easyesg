@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { GLOBAL_BAR_TONE, type GlobalBarTone } from './global-bar-vocabulary';
 import styles from './global-bar.module.css';
 
 /**
@@ -28,6 +29,13 @@ import styles from './global-bar.module.css';
  * `PUT /api/v1/session/organization` lands. Drawing the caret now would offer a control that
  * cannot act, which is the defect the tier's own link set avoids by omitting destinations that do
  * not render. When the write exists, this region becomes the trigger and the caret returns.
+ *
+ * **And the administrative console's band, since task 67.1, through `tone`** — `design_spec.md`
+ * §11.5's *Console nav* paragraph records the reading. The anatomy is this one: a brand slot, an
+ * actions slot, a landmark. What differs is the surface — dark neutral where the tenant band is
+ * brand-dark, a separate realm that says so (§5.2) — and the height, 46px from the console artboard
+ * against 68px here, which still clears NFR-75's 40px target for the account corner. The console
+ * passes no `organization`, and must never (D-5).
  *
  * **It holds slots, not knowledge.** This package owns no text and no router (the standing rule),
  * so the brand anchor and the account corner arrive as the caller's own elements; what is here is
@@ -60,11 +68,21 @@ export interface GlobalBarProps {
   readonly organization?: GlobalBarOrganization;
   /** The account corner: the user menu today, the notification centre when S-26 exists. */
   readonly actions: ReactNode;
+  /** The surface the band is drawn on. Absent is the tenant and public band. */
+  readonly tone?: GlobalBarTone;
 }
 
-export function GlobalBar({ label, brand, organization, actions }: GlobalBarProps) {
+export function GlobalBar({
+  label,
+  brand,
+  organization,
+  actions,
+  tone = GLOBAL_BAR_TONE.BRAND,
+}: GlobalBarProps) {
   return (
-    <header className={styles.bar} aria-label={label}>
+    // The tone is an attribute rather than a second class, so the value a spec pins is the value
+    // the stylesheet selects on.
+    <header className={styles.bar} data-tone={tone} aria-label={label}>
       <div className={styles.identity}>
         {brand}
         {organization ? (

@@ -20,10 +20,14 @@ invisible because nothing in this directory said the rules applied.
 
 ## Current state
 
-**A-01 only.** 26 route files cover all eighteen screens (`A-01` … `A-18`) and every one behind the
+**A-01 and the chrome.** 26 route files cover all eighteen screens (`A-01` … `A-18`) and every one behind the
 realm still returns `null`. What is live, from task 23: `src/realm/` — the API client, the session
-query, the two-step sign-in screen and the interim strip — plus `_realm`'s closed-by-default guard,
-and a third Playwright project driving the journey **cross-origin against the built bundle**.
+query and the two-step sign-in screen — plus `_realm`'s closed-by-default guard, and a third
+Playwright project driving the journey **cross-origin against the built bundle**. **From task 67.1,
+the console chrome** on every screen behind the guard: `GlobalBar` in the console's tone naming the
+operator's realm, `ConsoleNav` — which renders nothing until a screen behind the realm ships — and
+`AccountMenu` holding sign-out. Each privilege level lands on its own home, A-02 or A-10, at
+sign-in and at `/`.
 
 `src/features/` holds fifteen folders split `platform/` and `billing/`. There is no `features/core/`
 and that absence **is** D-5: a Platform Administrator has no standing access to any organization's
@@ -83,8 +87,9 @@ src/
 ├─ app/         entry/ (main.tsx) · providers/ (composition root, the router's two fallbacks) · routes/ ·
 │  │            styles/ — and the generated route-tree.gen.ts, the one file the router places beside them
 │  └─ routes/   _focus (A-01) · _realm (everything behind the guard) — both pathless
-├─ realm/       api/ (the one API client) · components/ (A-01's screen, the realm layout's strip) ·
-│               queries/ (the session) · tools/ (A-01's reducer). A LEAF (see below)
+├─ realm/       api/ (the one API client) · components/ (sign-in/ A-01's screen · chrome/ the realm
+│               layout's chrome · shared/ the realm chip both draw) · queries/ (the session) ·
+│               tools/ (A-01's reducer, each role's home, the navigation's sections). A LEAF (see below)
 ├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until built
 ├─ shared/      what BOTH contexts need. A LEAF
 ├─ i18n/        use-intl wiring, the console locale, formats, the expansion harness, global.d.ts
@@ -138,23 +143,30 @@ src/
   Administrator no standing access to organization data. A selector here would be that standing
   access arriving as a convenience.
 
+- **The console nav is presentation, never the boundary** (task 67.1). It shows an operator their
+  own realm's section, and only destinations whose screen renders — `realm/tools/console-sections.ts`
+  holds both rules and the destination table, empty today. A hidden link refuses nothing:
+  `AdminRealmGuard` (task 67.3) is what stops a Billing Operator reaching A-02 by typing its
+  address. **A screen that ships adds its destination in the same change**, with its label under
+  `realm.chrome.destinations` — the table's type will not accept a key the catalogue lacks.
+
 - **`defaultPreload: 'intent'` is safe here and is not in the tenant app.** Every admin route is
   already behind the realm guard; preloading a tenant route can warm data the viewer may lose
   rights to. Do not copy the setting in the other direction.
 
 - **A library default is user-facing text nobody wrote.** Unset, TanStack Router renders its own
   hardcoded English "Not Found" — which the JSXText ban structurally cannot catch, because the
-  literal is in `node_modules`. `route-fallbacks.tsx` exists for that; the same applies to any
+  literal is in `node_modules`. `app/providers/`'s two fallbacks exist for that; the same applies to any
   library you introduce that renders words.
 
 - **The token cascade is `packages/ui`'s and this app defines none.** §12 is "same tokens, same
   primitives, deliberately different composition". A second token file here is what UX-127 calls a
   defect. Tailwind loads first, tokens after, so the token layer wins a collision.
 
-  **Compact density is a recorded assumption, not a feature.** `[data-density="compact"]` is
-  declared on `<html>` so the contract is fixed, and `packages/ui` has no compact steps behind it
-  yet — so the console currently renders at the tenant scale. That is a stated divergence from §12,
-  and the steps belong in `packages/ui` when they come.
+  **Compact density is `packages/ui`'s, and since task 67.2 it has steps.** `[data-density="compact"]`
+  is declared on `<html>`, and `tokens.css` redefines space steps 4 through 8 under that selector
+  (architecture.md OQ-44). This bullet called it an assumption with nothing behind it until task
+  67.1 found it stale, along with the `globals.css` comment that said the same.
 
 - **Nothing pushes.** Every queue, migration run and exception list polls (§11.2); `refetchInterval`
   is the shape of every screen in `features/`. `staleTime: 0` is deliberate — an admin read is

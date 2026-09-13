@@ -69,6 +69,22 @@
   white-space: nowrap;
 }
 
+/* The console's band (task 67.1): `--consolebar-*`, and the artboard's 46px. Selected by the
+   attribute, and more specific than the frame rules below, which is deliberate — the console is
+   `wide` and `extra` only (UX-77), so the 390 frame's height is never its to take. */
+.bar[data-tone='console'] {
+  gap: var(--space-5);
+  min-block-size: 46px;
+  padding: 0 var(--space-5);
+  background: var(--consolebar-surface);
+  color: var(--consolebar-text);
+}
+
+.bar[data-tone='console'] .identity,
+.bar[data-tone='console'] .actions {
+  gap: var(--space-4);
+}
+
 /* UX-73's three frames. Only the horizontal rhythm changes: the band is one row at every width,
    because a wrapping global tier reads as two tiers and §4.2 says there are three. */
 @media (max-width: 1023px) {

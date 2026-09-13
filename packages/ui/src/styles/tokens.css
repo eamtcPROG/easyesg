@@ -270,6 +270,27 @@
   --enrolment-code-module: var(--slate-900);
   --enrolment-code-ground: var(--slate-0);
 
+  /* The administrative console's chrome (task 67.1, `EasyESG Admin Console Screens.dc.html`): a dark
+     neutral bar and side navigation, where the tenant band is brand-dark — a separate realm, and it
+     says so by surface (design_spec.md §5.2). **Dark in both schemes**, as the global bar's own
+     rules are, so every one reads the dark ramps directly and is named in `tokens.spec.ts`'s
+     SCHEME_INDEPENDENT set. The artboard's hex values map to the nearest dark-ramp steps, and each
+     text pairing is measured against its own surface there. */
+  --consolebar-surface: var(--slate-dark-900);
+  --consolebar-text: var(--slate-dark-0);
+  --consolebar-text-muted: var(--slate-dark-200);
+  --consolebar-divider: var(--slate-dark-500);
+  --consolebar-hover: var(--slate-dark-700);
+  --consolebar-avatar-surface: var(--slate-dark-400);
+  --consolebar-avatar-text: var(--slate-dark-0);
+  --consolenav-surface: var(--slate-dark-700);
+  --consolenav-heading: var(--slate-dark-200);
+  --consolenav-text: var(--slate-dark-100);
+  --consolenav-text-strong: var(--slate-dark-0);
+  --consolenav-hover: var(--slate-dark-500);
+  --consolenav-current-surface: var(--slate-dark-500);
+  --consolenav-current-rule: var(--pine-dark-300);
+
   /* Tells the browser which schemes this document supports, so form controls, scrollbars and
      the canvas behind the page follow the scheme rather than staying light under dark tokens. */
   color-scheme: light dark;

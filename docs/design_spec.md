@@ -1027,6 +1027,8 @@ your organizations" state, and 30.5 must not duplicate this one's wording.
 
 The administrative console shares tokens and primitives with the tenant application and deliberately diverges in density and composition (§12). All administrative screens: target `wide` and `extra` viewports only (UX-77); use compact density; are keyboard-first and bulk-capable; and sit behind a separate auth realm on a separate host with mandatory MFA (§3.2). Those properties are stated once here and are not repeated per screen. Every operation with cross-tenant blast radius follows the single pattern of UX-123 (§12.2).
 
+**The console chrome** (task 67.1, as `EasyESG Admin Console Screens.dc.html` draws it on every signed-in frame): a dark top bar — the wordmark, the realm chip and the operator's realm at one end, the account menu at the other — above a dark side navigation in two headed sections, *Platform* and *Billing*, marking the current destination. **Two rules bound what it shows, both the project owner's (13 Sep 2026).** **It carries what renders** — `GlobalTier`'s standing rule on the tenant surface, applied here: a destination enters the navigation with its screen, so the navigation is empty until A-02 ships, and the artboard's environment chip, command hint, build line and queue badges each arrive with what they point at. **And an operator sees their own realm's section only**: actors.md gives PA no billing authority and BO no platform authority, so the other section would be a list of refusals. That is presentation and not a boundary — `AdminRealmGuard` (task 67.3) is what refuses. The artboard names a person (*Ana Ceban*) where an administrator account holds an address and a role, so the bar names the realm and the menu the address, with no monogram (UX-137 derives one only from a name). A-19, the operator's own credentials, joins the menu when task 151 builds it.
+
 ### A-01 — Admin sign-in (MFA)
 
 - **Purpose:** admit an internal operator to a realm with cross-organization visibility.
@@ -1038,7 +1040,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Controls and actions:** authenticate; complete the second factor.
 - **States:** loading — initial; error — recoverable (failed credential, failed factor); error — permission.
 - **Validation behaviour:** multi-factor authentication is mandatory (FR-75). Elevated credentials are held apart from ordinary tenant accounts. **UX-108** applies: no cognitive function test, and password managers and paste shall work.
-- **Exits:** the console home for the operator's privilege level.
+- **Exits:** the console home for the operator's privilege level — **A-02 for a Platform Administrator, A-10 for a Billing Operator** (project owner, 13 Sep 2026, task 67.1). PA's is the register support triage starts from, and the first destination in its section; BO's is the reconciliation workspace — the largest of the daily exception queues actors.md gives the role, and the one A-11, A-13 and A-14's work routes from. A same-app address carried by the realm guard's `?redirect=` still wins over the home. **Until a billing screen renders, a Billing Operator lands on an address whose screen has not shipped**, which is the consequence accepted with the choice rather than a gap in it.
 - **Use cases:** UC-68.
 - **FRs:** FR-75.
 
@@ -1969,7 +1971,9 @@ container and every screen's measurements stay in that screen's stylesheet.
 
 **Feedback** — Inline field message · Callout (info · attention · warning · error · success) · Banner (persistent, page-level) · Toast (UX-67) · Empty state · Error state · Confirmation dialogue · Consequence dialogue (§6.14).
 
-**Navigation** — Global bar · Organization switcher · Workspace nav · **Chrome drawer** · Wizard step list · Tabs · Breadcrumb · Pagination · Back-to-context
+**Navigation** — Global bar · Organization switcher · Workspace nav · **Chrome drawer** · **Console nav** · Wizard step list · Tabs · Breadcrumb · Pagination · Back-to-context
+
+**Console nav added 13 Sep 2026 (task 67.1)** — the administrative console's side navigation, drawn on every signed-in frame of `EasyESG Admin Console Screens.dc.html`: vertical, in headed sections, the current destination marked by a left rule and a weight change beside `aria-current`. **A row of its own rather than a Workspace nav variant**, because the anatomy differs — headed sections, a vertical list, and a count slot beside each destination that the artboard fills with exception-queue badges — which is UX-89's test rather than a skin. Its applicable §8.1 states are rest · hover · focus · current, and **empty**: a section with no destinations is omitted, and a navigation with none renders nothing — the console's state until its first screen ships (§5.2). **The Global bar serves the console through a tone, not a second band**: the anatomy is the band's — brand at one end, actions at the other — and what differs is the surface, dark neutral where the tenant band is brand-dark, which is what `BUTTON_TONE` and `SWITCHER_TONE` already express. The account menu takes the same tone, and on the console it has no language row — the console is Romanian-only (architecture.md OQ-42), so a submenu offering one choice would decide nothing. Both the band and the navigation hold the same dark values in both schemes, as the global bar's own rules do.
 
 **Chrome drawer added 10 Sep 2026 (task 108)** — §4.2's chrome at `compact`, drawn as
 `EasyESG Workspace.dc.html`'s specimen captioned *"390 · workspace tier as a drawer"*: the

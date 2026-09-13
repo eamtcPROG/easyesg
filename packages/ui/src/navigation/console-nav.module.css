@@ -1,0 +1,66 @@
+/* The console's side navigation (task 67.1) — `EasyESG Admin Console Screens.dc.html`'s dark column.
+   Tier-3 `--consolenav-*` only; the pairings are measured in `tokens.spec.ts`. The console is `wide`
+   and `extra` only (UX-77), so there is no compact form to design. */
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-5);
+  /* 214px, from the artboard: the width at which the longest destination it draws —
+     *Notification templates* — sits on one line with a count beside it. */
+  inline-size: 214px;
+  padding: var(--space-4) 0;
+  background: var(--consolenav-surface);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+}
+
+.heading {
+  margin: 0;
+  padding: 0 var(--space-5) var(--space-2);
+  font: 500 10px/1.4 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--consolenav-heading);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item :is(a),
+.current :is(a) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  /* 32px: above WCAG 2.2's 24px minimum target, and the row height the artboard draws for a dense,
+     keyboard-first surface (§12.1) rather than the 40px a first-time user's controls carry. */
+  min-block-size: 32px;
+  padding: var(--space-2) var(--space-5);
+  font: 400 13px/18px var(--font-text);
+  color: var(--consolenav-text);
+  text-decoration: none;
+}
+
+.item :is(a):hover {
+  background: var(--consolenav-hover);
+  color: var(--consolenav-text-strong);
+}
+
+/* The current destination is a rule, a surface AND a weight — colour is never the sole carrier
+   (UX-102), and `aria-current` on the anchor carries it to assistive technology besides. The rule
+   takes its 3px out of the inset, so a label does not move when its item becomes current. */
+.current :is(a) {
+  padding-inline-start: calc(var(--space-5) - 3px);
+  border-inline-start: 3px solid var(--consolenav-current-rule);
+  background: var(--consolenav-current-surface);
+  color: var(--consolenav-text-strong);
+  font-weight: 600;
+}

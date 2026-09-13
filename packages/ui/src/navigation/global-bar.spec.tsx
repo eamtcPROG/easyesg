@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { GlobalBar } from './global-bar';
+import { GLOBAL_BAR_TONE } from './global-bar-vocabulary';
 
 /**
  * The band's two renderings, which are the two §8.1 states it has (task 30.1).
@@ -48,5 +49,36 @@ describe('GlobalBar', () => {
     bar();
 
     expect(screen.getByRole('banner')).toHaveAccessibleName('easyesg');
+  });
+});
+
+/**
+ * The band's tone (task 67.1) — the one property the stylesheet reads off the markup.
+ *
+ * **`data-tone` is asserted as the literal**, per the root file's test exception: the stylesheet
+ * selects `[data-tone='console']` by its literal, so a value renamed in the vocabulary would move a
+ * constant-based assertion along with the component and leave the selector matching nothing.
+ */
+describe('GlobalBar tone (task 67.1)', () => {
+  it('draws the brand band when no tone is given, which is every tenant and public caller', () => {
+    bar();
+
+    expect(screen.getByRole('banner')).toHaveAttribute('data-tone', 'brand');
+  });
+
+  it('draws the console band when the console asks for it, with the same regions', () => {
+    render(
+      <GlobalBar
+        tone={GLOBAL_BAR_TONE.CONSOLE}
+        label="Console"
+        brand={<a href="/">easyESG</a>}
+        actions={<button type="button">Account</button>}
+      />,
+    );
+
+    const banner = screen.getByRole('banner', { name: 'Console' });
+    expect(banner).toHaveAttribute('data-tone', 'console');
+    expect(banner).toContainElement(screen.getByRole('link', { name: 'easyESG' }));
+    expect(banner).toContainElement(screen.getByRole('button', { name: 'Account' }));
   });
 });
