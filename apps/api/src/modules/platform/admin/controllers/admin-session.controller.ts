@@ -41,13 +41,13 @@ const SET_COOKIE = 'set-cookie';
  * interceptor in the loop while the headers are set.
  *
  * No refresh route, deliberately: rotation is server-side, inside `GET`'s resolve, because the
- * api holds both ends of the exchange. And every route here stays public when task 28's guard
- * chain arrives — they are how an admin session comes to exist, and `GET` is the probe the
- * console's router asks "am I signed in" through.
+ * api holds both ends of the exchange. And every route here stays public when task 67.3's
+ * `AdminRealmGuard` arrives — they are how an admin session comes to exist, and `GET` is the
+ * probe the console's router asks "am I signed in" through.
  *
  * **`@Public()` here means public to the TENANT guard and nothing more.** This realm carries no
  * bearer: NFR-65 gives it a separate credential store and a sealed `SameSite=Strict` cookie which
- * this controller's own handler verifies, and 28.2's `AdminRealmGuard` is what turns that into a
+ * this controller's own handler verifies, and task 67.3's `AdminRealmGuard` is what turns that into a
  * chain. Without the marker the tenant guard would 401 the more privileged surface for not
  * presenting the less privileged surface's token.
  */
@@ -151,9 +151,11 @@ export class AdminSessionController {
   @ApiOperation({
     summary: 'Read the current administrative session',
     description:
-      'The console router’s probe. Judges the sealed cookie: a live access token answers ' +
-      'directly; an expired one is rotated server-side and the successor cookie set on this ' +
-      'response. 401 means sign in again.',
+      'The console router’s probe. Judges the sealed cookie against the session it names, on ' +
+      'every request: a live access token answers once that session is confirmed live, with the ' +
+      'account as it stands now; an expired one is rotated server-side and the successor cookie ' +
+      'set on this response. 401 means sign in again — a signed-out, revoked or deactivated ' +
+      'session is refused on its next request.',
   })
   @ApiObjectResponse(AdminSessionResponseDto, {
     status: 200,

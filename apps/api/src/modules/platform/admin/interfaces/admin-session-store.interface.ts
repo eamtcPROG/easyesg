@@ -1,5 +1,6 @@
 import type {
   AdminAccount,
+  AdminRequestSession,
   AdminSession,
   AdminSessionRevokedReason,
   PresentedAdminRefreshToken,
@@ -27,7 +28,8 @@ export interface AdminSessionTransaction {
   findAdminAccountByEmail(email: string): Promise<AdminAccount | null>;
 
   /** Active only, like the email lookup — rotation re-reads through this, so a deactivation
-   *  refuses the next rotation even before task 28's per-request guard exists. */
+   *  refuses the next rotation. A request on a live access token reads `findSessionForRequest`
+   *  instead, which carries no secret (task 145). */
   findAdminAccountById(accountId: string): Promise<AdminAccount | null>;
 
   /** Increments `failed_attempts`, locking at the threshold in one atomic UPDATE. Counts both
@@ -41,6 +43,18 @@ export interface AdminSessionTransaction {
   createSession(accountId: string, refreshTokenHash: Buffer, at: Date): Promise<AdminSession>;
 
   findRefreshToken(tokenHash: Buffer): Promise<PresentedAdminRefreshToken | null>;
+
+  /**
+   * The per-request read (task 145; AD-12) — by session id, the access token's `sub`. Null when no
+   * such session exists, which a forged or stale token produces.
+   *
+   * **It returns facts and decides nothing**, as the tenant `RequestIdentityStore` does: revocation
+   * and the two lifetime anchors come back to be judged against `admin-session-expiry.ts`, where the
+   * §12.5.6 policy lives beside its citation. The account comes back only while active, so a
+   * deactivation (FR-80) reads as no account — and as an identity rather than `AdminAccount`, so a
+   * request on a live token never opens the TOTP secret it has no use for.
+   */
+  findSessionForRequest(sessionId: string): Promise<AdminRequestSession | null>;
 
   /** The conditional consume that decides rotation races exactly once. */
   consumeRefreshToken(tokenId: string, at: Date): Promise<boolean>;

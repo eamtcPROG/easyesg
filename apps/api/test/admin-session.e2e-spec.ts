@@ -243,8 +243,8 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
       .expect(204);
     expect(String(signedOut.headers['set-cookie'])).toContain('Max-Age=0');
 
-    // Server-side termination (the cookie's access window notwithstanding — §12.5.6 records
-    // that cost): the session row is revoked, so the refresh path is dead.
+    // Server-side termination: the session row is revoked, so the refresh path is dead — and since
+    // task 145 the cookie itself is refused on its next request, which the describe below proves.
     const rows: { revoked_reason: string }[] = await db.query(
       `SELECT s.revoked_reason FROM identity.admin_session s
         JOIN identity.admin_account a ON a.id = s.account_id WHERE a.email = $1`,
@@ -364,6 +364,134 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
       .get('/api/v1/auth/admin/session')
       .set('cookie', `${ADMIN_SESSION_COOKIE}=AAAA-not-a-sealed-cookie`)
       .expect(401);
+  });
+
+  /**
+   * **Task 145 — the session is read on every request** (AD-12: *the lookup, not the lifetime,
+   * bounds staleness*). Every request below presents a cookie whose access token is still inside its
+   * fifteen minutes, which is the state in which the resolver answered from the cookie alone. Written
+   * before the fix and seen to fail against it: a signed-out cookie answered 200.
+   */
+  describe('the session is read on every request (task 145)', () => {
+    const probe = (sealed: string) =>
+      http().get('/api/v1/auth/admin/session').set('cookie', `${ADMIN_SESSION_COOKIE}=${sealed}`);
+
+    /**
+     * Proves a 200 came from the live-token tier. Rotation always sets a successor cookie and the
+     * live tier never does — and without this, every case below also passed with the live tier
+     * skipped: rotation spent the token on the first probe and the reuse grace refused the second,
+     * whatever happened in between (the gate-integrity review's finding).
+     */
+    const answeredLive = <T extends { headers: Record<string, unknown> }>(response: T): T => {
+      expect(response.headers['set-cookie']).toBeUndefined();
+      return response;
+    };
+
+    /** Ages this operator's session through the database's own clock — never the host's. */
+    const ageSession = (email: string, interval: string) =>
+      db.query(
+        `UPDATE identity.admin_session s SET created_at = now() - $2::interval
+           FROM identity.admin_account a WHERE a.id = s.account_id AND a.email = $1`,
+        [email, interval],
+      );
+
+    it('refuses a signed-out session on its next request, presented with the same cookie', async () => {
+      const email = addressFor('revoked');
+      await provision(email);
+      const sealed = sealedCookieOf(await signIn(email));
+      answeredLive(await probe(sealed).expect(200));
+
+      await http()
+        .delete('/api/v1/auth/admin/session')
+        .set('origin', ADMIN_ORIGIN)
+        .set('cookie', `${ADMIN_SESSION_COOKIE}=${sealed}`)
+        .expect(204);
+
+      // A copied cookie outliving the sign-out is the case: the browser's copy is cleared, a
+      // replayed one is not, and nothing about its access token has changed.
+      const refused = await probe(sealed).expect(401);
+      expect(problemType(refused)).toBe('https://easyesg.md/problems/authentication-required');
+    });
+
+    it('refuses a deactivated operator on their next request (AD-12)', async () => {
+      const email = addressFor('deactivated');
+      await provision(email);
+      const sealed = sealedCookieOf(await signIn(email));
+      answeredLive(await probe(sealed).expect(200));
+
+      await db.query(`UPDATE identity.admin_account SET active = false WHERE email = $1`, [email]);
+
+      const refused = await probe(sealed).expect(401);
+      expect(problemType(refused)).toBe('https://easyesg.md/problems/authentication-required');
+    });
+
+    it('answers with the role the account holds now, not the one sealed at sign-in', async () => {
+      const email = addressFor('role');
+      await provision(email);
+      const sealed = sealedCookieOf(await signIn(email));
+
+      await db.query(
+        `UPDATE identity.admin_account SET role = 'billing_operator' WHERE email = $1`,
+        [email],
+      );
+
+      expect(sessionBody(answeredLive(await probe(sealed).expect(200))).account.role).toBe(
+        'billing_operator',
+      );
+    });
+
+    it('judges the absolute bound from sign-in, on the record', async () => {
+      const email = addressFor('absolute');
+      await provision(email);
+      const sealed = sealedCookieOf(await signIn(email));
+
+      await ageSession(email, '12 hours 1 minute');
+
+      const refused = await probe(sealed).expect(401);
+      expect(problemType(refused)).toBe('https://easyesg.md/problems/session-expired');
+    });
+
+    it('counts idle from the live refresh token, not from sign-in or a consumed one', async () => {
+      const email = addressFor('idle');
+      await provision(email);
+      const sealed = sealedCookieOf(await signIn(email));
+
+      // Rotate once, as the rotation case does: the sign-in token is consumed, a live one issued.
+      const payload = unsealAdminCookie(sealed, tokens.cookieKey());
+      if (payload === null) throw new Error('the spec failed to unseal its own cookie');
+      const aged: AdminCookiePayload = {
+        ...payload,
+        accessToken: await tokens.sign('spoofed-session-id', new Date(Date.now() - 60_000)),
+      };
+      const rotated = await probe(sealAdminCookie(aged, tokens.cookieKey())).expect(200);
+      const resealed = sealedCookieOf(rotated);
+
+      // Nine hours since sign-in and since the consumed token — past idle from either, inside the
+      // absolute bound. Only the live token, issued a moment ago, keeps the session alive.
+      await ageSession(email, '9 hours');
+      await db.query(
+        `UPDATE identity.admin_refresh_token t SET issued_at = now() - interval '9 hours'
+           FROM identity.admin_session s JOIN identity.admin_account a ON a.id = s.account_id
+          WHERE t.session_id = s.id AND t.consumed_at IS NOT NULL AND a.email = $1`,
+        [email],
+      );
+
+      answeredLive(await probe(resealed).expect(200));
+    });
+
+    it('answers 401, not 500, for a live token naming something that is not a session id', async () => {
+      const email = addressFor('non-uuid');
+      await provision(email);
+      const payload = unsealAdminCookie(sealedCookieOf(await signIn(email)), tokens.cookieKey());
+      if (payload === null) throw new Error('the spec failed to unseal its own cookie');
+      const forged: AdminCookiePayload = {
+        ...payload,
+        accessToken: await tokens.sign('not-a-session-id', new Date(Date.now() + 5 * 60_000)),
+      };
+
+      const refused = await probe(sealAdminCookie(forged, tokens.cookieKey())).expect(401);
+      expect(problemType(refused)).toBe('https://easyesg.md/problems/authentication-required');
+    });
   });
 
   it('locks after ten consecutive failures, with the distinct admin release story', async () => {

@@ -14,8 +14,9 @@
  * token structurally unable to verify as an admin one.
  *
  * The claim discipline is AD-12's, unchanged: `sub` is the admin session id, plus `exp`/`iat` —
- * no role, no email, nothing of authorization consequence. Identity rides the sealed cookie's
- * own block; authorization is read per request once task 28's guard exists.
+ * no role, no email, nothing of authorization consequence. The sealed cookie still carries an
+ * identity block, and since task 145 nothing decides on it: identity and authorization are read from
+ * the session record on every request (§12.5.6's task-145 row, which records keeping the block).
  */
 export interface AdminTokens {
   /** `expiresAt` is stamped into the claim; the value is `admin-session-expiry.ts`'s to own. */

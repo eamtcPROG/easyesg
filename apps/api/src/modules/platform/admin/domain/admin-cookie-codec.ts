@@ -1,4 +1,4 @@
-import { ADMIN_ROLE, type AdminRole } from '../models/admin-session.model';
+import { isAdminRole, type AdminRole } from '../models/admin-session.model';
 import { sealJson, unsealJson } from './sealed-payload';
 
 /**
@@ -36,10 +36,6 @@ export function sealAdminCookie(payload: AdminCookiePayload, key: Buffer): strin
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
-
-const isAdminRole = (value: unknown): value is AdminRole =>
-  typeof value === 'string' &&
-  (Object.values(ADMIN_ROLE) as readonly string[]).includes(value);
 
 /** Validated, never cast — a stale payload shape must read as "no session", not crash later. */
 function readPayload(parsed: unknown): AdminCookiePayload | null {

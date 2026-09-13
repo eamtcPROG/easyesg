@@ -7,14 +7,15 @@ import type {
   AdminSessionTransaction,
 } from '@api/modules/platform/admin/interfaces/admin-session-store.interface';
 import {
-  ADMIN_ROLE,
+  isAdminRole,
   type AdminAccount,
-  type AdminRole,
+  type AdminRequestSession,
   type AdminSession,
   type AdminSessionRevokedReason,
   type PresentedAdminRefreshToken,
 } from '@api/modules/platform/admin/models/admin-session.model';
 import { CORE_DATA_SOURCE } from '../data-source';
+import { returnedRows } from '../returned-rows';
 import { countRecentAuthAttempts, recordAuthAttempt } from '../identity/auth-attempt.queries';
 
 /**
@@ -31,13 +32,15 @@ import { countRecentAuthAttempts, recordAuthAttempt } from '../identity/auth-att
  * `CompleteAdminSignIn` — would have made every future reader of a secret responsible for
  * remembering to open it, which is the failure mode the store exists to remove.
  *
- * **A recorded cost:** `findAdminAccountById` serves the resolve path, which reads only the
- * identity fields — so every `GET /auth/admin/session` opens a secret it will not use. Returning
- * it sealed from one finder and open from the other was rejected outright: `AdminAccount
- * .totpSecret` would then be a type that lies about what it holds, which is a worse defect class
- * than one AES-GCM over twenty bytes. A lazily-opening getter was rejected for the same family of
- * reason — a property that throws at an arbitrary later point. If the plaintext window ever needs
- * narrowing, the honest change is a second model without the field, not a field that varies.
+ * **The per-request read opens no secret, since task 145.** `findAdminAccountById` used to serve
+ * every `GET /auth/admin/session` that rotated, and reads only the identity fields — so a secret
+ * was opened that nothing used. Returning it sealed from one finder and open from the other was
+ * rejected outright: `AdminAccount.totpSecret` would then be a type that lies about what it holds.
+ * A lazily-opening getter was rejected for the same family of reason — a property that throws at
+ * an arbitrary later point. This file said the honest change was *a second model without the
+ * field*, and task 145 took it: `findSessionForRequest` answers `AdminIdentity`, so a request on
+ * a live token — every request but one per fifteen minutes — never opens the secret. Rotation
+ * still does, through `findAdminAccountById`, and that remaining cost is this paragraph's.
  */
 @Injectable()
 export class AdminSessionStoreRepository implements AdminSessionStore {
@@ -84,6 +87,16 @@ interface AdminSessionRow {
   revoked_at: Date | null;
 }
 
+interface AdminRequestSessionRow {
+  session_id: string;
+  session_created_at: Date;
+  token_issued_at: Date | null;
+  revoked_at: Date | null;
+  account_id: string | null;
+  email: string | null;
+  role: string | null;
+}
+
 interface PresentedAdminRefreshTokenRow {
   token_id: string;
   session_id: string;
@@ -94,33 +107,37 @@ interface PresentedAdminRefreshTokenRow {
   session_revoked_at: Date | null;
 }
 
-const toRole = (value: string): AdminRole =>
-  Object.values(ADMIN_ROLE).find((role) => role === value) ?? ADMIN_ROLE.PLATFORM_ADMINISTRATOR;
+/** RFC 9562 textual form, any version — `RequestIdentityStoreRepository`'s guard, for its reason. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * The row is the storage representation; `AdminAccount` is the domain's. `totp_secret` arrives
  * sealed and is opened here — a throw if it cannot be, because a secret that will not open is a
  * wrong `SECRET_ENCRYPTION_KEY` or a corrupt row, and answering "no secret" would present an
  * operator misconfiguration as a mistyped code on the factor step.
+ *
+ * **A role outside `ADMIN_ROLE` reads as no account**, which refuses sign-in and rotation alike.
+ * This mapped an unknown role to Platform Administrator, the most privileged member, until task
+ * 145's convention review found the per-request read about to inherit it. The `CHECK` makes the
+ * value impossible today; task 67's expand→migrate step is when it would not be.
  */
-const toAdminAccount = (row: AdminAccountRow, secrets: SecretCipher): AdminAccount => ({
-  id: row.id,
-  email: row.email,
-  role: toRole(row.role),
-  active: row.active,
-  passwordHash: row.password_hash,
-  totpSecret: secrets.open(row.totp_secret),
-  failedAttempts: row.failed_attempts,
-  lockedAt: row.locked_at,
-  createdAt: row.created_at,
-});
+const toAdminAccount = (row: AdminAccountRow, secrets: SecretCipher): AdminAccount | null =>
+  isAdminRole(row.role)
+    ? {
+        id: row.id,
+        email: row.email,
+        role: row.role,
+        active: row.active,
+        passwordHash: row.password_hash,
+        totpSecret: secrets.open(row.totp_secret),
+        failedAttempts: row.failed_attempts,
+        lockedAt: row.locked_at,
+        createdAt: row.created_at,
+      }
+    : null;
 
 const ADMIN_ACCOUNT_COLUMNS =
   'id, email, role, active, password_hash, totp_secret, failed_attempts, locked_at, created_at';
-
-/** See `AccountStoreRepository.returnedRows` — TypeORM shapes `query()` results per SQL command. */
-const returnedRows = <T>(result: unknown): T[] =>
-  Array.isArray(result) && Array.isArray(result[0]) ? (result[0] as T[]) : (result as T[]);
 
 class AdminSessionTransactionAdapter implements AdminSessionTransaction {
   constructor(
@@ -233,6 +250,52 @@ class AdminSessionTransactionAdapter implements AdminSessionTransaction {
       tokenConsumedAt: row.token_consumed_at,
       sessionCreatedAt: row.session_created_at,
       sessionRevokedAt: row.session_revoked_at,
+    };
+  }
+
+  /**
+   * One statement (task 145). The live refresh token is joined because it anchors the idle window,
+   * and `admin_refresh_token_live_key` makes "the live one" a single row by construction; the
+   * account is joined **only while active**, so a deactivation reads as a null account rather than
+   * as a missing session — the use case refuses both, but the facts stay distinct for a reader.
+   */
+  async findSessionForRequest(sessionId: string): Promise<AdminRequestSession | null> {
+    // A token's `sub` is whatever was signed and `admin_session.id` is a `uuid` column, so a
+    // non-uuid would raise `invalid input syntax for type uuid` and turn a 401 into a 500.
+    if (!UUID.test(sessionId)) return null;
+
+    const rows = returnedRows<AdminRequestSessionRow>(
+      await this.queryRunner.query(
+        `SELECT s.id         AS session_id,
+                s.created_at AS session_created_at,
+                s.revoked_at,
+                t.issued_at  AS token_issued_at,
+                a.id         AS account_id,
+                a.email,
+                a.role
+           FROM identity.admin_session s
+           LEFT JOIN identity.admin_refresh_token t
+             ON t.session_id = s.id AND t.consumed_at IS NULL
+           LEFT JOIN identity.admin_account a
+             ON a.id = s.account_id AND a.active
+          WHERE s.id = $1`,
+        [sessionId],
+      ),
+    );
+    if (rows.length === 0) return null;
+    const row = rows[0];
+    return {
+      sessionId: row.session_id,
+      sessionCreatedAt: row.session_created_at,
+      // A session always holds a live token — `createSession` writes both, rotation issues before
+      // it answers. Falling back to sign-in if that ever broke starts the idle window earlier, so
+      // the session expires sooner rather than later: the tenant adapter's reading, kept.
+      tokenIssuedAt: row.token_issued_at ?? row.session_created_at,
+      revokedAt: row.revoked_at,
+      account:
+        row.account_id === null || row.email === null || !isAdminRole(row.role)
+          ? null
+          : { id: row.account_id, email: row.email, role: row.role },
     };
   }
 

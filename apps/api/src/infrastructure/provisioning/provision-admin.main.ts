@@ -9,7 +9,7 @@ import {
 } from '@api/modules/platform/admin/domain/totp';
 import { returnedRows } from '@api/infrastructure/persistence/returned-rows';
 import { normaliseEmail } from '@api/modules/identity/account/domain/email-address';
-import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.model';
+import { ADMIN_ROLE, isAdminRole } from '@api/modules/platform/admin/models/admin-session.model';
 
 /**
  * Entrypoint for `pnpm --filter @easyesg/api admin:provision` — UC-68's precondition,
@@ -85,7 +85,7 @@ async function main(): Promise<void> {
 
     if (!values.password) throw new Error(`--password is required.\n${USAGE}`);
     const role = values.role;
-    if (!(Object.values(ADMIN_ROLE) as string[]).includes(role)) {
+    if (!isAdminRole(role)) {
       throw new Error(`--role must be one of ${Object.values(ADMIN_ROLE).join(', ')}.\n${USAGE}`);
     }
 

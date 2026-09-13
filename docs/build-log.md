@@ -19255,3 +19255,184 @@ in both schemes, `data-tone="console"`**, no navigation landmark, and a menu hol
 *Ieșiți din consolă* — no language row. The screenshots matched the artboard's band. Not the in-app
 browser pane, which holds the owner's own session: every sign-in here was a provisioned test operator
 through Playwright, cleaned up afterwards.
+
+## Task 145 closes — a revoked admin session, refused on its next request · 2026-09-13
+
+`ResolveAdminSession` answered a live access token from the sealed cookie alone, so a signed-out
+or reuse-revoked admin session kept answering `200` for up to fifteen minutes. Task 23 deferred the
+lookup to task 28's guard for uniformity with the tenant model, and task 28 closed without it. AD-12
+already decided the general case — *the lookup, not the lifetime, bounds staleness* — and §12.5.6's
+task-145 row (12 Sep 2026) had recorded the reversal and its price, one read per admin request,
+before any code. So this task opened no question: the decision existed and was unbuilt. The row has
+no sub-steps. It is taken **before 67.3** because `AdminRealmGuard` is built around this lookup
+(Batch B's stated ordering).
+
+**The three review agents and `pnpm gates:clean` ran on this task, and should not have been reached
+for by reflex** — the project owner's correction, 13 Sep 2026, given while both were running: *not
+after each task, only when truly required*. The reasoning that triggered them was mechanical — a row
+with no sub-steps read as its own parent close, and a two-line description change in the regenerated
+contract read as *a generated artefact* on the cold-run list. Neither made them truly required for an
+api-only fix whose change is one read and its tests. They were left to finish at the owner's word and
+their results are below; the judgement going forward is the owner's sentence, not the mechanical
+reading.
+
+### Written as a failing test first, and seen to fail
+
+The row's own words. Before the implementation moved, the use-case spec and
+`test/admin-session.e2e-spec.ts` were changed and run against the unchanged code:
+
+- **Unit, 5 failed / 5 passed** — exactly the five cases added or rewritten: a live token over a live
+  session answering the identity the store holds (the old case had asserted the opposite, *"no store
+  access"*, against an empty store); a revoked session; a token naming no session; a deactivated
+  account; the absolute bound past inside the token's fifteen minutes.
+- **E2E, 3 failed / 13 passed** — exactly the three new cases: a signed-out session presented again
+  with the same cookie, a deactivated operator, and the role answered as it stands.
+
+After the change: unit 10 / 10, the admin suite 16 / 16 — and after the reviews added their cases, 13
+and 19 (below).
+
+### What changed
+
+- **`AdminSessionTransaction.findSessionForRequest`** — one joined statement: the session, its live
+  refresh token (the idle anchor; `admin_refresh_token_live_key` makes it one row) and its account
+  **only while active**, answered as `AdminRequestSession`. It returns facts and decides nothing, the
+  tenant `RequestIdentityStore`'s split, so the §12.5.6 policy stays in `admin-session-expiry.ts`. A
+  UUID guard in the adapter keeps a non-uuid `sub` from turning a 401 into a 500, the tenant
+  adapter's reason.
+- **The account comes back as `AdminIdentity`, never `AdminAccount`**, so a request on a live token
+  opens no TOTP secret. The adapter's own docblock had said *"the honest change is a second model
+  without the field"*; this took it. Rotation and sign-in still open the secret — the first draft
+  of this entry said *rotation alone*, and the spec review caught sign-in's step one doing it too.
+- **`ResolveAdminSession.current`** refuses a missing session, a revoked one and a deactivated account
+  as `AdminSessionInvalidError`, answers a lifetime run out as `AdminSessionExpiredError`, and answers
+  the identity from the record — so a role change (FR-80's future privilege levels, AD-12's
+  *role read server-side on every request*) and a deactivation bind on the next request rather than
+  the next rotation.
+- **`GET /auth/admin/session`'s OpenAPI description** said *"a live access token answers directly"*;
+  it now says what happens, and the contract is regenerated — two description lines.
+
+### Two details settled in the building, and where they are written
+
+Both went into §12.5.6's task-145 row, which owns the decision:
+
+- **Revoked answers `authentication-required`, where the tenant `AuthGuard` answers
+  `session-expired`.** The admin realm's own contract draws that line — `AdminSessionInvalidError` is
+  *every way a presented cookie can be dead short of expiry, reuse revocation included, which must not
+  announce itself to the thief who tripped it* — and the rotation tier already answered a revoked
+  session that way. The alternative would have given one fact two answers depending on whether the
+  access token happened to have expired.
+- **No secret opened per request** (above).
+
+### Measured, not reasoned
+
+`EXPLAIN` of the new statement with `enable_seqscan = off`: `admin_session_pkey`,
+`admin_refresh_token_live_key` and `admin_account_pkey`, each an index scan, nested-loop left joins,
+one row. At these table sizes the planner would pick sequential scans; the point was that the indexes
+are usable.
+
+### Stale claims closed with it
+
+`apps/api/CLAUDE.md`'s *"Recorded cost, **still open**"*; §12.5.6's task-23 paragraph (*"the JWT is
+verified without a lookup until task 28's guard adds one"*); AD-12's *"closed 12 Sep 2026 by task
+145"*, which was the decision date and is now decided-and-closed; the store port's *"even before
+task 28's per-request guard exists"*; the adapter's recorded-cost paragraph; the e2e comment *"the
+cookie's access window notwithstanding"*; and the controller docblock naming *"28.2's
+`AdminRealmGuard`"*, which has been task 67.3's since 27 Aug 2026. Searched: `honoured`, `15 min`,
+`fifteen minutes`, `without a lookup`, `notwithstanding` and `AdminRealmGuard` across `apps`, `docs`
+and every `CLAUDE.md`.
+
+### Rules considered
+
+- **`security-use-guards`** — declined with its reason: the lookup lives in the use case the realm's
+  one probe route calls, because `AdminRealmGuard` is task 67.3's and this row exists to precede it.
+- **`db-use-transactions`** — met: one read inside the store's unit of work, the house shape.
+- **`perf-optimize-database`** — met: identity columns only, indexes proven usable.
+- **`di-interface-segregation`** — considered: one method on the realm's existing port rather than a
+  second port. The tenant realm split `RequestIdentityStore` out because two ports meant two
+  transactions on its hottest path; here the realm's store is already one port and one transaction.
+- **`file-one-behaviour-api`** — met: `current` is a private method of the one use case, not a helper
+  class beside it.
+
+### Three reviews on `opus`, and what each changed
+
+**Convention review — three violations, all applied.**
+
+- **The per-request read inherited an escalating role narrowing.** The adapter's private `toRole`
+  mapped an unknown role to `ADMIN_ROLE.PLATFORM_ADMINISTRATOR`, and the new read used it — moving the
+  busiest admin path from the cookie codec's *refusing* check to an *escalating* one. The root rule is
+  *an operation over a vocabulary lives with the vocabulary*: `isAdminRole` now sits beside
+  `ADMIN_ROLE` with a spec pinning the refusal, and an unknown role reads as **no account** on sign-in,
+  rotation and the per-request read alike. Three local copies went with it — both cookie codecs'
+  `isAdminRole` and `admin:provision`'s inline `includes`. The `CHECK` makes the value impossible
+  today; task 67's expand→migrate step is when it would not be.
+- **The deferral this task retired survived in a sixth place**, `admin-token.interface.ts`: *"Identity
+  rides the sealed cookie's own block; authorization is read per request once task 28's guard
+  exists"* — both halves now false.
+- **The new read called a leftover private `returnedRows`**, as did `social-sign-in-store.repository.ts`;
+  both import `persistence/returned-rows.ts` now. Also taken from its *not rules* list: the `CURRENT`
+  arm typed as `AdminIdentity` rather than the cookie's shape, the controller's *"when task 28's guard
+  chain arrives"*, and the model's *"Unencrypted at rest for now"*, stale since task 27.1.
+
+**Spec review — four findings, all applied.** No open question closed in passing and the deliverable
+met; what it found was record-keeping:
+
+- **The cookie's identity block is kept and no longer trusted**, an unrecorded deferral against AD-12's
+  own *"some guard, at some point, trusts the claim instead of the lookup"*. §12.5.6's task-145 row
+  now records it, with the assumption and what changes if it breaks.
+- **FR-80 was cited for timing**; it requires deactivation to exist, and AD-12 is what makes it bind
+  on the next request. The two test titles cite AD-12.
+- **"Rotation remains the only path that opens the secret" was false** — sign-in's step one opens it
+  too. Corrected in the §12.5.6 row and `apps/api/CLAUDE.md`.
+- **§6.2 defines `session-expired` as *the token was ours and the session behind it is over***, which
+  a revoked admin session is; it now points at the task-145 row for the admin realm's different line.
+  And the archived row's *"§12.5.6's task-23 paragraph records the reversal"* named the wrong place.
+
+**Gate-integrity review — five findings, and the first was the one that mattered.**
+
+- **The three e2e cases passed with the live-token tier skipped entirely.** The first probe rotated and
+  spent the refresh token; the second landed in the 30 s reuse grace and was refused — whatever the
+  sign-out or deactivation between them did. Proven by the reviewer in a scratch copy. Every live
+  probe now asserts **no `Set-Cookie`**, which rotation always sets and the live tier never does.
+- **The idle anchor was untested**: swapping the two anchors ends every live session at eight hours
+  instead of twelve with all fourteen cases green, because the only expiry case sat past both bounds.
+  A unit case nine hours after sign-in with a live token two minutes old — a consumed sign-in token
+  listed first — kills the swap, a sign-in anchor and a dropped live-token filter in the fake; two
+  e2e cases age the rows through the database's own clock to hold the adapter's mapping to the same.
+- **The check order was unpinned**, and it mattered: the first cut refused a deactivated account
+  before judging the lifetimes, so a deactivated *and* expired session answered `authentication-required`
+  on the live tier and `session-expired` on rotation. The live tier now judges in rotation's order —
+  revoked, lifetimes, account — and a case holds both tiers to one answer.
+- **The UUID guard was untested** — an e2e case presents a live token naming a non-uuid, expecting 401.
+
+### Verification
+
+**`pnpm gates:clean` ran once, on the pre-review tree, and stopped at `openapi:check`** — the regenerated
+contract was unstaged, and that gate compares the working tree to the index, which `apps/api/CLAUDE.md`
+already says (*"staging the regenerated files is what makes it pass"*). Everything before it was green:
+lint, typecheck, `docs:check`, the package suites, the api's 799 unit tests, the admin app's 57 and the
+web app's 560. The gates after it — `facade:check`, `routes:check`, `migrations:check` and the three e2e
+suites — did not run, and **the cold run was not restarted**, on the owner's correction above.
+
+**After the review fixes, what the change reaches**, per the root file's table for `apps/api`:
+
+- `pnpm --filter @easyesg/api typecheck` and `pnpm lint` green; the api unit suite **813 across 84**.
+- `pnpm e2e` — **916 across 38 suites**, which is also the HTTP entrypoint's boot proof
+  (`entrypoint-boot.e2e-spec.ts`). The admin suite is 19, the use-case spec 13.
+- `pnpm openapi:check` green with the contract staged; `docs:check` at 40 claims.
+- `admin:provision --role support` refuses with *"--role must be one of platform_administrator,
+  billing_operator"* — the shared `isAdminRole`, reached through the built CLI.
+- **Not run, and why**: `pnpm e2e:worker`, since nothing here reaches the worker; and `pnpm e2e:web
+  --project admin`, since the console's journey reads this route only through the probe the api suite now
+  drives with real cookies — sign-in, rotation, sign-out, revocation, deactivation and both lifetimes.
+
+**The new checks proven to bite**, each mutation on the real tree and the file restored from a byte copy
+(`cmp` confirmed):
+
+- **The account judged before the lifetimes** fails *"answers a deactivated account past its lifetime as
+  expired, in this tier and in rotation alike"* — the order is pinned.
+- **The two lifetime anchors swapped** fails *"keeps a session current nine hours after sign-in when its
+  live token was issued two minutes ago"* — the idle anchor is pinned.
+- **The live-token tier skipped, every request rotating** fails five of the admin suite's six task-145
+  cases — the three the review found passing for the wrong reason among them. The sixth, the absolute
+  bound, answers `session-expired` from rotation too, which is correct rather than a gap: both tiers
+  judge the same anchor.

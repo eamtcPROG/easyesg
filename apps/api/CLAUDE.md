@@ -90,10 +90,13 @@ traps each one left — grouped by area rather than by the task that built it.
   `kind` discriminator keeps it unconfusable with the session under the shared key; CORS pinned to
   `ADMIN_ORIGIN` with credentials and an Origin proof on the realm's writes. TOTP is a thin wrapper
   over `otpauth` — it was hand-rolled until 24 Aug 2026 and `domain/totp.ts`'s header records why
-  that was wrong. `admin:provision` runs from `dist/` so `tsc-alias` has resolved `@api/*`. Recorded
-  cost, **still open**: a revoked admin session's last access token is honoured ≤15 min — the
-  lookup was deferred to task 28's guard, task 28 closed without it, and
-  `resolve-admin-session.use-case.ts`'s docblock carries the same deferral. `totp_secret` is **encrypted at rest** (27.1): its type is `identity.encrypted_secret`,
+  that was wrong. `admin:provision` runs from `dist/` so `tsc-alias` has resolved `@api/*`. **The
+  session is read on every request since task 145** (13 Sep 2026): a signed-out, reuse-revoked or
+  deactivated session is refused on its next request, and the identity answered is the account as
+  it stands. Until then a revoked session's last access token was honoured ≤15 min — deferred to
+  task 28's guard, which closed without it. The read is `findSessionForRequest`, one joined
+  statement answering an identity rather than `AdminAccount`, so it opens no TOTP secret; rotation
+  and sign-in are the paths that still do. `totp_secret` is **encrypted at rest** (27.1): its type is `identity.encrypted_secret`,
   a domain whose constraint refuses anything but `v<n>.<base64url>`, so plaintext is unrepresentable
   rather than discouraged; the store adapter opens it on the way out and `admin:provision` seals it
   on the way in.

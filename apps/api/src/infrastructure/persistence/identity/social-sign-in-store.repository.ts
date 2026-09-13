@@ -24,6 +24,7 @@ import type { NewSession, Session } from '@api/modules/identity/session/models/s
 import type { SocialProvider } from '@api/contracts/identity-provider.port';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
+import { returnedRows } from '../returned-rows';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
 /**
@@ -127,10 +128,6 @@ const uniqueViolationConstraint = (error: unknown): string | undefined => {
     .driverError;
   return driverError?.code === UNIQUE_VIOLATION ? driverError.constraint : undefined;
 };
-
-/** See `AccountStoreRepository.returnedRows` — TypeORM shapes `query()` results per SQL command. */
-const returnedRows = <T>(result: unknown): T[] =>
-  Array.isArray(result) && Array.isArray(result[0]) ? (result[0] as T[]) : (result as T[]);
 
 class SocialSignInTransactionAdapter implements SocialSignInTransaction {
   constructor(private readonly queryRunner: QueryRunner) {}

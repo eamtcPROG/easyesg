@@ -15,7 +15,12 @@ import {
 } from '../errors/admin-session.errors';
 import type { AdminSessionStore } from '../interfaces/admin-session-store.interface';
 import type { AdminTokens } from '../interfaces/admin-token.interface';
-import { ADMIN_SESSION_REVOKED_REASON, type AdminAccount, type IssuedAdminSession } from '../models/admin-session.model';
+import {
+  ADMIN_SESSION_REVOKED_REASON,
+  type AdminAccount,
+  type AdminIdentity,
+  type IssuedAdminSession,
+} from '../models/admin-session.model';
 import type { Clock } from '@api/contracts/clock.port';
 
 export interface ResolveAdminSessionCommand {
@@ -34,7 +39,7 @@ const RESOLVE_OUTCOME = {
 export type ResolvedAdminSession =
   | {
       kind: typeof RESOLVE_OUTCOME.CURRENT;
-      identity: AdminCookiePayload['identity'];
+      identity: AdminIdentity;
       sessionId: string;
     }
   | { kind: typeof RESOLVE_OUTCOME.ROTATED; issued: IssuedAdminSession };
@@ -46,14 +51,25 @@ export const RESOLVED_ADMIN_SESSION = RESOLVE_OUTCOME;
  * does for the tenant realm, done api-side because the api IS this realm's token handler
  * (OQ-17).
  *
- * Two tiers, cheap first: a live access token answers from the sealed payload alone — no
- * lookup, which is the uniformity-with-the-tenant-model decision §12.5.6's task-23 paragraph
- * records, cost included (a revoked session's last access token is honoured ≤15 min until task
- * 28's guard adds the lookup). An expired one falls through to rotation, which is task 21's
- * exact decision tree over the admin tables: revoked-session check, reuse tripwire with the
- * 30 s race grace, expiry before consumption, the conditional consume deciding races once.
- * Rotation re-reads the account, so a deactivation (FR-80) takes effect at the next rotation
- * even before the guard exists.
+ * Two tiers, and **both read the record**. A live access token is judged against the session it
+ * names: a revoked session, a missing one or a deactivated account (FR-80) refuses, a lifetime run
+ * out answers expired, and the identity answered is the account as it stands rather than the block
+ * sealed at sign-in. That is AD-12's *the lookup, not the lifetime, bounds staleness*, and it was
+ * untrue of this realm until task 145: this tier answered from the sealed payload alone, so a
+ * revoked session's last access token was honoured for up to fifteen minutes — deferred to task
+ * 28's guard for uniformity with the tenant model, and task 28 closed without it. §12.5.6's
+ * task-145 row records the reversal and its cost, one read per admin request.
+ *
+ * An expired token falls through to rotation, which is task 21's exact decision tree over the
+ * admin tables: revoked-session check, reuse tripwire with the 30 s race grace, expiry before
+ * consumption, the conditional consume deciding races once. Rotation re-reads the account too, so
+ * neither tier answers for an operator who has since been deactivated.
+ *
+ * **Revoked answers invalid, not expired**, where the tenant `AuthGuard` answers `session-expired`
+ * for both. This realm's own contract draws the line there — `AdminSessionInvalidError` is every
+ * way a cookie can be dead short of its clocks, reuse revocation included, so a thief who tripped
+ * the tripwire learns nothing from the answer — and the rotation tier already answered a revoked
+ * session that way. One fact, one answer, in both tiers.
  */
 export class ResolveAdminSession {
   constructor(
@@ -65,9 +81,7 @@ export class ResolveAdminSession {
   async execute(command: ResolveAdminSessionCommand): Promise<ResolvedAdminSession> {
     const { payload } = command;
     const sessionId = await this.tokens.verify(payload.accessToken);
-    if (sessionId !== null) {
-      return { kind: RESOLVE_OUTCOME.CURRENT, identity: payload.identity, sessionId };
-    }
+    if (sessionId !== null) return this.current(sessionId);
 
     const now = this.now();
     const presentedHash = hashRefreshToken(payload.refreshToken);
@@ -146,5 +160,34 @@ export class ResolveAdminSession {
         }),
       },
     };
+  }
+
+  /**
+   * The live-token tier (task 145): one read, judged here rather than in the query, because the
+   * lifetimes are §12.5.6's policy and `admin-session-expiry.ts` is where it is cited. Nothing is
+   * written — a live access token is judged, never exchanged.
+   *
+   * **The checks run in rotation's order — revoked, then the lifetimes, then the account** — so a
+   * session in two dead states at once answers the same whichever tier meets it. A revoked session
+   * past its lifetime is invalid in both; a deactivated account past its lifetime is expired in
+   * both. The first cut checked the account before the lifetimes and disagreed with rotation on the
+   * second, with every test green; the gate-integrity review found the order unpinned.
+   */
+  private async current(sessionId: string): Promise<ResolvedAdminSession> {
+    const now = this.now();
+    const session = await this.store.run((tx) => tx.findSessionForRequest(sessionId));
+
+    if (session === null || session.revokedAt !== null) throw new AdminSessionInvalidError();
+    if (
+      adminSessionHasExpired(
+        { sessionCreatedAt: session.sessionCreatedAt, tokenIssuedAt: session.tokenIssuedAt },
+        now,
+      )
+    ) {
+      throw new AdminSessionExpiredError();
+    }
+    if (session.account === null) throw new AdminSessionInvalidError();
+
+    return { kind: RESOLVE_OUTCOME.CURRENT, identity: session.account, sessionId };
   }
 }

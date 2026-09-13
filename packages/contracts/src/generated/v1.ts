@@ -1044,7 +1044,7 @@ export interface paths {
         };
         /**
          * Read the current administrative session
-         * @description The console router’s probe. Judges the sealed cookie: a live access token answers directly; an expired one is rotated server-side and the successor cookie set on this response. 401 means sign in again.
+         * @description The console router’s probe. Judges the sealed cookie against the session it names, on every request: a live access token answers once that session is confirmed live, with the account as it stands now; an expired one is rotated server-side and the successor cookie set on this response. 401 means sign in again — a signed-out, revoked or deactivated session is refused on its next request.
          */
         get: operations["AdminSessionController_currentSession"];
         put?: never;

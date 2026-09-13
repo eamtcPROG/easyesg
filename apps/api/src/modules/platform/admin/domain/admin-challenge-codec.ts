@@ -1,4 +1,4 @@
-import { ADMIN_ROLE, type AdminRole } from '../models/admin-session.model';
+import { isAdminRole, type AdminRole } from '../models/admin-session.model';
 import { sealJson, unsealJson } from './sealed-payload';
 
 /**
@@ -40,9 +40,6 @@ export function sealAdminChallenge(
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
-
-const isAdminRole = (value: unknown): value is AdminRole =>
-  typeof value === 'string' && (Object.values(ADMIN_ROLE) as readonly string[]).includes(value);
 
 /** Validated, never cast — anything that is not exactly a challenge reads as "no challenge". */
 export function unsealAdminChallenge(sealed: string, key: Buffer): AdminChallengePayload | null {

@@ -4,6 +4,7 @@ import type {
 } from '../interfaces/admin-session-store.interface';
 import type {
   AdminAccount,
+  AdminRequestSession,
   AdminSessionRevokedReason,
   PresentedAdminRefreshToken,
   AdminSession,
@@ -174,6 +175,25 @@ class FakeAdminSessionTransaction implements AdminSessionTransaction {
       tokenConsumedAt: token.consumedAt,
       sessionCreatedAt: session.createdAt,
       sessionRevokedAt: session.revokedAt,
+    });
+  }
+
+  /** The adapter's join, modelled: the live token anchors idle, and only an active account answers. */
+  findSessionForRequest(sessionId: string): Promise<AdminRequestSession | null> {
+    const session = this.store.sessions.find((candidate) => candidate.id === sessionId);
+    if (!session) return Promise.resolve(null);
+    const live = this.store.refreshTokens.find(
+      (candidate) => candidate.sessionId === sessionId && candidate.consumedAt === null,
+    );
+    const account = this.store.accounts.find(
+      (candidate) => candidate.id === session.accountId && candidate.active,
+    );
+    return Promise.resolve({
+      sessionId: session.id,
+      sessionCreatedAt: session.createdAt,
+      tokenIssuedAt: live?.issuedAt ?? session.createdAt,
+      revokedAt: session.revokedAt,
+      account: account ? { id: account.id, email: account.email, role: account.role } : null,
     });
   }
 

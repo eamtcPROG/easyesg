@@ -5,7 +5,11 @@ import {
   AdminSessionInvalidError,
 } from '../errors/admin-session.errors';
 import type { AdminTokens } from '../interfaces/admin-token.interface';
-import { ADMIN_ROLE, ADMIN_SESSION_REVOKED_REASON } from '../models/admin-session.model';
+import {
+  ADMIN_ROLE,
+  ADMIN_SESSION_REVOKED_REASON,
+  type AdminRole,
+} from '../models/admin-session.model';
 import { FakeAdminSessionStore } from '../testing/admin-session-store.fake';
 import {
   RESOLVED_ADMIN_SESSION,
@@ -43,10 +47,12 @@ function storeWithSession(options: {
   consumedAt?: Date | null;
   revoked?: boolean;
   accountActive?: boolean;
+  role?: AdminRole;
 }): FakeAdminSessionStore {
   const store = new FakeAdminSessionStore();
   store.accounts.push({
     ...identity,
+    role: options.role ?? identity.role,
     active: options.accountActive ?? true,
     passwordHash: 'hashed:x',
     totpSecret: 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
@@ -75,14 +81,113 @@ const resolve = (store: FakeAdminSessionStore) =>
   new ResolveAdminSession(store, fakeTokens, () => NOW);
 
 describe('ResolveAdminSession (task 23)', () => {
-  it('answers from the sealed payload while the access token verifies — no store access', async () => {
-    const store = new FakeAdminSessionStore(); // empty on purpose: a lookup would return nothing
+  it('answers current for a live token over a live session, with the identity the store holds now', async () => {
+    // Sealed at sign-in as a Platform Administrator; the account holds Billing Operator today. What
+    // the request is judged against is the record, not the cookie (AD-12, task 145) — this case
+    // answered from the cookie until then, and passed against an empty store.
+    const store = storeWithSession({ role: ADMIN_ROLE.BILLING_OPERATOR });
     const resolved = await resolve(store).execute({ payload: payload() });
 
     expect(resolved).toEqual({
       kind: RESOLVED_ADMIN_SESSION.CURRENT,
-      identity,
+      identity: { ...identity, role: ADMIN_ROLE.BILLING_OPERATOR },
       sessionId: 'session-1',
+    });
+    // Judged, not exchanged: a live access token rotates nothing.
+    expect(store.refreshTokens).toHaveLength(1);
+    expect(store.refreshTokens[0].consumedAt).toBeNull();
+  });
+
+  /**
+   * Task 145 — a revoked session stops being honoured inside the request. Every case presents an
+   * access token that still VERIFIES, which is exactly the state in which the resolver answered from
+   * the sealed cookie alone and honoured a revoked session for up to fifteen minutes. Written before
+   * the fix, and each seen to fail against it.
+   */
+  describe('a live access token is judged against its session (task 145)', () => {
+    it('refuses a revoked session on its next request', async () => {
+      const store = storeWithSession({ revoked: true });
+
+      await expect(resolve(store).execute({ payload: payload() })).rejects.toBeInstanceOf(
+        AdminSessionInvalidError,
+      );
+    });
+
+    it('refuses a token naming a session that does not exist', async () => {
+      await expect(
+        resolve(new FakeAdminSessionStore()).execute({ payload: payload() }),
+      ).rejects.toBeInstanceOf(AdminSessionInvalidError);
+    });
+
+    it('refuses a deactivated account on its next request (AD-12)', async () => {
+      const store = storeWithSession({ accountActive: false });
+
+      await expect(resolve(store).execute({ payload: payload() })).rejects.toBeInstanceOf(
+        AdminSessionInvalidError,
+      );
+    });
+
+    it('keeps a session current nine hours after sign-in when its live token was issued two minutes ago', async () => {
+      // Idle counts from the LIVE refresh token and absolute from sign-in (§12.5.6). Swapping the two
+      // anchors, anchoring idle at sign-in, or picking the consumed token would each end this session
+      // at eight hours — which is why the consumed sign-in token sits first in the list.
+      const store = storeWithSession({
+        createdAt: new Date(NOW.getTime() - 9 * 60 * 60 * 1000),
+        issuedAt: new Date(NOW.getTime() - 2 * 60 * 1000),
+      });
+      store.refreshTokens.unshift({
+        id: 'token-0',
+        sessionId: 'session-1',
+        tokenHash: hashRefreshToken('refresh-0'),
+        issuedAt: new Date(NOW.getTime() - 9 * 60 * 60 * 1000),
+        consumedAt: new Date(NOW.getTime() - 2 * 60 * 1000),
+      });
+
+      const resolved = await resolve(store).execute({ payload: payload() });
+
+      expect(resolved.kind).toBe(RESOLVED_ADMIN_SESSION.CURRENT);
+    });
+
+    it('answers a revoked session past its lifetime as invalid — revoked is judged first, as rotation judges it', async () => {
+      const store = storeWithSession({
+        revoked: true,
+        createdAt: new Date(NOW.getTime() - (12 * 60 + 1) * 60 * 1000),
+        issuedAt: new Date(NOW.getTime() - 2 * 60 * 1000),
+      });
+
+      await expect(resolve(store).execute({ payload: payload() })).rejects.toBeInstanceOf(
+        AdminSessionInvalidError,
+      );
+    });
+
+    it('answers a deactivated account past its lifetime as expired, in this tier and in rotation alike', async () => {
+      // One state, one answer in both tiers: the lifetimes are judged before the account in each.
+      const dead = () =>
+        storeWithSession({
+          accountActive: false,
+          createdAt: new Date(NOW.getTime() - (12 * 60 + 1) * 60 * 1000),
+          issuedAt: new Date(NOW.getTime() - 2 * 60 * 1000),
+        });
+
+      await expect(resolve(dead()).execute({ payload: payload() })).rejects.toBeInstanceOf(
+        AdminSessionExpiredError,
+      );
+      await expect(
+        resolve(dead()).execute({ payload: payload({ accessToken: 'dead' }) }),
+      ).rejects.toBeInstanceOf(AdminSessionExpiredError);
+    });
+
+    it('answers expired past the absolute bound, inside the access token’s fifteen minutes', async () => {
+      // Rotated two minutes ago, so the token is live — and signed in twelve hours and a minute
+      // ago, so the session is over. The lifetimes are judged at the point of use (§12.5.6).
+      const store = storeWithSession({
+        createdAt: new Date(NOW.getTime() - (12 * 60 + 1) * 60 * 1000),
+        issuedAt: new Date(NOW.getTime() - 2 * 60 * 1000),
+      });
+
+      await expect(resolve(store).execute({ payload: payload() })).rejects.toBeInstanceOf(
+        AdminSessionExpiredError,
+      );
     });
   });
 

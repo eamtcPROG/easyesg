@@ -22,6 +22,17 @@ export const ADMIN_ROLE = {
 export type AdminRole = (typeof ADMIN_ROLE)[keyof typeof ADMIN_ROLE];
 
 /**
+ * Narrows an unvalidated value to a role — the one copy, beside the set it is derived from (task 145,
+ * from its convention review). **An unknown value is refused, never mapped to a member**: a string
+ * outside this set is exactly what task 67's expand→migrate step writes before this object learns it,
+ * and defaulting it to a member hands out whatever privilege that member carries — which the store
+ * adapter's private `toRole` did, to Platform Administrator. Both cookie codecs, the store adapter
+ * and `admin:provision` read this.
+ */
+export const isAdminRole = (value: unknown): value is AdminRole =>
+  typeof value === 'string' && (Object.values(ADMIN_ROLE) as readonly string[]).includes(value);
+
+/**
  * Why an admin session stopped being valid — the `admin_session_revoked_reason_known` CHECK's
  * vocabulary. No `password_reset` member, deliberately: the realm has no reset flow (§12.5.6's
  * task-23 paragraph — release is a PA action or the CLI), so the value cannot occur.
@@ -40,8 +51,8 @@ export interface AdminAccount {
   readonly role: AdminRole;
   readonly active: boolean;
   readonly passwordHash: string;
-  /** Base32, per `domain/totp.ts`. Unencrypted at rest for now — §12.5.6's task-23 MFA row
-   *  records that as task 27's hardening debt, not as a decision that it is fine. */
+  /** Base32, per `domain/totp.ts` — opened by the store adapter, because the column has been
+   *  encrypted at rest since task 27.1 (§12.5.6's secrets-at-rest row). */
   readonly totpSecret: string;
   readonly failedAttempts: number;
   readonly lockedAt: Date | null;
@@ -61,6 +72,24 @@ export interface AdminSession {
   /** The absolute lifetime's anchor (§12.5.6). */
   readonly createdAt: Date;
   readonly revokedAt: Date | null;
+}
+
+/**
+ * What a request on a live access token is judged against (task 145) — the session's facts and its
+ * account as it stands, `ResolvedRequestIdentity`'s shape over the admin tables. The anchors are
+ * flattened like `PresentedAdminRefreshToken`'s; the account is an identity, never `AdminAccount`,
+ * so the per-request read carries no secret.
+ */
+export interface AdminRequestSession {
+  readonly sessionId: string;
+  /** Sign-in — the absolute lifetime's anchor. */
+  readonly sessionCreatedAt: Date;
+  /** The live refresh token's issuance — the idle window's anchor. */
+  readonly tokenIssuedAt: Date;
+  /** Non-null once the session has ended: sign-out or reuse detection. */
+  readonly revokedAt: Date | null;
+  /** The account while it is active; null once deactivated (FR-80). */
+  readonly account: AdminIdentity | null;
 }
 
 /** A refresh token by its hash, flattened with its session's facts — `PresentedRefreshToken`'s
