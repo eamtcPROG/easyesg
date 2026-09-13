@@ -1,11 +1,11 @@
 'use client';
 
-import { AccessConfirmation } from './access-confirmation';
-import { AccessFilters } from './access-filters';
-import { AccessList } from './access-list';
-import { AccessNotice } from './access-notice';
-import { useAccess } from './access-context';
-import styles from './access.module.css';
+import { AccessConfirmation } from '../regions/access-confirmation';
+import { AccessFilters } from '../regions/access-filters';
+import { AccessList } from '../list/access-list';
+import { AccessNotice } from '../regions/access-notice';
+import { useAccess } from '../../shared/access-context';
+import styles from '../../styles/access.module.css';
 
 /**
  * S-16's Index body — filter, sort, table, row action, pager (§4.6).

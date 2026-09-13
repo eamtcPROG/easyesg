@@ -2,7 +2,7 @@
 
 import { CALLOUT_INTENT, Callout } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { ACCESS_MESSAGES } from './access-messages';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
 
 /**
  * S-16's seat count unavailable, where the invitation form would be (task 142).

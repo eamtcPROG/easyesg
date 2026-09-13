@@ -1,14 +1,14 @@
 'use client';
 
 import { Button, BUTTON_VARIANT } from '@easyesg/ui';
-import { ACCESS_MESSAGES } from './access-messages';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
-import { useAccess, useRowBusy } from './access-context';
-import { CONFIRMATION } from '../tools/access-state';
-import { resendInvitationAction } from '../actions/actions';
-import { ACCESS_ROW_KIND, isLastAdministrator, type AccessRow } from '../tools/access';
-import styles from './access.module.css';
+import { useAccess, useRowBusy } from '../../shared/access-context';
+import { CONFIRMATION } from '../../../tools/access-state';
+import { resendInvitationAction } from '../../../actions/actions';
+import { ACCESS_ROW_KIND, isLastAdministrator, type AccessRow } from '../../../tools/access';
+import styles from '../../styles/access.module.css';
 
 /**
  * What can be done to this row — different verbs on different objects, chosen by the union's own

@@ -1,12 +1,12 @@
 'use client';
 
 import { Select } from '@easyesg/ui';
-import { ACCESS_MESSAGES } from './access-messages';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
-import { useAccess } from './access-context';
-import { ACCESS_FILTER_ANY, ACCESS_STANDING, type AccessView } from '../tools/access';
-import styles from './access.module.css';
+import { useAccess } from '../../shared/access-context';
+import { ACCESS_FILTER_ANY, ACCESS_STANDING, type AccessView } from '../../../tools/access';
+import styles from '../../styles/access.module.css';
 
 /**
  * The Index's filter region (§4.6) — two facets, both written to the URL.

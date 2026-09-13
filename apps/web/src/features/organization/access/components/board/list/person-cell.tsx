@@ -1,5 +1,5 @@
-import { ACCESS_ROW_KIND, type AccessRow } from '../tools/access';
-import styles from './access.module.css';
+import { ACCESS_ROW_KIND, type AccessRow } from '../../../tools/access';
+import styles from '../../styles/access.module.css';
 
 /**
  * S-16's person column — UX-137's *"S-16's member list"*, which is the third of the three surfaces

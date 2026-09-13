@@ -13,11 +13,11 @@ import {
   DEFAULT_ACCESS_VIEW,
   type AccessRow,
   type AccessPage,
-} from '../tools/access';
-import { seatRegion } from '../tools/seats';
-import { resendInvitationAction } from '../actions/actions';
+} from '../../../tools/access';
+import { seatRegion } from '../../../tools/seats';
+import { resendInvitationAction } from '../../../actions/actions';
 import { AccessBoard } from './access-board';
-import { AccessProvider } from './access-context';
+import { AccessProvider } from '../../shared/access-context';
 
 /**
  * S-16's board, against stubbed actions.
@@ -32,7 +32,7 @@ import { AccessProvider } from './access-context';
  * The empty states are here for the same reason — `matched` and `total` are two numbers because
  * they are two screens, and a browser test that seeds one organization only ever sees one of them.
  */
-vi.mock('../actions/actions', () => ({
+vi.mock('../../../actions/actions', () => ({
   changeMemberRoleAction: vi.fn(),
   removeMemberAction: vi.fn(),
   resendInvitationAction: vi.fn(),

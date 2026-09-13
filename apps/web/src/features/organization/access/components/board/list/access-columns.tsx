@@ -1,7 +1,7 @@
 'use client';
 
 import { StatusChip, STATUS_TONE, type DataTableColumn, type StatusTone } from '@easyesg/ui';
-import { ACCESS_MESSAGES } from './access-messages';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import {
@@ -11,7 +11,7 @@ import {
   type AccessColumnKey,
   type AccessRow,
   type AccessStanding,
-} from '../tools/access';
+} from '../../../tools/access';
 import { PersonCell } from './person-cell';
 import { RoleCell } from './role-cell';
 import { RowActions } from './row-actions';

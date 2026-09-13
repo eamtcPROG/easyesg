@@ -1,13 +1,13 @@
 'use client';
 
 import { Select } from '@easyesg/ui';
-import { ACCESS_MESSAGES } from './access-messages';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { MEMBERSHIP_ROLE, type MembershipRole } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
-import { useAccess, useRowBusy } from './access-context';
-import { changeMemberRoleAction } from '../actions/actions';
-import { ACCESS_ROW_KIND, isLastAdministrator, type AccessRow } from '../tools/access';
+import { useAccess, useRowBusy } from '../../shared/access-context';
+import { changeMemberRoleAction } from '../../../actions/actions';
+import { ACCESS_ROW_KIND, isLastAdministrator, type AccessRow } from '../../../tools/access';
 
 /**
  * One of the two cells that act on a row — `row-actions.tsx` is the other.

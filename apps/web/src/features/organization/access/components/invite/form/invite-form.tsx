@@ -8,12 +8,12 @@ import { useForm } from 'react-hook-form';
 import type { InvitedRole } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { failureNotice, successNotice } from '@/lib/notice';
-import { inviteMemberAction } from '../actions/actions';
-import { INVITABLE_ROLES } from '../tools/access';
-import { NOTICE_REGION } from '../tools/access-state';
-import { useAccess } from './access-context';
-import { ACCESS_MESSAGES } from './access-messages';
-import styles from './access.module.css';
+import { inviteMemberAction } from '../../../actions/actions';
+import { INVITABLE_ROLES } from '../../../tools/access';
+import { NOTICE_REGION } from '../../../tools/access-state';
+import { useAccess } from '../../shared/access-context';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
+import styles from '../../styles/access.module.css';
 
 /**
  * What a *submitted* invitation holds. `role` is not optional and carries no empty member: "not yet

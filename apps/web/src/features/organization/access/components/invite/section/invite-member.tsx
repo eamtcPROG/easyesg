@@ -3,13 +3,13 @@
 import { Callout, Panel, USAGE_STANDING } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { NOTICE_REGION } from '../tools/access-state';
-import { useAccess } from './access-context';
-import { ACCESS_MESSAGES } from './access-messages';
-import { InvitationsPaused } from './invitations-paused';
-import { InviteForm } from './invite-form';
-import { SeatsFull } from './seats-full';
-import styles from './access.module.css';
+import { NOTICE_REGION } from '../../../tools/access-state';
+import { useAccess } from '../../shared/access-context';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
+import { InvitationsPaused } from '../states/invitations-paused';
+import { InviteForm } from '../form/invite-form';
+import { SeatsFull } from '../states/seats-full';
+import styles from '../../styles/access.module.css';
 
 /**
  * S-16's invite panel: its heading, the screen's notice where it belongs here, and which of three

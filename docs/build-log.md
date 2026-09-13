@@ -18650,3 +18650,59 @@ test fixes, plus the exhaustive switch. Re-run over them: typecheck, lint, `docs
 `openapi:check`, the api, web and ui unit suites, and the seats e2e suite. **Not re-run: the full
 `pnpm e2e` and `pnpm e2e:web`** — no runtime path changed, and the one runtime-shaped edit, the switch,
 is covered by the web unit suite. Stated so the judgement is visible rather than implied.
+
+## S-16's `components/` mirrors what the screen renders · 2026-09-13
+
+Task 142 recorded the follow-up in its 142.3 entry: `features/organization/access/components/` was a
+flat folder of twenty files, and `components-mirror-the-return` asks for one folder per child of what
+the screen renders, as S-05's `home/components/` already has. **No task row** — the project owner's
+choice when asked, so this entry is the whole record. A move and nothing else: no behaviour changed.
+
+```text
+components/
+├─ section/  access-section                       what the route renders — the read and the arms
+├─ heading/  seat-counter                          S-05's name for the heading row
+├─ board/    section/  access-board · access-board.spec
+│            regions/  access-notice · access-filters · access-confirmation
+│            list/     access-list · access-columns · person-cell · role-cell · row-actions
+├─ invite/   section/  invite-member · invite-member.spec
+│            form/     invite-form
+│            states/   seats-full · invitations-paused   — the arms that replace the form
+├─ shared/   access-context · access-messages
+└─ styles/   access.module.css
+```
+
+**Placement was one question asked at each level**, `shared-how-many-siblings`: a file read by one
+sibling lives with it, so the three cells sit in `list/` beside the columns that render them. The
+context is read by the section, `board/` and `invite/`, and the namespace by those plus `heading/` and
+the route's `loading.tsx`, so both rise to `components/shared/` and now carry their admission test.
+The stylesheet is read by every region and by `loading.tsx`, so it takes S-05's `styles/` leaf. File
+names keep their prefix, stutter included.
+
+**Two things the skills would ask for, considered and not done here:**
+
+- **The namespace was not narrowed per region**, which `shared-namespace-declared-once` asks for in
+  the same change as a split. The catalogue does not partition by region — `roles` is read by the
+  board's role cell and the invite form, `seats` by the heading's counter and the invite panel's arms
+  — so narrowing needs the catalogue restructured first, and `access-messages.ts` says so.
+- **The section's two inline error arms stay inline.** `file-one-idea` would give the forbidden and
+  unreachable callouts a `states/` file each, but that is a component change rather than a move, and
+  this change was scoped to where files live.
+
+**The four kinds of path a move changes, and what stood behind each** (`move-grep-the-mocks`):
+
+- **Import specifiers**: rewritten by one script from an old-to-new map rather than by hand, so every
+  file's relative paths came from the same table. `git diff -U0 | grep '^\+\s*(\*|//)'` found no
+  comment line touched. Typecheck confirmed.
+- **`vi.mock` strings**: grepped before the move — both specs mock `'../actions/actions'`, now
+  `'../../../actions/actions'` — and rewritten by the same script. The suite ran green afterwards.
+- **CSS-module class names**: none renamed. The browser suite is what would have seen one.
+- **Boundary fixtures**: `tools/prove-boundaries.sh` and `.dependency-cruiser.cjs` reference nothing in
+  this folder, so no proof could go inert.
+
+Git records all twenty files as renames. The two route files reach the folder through `@/`, and
+`folder-shape.spec.ts` still finds the directory it names.
+
+Web typecheck, `pnpm lint`, `pnpm docs:check`, the web unit suite (47 files, 559 — twelve more than
+before, one per new directory in `folder-shape.spec.ts`'s walk) and `pnpm e2e:web --project identity
+--project expansion` (177 passed, S-16's seven journeys among them) are green.

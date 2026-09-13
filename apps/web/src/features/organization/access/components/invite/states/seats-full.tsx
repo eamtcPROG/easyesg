@@ -2,8 +2,8 @@
 
 import { EntitlementGate } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import type { KnownSeatRegion } from '../tools/seats';
-import { ACCESS_MESSAGES } from './access-messages';
+import type { KnownSeatRegion } from '../../../tools/seats';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
 
 /**
  * S-16's entitlement gate state, in place of the invitation form (task 142; §6.10, UX-50).

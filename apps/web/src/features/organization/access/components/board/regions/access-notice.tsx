@@ -1,8 +1,8 @@
 'use client';
 
 import { Callout } from '@easyesg/ui';
-import { NOTICE_REGION } from '../tools/access-state';
-import { useAccess } from './access-context';
+import { NOTICE_REGION } from '../../../tools/access-state';
+import { useAccess } from '../../shared/access-context';
 
 /**
  * What the last action did, beside the list.

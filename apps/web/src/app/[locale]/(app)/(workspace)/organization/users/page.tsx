@@ -1,5 +1,5 @@
-import { AccessSection } from '@/features/organization/access/components/access-section';
-import { ACCESS_MESSAGES } from '@/features/organization/access/components/access-messages';
+import { AccessSection } from '@/features/organization/access/components/section/access-section';
+import { ACCESS_MESSAGES } from '@/features/organization/access/components/shared/access-messages';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**

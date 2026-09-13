@@ -1,14 +1,14 @@
 'use client';
 
 import { Button, BUTTON_VARIANT, EmptyState } from '@easyesg/ui';
-import { ACCESS_MESSAGES } from './access-messages';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { IndexView } from '@/shared/index-view';
-import { useAccess } from './access-context';
+import { useAccess } from '../../shared/access-context';
 import { useAccessColumns } from './access-columns';
-import type { AccessColumnKey } from '../tools/access';
-import { ACCESS_FILTER_ANY, accessRowKey, type AccessRow, type AccessSort } from '../tools/access';
+import type { AccessColumnKey } from '../../../tools/access';
+import { ACCESS_FILTER_ANY, accessRowKey, type AccessRow, type AccessSort } from '../../../tools/access';
 
 /**
  * S-16's list, as an instance of the Index archetype (§4.6).

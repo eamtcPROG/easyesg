@@ -1,11 +1,11 @@
 'use client';
 
 import { ConsequenceDialogue } from '@easyesg/ui';
-import { ACCESS_MESSAGES } from './access-messages';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { useTranslations } from 'next-intl';
-import { useAccess } from './access-context';
-import { CONFIRMATION } from '../tools/access-state';
-import { removeMemberAction, revokeInvitationAction } from '../actions/actions';
+import { useAccess } from '../../shared/access-context';
+import { CONFIRMATION } from '../../../tools/access-state';
+import { removeMemberAction, revokeInvitationAction } from '../../../actions/actions';
 
 /**
  * UC-61 and UC-63's confirmations — one dialogue, two consequences.

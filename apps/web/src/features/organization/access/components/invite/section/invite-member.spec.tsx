@@ -3,9 +3,9 @@ import { NextIntlClientProvider } from 'next-intl';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import ro from '@/messages/ro.json';
 import { formats } from '@/i18n/formats';
-import { ACCESS_PAGE_SIZE, DEFAULT_ACCESS_VIEW, type AccessPage } from '../tools/access';
-import { seatRegion } from '../tools/seats';
-import { AccessProvider } from './access-context';
+import { ACCESS_PAGE_SIZE, DEFAULT_ACCESS_VIEW, type AccessPage } from '../../../tools/access';
+import { seatRegion } from '../../../tools/seats';
+import { AccessProvider } from '../../shared/access-context';
 import { InviteMember } from './invite-member';
 
 /**
@@ -15,7 +15,7 @@ import { InviteMember } from './invite-member';
  * the **unknown** arm — an unreadable ceiling, which no journey can provoke without breaking the
  * configuration store under a running stack — and the claim that approaching still offers the form.
  */
-vi.mock('../actions/actions', () => ({
+vi.mock('../../../actions/actions', () => ({
   inviteMemberAction: vi.fn(),
   changeMemberRoleAction: vi.fn(),
   removeMemberAction: vi.fn(),

@@ -1,7 +1,7 @@
 import { USAGE_STANDING, UsageCounter } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import type { SeatRegion } from '../tools/seats';
-import { ACCESS_MESSAGES } from './access-messages';
+import type { SeatRegion } from '../../tools/seats';
+import { ACCESS_MESSAGES } from '../shared/access-messages';
 
 /**
  * S-16's seat counter, beside the heading as the artboard draws it (task 142; UX-52).

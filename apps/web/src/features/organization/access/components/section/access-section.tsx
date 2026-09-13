@@ -4,14 +4,14 @@ import type { ReactNode } from 'react';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { readAccessView } from '../tools/access';
-import { seatRegion } from '../tools/seats';
-import { AccessBoard } from './access-board';
-import { AccessProvider } from './access-context';
-import { ACCESS_MESSAGES } from './access-messages';
-import { InviteMember } from './invite-member';
-import { SeatCounter } from './seat-counter';
-import styles from './access.module.css';
+import { readAccessView } from '../../tools/access';
+import { seatRegion } from '../../tools/seats';
+import { AccessBoard } from '../board/section/access-board';
+import { AccessProvider } from '../shared/access-context';
+import { ACCESS_MESSAGES } from '../shared/access-messages';
+import { InviteMember } from '../invite/section/invite-member';
+import { SeatCounter } from '../heading/seat-counter';
+import styles from '../styles/access.module.css';
 
 /** The invite panel's heading, so the first-use empty state can send a reader straight to it. */
 const INVITE_ANCHOR = 'invite-a-colleague';

@@ -20,7 +20,7 @@ import {
   type AccessPage,
   type AccessRow,
   type AccessView,
-} from '../tools/access';
+} from '../../tools/access';
 import {
   ACCESS_EVENT,
   INITIAL_ACCESS_STATE,
@@ -29,9 +29,9 @@ import {
   type AccessState,
   type Confirmation,
   type PlacedNotice,
-} from '../tools/access-state';
-import type { SeatRegion } from '../tools/seats';
-import type { AccessActionResult } from '../actions/action-results';
+} from '../../tools/access-state';
+import type { SeatRegion } from '../../tools/seats';
+import type { AccessActionResult } from '../../actions/action-results';
 
 /**
  * S-16's screen state, in one place its regions read from (26 Aug 2026, project owner's review of
@@ -45,9 +45,14 @@ import type { AccessActionResult } from '../actions/action-results';
  * the component that holds the state. That is a context-shaped problem: the consumers are not the
  * children of the owner in any useful sense, they are *reached* by a library in between.
  *
- * **The state itself is a reducer, in `../access-state.ts`** — pure, and tested there. This file is
+ * **The state itself is a reducer, in `tools/access-state.ts`** — pure, and tested there. This file is
  * the wiring: it turns a reducer plus a router into the three behaviours a region calls, and
  * publishes both through one context.
+ *
+ * **In `components/shared/` on one test: is it read by more than one sibling?** The section provides
+ * it, and `board/` and `invite/` both read it — the board's notice, filters, list, cells and
+ * confirmation, the invite panel and its form — so it sits where all three can see it, one level
+ * above the regions.
  *
  * **What this is not.** It holds no server state — the rows arrive already read, filtered, sorted
  * and paged by the Server Component, and nothing here caches or refetches them. It is the screen's
