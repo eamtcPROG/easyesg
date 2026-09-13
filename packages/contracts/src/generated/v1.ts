@@ -3351,6 +3351,15 @@ export interface operations {
                     "application/problem+json": unknown;
                 };
             };
+            /** @description Too much invitation mail to this address from this organization in the window (task 141). The budget is per (organization, address) rather than per caller, because what it rations is mail to one mailbox — so another organization inviting the same person is unaffected, and so is this organization inviting somebody else. **It is shared with the resend route**: issuing and resending to one address draw on one allowance, so a revoke-and-reinvite cycle buys no fresh budget. Only delivered mail spends it; a refusal costs nothing. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
         };
     };
     InvitationsController_resend: {
@@ -3373,6 +3382,15 @@ export interface operations {
             };
             /** @description No outstanding invitation of this organization has that id — it was accepted or revoked. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too much invitation mail to this invitation’s address in the window (task 141). The budget is per (organization, address) and is **shared with the issue route**, because what it rations is mail to one mailbox rather than calls to one route — so a second invitation to the same person draws on the same allowance, and a different person’s is untouched. Only a delivered resend spends it; a refusal costs nothing, so the block drains rather than rolling forward while a client keeps trying. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

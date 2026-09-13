@@ -18177,3 +18177,184 @@ screen and it now checks both, because what that journey proves is that acceptan
 **Validated on one 15-second journey before re-running the project**, per the cost recorded against
 task 139: thirteen failures at a 30-second timeout each is the expensive way to discover a typo.
 Then `--project identity` whole: 152 passed.
+
+## Task 141 — the invitation mail throttle, and a control that counts the opposite thing · 2026-09-13
+
+`POST /invitations` and `POST /invitations/{id}/email` both send mail to somebody who never asked
+for it, and §12.5.6 has recorded that as an open gap against task 26.1 since 25 Aug 2026: the
+auth-path row names login, reset request and invitation *accept*, and issue and resend are not among
+them. The only control was task 71's edge budget, which sits five stages away and does not exist —
+so an administrator could resend one invitation as fast as this API answered.
+
+### The decision the task row did not contain
+
+**A success spends the window — like sign-in, and unlike the accept path.** `SignIn` admits its
+attempt *before* verifying the password, so a successful sign-in records a row; `AcceptInvitation`
+is the one key that inverts it, because a success there is proof the caller held a live token and
+the 26 Aug 2026 review found FR-12's bookkeeper refused for onboarding to six organizations in one
+sitting. Here the **email is the harm**, so the admitted call is the one that costs something.
+
+**The first draft of this entry said the opposite** — *"every other key spends its window on a
+refusal"* — in four places, and the spec review falsified it by reading `sign-in.use-case.ts`. The
+generalisation was drawn from the one path that is the exception. Worth keeping because the shape
+recurs: a comparison written from the most recently read example, stated as the rule.
+
+That was raised before any code and decided by the owner, because the two readings produce
+materially different behaviour and the sources pointed both ways — §12.5.6 says *"of the shape task
+21 already built"*, which is `admitAuthAttempt`'s semantics, while the task row's own deliverable
+phrase (*"the refusal's own attempt row survives"*) reads as acceptance's. Under the decision taken,
+that phrase resolves to the five **admitted** attempts surviving the refusal, which is what the e2e
+takes a seventh call to assert.
+
+`admitAuthAttempt` already had exactly these semantics — it records only what it admits — so both
+paths use it unchanged and neither needed a bespoke count-record shape. The fourth copy of that
+shape is the defect 27 Aug 2026 was spent removing; this task added none.
+
+**One key over both routes, and the first build got this wrong in a way every test agreed with.**
+§12.5.6 said *per invitation*; built literally that is issue keyed per (organization, address) and
+resend keyed per invitation id — and **those compose**, because every issue mints a new invitation
+and therefore a fresh resend budget. `issue → resend ×5 → revoke → issue …` sends **30 emails per
+window**, six times the ceiling this task was recording as its acceptability argument. Found by the
+spec review, by doing arithmetic nobody had done.
+
+The row's own stated reason is *"the natural key, since the harm is to one mailbox"*, and an
+invitation id is a proxy for a mailbox that leaks exactly where it matters. The address **is** the
+mailbox, so one key — `invitation-mail:<organization>:<address>` — serves both routes, and the
+recorded bound becomes true by construction rather than by an unchecked multiplication. The
+organization qualifies it because an address-only key would let one tenant exhaust another tenant's
+budget for the same person, which is a cross-tenant denial of service assembled out of a privacy
+control.
+
+**No `clientIp`**, where every other key carries one. Those callers are anonymous and the address is
+the only handle on them; this caller is a named Organization Administrator, already accountable and
+attributed in `core.field_change`. Keying on their network would let one person spend two budgets by
+moving between them while the mailbox on the other end sees the sum.
+
+**The limit is the shared 5 / 15 min** (owner), because §12.5.6 names no separate number and one
+invented here would be a threshold nobody decided. The bound is **five emails per fifteen minutes to
+one address from one organization — twenty an hour** — and that figure is the acceptability argument
+the §12.5.6 row rests on, which is exactly why it had to be true rather than approximately true.
+
+### The rollback works for this control rather than against it
+
+`apps/api/CLAUDE.md` records the trap from task 21 — a use case that throws inside its own
+transaction rolls back the `auth_attempt` row the throttle rests on — and task 26.2's acceptance
+returns an outcome and raises after its commit for exactly that reason. **Neither use case here does
+that, and neither needs to.** Both run on the *request's* transaction (`InvitationStore` has no
+`run()`, deliberately, so the invitation row and the outbox row commit together), so a throw rolls
+everything back — and under successes-spend there is nothing to lose, because a refusal records
+nothing.
+
+The same rollback then does something useful in the other direction: the attempt is recorded
+**before** the two collision checks, so an issue refused for an existing membership or a colliding
+pending invitation takes its own row back with the request. No mail left, so no budget was spent.
+That is the one place this trap produces the behaviour the design wants, and the e2e proves it by
+provoking six collisions and reading the table: zero rows, and the next legitimate invitation goes
+out.
+
+### Eight existing e2e cases went red, and they were right to
+
+The moment the control landed, `invitations.e2e-spec.ts` failed eight ways with `429` from inside
+its own helpers. That suite invites and resends one fixed address far more often than five times in
+a quarter of an hour — which is the suite manufacturing exactly the condition the throttle exists to
+refuse, not the throttle being wrong. Five invitations to one address from one organization is
+generous for a person fixing a role and free only for a loop.
+
+The fix is one statement in its existing `clearInvitations`, and the rule is the one
+`apps/api/CLAUDE.md` already records for sign-in with two more keys attached: **a suite that spends
+a window must drain it**, or it reports `429` from inside a helper and reads as a regression in
+whatever was changed last.
+
+### A mutation found a control with no failing state, over HTTP
+
+Five mutations on the unit specs each failed their own case: a refusal that also records (the
+never-drains defect), the organization dropped from the issue key, the invitation dropped from the
+resend key, and each throttle removed outright.
+
+**Then removing the issue throttle entirely left all thirty e2e cases green.** The only case
+touching that path asserted a *refusal* — six collisions, zero attempt rows — whose expected values
+are identical whether or not the control exists. A passing assertion that cannot distinguish the
+feature from its absence is what `gate-integrity-review` exists to find, and it was cheaper to find
+it here. The suite gained a case that drives the revoke-and-reinvite cycle five times and takes the
+sixth: with the throttle removed it now fails, and it is the only thing in the repository that would
+have said so.
+
+### Skills and the search, which the first draft of this entry omitted
+
+**`security-rate-limiting` declined by name** (`nestjs-best-practices`) — it is the rule that
+surfaced this gap on task 26.1, and its prescription is `@nestjs/throttler` with `@Throttle` per
+endpoint. That cannot express this key: the guard runs before the tenant transaction and keys on the
+IP, where what must be rationed is mail to one **address** from one **organization**, both of which
+are request-scoped facts resolved after the guard. `identity.auth_attempt` is the architecture's own
+mechanism and §12.5.6 names it. `one-idea-per-file` was read against the diff; the folder skill does
+not reach `apps/api`.
+
+**Searched, before closing**: every call site of `countRecentAuthAttempts`, which found **two**
+surviving hand-rolled count-record-compare windows — `RequestPasswordReset` and
+`CompleteSocialSignIn` — outside the four the 27 Aug 2026 sweep converted. Both were correct, which
+is the property `apps/api/CLAUDE.md` says does not survive: *"four locally-plausible copies is
+precisely the shape under which no test can see the difference."* Both now call `admitAuthAttempt`.
+Also searched: every `writeOutboxEvent` mail path, for a third amplifier — there is none; the
+verification and reset mails are self-service, addressed to the account that asked.
+
+### The three parent-close reviews, on `opus` — eleven findings, all applied
+
+**`spec-review` found the composed bound**, described above, and it is the most expensive finding
+any review has raised on this project: a number recorded in three places as the reason a control is
+acceptable, wrong by a factor of six, with every gate green and every test passing. Nothing
+mechanical could have caught it — the arithmetic spans two key families and no assertion multiplies
+them. What did catch it was reading the decision and the code against each other.
+
+It also found that **§12.5.6's own task-26.2 row still said, in the present tense, that this gap
+remained open**, and that FR-57 — whose two routes now carry a third refusal — gained no Note where
+its Notes column records the previous two. Both fixed; FR-57's note states plainly that **no NFR
+stands behind this refusal**: NFR-64 binds authentication paths and §12.5.6 says in terms that issue
+and resend are not among them, so unlike the accept throttle this control's only homes are FR-57 and
+§12.5.6.
+
+**`convention-review` found the same stale cross-log in two more places** — `apps/api/CLAUDE.md`'s
+own task-26.1 bullet and `archived_tasks.md`'s — which is *"a rule is applied where it holds"* about
+a sentence rather than about code, and the reason this entry now records what was searched. It found
+four docblocks stating counts of things outside their own file, **two of them already wrong on the
+day they were written** (*"five paths"* against six stores; *"seven commands"* against eight), which
+is precisely what `reason-docblock-carries-the-why` predicts. And it found the closed task row still
+claiming refusals are thrown *after* commit — task 26.2's mechanism, not this one's.
+
+**`gate-integrity-review` found a defect that would have gone red in CI and green here**, which is
+the pairing this project has learned to distrust. The new e2e describe deleted its organization, its
+accounts and its window — and **not** `audit.outbox_event`, which carries no foreign key to
+`core.organization` on purpose (AD-6: an effect must outlive the state change that caused it). It
+left **19 pending rows**. `outbox.e2e-spec.ts` asserts the table is quiet, because `dispatchBatch`
+polls every pending row regardless of tenant, so it went 8 of 8 red — but only when jest's size
+sequencer put the invitations file first. **The suite's colour depended on jest's cache**: cold it
+failed, warm-after-a-failure it passed, because jest reorders to run previous failures first. That
+is the root file's *"a gate must not depend on state a previous command left behind"* one layer up,
+and the suite above has carried the missing line since task 26.1.
+
+It also proved **two checks that could not fail on their subjects**, both now closed:
+
+- **The drains and the count probe were hand-typed `LIKE` prefixes** with no tie to the key they
+  meant to match. While the key was mid-rename, an assertion counting rows under the old prefix
+  answered zero *for the wrong reason* and passed, with 35 rows sitting under the new one —
+  `toEqual([])` against a probe returning `[]` because it was looking in the wrong place.
+  `INVITATION_MAIL_KEY_PREFIX` is exported now and the count probe builds the **exact** key through
+  `invitationMailThrottleKey`, so a rename is a compile error.
+- **Nothing over HTTP asserted the key's organization segment.** The unit case that covers it hands
+  `organizationId` straight to the use case, so it cannot see `InvitationService.boundOrganization()`
+  forwarding the wrong value — and during the rename the resend path wrote eleven rows keyed
+  `invitation-mail:undefined:<address>`, pooling every tenant into one bucket, with nothing red. The
+  suite gained a second organization and a case that invites the same address from it; a service
+  returning a fixed id now reds exactly that case.
+
+And two tests were **named for properties their neighbours pin**. *"drains, rather than rolling
+forward"* stays green under the roll-forward defect — its three refusals carry the same clock as the
+five successes, and three is below the limit anyway; its real subject is expiry, and dropping the
+`since` filter is the only thing that reds it. The unit *"spends nothing when the issue is refused"*
+asserts `attempts).toHaveLength(1)` — the budget **was** spent — pinning the throttle's placement
+ahead of the collision checks rather than the behaviour its name claimed. Both renamed to what they
+measure. A sound check under a wrong name is worse than no check, because the next reader stops
+looking for the real one.
+
+The key correction gained its own failing state in the same edit: re-keying the resend per
+invitation id now fails two unit cases, where before the correction nothing in the repository could
+tell the two designs apart.

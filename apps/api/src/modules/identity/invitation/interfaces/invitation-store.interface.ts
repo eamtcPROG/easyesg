@@ -1,4 +1,5 @@
 import type { Locale } from '@easyesg/i18n';
+import type { AuthAttemptRecorder } from '@api/modules/identity/account/domain/auth-throttle';
 import type { Invitation, InvitedRole, PendingInvitation } from '../models/invitation.model';
 
 /**
@@ -15,9 +16,21 @@ import type { Invitation, InvitedRole, PendingInvitation } from '../models/invit
  *
  * **Nothing below takes an organization id, and that absence is the tenancy model working.** RLS
  * scopes every statement to `app.current_org`; a method taking one would be a second, contradictory
- * source of tenancy of exactly the kind AD-2 and UX-2 forbid.
+ * source of tenancy of exactly the kind AD-2 and UX-2 forbid. Task 141's `organizationId` reaches
+ * the *command*, never a method here, and `IssueInvitationCommand` states why.
+ *
+ * **It extends `AuthAttemptRecorder` since task 141**, which is the same structural admission
+ * `InvitationBearerStore` made at task 26.2 and for a related reason — both mail paths spend a
+ * window on `identity.auth_attempt`. The two methods arrive by extension rather than by being
+ * restated, so what an *attempt* means cannot drift between the stores that count them.
+ *
+ * The window is spent on **the request's own transaction**, like everything else here, and under
+ * task 141's semantics that is correct rather than a compromise: only an admitted attempt records a
+ * row, so a refusal has nothing to roll back — and an issue that fails later for a collision rolls
+ * its row back, which is right, because no mail left. `auth-throttle.ts`'s invitation keys carry
+ * the argument.
  */
-export interface InvitationStore {
+export interface InvitationStore extends AuthAttemptRecorder {
   /**
    * S-16's outstanding-invitation list (FR-56, FR-57).
    *

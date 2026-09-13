@@ -1,7 +1,6 @@
 import { unverifiedAccountHasExpired } from '@api/modules/identity/account/domain/account-expiry';
 import {
-  AUTH_ATTEMPT_LIMIT,
-  AUTH_ATTEMPT_WINDOW_MS,
+  admitAuthAttempt,
   socialSignInThrottleKey,
 } from '@api/modules/identity/account/domain/auth-throttle';
 import { emailIdentityKey, normaliseEmail } from '@api/modules/identity/account/domain/email-address';
@@ -117,10 +116,12 @@ export class CompleteSocialSignIn {
 
     const now = this.now();
     const limited = await this.store.run(async (tx) => {
-      const key = socialSignInThrottleKey(command.clientIp, command.provider);
-      const since = new Date(now.getTime() - AUTH_ATTEMPT_WINDOW_MS);
-      if ((await tx.countRecentAuthAttempts(key, since)) >= AUTH_ATTEMPT_LIMIT) return true;
-      await tx.recordAuthAttempt(key, now);
+      // `admitAuthAttempt`, not the count-record-compare shape written out — the 27 Aug 2026 sweep
+      // converted four such copies and missed these two, and task 141 found them by searching for
+      // the shape before closing. `apps/api/CLAUDE.md`: *spend a window with `admitAuthAttempt`,
+      // never by hand*. Both copies were correct, which is the property that rule says does not
+      // survive — each is self-consistent, so no test can see the difference.
+      if (!(await admitAuthAttempt(tx, { key: socialSignInThrottleKey(command.clientIp, command.provider), now }))) return true;
       return false;
     });
     if (limited) throw new AuthRateLimitedError();

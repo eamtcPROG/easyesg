@@ -13,6 +13,7 @@ import {
 import { MEMBERSHIP_STATUS } from '@api/modules/identity/membership/models/membership.model';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { TenantRepository } from '../tenant-repository';
+import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
 /** Rows as PostgreSQL returns them: snake_case, `timestamptz` already parsed to `Date` by `pg`. */
 interface InvitationRow {
@@ -241,6 +242,26 @@ export class InvitationStoreRepository
     const result: unknown = await this.manager.query(sql, parameters);
     const [rows] = result as [unknown[], number];
     return rows.length === 1;
+  }
+
+  /**
+   * `AuthAttemptRecorder`, on the request's runner (task 141's mail throttle).
+   *
+   * Delegated to `auth-attempt.queries.ts` rather than written here, like every other store that
+   * throttles: what an *attempt* is — count processed ones only, prune on write so nothing personal
+   * outlives its window — is stated once, and every store that throttles delegates to it.
+   *
+   * **`identity.auth_attempt` carries no `organization_id` and no policy**, so these two run under
+   * the tenant binding without being scoped by it. That is what lets sign-in write the same table
+   * before any tenant exists, and here it is what makes the *key* the place the organization is
+   * named — `invitationMailThrottleKey` decides that, not this adapter.
+   */
+  countRecentAuthAttempts(key: string, since: Date): Promise<number> {
+    return countRecentAuthAttempts(this.runner, key, since);
+  }
+
+  recordAuthAttempt(key: string, at: Date): Promise<void> {
+    return recordAuthAttempt(this.runner, key, at);
   }
 }
 

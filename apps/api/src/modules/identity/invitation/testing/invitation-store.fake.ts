@@ -149,6 +149,27 @@ export class FakeInvitationStore implements InvitationStore {
     return Promise.resolve();
   }
 
+  /**
+   * `AuthAttemptRecorder` (task 141), modelling the window rather than returning a canned answer.
+   *
+   * **It keeps the rows a spec can read**, because the property worth asserting on these two paths
+   * is not *"the sixth call is refused"* but **what spends the budget**: a success records, a
+   * refusal records nothing, and a use case that throws later has its row rolled back. The first
+   * two are visible here; the third is the request transaction's and belongs to the e2e.
+   */
+  readonly attempts: { key: string; at: Date }[] = [];
+
+  countRecentAuthAttempts(key: string, since: Date): Promise<number> {
+    return Promise.resolve(
+      this.attempts.filter((a) => a.key === key && a.at.getTime() >= since.getTime()).length,
+    );
+  }
+
+  recordAuthAttempt(key: string, at: Date): Promise<void> {
+    this.attempts.push({ key, at });
+    return Promise.resolve();
+  }
+
   private write(invitationId: string, change: (row: Invitation) => Invitation): boolean {
     const index = this.rows.findIndex(
       (row) => row.id === invitationId && row.status === INVITATION_STATUS.PENDING,

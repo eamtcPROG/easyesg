@@ -1,6 +1,11 @@
 import type { Locale } from '@easyesg/i18n';
 import type { Clock } from '@api/contracts/clock.port';
+import {
+  admitAuthAttempt,
+  invitationMailThrottleKey,
+} from '@api/modules/identity/account/domain/auth-throttle';
 import { normaliseEmail } from '@api/modules/identity/account/domain/email-address';
+import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
 import { INVITATION_ISSUED, type InvitationIssued } from '../constants/invitation.constants';
 import { issueInvitationToken } from '../domain/invitation-token';
 import { AlreadyMemberError } from '../errors/invitation.errors';
@@ -17,6 +22,22 @@ export interface IssueInvitationCommand {
    * for registration.
    */
   readonly inviterLocale: Locale;
+  /**
+   * The organization this invitation belongs to, for task 141's amplification key **only**.
+   *
+   * **It is not a tenancy input and must never become one.** RLS scopes every statement this use
+   * case runs, and `InvitationStore`'s own header states the rule it is answering: *"nothing below
+   * takes an organization id, and that absence is the tenancy model working."* No store method
+   * gains one here — the value is read by `invitationMailThrottleKey` and by nothing else, and it
+   * arrives from `AuthGuard`'s membership lookup through `InvitationService`, which is AD-2's own
+   * source rather than a second one.
+   *
+   * Why the key needs it: an address-only key would let one tenant's invitations exhaust another
+   * tenant's budget for the same person, which turns a privacy control into a cross-tenant denial
+   * of service. `auth-throttle.ts` carries the rest of the argument, including why one key serves
+   * both mail routes rather than one each.
+   */
+  readonly organizationId: string;
 }
 
 /**
@@ -49,6 +70,29 @@ export class IssueInvitation {
 
   async execute(command: IssueInvitationCommand): Promise<Invitation> {
     const invitedEmail = normaliseEmail(command.email);
+
+    // **Task 141's amplification window, spent by a success and by nothing else.**
+    //
+    // Normalised first, so the key agrees with `account_email_key`'s idea of identity and two
+    // spellings of one address cannot buy two budgets.
+    //
+    // A refusal throws straight out of the request transaction, which is safe for the reason
+    // `ResendInvitation` states: `admitAuthAttempt` records nothing when it refuses. What is worth
+    // knowing *here* is the other direction — this row IS written before the two collision checks
+    // below, and either of those rolls it back with the rest of the request. That is correct rather
+    // than incidental: a refused issue sends no mail, so it should cost no budget, and the trap the
+    // repository records from task 21 happens to produce exactly the behaviour this control wants.
+    if (
+      !(await admitAuthAttempt(this.store, {
+        key: invitationMailThrottleKey({
+          organizationId: command.organizationId,
+          email: invitedEmail,
+        }),
+        now: this.now(),
+      }))
+    ) {
+      throw new AuthRateLimitedError();
+    }
 
     // The membership collision, checked rather than constrained — the two tables cannot share an
     // index, and no constraint can express "not an active member of this organization" across them.

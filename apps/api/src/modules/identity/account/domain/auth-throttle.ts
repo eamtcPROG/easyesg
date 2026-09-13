@@ -118,6 +118,75 @@ export const invitationAcceptThrottleKey = (
 ): string => throttleKey('invitation-accept', clientIp, accountId);
 
 /**
+ * **Invitation mail — one window over both routes that send it** (task 141, closing the
+ * amplification gap `architecture.md` §12.5.6 has recorded against task 26.1 since 25 Aug 2026).
+ *
+ * **It bounds a different harm from every key above, and everything else follows from that.** The
+ * keys above bound *guessing*: somebody is trying credentials or tokens against this platform, and
+ * what they cost is our round trips. `POST /invitations` and `POST /invitations/{id}/email` cost a
+ * **third party** an email they never asked for. The actor is an authenticated Organization
+ * Administrator, accountable and attributed in `core.field_change`, so this is not an intrusion
+ * control at all — it is an amplification control, and what it rations is mail to one mailbox.
+ *
+ * **One key for both routes, and that is the correction the arithmetic forced.** §12.5.6 said *"keyed
+ * per invitation"* and the first build took it literally: issue keyed per (organization, address),
+ * resend keyed per invitation id. Those compose, because **every issue mints a new invitation and
+ * therefore a fresh resend budget** — `issue → resend ×5 → revoke → issue …` yields 5 × (1 + 5) = **30
+ * emails per window**, six times the ceiling the row was recorded as buying. The row's own stated
+ * reason is *"the natural key, since the harm is to one mailbox"*, and an invitation id is a proxy
+ * for a mailbox that leaks exactly where it matters. The address **is** the mailbox, so it is the
+ * key, and the bound it states is then true by construction: **5 emails per 15 minutes to one
+ * address from one organization, 20 an hour.**
+ *
+ * **Qualified by the organization**, because an address-only key would let one tenant's invitations
+ * exhaust another tenant's budget for the same person — a cross-tenant denial of service assembled
+ * out of a privacy control. Two colleagues are two addresses and two budgets, which is what keeps an
+ * administrator onboarding a team from being refused halfway through.
+ *
+ * **No `clientIp`.** Every key above carries one because the caller is anonymous and the address is
+ * the only handle on them. Here the caller is named, and keying on their network would let one
+ * administrator spend two budgets by moving between them while the mailbox on the other end sees
+ * the sum. What is rationed is mail to one address, not requests from one socket.
+ *
+ * **A success spends the window — like sign-in, and unlike `invitationAcceptThrottleKey`** (owner,
+ * 13 Sep 2026). `SignIn` admits its attempt *before* verifying the password, so a successful
+ * sign-in records a row; acceptance is the one path that inverts it, because a success there is
+ * proof the caller held a live token and the 26 Aug review found FR-12's bookkeeper refused for
+ * onboarding to six organizations in a sitting. Here the email **is** the harm, so the admitted call
+ * is the one worth counting — the ordinary shape, not a departure from it. `admitAuthAttempt`
+ * already has exactly these semantics, so both paths use it unchanged.
+ *
+ * That also settles what a *failed* issue costs: nothing. The attempt is recorded on the request's
+ * own transaction, so an issue refused for an existing membership or a colliding pending invitation
+ * rolls the row back with everything else — and no mail left, so no budget should have been spent.
+ * It is the one place where the rollback trap `apps/api/CLAUDE.md` records from task 21 works *for*
+ * the design rather than against it.
+ *
+ * The limit is the shared 5 / 15 min (owner, 13 Sep 2026): §12.5.6 says *"of the shape task 21
+ * already built"* and names no separate number, so inventing one here would be a threshold nobody
+ * decided.
+ */
+/**
+ * The key's own path segment, **exported because the tests probe it by prefix**.
+ *
+ * A suite that spends this window has to drain it, and the drain is a `LIKE` pattern — a hand-typed
+ * one is a string with no tie to the key it means to match. Task 141's gate review proved what that
+ * costs: for the few minutes the key was renamed and the probes were not, an assertion counting
+ * rows under the old prefix answered zero **for the wrong reason** and passed, while 35 rows sat
+ * under the new one. Importing this makes that rename a compile error.
+ */
+export const INVITATION_MAIL_KEY_PREFIX = 'invitation-mail';
+
+export const invitationMailThrottleKey = (invitation: {
+  readonly organizationId: string;
+  readonly email: string;
+}): string =>
+  // An object, not two positional strings: they are adjacent, both `string`, and swapped the call
+  // compiles and buckets every invitation in the organization under one key — a wrong answer with
+  // no symptom, which is the hazard CLAUDE.md's rule about same-typed parameters names.
+  `${INVITATION_MAIL_KEY_PREFIX}:${invitation.organizationId}:${invitation.email.toLowerCase()}`;
+
+/**
  * The tenant second-factor step (UC-194, task 27.3).
  *
  * **Its own path segment, keyed on the ACCOUNT rather than the address**, and both halves are

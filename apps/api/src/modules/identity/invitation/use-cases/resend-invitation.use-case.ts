@@ -1,4 +1,9 @@
 import type { Clock } from '@api/contracts/clock.port';
+import {
+  admitAuthAttempt,
+  invitationMailThrottleKey,
+} from '@api/modules/identity/account/domain/auth-throttle';
+import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
 import { issueInvitationToken } from '../domain/invitation-token';
 import { InvitationNotFoundError } from '../errors/invitation.errors';
 import type { InvitationStore } from '../interfaces/invitation-store.interface';
@@ -7,6 +12,13 @@ import { emitInvitationEmail } from './issue-invitation.use-case';
 
 export interface ResendInvitationCommand {
   readonly invitationId: string;
+  /**
+   * The bound tenant, for task 141's amplification key **only** — never a tenancy input, per
+   * `InvitationStore`'s own header. `IssueInvitationCommand` carries the same field for the same
+   * reason and states the argument; here it pairs with the invitation's own `invitedEmail`, which
+   * is what the key actually rations.
+   */
+  readonly organizationId: string;
 }
 
 /**
@@ -29,6 +41,13 @@ export interface ResendInvitationCommand {
  * issuing one rather than a duplicate the queue discards. That is the same construction
  * `issueVerificationChallenge` relies on and it holds for the same reason: `expiresAt` changes on
  * every issuance and on nothing else.
+ *
+ * **Throttled since task 141**, which closes the amplification gap §12.5.6 has recorded against
+ * task 26.1 since 25 Aug 2026: until now an administrator could resend one invitation as fast as
+ * this API answered, and every one of those is an email to somebody who never asked for it. It
+ * shares one window with `IssueInvitation`, keyed on the invited **address** — see
+ * `auth-throttle.ts` for why one key rather than one each, for the absent `clientIp`, and for what
+ * spends it.
  */
 export class ResendInvitation {
   constructor(
@@ -46,6 +65,30 @@ export class ResendInvitation {
     }
 
     const now = this.now();
+
+    // **After the read, because the key is the ADDRESS and only the row knows it** (task 141). The
+    // first build keyed this per invitation id and could therefore throttle before reading — which
+    // also meant every issue minted a fresh budget, so the two windows composed to six times the
+    // ceiling §12.5.6 was recorded as buying. One key over both routes is the correction;
+    // `auth-throttle.ts` carries the arithmetic.
+    //
+    // Reading first also makes a 404 free, which is right: an id naming no outstanding invitation
+    // sends no mail. A refusal may simply throw from inside the request's transaction — the trap
+    // `apps/api/CLAUDE.md` records from task 21 does not bite, because `admitAuthAttempt` records
+    // nothing when it refuses, so a refusal has no row to lose. The rows that make the window bite
+    // were written by the *admitted* calls before it, each committed with its own request.
+    if (
+      !(await admitAuthAttempt(this.store, {
+        key: invitationMailThrottleKey({
+          organizationId: command.organizationId,
+          email: invitation.invitedEmail,
+        }),
+        now,
+      }))
+    ) {
+      throw new AuthRateLimitedError();
+    }
+
     const token = issueInvitationToken(now);
 
     // Conditional on the row still being `pending`, so the claim is the database's. Inside one

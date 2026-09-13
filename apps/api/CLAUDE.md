@@ -153,8 +153,12 @@ traps each one left — grouped by area rather than by the task that built it.
   they cannot see; and **nothing in 26.1 consults the clock** — expiry is derived at the point of
   use. `TenantRepository` gained a `protected get runner()`, because `writeOutboxEvent` needs the
   request's `QueryRunner` and an `EntityManager` cannot express P-8. Deferred: no entitlement gate
-  (task 54), and the two write routes are an authenticated mail amplifier bounded only by task 71's
-  edge limit (§12.5.6's task-26.1 amplification row).
+  (task 54); the two write routes were an authenticated mail amplifier bounded only by task 71's
+  edge limit **until task 141** (13 Sep 2026), which gives them **one window over both**, keyed
+  `invitation-mail:<organization>:<address>` at 5 per 15 min. The address is the key because the
+  mailbox is what is rationed — keyed per invitation id, a revoke-and-reinvite cycle bought a fresh
+  budget every time. A **success** spends it, like sign-in; a collision-refused issue rolls its own
+  row back with the request and costs nothing, because no mail left (§12.5.6's task-26.1 row).
 
 **A cleanup that deletes from a table with no `DELETE` policy removes nothing and says so quietly**
 (task 26.1, and the stronger form of the memberships note above). `DELETE FROM identity.invitation`

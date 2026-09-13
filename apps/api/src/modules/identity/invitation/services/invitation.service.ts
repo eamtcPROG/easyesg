@@ -19,13 +19,20 @@ import { AuthenticationRequiredError } from '@api/modules/identity/membership/er
  * shape `AccountService` established, derived rather than hand-written so the two can never
  * disagree.
  *
- * `inviterLocale` is the one field: it is the locale negotiated from the inviting administrator's
- * `Accept-Language` (OQ-46), and a controller has no business passing it. Its name says which
- * party's preference it carries, which matters here in a way it does not on registration — this
- * request has two people in it, and the *invitee's* locale is what actually reaches the email
- * whenever they already have an account (§12.5.6, FR-169).
+ * `inviterLocale` is the locale negotiated from the inviting administrator's `Accept-Language`
+ * (OQ-46), and a controller has no business passing it. Its name says which party's preference it
+ * carries, which matters here in a way it does not on registration — this request has two people in
+ * it, and the *invitee's* locale is what actually reaches the email whenever they already have an
+ * account (§12.5.6, FR-169).
+ *
+ * **`organizationId` joined it at task 141** — on **both** commands, since the two mail routes share
+ * one window — and it is omitted for a stronger reason than tidiness: a caller who could supply it
+ * would be choosing which throttle bucket to spend, which is the same objection
+ * `AcceptInvitationServiceInput` records about `clientIp` one layer down. It is read from
+ * `AuthGuard`'s membership lookup, which is AD-2's own source — and it reaches the *key* only, never
+ * a store method, per `InvitationStore`'s header.
  */
-type InvitationServiceInput<C> = Omit<C, 'inviterLocale'>;
+type InvitationServiceInput<C> = Omit<C, 'inviterLocale' | 'organizationId'>;
 
 /**
  * The Nest-aware seam between `InvitationsController` and the use cases (house rule, 20 Aug 2026:
@@ -59,9 +66,25 @@ export class InvitationService {
     return this.listInvitations.execute();
   }
 
+  /**
+   * The tenant both mail routes key their amplification window on (task 141).
+   *
+   * `@RequiresRole(OA)` has already refused a request with no bound organization, and this throws
+   * rather than trusting that — `accept` states the reasoning: a guard is a declaration, and this is
+   * the layer that would otherwise build a throttle key reading `undefined` and pool every
+   * organization's invitations into one bucket, which is the cross-tenant interference the key's
+   * shape exists to prevent.
+   */
+  private boundOrganization(): string {
+    const organizationId = requestContext()?.organizationId;
+    if (!organizationId) throw new AuthenticationRequiredError();
+    return organizationId;
+  }
+
   issue(input: InvitationServiceInput<IssueInvitationCommand>): Promise<Invitation> {
     return this.issueInvitation.execute({
       ...input,
+      organizationId: this.boundOrganization(),
       // Used only where the invited address has no account of its own — the fallback, not the
       // answer. `IssueInvitation` prefers the invitee's own stored locale, because FR-169 resolves
       // email language per recipient and this administrator is not the recipient.
@@ -69,8 +92,8 @@ export class InvitationService {
     });
   }
 
-  resend(command: ResendInvitationCommand): Promise<void> {
-    return this.resendInvitation.execute(command);
+  resend(input: InvitationServiceInput<ResendInvitationCommand>): Promise<void> {
+    return this.resendInvitation.execute({ ...input, organizationId: this.boundOrganization() });
   }
 
   revoke(command: RevokeInvitationCommand): Promise<void> {
