@@ -822,6 +822,39 @@ conditional render, which is how it ends up half-suppressed on one screen.
   when the tenant read answers `READY`, so a request whose API call had failed served a clean error
   state and returned 200.
 
+- **`⨯ Error: The destination stream closed early.` (digest `2667547900`) in a gate log is a stream the
+  client abandoned, not a render that failed** (13 Sep 2026, measured rather than assumed). React
+  raises it: the Flight renderer's `pipe()` — and the HTML renderer's, which Next bundles beside it —
+  registers `destination.on('close', …)` with that fixed sentence, and Flight's `abort()` returns at
+  once for a render that has already finished, so it is logged only when the HTTP response closes while
+  a render still has work. The digest is derived from the error and the message is a constant, which is
+  why unrelated screens share **one digest**: an error thrown in this app's code carries its own message
+  and a digest of its own. Every request the probe below found pending was a Flight response.
+
+  **Where the browser suite produces it**, each attributed by a probe that listed every request still
+  pending when a page was abandoned:
+
+  - **the production router's viewport prefetches.** The workspace tier's links render `/home`,
+    `/reports`, `/entities`, `/organization` and `/organization/users` down to their `loading.tsx` as
+    they enter the viewport, and a `page.goto` cancels the ones still streaming —
+    `post-sign-in.spec.ts`'s turned-away journey logs it at its `goto`s;
+  - **a Server Action's response**, which streams the revalidated tree after the client already shows
+    the outcome. S-15's save logged it when its test ended with `POST /organization` still pending,
+    and not when the same journey let the network settle first;
+  - **an action the router abandons on redirect.** S-13's archive posts, redirects to `/entities`,
+    and its `POST` shows `net::ERR_ABORTED` in the browser.
+
+  **Intermittent by construction.** A journey aborts dozens of prefetches, and the server logs only the
+  few still rendering when the abort lands. None of the three journeys reproduced it run alone;
+  `gates:clean` logged three and a second full `identity` run two, in the same journeys. **It predates
+  the work that surfaced it**: at `08064b7`, before task 142, a full `identity` run logged it twice, in
+  the same two journeys.
+
+  **What would make a line like this a finding**: the same `⨯` with any other message, or this
+  message with any other digest — that is a render that threw, which is `Slot`'s shape above, and it
+  hides behind a green suite exactly as that one did. Silencing this one (`prefetch={false}` on the
+  workspace tier, say) would trade navigation for a quieter log, and is not a decision taken here.
+
 ## Before you add a screen
 
 - It has an `S-nn` in `design_spec.md` §4.4, or it is one of the public/legal/help surfaces that

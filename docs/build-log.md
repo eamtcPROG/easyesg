@@ -18897,3 +18897,69 @@ lockout release until tasks 67.4 and 144, and `totp.spec.ts` pins `ADMIN_TOTP_IS
   defined because UX-90 makes an undefined state a defect.
 - **`rerender-memo` / `useMemo`**: S-28 passes primitives to a component that is not `memo()`'d, and
   `QRCodeSVG` memoizes its own encoding.
+
+## "The destination stream closed early" is a stream the browser abandoned · 2026-09-13
+
+Task 143's `gates:clean` was green, and its standalone web server logged `⨯ Error: The destination
+stream closed early.` three times with one digest, `2667547900`. Nothing recorded it, and the root
+file's `Slot` account is what a green suite beside a logged error has meant here before — so it was
+examined rather than waved through. **No task row** — the follow-up was raised from task 143's close,
+and the project owner chose this entry as its whole record when asked.
+
+### What raises it, read from the source
+
+React raises it. The Flight renderer's `renderToPipeableStream().pipe()` (Next 16.3.0 bundles
+`react-server-dom-turbopack`) registers `destination.on('close', createCancelHandler(request, "The
+destination stream closed early."))`, and the HTML renderer bundled in `app-page-turbo.runtime.prod.js`
+registers the same sentence. The cancel handler calls `abort(request, Error(reason))`, and **`abort`
+returns immediately once the request's status is past 11** — aborting, closing or closed — so a
+response that closes after its render finished logs nothing. Otherwise the error goes through
+`logRecoverableError`, which is Next's `⨯` line and its digest. **The digest is a function of the
+error and the message is a constant**, which is why an entity archive, a profile save and a sign-in
+redirect shared one: an error thrown in this app's code carries its own message and its own digest.
+
+### Which request, in each journey
+
+**Run alone, none of the three tests reproduced it** — 0, 0, 0 on HEAD — so a temporary probe (never
+committed, deleted after the run) repeated each journey twice: ABRUPT ending the way its test ends,
+SETTLED waiting for the network to go idle first. Each listed every request still pending, abandoned
+the page between two markers, and logged every request the browser aborted.
+
+- **S-15's save.** ABRUPT ended with `POST /organization` pending — the Server Action, whose response
+  streams the revalidated tree after the client has already shown *"Profilul a fost salvat"* — and the
+  error printed between the markers. SETTLED ended with nothing pending and printed nothing. That pair
+  is the attribution.
+- **The turned-away journey.** Both variants logged it mid-journey, at the `page.goto`s: a full
+  navigation cancels the previous page's viewport prefetches of the workspace tier — `/home`,
+  `/reports`, `/entities`, `/organization`, `/organization/users`, each `[RSC] … net::ERR_ABORTED` in the
+  browser. Next's production `<Link>` prefetches a dynamic route down to its `loading.tsx` as it enters
+  the viewport (the v16.2.9 docs, the nearest indexed to the 16.3.0 pin), so every workspace screen is
+  running those renders while it idles.
+- **S-13's archive** did not log it this time. Its `POST /entities/<id>` showed `net::ERR_ABORTED` —
+  the router abandons the action's response on redirect — beside the same prefetch aborts.
+
+**It is intermittent by construction, not flaky.** A journey aborts dozens of prefetches and the
+server logs only those still rendering when the abort lands. A second full `identity` run on HEAD
+logged two, inside the archive journey and the turned-away journey — the same tests `gates:clean`
+named. **One control did not do what it was written to**: `/home` abandoned at first byte left its
+document pending, but the render had already finished and nothing logged. It is reported rather than
+counted.
+
+### Whether it predates recent work
+
+**Yes.** A worktree at `08064b7`, before task 142, ran the full `identity` project against the same
+database — no migration lies between the two commits — and logged it twice on its first run, in the
+archive journey and the turned-away journey, with 152 passed. **The first attempt at that run tested
+nothing**: its api refused to boot with `AUTH_JWT_SECRET is not set`, because a worktree carries none of
+the git-ignored `.env` files the api reads at boot, and the chain printed an empty summary rather than a
+red one. The local env files were copied in for the rerun, and the worktree was removed afterwards.
+
+### Decided
+
+A client-abandoned stream, so recorded rather than fixed: `apps/web/CLAUDE.md` gains a trap saying
+what the line is, where the suite produces it, and **what would make a line like it a finding** — the
+same `⨯` with another message, or this message with another digest. Silencing it (`prefetch={false}`
+on the workspace tier) would trade navigation speed for a quieter log, and is not a decision taken
+here. Searched for the shape elsewhere: `docs/build-log.md`, the root `CLAUDE.md` and
+`apps/web/CLAUDE.md` carried no mention of the sentence or the digest; the console is served by
+`vite preview` as an SPA and has no streamed render to abandon.
