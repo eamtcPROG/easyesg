@@ -1018,6 +1018,23 @@
         "body": "Lista de mai sus arată deja situația nouă.",
         "action": "Nu mai aveți nimic de făcut.",
         "failedAction": "Încercați din nou sau reîncărcați pagina."
+      },
+      "seats": {
+        "counter": "Locuri ocupate: {used} din {limit}",
+        "counterApproaching": "Locuri ocupate: {used} din {limit} · a mai rămas un loc",
+        "counterReached": "Locuri ocupate: {used} din {limit} · niciun loc liber",
+        "counterUnknown": "Numărul de locuri ocupate nu poate fi afișat acum",
+        "gate": {
+          "title": "{limit, plural, =1 {Singurul loc al organizației este ocupat} one {Toate cele # locuri ale organizației sunt ocupate} few {Toate cele # locuri ale organizației sunt ocupate} other {Toate cele # de locuri ale organizației sunt ocupate}}",
+          "consumptionLabel": "Locuri ocupate",
+          "consumption": "{used} din {limit}",
+          "body": "Fiecare persoană cu acces și fiecare invitație în așteptare ocupă un loc — inclusiv invitațiile al căror link a expirat, până le anulați. Ca să invitați pe cineva, anulați o invitație sau retrageți accesul unei persoane din lista de mai sus."
+        },
+        "paused": {
+          "title": "Invitațiile sunt oprite deocamdată",
+          "body": "Nu putem verifica acum câte locuri sunt ocupate în organizație, așa că nu puteți trimite invitații. Lista de mai sus este corectă și puteți gestiona în continuare accesul fiecărei persoane.",
+          "action": "Reîncărcați pagina peste câteva minute."
+        }
       }
     },
     "wizard": {

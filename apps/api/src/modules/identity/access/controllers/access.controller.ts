@@ -1,7 +1,7 @@
 import { Controller, Get, Req, UseInterceptors } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { ApiListResponse } from '@api/app/decorators/api-envelope.decorator';
+import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { DEFAULT_ON_PAGE } from '@api/app/constants/pagination.constants';
 import { ResultListDto } from '@api/app/dto/result-list.dto';
 import { RequestListDto } from '@api/app/dto/request-list.dto';
@@ -9,6 +9,7 @@ import { ListQueryInterceptor } from '@api/app/interceptors/list-query.intercept
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import { AccessRowResponseDto } from '../dto/access-row.response.dto';
+import { SeatConsumptionResponseDto } from '../dto/seat-consumption.response.dto';
 import { AccessService } from '../services/access.service';
 
 /**
@@ -31,8 +32,17 @@ import { AccessService } from '../services/access.service';
  * that to what this screen can be asked and falls back rather than refusing, because a stale or
  * hand-edited query string should show the list and not a screen about the query string.
  *
- * **Not bounded**: `onpage=-1` is refused. The set is seat-limited today, and a route that can be
- * asked for everything is one an entitlement change turns into an outage with nobody editing it.
+ * **Not bounded**: `onpage=-1` is refused. The set is seat-limited — since task 142 by an enforced
+ * ceiling rather than by assumption — and a route that can be asked for everything is one a raised
+ * ceiling turns into an outage with nobody editing it.
+ *
+ * **`GET /access/seats` sits here because a seat is a row of this union** (task 142): what it counts
+ * is exactly what the list publishes, and S-16 reads it beside the list.
+ *
+ * **Neither read carries `@RequiresEntitlement`, and neither needs a key.** They publish an
+ * organization's own people to its administrator, which no plan gates. The seat ceiling bites on the
+ * writes that take a seat — `IssueInvitation` and `AcceptInvitation` — and task 54.2's
+ * `org.seats.max` check lands there, not on who may see the count.
  */
 @ApiTags('identity')
 @Controller('access')
@@ -105,5 +115,31 @@ export class AccessController {
       totalpages: Math.max(1, Math.ceil(page.matched / query.take)),
       unfiltered: page.total,
     });
+  }
+
+  @Get('seats')
+  @ApiOperation({
+    summary: 'How many people the organization may have, and how many seats are taken',
+    description:
+      'The seat ceiling in force and the seats held against it: every active member and every ' +
+      'pending invitation, including invitations whose link has lapsed, which hold their seat ' +
+      'until revoked. Inviting beyond the ceiling is refused, so this is what tells an ' +
+      'administrator whether an invitation can be sent before they write one. When the ceiling ' +
+      'cannot be read, allowance is null and the count is still answered.',
+  })
+  @ApiObjectResponse(SeatConsumptionResponseDto, {
+    status: 200,
+    description: 'The ceiling, or null where it cannot be read, and the seats held.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'The caller holds no membership in an active organization (problem type ' +
+      'membership-required), or holds one in a role that is not organization_administrator ' +
+      '(problem type insufficient-role).',
+    content: { 'application/problem+json': {} },
+  })
+  async seats(): Promise<SeatConsumptionResponseDto> {
+    return new SeatConsumptionResponseDto(await this.access.seats());
   }
 }

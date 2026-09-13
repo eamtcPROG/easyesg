@@ -3,6 +3,8 @@ import {
   cleanupAccounts,
   cleanupOrganizations,
   grantMembership,
+  organizationIdsForAccount,
+  seedSeatHolders,
   verificationTokenFor,
 } from './support/db';
 
@@ -23,6 +25,12 @@ import {
  * actually provoke reach the screen as sentences rather than as an error page.
  */
 const RUN_PREFIX = `e2e-web-access-${process.pid}-${Date.now()}`;
+
+/**
+ * The shipped seat ceiling (`config/seed/seat-allowance.global.json`), which the api's
+ * `seat-allowance.service.spec.ts` pins — restated here as the number the screen prints.
+ */
+const SEAT_CEILING = 10;
 const addressFor = (label: string) => `${RUN_PREFIX}-${label}@example.md`;
 const PASSWORD = 'Parola123!';
 
@@ -135,6 +143,8 @@ test('the administrator sees themself, and invites a colleague who appears as in
   // screen. It used to disambiguate against the interim session strip's "Contul activ:", which
   // task 30.1 deleted — the reason changed, the need did not.
   await expect(page.getByText('Activ', { exact: true })).toBeVisible();
+  // Task 142's counter at rest: the administrator alone holds one of the ceiling's seats.
+  await expect(page.getByText(`Locuri ocupate: 1 din ${SEAT_CEILING}`, { exact: true })).toBeVisible();
 
   const invited = addressFor('invite-guest');
   await page.getByLabel('Adresa de e-mail').fill(invited);
@@ -144,6 +154,49 @@ test('the administrator sees themself, and invites a colleague who appears as in
   // The other half, through the same list — which is the whole point of the read model.
   await expect(personCell(page, invited)).toBeVisible();
   await expect(page.getByText('Invitat', { exact: true })).toBeVisible();
+  // And the invitation holds a seat the moment it is sent — the rule the API gates on, on screen.
+  await expect(page.getByText(`Locuri ocupate: 2 din ${SEAT_CEILING}`, { exact: true })).toBeVisible();
+});
+
+/**
+ * UX-52 and UX-50 in one journey, against the shipped ceiling (task 142): one seat left is a warning
+ * against the counter with the form still offered, and the invitation that takes it replaces the form
+ * with the gate — through the product's own route, so the region, the gate and the API agree about the
+ * same count. The seats are seeded as bare memberships; eight registrations would buy nothing.
+ */
+test('the last seat is warned of, and taking it puts the gate where the invitation form was', async ({
+  page,
+}) => {
+  const administrator = await administratorOf(page, 'full');
+  const [organizationId] = await organizationIdsForAccount(administrator);
+  await seedSeatHolders({
+    organizationId,
+    prefix: `${RUN_PREFIX}-full`,
+    count: SEAT_CEILING - 2,
+  });
+  await openAccessScreen(page);
+
+  await expect(
+    page.getByText(`Locuri ocupate: ${SEAT_CEILING - 1} din ${SEAT_CEILING} · a mai rămas un loc`, {
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  await page.getByLabel('Adresa de e-mail').fill(addressFor('full-last-seat'));
+  await choose(page, 'Rolul acordat', 'Editare');
+  await page.getByRole('button', { name: 'Trimiteți invitația', exact: true }).click();
+
+  await expect(
+    page.getByText(`Locuri ocupate: ${SEAT_CEILING} din ${SEAT_CEILING} · niciun loc liber`, {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(`Toate cele ${SEAT_CEILING} locuri ale organizației sunt ocupate`, { exact: true }),
+  ).toBeVisible();
+  // Not offered, rather than offered and refused: the field is gone, not disabled.
+  await expect(page.getByLabel('Adresa de e-mail')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Trimiteți invitația', exact: true })).toHaveCount(0);
 });
 
 test('a second invitation to the same address is refused, in words the reader can act on', async ({

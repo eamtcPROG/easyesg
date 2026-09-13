@@ -38,10 +38,10 @@ import type { AccessActionResult } from './action-results';
  * wizard's PATCH stream, the offline drain, the polls.
  *
  * An action is a projection and nothing more. Every rule stays on the API: FR-60's lockout, both
- * invitation collisions, the seat entitlement when task 54.2 gives it an implementation. The screen
- * mirrors the lockout rule only to avoid *offering* an action that will be refused
- * (`isLastAdministrator`), and the refusal remains authoritative — between a render and a click,
- * someone else may have been demoted.
+ * invitation collisions, the seat ceiling (task 142). The screen mirrors the lockout and the ceiling
+ * only to avoid *offering* an action that will be refused (`isLastAdministrator`, `seatRegion`), and
+ * the refusal remains authoritative — between a render and a click, someone else may have been
+ * demoted, or invited.
  *
  * **Every write revalidates the screen's own path.** These actions change the list they were
  * invoked from, and `(app)` is `force-dynamic`, so the revalidation is not about a cache of the

@@ -1054,7 +1054,7 @@
     },
     "/api/v1/members": {
       "get": {
-        "description": "Answers \"who can see our ESG data\": every active member with their role, status and last activity. Unpaginated by design — the collection is bounded by the plan’s seat entitlement. Pending invitations are a separate resource and do not appear here.",
+        "description": "Answers \"who can see our ESG data\": every active member with their role, status and last activity. Unpaginated by design — the collection is bounded by the organization’s seat ceiling, which counts every member listed here. Pending invitations are a separate resource and do not appear here.",
         "operationId": "MembersController_list",
         "parameters": [],
         "responses": {
@@ -1224,7 +1224,7 @@
     },
     "/api/v1/invitations": {
       "get": {
-        "description": "The other half of \"who can see our ESG data\": people invited but not yet joined. Unpaginated by design — the collection is bounded by the plan’s seat entitlement. An invitation whose link has lapsed still appears, because it is what holds the invited address; resending it restores a working link.",
+        "description": "The other half of \"who can see our ESG data\": people invited but not yet joined. Unpaginated by design — the collection is bounded by the organization’s seat ceiling, which counts every invitation listed here. An invitation whose link has lapsed still appears, because it is what holds the invited address; resending it restores a working link.",
         "operationId": "InvitationsController_list",
         "parameters": [],
         "responses": {
@@ -1307,13 +1307,19 @@
             }
           },
           "409": {
-            "description": "The address already belongs to a member of this organization (problem type already-member), or an invitation to it is already outstanding (problem type invitation-outstanding) — resend or revoke that one instead. Two problem types rather than one, because the two have different resolutions and a client should not have to read the wording to tell them apart.",
+            "description": "The address already belongs to a member of this organization (problem type already-member), or an invitation to it is already outstanding (problem type invitation-outstanding) — resend or revoke that one instead. Two problem types rather than one, because the two have different resolutions and a client should not have to read the wording to tell them apart. Or every seat is taken (problem type entitlement-quota-exceeded, with limit and used members): active members and pending invitations together, lapsed invitations included, have reached the organization’s ceiling — withdraw an invitation or remove someone’s access first. An address already outstanding is still reported as outstanding, even at the ceiling.",
             "content": {
               "application/problem+json": {}
             }
           },
           "429": {
             "description": "Too much invitation mail to this address from this organization in the window (task 141). The budget is per (organization, address) rather than per caller, because what it rations is mail to one mailbox — so another organization inviting the same person is unaffected, and so is this organization inviting somebody else. **It is shared with the resend route**: issuing and resending to one address draw on one allowance, so a revoke-and-reinvite cycle buys no fresh budget. Only delivered mail spends it; a refusal costs nothing.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "503": {
+            "description": "The seat ceiling cannot be read right now (problem type seat-allowance-unavailable), so no invitation is sent until it can. Nothing was created; try again shortly.",
             "content": {
               "application/problem+json": {}
             }
@@ -1482,8 +1488,20 @@
               "application/problem+json": {}
             }
           },
+          "409": {
+            "description": "The organization already has more people than its seat ceiling allows, so no one more can join (problem type entitlement-quota-exceeded). The invitation is not used up: the same link works once an administrator frees a seat. An ordinary invitation never meets this — it held its seat from the moment it was sent.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
           "410": {
             "description": "The link cannot be used (problem type invitation-not-acceptable). The document carries a standing member saying which: expired, consumed, revoked, or unknown. None is retryable — ask an administrator for a new invitation.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "503": {
+            "description": "The seat ceiling cannot be read right now (problem type seat-allowance-unavailable), so nobody is added until it can. Nothing changed; try again shortly.",
             "content": {
               "application/problem+json": {}
             }
@@ -1566,6 +1584,46 @@
           }
         },
         "summary": "List everyone with access to the active organization, members and invitations as one",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/access/seats": {
+      "get": {
+        "description": "The seat ceiling in force and the seats held against it: every active member and every pending invitation, including invitations whose link has lapsed, which hold their seat until revoked. Inviting beyond the ceiling is refused, so this is what tells an administrator whether an invitation can be sent before they write one. When the ceiling cannot be read, allowance is null and the count is still answered.",
+        "operationId": "AccessController_seats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The ceiling, or null where it cannot be read, and the seats held.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SeatConsumptionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller holds no membership in an active organization (problem type membership-required), or holds one in a role that is not organization_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "How many people the organization may have, and how many seats are taken",
         "tags": [
           "identity"
         ]
@@ -4099,6 +4157,26 @@
           "lastActiveAt",
           "issuedAt",
           "expiresAt"
+        ]
+      },
+      "SeatConsumptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "allowance": {
+            "type": "number",
+            "nullable": true,
+            "example": 10,
+            "description": "How many people the organization may have — active members and pending invitations together. Null when the ceiling cannot be read right now; inviting and accepting are refused while it is, and the count below is still true."
+          },
+          "used": {
+            "type": "number",
+            "example": 4,
+            "description": "Seats held now: every active member plus every pending invitation, including invitations whose link has lapsed — they hold their seat until revoked. Equals the unfiltered total of GET /access, because it counts the same rows."
+          }
+        },
+        "required": [
+          "allowance",
+          "used"
         ]
       },
       "OrganizationChangeAttributionDto": {

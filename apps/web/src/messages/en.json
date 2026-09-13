@@ -1018,6 +1018,23 @@
         "body": "The list above already shows the new situation.",
         "action": "There is nothing further to do.",
         "failedAction": "Try again, or reload the page."
+      },
+      "seats": {
+        "counter": "Seats in use: {used} of {limit}",
+        "counterApproaching": "Seats in use: {used} of {limit} · one left",
+        "counterReached": "Seats in use: {used} of {limit} · none left",
+        "counterUnknown": "The number of seats in use cannot be shown right now",
+        "gate": {
+          "title": "{limit, plural, =1 {The organisation’s only seat is taken} other {All # of the organisation’s seats are taken}}",
+          "consumptionLabel": "Seats in use",
+          "consumption": "{used} of {limit}",
+          "body": "Every person with access and every pending invitation holds a seat — invitations whose link has expired included, until you withdraw them. To invite someone, withdraw an invitation or remove someone’s access from the list above."
+        },
+        "paused": {
+          "title": "Invitations are paused for now",
+          "body": "We cannot check how many of the organisation’s seats are in use just now, so no invitation can be sent. The list above is accurate, and you can still manage everyone’s access.",
+          "action": "Reload the page in a few minutes."
+        }
       }
     },
     "wizard": {

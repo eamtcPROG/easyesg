@@ -80,6 +80,13 @@ export class FakeInvitationBearerStore implements InvitationBearerStore {
   emailOf(accountId: string): string | null {
     return this.accounts[accountId] ?? null;
   }
+
+  /** @internal — task 142's count of pending invitations, lapsed included, in one organization. */
+  pendingIn(organizationId: string): number {
+    return this.invitations.filter(
+      (row) => row.organizationId === organizationId && row.status === INVITATION_STATUS.PENDING,
+    ).length;
+  }
 }
 
 class FakeBearerTransaction implements InvitationBearerTransaction {
@@ -151,6 +158,19 @@ class FakeBearerTransaction implements InvitationBearerTransaction {
     existing.role = invitation.role;
     existing.status = MEMBERSHIP_STATUS.ACTIVE;
     return Promise.resolve({ kind: MEMBERSHIP_GRANT_KIND.REACTIVATED, role: invitation.role });
+  }
+
+  /**
+   * Scoped to the resolved invitation's organization, as the adapter's binding makes the SQL — and
+   * counted after this transaction's writes, so an acceptance that consumed an invitation and granted
+   * a membership counts the same as before it, which is the property the gate's predicate rests on.
+   */
+  countSeatsHeld(): Promise<number> {
+    const { organizationId } = this.requireResolved();
+    const members = this.store.memberships.filter(
+      (m) => m.organizationId === organizationId && m.status === MEMBERSHIP_STATUS.ACTIVE,
+    ).length;
+    return Promise.resolve(members + this.store.pendingIn(organizationId));
   }
 
   /**

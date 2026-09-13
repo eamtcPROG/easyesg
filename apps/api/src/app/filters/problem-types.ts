@@ -100,7 +100,16 @@ export const ProblemType = {
    *  name the way out — list the subsidiaries, or report on an individual basis. */
   ConsolidationBoundaryEmpty: 'consolidation-boundary-empty',
   EntitlementDenied: 'entitlement-denied',
+  /** UC-150 / FR-102: a quota block — the limit reached, carried as `limit` and `used` extension
+   *  members. **First raised by task 142's interim seat ceiling, not by the entitlement service**,
+   *  and deliberately: the slug is what a client branches on, so the ceiling speaks the vocabulary
+   *  task 54.2 will raise and the swap changes no client (`architecture.md` §12.5.6). */
   EntitlementQuotaExceeded: 'entitlement-quota-exceeded',
+  /** Task 142: the seat ceiling could not be read — its artefact absent or malformed — so inviting
+   *  and accepting are refused rather than admitted past a ceiling nobody can see (fail closed,
+   *  §12.5.6). Its own slug because it is the one refusal here whose way out is to wait, not to act,
+   *  and it disappears when task 54.2 replaces the artefact. */
+  SeatAllowanceUnavailable: 'seat-allowance-unavailable',
   TenantContextMissing: 'tenant-context-missing',
   /** UC-56 refused: another reporting period for the same entity already covers part of these
    *  dates. Its own slug because S-14 must name the way out — adjust the dates, or edit the period

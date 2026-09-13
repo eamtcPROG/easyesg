@@ -44,8 +44,9 @@ export class MembersController {
     summary: 'List everyone with access to the active organization',
     description:
       'Answers "who can see our ESG data": every active member with their role, status and last ' +
-      'activity. Unpaginated by design — the collection is bounded by the plan’s seat ' +
-      'entitlement. Pending invitations are a separate resource and do not appear here.',
+      'activity. Unpaginated by design — the collection is bounded by the organization’s seat ' +
+      'ceiling, which counts every member listed here. Pending invitations are a separate resource ' +
+      'and do not appear here.',
   })
   @ApiListResponse(MemberResponseDto, { status: 200, description: 'The organization’s members.' })
   @ApiResponse({

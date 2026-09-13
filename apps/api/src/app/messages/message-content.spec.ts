@@ -18,7 +18,8 @@ import { ProblemType } from '../filters/problem-types';
  *
  * Two things make that reasoning hold, and both are gated elsewhere rather than assumed here:
  * `message-keys.spec.ts` proves every declared key resolves (a missing one omits `detail` rather
- * than falling back to the slug), and the only `DomainError` carrying params passes two integers,
+ * than falling back to the slug), and the `DomainError`s carrying params pass integers — the
+ * password policy's two bounds and, since task 142, the seat ceiling's limit —
  * so nothing dynamic reaches a rendered sentence.
  *
  * **The problem-type slugs are handed in from `ProblemType` rather than matched as a shape.** That

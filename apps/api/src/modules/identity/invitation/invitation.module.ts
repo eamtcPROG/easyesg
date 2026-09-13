@@ -1,7 +1,9 @@
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
+import { SEAT_ALLOWANCE, type SeatAllowance } from '@api/contracts/seat-allowance.port';
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
+import { AccessModule } from '@api/modules/identity/access/access.module';
 import { InvitationBearerStoreRepository } from '@api/infrastructure/persistence/identity/invitation-bearer-store.repository';
 import { InvitationStoreRepository } from '@api/infrastructure/persistence/identity/invitation-store.repository';
 import { InvitationEmailHandler } from './consumers/invitation-email.handler';
@@ -62,8 +64,9 @@ const httpProviders: Provider[] = [
   },
   {
     provide: IssueInvitation,
-    inject: [INVITATION_STORE, CLOCK],
-    useFactory: (store: InvitationStore, now: Clock) => new IssueInvitation(store, now),
+    inject: [INVITATION_STORE, SEAT_ALLOWANCE, CLOCK],
+    useFactory: (store: InvitationStore, seats: SeatAllowance, now: Clock) =>
+      new IssueInvitation(store, seats, now),
   },
   {
     provide: ResendInvitation,
@@ -82,8 +85,9 @@ const httpProviders: Provider[] = [
   },
   {
     provide: AcceptInvitation,
-    inject: [INVITATION_BEARER_STORE, CLOCK],
-    useFactory: (store: InvitationBearerStore, now: Clock) => new AcceptInvitation(store, now),
+    inject: [INVITATION_BEARER_STORE, SEAT_ALLOWANCE, CLOCK],
+    useFactory: (store: InvitationBearerStore, seats: SeatAllowance, now: Clock) =>
+      new AcceptInvitation(store, seats, now),
   },
 ];
 
@@ -91,7 +95,9 @@ const httpProviders: Provider[] = [
 const workerProviders: Provider[] = [InvitationEmailHandler];
 
 @Module({
-  imports: mode === APP_MODE.WORKER ? [EmailModule] : [],
+  // `AccessModule` on the HTTP side for `SEAT_ALLOWANCE` (task 142): the issue and acceptance gates are HTTP writes, and
+  // the worker's one job here — sending the invitation email — takes no seat.
+  imports: mode === APP_MODE.WORKER ? [EmailModule] : [AccessModule],
   controllers:
     mode === APP_MODE.WORKER ? [] : [InvitationsController, InvitationAcceptanceController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,

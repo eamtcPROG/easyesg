@@ -777,8 +777,9 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **69 files here are Client Components** (11 Sep 2026: ten each under
-  `organization/access/components/` and `credentials/components/`, seven under `shared/`, the rest
+  **72 files here are Client Components** (13 Sep 2026: thirteen under
+  `organization/access/components/` since task 142 split the invite panel into its arms, ten under
+  `credentials/components/`, seven under `shared/`, the rest
   across the wizard's controls and the two record forms' sections), so the three
   cases above are live questions in every one of them — `access-context.tsx` is the worked example,
   where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two

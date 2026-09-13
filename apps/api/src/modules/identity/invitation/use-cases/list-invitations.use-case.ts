@@ -16,8 +16,8 @@ import type { PendingInvitation } from '../models/invitation.model';
  * decisions. `expiresAt` travels on every row so the screen can say which are stale.
  *
  * No `execute` argument at all: the organization comes from RLS and there is nothing else to scope
- * by. Unpaginated, for `ListMembers`' reason — the collection is bounded by the plan's seat
- * entitlement.
+ * by. Unpaginated, for `ListMembers`' reason — the collection is bounded by the organization's seat
+ * ceiling, which since task 142 counts every row this lists, lapsed ones included.
  */
 export class ListInvitations {
   constructor(private readonly store: InvitationStore) {}

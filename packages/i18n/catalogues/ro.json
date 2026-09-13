@@ -116,6 +116,12 @@
     },
     "report-not-editable": {
       "title": "Raport blocat"
+    },
+    "entitlement-quota-exceeded": {
+      "title": "Limită atinsă"
+    },
+    "seat-allowance-unavailable": {
+      "title": "Locurile nu pot fi verificate acum"
     }
   },
   "validation": {},
@@ -161,6 +167,11 @@
         "revoked": "Această invitație a fost anulată de administratorul organizației, așa că nu ați fost adăugat. Dacă este o greșeală, cereți-i să vă invite din nou.",
         "unknown": "Linkul acesta nu corespunde niciunei invitații, așa că nu ați fost adăugat în nicio organizație. Verificați dacă l-ați copiat complet din e-mail sau cereți o invitație nouă."
       }
+    },
+    "seats": {
+      "allowance_reached": "{limit, plural, =1 {Singurul loc al organizației este ocupat} one {Toate cele # locuri ale organizației sunt ocupate} few {Toate cele # locuri ale organizației sunt ocupate} other {Toate cele # de locuri ale organizației sunt ocupate}}, așa că invitația nu a fost trimisă. O invitație în așteptare ocupă un loc până este acceptată sau anulată, chiar dacă linkul ei a expirat — anulați o invitație sau retrageți accesul cuiva, apoi trimiteți din nou invitația.",
+      "acceptance_refused": "Organizația nu mai are locuri libere, așa că nu ați fost adăugat, iar invitația dumneavoastră rămâne valabilă. Cereți administratorului organizației să elibereze un loc, apoi deschideți din nou linkul din e-mail.",
+      "unavailable": "Nu am putut verifica acum câte locuri sunt ocupate în organizație, așa că nimic nu a fost trimis sau schimbat. Încercați din nou peste câteva minute."
     },
     "totp": {
       "reauthentication_failed": "Parola actuală nu este corectă, așa că schimbarea nu a fost făcută. Introduceți parola cu care vă autentificați acum și încercați din nou.",

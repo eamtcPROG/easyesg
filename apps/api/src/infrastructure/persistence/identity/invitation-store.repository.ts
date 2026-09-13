@@ -14,6 +14,7 @@ import { MEMBERSHIP_STATUS } from '@api/modules/identity/membership/models/membe
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { TenantRepository } from '../tenant-repository';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
+import { countSeatsHeld, holdSeatLock } from './seat.queries';
 
 /** Rows as PostgreSQL returns them: snake_case, `timestamptz` already parsed to `Date` by `pg`. */
 interface InvitationRow {
@@ -158,6 +159,16 @@ export class InvitationStoreRepository
       if (isPendingAddressViolation(error)) throw new InvitationAlreadyPendingError();
       throw error;
     }
+  }
+
+  /**
+   * Task 142's issue gate reads this after inserting. The lock is keyed on the bound organization —
+   * the second place this repository names it, and like the insert's it is not a tenancy predicate:
+   * RLS still scopes the count, and the id only decides which writers wait for each other.
+   */
+  async countSeatsHeldUnderLock(): Promise<number> {
+    await holdSeatLock(this.runner, this.organizationId);
+    return countSeatsHeld(this.runner);
   }
 
   /**

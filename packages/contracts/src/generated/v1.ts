@@ -417,7 +417,7 @@ export interface paths {
         };
         /**
          * List everyone with access to the active organization
-         * @description Answers "who can see our ESG data": every active member with their role, status and last activity. Unpaginated by design — the collection is bounded by the plan’s seat entitlement. Pending invitations are a separate resource and do not appear here.
+         * @description Answers "who can see our ESG data": every active member with their role, status and last activity. Unpaginated by design — the collection is bounded by the organization’s seat ceiling, which counts every member listed here. Pending invitations are a separate resource and do not appear here.
          */
         get: operations["MembersController_list"];
         put?: never;
@@ -481,7 +481,7 @@ export interface paths {
         };
         /**
          * List the active organization’s outstanding invitations
-         * @description The other half of "who can see our ESG data": people invited but not yet joined. Unpaginated by design — the collection is bounded by the plan’s seat entitlement. An invitation whose link has lapsed still appears, because it is what holds the invited address; resending it restores a working link.
+         * @description The other half of "who can see our ESG data": people invited but not yet joined. Unpaginated by design — the collection is bounded by the organization’s seat ceiling, which counts every invitation listed here. An invitation whose link has lapsed still appears, because it is what holds the invited address; resending it restores a working link.
          */
         get: operations["InvitationsController_list"];
         put?: never;
@@ -588,6 +588,26 @@ export interface paths {
          * @description Answers "who can see our ESG data" as a single ordered list across active memberships and pending invitations, with the filter, the order and the page applied to the merged set. The standing is derived server-side from now(), so a row cannot be admitted by the filter as live and rendered as expired on the same request.
          */
         get: operations["AccessController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/seats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How many people the organization may have, and how many seats are taken
+         * @description The seat ceiling in force and the seats held against it: every active member and every pending invitation, including invitations whose link has lapsed, which hold their seat until revoked. Inviting beyond the ceiling is refused, so this is what tells an administrator whether an invitation can be sent before they write one. When the ceiling cannot be read, allowance is null and the count is still answered.
+         */
+        get: operations["AccessController_seats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1533,6 +1553,18 @@ export interface components {
             issuedAt: number | null;
             /** @description Unix epoch milliseconds when the invitation lapses. Null when kind is member. */
             expiresAt: number | null;
+        };
+        SeatConsumptionResponseDto: {
+            /**
+             * @description How many people the organization may have — active members and pending invitations together. Null when the ceiling cannot be read right now; inviting and accepting are refused while it is, and the count below is still true.
+             * @example 10
+             */
+            allowance: number | null;
+            /**
+             * @description Seats held now: every active member plus every pending invitation, including invitations whose link has lapsed — they hold their seat until revoked. Equals the unfiltered total of GET /access, because it counts the same rows.
+             * @example 4
+             */
+            used: number;
         };
         OrganizationChangeAttributionDto: {
             /**
@@ -3342,7 +3374,7 @@ export interface operations {
                     "application/problem+json": unknown;
                 };
             };
-            /** @description The address already belongs to a member of this organization (problem type already-member), or an invitation to it is already outstanding (problem type invitation-outstanding) — resend or revoke that one instead. Two problem types rather than one, because the two have different resolutions and a client should not have to read the wording to tell them apart. */
+            /** @description The address already belongs to a member of this organization (problem type already-member), or an invitation to it is already outstanding (problem type invitation-outstanding) — resend or revoke that one instead. Two problem types rather than one, because the two have different resolutions and a client should not have to read the wording to tell them apart. Or every seat is taken (problem type entitlement-quota-exceeded, with limit and used members): active members and pending invitations together, lapsed invitations included, have reached the organization’s ceiling — withdraw an invitation or remove someone’s access first. An address already outstanding is still reported as outstanding, even at the ceiling. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3353,6 +3385,15 @@ export interface operations {
             };
             /** @description Too much invitation mail to this address from this organization in the window (task 141). The budget is per (organization, address) rather than per caller, because what it rations is mail to one mailbox — so another organization inviting the same person is unaffected, and so is this organization inviting somebody else. **It is shared with the resend route**: issuing and resending to one address draw on one allowance, so a revoke-and-reinvite cycle buys no fresh budget. Only delivered mail spends it; a refusal costs nothing. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The seat ceiling cannot be read right now (problem type seat-allowance-unavailable), so no invitation is sent until it can. Nothing was created; try again shortly. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3488,8 +3529,26 @@ export interface operations {
                     "application/problem+json": unknown;
                 };
             };
+            /** @description The organization already has more people than its seat ceiling allows, so no one more can join (problem type entitlement-quota-exceeded). The invitation is not used up: the same link works once an administrator frees a seat. An ordinary invitation never meets this — it held its seat from the moment it was sent. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
             /** @description The link cannot be used (problem type invitation-not-acceptable). The document carries a standing member saying which: expired, consumed, revoked, or unknown. None is retryable — ask an administrator for a new invitation. */
             410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The seat ceiling cannot be read right now (problem type seat-allowance-unavailable), so nobody is added until it can. Nothing changed; try again shortly. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3525,6 +3584,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ResultListDto"] & {
                         objects?: components["schemas"]["AccessRowResponseDto"][];
+                    };
+                };
+            };
+            /** @description The caller holds no membership in an active organization (problem type membership-required), or holds one in a role that is not organization_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AccessController_seats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The ceiling, or null where it cannot be read, and the seats held. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SeatConsumptionResponseDto"];
                     };
                 };
             };

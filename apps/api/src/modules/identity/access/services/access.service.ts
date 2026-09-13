@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DEFAULT_ON_PAGE } from '@api/app/constants/pagination.constants';
+import { requestContext } from '@api/infrastructure/persistence/request-context';
+import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
 import { toAccessQuery, type ListQueryInput } from '../domain/access-query';
 import { ListAccess } from '../use-cases/list-access.use-case';
+import { ReadSeatConsumption } from '../use-cases/read-seat-consumption.use-case';
 import type { AccessPage, AccessQuery } from '../models/access.model';
+import type { SeatConsumption } from '../models/seat-consumption.model';
 
 /**
  * The Nest-aware seam between `AccessController` and the use case (house rule, 20 Aug 2026:
@@ -21,7 +25,10 @@ import type { AccessPage, AccessQuery } from '../models/access.model';
  */
 @Injectable()
 export class AccessService {
-  constructor(private readonly listAccess: ListAccess) {}
+  constructor(
+    private readonly listAccess: ListAccess,
+    private readonly readSeatConsumption: ReadSeatConsumption,
+  ) {}
 
   /**
    * The parsed list query, narrowed to what this screen can be asked.
@@ -37,5 +44,20 @@ export class AccessService {
 
   list(query: AccessQuery): Promise<AccessPage> {
     return this.listAccess.execute(query);
+  }
+
+  /**
+   * S-16's seat region (task 142) — the one read here that needs ambient context, and the reason
+   * this layer earns its keep for it: the organization reaches `SeatAllowance`'s query from
+   * `AuthGuard`'s lookup, never from a caller.
+   *
+   * `@RequiresRole(OA)` has already refused a request with no bound organization; this throws rather
+   * than trusting that, for `InvitationService.boundOrganization`'s reason — a guard is a
+   * declaration, and this is the layer that would otherwise ask about `undefined`.
+   */
+  seats(): Promise<SeatConsumption> {
+    const organizationId = requestContext()?.organizationId;
+    if (!organizationId) throw new AuthenticationRequiredError();
+    return this.readSeatConsumption.execute({ organizationId });
   }
 }

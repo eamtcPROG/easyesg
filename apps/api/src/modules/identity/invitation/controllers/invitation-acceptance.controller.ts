@@ -29,9 +29,11 @@ import { InvitationService } from '../services/invitation.service';
  * someone who belongs to no organization yet, which every acceptor does by definition (25.3 built
  * it for `/memberships` and this is its second consumer).
  *
- * **No entitlement gate, recorded rather than omitted.** Seat entitlement is checked where the
- * invitation is issued (UC-60), not where it is accepted — refusing at acceptance would punish the
- * invitee for the inviter's plan. `EntitlementPort` has no implementation until task 54 either way.
+ * **Task 142's seat ceiling is checked here too, and it does not punish the invitee for the
+ * inviter's organization.** An invitation takes its seat when it is issued (UC-60), so accepting it
+ * moves no count and an ordinary acceptance at a full organization is admitted. The refusal is
+ * reachable only where the organization has gone over its ceiling since — one that lowered the value
+ * after inviting — and it leaves the link usable once a seat is freed (§12.5.6's task-142 row).
  */
 @ApiTags('identity')
 @Controller('invitations')
@@ -94,6 +96,22 @@ export class InvitationAcceptanceController {
       'The link cannot be used (problem type invitation-not-acceptable). The document carries a ' +
       'standing member saying which: expired, consumed, revoked, or unknown. None is retryable — ' +
       'ask an administrator for a new invitation.',
+    content: { 'application/problem+json': {} },
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The organization already has more people than its seat ceiling allows, so no one more can ' +
+      'join (problem type entitlement-quota-exceeded). The invitation is not used up: the same ' +
+      'link works once an administrator frees a seat. An ordinary invitation never meets this — it ' +
+      'held its seat from the moment it was sent.',
+    content: { 'application/problem+json': {} },
+  })
+  @ApiResponse({
+    status: 503,
+    description:
+      'The seat ceiling cannot be read right now (problem type seat-allowance-unavailable), so ' +
+      'nobody is added until it can. Nothing changed; try again shortly.',
     content: { 'application/problem+json': {} },
   })
   async accept(

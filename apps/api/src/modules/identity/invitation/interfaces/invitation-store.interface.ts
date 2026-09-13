@@ -110,6 +110,18 @@ export interface InvitationStore extends AuthAttemptRecorder {
   activeOrganizationName(): Promise<string>;
 
   /**
+   * Seats the organization holds with this transaction's writes counted — active members plus every
+   * pending invitation, lapsed included (task 142) — **after taking the organization's seat lock**,
+   * which is held until the request commits or rolls back.
+   *
+   * The lock is in the name because it is the half a caller could not guess: UC-60's gate calls this
+   * after inserting, and without the lock two invitations at the last seat each count the other out
+   * and both commit (`seat.queries.ts` carries the argument). No organization id, per this port's
+   * header — the lock's key comes from the bound context, like the insert's column does.
+   */
+  countSeatsHeldUnderLock(): Promise<number>;
+
+  /**
    * Commits the intent to send, on **this** transaction (P-8, AD-6). The invitation row and the
    * outbox row commit together or neither does — roll back after a send and someone holds a working
    * invitation link to an organization that never issued one.

@@ -12,7 +12,7 @@ import styles from './access.module.css';
  * The Index's filter region (§4.6) — two facets, both written to the URL.
  *
  * There is no free-text search, and that is a decision rather than a gap: the collection is bounded
- * by the plan's seat entitlement, so an organization's whole list is a screenful or two, and the
+ * by the organization's seat ceiling, so an organization's whole list is a screenful or two, and the
  * two facets a reader actually asks by are "who can change things" and "who has not accepted yet".
  * A search box would be a third control earning its place only once a list outgrows the eye.
  *

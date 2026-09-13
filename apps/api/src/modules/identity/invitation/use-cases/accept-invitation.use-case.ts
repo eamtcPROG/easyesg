@@ -1,4 +1,10 @@
 import type { Clock } from '@api/contracts/clock.port';
+import type { SeatAllowance } from '@api/contracts/seat-allowance.port';
+import { withinSeatAllowance } from '@api/modules/identity/access/domain/seat-ceiling';
+import {
+  AcceptanceBeyondSeatAllowanceError,
+  SeatAllowanceUnavailableError,
+} from '@api/modules/identity/access/errors/seat.errors';
 import { emailIdentityKey } from '@api/modules/identity/account/domain/email-address';
 import {
   AUTH_ATTEMPT_LIMIT,
@@ -16,9 +22,11 @@ import {
   InvitationNotYoursError,
 } from '../errors/invitation.errors';
 import type { MembershipRole } from '@api/modules/identity/membership/models/membership.model';
-import type {
-  InvitationBearerStore,
-  MembershipGrantKind,
+import {
+  MEMBERSHIP_GRANT_KIND,
+  type InvitationBearerStore,
+  type InvitationBearerTransaction,
+  type MembershipGrantKind,
 } from '../interfaces/invitation-bearer-store.interface';
 
 export interface AcceptInvitationCommand {
@@ -84,10 +92,17 @@ export interface AcceptedInvitation {
  * compared so that a spent link tells the holder it is spent rather than telling them it was for
  * somebody else — two different sentences with two different resolutions, and the second would be
  * a false statement to a person who is in fact the invitee.
+ *
+ * **Task 142's seat ceiling is checked where a membership is created or restored, after the grant.**
+ * An invitation took its seat when it was sent, so an acceptance moves no count and an ordinary
+ * invitee at a full organization is admitted; the gate refuses only an organization already over its
+ * ceiling, which is one that lowered it since. Someone who was already a member creates nothing and is
+ * never refused — their acceptance frees a seat.
  */
 export class AcceptInvitation {
   constructor(
     private readonly store: InvitationBearerStore,
+    private readonly seats: SeatAllowance,
     private readonly now: Clock,
   ) {}
 
@@ -118,9 +133,11 @@ export class AcceptInvitation {
          * refusal spends the budget" is a property of one function rather than a rule each branch
          * has to remember — which is what the first version got wrong in the other direction.
          *
-         * It works only because nothing in this callback throws: a throw would roll the transaction
-         * back and take the row with it, which is the trap `apps/api/CLAUDE.md` records from task
-         * 21's sign-in and the reason `execute` returns an outcome and raises after the commit.
+         * It works only because no refusal that goes through here throws: a throw would roll the
+         * transaction back and take the row with it, which is the trap `apps/api/CLAUDE.md` records
+         * from task 21's sign-in and the reason `execute` returns an outcome and raises after the
+         * commit. The seat refusals below do throw, and do not come through here — see
+         * `admitWithinSeatAllowance` for why rolling back and spending nothing is right for them.
          */
         const refuse = async <T extends Exclude<Outcome, { kind: typeof OUTCOME.ACCEPTED }>>(
           outcome: T,
@@ -183,6 +200,10 @@ export class AcceptInvitation {
 
         const grant = await tx.grantMembership({ accountId: command.accountId, at: now });
 
+        if (grant.kind !== MEMBERSHIP_GRANT_KIND.ALREADY_MEMBER) {
+          await this.admitWithinSeatAllowance({ tx, organizationId: invitation.organizationId });
+        }
+
         // §12.5.6's task-26.2 row. Written even when they were `already_member`, because the
         // outcome S-03 promises — landing in this organization — is what the person clicked for,
         // and it is true of that case too.
@@ -214,5 +235,26 @@ export class AcceptInvitation {
     }
     if (outcome.kind === OUTCOME.ADDRESS_MISMATCH) throw new InvitationNotYoursError();
     return outcome.accepted;
+  }
+
+  /**
+   * Task 142's acceptance gate, run inside the transaction after the consume and the grant.
+   *
+   * **It throws, which every other refusal in this use case is careful not to**, and the difference
+   * is what each refusal must leave behind. The others must commit a throttle row, so they return an
+   * outcome. These must undo the consume and the grant — the invitation stays pending, so the same
+   * link works once a seat is freed — and they are not guesses, so they should cost the budget
+   * nothing. Throwing out of `run` does exactly that: the store rolls the whole transaction back and
+   * no attempt was ever recorded on this path.
+   */
+  private async admitWithinSeatAllowance(input: {
+    readonly tx: InvitationBearerTransaction;
+    readonly organizationId: string;
+  }): Promise<void> {
+    const allowance = await this.seats.allowanceFor({ organizationId: input.organizationId });
+    if (allowance === null) throw new SeatAllowanceUnavailableError();
+
+    const held = await input.tx.countSeatsHeld();
+    if (!withinSeatAllowance({ allowance, held })) throw new AcceptanceBeyondSeatAllowanceError();
   }
 }

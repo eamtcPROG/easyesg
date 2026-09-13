@@ -116,6 +116,12 @@
     },
     "report-not-editable": {
       "title": "Report locked"
+    },
+    "entitlement-quota-exceeded": {
+      "title": "Limit reached"
+    },
+    "seat-allowance-unavailable": {
+      "title": "Seats cannot be checked right now"
     }
   },
   "validation": {},
@@ -161,6 +167,11 @@
         "revoked": "An administrator of the organisation withdrew this invitation, so you have not been added. If that was a mistake, ask them to invite you again.",
         "unknown": "This link does not match any invitation, so you have not been added to an organisation. Check that you copied all of it from the email, or ask for a new invitation."
       }
+    },
+    "seats": {
+      "allowance_reached": "{limit, plural, =1 {The organisation’s only seat is taken} other {All # of the organisation’s seats are taken}}, so the invitation was not sent. A pending invitation holds a seat until it is accepted or withdrawn, even once its link has expired — withdraw an invitation or remove someone’s access, then send the invitation again.",
+      "acceptance_refused": "The organisation has no free seats left, so you have not been added, and your invitation is still valid. Ask an administrator of the organisation to free a seat, then open the link from the email again.",
+      "unavailable": "We could not check how many of the organisation’s seats are in use just now, so nothing was sent or changed. Try again in a few minutes."
     },
     "totp": {
       "reauthentication_failed": "The current password is not right, so the change was not made. Enter the password you sign in with now and try again.",

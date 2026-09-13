@@ -149,6 +149,44 @@ export async function grantMembership(input: {
 }
 
 /**
+ * Fills `count` seats in an organization with bare accounts holding active memberships (task 142), so
+ * S-16's seat region can be reached at and near its ceiling without registering a person per seat.
+ *
+ * The addresses start with `prefix`, so `cleanupAccounts` with the run's prefix removes them — and the
+ * memberships with them, by the cascade from the account. Accounts are unbound (the table carries no
+ * RLS); the memberships are inserted with the organization bound, for `grantMembership`'s reason.
+ * **Call it once per prefix**: a second call would try to give the same accounts a second membership.
+ */
+export async function seedSeatHolders(input: {
+  readonly organizationId: string;
+  readonly prefix: string;
+  readonly count: number;
+}): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `INSERT INTO identity.account (email, locale)
+       SELECT $1 || '-seat-' || n || '@example.md', 'ro' FROM generate_series(1, $2::int) AS n`,
+      [input.prefix, input.count],
+    );
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    await client.query(
+      `INSERT INTO identity.membership (account_id, organization_id, role)
+       SELECT a.id, $1, 'editor' FROM identity.account a WHERE a.email LIKE $2`,
+      [input.organizationId, `${input.prefix}-seat-%@example.md`],
+    );
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
  * Removes organizations this run created, by id, cascading their memberships.
  *
  * **It takes ids rather than finding them, and the first draft did not.** A

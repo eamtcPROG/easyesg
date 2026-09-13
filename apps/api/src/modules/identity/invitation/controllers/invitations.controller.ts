@@ -31,10 +31,11 @@ import { InvitationService } from '../services/invitation.service';
  * persistence answer is a status change, because FR-55 needs the record and no runtime role holds
  * `DELETE` on the table.
  *
- * **No entitlement gate, recorded rather than omitted** (`apps/api/CLAUDE.md`). UC-60's precondition
- * is available seat entitlement and UX-50 draws the quota path, but `EntitlementPort` has no
- * implementation until task 54 and `EntitlementGuard` does not exist — so an invitation beyond the
- * plan's allowance is issued. Closing it is one `@RequiresEntitlement('org.seats.max')` on `issue`.
+ * **UC-60's seat precondition is task 142's interim ceiling, not a guard.** `EntitlementPort` has no
+ * implementation until task 54, so `IssueInvitation` checks the configured `seat_allowance` through
+ * `SEAT_ALLOWANCE` — after its insert and under a per-organization lock — and refuses past it with the
+ * problem type task 54.2 will raise, which is what makes 54.2's swap a change of source rather than of
+ * this route (`architecture.md` §12.5.6's task-142 row).
  */
 @ApiTags('identity')
 @Controller('invitations')
@@ -47,7 +48,8 @@ export class InvitationsController {
     summary: 'List the active organization’s outstanding invitations',
     description:
       'The other half of "who can see our ESG data": people invited but not yet joined. ' +
-      'Unpaginated by design — the collection is bounded by the plan’s seat entitlement. An ' +
+      'Unpaginated by design — the collection is bounded by the organization’s seat ceiling, ' +
+      'which counts every invitation listed here. An ' +
       'invitation whose link has lapsed still appears, because it is what holds the invited ' +
       'address; resending it restores a working link.',
   })
@@ -92,7 +94,18 @@ export class InvitationsController {
       'The address already belongs to a member of this organization (problem type already-member), ' +
       'or an invitation to it is already outstanding (problem type invitation-outstanding) — ' +
       'resend or revoke that one instead. Two problem types rather than one, because the two have ' +
-      'different resolutions and a client should not have to read the wording to tell them apart.',
+      'different resolutions and a client should not have to read the wording to tell them apart. ' +
+      'Or every seat is taken (problem type entitlement-quota-exceeded, with limit and used members): ' +
+      'active members and pending invitations together, lapsed invitations included, have reached ' +
+      'the organization’s ceiling — withdraw an invitation or remove someone’s access first. An ' +
+      'address already outstanding is still reported as outstanding, even at the ceiling.',
+    content: { 'application/problem+json': {} },
+  })
+  @ApiResponse({
+    status: 503,
+    description:
+      'The seat ceiling cannot be read right now (problem type seat-allowance-unavailable), so no ' +
+      'invitation is sent until it can. Nothing was created; try again shortly.',
     content: { 'application/problem+json': {} },
   })
   @ApiResponse({

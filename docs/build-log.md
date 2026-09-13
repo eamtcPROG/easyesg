@@ -18425,3 +18425,228 @@ and breaks it only on a `C` cluster — the deployment the decision exists for a
 can be. Stated in the suite, in `apps/api/CLAUDE.md`'s new rule and in the register row rather than
 left for someone to discover. What stands in is that `collated()` is imported rather than
 remembered.
+
+## 142.1 — the seat ceiling enforced, and a race test that passed with its lock deleted · 2026-09-13
+
+Task 142 split into three sub-steps before any code — the API and the artefact, the two `packages/ui`
+components, S-16 — because each closes on its own gates, and the second has a scope (`pkg:ui`) the
+parent row does not name. This one ships `config/seed/seat-allowance.global.json`, `SEAT_ALLOWANCE` in
+`contracts/`, the issue gate, the acceptance gate and `GET /access/seats`.
+
+### Four unknowns, raised in one batch and closed by the owner
+
+The 12 Sep 2026 decisions said *what* the ceiling is; they did not say how many seats, what a lapsed
+invitation counts as, what an unreadable artefact does, or whether the scope is global. All four
+produce materially different work, so all four were asked before the first file, each with a
+recommendation, and all four recommendations were taken. They are written into §12.5.6's task-142
+row, AD-4's artefact table, FR-57's note, `use_cases.md` OQ-8 and S-16's states:
+
+- **10 seats, and not the Free plan's cap.** OQ-8 is a commercial decision the sources leave open; a
+  number seeded here would have closed it in passing had it been presented as the cap. It is an
+  operational bound at the figure the artboards already draw, and OQ-8's row now says it was not
+  closed.
+- **A lapsed invitation holds its seat.** This one was a contradiction inside the recorded decision
+  rather than a gap in it: the §12.5.6 row said *live pending* and also *the same union S-16
+  renders*, and S-16 renders lapsed invitations. Under a live-only count, lapsed rows pile up outside
+  the ceiling and the unpaginated `GET /invitations` justification — the claim the task exists to make
+  true — stays false. **The parent row in `task.md` still says *live-pending*, verbatim**, because the
+  file's split rule keeps a parent's description unchanged; 142.1's row carries the correction and
+  names where it was made.
+- **Fail closed** — `503 seat-allowance-unavailable` on both writes, `allowance: null` on the read.
+- **One `global` scope** — a per-organization override would be a second thing 54.2 must delete.
+
+### Decisions the code forced, recorded before they shipped
+
+- **The refusal is `entitlement-quota-exceeded`**, the type 54.2 will raise, with `limit` and `used`
+  extension members — so 54.2 changes no client, which is what S-16's *"what 54.2 changes is the source
+  of the allowance, not this screen"* requires. `409`, on `AlreadyMemberError`'s reading.
+- **Both gates check after their write, with one predicate.** `held <= allowance` after an issue's
+  insert admits the last seat and refuses one past it; after an acceptance it is unchanged, since a
+  counted invitation becomes a counted member. The obvious draft — `held + 1` at acceptance — refuses
+  every invitation accepted at a full organization, which is the invitee-punishing behaviour the
+  acceptance controller's docblock warned against. Checking the issue *after* the insert also keeps
+  an already-outstanding address refused as the collision, with its own way out.
+- **The issue count takes a transaction-scoped advisory lock per organization.** The collision row
+  accepts its race as benign; here the loser of the race is the one number the task makes true.
+- **Acceptance throws inside the bearer transaction**, where every other refusal there returns an
+  outcome. The others must commit a throttle row; this one must undo the consume and the grant and is
+  not a guess. The two port docblocks that said *nothing in this callback throws* were amended rather
+  than left false. The invitee's refusal carries no `limit` or `used` — a link is not a membership.
+
+### A mutation found a test that proved nothing
+
+The first lock test fired two invitations with `Promise.all` at the last seat and asserted
+`[201, 409]`. **With `holdSeatLock` deleted it passed five runs of five.** The first theory —
+`recordAuthAttempt`'s global prune `DELETE` serialising the two requests on stale rows' locks — was
+plausible and wrong: purging stale rows first, it passed five of five again. What serialises two
+near-simultaneous invitations on the request path was **not found**, and is recorded as unexplained
+rather than guessed at, because the test's job is not to explain the scheduler but to be independent
+of it.
+
+It was replaced with two `esg_app` transactions interleaved by hand, driving the real repository
+through `INVITATION_STORE` inside two request contexts: the first counts under the lock, the second's
+count must still be pending 500 ms later, and must see eleven once the first commits. **With the lock
+deleted it fails three runs of three** (`Received: 10`), and it passes with it.
+
+### Applied where it holds
+
+Searched for every membership write (`INSERT INTO identity.membership` under `src/`): the founding
+store and the bearer grant are the only two; founding takes the first seat of an empty organization
+and needs no check, which §12.5.6 now says. Searched for the deferral's prose — *no entitlement gate*
+and `@RequiresEntitlement('org.seats.max')` — and amended it in `issue-invitation.use-case.ts`,
+`invitations.controller.ts`, `apps/api/CLAUDE.md` and `invitation-acceptance.controller.ts`, whose
+docblock stated a rule the 12 Sep decision had already reversed. `message-content.spec.ts` claimed
+*the only `DomainError` carrying params*; there are two now.
+
+### Verification
+
+`pnpm --filter @easyesg/i18n test`, `pnpm --filter @easyesg/api test` (794), `pnpm e2e` (38 suites,
+910) and `pnpm e2e:worker` green — the worker run because this sub-step rewired two modules' imports,
+the class of change that once kept `MODE=worker` from starting. `pnpm openapi:check` is red and only
+for the reason it must be before a commit: its `git diff --exit-code` sees the regenerated
+`/access/seats` path and DTO, which is the change. `pnpm lint`, the api and web typechecks and
+`pnpm docs:check` green — the last after correcting the root file's seed count and path count.
+**`pnpm e2e:web` skipped**: no browser journey reaches this sub-step until 142.3 renders the region.
+
+Skills read against the diff: `nestjs-best-practices` — no circular import (`identity/invitation`
+imports `identity/access`, never the reverse), `SEAT_ALLOWANCE` provided once and exported, the issue
+count on the request's transaction. `one-idea-per-file` — `seat.errors.ts` is a vocabulary and stays
+whole; one docblock counted its callers and now names them. No review agents at a sub-step; they run
+at the parent close.
+
+## 142.2 — the entitlement gate and the usage counter · 2026-09-13
+
+§11.5 lists the *Entitlement gate* and `packages/ui` had none; the counter UX-52 wants the warning
+shown *against* is drawn on S-13, S-16 and S-17 and was in no inventory row. **Two components rather
+than one with a mode**, on UX-89's test: the counter is a line beside an action before it is pressed,
+the gate is a block after, and their anatomies share nothing but a colour. §11.5 gains the counter's
+row in the same change.
+
+- **The gate's `actions` is required and nullable**, `Callout`'s shape: the path is deferred for S-16's seat block while no
+  plan exists (recorded on FR-102 at the parent close — UX-50 does not itself permit its absence),
+  and an optional prop would let a screen that has a path forget it without a trace.
+- **The meter is an SVG `rect` whose width is an attribute**, because this package writes no inline
+  styles, and it is `aria-hidden` because the caller's figure beside it is the value.
+- **Type roles are classes, never restated literals** — task 152's finding about the `body` role,
+  not repeated in two new stylesheets.
+- **No new contrast pairing**: the counter's marked text is `--text-body` on the attention tint, which
+  `tokens.spec.ts` already measures as the callout body, and every gate text sits on
+  `--surface-default` in pairings already listed.
+
+Skills read against the diff. `vercel-composition-patterns`: no boolean prop (standing is a
+vocabulary in a directive-free sibling module), slots are nodes rather than render props, and
+**compound components were considered for the gate and declined** — UX-50 fixes the order of its four
+parts, and composable parts are exactly what would let a caller reorder or drop one. `one-idea-per-
+file`: `meterExtent` stays beside the gate with its own spec cases, on this package's precedent
+(`nextSort`, `periodRangeIsOrdered`), and a docblock that counted the artboards now names them.
+
+`pnpm --filter @easyesg/ui test` (27 files, 267) and typecheck, `@easyesg/web` (45, 537) and
+`@easyesg/admin` unit suites, `pnpm lint` and `pnpm docs:check` green. docs:check failed first on the
+six counts this change moved in `packages/ui/CLAUDE.md` — and on the root file's seed-artefact claim,
+whose pattern spelled *since task 33.1* into the regex, so a new artefact broke the entry rather than
+the claim; the pattern now matches the task as a shape. **`pnpm e2e:web` skipped**: nothing renders
+either component until 142.3.
+
+## 142.3 — S-16's seat region · 2026-09-13
+
+The counter sits at the end of the heading row, as the artboard places it; the invite panel draws one
+of three arms — the form, the entitlement gate at the ceiling, or a notice that invitations are paused
+where the ceiling cannot be read. `readOrganizationAccess` adds `GET /access/seats` to its
+`Promise.all`, all or nothing, on the administrator count's reason: which control the panel offers
+depends on it.
+
+- **The seat region is computed once, in the section** (`seatRegion`, pure, with its spec), and read
+  by both the counter and the panel through the provider — `section-compute-once`, so the two can
+  never disagree about whether the organization is full. It is a union rather than a nullable limit,
+  on `AccessRow`'s reason.
+- **At the ceiling the form is not offered rather than disabled**, which is `isLastAdministrator`'s
+  rule applied to seats; the API's refusal stays authoritative, since another tab can take the last
+  seat between render and press.
+- **The panel was one component holding a form; it is now four files** — `InviteMember` chooses the
+  arm and keeps the heading and the notice, `InviteForm` is the form it was, `SeatsFull` and
+  `InvitationsPaused` are the other two arms (`file-one-idea`).
+- Copy in three locales, RO the source and formal: *"Locuri ocupate: 9 din 10 · a mai rămas un loc"*
+  carries the standing in words, since `UsageCounter` marks the row and owns no text. No plan is named.
+
+Skills against the diff. `vercel-react-best-practices`: `async-parallel` (the third call joins the
+existing `Promise.all`), `server-serialization` (the region crossing into the client provider is four
+primitives), `rendering-conditional-render`; `bundle-barrel-imports` declined — `@easyesg/ui` is this
+repository's one import path for the inventory, and its vocabularies are directive-free modules
+exported directly. `one-kind-per-folder`: `folder-files-or-folders` holds; **`components-mirror-the-return`
+does not**, and did not before — S-16's `components/` was a flat folder and this task added four files
+to it. Reshaping it is a move with its own risks (`move-grep-the-mocks`), so it was spawned as a
+separate follow-up rather than folded in.
+
+Web unit suite (47 files, 547) including `seats.spec.ts` and `invite-member.spec.tsx` — the second
+reaching the paused arm, which no browser journey can provoke without breaking the store under a
+running stack. The browser journey ran inside the parent's `gates:clean`.
+
+## Task 142 closes — the parent close, and two checks that could not fail · 2026-09-13
+
+### The gate set, cold, and why cold
+
+`gates:clean` rather than `gates`: the diff reaches `packages/*` (`ui`, `i18n`, `contracts`), a
+generated artefact (the contract) and a seed — three of the five cases the root file names. **The
+first run went red at `docs:check`**: splitting the invite panel moved `apps/web/CLAUDE.md`'s count of
+Client Components from 69 to 72, which no sub-step's run had reached. The second run was green
+end to end — lint, `eslint:prove`, typecheck, `image:check`, `docs:check`, the unit suites (api 794,
+web 547, ui 267), boundaries and their proof, build, `openapi:check`, `facade:check`, `routes:check`,
+`migrations:check` (56), **`pnpm e2e` (38 suites, 910), `pnpm e2e:worker` and `pnpm e2e:web`
+(182 passed)** — the three runs that prove the HTTP entrypoint, the worker and both front ends boot
+and serve. Its log was read for runtime errors rather than only for a green summary: the one `ERROR`
+line is `problem-details.filter.spec.ts`'s deliberate leak fixture.
+
+**`openapi:check` needs the regenerated contract staged before a commit exists**, because its
+`git diff --exit-code` compares the working tree with the index. The two generated files were staged,
+not committed — the only way the chain can run past that gate on an uncommitted task.
+
+### Three reviews on `opus` — eleven findings, all applied or declined with a reason
+
+**Spec review, six.** None changed behaviour; every one was a record missing or wrong, which is the
+shape this agent exists to find. The §12.5.6 task-142 row gained points (a)–(e): the invitee's refusal
+carries no head count; **the upgrade path is a deferral of FR-102, not something UX-50 permits** — an
+attribution that began in S-16's own 12 Sep sentence and that this task had turned into a component
+contract, now corrected in S-16, §11.5, FR-102 and UC-150; **what task 54.2's swap owes is recorded
+as a deferral** — AD-5's null implementation grants everything and an unreachable billing context
+allows granted keys, neither of which this port's `null` can express, so *"no call site moves"* holds
+for a numeric ceiling only; S-17's metered *active users* disagrees with S-16's definition of a seat,
+named in both places; and the hashed lock key, AD-7's objection, is benign here. FR-11 and UC-15 gained
+the acceptance refusal, task 54.2's row now lists what it deletes, and S-16's partial arm says which
+failure it is.
+
+**Convention review, three.** *"The plan's seat entitlement"* survived at six sites — two of them
+published OpenAPI descriptions, regenerated — because 142.1's sweep had searched for the deferral's
+wording and not the bound's; the `/access` reads now state why they carry no entitlement key; and nine
+docblocks counted things outside their own file, the rule both sub-step entries had applied once each.
+Of the unruled notes, the stacked docblocks and the hand-listed `KnownSeatStanding` were fixed (it is
+now `Exclude<…>`, with `SeatCounter`'s switch exhaustive by type); **`UsageCounter.action` stays
+optional** — the counter's link is a convenience, and the path UX-50 means belongs to the gate — and
+`AccessService`'s organization-or-throw stays a second copy, two readers not earning a shared helper.
+
+**Gate-integrity review, two — both proven, both fixed, both re-proven.**
+
+- **Test 1's "agreeing with the list" could not see the rows where a count and a union differ.** It
+  ran first, so no removed member or spent invitation existed; a count including removed members left
+  it green, and only test order elsewhere noticed. It now seeds a removed member, a revoked invitation
+  and an accepted one beside the seat holders — **with removed members counted it fails on its own.**
+- **`usage-counter.spec.tsx` compared `data-standing` against the constant while the stylesheet selects
+  the literal**, so renaming a value changed both sides and the marked row vanished with five of five
+  green. It asserts the literals now — **renamed to `'nearing'`, one of five fails** — which is the
+  root file's case for a test pinning `'active'`.
+
+Also taken from its unruled notes: test 4's first refusal now asserts its problem type. Left: a
+redundant arithmetic case in `seat-ceiling.spec.ts`, and that `pnpm e2e:web` does not seed — a dev
+database seeded before the artefact existed shows S-16's paused arm and fails the journey loudly, the
+same dependency the entity and period journeys already have.
+
+**One collision worth keeping.** The gate-integrity agent proves its findings by mutating the working
+tree, and a `docs:check` run in parallel went red on one of its probes and passed on the rerun. Local
+checks wait for that agent to finish.
+
+### After the reviews
+
+The edits after the green `gates:clean` were records, docblocks, two contract descriptions and three
+test fixes, plus the exhaustive switch. Re-run over them: typecheck, lint, `docs:check`,
+`openapi:check`, the api, web and ui unit suites, and the seats e2e suite. **Not re-run: the full
+`pnpm e2e` and `pnpm e2e:web`** — no runtime path changed, and the one runtime-shaped edit, the switch,
+is covered by the web unit suite. Stated so the judgement is visible rather than implied.

@@ -14,6 +14,7 @@ import {
   type AccessRow,
   type AccessPage,
 } from '../tools/access';
+import { seatRegion } from '../tools/seats';
 import { resendInvitationAction } from '../actions/actions';
 import { AccessBoard } from './access-board';
 import { AccessProvider } from './access-context';
@@ -142,7 +143,12 @@ const board = (given: readonly AccessRow[] = rows()) => (
     timeZone={TIME_ZONE}
     messages={{ organization: ro.organization, chrome: ro.chrome, identity: ro.identity }}
   >
-    <AccessProvider page={pageOf(given)} view={DEFAULT_ACCESS_VIEW} inviteAnchorId="invite">
+    <AccessProvider
+      page={pageOf(given)}
+      view={DEFAULT_ACCESS_VIEW}
+      seats={seatRegion({ allowance: 10, used: given.length })}
+      inviteAnchorId="invite"
+    >
       <AccessBoard />
     </AccessProvider>
   </NextIntlClientProvider>
@@ -311,6 +317,7 @@ describe('AccessBoard · the two empty states', () => {
         <AccessProvider
           page={{ ...pageOf(given), rows: [], matched: 0 }}
           view={DEFAULT_ACCESS_VIEW}
+          seats={seatRegion({ allowance: 10, used: given.length })}
           inviteAnchorId="invite"
         >
           <AccessBoard />

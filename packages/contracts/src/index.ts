@@ -85,6 +85,11 @@ export type Member = components['schemas']['MemberResponseDto'];
 export type ChangeMemberRoleRequest = components['schemas']['ChangeMemberRoleRequestDto'];
 export type AccountMembership = components['schemas']['AccountMembershipResponseDto'];
 
+// identity — S-16's seat region (task 142): the interim ceiling and the seats held against it.
+// `allowance` is null where the ceiling cannot be read, which the screen draws as a count it cannot
+// show; task 54.2 changes where the number comes from and not this shape.
+export type SeatConsumption = components['schemas']['SeatConsumptionResponseDto'];
+
 // identity — invitations (FR-11, FR-57; tasks 26.1, 26.2). Two audiences on one resource, which is
 // why the shapes do not overlap: `Invitation` is a row on the administrator's list, read with a
 // tenant bound; the preview and acceptance shapes belong to the **bearer** of a link, who may hold

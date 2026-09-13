@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { collated } from '../collation';
 import { TenantRepository } from '../tenant-repository';
+import { countSeatsHeld } from './seat.queries';
 import { MEMBERSHIP_STATUS, type MembershipRole } from '@api/modules/identity/membership/models/membership.model';
 import { INVITATION_STATUS } from '@api/modules/identity/invitation/models/invitation.model';
 import type { AccessStore } from '@api/modules/identity/access/interfaces/access-store.interface';
@@ -183,6 +184,11 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
     );
 
     return { rows: rows.map(toAccessRow), matched: counts.matched, total: counts.total };
+  }
+
+  /** Task 142, on the request's runner — the shared statement, never a second spelling of the union. */
+  countSeatsHeld(): Promise<number> {
+    return countSeatsHeld(this.runner);
   }
 }
 

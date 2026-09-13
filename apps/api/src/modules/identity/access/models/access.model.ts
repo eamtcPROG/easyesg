@@ -8,7 +8,7 @@ import { MEMBERSHIP_ROLE, type MembershipRole } from '@api/modules/identity/memb
  * union belongs in a read model. Until now that read model lived in `apps/web`: the browser tier
  * fetched `GET /members` and `GET /invitations` whole and did the filter, the sort and the page
  * arithmetic in a Server Component. That works and is what shipped — the collection is bounded by
- * the plan's seat entitlement — but it cannot be made server-side by adding parameters to the two
+ * the organization's seat ceiling — but it cannot be made server-side by adding parameters to the two
  * endpoints, because **page 2 of members unioned with page 2 of invitations is not page 2 of the
  * union**, and a sort spanning both cannot be resolved from two separately-ordered responses.
  *

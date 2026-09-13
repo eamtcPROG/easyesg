@@ -97,11 +97,15 @@ export interface InvitationBearerTransaction {
    * the same `identity.auth_attempt` table and the one shared implementation, so the three paths
    * cannot drift on what an attempt is.
    *
-   * **They run inside this transaction on purpose, and that only works because nothing in the
-   * acceptance throws.** `apps/api/CLAUDE.md` records the trap from task 21: a use case that throws
-   * inside its own `run` rolls back the very counters the throttle requires, so a refusal would
-   * cost the caller nothing and the limit would never bite. `AcceptInvitation` therefore returns an
-   * outcome and throws after the commit, exactly as `RequestPasswordReset` does.
+   * **They run inside this transaction on purpose, and that only works because no refusal that must
+   * spend the budget throws.** `apps/api/CLAUDE.md` records the trap from task 21: a use case that
+   * throws inside its own `run` rolls back the very counters the throttle requires, so a refusal
+   * would cost the caller nothing and the limit would never bite. `AcceptInvitation` therefore
+   * returns an outcome and throws after the commit, exactly as `RequestPasswordReset` does. **Task
+   * 142's seat refusals — `AcceptanceBeyondSeatAllowanceError` and `SeatAllowanceUnavailableError` —
+   * are the exception, and they throw on purpose**: they arrive after the
+   * consume and the grant, which must be undone, and they are not guesses — so a rollback that takes
+   * nothing from the budget is the behaviour wanted, not the trap.
    */
   countRecentAuthAttempts(key: string, since: Date): Promise<number>;
 
@@ -139,6 +143,16 @@ export interface InvitationBearerTransaction {
     readonly accountId: string;
     readonly at: Date;
   }): Promise<MembershipGranted>;
+
+  /**
+   * Seats the resolved invitation's organization holds with this transaction's writes counted —
+   * active members plus every pending invitation, lapsed included (task 142).
+   *
+   * **No lock, unlike the issuing store's.** An acceptance converts a counted invitation into a
+   * counted member and never raises the count, so it has no race to serialise against; the lock
+   * exists for writes that take a seat, and this is not one.
+   */
+  countSeatsHeld(): Promise<number>;
 
   /**
    * Points the session at the organization just joined (§12.5.6's task-26.2 row), so S-03's exit —

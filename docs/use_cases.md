@@ -693,7 +693,7 @@ their numbers put them.
   1. The invited person opens the link.
   2. They either create an account — by password or social provider — or link an existing one.
   3. On acceptance they gain the role the inviting Organization Administrator assigned, edit or view-only, scoped to that organization's reports.
-- **Exception flows:** Invitations are single-use and expire if unaccepted; a revoked invitation's link is invalid immediately (UC-61).
+- **Exception flows:** Invitations are single-use and expire if unaccepted; a revoked invitation's link is invalid immediately (UC-61). **Added 13 Sep 2026 (task 142):** acceptance is refused, and the invitation left pending, where the organization is already over its seat ceiling or the ceiling cannot be read (FR-11's note).
 - **Business rules:** The invitation binds to the invited email address, so a social sign-in is accepted only where the provider asserts that same address.
 - **Related FRs:** FR-11
 - **Related UCs:** UC-01, UC-02, UC-60, UC-61
@@ -2512,6 +2512,7 @@ their numbers put them.
   3. The system offers the upgrade path.
 - **Business rules:** Reporting work already in progress is never lost to a quota block, and a report already started can always be finished and exported.
 - **Related FRs:** FR-102
+- **Note (13 Sep 2026, task 142):** the interim seat ceiling's block offers no upgrade path while no plan exists to upgrade to — step 3 deferred for that ceiling, recorded on FR-102.
 - **Related UCs:** UC-60, UC-100, UC-148
 
 ### UC-151 — Apply the downgrade data-retention rule
@@ -3349,7 +3350,7 @@ Legacy forward-looking entries UC-17 … UC-24 of that document are not carried 
 | OQ-5 | **Closed 18 Aug 2026.** UC-172 … UC-174 and FR-160 … FR-173 now have non-functional counterparts: **NFR-106 … NFR-109**, ratified into `non_functional_requirements.md` §4.16 — dispatch p95 ≤ 60 s; exponential retry bounded at 24 h with suppression on first hard bounce; ≥ 99% accepted transactional-mail delivery, SPF/DKIM/DMARC-aligned; delivery records retained for organization life + 1 year. | Note closing the functional register | Resolved. Also closed in `functional_requirements.md` OQ-3, `non_functional_requirements.md` OQ-13, `architecture.md` OQ-2 and `design_spec.md` OQ-11. |
 | OQ-6 | **Closed 18 Aug 2026 — no change, deliberately.** UC-48 stays under Traceability and UC-108/UC-109 stay in one module. | This consolidation | Closed as *won't fix*, not as *done*. Modules carry no system, permission or build meaning — they are a reading aid — so regrouping would be a change to the source rather than a consolidation of it, and would break every citation that locates a use case by module for no functional gain. Recorded here so a future reader does not re-raise it as an oversight. |
 | OQ-7 | The MIA per-transaction ceiling (~5,000 MDL) and the commission-free monthly threshold (10,000 MDL) are National Bank parameters that move. UC-120 reads the limit from configuration, but the source does not name who owns the value or on what cadence it is reviewed. | D-8, 6.2 | Open — an operational ownership question, not a design gap. |
-| OQ-8 | Free plan seat cap and Standard plan quota values are described qualitatively ("a capped number of users", "higher user and export quotas") but no numbers are fixed anywhere in the source set. Also logged in `problem_overview.md` OQ-8. | D-12, UC-60, UC-90 | Open — a commercial decision to be recorded against UC-90 when taken. |
+| OQ-8 | Free plan seat cap and Standard plan quota values are described qualitatively ("a capped number of users", "higher user and export quotas") but no numbers are fixed anywhere in the source set. Also logged in `problem_overview.md` OQ-8. | D-12, UC-60, UC-90 | Open — a commercial decision to be recorded against UC-90 when taken. **Not closed by task 142 (13 Sep 2026):** its interim seat ceiling of 10 is an operational bound in the configuration store until the entitlement service exists (`architecture.md` §12.5.6), and it states no Free plan cap. |
 
 ---
 

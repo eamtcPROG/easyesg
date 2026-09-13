@@ -171,3 +171,11 @@ export {
   type SaveState,
   type SaveStateIndicatorProps,
 } from './domain/save-state-indicator';
+// §6.10's two, added by task 142: the counter beside an action and the gate after a refused one.
+export { USAGE_STANDING, type UsageStanding } from './domain/usage-counter-vocabulary';
+export { UsageCounter, type UsageCounterProps } from './domain/usage-counter';
+export {
+  EntitlementGate,
+  meterExtent,
+  type EntitlementGateProps,
+} from './domain/entitlement-gate';

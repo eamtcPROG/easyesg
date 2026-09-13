@@ -5,10 +5,12 @@ import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { readAccessView } from '../tools/access';
+import { seatRegion } from '../tools/seats';
 import { AccessBoard } from './access-board';
 import { AccessProvider } from './access-context';
 import { ACCESS_MESSAGES } from './access-messages';
 import { InviteMember } from './invite-member';
+import { SeatCounter } from './seat-counter';
 import styles from './access.module.css';
 
 /** The invite panel's heading, so the first-use empty state can send a reader straight to it. */
@@ -24,7 +26,10 @@ const INVITE_ANCHOR = 'invite-a-colleague';
  * statement that filters and orders on it. **One provider over BOTH regions** (28 Aug 2026): it
  * used to sit inside `AccessBoard`, which left the invite panel holding an outcome of its own that
  * nothing else could clear. The screen holds one notice; each region renders it only when it is
- * theirs.
+ * theirs. **The seat region is computed here, once** (task 142): the counter beside the heading and
+ * the invite panel's arm read the same value, so they cannot disagree about whether the organization
+ * is full — and the counter renders only on the ready arm, since a refused or failed read has no
+ * count to state.
  */
 export async function AccessSection({
   searchParams,
@@ -35,6 +40,7 @@ export async function AccessSection({
   const [read, t] = await Promise.all([readOrganizationAccess(view), getTranslations(ACCESS_MESSAGES)]);
 
   let body: ReactNode;
+  let counter: ReactNode = null;
   if (read.status === ACCESS_READ.FORBIDDEN) {
     body = (
       <Callout
@@ -60,8 +66,10 @@ export async function AccessSection({
       </Callout>
     );
   } else {
+    const seats = seatRegion(read.seats);
+    counter = <SeatCounter region={seats} />;
     body = (
-      <AccessProvider page={read.page} view={view} inviteAnchorId={INVITE_ANCHOR}>
+      <AccessProvider page={read.page} view={view} seats={seats} inviteAnchorId={INVITE_ANCHOR}>
         <AccessBoard />
         <InviteMember id={INVITE_ANCHOR} />
       </AccessProvider>
@@ -70,10 +78,13 @@ export async function AccessSection({
 
   return (
     <div className={styles.screen}>
-      <hgroup>
-        <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-        <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-      </hgroup>
+      <div className={styles.header}>
+        <hgroup>
+          <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
+          <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
+        </hgroup>
+        {counter}
+      </div>
       {body}
     </div>
   );

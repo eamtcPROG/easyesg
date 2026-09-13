@@ -178,6 +178,9 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // necessarily so: it publishes exactly the rows `GET /members` and `GET /invitations` publish, so
   // a weaker gate here would be a way around both.
   'GET /access': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  // The seats that union holds, against the ceiling (task 142). Its halves' permission for its
+  // halves' reason: the count is of exactly the rows the list above publishes.
+  'GET /access/seats': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'GET /members': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'PATCH /members/:membershipId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'DELETE /members/:membershipId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,

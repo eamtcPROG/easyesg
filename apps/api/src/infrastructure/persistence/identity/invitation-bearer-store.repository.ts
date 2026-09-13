@@ -21,6 +21,7 @@ import {
 } from '@api/modules/identity/membership/models/membership.model';
 import { CORE_DATA_SOURCE } from '../data-source';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
+import { countSeatsHeld } from './seat.queries';
 
 interface BearerInvitationRow {
   id: string;
@@ -224,6 +225,17 @@ class BearerTransaction implements InvitationBearerTransaction {
       [row.id, invitation.role, MEMBERSHIP_STATUS.ACTIVE, input.at],
     );
     return { kind: MEMBERSHIP_GRANT_KIND.REACTIVATED, role: invitation.role };
+  }
+
+  /**
+   * Task 142's acceptance gate. Binds the invitation's own organization before counting, for the
+   * reason every write here does: nothing may depend on another method having run first — and here
+   * an unbound context would not fail but count **zero**, which reads as an empty organization and
+   * admits everything.
+   */
+  async countSeatsHeld(): Promise<number> {
+    await this.bindResolvedOrganization();
+    return countSeatsHeld(this.runner);
   }
 
   /** §12.5.6's window, through the one shared implementation the other two stores use. */

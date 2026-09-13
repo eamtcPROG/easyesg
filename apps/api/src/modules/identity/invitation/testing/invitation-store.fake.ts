@@ -144,6 +144,17 @@ export class FakeInvitationStore implements InvitationStore {
     return Promise.resolve('Alpha SRL');
   }
 
+  /**
+   * Task 142's count: `members` plus every `pending` row, **lapsed ones included** — the rule the SQL
+   * states, modelled rather than canned so a spec at the ceiling fills it the way production does.
+   * The lock is modelled as nothing: a fake has one caller at a time, and the race it serialises is
+   * the e2e's to prove.
+   */
+  countSeatsHeldUnderLock(): Promise<number> {
+    const pending = this.rows.filter((row) => row.status === INVITATION_STATUS.PENDING).length;
+    return Promise.resolve(this.members.length + pending);
+  }
+
   emit(effect: EmittedEffect): Promise<void> {
     this.emitted.push(effect);
     return Promise.resolve();

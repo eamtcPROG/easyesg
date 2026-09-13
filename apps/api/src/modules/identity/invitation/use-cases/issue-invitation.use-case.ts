@@ -1,5 +1,11 @@
 import type { Locale } from '@easyesg/i18n';
 import type { Clock } from '@api/contracts/clock.port';
+import type { SeatAllowance } from '@api/contracts/seat-allowance.port';
+import { withinSeatAllowance } from '@api/modules/identity/access/domain/seat-ceiling';
+import {
+  SeatAllowanceReachedError,
+  SeatAllowanceUnavailableError,
+} from '@api/modules/identity/access/errors/seat.errors';
 import {
   admitAuthAttempt,
   invitationMailThrottleKey,
@@ -23,14 +29,16 @@ export interface IssueInvitationCommand {
    */
   readonly inviterLocale: Locale;
   /**
-   * The organization this invitation belongs to, for task 141's amplification key **only**.
+   * The organization this invitation belongs to, for task 141's amplification key and task 142's
+   * seat-allowance query **only**.
    *
    * **It is not a tenancy input and must never become one.** RLS scopes every statement this use
    * case runs, and `InvitationStore`'s own header states the rule it is answering: *"nothing below
    * takes an organization id, and that absence is the tenancy model working."* No store method
-   * gains one here — the value is read by `invitationMailThrottleKey` and by nothing else, and it
-   * arrives from `AuthGuard`'s membership lookup through `InvitationService`, which is AD-2's own
-   * source rather than a second one.
+   * gains one here — the value is read by `invitationMailThrottleKey` and by `SeatAllowance`, whose
+   * configured source ignores it and whose task-54.2 source is keyed by it, and it arrives from
+   * `AuthGuard`'s membership lookup through `InvitationService`, which is AD-2's own source rather
+   * than a second one.
    *
    * Why the key needs it: an address-only key would let one tenant's invitations exhaust another
    * tenant's budget for the same person, which turns a privacy control into a cross-tenant denial
@@ -57,14 +65,18 @@ export interface IssueInvitationCommand {
  * **No `run()` and no transaction of its own.** Every statement below is on the request's
  * `QueryRunner`, so the invitation row and the outbox row commit with the request or not at all.
  *
- * **No entitlement gate**, and that is a recorded deferral rather than an omission: UC-60's
- * precondition is seat entitlement and UX-50 draws the quota path, but `EntitlementPort` has no
- * implementation until task 54 and `EntitlementGuard` does not exist. What closes it is one
- * `@RequiresEntitlement('org.seats.max')` on the route.
+ * **UC-60's seat precondition is task 142's interim ceiling**, not an entitlement: `EntitlementPort`
+ * has no implementation until task 54, so the allowance comes through `SeatAllowance` and task 54.2
+ * swaps its source without touching this file (`architecture.md` §12.5.6's task-142 row). Two
+ * orderings in `execute` are the decision rather than taste — the ceiling is read before anything is
+ * written, so an unreadable one refuses cleanly, and it is **checked after the insert**, so an address
+ * already outstanding is still refused as the collision it is, with its own way out, rather than as
+ * a full organization.
  */
 export class IssueInvitation {
   constructor(
     private readonly store: InvitationStore,
+    private readonly seats: SeatAllowance,
     private readonly now: Clock,
   ) {}
 
@@ -103,6 +115,11 @@ export class IssueInvitation {
     // rule in the one place `esg_app` cannot be made to see it fail.
     if (await this.store.hasActiveMemberWithEmail(invitedEmail)) throw new AlreadyMemberError();
 
+    // Task 142: the ceiling, read before anything is written. Null is fail-closed (§12.5.6) — an
+    // unreadable ceiling refuses rather than admitting a write past a number nobody can see.
+    const allowance = await this.seats.allowanceFor({ organizationId: command.organizationId });
+    if (allowance === null) throw new SeatAllowanceUnavailableError();
+
     // FR-169, resolved here and stored, so every resend of this invitation speaks the same language
     // and the worker needs no fallback of its own (§12.5.6, task 26.1).
     const locale = (await this.store.findAccountLocale(invitedEmail)) ?? command.inviterLocale;
@@ -119,6 +136,15 @@ export class IssueInvitation {
       tokenHash: token.hash,
       expiresAt: token.expiresAt,
     });
+
+    // Task 142's gate, after the insert and under the organization's seat lock, so the count includes
+    // this invitation and no simultaneous one can slip past it. A refusal throws out of the request
+    // transaction and takes the row, the throttle attempt and — because the email is emitted below —
+    // no outbox row with it: a refused invitation sends nothing and costs nothing.
+    const held = await this.store.countSeatsHeldUnderLock();
+    if (!withinSeatAllowance({ allowance, held })) {
+      throw new SeatAllowanceReachedError({ limit: allowance, used: held - 1 });
+    }
 
     await emitInvitationEmail(this.store, invitation, token.value);
 

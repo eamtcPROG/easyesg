@@ -4,6 +4,11 @@ import { INVITATION_ISSUED } from '../constants/invitation.constants';
 import { INVITATION_TOKEN_TTL_MS } from '../domain/invitation-token';
 import { AlreadyMemberError, InvitationAlreadyPendingError } from '../errors/invitation.errors';
 import { INVITATION_STATUS, INVITED_ROLE } from '../models/invitation.model';
+import {
+  SeatAllowanceReachedError,
+  SeatAllowanceUnavailableError,
+} from '@api/modules/identity/access/errors/seat.errors';
+import { FakeSeatAllowance } from '@api/modules/identity/access/testing/seat-allowance.fake';
 import { FakeInvitationStore, invitation } from '../testing/invitation-store.fake';
 import { ResendInvitation } from './resend-invitation.use-case';
 import { IssueInvitation } from './issue-invitation.use-case';
@@ -17,6 +22,12 @@ import { IssueInvitation } from './issue-invitation.use-case';
 const ORGANIZATION = '01920000-0000-7000-8000-0000000000a1';
 
 /**
+ * A ceiling no case outside task 142's own reaches, so the specs that are about something else are
+ * not quietly also about seats. The seat cases below construct their own.
+ */
+const ROOMY = 100;
+
+/**
  * UC-60 with no database, no broker and no HTTP — CLAUDE.md's check that the dependencies point
  * inward. Three closures and a fake are the whole harness.
  */
@@ -24,7 +35,7 @@ describe('IssueInvitation (UC-60, FR-57)', () => {
   const NOW = new Date('2026-08-25T09:00:00Z');
 
   const issueWith = (store: FakeInvitationStore) =>
-    new IssueInvitation(store, () => NOW);
+    new IssueInvitation(store, new FakeSeatAllowance(ROOMY), () => NOW);
 
   it('issues a pending invitation at the requested role and emails it', async () => {
     const store = new FakeInvitationStore();
@@ -194,7 +205,8 @@ describe('IssueInvitation · the mail-amplifier window (task 141)', () => {
   const OTHER_ORGANIZATION = '01920000-0000-7000-8000-0000000000a2';
   const NOW = new Date('2026-08-25T09:00:00Z');
 
-  const issueWith = (store: FakeInvitationStore) => new IssueInvitation(store, () => NOW);
+  const issueWith = (store: FakeInvitationStore) =>
+    new IssueInvitation(store, new FakeSeatAllowance(ROOMY), () => NOW);
 
   const issueTo = (
     store: FakeInvitationStore,
@@ -283,5 +295,101 @@ describe('IssueInvitation · the mail-amplifier window (task 141)', () => {
     );
     expect(store.attempts).toHaveLength(1);
     expect(store.emitted).toHaveLength(0);
+  });
+});
+
+/**
+ * UC-60's seat precondition, as task 142's interim ceiling (`architecture.md` §12.5.6's task-142 row).
+ *
+ * The fake counts what the SQL counts — its `members` plus every pending row, lapsed included — so
+ * these fill the organization the way production does. What it cannot model is the request's
+ * rollback or the seat lock; `test/seats.e2e-spec.ts` owns both.
+ */
+describe('IssueInvitation · the interim seat ceiling (task 142)', () => {
+  const NOW = new Date('2026-08-25T09:00:00Z');
+  const CEILING = 10;
+
+  const issue = (input: {
+    store: FakeInvitationStore;
+    seats?: FakeSeatAllowance;
+    email?: string;
+  }) =>
+    new IssueInvitation(input.store, input.seats ?? new FakeSeatAllowance(CEILING), () => NOW).execute({
+      email: input.email ?? 'newcomer@example.md',
+      role: INVITED_ROLE.EDITOR,
+      inviterLocale: SOURCE_LOCALE,
+      organizationId: ORGANIZATION,
+    });
+
+  const members = (count: number): string[] =>
+    Array.from({ length: count }, (_, index) => `member-${index}@example.md`);
+
+  it('admits the invitation that takes the last seat', async () => {
+    const store = new FakeInvitationStore([], {}, members(CEILING - 1));
+
+    await expect(issue({ store })).resolves.toMatchObject({ status: INVITATION_STATUS.PENDING });
+    expect(store.emitted).toHaveLength(1);
+  });
+
+  /**
+   * UX-50's first three values, as the problem document carries them: the limit and what holds it.
+   * `used` is the organization's count **without** the refused invitation, because the refusal rolls
+   * that row back — reporting eleven of ten would describe a state that never commits.
+   */
+  it('refuses the invitation one past it, stating the limit and what holds it, and sends nothing', async () => {
+    const store = new FakeInvitationStore([], {}, members(CEILING));
+
+    const error = await issue({ store }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(SeatAllowanceReachedError);
+    expect((error as SeatAllowanceReachedError).extensions).toEqual({ limit: CEILING, used: CEILING });
+    expect(store.emitted).toHaveLength(0);
+  });
+
+  /** Decided 13 Sep 2026: a lapsed invitation holds its seat until it is revoked. */
+  it('counts a lapsed invitation as holding a seat', async () => {
+    const lapsed = invitation({ id: 'lapsed', expiresAt: new Date('2026-08-01T00:00:00Z') });
+    const store = new FakeInvitationStore([lapsed], {}, members(CEILING - 1));
+
+    await expect(issue({ store })).rejects.toBeInstanceOf(SeatAllowanceReachedError);
+  });
+
+  it('frees that seat once the lapsed invitation is revoked', async () => {
+    const lapsed = invitation({ id: 'lapsed', expiresAt: new Date('2026-08-01T00:00:00Z') });
+    const store = new FakeInvitationStore([lapsed], {}, members(CEILING - 1));
+    await store.revoke({ invitationId: 'lapsed', at: NOW });
+
+    await expect(issue({ store })).resolves.toMatchObject({ status: INVITATION_STATUS.PENDING });
+  });
+
+  /**
+   * **Checked after the insert, so the collision keeps its own way out.** An administrator re-inviting
+   * someone already outstanding at a full organization is told to resend or revoke that invitation —
+   * which resolves what they were doing — rather than that the organization is full, which does not.
+   */
+  it('refuses an address already outstanding as the collision it is, even at the ceiling', async () => {
+    const outstanding = invitation({ id: 'a', invitedEmail: 'newcomer@example.md' });
+    const store = new FakeInvitationStore([outstanding], {}, members(CEILING - 1));
+
+    await expect(issue({ store })).rejects.toBeInstanceOf(InvitationAlreadyPendingError);
+  });
+
+  /** Fail closed (§12.5.6): an unreadable ceiling refuses, and refuses before anything is written. */
+  it('refuses when the ceiling cannot be read, writing and sending nothing', async () => {
+    const store = new FakeInvitationStore();
+
+    await expect(issue({ store, seats: new FakeSeatAllowance(null) })).rejects.toBeInstanceOf(
+      SeatAllowanceUnavailableError,
+    );
+    expect(store.all).toHaveLength(0);
+    expect(store.emitted).toHaveLength(0);
+  });
+
+  it('asks for the ceiling of the organization it is issuing in', async () => {
+    const seats = new FakeSeatAllowance(CEILING);
+
+    await issue({ store: new FakeInvitationStore(), seats });
+
+    expect(seats.asked).toEqual([{ organizationId: ORGANIZATION }]);
   });
 });

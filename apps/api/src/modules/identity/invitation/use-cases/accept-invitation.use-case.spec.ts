@@ -7,8 +7,16 @@ import {
 import { MEMBERSHIP_GRANT_KIND } from '../interfaces/invitation-bearer-store.interface';
 import { INVITATION_STATUS, INVITED_ROLE } from '../models/invitation.model';
 import { MEMBERSHIP_ROLE, MEMBERSHIP_STATUS } from '@api/modules/identity/membership/models/membership.model';
+import {
+  AcceptanceBeyondSeatAllowanceError,
+  SeatAllowanceUnavailableError,
+} from '@api/modules/identity/access/errors/seat.errors';
+import { FakeSeatAllowance } from '@api/modules/identity/access/testing/seat-allowance.fake';
 import { FakeInvitationBearerStore, bearerInvitation } from '../testing/invitation-bearer-store.fake';
 import { AcceptInvitation } from './accept-invitation.use-case';
+
+/** A ceiling no case outside task 142's own reaches — see the seat cases at the end of the file. */
+const ROOMY = 100;
 
 /**
  * UC-15 with no database, no broker and no HTTP. **The paths that are not the happy one are this
@@ -27,7 +35,7 @@ describe('AcceptInvitation (UC-15, FR-11)', () => {
   ) => new FakeInvitationBearerStore(invitations, { [TOKEN]: invitations[0]?.id }, accounts);
 
   const accept = (store: FakeInvitationBearerStore) =>
-    new AcceptInvitation(store, () => NOW).execute({
+    new AcceptInvitation(store, new FakeSeatAllowance(ROOMY), () => NOW).execute({
       token: TOKEN,
       accountId: ACCOUNT,
       sessionId: SESSION,
@@ -256,5 +264,117 @@ describe('AcceptInvitation (UC-15, FR-11)', () => {
       standing: INVITATION_STANDING.CONSUMED,
     });
     expect(store.memberships).toHaveLength(1);
+  });
+
+  // ── Task 142's seat ceiling ───────────────────────────────────────────────────────────────────
+
+  /**
+   * The gate at membership creation (`architecture.md` §12.5.6's task-142 row). **The fake cannot model
+   * the rollback**, so these assert what the use case decides and what it spends; that the refusal
+   * leaves the invitation pending and the link usable is `test/seats.e2e-spec.ts`'s, over the real
+   * transaction.
+   */
+  describe('the interim seat ceiling (task 142)', () => {
+    const CEILING = 10;
+
+    const acceptWithin = (store: FakeInvitationBearerStore, seats: FakeSeatAllowance) =>
+      new AcceptInvitation(store, seats, () => NOW).execute({
+        token: TOKEN,
+        accountId: ACCOUNT,
+        sessionId: SESSION,
+        clientIp: '198.51.100.7',
+      });
+
+    /** Active colleagues in the organization `bearerInvitation` names by default. */
+    const colleagues = (store: FakeInvitationBearerStore, count: number) => {
+      for (let index = 0; index < count; index += 1) {
+        store.memberships.push({
+          accountId: `colleague-${index}`,
+          organizationId: 'organization-alpha',
+          role: MEMBERSHIP_ROLE.EDITOR,
+          status: MEMBERSHIP_STATUS.ACTIVE,
+        });
+      }
+    };
+
+    /**
+     * The case a `held + 1` comparison gets wrong: nine colleagues and this invitation are ten seats
+     * before the acceptance and ten after it, so a full organization admits the person it invited.
+     */
+    it('admits an acceptance at a full organization, whose seat the invitation already held', async () => {
+      const store = storeWith([bearerInvitation({ id: 'a' })]);
+      colleagues(store, CEILING - 1);
+
+      await expect(acceptWithin(store, new FakeSeatAllowance(CEILING))).resolves.toMatchObject({
+        grant: MEMBERSHIP_GRANT_KIND.CREATED,
+      });
+    });
+
+    /** Reachable only once the ceiling was lowered below what the organization already held. */
+    it('refuses an organization already over its ceiling, and spends nothing', async () => {
+      const store = storeWith([bearerInvitation({ id: 'a' })]);
+      colleagues(store, CEILING);
+
+      await expect(acceptWithin(store, new FakeSeatAllowance(CEILING))).rejects.toBeInstanceOf(
+        AcceptanceBeyondSeatAllowanceError,
+      );
+      // Not a guess, so not a throttle attempt — the refusal throws out of `run` instead of going
+      // through `refuse`, which is the one path that records.
+      expect(store.attempts).toHaveLength(0);
+    });
+
+    it('holds a restored member to the same gate', async () => {
+      const store = storeWith([bearerInvitation({ id: 'a' })]);
+      colleagues(store, CEILING);
+      store.memberships.push({
+        accountId: ACCOUNT,
+        organizationId: 'organization-alpha',
+        role: MEMBERSHIP_ROLE.VIEWER,
+        status: MEMBERSHIP_STATUS.REMOVED,
+      });
+
+      await expect(acceptWithin(store, new FakeSeatAllowance(CEILING))).rejects.toBeInstanceOf(
+        AcceptanceBeyondSeatAllowanceError,
+      );
+    });
+
+    /**
+     * Someone already a member creates nothing, so there is no membership creation to gate — and the
+     * ceiling is not even read, which is why an unreadable one does not refuse them either.
+     */
+    it('never gates someone already a member, whose acceptance frees a seat', async () => {
+      const store = storeWith([bearerInvitation({ id: 'a' })]);
+      colleagues(store, CEILING + 2);
+      store.memberships.push({
+        accountId: ACCOUNT,
+        organizationId: 'organization-alpha',
+        role: MEMBERSHIP_ROLE.VIEWER,
+        status: MEMBERSHIP_STATUS.ACTIVE,
+      });
+      const seats = new FakeSeatAllowance(null);
+
+      await expect(acceptWithin(store, seats)).resolves.toMatchObject({
+        grant: MEMBERSHIP_GRANT_KIND.ALREADY_MEMBER,
+      });
+      expect(seats.asked).toHaveLength(0);
+    });
+
+    it('refuses when the ceiling cannot be read, spending nothing', async () => {
+      const store = storeWith([bearerInvitation({ id: 'a' })]);
+
+      await expect(acceptWithin(store, new FakeSeatAllowance(null))).rejects.toBeInstanceOf(
+        SeatAllowanceUnavailableError,
+      );
+      expect(store.attempts).toHaveLength(0);
+    });
+
+    it('asks for the ceiling of the organization the invitation names', async () => {
+      const store = storeWith([bearerInvitation({ id: 'a', organizationId: 'organization-beta' })]);
+      const seats = new FakeSeatAllowance(CEILING);
+
+      await acceptWithin(store, seats);
+
+      expect(seats.asked).toEqual([{ organizationId: 'organization-beta' }]);
+    });
   });
 });

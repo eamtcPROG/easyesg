@@ -1,0 +1,36 @@
+/* Usage counter — §11.5 Domain, §6.10, UX-52. The type role is `t-caption`, applied as a class rather
+   than restated here. Every colour is a tier-2 semantic token (UX-78). */
+
+.counter {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* Approaching and reached: the S-13 artboard's marked row — border, tint and dot in the attention
+   state. The text moves from muted to body on the tint, which is the pairing `tokens.spec.ts` measures
+   as "callout body on the attention tint"; muted text on a tint is the combination the tier-2 comment
+   records as spending its margin. */
+.counter[data-standing='approaching'],
+.counter[data-standing='reached'] {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--state-attention);
+  border-radius: var(--radius-1);
+  background: var(--state-attention-tint);
+  color: var(--text-body);
+}
+
+.dot {
+  inline-size: 6px;
+  block-size: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--state-attention);
+}
+
+.action {
+  font-weight: 500;
+}

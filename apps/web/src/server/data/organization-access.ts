@@ -10,7 +10,7 @@ import {
   type AccessStanding,
   type AccessView,
 } from '@/features/organization/access/tools/access';
-import { MEMBERSHIP_ROLE, type MembershipRole } from '@easyesg/contracts';
+import { MEMBERSHIP_ROLE, type MembershipRole, type SeatConsumption } from '@easyesg/contracts';
 import { api } from '../api/api-client';
 
 /**
@@ -36,7 +36,12 @@ import { api } from '../api/api-client';
 export { TENANT_READ as ACCESS_READ } from './tenant-read';
 
 export type AccessRead =
-  | { readonly status: typeof TENANT_READ.READY; readonly page: AccessPage }
+  | {
+      readonly status: typeof TENANT_READ.READY;
+      readonly page: AccessPage;
+      /** The ceiling and the seats held against it (task 142) — a fact about the organization. */
+      readonly seats: SeatConsumption;
+    }
   | { readonly status: typeof TENANT_READ.FORBIDDEN }
   | { readonly status: typeof TENANT_READ.UNREACHABLE };
 
@@ -103,7 +108,7 @@ const toAccessRow = (row: AccessRowWire): AccessRow =>
  * the screen would have to guess at FR-60, and guessing wrong offers a control that cannot act.
  */
 export const readOrganizationAccess = async (view: AccessView): Promise<AccessRead> => {
-  const [listed, administrators] = await Promise.all([
+  const [listed, administrators, seats] = await Promise.all([
     api.getList<AccessRowWire>('/access', accessListQuery(view)),
     api.getList<AccessRowWire>('/access', {
       filters: [{ field: 'role', values: [MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR] }],
@@ -111,18 +116,28 @@ export const readOrganizationAccess = async (view: AccessView): Promise<AccessRe
       // and asking for none would be a different request than asking for as few as possible.
       onpage: 1,
     }),
+    // Task 142's region. The same all-or-nothing rule as the count above, and for its reason: the
+    // seats decide which control the invite panel offers, so a screen missing them would have to
+    // guess — and an unreadable *ceiling* is not a failed read: the API answers `allowance: null`,
+    // which is the region's own partial state rather than this function's unreachable one.
+    api.get<SeatConsumption>('/access/seats'),
   ]);
 
-  if (isPermissionRefusal(listed) || isPermissionRefusal(administrators)) {
+  if (isPermissionRefusal(listed) || isPermissionRefusal(administrators) || isPermissionRefusal(seats)) {
     return { status: TENANT_READ.FORBIDDEN };
   }
-  if (listed.status !== API_OUTCOME.Ok || administrators.status !== API_OUTCOME.Ok) {
+  if (
+    listed.status !== API_OUTCOME.Ok ||
+    administrators.status !== API_OUTCOME.Ok ||
+    seats.status !== API_OUTCOME.Ok
+  ) {
     return { status: TENANT_READ.UNREACHABLE };
   }
 
   return {
     status: TENANT_READ.READY,
     page: toAccessPage({ listed: listed.value, administrators: administrators.value.total, view }),
+    seats: seats.value,
   };
 };
 

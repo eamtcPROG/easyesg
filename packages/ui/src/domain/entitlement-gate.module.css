@@ -1,0 +1,56 @@
+/* Entitlement gate — §11.5 Domain, §6.10, UX-50. Type roles are classes (`t-body-strong`, `t-caption`,
+   `t-body`) rather than restated values; every colour is a tier-2 semantic token (UX-78), and every
+   text pairing below is one `tokens.spec.ts` already measures on `--surface-default`. */
+
+.gate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.title {
+  margin: 0;
+  color: var(--text-default);
+}
+
+.consumption {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  color: var(--text-muted);
+}
+
+.figure {
+  color: var(--text-default);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.meter {
+  display: block;
+  inline-size: 100%;
+  block-size: 8px;
+}
+
+.track {
+  fill: var(--border-default);
+}
+
+/* The attention state, as the specimen draws it: a block at a limit is a boundary the reader can
+   resolve, not an error. Decorative — the figure above carries the value (UX-102). */
+.fill {
+  fill: var(--state-attention);
+}
+
+.body {
+  color: var(--text-body);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

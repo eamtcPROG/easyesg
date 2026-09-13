@@ -200,7 +200,9 @@ const CLAIMS = [
   {
     what: 'config/seed artefacts',
     file: 'CLAUDE.md',
-    pattern: /— (\w+) artefacts since task 33\.1/,
+    // The task named moves with the count — 33.1 made it seventeen, 142 eighteen — so it is matched
+    // as a shape rather than spelled, or every new artefact breaks this entry instead of the claim.
+    pattern: /— (\w+) artefacts since task [\d.]+/,
     actual: () => readdirSync('config/seed').filter((f) => f.endsWith('.json')).length,
   },
   {

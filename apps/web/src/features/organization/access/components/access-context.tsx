@@ -30,6 +30,7 @@ import {
   type Confirmation,
   type PlacedNotice,
 } from '../tools/access-state';
+import type { SeatRegion } from '../tools/seats';
 import type { AccessActionResult } from '../actions/action-results';
 
 /**
@@ -74,6 +75,12 @@ import type { AccessActionResult } from '../actions/action-results';
 interface AccessContextValue extends AccessState {
   readonly page: AccessPage;
   readonly view: AccessView;
+  /**
+   * The seat region (task 142), computed once by the section so the counter beside the heading and
+   * the invite panel's arm read one value. Server state like `page`, and held here for `page`'s
+   * reason — the panel is reached through the provider, not handed props by the section.
+   */
+  readonly seats: SeatRegion;
   /** Where the first-use empty state sends a reader. */
   readonly inviteAnchorId: string;
   /** True while a navigation this screen started is in flight. */
@@ -118,11 +125,13 @@ export function useAccess(): AccessContextValue {
 export function AccessProvider({
   page,
   view,
+  seats,
   inviteAnchorId,
   children,
 }: {
   readonly page: AccessPage;
   readonly view: AccessView;
+  readonly seats: SeatRegion;
   readonly inviteAnchorId: string;
   readonly children: ReactNode;
 }) {
@@ -200,6 +209,7 @@ export function AccessProvider({
       ...state,
       page,
       view,
+      seats,
       inviteAnchorId,
       navigating,
       setView,
@@ -213,6 +223,7 @@ export function AccessProvider({
       state,
       page,
       view,
+      seats,
       inviteAnchorId,
       navigating,
       setView,

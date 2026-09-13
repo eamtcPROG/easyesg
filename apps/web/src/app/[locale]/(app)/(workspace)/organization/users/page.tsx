@@ -17,12 +17,10 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * `/memberships` first, and one fewer place for this tier's belief about a role to disagree with
  * the server's.
  *
- * **Two omissions, both recorded rather than silent.** The seat-consumption region and UX-50's
- * entitlement gate are task 54.2's: UX-50 requires the limit, the allowance, current consumption
- * and the upgrade path *in that order*, and only consumption is knowable before `EntitlementPort`
- * has an implementation — a partial region would invite a reader to infer a ceiling nothing is
- * checking. And UC-175's manual reminder is task 50's, which now owns it; it appeared in this
- * screen's controls and in no task at all until this one was built.
+ * **The seat region and UX-50's gate ship with task 142**, over the interim configured ceiling rather
+ * than waiting for task 54.2, which changes the ceiling's source and not this screen. **One omission
+ * remains, recorded rather than silent**: UC-175's manual reminder is task 50's, which now owns it; it
+ * appeared in this screen's controls and in no task at all until this one was built.
  *
  * States (§8.1): ready · empty — first use · empty — filtered · error — permission · error —
  * recoverable. Loading is `loading.tsx`; the transient states of an action are the board's. *

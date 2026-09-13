@@ -152,8 +152,9 @@ traps each one left — grouped by area rather than by the task that built it.
   collection must publish exactly what the index constrains or an administrator gets a 409 on a row
   they cannot see; and **nothing in 26.1 consults the clock** — expiry is derived at the point of
   use. `TenantRepository` gained a `protected get runner()`, because `writeOutboxEvent` needs the
-  request's `QueryRunner` and an `EntityManager` cannot express P-8. Deferred: no entitlement gate
-  (task 54); the two write routes were an authenticated mail amplifier bounded only by task 71's
+  request's `QueryRunner` and an `EntityManager` cannot express P-8. **The seat precondition is task
+  142's interim ceiling** (below), not an entitlement gate — that is task 54.2's, and it swaps the
+  source rather than adding a guard. The two write routes were an authenticated mail amplifier bounded only by task 71's
   edge limit **until task 141** (13 Sep 2026), which gives them **one window over both**, keyed
   `invitation-mail:<organization>:<address>` at 5 per 15 min. The address is the key because the
   mailbox is what is rationed — keyed per invitation id, a revoke-and-reinvite cycle bought a fresh
@@ -202,6 +203,21 @@ their second client's invitation with a tenant already bound.
   required**: passing the class makes Nest inject its `(bounded, maxOnPage)` primitives and the
   application does not boot, which the interceptor's own docblock prescribed for three weeks
   because nothing had ever opted in.
+- **The interim seat ceiling** (task 142; §12.5.6's task-142 row): `config/seed/seat-allowance.global.json`
+  read through `SEAT_ALLOWANCE` in `contracts/`, provided by `identity/access` and imported by
+  `identity/invitation`, whose two writes are the gates. Three things to know before touching it.
+  **A seat is an active member or a pending invitation, lapsed ones included**, counted by one
+  statement (`persistence/identity/seat.queries.ts`) that the issue gate, the acceptance gate and
+  `GET /access/seats` all call — `test/seats.e2e-spec.ts` holds it equal to `GET /access`'s
+  unfiltered total. **Both gates check after their write with one predicate**
+  (`withinSeatAllowance`): the issue counts its own insert under a transaction-scoped advisory lock,
+  so two invitations at the last seat cannot both commit; the acceptance moves no count, so it
+  refuses only an organization already over its ceiling, and it **throws inside the bearer
+  transaction on purpose** — the consume and the grant must roll back, and a seat refusal is not a
+  guess, so it must spend no throttle budget. **It fails closed**: an absent or malformed artefact
+  answers both writes `503 seat-allowance-unavailable`, while the read answers `allowance: null`.
+  The refusal is `entitlement-quota-exceeded`, the type task 54.2 will raise — which, with the
+  port, is what makes that task a change of source that deletes the artefact rather than extends it.
 
 **Reporting core**
 
