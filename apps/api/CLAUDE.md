@@ -609,6 +609,31 @@ transaction-local. Never `SET LOCAL` (utility syntax, no bind parameter, forces 
 the one value tenancy rests on) and never session-scoped (PgBouncer runs transaction pooling; it
 would leak to the next borrower).
 
+### A user-visible text ordering states its own collation
+
+`architecture.md` **OQ-61**, closed 13 Sep 2026. `ORDER BY name` takes whatever collation the
+cluster was initialised with, and nothing here pins one — `infra/postgres/init/init.sh` sets no
+locale and the compose file passes no `POSTGRES_INITDB_ARGS`, so it is the image default. Wrap the
+expression in `collated()` from `infrastructure/persistence/collation.ts`:
+
+```ts
+ORDER BY ${collated('name')}, id
+```
+
+- **It applies wherever a person reads the order** — names, addresses, titles. Five orderings across
+  three adapters carried this when the row closed: S-16's person column and its tie-break, entity
+  names (×3) and organization names.
+- **Not to a `uuid`, a `timestamptz` or an integer rank.** Those are not collatable and `COLLATE` on
+  them is a type error, so a tie-break on `id` stays bare beside a collated text key. The asymmetry
+  is correct.
+- **Measured, and the obvious fix does not work.** Under `C`, *Ștefan Țurcanu* sorts after
+  `zoe@example.md` — a Romanian name below every ASCII value, which for this product is the failure
+  that matters rather than the capitalisation. `lower()` corrects the case and leaves `ș` past `z`.
+  `test/collation.e2e-spec.ts` pins all of it.
+- **Nothing mechanical catches an omission on this machine.** The dev cluster is `en_US.utf8`, which
+  agrees with ICU on every value the suite tests, so a missing `collated()` breaks only on a `C`
+  cluster. What stands in is that the helper is the one spelling — imported, not remembered.
+
 ### Adding a tenant table
 
 Four things in the **same** migration, or `pnpm migrations:check` fails the build:

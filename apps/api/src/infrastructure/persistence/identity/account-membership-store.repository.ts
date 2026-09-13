@@ -9,6 +9,7 @@ import {
   type AccountMembership,
   type MembershipRole,
 } from '@api/modules/identity/membership/models/membership.model';
+import { collated } from '../collation';
 import { CORE_DATA_SOURCE } from '../data-source';
 
 interface AccountMembershipRow {
@@ -56,7 +57,7 @@ export class AccountMembershipStoreRepository implements AccountMembershipStore 
            FROM identity.membership m
            JOIN core.organization o ON o.id = m.organization_id
           WHERE m.status = $1
-          ORDER BY o.name, m.id`,
+          ORDER BY ${collated('o.name')}, m.id`,
         [MEMBERSHIP_STATUS.ACTIVE],
       )) as AccountMembershipRow[];
 

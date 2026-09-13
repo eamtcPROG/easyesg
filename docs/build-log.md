@@ -18358,3 +18358,70 @@ looking for the real one.
 The key correction gained its own failing state in the same edit: re-keying the resend per
 invitation id now fails two unit cases, where before the correction nothing in the repository could
 tell the two designs apart.
+
+## OQ-61 closes — every user-visible text ordering states its own collation · 2026-09-13
+
+Task 140's spec review raised it: S-16's person column sorts on a derived display name, names are
+capitalised where addresses are not, and **nothing in this repository pins the collation that
+decides the result**. `infra/postgres/init/init.sh` sets no locale, the compose file passes no
+`POSTGRES_INITDB_ARGS`, §7 and §12.5.10 are silent — it is the `postgres:18.4` image default. The
+register row went in with three options and a recommendation.
+
+### The measurement killed the recommendation
+
+The row proposed `lower()` as the collation-independent fix. Run against eight realistic values:
+
+```
+en_US.utf8  Ana Ionescu · ana.popescu@ · Bianca Avram · bogdan@ · corina@ · Ștefan Țurcanu · zoe@
+C           Ana Ionescu · Bianca Avram · ana.popescu@ · bogdan@ · corina@ · zoe@ · Ștefan Țurcanu
+lower()/C   Ana Ionescu · ana.popescu@ · Bianca Avram · bogdan@ · corina@ · zoe@ · Ștefan Țurcanu
+und-x-icu   Ana Ionescu · ana.popescu@ · Bianca Avram · bogdan@ · corina@ · Ștefan Țurcanu · zoe@
+```
+
+**Under `C` a Romanian name sorts after every ASCII value** — *Ștefan Țurcanu* below
+`zoe@example.md`. For a product whose source locale is Romanian that is the failure that matters,
+and it is not the one the row was written about; the capitalisation is the cheap half. **`lower()`
+fixes the cheap half only** — it corrects the case and leaves `ș` past `z`, because the character is
+multi-byte and `C` compares bytes. The row's own recommendation would have shipped the defect it was
+raised to prevent, and only running it said so.
+
+### A fourth option the row had not listed
+
+`und-x-icu` is present in this cluster, and ICU collations are **compiled into PostgreSQL** rather
+than read from the host's locales — so it resolves on a `C` cluster, on a restored backup, and on a
+managed Postgres nobody ran `initdb` on. That turns correct ordering from an operational
+precondition into a property of the query.
+
+**Declined: pinning the cluster at `initdb`** (owner). It makes dev, CI and production agree by
+construction, and costs a re-init of any cluster created differently — and cannot be asserted until
+after that cluster exists, so a wrong one is found late.
+
+**`und` rather than `ro-x-icu`**, and it is a decision: the reader's language is a per-request fact
+and the sort happens before any locale is known, so a collation per request would give a different
+page 2 depending on who asked. **The product behaviour was confirmed rather than left emergent**
+(owner): a list of people sorts case-insensitively with diacritics folded, which is what all three
+locales want and what the screen previously did by accident of the image default.
+
+### Applied where it holds, not where it was found
+
+The row was about S-16. Searching `ORDER BY` across the api found **five orderings in three
+adapters** with the same exposure — S-16's person key and its `email` tie-break, entity names (three
+statements, S-13's list) and organization names (the memberships read behind the switcher). Every
+other `ORDER BY` sorts a `timestamptz`, a `uuid` or an integer rank, none of which is collatable.
+`collated()` in `infrastructure/persistence/collation.ts` is the one spelling.
+
+### What the suite proves, and the one thing it cannot
+
+`test/collation.e2e-spec.ts` pins the choice: the expected order for all three locales, that `C`
+disagrees (so the clause is load-bearing), that `lower()` does not rescue it, and that the collation
+is ICU-provided — the last being the premise the whole decision rests on. Proved by mutation:
+switching the constant to `C` reds three of four, and switching it to **`en_US.utf8`** — which
+produces the *identical ordering on this machine* — reds exactly the provider assertion, which is
+the difference between "correct here" and "correct anywhere".
+
+**It cannot prove that a given adapter calls the helper.** This cluster is `en_US.utf8`, which agrees
+with ICU on every tested value, so deleting a `collated(…)` leaves the routes' order unchanged here
+and breaks it only on a `C` cluster — the deployment the decision exists for and the one no local run
+can be. Stated in the suite, in `apps/api/CLAUDE.md`'s new rule and in the register row rather than
+left for someone to discover. What stands in is that `collated()` is imported rather than
+remembered.

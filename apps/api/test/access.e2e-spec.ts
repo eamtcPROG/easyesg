@@ -46,15 +46,14 @@ import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } fro
  * 21 tests passed. The viewer is now *Ana Ionescu* on `f-viewer@access.test`, so the name order and
  * the address order disagree and only one of them satisfies the assertions below.
  *
- * **That ordering needs a case-insensitive collation, and nothing in this repository pins one** —
- * `architecture.md` **OQ-61**, raised by task 140's spec review. This cluster reports `en_US.utf8`,
- * where `'Bianca Avram' < 'c-live@access.test'`; under `C` every capitalised name sorts ahead of
- * every lowercase address and the interleaving above collapses. The value comes from the
- * `postgres:18.4` image default: `infra/postgres/init/init.sh` sets no locale and the compose file
- * passes no `POSTGRES_INITDB_ARGS`. **This docblock claimed `infra/postgres/init` was where it was
- * set, and that was simply false** — which is why the register row exists rather than a sentence
- * here. If that row closes by pinning the locale, this fixture is unaffected; if it closes by
- * making the ordering collation-independent, the expected order below is what changes.
+ * **That ordering needs a case-insensitive collation, and the query now states one** —
+ * `architecture.md` **OQ-61**, raised by task 140's spec review and closed 13 Sep 2026: the person
+ * key is wrapped in `collated()`, so `'Bianca Avram' < 'c-live@access.test'` holds on any cluster
+ * rather than on one initialised `en_US.utf8`. Under a bare ordering on a `C` cluster every
+ * capitalised name sorts ahead of every lowercase address and the interleaving above collapses.
+ * **This docblock claimed `infra/postgres/init` was where the locale was set, and that was simply
+ * false** — nothing here pins one, which is what the register row was raised about. The expected
+ * order below is unchanged by the close, because this machine's cluster already agreed with ICU.
  */
 const ALPHA = '01920000-0000-7000-8000-0000000000f1';
 const BETA = '01920000-0000-7000-8000-0000000000f2';

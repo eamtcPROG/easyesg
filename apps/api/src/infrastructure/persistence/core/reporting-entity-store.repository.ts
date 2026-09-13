@@ -12,6 +12,7 @@ import {
   type ReportingEntityPatch,
   type Site,
 } from '@api/modules/core/entity/models/reporting-entity.model';
+import { collated } from '../collation';
 import { TenantRepository } from '../tenant-repository';
 
 interface EntityRow {
@@ -134,7 +135,7 @@ export class ReportingEntityStoreRepository
     const rows = await this.manager.query<SiteRow[]>(
       `SELECT ${SITE_COLUMNS} FROM core.site
         WHERE reporting_entity_id = ANY($1)
-        ORDER BY name, id`,
+        ORDER BY ${collated('name')}, id`,
       [entityIds],
     );
     for (const row of rows) grouped.get(row.reporting_entity_id)?.push(toSite(row));
@@ -148,7 +149,7 @@ export class ReportingEntityStoreRepository
     const rows = await this.manager.query<MemberRow[]>(
       `SELECT ${MEMBER_COLUMNS} FROM core.consolidation_member
         WHERE reporting_entity_id = ANY($1)
-        ORDER BY name, id`,
+        ORDER BY ${collated('name')}, id`,
       [entityIds],
     );
     for (const row of rows) grouped.get(row.reporting_entity_id)?.push(toMember(row));
@@ -157,7 +158,7 @@ export class ReportingEntityStoreRepository
 
   async listEntities(): Promise<ReportingEntity[]> {
     const rows = await this.manager.query<EntityRow[]>(
-      `SELECT ${ENTITY_COLUMNS} FROM core.reporting_entity ORDER BY name, id`,
+      `SELECT ${ENTITY_COLUMNS} FROM core.reporting_entity ORDER BY ${collated('name')}, id`,
     );
     const ids = rows.map((row) => row.id);
     const [sites, members] = await Promise.all([this.sitesFor(ids), this.membersFor(ids)]);

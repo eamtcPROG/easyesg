@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { collated } from '../collation';
 import { TenantRepository } from '../tenant-repository';
 import { MEMBERSHIP_STATUS, type MembershipRole } from '@api/modules/identity/membership/models/membership.model';
 import { INVITATION_STATUS } from '@api/modules/identity/invitation/models/invitation.model';
@@ -146,7 +147,10 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
   private static readonly ORDER_BY: Record<AccessSort, string> = {
     // The name where there is one and the address where there is not — the column the reader
     // sees, not the one underneath it. It was `email` until task 140 put a name in that cell.
-    [ACCESS_SORT.PERSON]: 'COALESCE(display_name, email)',
+    //
+    // **Collated explicitly (OQ-61)**: a bare ordering takes the cluster's collation, and under `C`
+    // a Romanian name sorts after every ASCII value. `collation.ts` carries the measurement.
+    [ACCESS_SORT.PERSON]: collated('COALESCE(display_name, email)'),
     [ACCESS_SORT.ROLE]: `CASE role WHEN 'organization_administrator' THEN 0 WHEN 'editor' THEN 1 ELSE 2 END`,
     [ACCESS_SORT.STANDING]: `CASE standing WHEN '${ACCESS_STANDING.INVITATION_EXPIRED}' THEN 0 WHEN '${ACCESS_STANDING.INVITED}' THEN 1 ELSE 2 END`,
     [ACCESS_SORT.ACTIVITY]: 'activity_at',
@@ -173,7 +177,7 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
          FROM access
         WHERE ${this.matches}
         ORDER BY ${AccessStoreRepository.ORDER_BY[query.sort]} ${query.descending ? 'DESC' : 'ASC'},
-                 email ASC
+                 ${collated('email')} ASC
         LIMIT $3 OFFSET $4`,
       [...facets, query.take, query.skip],
     );
