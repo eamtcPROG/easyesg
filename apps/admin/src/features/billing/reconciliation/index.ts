@@ -12,8 +12,9 @@
  * (D-11): with `BILLING_ENABLED=false` the whole `/billing` subtree goes dark and every platform
  * screen must still work.
  *
- * Not built. Folders are `components/ hooks/ queries/ schema/ types/`, tests colocated as
- * `*.spec.tsx`. Data reaches this feature through TanStack Query against `/api/v1/admin/*` — an
+ * Not built. When it is, it holds the kinds its screens have — `components/ · tools/ · queries/`
+ * (`one-kind-per-folder`); the scaffold folders went in task 135, and this barrel stays until then.
+ * Data reaches this feature through TanStack Query against `/api/v1/admin/*` — an
  * ordinary client of the one public API (DR-11), never a privileged route.
  */
 export {};

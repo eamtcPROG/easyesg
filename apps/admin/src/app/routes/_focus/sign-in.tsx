@@ -17,7 +17,7 @@
  */
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { ADMIN_SESSION_QUERY_KEY } from '~/realm/session';
+import { ADMIN_SESSION_QUERY_KEY } from '~/realm/queries/session';
 import { SignInScreen } from '~/realm/components/sign-in-screen';
 
 /** Same-app paths only — a crafted link must not turn sign-in into an open redirect. */

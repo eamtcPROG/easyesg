@@ -49,6 +49,13 @@ The differences that change what you write:
 `apps/web/src`, and a TS `paths` key holds one meaning — sharing it would resolve admin's
 `~/lib/env` to web's `lib/env` (both exist) and fire the cross-app boundary rules on the wrong file.
 
+**The boundary rules resolve `~/*` since task 135, and until then they did not.** That same file
+mapped only `@/*` and `@api/*`, so an import written through `~/` resolved to nothing and none of the
+four rules below could see it — `export * from '~/features/platform/admin'` inside `realm/` cruised
+clean, while fourteen of this app's imports are written that way. `admin-realm-is-a-leaf`'s proof
+fixture now violates *through* the alias, so a dropped mapping fails `boundaries:prove` rather than
+switching the four rules off.
+
 **Romanian-only is a decision about catalogues, not permission to write a sentence in a `.tsx`.**
 Every string a person reads is still a message key in `src/messages/ro.json`; the JSXText lint rule
 enforces it here exactly as it does in the tenant app. `LOCALES` is still exported for A-03, where an
@@ -73,14 +80,17 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 
 ```
 src/
-├─ app/         composition root, routes, generated route tree, fallbacks, styles
+├─ app/         entry/ (main.tsx) · providers/ (composition root, the router's two fallbacks) · routes/ ·
+│  │            styles/ — and the generated route-tree.gen.ts, the one file the router places beside them
 │  └─ routes/   _focus (A-01) · _realm (everything behind the guard) — both pathless
-├─ realm/       session, API client, guards, A-01's screen. A LEAF (see below)
-├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts
+├─ realm/       api/ (the one API client) · components/ (A-01's screen, the realm layout's strip) ·
+│               queries/ (the session) · tools/ (A-01's reducer). A LEAF (see below)
+├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until built
 ├─ shared/      what BOTH contexts need. A LEAF
-├─ i18n/        use-intl wiring, the console locale, formats, the expansion harness
-├─ lib/         env (build-time only), pagination
-└─ messages/    ro.json — one catalogue, by decision
+├─ i18n/        use-intl wiring, the console locale, formats, the expansion harness, global.d.ts
+├─ lib/         env (build-time only) and vite-env.d.ts beside it, pagination
+├─ messages/    ro.json — one catalogue, by decision
+└─ test/        the setup file, and folder-shape.spec.ts — the folder invariant's failing state
 ```
 
 **Four boundary rules, all enforced and all proved:**
@@ -151,17 +161,26 @@ src/
   operator-driven and cross-tenant, so a stale queue is a wrong decision rather than a slow one.
   Retry is capped at 2 against §12.5.6's rate budget.
 
-- **The folder rules bind this app, and it does not yet meet them** (11 Sep 2026, task 132 — the
-  `one-kind-per-folder` skill; the owner scoped it to *web and admin*). Three sites, all task 135's. `realm/` holds `api-client.ts`, `session.ts` and an
-  `index.ts` that exports nothing beside `components/`. `app/` holds `providers.tsx` and
-  `route-fallbacks.tsx` beside `routes/` and `styles/` — `routes/` itself and `route-tree.gen.ts`
-  are the router's layout and exempt, since `_realm.tsx` beside `_realm/` *is* how TanStack spells
-  a pathless layout. And fifteen unbuilt feature scaffolds each hold an `index.ts` reading *"Not
-  built"* beside five `.gitkeep` folders, which go when the domain is built. A built feature here
-  takes the tenant app's three kinds with the wire half named for how data arrives: `components/`
-  renders, `tools/` is pure, **`queries/`** holds the TanStack Query definitions where `apps/web`
-  has `actions/`. `hooks/`, `schema/` and `types/` are the scaffold's names from before the rule; a
-  screen has the kinds it has.
+- **The folder rules bind this app, and it meets them since task 135** (the `one-kind-per-folder`
+  skill; the owner scoped it to *web and admin* in task 132). Three sites mixed until then:
+  `realm/` held `api-client.ts`, `session.ts` and an empty barrel beside `components/`, and now
+  holds `api/ · components/ · queries/ · tools/`; `app/` held `providers.tsx` and `route-fallbacks.tsx`
+  beside `routes/` and `styles/`, and they are `app/providers/` now, the fallbacks one component per
+  file; the `src/` root held `main.tsx` and two declaration files beside every folder, and holds only
+  folders now (`app/entry/main.tsx`, `i18n/global.d.ts`, `lib/vite-env.d.ts`); and the fifteen unbuilt feature
+  scaffolds lost their five `.gitkeep` folders each and keep one `index.ts` — four of those barrels
+  are what `prove-boundaries.sh`'s admin fixtures import, so they go only when a fixture is
+  repointed. A built feature here takes the tenant app's three kinds with the wire half named for
+  how data arrives: `components/` renders, `tools/` is pure, **`queries/`** holds the TanStack Query
+  definitions where `apps/web` has `actions/`.
+
+  **It has a failing state**: `src/test/folder-shape.spec.ts` walks every directory under `src/`
+  and names the offender. **Two exemptions, both the router's and each listed rather than
+  patterned**: `app/routes/`, which is TanStack's file tree (`_realm.tsx` beside `_realm/` *is* how
+  it spells a pathless layout) and is not entered, and `route-tree.gen.ts`, the one file the router
+  generates beside `app/`'s folders. **The root is not exempt**: nothing places `main.tsx` there but
+  `index.html`, which this project wrote. Proven to bite by a stray file at the root, in `realm/` and
+  in `app/`, and by a folder added to a scaffold — and not to fire on a file inside `app/routes/`.
 
 - **Nothing here is memoized, and no compiler is doing it for you.** `reactCompiler` is off across
   the repo with a recorded reason (AD-9). This app is ~33 Client Components with **no server tier to
@@ -172,7 +191,8 @@ src/
 ## Before you call it done
 
 The root `CLAUDE.md`'s "Closing a task" says which run applies — a sub-step gets only the gates its
-change reaches, the parent gets `pnpm gates:clean`. Everything in `apps/web/CLAUDE.md`'s "Before you call it
+change reaches, the parent gets the gate set, cold where the diff calls for it (the root file's
+*"When `gates:clean` is the required run"*). Everything in `apps/web/CLAUDE.md`'s "Before you call it
 done" applies here too — load `vercel-react-best-practices` and read the diff against it, load
 `vercel-composition-patterns` when a component API grows, load `one-idea-per-file` and
 `one-kind-per-folder` whenever a file is added, split or moved under `src/`, re-read these traps against what you

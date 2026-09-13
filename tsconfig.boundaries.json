@@ -9,8 +9,14 @@
     "moduleResolution": "bundler",
     "jsx": "preserve",
     // Without this, every `@/...` import in apps/web resolves to nothing — and a rule whose
-    // `from` never resolves looks exactly like a rule that passes.
-    "paths": { "@/*": ["apps/web/src/*"], "@api/*": ["apps/api/src/*"] }
+    // `from` never resolves looks exactly like a rule that passes. `~/*` is apps/admin's, and it was
+    // missing until task 135's gate-integrity review proved the four admin rules blind to it:
+    // `export * from '~/features/platform/admin'` inside `realm/` cruised clean.
+    "paths": {
+      "@/*": ["apps/web/src/*"],
+      "@api/*": ["apps/api/src/*"],
+      "~/*": ["apps/admin/src/*"]
+    }
   },
   "include": [
     "apps/*/src/**/*.ts",

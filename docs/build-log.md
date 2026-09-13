@@ -18963,3 +18963,154 @@ on the workspace tier) would trade navigation speed for a quieter log, and is no
 here. Searched for the shape elsewhere: `docs/build-log.md`, the root `CLAUDE.md` and
 `apps/web/CLAUDE.md` carried no mention of the sentence or the digest; the console is served by
 `vite preview` as an SPA and has no streamed render to abandon.
+
+## Task 135 closes — the console against the folder rules, taken ahead of its chrome · 2026-09-13
+
+**Pulled in ahead of 67.1 by the project owner's decision**, raised as 67.1's first question. The
+Stage order put `135` *immediately before the six console screens*, and 67.1 is not one of them — but
+it deletes `realm/components/session-strip.tsx` and adds the chrome's files, which 135 would then have
+moved a second time. One pass over `realm/` and `app/` instead of two. The row has no sub-steps, so
+this is its parent close.
+
+### What moved, and why each landing
+
+- **`realm/api-client.ts` and `realm/session.ts` → `realm/queries/`.** The console's wire kind is
+  `queries/` (`screen-three-kinds`), and both are the wire half — the session's query definitions and
+  the one client they call. `realm/` now holds `components/ · queries/`.
+- **`realm/index.ts` deleted.** An empty barrel imported by nothing; `admin-realm-is-a-leaf` matches
+  the directory, not the file, so no rule or fixture reached it. **Its docblock was the only place that
+  said why `realm/` is a leaf and why A-01 lives there** — serving PA and BO and belonging to neither
+  — so that paragraph moved into `realm/queries/session.ts` rather than going with the file.
+- **`app/providers.tsx` and `app/route-fallbacks.tsx` → `app/providers/`.** The fallbacks' one reader
+  is the providers file, which installs them on the router. `providers/providers.tsx` stutters and stays
+  (`move-names-keep-prefix`).
+- **Seventy-five `.gitkeep` files, five per scaffold, deleted**, and the folders with them. The fifteen
+  `index.ts` stay — four are the import targets of `prove-boundaries.sh`'s admin fixtures — and each
+  docblock's *"Not built. Folders are `components/ hooks/ queries/ schema/ types/`"* now says what the
+  tenant app's say since task 134: the kinds it will hold when built, and that the scaffold went.
+- `shared/` keeps its `.gitkeep` beside `README.md`: two files, no folders, so it already complied.
+
+### The four kinds of path a move changes (`move-grep-the-mocks`)
+
+- **Import specifiers** — seven, rewritten by one script that asserted each anchor matched exactly
+  once; typecheck confirmed.
+- **`vi.mock` strings** — one, `vi.mock('../session')` in `sign-in-screen.spec.tsx`, grepped before
+  the move and rewritten with the import beside it; the suite ran green afterwards.
+- **CSS-module class names** — none: this app styles with Tailwind classes and moved no stylesheet.
+- **Boundary fixtures** — `prove-boundaries.sh` writes its `admin-realm-is-a-leaf` fixture into
+  `realm/` and imports four feature barrels, none of which moved. `boundaries:prove` confirmed.
+
+Also read: a grep for every old path across `apps`, `e2e`, `tools`, `docs` and `CLAUDE.md` found only
+the deliberate note in `session.ts`; and `git diff -U0 | grep '^\+\s*(\*|//)'` found no comment line
+touched except the fifteen docblocks and that note.
+
+### The failing state
+
+`apps/admin/src/test/folder-shape.spec.ts`, modelled on the tenant app's, rooted at `src/` from its
+first run because the three sites were fixed in the same change. **Three exemptions, each listed**:
+`app/routes/` (TanStack's file tree, not entered), the `src/` root (`main.tsx` and two declaration
+files), and `route-tree.gen.ts` — one file allowed in `app/` and no other. It guards itself: named
+directories must be walked, and every feature folder on disk must be among them.
+
+### Three reviews on `opus`, and the row's own claim was one of the things wrong
+
+**Convention review, four findings, all applied.** **(1) The row said *"`sign-in-screen.tsx` is
+already one reducer, so one idea per file has no site"*, and that answered the wrong rule.** *Already
+one reducer* is the `useReducer`-over-`useState`s rule; `pure-logic-leaves-the-component` puts a
+reducer in `tools/` with a spec, and `signInReducer` sat unexported inside the component where no
+transition could be tested without rendering the screen — the only reducer in either front end or
+`packages/ui` not in a `tools/` module. It is `realm/tools/sign-in-state.ts` with its spec now, its
+`default:` branch named as `RESTARTED` so a sixth event without a branch is a type error. The root
+`CLAUDE.md` row repeating *"already one reducer"* is corrected with it. **(2) `api-client.ts` was put
+in `queries/`** while the diff's own `apps/admin/CLAUDE.md` said `queries/` holds *TanStack Query
+definitions*, which a `fetch` transport is not — and every 67.x feature will import it from wherever
+it lands. It is `realm/api/`, `apps/web`'s `server/api/` precedent, and says why. **(3)
+`route-fallbacks.tsx` declared two components**, which `file-one-idea` reaches whenever a file is
+moved: `route-not-found.tsx` and `route-error.tsx`. **(4) Task 149's row cited
+`app/providers.tsx`**, a path this diff moved, and 67.1's cited `realm/session-strip.tsx`, a path that
+had not existed since `fa31b75`. Both corrected; **67's parent row keeps its stale citation**, because
+a group's description is verbatim under `task.md`'s split rule and 67.1 deletes the file anyway. Also
+taken: `apps/admin/CLAUDE.md`'s *"the parent gets `pnpm gates:clean`"*, which the root's 12 Sep
+decision replaced and `apps/web`'s copy had already dropped; the changelog-shaped parenthetical in
+`session.ts`'s moved paragraph.
+
+**Spec review, three findings, all applied.** **(1) The spec exempted the whole `src/` root on a
+reason that was false** — *"the entrypoints Vite and TypeScript find by name"*, when `index.html`
+names `/src/main.tsx` by a path this project wrote and `tsconfig.json` finds the declaration files
+by a glob. The skill admits exemptions only where a framework decides the layout, and a third one
+*"arriving as a convenience is the rule being switched off one folder at a time"*. So rather than
+decide an exemption, the root was made to comply: `main.tsx` is `app/entry/main.tsx` (one line in
+`index.html`), `global.d.ts` sits in `i18n/` beside the formats and catalogue it types, and
+`vite-env.d.ts` in `lib/` beside the `env.ts` that reads it. The spec now exempts `app/routes/` and the
+one generated file, and walks the root. **(2) Task 149's path** — the same finding as the convention
+review's fourth. **(3) The archive row was appended after 143**, where the archive orders its appended
+sections by number; it sits between 134.6 and 136 now. **From its notes, one that predates this task
+and is the same gate:** task 134's review recorded that the tenant spec *"asserts the src/ root holds
+exactly proxy.ts and its spec"* — commit `112761f` wrote no such assertion. It exists now. Also
+corrected: `.dependency-cruiser.cjs`'s `admin-realm-is-a-leaf` comment said `realm/` holds *"the route
+guards"*; the guard is `_realm.tsx`. **Left:** the root `CLAUDE.md`'s *"Stage 1 holding sixteen
+existing groups plus the thirteen appended as 139–151"* no longer counts 152 and 153 — a Stage is
+`task.md`'s ordering prose and not this task's to re-cut.
+
+**Gate-integrity review — two checks proven blind, one of them older than this task and on the
+surface this task moved.** Every mutation ran on scratch copies; the working tree was not touched
+while `gates:clean` ran against it.
+
+- **The new spec's guard test checked a copy of the list the cases ran over.** *"walks the tree it
+  means to"* read `directories`, and the per-directory cases ran over a second, separately computed
+  `directoriesUnder(SRC).filter(…)` — so a filter added on that line exempted `realm/` with a stray
+  file in it and 28 of 28 green, which is exactly the silent exemption the guard exists for. Both
+  now read one list (`it.each(directories)`), and **`apps/web`'s spec had the same shape** and got
+  the same fix.
+- **The console's four boundary rules did not see an import written through `~/`.**
+  `tsconfig.boundaries.json` mapped `@/*` and `@api/*` and not the console's alias, so
+  `export * from '~/features/platform/admin'` inside `realm/` resolved to nothing and cruised clean —
+  proven for `admin-realm-is-a-leaf` and `admin-platform-not-to-billing`, and the same cause reaches
+  the other two. **This app writes fourteen of its imports that way**, four of them rewritten by this
+  task, while `session.ts`'s moved paragraph and `apps/admin/CLAUDE.md` both said the rule forbade
+  them. `boundaries:prove` could not see it because every admin fixture imported relatively. The
+  alias is mapped now, and the `admin-realm-is-a-leaf` fixture violates **through** `~/` — the
+  console's `controllers-not-to-use-cases` — so a dropped mapping fails the proof instead of switching
+  four rules off. The resolver's own comment had described this failure for `@/` since task 20.
+- Its other conclusions, each proven: the `vi.mock` rewrite is exercised (the old path fails all
+  seven cases loudly, not silently); `import.meta.dirname` resolves to `src/` under this vitest; the
+  walk sees dot-files, deep mixes, a copied generated file outside `app/`, and a narrowed root.
+  **Left, with the reason**: a symlinked file passes, because `Dirent.isFile()` is false for one and
+  `src/` holds none; and a depth cap added to the walk would pass today because nothing four levels
+  deep exists to name — the named list gains a deep entry when the first feature is built.
+
+### Verification, twice, because the reviews moved files again
+
+**The first tree.** The console's typecheck and unit suite (38, the new spec and the sign-in spec with
+its rewritten mock among them), lint, `boundaries`, `boundaries:prove`, `routes:check` (the route
+tree unchanged) and `docs:check` (40) were green, and the spec bit where it should: a stray file in
+`realm/` failed naming `[stray.ts] beside [components, queries]`, one in `app/` failed naming
+`[providers, routes, styles]`, a folder added to a scaffold failed naming `[index.ts] beside
+[components]`, and a file inside `app/routes/` passed. **`gates:clean` over that tree was green** —
+lint, `eslint:prove`, typecheck, `image:check`, `docs:check`, the unit suites (api 795, web 559, ui
+277, admin 38), boundaries and their proof, build, `openapi:check`, `facade:check`, `routes:check`,
+`migrations:check` (56), **`pnpm e2e` (910), `pnpm e2e:worker` and `pnpm e2e:web` (182, the admin
+project among them)**. Its log was read: the `MessageCatalogue` line is `problem-details.filter.spec.ts`'s
+own, and one *"destination stream closed early"* is the client-abandoned stream `apps/web/CLAUDE.md`
+now records.
+
+**The reviews' fixes moved four more files and split two**, so that run proved a tree that no longer
+exists, and the rule that makes `gates:clean` the required run — *a file moved, renamed or deleted* —
+applied again rather than being carried over.
+
+**The fixed tree.** The console's typecheck and unit suite (47 — the reducer's new spec among them),
+the web suite (560, the root pin among them), `boundaries`, `boundaries:prove`, `routes:check` and
+`docs:check` were green. **Mapping `~/*` surfaced no hidden violation** — the fourteen aliased imports
+were all legitimate, which is the good outcome and not the guaranteed one. **The alias proof bites**:
+with the `~/*` mapping removed, `boundaries:prove` answered *"admin-realm-is-a-leaf did NOT reject its
+violation — the rule matches nothing"*. **Both roots bite**: a stray file at the console's `src/`
+failed naming all eight folders beside it, and one at the tenant's failed the new pin. **Lint went red
+once**, on the reducer spec's `as ApiFailure` over an object already annotated with that type
+(`no-unnecessary-type-assertion`); the cast is gone.
+
+**`gates:clean` over the fixed tree was green on its first run** — the same set, the admin unit
+suite at 47 and the web suite at 560 — with **`pnpm e2e` (910), `pnpm e2e:worker` and
+`pnpm e2e:web` (182, the admin project among them)** proving the HTTP entrypoint, the worker and
+both front ends boot and serve. Its log carried the two known kinds and nothing new:
+`problem-details.filter.spec.ts`'s catalogue line and leak fixture, and three client-abandoned
+streams.

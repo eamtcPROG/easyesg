@@ -10,8 +10,9 @@
  * `admin-platform-not-to-billing` and its mirror enforce it — the same separation DR-1 and D-11
  * hold in apps/api, and what makes `BILLING_ENABLED=false` testable on this surface too.
  *
- * Not built. Folders are `components/ hooks/ queries/ schema/ types/`, tests colocated as
- * `*.spec.tsx`. Data reaches this feature through TanStack Query against `/api/v1/admin/*` — an
+ * Not built. When it is, it holds the kinds its screens have — `components/ · tools/ · queries/`
+ * (`one-kind-per-folder`); the scaffold folders went in task 135, and this barrel stays until then.
+ * Data reaches this feature through TanStack Query against `/api/v1/admin/*` — an
  * ordinary client of the one public API (DR-11), never a privileged route.
  */
 export {};

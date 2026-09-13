@@ -152,9 +152,12 @@ prove admin-billing-not-to-platform \
   "$ADMIN/features/billing/catalogue/__boundary_fixture.ts" \
   "export * from '../../platform/configuration';"
 
+# Deliberately through the `~/*` alias, as `controllers-not-to-use-cases` is through `@api/*`: this is
+# also the proof that the console's alias resolves to a path the admin rules match on. The mapping
+# was missing until task 135, when this fixture imported relatively and every `~/` violation passed.
 prove admin-realm-is-a-leaf \
   "$ADMIN/realm/__boundary_fixture.ts" \
-  "export * from '../features/platform/admin';"
+  "export * from '~/features/platform/admin';"
 
 prove admin-shared-is-a-leaf \
   "$ADMIN/shared/__boundary_fixture.ts" \

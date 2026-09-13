@@ -6,9 +6,9 @@ import {
   API_OUTCOME,
   PROBLEM_TYPE,
   type AdminAccount,
-  type ApiFailure,
 } from '@easyesg/contracts';
-import { beginSignIn, completeSignIn } from '../session';
+import { beginSignIn, completeSignIn } from '../queries/session';
+import { INITIAL_SIGN_IN_STATE, SIGN_IN_EVENT, STEP, signInReducer } from '../tools/sign-in-state';
 import { CredentialStep } from './credential-step';
 import { FactorStep } from './factor-step';
 
@@ -19,7 +19,8 @@ import { FactorStep } from './factor-step';
  * has verified** — "Conectat ca …" is a fact, not copy. One card, three sections (header with
  * its mono kicker, body, footer with the realm statement), on the Focus archetype's column.
  *
- * This component owns the **flow and the card**; each step owns its own form
+ * This component owns the **flow and the card** — the flow's state machine itself is
+ * `realm/tools/sign-in-state.ts`, pure and specced (task 135) — and each step owns its own form
  * (`credential-step.tsx`, `factor-step.tsx`). The line between them is where the state lives: a
  * step's `useForm`, its field ids and its field-level messages are read by nothing else, while
  * the challenge, the failure and which step is showing are read by both. The steps are not
@@ -54,83 +55,6 @@ import { FactorStep } from './factor-step';
  * recorded divergence for design review, not a fork of the archetype. The factor step's own
  * deferrals are listed in `factor-step.tsx`.
  */
-const STEP = {
-  Credential: 'credential',
-  Factor: 'factor',
-} as const;
-
-type SignInStep =
-  | { kind: typeof STEP.Credential }
-  | { kind: typeof STEP.Factor; email: string };
-
-/**
- * The handshake's state, as one value and the events that move it.
- *
- * **`step` and `failure` were two `useState`s and are one state** (26 Aug 2026, project owner's
- * rule for both front ends). Every handler wrote both: advancing cleared the failure and set the
- * step, a lapsed challenge set the step and then set the failure, restarting set both. Three call
- * sites spelling out one transition each, with the reader left to reconstruct what actually
- * happens on each event.
- *
- * Writing the whole next state is what makes the lapsed-challenge branch legible: it returns to
- * the credential step **and keeps the refusal**, so the api's own explanation is what greets the
- * reader there. As two setters that was a `setStep` inside an `if` followed by an unconditional
- * `setFailure`, which is the same behaviour and reads like a fall-through.
- */
-interface SignInState {
-  readonly step: SignInStep;
-  readonly failure: ApiFailure | null;
-}
-
-const SIGN_IN_EVENT = {
-  /** The credential was accepted: a sealed challenge is open for this address. */
-  CHALLENGE_OPENED: 'challenge_opened',
-  /** The api refused, at whichever step asked. */
-  REFUSED: 'refused',
-  /** The five-minute challenge lapsed (§12.5.6), so the flow starts again from the credential. */
-  CHALLENGE_LAPSED: 'challenge_lapsed',
-  /** "Use another account" — the reader chose to start over. */
-  RESTARTED: 'restarted',
-  /**
-   * A step's form left for the server. The previous refusal goes with it: a stale "wrong code"
-   * above a submission that is still running says something untrue about the attempt in flight.
-   */
-  SUBMITTED: 'submitted',
-} as const;
-
-type SignInEvent =
-  | { readonly type: typeof SIGN_IN_EVENT.CHALLENGE_OPENED; readonly email: string }
-  | { readonly type: typeof SIGN_IN_EVENT.REFUSED; readonly failure: ApiFailure }
-  | { readonly type: typeof SIGN_IN_EVENT.CHALLENGE_LAPSED; readonly failure: ApiFailure }
-  | { readonly type: typeof SIGN_IN_EVENT.RESTARTED }
-  | { readonly type: typeof SIGN_IN_EVENT.SUBMITTED };
-
-const INITIAL_SIGN_IN_STATE: SignInState = {
-  step: { kind: STEP.Credential },
-  failure: null,
-};
-
-function signInReducer(state: SignInState, event: SignInEvent): SignInState {
-  switch (event.type) {
-    case SIGN_IN_EVENT.CHALLENGE_OPENED:
-      return { step: { kind: STEP.Factor, email: event.email }, failure: null };
-
-    case SIGN_IN_EVENT.REFUSED:
-      // The step is deliberately untouched: a wrong code must leave the reader on the factor
-      // screen with the challenge still open, which is what the retype needs.
-      return { ...state, failure: event.failure };
-
-    case SIGN_IN_EVENT.CHALLENGE_LAPSED:
-      return { step: { kind: STEP.Credential }, failure: event.failure };
-
-    case SIGN_IN_EVENT.SUBMITTED:
-      return { ...state, failure: null };
-
-    default:
-      return INITIAL_SIGN_IN_STATE;
-  }
-}
-
 export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccount) => void }) {
   const t = useTranslations('realm.signIn');
   const tCommon = useTranslations('realm');

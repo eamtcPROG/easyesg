@@ -74,7 +74,20 @@ describe("the tenant app's folder shape", () => {
     expect(directories.some((relative) => relative.startsWith('app/'))).toBe(false);
   });
 
-  it.each(directoriesUnder(SRC).filter((relative) => !EXEMPT.has(relative)))(
+  // **The root is exempt as a path, and what the rule exempts there is one file.** Next places
+  // `proxy.ts` by name at `src/`, and its spec lives beside it; nothing else is framework-placed at
+  // the root, so a third file there is the exemption widening rather than the rule holding. Task
+  // 134's review recorded this assertion as made and commit `112761f` did not write it — found by
+  // task 135's spec review, which modelled the console's spec on this one.
+  it('holds only the framework-placed entrypoint at the root', () => {
+    const files = readdirSync(SRC, { withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .sort();
+    expect(files).toEqual(['proxy.spec.ts', 'proxy.ts']);
+  });
+
+  it.each(directories)(
     'holds files or folders, never both: %s',
     (relative) => {
       const entries = readdirSync(join(SRC, relative), { withFileTypes: true });

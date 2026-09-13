@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import ro from '~/messages/ro.json';
 import { CONSOLE_LOCALE, CONSOLE_TIME_ZONE, formats } from '~/i18n';
-import { beginSignIn, completeSignIn } from '../session';
+import { beginSignIn, completeSignIn } from '../queries/session';
 import { SignInScreen } from './sign-in-screen';
 
 /**
@@ -16,7 +16,7 @@ import { SignInScreen } from './sign-in-screen';
  * api's refusals rendered as received, and the one branch it owns — a lapsed challenge sends
  * the flow back to the credential step.
  */
-vi.mock('../session', () => ({
+vi.mock('../queries/session', () => ({
   beginSignIn: vi.fn(),
   completeSignIn: vi.fn(),
 }));

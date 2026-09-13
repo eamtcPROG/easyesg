@@ -237,7 +237,7 @@ module.exports = {
       name: 'admin-realm-is-a-leaf',
       comment:
         'The mirror of contracts-is-a-leaf. realm/ holds the session, the API client and the ' +
-        'route guards — the things every feature depends on. A reference in the other direction ' +
+        'sign-in screen — the things every feature depends on. A reference in the other direction ' +
         'makes whatever it reached for a transitive dependency of both bounded contexts at once, ' +
         'and the platform/billing separation leaks through the one surface that spans them.',
       severity: 'error',

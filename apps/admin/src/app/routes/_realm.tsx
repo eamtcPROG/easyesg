@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { ADMIN_SESSION_QUERY_KEY, adminSessionQuery, signOut } from '~/realm/session';
+import { ADMIN_SESSION_QUERY_KEY, adminSessionQuery, signOut } from '~/realm/queries/session';
 import { SessionStrip } from '~/realm/components/session-strip';
 
 /**
