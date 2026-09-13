@@ -131,7 +131,9 @@ describe('second factor (UC-193, UC-195, NFR-95)', () => {
       .expect(201);
 
     const offer = objectOf<{ secret: string; enrolmentUri: string }>(begun);
-    expect(offer.enrolmentUri).toContain('otpauth://totp/');
+    // The tenant realm's issuer on the wire (task 143) — the name S-28's scanned symbol gives the
+    // factor on its owner's phone.
+    expect(offer.enrolmentUri).toMatch(/^otpauth:\/\/totp\/EasyESG:[^?]+\?issuer=EasyESG&/);
 
     // A row exists, and the factor does not. This is the state a failed authenticator scan leaves
     // behind, and it must not challenge anybody.

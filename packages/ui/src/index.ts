@@ -138,6 +138,12 @@ export {
   type StatusChipProps,
   type StatusTone,
 } from './data-display/status-chip';
+// Task 143's inventory addition: the QR symbol beside the secret it encodes, and its loading arm.
+export { EnrolmentCode, type EnrolmentCodeProps } from './data-display/enrolment-code';
+export {
+  EnrolmentCodeLoading,
+  type EnrolmentCodeLoadingProps,
+} from './data-display/enrolment-code-loading';
 
 // archetypes
 export { FocusShell, type FocusShellProps } from './archetypes/focus-shell';

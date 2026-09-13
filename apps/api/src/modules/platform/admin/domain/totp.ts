@@ -52,16 +52,33 @@ const VERIFICATION_WINDOW_STEPS = 1;
 /** 20 bytes = 160 bits, RFC 4226's recommended secret length for SHA-1. */
 const SECRET_BYTES = 20;
 
-const ISSUER = 'EasyESG Admin';
+/**
+ * The name an authenticator files the admin realm's factor under — what an operator reads on their
+ * phone once the provisioning CLI's URI is scanned.
+ *
+ * **Exported since task 143, because the issuer became the caller's.** The tenant realm borrows this
+ * file's mechanism and, until that task, borrowed this name with it — invisible while nothing drew the
+ * tenant URI, and "EasyESG Admin" on a tenant user's phone the moment S-28 did. `identity/account`
+ * now names its own factor.
+ */
+export const ADMIN_TOTP_ISSUER = 'EasyESG Admin';
 
 /** The parameters, in one place: the verifier, the code generator and the enrolment URI are all
  *  built from this, so a client that reads them agrees with the verifier. One named input —
- *  `secret` and `label` are both strings, and swapped positionally `Secret.fromBase32` would read
- *  the label, refusing every code as "wrong" with nothing in any log (CLAUDE.md's
- *  adjacent-same-type rule). */
-const totpFor = (input: { readonly secret: string; readonly label: string }): TOTP =>
+ *  `secret`, `issuer` and `label` are all strings, and swapped positionally `Secret.fromBase32`
+ *  would read the label, refusing every code as "wrong" with nothing in any log (CLAUDE.md's
+ *  adjacent-same-type rule).
+ *
+ *  `issuer` and `label` name the factor for a person and never reach the HMAC, which is why the
+ *  verifier and the generator below pass the admin realm's name for want of a reader — and why a
+ *  tenant factor verifies here unchanged whatever its URI called it. */
+const totpFor = (input: {
+  readonly secret: string;
+  readonly issuer: string;
+  readonly label: string;
+}): TOTP =>
   new TOTP({
-    issuer: ISSUER,
+    issuer: input.issuer,
     label: input.label,
     algorithm: 'SHA1',
     digits: TOTP_DIGITS,
@@ -88,7 +105,11 @@ export interface TotpVerification {
 export function verifyTotp(input: TotpVerification, now: Date): boolean {
   if (!/^\d{6}$/u.test(input.code)) return false;
   try {
-    const delta = totpFor({ secret: input.secret, label: ISSUER }).validate({
+    const delta = totpFor({
+      secret: input.secret,
+      issuer: ADMIN_TOTP_ISSUER,
+      label: ADMIN_TOTP_ISSUER,
+    }).validate({
       token: input.code,
       timestamp: now.getTime(),
       window: VERIFICATION_WINDOW_STEPS,
@@ -106,20 +127,31 @@ export function verifyTotp(input: TotpVerification, now: Date): boolean {
  */
 export function totpCodeAt(secret: string, now: Date): string | null {
   try {
-    return totpFor({ secret, label: ISSUER }).generate({ timestamp: now.getTime() });
+    return totpFor({ secret, issuer: ADMIN_TOTP_ISSUER, label: ADMIN_TOTP_ISSUER }).generate({
+      timestamp: now.getTime(),
+    });
   } catch {
     return null;
   }
 }
 
 /**
- * The enrolment string the provisioning CLI prints (§12.5.6's task-23 MFA row) — what an
- * authenticator app's QR scanner or manual entry consumes, in the Key Uri Format, emitted by
- * the same object that verifies so the two cannot disagree on parameters.
+ * The enrolment string — what an authenticator app's QR scanner or manual entry consumes, in the
+ * Key Uri Format, emitted by the same object that verifies so the two cannot disagree on
+ * parameters. The provisioning CLI prints the admin realm's (§12.5.6's task-23 MFA row); S-28 draws
+ * the tenant realm's as a symbol (task 143).
+ *
+ * **The issuer is the caller's** (task 143): it is the name the authenticator shows its owner, so
+ * each realm passes its own — `ADMIN_TOTP_ISSUER` here, `TENANT_TOTP_ISSUER` in `identity/account`.
  */
 export function totpEnrolmentUri(enrolment: {
+  readonly issuer: string;
   readonly email: string;
   readonly secret: string;
 }): string {
-  return totpFor({ secret: enrolment.secret, label: enrolment.email }).toString();
+  return totpFor({
+    secret: enrolment.secret,
+    issuer: enrolment.issuer,
+    label: enrolment.email,
+  }).toString();
 }

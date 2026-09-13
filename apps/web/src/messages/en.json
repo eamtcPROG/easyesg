@@ -322,6 +322,7 @@
         "reissue": "Generate new codes",
         "secretHeading": "Scan or enter this code",
         "secretHelp": "Add it to your authenticator app, then enter the code the app shows below.",
+        "symbolLabel": "QR code for your authenticator app",
         "codeLabel": "Code from the app",
         "codeMissing": "Enter the code from the app, or setting this up cannot be completed.",
         "confirm": "Finish turning it on",

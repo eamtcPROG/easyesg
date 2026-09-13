@@ -9,14 +9,14 @@ component that only works in one of them is a defect here, not a variant.
 `'use client'` vocabulary rule, the `Slot` rule, UX-89's "reuse or add to the inventory", the four
 homes of state — it is written at root because it holds for `apps/web` and `apps/admin` too, and
 restating it here would create the second copy that drifts. This file carries what is true of
-*these 49 components*: where things are, what has already bitten someone, and what finishing looks like.
+*these 51 components*: where things are, what has already bitten someone, and what finishing looks like.
 
 ## Current state
 
-49 components in nine folders, 26 spec files, `src/styles/tokens.css` at 429 lines — **light and
+51 components in nine folders, 27 spec files, `src/styles/tokens.css` at 439 lines — **light and
 dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
 schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
-`.spec.ts` rather than a `.spec.tsx` and so is *not* in the 26: it renders nothing, it parses the
+`.spec.ts` rather than a `.spec.tsx` and so is *not* in the 27: it renders nothing, it parses the
 stylesheet. Not every
 component has its own spec — `forms/forms.spec.tsx` covers several together — so per-file absence
 is not itself a gap.
@@ -28,7 +28,7 @@ is not itself a gap.
 | `forms/` | 7 | The react-hook-form binding. **A separate entry point** — see the traps |
 | `feedback/` | 4 | Banner, Callout, EmptyState, ConsequenceDialogue |
 | `navigation/` | 7 | GlobalBar, AccountMenu, WorkspaceNav, ChromeDrawer, LanguageSwitcher, Pagination, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
-| `data-display/` | 2 | DataTable, StatusChip |
+| `data-display/` | 4 | DataTable, StatusChip, and task 143's EnrolmentCode with its loading arm |
 | `disclosure/` | 1 | DisclosureField — the anatomy every B1–B11 module reuses (task 36.1) |
 | `domain/` | 5 | ReportingPeriodPicker, SaveStateIndicator, VersionPinIndicator, and §6.10's two from task 142 — UsageCounter beside an action, EntitlementGate after a refused one |
 | `archetypes/` | 5 | Focus, Index, Record, Wizard shells — see `src/archetypes/README.md` |
@@ -58,7 +58,7 @@ something quiet, and a stale `dist/` is one failure mode this package cannot hav
 
 ```
 src/
-├─ index.ts        The barrel — 51 exports. `@easyesg/ui`
+├─ index.ts        The barrel — 53 exports. `@easyesg/ui`
 ├─ forms/index.ts  The react-hook-form binding. `@easyesg/ui/forms`, NOT in the barrel
 ├─ styles/         tokens.css — reached as `@easyesg/ui/src/styles/tokens.css`
 ├─ archetypes/     The nine §4.6 page templates. README.md is the map
@@ -89,8 +89,10 @@ src/
   version of this bullet listed four families and was already wrong on the day it was written.**
   `tokens.spec.ts` asserts the real rule instead: any token carrying colour that resolves to the
   *same* literal in both schemes fails, unless it is named in that spec's `SCHEME_INDEPENDENT` set
-  with a reason. The three white-over-brand alphas on the global bar are the only members, because
-  the band is dark in both schemes. So adding a tier-3 token that reads tier 1 no longer relies on
+  with a reason, and the reasons differ by member: the global bar's white-over-brand alphas sit on a
+  band that is dark in both schemes, and since task 143 the Enrolment code's plate pair holds dark on
+  light because a camera reads that symbol and a reversed QR is one a scanner may be unable to decode.
+  The spec's own set is the enumeration; this sentence names the reasons. So adding a tier-3 token that reads tier 1 no longer relies on
   anyone remembering — it goes red.
 
 - **No colour may be written outside `tokens.css`, and as of task 82 none is.** The last two were
@@ -118,7 +120,7 @@ src/
   Server Component as `undefined`, a button in the wrong colours, every gate green). When you add a
   vocabulary, add the sibling module — not an `as const` at the top of the component.
 
-- **25 of the 49 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
+- **25 of the 51 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
   or a handler of its own. `Button` carried it from task 20 without needing it, and the day it
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never

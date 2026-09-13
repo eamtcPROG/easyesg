@@ -1,4 +1,10 @@
-import { mintTotpSecret, totpCodeAt, totpEnrolmentUri, verifyTotp } from './totp';
+import {
+  ADMIN_TOTP_ISSUER,
+  mintTotpSecret,
+  totpCodeAt,
+  totpEnrolmentUri,
+  verifyTotp,
+} from './totp';
 
 /**
  * Pinned to RFC 6238 Appendix B. The implementation is `otpauth` (§12.1) rather than this
@@ -80,10 +86,28 @@ describe('TOTP (RFC 6238, SHA-1, 6 digits, 30 s step)', () => {
   });
 
   it('emits the enrolment URI in the Key Uri Format an authenticator scans', () => {
-    const uri = totpEnrolmentUri({ email: 'ana@easyesg.md', secret: RFC_SECRET_BASE32 });
+    const uri = totpEnrolmentUri({
+      issuer: ADMIN_TOTP_ISSUER,
+      email: 'ana@easyesg.md',
+      secret: RFC_SECRET_BASE32,
+    });
     expect(uri).toBe(
       'otpauth://totp/EasyESG%20Admin:ana%40easyesg.md' +
         `?issuer=EasyESG%20Admin&secret=${RFC_SECRET_BASE32}&algorithm=SHA1&digits=6&period=30`,
     );
+  });
+
+  /**
+   * The issuer is the name a phone shows beside the digits, so it is the caller's (task 143). The
+   * case above cannot see an implementation that ignored the argument and kept the admin realm's
+   * name — which is exactly what the tenant realm received until that task.
+   */
+  it('names the factor with the issuer the caller gives', () => {
+    const uri = totpEnrolmentUri({
+      issuer: 'EasyESG',
+      email: 'ana@easyesg.md',
+      secret: RFC_SECRET_BASE32,
+    });
+    expect(uri).toMatch(/^otpauth:\/\/totp\/EasyESG:ana%40easyesg\.md\?issuer=EasyESG&/u);
   });
 });

@@ -19,6 +19,7 @@ import {
 import type { AccountStore } from '../interfaces/account-store.interface';
 import type { PasswordHasher } from '../interfaces/password-hasher.interface';
 import { RECOVERY_CODE_OUTCOME, type TotpState } from '../models/totp.model';
+import { TENANT_TOTP_ISSUER } from '../constants/totp.constants';
 
 /**
  * UC-193 — enrol, confirm, disenrol and re-issue the opt-in second factor (NFR-95; task 27.2).
@@ -36,7 +37,9 @@ import { RECOVERY_CODE_OUTCOME, type TotpState } from '../models/totp.model';
  * would be two implementations of one algorithm, drifting on the window, the digits or the step,
  * which is exactly the class of defect the 24 Aug 2026 review found in the hand-rolled original.
  * What this module must never borrow is the admin realm's tables or its `AdminSessionStore`, and
- * it borrows neither.
+ * it borrows neither. **Nor, since task 143, its name**: the enrolment URI's issuer is what a phone
+ * shows the account's owner once S-28's symbol is scanned, so it is `TENANT_TOTP_ISSUER` here and the
+ * admin realm keeps its own.
  *
  * **Two steps, and activation belongs to the second.** `begin` issues a secret and stores it
  * unconfirmed; `confirm` requires a current code, which is the only evidence that the
@@ -139,7 +142,10 @@ export class ManageTotp {
         throw new TotpAlreadyEnrolledError();
       }
 
-      return { secret, enrolmentUri: totpEnrolmentUri({ email: account.email, secret }) };
+      return {
+        secret,
+        enrolmentUri: totpEnrolmentUri({ issuer: TENANT_TOTP_ISSUER, email: account.email, secret }),
+      };
     });
   }
 

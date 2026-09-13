@@ -18706,3 +18706,194 @@ Git records all twenty files as renames. The two route files reach the folder th
 Web typecheck, `pnpm lint`, `pnpm docs:check`, the web unit suite (47 files, 559 — twelve more than
 before, one per new directory in `folder-shape.spec.ts`'s walk) and `pnpm e2e:web --project identity
 --project expansion` (177 passed, S-16's seven journeys among them) are green.
+
+## Task 143 closes — the QR S-28 never drew, and the name it would have put on a phone · 2026-09-13
+
+The API has minted an `otpauth://` Key Uri since task 27.2, the contract has carried it and S-28's
+reducer has held it — and nothing drew it, so the screen printed a base32 secret under *"Scanați sau
+introduceți acest cod"*. The row has no sub-steps, so this entry is both the task's and its parent
+close. Scope widened from `pkg:ui+web+root` to **`api`** as well, for the first reason below.
+
+### Three questions before the first file
+
+Raised in one batch and answered by the project owner the same day; all three are recorded in
+`architecture.md` §12.5.6's task-143 row.
+
+- **The tenant factor was named for the admin realm.** `ManageTotp` borrows
+  `platform/admin/domain/totp.ts`'s primitive — correctly, as the mechanism — and borrowed its
+  `ISSUER = 'EasyESG Admin'` with it. Nobody could see it while the URI went undrawn: a typed key lets
+  a person name the authenticator entry, a scanned symbol names it for them. **The record of the
+  defect already existed, written as its justification**: `e2e/web/support/second-factor.ts` said
+  *"it is `'EasyESG Admin'` on the tenant realm too … Stated here because the string looks like a
+  copy-paste slip and is not"*, while the DTO's own example read `issuer=EasyESG` — so the fix brought
+  the code to the published contract, and `openapi:check` had nothing to regenerate. Answer: fix it
+  inside 143 — `totpEnrolmentUri` takes the issuer, `TENANT_TOTP_ISSUER = 'EasyESG'` — **without task
+  133.1's split first**. A factor enrolled before today keeps working (the HMAC never sees the issuer)
+  and keeps its old name until enrolled again.
+- **§12.1 said the symbol inherits `currentColor`**, which in the dark scheme draws light modules on a
+  dark ground — and ISO/IEC 18004 leaves decoding a reversed symbol optional. Answer: dark on light in
+  both schemes, a tier-3 pair named in `SCHEME_INDEPENDENT` and measured as a pairing (17.33:1).
+- **How the suite proves a scan.** Answer: decode pixels with `zxing-wasm`; declined `jsqr` (last
+  published April 2021) and no decoder.
+
+**What 133.1 lost, recorded here rather than in `task.md`.** Its row said *"Split here … because tasks
+143, 144 and 151 all amend this file"*, and the preamble ordered `133.1` before *"143/144/151 touch
+`manage-totp.use-case.ts`"*. Both now name 144 and 151 only; 143 went first on the owner's decision,
+its change there being one argument. The decision is §12.5.6's; this is its history.
+
+### What reading turned up that nobody had asked
+
+- **`zxing-wasm` downloads its wasm from jsDelivr on first use — in Node too.** Measured by replacing
+  `fetch` before a decode. `symbol.ts` hands it the packaged `zxing_reader.wasm` and keeps `fetch` a
+  thrower while it decodes, so an override that goes missing fails rather than reaching a CDN.
+- **No `'use client'` on the component, from source rather than habit.** `QRCodeSVG` calls
+  `useMemo` and `forwardRef` and nothing else, and React 19.2.8's server build exports both; the
+  directive would have been `Button`'s defect over again. What was measured is the export list, not an
+  RSC render — no Server Component renders it yet — and the docblock says which.
+- **§12.1's `qrcode.react` row said MIT; the registry says ISC.** Corrected in the row.
+- **The library's defaults are wrong for this use**: error correction `L` and no quiet zone. The
+  component uses `M` and four modules, and the quiet zone is the plate's own ground.
+- **`packages/ui/CLAUDE.md` said the global bar's alphas were `SCHEME_INDEPENDENT`'s only members** —
+  made false by this task. Rewritten to name the reasons and leave the enumeration to the spec.
+
+### Shape
+
+`data-display/`, where §11.5 enumerates the entry; the loading arm is its own file (`file-one-idea`)
+over the same stylesheet, so its box matches (UX-115). S-28's `.secret` rule moved into the component
+with the markup it styles. **`secretHeading` is unchanged** — *scan or enter* is true of the arm S-28
+renders, since the contract requires the URI — and `symbolLabel` is new in all three locales. The e2e
+helper's `totp(secret, email)` became `codeFor(uri)`: parsing the scanned URI restates no parameter,
+where the old helper restated five and one of them was the defect.
+
+**The row's wording of the state set was not the one met, and the row is what is wrong.** It names
+*"the URI absent, and the type-it-in fallback"*; §11.5, written on 12 Sep before the work, names *"the
+URI absent … and loading"* and says the typed key and the scan are *"neither … a fallback for the
+other"*. `archived_tasks.md`'s precedence rule settles it — the identifier wins — so the component
+carries ready, URI-absent and loading, and the typed key renders in every arm rather than as one.
+
+### Where else the rules held
+
+- `'EasyESG Admin'`: the admin e2e helper keeps it (correct — the admin realm), the provisioning CLI
+  now passes `ADMIN_TOTP_ISSUER`, and the tenant e2e helper's restatement is gone.
+  `totpEnrolmentUri` has two callers and both name their realm.
+- Docblocks counting things outside their file: three found before the reviews (*"the two credential
+  screens"*, two *"no consumer … today"*), fixed, and two more the convention review found (below).
+  `tokens.css`'s *"the one pair that must not follow the scheme"* was also false — the global bar's
+  alphas do not follow it either — and its *"fourteen tier-3 tokens"* went stale with the pair.
+
+### Verification
+
+**Before the reviews.** ui 275, web 559, the api's TOTP and provisioning specs 38; typecheck across
+all seven workspaces; lint. **Eight mutations, each restored and byte-compared, each failing exactly
+the test written for it**: the quiet zone dropped, the symbol encoding the secret, the library's
+default colours, the loading arm announcing nothing, the plate's ground turned dark, the plate taken
+out of `SCHEME_INDEPENDENT`, the tenant issuer set to the admin name, and `totpEnrolmentUri` ignoring
+the issuer it is given. The browser: S-28's journeys and the axe suite, **22 of 22** — enrolment
+decodes the symbol off the page and confirms from what it read, sign-in's challenge and the recovery
+code run on that scanned factor, and axe passes on the offer stage; the api's TOTP e2e, 10 of 10.
+
+**One run that did not run, recorded because its exit code said otherwise.** The first browser
+invocation was `pnpm e2e:web --project identity credentials.spec accessibility.spec`; Playwright's
+`--project` is variadic, took both file filters as project names and refused — and the chain's exit
+code was the api suite's that followed it, 0. Found by reading the log rather than the summary; re-run
+as `--project=identity`.
+
+**After the reviews.** ui 277, lint clean. **The two new plate assertions bite**: the pair swapped in
+`:root` fails the direction check in both schemes; the pair re-pointed to its reverse in the dark block
+fails both the *requires* check and the dark direction check. The enrolment journey passes with the
+decode strict (`tryInvert: false`). **The visual record** came from a temporary spec driving a fresh
+e2e account, run once and deleted, never committed: S-28's enrolment offer at 1440 and 390 in both
+schemes. The Key Uri a real e2e address produces is **157 characters**; the symbol renders at
+**192 × 192** in all four; the page overflows by **0**; and each of the four decodes with inversion off
+— the dark scheme's plate included, which is decision (2) seen working rather than asserted. The
+browser pane was not used for this: its session was the owner's own dev account, and signing in or
+registering through it would mean entering a password.
+
+**Three browser mutations, and the first attempt at them was not evidence.** A script counted any
+non-zero Playwright exit as a bite and printed no failure line — a web server that never started looks
+identical — and its first case needed no rebuild, so on a second run it would have met the previous
+case's mutated bundle. Rewritten to rebuild the unmutated bundle, require a green baseline, and count
+a case only when the failure names the check it targets. **All three bite on their own check**: the
+decoder denied its packaged binary aborts its wasm load with the thrower's message in the log
+(*"zxing-wasm reached for the network"*); the symbol at 2rem and the plate drawn light on dark both
+fail *"exactly one readable QR symbol in the element"* — the second only because the decode is strict.
+
+### The gate set, cold, and why cold
+
+`gates:clean` rather than `gates`: the diff reaches `packages/*`, a build input (the lockfile and the
+catalog) and a type (`totpEnrolmentUri`'s input) — three of the root file's cases. It ran after every
+review edit and was green on its first run: lint, `eslint:prove`, typecheck, `image:check`,
+`docs:check` (40), the unit suites (api 795, web 559, ui 277), boundaries and their proof, build,
+`openapi:check`, `facade:check`, `routes:check`, `migrations:check` (56), **`pnpm e2e` (910),
+`pnpm e2e:worker` and `pnpm e2e:web` (182)** — the three runs that prove the HTTP entrypoint, the
+worker and both front ends boot and serve.
+
+**Its log was read for runtime errors, and two kinds are not this diff's.** `[MessageCatalogue] …
+used before initialiseCatalogue()` sits beside the known leak fixture and comes from
+`problem-details.filter.spec.ts` itself — run alone, it prints both — and no file of this diff reaches
+the catalogue. And the standalone server logged `⨯ Error: The destination stream closed early` three
+times (digest `2667547900`), each after a journey that redirects mid-render — archiving an entity, the
+profile's identifier refusal, a signed-in member turned away from sign-in — none of which renders
+anything this diff changed. Nothing in this repository records it, and attributing it means running
+the browser suite on an earlier commit, which is not this task; it is raised as its own follow-up
+rather than assumed benign.
+
+### Three reviews on `opus`
+
+**Spec review, two findings, both applied.** §12.1's `qrcode.react` row cited **FR-7**, which is
+password change — it now cites UC-193 and NFR-95; the citation predates this task, and the row's
+rationale was rewritten without its heading being read. And `task.md`'s preamble and 133.1's row had
+gained dated parentheticals repeating §12.5.6's decision, which `archived_tasks.md` forbids a row to
+carry; the facts stayed in the rows and the history moved into this entry. Also taken: §12.5.6 now
+states the assumption behind *"nothing migrates"* — no deployed environment holds a tenant factor,
+tasks 71–73 not being live — and what renaming one would cost (turning it off and enrolling again,
+which replaces the recovery codes); §11.5's citation moved beside the clause it supports.
+
+**Convention review, two findings, both applied.** `offerEnrolment` still read the printed key with
+`section.locator('.t-code').first()` — a line carried unchanged through the rewrite, now bearing the
+new *printed key equals scanned secret* check, and the root file's words on it are *"`.first()` … are
+findings, not locator style"*. At the enrolment stage there is one `t-code` in the region, so it
+disambiguated nothing and would have hidden a second; it is strict now. And two docblocks said the
+library's defaults *"would have been the only colours in this package written outside `tokens.css`"*
+— a count of every other file, which `reason-docblock-carries-the-why` forbids; they now say what the
+file knows. From its notes: a second copy of the spec count in `packages/ui/CLAUDE.md` (*"not in the
+26"*) that `docs:check` does not guard, fixed; the spec's `modulesOf` reads path `[1]` with nothing
+pinning that there are two, now asserted. **Left, and raised rather than fixed:** `packages/ui/CLAUDE.md`
+says *"Tier 3 is the only tier a component may read"*, while 39 of the package's 41 stylesheets read
+tier-1 space or radius and the package reads tier 2 for colour 257 times. The new stylesheet follows
+the practice; the sentence is what disagrees, and reconciling it is not this task's.
+
+**Gate-integrity review — one property guarded by nothing, proven three ways, and it was the owner's
+second decision.** The plate must be dark modules on a light ground, and none of the three checks that
+looked as if they held that could fail on it:
+
+- **The contrast pairing is blind to direction.** Swapped in `:root`, the pair still measured 17.33:1
+  and all 118 assertions passed.
+- **`SCHEME_INDEPENDENT` permitted and did not require.** Its filter only drops a member from the
+  offenders, so re-pointing the plate to its reverse in the dark block passed too — and my own
+  mutation, removing the pair from the set, had proven the set necessary for a green run, not that it
+  held anything still.
+- **The browser decode read reversed symbols.** `zxing-wasm` defaults `tryInvert` to true; the
+  reviewer's Chromium harness decoded a reversed symbol with it on and found nothing with it off.
+  Nothing under `e2e/` renders the dark scheme either.
+
+Fixed on all three: `tokens.spec.ts` asserts every `SCHEME_INDEPENDENT` member resolves the same in
+both schemes, and that the plate's modules are darker than its ground in both; `readSymbol` decodes
+with `tryInvert: false`, like the scanner the decision was made for. Its other conclusions, each proven
+or read from source: the fetch thrower and the 2rem symbol both bite; a missing quiet zone still
+decodes, so the unit anchor is its only guard and a sound one; the issuer, secret and label assertions
+are not vacuous; the second axe scan is not inert, though `offerEnrolment` finds the symbol by name
+first and so fails before axe could. **Left:** nothing guards the issuer the provisioning CLI prints —
+`e2e/admin/support/provision.ts` supplies the secret and never reads the URI. The CLI is the interim
+lockout release until tasks 67.4 and 144, and `totp.spec.ts` pins `ADMIN_TOTP_ISSUER`'s value.
+
+### Considered and not applied
+
+- **No expansion-harness case for the enrolment stage.** `credentials.expansion.spec.ts` measures S-28
+  at rest; the stage this task changed is bounded by a fixed 12rem symbol, a wrap rather than a
+  breakpoint, and `break-all` on the key — and the temporary run measured 0 overflow at 390 in both
+  schemes. A committed case would cost an enrolment per frame to re-prove a box that cannot grow.
+- **`EnrolmentCodeLoading` has no consumer**: S-28 changes stage only when the offer has arrived. It is
+  defined because UX-90 makes an undefined state a defect.
+- **`rerender-memo` / `useMemo`**: S-28 passes primitives to a component that is not `memo()`'d, and
+  `QRCodeSVG` memoizes its own encoding.

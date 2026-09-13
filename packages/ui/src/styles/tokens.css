@@ -189,7 +189,7 @@
 
   /* The skeleton's two greys — §11.5 names the token `skeleton.bg` and the specimen draws both:
      the stronger one carries a heading's line, the quiet one every other bar. Tier 1 directly, as
-     fourteen tier-3 tokens here already do, because neither grey has a tier-2 role: they are not a
+     other tier-3 tokens here already do, because neither grey has a tier-2 role: they are not a
      surface a reader reads on, they are the absence of one. */
   --skeleton-surface: var(--slate-100);
   --skeleton-surface-quiet: var(--slate-50);
@@ -259,6 +259,16 @@
      `rgb(0 0 0 / 45%)` — and because 45 % black over an already-dark page separates nothing.
      Alpha over black rather than a slate step, so it composites correctly on any surface. */
   --scrim: rgb(0 0 0 / 45%);
+
+  /* The Enrolment code's symbol (task 143) — a pair that must NOT follow the scheme (project owner,
+     13 Sep 2026). A QR symbol is read by a camera, and ISO/IEC 18004 makes
+     decoding a reflectance-reversed symbol an optional capability: light modules on a dark ground are
+     unreadable to every scanner that omits it. So dark on light in both schemes, from the slate
+     ramp's two ends directly — tier 1, which the dark palette never re-points — and named in
+     `tokens.spec.ts`'s SCHEME_INDEPENDENT set with this reason. In the dark scheme it reads as a light
+     plate on the card, which is what a printed symbol on a dark page looks like too. */
+  --enrolment-code-module: var(--slate-900);
+  --enrolment-code-ground: var(--slate-0);
 
   /* Tells the browser which schemes this document supports, so form controls, scrollbars and
      the canvas behind the page follow the scheme rather than staying light under dark tokens. */

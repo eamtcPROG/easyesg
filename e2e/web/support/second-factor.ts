@@ -1,10 +1,12 @@
 import { expect, type Page } from '@playwright/test';
+import { TOTP, URI } from 'otpauth';
 import { signOut } from './session';
+import { readSymbol } from './symbol';
 
 /**
  * Driving the second factor through the shipped screens — shared by `credentials.spec.ts` (which
- * asserts the journeys) and `accessibility.spec.ts` (which needs an enrolled account to reach the
- * step axe scans).
+ * asserts the journeys) and `accessibility.spec.ts` (which needs the enrolment offer on screen, and an
+ * enrolled account to reach the step axe scans).
  *
  * **Extracted 27 Aug 2026**, when a review found the whole enrolment journey copy-pasted between
  * the two files, TOTP generator included. Two copies of one journey is not a tidiness problem: when
@@ -34,46 +36,40 @@ export interface Credentials {
 }
 
 /**
- * RFC 6238 against the secret the screen just showed — the same generator an authenticator runs.
+ * The code an authenticator shows for a factor it enrolled from `uri` — RFC 6238 over every
+ * parameter the URI carries, which is exactly what an authenticator does with a scanned symbol.
  *
- * The issuer is the API's, and it is `'EasyESG Admin'` on the tenant realm too: `ManageTotp`
- * borrows `platform/admin/domain/totp.ts`'s primitive, which is a deliberate sharing of a
- * *mechanism* rather than of the realms' data (NFR-65). Stated here because the string looks like a
- * copy-paste slip and is not — and because it is precisely what a second copy of this helper would
- * get wrong.
+ * **It takes the scanned URI rather than a secret, since task 143.** It used to rebuild the factor
+ * from the printed secret and restate the rest — SHA-1, six digits, thirty seconds, and the issuer
+ * `'EasyESG Admin'`, under a paragraph explaining that the tenant realm's factor really was named for
+ * the admin realm. That paragraph was the defect's only record: the issuer is the name a phone shows
+ * its owner once the symbol is scanned, and task 143 gave the tenant realm its own. Parsing restates
+ * nothing, so nothing here can drift from the server.
  */
-export function totp(secret: string, email: string): Promise<string> {
-  return import('otpauth').then(({ TOTP, Secret }) =>
-    new TOTP({
-      issuer: 'EasyESG Admin',
-      label: email,
-      algorithm: 'SHA1',
-      digits: 6,
-      period: 30,
-      secret: Secret.fromBase32(secret),
-    }).generate(),
-  );
+export function codeFor(uri: string): string {
+  return URI.parse(uri).generate();
 }
 
-export interface EnrolledFactor {
-  /** The secret an authenticator would have captured. */
+/** What S-28 offers at the first enrolment step, each read the way its reader reads it. */
+export interface EnrolmentOffer {
+  /** The key as the screen prints it, for typing. */
   readonly secret: string;
-  /** The ten recovery codes, shown exactly once. */
-  readonly recovery: string[];
+  /** The Key Uri as a camera reads it off the symbol — decoded from pixels, never from the DOM. */
+  readonly uri: string;
 }
 
 /**
- * Enrols a second factor on a signed-in account through S-28's own controls, and answers with what
- * the screen showed.
+ * Begins enrolment through S-28's own controls, and answers with both paths into an authenticator.
  *
- * It goes through the UI rather than seeding the database on purpose: the point of these suites is
- * that three tasks' code agrees, and a seeded `totp_credential` row would prove only that the
- * challenge reads a table.
+ * **The two must be one factor, and this is where that is asserted rather than assumed**: the scanned
+ * URI's secret is the printed one, and it names this realm and this person. A symbol drawn from the
+ * wrong value, a key printed from a different offer, or the admin realm's issuer on a tenant factor
+ * each fail here, on the screen that caused them.
  */
-export async function enrolFactor(
+export async function offerEnrolment(
   page: Page,
   { email, password }: Credentials,
-): Promise<EnrolledFactor> {
+): Promise<EnrolmentOffer> {
   await page.goto('/account/credentials');
 
   const section = page.getByRole('region', { name: 'Verificare în doi pași' });
@@ -86,10 +82,48 @@ export async function enrolFactor(
   await section.getByRole('button', { name: 'Activați verificarea în doi pași' }).click();
 
   await expect(section.getByText('Scanați sau introduceți acest cod')).toBeVisible();
-  const secret = (await section.locator('.t-code').first().textContent()) ?? '';
+  // Strict, not `.first()`: at this stage the key is the region's only `t-code`, and a second one is
+  // a defect for this locator to fail on rather than to choose between.
+  const secret = (await section.locator('.t-code').textContent()) ?? '';
   expect(secret).toMatch(/^[A-Z2-7]{32}$/);
 
-  await section.getByLabel('Codul din aplicație').fill(await totp(secret, email));
+  const uri = await readSymbol(
+    section.getByRole('img', { name: 'Cod QR pentru aplicația de autentificare' }),
+  );
+  const scanned = URI.parse(uri);
+  expect(scanned).toBeInstanceOf(TOTP);
+  expect(scanned.secret.base32).toBe(secret);
+  // The name a phone files the factor under, and so the words its owner reads there.
+  expect(scanned.issuer).toBe('EasyESG');
+  expect(scanned.label).toBe(email);
+
+  return { secret, uri };
+}
+
+export interface EnrolledFactor {
+  /** The Key Uri the authenticator enrolled from — what `codeFor` generates against. */
+  readonly uri: string;
+  /** The ten recovery codes, shown exactly once. */
+  readonly recovery: string[];
+}
+
+/**
+ * Enrols a second factor on a signed-in account through S-28's own controls, and answers with what
+ * the screen showed.
+ *
+ * It goes through the UI rather than seeding the database on purpose: the point of these suites is
+ * that three tasks' code agrees, and a seeded `totp_credential` row would prove only that the
+ * challenge reads a table.
+ *
+ * **It confirms with a code generated from the scanned symbol, not from the printed key** — task
+ * 143's expected result, a phone authenticator enrolling by scanning S-28, as the journey rather than
+ * a separate assertion. `offerEnrolment` has already held the printed key to the same factor.
+ */
+export async function enrolFactor(page: Page, credentials: Credentials): Promise<EnrolledFactor> {
+  const { uri } = await offerEnrolment(page, credentials);
+
+  const section = page.getByRole('region', { name: 'Verificare în doi pași' });
+  await section.getByLabel('Codul din aplicație').fill(codeFor(uri));
   await section.getByRole('button', { name: 'Finalizați activarea' }).click();
 
   // The recovery codes, shown exactly once — with the warning BEFORE them (P5).
@@ -99,7 +133,7 @@ export async function enrolFactor(
   const recovery = await codes.allInnerTexts();
   await section.getByRole('button', { name: 'Le-am notat' }).click();
 
-  return { secret, recovery };
+  return { uri, recovery };
 }
 
 /**

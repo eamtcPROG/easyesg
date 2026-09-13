@@ -1,0 +1,55 @@
+/* Enrolment code (§11.5, task 143). The symbol beside the secret where the region has room for both
+   and above it where it does not — a wrap rather than a breakpoint, because the component cannot know
+   how wide the region holding it is. */
+.code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+/* The plate. Its ground is also the quiet zone the symbol draws in, so the four modules a scanner
+   needs around the finder patterns are the plate's own colour rather than the card's. `rem`, so the
+   symbol grows with a reader's font size rather than staying a fixed photograph of one. */
+.symbol {
+  flex: none;
+  inline-size: 12rem;
+  block-size: 12rem;
+  border-radius: var(--radius-1);
+  color: var(--enrolment-code-module);
+  background: var(--enrolment-code-ground);
+}
+
+.manual {
+  display: flex;
+  flex: 1 1 16rem;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.manual > p {
+  margin: 0;
+}
+
+/* `break-all` because a base32 secret has no spaces and must not force the region wider than 390 px
+   (UX-73's narrowest width). Moved here from S-28's stylesheet with the markup it styles. */
+.secret {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-1);
+  background: var(--surface-sunken);
+  color: var(--text-default);
+  word-break: break-all;
+}
+
+/* The loading state's two bars that are not one of Skeleton's own shapes. Two classes each, so they
+   win over Skeleton's `.block` height whichever stylesheet the bundler happens to emit last. */
+.code .symbolLoading {
+  flex: none;
+  inline-size: 12rem;
+  block-size: 12rem;
+}
+
+.code .helpLoading {
+  inline-size: 80%;
+}

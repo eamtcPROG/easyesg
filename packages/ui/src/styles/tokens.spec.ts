@@ -182,6 +182,10 @@ const NON_TEXT: Pairing[] = [
   { what: 'focus ring, halo against the ring', fg: '--border-focus-halo', bg: '--border-focus', floor: 3 },
   { what: 'accent as an active marker', fg: '--accent', bg: '--surface-default', floor: 3 },
   { what: 'accent on its own tint', fg: '--accent', bg: '--accent-tint', floor: 3 },
+  // The Enrolment code's modules on their plate (task 143). Held to 4.5 rather than 1.4.11's 3:
+  // no WCAG floor is written for a camera, and of the two this file knows the stricter is the nearer
+  // to what one needs. The pair's comment in `tokens.css` is why it is the same in both schemes.
+  { what: 'enrolment code modules on their plate', fg: '--enrolment-code-module', bg: '--enrolment-code-ground', floor: 4.5 },
 ];
 
 const ALL = [...TEXT, ...STATE_TEXT, ...TEXT_ON_TINT, ...STATE_ON_SURFACE, ...NON_TEXT];
@@ -260,14 +264,21 @@ describe('tokens.css — UX-80 and UX-101', () => {
     const isColour = (v: string) => /^(#|rgb|hsl|oklch)/.test(v);
     const isTier1 = (n: string) => /^--(pine|slate|amber|rust|crimson|iris|azure)-/.test(n);
 
-    /** Scheme-independent on purpose. Each is white-over-brand alpha on a band that is dark in
-     *  BOTH schemes — the tier-3 comment on the global bar records why alpha rather than a pine
-     *  step: it composites correctly against any brand colour, which is what makes it correct
-     *  here too. Adding to this list is a decision; it needs a reason in the same commit. */
+    /** Scheme-independent on purpose, and each family for its own reason. Adding to this list is a
+     *  decision; it needs a reason in the same commit.
+     *
+     *  - **The global bar's three rules** are white-over-brand alpha on a band that is dark in BOTH
+     *    schemes — the tier-3 comment on the global bar records why alpha rather than a pine step:
+     *    it composites correctly against any brand colour, which is what makes it correct here too.
+     *  - **The Enrolment code's plate** (task 143) is dark modules on a light ground in both schemes
+     *    because a camera reads it, and decoding a reversed QR symbol is optional in ISO/IEC 18004 —
+     *    a symbol that inverted with the scheme would be unreadable to any scanner omitting it. */
     const SCHEME_INDEPENDENT = new Set([
       '--globalbar-divider',
       '--globalbar-plate-border',
       '--globalbar-plate-hover',
+      '--enrolment-code-module',
+      '--enrolment-code-ground',
     ]);
 
     const unmoved = [...LIGHT.keys()]
@@ -281,7 +292,32 @@ describe('tokens.css — UX-80 and UX-101', () => {
       `these carry colour and are identical in both schemes — re-point them in the dark block, ` +
         `or add them to SCHEME_INDEPENDENT with a reason: ${unmoved.join(', ')}`,
     ).toEqual([]);
+
+    // The set requires as well as permits. The filter above only drops a member from the offenders,
+    // so a member re-pointed in the dark block passed silently — proven on task 143's plate by
+    // re-pointing it to its own reverse (gate-integrity review). Each member is held to its claim.
+    const moved = [...SCHEME_INDEPENDENT].filter(
+      (name) => resolve(name, 'light') !== resolve(name, 'dark'),
+    );
+    expect(
+      moved,
+      `named scheme-independent but re-pointed in the dark block: ${moved.join(', ')}`,
+    ).toEqual([]);
   });
+
+  /**
+   * The Enrolment code's plate draws dark modules on a light ground (task 143), and a contrast ratio
+   * cannot say which side is darker — swapped in `:root`, the pair still measured 17.33:1 and every
+   * assertion passed. So the direction is its own check, in both schemes.
+   */
+  it.each(['light', 'dark'] as const)(
+    '%s: the enrolment code draws dark modules on a light ground',
+    (scheme) => {
+      expect(luminance(resolve('--enrolment-code-module', scheme))).toBeLessThan(
+        luminance(resolve('--enrolment-code-ground', scheme)),
+      );
+    },
+  );
 
   it.each(
     (['light', 'dark'] as const).flatMap((scheme) => ALL.map((p) => [scheme, p] as const)),

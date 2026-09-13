@@ -59,6 +59,7 @@
     "otpauth": "catalog:",
     "pg": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "catalog:"
+    "typescript-eslint": "catalog:",
+    "zxing-wasm": "catalog:"
   }
 }

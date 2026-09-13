@@ -5,7 +5,7 @@ import {
   grantMembership,
   verificationTokenFor,
 } from './support/db';
-import { PASSWORD, enrolFactor, presentPassword, totp } from './support/second-factor';
+import { PASSWORD, codeFor, enrolFactor, presentPassword } from './support/second-factor';
 import { signOut } from './support/session';
 
 /**
@@ -129,7 +129,7 @@ test('turning on the second factor makes sign-in ask for a code (UC-193 → UC-1
   page,
 }) => {
   const email = await signedIn(page, 'factor');
-  const { secret } = await enrolFactor(page, { email, password: PASSWORD });
+  const { uri } = await enrolFactor(page, { email, password: PASSWORD });
 
   // And the point of all of it. **This is the journey task 27.3 broke and nobody could see**: the
   // API started answering a challenge where a session used to be, and until the web tier learned
@@ -138,7 +138,8 @@ test('turning on the second factor makes sign-in ask for a code (UC-193 → UC-1
   await page.waitForURL('**/sign-in/factor');
   await expect(page.getByRole('heading', { name: 'Confirmați că sunteți dumneavoastră', level: 1 })).toBeVisible();
 
-  await page.getByLabel('Codul din aplicația de autentificare').fill(await totp(secret, email));
+  // From the factor the phone scanned off S-28 (task 143), which is the only factor a real user has.
+  await page.getByLabel('Codul din aplicația de autentificare').fill(codeFor(uri));
   await page.getByRole('button', { name: 'Confirmați și intrați în cont' }).click();
   await page.waitForURL('**/home');
 });

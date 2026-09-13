@@ -72,7 +72,11 @@ describe('ManageTotp (UC-193, NFR-95)', () => {
   it('enrols in two steps and issues the specified number of recovery codes', async () => {
     const { offer, codes } = await enrol();
 
-    expect(offer.enrolmentUri).toContain('otpauth://totp/');
+    // The tenant realm's own name, as a literal: it is what a phone shows the account's owner once
+    // S-28's symbol is scanned, and the admin realm's `EasyESG Admin` stood here until task 143.
+    expect(offer.enrolmentUri).toMatch(
+      /^otpauth:\/\/totp\/EasyESG:account-1%40example\.md\?issuer=EasyESG&secret=[A-Z2-7]{32}&/,
+    );
     expect(codes).toHaveLength(RECOVERY_CODE_COUNT);
     expect(await totp.state('account-1')).toEqual({
       enrolled: true,

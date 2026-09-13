@@ -322,6 +322,7 @@
         "reissue": "Generați coduri noi",
         "secretHeading": "Scanați sau introduceți acest cod",
         "secretHelp": "Adăugați-l în aplicația de autentificare, apoi introduceți mai jos codul afișat de aplicație.",
+        "symbolLabel": "Cod QR pentru aplicația de autentificare",
         "codeLabel": "Codul din aplicație",
         "codeMissing": "Introduceți codul din aplicație, altfel activarea nu poate fi finalizată.",
         "confirm": "Finalizați activarea",

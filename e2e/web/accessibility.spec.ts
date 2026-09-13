@@ -8,7 +8,7 @@ import {
   seedReport,
   verificationTokenFor,
 } from './support/db';
-import { enrolFactor, presentPassword } from './support/second-factor';
+import { enrolFactor, offerEnrolment, presentPassword } from './support/second-factor';
 import { accountTrigger } from './support/session';
 
 /**
@@ -350,6 +350,11 @@ test('axe finds no violations on the credentials screen', async ({ page }) => {
   // Three labelled regions and one h1 — the Record archetype's structure is most of what axe
   // has to judge here, and it is the part a screen gets wrong invisibly.
   await expect(page.getByRole('heading', { name: 'Date de autentificare', level: 1 })).toBeVisible();
+  await scan(page);
+
+  // The enrolment offer (task 143): the Enrolment code's symbol is an `img` that must carry a name,
+  // and this stage is the only place in the product axe can see one.
+  await offerEnrolment(page, { email, password: PASSWORD });
   await scan(page);
 });
 

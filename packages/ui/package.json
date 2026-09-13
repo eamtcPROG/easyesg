@@ -32,6 +32,7 @@
   "dependencies": {
     "@types/react": "catalog:",
     "lucide-react": "catalog:",
+    "qrcode.react": "catalog:",
     "radix-ui": "catalog:",
     "react": "catalog:"
   },

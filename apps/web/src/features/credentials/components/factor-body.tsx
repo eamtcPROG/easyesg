@@ -1,6 +1,6 @@
 'use client';
 
-import { BUTTON_VARIANT, Button, Callout, CALLOUT_INTENT } from '@easyesg/ui';
+import { BUTTON_VARIANT, Button, Callout, CALLOUT_INTENT, EnrolmentCode } from '@easyesg/ui';
 import { FormCodeField, FormSummary } from '@easyesg/ui/forms';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
@@ -108,9 +108,16 @@ export function FactorBody({ factor }: { readonly factor: TotpState }) {
     return (
       <form method="post" onSubmit={(event) => void confirm(event)} noValidate className={styles.form}>
         <FormSummary control={control} title={tForms('summaryTitle')} />
-        <p className="t-label">{t('secretHeading')}</p>
-        <p className={`t-code ${styles.secret}`} translate="no">{stage.secret}</p>
-        <p className="t-caption">{t('secretHelp')}</p>
+        {/* The symbol beside the key it encodes (§11.5, task 143). The heading's "scan or enter" is
+            true of this arm only because the contract always carries the URI — a screen that could
+            receive none would owe the component's URI-absent arm a heading of its own. */}
+        <EnrolmentCode
+          uri={stage.enrolmentUri}
+          secret={stage.secret}
+          heading={t('secretHeading')}
+          help={t('secretHelp')}
+          symbolLabel={t('symbolLabel')}
+        />
 
         <FormCodeField
           control={control}
