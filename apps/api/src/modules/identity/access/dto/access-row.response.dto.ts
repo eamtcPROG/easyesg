@@ -41,6 +41,19 @@ export class AccessRowResponseDto {
   email: string;
 
   @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'Ana Popescu',
+    description:
+      'UX-137’s derived display name, falling back to the address for an account that has not ' +
+      'set one. Null when kind is invitation: nobody holds it yet, so there is no account and no ' +
+      'name — which is a different fact from an account whose name is unset, and the reason this ' +
+      'is not defaulted to the address here. It is derived in the same statement that orders on ' +
+      'it, so the value sorted and the value rendered are one column.',
+  })
+  displayName: string | null;
+
+  @ApiProperty({
     enum: Object.values(MEMBERSHIP_ROLE),
     description: 'The role held, or for an invitation the role it will grant when accepted.',
   })
@@ -107,6 +120,7 @@ export class AccessRowResponseDto {
     const member = row.kind === ACCESS_ROW_KIND.MEMBER ? row : null;
     const invitation = row.kind === ACCESS_ROW_KIND.INVITATION ? row : null;
 
+    this.displayName = member?.displayName ?? null;
     this.accountId = member?.accountId ?? null;
     this.joinedAt = member?.joinedAt.getTime() ?? null;
     this.lastActiveAt = member?.lastActiveAt?.getTime() ?? null;

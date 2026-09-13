@@ -12,7 +12,7 @@ const payload: SessionPayload = {
   refreshToken: 'opaque-refresh-token',
   refreshTokenExpiresAt: 1_788_048_000_000,
   remembered: true,
-  account: { id: 'c0ffee00-0000-7000-8000-000000000001', email: 'ana@example.md', locale: 'ro' },
+  account: { id: 'c0ffee00-0000-7000-8000-000000000001', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro' },
 };
 
 describe('the session cookie codec (OQ-33)', () => {
@@ -85,5 +85,50 @@ describe('session persistence in the sealed payload (OQ-35)', () => {
   it('keeps a declined session declined across the seal', () => {
     const declined = sealSession({ ...payload, remembered: false }, SECRET);
     expect(unsealSession({ sealed: declined, secret: SECRET })?.remembered).toBe(false);
+  });
+});
+
+/**
+ * The identity block's two task-140 members, and the tolerance that keeps a live session alive
+ * across the deploy that added them (task 140's gate review).
+ *
+ * Same shape as `remembered` above and the same reason: a cookie sealed by the previous build
+ * carries neither field, and a strict reader would answer `null` for it — which reads as *no
+ * session* and signs every signed-in user out for a format change. The difference is that
+ * `remembered`'s tolerance has had a test since task 97 and these two shipped with none, so the
+ * branch could have been tightened, or typo'd into `undefined`, with every suite green.
+ *
+ * The fallbacks are **UX-137's own**, not invented for the codec: an account with no name displays
+ * its address, and an absent monogram renders the glyph. So a stale cookie shows the pre-140 chrome
+ * until its next rotation rather than an error.
+ */
+describe('the identity block sealed before task 140', () => {
+  it('reads a payload with no displayName as the address, and no monogram as null', () => {
+    // Sealed through the generic box, like the `remembered` case: the typed sealer cannot express
+    // a payload missing a required member, which is exactly what an older build wrote.
+    const { displayName: _name, monogram: _mono, ...account } = payload.account;
+    const sealed = sealJson({ ...payload, account }, SECRET);
+
+    const opened = unsealSession({ sealed, secret: SECRET });
+    expect(opened?.account.displayName).toBe(payload.account.email);
+    expect(opened?.account.monogram).toBeNull();
+  });
+
+  it('still refuses a payload whose identity block is missing something REQUIRED', () => {
+    // The tolerance is two members wide and not a general leniency: drop `email` and the reader
+    // must answer `null`. Without this the case above would be satisfied by a reader that had
+    // stopped validating the block at all.
+    const { email: _dropped, ...account } = payload.account;
+    const sealed = sealJson({ ...payload, account }, SECRET);
+
+    expect(unsealSession({ sealed, secret: SECRET })).toBeNull();
+  });
+
+  it('carries a real name and monogram through the seal unchanged', () => {
+    const sealed = sealSession(payload, SECRET);
+    const opened = unsealSession({ sealed, secret: SECRET });
+
+    expect(opened?.account.displayName).toBe(payload.account.displayName);
+    expect(opened?.account.monogram).toBe(payload.account.monogram);
   });
 });

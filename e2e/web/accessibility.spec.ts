@@ -9,6 +9,7 @@ import {
   verificationTokenFor,
 } from './support/db';
 import { enrolFactor, presentPassword } from './support/second-factor';
+import { accountTrigger } from './support/session';
 
 /**
  * The automated half of NFR-75's verification (architecture.md §12.1 pins @axe-core/playwright
@@ -147,7 +148,7 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   // scan below this line already includes it. This one judges it **open**: a menu, a submenu, an
   // expanded trigger and the roles that hold them together, none of which exist in the DOM until
   // somebody clicks. A component spec pins the roles; only axe judges them in a real page.
-  await page.getByRole('button', { name: `Contul dumneavoastră: ${email}` }).click();
+  await accountTrigger(page, { email }).click();
   await expect(page.getByRole('menuitem', { name: 'Date de autentificare' })).toBeVisible();
   await scan(page);
 });

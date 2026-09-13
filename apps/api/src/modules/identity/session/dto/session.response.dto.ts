@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { displayName, monogram } from '@api/modules/identity/account/domain/display-name';
 import { LOCALES, type Locale } from '@easyesg/i18n';
 import type { EpochMillis } from '@api/contracts/types/time';
 import { SIGN_IN_OUTCOME, type IssuedSession } from '../models/session.model';
@@ -9,6 +10,17 @@ import { SIGN_IN_OUTCOME, type IssuedSession } from '../models/session.model';
  * line, and `locale` is what the web tier writes into `NEXT_LOCALE` at sign-in (OQ-32 — the
  * session is named there as what carries the profile preference to the cookie). Everything else
  * about the account is the profile surface's, fetched authenticated.
+ *
+ * **Two more fields since task 140, admitted on this paragraph's own criterion rather than despite
+ * it.** `email` is here because it is the *"signed in as"* line; UX-137 changed what that line
+ * shows, so `displayName` and `monogram` are the same caller at the same moment, not a fourth and
+ * fifth concern. **Both are derived server-side by `domain/display-name.ts`** so one implementation
+ * exists: `monogram` in particular cannot be recomputed from `displayName` alone, because the
+ * composite collapses to the email address when no name is set and splitting *that* would produce
+ * an initial from an address — which UX-137 forbids in terms.
+ *
+ * The alternative was an authenticated read per page load in the global tier, which that
+ * component's own comment argues against on the most-rendered path in the product.
  */
 export class SessionAccountDto {
   @ApiProperty({ format: 'uuid' })
@@ -23,9 +35,23 @@ export class SessionAccountDto {
   })
   readonly locale: Locale;
 
+  /** UX-137's derived presentation string — the chrome's "signed in as" line. */
+  @ApiProperty({ example: 'Ana Popescu' })
+  readonly displayName: string;
+
+  /**
+   * UX-137's avatar monogram, or `null` where no name is set. **Null rather than an initial from
+   * the address**: a letter cut from an email reads as a name the person never gave, so the surface
+   * shows its glyph instead and says nothing false.
+   */
+  @ApiProperty({ type: String, example: 'AP', nullable: true })
+  readonly monogram: string | null;
+
   constructor(account: IssuedSession['account']) {
     this.id = account.id;
     this.email = account.email;
+    this.displayName = displayName(account, account.email);
+    this.monogram = monogram(account);
     this.locale = account.locale;
   }
 }

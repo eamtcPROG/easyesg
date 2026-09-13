@@ -14,6 +14,7 @@ import {
   isLastAdministrator,
   readAccessView,
   type AccessRow,
+  type MemberRow,
 } from './access';
 
 /**
@@ -29,17 +30,29 @@ import {
  * belongs to the screen, and **FR-60's mirror**, which exists so the screen does not offer a control
  * the API will refuse.
  */
-const member = (over: Partial<AccessRow> = {}): AccessRow => ({
+/**
+ * **`Partial<MemberRow>` and no trailing cast, since task 140's gate review.** It read
+ * `(over: Partial<AccessRow>) => ({ … } as AccessRow)`, and the cast is what let a **required**
+ * field be added to `MemberRow` with this fixture compiling unchanged — `displayName` was missing
+ * here and nothing said so, where the same omission in `access-board.spec.tsx` was a type error the
+ * compiler raised immediately. A cast over an object literal turns the compiler off for exactly the
+ * check a fixture exists to receive.
+ *
+ * `Partial<MemberRow>` rather than `Partial<AccessRow>` for the same reason: over the union, an
+ * override naming an invitation's field would be accepted for a row whose `kind` is `member`.
+ */
+const member = (over: Partial<MemberRow> = {}): MemberRow => ({
   kind: ACCESS_ROW_KIND.MEMBER,
   id: 'm-1',
   email: 'ana@example.md',
+  displayName: 'Ana Popescu',
   role: MEMBERSHIP_ROLE.EDITOR,
   standing: ACCESS_STANDING.ACTIVE,
   accountId: 'acc-1',
   lastActiveAt: null,
   joinedAt: 0,
   ...over,
-} as AccessRow);
+});
 
 const view = (over: Partial<typeof DEFAULT_ACCESS_VIEW> = {}) => ({
   ...DEFAULT_ACCESS_VIEW,

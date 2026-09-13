@@ -78,6 +78,18 @@ interface AccessRowShared {
 export interface MemberRow extends AccessRowShared {
   readonly kind: typeof ACCESS_ROW_KIND.MEMBER;
   readonly accountId: string;
+  /**
+   * UX-137's derived name, never empty — it falls back to the address for an account that has not
+   * set one, so this is what the person cell leads with and the address is what it states beneath.
+   *
+   * **Derived by the server and never recomputed here**, which is the same rule `standing` above
+   * carries and for a sharper reason: the API derives this in the statement that **orders** on it,
+   * so a name computed in the browser could sort one way and read another within one page.
+   *
+   * **On this half only.** An invitation has no account and therefore no name — *not known*, not
+   * *unset* — and the cell draws its address alone rather than a fallback wearing a person's slot.
+   */
+  readonly displayName: string;
   /** Null for a member who has not made a request since access was granted. */
   readonly lastActiveAt: number | null;
   readonly joinedAt: number;

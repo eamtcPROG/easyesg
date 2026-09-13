@@ -48,3 +48,30 @@
   gap: var(--space-5);
   max-inline-size: 32rem;
 }
+
+/* S-16's person cell (task 140). The name leads and the address follows it, in the type roles §11.6
+   gives a list row: the second line is `--text-muted`, which is 5.1:1 on `--surface-default` and is
+   measured rather than assumed — `tokens.css` carries the pairing and the note that any *tinted*
+   surface spends that margin, which is why this cell must not acquire a highlighted variant without
+   re-measuring it. */
+.person {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.personName {
+  font-weight: 600;
+  color: var(--text-default);
+}
+
+/* Truncating rather than wrapping: an address has no bound and a table row that grows to fit one
+   pushes every other row down. The full value stays in the DOM, so it is selectable and findable. */
+.personEmail {
+  display: block;
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

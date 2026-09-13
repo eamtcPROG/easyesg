@@ -5,6 +5,7 @@ import {
   grantMembership,
   verificationTokenFor,
 } from './support/db';
+import { accountTrigger } from './support/session';
 
 /**
  * §4.2's global tier in a real browser (UX-2, UX-135; task 30.1).
@@ -55,9 +56,6 @@ async function signIn(page: Page, email: string): Promise<void> {
   await page.waitForURL('**/home');
 }
 
-const accountTrigger = (page: Page, email: string) =>
-  page.getByRole('button', { name: `Contul dumneavoastră: ${email}` });
-
 test('the tier names the active organization and carries the account corner (UX-2)', async ({
   page,
 }) => {
@@ -74,7 +72,26 @@ test('the tier names the active organization and carries the account corner (UX-
   // Scoped to the banner since task 30.5: S-05 names the same organization in its heading and its
   // membership list too, and this test is about the *tier*.
   await expect(page.getByRole('banner').getByText(organizationName)).toBeVisible();
-  await expect(accountTrigger(page, email)).toBeVisible();
+  await expect(accountTrigger(page, { email })).toBeVisible();
+
+  // **The trigger shows the NAME and is named by the ADDRESS** (UX-137, task 140), and the split is
+  // the point: the name is what a reader recognises, the address is the unique fact that settles
+  // *which* account when two people share a display name — which is why it stays the accessible
+  // name above rather than following the visible text.
+  //
+  // Asserted as the whole run rather than as two `toContainText`s. The avatar is `aria-hidden` and
+  // adjacent, so the trigger's text is the monogram immediately followed by the name with no
+  // separator — `APAna Popescu` — and an equality is what fails if either half is dropped.
+  //
+  // **What this does NOT check is where `AP` was computed**, and the first draft of this comment
+  // claimed it did. For an account called *Ana Popescu* a browser-side `monogram(displayName)` and
+  // the session's own value agree, so both satisfy the line above. The two diverge only for an
+  // account with **no** name, where the composite has collapsed to the address and splitting it
+  // would show an initial cut from an email — and no journey here reaches that account, because
+  // S-01 requires both name fields. That refusal is guarded at unit level instead, twice:
+  // `display-name.spec.ts`'s *"gives nothing at all … rather than an initial from the address"* and
+  // `account-menu.spec.tsx`'s glyph case. What is unguarded end to end is the wiring between them.
+  await expect(accountTrigger(page, { email })).toHaveText('APAna Popescu');
 
   // The same band on a screen in the other route group, which is what "every authenticated
   // screen" means: `(workspace)` and the two `(app)` screens outside it share one layout.
@@ -102,7 +119,7 @@ test('the user menu carries S-28 and the language choice, and signs out (§4.2, 
   organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} Menu` }));
 
   await signIn(page, email);
-  await accountTrigger(page, email).click();
+  await accountTrigger(page, { email }).click();
 
   // S-28 moved here from the workspace tier in this task — §4.2 puts credentials under the
   // account corner, and task 27.7 put it in the nav only because no corner existed.
@@ -128,11 +145,11 @@ test('the user menu carries S-28 and the language choice, and signs out (§4.2, 
   await expect(submenu).toBeVisible();
   await submenu.getByRole('menuitem', { name: 'Русский' }).press('Enter');
   await page.waitForURL('**/ru/home');
-  await expect(page.getByRole('button', { name: `Ваша учётная запись: ${email}` })).toBeVisible();
+  await expect(accountTrigger(page, { email, label: 'Ваша учётная запись' })).toBeVisible();
 
   // Sign-out from inside the portal: the button is associated with a form outside the menu by id,
   // and this is the assertion that says the association survives Radix closing the menu.
-  await page.getByRole('button', { name: `Ваша учётная запись: ${email}` }).click();
+  await accountTrigger(page, { email, label: 'Ваша учётная запись' }).click();
   await page.getByRole('menuitem', { name: 'Выйти из учётной записи' }).click();
   await page.waitForURL('**/sign-in**');
 

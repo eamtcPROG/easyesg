@@ -92,6 +92,21 @@ const openAccessScreen = async (page: Page) => {
 const personCell = (page: Page, email: string) =>
   page.getByRole('cell', { name: email, exact: true });
 
+/**
+ * A **member's** person cell, which is two lines since task 140 and so cannot be found the way an
+ * invitation's is.
+ *
+ * `personCell` above still fits an invitation exactly — nobody holds it, so there is no account and
+ * no name, and its cell is the address alone. A member's cell holds the derived name over the
+ * address, and its accessible name is the two joined by whatever separator the engine inserts at a
+ * block-level boundary. **That separator is the engine's business rather than this app's**, so the
+ * row is the anchor here and the two facts are asserted as contents.
+ */
+const memberRow = (page: Page, email: string) =>
+  page.getByRole('row').filter({ hasText: email });
+
+const memberCell = (page: Page, email: string) => memberRow(page, email).getByRole('cell').first();
+
 /** Radix Select: open the trigger by its label, then choose the option by name. */
 async function choose(page: Page, label: string, option: string): Promise<void> {
   await page.getByRole('combobox', { name: label, exact: true }).click();
@@ -105,7 +120,17 @@ test('the administrator sees themself, and invites a colleague who appears as in
   await openAccessScreen(page);
 
   // The union's first half: the seeded membership, rendered from `GET /members`.
-  await expect(personCell(page, administrator)).toBeVisible();
+  // **The row count first, because `.first()` below would otherwise resolve a duplicate away.**
+  // `filter({ hasText })` can match more than one row, and a member appearing twice is exactly what
+  // a wrong sort key produces at a page boundary — the defect the union's `email` tie-break exists
+  // to prevent. The invitation locator beside this one gets its count on line ~166; this one had
+  // none until task 140's gate review said so.
+  await expect(memberRow(page, administrator)).toHaveCount(1);
+  // Both lines: the derived name the reader recognises, and the address every sentence this screen
+  // says about the row names — the resend notice, the confirmation dialogue's object, the
+  // role-change announcement. A cell showing the name alone would leave those unmatchable.
+  await expect(memberCell(page, administrator)).toContainText('Ana Popescu');
+  await expect(memberCell(page, administrator)).toContainText(administrator);
   // `exact`: the member's status chip, not the word inside a longer sentence elsewhere on the
   // screen. It used to disambiguate against the interim session strip's "Contul activ:", which
   // task 30.1 deleted — the reason changed, the need did not.

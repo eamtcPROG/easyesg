@@ -5,6 +5,7 @@ import {
   organizationIdsForAccount,
   verificationTokenFor,
 } from './support/db';
+import { accountTrigger } from './support/session';
 
 /**
  * S-04 in a real browser (UC-49, FR-13, D-1; task 30.2).
@@ -63,7 +64,7 @@ test('a member of nothing founds an organization and lands in it (UC-49, D-1)', 
 
   // The band above the form carries no organization yet — S-04's own artboard state, and the
   // reason the screen exists. An exact count, because the name is about to appear exactly once.
-  await expect(page.getByRole('button', { name: `Contul dumneavoastră: ${email}` })).toBeVisible();
+  await expect(accountTrigger(page, { email })).toBeVisible();
 
   // Preselected, because the vocabulary holds one entry: the field states the country without
   // asking anyone to choose from a list of one.

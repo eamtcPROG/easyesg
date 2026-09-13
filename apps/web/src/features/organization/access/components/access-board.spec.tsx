@@ -78,6 +78,7 @@ const rows = (): AccessRow[] => [
     id: 'm-1',
     accountId: 'a-1',
     email: 'ana@example.md',
+    displayName: 'Ana Popescu',
     role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
     standing: ACCESS_STANDING.ACTIVE,
     lastActiveAt: NOW - DAY,
@@ -234,6 +235,55 @@ describe('AccessBoard · per-row pending', () => {
 
     expect(await screen.findByText('Invitația nu mai există')).toBeInTheDocument();
     expect(screen.getByText('A fost anulată între timp. Reîncărcați lista.')).toBeInTheDocument();
+  });
+});
+
+describe('AccessBoard · the person column (UX-137, task 140)', () => {
+  /**
+   * The person cell is the row's first, and it is reached positionally on purpose.
+   *
+   * **`getByRole('cell', { name })` is the wrong instrument here and the reason is jsdom, not the
+   * markup.** A member's cell holds two block-level spans, and the accessible-name computation
+   * inserts a separator at a block-level boundary — which a browser does and jsdom does not,
+   * because vitest compiles the CSS module to class names and applies no stylesheet, so
+   * `display: flex` is never in effect and both spans are inline. The name that query answers with
+   * is therefore `Ana Popescuana@example.md`, an artefact of the environment rather than anything a
+   * reader would hear. `textContent` is the claim this file can actually make; the accessible name
+   * belongs to `e2e/web/users-access.spec.ts`, where a real engine has the stylesheet.
+   */
+  const personCell = (index: number) =>
+    screen.getAllByRole('row')[index + 1].querySelector('td')!;
+
+  it('names a member and keeps their address beneath it', () => {
+    render(board());
+
+    // Both facts, in that order. Every sentence this screen says about a row names the ADDRESS —
+    // the confirmation dialogue's object, the resend notice, the role-change announcement — so a
+    // cell that showed the name alone would leave the reader unable to match row to notice. An
+    // equality rather than two `toHaveTextContent`s: it is what fails if either line is dropped
+    // AND if a third thing is ever rendered into the cell.
+    expect(personCell(0).textContent).toBe('Ana Popescuana@example.md');
+  });
+
+  it('draws an invitation’s address alone, because no account holds it yet', () => {
+    render(board());
+
+    // Not a name — nobody of that name exists. An invitation names an address and the platform
+    // knows nothing else about the person, which is a different fact from a member whose name is
+    // unset, and this cell is where an administrator tells the two apart.
+    expect(personCell(1).textContent).toBe('bogdan@example.md');
+  });
+
+  it('states a nameless member’s address ONCE rather than on both lines', () => {
+    // UX-137's fallback derives the address AS the display name, which is what every account had
+    // before task 139 and what a provider sign-up asserting no name keeps. Spelled by mapping the
+    // fixture rather than by adding a fourth row, so the case is visibly the SAME member.
+    const nameless = rows().map((row) =>
+      row.kind === ACCESS_ROW_KIND.MEMBER ? { ...row, displayName: row.email } : row,
+    );
+    render(board(nameless));
+
+    expect(personCell(0).textContent).toBe('ana@example.md');
   });
 });
 

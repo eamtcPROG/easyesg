@@ -19,6 +19,7 @@ interface AccessDbRow {
   kind: string;
   id: string;
   email: string;
+  display_name: string | null;
   role: MembershipRole;
   standing: AccessStanding;
   account_id: string | null;
@@ -56,6 +57,49 @@ interface AccessDbRow {
  * may swap between two requests for the same page, which reads as a row moving under the reader's
  * cursor and, at a page boundary, as a row appearing twice or not at all.
  */
+/**
+ * UX-137's derivation, in SQL — a second implementation of the rule
+ * `identity/account/domain/display-name.ts` states, written here deliberately.
+ *
+ * `identity/account/domain/display-name.ts` is the implementation every other surface uses — the
+ * session, `AccountResponseDto`, `MemberResponseDto` — and this is deliberately not a call to it.
+ * The reason is the same one `standing` already carries two paragraphs below: this column is what
+ * `ORDER BY person` sorts on, and a name derived in TypeScript *after* the window has been applied
+ * would let a row be **ordered** by its address and **rendered** by its name on one request. At a
+ * page boundary that is a row appearing twice or not at all, which is what the `email` tie-break
+ * exists to prevent and what re-deriving would reintroduce one column over.
+ *
+ * So the value is derived where it is ordered, selected into the CTE, and read straight out by
+ * `toAccessRow` — the wire value and the sort key are literally one column and cannot disagree.
+ * What *can* disagree is this expression and the TypeScript one, so that agreement is asserted
+ * rather than assumed: `test/access-display-name.e2e-spec.ts` runs UX-137's own cases through both
+ * and compares them.
+ *
+ * **`concat_ws` skips nulls, which is the whole mapping.** Both parts present gives `'Ana Popescu'`;
+ * one present gives that one alone; neither gives `''`, which `NULLIF` turns to NULL and `COALESCE`
+ * answers with the address — UX-137's four cases, in that order.
+ *
+ * **The trim is explicit about its character class and does not match JavaScript's exactly.**
+ * `btrim(x)` with no second argument trims *spaces only*, so a tab would read as a name where
+ * `display-name.ts` reads it as absent — task 139's migration records that a whitespace-only value
+ * passes the column's `CHECK (char_length >= 1)` and is storable. `[[:space:]]` is PostgreSQL's
+ * class: space, tab, newline, carriage return, form feed and vertical tab. JavaScript's `trim()`
+ * additionally removes Unicode space separators (NBSP, U+2028, the BOM), so a name pasted with a
+ * leading NBSP would still differ. **That residue is stated rather than closed here** because
+ * closing it belongs on the write path — the two fields carry `@MinLength(1)` and no trim — and
+ * that is a change to task 139's DTO rather than to this read.
+ */
+const DISPLAY_NAME_SQL = `
+  COALESCE(
+    NULLIF(
+      regexp_replace(
+        concat_ws(' ',
+          NULLIF(regexp_replace(a.given_name,  '^[[:space:]]+|[[:space:]]+$', '', 'g'), ''),
+          NULLIF(regexp_replace(a.family_name, '^[[:space:]]+|[[:space:]]+$', '', 'g'), '')),
+        '^[[:space:]]+|[[:space:]]+$', '', 'g'),
+      ''),
+    a.email)`;
+
 @Injectable()
 export class AccessStoreRepository extends TenantRepository<never> implements AccessStore {
   protected readonly entity = 'identity.membership' as never;
@@ -70,7 +114,8 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
    * the union honestly.
    */
   private readonly union = `
-    SELECT '${ACCESS_ROW_KIND.MEMBER}' AS kind, m.id, a.email, m.role,
+    SELECT '${ACCESS_ROW_KIND.MEMBER}' AS kind, m.id, a.email,
+           ${DISPLAY_NAME_SQL} AS display_name, m.role,
            '${ACCESS_STANDING.ACTIVE}' AS standing,
            COALESCE(m.last_active_at, m.created_at) AS activity_at,
            m.account_id, m.created_at AS joined_at, m.last_active_at,
@@ -79,7 +124,11 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
       JOIN identity.account a ON a.id = m.account_id
      WHERE m.status = '${MEMBERSHIP_STATUS.ACTIVE}'
      UNION ALL
-    SELECT '${ACCESS_ROW_KIND.INVITATION}', i.id, i.invited_email, i.role,
+    SELECT '${ACCESS_ROW_KIND.INVITATION}', i.id, i.invited_email,
+           -- An invitation names an address and nothing else: no account exists to hold a
+           -- name, so this is *not known* rather than *absent*, and the screen draws the
+           -- address alone rather than a fallback dressed as a person.
+           NULL::text, i.role,
            CASE WHEN i.expires_at <= now()
                 THEN '${ACCESS_STANDING.INVITATION_EXPIRED}'
                 ELSE '${ACCESS_STANDING.INVITED}' END,
@@ -95,7 +144,9 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
                           AND ($2 = '${ACCESS_FILTER_ANY}' OR standing = $2)`;
 
   private static readonly ORDER_BY: Record<AccessSort, string> = {
-    [ACCESS_SORT.PERSON]: 'email',
+    // The name where there is one and the address where there is not — the column the reader
+    // sees, not the one underneath it. It was `email` until task 140 put a name in that cell.
+    [ACCESS_SORT.PERSON]: 'COALESCE(display_name, email)',
     [ACCESS_SORT.ROLE]: `CASE role WHEN 'organization_administrator' THEN 0 WHEN 'editor' THEN 1 ELSE 2 END`,
     [ACCESS_SORT.STANDING]: `CASE standing WHEN '${ACCESS_STANDING.INVITATION_EXPIRED}' THEN 0 WHEN '${ACCESS_STANDING.INVITED}' THEN 1 ELSE 2 END`,
     [ACCESS_SORT.ACTIVITY]: 'activity_at',
@@ -117,7 +168,7 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
 
     const rows = await this.manager.query<AccessDbRow[]>(
       `WITH access AS (${this.union})
-       SELECT kind, id, email, role, standing, account_id, joined_at, last_active_at,
+       SELECT kind, id, email, display_name, role, standing, account_id, joined_at, last_active_at,
               issued_at, expires_at
          FROM access
         WHERE ${this.matches}
@@ -145,6 +196,9 @@ const toAccessRow = (row: AccessDbRow): AccessRow =>
         kind: ACCESS_ROW_KIND.MEMBER,
         id: row.id,
         email: row.email,
+        // Non-null for the same reason `account_id` is: the member half of the `UNION ALL` selects
+        // an expression whose last `COALESCE` arm is `a.email`, which is `NOT NULL`.
+        displayName: row.display_name as string,
         role: row.role,
         standing: ACCESS_STANDING.ACTIVE,
         accountId: row.account_id as string,

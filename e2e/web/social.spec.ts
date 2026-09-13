@@ -6,6 +6,7 @@ import {
   publishIdentityProvider,
   restoreIdentityProviderSeed,
 } from './support/provider-config';
+import { accountTrigger } from './support/session';
 
 /**
  * Task 24's browser half: the provider journey through the shipped screens — S-01's provider
@@ -96,7 +97,7 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     // sign-in does — which is the point of routing both through one decision.
     await expect(page).toHaveURL(/\/create-organization$/);
     await expect(
-      page.getByRole('button', { name: `Contul dumneavoastră: ${email}` }),
+      accountTrigger(page, { email }),
     ).toBeVisible();
   });
 

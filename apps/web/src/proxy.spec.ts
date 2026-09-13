@@ -46,7 +46,7 @@ const sessionWith = (overrides: Partial<SessionPayload> = {}): SessionPayload =>
   refreshToken: 'refresh-token-1',
   refreshTokenExpiresAt: Date.now() + 7 * DAY_MS,
   remembered: true,
-  account: { id: 'a', email: 'ana@example.md', locale: 'ro' },
+  account: { id: 'a', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro' },
   ...overrides,
 });
 

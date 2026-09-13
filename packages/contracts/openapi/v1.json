@@ -3369,12 +3369,23 @@
               "ru"
             ],
             "description": "The interface language persisted on the account (FR-10)."
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Ana Popescu"
+          },
+          "monogram": {
+            "type": "string",
+            "example": "AP",
+            "nullable": true
           }
         },
         "required": [
           "id",
           "email",
-          "locale"
+          "locale",
+          "displayName",
+          "monogram"
         ]
       },
       "SessionResponseDto": {
@@ -4013,6 +4024,12 @@
             "type": "string",
             "format": "email"
           },
+          "displayName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Ana Popescu",
+            "description": "UX-137’s derived display name, falling back to the address for an account that has not set one. Null when kind is invitation: nobody holds it yet, so there is no account and no name — which is a different fact from an account whose name is unset, and the reason this is not defaulted to the address here. It is derived in the same statement that orders on it, so the value sorted and the value rendered are one column."
+          },
           "role": {
             "type": "string",
             "enum": [
@@ -4062,6 +4079,7 @@
           "kind",
           "id",
           "email",
+          "displayName",
           "role",
           "standing",
           "accountId",

@@ -393,6 +393,8 @@
     "home": {
       "title": "Prima pagină",
       "lede": "Starea raportărilor din organizație și organizațiile la care aveți acces.",
+      "greeting": "Bine ați venit, {name}",
+      "membership": "{organization} · {role}",
       "overview": {
         "attention": {
           "heading": "Ce necesită atenție",

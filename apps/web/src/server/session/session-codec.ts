@@ -39,6 +39,8 @@ export interface SessionPayload {
   account: {
     id: string;
     email: string;
+    displayName: string;
+    monogram: string | null;
     locale: Locale;
   };
 }
@@ -101,7 +103,7 @@ function readPayload(parsed: unknown): SessionPayload | null {
   if (!isRecord(parsed) || !isRecord(parsed.account)) return null;
   const { accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt, remembered } =
     parsed;
-  const { id, email, locale } = parsed.account;
+  const { id, email, locale, displayName, monogram } = parsed.account;
   if (
     typeof accessToken !== 'string' ||
     typeof accessTokenExpiresAt !== 'number' ||
@@ -125,7 +127,19 @@ function readPayload(parsed: unknown): SessionPayload | null {
     // `false` would shorten a window already granted. The strict alternative is right where the
     // cost is one retype (`factor-challenge.ts` takes it) and wrong here.
     remembered: typeof remembered === 'boolean' ? remembered : true,
-    account: { id, email, locale },
+    // **Tolerant for the same reason `remembered` is, and the fallback is UX-137's own.** A cookie
+    // sealed before task 140 carries neither field; rejecting it would sign every signed-in user
+    // out for a format change. `displayName` falls back to the address — which is exactly what
+    // UX-137 specifies for an account with no name — and `monogram` to `null`, which renders the
+    // glyph. So a stale cookie shows the pre-140 chrome until its next rotation, rather than an
+    // error or a sign-out.
+    account: {
+      id,
+      email,
+      locale,
+      displayName: typeof displayName === 'string' && displayName ? displayName : email,
+      monogram: typeof monogram === 'string' && monogram ? monogram : null,
+    },
   };
 }
 

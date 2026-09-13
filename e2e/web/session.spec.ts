@@ -6,7 +6,7 @@ import {
   passwordResetTokenFor,
   verificationTokenFor,
 } from './support/db';
-import { signOut } from './support/session';
+import { accountTrigger, signOut } from './support/session';
 
 /**
  * Task 22's stated deliverable, literally: **browser sign-in/out against the public API** —
@@ -82,7 +82,7 @@ test('a user signs in, holds an httpOnly session, and signs out (UC-04, UC-06)',
   // The global tier's account corner names the signed-in address (task 30.1, replacing task 22's
   // interim strip). The band carries no organization region here, which is S-04's own artboard
   // state and `global-tier.spec.ts`'s subject.
-  await expect(page.getByRole('button', { name: `Contul dumneavoastră: ${email}` })).toBeVisible();
+  await expect(accountTrigger(page, { email })).toBeVisible();
 
   // AD-9's whole point, asserted from inside the browser: the session cookie is httpOnly and
   // carries no readable token — browser JavaScript sees nothing of it.

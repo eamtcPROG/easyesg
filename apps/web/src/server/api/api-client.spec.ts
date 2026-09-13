@@ -113,7 +113,7 @@ describe('the api client (§6.8 wire conventions, in one place)', () => {
       refreshToken: 'refresh-token-1',
       refreshTokenExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
       remembered: true,
-      account: { id: 'a', email: 'ana@example.md', locale: 'ro' },
+      account: { id: 'a', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro' },
     };
     cookieJar.set(
       REFRESH_COOKIE,
@@ -151,7 +151,7 @@ describe('the api client (§6.8 wire conventions, in one place)', () => {
       refreshToken: 'refresh-token-1',
       refreshTokenExpiresAt: Date.now() - 1_000,
       remembered: true,
-      account: { id: 'a', email: 'ana@example.md', locale: 'ro' },
+      account: { id: 'a', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro' },
     };
     cookieJar.set(REFRESH_COOKIE, sealSession(ended, 'spec-secret-0000000000000000000000000000'));
 

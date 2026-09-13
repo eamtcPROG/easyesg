@@ -393,6 +393,8 @@
     "home": {
       "title": "Home",
       "lede": "How your organization's reporting stands, and the organizations you can reach.",
+      "greeting": "Welcome, {name}",
+      "membership": "{organization} · {role}",
       "overview": {
         "attention": {
           "heading": "What needs attention",

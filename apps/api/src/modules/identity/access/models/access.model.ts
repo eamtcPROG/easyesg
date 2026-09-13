@@ -94,6 +94,15 @@ export interface MemberAccessRow extends AccessRowShared {
   readonly kind: typeof ACCESS_ROW_KIND.MEMBER;
   readonly standing: typeof ACCESS_STANDING.ACTIVE;
   readonly accountId: string;
+  /**
+   * UX-137's derived name, never empty: it falls back to `email` for an account that has none, so
+   * a surface renders this and shows the address beside it rather than choosing between them.
+   *
+   * **It sits on this half only**, which is the union earning its keep again: an invitation has no
+   * account, so it has no name — *not known*, rather than *absent and defaulted*. Flattening it
+   * with a nullable would make every consumer re-derive which standing makes it meaningful.
+   */
+  readonly displayName: string;
   /** Null for a member who has not made a request since access was granted. */
   readonly lastActiveAt: Date | null;
   readonly joinedAt: Date;

@@ -39,10 +39,22 @@
   block-size: 18px;
 }
 
-/* The address is longer than a name and the band is one row at every width, so it truncates
-   rather than wrapping. The full value stays in the trigger's accessible name and in the
-   menu's own identity block, so nothing is only available by hovering. */
-.triggerEmail {
+/* UX-137's monogram, where the account has one. Tabular-free and non-selectable: it is a picture of
+   an identity rather than text anyone copies, which is also why the avatar stays `aria-hidden` —
+   the trigger's accessible name already carries the address. */
+.avatarMonogram {
+  font: 600 13px/1 var(--font-text);
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+/* Neither a name nor the address it falls back to has a bound, and the band is one row at every
+   width, so this truncates rather than wrapping. The full value stays in the menu's own identity
+   block and the ADDRESS stays in the trigger's accessible name, so nothing is available only by
+   hovering. (It was `.triggerEmail` until task 140 put the name here; the class name is the one
+   thing about a CSS module no compiler checks, since the ambient declaration in `styles.d.ts` is
+   an index signature — a stale name resolves to `undefined` and silently drops every rule.) */
+.triggerName {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -70,9 +82,27 @@
   display: block;
   overflow: hidden;
   padding: var(--space-3) var(--space-4);
+}
+
+/* The name leads and the address follows it, because the name is what a reader recognises and the
+   address is what settles WHICH account when two people share one. Both truncate: this block is as
+   wide as the menu and neither value has a bound. */
+.identityName {
+  display: block;
+  overflow: hidden;
+  font: 600 14px/20px var(--font-text);
+  color: var(--text-default);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identityEmail {
+  display: block;
+  overflow: hidden;
   font: 400 13px/19px var(--font-text);
   color: var(--text-muted);
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .separator {

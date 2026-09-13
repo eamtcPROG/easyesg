@@ -7,6 +7,7 @@ import {
   revokeInvitations,
   verificationTokenFor,
 } from './support/db';
+import { REGISTERED_DISPLAY_NAME } from './support/session';
 
 /**
  * S-03 in a real browser (UC-15, FR-11; task 26.3) — the deliverable stated as a journey: **a user
@@ -97,7 +98,14 @@ test('an invited user with an account joins from the browser (UC-15)', async ({ 
   // Before this, all three grants landed identically and someone who already had access learned
   // nothing from clicking; the `?joined=` parameter is what lets the landing differ.
   await expect(page.getByText('Ați primit acces')).toBeVisible();
-  await expect(page.getByRole('heading', { name: organization.name, level: 1 })).toBeVisible();
+  // **The `h1` is the greeting since task 140, and the organization is the tagline beneath it.**
+  // This asserted the organization as the heading, which is what S-05 drew from task 30.5 until
+  // OQ-16's name half closed. Both facts are still on the screen and both are checked, because what
+  // this journey is proving is that acceptance landed the reader *in the new organization*.
+  await expect(
+    page.getByRole('heading', { name: `Bine ați venit, ${REGISTERED_DISPLAY_NAME}`, level: 1 }),
+  ).toBeVisible();
+  await expect(page.locator('hgroup p')).toContainText(organization.name);
 });
 
 /**

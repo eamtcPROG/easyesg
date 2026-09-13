@@ -68,6 +68,8 @@ export async function GlobalTier() {
           <span className={styles.wide}>
             <AccountCorner
               email={session.account.email}
+              displayName={session.account.displayName}
+              monogram={session.account.monogram}
               locale={locale}
               locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
               labels={{

@@ -32,6 +32,29 @@ import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } fro
  * Addresses are chosen so alphabetical order interleaves members and invitations rather than
  * grouping them: a sort that silently ran per-collection would still look sorted, and would pass a
  * suite whose fixtures happened to be grouped.
+ *
+ * **The members carry distinct names since task 140, and one of them deliberately contradicts its
+ * own address.** `ORDER BY person` sorts on the derived display name now, and every account
+ * `signInFreshAccount` registers gets `REGISTERED_NAME` — so left alone, all three members would
+ * tie on *"Ana Popescu"*, group together, and the interleaving this suite rests on would be gone
+ * with every assertion still green.
+ *
+ * **The first fix chose names on the addresses' own letters and was worse than it looked.** B, D
+ * and F between the invitations' c and e kept the expected order byte-identical — which meant
+ * sorting by address and sorting by name produced the same sequence, so the suite could not tell
+ * the two apart. The gate-integrity review proved it: `ORDER BY person` reverted to `email` and all
+ * 21 tests passed. The viewer is now *Ana Ionescu* on `f-viewer@access.test`, so the name order and
+ * the address order disagree and only one of them satisfies the assertions below.
+ *
+ * **That ordering needs a case-insensitive collation, and nothing in this repository pins one** —
+ * `architecture.md` **OQ-61**, raised by task 140's spec review. This cluster reports `en_US.utf8`,
+ * where `'Bianca Avram' < 'c-live@access.test'`; under `C` every capitalised name sorts ahead of
+ * every lowercase address and the interleaving above collapses. The value comes from the
+ * `postgres:18.4` image default: `infra/postgres/init/init.sh` sets no locale and the compose file
+ * passes no `POSTGRES_INITDB_ARGS`. **This docblock claimed `infra/postgres/init` was where it was
+ * set, and that was simply false** — which is why the register row exists rather than a sentence
+ * here. If that row closes by pinning the locale, this fixture is unaffected; if it closes by
+ * making the ordering collation-independent, the expected order below is what changes.
  */
 const ALPHA = '01920000-0000-7000-8000-0000000000f1';
 const BETA = '01920000-0000-7000-8000-0000000000f2';
@@ -41,6 +64,24 @@ const EMAILS = {
   editor: 'd-editor@access.test',
   viewer: 'f-viewer@access.test',
   beta: 'z-beta@access.test',
+};
+
+/**
+ * One name per member, on the letter its address already carries.
+ *
+ * Given name first, because that is the order UX-137 derives in and therefore the one the sort
+ * sees — a family name chosen to interleave would sort on nothing.
+ */
+const NAMES = {
+  admin: { givenName: 'Bianca', familyName: 'Avram' },
+  editor: { givenName: 'Dan', familyName: 'Cebotari' },
+  // **`f-viewer@access.test` is called *Ana*, and the mismatch is the whole point.** The other two
+  // names land on their own address's letter, which keeps the interleaving legible — and if every
+  // name did, sorting by address and sorting by name would produce the identical sequence and this
+  // suite could not tell them apart. It could not, for one commit: task 140's gate-integrity review
+  // reverted `ORDER BY person` to `email` and all 21 tests stayed green. This row is what fails.
+  viewer: { givenName: 'Ana', familyName: 'Ionescu' },
+  beta: { givenName: 'Zamfira', familyName: 'Ursu' },
 };
 
 /** Not accounts — an invitation names an address that may never have registered. */
@@ -149,6 +190,15 @@ describe('access — the union of members and invitations (UC-59, FR-56)', () =>
     const viewer = await signInFreshAccount({ server, worker, email: EMAILS.viewer });
     betaAdmin = await signInFreshAccount({ server, worker, email: EMAILS.beta });
 
+    // The names the sort now reads. Written as the owner rather than through a route: no endpoint
+    // edits a name yet — S-27 is task 52.3's — and this suite is about the read.
+    for (const [who, name] of Object.entries(NAMES)) {
+      await owner.query(
+        `UPDATE identity.account SET given_name = $2, family_name = $3 WHERE email = $1`,
+        [EMAILS[who as keyof typeof EMAILS], name.givenName, name.familyName],
+      );
+    }
+
     await grant(admin, ALPHA, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR);
     await grant(editor, ALPHA, MEMBERSHIP_ROLE.EDITOR);
     await grant(viewer, ALPHA, MEMBERSHIP_ROLE.VIEWER);
@@ -170,12 +220,15 @@ describe('access — the union of members and invitations (UC-59, FR-56)', () =>
   it('answers members and invitations as one list, scoped to the bound organization', async () => {
     const body = await list(`?order=${ACCESS_SORT.PERSON},asc`);
 
+    // Ana Ionescu, Bianca Avram, c-live@…, Dan Cebotari, e-expired@… — by the NAME, which is why
+    // the viewer leads on an address beginning `f`. Sorting by address gives the reverse-ish
+    // sequence `b, c, d, e, f` and fails here, which is what makes the sort key testable at all.
     expect(body.objects.map((row) => row.email)).toEqual([
+      EMAILS.viewer,
       EMAILS.admin,
       INVITED.live,
       EMAILS.editor,
       INVITED.expired,
-      EMAILS.viewer,
     ]);
     // Both kinds, and Beta's member and invitation in neither — RLS, not a WHERE clause.
     expect(new Set(body.objects.map((row) => row.kind))).toEqual(
@@ -187,18 +240,18 @@ describe('access — the union of members and invitations (UC-59, FR-56)', () =>
 
   /**
    * The claim two endpoints cannot make. The alphabetical order above interleaves the kinds —
-   * member, invitation, member, invitation, member — so an implementation that ordered each
-   * collection and concatenated them would produce a different list and fail here.
+   * member, member, invitation, member, invitation — so an implementation that ordered each
+   * collection and concatenated them would answer `M M M I I` and fail here.
    */
   it('orders across the union rather than within each collection', async () => {
     const body = await list(`?order=${ACCESS_SORT.PERSON},asc`);
 
     expect(body.objects.map((row) => row.kind)).toEqual([
       ACCESS_ROW_KIND.MEMBER,
-      ACCESS_ROW_KIND.INVITATION,
       ACCESS_ROW_KIND.MEMBER,
       ACCESS_ROW_KIND.INVITATION,
       ACCESS_ROW_KIND.MEMBER,
+      ACCESS_ROW_KIND.INVITATION,
     ]);
   });
 
@@ -245,9 +298,9 @@ describe('access — the union of members and invitations (UC-59, FR-56)', () =>
     const second = await list(`?order=${ACCESS_SORT.PERSON},asc&page=2&onpage=2`);
     const third = await list(`?order=${ACCESS_SORT.PERSON},asc&page=3&onpage=2`);
 
-    expect(first.objects.map((row) => row.email)).toEqual([EMAILS.admin, INVITED.live]);
-    expect(second.objects.map((row) => row.email)).toEqual([EMAILS.editor, INVITED.expired]);
-    expect(third.objects.map((row) => row.email)).toEqual([EMAILS.viewer]);
+    expect(first.objects.map((row) => row.email)).toEqual([EMAILS.viewer, EMAILS.admin]);
+    expect(second.objects.map((row) => row.email)).toEqual([INVITED.live, EMAILS.editor]);
+    expect(third.objects.map((row) => row.email)).toEqual([INVITED.expired]);
     expect(first.totalpages).toBe(3);
   });
 

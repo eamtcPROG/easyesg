@@ -12,6 +12,7 @@ import {
   type AccessRow,
   type AccessStanding,
 } from '../tools/access';
+import { PersonCell } from './person-cell';
 import { RoleCell } from './role-cell';
 import { RowActions } from './row-actions';
 
@@ -52,7 +53,12 @@ export function useAccessColumns(): readonly DataTableColumn<AccessRow, AccessCo
         key: ACCESS_COLUMN.PERSON,
         header: t('columns.person'),
         sortable: true,
-        cell: (row: AccessRow) => row.email,
+        // **Sorted by what this cell leads with, which is the server's business rather than this
+        // file's.** `ORDER BY` runs over the same derived column the row carries (task 140), so
+        // ascending here means ascending by the name a reader sees — the defect the `standing`
+        // column already records one row down, where a value drawn in the browser and filtered in
+        // the database would be two evaluations of one fact.
+        cell: (row: AccessRow) => <PersonCell row={row} />,
       },
       {
         key: ACCESS_COLUMN.ROLE,

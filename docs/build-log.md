@@ -17945,3 +17945,235 @@ across 80 suites, 12 of them the derivation's; `e2e` 880/880; `e2e:worker` 2/2; 
 **Twice today a task notification reported exit code 0 for a run that had failed** — the shell
 wrapper's status, not the gate's. Both were caught by reading the log. Neither is a finding about
 the gates; it is a finding about which line to trust.
+
+## Task 140 — the name on three surfaces, and a fourth derivation the ordering forced · 2026-09-12
+
+Task 139 put `given_name` and `family_name` on `identity.account` and wrote UX-137's derivation as
+`identity/account/domain/display-name.ts`. This row spends it: the account menu's monogram, S-05's
+greeting and S-16's member list. All three had been predicted in docblocks — the row's own Scope
+column says so, which is what made it look small.
+
+### The row that widened, and the claim that made it widen
+
+**Task 139's Scope column says `AccountResponseDto`, `MemberResponseDto` and S-16's access row carry
+the name. The first two do; `AccessRowResponseDto` carried nothing.** S-16's list is the union read
+model task 131 built, with a DTO of its own, and the sweep that added the field to the two member
+DTOs did not reach it. So the deliverable "member list renders the derived name" was unbuildable in
+`web+pkg:ui`, and this row's scope became `api+web+pkg:ui+pkg:contracts`.
+
+Worth stating plainly rather than filing as a metadata change: 139's *Deliverable* column did not
+claim the access row, only its Scope narrative did — so no gate and no review could have caught it,
+and nothing did until a component needed the field and it was not on the wire.
+
+### The derivation is now written twice, and the reason is the sort rather than convenience
+
+S-16's person column is sortable and `ORDER BY person` sorted on `email`. Rendering a name while
+sorting an address puts a row in a position its own cell cannot explain, and at a page boundary
+makes one appear twice or not at all — which is precisely what the `email` tie-break exists to
+prevent, reintroduced one column over. A name derived in TypeScript necessarily happens *after* the
+window has been applied, so it can never be the sort key.
+
+So `AccessStoreRepository` derives it in SQL, selects it into the union CTE, and `toAccessRow` reads
+it out: **the value sorted and the value rendered are one column and cannot disagree.** That is task
+131's own argument for `standing`, one field over. `architecture.md` §12.5.6 carries the decision.
+
+**The cost is a second implementation and it is paid down rather than accepted.**
+`test/access-display-name.e2e-spec.ts` runs UX-137's cases through both and compares them **to each
+other**, not to literals — a test pinning `'Ana Popescu'` on both sides would pass while they
+disagreed about every case it did not list. Two of the eight cases are unreachable through the API
+at all (`RegisterAccountRequestDto` requires both parts at `@MinLength(1)`), so they are written
+straight into the columns, which is the row shape a pre-139 account and a provider sign-up actually
+have. Proven by mutation: trimming only spaces fails the tab case, and dropping the empty-string
+fallback fails two.
+
+**Known residue, stated rather than closed.** The SQL trims PostgreSQL's `[[:space:]]`; JavaScript's
+`trim()` also removes Unicode space separators, so a name pasted with a leading NBSP would still
+differ. Closing it belongs on the *write* path — the two fields carry `@MinLength(1)` and no trim —
+which is task 139's DTO rather than this read, and widening this row a second time to reach it would
+have been the wrong call.
+
+### The greeting: which element it returns to was a question the prose left open
+
+`design_spec.md`'s S-05 row said *"the greeting returns with task 140"* and did not say where. Task
+30.5 had displaced it for **two** reasons and only one had expired: no name existed (closed), and
+the organization's name is what UX-2 requires visible and is the more useful orientation (standing).
+Read one way the `h1` changes owner; read the other the greeting goes somewhere unspecified.
+
+**The artboard settled it** — `design/screens/EasyESG Workspace.dc.html` draws *"Good afternoon,
+Ana"* as the `h1` over *"Brutăria Lina SRL · …"* as the `p`. So the greeting is the heading and the
+organization is the `hgroup`'s tagline beside the role, which keeps the standing reason intact
+rather than discarding it with the expired one: the organization is visible twice, on the band's
+plate and on that line. This is the *"re-read the screen's own source"* step of `apps/web`'s
+checklist finding something the prose could not.
+
+**The salutation is plain, and the second half of task 30.5's condition is what that answers.**
+*Bine ați venit* / *Welcome* / *Добро пожаловать*, authored per locale and formal (UX-135).
+Romanian's conventional formal greeting is *bună ziua*, and it is one of three times of day — which
+the server cannot know for the reader, so choosing it would have been a guess rendered as a fact.
+
+**Two citations were wrong in the first draft and the spec review caught both.** The comments said
+*"that half of OQ-16 is still open"* — OQ-16 asks about the register's name field and its consent
+checkbox and says nothing about a clock, which is exactly the conflation OQ-23 and OQ-24 were each
+raised to undo; the time-of-day half belongs to task 30.5's own condition. And they cited **NFR-26**,
+which requires dates, numbers and currency to be formatted from the active locale with no hardcoded
+pattern — a formatting rule, not a rule about deriving a reader's local hour. The clock argument
+stands on its own and now says so without either.
+
+### Four tests that had to be argued with, and one that was measuring the wrong layer
+
+**The person cell's accessible name is a jsdom artefact.** `getByRole('cell', { name: 'Ana Popescu
+ana@example.md' })` failed, answering `'Ana Popescuana@example.md'`. The first instinct — change the
+assertion to match — would have shipped what looked like a real accessibility defect. It is not one:
+the accName algorithm inserts a separator at a block-level boundary, and vitest compiles the CSS
+module to class names while applying no stylesheet, so `display: flex` is never in effect and both
+spans are inline. **A jsdom test cannot make an accessible-name claim about a styled cell**; it
+asserts `textContent`, and the claim moved to `e2e/web/users-access.spec.ts`, where a real engine has
+the stylesheet. The intermediate fix — a trailing space inside the name span — was reverted along
+with the comment claiming it was load-bearing, since a comment stating something untrue is worse
+than the thing it was added for.
+
+**`e2e/web/users-access.spec.ts`'s `personCell` still fits an invitation and no longer fits a
+member**, and that asymmetry is the read model's rather than the test's: an invitation has no
+account, so no name, so one line. A second locator anchors on the row instead of on a separator that
+belongs to the engine.
+
+**`access.e2e-spec.ts`'s interleaving property would have gone silent.** Its docblock says addresses
+are chosen so alphabetical order interleaves members and invitations — *"a sort that silently ran
+per-collection would still look sorted"*. Every account `signInFreshAccount` registers gets
+`REGISTERED_NAME`, so under the new sort key all three members would have tied on *Ana Popescu*,
+grouped, and the property would have been gone **with every assertion still green**. They carry
+distinct names now, on the same letters their addresses do (B, D, F between the invitations' c and
+e), so the expected order is unchanged and it is the displayed value that produces it. That ordering
+needs a case-insensitive collation; the cluster has `en_US.utf8`, and it is now stated in the file.
+
+**Three mutations on the account menu and three on the person cell**, each caught by the assertion
+written for it. One of them is worth recording: naming the trigger by the *display name* instead of
+the address failed **five** tests, because `trigger()` is the shared locator. That is a coupling in
+the spec rather than in the product, and it is why the accessible-name contract has a test of its
+own — so the failure list has one entry saying what broke rather than five saying everything did.
+
+### Rules considered and declined
+
+- **UX-89 — "no screen shall introduce a one-off component"**, against `PersonCell` living in
+  `apps/web` rather than `packages/ui`. Declined: `DataTable`'s `cell` slot takes the caller's
+  content, and `RoleCell`, `RowActions` and `activityText` are the three precedents in this same
+  folder. The design-system component here is the table.
+- **The same name-over-address anatomy now exists twice** — this cell and `AccountMenu`'s identity
+  block — which is the point at which the inventory question is real. Declined at two: they share a
+  three-line *rule* (suppress the second line when it equals the first), not a component; one lives
+  in a Radix menu label with its own truncation, the other in a `td`. **A third site flips this**,
+  and S-27 (task 52.3) is where it would come from.
+- **`readSession` is not React-`cache()`d** and `OrganizationHeading` is its second reader in a
+  render. Declined: it is a cookie read plus one AES-GCM open, no I/O, and wrapping it would add a
+  memo whose invalidation nobody owns. What matters for this screen is that it stays non-blocking,
+  which `e2e/web/home.spec.ts`'s pending-boundary count asserts.
+- `vercel-react-best-practices` and `one-idea-per-file` read against the diff. `PersonCell` carries
+  no `'use client'` because it has no reason to — it is pulled into `access-columns.tsx`'s existing
+  boundary — which is `packages/ui`'s rule applied where it holds.
+
+### A class name no compiler checks
+
+`.triggerEmail` held the name after this change and was renamed `.triggerName`. Noted because
+`packages/ui/src/styles.d.ts` declares CSS modules with an **index signature**, so a stale key
+resolves to `undefined` and silently drops every rule — the rename had to be made in both files in
+one edit, and the compiler would not have said otherwise.
+
+### The three parent-close reviews, on `opus` — thirteen findings, all applied
+
+**`gate-integrity-review` found the expensive one, and it was in a test this entry already
+praised.** The fixture change two sections above gave the three members names *"chosen to land on
+the same letters the addresses already do (B, D, F between the invitations' c and e), so the
+expected order is unchanged"* — which is precisely why the suite could no longer tell the two
+orderings apart. **It reverted `ORDER BY person` to `email` and all 21 tests stayed green.** The
+sort key is the entire justification for deriving UX-137 twice; nothing in the repository failed
+when it was removed. `e2e/web/users-access.spec.ts` and `access.spec.ts` assert no ordering either,
+so the gap was total.
+
+The viewer is now *Ana Ionescu* on `f-viewer@access.test`. Name order and address order disagree,
+only one satisfies the assertions, and reverting the sort key now fails three tests. **What made the
+first fix wrong is what made it feel right**: keeping the expected sequence byte-identical looked
+like minimal churn and was the property that made the change untestable.
+
+**The session codec's pre-140 tolerance had no test**, proved by replacing the `displayName`
+fallback with a `throw` — 69 tests green. `remembered` has had that test since task 97 and these two
+shipped without one, so tightening the branch or typo'ing it to `undefined` would have signed out
+every live session on deploy with nothing red. Three cases now: the legacy shape, a *required*
+member still refused (so the first cannot be satisfied by a reader that stopped validating), and the
+round trip. Both fallbacks proved by mutation.
+
+Three smaller ones: a tautology (`toHaveTextContent('Ana Popescu')` on the parent of an element
+found *by* that text); `memberCell`'s `.first()` resolving away a duplicated row — the exact defect
+the union's tie-break exists to prevent, now counted; and a comment on the browser's
+`toHaveText('APAna Popescu')` claiming it proves the monogram was not recomputed client-side, which
+it cannot — both implementations agree for a named account, and no journey reaches a nameless one.
+The comment now says what the assertion checks and names the two unit specs that guard the rest.
+
+**`spec-review` found a false pointer I had written** — the collation claim named
+`infra/postgres/init` as where the locale is set; nothing there sets one, and the value is the
+`postgres:18.4` image default. Since the sort key now orders capitalised names against lowercase
+addresses, that dependency became load-bearing. **`architecture.md` OQ-61** records it with the
+assumption and three costed options; it is the owner's, not one to close in passing.
+
+Four more: UX-137 binds five surfaces and three shipped, with no deferral recorded for S-15's change
+attribution (which needs an API change first — `core.field_change.actor_id` is a bare uuid by design
+and the profile's wire shape carries only `email`) or for the unbuilt notification surfaces; a
+**mis-citation at four sites** — *"the half of OQ-16 still open"*, where OQ-16 asks about the
+register's name field and its consent checkbox and nothing about a clock, which is the conflation
+OQ-23 and OQ-24 were each raised to undo, plus **NFR-26**, a rule about format patterns and not
+about deriving a reader's local hour; S-16's *"where the prototype exceeds this row"* clause, whose
+premise task 139 removed; and three stale counts across the tracking files.
+
+**`convention-review`** found the `EXPLAIN` the api checklist requires and this entry had not
+opened, two docblocks counting sites outside their own file (`one-idea-per-file` forbids it, and
+both were already fragile — `session-codec.ts` implements the email-fallback arm a third time), and
+`gap: 2px` where UX-85 prohibits arbitrary values and `--space-1` is exactly 2px.
+
+**The `EXPLAIN` answered better than a cost number.** The pre-140 query *also* sorted: `ORDER BY`
+runs over a `UNION ALL`, so `account_email_key` was never reachable by the planner — measured both
+ways on the Compose stack. The expression forfeits no index because none was available, and adds
+per-row `regexp_replace` to a sort that already existed over a seat-bounded set. Reasoning about it
+would have produced the frightening answer; measuring produced the real one.
+
+### One finding not taken as suggested
+
+Both reviewers proposed a `docs:check` claim for the tracking files' own row and number totals,
+which have no failing state and had already drifted apart (76/153 against 73/150 for one fact).
+**Declined, and the reason is in this plan's own history:** those totals change on *every* close, so
+a claim on them is a churn gate needing a `CLAUDE.md` edit per task — which is exactly why the
+task-count claim was rewritten to measure the invariant **union** of both files rather than either
+one. The three numbers are corrected; what would actually close this is deleting them, since a
+figure that moves every close orients no reader, and that is a decision about three documents'
+prose rather than this task's.
+
+### The 2.5.3 fix applied at one site out of eight — thirteen browser journeys, found by `gates:clean`
+
+The accessible-name change above was made in `account-menu.tsx` and in the one browser spec being
+edited. The trigger's accessible name was written out at **eight** sites across `e2e/web/`, and the
+other seven still expected `Contul dumneavoastră: <address>`. `pnpm gates:clean` reached `e2e:web`
+and took down thirteen journeys across seven files — sign-in, sign-out, the credentials screen's
+four, social sign-in's three, create-organization, the invitation landing and two axe scans.
+
+**This is the root `CLAUDE.md`'s *"a rule is applied where it holds, not where it was found"*, and
+the entry above had already quoted that rule about somebody else's diff.** *"Is this one right?"*
+and *"are there others?"* are different questions; the first was answered correctly and the second
+was never asked. What is worth keeping is the shape rather than the apology: the accessible name is
+**a string assembled from three parts**, and a string assembled at eight sites has no single place
+its spelling is true — which is the closed-vocabulary argument in a directory that convention does
+not reach, because `no-restricted-syntax` cannot see a template literal's meaning.
+
+So the fix is not seven edits. `e2e/web/support/session.ts` now exports `accountTrigger(page, {
+email, displayName?, label? })` and `REGISTERED_DISPLAY_NAME`, and every site goes through it —
+including `signOut`, whose docblock had already made this argument for the menu item (*"if the menu
+item moves or is renamed, this times out and every journey that leaves a session says so
+together"*). `label` is a parameter because `global-tier.spec.ts` drives the Russian chrome, and
+`displayName` because UX-137 falls a nameless account back to its address, where the accessible
+name states the address once rather than twice.
+
+**One assertion was a different shape and is worth separating**: `invitation.spec.ts` asserted S-05's
+`h1` was the organization's name, which task 140 made the greeting. Both facts are still on the
+screen and it now checks both, because what that journey proves is that acceptance landed the reader
+*in the new organization*.
+
+**Validated on one 15-second journey before re-running the project**, per the cost recorded against
+task 139: thirteen failures at a 30-second timeout each is the expensive way to discover a typo.
+Then `--project identity` whole: 152 passed.

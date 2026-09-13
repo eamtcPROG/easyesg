@@ -1202,6 +1202,10 @@ export interface components {
              * @enum {string}
              */
             locale: "ro" | "en" | "ru";
+            /** @example Ana Popescu */
+            displayName: string;
+            /** @example AP */
+            monogram: string | null;
         };
         SessionResponseDto: {
             /**
@@ -1501,6 +1505,11 @@ export interface components {
             id: string;
             /** Format: email */
             email: string;
+            /**
+             * @description UX-137’s derived display name, falling back to the address for an account that has not set one. Null when kind is invitation: nobody holds it yet, so there is no account and no name — which is a different fact from an account whose name is unset, and the reason this is not defaulted to the address here. It is derived in the same statement that orders on it, so the value sorted and the value rendered are one column.
+             * @example Ana Popescu
+             */
+            displayName: string | null;
             /**
              * @description The role held, or for an invitation the role it will grant when accepted.
              * @enum {string}

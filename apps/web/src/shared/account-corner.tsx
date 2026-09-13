@@ -45,6 +45,9 @@ export interface AccountCornerLabels {
 
 export interface AccountCornerProps {
   readonly email: string;
+  /** UX-137's derived pair, computed once by the api and carried on the session. */
+  readonly displayName: string;
+  readonly monogram: string | null;
   readonly locale: Locale;
   /**
    * Every locale with its own name in that language, resolved on the server — an array rather than
@@ -56,7 +59,14 @@ export interface AccountCornerProps {
   readonly labels: AccountCornerLabels;
 }
 
-export function AccountCorner({ email, locale, locales, labels }: AccountCornerProps) {
+export function AccountCorner({
+  email,
+  displayName,
+  monogram,
+  locale,
+  locales,
+  labels,
+}: AccountCornerProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -74,6 +84,8 @@ export function AccountCorner({ email, locale, locales, labels }: AccountCornerP
       <AccountMenu
         label={labels.account}
         email={email}
+        displayName={displayName}
+        monogram={monogram}
         items={[
           {
             key: 'credentials',

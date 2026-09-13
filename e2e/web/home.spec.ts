@@ -85,15 +85,30 @@ async function signedIn(
   return { email, organizationId };
 }
 
-test('the home names the organization and states its role (UX-2, UC-16)', async ({ page }) => {
+test('the home greets the reader and states the organization and role (UX-137, UX-2, UC-16)', async ({
+  page,
+}) => {
   await signedIn(page, 'single');
 
-  // The heading is the organization, not a greeting: registration collects no display name
-  // (OQ-16) and a Server Component cannot know the reader's time of day.
+  // **The heading is the reader again since task 140**, which is the artboard's own anatomy: the
+  // greeting over the organization. It named the organization from task 30.5 until OQ-16's name
+  // half closed, because registration collected nothing to greet anybody by — `signedIn` fills
+  // *Ana Popescu* on S-01, so this is UX-137's derivation end to end rather than a fixture.
+  //
+  // The salutation is plain rather than time-of-day, and the clock is the whole reason: a Server
+  // Component cannot know the reader's local hour. That is task 30.5's second condition, not a half
+  // of OQ-16 — which asks about the register's name field and its consent checkbox and nothing
+  // about a clock.
   await expect(
-    page.getByRole('heading', { name: `${RUN_PREFIX}-single`, level: 1 }),
+    page.getByRole('heading', { name: 'Bine ați venit, Ana Popescu', level: 1 }),
   ).toBeVisible();
-  await expect(page.getByText('Administrator al organizației').first()).toBeVisible();
+
+  // The organization is the tagline, and asserting the WHOLE line is what replaced a
+  // `getByText(role).first()` — the role also appears in the membership list below, and `.first()`
+  // was the only record of that ambiguity. Scoped to the `hgroup`, the count is exact.
+  await expect(page.locator('hgroup p')).toHaveText(
+    `${RUN_PREFIX}-single · Administrator al organizației`,
+  );
 
   // §4.6's first-use state: an organization with no reporting period is taught what a filing is
   // and offered the one action that leads to creating one, which is the entity it hangs off.
