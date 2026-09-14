@@ -1,8 +1,9 @@
+import { SOCIAL_PROVIDER } from '@easyesg/contracts';
 import { SKELETON_SHAPE, Skeleton } from '@easyesg/ui';
 import { useTranslations } from 'use-intl';
 
-/** One placeholder row per provider FR-2 names. */
-const PLACEHOLDER_ROWS = 2;
+/** One placeholder row per provider FR-2 names — derived, so a provider added to the vocabulary gains its row. */
+const PLACEHOLDER_ROWS = Object.values(SOCIAL_PROVIDER).length;
 
 /** A-18's *loading — initial* (task 67.11), announced once. */
 export function ProvidersLoading() {

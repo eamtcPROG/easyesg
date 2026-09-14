@@ -2,7 +2,7 @@ import type { IdentityProvider } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button } from '@easyesg/ui';
 import { useId } from 'react';
 import { useTranslations } from 'use-intl';
-import { PROVIDER_CONTROL, type ProviderAction } from '../../../tools/provider-action-state';
+import { PROVIDER_CONTROL, isPendingControl, type ProviderAction } from '../../../tools/provider-action-state';
 
 /**
  * A-18's enable or disable (task 67.11). **The api's reason a provider could not sign anyone in is shown before the
@@ -35,7 +35,7 @@ export function ProviderStateControl({
         <Button
           type="button"
           variant={BUTTON_VARIANT.SECONDARY}
-          busy={pending?.provider === provider.provider && pending.control === control}
+          busy={isPendingControl({ pending, provider: provider.provider, control })}
           disabled={pending !== null || (!provider.enabled && blocker !== null)}
           aria-describedby={blocker === null ? undefined : reasonId}
           onClick={() => onAction({ control, provider: provider.provider, revision: provider.revision })}

@@ -118,7 +118,9 @@ import { StageAdminEnrolment } from './use-cases/stage-admin-enrolment.use-case'
  * **What this module deliberately borrows from `identity`, and why that is not a boundary
  * breach:** the Argon2id hasher port, the refresh-token mint/hash, and the throttle domain
  * (`auth-throttle.ts`, which names its cross-module consumers itself). Those are auth
- * MECHANISMS; NFR-65's separation is about DATA — separate tables, cookie, secret — and §17.5
+ * MECHANISMS; and since task 67.11 `identity/provider`'s payload reader, FR-2's scopes and the client secrets'
+ * setting names — the shape of a provider's configuration, which A-18 edits and the sign-in flow reads, so one
+ * narrowing serves both; NFR-65's separation is about DATA — separate tables, cookie, secret — and §17.5
  * places FR-75's ownership here. What it must never borrow is the tenant session's tables or
  * its `SessionStore`.
  *

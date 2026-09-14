@@ -43,6 +43,17 @@ export const actionAsksConfirmation = (input: {
   input.action.control === PROVIDER_CONTROL.DISABLE ||
   (input.action.control === PROVIDER_CONTROL.SAVE && input.enabled);
 
+/**
+ * Whether this control is the one in flight for this provider — the busy state a button draws. One predicate for
+ * the record's two controls, so the state control and the form cannot ask the question two different ways.
+ */
+export const isPendingControl = (input: {
+  readonly pending: ProviderAction | null;
+  readonly provider: SocialProvider;
+  readonly control: ProviderControl;
+}): boolean =>
+  input.pending !== null && input.pending.provider === input.provider && input.pending.control === input.control;
+
 export const PROVIDER_NOTICE = {
   DONE: 'done',
   /** Another operator saved first — §5.2's *error — conflict*, drawn as the values in force with a sentence. */

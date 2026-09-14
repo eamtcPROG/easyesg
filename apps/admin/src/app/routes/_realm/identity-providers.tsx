@@ -1,10 +1,12 @@
 /**
  * A-18 — Identity provider configuration · PA · UC-70 · Record (task 67.11)
  *
- * Registering, enabling, disabling and rotating the client id of the two social providers FR-2 names, with no
- * redeploy (FR-82). **A provider has two halves and the screen keeps them apart** (project owner, 14 Sep 2026):
- * its behaviour, which an operator edits here, and its client secret, which the server's environment holds and
- * this screen reports on — held or not, and where it is set — without ever reading it back (NFR-69). Disabling
+ * Registering, enabling, disabling and rotating the client id of the social providers FR-2 names, with no redeploy
+ * (FR-82). **A provider has two halves and the screen keeps them apart** (project owner, 14 Sep 2026): its
+ * behaviour, which an operator edits here, and its client secret, which the server's environment holds and this
+ * screen reports on — held or not, and where it is set — without ever reading it back. **The secret in the
+ * environment is a recorded deviation from NFR-69, not compliance with it** (§12.5.6's task-24 configuration row),
+ * and task 154 moves it into the secret manager. Disabling
  * names who it reaches (UX-70). The screen is `features/platform/admin/identity-providers/`; this route owns only
  * its addressable state.
  *

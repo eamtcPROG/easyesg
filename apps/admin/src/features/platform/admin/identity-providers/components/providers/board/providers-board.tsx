@@ -11,6 +11,7 @@ import {
   providerActionReducer,
   type ProviderAction,
 } from '../../../tools/provider-action-state';
+import { providerNamed } from '../../../tools/providers-read';
 import { ProviderConfirmation } from '../confirm/provider-confirmation';
 import { ProviderList } from '../list/provider-list';
 import { ProviderNotice } from '../notice/provider-notice';
@@ -23,6 +24,9 @@ import { ProviderRecord } from '../record/provider-record';
  * **Every answer invalidates the providers**, the refusals included: a save refused because a colleague saved
  * first must redraw the record with the values now in force, which is what the conflict notice tells the operator
  * they are looking at.
+ *
+ * **Only `onOpen` is memoised**, because the list's columns are memoised on it; `perform` and `request` reach
+ * plain buttons that observe no identity, so wrapping them would be noise (`reactCompiler` is off, AD-9).
  */
 export function ProvidersBoard({
   providers,
@@ -39,44 +43,36 @@ export function ProvidersBoard({
   const [state, dispatch] = useReducer(providerActionReducer, INITIAL_PROVIDER_ACTION_STATE);
   const { mutate: run } = useMutation({ mutationFn: runProviderAction });
 
-  const perform = useCallback(
-    (action: ProviderAction) => {
-      dispatch({ type: PROVIDER_ACTION_EVENT.STARTED, action });
-      run(action, {
-        onSuccess: (outcome) => {
-          dispatch(
-            outcome.status === API_OUTCOME.Ok
-              ? { type: PROVIDER_ACTION_EVENT.SUCCEEDED }
-              : { type: PROVIDER_ACTION_EVENT.REFUSED, failure: outcome },
-          );
-          void queryClient.invalidateQueries({ queryKey: IDENTITY_PROVIDERS_QUERY_KEY });
-        },
-      });
-    },
-    [run, queryClient],
-  );
+  const perform = (action: ProviderAction) => {
+    dispatch({ type: PROVIDER_ACTION_EVENT.STARTED, action });
+    run(action, {
+      onSuccess: (outcome) => {
+        dispatch(
+          outcome.status === API_OUTCOME.Ok
+            ? { type: PROVIDER_ACTION_EVENT.SUCCEEDED }
+            : { type: PROVIDER_ACTION_EVENT.REFUSED, failure: outcome },
+        );
+        void queryClient.invalidateQueries({ queryKey: IDENTITY_PROVIDERS_QUERY_KEY });
+      },
+    });
+  };
 
-  const selected = providers.find((provider) => provider.provider === search.provider) ?? null;
-
-  // Stable, because the record's controls are rebuilt from it — and `reactCompiler` is off (AD-9).
-  const request = useCallback(
-    (action: ProviderAction) => {
-      const enabled = providers.find((provider) => provider.provider === action.provider)?.enabled ?? false;
-      if (actionAsksConfirmation({ action, enabled })) {
-        dispatch({ type: PROVIDER_ACTION_EVENT.CONFIRMATION_REQUESTED, action });
-      } else {
-        perform(action);
-      }
-    },
-    [providers, perform],
-  );
+  const request = (action: ProviderAction) => {
+    const enabled = providerNamed({ providers, provider: action.provider })?.enabled ?? false;
+    if (actionAsksConfirmation({ action, enabled })) {
+      dispatch({ type: PROVIDER_ACTION_EVENT.CONFIRMATION_REQUESTED, action });
+    } else {
+      perform(action);
+    }
+  };
 
   const onOpen = useCallback(
     (provider: SocialProvider) => onSearchChange(withProvider(search, provider)),
     [onSearchChange, search],
   );
 
-  const confirmed = providers.find((provider) => provider.provider === state.confirming?.provider) ?? null;
+  const selected = providerNamed({ providers, provider: search.provider });
+  const confirmed = providerNamed({ providers, provider: state.confirming?.provider });
 
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-[var(--space-5)]">

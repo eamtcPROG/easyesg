@@ -1,4 +1,4 @@
-import type { SocialProvider } from '@api/contracts/identity-provider.port';
+import { socialCallbackPath, type SocialProvider } from '@api/contracts/identity-provider.port';
 import {
   IDENTITY_PROVIDER_ENABLEMENT_BLOCKER,
   type IdentityProviderEnablementBlocker,
@@ -10,13 +10,6 @@ import {
  * FR-82; §12.5.6's task-67.11 row). Pure, and read by the refusals and by the screen's reading alike, so the
  * reason the console shows before a click is the reason the api gives after one.
  */
-
-/**
- * The path `apps/web` serves a provider's return on (§12.5.6's task-24 flow row) — fixed and unlocalized,
- * because it is the address registered at the provider. A redirect address naming any other path could never
- * be presented by the web tier, so it is refused rather than stored as configuration nothing can use.
- */
-export const socialCallbackPath = (provider: SocialProvider): string => `/auth/social/${provider}/callback`;
 
 const SECURE_PROTOCOL = 'https:';
 const INSECURE_PROTOCOL = 'http:';
@@ -86,17 +79,23 @@ export const enablementBlockerOf = (input: {
   return null;
 };
 
-const sameList = (left: readonly string[], right: readonly string[]): boolean =>
-  left.length === right.length && left.every((entry, index) => entry === right[index]);
+const sameValue = (left: unknown, right: unknown): boolean =>
+  Array.isArray(left) && Array.isArray(right)
+    ? left.length === right.length && left.every((entry, index) => entry === right[index])
+    : left === right;
 
-/** Whether a proposed configuration is the one already in force — refused rather than recorded as a change. */
+/**
+ * Whether a proposed configuration is the one already in force — refused rather than recorded as a change.
+ * **Every field is compared, not a list of them** (task 67.11's gate-integrity review): a hand-written list
+ * dropped the issuer without failing a spec, which refused a save that only corrected it, and would miss a field
+ * the payload gains later in the same silent way.
+ */
 export const settingsAreUnchanged = (input: {
   readonly before: IdentityProviderSettings | null;
   readonly after: IdentityProviderSettings;
-}): boolean =>
-  input.before !== null &&
-  input.before.enabled === input.after.enabled &&
-  input.before.clientId === input.after.clientId &&
-  input.before.issuer === input.after.issuer &&
-  sameList(input.before.scopes, input.after.scopes) &&
-  sameList(input.before.redirectUris, input.after.redirectUris);
+}): boolean => {
+  const { before, after } = input;
+  if (before === null) return false;
+  const fields = new Set([...Object.keys(before), ...Object.keys(after)]) as Set<keyof IdentityProviderSettings>;
+  return [...fields].every((field) => sameValue(before[field], after[field]));
+};

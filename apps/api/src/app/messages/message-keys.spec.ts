@@ -23,9 +23,17 @@ import { LOCALES } from '@easyesg/i18n';
  * classes something happened to import. A regex over `super('…')` in `errors/*.ts` sees every one
  * that exists, including a file nothing imports yet — which is exactly the case that would
  * otherwise ship wordless.
+ *
+ * **And a key written anywhere in an errors file, not only inside `super(…)`** (task 67.11's
+ * gate-integrity review). A refusal choosing its key from a literal map (`super(KEY[change])`) or a
+ * ternary passes the key where `super('…')` cannot see it: four of A-18's eleven keys were invisible
+ * that way, and so were A-08's account-change and invitation-standing maps before them — deleted from
+ * all three catalogues, the gate stayed green. Every dotted, lower-case, three-segment literal in an
+ * errors file is a message key by that file's own convention; an import path carries `/` and cannot match.
  */
 const MODULES_ROOT = join(__dirname, '../../modules');
 const SUPER_CALL = /\bsuper\(\s*'([a-z][\w.]*\.[\w.]+)'/gu;
+const KEY_LITERAL = /'([a-z][a-z_]*(?:\.[a-z_]+){2,})'/gu;
 
 /** Every `errors/*.ts` under `modules/`, found by walking rather than by a maintained list. */
 function errorFiles(directory: string): string[] {
@@ -41,6 +49,7 @@ const declaredKeys = (): string[] => {
   for (const file of errorFiles(MODULES_ROOT)) {
     const source = readFileSync(file, 'utf8');
     for (const match of source.matchAll(SUPER_CALL)) keys.add(match[1]);
+    for (const match of source.matchAll(KEY_LITERAL)) keys.add(match[1]);
   }
   return [...keys].sort();
 };
@@ -67,6 +76,9 @@ describe('every DomainError message key is in every catalogue (NFR-79)', () => {
     // the file convention ever changes, this fails instead of silently checking an empty set.
     expect(keys.length).toBeGreaterThan(20);
     expect(keys).toContain('identity.social.last_credential');
+    // A key chosen from a literal map and one from a ternary — the two shapes `super('…')` cannot see.
+    expect(keys).toContain('platform.admin.identity_provider_incomplete.secret_missing');
+    expect(keys).toContain('platform.admin.identity_provider_state_unchanged.disabled');
   });
 
   it.each(LOCALES)('%s carries every declared key', (locale) => {

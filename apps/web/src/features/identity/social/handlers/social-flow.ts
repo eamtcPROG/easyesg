@@ -5,6 +5,7 @@ import {
   SOCIAL_SIGN_IN_INTENT,
   isSocialProvider,
   isSocialSignInIntent,
+  socialCallbackPath,
   type CompleteSocialSignInRequest,
   type SocialChallengeRequest,
   type SocialChallengeResponse,
@@ -102,7 +103,7 @@ export async function beginSocialFlow(
       : requested;
   const returnCandidate = request.nextUrl.searchParams.get('return') ?? undefined;
   const returnPath = sanitizeReturnPath(returnCandidate) ? (returnCandidate ?? null) : null;
-  const redirectUri = `${env.publicOrigin}/auth/social/${providerParam}/callback`;
+  const redirectUri = `${env.publicOrigin}${socialCallbackPath(providerParam)}`;
 
   const outcome = await api.post<SocialChallengeRequest, SocialChallengeResponse>(
     `/auth/social/${providerParam}/challenge`,

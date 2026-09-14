@@ -433,9 +433,9 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   1. The user follows the verification link.
   2. The account transitions from unverified to active.
   3. The founding-organization flow (UC-49) or a pending invitation (UC-15) becomes available.
-- **Alternate flows:** Satisfied automatically where a social provider asserts an already-verified address.
+- **Alternate flows:** Satisfied automatically where a social provider asserts an already-verified address. **For an account registered through a provider, verification satisfied either way does not make the account active: it becomes active when its password is set** (UC-02 step 5; amended 14 Sep 2026, project owner; task 155).
 - **Exception flows:** Unverified accounts expire after a defined window.
-- **Postconditions:** The account is active.
+- **Postconditions:** The account is active — or, for an account registered through a provider, verified and awaiting its password (UC-02).
 - **Related FRs:** FR-3
 - **Related UCs:** UC-01, UC-02, UC-15, UC-49
 
@@ -3183,7 +3183,7 @@ Every `D-n` reference in section 5 resolves here. Decision identifiers are prese
 
 **D-5 — Platform Administrator has no standing access to tenant report data.** Access to a specific organization's report content is obtained only through a time-boxed, logged support-access grant that an Organization Administrator of that organization gives (UC-85; the consent amended 14 Sep 2026, project owner, task 67.9), itself auditable (UC-86).
 
-**D-6 — Social sign-in is in MVP scope; enterprise SSO is not.** Sign-up and sign-in through consumer/business identity providers — Google and Microsoft at MVP — sit alongside email and password as separate authentication paths over a single account record. The target user is a small-business owner or bookkeeper who already holds a Google or Microsoft work account and for whom another password is a real barrier at first use. Enterprise SSO in the federated sense (SAML/OIDC against a customer's own directory, with domain claiming and provisioning) stays out of MVP, but the identity model is provider-agnostic so adding it is a provider registration rather than a rework.
+**D-6 — Social sign-in is in MVP scope; enterprise SSO is not.** Sign-up and sign-in through consumer/business identity providers — Google and Microsoft at MVP — sit alongside email and password as separate authentication paths over a single account record. The target user is a small-business owner or bookkeeper who already holds a Google or Microsoft work account and for whom another password is a real barrier at first use. Enterprise SSO in the federated sense (SAML/OIDC against a customer's own directory, with domain claiming and provisioning) stays out of MVP, but the identity model is provider-agnostic so adding it is a provider registration rather than a rework. **Amended 14 Sep 2026** (project owner, task 67.11): the paths still meet in one account record, but an account registered through a provider now also sets a password before it is active (FR-2 amended, task 155). The barrier this rationale names moves to the step after the provider rather than being removed, because an account holding nothing but a provider identity is stranded the day that provider is disabled (UC-70).
 
 **D-7 — "Built from the ground up" means owning the billing domain, not the card rails.** The platform builds and owns the plan catalogue, subscription state machine, order flow, invoice and credit-note documents, billing ledger, dunning, and entitlement enforcement — the parts a third-party billing vendor would otherwise have supplied and the parts that carry Moldovan fiscal law. It does not build card processing itself: accepting raw card data would place the platform in PCI DSS SAQ-D scope, which is disproportionate and avoidable. Card capture stays with a licensed acquirer's hosted page or SDK, reached through a provider adapter. This is the pattern NFR-11 already mandates for third-party components, applied to payments.
 

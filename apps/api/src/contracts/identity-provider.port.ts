@@ -33,6 +33,14 @@ export const isSocialProvider = (value: string): value is SocialProvider =>
   (Object.values(SOCIAL_PROVIDER) as string[]).includes(value);
 
 /**
+ * The path `apps/web` serves a provider's return on (§12.5.6's task-24 flow row) — fixed and unlocalized, because it
+ * is the address registered at the provider. **Beside the vocabulary it formats** (task 67.11), mirrored by
+ * `@easyesg/contracts`'s `socialCallbackPath`, which the web tier builds its redirect address from: A-18 refuses a
+ * redirect address naming any other path, since the web tier could never present one.
+ */
+export const socialCallbackPath = (provider: SocialProvider): string => `/auth/social/${provider}/callback`;
+
+/**
  * A provider as resolved for one call: the config-store payload (enabled state, client id,
  * issuer, scopes, redirect allowlist) joined with the environment's client secret. FR-82's
  * split is visible in the shape — everything here except `clientSecret` is store data a

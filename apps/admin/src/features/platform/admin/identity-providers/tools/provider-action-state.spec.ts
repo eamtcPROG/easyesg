@@ -4,6 +4,7 @@ import {
   INITIAL_PROVIDER_ACTION_STATE,
   PROVIDER_ACTION_EVENT,
   actionAsksConfirmation,
+  isPendingControl,
   providerActionReducer,
   type ProviderAction,
 } from './provider-action-state';
@@ -27,6 +28,13 @@ describe('A-18’s action state (task 67.11)', () => {
     expect(actionAsksConfirmation({ action: SAVE, enabled: true })).toBe(true);
     expect(actionAsksConfirmation({ action: SAVE, enabled: false })).toBe(false);
     expect(actionAsksConfirmation({ action: ENABLE, enabled: false })).toBe(false);
+  });
+
+  it('marks a control pending only for its own provider and its own control', () => {
+    expect(isPendingControl({ pending: DISABLE, provider: 'google', control: 'disable' })).toBe(true);
+    expect(isPendingControl({ pending: DISABLE, provider: 'microsoft', control: 'disable' })).toBe(false);
+    expect(isPendingControl({ pending: DISABLE, provider: 'google', control: 'save' })).toBe(false);
+    expect(isPendingControl({ pending: null, provider: 'google', control: 'disable' })).toBe(false);
   });
 
   it('carries a confirmed action into flight, and names what was done when it succeeds', () => {

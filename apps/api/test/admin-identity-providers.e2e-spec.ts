@@ -202,7 +202,9 @@ describe('identity providers from the console (A-18; task 67.11)', () => {
       revision: current.revision - 1,
     }).expect(409);
 
-    expect(problemType(refused)).toBe(problemTypeUri(ProblemType.IdentityProviderChanged));
+    // The wire literal, on purpose: A-18's conflict state branches on `@easyesg/contracts`' copy of this URI, and a
+    // slug renamed on the api's side alone would pass an assertion written with the api's own constant.
+    expect(problemType(refused)).toBe('https://easyesg.md/problems/identity-provider-changed');
     expect((await google()).revision).toBe(current.revision);
   });
 
@@ -250,25 +252,34 @@ describe('identity providers from the console (A-18; task 67.11)', () => {
   it('counts the accounts a disable reaches, and of those the ones holding no other credential', async () => {
     const before = await google();
 
-    const accounts = await owner.query<{ id: string }[]>(
+    // Three accounts, one per way an account can stand: Google alone, Google with a password, and Google with
+    // Microsoft — so each half of "no other credential" is the only thing that can keep its account out of the count.
+    const [googleOnly, withPassword, withMicrosoft] = await owner.query<{ id: string }[]>(
       `INSERT INTO identity.account (email, locale, status, verified_at)
-       VALUES ($1, 'ro', 'active', now()), ($2, 'ro', 'active', now())
+       VALUES ($1, 'ro', 'active', now()), ($2, 'ro', 'active', now()), ($3, 'ro', 'active', now())
        RETURNING id`,
-      [`identity-providers-only-${RUN}@example.md`, `identity-providers-password-${RUN}@example.md`],
+      [
+        `identity-providers-only-${RUN}@example.md`,
+        `identity-providers-password-${RUN}@example.md`,
+        `identity-providers-microsoft-${RUN}@example.md`,
+      ],
     );
-    for (const [index, account] of accounts.entries()) {
-      await owner.query(
+    const link = (accountId: string, provider: string, label: string) =>
+      owner.query(
         `INSERT INTO identity.provider_identity (account_id, provider, subject, asserted_email, email_verified_asserted)
-         VALUES ($1, 'google', $2, $3, true)`,
-        [account.id, `identity-providers-subject-${String(index)}-${RUN}`, `identity-providers-${String(index)}-${RUN}@example.md`],
+         VALUES ($1, $2, $3, $4, true)`,
+        [accountId, provider, `identity-providers-subject-${label}-${RUN}`, `identity-providers-${label}-${RUN}@example.md`],
       );
-    }
+    await link(googleOnly.id, 'google', 'only');
+    await link(withPassword.id, 'google', 'password');
+    await link(withMicrosoft.id, 'google', 'both-google');
+    await link(withMicrosoft.id, 'microsoft', 'both-microsoft');
     await owner.query(`INSERT INTO identity.credential (account_id, password_hash) VALUES ($1, 'not-a-real-hash')`, [
-      accounts[1].id,
+      withPassword.id,
     ]);
 
     const after = await google();
-    expect(after.linkedAccounts - before.linkedAccounts).toBe(2);
+    expect(after.linkedAccounts - before.linkedAccounts).toBe(3);
     expect(after.accountsWithoutOtherCredential - before.accountsWithoutOtherCredential).toBe(1);
   });
 });

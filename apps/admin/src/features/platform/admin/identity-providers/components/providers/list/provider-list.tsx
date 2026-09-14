@@ -7,8 +7,8 @@ import { useProviderColumns } from './provider-columns';
 const rowKey = (row: IdentityProvider): string => row.provider;
 
 /**
- * A-18's providers (task 67.11). **A table, not an Index**: two rows, read whole, with nothing to page, search or
- * filter — and never empty, since both providers FR-2 names are answered whether configured or not.
+ * A-18's providers (task 67.11). **A table, not an Index**: the providers are read whole, with nothing to page,
+ * search or filter — and never empty, since every provider FR-2 names is answered whether configured or not.
  */
 export function ProviderList({
   providers,

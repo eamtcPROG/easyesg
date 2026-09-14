@@ -116,6 +116,7 @@ export {
   SOCIAL_SIGN_IN_INTENT,
   isSocialProvider,
   isSocialSignInIntent,
+  socialCallbackPath,
   type SocialProvider,
   type SocialSignInIntent,
 } from './social';

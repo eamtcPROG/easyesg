@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { ConfigurationPublisher } from '../src/infrastructure/configuration/configuration-publisher.service';
+import { ConfigurationRevisionMismatchError } from '../src/infrastructure/configuration/configuration-revision-mismatch.error';
 import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
 import { seedConfiguration } from '../src/infrastructure/configuration/seed-configuration';
 
@@ -75,6 +76,50 @@ describe('configuration store (DR-3, AD-4)', () => {
     await owner.query(`DELETE FROM config.entry_schedule WHERE kind = $1`, [KIND]);
     await owner.query(`DELETE FROM config.entry_version WHERE kind = $1`, [KIND]);
     await owner.query(`ALTER TABLE config.entry_version ENABLE TRIGGER reject_published_edit`);
+  });
+
+  /**
+   * A publication made against a revision (task 67.11, A-18). **The refusal and the lock are separate claims**:
+   * the refusal is what stops a stale save overwriting a colleague's, and the lock is what makes two saves against
+   * one revision meet that refusal rather than the `(kind, scope, revision)` unique key as a 500 — which no
+   * sequential test can see, so the second case holds the lock itself and watches the publication wait for it.
+   */
+  describe('a publication against the revision its caller read', () => {
+    it('refuses a revision no longer in force, and puts nothing new in force', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+
+      await expect(
+        publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 75 }, expectedRevision: 0 }),
+      ).rejects.toBeInstanceOf(ConfigurationRevisionMismatchError);
+
+      const versions = await owner.query<{ revision: number }[]>(
+        `SELECT revision FROM config.entry_version WHERE kind = $1 AND scope = $2`,
+        [KIND, SCOPE],
+      );
+      expect(versions).toEqual([{ revision: 1 }]);
+    });
+
+    it('waits for the slot’s lock, so two saves against one revision are decided one after the other', async () => {
+      const holder = owner.createQueryRunner();
+      await holder.connect();
+      await holder.startTransaction();
+      // The publisher's own key, restated: a publication that stopped taking this lock resolves at once and fails here.
+      await holder.query(`SELECT pg_advisory_xact_lock(hashtextextended($1::text || '/' || $2::text, 0))`, [KIND, SCOPE]);
+
+      let settled = false;
+      const publication = publisher
+        .publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 }, expectedRevision: 0 })
+        .finally(() => {
+          settled = true;
+        });
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      expect(settled).toBe(false);
+
+      await holder.commitTransaction();
+      await holder.release();
+      await expect(publication).resolves.toMatchObject({ revision: 1 });
+    });
   });
 
   /**

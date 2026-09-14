@@ -2,9 +2,9 @@ import type { IdentityProvider } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button, Panel } from '@easyesg/ui';
 import { useTranslations } from 'use-intl';
 import type { ProviderAction } from '../../../tools/provider-action-state';
-import { ProviderSettingsForm } from '../form/provider-settings-form';
 import { ProviderFacts } from './provider-facts';
 import { ProviderSecret } from './provider-secret';
+import { ProviderSettingsForm } from './provider-settings-form';
 import { ProviderStateControl } from './provider-state-control';
 
 /**

@@ -11,8 +11,11 @@ import { currentTotpCode } from './support/totp';
  * What only this suite can prove is §5.2 A-18's exit, *the effect is visible on S-01*: an operator registers Google
  * by saving its client id, enables it, and the tenant sign-in screen offers it — with no redeploy and no restart —
  * then disables it past the confirmation that names who it reaches, and the button is gone. On the way it holds the
- * screen to the task row's one obligation about the secret: **it says the server holds one, and where it is set,
- * and never shows it**. The api suite proves the rules; this proves the two screens agree about what happened.
+ * screen to the task row's one obligation about the secret: **it says the server holds one, and where it is set**.
+ * That the secret's value never leaves the api is `apps/api/test/admin-identity-providers.e2e-spec.ts`'s claim,
+ * made against the value the api actually loaded — this process cannot see that value, and a check against a
+ * guessed one would pass whatever the page held. The api suite proves the rules; this proves the two screens
+ * agree about what happened.
  *
  * **What it needs and does not create**: a Google client secret in the api's environment and http admitted for a
  * local redirect address — both from `apps/api/.env`, which the api loads and CI copies from `.env.example`, as
@@ -71,11 +74,9 @@ test('an operator registers Google, enables it onto the sign-in screen, and disa
   await page.waitForURL(/[?&]provider=google/u);
   const record = page.getByRole('complementary', { name: 'Fișa furnizorului Google' });
 
-  // The half the screen cannot edit: held, where it is set, and the secret itself nowhere on the page.
+  // The half the screen cannot edit: whether the server holds the secret, and where it is set.
   await expect(record.getByText('Serverul deține secretul')).toBeVisible();
   await expect(record.getByText('AUTH_SOCIAL_GOOGLE_CLIENT_SECRET', { exact: true })).toBeVisible();
-  const secret = process.env.AUTH_SOCIAL_GOOGLE_CLIENT_SECRET ?? 'devonly-google-secret';
-  expect(await page.content()).not.toContain(secret);
 
   // The seed ships no client id, so the provider cannot be enabled yet, and the record says why before the click.
   await expect(record.getByText('Nu poate fi activat încă: lipsește identificatorul clientului.')).toBeVisible();
@@ -107,18 +108,25 @@ test('an operator registers Google, enables it onto the sign-in screen, and disa
   await dialogue.getByRole('button', { name: 'Dezactivați', exact: true }).click();
   await expect(page.getByText('Furnizorul Google este dezactivat și nu mai apare pe pagina de autentificare.')).toBeVisible();
 
+  // Gone because it is disabled, not because the read failed: S-01 draws no provider block when its read fails, so
+  // the api's own answer is asserted first, then the rendered screen.
+  const offered = await visitor.request.get('http://localhost:3000/api/v1/auth/social/providers');
+  expect(offered.ok()).toBe(true);
+  expect(((await offered.json()) as { object: { providers: string[] } }).object.providers).not.toContain('google');
   await signInScreen.reload();
+  await expect(signInScreen.getByLabel('Adresa de e-mail')).toBeVisible();
   await expect(signInScreen.getByRole('link', { name: 'Continuați cu Google' })).toHaveCount(0);
   await visitor.close();
 
-  // The log names what was acted on by its provider — a configuration version has no address.
+  // The log names what was acted on by its provider — a configuration version has no address. Filtered to this
+  // run's operator: the log is append-only, so every earlier run's disable is also a row naming Google.
   await page
     .getByRole('navigation', { name: 'Secțiunile consolei' })
     .getByRole('link', { name: 'Conturi de administrator' })
     .click();
   await page.waitForURL('**/accounts');
   const log = page.getByRole('table', { name: 'Intrările jurnalului de sistem, cele mai noi primele' });
-  await expect(log.getByRole('row').filter({ hasText: 'A dezactivat un furnizor de identitate' }).first()).toContainText(
-    'Google',
-  );
+  const disabled = log.getByRole('row').filter({ hasText: 'A dezactivat un furnizor de identitate' }).filter({ hasText: OPERATOR });
+  await expect(disabled).toHaveCount(1);
+  await expect(disabled).toContainText('Google');
 });

@@ -1,10 +1,10 @@
+import { socialCallbackPath } from '@api/contracts/identity-provider.port';
 import {
   enablementBlockerOf,
   issuerIsAdmissible,
   normalisedRedirectUris,
   redirectUriIsAdmissible,
   settingsAreUnchanged,
-  socialCallbackPath,
 } from './identity-provider-rules';
 
 const SETTINGS = {
@@ -88,6 +88,15 @@ describe('A-18’s configuration rules (task 67.11)', () => {
   });
 
   describe('an unchanged configuration', () => {
+    // Every field of the payload, walked from the fixture's own keys: a field the settings gain later must be
+    // added to this typed fixture, and is then covered here without anyone remembering to add a case.
+    it.each(Object.keys(SETTINGS) as (keyof typeof SETTINGS)[])('is changed by a different %s alone', (field) => {
+      const original = SETTINGS[field];
+      const changed = Array.isArray(original) ? [...original, 'x'] : typeof original === 'boolean' ? !original : `${original}-x`;
+
+      expect(settingsAreUnchanged({ before: SETTINGS, after: { ...SETTINGS, [field]: changed } })).toBe(false);
+    });
+
     it('is the same values, list order included', () => {
       expect(settingsAreUnchanged({ before: SETTINGS, after: { ...SETTINGS } })).toBe(true);
       expect(settingsAreUnchanged({ before: null, after: SETTINGS })).toBe(false);

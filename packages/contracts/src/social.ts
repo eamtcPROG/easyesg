@@ -18,6 +18,15 @@ export const isSocialProvider = (value: string): value is SocialProvider =>
   (Object.values(SOCIAL_PROVIDER) as string[]).includes(value);
 
 /**
+ * The path `apps/web` serves a provider's return on — fixed and unlocalized, because it is the redirect address
+ * registered at the provider (`architecture.md` §12.5.6's task-24 flow row). **Declared once for both front ends**
+ * (task 67.11): the web tier builds its redirect address from it and A-18 tells an operator what an address must end
+ * in, so the two cannot name different paths. The api's copy sits beside its own `SOCIAL_PROVIDER`, for this file's
+ * stated reason.
+ */
+export const socialCallbackPath = (provider: SocialProvider): string => `/auth/social/${provider}/callback`;
+
+/**
  * What the user was doing when the flow began — decides UC-05's alternate (a sign-in matching
  * nothing is OFFERED registration) against UC-02's main path (a registration registers).
  */

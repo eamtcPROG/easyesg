@@ -5,7 +5,7 @@ import type { ProviderEnvironment } from '../interfaces/provider-environment.int
 import type { IdentityProviderConfiguration } from '../models/identity-provider.model';
 
 /**
- * UC-70's reading — A-18's providers (task 67.11; FR-82): the two FR-2 names in declaration order, each with the
+ * UC-70's reading — A-18's providers (task 67.11; FR-82): the providers FR-2 names, in declaration order, each with the
  * configuration in force, whether its secret is held and where it is set, who has linked it, and why it could not
  * be enabled if it could not.
  *

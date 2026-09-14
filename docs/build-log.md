@@ -20399,9 +20399,9 @@ registration from an invitation — are listed on its row for its own batch.
   `SOCIAL_CLIENT_SECRET_SETTING` names the variables once, and a spec holds `configuration.ts` to the same names.
 - **The console's form is keyed by the revision it opened on**, so it remounts with the values in force after any
   save rather than being reset by an effect.
-- **Known limit**: the reset email and S-02 say *reset* to a social-only account that has never had a password. The
-  flow works; the words are task 155's to settle with the registration step, which changes who can still be
-  social-only at all.
+- **Known limit**: the reset email and S-02 say *reset* to a social-only account that has never had a password, and
+  the email tells it its current password stays unchanged. The flow works; the wording is recorded on task 155's
+  row, with what is assumed meanwhile, because that task decides who can still be social-only at all.
 
 ### What the gates found
 
@@ -20462,3 +20462,73 @@ shape and the domain rules bound meaning; `error-throw-http-exceptions` declined
 - **Not run**: `pnpm e2e:worker` — no consumer changed; `pnpm migrations:check` — no migration. **The review agents and
   `gates:clean` did not run**, under the owner's standing rule for a sub-step; 67's parent close gets both, and cold:
   `packages/contracts` and `packages/i18n` changed, a generated artefact was regenerated, and a seed script changed.
+
+### The reviews, run at the owner's request — all three on opus
+
+The owner asked for the three review agents at this sub-step, over `d21381b..ba4c5a7`; the parent close still owes
+its own. Twenty findings, all verified before acting on them; every one was acted on, none declined.
+
+**Spec review — five findings.**
+- **FR-2's amendment contradicted FR-3 and UC-03**, which still made a provider-verified address activate the account.
+  Both now say activation waits for the password for such an account; task 155's open list gains how the account's
+  status represents *verified and awaiting a password*. FR-2 gains the language step UC-02 already named.
+- **D-6's rationale** carries a dated note that its barrier moved rather than vanished.
+- **The reset email's wording deferral was in this log only**; it is on task 155's row now, with its assumption.
+- **FR-82 and NFR-69 carried no note of the secret deferral** UC-70 and §12.5.6 record; both do now.
+- **A route docblock cited NFR-69 as though the environment secret complied with it**; it names the deviation now.
+- Minor, also done: A-18's index row says *built as Record*, A-18 and §12.5.6 say *linked* where they said *signed
+  in*, and task 67.11's Scope names the web and i18n workspaces it reached.
+
+**Convention review — six findings.**
+- **The callback path was written by hand three times**, the web tier's copy predating this task. It is
+  `socialCallbackPath` beside `SOCIAL_PROVIDER` in `@easyesg/contracts`, read by the web tier's redirect and A-18's
+  help, with the api's copy beside its own vocabulary in `contracts/identity-provider.port.ts`.
+- **`.first()` on A-08's log row**: the row is filtered to this run's operator and asserted to be exactly one.
+- **One *is this pending* question in two spellings, one lookup three times**: `isPendingControl` and
+  `providerNamed` in `tools/`, with specs.
+- **The new statements had not been `EXPLAIN`ed.** Measured on the Compose stack, as `esg_app` and `esg_admin_ro`,
+  with and without `enable_seqscan`: the usage count's two `NOT EXISTS` probes take `credential_pkey` and
+  `provider_identity_one_per_provider`; the in-force read takes `entry_schedule_pkey` on `(kind, validity)`; the log's
+  new join takes `entry_version_pkey` even under the default plan, over 9,250 rows. At these sizes the planner prefers
+  sequential scans for the first two, and every index is usable.
+- **Docblocks stated counts of things outside their files**; removed, and the loading skeleton's rows derive from
+  `SOCIAL_PROVIDER`.
+- **The connection form sat beside `record/`, which is its one reader**; it is in `record/`.
+- Of the six observations no rule covers, two were acted on: `perform` and `request` lost a `useCallback` whose
+  comment claimed an observer none had, and `AdminModule`'s list of what it borrows from `identity` names the provider
+  shape. The other four — the absent-provider default spelled three ways, the length bounds restated in the form, the
+  unbounded range literal, and the seed spec's `process.cwd()` — are left: each follows an existing precedent.
+
+**Gate-integrity review — nine findings**, the first three proven by breaking an export of the commit.
+- **The conflict slug linked nothing across the api and the console.** The api e2e now asserts the wire URI as a
+  literal, which the console's reducer spec also pins — renaming either side's copy fails one of them.
+- **`message-keys.spec` could not see a key chosen from a map or a ternary**: four of A-18's keys, and A-08's
+  account-change and invitation-standing maps before them. It now collects every dotted three-segment literal in an
+  errors file. **Proven to bite**: with one A-18 key and one A-08 map key deleted from `ro.json`, it failed and named
+  both.
+- **`settingsAreUnchanged` compared a hand-written field list** that could lose the issuer silently. It compares
+  every field, and its spec walks the fixture's own keys.
+- **The environment adapter had no spec** — every suite ran a fake or held both secrets. It has one: a set secret, an
+  absent one, an empty one, and the insecure switch both ways.
+- **The count's other-provider half was unguarded**: the fixture gains an account linked to Google and Microsoft with
+  no password, which only that half keeps out of the count.
+- **A-08's log row matched any run's disable**; filtered, as above.
+- **"Gone from S-01" passed on a failed read**, since S-01 draws nothing then: the journey asserts the api's own
+  answer and a field S-01 always renders first.
+- **The publisher's lock had no test**: the configuration-store suite holds the slot's advisory lock in a second
+  session and asserts a publication waits for it, beside a direct stale-revision refusal.
+- **The browser journey searched the page for a guessed secret**; removed — the api e2e asserts against the value the
+  api loaded, which a browser process cannot see.
+
+**What fixing them found.**
+- **`socialCallbackPath` was added to `social.ts` and not to the package's explicit export list**; both typechecks
+  failed on it, which is what they are for.
+- **The lint cache kept reporting the resulting errors after the export was fixed** — the recorded
+  *type changed, file did not* trap, met again. Re-linted without the cache, then the whole repository cold.
+
+**Verification after the fixes.** `@easyesg/api` **1,003 tests across 119 suites**, typecheck clean; the A-18 and
+configuration-store e2e suites **26 of 26**; `@easyesg/admin` typecheck clean, **246 tests across 29 files**,
+`routes:check` exit 0; `@easyesg/web` typecheck clean, **576 tests across 49 files**; `@easyesg/contracts` typecheck
+clean; **`pnpm lint` cold, exit 0**; `pnpm boundaries` clean over 1,530 modules; `pnpm docs:check` 40 claims. The
+browser journeys the fixes reach, on bundles rebuilt from them — the three social sign-in cases and A-18's journey —
+**4 of 4**. Not re-run: the full `pnpm e2e` and `pnpm e2e:web`, whose other suites no fix reaches.

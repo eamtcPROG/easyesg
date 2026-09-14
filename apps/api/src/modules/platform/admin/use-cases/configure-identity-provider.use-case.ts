@@ -1,11 +1,10 @@
-import type { SocialProvider } from '@api/contracts/identity-provider.port';
+import { socialCallbackPath, type SocialProvider } from '@api/contracts/identity-provider.port';
 import { REQUESTED_SCOPES } from '@api/modules/identity/provider/domain/identity-provider-payload';
 import {
   issuerIsAdmissible,
   normalisedRedirectUris,
   redirectUriIsAdmissible,
   settingsAreUnchanged,
-  socialCallbackPath,
 } from '../domain/identity-provider-rules';
 import {
   IdentityProviderEnabledIncompleteError,
