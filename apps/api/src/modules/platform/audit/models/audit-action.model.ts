@@ -17,7 +17,14 @@ import { emailIdentityKey } from '@api/modules/identity/account/domain/email-add
  *
  * Dotted and past-tense: the row states what happened, not what was attempted. FR-81's five event
  * classes — version rollouts, content publications, migration runs, factor-set updates and
- * administrator account changes — arrive with task 67's screens and extend this object.
+ * administrator account changes — arrive with task 67's screens and extend this object; **the
+ * account changes arrived with task 67.4**, and version rollouts, content publications, migration runs
+ * and factor-set updates join with A-03, A-04 and A-05.
+ *
+ * Most of task 67.4's members are written by `AuditInterceptor` under the action a route declares
+ * with `@AuditAction`; `ADMIN_INVITATION_ACCEPTED` and `ADMIN_ACCOUNT_PROVISIONED` are written by
+ * their use case and the provisioning CLI, because no session-bearing request carries them
+ * (§12.5.6's task-67.4 row).
  */
 export const AUDIT_ACTION = {
   /** UC-68 completed: credential and second factor both answered, a session issued. */
@@ -34,9 +41,30 @@ export const AUDIT_ACTION = {
   ADMIN_SIGN_IN_BLOCKED: 'admin.sign_in.blocked',
   /** Refused before anything was verified, because the window is spent (§12.5.6). */
   ADMIN_SIGN_IN_THROTTLED: 'admin.sign_in.throttled',
+  /** A Platform Administrator invited an operator (UC-87); the target is the invitation. */
+  ADMIN_INVITATION_ISSUED: 'admin.invitation.issued',
+  /** The invitation's link was replaced and sent again; the old link stopped working. */
+  ADMIN_INVITATION_RESENT: 'admin.invitation.resent',
+  /** The invitation was withdrawn before anyone accepted it. */
+  ADMIN_INVITATION_REVOKED: 'admin.invitation.revoked',
+  /** The invitee set a password and confirmed a second factor; the actor is the account created. */
+  ADMIN_INVITATION_ACCEPTED: 'admin.invitation.accepted',
+  /** The account was suspended and its sessions ended; reversible. */
+  ADMIN_ACCOUNT_SUSPENDED: 'admin.account.suspended',
+  ADMIN_ACCOUNT_REACTIVATED: 'admin.account.reactivated',
+  /** The account's access was removed, finally; its entries stay attributed to it. */
+  ADMIN_ACCOUNT_REMOVED: 'admin.account.removed',
+  /** A lockout was released — from A-08 by an operator, or by the provisioning CLI with no actor. */
+  ADMIN_ACCOUNT_LOCKOUT_RELEASED: 'admin.account.lockout_released',
+  /** An account created by the provisioning CLI, which is the bootstrap and has no actor. */
+  ADMIN_ACCOUNT_PROVISIONED: 'admin.account.provisioned',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];
+
+/** Narrows a stored or requested value — A-08's filter and the log reader both read through this. */
+export const isAuditAction = (value: unknown): value is AuditAction =>
+  typeof value === 'string' && (Object.values(AUDIT_ACTION) as readonly string[]).includes(value);
 
 /**
  * The pseudonymous subject for an identifier a caller presented.

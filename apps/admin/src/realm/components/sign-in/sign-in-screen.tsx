@@ -8,6 +8,7 @@ import {
   type AdminAccount,
 } from '@easyesg/contracts';
 import { beginSignIn, completeSignIn } from '../../queries/session';
+import { SIGN_IN_NOTICE, type SignInNotice } from '../../tools/sign-in-notice';
 import { INITIAL_SIGN_IN_STATE, SIGN_IN_EVENT, STEP, signInReducer } from '../../tools/sign-in-state';
 import { CredentialStep } from './credential-step';
 import { FactorStep } from './factor-step';
@@ -55,7 +56,14 @@ import { FactorStep } from './factor-step';
  * recorded divergence for design review, not a fork of the archetype. The factor step's own
  * deferrals are listed in `factor-step.tsx`.
  */
-export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccount) => void }) {
+export function SignInScreen({
+  onSignedIn,
+  notice,
+}: {
+  onSignedIn: (account: AdminAccount) => void;
+  /** What arrival announces — A-20's success since task 67.4. */
+  notice?: SignInNotice;
+}) {
   const t = useTranslations('realm.signIn');
   const tCommon = useTranslations('realm');
   const [{ step, failure }, dispatch] = useReducer(signInReducer, INITIAL_SIGN_IN_STATE);
@@ -117,6 +125,16 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (account: AdminAccoun
 
       {/* Body section — the refusal, then the step that is showing. */}
       <div className="flex flex-col gap-[var(--space-4)] px-[var(--space-7)] py-[var(--space-5)]">
+        {notice === SIGN_IN_NOTICE.INVITATION_ACCEPTED && failure === null && !onFactorStep ? (
+          <Callout
+            intent={CALLOUT_INTENT.SUCCESS}
+            title={t('notice.invitationAccepted.title')}
+            action={null}
+          >
+            {t('notice.invitationAccepted.body')}
+          </Callout>
+        ) : null}
+
         {failure?.status === API_OUTCOME.Problem ? (
           <Callout
             intent={CALLOUT_INTENT.ERROR}

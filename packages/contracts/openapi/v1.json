@@ -3183,6 +3183,727 @@
           "platform"
         ]
       }
+    },
+    "/api/v1/admin/accounts": {
+      "get": {
+        "description": "UC-87. Accounts in both realms, removed ones included because their entries stay attributed to them, followed by pending invitations — each with its one-word state and its last sign-in or expiry. Never a credential.",
+        "operationId": "AdminAccountsController_roster",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The whole roster: operators who can act, then invitations, then removed accounts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AdminRosterRowResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "List every operator account and every pending invitation",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/accounts/{accountId}/suspension": {
+      "post": {
+        "description": "Reversible. The account can no longer sign in, and every session it holds is refused on its next request. Recorded in the system audit log.",
+        "operationId": "AdminAccountsController_suspend",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The operator account.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Suspended; its sessions have ended."
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No operator account has this id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The account is not active, or it is the operator’s own (problem type conflict); or it is the last active Platform Administrator (problem type last-administrator).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Suspend an operator account",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/accounts/{accountId}/reactivation": {
+      "post": {
+        "description": "The account may sign in again. No session the suspension ended comes back. Recorded in the system audit log.",
+        "operationId": "AdminAccountsController_reactivate",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The operator account.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Reactivated."
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No operator account has this id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The account is not suspended (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Reactivate a suspended operator account",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/accounts/{accountId}/removal": {
+      "post": {
+        "description": "Irreversible. The account can never sign in again and cannot be restored; every entry it made stays attributed to it. Inviting its address again creates a new account. Recorded in the system audit log.",
+        "operationId": "AdminAccountsController_remove",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The operator account.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed; its sessions have ended."
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No operator account has this id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The account is already removed, or it is the operator’s own (problem type conflict); or it is the last active Platform Administrator (problem type last-administrator).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Remove an operator account’s access, finally",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/accounts/{accountId}/lockout-release": {
+      "post": {
+        "description": "Clears the lock and the failure count, so the operator has the whole threshold back. Recorded in the system audit log.",
+        "operationId": "AdminAccountsController_releaseLockout",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The operator account.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Released."
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No operator account has this id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The account is not locked (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Release an operator account locked after repeated failures",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/invitations": {
+      "post": {
+        "description": "UC-87. Emails a single-use link, valid for 24 hours, to the address; the account exists only once the invitee sets a password and confirms a second factor. Recorded in the system audit log.",
+        "operationId": "AdminInvitationsController_invite",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteAdministratorRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The invitation was sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminInvitationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "An account that is not removed holds the address (problem type admin-account-exists), or the address already has a pending invitation (problem type invitation-outstanding).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Five invitation emails have gone to this address in the last fifteen minutes (problem type rate-limited).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Invite an operator into either realm",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/invitations/{invitationId}/email": {
+      "post": {
+        "description": "The previous link stops working at once and the 24 hours restart. A lapsed invitation is resent this way. Recorded in the system audit log.",
+        "operationId": "AdminInvitationsController_resend",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "required": true,
+            "in": "path",
+            "description": "The invitation.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sent again."
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No pending invitation has this id — accepted, revoked, or never sent (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Five invitation emails have gone to this address in the last fifteen minutes (problem type rate-limited).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Send an invitation again, with a new link",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/invitations/{invitationId}": {
+      "delete": {
+        "description": "The link stops working at once and the address may be invited again. Recorded in the system audit log.",
+        "operationId": "AdminInvitationsController_revoke",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "required": true,
+            "in": "path",
+            "description": "The invitation.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revoked."
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No pending invitation has this id — accepted, revoked, or never sent (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Revoke a pending invitation",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/invitation/preview": {
+      "post": {
+        "description": "A-20’s first read: the address and the realm, so the invitee knows what they are joining.",
+        "operationId": "AdminInvitationAcceptanceController_preview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminInvitationTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The link is live.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminInvitationPreviewResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The link cannot become an account: it expired, was revoked, was already used, or does not resolve — including a link a resend replaced (problem type invitation-not-acceptable; the `standing` extension says which).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Five links from this address that did not resolve in the last fifteen minutes (problem type rate-limited). A live link spends nothing.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read what an administrator invitation link invites",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/invitation/enrolment": {
+      "post": {
+        "description": "Answers the secret and its Key Uri. Asked again, it answers the same secret, so a reload does not invalidate a scan; only a resend replaces it.",
+        "operationId": "AdminInvitationAcceptanceController_enrol",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminInvitationTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The factor is staged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminEnrolmentResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The link cannot become an account: it expired, was revoked, was already used, or does not resolve — including a link a resend replaced (problem type invitation-not-acceptable; the `standing` extension says which).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Five links from this address that did not resolve in the last fifteen minutes (problem type rate-limited). A live link spends nothing.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Stage the second factor the account will be created with",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/invitation/acceptance": {
+      "post": {
+        "description": "Creates the operator account, holding the password and the confirmed factor, and spends the link. Issues no session: the new operator signs in to the console.",
+        "operationId": "AdminInvitationAcceptanceController_accept",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptAdminInvitationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The account exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AcceptedAdminInvitationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The password does not meet the policy (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "The code is not current for the staged secret (problem type factor-invalid).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "No factor was staged (problem type conflict), or an account that is not removed already holds the address (problem type admin-account-exists).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "410": {
+            "description": "The link cannot become an account: it expired, was revoked, was already used, or does not resolve — including a link a resend replaced (problem type invitation-not-acceptable; the `standing` extension says which).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Five links from this address that did not resolve in the last fifteen minutes (problem type rate-limited). A live link spends nothing.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Accept the invitation — set the password and confirm the second factor",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/audit-log": {
+      "get": {
+        "description": "UC-88. Administrator account changes and every admin sign-in attempt, attributed and timestamped, newest first. Read-only: nothing in the console edits an entry.",
+        "operationId": "SystemAuditLogController_list",
+        "parameters": [
+          {
+            "name": "onpage",
+            "required": false,
+            "in": "query",
+            "description": "Entries per page, 25 unless given, at most 200. `-1` is refused.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Unix epoch milliseconds; only events before it.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Unix epoch milliseconds; only events at or after it.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "description": "Only this kind of event.",
+            "schema": {
+              "enum": [
+                "admin.sign_in.succeeded",
+                "admin.sign_in.credential_refused",
+                "admin.sign_in.factor_refused",
+                "admin.sign_in.blocked",
+                "admin.sign_in.throttled",
+                "admin.invitation.issued",
+                "admin.invitation.resent",
+                "admin.invitation.revoked",
+                "admin.invitation.accepted",
+                "admin.account.suspended",
+                "admin.account.reactivated",
+                "admin.account.removed",
+                "admin.account.lockout_released",
+                "admin.account.provisioned"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "operator",
+            "required": false,
+            "in": "query",
+            "description": "Only what this operator account did (uuid).",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page. `total` counts entries the filters admitted and is what pages are counted from; `unfiltered` counts every entry, which tells an empty page whether nothing has happened yet or nothing matched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SystemAuditLogEntryResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read the platform-wide system audit log",
+        "tags": [
+          "platform"
+        ]
+      }
     }
   },
   "info": {
@@ -6231,6 +6952,283 @@
           "entityCount",
           "reportCount",
           "lastSignInAt"
+        ]
+      },
+      "AdminRosterRowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account’s id, or the invitation’s — `kind` says which, and so which routes act on it."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "account",
+              "invitation"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "operator@easyesg.md"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "platform_administrator",
+              "billing_operator"
+            ],
+            "description": "The realm — fixed when the invitation was sent, never changed afterwards."
+          },
+          "standing": {
+            "type": "string",
+            "enum": [
+              "active",
+              "locked",
+              "suspended",
+              "removed",
+              "invited",
+              "lapsed"
+            ],
+            "description": "One word read from the facts: an account is active, locked (active and locked out after repeated failures), suspended or removed; an invitation is invited, or lapsed once its link has expired."
+          },
+          "lastSignInAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds of the most recent sign-in. Null for an invitation, and for an account that has never signed in."
+          },
+          "expiresAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds after which an invitation’s link stops working. Null for an account."
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "email",
+          "role",
+          "standing",
+          "lastSignInAt",
+          "expiresAt"
+        ]
+      },
+      "AdminInvitationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifies the invitation for a resend or a revoke."
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "platform_administrator",
+              "billing_operator"
+            ]
+          },
+          "expiresAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds after which the link stops working — 24 hours after sending."
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "expiresAt"
+        ]
+      },
+      "InviteAdministratorRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320,
+            "description": "The operator’s address. The link goes here, and the account it creates holds this address."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "platform_administrator",
+              "billing_operator"
+            ],
+            "description": "The realm the account will belong to. The two realms are separate accounts: a realm is not changed later."
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ]
+      },
+      "AdminInvitationPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "The address the account will hold."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "platform_administrator",
+              "billing_operator"
+            ],
+            "description": "The realm the account will belong to."
+          },
+          "expiresAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds after which the link stops working."
+          }
+        },
+        "required": [
+          "email",
+          "role",
+          "expiresAt"
+        ]
+      },
+      "AdminInvitationTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The single-use value from the invitation link.",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "AdminEnrolmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "secret": {
+            "type": "string",
+            "description": "The base32 secret, for typing into an authenticator that cannot scan.",
+            "example": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
+          },
+          "uri": {
+            "type": "string",
+            "description": "The otpauth Key Uri the enrolment symbol encodes — the same secret, scannable."
+          }
+        },
+        "required": [
+          "secret",
+          "uri"
+        ]
+      },
+      "AcceptedAdminInvitationResponseDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "The address to sign in with."
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "AcceptAdminInvitationRequestDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The single-use value from the invitation link.",
+            "maxLength": 128
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "The operator’s password, under the same policy as every other: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character."
+          },
+          "totpCode": {
+            "type": "string",
+            "description": "A current code from the authenticator the enrolment secret was entered into. The account exists only once this confirms.",
+            "example": "492039"
+          }
+        },
+        "required": [
+          "token",
+          "password",
+          "totpCode"
+        ]
+      },
+      "SystemAuditLogEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "occurredAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when it happened."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "admin.sign_in.succeeded",
+              "admin.sign_in.credential_refused",
+              "admin.sign_in.factor_refused",
+              "admin.sign_in.blocked",
+              "admin.sign_in.throttled",
+              "admin.invitation.issued",
+              "admin.invitation.resent",
+              "admin.invitation.revoked",
+              "admin.invitation.accepted",
+              "admin.account.suspended",
+              "admin.account.reactivated",
+              "admin.account.removed",
+              "admin.account.lockout_released",
+              "admin.account.provisioned"
+            ],
+            "description": "What happened."
+          },
+          "actorId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The operator who acted. Null for the provisioning command, and for a sign-in attempt against an address that matches no account."
+          },
+          "actorEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "description": "The acting operator’s address. Null with `actorId`, or where no account holds that id."
+          },
+          "targetId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The account or invitation the event acted on. Null for an event that acted on none."
+          },
+          "targetEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "description": "The target’s address, where the target is an account or an invitation."
+          }
+        },
+        "required": [
+          "id",
+          "occurredAt",
+          "action",
+          "actorId",
+          "actorEmail",
+          "targetId",
+          "targetEmail"
         ]
       }
     }

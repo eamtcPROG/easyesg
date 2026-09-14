@@ -20,5 +20,8 @@ import { AdminModule } from './admin/admin.module';
     SupportAccessModule,
     AdminModule,
   ],
+  // Re-exported so `AppModule` resolves `AuditInterceptor`'s writer (task 67.4) — `IdentityModule`
+  // re-exports `SessionModule` for `AuthGuard` for the same reason.
+  exports: [AuditModule],
 })
 export class PlatformModule {}

@@ -100,6 +100,8 @@ export const cleanupSignedInOperators = async (input: { readonly owner: DataSour
   const emails = [...provisioned];
   if (emails.length === 0) return;
   await input.owner.query(`DELETE FROM identity.admin_account WHERE email = ANY($1)`, [emails]);
+  // Task 67.4: an invitation these operators sent, or one addressed to them, goes with them.
+  await input.owner.query(`DELETE FROM identity.admin_invitation WHERE email = ANY($1)`, [emails]);
   await input.owner.query(
     `DELETE FROM identity.auth_attempt WHERE ${emails.map((_, i) => `attempt_key LIKE $${i + 1}`).join(' OR ')}`,
     emails.map((email) => `%${email}%`),

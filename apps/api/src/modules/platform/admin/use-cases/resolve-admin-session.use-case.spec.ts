@@ -6,6 +6,7 @@ import {
 } from '../errors/admin-session.errors';
 import type { AdminTokens } from '../interfaces/admin-token.interface';
 import {
+  ADMIN_ACCOUNT_STATUS,
   ADMIN_ROLE,
   ADMIN_SESSION_REVOKED_REASON,
   type AdminRole,
@@ -53,7 +54,8 @@ function storeWithSession(options: {
   store.accounts.push({
     ...identity,
     role: options.role ?? identity.role,
-    active: options.accountActive ?? true,
+    status:
+      (options.accountActive ?? true) ? ADMIN_ACCOUNT_STATUS.ACTIVE : ADMIN_ACCOUNT_STATUS.SUSPENDED,
     passwordHash: 'hashed:x',
     totpSecret: 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
     failedAttempts: 0,

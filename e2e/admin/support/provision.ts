@@ -74,6 +74,7 @@ export async function cleanupOperators(prefix: string): Promise<void> {
     await client.query(`DELETE FROM identity.auth_attempt WHERE attempt_key LIKE $1`, [
       `%${prefix}%`,
     ]);
+    await client.query(`DELETE FROM identity.admin_invitation WHERE email LIKE $1`, [`${prefix}%`]);
     await client.query(`DELETE FROM identity.admin_account WHERE email LIKE $1`, [`${prefix}%`]);
   } finally {
     await client.end();

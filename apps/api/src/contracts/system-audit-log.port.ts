@@ -39,6 +39,13 @@ export interface SystemAuditEvent {
    * grouping this column exists for.
    */
   readonly subject?: Buffer | null;
+
+  /**
+   * What the event acted on — an administrator account or an invitation since task 67.4, and a
+   * version, a publication or a run as A-03 … A-05 arrive. A bare id with no foreign key, `actorId`'s
+   * reason: the attribution must outlive the row it names.
+   */
+  readonly targetId?: string | null;
 }
 
 export interface SystemAuditLog {

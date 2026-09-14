@@ -5,6 +5,7 @@ import {
   type OrganizationRegisterRow,
 } from '@easyesg/contracts';
 import type { IndexPage } from '@easyesg/ui';
+import { REALM_READ, realmReadFailureOf, type RealmReadFailure } from '../../shared/tools/realm-read';
 import { REGISTER_PAGE_SIZE } from './register-search';
 
 /**
@@ -16,21 +17,11 @@ import { REGISTER_PAGE_SIZE } from './register-search';
  * this read — revoked, deactivated, or its lifetime run out (task 145) — and the answer is A-01, not
  * an explanation. Everything else the screen cannot use is `unavailable`, the recoverable state.
  */
-export const REGISTER_READ = {
-  READY: 'ready',
-  FORBIDDEN: 'forbidden',
-  SIGNED_OUT: 'signed_out',
-  UNAVAILABLE: 'unavailable',
-} as const;
+export const REGISTER_READ = REALM_READ;
 
 export type RegisterRead =
   | { readonly kind: typeof REGISTER_READ.READY; readonly page: IndexPage<OrganizationRegisterRow> }
-  | { readonly kind: typeof REGISTER_READ.FORBIDDEN }
-  | { readonly kind: typeof REGISTER_READ.SIGNED_OUT }
-  | { readonly kind: typeof REGISTER_READ.UNAVAILABLE };
-
-const HTTP_UNAUTHORIZED = 401;
-const HTTP_FORBIDDEN = 403;
+  | RealmReadFailure;
 
 export const readRegisterOutcome = (input: {
   readonly outcome: ApiOutcome<ListResult<OrganizationRegisterRow>>;
@@ -54,10 +45,5 @@ export const readRegisterOutcome = (input: {
     };
   }
 
-  if (outcome.status === API_OUTCOME.Problem) {
-    if (outcome.problem.status === HTTP_FORBIDDEN) return { kind: REGISTER_READ.FORBIDDEN };
-    if (outcome.problem.status === HTTP_UNAUTHORIZED) return { kind: REGISTER_READ.SIGNED_OUT };
-  }
-
-  return { kind: REGISTER_READ.UNAVAILABLE };
+  return realmReadFailureOf(outcome);
 };

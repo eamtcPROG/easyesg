@@ -20,6 +20,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { ADMIN_SESSION_QUERY_KEY } from '~/realm/queries/session';
 import { SignInScreen } from '~/realm/components/sign-in/sign-in-screen';
 import { consoleHomeFor } from '~/realm/tools/console-home';
+import { readSignInNotice, type SignInNotice } from '~/realm/tools/sign-in-notice';
 
 /** Same-app paths only — a crafted link must not turn sign-in into an open redirect. */
 const safeRealmPath = (candidate: string | undefined): string | null =>
@@ -28,19 +29,22 @@ const safeRealmPath = (candidate: string | undefined): string | null =>
     : null;
 
 export const Route = createFileRoute('/_focus/sign-in')({
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; notice?: SignInNotice } => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+    // A-20's success (task 67.4): the account an invitation became exists, and it signs in here.
+    notice: readSignInNotice(search.notice),
   }),
   component: AdminSignInRoute,
 });
 
 function AdminSignInRoute() {
-  const { redirect: target } = Route.useSearch();
+  const { redirect: target, notice } = Route.useSearch();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   return (
     <SignInScreen
+      notice={notice}
       onSignedIn={(account) => {
         // The probe's answer is already in hand — cached, so the realm guard the navigation
         // is about to run asks the api nothing.

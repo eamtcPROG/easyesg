@@ -8,14 +8,17 @@ import {
   totpEnrolmentUri,
 } from '@api/modules/platform/admin/domain/totp';
 import { returnedRows } from '@api/infrastructure/persistence/returned-rows';
-import { normaliseEmail } from '@api/modules/identity/account/domain/email-address';
+import { SystemAuditLogRepository } from '@api/infrastructure/persistence/platform/system-audit-log.repository';
+import { AUDIT_ACTION } from '@api/modules/platform/audit/models/audit-action.model';
+import { emailIdentityKey } from '@api/modules/identity/account/domain/email-address';
 import { ADMIN_ROLE, isAdminRole } from '@api/modules/platform/admin/models/admin-session.model';
 
 /**
  * Entrypoint for `pnpm --filter @easyesg/api admin:provision` — UC-68's precondition,
- * mechanised: "an elevated administrator account exists (UC-87) with MFA enrolled". UC-87's
- * screens are task 67; until then THIS is how an operator account comes to exist, and it is
- * also §12.5.6's named lockout release for the realm (`--unlock`).
+ * mechanised: "an elevated administrator account exists (UC-87) with MFA enrolled". **Since task
+ * 67.4 it is the bootstrap and nothing more**: A-08 invites every further operator and releases a
+ * lockout, and this command creates the first operator — something has to — and keeps `--unlock`
+ * for a realm with nobody left signed in to use A-08.
  *
  * Runs from `dist/` under plain `node` (see `admin:provision` in package.json): `tsc-alias` has
  * already resolved the `@api/*` imports there, which is what lets this entrypoint reuse the
@@ -34,6 +37,10 @@ import { ADMIN_ROLE, isAdminRole } from '@api/modules/platform/admin/models/admi
  * .totp_secret` is `identity.encrypted_secret`, so an INSERT of plaintext is refused by the
  * database. The URI still prints the plaintext, because an authenticator app is what it is for
  * and it exists only in this process's memory and the operator's terminal.
+ *
+ * **Both writes leave a row in the system audit log since task 67.4** (FR-81's administrator account
+ * changes), with no actor — a shell is not an account — and the account as the target, so the
+ * bootstrap is not a way around the record.
  */
 const USAGE =
   'admin:provision --email <address> --password <password> [--role platform_administrator|billing_operator] ' +
@@ -51,7 +58,9 @@ async function main(): Promise<void> {
   });
 
   if (!values.email) throw new Error(`--email is required.\n${USAGE}`);
-  const email = normaliseEmail(values.email);
+  // Lower-cased, as `admin_account_email_lowercase` requires: a mixed-case `--email` would be refused by
+  // the CHECK on provision and would match no row on `--unlock`.
+  const email = emailIdentityKey(values.email);
 
   const dataSource = new DataSource({
     type: 'postgres',
@@ -66,19 +75,27 @@ async function main(): Promise<void> {
   });
 
   await dataSource.initialize();
+  const audit = new SystemAuditLogRepository(dataSource);
   try {
     if (values.unlock) {
       const result: unknown = await dataSource.query(
         `UPDATE identity.admin_account
             SET locked_at = NULL, failed_attempts = 0, updated_at = now()
           WHERE email = $1
-          RETURNING email`,
+          RETURNING id`,
         [email],
       );
       // UPDATE … RETURNING arrives as [rows, count] — see `returnedRows`' own header.
-      const unlocked = returnedRows<{ email: string }>(result).length > 0;
+      const [unlocked] = returnedRows<{ id: string }>(result);
+      if (unlocked !== undefined) {
+        await audit.record({
+          action: AUDIT_ACTION.ADMIN_ACCOUNT_LOCKOUT_RELEASED,
+          actorId: null,
+          targetId: unlocked.id,
+        });
+      }
       process.stdout.write(
-        unlocked ? `${email}: unlocked\n` : `${email}: no such operator account\n`,
+        unlocked !== undefined ? `${email}: unlocked\n` : `${email}: no such operator account\n`,
       );
       return;
     }
@@ -94,11 +111,17 @@ async function main(): Promise<void> {
     const totpSecret = values['totp-secret'] ?? mintTotpSecret();
     const secrets = new AesGcmSecretCipher(process.env.SECRET_ENCRYPTION_KEY);
 
-    await dataSource.query(
+    const [provisioned] = await dataSource.query<{ id: string }[]>(
       `INSERT INTO identity.admin_account (email, role, password_hash, totp_secret)
-       VALUES ($1, $2, $3, $4)`,
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
       [email, role, passwordHash, secrets.seal(totpSecret)],
     );
+    await audit.record({
+      action: AUDIT_ACTION.ADMIN_ACCOUNT_PROVISIONED,
+      actorId: null,
+      targetId: provisioned.id,
+    });
 
     process.stdout.write(`${email}: provisioned as ${role}\n`);
     process.stdout.write(`Enrol the second factor from this URI (FR-75):\n`);

@@ -33,13 +33,38 @@ export const isAdminRole = (value: unknown): value is AdminRole =>
   typeof value === 'string' && (Object.values(ADMIN_ROLE) as readonly string[]).includes(value);
 
 /**
+ * Where an account stands in its lifecycle — the `admin_account_status_known` CHECK's vocabulary
+ * (task 67.4; `architecture.md` §12.5.6's task-67.4 row). It replaced a boolean `active`, because
+ * suspension is reversible and removal is final, and two booleans for that would make *removed and
+ * active* representable. Only an active account signs in, rotates or answers a request.
+ */
+export const ADMIN_ACCOUNT_STATUS = {
+  ACTIVE: 'active',
+  SUSPENDED: 'suspended',
+  REMOVED: 'removed',
+} as const;
+
+export type AdminAccountStatus = (typeof ADMIN_ACCOUNT_STATUS)[keyof typeof ADMIN_ACCOUNT_STATUS];
+
+/** `isAdminRole`'s reason: an unknown value is refused, never mapped to a member. */
+export const isAdminAccountStatus = (value: unknown): value is AdminAccountStatus =>
+  typeof value === 'string' &&
+  (Object.values(ADMIN_ACCOUNT_STATUS) as readonly string[]).includes(value);
+
+/**
  * Why an admin session stopped being valid — the `admin_session_revoked_reason_known` CHECK's
  * vocabulary. No `password_reset` member, deliberately: the realm has no reset flow (§12.5.6's
  * task-23 paragraph — release is a PA action or the CLI), so the value cannot occur.
+ *
+ * **The two account members arrived with task 67.4**: suspending or removing an account ends its
+ * sessions in the same transaction, because a reactivation would otherwise revive every session the
+ * suspension ended — task 145's read refuses a session only while its account is not active.
  */
 export const ADMIN_SESSION_REVOKED_REASON = {
   SIGNED_OUT: 'signed_out',
   REFRESH_REUSED: 'refresh_reused',
+  ACCOUNT_SUSPENDED: 'account_suspended',
+  ACCOUNT_REMOVED: 'account_removed',
 } as const;
 
 export type AdminSessionRevokedReason =
@@ -49,7 +74,7 @@ export interface AdminAccount {
   readonly id: string;
   readonly email: string;
   readonly role: AdminRole;
-  readonly active: boolean;
+  readonly status: AdminAccountStatus;
   readonly passwordHash: string;
   /** Base32, per `domain/totp.ts` — opened by the store adapter, because the column has been
    *  encrypted at rest since task 27.1 (§12.5.6's secrets-at-rest row). */

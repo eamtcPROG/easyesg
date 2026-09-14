@@ -187,6 +187,26 @@ export const invitationMailThrottleKey = (invitation: {
   `${INVITATION_MAIL_KEY_PREFIX}:${invitation.organizationId}:${invitation.email.toLowerCase()}`;
 
 /**
+ * An administrator invitation's mail (task 67.4) — task 141's key over the admin realm: issue and
+ * resend share **one window per invited address**, and a success spends it, because the email is the
+ * harm. No organization qualifies it, the realm having none, and no IP, because the caller is a named
+ * Platform Administrator whose network is not what is rationed.
+ */
+export const ADMIN_INVITATION_MAIL_KEY_PREFIX = 'admin-invitation-mail';
+
+export const adminInvitationMailThrottleKey = (email: string): string =>
+  `${ADMIN_INVITATION_MAIL_KEY_PREFIX}:${email.toLowerCase()}`;
+
+/**
+ * The three routes a link's bearer reaches — preview, enrolment, acceptance (task 67.4) — share **one
+ * window per IP, spent only by a refusal**: the tenant acceptance's rule (26 Aug 2026 review), since
+ * a token that resolves is proof the caller holds a live link, and an invitee mistyping a code is not
+ * guessing a token. Per IP alone, because before the token resolves there is no address to key on.
+ */
+export const adminInvitationBearerThrottleKey = (clientIp: string | undefined): string =>
+  `admin-invitation:${clientIp ?? 'unknown'}`;
+
+/**
  * The tenant second-factor step (UC-194, task 27.3).
  *
  * **Its own path segment, keyed on the ACCOUNT rather than the address**, and both halves are

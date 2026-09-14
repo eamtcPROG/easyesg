@@ -1,13 +1,15 @@
+import type { SystemAuditEvent, SystemAuditLog } from '@api/contracts/system-audit-log.port';
 import type {
   AdminSessionStore,
   AdminSessionTransaction,
 } from '../interfaces/admin-session-store.interface';
-import type {
-  AdminAccount,
-  AdminRequestSession,
-  AdminSessionRevokedReason,
-  PresentedAdminRefreshToken,
-  AdminSession,
+import {
+  ADMIN_ACCOUNT_STATUS,
+  type AdminAccount,
+  type AdminRequestSession,
+  type AdminSessionRevokedReason,
+  type PresentedAdminRefreshToken,
+  type AdminSession,
 } from '../models/admin-session.model';
 
 /**
@@ -101,13 +103,13 @@ class FakeAdminSessionTransaction implements AdminSessionTransaction {
 
   findAdminAccountByEmail(email: string): Promise<AdminAccount | null> {
     return Promise.resolve(
-      this.store.accounts.find((account) => account.email === email && account.active) ?? null,
+      this.store.accounts.find((account) => account.email === email && account.status === ADMIN_ACCOUNT_STATUS.ACTIVE) ?? null,
     );
   }
 
   findAdminAccountById(accountId: string): Promise<AdminAccount | null> {
     return Promise.resolve(
-      this.store.accounts.find((account) => account.id === accountId && account.active) ?? null,
+      this.store.accounts.find((account) => account.id === accountId && account.status === ADMIN_ACCOUNT_STATUS.ACTIVE) ?? null,
     );
   }
 
@@ -186,7 +188,7 @@ class FakeAdminSessionTransaction implements AdminSessionTransaction {
       (candidate) => candidate.sessionId === sessionId && candidate.consumedAt === null,
     );
     const account = this.store.accounts.find(
-      (candidate) => candidate.id === session.accountId && candidate.active,
+      (candidate) => candidate.id === session.accountId && candidate.status === ADMIN_ACCOUNT_STATUS.ACTIVE,
     );
     return Promise.resolve({
       sessionId: session.id,
@@ -239,10 +241,10 @@ class FakeAdminSessionTransaction implements AdminSessionTransaction {
  * **It never throws**, mirroring the real adapter: a failed audit write must not turn a refusal
  * into a 500, and a fake that could throw would let a spec pass for the wrong reason.
  */
-export class FakeSystemAuditLog {
-  readonly recorded: { action: string; actorId?: string | null; subject?: Buffer | null }[] = [];
+export class FakeSystemAuditLog implements SystemAuditLog {
+  readonly recorded: SystemAuditEvent[] = [];
 
-  record(event: { action: string; actorId?: string | null; subject?: Buffer | null }): Promise<void> {
+  record(event: SystemAuditEvent): Promise<void> {
     this.recorded.push(event);
     return Promise.resolve();
   }

@@ -15,8 +15,9 @@ export const DEFAULT_ON_PAGE = 25;
  *
  * `onpage=-1` ("all rows") is honoured ONLY on routes explicitly marked bounded.
  * Everything backed by an append-only store — audit.system_audit_log, the billing
- * ledger, metering events — is unbounded by construction and retains for six years
- * (architecture.md §12.5.7, DR-6). Serving "all rows" there is a slow-motion outage,
+ * ledger, metering events — is unbounded by construction and retains for years: 24 months
+ * for the system audit log and metering, six for the billing ledger (architecture.md
+ * §12.5.7, DR-6). Serving "all rows" there is a slow-motion outage,
  * so those routes clamp to this value instead.
  */
 export const MAX_ON_PAGE = 100;

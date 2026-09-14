@@ -1,6 +1,7 @@
 import {
   PERMISSION,
   SURFACE,
+  computeAuditActions,
   computeSurface,
   type PermissionKind,
 } from './testing/route-permissions';
@@ -67,5 +68,38 @@ describe('every route states its permission (task 28.2, actors.md §5)', () => {
       PERMISSION.PUBLIC,
       PERMISSION.ROLE,
     ]);
+  });
+});
+
+describe('every admin-realm write declares what the system audit log records (task 67.4, FR-159)', () => {
+  const actions = computeAuditActions();
+  const surface = computeSurface();
+
+  const isAdminRealmWrite = (route: string): boolean =>
+    (surface[route] ?? '').startsWith(`${PERMISSION.ADMIN}:`) && !route.startsWith('GET ');
+
+  it('finds admin-realm writes at all — a gate over an empty set looks exactly like one that passes', () => {
+    expect(Object.keys(actions).filter(isAdminRealmWrite).length).toBeGreaterThanOrEqual(7);
+  });
+
+  it('leaves no admin-realm write without an action', () => {
+    const undeclared = Object.keys(actions).filter(
+      (route) => isAdminRealmWrite(route) && actions[route] === null,
+    );
+    expect(undeclared).toEqual([]);
+  });
+
+  it('declares an action nowhere else — a read changes nothing, and a tenant write is core.field_change’s', () => {
+    const misplaced = Object.keys(actions).filter(
+      (route) => !isAdminRealmWrite(route) && actions[route] !== null,
+    );
+    expect(misplaced).toEqual([]);
+  });
+
+  it('gives each admin-realm write its own action, so no two changes read alike on A-08', () => {
+    const declared = Object.keys(actions)
+      .filter(isAdminRealmWrite)
+      .map((route) => actions[route]);
+    expect(new Set(declared).size).toBe(declared.length);
   });
 });

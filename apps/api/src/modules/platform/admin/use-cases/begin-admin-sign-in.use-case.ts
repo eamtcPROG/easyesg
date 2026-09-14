@@ -3,7 +3,7 @@ import {
   adminSignInThrottleKey,
   admitAuthAttempt,
 } from '@api/modules/identity/account/domain/auth-throttle';
-import { normaliseEmail } from '@api/modules/identity/account/domain/email-address';
+import { emailIdentityKey } from '@api/modules/identity/account/domain/email-address';
 import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
 import type { PasswordHasher } from '@api/modules/identity/account/interfaces/password-hasher.interface';
 import { mintRefreshToken } from '@api/modules/identity/session/domain/refresh-token';
@@ -60,7 +60,10 @@ export class BeginAdminSignIn {
   ) {}
 
   async execute(command: BeginAdminSignInCommand): Promise<AdminFactorChallenge> {
-    const email = normaliseEmail(command.email);
+    // The identity key, not the trimmed input: `identity.admin_account` holds every address lower-cased
+    // (`admin_account_email_lowercase`), so an operator typing `Ana@EasyESG.md` must find `ana@easyesg.md`.
+    // The throttle key and the audit subject already normalise this way; the lookup now agrees with both.
+    const email = emailIdentityKey(command.email);
     const now = this.now();
 
     // The subject for every event below: a digest of what was presented, so repeated attempts

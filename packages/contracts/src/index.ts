@@ -248,6 +248,29 @@ export type AdminChallengeResponse = components['schemas']['AdminChallengeRespon
 export type AdminFactorRequest = components['schemas']['AdminFactorRequestDto'];
 export type AdminSessionResponse = components['schemas']['AdminSessionResponseDto'];
 export type AdminAccount = components['schemas']['AdminAccountDto'];
-export { ADMIN_ROLE, type AdminRole } from './admin';
+export {
+  ADMIN_ROLE,
+  ADMIN_ROSTER_KIND,
+  ADMIN_STANDING,
+  SYSTEM_AUDIT_ACTION,
+  type AdminRole,
+  type AdminRosterKind,
+  type AdminStanding,
+  type SystemAuditAction,
+} from './admin';
 /** One organization in A-02's register (task 67.3) — account-level metadata, never report content. */
 export type OrganizationRegisterRow = components['schemas']['OrganizationRegisterRowResponseDto'];
+
+// platform — A-08's accounts, invitations and log, and A-20's acceptance (FR-80, FR-81; task 67.4).
+/** One row of A-08's account table: an account in either realm, or a pending invitation. */
+export type AdminRosterRow = components['schemas']['AdminRosterRowResponseDto'];
+export type InviteAdministratorRequest = components['schemas']['InviteAdministratorRequestDto'];
+/** An invitation just sent — never its link, which exists only in the email. */
+export type AdminInvitation = components['schemas']['AdminInvitationResponseDto'];
+export type AdminInvitationTokenRequest = components['schemas']['AdminInvitationTokenRequestDto'];
+export type AdminInvitationPreview = components['schemas']['AdminInvitationPreviewResponseDto'];
+export type AdminEnrolment = components['schemas']['AdminEnrolmentResponseDto'];
+export type AcceptAdminInvitationRequest = components['schemas']['AcceptAdminInvitationRequestDto'];
+export type AcceptedAdminInvitation = components['schemas']['AcceptedAdminInvitationResponseDto'];
+/** One entry of A-08's system audit log — parties flattened into id and address. */
+export type SystemAuditLogEntry = components['schemas']['SystemAuditLogEntryResponseDto'];

@@ -52,7 +52,13 @@
       "problemTitle": "Autentificarea nu a reușit",
       "problemBody": "Nu v-am putut autentifica din cauza unei erori la procesarea cererii.",
       "realmNote": "Conturile de platformă sunt create de un alt administrator — aici nu există înregistrare. Conturile companiilor se autentifică în aplicația pentru companii și nu pot fi folosite pe această consolă.",
-      "auditNote": "Fiecare încercare este înregistrată în jurnalul de sistem, indiferent dacă reușește: momentul, contul și o amprentă a adresei introduse — nu adresa în sine."
+      "auditNote": "Fiecare încercare este înregistrată în jurnalul de sistem, indiferent dacă reușește: momentul, contul și o amprentă a adresei introduse — nu adresa în sine.",
+      "notice": {
+        "invitationAccepted": {
+          "title": "Contul de operator a fost creat",
+          "body": "Autentificați-vă cu adresa la care ați primit invitația, parola aleasă și codul din aplicația de autentificare."
+        }
+      }
     },
     "chrome": {
       "bar": "Consola de administrare",
@@ -67,7 +73,8 @@
         "billing": "Facturare"
       },
       "destinations": {
-        "organizations": "Organizații"
+        "organizations": "Organizații",
+        "accounts": "Conturi de administrator"
       },
       "account": "Contul dumneavoastră",
       "signOut": "Ieșiți din consolă"
@@ -76,7 +83,51 @@
       "title": "Serverul nu poate fi contactat",
       "body": "Cererea nu a ajuns la server, așa că nimic nu s-a trimis și nimic nu s-a schimbat.",
       "action": "Verificați-vă conexiunea la internet și încercați din nou peste câteva momente."
-    }
+    },
+    "invitation": {
+      "kicker": "Administrarea platformei",
+      "loading": "Se verifică linkul de invitație",
+      "password": {
+        "title": "Alegeți parola contului de operator",
+        "lede": "Invitație pentru <email></email> — {realm}.",
+        "passwordLabel": "Parolă nouă",
+        "passwordMissing": "Parola lipsește, deci contul nu poate fi pregătit. Alegeți o parolă înainte de a continua.",
+        "passwordWeak": "Parola nu îndeplinește toate cerințele de mai jos, deci contul nu poate fi pregătit. Completați cerințele rămase.",
+        "requirements": {
+          "length": "Între {minimum} și {maximum} de caractere",
+          "lowercase": "O literă mică",
+          "uppercase": "O literă mare",
+          "digit": "O cifră",
+          "further": "Încă un caracter, de exemplu un semn de punctuație",
+          "met": "îndeplinită",
+          "unmet": "neîndeplinită"
+        },
+        "submit": "Continuați",
+        "show": "Arătați",
+        "hide": "Ascundeți"
+      },
+      "enrolment": {
+        "title": "Configurați al doilea factor",
+        "lede": "Contul se creează abia după ce confirmați un cod din aplicația de autentificare.",
+        "heading": "Scanați simbolul sau introduceți cheia în aplicația de autentificare",
+        "help": "Codul se schimbă la 30 de secunde. Dacă scanarea nu reușește, tastați cheia de mai sus.",
+        "symbolLabel": "Simbol QR care conține cheia pentru aplicația de autentificare",
+        "codeLabel": "Cod de verificare",
+        "codeHelp": "Introduceți codul de șase cifre afișat acum de aplicație.",
+        "codeMissing": "Codul de verificare lipsește, iar contul nu poate fi creat fără al doilea factor. Completați codul înainte de a continua.",
+        "submit": "Creați contul",
+        "back": "Schimbați parola"
+      },
+      "refused": {
+        "title": "Linkul de invitație nu mai poate fi folosit",
+        "body": "Linkul nu a putut fi verificat. Cereți administratorului de platformă care v-a invitat să retrimită invitația.",
+        "action": "Mergeți la autentificare"
+      },
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+      "problemTitle": "Contul nu a putut fi creat",
+      "realmNote": "Invitațiile sunt trimise de un administrator de platformă. Parola și al doilea factor alese aici sunt cunoscute doar de dumneavoastră."
+    },
+    "refusalFallback": "Cererea nu a putut fi procesată. Încercați din nou peste câteva momente."
   },
   "platform": {
     "organizations": {
@@ -129,7 +180,176 @@
       },
       "forbidden": {
         "title": "Registrul este accesibil administratorilor de platformă",
-        "body": "Rolul contului dumneavoastră de operator nu include registrul organizațiilor. Un administrator de platformă îl poate consulta în locul dumneavoastră sau vă poate schimba rolul."
+        "body": "Rolul contului dumneavoastră de operator nu include registrul organizațiilor. Un administrator de platformă îl poate consulta în locul dumneavoastră."
+      }
+    },
+    "accounts": {
+      "title": "Conturi de administrator",
+      "lede": "Conturile operatorilor din ambele domenii, invitațiile în curs și jurnalul de sistem al platformei.",
+      "summary": "{accounts, plural, one {# cont} few {# conturi} other {# de conturi}} · al doilea factor obligatoriu",
+      "invite": "Invitați un administrator",
+      "loading": "Se încarcă conturile de administrator",
+      "unavailable": {
+        "title": "Conturile nu au putut fi încărcate",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează niciun cont. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Conturile de administrator sunt gestionate de administratorii de platformă",
+        "body": "Rolul contului dumneavoastră de operator nu include conturile de administrator sau jurnalul de sistem. Un administrator de platformă le poate consulta în locul dumneavoastră."
+      },
+      "table": {
+        "caption": "Conturile operatorilor și invitațiile în curs",
+        "account": "Cont",
+        "realm": "Domeniu",
+        "factor": "Al doilea factor",
+        "lastSignIn": "Ultima autentificare",
+        "state": "Stare",
+        "factorEnrolled": "Configurat",
+        "factorPending": "Neconfigurat",
+        "neverSignedIn": "Nicio autentificare"
+      },
+      "standing": {
+        "active": "Activ",
+        "locked": "Blocat",
+        "suspended": "Suspendat",
+        "removed": "Eliminat",
+        "invited": "Invitat",
+        "lapsed": "Invitație expirată"
+      },
+      "record": {
+        "region": "Fișa contului",
+        "close": "Închideți fișa",
+        "realm": "Domeniu",
+        "state": "Stare",
+        "lastSignIn": "Ultima autentificare",
+        "expires": "Linkul expiră",
+        "powersTitle": "Puteri",
+        "powersLede": "Puterile țin de domeniu, nu de persoană — cele două domenii sunt conturi separate.",
+        "yes": "Da",
+        "no": "Nu",
+        "nobody": "Nu — nimeni nu are această putere",
+        "removedNote": "Un cont eliminat nu se mai poate autentifica și nu poate fi restaurat; pentru acces se trimite o invitație nouă. Fiecare acțiune făcută de el rămâne atribuită lui."
+      },
+      "powers": {
+        "content": "Conținut, taxonomie, factori și reguli",
+        "publication": "Publicare și migrare pentru toate organizațiile",
+        "support": "Acces de suport, doar citire, cu motiv",
+        "accounts": "Conturi de administrator și furnizori de identitate",
+        "plans": "Planuri, prețuri și reduceri",
+        "invoices": "Facturi, rambursări și anulări de datorii",
+        "tenantData": "Introducerea sau modificarea datelor din rapoartele companiilor"
+      },
+      "controls": {
+        "release_lockout": "Deblocați contul",
+        "reactivate": "Reactivați contul",
+        "suspend": "Suspendați contul",
+        "remove": "Eliminați accesul",
+        "resend": "Retrimiteți invitația",
+        "revoke": "Retrageți invitația"
+      },
+      "confirm": {
+        "cancel": "Renunțați",
+        "suspend": {
+          "title": "Suspendați contul?",
+          "consequence": "Contul nu se mai poate autentifica, iar sesiunile lui deschise sunt refuzate la următoarea cerere.",
+          "retained": "Contul poate fi reactivat, dar sesiunile încheiate nu revin; înregistrările din jurnal rămân atribuite lui.",
+          "confirm": "Suspendați contul"
+        },
+        "remove": {
+          "title": "Eliminați accesul acestui cont?",
+          "consequence": "Contul nu se va mai putea autentifica niciodată, iar sesiunile lui sunt refuzate la următoarea cerere. Eliminarea nu poate fi anulată.",
+          "retained": "Fiecare înregistrare făcută de acest cont rămâne atribuită lui. O invitație nouă pe aceeași adresă creează un cont nou.",
+          "confirm": "Eliminați accesul"
+        }
+      },
+      "notice": {
+        "dismiss": "Închideți mesajul",
+        "doneTitle": "Modificarea a fost făcută",
+        "done": {
+          "release_lockout": "Contul {email} a fost deblocat.",
+          "reactivate": "Contul {email} a fost reactivat.",
+          "suspend": "Contul {email} a fost suspendat, iar sesiunile lui s-au încheiat.",
+          "remove": "Accesul contului {email} a fost eliminat.",
+          "resend": "Invitația pentru {email} a fost retrimisă cu un link nou.",
+          "revoke": "Invitația pentru {email} a fost retrasă."
+        },
+        "invitedTitle": "Invitația a fost trimisă",
+        "invitedBody": "Linkul a plecat la {email} și este valabil 24 de ore.",
+        "refusedTitle": "Modificarea nu a fost făcută",
+        "refusedBody": "Cererea nu a primit un răspuns utilizabil, deci nu știm dacă modificarea s-a produs. Reîncărcați lista și verificați starea contului."
+      },
+      "inviteForm": {
+        "region": "Invitați un administrator",
+        "title": "Invitați un administrator",
+        "lede": "Persoana invitată își alege singură parola și al doilea factor. Linkul este valabil 24 de ore.",
+        "emailLabel": "Adresa de e-mail",
+        "emailMissing": "Adresa lipsește, deci nu știm cui să trimitem invitația. Completați adresa înainte de a trimite.",
+        "emailInvalid": "Textul introdus nu are forma unei adrese de e-mail, deci invitația nu poate pleca. Verificați adresa și corectați-o.",
+        "roleLabel": "Domeniul contului",
+        "rolePlaceholder": "Alegeți domeniul",
+        "roleMissing": "Domeniul lipsește, iar fiecare cont aparține exact unuia. Alegeți domeniul înainte de a trimite.",
+        "submit": "Trimiteți invitația",
+        "cancel": "Renunțați",
+        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a trimite invitația",
+        "problemTitle": "Invitația nu a fost trimisă"
+      },
+      "log": {
+        "title": "Jurnalul de sistem",
+        "lede": "Ce s-a întâmplat pe platformă, cine a acționat și asupra cui. Intrările nu pot fi modificate din consolă.",
+        "caption": "Intrările jurnalului de sistem, cele mai noi primele",
+        "time": "Moment",
+        "operator": "Operator",
+        "action": "Acțiune",
+        "object": "Obiect",
+        "noObject": "Fără obiect",
+        "unknownOperator": "O adresă fără cont",
+        "provisioning": "Instrumentul de configurare",
+        "formerOperator": "Un cont care nu mai există",
+        "loading": "Se încarcă jurnalul de sistem",
+        "unavailable": {
+          "title": "Jurnalul nu a putut fi încărcat",
+          "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio intrare. Încercați din nou peste câteva momente.",
+          "action": "Încercați din nou"
+        },
+        "empty": {
+          "firstUse": {
+            "title": "Jurnalul este încă gol",
+            "body": "Prima intrare apare la prima autentificare în consolă sau la prima modificare a unui cont."
+          },
+          "filtered": {
+            "title": "Nicio intrare nu corespunde filtrelor",
+            "body": "Nicio acțiune din jurnal nu corespunde operatorului, acțiunii sau perioadei alese.",
+            "action": "Ștergeți filtrele"
+          }
+        },
+        "filters": {
+          "region": "Filtrele jurnalului",
+          "operator": "Operator",
+          "anyOperator": "Toți operatorii",
+          "action": "Acțiune",
+          "anyAction": "Toate acțiunile",
+          "from": "De la",
+          "to": "Până la",
+          "submit": "Filtrați",
+          "clear": "Ștergeți filtrele"
+        },
+        "actions": {
+          "signInSucceeded": "Autentificare reușită",
+          "signInCredentialRefused": "Autentificare refuzată: adresă sau parolă greșită",
+          "signInFactorRefused": "Autentificare refuzată: cod greșit",
+          "signInBlocked": "Autentificare refuzată: cont blocat",
+          "signInThrottled": "Autentificare refuzată: prea multe încercări",
+          "invitationIssued": "A trimis o invitație",
+          "invitationResent": "A retrimis o invitație",
+          "invitationRevoked": "A retras o invitație",
+          "invitationAccepted": "A acceptat invitația",
+          "accountSuspended": "A suspendat un cont",
+          "accountReactivated": "A reactivat un cont",
+          "accountRemoved": "A eliminat accesul unui cont",
+          "accountLockoutReleased": "A deblocat un cont",
+          "accountProvisioned": "Cont creat cu instrumentul de configurare"
+        }
       }
     }
   }

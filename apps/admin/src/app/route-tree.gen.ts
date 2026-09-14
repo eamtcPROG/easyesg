@@ -19,6 +19,7 @@ import { Route as RealmMetricsRouteImport } from './routes/_realm/metrics';
 import { Route as RealmNotificationTemplatesRouteImport } from './routes/_realm/notification-templates';
 import { Route as RealmOrganizationsRouteImport } from './routes/_realm/organizations';
 import { Route as RealmSupportAccessRouteImport } from './routes/_realm/support-access';
+import { Route as FocusInvitationTokenRouteImport } from './routes/_focus/invitation.$token';
 import { Route as RealmBillingCollectionsRouteImport } from './routes/_realm/billing/collections';
 import { Route as RealmBillingEfacturaRouteImport } from './routes/_realm/billing/efactura';
 import { Route as RealmBillingEnterpriseRouteImport } from './routes/_realm/billing/enterprise';
@@ -83,6 +84,11 @@ const RealmSupportAccessRoute = RealmSupportAccessRouteImport.update({
   id: '/support-access',
   path: '/support-access',
   getParentRoute: () => RealmRoute,
+} as any);
+const FocusInvitationTokenRoute = FocusInvitationTokenRouteImport.update({
+  id: '/invitation/$token',
+  path: '/invitation/$token',
+  getParentRoute: () => FocusRoute,
 } as any);
 const RealmBillingCollectionsRoute = RealmBillingCollectionsRouteImport.update({
   id: '/billing/collections',
@@ -171,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/notification-templates': typeof RealmNotificationTemplatesRoute;
   '/organizations': typeof RealmOrganizationsRoute;
   '/support-access': typeof RealmSupportAccessRoute;
+  '/invitation/$token': typeof FocusInvitationTokenRoute;
   '/billing/collections': typeof RealmBillingCollectionsRoute;
   '/billing/efactura': typeof RealmBillingEfacturaRoute;
   '/billing/enterprise': typeof RealmBillingEnterpriseRoute;
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/notification-templates': typeof RealmNotificationTemplatesRoute;
   '/organizations': typeof RealmOrganizationsRoute;
   '/support-access': typeof RealmSupportAccessRoute;
+  '/invitation/$token': typeof FocusInvitationTokenRoute;
   '/billing/collections': typeof RealmBillingCollectionsRoute;
   '/billing/efactura': typeof RealmBillingEfacturaRoute;
   '/billing/enterprise': typeof RealmBillingEnterpriseRoute;
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/_realm/notification-templates': typeof RealmNotificationTemplatesRoute;
   '/_realm/organizations': typeof RealmOrganizationsRoute;
   '/_realm/support-access': typeof RealmSupportAccessRoute;
+  '/_focus/invitation/$token': typeof FocusInvitationTokenRoute;
   '/_realm/billing/collections': typeof RealmBillingCollectionsRoute;
   '/_realm/billing/efactura': typeof RealmBillingEfacturaRoute;
   '/_realm/billing/enterprise': typeof RealmBillingEnterpriseRoute;
@@ -251,6 +260,7 @@ export interface FileRouteTypes {
     | '/notification-templates'
     | '/organizations'
     | '/support-access'
+    | '/invitation/$token'
     | '/billing/collections'
     | '/billing/efactura'
     | '/billing/enterprise'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/notification-templates'
     | '/organizations'
     | '/support-access'
+    | '/invitation/$token'
     | '/billing/collections'
     | '/billing/efactura'
     | '/billing/enterprise'
@@ -303,6 +314,7 @@ export interface FileRouteTypes {
     | '/_realm/notification-templates'
     | '/_realm/organizations'
     | '/_realm/support-access'
+    | '/_focus/invitation/$token'
     | '/_realm/billing/collections'
     | '/_realm/billing/efactura'
     | '/_realm/billing/enterprise'
@@ -397,6 +409,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/support-access';
       preLoaderRoute: typeof RealmSupportAccessRouteImport;
       parentRoute: typeof RealmRoute;
+    };
+    '/_focus/invitation/$token': {
+      id: '/_focus/invitation/$token';
+      path: '/invitation/$token';
+      fullPath: '/invitation/$token';
+      preLoaderRoute: typeof FocusInvitationTokenRouteImport;
+      parentRoute: typeof FocusRoute;
     };
     '/_realm/billing/collections': {
       id: '/_realm/billing/collections';
@@ -508,10 +527,12 @@ declare module '@tanstack/react-router' {
 
 interface FocusRouteChildren {
   FocusSignInRoute: typeof FocusSignInRoute;
+  FocusInvitationTokenRoute: typeof FocusInvitationTokenRoute;
 }
 
 const FocusRouteChildren: FocusRouteChildren = {
   FocusSignInRoute: FocusSignInRoute,
+  FocusInvitationTokenRoute: FocusInvitationTokenRoute,
 };
 
 const FocusRouteWithChildren = FocusRoute._addFileChildren(FocusRouteChildren);

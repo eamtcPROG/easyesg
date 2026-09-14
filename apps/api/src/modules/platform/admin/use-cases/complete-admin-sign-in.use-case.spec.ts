@@ -9,7 +9,7 @@ import {
   AdminSessionInvalidError,
 } from '../errors/admin-session.errors';
 import type { AdminTokens } from '../interfaces/admin-token.interface';
-import { ADMIN_ROLE, type AdminAccount } from '../models/admin-session.model';
+import { ADMIN_ACCOUNT_STATUS, ADMIN_ROLE, type AdminAccount } from '../models/admin-session.model';
 import { FakeAdminSessionStore ,
   FakeSystemAuditLog,
 } from '../testing/admin-session-store.fake';
@@ -40,7 +40,7 @@ const operator = (overrides: Partial<AdminAccount> = {}): AdminAccount => ({
   id: '00000000-0000-7000-8000-00000000aaaa',
   email: 'operator@easyesg.md',
   role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
-  active: true,
+  status: ADMIN_ACCOUNT_STATUS.ACTIVE,
   passwordHash: 'hashed:Parola123!',
   totpSecret: RFC_SECRET,
   failedAttempts: 0,
@@ -112,7 +112,7 @@ describe('CompleteAdminSignIn (UC-68 step two, FR-75)', () => {
 
   it('re-reads the account: a deactivation or a lock landed mid-challenge wins', async () => {
     const deactivated = new FakeAdminSessionStore();
-    deactivated.accounts.push(operator({ active: false }));
+    deactivated.accounts.push(operator({ status: ADMIN_ACCOUNT_STATUS.SUSPENDED }));
     await expect(
       build(deactivated).execute({ challenge: challenge(), totpCode: RFC_CODE }),
     ).rejects.toBeInstanceOf(AdminSessionInvalidError);

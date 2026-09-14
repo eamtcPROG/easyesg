@@ -23,6 +23,8 @@ export type SupportAccessEntryKind =
 export const ACQUISITION_PURPOSE = {
   /** A-02's register: account-level metadata across every organization (FR-76). */
   ORGANIZATION_REGISTER: 'organization_register',
+  /** A-08's read of `audit.system_audit_log` (task 67.4) — platform rows `esg_app` cannot see. */
+  SYSTEM_AUDIT_LOG: 'system_audit_log',
 } as const;
 
 export type AcquisitionPurpose = (typeof ACQUISITION_PURPOSE)[keyof typeof ACQUISITION_PURPOSE];

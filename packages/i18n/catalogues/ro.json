@@ -122,6 +122,9 @@
     },
     "seat-allowance-unavailable": {
       "title": "Locurile nu pot fi verificate acum"
+    },
+    "admin-account-exists": {
+      "title": "Contul există deja"
     }
   },
   "validation": {},
@@ -241,6 +244,12 @@
         "subject": "Ați fost invitat în organizația {organizationName}",
         "body": "Bună ziua,\n\nAți fost invitat să vă alăturați organizației {organizationName} pe easyesg, platforma de raportare privind durabilitatea. Deschideți linkul de mai jos pentru a accepta invitația:\n\n{invitationUrl}\n\nLinkul este valabil 7 zile, poate fi folosit o singură dată și funcționează numai pentru această adresă de e-mail.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun acces."
       }
+    },
+    "platform": {
+      "admin_invitation": {
+        "subject": "Invitație în consola de administrare easyesg",
+        "body": "Bună ziua,\n\nAți fost invitat să deveniți operator în consola de administrare easyesg. Deschideți linkul de mai jos pentru a vă alege parola și a configura al doilea factor de autentificare:\n\n{invitationUrl}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată. Contul este creat abia după ce confirmați al doilea factor.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun cont."
+      }
     }
   },
   "platform": {
@@ -250,7 +259,26 @@
       "factor_invalid": "Codul introdus nu este valabil în acest moment, așa că autentificarea nu s-a finalizat. Deschideți aplicația de autentificare și introduceți codul afișat acum.",
       "session_expired": "Sesiunea de administrare a expirat, deci cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
       "session_invalid": "Sesiunea de administrare nu mai este valabilă, așa că cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
-      "insufficient_role": "Rolul contului dumneavoastră de operator nu include această parte a consolei, așa că cererea nu a fost procesată. Cereți unui administrator de platformă să preia cererea sau să vă schimbe rolul."
+      "insufficient_role": "Rolul contului dumneavoastră de operator nu include această parte a consolei, așa că cererea nu a fost procesată. Cereți unui administrator de platformă să preia cererea.",
+      "account_not_found": "Contul de operator nu există, așa că cererea nu a fost procesată. Reîncărcați lista conturilor și încercați din nou.",
+      "account_exists": "Există deja un cont de operator activ sau suspendat cu această adresă, așa că nu a fost creat unul nou. Autentificați-vă cu contul existent sau cereți unui administrator de platformă să îl elimine mai întâi.",
+      "account_self": "Nu vă puteți suspenda sau elimina propriul cont, așa că modificarea nu a fost făcută. Cereți altui administrator de platformă să o facă, dacă este necesară.",
+      "last_platform_administrator": "Acesta este singurul administrator de platformă activ și fără el nimeni nu ar mai putea gestiona conturile, așa că modificarea nu a fost făcută. Invitați mai întâi un alt administrator de platformă.",
+      "account_change": {
+        "suspend": "Contul nu este activ, așa că nu a putut fi suspendat. Reîncărcați lista pentru a vedea starea lui actuală.",
+        "reactivate": "Contul nu este suspendat, așa că nu a putut fi reactivat. Reîncărcați lista pentru a vedea starea lui actuală.",
+        "remove": "Accesul acestui cont a fost deja eliminat, așa că nu mai poate fi modificat. Pentru a reda accesul persoanei, trimiteți o invitație nouă."
+      },
+      "account_not_locked": "Contul nu este blocat, așa că nu a fost nimic de deblocat. Reîncărcați lista pentru a vedea starea lui actuală.",
+      "invitation_not_found": "Invitația nu mai este în așteptare — a fost acceptată sau retrasă —, așa că nu a putut fi modificată. Reîncărcați lista conturilor.",
+      "invitation_outstanding": "Această adresă are deja o invitație în așteptare, așa că nu a fost trimisă alta. Retrimiteți invitația existentă sau retrageți-o.",
+      "invitation_standing": {
+        "expired": "Linkul de invitație a expirat, deci contul nu mai poate fi creat cu el. Cereți administratorului de platformă care v-a invitat să retrimită invitația.",
+        "revoked": "Invitația a fost retrasă, deci contul nu poate fi creat cu acest link. Dacă aveți totuși nevoie de acces, cereți unui administrator de platformă o invitație nouă.",
+        "accepted": "Invitația a fost deja folosită, iar contul există. Autentificați-vă în consolă cu adresa și parola alese.",
+        "unknown": "Linkul nu mai este valabil — poate a fost înlocuit de o invitație retrimisă —, deci contul nu poate fi creat cu el. Folosiți cel mai recent e-mail de invitație sau cereți o invitație nouă."
+      },
+      "enrolment_missing": "Al doilea factor nu a fost pregătit, așa că nu există niciun cod de confirmat. Reveniți la pasul de configurare a aplicației de autentificare și încercați din nou."
     }
   }
 }

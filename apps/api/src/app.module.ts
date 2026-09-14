@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import configuration, { APP_MODE } from './config/configuration';
 import { AuthGuard } from '@api/modules/identity/session/guards/auth.guard';
 import { TenantTransactionGuard } from './app/guards/tenant-transaction.guard';
+import { AuditInterceptor } from './app/interceptors/audit.interceptor';
 import { GlobalResponseInterceptor } from './app/interceptors/global-response.interceptor';
 import { TransactionInterceptor } from './app/interceptors/transaction.interceptor';
 import { PersistenceModule } from './infrastructure/persistence/persistence.module';
@@ -74,6 +75,8 @@ const requestPipeline: Provider[] = [
   { provide: APP_GUARD, useClass: TenantTransactionGuard },
   { provide: APP_INTERCEPTOR, useClass: TransactionInterceptor },
   { provide: APP_INTERCEPTOR, useClass: GlobalResponseInterceptor },
+  // Last, so innermost — the header's first ordering rule. Since task 67.4.
+  { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
 ];
 @Module({
   imports: [

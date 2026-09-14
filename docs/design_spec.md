@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-34`, `A-01` … `A-19` |
+| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-34`, `A-01` … `A-20` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -325,8 +325,9 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-17 | Notification categories and templates | PA | UC-176 | Editor + Publish |
 | A-18 | Identity provider configuration | PA | UC-70 | Editor |
 | A-19 | My credentials (operator's own password, second factor, recovery codes) | PA | UC-212 | Record |
+| A-20 | Accept an administrator invitation | PA, BO | UC-87 | Focus |
 
-**Count:** 54 screens — 35 tenant (`S-01 … S-35`) and 19 administrative (`A-01 … A-19`). *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
+**Count:** 55 screens — 35 tenant (`S-01 … S-35`) and 20 administrative (`A-01 … A-20`). **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -1027,14 +1028,14 @@ your organizations" state, and 30.5 must not duplicate this one's wording.
 
 The administrative console shares tokens and primitives with the tenant application and deliberately diverges in density and composition (§12). All administrative screens: target `wide` and `extra` viewports only (UX-77); use compact density; are keyboard-first and bulk-capable; and sit behind a separate auth realm on a separate host with mandatory MFA (§3.2). Those properties are stated once here and are not repeated per screen. Every operation with cross-tenant blast radius follows the single pattern of UX-123 (§12.2).
 
-**The console chrome** (task 67.1, as `EasyESG Admin Console Screens.dc.html` draws it on every signed-in frame): a dark top bar — the wordmark, the realm chip and the operator's realm at one end, the account menu at the other — above a dark side navigation in two headed sections, *Platform* and *Billing*, marking the current destination. **Two rules bound what it shows, both the project owner's (13 Sep 2026).** **It carries what renders** — `GlobalTier`'s standing rule on the tenant surface, applied here: a destination enters the navigation with its screen, so the navigation held nothing until A-02 shipped and, since task 67.3, holds A-02 for a Platform Administrator and nothing yet for a Billing Operator, and the artboard's environment chip, command hint, build line and queue badges each arrive with what they point at. **And an operator sees their own realm's section only**: actors.md gives PA no billing authority and BO no platform authority, so the other section would be a list of refusals. That is presentation and not a boundary — `AdminRealmGuard` (task 67.3) is what refuses. The artboard names a person (*Ana Ceban*) where an administrator account holds an address and a role, so the bar names the realm and the menu the address, with no monogram (UX-137 derives one only from a name). A-19, the operator's own credentials, joins the menu when task 151 builds it.
+**The console chrome** (task 67.1, as `EasyESG Admin Console Screens.dc.html` draws it on every signed-in frame): a dark top bar — the wordmark, the realm chip and the operator's realm at one end, the account menu at the other — above a dark side navigation in two headed sections, *Platform* and *Billing*, marking the current destination. **Two rules bound what it shows, both the project owner's (13 Sep 2026).** **It carries what renders** — `GlobalTier`'s standing rule on the tenant surface, applied here: a destination enters the navigation with its screen, so the navigation held nothing until A-02 shipped and, since task 67.3, holds A-02 — and since task 67.4 A-08 — for a Platform Administrator and nothing yet for a Billing Operator, and the artboard's environment chip, command hint, build line and queue badges each arrive with what they point at. **And an operator sees their own realm's section only**: actors.md gives PA no billing authority and BO no platform authority, so the other section would be a list of refusals. That is presentation and not a boundary — `AdminRealmGuard` (task 67.3) is what refuses. The artboard names a person (*Ana Ceban*) where an administrator account holds an address and a role, so the bar names the realm and the menu the address, with no monogram (UX-137 derives one only from a name). A-19, the operator's own credentials, joins the menu when task 151 builds it.
 
 ### A-01 — Admin sign-in (MFA)
 
 - **Purpose:** admit an internal operator to a realm with cross-organization visibility.
 - **Primary actors:** PA, BO.
 - **Archetype:** Focus.
-- **Entry points:** direct arrival at the administrative host.
+- **Entry points:** direct arrival at the administrative host; A-20's success, which lands here with the new operator's account created and a notice saying so (task 67.4).
 - **Layout and regions:** single column, centred, one primary action. No further per-screen layout is specified in the source.
 - **Content and data shown:** credential entry; the second factor challenge.
 - **Controls and actions:** authenticate; complete the second factor.
@@ -1139,13 +1140,13 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Purpose:** separate internal privileges from one another, and make a platform-side change explicable after the fact.
 - **Primary actors:** PA.
 - **Archetype:** Index.
-- **Entry points:** console navigation.
-- **Layout and regions:** dense tables with saved filters.
-- **Content and data shown:** administrator accounts with separable privilege levels; the platform-wide log of version rollouts, content publications, migration runs, factor-set updates and administrator account changes.
-- **Controls and actions:** create, modify and deactivate an administrator account; set privilege level; filter and review the log.
-- **States:** empty — filtered; loading — initial; loading — refresh; error — recoverable; error — permission; read-only (the log).
-- **Validation behaviour:** deactivating an account is a consequence-disclosing action naming the account and what it currently holds (UX-70). Content, operations and support functions do not require one another's rights (FR-80).
-- **Exits:** none beyond the console.
+- **Entry points:** console navigation — the platform section's second destination, after A-02.
+- **Layout and regions:** two dense tables on one screen, as the artboard draws them: the accounts, with the selected account's record — or the invitation form — in a side panel beside them, and below them the system audit log. **The log's filters are held in the URL, and there are no named saved views** (task 67.4, 13 Sep 2026): the artboard draws none, and a view kept is its address, which is A-02's decision applied to a second Index rather than a new one.
+- **Content and data shown:** **the accounts** — each operator's address, realm (Platform Administrator or Billing Operator), state (active, locked, suspended, removed; and for a pending invitation, invited or lapsed), and last sign-in. **Every account has its second factor by construction** — an account comes into existence only when its invitee confirms one (A-20) — so the artboard's MFA column reads *not enrolled* only for an invitation, and is drawn as its state. The artboard's person names are not shown: an administrator account holds an address and a realm (the console chrome's reason, task 67.1). **The support-access column arrives with A-07 (task 67.9)**, with what it counts. **The record** states what the realm may and may not do — powers are by realm, not by person. **The log** — time, operator, action, and the account or invitation it acted on — holds administrator account changes and every admin sign-in attempt from task 67.4, and version rollouts, content publications, migration runs and factor-set updates join it with A-03, A-04 and A-05. The artboard's **scope** column arrives with the first operation that discloses a blast radius (UX-123), and its **audit export** is not built (A-02's precedent). **Privilege levels within the Platform Administrator role are a recorded deferral** (project owner, 13 Sep 2026): the realm is the level this screen sets, and FR-80's separation of content, operations and support rights lands with task 67.5 (A-03), the first screen a level would gate — a level with nothing behind it gates nothing, and its acceptance test cannot run before then. Assumed meanwhile: every Platform Administrator holds every platform power, which the record states. If a level is needed sooner, the account model gains it by expand→migrate and this line is what changes.
+- **Controls and actions:** **invite an administrator** — an address and a realm — which emails a single-use link valid for 24 hours (§12.5.6); **resend** an invitation, which replaces its link, and **revoke** it; **suspend** an account and **reactivate** it; **remove** an account's access, finally — a removed account cannot be restored, and inviting its address again creates a new account with its own history; **release a lockout**; filter the log by operator, action and date range. **A Platform Administrator manages both realms' accounts** (`actors.md` OQ-6, closed 13 Sep 2026). **There is no realm change** — the two realms are separate accounts, not two checkboxes on one, so an operator who changes function is removed and invited anew — and **no second-factor reset**: a lost device is the operator's own re-enrolment, A-19 (tasks 144, 151). An operator cannot suspend or remove their own account, nor the last active Platform Administrator.
+- **States:** empty — first use (the log holds no event yet); empty — filtered (the log); loading — initial; loading — refresh; pending — an action in flight on a row; error — recoverable; error — permission (a Billing Operator reaching the address, refused by `AdminRealmGuard`); success (the action's result announced in place); read-only (the log — no edit affordance anywhere, as the artboard states).
+- **Validation behaviour:** **suspension and removal are consequence-disclosing actions** naming the account and what happens to what it holds (UX-70): its sessions end on their next request; removal also states that it cannot be undone and that every entry the account made stays attributed to it. An invitation to an address already held by an account that is not removed, or already carrying a pending invitation, is refused with its resolution. Content, operations and support functions do not require one another's rights (FR-80) — deferred as above.
+- **Exits:** A-20, for the invitee, by the emailed link.
 - **Use cases:** UC-87, UC-88.
 - **FRs:** FR-80, FR-81.
 
@@ -1317,6 +1318,23 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **FRs:** FR-80.
 
 **Not on A-08, and not a variant of S-28.** A-08 manages other administrators (UC-87); this screen is the operator's own credentials, and the two answer different questions about different people. S-28 is the tenant equivalent and shares its *shape* but not its realm — NFR-65 keeps the credentials, tables and session disjoint, so the two screens are siblings rather than one screen with a flag.
+
+### A-20 — Accept an administrator invitation
+
+- **Purpose:** turn an invitation into an operator account holding its own credential and its mandatory second factor, without either passing through another person.
+- **Primary actors:** PA, BO — the invitee, who holds neither role until this screen completes.
+- **Archetype:** Focus.
+- **Entry points:** the link in the invitation email A-08 sends — the only one. No navigation reaches it.
+- **Layout and regions:** Focus fixed elements — single column, one primary action per step — inside the console's Focus layout with its realm chip, as A-01 is: the invitee should know which realm they are joining before typing anything.
+- **Content and data shown:** the invited address and realm; the password policy's requirements as the password is typed (OQ-51); **the Enrolment code component — the QR symbol beside the base32 secret it encodes** (§11.5); the confirming code.
+- **Controls and actions:** set a password; scan or type the secret; confirm with a current code, which creates the account; continue to A-01.
+- **States:** loading — initial (the link is being read); ready; **enrolling** — the staged secret and its symbol, until a code confirms them; error — recoverable (a password the policy refuses, a code that is not current); error — not acceptable (the link expired, was revoked, was replaced by a resend, or was already used — each stated as what happened, and that a Platform Administrator can send a new invitation); error — system; success (the account exists; continue to sign in).
+- **Validation behaviour:** **the account exists only once the code confirms** — a scan that silently failed creates nothing, which is A-19's and S-28's rule for the same reason. UX-108 applies: no cognitive function test, and paste and password managers work. The link is single-use and lives 24 hours from when it was last sent (§12.5.6's task-67.4 row).
+- **Exits:** A-01, where the new operator signs in with the password and factor just set — the one path that records a sign-in, so acceptance issues no session of its own.
+- **Use cases:** UC-87 (the invitee's half of account creation); UC-68's precondition, *an elevated administrator account exists with MFA enrolled*.
+- **FRs:** FR-80, FR-75.
+
+**A screen of its own, not a step of A-01.** A-01 admits someone who already holds a credential; this one creates the credential, and the two share a layout and nothing else. **Added 13 Sep 2026 with task 67.4**, when the project owner chose invitation over a handed-over secret: a password and a TOTP seed shown to the inviting operator would pass a credential through a second person, which is the thing UC-68's "elevated credentials are held apart" exists to prevent.
 
 ## 6. Key interaction patterns
 
@@ -2203,6 +2221,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | A-17 | Notification categories and templates | PA | UC-176 | FR-173 |
 | A-18 | Identity provider configuration | PA | UC-70 | FR-82 |
 | A-19 | My credentials | PA | UC-212 | FR-80 |
+| A-20 | Accept an administrator invitation | PA, BO | UC-87 | FR-80, FR-75 |
 | *(global tier)* | User menu — log out | CA | UC-06 | FR-5 |
 | *(inline)* | Re-authentication over preserved context | CA | UC-07 | FR-5 |
 | *(global tier)* | Organization switcher | CA | UC-16 | FR-12 |

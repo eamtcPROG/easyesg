@@ -533,6 +533,9 @@ const ENCRYPTED_SECRET_DOMAIN = 'identity.encrypted_secret';
  */
 const ENCRYPTED_SECRET_COLUMNS = [
   'identity.admin_account.totp_secret',
+  // Task 67.4: the factor staged on an administrator invitation until A-20's code confirms it — the
+  // secret the account is then created with, so sealed the same way before it becomes one.
+  'identity.admin_invitation.totp_secret',
   'identity.totp_credential.secret',
 ];
 

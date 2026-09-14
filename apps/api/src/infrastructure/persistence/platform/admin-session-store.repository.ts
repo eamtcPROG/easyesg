@@ -7,6 +7,8 @@ import type {
   AdminSessionTransaction,
 } from '@api/modules/platform/admin/interfaces/admin-session-store.interface';
 import {
+  ADMIN_ACCOUNT_STATUS,
+  isAdminAccountStatus,
   isAdminRole,
   type AdminAccount,
   type AdminRequestSession,
@@ -72,7 +74,7 @@ interface AdminAccountRow {
   id: string;
   email: string;
   role: string;
-  active: boolean;
+  status: string;
   password_hash: string;
   totp_secret: string;
   failed_attempts: number;
@@ -122,12 +124,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * value impossible today; task 67's expand→migrate step is when it would not be.
  */
 const toAdminAccount = (row: AdminAccountRow, secrets: SecretCipher): AdminAccount | null =>
-  isAdminRole(row.role)
+  isAdminRole(row.role) && isAdminAccountStatus(row.status)
     ? {
         id: row.id,
         email: row.email,
         role: row.role,
-        active: row.active,
+        status: row.status,
         passwordHash: row.password_hash,
         totpSecret: secrets.open(row.totp_secret),
         failedAttempts: row.failed_attempts,
@@ -137,7 +139,7 @@ const toAdminAccount = (row: AdminAccountRow, secrets: SecretCipher): AdminAccou
     : null;
 
 const ADMIN_ACCOUNT_COLUMNS =
-  'id, email, role, active, password_hash, totp_secret, failed_attempts, locked_at, created_at';
+  'id, email, role, status, password_hash, totp_secret, failed_attempts, locked_at, created_at';
 
 class AdminSessionTransactionAdapter implements AdminSessionTransaction {
   constructor(
@@ -157,7 +159,7 @@ class AdminSessionTransactionAdapter implements AdminSessionTransaction {
     const rows = returnedRows<AdminAccountRow>(
       await this.queryRunner.query(
         `SELECT ${ADMIN_ACCOUNT_COLUMNS} FROM identity.admin_account
-          WHERE email = $1 AND active`,
+          WHERE email = $1 AND status = '${ADMIN_ACCOUNT_STATUS.ACTIVE}'`,
         [email],
       ),
     );
@@ -168,7 +170,7 @@ class AdminSessionTransactionAdapter implements AdminSessionTransaction {
     const rows = returnedRows<AdminAccountRow>(
       await this.queryRunner.query(
         `SELECT ${ADMIN_ACCOUNT_COLUMNS} FROM identity.admin_account
-          WHERE id = $1 AND active`,
+          WHERE id = $1 AND status = '${ADMIN_ACCOUNT_STATUS.ACTIVE}'`,
         [accountId],
       ),
     );
@@ -277,7 +279,7 @@ class AdminSessionTransactionAdapter implements AdminSessionTransaction {
            LEFT JOIN identity.admin_refresh_token t
              ON t.session_id = s.id AND t.consumed_at IS NULL
            LEFT JOIN identity.admin_account a
-             ON a.id = s.account_id AND a.active
+             ON a.id = s.account_id AND a.status = '${ADMIN_ACCOUNT_STATUS.ACTIVE}'
           WHERE s.id = $1`,
         [sessionId],
       ),

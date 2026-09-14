@@ -19581,3 +19581,183 @@ on the owner's correction: this is a sub-step of group 67, and the diff is new f
 additive changes rather than moves, a changed generator or a cold-build hazard. It does touch the
 admin realm's authorization and a `BYPASSRLS` read path — the surface where a review earns the most —
 so that judgement is stated here and put to the owner rather than taken silently.
+
+## Task 67.4 — A-08's accounts by invitation, their lifecycle, and the interceptor that records them · 2026-09-13
+
+A Platform Administrator now manages every operator account from the console: invites an operator into
+either realm, resends or revokes the invitation, suspends, reactivates or removes an account, and
+releases a lockout — and reads each of those, with every admin sign-in attempt, in the system audit log
+on the same screen. The invitee sets their own password and second factor on **A-20**, a screen this
+task added. Behind it sits **`AuditInterceptor`**, which no row owned until 27 Aug 2026 and this one
+builds. **The row said `admin`, and the work reached `api`, `pkg:contracts`, `pkg:i18n`, `e2e` and every
+spec document the decisions touched.**
+
+### Seven decisions, the owner's, in two batches before any code
+
+The first batch (13 Sep 2026) followed a brief that found account creation claimed by both 67.4 and
+144, OQ-6 open, FR-80's levels named nowhere, and no specification for the interceptor at all:
+
+- **A Platform Administrator manages both realms' accounts** — `actors.md` OQ-6 closed.
+- **FR-80's levels within the PA role are deferred to task 67.5 (A-03)**, the first screen one would gate.
+- **Accounts are created by invitation now** — the non-recommended option, pulling creation and lockout
+  release forward from task 144, whose row is amended. It opened the second batch.
+- **The interceptor records admin-realm mutations**; tenant attribution stays with `core.field_change`.
+
+The second batch:
+
+- **The link lives 24 hours** (recommended 72).
+- **Suspend and reactivate, and a final removal**; no realm change, no second-factor reset.
+- **One audit row per change, under the action the route declares** — not a route-keyed row beside a
+  use-case row.
+
+`architecture.md` §12.5.6's task-67.4 row carries all seven and what they settled; `design_spec.md` §5.2
+carries A-08's amended entry and A-20's new one (the count is 55 screens); §6.2, §6.8, §7.6 and §9.2
+were amended where they named the interceptor, the admin surface, `esg_admin_ro` and the log.
+
+### Settled in the building, and where each is written
+
+All in §12.5.6's task-67.4 row unless named:
+
+- **An invitation is its own table**, so task 23's *every account holds a credential and a confirmed
+  factor* stays true: only the acceptance that sets both writes an account row, in one transaction with
+  the claim that decides two acceptances racing.
+- **The staged secret is sealed on the invitation** (`identity.encrypted_secret`) and answered unchanged
+  on a repeat — `COALESCE` in the write — so a reload or a second tab does not invalidate a scan. A
+  resend clears it with the old token.
+- **Acceptance issues no session**; the new operator signs in on A-01, with a notice in the address as a
+  word and never the address.
+- **`active` became `status`**, the address unique among accounts that are not removed, and **suspension
+  and removal revoke the sessions in the same transaction** — task 145's read would otherwise hand them
+  back on reactivation.
+- **The last active Platform Administrator stays, counted under an advisory lock**, and an operator cannot
+  end their own account.
+- **`@RequiresAdminRole` composes `AdminOriginGuard`**, so every admin-realm write carries task 23's
+  Origin proof by construction.
+- **The bearer routes spend one per-IP window, and only on a refusal** — the tenant acceptance's rule.
+- **The email is Romanian** (OQ-42) and its link is built from `ADMIN_ORIGIN` on the worker.
+- **The log is read through `esg_admin_ro`**, logged under a second acquisition purpose, with column
+  grants on the two realm tables' `(id, email)`.
+- **The provisioning CLI writes audit rows** — provisioned and lockout released, with no actor.
+
+### What shipped
+
+- **`apps/api`** — the migration (`admin_invitation`, `status`, two revocation reasons, `target_id`, an
+  index, two column grants); in `platform/admin`: three models, four pure domain modules with specs
+  (token, standing, lifecycle, roster rows) plus the log query narrowing, three ports, two errors files,
+  ten use cases, four services and the request-operator helper, four controllers, nine DTOs, the email
+  handler, and the in-memory realm fake; `AUDIT_ACTION`'s nine members and `isAuditAction`; the port's
+  `targetId`; `AuditModule` given a body and re-exported; `@AuditAction` and `AuditInterceptor` with its
+  spec in `app/`; three adapters and a shared rows module in `persistence/platform/`; the throttle keys;
+  the permission table's twelve rows and `computeAuditActions`, with four gate cases in
+  `route-permissions.spec.ts`; `test/admin-accounts.e2e-spec.ts`; catalogue messages in three locales.
+- **`packages/contracts`** — regenerated; nine aliases; `ADMIN_ROSTER_KIND`, `ADMIN_STANDING` and
+  `SYSTEM_AUDIT_ACTION` mirrored with compile-time checks.
+- **`apps/admin`** — A-08 at `features/platform/admin/admin-accounts/` (six tools with specs, three query
+  modules, the shell, the account region's nine parts and three states, the log region's five parts and
+  two states); `features/platform/admin/shared/tools/realm-read.ts`, now read by A-02's register too;
+  A-20 in `realm/components/invitation/` with its reducer, query module and route; A-01's notice; the
+  realm's refusal callout and email shape; the nav destination; `@easyesg/validation` as a dependency for
+  the password requirements.
+- **`e2e/admin`** — invitation to sign-in to suspension through the built console, axe on both screens,
+  and a Billing Operator's permission state.
+
+### Found on the way
+
+- **The admin session e2e still set `active = false`**, which the migration removes — the one site the
+  status rename reached outside the realm's own files. Searched `active` across `apps/api`, `e2e` and
+  `tools` for the table's other readers; the store adapter, its fake and two specs' fixtures were the rest.
+- **`controllers-not-to-use-cases` covers `domain/` too**: the accounts controller imported the change
+  vocabulary from the lifecycle module. The vocabulary moved to `models/`, where a shared value belongs.
+- **Two copies of A-02's read mapping would have been the second and third** — extracted to
+  `platform/admin/shared/` with A-02's register repointed; and **the email shape's second copy** moved to
+  `realm/tools/`.
+- **Two sentences told a Billing Operator a Platform Administrator could change their role**, which no
+  longer exists: `platform.admin.insufficient_role` in three catalogues and A-02's permission state.
+- **The pagination constants said the system audit log retains six years**; §12.5.7 says 24 months.
+- **`normaliseEmail` does not lower-case** while `identity.admin_account` requires it: the invitation
+  uses `emailIdentityKey`. A-01 itself looks the address up as typed — recorded, not changed here.
+
+### Considered and not applied
+
+- **No realm change and no MFA reset** — the owner's decision, stated on A-08.
+- **The artboard's person names, support-access column, scope column and audit export** — each arrives
+  with what it reads, stated in §5.2 A-08.
+- **No client-side last-administrator check**: the count is the api's, and the refusal is drawn with its
+  sentence.
+- **Skills**: `security-use-guards` — the decorator composes both guards and cannot be half-applied;
+  `db-use-transactions` — every lifecycle change and acceptance is one unit of work, sign-in's
+  record-then-throw shape where a refusal must count; `security-rate-limiting` — the mail and bearer
+  windows; `api-use-interceptors` — the interceptor is innermost, after the handler, awaited;
+  `one-idea-per-file` and `one-kind-per-folder` — per-screen feature folder, regions mirroring the shell's
+  return, two `shared/` with their admission tests; `rerender-*` — columns, options and handlers memoised
+  where a child receives them, since `reactCompiler` is off.
+
+### Verification
+
+**What the change reaches, and nothing cold** — the owner's standing correction (13 Sep 2026): no
+review agents and no `gates:clean` by reflex. Group 67 stays open, so this is a sub-step close. The
+change reaches `apps/api`, `apps/admin`, `packages/contracts` and `packages/i18n`, and through the two
+packages `apps/web`:
+
+- `pnpm migrations:check` — the migration applies, reverts and re-applies, and all 56 schema invariants
+  pass, the staged secret classified as encrypted.
+- Typecheck clean in `apps/api`, `apps/admin`, `apps/web` and `packages/contracts`.
+- Unit: the api 886 across 97 suites, and 126 across the realm's 17 after the vocabulary move; the
+  console 135; the tenant app 560.
+- `pnpm lint` clean, after the one finding: a SQLSTATE compared as a literal.
+- `pnpm boundaries` clean, after its one finding: the controller reaching into `domain/`.
+- `pnpm docs:check` — 40 claims, after `packages/ui/CLAUDE.md`'s forms import count moved from 23 to 26.
+- `pnpm openapi:check` — green over 64 paths. `pnpm routes:check` — green with A-20's route.
+- `pnpm e2e` — **977 across 41 suites** on the second run. **The first run failed once, and it did not
+  reproduce.** The admin route matrix classified a tenant bearer's `GET /admin/audit-log` as admitted.
+  The suite alone passed 42 of 42. The full run repeated with a temporary line logging every tenant
+  response passed 977 of 977, and printed `401 authentication-required` for that exact request. The
+  refusal path is deterministic: `AdminSessionService.resolve` refuses a missing cookie on its first
+  line. Recorded as unreproduced, not explained. The matrix reads any non-refusal status under 500 as
+  admission, by design, so a recurrence fails loudly; what it will not say is the status, which is
+  what to capture if it does.
+- `pnpm e2e:worker` — 2 of 2, the worker booting with the invitation email handler registered.
+- `pnpm e2e:web --project admin` — **12 of 12**, the two new journeys among them, with axe clean on
+  A-20's enrolment step and on A-08 with a record open.
+- **Skipped: `pnpm e2e:web --project identity --project expansion`.** The change reaches the tenant app
+  only through additive contract aliases and the api's catalogue wording, and no tenant markup moved.
+  Its typecheck and unit suite are what that reach can break, and both passed.
+
+## Admin sign-in finds the address in any case, as the realm stores it · 2026-09-13
+
+Found while building task 67.4 and recorded there as not changed: `identity.admin_account` holds every
+address lower-cased — `admin_account_email_lowercase`, a `CHECK` since task 23's migration — while A-01's
+credential step looked the address up as typed. **An operator who typed `Ana@EasyESG.md` was told the
+address or password was wrong**, the uniform refusal NFR-64 makes indistinguishable from a real one.
+The provisioning CLI had the same split: a mixed-case `--email` was refused by the `CHECK` on
+provision and matched no row on `--unlock`.
+
+### What changed
+
+- **`BeginAdminSignIn` looks the account up by `emailIdentityKey`**, the lower-cased trimmed address,
+  in place of `normaliseEmail`, which only trims. The throttle key (`adminSignInThrottleKey`) and the
+  audit subject (`auditSubject`) already normalised this way, so the lookup, the window and the log now
+  agree about what one address is — no key moved, and no window or subject grouping changes.
+- **`admin:provision` lower-cases `--email` the same way**, for both the insert and the unlock.
+- Task 67.4's invitations already used `emailIdentityKey`, which is how the gap became visible.
+
+### No open question, and why
+
+The table's own `CHECK` already decides what an address is in this realm; the code was disagreeing with
+the schema, not choosing between two readings. The tenant realm's split — `normaliseEmail` for what is
+stored and displayed, `emailIdentityKey` for what is compared — does not arise here, because an
+operator address is stored lower-cased by rule and there is no display-case to keep.
+
+### Verification
+
+- **The new unit case bites**: `begin-admin-sign-in.use-case.spec.ts` gained *finds the account whatever
+  case the address is typed in*. With the lookup put back to a trim-only normalisation it fails (1 of 13);
+  restored, 13 of 13.
+- `apps/api/test/admin-session.e2e-spec.ts` gained *signs in with the address typed in any case*: an
+  operator provisioned lower-cased opens the challenge with a capitalised local part and an upper-case
+  domain, the challenge and the session both name the account as it is held, and the handshake completes.
+- `pnpm --filter @easyesg/api typecheck` clean; `pnpm --filter @easyesg/api test` — 887 across 97 suites;
+  `pnpm lint` clean.
+- `pnpm e2e` — **978 across 41 suites**, one more than task 67.4's run: the new case.
+- **Not run:** the browser suite, since no console markup changed and the change is api-only; the review
+  agents and `gates:clean`, under the owner's standing rule.

@@ -37,6 +37,7 @@ import { ReportCurrency1789776000000 } from './1789776000000-report-currency';
 import { MembershipSelfSelectScope1789862400000 } from './1789862400000-membership-self-select-scope';
 import { AccountName1789948800000 } from './1789948800000-account-name';
 import { SupportAccessLog1790035200000 } from './1790035200000-support-access-log';
+import { AdminAccountManagement1790121600000 } from './1790121600000-admin-account-management';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -92,4 +93,5 @@ export const migrations = [
   MembershipSelfSelectScope1789862400000,
   AccountName1789948800000,
   SupportAccessLog1790035200000,
+  AdminAccountManagement1790121600000,
 ];

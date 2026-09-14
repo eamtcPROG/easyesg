@@ -20,10 +20,12 @@ invisible because nothing in this directory said the rules applied.
 
 ## Current state
 
-**A-01, the chrome and A-02.** 26 route files cover all eighteen screens (`A-01` … `A-18`). **A-02's
-organization register is live since task 67.3** — `features/platform/admin/organization-register/`,
-reading `GET /admin/organizations` through `AdminRealmGuard` — and every other screen behind the
-realm still returns `null`. What is live, from task 23: `src/realm/` — the API client, the session
+**A-01, the chrome, A-02, A-08 and A-20.** Route files cover the eighteen scaffolded screens (`A-01` …
+`A-18`) and A-20. **A-02's organization register is live since task 67.3** —
+`features/platform/admin/organization-register/`, reading `GET /admin/organizations` through
+`AdminRealmGuard` — and **A-08's accounts and system audit log since task 67.4**, in
+`features/platform/admin/admin-accounts/`, with **A-20**, the invitation acceptance, in
+`realm/components/invitation/`. Every other screen behind the realm still returns `null`. What is live, from task 23: `src/realm/` — the API client, the session
 query and the two-step sign-in screen — plus `_realm`'s closed-by-default guard, and a third
 Playwright project driving the journey **cross-origin against the built bundle**. **From task 67.1,
 the console chrome** on every screen behind the guard: `GlobalBar` in the console's tone naming the
@@ -88,12 +90,14 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 src/
 ├─ app/         entry/ (main.tsx) · providers/ (composition root, the router's two fallbacks) · routes/ ·
 │  │            styles/ — and the generated route-tree.gen.ts, the one file the router places beside them
-│  └─ routes/   _focus (A-01) · _realm (everything behind the guard) — both pathless
-├─ realm/       api/ (the one API client) · components/ (sign-in/ A-01's screen · chrome/ the realm
-│               layout's chrome · shared/ the realm chip both draw) · queries/ (the session) ·
-│               tools/ (A-01's reducer, each role's home, the navigation's sections). A LEAF (see below)
+│  └─ routes/   _focus (A-01, A-20) · _realm (everything behind the guard) — both pathless
+├─ realm/       api/ (the one API client) · components/ (sign-in/ A-01's screen · invitation/ A-20's ·
+│               chrome/ the realm layout's chrome · shared/ the realm chip and the refusal callout) ·
+│               queries/ (the session, the invitation) · tools/ (the two reducers, each role's home, the
+│               navigation's sections, A-01's notice, the email shape). A LEAF (see below)
 ├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until
-│               built; platform/admin/organization-register/ (A-02, task 67.3) is the first built
+│               built; platform/admin/ holds organization-register/ (A-02, task 67.3), admin-accounts/
+│               (A-08, task 67.4) and the shared/ both read
 ├─ shared/      what BOTH contexts need — index-view.tsx, the Index archetype's chrome bound once. A LEAF
 ├─ i18n/        use-intl wiring, the console locale, formats, the expansion harness, global.d.ts
 ├─ lib/         env (build-time only) and vite-env.d.ts beside it, pagination
@@ -133,7 +137,10 @@ src/
 - **The guard is `beforeLoad` and closed by default.** Every route under `_realm` resolves the
   session probe before rendering, and an unauthenticated arrival is redirected to A-01 with
   `?redirect=` carrying the destination. Adding a route outside `_realm` is adding an
-  unauthenticated surface — there are two, and both are deliberate: `_focus/sign-in` and `index`.
+  unauthenticated surface — there are three, and all are deliberate: `_focus/sign-in`, `index`, and since
+  task 67.4 `_focus/invitation.$token` (A-20), whose visitor holds no session and cannot — the link's
+  token is the capability, and the api judges it on every call, spending a per-IP window on each
+  link that does not resolve.
 
   **The redirect is validated where it is consumed, not where it is set.** `_realm`'s guard puts
   `location.href` in the search param; `_focus/sign-in.tsx`'s `safeRealmPath` is what refuses
@@ -148,7 +155,7 @@ src/
 
 - **The console nav is presentation, never the boundary** (task 67.1). It shows an operator their
   own realm's section, and only destinations whose screen renders — `realm/tools/console-sections.ts`
-  holds both rules and the destination table, empty today. A hidden link refuses nothing:
+  holds both rules and the destination table, which holds A-02 and A-08 for a Platform Administrator. A hidden link refuses nothing:
   `AdminRealmGuard` (task 67.3) is what stops a Billing Operator reaching A-02 by typing its
   address. **A screen that ships adds its destination in the same change**, with its label under
   `realm.chrome.destinations` — the table's type will not accept a key the catalogue lacks.

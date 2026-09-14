@@ -17,6 +17,7 @@
     "@easyesg/contracts": "workspace:*",
     "@easyesg/i18n": "workspace:*",
     "@easyesg/ui": "workspace:*",
+    "@easyesg/validation": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "react": "catalog:",

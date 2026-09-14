@@ -4,7 +4,7 @@ import {
   AdminAccountLockedError,
   AdminCredentialInvalidError,
 } from '../errors/admin-session.errors';
-import { ADMIN_ROLE, type AdminAccount } from '../models/admin-session.model';
+import { ADMIN_ACCOUNT_STATUS, ADMIN_ROLE, type AdminAccount } from '../models/admin-session.model';
 import { FakeAdminSessionStore ,
   FakeSystemAuditLog,
 } from '../testing/admin-session-store.fake';
@@ -26,7 +26,7 @@ const operator = (overrides: Partial<AdminAccount> = {}): AdminAccount => ({
   id: '00000000-0000-7000-8000-00000000aaaa',
   email: 'operator@easyesg.md',
   role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
-  active: true,
+  status: ADMIN_ACCOUNT_STATUS.ACTIVE,
   passwordHash: 'hashed:Parola123!',
   totpSecret: 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
   failedAttempts: 0,
@@ -65,6 +65,19 @@ describe('BeginAdminSignIn (UC-68 step one, FR-75)', () => {
     expect(store.refreshTokens).toHaveLength(0);
   });
 
+  it('finds the account whatever case the address is typed in — the realm stores it lower-cased', async () => {
+    const store = new FakeAdminSessionStore();
+    store.accounts.push(operator());
+
+    const challenge = await build(store).execute(command({ email: '  Operator@EasyESG.md ' }));
+
+    expect(challenge.identity).toEqual({
+      id: operator().id,
+      email: 'operator@easyesg.md',
+      role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+    });
+  });
+
   it('does not clear the failure count — only the completed pair does', async () => {
     const store = new FakeAdminSessionStore();
     store.accounts.push(operator({ failedAttempts: 7 }));
@@ -83,7 +96,7 @@ describe('BeginAdminSignIn (UC-68 step one, FR-75)', () => {
       operator({
         id: '00000000-0000-7000-8000-00000000bbbb',
         email: 'former@easyesg.md',
-        active: false,
+        status: ADMIN_ACCOUNT_STATUS.SUSPENDED,
       }),
     );
     const begin = build(store);

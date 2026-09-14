@@ -8,6 +8,10 @@ import {
   REQUIRES_ACCOUNT,
 } from '@api/modules/identity/membership/constants/membership.constants';
 import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
+import {
+  AUDIT_ACTION_METADATA,
+  type AuditDeclaration,
+} from '@api/app/decorators/audit-action.decorator';
 import { REQUIRED_ADMIN_ROLES } from '@api/modules/platform/admin/constants/admin-realm.constants';
 import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.model';
 
@@ -99,6 +103,9 @@ type Permission =
  * Every role, as `computeSurface` renders a multi-role declaration: sorted and joined, so the
  * table's spelling cannot depend on the order the decorator happened to list them in.
  */
+/** The admin realm's Platform Administrators — every console route so far (tasks 67.3, 67.4). */
+const PLATFORM_ADMINISTRATORS: Permission = `${PERMISSION.ADMIN}:${ADMIN_ROLE.PLATFORM_ADMINISTRATOR}`;
+
 const ALL_MEMBERS: Permission = `${PERMISSION.ROLE}:${[
   MEMBERSHIP_ROLE.EDITOR,
   MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
@@ -161,11 +168,27 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /auth/admin/session': PERMISSION.PUBLIC,
   'GET /auth/admin/session': PERMISSION.PUBLIC,
   'DELETE /auth/admin/session': PERMISSION.PUBLIC,
+  // A-20 (task 67.4): the bearer of an administrator invitation's link holds no session of any kind —
+  // the token is the capability, the tenant invitation preview's class.
+  'POST /auth/admin/invitation/preview': PERMISSION.PUBLIC,
+  'POST /auth/admin/invitation/enrolment': PERMISSION.PUBLIC,
+  'POST /auth/admin/invitation/acceptance': PERMISSION.PUBLIC,
 
   // ── The admin realm's own surface (task 67.3) — reached with the realm's sealed cookie through
   // `AdminRealmGuard`, never through the tenant guard. The register is a Platform Administrator's:
   // actors.md §5 gives *Organization register* PA `Y` and BO `—`.
-  'GET /admin/organizations': `${PERMISSION.ADMIN}:${ADMIN_ROLE.PLATFORM_ADMINISTRATOR}`,
+  'GET /admin/organizations': PLATFORM_ADMINISTRATORS,
+  // ── A-08 (task 67.4): accounts, their lifecycle, invitations and the log. Every write here also
+  // declares an audit action, which `route-permissions.spec.ts` holds to the permission table.
+  'GET /admin/accounts': PLATFORM_ADMINISTRATORS,
+  'POST /admin/accounts/:accountId/suspension': PLATFORM_ADMINISTRATORS,
+  'POST /admin/accounts/:accountId/reactivation': PLATFORM_ADMINISTRATORS,
+  'POST /admin/accounts/:accountId/removal': PLATFORM_ADMINISTRATORS,
+  'POST /admin/accounts/:accountId/lockout-release': PLATFORM_ADMINISTRATORS,
+  'POST /admin/invitations': PLATFORM_ADMINISTRATORS,
+  'POST /admin/invitations/:invitationId/email': PLATFORM_ADMINISTRATORS,
+  'DELETE /admin/invitations/:invitationId': PLATFORM_ADMINISTRATORS,
+  'GET /admin/audit-log': PLATFORM_ADMINISTRATORS,
 
   // ── A person's own account: credentials, second factor, linked identities (actors.md §5's first
   // row — CA, held by every other human actor "via CA"). `account` and not `role`, because these
@@ -341,9 +364,13 @@ function permissionOf(controller: Constructor, handler: object): Permission | nu
   return null;
 }
 
-/** `method path` for every handler on the surface, mapped to what it declares. */
-export function computeSurface(): Record<string, Permission | null> {
-  const surface: Record<string, Permission | null> = {};
+/**
+ * Every handler on the surface, as `method path` mapped to what `read` answers for it — the walk both
+ * tables below are computed by, so the permission table and the audit-action table cannot disagree
+ * about which routes exist.
+ */
+function mapSurface<V>(read: (route: { controller: Constructor; handler: object }) => V): Record<string, V> {
+  const surface: Record<string, V> = {};
 
   for (const controller of controllersOf(AppModule)) {
     const base = (Reflect.getMetadata(PATH_METADATA, controller) ?? '') as string;
@@ -361,14 +388,30 @@ export function computeSurface(): Record<string, Permission | null> {
       if (verb === undefined) continue;
 
       const own = (Reflect.getMetadata(PATH_METADATA, handler) ?? '') as string;
-      surface[`${METHOD_NAMES[verb] ?? String(verb)} ${joinPath(base, own)}`] = permissionOf(
-        controller,
-        handler,
-      );
+      surface[`${METHOD_NAMES[verb] ?? String(verb)} ${joinPath(base, own)}`] = read({ controller, handler });
     }
   }
 
   return surface;
+}
+
+/** `method path` for every handler on the surface, mapped to what it declares. */
+export function computeSurface(): Record<string, Permission | null> {
+  return mapSurface(({ controller, handler }) => permissionOf(controller, handler));
+}
+
+/**
+ * `method path` for every handler, mapped to the audit action it declares with `@AuditAction`, or null
+ * (task 67.4; FR-159). Method-level only: an action names one change, and a class-level declaration
+ * would put the same action on a controller's reads and writes alike.
+ */
+export function computeAuditActions(): Record<string, string | null> {
+  return mapSurface(({ handler }) => {
+    const declaration = Reflect.getMetadata(AUDIT_ACTION_METADATA, handler) as
+      | AuditDeclaration
+      | undefined;
+    return declaration?.action ?? null;
+  });
 }
 
 export type { Permission, PermissionKind };

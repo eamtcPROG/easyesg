@@ -26,6 +26,7 @@ export const ProblemType = {
   /** The admin realm's lockout: same threshold as `account-locked`, different release — a PA
    *  action or the provisioning CLI, never a reset link (the realm has none). */
   AdminAccountLocked: 'admin-account-locked',
+  AdminAccountExists: 'admin-account-exists',
   EmailUnverified: 'email-unverified',
   /** FR-82: the provider is not registered or is disabled — refused for sign-in and registration
    *  alike, which is the "stops new registrations" half; existing accounts keep their OTHER

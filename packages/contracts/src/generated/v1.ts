@@ -1083,6 +1083,246 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List every operator account and every pending invitation
+         * @description UC-87. Accounts in both realms, removed ones included because their entries stay attributed to them, followed by pending invitations — each with its one-word state and its last sign-in or expiry. Never a credential.
+         */
+        get: operations["AdminAccountsController_roster"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/accounts/{accountId}/suspension": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suspend an operator account
+         * @description Reversible. The account can no longer sign in, and every session it holds is refused on its next request. Recorded in the system audit log.
+         */
+        post: operations["AdminAccountsController_suspend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/accounts/{accountId}/reactivation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reactivate a suspended operator account
+         * @description The account may sign in again. No session the suspension ended comes back. Recorded in the system audit log.
+         */
+        post: operations["AdminAccountsController_reactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/accounts/{accountId}/removal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove an operator account’s access, finally
+         * @description Irreversible. The account can never sign in again and cannot be restored; every entry it made stays attributed to it. Inviting its address again creates a new account. Recorded in the system audit log.
+         */
+        post: operations["AdminAccountsController_remove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/accounts/{accountId}/lockout-release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Release an operator account locked after repeated failures
+         * @description Clears the lock and the failure count, so the operator has the whole threshold back. Recorded in the system audit log.
+         */
+        post: operations["AdminAccountsController_releaseLockout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Invite an operator into either realm
+         * @description UC-87. Emails a single-use link, valid for 24 hours, to the address; the account exists only once the invitee sets a password and confirms a second factor. Recorded in the system audit log.
+         */
+        post: operations["AdminInvitationsController_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/invitations/{invitationId}/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send an invitation again, with a new link
+         * @description The previous link stops working at once and the 24 hours restart. A lapsed invitation is resent this way. Recorded in the system audit log.
+         */
+        post: operations["AdminInvitationsController_resend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/invitations/{invitationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a pending invitation
+         * @description The link stops working at once and the address may be invited again. Recorded in the system audit log.
+         */
+        delete: operations["AdminInvitationsController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/admin/invitation/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read what an administrator invitation link invites
+         * @description A-20’s first read: the address and the realm, so the invitee knows what they are joining.
+         */
+        post: operations["AdminInvitationAcceptanceController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/admin/invitation/enrolment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stage the second factor the account will be created with
+         * @description Answers the secret and its Key Uri. Asked again, it answers the same secret, so a reload does not invalidate a scan; only a resend replaces it.
+         */
+        post: operations["AdminInvitationAcceptanceController_enrol"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/admin/invitation/acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept the invitation — set the password and confirm the second factor
+         * @description Creates the operator account, holding the password and the confirmed factor, and spends the link. Issues no session: the new operator signs in to the console.
+         */
+        post: operations["AdminInvitationAcceptanceController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the platform-wide system audit log
+         * @description UC-88. Administrator account changes and every admin sign-in attempt, attributed and timestamped, newest first. Read-only: nothing in the console edits an entry.
+         */
+        get: operations["SystemAuditLogController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2359,6 +2599,138 @@ export interface components {
             reportCount: number;
             /** @description Unix epoch milliseconds of the most recent sign-in by any active member. Null when no member has signed in. */
             lastSignInAt: number | null;
+        };
+        AdminRosterRowResponseDto: {
+            /**
+             * Format: uuid
+             * @description The account’s id, or the invitation’s — `kind` says which, and so which routes act on it.
+             */
+            id: string;
+            /** @enum {string} */
+            kind: "account" | "invitation";
+            /**
+             * Format: email
+             * @example operator@easyesg.md
+             */
+            email: string;
+            /**
+             * @description The realm — fixed when the invitation was sent, never changed afterwards.
+             * @enum {string}
+             */
+            role: "platform_administrator" | "billing_operator";
+            /**
+             * @description One word read from the facts: an account is active, locked (active and locked out after repeated failures), suspended or removed; an invitation is invited, or lapsed once its link has expired.
+             * @enum {string}
+             */
+            standing: "active" | "locked" | "suspended" | "removed" | "invited" | "lapsed";
+            /** @description Unix epoch milliseconds of the most recent sign-in. Null for an invitation, and for an account that has never signed in. */
+            lastSignInAt: number | null;
+            /** @description Unix epoch milliseconds after which an invitation’s link stops working. Null for an account. */
+            expiresAt: number | null;
+        };
+        AdminInvitationResponseDto: {
+            /**
+             * Format: uuid
+             * @description Identifies the invitation for a resend or a revoke.
+             */
+            id: string;
+            /** Format: email */
+            email: string;
+            /** @enum {string} */
+            role: "platform_administrator" | "billing_operator";
+            /** @description Unix epoch milliseconds after which the link stops working — 24 hours after sending. */
+            expiresAt: number;
+        };
+        InviteAdministratorRequestDto: {
+            /**
+             * Format: email
+             * @description The operator’s address. The link goes here, and the account it creates holds this address.
+             */
+            email: string;
+            /**
+             * @description The realm the account will belong to. The two realms are separate accounts: a realm is not changed later.
+             * @enum {string}
+             */
+            role: "platform_administrator" | "billing_operator";
+        };
+        AdminInvitationPreviewResponseDto: {
+            /**
+             * Format: email
+             * @description The address the account will hold.
+             */
+            email: string;
+            /**
+             * @description The realm the account will belong to.
+             * @enum {string}
+             */
+            role: "platform_administrator" | "billing_operator";
+            /** @description Unix epoch milliseconds after which the link stops working. */
+            expiresAt: number;
+        };
+        AdminInvitationTokenRequestDto: {
+            /** @description The single-use value from the invitation link. */
+            token: string;
+        };
+        AdminEnrolmentResponseDto: {
+            /**
+             * @description The base32 secret, for typing into an authenticator that cannot scan.
+             * @example GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ
+             */
+            secret: string;
+            /** @description The otpauth Key Uri the enrolment symbol encodes — the same secret, scannable. */
+            uri: string;
+        };
+        AcceptedAdminInvitationResponseDto: {
+            /**
+             * Format: email
+             * @description The address to sign in with.
+             */
+            email: string;
+        };
+        AcceptAdminInvitationRequestDto: {
+            /** @description The single-use value from the invitation link. */
+            token: string;
+            /**
+             * Format: password
+             * @description The operator’s password, under the same policy as every other: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.
+             */
+            password: string;
+            /**
+             * @description A current code from the authenticator the enrolment secret was entered into. The account exists only once this confirms.
+             * @example 492039
+             */
+            totpCode: string;
+        };
+        SystemAuditLogEntryResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description Unix epoch milliseconds when it happened. */
+            occurredAt: number;
+            /**
+             * @description What happened.
+             * @enum {string}
+             */
+            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned";
+            /**
+             * Format: uuid
+             * @description The operator who acted. Null for the provisioning command, and for a sign-in attempt against an address that matches no account.
+             */
+            actorId: string | null;
+            /**
+             * Format: email
+             * @description The acting operator’s address. Null with `actorId`, or where no account holds that id.
+             */
+            actorEmail: string | null;
+            /**
+             * Format: uuid
+             * @description The account or invitation the event acted on. Null for an event that acted on none.
+             */
+            targetId: string | null;
+            /**
+             * Format: email
+             * @description The target’s address, where the target is an account or an invitation.
+             */
+            targetEmail: string | null;
         };
     };
     responses: never;
@@ -4760,6 +5132,653 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ResultListDto"] & {
                         objects?: components["schemas"]["OrganizationRegisterRowResponseDto"][];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminAccountsController_roster: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The whole roster: operators who can act, then invitations, then removed accounts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["AdminRosterRowResponseDto"][];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminAccountsController_suspend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The operator account. */
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Suspended; its sessions have ended. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No operator account has this id (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is not active, or it is the operator’s own (problem type conflict); or it is the last active Platform Administrator (problem type last-administrator). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminAccountsController_reactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The operator account. */
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reactivated. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No operator account has this id (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is not suspended (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminAccountsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The operator account. */
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed; its sessions have ended. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No operator account has this id (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is already removed, or it is the operator’s own (problem type conflict); or it is the last active Platform Administrator (problem type last-administrator). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminAccountsController_releaseLockout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The operator account. */
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Released. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No operator account has this id (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is not locked (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminInvitationsController_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteAdministratorRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The invitation was sent. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminInvitationResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description An account that is not removed holds the address (problem type admin-account-exists), or the address already has a pending invitation (problem type invitation-outstanding). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Five invitation emails have gone to this address in the last fifteen minutes (problem type rate-limited). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminInvitationsController_resend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The invitation. */
+                invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sent again. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No pending invitation has this id — accepted, revoked, or never sent (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Five invitation emails have gone to this address in the last fifteen minutes (problem type rate-limited). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminInvitationsController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The invitation. */
+                invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No pending invitation has this id — accepted, revoked, or never sent (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminInvitationAcceptanceController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminInvitationTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The link is live. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminInvitationPreviewResponseDto"];
+                    };
+                };
+            };
+            /** @description The link cannot become an account: it expired, was revoked, was already used, or does not resolve — including a link a resend replaced (problem type invitation-not-acceptable; the `standing` extension says which). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Five links from this address that did not resolve in the last fifteen minutes (problem type rate-limited). A live link spends nothing. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminInvitationAcceptanceController_enrol: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminInvitationTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The factor is staged. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminEnrolmentResponseDto"];
+                    };
+                };
+            };
+            /** @description The link cannot become an account: it expired, was revoked, was already used, or does not resolve — including a link a resend replaced (problem type invitation-not-acceptable; the `standing` extension says which). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Five links from this address that did not resolve in the last fifteen minutes (problem type rate-limited). A live link spends nothing. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminInvitationAcceptanceController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptAdminInvitationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The account exists. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AcceptedAdminInvitationResponseDto"];
+                    };
+                };
+            };
+            /** @description The password does not meet the policy (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The code is not current for the staged secret (problem type factor-invalid). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No factor was staged (problem type conflict), or an account that is not removed already holds the address (problem type admin-account-exists). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The link cannot become an account: it expired, was revoked, was already used, or does not resolve — including a link a resend replaced (problem type invitation-not-acceptable; the `standing` extension says which). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Five links from this address that did not resolve in the last fifteen minutes (problem type rate-limited). A live link spends nothing. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SystemAuditLogController_list: {
+        parameters: {
+            query?: {
+                /** @description Entries per page, 25 unless given, at most 200. `-1` is refused. */
+                onpage?: number;
+                /** @description 1-based. */
+                page?: number;
+                /** @description Unix epoch milliseconds; only events before it. */
+                to?: number;
+                /** @description Unix epoch milliseconds; only events at or after it. */
+                from?: number;
+                /** @description Only this kind of event. */
+                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned";
+                /** @description Only what this operator account did (uuid). */
+                operator?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page. `total` counts entries the filters admitted and is what pages are counted from; `unfiltered` counts every entry, which tells an empty page whether nothing has happened yet or nothing matched. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["SystemAuditLogEntryResponseDto"][];
                     };
                 };
             };

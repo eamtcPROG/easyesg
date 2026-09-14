@@ -3,6 +3,7 @@ import { FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'use-intl';
 import type { AdminChallengeRequest } from '@easyesg/contracts';
+import { EMAIL_SHAPE } from '../../tools/email-shape';
 
 /**
  * A-01 step one — the credential that opens the sealed five-minute challenge (UC-68, FR-75).
@@ -21,7 +22,6 @@ import type { AdminChallengeRequest } from '@easyesg/contracts';
  * definitions so the server verdict and the inline verdict cannot drift, and whether a credential
  * is *correct* is the api's answer — it arrives as the screen's failure, uniform and throttled.
  */
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function CredentialStep({
   busy,

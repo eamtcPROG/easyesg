@@ -253,6 +253,21 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
     expect(rows[0].revoked_reason).toBe('signed_out');
   });
 
+  it('signs in with the address typed in any case, since the realm holds it lower-cased', async () => {
+    const email = addressFor('case');
+    await provision(email);
+
+    const typed = `${email.charAt(0).toUpperCase()}${email.slice(1, email.indexOf('@'))}@EasyESG.MD`;
+    expect(typed).not.toBe(email);
+
+    const opened = await beginSignIn(typed).expect(201);
+    // The challenge names the account as it is held, not as it was typed.
+    expect((opened.body as Envelope<{ email: string }>).object.email).toBe(email);
+
+    const signedIn = await completeSignIn(sealedCookieOf(opened, ADMIN_CHALLENGE_COOKIE)).expect(201);
+    expect(sessionBody(signedIn).account.email).toBe(email);
+  });
+
   it('answers uniformly for a wrong password, and factor-invalid only past the credential bar', async () => {
     const email = addressFor('factor');
     await provision(email);
@@ -419,7 +434,8 @@ describe('the admin realm (UC-68, FR-75, OQ-17; task 23)', () => {
       const sealed = sealedCookieOf(await signIn(email));
       answeredLive(await probe(sealed).expect(200));
 
-      await db.query(`UPDATE identity.admin_account SET active = false WHERE email = $1`, [email]);
+      // Suspension since task 67.4 replaced the `active` flag with `status`; the session read refuses both alike.
+      await db.query(`UPDATE identity.admin_account SET status = 'suspended' WHERE email = $1`, [email]);
 
       const refused = await probe(sealed).expect(401);
       expect(problemType(refused)).toBe('https://easyesg.md/problems/authentication-required');

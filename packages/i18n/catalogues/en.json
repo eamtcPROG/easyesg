@@ -122,6 +122,9 @@
     },
     "seat-allowance-unavailable": {
       "title": "Seats cannot be checked right now"
+    },
+    "admin-account-exists": {
+      "title": "Account already exists"
     }
   },
   "validation": {},
@@ -241,6 +244,12 @@
         "subject": "You have been invited to {organizationName}",
         "body": "Hello,\n\nYou have been invited to join {organizationName} on easyesg, the sustainability reporting platform. Open the link below to accept the invitation:\n\n{invitationUrl}\n\nThe link is valid for 7 days, works only once, and works only for this email address.\n\nIf you were not expecting this invitation, ignore this message: no access is created unless you accept it."
       }
+    },
+    "platform": {
+      "admin_invitation": {
+        "subject": "Invitation to the easyesg administration console",
+        "body": "Hello,\n\nYou have been invited to become an operator in the easyesg administration console. Open the link below to choose your password and set up your second sign-in factor:\n\n{invitationUrl}\n\nThe link is valid for 24 hours and can be used once. The account is created only after you confirm the second factor.\n\nIf you were not expecting this invitation, ignore this message: without acceptance, no account is created."
+      }
     }
   },
   "platform": {
@@ -250,7 +259,26 @@
       "factor_invalid": "That code is not valid right now, so sign-in did not complete. Open your authenticator app and enter the code it is showing now.",
       "session_expired": "The administration session has expired, so the request was not processed. Sign in again to continue.",
       "session_invalid": "The administration session is no longer valid, so the request was not processed. Sign in again to continue.",
-      "insufficient_role": "Your operator role does not include this part of the console, so the request was not processed. Ask a platform administrator to take the request or to change your role."
+      "insufficient_role": "Your operator role does not include this part of the console, so the request was not processed. Ask a platform administrator to take the request.",
+      "account_not_found": "This operator account does not exist, so the request was not processed. Reload the list of accounts and try again.",
+      "account_exists": "An active or suspended operator account already holds this address, so no new one was created. Sign in with the existing account, or ask a platform administrator to remove it first.",
+      "account_self": "You cannot suspend or remove your own account, so the change was not made. Ask another platform administrator to make it if it is needed.",
+      "last_platform_administrator": "This is the only active platform administrator, and without it nobody could manage accounts, so the change was not made. Invite another platform administrator first.",
+      "account_change": {
+        "suspend": "This account is not active, so it could not be suspended. Reload the list to see its current state.",
+        "reactivate": "This account is not suspended, so it could not be reactivated. Reload the list to see its current state.",
+        "remove": "This account’s access has already been removed, so it can no longer be changed. To give this person access again, send a new invitation."
+      },
+      "account_not_locked": "This account is not locked, so there was nothing to unlock. Reload the list to see its current state.",
+      "invitation_not_found": "This invitation is no longer pending — it was accepted or withdrawn — so it could not be changed. Reload the list of accounts.",
+      "invitation_outstanding": "This address already has a pending invitation, so another was not sent. Resend the existing invitation or withdraw it.",
+      "invitation_standing": {
+        "expired": "This invitation link has expired, so the account can no longer be created with it. Ask the platform administrator who invited you to resend the invitation.",
+        "revoked": "This invitation was withdrawn, so the account cannot be created with this link. If you still need access, ask a platform administrator for a new invitation.",
+        "accepted": "This invitation has already been used and the account exists. Sign in to the console with the address and password you chose.",
+        "unknown": "This link is no longer valid — it may have been replaced by a resent invitation — so the account cannot be created with it. Use the most recent invitation email, or ask for a new invitation."
+      },
+      "enrolment_missing": "The second factor has not been set up, so there is no code to confirm. Go back to the authenticator step and try again."
     }
   }
 }

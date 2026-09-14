@@ -54,7 +54,7 @@ traps each one left — grouped by area rather than by the task that built it.
   nothing else, opaque refresh rows rotated by conditional consume with a 30 s race grace and
   reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
   §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
-  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3);
+  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4);
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`);
   opt-in TOTP and password change (27); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`); invitations and acceptance (`GET/POST /invitations`,
@@ -71,7 +71,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  notifications (49 … 52), billing (53 … 66), the console's screens beyond A-02's register (67 … 70), edge and deploy
+  notifications (49 … 52), billing (53 … 66), the console's screens beyond A-02 and A-08 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -112,6 +112,16 @@ traps each one left — grouped by area rather than by the task that built it.
   job and the browser suite pass them. `test/admin-route-matrix.e2e-spec.ts` is the realm's half of
   the route matrix, derived from `admin:` rows in `src/testing/route-permissions.ts`;
   `test/support/signed-in-operator.ts` signs an operator in through the real handshake.
+- **Accounts come from invitations, and their lifecycle is a status** (task 67.4; §12.5.6's task-67.4
+  row). `identity.admin_invitation` holds the address, the realm, the token's hash, a 24-hour expiry
+  and a staged `totp_secret` (`identity.encrypted_secret`); an account row is written only by the
+  acceptance that sets the password and confirms the factor, in one transaction with the claim.
+  `admin_account.active` became `status` (`active`, `suspended`, `removed`), the address unique only
+  among accounts that are not removed; suspension and removal revoke the account's sessions in the
+  same transaction, so a reactivation revives none. **`@RequiresAdminRole` composes `AdminOriginGuard`**
+  since this task, so every admin-realm write carries the Origin proof. The log is read through
+  `esg_admin_ro` (a platform row is invisible to `esg_app`), logged as an acquisition under
+  `system_audit_log`, with column grants on the two realm tables' `(id, email)`.
 - **Social sign-in matches on `(provider, subject)`, never email** (task 24; §9.1 calls the
   email-match variant an account-takeover path). `openid-client` 6.8.7 is a plain static import —
   ESM-only, and on `module: nodenext`/Node 26 `require(esm)` loads it, the OQ-48 revisit, proven for
@@ -411,7 +421,7 @@ believing the invariants.
 **Not built yet, and do not assume otherwise** (rewritten 31 Aug 2026 — the previous version was
 taken 25 Aug and had been overtaken by tasks 29, 30, 31 and 33, which is the failure mode a
 current-state list has): **one of the four edge guards** — `EntitlementGuard` (task 54; `AdminRealmGuard` shipped with
-task 67.3, under Identity above) — and `AuditInterceptor` (task 67.4). No **disclosure
+task 67.3 and `AuditInterceptor` with task 67.4, both under Identity above). No **disclosure
 value** store (task 34), no calculator, validation, comparatives, export or trace body, and no
 `billing` or `platform` body beyond `admin`, `configuration`, `localization` and `taxonomy`.
 
@@ -600,12 +610,15 @@ Traps, each of which has cost someone a day:
 
 - **The catch-all filter registers first.** Nest scans filters backwards from the last registered
   for the first matching `@Catch`, so a catch-all added last swallows every specific one.
-- **`AuditInterceptor` registers last** — when it exists. It is **task 67.4's** (assigned 27 Aug
-  2026, closing the same kind of plan gap `AdminRealmGuard` had): §6.2 puts it fourth in the
-  pipeline, but per-field tenant mutations are already captured by task 14's trigger, so what it
-  must add is answerable only once A-08 can read the result. Task 28.4 writes the admin sign-in
-  events directly rather than waiting for it. Last-registered is *innermost*, and only the innermost
-  interceptor sees the handler's raw return value — which is how it records a created row's id.
+- **`AuditInterceptor` registers last**, and since task 67.4 it exists (§12.5.6's task-67.4 row).
+  Every successful admin-realm write that declares `@AuditAction({ action, target })` becomes **one**
+  row in `audit.system_audit_log` — the operator, the action, the target, the time — written once the
+  handler returns; a refusal writes nothing. `route-permissions.spec.ts` fails an admin-realm write
+  that declares no action, and an action declared on anything else. Tenant mutations are not its
+  business (`core.field_change` attributes them) and a use case writes explicitly only where no
+  session-bearing request carries the event — sign-in (28.4), an invitation's acceptance, the
+  provisioning CLI. Last-registered is *innermost*, and only the innermost interceptor sees the
+  handler's raw return value — which is how it records a created row's id.
 - **A guard that throws never reaches an interceptor.** `TenantTransactionGuard` opens a
   transaction, so the rollback cannot live only in a transaction interceptor —
   `ProblemDetailsFilter` rolls back, `TransactionInterceptor` only commits. The asymmetry is the

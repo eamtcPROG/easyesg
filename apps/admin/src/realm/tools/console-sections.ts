@@ -42,7 +42,11 @@ export const SECTION_OF_ROLE = {
 
 /** Every destination with a screen that renders — A-02's register since task 67.3, and nothing else yet. */
 export const CONSOLE_DESTINATIONS: ConsoleDestinations = {
-  [CONSOLE_SECTION.PLATFORM]: [{ href: '/organizations', label: 'destinations.organizations' }],
+  [CONSOLE_SECTION.PLATFORM]: [
+    { href: '/organizations', label: 'destinations.organizations' },
+    // A-08, since task 67.4.
+    { href: '/accounts', label: 'destinations.accounts' },
+  ],
   [CONSOLE_SECTION.BILLING]: [],
 };
 

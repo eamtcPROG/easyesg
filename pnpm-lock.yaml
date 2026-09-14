@@ -528,6 +528,9 @@ importers:
       '@easyesg/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@easyesg/validation':
+        specifier: workspace:*
+        version: link:../../packages/validation
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.101.4(react@19.2.8)
