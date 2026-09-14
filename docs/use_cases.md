@@ -1624,14 +1624,16 @@ their numbers put them.
 
 - **Primary actor:** PA
 - **Module:** Support & audit
-- **Stakeholders and interests:** Platform Administrator — needs to act on a support request; the organization — must have that access scoped, justified and expiring.
+- **Stakeholders and interests:** Platform Administrator — needs to act on a support request; the organization — must have that access scoped, justified, **consented to by its own Organization Administrator, visible while it lasts** and expiring (amended 14 Sep 2026, project owner, task 67.9).
 - **Preconditions:** A support request exists with a ticket reference.
 - **Trigger:** The Administrator needs report data to act on a support request.
 - **Main success scenario:**
-  1. The Administrator requests scoped, time-limited access to a specific organization's report data.
-  2. The Administrator states a reason and references the ticket.
-  3. Access expires automatically.
-- **Business rules:** Standing access to tenant report data does not exist at any point (D-5).
+  1. The Administrator requests read-only, time-limited access to a specific organization's report data, stating a reason and referencing the ticket.
+  2. An Organization Administrator of that organization sees the request in the tenant application and grants it.
+  3. For 60 minutes the Administrator reads the organization's reports, read-only, while every member of the organization sees that access is active, by whom and why.
+  4. Access expires automatically.
+- **Alternate flows:** 2a. An Organization Administrator declines, and nothing is permitted. 2b. Nobody answers within 24 hours: the request lapses and permits nothing. 3a. An Organization Administrator, or any Platform Administrator, ends access early. 3b. The need outlasts 60 minutes: the Administrator raises a new request with its own reason, which needs its own grant.
+- **Business rules:** Standing access to tenant report data does not exist at any point (D-5). Nobody at the platform can grant a request on the organization's behalf. Access is read-only: nothing under a grant enters a value, resolves a finding, files a report or exports a document.
 - **Related FRs:** FR-77, FR-78
 - **Related UCs:** UC-69, UC-86
 
@@ -1642,7 +1644,7 @@ their numbers put them.
 - **Preconditions:** Support access grants have been issued (UC-85).
 - **Trigger:** Review of the support-access privilege.
 - **Main success scenario:**
-  1. The Administrator reviews every support access grant — who requested it, over which organization, for what reason, and what was accessed.
+  1. The Administrator reviews every support access grant — who requested it, over which organization, for what reason, what the organization decided and who decided it, how it ended, and what was accessed.
 - **Business rules:** Because it is exactly this role's privilege that most needs restraining, the log is reviewable and cannot be edited from within the console.
 - **Related FRs:** FR-79
 - **Related UCs:** UC-85, UC-88
@@ -3175,7 +3177,7 @@ Every `D-n` reference in section 5 resolves here. Decision identifiers are prese
 
 **D-4 — "Not available, with reason" is a first-class field state.** Every reference report reviewed in this project explicitly discloses gaps rather than hiding them, so a declared, explained gap is a valid terminal state (UC-31), distinct from an unaddressed `MISSING VALUE`.
 
-**D-5 — Platform Administrator has no standing access to tenant report data.** Access to a specific organization's report content is obtained only through a time-boxed, logged support-access grant (UC-85), itself auditable (UC-86).
+**D-5 — Platform Administrator has no standing access to tenant report data.** Access to a specific organization's report content is obtained only through a time-boxed, logged support-access grant that an Organization Administrator of that organization gives (UC-85; the consent amended 14 Sep 2026, project owner, task 67.9), itself auditable (UC-86).
 
 **D-6 — Social sign-in is in MVP scope; enterprise SSO is not.** Sign-up and sign-in through consumer/business identity providers — Google and Microsoft at MVP — sit alongside email and password as separate authentication paths over a single account record. The target user is a small-business owner or bookkeeper who already holds a Google or Microsoft work account and for whom another password is a real barrier at first use. Enterprise SSO in the federated sense (SAML/OIDC against a customer's own directory, with domain claiming and provisioning) stays out of MVP, but the identity model is provider-agnostic so adding it is a provider registration rather than a rework.
 
