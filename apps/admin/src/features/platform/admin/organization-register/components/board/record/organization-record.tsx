@@ -1,5 +1,6 @@
 import type { OrganizationRegisterRow } from '@easyesg/contracts';
-import { BUTTON_VARIANT, Button, CALLOUT_INTENT, Callout, Panel } from '@easyesg/ui';
+import { BUTTON_VARIANT, Button, CALLOUT_INTENT, Callout, Panel, TextLink } from '@easyesg/ui';
+import { Link } from '@tanstack/react-router';
 import { useFormatter, useTranslations } from 'use-intl';
 
 /**
@@ -9,8 +10,9 @@ import { useFormatter, useTranslations } from 'use-intl';
  * **The boundary is a designed state, not an empty region** — §5.2's validation behaviour, and the
  * reason the callout is here rather than on the page: this is where an operator looks for more about
  * one organization, so it is where the record says what it holds, what it never holds, and what
- * reading an organization's content takes (FR-77, FR-78, D-5). **No control to request access**: that
- * arrives with A-07 (task 67.9) rather than as a button that cannot act.
+ * reading an organization's content takes (FR-77, FR-78, D-5). **The way to ask is beside it since task
+ * 67.9**: A-07's request form, opened for this organization — which asks the organization and grants
+ * nothing, so the boundary the callout states stays true after the click.
  *
  * **What it shows is the row the table already holds**, re-read with nothing added — the register's
  * columns are the whole of what an account-level record is today, and a second route that could
@@ -46,7 +48,17 @@ export function OrganizationRecord({
               : format.dateTime(row.lastSignInAt, 'stamp')}
           </dd>
         </dl>
-        <Callout intent={CALLOUT_INTENT.INFO} title={t('record.boundaryTitle')} action={null}>
+        <Callout
+          intent={CALLOUT_INTENT.INFO}
+          title={t('record.boundaryTitle')}
+          action={
+            <TextLink asChild>
+              <Link to="/support-access" search={{ organization: row.id }}>
+                {t('record.requestAccess')}
+              </Link>
+            </TextLink>
+          }
+        >
           {t('record.boundaryBody')}
         </Callout>
         <div>

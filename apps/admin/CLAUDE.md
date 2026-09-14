@@ -20,14 +20,19 @@ invisible because nothing in this directory said the rules applied.
 
 ## Current state
 
-**A-01, the chrome, A-02, A-08, A-19 and A-20.** Route files cover the eighteen scaffolded screens
+**A-01, the chrome, A-02, A-07, A-08, A-19 and A-20.** Route files cover the eighteen scaffolded screens
 (`A-01` … `A-18`), A-19 and A-20. **A-02's organization register is live since task 67.3** —
 `features/platform/admin/organization-register/`, reading `GET /admin/organizations` through
 `AdminRealmGuard` — and **A-08's accounts and system audit log since task 67.4**, in
 `features/platform/admin/admin-accounts/`, with **A-20**, the invitation acceptance, in
 `realm/components/invitation/`. **A-19, the operator's own credentials, since task 151**, in
 `realm/components/credentials/` — both privilege levels, from the account menu — with A-01's
-**recovery sign-in** as that screen's third step, landing on A-19. Every other screen behind the realm
+**recovery sign-in** as that screen's third step, landing on A-19. **A-07, support access, since task 67.9**, in
+`features/platform/support-access/` — the request form A-02's record opens, what is in progress with each running
+grant's countdown, the organization's reports read under a grant, and the log. Two things to know before touching
+it: **every read of the log is itself a logged acquisition**, so it polls only while a request waits or a grant runs
+(`logIsMoving`); and **every read under a grant writes an access row**, so those queries never refetch on their own
+and are not kept once their view unmounts — their key root is separate so invalidating the log cannot reach them. Every other screen behind the realm
 still returns `null`. What is live, from task 23: `src/realm/` — the API client, the session
 query and the two-step sign-in screen — plus `_realm`'s closed-by-default guard, and a third
 Playwright project driving the journey **cross-origin against the built bundle**. **From task 67.1,
@@ -160,7 +165,7 @@ src/
 
 - **The console nav is presentation, never the boundary** (task 67.1). It shows an operator their
   own realm's section, and only destinations whose screen renders — `realm/tools/console-sections.ts`
-  holds both rules and the destination table, which holds A-02 and A-08 for a Platform Administrator. A hidden link refuses nothing:
+  holds both rules and the destination table, which holds A-02, A-08 and A-07 for a Platform Administrator. A hidden link refuses nothing:
   `AdminRealmGuard` (task 67.3) is what stops a Billing Operator reaching A-02 by typing its
   address. **A screen that ships adds its destination in the same change**, with its label under
   `realm.chrome.destinations` — the table's type will not accept a key the catalogue lacks. **A-19 is

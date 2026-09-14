@@ -40,12 +40,14 @@ export const SECTION_OF_ROLE = {
   [ADMIN_ROLE.BILLING_OPERATOR]: CONSOLE_SECTION.BILLING,
 } as const satisfies Record<AdminRole, ConsoleSection>;
 
-/** Every destination with a screen that renders — A-02's register since task 67.3, and nothing else yet. */
+/** Every destination with a screen that renders — A-02's register (67.3), A-08's accounts (67.4), A-07's support access (67.9). */
 export const CONSOLE_DESTINATIONS: ConsoleDestinations = {
   [CONSOLE_SECTION.PLATFORM]: [
     { href: '/organizations', label: 'destinations.organizations' },
     // A-08, since task 67.4.
     { href: '/accounts', label: 'destinations.accounts' },
+    // A-07, since task 67.9.
+    { href: '/support-access', label: 'destinations.supportAccess' },
   ],
   [CONSOLE_SECTION.BILLING]: [],
 };

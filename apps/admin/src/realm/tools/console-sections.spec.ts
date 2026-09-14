@@ -53,6 +53,7 @@ describe('consoleSectionsFor (§5.2)', () => {
         items: [
           { href: '/organizations', label: 'destinations.organizations' },
           { href: '/accounts', label: 'destinations.accounts' },
+          { href: '/support-access', label: 'destinations.supportAccess' },
         ],
       },
     ]);

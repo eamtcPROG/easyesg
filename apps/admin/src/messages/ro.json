@@ -85,7 +85,8 @@
       },
       "destinations": {
         "organizations": "Organizații",
-        "accounts": "Conturi de administrator"
+        "accounts": "Conturi de administrator",
+        "supportAccess": "Acces de suport"
       },
       "account": "Contul dumneavoastră",
       "signOut": "Ieșiți din consolă",
@@ -253,7 +254,8 @@
         "reports": "Rapoarte",
         "activity": "Ultima autentificare a unui membru",
         "boundaryTitle": "Conținutul rapoartelor nu este afișat",
-        "boundaryBody": "Fișa cuprinde doar date la nivel de cont. Pentru a citi conținutul unei organizații este nevoie de un acces de suport, acordat cu un motiv și referința tichetului, care expiră singur și este înregistrat în jurnal."
+        "boundaryBody": "Fișa cuprinde doar date la nivel de cont. Pentru a citi conținutul unei organizații este nevoie de un acces de suport, acordat cu un motiv și referința tichetului, care expiră singur și este înregistrat în jurnal.",
+        "requestAccess": "Cereți acces de suport"
       },
       "loading": "Se încarcă registrul organizațiilor",
       "unavailable": {
@@ -287,10 +289,12 @@
         "realm": "Domeniu",
         "factor": "Al doilea factor",
         "lastSignIn": "Ultima autentificare",
+        "supportAccess": "Cereri de acces de suport în 30 de zile",
         "state": "Stare",
         "factorEnrolled": "Configurat",
         "factorPending": "Neconfigurat",
-        "neverSignedIn": "Nicio autentificare"
+        "neverSignedIn": "Nicio autentificare",
+        "supportAccessNotApplicable": "Nu se aplică"
       },
       "standing": {
         "active": "Activ",
@@ -440,6 +444,138 @@
           "recoveryCodesIssued": "A emis coduri de recuperare",
           "supportAccessRequested": "A cerut unei organizații acces pentru asistență",
           "supportAccessEnded": "A încheiat un acces pentru asistență"
+        }
+      }
+    },
+    "supportAccess": {
+      "title": "Acces de suport",
+      "lede": "Citirea rapoartelor unei organizații, doar pentru citire, după ce un administrator al ei acceptă cererea. Fiecare cerere, răspuns și citire rămâne în jurnal.",
+      "loading": "Se încarcă accesul de suport",
+      "unavailable": {
+        "title": "Accesul de suport nu a putut fi încărcat",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio cerere. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Accesul de suport este rezervat administratorilor de platformă",
+        "body": "Rolul contului dumneavoastră de operator nu include cererile de acces la datele organizațiilor sau jurnalul lor. Un administrator de platformă le poate consulta în locul dumneavoastră."
+      },
+      "state": {
+        "awaiting": "Așteaptă răspuns",
+        "active": "Activ",
+        "declined": "Refuzat",
+        "lapsed": "Expirat fără răspuns",
+        "ended": "Încheiat",
+        "expired": "Expirat"
+      },
+      "request": {
+        "region": "Cerere de acces de suport",
+        "title": "Cereți acces la rapoartele organizației",
+        "lede": "Organizația primește cererea în aplicația ei, cu motivul pe care îl scrieți, iar un administrator al ei o acceptă sau o refuză. Fără răspuns, cererea expiră după 24 de ore.",
+        "loading": "Se încarcă organizația",
+        "organization": "Organizație",
+        "duration": "Durată",
+        "durationValue": "60 de minute de la acceptare",
+        "mode": "Mod",
+        "modeValue": "Doar citire",
+        "ticketLabel": "Referința tichetului",
+        "ticketMissing": "Referința tichetului lipsește, iar accesul de suport există doar pentru un tichet. Completați referința înainte de a trimite cererea.",
+        "ticketTooLong": "Referința are mai mult de 64 de caractere, deci nu poate fi înregistrată. Păstrați doar identificatorul tichetului.",
+        "reasonLabel": "Motivul, pentru organizație",
+        "reasonHelp": "Organizația citește acest text înainte de a răspunde. Spuneți ce trebuie verificat și de ce.",
+        "reasonMissing": "Motivul lipsește, iar organizația nu poate decide fără el. Scrieți de ce aveți nevoie de acces.",
+        "reasonTooLong": "Motivul are mai mult de 500 de caractere, deci nu poate fi înregistrat. Scurtați-l la ce trebuie să știe organizația.",
+        "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea trimite cererea",
+        "submit": "Trimiteți cererea organizației",
+        "cancel": "Renunțați",
+        "problemTitle": "Cererea nu a fost trimisă",
+        "sentTitle": "Cererea a fost trimisă",
+        "sentBody": "Organizația {organization} o vede la următoarea deschidere a aplicației. Puteți citi rapoartele doar după ce un administrator al ei o acceptă.",
+        "dismiss": "Închideți mesajul",
+        "chooseTitle": "Alegeți întâi organizația",
+        "chooseBody": "O cerere pornește din fișa unei organizații din registru, ca să fie limpede cui îi cereți acces.",
+        "chooseAction": "Deschideți registrul organizațiilor",
+        "organizationUnavailable": "Organizația nu a putut fi deschisă"
+      },
+      "inProgress": {
+        "region": "Cereri în curs",
+        "title": "În curs",
+        "empty": "Nicio cerere nu așteaptă un răspuns și niciun acces nu este activ.",
+        "awaiting": "Așteaptă răspunsul organizației până la {time}",
+        "active": "Acces activ până la {time}",
+        "minutesLeft": "{minutes, plural, one {# minut rămas} few {# minute rămase} other {# de minute rămase}}",
+        "requestedBy": "Cerut de {email}",
+        "formerOperator": "Cerut de un cont de operator eliminat",
+        "read": "Citiți rapoartele",
+        "end": "Încheiați accesul",
+        "endProblemTitle": "Accesul nu a fost încheiat"
+      },
+      "grant": {
+        "region": "Rapoartele organizației, doar citire",
+        "title": "Rapoartele organizației {organization}",
+        "lede": "Vedeți ce vede organizația, fără a putea modifica ceva. Fiecare deschidere este înregistrată în jurnal înainte de a fi afișată.",
+        "observed": "Organizația vede că accesul este activ și îl poate încheia oricând.",
+        "close": "Închideți rapoartele",
+        "loading": "Se încarcă rapoartele organizației",
+        "reports": "Rapoarte",
+        "report": "{entity} · anul {year}",
+        "noReports": "Organizația nu are încă niciun raport.",
+        "modules": "Module",
+        "module": "{module} · {answered} din {total} răspunsuri",
+        "backToReports": "Înapoi la rapoarte",
+        "backToModules": "Înapoi la module",
+        "fields": "Valorile modulului {module}",
+        "noValue": "Fără valoare",
+        "yes": "Da",
+        "no": "Nu",
+        "endedTitle": "Accesul s-a încheiat",
+        "endedBody": "Cele 60 de minute au trecut sau accesul a fost încheiat, așa că rapoartele nu mai pot fi citite. Pentru o nouă citire trimiteți o cerere nouă, cu motivul ei.",
+        "goneTitle": "Accesul nu mai este în curs",
+        "goneBody": "Cererea nu mai apare printre cele active, așa că rapoartele nu pot fi deschise. Verificați jurnalul pentru ce s-a întâmplat cu ea.",
+        "unlabelled": "Câmp fără denumire",
+        "ticket": "Tichet",
+        "reason": "Motiv"
+      },
+      "log": {
+        "region": "Jurnalul accesului de suport",
+        "title": "Jurnal",
+        "caption": "Fiecare cerere de acces de suport, cea mai recentă prima",
+        "requestedAt": "Cerută",
+        "organization": "Organizație",
+        "requester": "Cerută de",
+        "ticket": "Tichet",
+        "state": "Stare",
+        "decision": "Răspunsul organizației",
+        "accesses": "Citiri",
+        "formerOperator": "Cont de operator eliminat",
+        "deletedOrganization": "Organizație ștearsă",
+        "noDecision": "Fără răspuns",
+        "granted": "Acceptată de {email}",
+        "declined": "Refuzată de {email}",
+        "formerMember": "un membru care nu mai are cont",
+        "empty": {
+          "title": "Nicio cerere încă",
+          "body": "Prima cerere de acces de suport apare aici din momentul în care este trimisă."
+        },
+        "record": {
+          "region": "Fișa cererii",
+          "close": "Închideți fișa",
+          "reason": "Motiv",
+          "lapses": "Expiră fără răspuns la",
+          "grantedAt": "Acceptată la",
+          "expiresAt": "Se încheie la",
+          "endedBy": "Încheiată de",
+          "endedByOrganization": "{email}, din partea organizației",
+          "endedByPlatform": "{email}, administrator de platformă",
+          "notEnded": "Nu a fost încheiată înainte de termen",
+          "accessesTitle": "Ce s-a citit",
+          "noAccesses": "Nimic nu a fost citit.",
+          "purpose": {
+            "reports": "Lista rapoartelor",
+            "report_modules": "Modulele unui raport",
+            "report_module": "Valorile unui modul"
+          },
+          "module": "{purpose} · modulul {module}"
         }
       }
     }

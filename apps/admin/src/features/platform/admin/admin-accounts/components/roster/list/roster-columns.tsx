@@ -9,6 +9,7 @@ const ROSTER_COLUMN = {
   REALM: 'realm',
   FACTOR: 'factor',
   LAST_SIGN_IN: 'lastSignIn',
+  SUPPORT_ACCESS: 'supportAccess',
   STATE: 'state',
 } as const;
 
@@ -16,9 +17,11 @@ type RosterColumn = (typeof ROSTER_COLUMN)[keyof typeof ROSTER_COLUMN];
 
 /**
  * A-08's columns, as the artboard draws them (task 67.4) — the address rather than a person's name
- * (an account holds none), the realm, the second factor, the last sign-in and the state. **The factor
- * column is a reading of the row's kind**: every account holds a confirmed factor by construction, and
- * only an invitation has none yet. The support-access column arrives with A-07.
+ * (an account holds none), the realm, the second factor, the last sign-in, the support-access requests and
+ * the state. **The factor column is a reading of the row's kind**: every account holds a confirmed factor by
+ * construction, and only an invitation has none yet. **The support-access column is task 67.9's**: how many
+ * requests each account raised in the last 30 days, whatever became of them — who leans on the privilege is
+ * what reviewing it needs — and *not applicable* for an invitation, which is not yet anybody who could ask.
  *
  * Memoised on the translators and `onOpen`, which the board keeps stable — `reactCompiler` is off.
  */
@@ -58,6 +61,14 @@ export function useRosterColumns({
         header: t('lastSignIn'),
         cell: (row: AdminRosterRow) =>
           row.lastSignInAt === null ? t('neverSignedIn') : format.dateTime(row.lastSignInAt, 'stamp'),
+      },
+      {
+        key: ROSTER_COLUMN.SUPPORT_ACCESS,
+        header: t('supportAccess'),
+        cell: (row: AdminRosterRow) =>
+          row.supportAccessRequests === null
+            ? t('supportAccessNotApplicable')
+            : format.number(row.supportAccessRequests, 'integer'),
       },
       {
         key: ROSTER_COLUMN.STATE,

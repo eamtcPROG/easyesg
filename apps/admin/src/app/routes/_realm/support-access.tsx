@@ -1,24 +1,39 @@
 /**
- * A-07 — Support access request and audit log · PA · UC-85, UC-86 · Focus + Index
+ * A-07 — Support access request and audit log · PA · UC-85, UC-86 · Focus + Index (task 67.9)
  *
- * The only route by which an operator reaches a specific organization's report data, and the log of every such grant (FR-78, FR-79).
+ * The only route by which an operator reaches a specific organization's report data, and the log of every such
+ * request (FR-77 … FR-79). D-5 is the binding constraint of this whole application: there is no standing access,
+ * and this screen is the one exception path — **and since 14 Sep 2026 the exception is the organization's to give**
+ * (FR-78 amended): an operator asks from here, an Organization Administrator answers in the tenant application, and
+ * the grant lasts 60 minutes, read-only, with its own countdown (UX-124). The log is reviewable and never editable
+ * (FR-79). The screen is `features/platform/support-access/`; this route owns only its addressable state and hands
+ * the screen the signed-in operator, since only the operator who asked may read under a grant.
  *
- * D-5 is the binding constraint of this entire application: there is no standing access, and this
- * screen is the sole exception path. UX-124 — a stated reason and ticket reference, a visible
- * expiry countdown while active, and the console must make it evident the access is observed.
- * FR-79: the log is reviewable but not editable from within the console.
+ * **Every part of the view is in the URL** (UX-4): the organization a request is being written for (A-02's exit),
+ * the grant being read with its report and module, the log's open entry and its page.
  *
- * Not built. `design_spec.md` §5.2 owns this screen's content, controls and states;
- * `design/IMPLEMENTATION_PLAN.md` owns when it lands. Prototypes in
- * `design/screens/EasyESG Admin Console Screens.dc.html` are the rendered reference — read them
- * for values, never copy their markup (design_spec.md OQ-10).
+ * **The realm guard admits any operator; the api decides who reads.** A Billing Operator who follows a link here
+ * sees §5.2's permission state, drawn from the api's 403.
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { SupportAccess } from '~/features/platform/support-access/components/section/support-access';
+import { readSupportAccessSearch } from '~/features/platform/support-access/tools/support-access-search';
 
 export const Route = createFileRoute('/_realm/support-access')({
+  validateSearch: readSupportAccessSearch,
   component: SupportAccessRoute,
 });
 
 function SupportAccessRoute() {
-  return null;
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { account } = Route.useRouteContext();
+
+  return (
+    <SupportAccess
+      search={search}
+      operatorId={account.id}
+      onSearchChange={(next) => void navigate({ search: next })}
+    />
+  );
 }
