@@ -814,6 +814,17 @@ the helper records what it registered in a module-level set, which is per-file b
 each test file its own module registry. A suite therefore cannot pass the wrong addresses or forget
 an actor added later. Call it from any suite using `signInFreshAccount`.
 
+**An e2e response with no `x-correlation-id` did not come from this api** (14 Sep 2026; §12.5.6's
+loopback row). supertest binds a server per request with a host-less `listen(0)` and then requests
+`127.0.0.1`, so a local tool that bound the same port on `127.0.0.1` used to receive the request — in one
+run VS Code's helper answered a sign-in route with `400 WebSockets request was expected` and a session probe
+with an empty `404`. `test/support/supertest-loopback.ts` makes that server listen on `127.0.0.1`, where
+nothing else can take the port. It patches supertest's private `serverAddress` and `end`, because a `listen`
+naming a host binds asynchronously and supertest reads the port synchronously — so defaulting the host in
+`http.Server#listen` is the fix that looks right and crashes every request. If a status that fits no path
+its request could take comes back anyway, read the response's correlation header before reading the code:
+its absence means the answer was not ours.
+
 **Re-running `pnpm e2e` exhausts the sign-in window, and it does not look like a throttle
 problem.** These suites use fixed addresses, so three runs inside fifteen minutes spend §12.5.6's
 five-attempt budget for each of them and the fourth reports `expected 201 "Created", got 429` from

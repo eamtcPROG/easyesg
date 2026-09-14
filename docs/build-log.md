@@ -19907,7 +19907,9 @@ generated enum, and A-08's `LOG_ACTION_LABEL` with its `satisfies` and its catal
   passed alone (6 of 6; 20 of 20, twice) and in the other full runs. With task 67.4's unreproduced
   route-matrix mismatch this is the **third response that fits no path its request could take**, and a
   pattern is not something to close in passing: it is flagged as its own task, with the three occurrences,
-  to capture the response bodies a failure has so far never printed.
+  to capture the response bodies a failure has so far never printed — **explained the same day**, in the
+  entry below: another local process answering on a port supertest's per-request server had bound as a
+  wildcard.
 - **Not run:** the browser suite, since no console markup changed — the admin workspace gained six log-label
   keys and their catalogue copy, and A-19 and A-01's affordance are task 151's; `pnpm e2e:worker`, since no
   consumer changed. **The review agents and `gates:clean` did not run**, under the owner's standing rule —
@@ -19921,3 +19923,101 @@ generated enum, and A-08's `LOG_ACTION_LABEL` with its `satisfies` and its catal
   `file-one-behaviour-api`: one use case per file, the two shared functions — `reauthenticate-operator.ts`
   and `issued-admin-session.ts` — a file each, and A-19's refusals a vocabulary file of their own.
 
+## The e2e answers that came from another process — supertest's server was listening on the wrong address · 2026-09-14
+
+Not a task: the investigation task 144's entry flagged. Three full `pnpm e2e` runs had each failed once, in
+a different suite, on a status no path through the request could produce, and each failing test passed
+alone and in the next run: task 67.4's admin route matrix calling a tenant bearer's `GET /admin/audit-log`
+*admitted*; task 144's `POST /periods` answering `401` to a bearer the previous test had just used; and a
+well-formed admin challenge answering `400`, a status nothing in the admin module raises. **None of them had
+ever printed a response body**, so every earlier explanation was a hypothesis.
+
+### Capturing the failure before explaining it
+
+A temporary jest setup file, active only when `E2E_TRAIL` named a file, appended one JSON line per
+observation: every supertest response (status, problem type, headers, correlation id, port); a failed status
+assertion with the full response; every server-side write of a `4xx`/`5xx`, with the request's correlation
+id beside the one in its AsyncLocalStorage context; Node's `clientError`; every exception the problem-details
+filter formatted; why the access-token verifier returned `null` and which session reads came back empty; and
+each file's event-loop delay and leftover handles. **It was proven before it was trusted** — a throwaway spec
+fed a server raw garbage and asserted the `client-error` line, and asserted a wrong status against a `418`
+and found the response appended — because a diagnostic that records nothing reads exactly like a clean run.
+
+Eight full runs, **68 850 lines**. Seven passed 1 003 of 1 003; run 3 failed twice, and the trail caught both:
+
+| Request | Answer the test received | What the trail says |
+| --- | --- | --- |
+| `POST /api/v1/auth/admin/session/recovery` to `127.0.0.1:50873` | `400 text/html`, `WebSockets request was expected` | no server-side write, no filter call, no `x-correlation-id` |
+| `GET /api/v1/auth/admin/session` to `127.0.0.1:51203` | `404`, empty chunked body | the same: **this api never saw either request** |
+
+`lsof` afterwards: **both ports were held on `127.0.0.1` by VS Code's `Code Helper (Plugin)`** — the answers
+were its.
+
+### The mechanism, measured
+
+supertest's `Test#serverAddress` calls `app.listen(0)` **with no host** for every request against a server
+that is not listening — every suite passes `app.getHttpServer()` unlistened — and then requests
+`http://127.0.0.1:<port>`. A host-less listen binds the IPv6 wildcard. Each combination was measured with the
+other listener in a separate process:
+
+| Ours | Another process binds the same port on | Its bind | `127.0.0.1` request answered by |
+| --- | --- | --- | --- |
+| `::` | `127.0.0.1` | **succeeds** | **the other process** |
+| `127.0.0.1` | `127.0.0.1` | refused, `EADDRINUSE` | ours |
+| `127.0.0.1` | `::` | succeeds | ours |
+| `127.0.0.1` | `0.0.0.0` | succeeds | ours |
+
+The kernel prefers the more specific binding, and macOS does not treat a wildcard binding as occupying the
+specific address. **The ephemeral allocator is not the route in**: in 32 000 `listen(0)` allocations, in the
+same process and across processes and in both directions, neither side was ever handed a port the other held.
+The displacement takes a tool that **chooses** a port — probing it on `127.0.0.1`, where our wildcard does not
+refuse it — and binds it explicitly while supertest's request is in flight.
+
+### What the same evidence retired
+
+- **An AsyncLocalStorage context leaking between requests** — no request's context carried another's
+  correlation id, at any refusal in any run.
+- **Node's HTTP parser answering a bare `400`** — no `clientError` in 68 850 lines.
+- **A network error surfacing as a status** — none.
+- **A memory stall** — the worst event-loop delay in any file was 711 ms, and run 3's two failing files
+  peaked at 300 ms and 110 ms; a stall explains a timeout, not an answer from another process.
+
+### The fix, and the first build of it that would have broken everything
+
+**Owner's decisions** (14 Sep 2026): the fix is **a central patch in the test process**, not each suite
+listening explicitly — the next suite to forget would bring the failure back silently, `close-connections.ts`'s
+reason for patching rather than trusting — and **the diagnostic trail is deleted**, this entry being the record
+of how to rebuild it. Recorded in `architecture.md` §12.5.6's loopback row.
+
+The obvious patch — default the host inside `http.Server#listen` — **crashed every supertest request**, and
+the proof spec's first run is what said so: a `listen` that names a host binds only after `dns.lookup`, even
+for an IP literal, and supertest reads `app.address().port` synchronously on the next line. So
+`test/support/supertest-loopback.ts` patches supertest itself: `serverAddress` starts a `127.0.0.1` listen,
+and `end` sends once the server is listening, with the real port. A server a suite already listens on keeps
+supertest's own path. The listen still passes through `close-connections.ts`'s tracking. It reaches into
+supertest 7.2.2's private methods, which a version change can move, and the spec below is what would notice.
+
+### Consistent with this, and not proven to be it
+
+Task 88's one-off `admitted` for the editor on `PATCH /periods/:id`, and task 85's `404` in
+`invitation-acceptance` and `401` cascade from `signInFreshAccount`, have the shape of an answer from another
+process — the matrix's classifier calls any `4xx` without a guard refusal's type *admitted*. They are not
+claimed here, and they are named so the next unexplained status is checked against this first. **The first
+thing to read is whether the response carries `x-correlation-id`**: every answer this api writes does, and
+`apps/api/CLAUDE.md` now says so.
+
+### Verification
+
+- `supertest-loopback.e2e-spec.ts`, beside `close-connections.e2e-spec.ts`: **5 of 5**. Its three tests go
+  through supertest against an unlistened server, as every suite does. **With the patch removed, 2 of 3 fail**
+  — the server binds `::`, and a listener binding its port on `127.0.0.1` mid-request is `bound` where
+  `EADDRINUSE` is expected — and the third, the path the patch must leave alone, still passes.
+- `pnpm --filter @easyesg/api typecheck` clean; `pnpm lint` clean.
+- **Eight full `pnpm e2e` runs with the fix in place: 1 006 of 1 006, every one** — the 1 003 plus the
+  proof spec's three — under the same host pressure as the loop that caught the failures (swap 7.2–8.2 GB
+  of 9 GB throughout, load average up to 12). That is supporting evidence rather than proof: the failure
+  needs a local tool to bind a port at the wrong moment, and eight clean runs bound its rate without ruling
+  it out. The proof is the spec, which fails deterministically without the patch; the loop shows the patch
+  breaks no suite that makes ~1 000 supertest requests through it. `pnpm docs:check` — 40 claims.
+- **No application code changed**: the fix is `test/support` and `jest-e2e.json`. CI has probably never met
+  this — a fresh runner has no desktop tool binding loopback ports — and the patch is harmless there.

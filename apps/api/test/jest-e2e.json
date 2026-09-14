@@ -19,7 +19,8 @@
     "^@api/(.*)$": "<rootDir>/../src/$1"
   },
   "setupFilesAfterEnv": [
-    "<rootDir>/support/close-connections.ts"
+    "<rootDir>/support/close-connections.ts",
+    "<rootDir>/support/supertest-loopback.ts"
   ],
   "testTimeout": 30000
 }
