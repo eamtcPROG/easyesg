@@ -2,7 +2,7 @@ import type { SystemAuditLogEntry } from '@easyesg/contracts';
 import type { DataTableColumn } from '@easyesg/ui';
 import { useMemo } from 'react';
 import { useFormatter, useTranslations } from 'use-intl';
-import { LOG_ACTION_LABEL, LOG_OPERATOR, logOperatorOf } from '../../../tools/log-labels';
+import { LOG_ACTION_LABEL, LOG_OBJECT, LOG_OPERATOR, logObjectOf, logOperatorOf } from '../../../tools/log-labels';
 
 export const LOG_COLUMN = {
   TIME: 'time',
@@ -21,6 +21,7 @@ export type LogColumn = (typeof LOG_COLUMN)[keyof typeof LOG_COLUMN];
  */
 export function useLogColumns(): readonly DataTableColumn<SystemAuditLogEntry, LogColumn>[] {
   const t = useTranslations('platform.accounts.log');
+  const tProviders = useTranslations('platform.identityProviders.providers');
   const format = useFormatter();
 
   return useMemo(
@@ -55,9 +56,19 @@ export function useLogColumns(): readonly DataTableColumn<SystemAuditLogEntry, L
       {
         key: LOG_COLUMN.OBJECT,
         header: t('object'),
-        cell: (entry: SystemAuditLogEntry) => entry.targetEmail ?? t('noObject'),
+        cell: (entry: SystemAuditLogEntry) => {
+          const object = logObjectOf(entry);
+          switch (object.kind) {
+            case LOG_OBJECT.ADDRESS:
+              return object.email;
+            case LOG_OBJECT.PROVIDER:
+              return tProviders(object.provider);
+            case LOG_OBJECT.NONE:
+              return t('noObject');
+          }
+        },
       },
     ],
-    [t, format],
+    [t, tProviders, format],
   );
 }

@@ -70,6 +70,22 @@ describe('ResetPassword (UC-09, FR-6)', () => {
     expect(store.sessions.every((s) => s.revokedReason === 'password_reset')).toBe(true);
   });
 
+  it('gives a social-only account its first password — UC-09’s alternate flow (task 67.11)', async () => {
+    seed();
+    store.credentials.delete('account-1');
+
+    await reset.execute({ token: raw, password: 'ParolaNoua1!' });
+
+    expect(store.credentials.get('account-1')).toEqual({
+      accountId: 'account-1',
+      passwordHash: 'hashed:ParolaNoua1!',
+      failedAttempts: 0,
+      lockedAt: null,
+    });
+    expect(store.resetTokens[0].consumedAt).toEqual(now);
+    expect(store.sessions.every((s) => s.revokedReason === 'password_reset')).toBe(true);
+  });
+
   it('refuses a policy-violating password before touching the link, so the link survives', async () => {
     seed();
 

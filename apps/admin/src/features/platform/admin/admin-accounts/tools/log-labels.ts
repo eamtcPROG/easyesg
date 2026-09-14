@@ -1,5 +1,6 @@
 import {
   SYSTEM_AUDIT_ACTION,
+  type SocialProvider,
   type SystemAuditAction,
   type SystemAuditLogEntry,
 } from '@easyesg/contracts';
@@ -32,7 +33,30 @@ export const LOG_ACTION_LABEL = {
   [SYSTEM_AUDIT_ACTION.ADMIN_RECOVERY_CODES_ISSUED]: 'recoveryCodesIssued',
   [SYSTEM_AUDIT_ACTION.ADMIN_SUPPORT_ACCESS_REQUESTED]: 'supportAccessRequested',
   [SYSTEM_AUDIT_ACTION.ADMIN_SUPPORT_ACCESS_ENDED]: 'supportAccessEnded',
+  [SYSTEM_AUDIT_ACTION.ADMIN_IDENTITY_PROVIDER_CONFIGURED]: 'identityProviderConfigured',
+  [SYSTEM_AUDIT_ACTION.ADMIN_IDENTITY_PROVIDER_ENABLED]: 'identityProviderEnabled',
+  [SYSTEM_AUDIT_ACTION.ADMIN_IDENTITY_PROVIDER_DISABLED]: 'identityProviderDisabled',
 } as const satisfies Record<SystemAuditAction, string>;
+
+export const LOG_OBJECT = {
+  /** An account or an invitation, named by its address. */
+  ADDRESS: 'address',
+  /** A social provider's configuration version (task 67.11), named by the provider. */
+  PROVIDER: 'provider',
+  NONE: 'none',
+} as const;
+
+export type LogObject =
+  | { readonly kind: typeof LOG_OBJECT.ADDRESS; readonly email: string }
+  | { readonly kind: typeof LOG_OBJECT.PROVIDER; readonly provider: SocialProvider }
+  | { readonly kind: typeof LOG_OBJECT.NONE };
+
+/** What an entry acted on, as the log's object column names it. */
+export const logObjectOf = (entry: Pick<SystemAuditLogEntry, 'targetEmail' | 'targetProvider'>): LogObject => {
+  if (entry.targetEmail !== null) return { kind: LOG_OBJECT.ADDRESS, email: entry.targetEmail };
+  if (entry.targetProvider !== null) return { kind: LOG_OBJECT.PROVIDER, provider: entry.targetProvider };
+  return { kind: LOG_OBJECT.NONE };
+};
 
 export const LOG_OPERATOR = {
   ACCOUNT: 'account',

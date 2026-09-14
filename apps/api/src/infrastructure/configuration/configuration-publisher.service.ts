@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { DataSource, QueryRunner } from 'typeorm';
 import { CORE_DATA_SOURCE } from '../persistence/data-source';
+import { ConfigurationRevisionMismatchError } from './configuration-revision-mismatch.error';
 
 export interface PublishRequest {
   kind: string;
@@ -12,6 +13,19 @@ export interface PublishRequest {
   /** Exclusive end. Omit for an open-ended range. */
   validTo?: string | null;
   actorId?: string | null;
+  /**
+   * The revision the caller read as in force for this slot — 0 where it read none. When given, a slot holding
+   * any other revision refuses the publication with `ConfigurationRevisionMismatchError` rather than
+   * overwriting a change the caller never saw (task 67.11, A-18). Omit it where no person edited a reading:
+   * the seed loader compares payloads instead.
+   */
+  expectedRevision?: number;
+}
+
+/** A version just put in force: its id, which an audit row can name, and its revision. */
+export interface PublishedVersion {
+  readonly id: string;
+  readonly revision: number;
 }
 
 export interface RevertRequest {
@@ -40,14 +54,48 @@ export class ConfigurationPublisher {
   /**
    * Writes the next revision and puts it in force, retiring whatever held that slot.
    *
-   * Returns the new revision. The previous version is **superseded, not deleted** — that is what
-   * makes revert a pointer flip rather than a restoration, and what NFR-19 needs so a stored
-   * calculation can still be reproduced against the factor set it actually used.
+   * Returns the new version's id and revision. The previous version is **superseded, not deleted** —
+   * that is what makes revert a pointer flip rather than a restoration, and what NFR-19 needs so a
+   * stored calculation can still be reproduced against the factor set it actually used.
    */
-  async publish(request: PublishRequest): Promise<number> {
+  async publish(request: PublishRequest): Promise<PublishedVersion> {
     return this.inTransaction(async (runner) => {
-      const nextRevision = await this.nextRevision(runner, request);
       const validity = range(request.validFrom ?? null, request.validTo ?? null);
+
+      // One publication per slot at a time (task 67.11). A transaction-scoped advisory lock rather than
+      // `FOR UPDATE` on the slot row, because a slot's first publication has no row to lock — and two of
+      // those racing would compute the same revision and meet the unique key as a 500, not as a refusal.
+      await runner.query(`SELECT pg_advisory_xact_lock(hashtextextended($1::text || '/' || $2::text, 0))`, [
+        request.kind,
+        request.scope,
+      ]);
+
+      // The existence check comes first rather than relying on an UPDATE that matches nothing:
+      // `bump_store_version` is a **statement**-level trigger, so it fires even when the statement
+      // touches no rows, and an empty UPDATE would move the store version and invalidate every
+      // replica's cache for a change that did not happen. Read under the lock, so the revision it
+      // answers is the one this publication supersedes.
+      const slot = (await runner.query(
+        `SELECT s.version_id, v.revision
+           FROM config.entry_schedule s
+           JOIN config.entry_version v ON v.id = s.version_id
+          WHERE s.kind = $1 AND s.scope = $2 AND s.validity = $3::daterange`,
+        [request.kind, request.scope, validity],
+      )) as { version_id: string; revision: number }[];
+
+      if (request.expectedRevision !== undefined) {
+        const inForce = slot.length > 0 ? slot[0].revision : 0;
+        if (inForce !== request.expectedRevision) {
+          throw new ConfigurationRevisionMismatchError({
+            kind: request.kind,
+            scope: request.scope,
+            expected: request.expectedRevision,
+            inForce,
+          });
+        }
+      }
+
+      const nextRevision = await this.nextRevision(runner, request);
 
       const inserted = (await runner.query(
         `INSERT INTO config.entry_version (kind, scope, revision, state, payload, created_by, published_at)
@@ -66,17 +114,6 @@ export class ConfigurationPublisher {
       // what makes revert the same operation in reverse (AD-4, NFR-85). It also means the schedule
       // needs no DELETE grant — an application role able to delete a slot could un-publish an
       // artefact, and nothing in AD-4 asks for that.
-      //
-      // The existence check comes first rather than relying on an UPDATE that matches nothing:
-      // `bump_store_version` is a **statement**-level trigger, so it fires even when the statement
-      // touches no rows, and an empty UPDATE would move the store version and invalidate every
-      // replica's cache for a change that did not happen.
-      const slot = (await runner.query(
-        `SELECT version_id FROM config.entry_schedule
-          WHERE kind = $1 AND scope = $2 AND validity = $3::daterange`,
-        [request.kind, request.scope, validity],
-      )) as { version_id: string }[];
-
       if (slot.length > 0) {
         await runner.query(
           `UPDATE config.entry_schedule SET version_id = $4
@@ -100,7 +137,7 @@ export class ConfigurationPublisher {
         );
       }
 
-      return nextRevision;
+      return { id: inserted[0].id, revision: nextRevision };
     });
   }
 

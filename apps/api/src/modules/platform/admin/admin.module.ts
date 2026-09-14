@@ -11,6 +11,8 @@ import { AdminInvitationBearerStoreRepository } from '@api/infrastructure/persis
 import { SystemAuditLogReaderRepository } from '@api/infrastructure/persistence/platform/system-audit-log-reader.repository';
 import { AuditModule } from '@api/modules/platform/audit/audit.module';
 import { AdminSessionStoreRepository } from '@api/infrastructure/persistence/platform/admin-session-store.repository';
+import { IdentityProviderConfigurationStoreRepository } from '@api/infrastructure/persistence/platform/identity-provider-configuration-store.repository';
+import { ConfigProviderEnvironment } from '@api/infrastructure/adapters/provider-environment/config-provider-environment.adapter';
 import { OrganizationRegisterStoreRepository } from '@api/infrastructure/persistence/platform/organization-register-store.repository';
 import { SupportAccessRequestCountsRepository } from '@api/infrastructure/persistence/platform/support-access-request-counts.repository';
 import { SYSTEM_AUDIT_LOG, type SystemAuditLog } from '@api/contracts/system-audit-log.port';
@@ -21,6 +23,7 @@ import type { PasswordHasher } from '@api/modules/identity/account/interfaces/pa
 import { AdminInvitationEmailHandler } from './consumers/admin-invitation-email.handler';
 import { AdminAccountsController } from './controllers/admin-accounts.controller';
 import { AdminCredentialsController } from './controllers/admin-credentials.controller';
+import { AdminIdentityProvidersController } from './controllers/admin-identity-providers.controller';
 import { AdminInvitationAcceptanceController } from './controllers/admin-invitation-acceptance.controller';
 import { AdminInvitationsController } from './controllers/admin-invitations.controller';
 import { AdminSessionController } from './controllers/admin-session.controller';
@@ -46,6 +49,11 @@ import {
 } from './interfaces/admin-session-store.interface';
 import { ADMIN_TOKENS, type AdminTokens } from './interfaces/admin-token.interface';
 import {
+  IDENTITY_PROVIDER_CONFIGURATION_STORE,
+  type IdentityProviderConfigurationStore,
+} from './interfaces/identity-provider-configuration-store.interface';
+import { PROVIDER_ENVIRONMENT, type ProviderEnvironment } from './interfaces/provider-environment.interface';
+import {
   ORGANIZATION_REGISTER_STORE,
   type OrganizationRegisterStore,
 } from './interfaces/organization-register-store.interface';
@@ -62,6 +70,7 @@ import { AdminCredentialsService } from './services/admin-credentials.service';
 import { AdminInvitationAcceptanceService } from './services/admin-invitation-acceptance.service';
 import { AdminInvitationsService } from './services/admin-invitations.service';
 import { AdminSessionService } from './services/admin-session.service';
+import { IdentityProvidersService } from './services/identity-providers.service';
 import { OrganizationRegisterService } from './services/organization-register.service';
 import { SystemAuditLogService } from './services/system-audit-log.service';
 import { AcceptAdminInvitation } from './use-cases/accept-admin-invitation.use-case';
@@ -69,11 +78,14 @@ import { BeginAdminReenrolment } from './use-cases/begin-admin-reenrolment.use-c
 import { BeginAdminSignIn } from './use-cases/begin-admin-sign-in.use-case';
 import { ChangeAdminAccountStatus } from './use-cases/change-admin-account-status.use-case';
 import { ChangeAdminPassword } from './use-cases/change-admin-password.use-case';
+import { ChangeIdentityProviderState } from './use-cases/change-identity-provider-state.use-case';
 import { CompleteAdminSignIn } from './use-cases/complete-admin-sign-in.use-case';
+import { ConfigureIdentityProvider } from './use-cases/configure-identity-provider.use-case';
 import { ConfirmAdminReenrolment } from './use-cases/confirm-admin-reenrolment.use-case';
 import { InviteAdministrator } from './use-cases/invite-administrator.use-case';
 import { IssueAdminRecoveryCodes } from './use-cases/issue-admin-recovery-codes.use-case';
 import { ListAdminRoster } from './use-cases/list-admin-roster.use-case';
+import { ListIdentityProviders } from './use-cases/list-identity-providers.use-case';
 import { ListOrganizationRegister } from './use-cases/list-organization-register.use-case';
 import { ListSystemAuditLog } from './use-cases/list-system-audit-log.use-case';
 import { PreviewAdminInvitation } from './use-cases/preview-admin-invitation.use-case';
@@ -99,7 +111,9 @@ import { StageAdminEnrolment } from './use-cases/stage-admin-enrolment.use-case'
  * FR-80 and FR-81** — A-08's accounts, their invitations and lifecycle, the system audit log's read,
  * and A-20's acceptance beside the handshake (§12.5.6's task-67.4 row). **Task 144 fills in FR-80's other
  * half** — the operator's own password, second factor and recovery codes (A-19), and the recovery sign-in
- * beside the handshake (§12.5.6's task-144 row). FR-82/83 are tasks 67.11 and later.
+ * beside the handshake (§12.5.6's task-144 row). **Task 67.11 fills in FR-82** — A-18's social providers: their
+ * behaviour published into the configuration store, their secret reported from the environment and never edited
+ * (§12.5.6's task-67.11 row). FR-83 is later.
  *
  * **What this module deliberately borrows from `identity`, and why that is not a boundary
  * breach:** the Argon2id hasher port, the refresh-token mint/hash, and the throttle domain
@@ -206,6 +220,29 @@ const httpProviders: Provider[] = [
     provide: ListSystemAuditLog,
     inject: [SYSTEM_AUDIT_LOG_READER],
     useFactory: (reader: SystemAuditLogReader) => new ListSystemAuditLog(reader),
+  },
+  // A-18 (task 67.11): the providers' configuration, published into the store, and what the environment says of
+  // their secrets.
+  { provide: IDENTITY_PROVIDER_CONFIGURATION_STORE, useClass: IdentityProviderConfigurationStoreRepository },
+  { provide: PROVIDER_ENVIRONMENT, useClass: ConfigProviderEnvironment },
+  IdentityProvidersService,
+  {
+    provide: ListIdentityProviders,
+    inject: [IDENTITY_PROVIDER_CONFIGURATION_STORE, PROVIDER_ENVIRONMENT],
+    useFactory: (store: IdentityProviderConfigurationStore, environment: ProviderEnvironment) =>
+      new ListIdentityProviders(store, environment),
+  },
+  {
+    provide: ConfigureIdentityProvider,
+    inject: [IDENTITY_PROVIDER_CONFIGURATION_STORE, PROVIDER_ENVIRONMENT],
+    useFactory: (store: IdentityProviderConfigurationStore, environment: ProviderEnvironment) =>
+      new ConfigureIdentityProvider(store, environment),
+  },
+  {
+    provide: ChangeIdentityProviderState,
+    inject: [IDENTITY_PROVIDER_CONFIGURATION_STORE, PROVIDER_ENVIRONMENT],
+    useFactory: (store: IdentityProviderConfigurationStore, environment: ProviderEnvironment) =>
+      new ChangeIdentityProviderState(store, environment),
   },
   // A-19 (task 144): the operator's own credentials, over a store of their own that seals the staged factor.
   { provide: ADMIN_CREDENTIAL_STORE, useClass: AdminCredentialStoreRepository },
@@ -326,6 +363,7 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
           AdminInvitationAcceptanceController,
           SystemAuditLogController,
           AdminCredentialsController,
+          AdminIdentityProvidersController,
         ],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
   // Since task 67.9, for `SupportAccessModule`. **`AdminSessionService`, not the guards**: a guard named in

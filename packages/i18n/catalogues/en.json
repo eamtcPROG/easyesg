@@ -131,6 +131,12 @@
     },
     "support-access-required": {
       "title": "Support access is not active"
+    },
+    "identity-provider-changed": {
+      "title": "The configuration changed in the meantime"
+    },
+    "identity-provider-incomplete": {
+      "title": "The provider is not fully configured"
     }
   },
   "validation": {},
@@ -289,7 +295,22 @@
       "reenrolment_missing": "No new authenticator is waiting to be confirmed, so there is nothing to confirm. Start setting up the authenticator again to get a new code to scan.",
       "reenrolment_code_invalid": "That code does not match the new authenticator right now, so your second factor was not changed. Enter the code the new authenticator is showing now.",
       "recovery_refused": "The address, the password or the recovery code is not right, or that code has already been used, so no session was created. Check all three and try again with an unused code.",
-      "organization_not_found": "The organization is not in the register, so it cannot be shown. Search for it again in the organization register."
+      "organization_not_found": "The organization is not in the register, so it cannot be shown. Search for it again in the organization register.",
+      "identity_provider_not_found": "There is no identity provider by that name, so nothing was changed. Choose one of the providers the console lists.",
+      "identity_provider_changed": "Another administrator saved a new configuration for this provider after you opened it, so your change was not applied. Check the current values and save again if it is still needed.",
+      "identity_provider_incomplete": {
+        "client_id_missing": "The provider has no client ID, so it cannot be enabled: signing in through it would not work. Enter the client ID the provider issued, save, then enable it.",
+        "redirect_missing": "The provider has no redirect address, so it cannot be enabled: nobody could return to the application after signing in. Add the application’s redirect address, save, then enable it.",
+        "secret_missing": "The server does not hold this provider’s client secret, so it cannot be enabled: signing in through it would fail. Set the secret in the server’s environment, restart the server, then enable the provider."
+      },
+      "identity_provider_enabled_incomplete": "The provider is enabled, and without a client ID or a redirect address signing in through it would stop, so the change was not saved. Fill in both fields, or disable the provider first.",
+      "identity_provider_unchanged": "The values sent are the same as the configuration in force, so no new version was saved. Change a field before saving.",
+      "identity_provider_state_unchanged": {
+        "enabled": "The provider is already enabled, so nothing was changed. Reload the page to see its current state.",
+        "disabled": "The provider is already disabled, so nothing was changed. Reload the page to see its current state."
+      },
+      "identity_provider_issuer_invalid": "The issuer must be a complete https address with no parameters, so the configuration was not saved. Enter the issuer address the provider publishes.",
+      "identity_provider_redirect_invalid": "Every redirect address must be a complete address ending in {path}, with no parameters, so the configuration was not saved. Correct the addresses that do not have this form."
     },
     "support_access": {
       "organization_not_found": "The organization does not exist, so the access request was not sent. Open the organization from the register and try again.",

@@ -1647,6 +1647,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/identity-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the social identity providers and how each is configured
+         * @description UC-70. Google and Microsoft, each with its configuration in force and who published it, whether the server holds its client secret and where that is set — never the secret — how many accounts have linked it and how many of those have no other way to sign in, and why it could not be enabled if it could not.
+         */
+        get: operations["AdminIdentityProvidersController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity-providers/{provider}/configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save a provider’s client ID, issuer and redirect addresses
+         * @description UC-70. Publishes a new configuration revision, in force within seconds with no redeploy. Saving the first client ID registers the provider. The enabled state is kept as it is and the scopes are always the three FR-2 names. Recorded in the system audit log.
+         */
+        post: operations["AdminIdentityProvidersController_configure"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity-providers/{provider}/enablement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enable a provider
+         * @description UC-70. Offers sign-in, registration and linking through the provider from the next request. Refused while the provider could not sign anyone in. Recorded in the system audit log.
+         */
+        post: operations["AdminIdentityProvidersController_enable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity-providers/{provider}/disablement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable a provider
+         * @description UC-70, BR-ID-6. Stops new sign-ins, registrations and links through the provider. Signs nobody out, and leaves every account able to sign in with a password — an account holding none sets one through a password reset. Recorded in the system audit log.
+         */
+        post: operations["AdminIdentityProvidersController_disable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3192,7 +3272,7 @@ export interface components {
              * @description What happened.
              * @enum {string}
              */
-            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended";
+            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled";
             /**
              * Format: uuid
              * @description The operator who acted. Null for the provisioning command, and for a sign-in attempt against an address that matches no account.
@@ -3205,7 +3285,7 @@ export interface components {
             actorEmail: string | null;
             /**
              * Format: uuid
-             * @description The account or invitation the event acted on. Null for an event that acted on none.
+             * @description The account, invitation or provider configuration version the event acted on. Null for an event that acted on none.
              */
             targetId: string | null;
             /**
@@ -3213,6 +3293,11 @@ export interface components {
              * @description The target’s address, where the target is an account or an invitation.
              */
             targetEmail: string | null;
+            /**
+             * @description The social provider, where the target is a provider’s configuration version (task 67.11).
+             * @enum {string|null}
+             */
+            targetProvider: "google" | "microsoft" | null;
         };
         AdminCredentialsResponseDto: {
             /**
@@ -3268,6 +3353,76 @@ export interface components {
              *     ]
              */
             recoveryCodes: string[];
+        };
+        IdentityProviderResponseDto: {
+            /**
+             * @description The provider — Google or Microsoft (FR-2).
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
+            /** @description Whether sign-in, registration and linking through the provider are offered. Changed only by the enablement and disablement routes, never by a configuration save. */
+            enabled: boolean;
+            /** @description The client ID the provider issued; empty until the provider is registered. */
+            clientId: string;
+            /** @description The OIDC issuer discovery runs against; empty until the provider is configured. */
+            issuer: string;
+            /** @description The scopes requested — the three FR-2 names, not editable here. */
+            scopes: string[];
+            /** @description The exact redirect addresses a sign-in may return to. */
+            redirectUris: string[];
+            /** @description The configuration revision in force, sent back with a change so that a newer one refuses it. 0 before anything was published for the provider. */
+            revision: number;
+            /**
+             * @description The first reason the provider could not sign anyone in — no client ID, no redirect address, or no client secret held — or null when it could. Set for an enabled provider too, whose secret may since have left the environment.
+             * @enum {string|null}
+             */
+            enablementBlocker: "client_id_missing" | "redirect_missing" | "secret_missing" | null;
+            /** @description Whether the server holds the provider’s client secret. Never the secret itself. */
+            secretHeld: boolean;
+            /**
+             * @description The environment variable that holds the client secret — where it is set, since this surface cannot set it. A change to it takes effect when the server restarts.
+             * @example AUTH_SOCIAL_GOOGLE_CLIENT_SECRET
+             */
+            secretSetting: string;
+            /** @description Accounts holding an identity through the provider. */
+            linkedAccounts: number;
+            /** @description Of those, the accounts with no password and no other provider — which, once the provider is disabled, sign in again only by resetting their password. */
+            accountsWithoutOtherCredential: number;
+            /**
+             * Format: email
+             * @description The operator who published the configuration in force. Null for a seeded configuration.
+             */
+            changedByEmail: string | null;
+            /** @description Unix epoch milliseconds when the configuration in force was published. */
+            changedAt: number | null;
+        };
+        IdentityProviderPublicationResponseDto: {
+            /**
+             * Format: uuid
+             * @description The configuration version now in force.
+             */
+            id: string;
+            /** @enum {string} */
+            provider: "google" | "microsoft";
+            /** @description Its revision — what the next change is made against. */
+            revision: number;
+        };
+        ConfigureIdentityProviderRequestDto: {
+            /** @description The client ID the provider issued. Saving the first one registers the provider; saving another rotates it. May be empty while the provider is disabled. */
+            clientId: string;
+            /**
+             * @description The OIDC issuer discovery runs against — a complete https address with no query or fragment.
+             * @example https://accounts.google.com
+             */
+            issuer: string;
+            /** @description The exact redirect addresses a sign-in may return to, each ending in `/auth/social/{provider}/callback`. Blank entries and repeats are dropped. May be empty while the provider is disabled. */
+            redirectUris: string[];
+            /** @description The revision this change was made against — the one the reading answered. A newer one in force refuses the change (problem type identity-provider-changed). */
+            revision: number;
+        };
+        IdentityProviderRevisionRequestDto: {
+            /** @description The revision this change was made against. A newer one in force refuses the change (problem type identity-provider-changed), so a provider another operator just reconfigured is never enabled unseen. */
+            revision: number;
         };
     };
     responses: never;
@@ -6864,7 +7019,7 @@ export interface operations {
                 /** @description Unix epoch milliseconds; only events at or after it. */
                 from?: number;
                 /** @description Only this kind of event. */
-                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended";
+                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled";
                 /** @description Only what this operator account did (uuid). */
                 operator?: unknown;
             };
@@ -7153,6 +7308,250 @@ export interface operations {
             };
             /** @description Too many attempts at the current password in the window (problem type rate-limited) — every write on this screen spends the same one. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminIdentityProvidersController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Both providers, in a fixed order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["IdentityProviderResponseDto"][];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminIdentityProvidersController_configure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The provider. */
+                provider: "google" | "microsoft";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigureIdentityProviderRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The configuration revision now in force. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["IdentityProviderPublicationResponseDto"];
+                    };
+                };
+            };
+            /** @description A field is missing or malformed, the issuer is not a bare https address, or a redirect address does not end in the provider’s callback path (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The path names no provider FR-2 offers (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A newer revision is in force (problem type identity-provider-changed), the change would leave an enabled provider without a client ID or a redirect address (problem type identity-provider-incomplete), or it changes nothing (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminIdentityProvidersController_enable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The provider. */
+                provider: "google" | "microsoft";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityProviderRevisionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The configuration revision now in force. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["IdentityProviderPublicationResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The path names no provider FR-2 offers (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A newer revision is in force (problem type identity-provider-changed), the provider has no client ID, no redirect address or no client secret held (problem type identity-provider-incomplete), or it is already enabled (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminIdentityProvidersController_disable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The provider. */
+                provider: "google" | "microsoft";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityProviderRevisionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The configuration revision now in force. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["IdentityProviderPublicationResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The path names no provider FR-2 offers (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A newer revision is in force (problem type identity-provider-changed), or the provider is already disabled (problem type conflict). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

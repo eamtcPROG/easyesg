@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SYSTEM_AUDIT_ACTION } from '@easyesg/contracts';
 import ro from '~/messages/ro.json';
-import { LOG_ACTION_LABEL, logOperatorOf } from './log-labels';
+import { LOG_ACTION_LABEL, logObjectOf, logOperatorOf } from './log-labels';
 
 describe('A-08’s log labels (task 67.4)', () => {
   it('labels every action the log can hold, each from the catalogue', () => {
@@ -28,5 +28,17 @@ describe('A-08’s log labels (task 67.4)', () => {
     expect(
       logOperatorOf({ action: 'admin.sign_in.credential_refused', actorId: null, actorEmail: null }),
     ).toEqual({ kind: 'unknown_address' });
+  });
+
+  it('names an object by its address, or by its provider for a configuration version (task 67.11)', () => {
+    expect(logObjectOf({ targetEmail: 'ana@easyesg.md', targetProvider: null })).toEqual({
+      kind: 'address',
+      email: 'ana@easyesg.md',
+    });
+    expect(logObjectOf({ targetEmail: null, targetProvider: 'microsoft' })).toEqual({
+      kind: 'provider',
+      provider: 'microsoft',
+    });
+    expect(logObjectOf({ targetEmail: null, targetProvider: null })).toEqual({ kind: 'none' });
   });
 });

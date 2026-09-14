@@ -26,10 +26,15 @@ export interface ResetPasswordCommand {
  * harmless for the reason `claimVerificationToken` gives: an expired token can never succeed,
  * however often it is presented.
  *
- * Every way the token can be dead — never issued, consumed, expired, superseded by a newer
- * request, or belonging to an account with no password credential — collapses into one
- * `ResetTokenInvalidError`, and the policy check runs BEFORE the claim so a rejected password
- * costs the user their typing, not their link.
+ * Every way the token can be dead — never issued, consumed, expired, or superseded by a newer
+ * request — collapses into one `ResetTokenInvalidError`, and the policy check runs BEFORE the
+ * claim so a rejected password costs the user their typing, not their link.
+ *
+ * **An account holding no password is not a dead token since task 67.11.** A social-only account
+ * (FR-2) consuming its link gains its first password — UC-09's alternate flow, which this use case
+ * used to refuse — and that is the way back for an account whose only provider an operator disabled
+ * on A-18. UC-08 was amended to send such an account the same link rather than direct it to its
+ * provider, which after a disable would be a dead end.
  *
  * The password is hashed before the transaction opens, for `RegisterAccount`'s stated reason:
  * Argon2id is tens of milliseconds by design, and a pooled connection must not idle through it.
@@ -55,10 +60,7 @@ export class ResetPassword {
         throw new ResetTokenInvalidError();
       }
 
-      if (!(await tx.replaceCredentialPassword({ accountId: claimed.accountId, passwordHash }, now))) {
-        throw new ResetTokenInvalidError();
-      }
-
+      await tx.setCredentialPassword({ accountId: claimed.accountId, passwordHash }, now);
       await tx.revokeAllSessionsForPasswordReset(claimed.accountId, now);
     });
   }

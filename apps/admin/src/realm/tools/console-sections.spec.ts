@@ -44,7 +44,7 @@ describe('consoleSectionsFor (§5.2)', () => {
    * none — the section a BO would see is empty, and an empty section is not drawn. The next screen to
    * ship changes this assertion deliberately, with its own destination.
    */
-  it('shows a Platform Administrator the register and the accounts, and a Billing Operator nothing, as shipped', () => {
+  it('shows a Platform Administrator every platform screen that renders, and a Billing Operator nothing, as shipped', () => {
     expect(
       consoleSectionsFor({ role: ADMIN_ROLE.PLATFORM_ADMINISTRATOR, destinations: CONSOLE_DESTINATIONS }),
     ).toEqual([
@@ -54,6 +54,7 @@ describe('consoleSectionsFor (§5.2)', () => {
           { href: '/organizations', label: 'destinations.organizations' },
           { href: '/accounts', label: 'destinations.accounts' },
           { href: '/support-access', label: 'destinations.supportAccess' },
+          { href: '/identity-providers', label: 'destinations.identityProviders' },
         ],
       },
     ]);

@@ -131,6 +131,12 @@
     },
     "support-access-required": {
       "title": "Accesul de suport nu este activ"
+    },
+    "identity-provider-changed": {
+      "title": "Configurarea s-a schimbat între timp"
+    },
+    "identity-provider-incomplete": {
+      "title": "Furnizorul nu este complet configurat"
     }
   },
   "validation": {},
@@ -289,7 +295,22 @@
       "reenrolment_missing": "Nicio aplicație de autentificare nouă nu așteaptă confirmarea, așa că nu există nimic de confirmat. Reluați configurarea aplicației de autentificare pentru a obține un cod nou de scanat.",
       "reenrolment_code_invalid": "Codul nu corespunde în acest moment noii aplicații de autentificare, așa că al doilea factor nu a fost schimbat. Introduceți codul afișat acum de noua aplicație.",
       "recovery_refused": "Adresa, parola sau codul de recuperare nu sunt corecte ori codul a fost deja folosit, așa că sesiunea nu a fost creată. Verificați toate trei și încercați din nou cu un cod nefolosit.",
-      "organization_not_found": "Organizația nu se află în registru, așa că nu poate fi afișată. Căutați-o din nou în registrul organizațiilor."
+      "organization_not_found": "Organizația nu se află în registru, așa că nu poate fi afișată. Căutați-o din nou în registrul organizațiilor.",
+      "identity_provider_not_found": "Nu există un furnizor de identitate cu acest nume, așa că nu s-a modificat nimic. Alegeți unul dintre furnizorii afișați în consolă.",
+      "identity_provider_changed": "Alt administrator a salvat o configurare nouă pentru acest furnizor după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost aplicată. Verificați valorile actuale și salvați din nou, dacă este încă nevoie.",
+      "identity_provider_incomplete": {
+        "client_id_missing": "Furnizorul nu are un identificator al clientului, deci nu poate fi activat: conectarea prin el nu ar funcționa. Introduceți identificatorul primit de la furnizor, salvați, apoi activați-l.",
+        "redirect_missing": "Furnizorul nu are nicio adresă de întoarcere, deci nu poate fi activat: după conectare nimeni nu ar putea reveni în aplicație. Adăugați adresa de întoarcere a aplicației, salvați, apoi activați-l.",
+        "secret_missing": "Serverul nu deține secretul clientului pentru acest furnizor, deci nu poate fi activat: conectarea prin el ar eșua. Setați secretul în mediul serverului, reporniți serverul, apoi activați furnizorul."
+      },
+      "identity_provider_enabled_incomplete": "Furnizorul este activat, iar fără identificatorul clientului sau fără o adresă de întoarcere conectarea prin el s-ar opri, așa că modificarea nu a fost salvată. Completați ambele câmpuri sau dezactivați mai întâi furnizorul.",
+      "identity_provider_unchanged": "Valorile trimise sunt identice cu configurarea în vigoare, așa că nu s-a salvat o versiune nouă. Modificați un câmp înainte de a salva.",
+      "identity_provider_state_unchanged": {
+        "enabled": "Furnizorul este deja activat, așa că nu s-a modificat nimic. Reîncărcați pagina pentru a vedea starea actuală.",
+        "disabled": "Furnizorul este deja dezactivat, așa că nu s-a modificat nimic. Reîncărcați pagina pentru a vedea starea actuală."
+      },
+      "identity_provider_issuer_invalid": "Emitentul trebuie să fie o adresă https completă, fără parametri, așa că configurarea nu a fost salvată. Introduceți adresa emitentului publicată de furnizor.",
+      "identity_provider_redirect_invalid": "Fiecare adresă de întoarcere trebuie să fie o adresă completă care se termină cu {path}, fără parametri, așa că configurarea nu a fost salvată. Corectați adresele care nu au această formă."
     },
     "support_access": {
       "organization_not_found": "Organizația nu există, așa că cererea de acces nu a fost trimisă. Deschideți organizația din registru și încercați din nou.",

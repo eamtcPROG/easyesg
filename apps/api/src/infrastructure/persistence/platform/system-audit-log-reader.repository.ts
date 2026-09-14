@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { QueryRunner } from 'typeorm';
+import { isSocialProvider } from '@api/contracts/identity-provider.port';
+import { IDENTITY_PROVIDER_CONFIG_KIND } from '@api/modules/identity/provider/constants/provider.constants';
 import type {
   SystemAuditLogRead,
   SystemAuditLogReader,
@@ -32,7 +34,9 @@ import { AdminReadOnly } from '../admin-readonly';
  * **Names, from two column grants**: the operator's and the target's address, joined by id over
  * `identity.admin_account (id, email)` and `identity.admin_invitation (id, email)` — nothing else of
  * either table is readable by this role. The pseudonymous `subject` is never selected: it groups
- * attempts and is not a thing to show.
+ * attempts and is not a thing to show. **Since task 67.11 a target may be a configuration version** — A-18's
+ * writes name the version they put in force, a provider having no id of its own — and it is named by the
+ * provider it configures, read from `config.entry_version`, which this role reads already.
  */
 @Injectable()
 export class SystemAuditLogReaderRepository implements SystemAuditLogReader {
@@ -57,15 +61,18 @@ export class SystemAuditLogReaderRepository implements SystemAuditLogReader {
         const rows = (await runner.query(
           `SELECT l.id, l.occurred_at, l.action,
                   l.actor_id, actor.email AS actor_email,
-                  l.target_id, coalesce(target_account.email, target_invitation.email) AS target_email
+                  l.target_id, coalesce(target_account.email, target_invitation.email) AS target_email,
+                  target_configuration.scope AS target_provider
              FROM audit.system_audit_log l
-             LEFT JOIN identity.admin_account    actor             ON actor.id = l.actor_id
-             LEFT JOIN identity.admin_account    target_account    ON target_account.id = l.target_id
-             LEFT JOIN identity.admin_invitation target_invitation ON target_invitation.id = l.target_id
+             LEFT JOIN identity.admin_account    actor                ON actor.id = l.actor_id
+             LEFT JOIN identity.admin_account    target_account       ON target_account.id = l.target_id
+             LEFT JOIN identity.admin_invitation target_invitation    ON target_invitation.id = l.target_id
+             LEFT JOIN config.entry_version      target_configuration ON target_configuration.id = l.target_id
+                                                                     AND target_configuration.kind = $8
             WHERE ${PLATFORM} AND ${MATCHES}
             ORDER BY l.occurred_at DESC, l.id DESC
             LIMIT $6 OFFSET $7`,
-          [...filters, query.take, query.skip],
+          [...filters, query.take, query.skip, IDENTITY_PROVIDER_CONFIG_KIND],
         )) as SystemAuditLogRow[];
 
         return {
@@ -95,6 +102,7 @@ interface SystemAuditLogRow {
   actor_email: string | null;
   target_id: string | null;
   target_email: string | null;
+  target_provider: string | null;
 }
 
 const toEntry = (row: SystemAuditLogRow): SystemAuditLogEntry | null =>
@@ -104,6 +112,13 @@ const toEntry = (row: SystemAuditLogRow): SystemAuditLogEntry | null =>
         occurredAt: row.occurred_at,
         action: row.action,
         actor: row.actor_id === null ? null : { id: row.actor_id, email: row.actor_email },
-        target: row.target_id === null ? null : { id: row.target_id, email: row.target_email },
+        target:
+          row.target_id === null
+            ? null
+            : {
+                id: row.target_id,
+                email: row.target_email,
+                provider: row.target_provider !== null && isSocialProvider(row.target_provider) ? row.target_provider : null,
+              },
       }
     : null;

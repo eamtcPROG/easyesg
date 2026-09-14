@@ -8,43 +8,8 @@ import {
   type SocialProviderSettings,
 } from '@api/contracts/identity-provider.port';
 import { IDENTITY_PROVIDER_CONFIG_KIND } from '../constants/provider.constants';
+import { readIdentityProviderPayload } from '../domain/identity-provider-payload';
 import type { SocialProviderCatalog } from '../interfaces/social-provider-catalog.interface';
-
-/** The store payload's expected shape — what A-18 edits and `config/seed` provides. */
-interface IdentityProviderConfigPayload {
-  readonly enabled: boolean;
-  readonly clientId: string;
-  readonly issuer: string;
-  readonly scopes: readonly string[];
-  readonly redirectUris: readonly string[];
-}
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((entry) => typeof entry === 'string');
-
-/**
- * Validated, never cast — configuration is data someone edits, and a malformed payload must
- * surface as "this provider is unavailable" plus an operator-facing log line, not as an
- * `undefined` threading itself into an authorization URL.
- */
-const readPayload = (payload: Record<string, unknown>): IdentityProviderConfigPayload | null => {
-  if (
-    typeof payload.enabled !== 'boolean' ||
-    typeof payload.clientId !== 'string' ||
-    typeof payload.issuer !== 'string' ||
-    !isStringArray(payload.scopes) ||
-    !isStringArray(payload.redirectUris)
-  ) {
-    return null;
-  }
-  return {
-    enabled: payload.enabled,
-    clientId: payload.clientId,
-    issuer: payload.issuer,
-    scopes: payload.scopes,
-    redirectUris: payload.redirectUris,
-  };
-};
 
 /**
  * FR-82's join, and the ONLY place the split of §12.5.6's task-24 configuration row is visible:
@@ -71,7 +36,7 @@ export class SocialProviderCatalogService implements SocialProviderCatalog {
     const entry = this.configurationStore.get({ kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: provider });
     if (!entry) return null;
 
-    const payload = readPayload(entry.payload);
+    const payload = readIdentityProviderPayload(entry.payload);
     if (!payload) {
       this.logger.error(
         `Configuration entry ${IDENTITY_PROVIDER_CONFIG_KIND}/${provider} (revision ${entry.revision}) is malformed; treating the provider as unavailable`,

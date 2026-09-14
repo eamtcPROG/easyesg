@@ -213,6 +213,12 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /admin/invitations/:invitationId/email': PLATFORM_ADMINISTRATORS,
   'DELETE /admin/invitations/:invitationId': PLATFORM_ADMINISTRATORS,
   'GET /admin/audit-log': PLATFORM_ADMINISTRATORS,
+  // ── A-18 (task 67.11): the social providers — their reading, and three writes that each publish a
+  // configuration revision and declare an audit action naming it. actors.md §5 gives the row PA `Y`, BO `—`.
+  'GET /admin/identity-providers': PLATFORM_ADMINISTRATORS,
+  'POST /admin/identity-providers/:provider/configuration': PLATFORM_ADMINISTRATORS,
+  'POST /admin/identity-providers/:provider/enablement': PLATFORM_ADMINISTRATORS,
+  'POST /admin/identity-providers/:provider/disablement': PLATFORM_ADMINISTRATORS,
   // ── A-19 (task 144): the operator's own credentials — both roles, because every operator holds a
   // password and a second factor, and each write declares an action naming the operator's own account.
   'GET /admin/credentials': OPERATORS,

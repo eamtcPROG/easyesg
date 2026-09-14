@@ -86,7 +86,8 @@
       "destinations": {
         "organizations": "Organizații",
         "accounts": "Conturi de administrator",
-        "supportAccess": "Acces de suport"
+        "supportAccess": "Acces de suport",
+        "identityProviders": "Furnizori de identitate"
       },
       "account": "Contul dumneavoastră",
       "signOut": "Ieșiți din consolă",
@@ -443,7 +444,10 @@
           "factorReenrolled": "A reconfigurat al doilea factor",
           "recoveryCodesIssued": "A emis coduri de recuperare",
           "supportAccessRequested": "A cerut unei organizații acces pentru asistență",
-          "supportAccessEnded": "A încheiat un acces pentru asistență"
+          "supportAccessEnded": "A încheiat un acces pentru asistență",
+          "identityProviderConfigured": "A salvat configurarea unui furnizor de identitate",
+          "identityProviderEnabled": "A activat un furnizor de identitate",
+          "identityProviderDisabled": "A dezactivat un furnizor de identitate"
         }
       }
     },
@@ -577,6 +581,113 @@
           },
           "module": "{purpose} · modulul {module}"
         }
+      }
+    },
+    "identityProviders": {
+      "title": "Furnizori de identitate",
+      "lede": "Autentificarea cu Google și Microsoft. Aici se configurează cum funcționează fiecare furnizor, cu efect pe pagina de autentificare în câteva secunde, fără o versiune nouă a aplicației. Secretul clientului se păstrează în mediul serverului și nu se editează aici.",
+      "loading": "Se încarcă furnizorii de identitate",
+      "unavailable": {
+        "title": "Furnizorii nu au putut fi încărcați",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio configurare. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Doar administratorii de platformă configurează furnizorii",
+        "body": "Configurarea furnizorilor de identitate ține de domeniul platformei, iar contul dumneavoastră aparține domeniului de facturare. Cereți unui administrator de platformă modificarea de care aveți nevoie."
+      },
+      "providers": {
+        "google": "Google",
+        "microsoft": "Microsoft"
+      },
+      "state": {
+        "enabled": "Activat",
+        "disabled": "Dezactivat"
+      },
+      "table": {
+        "caption": "Furnizorii de identitate, starea lor și conturile conectate prin ei",
+        "provider": "Furnizor",
+        "state": "Stare",
+        "accounts": "Conturi conectate",
+        "changed": "Ultima modificare",
+        "neverChanged": "Nicio configurare publicată"
+      },
+      "record": {
+        "region": "Fișa furnizorului {provider}",
+        "close": "Închideți fișa",
+        "state": "Stare",
+        "accounts": "Conturi conectate",
+        "withoutOther": "Dintre ele, fără altă metodă de autentificare",
+        "accountsValue": "{count, plural, one {# cont} few {# conturi} other {# de conturi}}",
+        "scopes": "Informații cerute furnizorului",
+        "scopesValue": "Identificatorul, adresa de e-mail și numele",
+        "scopesNote": "Sunt fixe: se cer doar aceste trei informații, nimic în plus.",
+        "changed": "Ultima modificare",
+        "changedBy": "{email}, {time}",
+        "changedWithoutOperator": "Configurarea inițială, {time}",
+        "neverChanged": "Nicio configurare publicată"
+      },
+      "secret": {
+        "title": "Secretul clientului",
+        "standing": "Pe server",
+        "held": "Serverul deține secretul",
+        "notHeld": "Serverul nu deține secretul",
+        "setting": "Variabila de mediu",
+        "note": "Secretul nu se editează și nu se afișează în consolă. Se setează în mediul serverului, în variabila de mai sus, iar o schimbare are efect după repornirea serverului."
+      },
+      "form": {
+        "title": "Conexiunea",
+        "lede": "Salvarea primului identificator al clientului înregistrează furnizorul, iar salvarea altuia îl rotește.",
+        "clientIdLabel": "Identificatorul clientului",
+        "clientIdHelp": "Identificatorul emis de furnizor pentru această aplicație.",
+        "clientIdTooLong": "Identificatorul clientului are cel mult 512 caractere, așa că nu poate fi salvat. Verificați valoarea copiată de la furnizor.",
+        "issuerLabel": "Emitentul",
+        "issuerHelp": "Adresa https publicată de furnizor, de exemplu https://accounts.google.com.",
+        "issuerMissing": "Emitentul lipsește, așa că configurarea nu poate fi salvată. Introduceți adresa emitentului publicată de furnizor.",
+        "issuerTooLong": "Adresa emitentului are cel mult 2048 de caractere, așa că nu poate fi salvată. Verificați valoarea copiată de la furnizor.",
+        "redirectLabel": "Adresele de întoarcere",
+        "redirectHelp": "Câte o adresă pe rând. Fiecare trebuie să se termine cu {path}.",
+        "summaryTitle": "Configurarea nu poate fi salvată încă",
+        "save": "Salvați configurarea",
+        "reset": "Renunțați la modificări"
+      },
+      "controls": {
+        "enable": "Activați furnizorul",
+        "disable": "Dezactivați furnizorul"
+      },
+      "blocker": {
+        "client_id_missing": "Nu poate fi activat încă: lipsește identificatorul clientului.",
+        "redirect_missing": "Nu poate fi activat încă: lipsește o adresă de întoarcere.",
+        "secret_missing": "Nu poate fi activat încă: serverul nu deține secretul clientului."
+      },
+      "blockerWhileEnabled": "Activat, dar nu apare pe pagina de autentificare. {reason}",
+      "confirm": {
+        "cancel": "Renunțați",
+        "disable": {
+          "title": "Dezactivați furnizorul {provider}?",
+          "consequence": "Nimeni nu se mai poate înregistra, autentifica sau conecta contul prin {provider}. {linked, plural, =0 {Niciun cont nu este conectat prin acest furnizor.} one {# cont este conectat prin el.} few {# conturi sunt conectate prin el.} other {# de conturi sunt conectate prin el.}}",
+          "retained": "Nimeni nu este deconectat, iar conturile cu parolă se autentifică în continuare cu ea. {without, plural, =0 {Toate conturile conectate au și altă metodă de autentificare.} one {# cont nu are altă metodă de autentificare și își poate seta o parolă prin resetarea parolei.} few {# conturi nu au altă metodă de autentificare și își pot seta o parolă prin resetarea parolei.} other {# de conturi nu au altă metodă de autentificare și își pot seta o parolă prin resetarea parolei.}}",
+          "confirm": "Dezactivați"
+        },
+        "save": {
+          "title": "Salvați configurarea furnizorului {provider}?",
+          "consequence": "Furnizorul este activat, așa că autentificările noi prin {provider} folosesc noua configurare în câteva secunde.",
+          "retained": "Sesiunile deschise nu se încheie. Dacă noile valori sunt greșite, autentificarea prin {provider} eșuează până când le corectați.",
+          "confirm": "Salvați"
+        }
+      },
+      "notice": {
+        "dismiss": "Închideți mesajul",
+        "doneTitle": "Modificarea a fost făcută",
+        "done": {
+          "save": "Configurarea furnizorului {provider} a fost salvată și este în vigoare.",
+          "enable": "Furnizorul {provider} este activat și apare pe pagina de autentificare.",
+          "disable": "Furnizorul {provider} este dezactivat și nu mai apare pe pagina de autentificare."
+        },
+        "changedTitle": "Configurarea s-a schimbat între timp",
+        "changedBody": "Alt administrator a salvat o configurare pentru {provider} după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost aplicată. Fișa arată acum valorile în vigoare; verificați-le și reluați modificarea, dacă este încă nevoie.",
+        "refusedTitle": "Modificarea nu a fost făcută",
+        "refusedBody": "Cererea nu a primit un răspuns utilizabil, deci nu știm dacă modificarea s-a produs. Reîncărcați pagina și verificați starea furnizorului."
       }
     }
   }

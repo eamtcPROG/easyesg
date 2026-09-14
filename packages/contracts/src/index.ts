@@ -252,10 +252,12 @@ export {
   ADMIN_ROLE,
   ADMIN_ROSTER_KIND,
   ADMIN_STANDING,
+  IDENTITY_PROVIDER_ENABLEMENT_BLOCKER,
   SYSTEM_AUDIT_ACTION,
   type AdminRole,
   type AdminRosterKind,
   type AdminStanding,
+  type IdentityProviderEnablementBlocker,
   type SystemAuditAction,
 } from './admin';
 /** One organization in A-02's register (task 67.3) — account-level metadata, never report content. */
@@ -312,3 +314,13 @@ export type SupportAccessRaised = components['schemas']['SupportAccessRaisedResp
 export type SupportAccessLogEntry = components['schemas']['SupportAccessLogEntryResponseDto'];
 export type SupportAccessDecision = components['schemas']['SupportAccessDecisionResponseDto'];
 export type SupportAccessAccess = components['schemas']['SupportAccessAccessResponseDto'];
+
+// platform — A-18's social identity providers: the configuration in force, and the three writes that each publish a
+// new revision of it (FR-82, UC-70; task 67.11).
+/** One provider as A-18 shows it — its configuration in force, whether the server holds its secret and where, and who has linked it. */
+export type IdentityProvider = components['schemas']['IdentityProviderResponseDto'];
+export type ConfigureIdentityProviderRequest = components['schemas']['ConfigureIdentityProviderRequestDto'];
+/** The revision an enablement or a disablement was made against. */
+export type IdentityProviderRevisionRequest = components['schemas']['IdentityProviderRevisionRequestDto'];
+/** The configuration revision a write just put in force. */
+export type IdentityProviderPublication = components['schemas']['IdentityProviderPublicationResponseDto'];

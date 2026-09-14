@@ -1,3 +1,4 @@
+import type { SocialProvider } from '@api/contracts/identity-provider.port';
 import type { AuditAction } from '@api/modules/platform/audit/models/audit-action.model';
 
 /**
@@ -29,13 +30,21 @@ export interface SystemAuditLogParty {
   readonly email: string | null;
 }
 
+/**
+ * What an event acted on: an account or an invitation, named by address, or since task 67.11 a social provider's
+ * configuration version, named by the provider it configures.
+ */
+export interface SystemAuditLogTarget extends SystemAuditLogParty {
+  readonly provider: SocialProvider | null;
+}
+
 export interface SystemAuditLogEntry {
   readonly id: string;
   readonly occurredAt: Date;
   readonly action: AuditAction;
   /** Null for the provisioning CLI, and for a sign-in attempt against an address with no account. */
   readonly actor: SystemAuditLogParty | null;
-  readonly target: SystemAuditLogParty | null;
+  readonly target: SystemAuditLogTarget | null;
 }
 
 export interface SystemAuditLogPage {

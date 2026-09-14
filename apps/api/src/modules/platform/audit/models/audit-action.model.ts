@@ -84,6 +84,16 @@ export const AUDIT_ACTION = {
   ADMIN_SUPPORT_ACCESS_REQUESTED: 'admin.support_access.requested',
   /** A Platform Administrator ended a running support-access grant early; the target is the request. */
   ADMIN_SUPPORT_ACCESS_ENDED: 'admin.support_access.ended',
+  /**
+   * A Platform Administrator saved a social provider's client id, issuer or redirect addresses (task 67.11; UC-70)
+   * — its registration, the first time. The target is the configuration version put in force, which names the
+   * provider.
+   */
+  ADMIN_IDENTITY_PROVIDER_CONFIGURED: 'admin.identity_provider.configured',
+  /** A provider was enabled: offered for sign-in, registration and linking from the next request. */
+  ADMIN_IDENTITY_PROVIDER_ENABLED: 'admin.identity_provider.enabled',
+  /** A provider was disabled: no new sign-in, registration or link through it (BR-ID-6). */
+  ADMIN_IDENTITY_PROVIDER_DISABLED: 'admin.identity_provider.disabled',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];

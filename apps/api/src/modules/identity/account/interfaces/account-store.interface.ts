@@ -109,9 +109,19 @@ export interface AccountTransaction {
   claimPasswordResetToken(tokenHash: Buffer, at: Date): Promise<ClaimedPasswordResetToken | null>;
 
   /**
-   * Replaces the hash AND clears the lockout in one statement — §12.5.6 names the consumed reset
-   * link as a lockout release, so the two must not be separable. False when the account holds no
-   * password credential, which the caller treats as an invalid token rather than explaining.
+   * FR-6's write: sets the password AND clears the lockout in one statement — §12.5.6 names the consumed
+   * reset link as a lockout release, so the two must not be separable — **creating the credential where the
+   * account holds none**. That is UC-09's alternate flow: a social-only account's first password, and the way
+   * back for an account whose only provider was disabled on A-18 (task 67.11; UC-08 amended to agree).
+   */
+  setCredentialPassword(
+    credential: { readonly accountId: string; readonly passwordHash: string },
+    at: Date,
+  ): Promise<void>;
+
+  /**
+   * Replaces the hash AND clears the lockout in one statement. False when the account holds no
+   * password credential — FR-7's change, whose caller has already verified the password it replaces.
    */
   replaceCredentialPassword(
     credential: { readonly accountId: string; readonly passwordHash: string },

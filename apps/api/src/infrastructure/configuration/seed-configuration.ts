@@ -135,7 +135,7 @@ export async function seedConfiguration(dataSource: DataSource): Promise<SeedOut
       continue;
     }
 
-    const revision = await publisher.publish({ ...parsed, payload });
+    const { revision } = await publisher.publish({ ...parsed, payload });
     outcomes.push({ ...parsed, published: true, revision });
   }
 
@@ -205,7 +205,7 @@ async function applyWindow(
     return { ...parsed, published: false, revision: current.revision, window: label };
   }
 
-  const revision = await publisher.publish({
+  const { revision } = await publisher.publish({
     ...parsed,
     payload: window.payload,
     validFrom: window.validFrom ?? null,

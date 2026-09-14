@@ -4561,7 +4561,10 @@
                 "admin.factor.reenrolled",
                 "admin.recovery_codes.issued",
                 "admin.support_access.requested",
-                "admin.support_access.ended"
+                "admin.support_access.ended",
+                "admin.identity_provider.configured",
+                "admin.identity_provider.enabled",
+                "admin.identity_provider.disabled"
               ],
               "type": "string"
             }
@@ -4895,6 +4898,307 @@
           }
         },
         "summary": "Issue a set of recovery codes, replacing any before it",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/identity-providers": {
+      "get": {
+        "description": "UC-70. Google and Microsoft, each with its configuration in force and who published it, whether the server holds its client secret and where that is set — never the secret — how many accounts have linked it and how many of those have no other way to sign in, and why it could not be enabled if it could not.",
+        "operationId": "AdminIdentityProvidersController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Both providers, in a fixed order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/IdentityProviderResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "List the social identity providers and how each is configured",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/identity-providers/{provider}/configuration": {
+      "post": {
+        "description": "UC-70. Publishes a new configuration revision, in force within seconds with no redeploy. Saving the first client ID registers the provider. The enabled state is kept as it is and the scopes are always the three FR-2 names. Recorded in the system audit log.",
+        "operationId": "AdminIdentityProvidersController_configure",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "description": "The provider.",
+            "schema": {
+              "enum": [
+                "google",
+                "microsoft"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureIdentityProviderRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The configuration revision now in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/IdentityProviderPublicationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A field is missing or malformed, the issuer is not a bare https address, or a redirect address does not end in the provider’s callback path (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The path names no provider FR-2 offers (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A newer revision is in force (problem type identity-provider-changed), the change would leave an enabled provider without a client ID or a redirect address (problem type identity-provider-incomplete), or it changes nothing (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Save a provider’s client ID, issuer and redirect addresses",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/identity-providers/{provider}/enablement": {
+      "post": {
+        "description": "UC-70. Offers sign-in, registration and linking through the provider from the next request. Refused while the provider could not sign anyone in. Recorded in the system audit log.",
+        "operationId": "AdminIdentityProvidersController_enable",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "description": "The provider.",
+            "schema": {
+              "enum": [
+                "google",
+                "microsoft"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityProviderRevisionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The configuration revision now in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/IdentityProviderPublicationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The path names no provider FR-2 offers (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A newer revision is in force (problem type identity-provider-changed), the provider has no client ID, no redirect address or no client secret held (problem type identity-provider-incomplete), or it is already enabled (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Enable a provider",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/identity-providers/{provider}/disablement": {
+      "post": {
+        "description": "UC-70, BR-ID-6. Stops new sign-ins, registrations and links through the provider. Signs nobody out, and leaves every account able to sign in with a password — an account holding none sets one through a password reset. Recorded in the system audit log.",
+        "operationId": "AdminIdentityProvidersController_disable",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "description": "The provider.",
+            "schema": {
+              "enum": [
+                "google",
+                "microsoft"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityProviderRevisionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The configuration revision now in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/IdentityProviderPublicationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The path names no provider FR-2 offers (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A newer revision is in force (problem type identity-provider-changed), or the provider is already disabled (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Disable a provider",
         "tags": [
           "platform"
         ]
@@ -8573,7 +8877,10 @@
               "admin.factor.reenrolled",
               "admin.recovery_codes.issued",
               "admin.support_access.requested",
-              "admin.support_access.ended"
+              "admin.support_access.ended",
+              "admin.identity_provider.configured",
+              "admin.identity_provider.enabled",
+              "admin.identity_provider.disabled"
             ],
             "description": "What happened."
           },
@@ -8593,13 +8900,22 @@
             "type": "string",
             "nullable": true,
             "format": "uuid",
-            "description": "The account or invitation the event acted on. Null for an event that acted on none."
+            "description": "The account, invitation or provider configuration version the event acted on. Null for an event that acted on none."
           },
           "targetEmail": {
             "type": "string",
             "nullable": true,
             "format": "email",
             "description": "The target’s address, where the target is an account or an invitation."
+          },
+          "targetProvider": {
+            "type": "string",
+            "enum": [
+              "google",
+              "microsoft"
+            ],
+            "nullable": true,
+            "description": "The social provider, where the target is a provider’s configuration version (task 67.11)."
           }
         },
         "required": [
@@ -8609,7 +8925,8 @@
           "actorId",
           "actorEmail",
           "targetId",
-          "targetEmail"
+          "targetEmail",
+          "targetProvider"
         ]
       },
       "AdminCredentialsResponseDto": {
@@ -8714,6 +9031,177 @@
         },
         "required": [
           "recoveryCodes"
+        ]
+      },
+      "IdentityProviderResponseDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "google",
+              "microsoft"
+            ],
+            "description": "The provider — Google or Microsoft (FR-2)."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether sign-in, registration and linking through the provider are offered. Changed only by the enablement and disablement routes, never by a configuration save."
+          },
+          "clientId": {
+            "type": "string",
+            "description": "The client ID the provider issued; empty until the provider is registered."
+          },
+          "issuer": {
+            "type": "string",
+            "description": "The OIDC issuer discovery runs against; empty until the provider is configured."
+          },
+          "scopes": {
+            "description": "The scopes requested — the three FR-2 names, not editable here.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "redirectUris": {
+            "description": "The exact redirect addresses a sign-in may return to.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "revision": {
+            "type": "number",
+            "description": "The configuration revision in force, sent back with a change so that a newer one refuses it. 0 before anything was published for the provider."
+          },
+          "enablementBlocker": {
+            "type": "string",
+            "enum": [
+              "client_id_missing",
+              "redirect_missing",
+              "secret_missing"
+            ],
+            "nullable": true,
+            "description": "The first reason the provider could not sign anyone in — no client ID, no redirect address, or no client secret held — or null when it could. Set for an enabled provider too, whose secret may since have left the environment."
+          },
+          "secretHeld": {
+            "type": "boolean",
+            "description": "Whether the server holds the provider’s client secret. Never the secret itself."
+          },
+          "secretSetting": {
+            "type": "string",
+            "example": "AUTH_SOCIAL_GOOGLE_CLIENT_SECRET",
+            "description": "The environment variable that holds the client secret — where it is set, since this surface cannot set it. A change to it takes effect when the server restarts."
+          },
+          "linkedAccounts": {
+            "type": "number",
+            "description": "Accounts holding an identity through the provider."
+          },
+          "accountsWithoutOtherCredential": {
+            "type": "number",
+            "description": "Of those, the accounts with no password and no other provider — which, once the provider is disabled, sign in again only by resetting their password."
+          },
+          "changedByEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "description": "The operator who published the configuration in force. Null for a seeded configuration."
+          },
+          "changedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds when the configuration in force was published."
+          }
+        },
+        "required": [
+          "provider",
+          "enabled",
+          "clientId",
+          "issuer",
+          "scopes",
+          "redirectUris",
+          "revision",
+          "enablementBlocker",
+          "secretHeld",
+          "secretSetting",
+          "linkedAccounts",
+          "accountsWithoutOtherCredential",
+          "changedByEmail",
+          "changedAt"
+        ]
+      },
+      "IdentityProviderPublicationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The configuration version now in force."
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "google",
+              "microsoft"
+            ]
+          },
+          "revision": {
+            "type": "number",
+            "description": "Its revision — what the next change is made against."
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "revision"
+        ]
+      },
+      "ConfigureIdentityProviderRequestDto": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "The client ID the provider issued. Saving the first one registers the provider; saving another rotates it. May be empty while the provider is disabled."
+          },
+          "issuer": {
+            "type": "string",
+            "maxLength": 2048,
+            "example": "https://accounts.google.com",
+            "description": "The OIDC issuer discovery runs against — a complete https address with no query or fragment."
+          },
+          "redirectUris": {
+            "maxItems": 10,
+            "description": "The exact redirect addresses a sign-in may return to, each ending in `/auth/social/{provider}/callback`. Blank entries and repeats are dropped. May be empty while the provider is disabled.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "revision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The revision this change was made against — the one the reading answered. A newer one in force refuses the change (problem type identity-provider-changed)."
+          }
+        },
+        "required": [
+          "clientId",
+          "issuer",
+          "redirectUris",
+          "revision"
+        ]
+      },
+      "IdentityProviderRevisionRequestDto": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The revision this change was made against. A newer one in force refuses the change (problem type identity-provider-changed), so a provider another operator just reconfigured is never enabled unseen."
+          }
+        },
+        "required": [
+          "revision"
         ]
       }
     }

@@ -86,6 +86,10 @@ export const SYSTEM_AUDIT_ACTION = {
   /** Task 67.9 — asking an organization for support access, and ending a running grant. */
   ADMIN_SUPPORT_ACCESS_REQUESTED: 'admin.support_access.requested',
   ADMIN_SUPPORT_ACCESS_ENDED: 'admin.support_access.ended',
+  /** Task 67.11 — A-18's configuration save, enablement and disablement of a social provider. */
+  ADMIN_IDENTITY_PROVIDER_CONFIGURED: 'admin.identity_provider.configured',
+  ADMIN_IDENTITY_PROVIDER_ENABLED: 'admin.identity_provider.enabled',
+  ADMIN_IDENTITY_PROVIDER_DISABLED: 'admin.identity_provider.disabled',
 } as const;
 
 export type SystemAuditAction = (typeof SYSTEM_AUDIT_ACTION)[keyof typeof SYSTEM_AUDIT_ACTION];
@@ -93,4 +97,23 @@ export type SystemAuditAction = (typeof SYSTEM_AUDIT_ACTION)[keyof typeof SYSTEM
 export const SYSTEM_AUDIT_ACTION_MIRRORS_WIRE: SameSet<
   SystemAuditAction,
   components['schemas']['SystemAuditLogEntryResponseDto']['action']
+> = true;
+
+/**
+ * Why A-18 could not enable a provider now (task 67.11) — the api's `IDENTITY_PROVIDER_ENABLEMENT_BLOCKER`,
+ * mirrored because the console words each one differently: two are completed on the screen, and the secret is
+ * set outside it.
+ */
+export const IDENTITY_PROVIDER_ENABLEMENT_BLOCKER = {
+  CLIENT_ID_MISSING: 'client_id_missing',
+  REDIRECT_MISSING: 'redirect_missing',
+  SECRET_MISSING: 'secret_missing',
+} as const;
+
+export type IdentityProviderEnablementBlocker =
+  (typeof IDENTITY_PROVIDER_ENABLEMENT_BLOCKER)[keyof typeof IDENTITY_PROVIDER_ENABLEMENT_BLOCKER];
+
+export const IDENTITY_PROVIDER_ENABLEMENT_BLOCKER_MIRRORS_WIRE: SameSet<
+  IdentityProviderEnablementBlocker,
+  NonNullable<components['schemas']['IdentityProviderResponseDto']['enablementBlocker']>
 > = true;

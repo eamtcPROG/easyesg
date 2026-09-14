@@ -336,6 +336,21 @@ export class FakeAccountStore implements AccountStore {
         return Promise.resolve({ accountId: token.accountId, expiresAt: token.expiresAt });
       },
 
+      setCredentialPassword(
+        credential: { readonly accountId: string; readonly passwordHash: string },
+        at: Date,
+      ): Promise<void> {
+        void at;
+        const existing = store.credentials.get(credential.accountId);
+        store.credentials.set(credential.accountId, {
+          ...(existing ?? { accountId: credential.accountId }),
+          passwordHash: credential.passwordHash,
+          failedAttempts: 0,
+          lockedAt: null,
+        });
+        return Promise.resolve();
+      },
+
       replaceCredentialPassword(
         credential: { readonly accountId: string; readonly passwordHash: string },
         at: Date,

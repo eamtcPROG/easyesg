@@ -65,6 +65,9 @@ export const PROBLEM_TYPE = {
    *  granted (task 67.9). A-07's grant view stops drawing the organization's reports and says access has ended,
    *  rather than showing the refusal over a view that can no longer be read. */
   SupportAccessRequired: 'https://easyesg.md/problems/support-access-required',
+  /** Another operator saved a provider's configuration after this one was read (task 67.11). A-18 reloads the
+   *  values in force and says so, rather than showing the refusal over a form that no longer matches them. */
+  IdentityProviderChanged: 'https://easyesg.md/problems/identity-provider-changed',
 } as const;
 
 export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

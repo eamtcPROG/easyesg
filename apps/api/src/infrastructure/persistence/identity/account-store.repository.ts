@@ -337,13 +337,33 @@ class AccountTransactionAdapter implements AccountTransaction {
     return { accountId: rows[0].account_id, expiresAt: rows[0].expires_at };
   }
 
+  async setCredentialPassword(
+    credential: { readonly accountId: string; readonly passwordHash: string },
+    at: Date,
+  ): Promise<void> {
+    // One statement sets the hash AND releases the lockout — §12.5.6 names the consumed reset link
+    // as a release, and separating the two would create a state where one happened without the
+    // other. **An upsert since task 67.11**: a social-only account (FR-2) holds no row here, and
+    // UC-09's alternate flow gives it one — its first password, the way back when its provider is
+    // disabled. The UPDATE this replaced matched nothing for such an account and the reset refused.
+    await this.queryRunner.query(
+      `INSERT INTO identity.credential (account_id, password_hash, updated_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (account_id) DO UPDATE
+          SET password_hash = EXCLUDED.password_hash,
+              failed_attempts = 0,
+              locked_at = NULL,
+              updated_at = EXCLUDED.updated_at`,
+      [credential.accountId, credential.passwordHash, at],
+    );
+  }
+
   async replaceCredentialPassword(
     credential: { readonly accountId: string; readonly passwordHash: string },
     at: Date,
   ): Promise<boolean> {
-    // One statement replaces the hash AND releases the lockout — §12.5.6 names the consumed
-    // reset link as a release, and separating the two would create a state where one happened
-    // without the other.
+    // One statement replaces the hash AND releases the lockout — the reset's rule, kept for FR-7's
+    // change, which only ever replaces a password the caller has just proved.
     const rows = returnedRows<{ account_id: string }>(
       await this.queryRunner.query(
         `UPDATE identity.credential

@@ -288,6 +288,35 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
     }, 30_000);
   });
 
+  describe('a social-only account (UC-09’s alternate flow; task 67.11)', () => {
+    it('is sent the same link, and consuming it gives the account its first password', async () => {
+      const email = addressFor('social-only');
+      const [account] = await owner.query<{ id: string }[]>(
+        `INSERT INTO identity.account (email, locale, status, verified_at, given_name)
+         VALUES ($1, 'ro', 'active', now(), 'Ana')
+         RETURNING id`,
+        [email],
+      );
+      await owner.query(
+        `INSERT INTO identity.provider_identity (account_id, provider, subject, asserted_email, email_verified_asserted)
+         VALUES ($1, 'google', $2, $3, true)`,
+        [account.id, `task21r-subject-${process.pid}-${Date.now()}`, email],
+      );
+
+      await requestReset(email).expect(202);
+      const [queued] = await queuedReset(email);
+      await resetPassword(queued.payload.token).expect(204);
+
+      // The account signs in with the password it never had, and keeps the provider it signed up with.
+      await signIn(email, NEW_PASSWORD).expect(201);
+      const identities = await owner.query<{ provider: string }[]>(
+        `SELECT provider FROM identity.provider_identity WHERE account_id = $1`,
+        [account.id],
+      );
+      expect(identities).toEqual([{ provider: 'google' }]);
+    }, 30_000);
+  });
+
   describe('the lockout release (§12.5.6)', () => {
     it('a locked account resets its way back in', async () => {
       const email = addressFor('locked');

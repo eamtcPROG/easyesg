@@ -119,6 +119,14 @@ export const ProblemType = {
    *  not active. Its own slug because A-07 branches on it: a window that closed mid-read is a state the
    *  console draws, not a permission error. */
   SupportAccessRequired: 'support-access-required',
+  /** Task 67.11: a change to a social provider's configuration made against a revision no longer in force — another
+   *  operator saved first. Its own slug because A-18 draws it as a state, reloading the values in force, rather than
+   *  showing the refusal over values that are stale. */
+  IdentityProviderChanged: 'identity-provider-changed',
+  /** Task 67.11: a provider that could not sign anyone in — enabling one with no client id, no redirect address or
+   *  no client secret held, or saving an enabled one into that state. Its own slug because the way out is to
+   *  complete the provider, and for the secret that is done outside the console. */
+  IdentityProviderIncomplete: 'identity-provider-incomplete',
   TenantContextMissing: 'tenant-context-missing',
   /** UC-56 refused: another reporting period for the same entity already covers part of these
    *  dates. Its own slug because S-14 must name the way out — adjust the dates, or edit the period

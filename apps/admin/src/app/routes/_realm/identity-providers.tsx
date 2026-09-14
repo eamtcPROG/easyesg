@@ -1,23 +1,30 @@
 /**
- * A-18 — Identity provider configuration · PA · UC-70 · Editor
+ * A-18 — Identity provider configuration · PA · UC-70 · Record (task 67.11)
  *
- * Registration, enabling, disabling and credential rotation for social identity providers, without a redeploy (FR-82).
+ * Registering, enabling, disabling and rotating the client id of the two social providers FR-2 names, with no
+ * redeploy (FR-82). **A provider has two halves and the screen keeps them apart** (project owner, 14 Sep 2026):
+ * its behaviour, which an operator edits here, and its client secret, which the server's environment holds and
+ * this screen reports on — held or not, and where it is set — without ever reading it back (NFR-69). Disabling
+ * names who it reaches (UX-70). The screen is `features/platform/admin/identity-providers/`; this route owns only
+ * its addressable state.
  *
- * D-6 puts social sign-in in scope and enterprise SSO out. Credentials are written, never read
- * back — NFR-69 governs secret handling, and this screen must not become a place secrets can be
- * retrieved. UX-70 applies to disabling a provider tenants are actively signing in with.
+ * **Every part of the view is in the URL** (UX-4): the provider whose record is open.
  *
- * Not built. `design_spec.md` §5.2 owns this screen's content, controls and states;
- * `design/IMPLEMENTATION_PLAN.md` owns when it lands. Prototypes in
- * `design/screens/EasyESG Admin Console Screens.dc.html` are the rendered reference — read them
- * for values, never copy their markup (design_spec.md OQ-10).
+ * **The realm guard admits any operator; the api decides who reads.** A Billing Operator who follows a link here
+ * sees §5.2's permission state, drawn from the api's 403.
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { IdentityProviders } from '~/features/platform/admin/identity-providers/components/section/identity-providers';
+import { readIdentityProvidersSearch } from '~/features/platform/admin/identity-providers/tools/identity-providers-search';
 
 export const Route = createFileRoute('/_realm/identity-providers')({
+  validateSearch: readIdentityProvidersSearch,
   component: IdentityProvidersRoute,
 });
 
 function IdentityProvidersRoute() {
-  return null;
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+
+  return <IdentityProviders search={search} onSearchChange={(next) => void navigate({ search: next })} />;
 }
