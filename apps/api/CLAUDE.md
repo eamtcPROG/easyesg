@@ -54,7 +54,7 @@ traps each one left — grouped by area rather than by the task that built it.
   nothing else, opaque refresh rows rotated by conditional consume with a 30 s race grace and
   reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
   §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
-  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9);
+  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9); A-18's identity providers (`GET /admin/identity-providers`, `POST /admin/identity-providers/{provider}/{configuration,enablement,disablement}`) (67.11);
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`);
   opt-in TOTP and password change (27); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`); invitations and acceptance (`GET/POST /invitations`,
@@ -71,7 +71,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  notifications (49 … 52), billing (53 … 66), the console's screens beyond A-02, A-07 and A-08 (67 … 70), edge and deploy
+  notifications (49 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -146,6 +146,16 @@ traps each one left — grouped by area rather than by the task that built it.
   from `AdminModule`, not the guard — the preview boot `openapi:emit` runs refused it, and said nothing until booted
   with `abortOnError: false`. **The migration's `down` is lossy and lifts `FORCE ROW LEVEL SECURITY` for its one
   DELETE**: without it the owner deletes nothing and says so quietly, which `migrations:check` found.
+- **A-18 publishes a provider's behaviour and never touches its secret** (task 67.11; §12.5.6's task-67.11 row). Its
+  three writes are each a `ConfigurationPublisher.publish` **carrying the revision the operator read**:
+  `expectedRevision` refuses any other in force, under a transaction-scoped advisory lock on the slot, because a slot's
+  first publication has no row `FOR UPDATE` could lock. `publish` answers `{ id, revision }` since, and the version's id
+  is each write's audit target, which A-08's log names by provider. The reading comes from `config.entry_*` directly
+  rather than the cache, and the store adapter calls `ConfigurationStore.poll()` after a publication, so this replica's
+  S-01 changes at once. **The secret's standing comes from `PROVIDER_ENVIRONMENT`** — held, and the setting — which task
+  154 re-points at OpenBao; the e2e suites get Google's secret from `apps/api/.env`, which `ConfigModule` loads, so the
+  secret-missing refusal is a unit spec's. **`setCredentialPassword` is an upsert** (UC-09's alternate flow): a
+  social-only account holds no `identity.credential` row, and a reset used to refuse it as a dead link.
 - **Social sign-in matches on `(provider, subject)`, never email** (task 24; §9.1 calls the
   email-match variant an account-takeover path). `openid-client` 6.8.7 is a plain static import —
   ESM-only, and on `module: nodenext`/Node 26 `require(esm)` loads it, the OQ-48 revisit, proven for

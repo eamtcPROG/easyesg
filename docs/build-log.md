@@ -20340,3 +20340,125 @@ Recorded in UX-89 before any code, then the limit closed.
   lines carry digest `2667547900`.
 - **Not run**: the api suites, since no api code changed. The review agents and `gates:clean` did not run, under the
   owner's standing rule.
+
+## Task 67.11 — A-18's identity providers, and a first password by reset · 2026-09-14
+
+UC-70 on the console. A Platform Administrator registers Google or Microsoft by saving its client id, edits its issuer
+and redirect addresses, and enables or disables it — each a configuration publication in force on S-01 within the
+store's poll, with no redeploy. The screen reports the client secret's half without editing it: whether the server
+holds one, and the variable that holds it. A disable names who it reaches. A password reset now gives a social-only
+account its first password, which is how that account gets back in once its provider is withdrawn. Two open-question
+batches, both answered on the recommended option except where the owner wrote their own, all written into UC-70, UC-08,
+UC-09, UC-02, FR-2, `design_spec.md` A-18 and `architecture.md` §12.5.6 before any code. Two tasks appended: **154**
+(OpenBao) and **155** (a social registration completes with a password and a name).
+
+### The owner's decisions
+
+§12.5.6's task-67.11 row carries them; in short. **Only the two providers FR-2 names**: registering is saving a client
+id, a third provider is a release, and the scopes are shown and fixed at FR-2's three. **One figure from the artboard**,
+the accounts a provider reaches; the eID gateway, sign-in metrics, the degraded state and the seven-day notice declined
+and recorded in A-18. **UC-09's alternate flow wins over UC-08's**: a social-only account's reset creates its password.
+**The secret's presence shown, enabling refused without it**, and task 154 appended, because no task provisioned the
+vault the task-24 deferral waited for.
+
+**The owner then changed the registration flow itself, mid-task**: an account registered through a provider is not
+active until a password is set, and a name-and-language step with both names required follows. That reverses FR-2's
+*no password set*. It is **task 155, built next** (owner's decision), not this task; FR-2 and UC-02 are amended now, and
+the questions it still carries — accounts that already exist, the unverified path, what the interim session may do, a
+registration from an invitation — are listed on its row for its own batch.
+
+### Routine calls, stated
+
+- **§4.6 has no *Editor*.** A-18's layout line lists Record's fixed elements word for word, so it is built as a Record;
+  A-18's archetype line says so.
+- **Three action-noun routes, not a `PATCH`** — `configuration`, `enablement`, `disablement`, A-08's shape — each
+  answering 201 with the configuration version it put in force. **A save carries the enabled state and never sets
+  it**, so a save cannot enable a provider past enablement's checks, and the two are different audit actions.
+- **Every write sends the revision it was made against**, and the publisher refuses any other in force under a
+  transaction-scoped advisory lock (`identity-provider-changed`). A-18 draws that as its conflict state: the record
+  reloads the values in force, and the console words the notice, since what it must say is what the screen now shows.
+- **A save identical to what is in force, and a state change to the state already held, are refused** — A-08's
+  lockout-release reading: the audit action would otherwise record a change that did not happen. A save identical to
+  the values in force is refused as unchanged *before* the revision is compared, which is a truthful answer even when
+  stale.
+- **Every write stores FR-2's three scopes**, whatever the payload in force held.
+- **A redirect address must end in `/auth/social/{provider}/callback`**, the only path `apps/web` can present; http is
+  admitted for an issuer or an address only where `AUTH_SOCIAL_ALLOW_INSECURE` admits the stub's.
+- **A disable asks for confirmation, and so does a save to an enabled provider**; an enable does not, since it takes
+  nothing from anyone and the api refuses one that could not sign anyone in.
+- **The enablement blocker is the api's**, computed by the same rule that refuses an enable and served on the
+  reading, so the console states the reason before the click without a client-side copy of the rule. It is served for
+  an enabled provider too: a secret gone from the environment leaves a provider enabled on paper and absent from S-01.
+- **The usage counts are every linked account**, whatever its status, read as `esg_app`: identity tables carry no row
+  security and name no organization, so nothing acquires `esg_admin_ro`.
+- **The reading comes from `config.entry_*`, not the cache**, which carries no publisher and may be a poll behind;
+  after publishing, the store adapter polls, so this replica's S-01 changes at once.
+- **The audit target is the configuration version's id**, a provider having none of its own; A-08's log names it by
+  provider through a join on `config.entry_version` (`targetProvider` on the entry).
+- **The secret's standing is a port**, `PROVIDER_ENVIRONMENT`, so task 154 changes its source and not A-18.
+  `SOCIAL_CLIENT_SECRET_SETTING` names the variables once, and a spec holds `configuration.ts` to the same names.
+- **The console's form is keyed by the revision it opened on**, so it remounts with the values in force after any
+  save rather than being reset by an effect.
+- **Known limit**: the reset email and S-02 say *reset* to a social-only account that has never had a password. The
+  flow works; the words are task 155's to settle with the registration step, which changes who can still be
+  social-only at all.
+
+### What the gates found
+
+- **The api e2e run failed one case, on test data rather than product**: the stale-save case sent the client id its
+  own setup had just saved, so the use case correctly refused it as unchanged before comparing revisions. The case now
+  sends a different value; the check order stays.
+- **`@easyesg/admin` typecheck**: A-08's log fixture lacked the new `targetProvider`.
+- **`docs:check`**: the forms binding's import sites, 29 to 30, from A-18's connection form.
+- **Not found by a gate**: the social-only reset case's first draft concatenated the account id into
+  `asserted_email`, caught on reading before it ran. And the nav table was briefly reordered to the artboard's order,
+  a change nobody asked for, reverted before any gate saw it.
+
+### Searched
+
+- **Callers of `ConfigurationPublisher.publish` that read its answer**: the seed loader's two, updated to
+  `{ revision }`; every e2e caller ignores it.
+- **Copies of the provider payload narrowing**: one, private to the catalog service — moved to
+  `identity/provider/domain/`, not copied.
+- **Other readers of `replaceCredentialPassword`'s `false`**: FR-7's change, which only replaces a password the caller
+  has proved, so it keeps the update-only method.
+- **Fixtures of a system audit log entry**: one, A-08's `log-read.spec.ts`.
+- **`.gitignore` against the new directories**: `git check-ignore` names nothing, and `git status --untracked-files=all`
+  lists every file.
+
+### Skills, read against the diff
+
+`one-kind-per-folder` (`components-mirror-the-return`: the shell has one child, so `components/` holds `section/` and
+`providers/`; `components-region-anatomy`: the region is `section/`, its parts, `states/` and `shared/`, A-08's
+shape; `shared-admission-test`: the state chip names its two readers); `one-idea-per-file` (`shell-composes-only`: the
+route and the shell compose; `pure-logic-leaves-the-component`: the address, the read arms, the form↔wire conversion
+and the reducer are `tools/` with a spec each; `file-one-behaviour-api`: three use cases, one file each, the errors file
+a vocabulary); `nestjs-best-practices` (`di-use-interfaces-tokens`: two ports with tokens; `arch-avoid-circular-deps`:
+`AdminModule` gains no import, the configuration module being global; `security-validate-all-input`: the DTOs bound
+shape and the domain rules bound meaning; `error-throw-http-exceptions` declined as always, `DomainError`);
+`vercel-react-best-practices` (`rerender-memo`: the columns memoised on their inputs, `reactCompiler` being off;
+`rerender-no-inline-components` held).
+
+### Verification
+
+- `@easyesg/api`: **995 tests across 118 suites**, the three use cases, both domain files, the payload reader and the
+  secret-setting names among them; typecheck clean. **`pnpm e2e`: 1,091 of 1,092 across 45 suites** on the full run,
+  the one failure the test-data case above; after its fix `admin-identity-providers.e2e-spec.ts` and
+  `password-reset.e2e-spec.ts` **18 of 18** — the stale save refused with nothing published, an enable putting Google on
+  `GET /auth/social/providers` and a disable taking it off, the counts moving by the rows inserted, the response
+  never containing the secret, and a social-only account signing in with the password its reset created.
+- **The contract**: 80 paths to **84**, and a fresh api build, emit and regeneration reproduce `v1.json` and `v1.ts`
+  byte for byte.
+- `@easyesg/i18n` **130 tests across 5 files**, the parity gate over the new problem wording; `@easyesg/admin`
+  typecheck clean and **244 tests across 28 files**, `pnpm routes:check` exit 0; `@easyesg/web` typecheck clean and
+  **576 tests across 49 files**; `pnpm lint` clean; `pnpm boundaries` clean over 1,528 modules; `pnpm docs:check` 40
+  claims.
+- **The full `pnpm e2e:web`: 196 of 197**, the new cross-app journey passing — Google registered and enabled on A-18,
+  offered on S-01 to a visitor with no session, disabled past the confirmation with axe clean over it, gone from S-01,
+  and named by provider in A-08's log; the secret's value absent from the page. The one failure was
+  `post-sign-in.spec.ts:108`, a `page.goto('/sign-in')` timing out at 30 s in a tenant journey this change does not
+  reach. **Re-run alone against the same bundles, three times: 7 of 7 each.** The run's `⨯ The destination stream
+  closed early` line carries digest `2667547900`, the one earlier entries record.
+- **Not run**: `pnpm e2e:worker` — no consumer changed; `pnpm migrations:check` — no migration. **The review agents and
+  `gates:clean` did not run**, under the owner's standing rule for a sub-step; 67's parent close gets both, and cold:
+  `packages/contracts` and `packages/i18n` changed, a generated artefact was regenerated, and a seed script changed.

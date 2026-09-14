@@ -410,10 +410,14 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
 - **Main success scenario:**
   1. The user selects a provider.
   2. The platform requests only minimum profile scopes — identifier, email address, display name.
-  3. The system creates an account holding the provider identity as its credential, with no password set.
+  3. The system creates an account holding the provider identity as its credential, **not yet active**.
   4. Where the provider asserts the email is verified, UC-03 is satisfied without a separate verification email.
+  5. **The user sets a password meeting the password policy, and the account becomes active.**
+  6. **The user confirms their given name, family name and interface language, both names required, and continues to §4.3's branch.**
+
+  *Steps 3, 5 and 6 amended 14 Sep 2026 (project owner; built by task 155): the account previously held no password at all, which left it stranded whenever its provider was disabled (UC-70).*
 - **Alternate flows:** Where an account already exists for the asserted address, no duplicate is created; the user is routed through identity linking (UC-11) after proving control of the existing account.
-- **Postconditions:** An account exists with a provider identity credential and no password.
+- **Postconditions:** An account exists with a provider identity credential and a password, and both name parts set. *(Amended 14 Sep 2026; previously "and no password".)*
 - **Business rules:** Social sign-in is in MVP scope; enterprise SSO is not (D-6). A provider assertion alone is never sufficient to attach to an existing account.
 - **Related FRs:** FR-2
 - **Related UCs:** UC-01, UC-03, UC-05, UC-11, UC-70
@@ -510,7 +514,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   1. The user enters their email address.
   2. The system issues a single-use, time-limited reset link.
   3. The system returns an identical response whether or not the address is registered.
-- **Alternate flows:** Where the address belongs to a social-only account with no password, the message sent instead directs the user to sign in with their provider.
+- **Alternate flows:** Where the address belongs to a social-only account with no password, the same single-use link is sent, and completing it gives the account its first password (UC-09's alternate flow). **Amended 14 Sep 2026** (project owner, task 67.11): this line previously directed such a user to sign in with their provider instead, which contradicted UC-09 — and once a provider is disabled through UC-70 that direction is a dead end, stranding exactly the accounts FR-82 says a withdrawal must not strand.
 - **Business rules:** The endpoint cannot be used to enumerate accounts.
 - **Related FRs:** FR-6
 - **Related UCs:** UC-09
@@ -526,7 +530,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   1. The user follows the link and sets a new password meeting the password policy.
   2. The link is consumed on use.
   3. All existing sessions for that account are invalidated.
-- **Alternate flows:** A social-only account completing this flow gains a password credential in addition to its linked identity.
+- **Alternate flows:** A social-only account completing this flow gains a password credential in addition to its linked identity. This is the recovery path for an account whose only provider has been disabled (UC-70), and since 14 Sep 2026 UC-08 sends such an account the same link (task 67.11).
 - **Postconditions:** The account holds a new password; no prior session remains valid.
 - **Related FRs:** FR-6
 - **Related UCs:** UC-08, UC-12
@@ -1434,10 +1438,10 @@ their numbers put them.
 - **Preconditions:** An elevated session.
 - **Trigger:** A provider is added, withdrawn, or its client secret must be rotated.
 - **Main success scenario:**
-  1. The Administrator registers, enables and disables the social identity providers offered on the sign-in screen.
-  2. The Administrator maintains each provider's client credentials, requested scopes and redirect configuration.
-- **Alternate flows:** Disabling a provider stops new registrations and links through it while leaving existing accounts able to authenticate by their other credential.
-- **Business rules:** Credential rotation happens here rather than through a redeploy, which keeps an expiring or leaked client secret from becoming a platform-wide outage.
+  1. The Administrator registers, enables and disables the social identity providers offered on the sign-in screen. **Registering is giving one of the providers FR-2 names — Google or Microsoft — its client id; a provider FR-2 does not name ships as a release, not as a registration** (amended 14 Sep 2026, project owner, task 67.11).
+  2. The Administrator maintains each provider's client credentials, requested scopes and redirect configuration. **The client id, the issuer and the redirect addresses are edited; the requested scopes are shown and stay FR-2's three; the client secret is held in the server's environment, and the Administrator sees whether it is held and where it is set, never its value** (amended 14 Sep 2026, task 67.11).
+- **Alternate flows:** Disabling a provider stops new registrations and links through it while leaving existing accounts able to authenticate by their other credential. **An account whose only credential is that provider recovers through a password reset, which gives it a first password (UC-09), and the confirmation states how many accounts that is** (amended 14 Sep 2026, task 67.11). Enabling a provider is refused, with the reason, while it has no client id, no redirect address or no client secret held.
+- **Business rules:** Credential rotation happens here rather than through a redeploy, which keeps an expiring or leaked client secret from becoming a platform-wide outage. **Deferred for the client secret until task 154** (14 Sep 2026): until the secret manager holds it, rotating the secret is an environment change and a restart (`architecture.md` §12.5.6's task-24 row); what rotates here without a redeploy is everything else — the client id, the issuer, the redirect addresses and the enabled state.
 - **Related FRs:** FR-82
 - **Related UCs:** UC-02, UC-05, UC-11, UC-12
 
