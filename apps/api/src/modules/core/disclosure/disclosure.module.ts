@@ -198,6 +198,9 @@ const httpProviders: Provider[] = [
   imports: [TaxonomyModule, LocalizationModule, OrganizationModule],
   controllers: mode === APP_MODE.WORKER ? [] : [ReportsController, WizardController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
-  exports: mode === APP_MODE.WORKER ? [] : [DISCLOSURE_VALUE_STORE, DisclosureFacade],
+  // `ReportService` and `WizardService` since task 67.9: a read under a support-access grant runs exactly the
+  // reads a member's S-06 and S-07 run, inside the grant's binding, so it borrows them rather than restating.
+  exports:
+    mode === APP_MODE.WORKER ? [] : [DISCLOSURE_VALUE_STORE, DisclosureFacade, ReportService, WizardService],
 })
 export class DisclosureModule {}

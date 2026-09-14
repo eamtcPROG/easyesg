@@ -1,4 +1,5 @@
 import type { components } from './generated/v1';
+import type { SameSet } from './same-set';
 
 /**
  * The administrative realm's privilege levels (FR-80, UC-87; actors.md's PA and BO) — the
@@ -20,9 +21,6 @@ export const ADMIN_ROLE = {
 export type AdminRole = (typeof ADMIN_ROLE)[keyof typeof ADMIN_ROLE];
 
 type WireAdminRole = components['schemas']['AdminAccountDto']['role'];
-
-/** `true` only while `A` and `B` are the same set: each extends the other. */
-type SameSet<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
 /** Compiles only while the mirror and the generated enum agree, in both directions. */
 export const ADMIN_ROLE_MIRRORS_WIRE: SameSet<AdminRole, WireAdminRole> = true;
@@ -85,6 +83,9 @@ export const SYSTEM_AUDIT_ACTION = {
   ADMIN_FACTOR_REENROLMENT_STARTED: 'admin.factor.reenrolment_started',
   ADMIN_FACTOR_REENROLLED: 'admin.factor.reenrolled',
   ADMIN_RECOVERY_CODES_ISSUED: 'admin.recovery_codes.issued',
+  /** Task 67.9 — asking an organization for support access, and ending a running grant. */
+  ADMIN_SUPPORT_ACCESS_REQUESTED: 'admin.support_access.requested',
+  ADMIN_SUPPORT_ACCESS_ENDED: 'admin.support_access.ended',
 } as const;
 
 export type SystemAuditAction = (typeof SYSTEM_AUDIT_ACTION)[keyof typeof SYSTEM_AUDIT_ACTION];

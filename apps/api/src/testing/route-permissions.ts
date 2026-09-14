@@ -189,6 +189,19 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // `AdminRealmGuard`, never through the tenant guard. The register is a Platform Administrator's:
   // actors.md §5 gives *Organization register* PA `Y` and BO `—`.
   'GET /admin/organizations': PLATFORM_ADMINISTRATORS,
+  // One organization's register row — what A-07's request form names the organization with (task 67.9).
+  'GET /admin/organizations/:organizationId': PLATFORM_ADMINISTRATORS,
+  // ── A-07 (task 67.9): support access — the log, a request, ending a grant, and the reads a live grant
+  // opens. The request and the end declare audit actions; the grant itself is the organization's, on the
+  // tenant surface below, and a grant-scoped read admits only the operator the grant was given to.
+  'GET /admin/support-access': PLATFORM_ADMINISTRATORS,
+  'POST /admin/support-access': PLATFORM_ADMINISTRATORS,
+  'POST /admin/organizations/:organizationId/support-access/:requestId/end': PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations/:organizationId/support-access/:requestId/reports': PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations/:organizationId/support-access/:requestId/reports/:reportId/modules':
+    PLATFORM_ADMINISTRATORS,
+  'GET /admin/organizations/:organizationId/support-access/:requestId/reports/:reportId/modules/:module':
+    PLATFORM_ADMINISTRATORS,
   // ── A-08 (task 67.4): accounts, their lifecycle, invitations and the log. Every write here also
   // declares an audit action, which `route-permissions.spec.ts` holds to the permission table.
   'GET /admin/accounts': PLATFORM_ADMINISTRATORS,
@@ -248,6 +261,14 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /invitations': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'POST /invitations/:invitationId/email': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'DELETE /invitations/:invitationId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+
+  // ── Support access, the organization's side (task 67.9; UC-85, UX-124). Every member reads whether
+  // EasyESG holds access right now — the banner is everyone's — and only an Organization Administrator
+  // answers a request or ends running access, because consent is the organization's to give.
+  'GET /support-access': ALL_MEMBERS,
+  'POST /support-access/:requestId/grant': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /support-access/:requestId/decline': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  'POST /support-access/:requestId/end': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
 
   // ── Founding an organization, and the vocabulary the founding form is built from (UC-49).
   // `account`, not `role`, for `GET /memberships`' reason exactly: S-04's caller is a verified

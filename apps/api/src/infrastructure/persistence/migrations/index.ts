@@ -39,6 +39,7 @@ import { AccountName1789948800000 } from './1789948800000-account-name';
 import { SupportAccessLog1790035200000 } from './1790035200000-support-access-log';
 import { AdminAccountManagement1790121600000 } from './1790121600000-admin-account-management';
 import { AdminCredentials1790208000000 } from './1790208000000-admin-credentials';
+import { SupportAccessGrants1790294400000 } from './1790294400000-support-access-grants';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -96,4 +97,5 @@ export const migrations = [
   SupportAccessLog1790035200000,
   AdminAccountManagement1790121600000,
   AdminCredentials1790208000000,
+  SupportAccessGrants1790294400000,
 ];

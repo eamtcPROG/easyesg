@@ -54,7 +54,7 @@ traps each one left — grouped by area rather than by the task that built it.
   nothing else, opaque refresh rows rotated by conditional consume with a 30 s race grace and
   reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
   §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
-  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144);
+  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9);
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`);
   opt-in TOTP and password change (27); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`); invitations and acceptance (`GET/POST /invitations`,
@@ -71,7 +71,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  notifications (49 … 52), billing (53 … 66), the console's screens beyond A-02 and A-08 (67 … 70), edge and deploy
+  notifications (49 … 52), billing (53 … 66), the console's screens beyond A-02, A-07 and A-08 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -133,6 +133,19 @@ traps each one left — grouped by area rather than by the task that built it.
   lock. `identity.admin_recovery_code` is the one realm table `esg_app` may `DELETE` from, and codes exist
   only once A-19 issues them. `AdminRealmGuard` writes `adminSessionId` beside `adminAccountId`, for the
   password change that spares the session asking, and `@AuditAction` gains a third target, `operator`.
+- **Support access is folded from log rows, and consent is the database's** (task 67.9; §12.5.6's task-67.9 row).
+  A request, its grant or decline, an end from either realm and every read under a grant are each one row in
+  `audit.support_access_log`, and a request's state — awaiting, active, declined, lapsed, ended, expired — is computed
+  from those rows against the clock, so nothing expires by a job. **The platform insert policy never admits a grant or
+  a decline**, and the organization insert policy admits one only for the bound organization with the bound member as
+  actor, so no defect above the database can grant on an organization's behalf. **A read under a grant runs the
+  organization's own `ReportService` and `WizardService`** inside a READ ONLY transaction bound to that organization,
+  which `SupportAccessGrantedReads` lends to the request context — an admin-realm request has none — after writing the
+  access row on its own connection; a failed access write refuses the read. **A guard named in `@UseGuards` is built in
+  the controller's own module**, so `SupportAccessModule`'s `@RequiresAdminRole` needs `AdminSessionService` exported
+  from `AdminModule`, not the guard — the preview boot `openapi:emit` runs refused it, and said nothing until booted
+  with `abortOnError: false`. **The migration's `down` is lossy and lifts `FORCE ROW LEVEL SECURITY` for its one
+  DELETE**: without it the owner deletes nothing and says so quietly, which `migrations:check` found.
 - **Social sign-in matches on `(provider, subject)`, never email** (task 24; §9.1 calls the
   email-match variant an account-takeover path). `openid-client` 6.8.7 is a plain static import —
   ESM-only, and on `module: nodenext`/Node 26 `require(esm)` loads it, the OQ-48 revisit, proven for

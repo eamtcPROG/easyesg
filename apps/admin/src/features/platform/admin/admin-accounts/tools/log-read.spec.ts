@@ -50,6 +50,7 @@ describe('A-08’s reads (task 67.4)', () => {
       standing: 'active',
       lastSignInAt: null,
       expiresAt: null,
+      supportAccessRequests: 0,
     } as const;
 
     expect(

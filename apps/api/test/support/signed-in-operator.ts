@@ -24,8 +24,11 @@ export const OPERATOR_PASSWORD = 'Parola123!';
 
 const TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 
-/** The console origin the api's Origin proof admits on the handshake's two POSTs. */
-const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN ?? 'http://localhost:3200';
+/**
+ * The console origin the api's Origin proof admits — on the handshake's two POSTs here, and on every admin-realm
+ * write a suite then makes (`@RequiresAdminRole` composes `AdminOriginGuard`).
+ */
+export const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN ?? 'http://localhost:3200';
 
 /** Every address this module provisioned in this test file — per-file, as jest's registries are. */
 const provisioned = new Set<string>();

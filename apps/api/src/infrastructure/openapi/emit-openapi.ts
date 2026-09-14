@@ -22,9 +22,16 @@ import { buildOpenApiDocument } from './document.factory';
  * instances.
  *
  * **The cost is real and is accepted rather than overlooked:** a full boot also proved the DI
- * graph resolves, and preview mode does not. A missing provider or a circular dependency will now
+ * graph resolves, and preview mode proves less. A missing provider or a circular dependency may now
  * surface when the app actually starts instead of here. That trade buys eight of the nine gates
  * staying runnable without Docker; the ninth, `migrations:check`, needs it by nature.
+ *
+ * **Less is not nothing, and a refusal here is silent** (task 67.9). Preview mode still resolved a
+ * guard's constructor dependencies: `SupportAccessModule`'s `@RequiresAdminRole` needed
+ * `AdminSessionService` visible to it, and this script exited 1 — printing nothing, because
+ * `logger: false` with Nest's default `abortOnError` turns the refusal into a bare `process.exit(1)`.
+ * To read the reason, boot `AppModule` with `{ preview: true, abortOnError: false }` and log the
+ * rejection; the build-log entry for task 67.9 has the one-liner.
  *
  * **It emits through `configureHttpApp`, the same function `bootstrapHttp` uses**, and that is
  * load-bearing rather than tidy. `setGlobalPrefix('api/v1')` lives there; emitting without it

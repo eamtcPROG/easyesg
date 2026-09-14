@@ -12,6 +12,7 @@ import { SystemAuditLogReaderRepository } from '@api/infrastructure/persistence/
 import { AuditModule } from '@api/modules/platform/audit/audit.module';
 import { AdminSessionStoreRepository } from '@api/infrastructure/persistence/platform/admin-session-store.repository';
 import { OrganizationRegisterStoreRepository } from '@api/infrastructure/persistence/platform/organization-register-store.repository';
+import { SupportAccessRequestCountsRepository } from '@api/infrastructure/persistence/platform/support-access-request-counts.repository';
 import { SYSTEM_AUDIT_LOG, type SystemAuditLog } from '@api/contracts/system-audit-log.port';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
@@ -49,6 +50,10 @@ import {
   type OrganizationRegisterStore,
 } from './interfaces/organization-register-store.interface';
 import {
+  SUPPORT_ACCESS_REQUEST_COUNTS,
+  type SupportAccessRequestCounts,
+} from './interfaces/support-access-request-counts.interface';
+import {
   SYSTEM_AUDIT_LOG_READER,
   type SystemAuditLogReader,
 } from './interfaces/system-audit-log-reader.interface';
@@ -73,6 +78,7 @@ import { ListOrganizationRegister } from './use-cases/list-organization-register
 import { ListSystemAuditLog } from './use-cases/list-system-audit-log.use-case';
 import { PreviewAdminInvitation } from './use-cases/preview-admin-invitation.use-case';
 import { ReadAdminCredentials } from './use-cases/read-admin-credentials.use-case';
+import { ReadOrganizationRegisterRow } from './use-cases/read-organization-register-row.use-case';
 import { RecoverAdminSignIn } from './use-cases/recover-admin-sign-in.use-case';
 import { ReleaseAdminLockout } from './use-cases/release-admin-lockout.use-case';
 import { ResendAdminInvitation } from './use-cases/resend-admin-invitation.use-case';
@@ -127,6 +133,13 @@ const httpProviders: Provider[] = [
     inject: [ORGANIZATION_REGISTER_STORE],
     useFactory: (store: OrganizationRegisterStore) => new ListOrganizationRegister(store),
   },
+  {
+    provide: ReadOrganizationRegisterRow,
+    inject: [ORGANIZATION_REGISTER_STORE],
+    useFactory: (store: OrganizationRegisterStore) => new ReadOrganizationRegisterRow(store),
+  },
+  // A-08's support-access column (task 67.9): a count across every organization, so through `esg_admin_ro`.
+  { provide: SUPPORT_ACCESS_REQUEST_COUNTS, useClass: SupportAccessRequestCountsRepository },
   { provide: CLOCK, useValue: (() => new Date()) as Clock },
   { provide: ADMIN_SESSION_STORE, useClass: AdminSessionStoreRepository },
   // A-08 (task 67.4): the account store, the bearer store A-20 reaches, and the log's reader behind
@@ -140,8 +153,9 @@ const httpProviders: Provider[] = [
   SystemAuditLogService,
   {
     provide: ListAdminRoster,
-    inject: [ADMIN_ACCOUNT_STORE, CLOCK],
-    useFactory: (store: AdminAccountStore, now: Clock) => new ListAdminRoster(store, now),
+    inject: [ADMIN_ACCOUNT_STORE, SUPPORT_ACCESS_REQUEST_COUNTS, CLOCK],
+    useFactory: (store: AdminAccountStore, requests: SupportAccessRequestCounts, now: Clock) =>
+      new ListAdminRoster(store, requests, now),
   },
   {
     provide: InviteAdministrator,
@@ -314,5 +328,10 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
           AdminCredentialsController,
         ],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
+  // Since task 67.9, for `SupportAccessModule`. **`AdminSessionService`, not the guards**: a guard named in
+  // `@UseGuards` is built as an injectable of the controller's own module, so exporting `AdminRealmGuard` changes
+  // nothing and what that module needs is the guard's dependency — the preview boot refused exactly that. And its
+  // log is read through the same logged `esg_admin_ro` door A-02 and A-08 use — one instance, not a second.
+  exports: mode === APP_MODE.WORKER ? [] : [AdminSessionService, AdminReadOnly],
 })
 export class AdminModule {}

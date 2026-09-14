@@ -4,6 +4,7 @@ import { ENTITY_STATUS } from '@api/modules/core/entity/models/reporting-entity.
 import { MEMBERSHIP_STATUS } from '@api/modules/identity/membership/models/membership.model';
 import type {
   OrganizationRegisterRead,
+  OrganizationRegisterRowRead,
   OrganizationRegisterStore,
 } from '@api/modules/platform/admin/interfaces/organization-register-store.interface';
 import {
@@ -110,6 +111,26 @@ export class OrganizationRegisterStoreRepository implements OrganizationRegister
         )) as RegisterDbRow[];
 
         return { rows: rows.map(toRegisterRow), matched: counts.matched, total: counts.total };
+      },
+    );
+  }
+
+  find(read: OrganizationRegisterRowRead): Promise<OrganizationRegisterRow | null> {
+    return this.adminReadOnly.acquire(
+      {
+        requesterId: read.requesterId,
+        purpose: ACQUISITION_PURPOSE.ORGANIZATION_REGISTER,
+        organizationId: read.organizationId,
+      },
+      async (runner: QueryRunner) => {
+        const rows = (await runner.query(
+          `WITH register AS (${REGISTER})
+           SELECT id, name, idno, created_at, entity_count, report_count, last_sign_in_at
+             FROM register
+            WHERE id = $1`,
+          [read.organizationId],
+        )) as RegisterDbRow[];
+        return rows.length === 0 ? null : toRegisterRow(rows[0]);
       },
     );
   }

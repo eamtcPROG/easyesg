@@ -76,6 +76,14 @@ export const AUDIT_ACTION = {
   ADMIN_FACTOR_REENROLLED: 'admin.factor.reenrolled',
   /** A set of recovery codes was issued, replacing any set before it. */
   ADMIN_RECOVERY_CODES_ISSUED: 'admin.recovery_codes.issued',
+  /**
+   * A Platform Administrator asked an organization for read-only support access (task 67.9; UC-85); the
+   * target is the request. The organization's answer is not here: it is a tenant member's act, recorded in
+   * the support access log beside the request.
+   */
+  ADMIN_SUPPORT_ACCESS_REQUESTED: 'admin.support_access.requested',
+  /** A Platform Administrator ended a running support-access grant early; the target is the request. */
+  ADMIN_SUPPORT_ACCESS_ENDED: 'admin.support_access.ended',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];

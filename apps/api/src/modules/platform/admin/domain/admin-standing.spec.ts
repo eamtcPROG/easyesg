@@ -4,6 +4,7 @@ import { ADMIN_ACCOUNT_STATUS, ADMIN_ROLE } from '../models/admin-session.model'
 import { adminRosterRowsOf } from './admin-standing';
 
 const now = new Date('2026-09-13T10:00:00Z');
+const none: ReadonlyMap<string, number> = new Map();
 
 const account = (email: string, overrides: Partial<AdminRosterAccount> = {}): AdminRosterAccount => ({
   id: `account-${email}`,
@@ -28,6 +29,7 @@ describe('A-08’s account rows (task 67.4)', () => {
   it('reads one word per row from the facts, removal and suspension outranking a lockout', () => {
     const rows = adminRosterRowsOf({
       now,
+      supportAccessRequests: none,
       roster: {
         accounts: [
           account('active@easyesg.md'),
@@ -55,6 +57,7 @@ describe('A-08’s account rows (task 67.4)', () => {
   it('puts invitations after the accounts that can act and removed accounts last, each group in the store’s order', () => {
     const rows = adminRosterRowsOf({
       now,
+      supportAccessRequests: none,
       roster: {
         accounts: [
           account('zeta-removed@easyesg.md', { status: ADMIN_ACCOUNT_STATUS.REMOVED }),
@@ -78,6 +81,7 @@ describe('A-08’s account rows (task 67.4)', () => {
     const expires = new Date('2026-09-14T10:00:00Z');
     const [accountRow, invitationRow] = adminRosterRowsOf({
       now,
+      supportAccessRequests: none,
       roster: {
         accounts: [account('alfa@easyesg.md', { lastSignInAt: signedIn })],
         invitations: [invitation('beta@easyesg.md', expires)],
@@ -91,6 +95,7 @@ describe('A-08’s account rows (task 67.4)', () => {
   it('never shows an invitation that is no longer pending', () => {
     const rows = adminRosterRowsOf({
       now,
+      supportAccessRequests: none,
       roster: {
         accounts: [],
         invitations: [
@@ -101,5 +106,28 @@ describe('A-08’s account rows (task 67.4)', () => {
     });
 
     expect(rows).toEqual([]);
+  });
+
+  it('counts an account’s support-access requests, zero where it raised none, and none for an invitation (task 67.9)', () => {
+    const rows = adminRosterRowsOf({
+      now,
+      supportAccessRequests: new Map([['account-asks@easyesg.md', 3]]),
+      roster: {
+        accounts: [
+          account('asks@easyesg.md'),
+          account('quiet@easyesg.md'),
+          account('gone@easyesg.md', { status: ADMIN_ACCOUNT_STATUS.REMOVED }),
+        ],
+        invitations: [invitation('invited@easyesg.md', new Date('2026-09-14T10:00:00Z'))],
+      },
+    });
+
+    // An invitation is null rather than 0: nobody has yet been anybody who could ask.
+    expect(rows.map((row) => [row.email, row.supportAccessRequests])).toEqual([
+      ['asks@easyesg.md', 3],
+      ['quiet@easyesg.md', 0],
+      ['invited@easyesg.md', null],
+      ['gone@easyesg.md', 0],
+    ]);
   });
 });

@@ -30,6 +30,8 @@ export const LOG_ACTION_LABEL = {
   [SYSTEM_AUDIT_ACTION.ADMIN_FACTOR_REENROLMENT_STARTED]: 'factorReenrolmentStarted',
   [SYSTEM_AUDIT_ACTION.ADMIN_FACTOR_REENROLLED]: 'factorReenrolled',
   [SYSTEM_AUDIT_ACTION.ADMIN_RECOVERY_CODES_ISSUED]: 'recoveryCodesIssued',
+  [SYSTEM_AUDIT_ACTION.ADMIN_SUPPORT_ACCESS_REQUESTED]: 'supportAccessRequested',
+  [SYSTEM_AUDIT_ACTION.ADMIN_SUPPORT_ACCESS_ENDED]: 'supportAccessEnded',
 } as const satisfies Record<SystemAuditAction, string>;
 
 export const LOG_OPERATOR = {

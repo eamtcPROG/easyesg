@@ -125,6 +125,12 @@
     },
     "admin-account-exists": {
       "title": "Account already exists"
+    },
+    "support-access-outstanding": {
+      "title": "Access request in progress"
+    },
+    "support-access-required": {
+      "title": "Support access is not active"
     }
   },
   "validation": {},
@@ -282,7 +288,16 @@
       "reauthentication_failed": "The current password is not right, so nothing was changed. Enter the password you sign in with and try again.",
       "reenrolment_missing": "No new authenticator is waiting to be confirmed, so there is nothing to confirm. Start setting up the authenticator again to get a new code to scan.",
       "reenrolment_code_invalid": "That code does not match the new authenticator right now, so your second factor was not changed. Enter the code the new authenticator is showing now.",
-      "recovery_refused": "The address, the password or the recovery code is not right, or that code has already been used, so no session was created. Check all three and try again with an unused code."
+      "recovery_refused": "The address, the password or the recovery code is not right, or that code has already been used, so no session was created. Check all three and try again with an unused code.",
+      "organization_not_found": "The organization is not in the register, so it cannot be shown. Search for it again in the organization register."
+    },
+    "support_access": {
+      "organization_not_found": "The organization does not exist, so the access request was not sent. Open the organization from the register and try again.",
+      "outstanding": "You already have an access request for this organization that is waiting for an answer or running, so another was not sent. Use the existing request or wait for it to end.",
+      "request_not_found": "This organization has no such access request, so nothing changed. Reload the page to see the current requests.",
+      "not_awaiting": "The access request is no longer waiting for an answer — it was already answered or its wait ran out — so your answer was not recorded. Reload the page to see where it stands.",
+      "not_active": "Support access is not running — it was never granted, has already ended or has expired — so there was nothing to end. Reload the page to see where it stands.",
+      "required": "Support access to this organization is not active for you, so its data was not read. Send a new request and wait for the organization to grant it."
     }
   }
 }

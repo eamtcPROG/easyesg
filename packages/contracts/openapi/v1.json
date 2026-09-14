@@ -2926,6 +2926,593 @@
         ]
       }
     },
+    "/api/v1/admin/support-access": {
+      "get": {
+        "description": "UC-86. Every support-access request, newest first: who asked, over which organization, for what reason, what the organization decided and who decided it, how it ended, and every read made under it. Read-only: nothing edits an entry. Reading it is recorded in the same log.",
+        "operationId": "AdminSupportAccessController_list",
+        "parameters": [
+          {
+            "name": "onpage",
+            "required": false,
+            "in": "query",
+            "description": "Entries per page, 25 unless given, at most 200. `-1` is refused.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the log. `total` counts every request ever raised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SupportAccessLogEntryResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or a write came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read the support access log",
+        "tags": [
+          "platform"
+        ]
+      },
+      "post": {
+        "description": "UC-85. Raises a request with a ticket reference and a reason, which the organization’s administrators see and answer in their own application. Nothing is granted here: a grant lasts 60 minutes from when the organization gives it, and a request nobody answers lapses after 24 hours. Recorded in the system audit log.",
+        "operationId": "AdminSupportAccessController_raise",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RaiseSupportAccessRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The request, waiting for the organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SupportAccessRaisedResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The ticket reference or the reason is missing or too long (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or a write came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No organization has this id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "This operator already has a request with the organization that is waiting or running (problem type support-access-outstanding).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Ask an organization for read-only support access",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organizationId}/support-access/{requestId}/end": {
+      "post": {
+        "description": "UC-85. Any Platform Administrator may end any running grant; the organization sees it end. Recorded in the support access log and the system audit log.",
+        "operationId": "SupportAccessGrantController_end",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Ended."
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The organization has no such request (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The access is not running — never granted, ended already, or expired (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "End running support access before its 60 minutes",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organizationId}/support-access/{requestId}/reports": {
+      "get": {
+        "description": "The reports the organization’s own report list shows, newest reporting period first — read-only, recorded in the support access log before the read runs.",
+        "operationId": "SupportAccessGrantController_listReports",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The reports.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ReportResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The request is not active for this operator — never granted, ended, expired, or another operator’s — so nothing was read (problem type support-access-required).\n\nThe operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "The organization’s reports, under a running grant",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organizationId}/support-access/{requestId}/reports/{reportId}/modules": {
+      "get": {
+        "description": "The report’s modules with how much of each is answered, as the organization’s wizard shows them — read-only, recorded in the support access log before the read runs.",
+        "operationId": "SupportAccessGrantController_modules",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The modules.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/DisclosureModuleSummaryDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The request is not active for this operator — never granted, ended, expired, or another operator’s — so nothing was read (problem type support-access-required).\n\nThe operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The organization has no such report (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "One report’s modules, under a running grant",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organizationId}/support-access/{requestId}/reports/{reportId}/modules/{module}": {
+      "get": {
+        "description": "The module’s fields with their values, as the organization’s wizard shows them — read-only, recorded in the support access log before the read runs.",
+        "operationId": "SupportAccessGrantController_step",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "module",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "B3",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The module.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/DisclosureStepDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The request is not active for this operator — never granted, ended, expired, or another operator’s — so nothing was read (problem type support-access-required).\n\nThe operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The organization has no such report, or its version has no such module (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "One module’s values, under a running grant",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/support-access": {
+      "get": {
+        "description": "Access running now, which every member is shown, and — for an Organization Administrator — the requests waiting for an answer.",
+        "operationId": "OrganizationSupportAccessController_current",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The organization’s support access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/OrganizationSupportAccessResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Whether EasyESG support is reading the organization, or asking to",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/support-access/{requestId}/grant": {
+      "post": {
+        "description": "Lets the Platform Administrator who asked read the organization’s reports, read-only, for 60 minutes. Every member sees it while it runs, and any Organization Administrator can end it.",
+        "operationId": "OrganizationSupportAccessController_grant",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Granted."
+          },
+          "404": {
+            "description": "The organization has no such request (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The request is no longer waiting — answered already, or lapsed (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Grant a support-access request",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/support-access/{requestId}/decline": {
+      "post": {
+        "description": "Nothing is read. The operator sees the request declined.",
+        "operationId": "OrganizationSupportAccessController_decline",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Declined."
+          },
+          "404": {
+            "description": "The organization has no such request (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The request is no longer waiting — answered already, or lapsed (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Decline a support-access request",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/support-access/{requestId}/end": {
+      "post": {
+        "description": "The grant stops at once, before its 60 minutes; the operator can read nothing more under it.",
+        "operationId": "OrganizationSupportAccessController_end",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Ended."
+          },
+          "404": {
+            "description": "The organization has no such request (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The access is not running — never granted, ended already, or expired (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "End running support access",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/auth/admin/session/challenge": {
       "post": {
         "description": "UC-68 step one. Verifies email and password; on success the sealed, five-minute factor challenge rides an httpOnly cookie and the body names whose code is now awaited. Failures are uniform for unknown and deactivated operators alike, throttled per address, and locked after repeated failure.",
@@ -3235,6 +3822,68 @@
           }
         },
         "summary": "Search the register of every organization on the platform",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organizationId}": {
+      "get": {
+        "description": "Task 67.9. The row the register lists for this organization — account-level metadata, never report content — which the support-access request form names the organization with. Recorded in the support access log before it runs, naming the organization read.",
+        "operationId": "OrganizationRegisterController_row",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The organization’s row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/OrganizationRegisterRowResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No organization in the register holds this id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "One organization’s register row",
         "tags": [
           "platform"
         ]
@@ -3910,7 +4559,9 @@
                 "admin.password.changed",
                 "admin.factor.reenrolment_started",
                 "admin.factor.reenrolled",
-                "admin.recovery_codes.issued"
+                "admin.recovery_codes.issued",
+                "admin.support_access.requested",
+                "admin.support_access.ended"
               ],
               "type": "string"
             }
@@ -7158,6 +7809,331 @@
           "values"
         ]
       },
+      "SupportAccessDecisionResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "grant",
+              "decline",
+              "end"
+            ]
+          },
+          "actorRealm": {
+            "type": "string",
+            "enum": [
+              "organization",
+              "platform"
+            ],
+            "description": "organization — a member of the organization; platform — a Platform Administrator."
+          },
+          "actorEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "description": "Null for an account since removed."
+          },
+          "occurredAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "kind",
+          "actorRealm",
+          "actorEmail",
+          "occurredAt"
+        ]
+      },
+      "SupportAccessAccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "reports",
+              "report_modules",
+              "report_module"
+            ],
+            "description": "reports — the report list; report_modules — one report’s modules; report_module — one module."
+          },
+          "subject": {
+            "type": "string",
+            "nullable": true,
+            "description": "The report read, or the report and module as `<report id>/<module>`. Null for the list."
+          },
+          "occurredAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds."
+          }
+        },
+        "required": [
+          "purpose",
+          "subject",
+          "occurredAt"
+        ]
+      },
+      "SupportAccessLogEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requesterEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "description": "The Platform Administrator who asked — the address the organization is shown. Null for an operator account since removed."
+          },
+          "ticketReference": {
+            "type": "string",
+            "example": "SUP-4417"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why access is asked for, as the operator wrote it for the organization."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "awaiting",
+              "active",
+              "declined",
+              "lapsed",
+              "ended",
+              "expired"
+            ],
+            "description": "awaiting — nobody has answered, for up to 24 hours; active — granted and within its 60 minutes; declined; lapsed — nobody answered in time; ended — granted, then ended early; expired — its 60 minutes ran out."
+          },
+          "requestedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when the request was raised."
+          },
+          "lapsesAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when an unanswered request stops waiting — 24 hours after it was raised."
+          },
+          "grantedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds when the organization granted it; null for a request never granted."
+          },
+          "expiresAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds when the grant’s 60 minutes run out; null for a request never granted."
+          },
+          "requesterId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The Platform Administrator who asked."
+          },
+          "organizationName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Lactate Nord SA"
+          },
+          "decision": {
+            "nullable": true,
+            "description": "The organization’s answer, where one came before the request lapsed.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SupportAccessDecisionResponseDto"
+              }
+            ]
+          },
+          "ended": {
+            "nullable": true,
+            "description": "The end that came while the grant was running, from either realm.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SupportAccessDecisionResponseDto"
+              }
+            ]
+          },
+          "accesses": {
+            "description": "Every read made under the grant, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SupportAccessAccessResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "requesterEmail",
+          "ticketReference",
+          "reason",
+          "state",
+          "requestedAt",
+          "lapsesAt",
+          "grantedAt",
+          "expiresAt",
+          "requesterId",
+          "organizationName",
+          "decision",
+          "ended",
+          "accesses"
+        ]
+      },
+      "SupportAccessRaisedResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requestedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when the request was raised."
+          },
+          "lapsesAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when the request stops waiting if nobody answers it — 24 hours on."
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "requestedAt",
+          "lapsesAt"
+        ]
+      },
+      "RaiseSupportAccessRequestDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The organization whose report data the request asks to read."
+          },
+          "ticketReference": {
+            "type": "string",
+            "maxLength": 64,
+            "example": "SUP-4417",
+            "description": "The support ticket the request acts on."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "The owner reports the Scope 2 figure is missing from the export after recalculation.",
+            "description": "Why access is needed, written for the organization, which reads it before answering."
+          }
+        },
+        "required": [
+          "organizationId",
+          "ticketReference",
+          "reason"
+        ]
+      },
+      "SupportAccessRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requesterEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "description": "The Platform Administrator who asked — the address the organization is shown. Null for an operator account since removed."
+          },
+          "ticketReference": {
+            "type": "string",
+            "example": "SUP-4417"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why access is asked for, as the operator wrote it for the organization."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "awaiting",
+              "active",
+              "declined",
+              "lapsed",
+              "ended",
+              "expired"
+            ],
+            "description": "awaiting — nobody has answered, for up to 24 hours; active — granted and within its 60 minutes; declined; lapsed — nobody answered in time; ended — granted, then ended early; expired — its 60 minutes ran out."
+          },
+          "requestedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when the request was raised."
+          },
+          "lapsesAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds when an unanswered request stops waiting — 24 hours after it was raised."
+          },
+          "grantedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds when the organization granted it; null for a request never granted."
+          },
+          "expiresAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds when the grant’s 60 minutes run out; null for a request never granted."
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "requesterEmail",
+          "ticketReference",
+          "reason",
+          "state",
+          "requestedAt",
+          "lapsesAt",
+          "grantedAt",
+          "expiresAt"
+        ]
+      },
+      "OrganizationSupportAccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "awaiting": {
+            "description": "Requests waiting for an answer, newest first — for an Organization Administrator, who answers them; empty for any other member.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SupportAccessRequestResponseDto"
+            }
+          },
+          "active": {
+            "nullable": true,
+            "description": "Access running now, which every member is shown; null when none is.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SupportAccessRequestResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "awaiting",
+          "active"
+        ]
+      },
       "AdminChallengeResponseDto": {
         "type": "object",
         "properties": {
@@ -7394,6 +8370,11 @@
             "type": "number",
             "nullable": true,
             "description": "Unix epoch milliseconds after which an invitation’s link stops working. Null for an account."
+          },
+          "supportAccessRequests": {
+            "type": "number",
+            "nullable": true,
+            "description": "Support-access requests the account raised in the last 30 days, whatever became of them (task 67.9). Null for an invitation."
           }
         },
         "required": [
@@ -7403,7 +8384,8 @@
           "role",
           "standing",
           "lastSignInAt",
-          "expiresAt"
+          "expiresAt",
+          "supportAccessRequests"
         ]
       },
       "AdminInvitationResponseDto": {
@@ -7589,7 +8571,9 @@
               "admin.password.changed",
               "admin.factor.reenrolment_started",
               "admin.factor.reenrolled",
-              "admin.recovery_codes.issued"
+              "admin.recovery_codes.issued",
+              "admin.support_access.requested",
+              "admin.support_access.ended"
             ],
             "description": "What happened."
           },

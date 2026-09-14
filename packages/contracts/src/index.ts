@@ -288,3 +288,27 @@ export type AdminRecoveryCodes = components['schemas']['AdminRecoveryCodesRespon
 export type AdminRecoveryRequest = components['schemas']['AdminRecoveryRequestDto'];
 /** A recovery sign-in's session, with how many codes remain. */
 export type AdminRecoveredSession = components['schemas']['AdminRecoveredSessionResponseDto'];
+
+// platform — support access by the organization's consent: A-07's requests, grants and log, and the tenant
+// banner that answers them (FR-77 … FR-79, UC-85, UC-86; task 67.9).
+export {
+  SUPPORT_ACCESS_ACTOR_REALM,
+  SUPPORT_ACCESS_DECISION,
+  SUPPORT_ACCESS_READ_PURPOSE,
+  SUPPORT_ACCESS_STATE,
+  type SupportAccessActorRealm,
+  type SupportAccessDecisionKind,
+  type SupportAccessReadPurpose,
+  type SupportAccessState,
+} from './support-access';
+/** A request as it stands — what the banner shows, and the part of A-07's log entry every reader shares. */
+export type SupportAccessRequest = components['schemas']['SupportAccessRequestResponseDto'];
+/** The banner's whole read: requests awaiting an answer (an administrator's only), and access running now. */
+export type OrganizationSupportAccess = components['schemas']['OrganizationSupportAccessResponseDto'];
+export type RaiseSupportAccessRequest = components['schemas']['RaiseSupportAccessRequestDto'];
+/** A request just raised — waiting for the organization. */
+export type SupportAccessRaised = components['schemas']['SupportAccessRaisedResponseDto'];
+/** One entry of A-07's log: the request, who decided, how it ended, and every read made under it. */
+export type SupportAccessLogEntry = components['schemas']['SupportAccessLogEntryResponseDto'];
+export type SupportAccessDecision = components['schemas']['SupportAccessDecisionResponseDto'];
+export type SupportAccessAccess = components['schemas']['SupportAccessAccessResponseDto'];

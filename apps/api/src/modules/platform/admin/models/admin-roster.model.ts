@@ -64,4 +64,6 @@ export interface AdminRosterRow {
   readonly lastSignInAt: Date | null;
   /** An invitation's expiry; null for an account. */
   readonly expiresAt: Date | null;
+  /** Support-access requests the account raised in the last 30 days (task 67.9); null for an invitation. */
+  readonly supportAccessRequests: number | null;
 }

@@ -330,10 +330,11 @@ describe('the organization register (A-02, UC-69; task 67.3)', () => {
     expect(refused.n).toBe(0);
   });
 
-  it('keeps the log out of the tenant tier’s reach — neither readable nor rewritable', async () => {
-    await expect(application.query(`SELECT 1 FROM audit.support_access_log LIMIT 1`)).rejects.toThrow(
-      /permission denied/u,
-    );
+  // Task 67.9 gave `esg_app` SELECT, for the organization's banner, and row security narrows it to the bound
+  // organization's request, grant, decline and end rows — so with nothing bound, as here, the read is admitted and
+  // sees nothing, the acquisitions this suite just wrote included. `support-access.e2e-spec.ts` owns the bound case.
+  it('keeps the log out of the tenant tier’s reach — nothing visible unbound, and nothing rewritable', async () => {
+    await expect(application.query(`SELECT 1 FROM audit.support_access_log LIMIT 1`)).resolves.toEqual([]);
     await expect(
       application.query(`UPDATE audit.support_access_log SET purpose = purpose`),
     ).rejects.toThrow(/permission denied/u);

@@ -25,7 +25,7 @@ export class AdminAccountsService {
   ) {}
 
   roster(): Promise<AdminRosterRow[]> {
-    return this.listRoster.execute();
+    return this.listRoster.execute({ requesterId: requestOperatorId() });
   }
 
   changeStatus(input: Omit<ChangeAdminAccountStatusCommand, 'actingAccountId'>): Promise<void> {

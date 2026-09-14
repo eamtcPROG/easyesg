@@ -313,9 +313,10 @@ const UNAUDITED_TABLES = [
   'audit.outbox_event',
   /**
    * `audit.support_access_log` (task 67.3) is `audit.system_audit_log`'s argument once more: every
-   * row records that something happened — an acquisition of the `BYPASSRLS` role today, a support
-   * grant from task 67.9 — and it is append-only by `audit.enforce_append_only`, so a per-field
-   * trail of it would record the writing of a record.
+   * row records that something happened — an acquisition of the `BYPASSRLS` role, and since task 67.9
+   * a support-access request, its grant, decline or end, and each read under a grant — and it is
+   * append-only by `audit.enforce_append_only`, so a per-field trail of it would record the writing of
+   * a record.
    */
   'audit.support_access_log',
   /**

@@ -125,6 +125,12 @@
     },
     "admin-account-exists": {
       "title": "Contul există deja"
+    },
+    "support-access-outstanding": {
+      "title": "Cerere de acces în curs"
+    },
+    "support-access-required": {
+      "title": "Accesul de suport nu este activ"
     }
   },
   "validation": {},
@@ -282,7 +288,16 @@
       "reauthentication_failed": "Parola actuală nu este corectă, așa că nu a fost modificat nimic. Introduceți parola cu care vă autentificați și încercați din nou.",
       "reenrolment_missing": "Nicio aplicație de autentificare nouă nu așteaptă confirmarea, așa că nu există nimic de confirmat. Reluați configurarea aplicației de autentificare pentru a obține un cod nou de scanat.",
       "reenrolment_code_invalid": "Codul nu corespunde în acest moment noii aplicații de autentificare, așa că al doilea factor nu a fost schimbat. Introduceți codul afișat acum de noua aplicație.",
-      "recovery_refused": "Adresa, parola sau codul de recuperare nu sunt corecte ori codul a fost deja folosit, așa că sesiunea nu a fost creată. Verificați toate trei și încercați din nou cu un cod nefolosit."
+      "recovery_refused": "Adresa, parola sau codul de recuperare nu sunt corecte ori codul a fost deja folosit, așa că sesiunea nu a fost creată. Verificați toate trei și încercați din nou cu un cod nefolosit.",
+      "organization_not_found": "Organizația nu se află în registru, așa că nu poate fi afișată. Căutați-o din nou în registrul organizațiilor."
+    },
+    "support_access": {
+      "organization_not_found": "Organizația nu există, așa că cererea de acces nu a fost trimisă. Deschideți organizația din registru și încercați din nou.",
+      "outstanding": "Aveți deja o cerere de acces pentru această organizație care așteaptă un răspuns sau este în curs, așa că nu a fost trimisă alta. Folosiți cererea existentă sau așteptați să se încheie.",
+      "request_not_found": "Cererea de acces nu există pentru această organizație, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea cererile actuale.",
+      "not_awaiting": "Cererea de acces nu mai așteaptă un răspuns — a primit deja unul sau termenul de așteptare a trecut —, așa că răspunsul nu a fost înregistrat. Reîncărcați pagina pentru a vedea starea ei.",
+      "not_active": "Accesul de suport nu este în curs — nu a fost acordat, s-a încheiat deja sau a expirat —, așa că nu a fost nimic de încheiat. Reîncărcați pagina pentru a vedea starea lui.",
+      "required": "Accesul de suport pentru această organizație nu este activ pentru dumneavoastră, așa că datele ei nu au fost citite. Trimiteți o cerere nouă și așteptați ca organizația să o accepte."
     }
   }
 }

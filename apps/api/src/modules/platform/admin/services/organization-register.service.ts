@@ -9,8 +9,10 @@ import { AdminSessionInvalidError } from '../errors/admin-session.errors';
 import type {
   OrganizationRegisterPage,
   OrganizationRegisterQuery,
+  OrganizationRegisterRow,
 } from '../models/organization-register.model';
 import { ListOrganizationRegister } from '../use-cases/list-organization-register.use-case';
+import { ReadOrganizationRegisterRow } from '../use-cases/read-organization-register-row.use-case';
 
 /**
  * The Nest-aware seam between `OrganizationRegisterController` and UC-69's use case (house rule:
@@ -19,7 +21,17 @@ import { ListOrganizationRegister } from '../use-cases/list-organization-registe
  */
 @Injectable()
 export class OrganizationRegisterService {
-  constructor(private readonly listRegister: ListOrganizationRegister) {}
+  constructor(
+    private readonly listRegister: ListOrganizationRegister,
+    private readonly readRow: ReadOrganizationRegisterRow,
+  ) {}
+
+  /** One organization's row (task 67.9) — resolving the reader as `list` does, for the same reason. */
+  row(organizationId: string): Promise<OrganizationRegisterRow> {
+    const requesterId = requestContext()?.adminAccountId;
+    if (!requesterId) throw new AdminSessionInvalidError();
+    return this.readRow.execute({ organizationId, requesterId });
+  }
 
   /** The parsed list query and the search, narrowed to what A-02 can be asked. */
   narrow(input: { readonly list: RegisterListInput; readonly search: unknown }): OrganizationRegisterQuery {

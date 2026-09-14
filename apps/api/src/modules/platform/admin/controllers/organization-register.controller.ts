@@ -1,7 +1,7 @@
-import { Controller, Get, Query, Req, UseInterceptors } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, ParseUUIDPipe, Query, Req, UseInterceptors } from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { ApiListResponse } from '@api/app/decorators/api-envelope.decorator';
+import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { DEFAULT_ON_PAGE, MAX_ON_PAGE_ADMIN } from '@api/app/constants/pagination.constants';
 import { RequestListDto } from '@api/app/dto/request-list.dto';
 import { ResultListDto } from '@api/app/dto/result-list.dto';
@@ -101,5 +101,39 @@ export class OrganizationRegisterController {
       totalpages: Math.max(1, Math.ceil(page.matched / query.take)),
       unfiltered: page.total,
     });
+  }
+
+  @Get(':organizationId')
+  @ApiOperation({
+    summary: 'One organization’s register row',
+    description:
+      'Task 67.9. The row the register lists for this organization — account-level metadata, never ' +
+      'report content — which the support-access request form names the organization with. Recorded in ' +
+      'the support access log before it runs, naming the organization read.',
+  })
+  @ApiParam({ name: 'organizationId', format: 'uuid' })
+  @ApiObjectResponse(OrganizationRegisterRowResponseDto, { status: 200, description: 'The organization’s row.' })
+  @ApiResponse({
+    status: 401,
+    description:
+      'No usable operator session (problem type authentication-required), or its lifetimes ran ' +
+      'out (problem type session-expired).',
+    content: { [PROBLEM_MEDIA_TYPE]: {} },
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'The operator’s role is not platform_administrator (problem type insufficient-role).',
+    content: { [PROBLEM_MEDIA_TYPE]: {} },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No organization in the register holds this id (problem type not-found).',
+    content: { [PROBLEM_MEDIA_TYPE]: {} },
+  })
+  async row(
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+  ): Promise<OrganizationRegisterRowResponseDto> {
+    return new OrganizationRegisterRowResponseDto(await this.register.row(organizationId));
   }
 }

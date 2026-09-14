@@ -122,7 +122,8 @@ const concreteUrl = (route: string): { method: string; url: string } => {
     url: `/api/v1${path
       .replace(':provider', 'google')
       .replace(':invitationId', '01920000-0000-7000-8000-00000000ffff')
-      .replace(':membershipId', '01920000-0000-7000-8000-00000000fffe')}`,
+      .replace(':membershipId', '01920000-0000-7000-8000-00000000fffe')
+      .replace(':requestId', '01920000-0000-7000-8000-00000000fffd')}`,
   };
 };
 

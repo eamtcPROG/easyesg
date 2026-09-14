@@ -437,7 +437,9 @@
           "passwordChanged": "Și-a schimbat parola",
           "factorReenrolmentStarted": "A început reconfigurarea celui de-al doilea factor",
           "factorReenrolled": "A reconfigurat al doilea factor",
-          "recoveryCodesIssued": "A emis coduri de recuperare"
+          "recoveryCodesIssued": "A emis coduri de recuperare",
+          "supportAccessRequested": "A cerut unei organizații acces pentru asistență",
+          "supportAccessEnded": "A încheiat un acces pentru asistență"
         }
       }
     }

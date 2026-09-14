@@ -1015,6 +1015,190 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/support-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the support access log
+         * @description UC-86. Every support-access request, newest first: who asked, over which organization, for what reason, what the organization decided and who decided it, how it ended, and every read made under it. Read-only: nothing edits an entry. Reading it is recorded in the same log.
+         */
+        get: operations["AdminSupportAccessController_list"];
+        put?: never;
+        /**
+         * Ask an organization for read-only support access
+         * @description UC-85. Raises a request with a ticket reference and a reason, which the organization’s administrators see and answer in their own application. Nothing is granted here: a grant lasts 60 minutes from when the organization gives it, and a request nobody answers lapses after 24 hours. Recorded in the system audit log.
+         */
+        post: operations["AdminSupportAccessController_raise"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{organizationId}/support-access/{requestId}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End running support access before its 60 minutes
+         * @description UC-85. Any Platform Administrator may end any running grant; the organization sees it end. Recorded in the support access log and the system audit log.
+         */
+        post: operations["SupportAccessGrantController_end"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{organizationId}/support-access/{requestId}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The organization’s reports, under a running grant
+         * @description The reports the organization’s own report list shows, newest reporting period first — read-only, recorded in the support access log before the read runs.
+         */
+        get: operations["SupportAccessGrantController_listReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{organizationId}/support-access/{requestId}/reports/{reportId}/modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One report’s modules, under a running grant
+         * @description The report’s modules with how much of each is answered, as the organization’s wizard shows them — read-only, recorded in the support access log before the read runs.
+         */
+        get: operations["SupportAccessGrantController_modules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{organizationId}/support-access/{requestId}/reports/{reportId}/modules/{module}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One module’s values, under a running grant
+         * @description The module’s fields with their values, as the organization’s wizard shows them — read-only, recorded in the support access log before the read runs.
+         */
+        get: operations["SupportAccessGrantController_step"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether EasyESG support is reading the organization, or asking to
+         * @description Access running now, which every member is shown, and — for an Organization Administrator — the requests waiting for an answer.
+         */
+        get: operations["OrganizationSupportAccessController_current"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support-access/{requestId}/grant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Grant a support-access request
+         * @description Lets the Platform Administrator who asked read the organization’s reports, read-only, for 60 minutes. Every member sees it while it runs, and any Organization Administrator can end it.
+         */
+        post: operations["OrganizationSupportAccessController_grant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support-access/{requestId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decline a support-access request
+         * @description Nothing is read. The operator sees the request declined.
+         */
+        post: operations["OrganizationSupportAccessController_decline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support-access/{requestId}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End running support access
+         * @description The grant stops at once, before its 60 minutes; the operator can read nothing more under it.
+         */
+        post: operations["OrganizationSupportAccessController_end"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/admin/session/challenge": {
         parameters: {
             query?: never;
@@ -1095,6 +1279,26 @@ export interface paths {
          * @description UC-69. Account-level metadata for every registered organization — name, IDNO, registration date, active entity count, report count and the most recent member sign-in — and never report content. Every read is recorded in the support access log before it runs.
          */
         get: operations["OrganizationRegisterController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{organizationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One organization’s register row
+         * @description Task 67.9. The row the register lists for this organization — account-level metadata, never report content — which the support-access request form names the organization with. Recorded in the support access log before it runs, naming the organization read.
+         */
+        get: operations["OrganizationRegisterController_row"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2648,6 +2852,135 @@ export interface components {
             prior: components["schemas"]["PriorReportPinDto"] | null;
             values: components["schemas"]["PriorPeriodValueDto"][];
         };
+        SupportAccessDecisionResponseDto: {
+            /** @enum {string} */
+            kind: "grant" | "decline" | "end";
+            /**
+             * @description organization — a member of the organization; platform — a Platform Administrator.
+             * @enum {string}
+             */
+            actorRealm: "organization" | "platform";
+            /**
+             * Format: email
+             * @description Null for an account since removed.
+             */
+            actorEmail: string | null;
+            /** @description Unix epoch milliseconds. */
+            occurredAt: number;
+        };
+        SupportAccessAccessResponseDto: {
+            /**
+             * @description reports — the report list; report_modules — one report’s modules; report_module — one module.
+             * @enum {string}
+             */
+            purpose: "reports" | "report_modules" | "report_module";
+            /** @description The report read, or the report and module as `<report id>/<module>`. Null for the list. */
+            subject: string | null;
+            /** @description Unix epoch milliseconds. */
+            occurredAt: number;
+        };
+        SupportAccessLogEntryResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organizationId: string;
+            /**
+             * Format: email
+             * @description The Platform Administrator who asked — the address the organization is shown. Null for an operator account since removed.
+             */
+            requesterEmail: string | null;
+            /** @example SUP-4417 */
+            ticketReference: string;
+            /** @description Why access is asked for, as the operator wrote it for the organization. */
+            reason: string;
+            /**
+             * @description awaiting — nobody has answered, for up to 24 hours; active — granted and within its 60 minutes; declined; lapsed — nobody answered in time; ended — granted, then ended early; expired — its 60 minutes ran out.
+             * @enum {string}
+             */
+            state: "awaiting" | "active" | "declined" | "lapsed" | "ended" | "expired";
+            /** @description Unix epoch milliseconds when the request was raised. */
+            requestedAt: number;
+            /** @description Unix epoch milliseconds when an unanswered request stops waiting — 24 hours after it was raised. */
+            lapsesAt: number;
+            /** @description Unix epoch milliseconds when the organization granted it; null for a request never granted. */
+            grantedAt: number | null;
+            /** @description Unix epoch milliseconds when the grant’s 60 minutes run out; null for a request never granted. */
+            expiresAt: number | null;
+            /**
+             * Format: uuid
+             * @description The Platform Administrator who asked.
+             */
+            requesterId: string;
+            /** @example Lactate Nord SA */
+            organizationName: string | null;
+            /** @description The organization’s answer, where one came before the request lapsed. */
+            decision: components["schemas"]["SupportAccessDecisionResponseDto"] | null;
+            /** @description The end that came while the grant was running, from either realm. */
+            ended: components["schemas"]["SupportAccessDecisionResponseDto"] | null;
+            /** @description Every read made under the grant, oldest first. */
+            accesses: components["schemas"]["SupportAccessAccessResponseDto"][];
+        };
+        SupportAccessRaisedResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @description Unix epoch milliseconds when the request was raised. */
+            requestedAt: number;
+            /** @description Unix epoch milliseconds when the request stops waiting if nobody answers it — 24 hours on. */
+            lapsesAt: number;
+        };
+        RaiseSupportAccessRequestDto: {
+            /**
+             * Format: uuid
+             * @description The organization whose report data the request asks to read.
+             */
+            organizationId: string;
+            /**
+             * @description The support ticket the request acts on.
+             * @example SUP-4417
+             */
+            ticketReference: string;
+            /**
+             * @description Why access is needed, written for the organization, which reads it before answering.
+             * @example The owner reports the Scope 2 figure is missing from the export after recalculation.
+             */
+            reason: string;
+        };
+        SupportAccessRequestResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organizationId: string;
+            /**
+             * Format: email
+             * @description The Platform Administrator who asked — the address the organization is shown. Null for an operator account since removed.
+             */
+            requesterEmail: string | null;
+            /** @example SUP-4417 */
+            ticketReference: string;
+            /** @description Why access is asked for, as the operator wrote it for the organization. */
+            reason: string;
+            /**
+             * @description awaiting — nobody has answered, for up to 24 hours; active — granted and within its 60 minutes; declined; lapsed — nobody answered in time; ended — granted, then ended early; expired — its 60 minutes ran out.
+             * @enum {string}
+             */
+            state: "awaiting" | "active" | "declined" | "lapsed" | "ended" | "expired";
+            /** @description Unix epoch milliseconds when the request was raised. */
+            requestedAt: number;
+            /** @description Unix epoch milliseconds when an unanswered request stops waiting — 24 hours after it was raised. */
+            lapsesAt: number;
+            /** @description Unix epoch milliseconds when the organization granted it; null for a request never granted. */
+            grantedAt: number | null;
+            /** @description Unix epoch milliseconds when the grant’s 60 minutes run out; null for a request never granted. */
+            expiresAt: number | null;
+        };
+        OrganizationSupportAccessResponseDto: {
+            /** @description Requests waiting for an answer, newest first — for an Organization Administrator, who answers them; empty for any other member. */
+            awaiting: components["schemas"]["SupportAccessRequestResponseDto"][];
+            /** @description Access running now, which every member is shown; null when none is. */
+            active: components["schemas"]["SupportAccessRequestResponseDto"] | null;
+        };
         AdminChallengeResponseDto: {
             /**
              * Format: email
@@ -2774,6 +3107,8 @@ export interface components {
             lastSignInAt: number | null;
             /** @description Unix epoch milliseconds after which an invitation’s link stops working. Null for an account. */
             expiresAt: number | null;
+            /** @description Support-access requests the account raised in the last 30 days, whatever became of them (task 67.9). Null for an invitation. */
+            supportAccessRequests: number | null;
         };
         AdminInvitationResponseDto: {
             /**
@@ -2857,7 +3192,7 @@ export interface components {
              * @description What happened.
              * @enum {string}
              */
-            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued";
+            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended";
             /**
              * Format: uuid
              * @description The operator who acted. Null for the provisioning command, and for a sign-in attempt against an address that matches no account.
@@ -5153,6 +5488,477 @@ export interface operations {
             };
         };
     };
+    AdminSupportAccessController_list: {
+        parameters: {
+            query?: {
+                /** @description Entries per page, 25 unless given, at most 200. `-1` is refused. */
+                onpage?: number;
+                /** @description 1-based. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the log. `total` counts every request ever raised. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["SupportAccessLogEntryResponseDto"][];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or a write came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminSupportAccessController_raise: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RaiseSupportAccessRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The request, waiting for the organization. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SupportAccessRaisedResponseDto"];
+                    };
+                };
+            };
+            /** @description The ticket reference or the reason is missing or too long (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or a write came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No organization has this id (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description This operator already has a request with the organization that is waiting or running (problem type support-access-outstanding). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SupportAccessGrantController_end: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ended. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The organization has no such request (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The access is not running — never granted, ended already, or expired (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SupportAccessGrantController_listReports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The reports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["ReportResponseDto"][];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /**
+             * @description The request is not active for this operator — never granted, ended, expired, or another operator’s — so nothing was read (problem type support-access-required).
+             *
+             *     The operator’s role is not platform_administrator (problem type insufficient-role).
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SupportAccessGrantController_modules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                requestId: string;
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The modules. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["DisclosureModuleSummaryDto"][];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /**
+             * @description The request is not active for this operator — never granted, ended, expired, or another operator’s — so nothing was read (problem type support-access-required).
+             *
+             *     The operator’s role is not platform_administrator (problem type insufficient-role).
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The organization has no such report (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SupportAccessGrantController_step: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                requestId: string;
+                reportId: string;
+                module: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The module. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["DisclosureStepDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /**
+             * @description The request is not active for this operator — never granted, ended, expired, or another operator’s — so nothing was read (problem type support-access-required).
+             *
+             *     The operator’s role is not platform_administrator (problem type insufficient-role).
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The organization has no such report, or its version has no such module (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    OrganizationSupportAccessController_current: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The organization’s support access. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["OrganizationSupportAccessResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    OrganizationSupportAccessController_grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Granted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The organization has no such request (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The request is no longer waiting — answered already, or lapsed (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    OrganizationSupportAccessController_decline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Declined. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The organization has no such request (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The request is no longer waiting — answered already, or lapsed (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    OrganizationSupportAccessController_end: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ended. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The organization has no such request (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The access is not running — never granted, ended already, or expired (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     AdminSessionController_beginSignIn: {
         parameters: {
             query?: never;
@@ -5392,6 +6198,57 @@ export interface operations {
             };
             /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    OrganizationRegisterController_row: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The organization’s row. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["OrganizationRegisterRowResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No organization in the register holds this id (problem type not-found). */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6007,7 +6864,7 @@ export interface operations {
                 /** @description Unix epoch milliseconds; only events at or after it. */
                 from?: number;
                 /** @description Only this kind of event. */
-                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued";
+                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended";
                 /** @description Only what this operator account did (uuid). */
                 operator?: unknown;
             };

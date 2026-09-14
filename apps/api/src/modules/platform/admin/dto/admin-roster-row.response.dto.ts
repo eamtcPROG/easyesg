@@ -56,6 +56,15 @@ export class AdminRosterRowResponseDto {
   })
   readonly expiresAt: EpochMillis | null;
 
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'Support-access requests the account raised in the last 30 days, whatever became of them (task 67.9). ' +
+      'Null for an invitation.',
+  })
+  readonly supportAccessRequests: number | null;
+
   constructor(row: AdminRosterRow) {
     this.id = row.id;
     this.kind = row.kind;
@@ -64,5 +73,6 @@ export class AdminRosterRowResponseDto {
     this.standing = row.standing;
     this.lastSignInAt = row.lastSignInAt?.getTime() ?? null;
     this.expiresAt = row.expiresAt?.getTime() ?? null;
+    this.supportAccessRequests = row.supportAccessRequests;
   }
 }

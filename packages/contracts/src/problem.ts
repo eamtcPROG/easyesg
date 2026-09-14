@@ -61,6 +61,10 @@ export const PROBLEM_TYPE = {
    *  what an editor or a viewer receives, and the screen renders its permission state rather than
    *  an error — the branch is to a DIFFERENT SCREEN STATE, which is the bar this registry sets. */
   InsufficientRole: 'https://easyesg.md/problems/insufficient-role',
+  /** A read under a support-access grant that is no longer running for this operator — ended, expired, or never
+   *  granted (task 67.9). A-07's grant view stops drawing the organization's reports and says access has ended,
+   *  rather than showing the refusal over a view that can no longer be read. */
+  SupportAccessRequired: 'https://easyesg.md/problems/support-access-required',
 } as const;
 
 export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

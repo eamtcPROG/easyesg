@@ -111,6 +111,14 @@ export const ProblemType = {
    *  §12.5.6). Its own slug because it is the one refusal here whose way out is to wait, not to act,
    *  and it disappears when task 54.2 replaces the artefact. */
   SeatAllowanceUnavailable: 'seat-allowance-unavailable',
+  /** Task 67.9: the operator already has a support-access request with this organization that is waiting
+   *  or running. Its own slug because A-07 names the way out — the request that exists — which the generic
+   *  `conflict` cannot. */
+  SupportAccessOutstanding: 'support-access-outstanding',
+  /** Task 67.9: a read under a support-access grant the grant does not permit — not this operator's, or
+   *  not active. Its own slug because A-07 branches on it: a window that closed mid-read is a state the
+   *  console draws, not a permission error. */
+  SupportAccessRequired: 'support-access-required',
   TenantContextMissing: 'tenant-context-missing',
   /** UC-56 refused: another reporting period for the same entity already covers part of these
    *  dates. Its own slug because S-14 must name the way out — adjust the dates, or edit the period
