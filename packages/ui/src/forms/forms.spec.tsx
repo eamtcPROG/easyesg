@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FormCheckbox } from './form-checkbox';
 import { FormPasswordField } from './form-password-field';
 import { FormSummary } from './form-summary';
+import { FormTextArea } from './form-text-area';
 import { FormTextField } from './form-text-field';
 
 /**
@@ -213,6 +214,54 @@ function PreferenceForm({ onValid = vi.fn() }: { onValid?: (values: Preference) 
     </form>
   );
 }
+
+interface ReasonFields {
+  reason: string;
+}
+
+function ReasonForm({ onValid = vi.fn() }: { onValid?: (values: ReasonFields) => void }) {
+  const { control, handleSubmit } = useForm<ReasonFields>({ mode: 'onTouched' });
+
+  return (
+    <form onSubmit={(event) => void handleSubmit(onValid)(event)} noValidate>
+      <FormSummary control={control} title={SUMMARY_TITLE} />
+      <FormTextArea control={control} name="reason" label="Reason" rules={{ required: 'Reason is missing' }} />
+      <button type="submit">Continue</button>
+    </form>
+  );
+}
+
+/**
+ * The multi-line binding (14 Sep 2026) — the same contract as `FormTextField`, over a `<textarea>`. What is pinned
+ * is that it IS a textarea, that a line break survives into the submitted value, and that the id agreement the
+ * layer exists for holds for it too.
+ */
+describe('FormTextArea', () => {
+  it('binds a multi-line value from control + name alone', async () => {
+    const user = userEvent.setup();
+    const onValid = vi.fn();
+    render(<ReasonForm onValid={onValid} />);
+
+    const field = screen.getByLabelText('Reason');
+    expect(field.tagName).toBe('TEXTAREA');
+    await user.type(field, 'First line{Enter}second line');
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(onValid.mock.calls[0][0]).toEqual({ reason: 'First line\nsecond line' });
+  });
+
+  it('marks itself invalid and is the target of its summary entry, as every bound field is', async () => {
+    const user = userEvent.setup();
+    render(<ReasonForm />);
+
+    const summary = await submitEmpty(user);
+    const field = screen.getByLabelText('Reason');
+
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    expect(field).toHaveAccessibleDescription(/Reason is missing/);
+    expect(summary.querySelector(`a[href="#${field.id}"]`)).not.toBeNull();
+  });
+});
 
 describe('FormCheckbox', () => {
   it('reports the boolean, not the event and not a string', async () => {

@@ -1148,21 +1148,35 @@ validated `@Body()` DTO straight through, which is why `auth.controller.ts` now 
 
 ### A component is reused, or it becomes a new reusable component
 
-**This is UX-89 and it is closed, not a preference:** *"No screen shall introduce a one-off
+**This is UX-89, amended 14 Sep 2026 by the project owner:** *"No screen shall introduce a one-off
 component. A need not met by this inventory is an addition to the inventory, reviewed once and
-reused."* The inventory is `design_spec.md` §11.5 — primitives, form controls, feedback,
-navigation, data display, and the fourteen domain components that carry the product. Every
-specimen is rendered in `design/screens/EasyESG Components.dc.html`, which settles anything the
-prose leaves ambiguous.
+reused"* — **and the inventory has two homes.** The shared one is `design_spec.md` §11.5 —
+primitives, form controls, feedback, navigation, data display, and the fourteen domain components
+that carry the product — built in `packages/ui`, with every specimen rendered in
+`design/screens/EasyESG Components.dc.html`, which settles anything the prose leaves ambiguous.
+**A component only one application needs is that application's**, in its own component folders.
+
+**Why it was amended, because the old reading is easy to fall back into.** Read as *everything goes
+in `packages/ui`*, the rule made the cheaper, worse answer look like the compliant one: task 67.9
+shipped A-07's 500-character reason as a single-line field rather than add a few-line binding,
+because the binding read as an inventory change out of scope. The owner's correction is that where
+a component lives follows who needs it.
 
 The order of moves when a screen needs something:
 
 1. **Use the inventory component.** If it exists, it is the answer — variants and states included.
-2. **If nothing fits, add to the inventory**, in `packages/ui`, with all eleven §8.1 states designed
-   before any instance is built (UX-8, UX-90). It is now reusable by construction.
-3. **Never inline it in the screen.** A bespoke component under `apps/web/src/app/…` or
-   `apps/admin/src/app/routes/…` is the defect UX-89 names. The cost is not untidiness: a component
-   living in a screen has no state set, no dark map, no expansion-harness coverage and no
+2. **If nothing fits and both applications need it, add it to the inventory**, in `packages/ui`,
+   with all eleven §8.1 states designed before any instance is built (UX-8, UX-90). It is now
+   reusable by construction.
+3. **If nothing fits and only one application needs it, build it in that application** — under
+   `features/` beside its screen, or in the app's `shared/` (`realm/` in the console) when several
+   of its screens read it, laid out by the two folder skills. It still takes colour, space and type
+   only from the token cascade (UX-127), carries no string that is not a catalogue key, and sits
+   under the app's own accessibility checks — and **it moves to `packages/ui` the day the other
+   application needs it**, never copied across.
+4. **Never inline it in a route file.** A component written into `apps/web/src/app/…` or
+   `apps/admin/src/app/routes/…` is the defect UX-89 still names. The cost is not untidiness: a
+   component living in a route has no state set, no dark map, no expansion-harness coverage and no
    accessibility review, and the next screen that needs it copies all four omissions.
 
 The judgement this leaves you is what "nothing fits" means. It is a difference in **anatomy**, not

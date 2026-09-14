@@ -116,6 +116,8 @@ test('a request raised from the register is granted by the organization, read un
   await expect(request).toContainText('60 de minute de la acceptare');
   await expect(request).toContainText('Doar citire');
   await request.getByLabel('Referința tichetului').fill(TICKET);
+  // The reason is written for the organization and may run long, so it is a multi-line field (UX-89 amended).
+  await expect(request.getByLabel('Motivul, pentru organizație')).toHaveJSProperty('tagName', 'TEXTAREA');
   await request.getByLabel('Motivul, pentru organizație').fill(REASON);
   await request.getByRole('button', { name: 'Trimiteți cererea organizației' }).click();
   await expect(page.getByText('Cererea a fost trimisă')).toBeVisible();

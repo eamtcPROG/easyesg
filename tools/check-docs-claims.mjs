@@ -169,11 +169,13 @@ const CLAIMS = [
     what: '@easyesg/ui/forms import sites in the apps',
     file: 'packages/ui/CLAUDE.md',
     pattern: /(\d+) import sites across the two apps today/,
+    // Files that IMPORT the binding, which is what the document counts — not mentions of the entry point, which a
+    // docblock naming it would add to (found 14 Sep 2026, when one sentence in A-07's form read as a 32nd site).
     actual: () =>
       ['apps/web/src', 'apps/admin/src']
         .flatMap((d) => walk(d))
         .filter((f) => /\.tsx?$/.test(f))
-        .reduce((n, f) => n + countIn(f, /@easyesg\/ui\/forms/g), 0),
+        .filter((f) => /from\s+['"]@easyesg\/ui\/forms['"]/.test(read(f))).length,
   },
   {
     // The opening paragraph said "these 46 files" beside a guarded "47 components" — the two

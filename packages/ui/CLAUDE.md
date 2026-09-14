@@ -9,11 +9,11 @@ component that only works in one of them is a defect here, not a variant.
 `'use client'` vocabulary rule, the `Slot` rule, UX-89's "reuse or add to the inventory", the four
 homes of state — it is written at root because it holds for `apps/web` and `apps/admin` too, and
 restating it here would create the second copy that drifts. This file carries what is true of
-*these 52 components*: where things are, what has already bitten someone, and what finishing looks like.
+*these 53 components*: where things are, what has already bitten someone, and what finishing looks like.
 
 ## Current state
 
-52 components in nine folders, 28 spec files, `src/styles/tokens.css` at 460 lines — **light and
+53 components in nine folders, 28 spec files, `src/styles/tokens.css` at 460 lines — **light and
 dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
 schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
 `.spec.ts` rather than a `.spec.tsx` and so is *not* in the 28: it renders nothing, it parses the
@@ -25,7 +25,7 @@ is not itself a gap.
 | --- | --- | --- |
 | `primitives/` | 7 | Button, Panel, Skeleton, Spinner, TextLink, BrandMark, ProviderButton |
 | `form/` | 11 | The presentational controls — `value`/`onChange`/`ref`, no form library |
-| `forms/` | 7 | The react-hook-form binding. **A separate entry point** — see the traps |
+| `forms/` | 8 | The react-hook-form binding. **A separate entry point** — see the traps |
 | `feedback/` | 4 | Banner, Callout, EmptyState, ConsequenceDialogue |
 | `navigation/` | 8 | GlobalBar — the console's band too, through a tone — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
 | `data-display/` | 4 | DataTable, StatusChip, and task 143's EnrolmentCode with its loading arm |
@@ -108,11 +108,13 @@ src/
   the graph of every consumer, including the PDF worker and the email renderer, which read this
   package for UX-127's values and have no DOM. It is a **peer** dependency: the apps own the §12.1
   catalog pin (7.85.0), and a second resolved copy would give a field a different `Control` type
-  than the form that created it. **31 import sites across the two apps today** — 16 until task 129,
+  than the form that created it. **29 import sites across the two apps today** — 16 until task 129,
   which split S-15's form into four section components over one `control` and so multiplied one site
   into five, 20 until task 134 did the same to S-13's form with three, 23 until task 67.4 added
   A-08's invitation form and A-20's two steps, and 26 until task 151 added A-01's recovery step, A-19's
-  password and re-enrolment forms and its one current-password field, and 30 until task 67.9 added A-07's request form. Worth knowing when reading this number: it counts *files that import the binding*, not
+  password and re-enrolment forms and its one current-password field, and 30 until task 67.9 added A-07's request form. **Every figure before 29 was two high**: `docs:check` counted *mentions* of the entry point until
+  14 Sep 2026, and two specs name it in a comment without importing it — measured when a docblock in A-07's
+  form read as a 32nd site. Worth knowing when reading this number: it counts *files that import the binding*, not
   forms, and splitting a form raises it without adding a form.
 
 - **The eight vocabularies live in directive-free sibling modules and are exported from the barrel
@@ -125,7 +127,7 @@ src/
   Server Component as `undefined`, a button in the wrong colours, every gate green). When you add a
   vocabulary, add the sibling module — not an `as const` at the top of the component.
 
-- **25 of the 52 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
+- **26 of the 53 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
   or a handler of its own. `Button` carried it from task 20 without needing it, and the day it
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never
@@ -155,8 +157,9 @@ src/
 
 ## Before you add a component
 
-UX-89 is closed and the order of moves is not a preference — the root file states it. What is local
-is where the work lands:
+UX-89's order of moves is not a preference — the root file states it, **amended 14 Sep 2026: a
+component only one app needs is that app's, not this package's**, and comes here the day the other
+app needs it. What is local is where the work lands for a component that *is* this package's:
 
 1. **Check the inventory first.** `design/screens/EasyESG Components.dc.html` renders every
    specimen and settles what the prose leaves ambiguous. A difference in *content* or *variant* is

@@ -2034,7 +2034,7 @@ would be a task made unavailable by viewport with no statement of why. control.
 | Version pin indicator | §6.9 | Taxonomy / template / factor-set version in force |
 | Provenance chip | §6.13 | Who, when, from where |
 
-**UX-89** No screen shall introduce a one-off component. A need not met by this inventory is an addition to the inventory, reviewed once and reused.
+**UX-89** No screen shall introduce a one-off component. A need not met by this inventory is an addition to the inventory, reviewed once and reused. **Amended 14 Sep 2026 (project owner): the inventory has two homes.** A component both applications need is this section's and `packages/ui`'s, with its §8.1 state set. **A component only one application needs lives in that application's own component folders** — beside the screen under `features/`, or in the app's `shared/` (and `realm/` in the console) when several of its screens read it — laid out by the two folder skills, and never inlined in a route file. It keeps what makes an inventory component safe: colour, space and type only from the token cascade (UX-127), every string a catalogue key, and the application's own accessibility checks over it. **It moves to `packages/ui` the day the other application needs it**, rather than being copied. The amendment's occasion is task 67.9: A-07's 500-character reason shipped as a single-line field because a bound multi-line control read as an inventory change out of that task's scope — the rule was making the worse answer look like the compliant one.
 
 ### 11.6 Typography, space, shape, elevation, iconography, motion
 

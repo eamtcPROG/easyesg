@@ -20206,7 +20206,8 @@ operator's requests in 30 days**.
 - **Two known limits of A-07's read view**: module values show no unit — a unit's words are the tenant app's
   catalogue copy (OQ-43), and a second catalogue for one screen is not this task's — and **the reason is a
   single-line field**, since the console's bound form controls hold no multi-line one and adding one is a
-  `packages/ui` inventory change (UX-89) of its own.
+  `packages/ui` inventory change (UX-89) of its own. **The second limit closed the same day**: the owner amended UX-89 and `FormTextArea` joined the forms binding
+  (the entry that follows).
 - **The log shows an access's module, never its report id**: the subject is `<report id>/<module>`, and the id is
   an internal identifier (`accessModuleOf`).
 - **Russian says *поддержка сможет*** where Romanian and English need no pronoun, rather than gendering the operator.
@@ -20277,3 +20278,65 @@ reads start together; `rerender-memo`: A-07's columns are memoised on their inpu
 - **Not run**: `pnpm e2e:worker` — no consumer changed. **The review agents and `gates:clean` did not run**, under
   the owner's standing rule for a sub-step; 67's parent close gets both, and this diff is one that close must run
   cold — files moved, `packages/contracts` changed, and a generated artefact regenerated.
+
+## UX-89 amended, and `FormTextArea` · 2026-09-14
+
+The project owner's correction to task 67.9's close-out, which had listed A-07's single-line reason as a known
+limit: *a UI component only one application needs may live in that application's own components, with no limit.*
+Recorded in UX-89 before any code, then the limit closed.
+
+### The owner's decision
+
+- **The inventory has two homes** (`design_spec.md` UX-89, amended). A component both applications need stays
+  §11.5's and `packages/ui`'s, with its §8.1 state set; **a component only one application needs lives in that
+  application** — under `features/` beside its screen, or its `shared/` (`realm/` in the console) when several
+  screens read it — laid out by the two folder skills and never inlined in a route file. What made an inventory
+  component safe still binds it: the token cascade only (UX-127), catalogue keys only, the app's own accessibility
+  checks. **It moves to `packages/ui` the day the other application needs it**, rather than being copied. Root
+  `CLAUDE.md`'s *A component is reused* section and `packages/ui/CLAUDE.md`'s *Before you add a component* now say
+  the same; the order of moves gained a step for the app-local case.
+
+### Why the reason had been single-line
+
+- **Nothing technical forced it.** `TextArea` has existed in `packages/ui/src/form/` since task 35.2 with its states,
+  its `aria-describedby` wiring and its summary anchor; what `@easyesg/ui/forms` lacked was only the binding — one
+  `useBoundField` call and one render, `FormTextField`'s shape over the other control. **I read UX-89 as *everything
+  in `packages/ui`*, and a binding as an inventory addition out of 67.9's scope**, so a 500-character reason written
+  for the organization went into one line. The amendment's text names this as its occasion, because the old
+  reading made the worse answer look like the compliant one.
+
+### Routine calls, stated
+
+- **`FormTextArea` is `packages/ui`'s, not the console's**, under the amended rule itself: nothing about it is the
+  console's, and the wizard's narrative fields are the same control.
+- **The cross-app journey asserts the reason is a `<textarea>`**, so a regression to one line fails in a browser,
+  not only in `forms.spec.tsx`.
+
+### What the gates found
+
+- **`docs:check` counted mentions of `@easyesg/ui/forms`, not files importing it.** A sentence in A-07's form's
+  docblock naming the entry point read as a 32nd import site. The counter now counts files carrying an import from
+  it — the claim `packages/ui/CLAUDE.md` makes — and **the true figure is 29, not 31**: two specs,
+  `sign-in-form.spec.tsx` in the tenant app and `sign-in-screen.spec.tsx` in the console, name the entry point in a
+  comment and import nothing from it, so every figure the document gave before was two high. The document says so
+  rather than rewriting the history of the number.
+
+### Searched
+
+- **Every restatement of UX-89**: root `CLAUDE.md` and `packages/ui/CLAUDE.md` changed; `apps/web/CLAUDE.md`'s
+  boolean-prop smell and `one-kind-per-folder`'s `shared-admission-test` stay true under the amendment and are
+  unchanged.
+- **Files naming the forms entry point without importing it**: the two specs above, and no others.
+
+### Verification
+
+- `@easyesg/ui` **307 tests across 29 files**, the two new `FormTextArea` cases among them — a line break survives
+  into the submitted value, and the invalid state and the summary link hold as for every bound field — and
+  typecheck clean; `@easyesg/admin` typecheck clean and 220 tests across 25 files; `@easyesg/web` typecheck clean;
+  lint clean on every file touched; `pnpm docs:check` 40 claims, after the counter's fix; `pnpm routes:check`
+  exit 0.
+- **The full `pnpm e2e:web`: 196 of 196** — a shared package's change reaches both applications' browser projects —
+  the cross-app journey's new `<textarea>` assertion included. Its two `⨯ The destination stream closed early`
+  lines carry digest `2667547900`.
+- **Not run**: the api suites, since no api code changed. The review agents and `gates:clean` did not run, under the
+  owner's standing rule.

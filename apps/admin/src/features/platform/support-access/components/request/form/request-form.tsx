@@ -6,7 +6,7 @@ import {
   type RaiseSupportAccessRequest,
 } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button, Panel } from '@easyesg/ui';
-import { FormSummary, FormTextField } from '@easyesg/ui/forms';
+import { FormSummary, FormTextArea, FormTextField } from '@easyesg/ui/forms';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'use-intl';
@@ -24,8 +24,8 @@ type RequestFields = Pick<RaiseSupportAccessRequest, 'ticketReference' | 'reason
  * organization. **The duration and the mode are shown and not offered**: 60 minutes from the grant and read-only
  * are fixed (project owner, 14 Sep 2026), so a control for either would be a choice that does not exist.
  *
- * **The reason is a single-line field**: the console's bound form controls hold no multi-line one, and adding one to
- * `packages/ui` is an inventory change of its own (UX-89) — the field takes its 500 characters either way.
+ * **The reason is a multi-line field**: the organization reads it before answering, and it may run to 500 characters.
+ * It shipped single-line until `FormTextArea` joined `@easyesg/ui/forms` (14 Sep 2026, UX-89 amended the same day).
  *
  * The refusal is one value with a lifecycle, cleared on the next submission — A-08's invitation form's reading.
  */
@@ -99,7 +99,7 @@ export function RequestForm({
             }}
           />
 
-          <FormTextField
+          <FormTextArea
             control={control}
             name="reason"
             label={t('reasonLabel')}
