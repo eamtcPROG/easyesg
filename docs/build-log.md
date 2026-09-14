@@ -19761,3 +19761,49 @@ operator address is stored lower-cased by rule and there is no display-case to k
 - `pnpm e2e` — **978 across 41 suites**, one more than task 67.4's run: the new case.
 - **Not run:** the browser suite, since no console markup changed and the change is api-only; the review
   agents and `gates:clean`, under the owner's standing rule.
+
+## Task 133.1 — `ConsumeRecoveryCode` gets its own file · 2026-09-14
+
+Taken ahead of task 144 on the owner's decision (14 Sep 2026), which is the order `task.md` gives it.
+**Its row's reason no longer holds, and the owner chose to do it anyway.** The row says tasks 144 and 151
+both amend `manage-totp.use-case.ts`; but 144, as its open questions settled it, builds the admin realm's
+credentials over that realm's own store and reuses only the pure modules — `recovery-code.ts`, `totp.ts`,
+`auth-throttle.ts`, the password policy — so neither task opens the file. Offered *leave it and correct
+the rationale* or *do it first*, the owner chose the second. The row's text is left as the plan wrote it,
+and this entry is where the premise is corrected.
+
+### What changed
+
+- `ConsumeRecoveryCode` moves to `identity/account/use-cases/consume-recovery-code.use-case.ts` with its
+  docblock, and its inline `{ accountId, code }` becomes `ConsumeRecoveryCodeCommand` — CLAUDE.md's
+  `<UseCase>Command` naming, which the class never followed while it was the second export of another use
+  case's file. No behaviour moved.
+- Its four cases move with it into `consume-recovery-code.use-case.spec.ts`, unchanged. **`ManageTotp`'s
+  re-issue case still constructs it** — as a collaborator, to observe that an old code stops spending — so
+  that spec imports it from the new file. The first sweep read only the describe block being moved and
+  missed this site; typecheck named it.
+- Three importers repointed: `account.module.ts`, `account-second-factor.ts`, `test/totp.e2e-spec.ts`.
+  `totp.service.ts` and `totp.response.dto.ts` import only `ManageTotp` and `TotpEnrolmentOffer`, which
+  stay where they were.
+- `apps/api/CLAUDE.md`'s *one behaviour per file* paragraph and the root file's workspace table name one
+  file outstanding, 133.2's. Task 133 stays `TODO`: 133.2 is deferred to Stage 2.
+
+### Searched
+
+`grep -rn "manage-totp.use-case" apps/api` for importers, then `ConsumeRecoveryCode` across `apps/api/src`
+and `apps/api/test` for every site naming the class, and the docs set, both CLAUDE.md files and
+`.agents/skills` for prose naming the file. `file-one-behaviour-api.md` keeps it as its incorrect/correct
+illustration, which reads the same now that the file meets the rule.
+
+### Verification
+
+- `pnpm --filter @easyesg/api typecheck` clean — the program includes `test/`, so the e2e suite's import is
+  resolved too; `pnpm --filter @easyesg/api test` — 887 across **98** suites, the same cases in one more
+  file; `pnpm lint` clean; `pnpm docs:check` — 40 claims.
+- **Not run for this sub-step on its own: `pnpm e2e`.** The change moves a class and renames nothing Nest
+  resolves — the provider token is the class itself — and task 144, taken next over the same tree, runs
+  `pnpm e2e`, including `totp.e2e-spec.ts`, which resolves `ConsumeRecoveryCode` from the booted
+  application. That run is this entry's boot proof, and 144's entry reports it. The review agents and
+  `gates:clean` did not run, under the owner's standing rule; 133's parent close is where the moved file
+  makes `gates:clean` the required run.
+

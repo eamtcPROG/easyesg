@@ -563,10 +563,10 @@ case, a service, a controller, a repository or a consumer is one file each. `<mo
 the module's closed set of refusals — and a `dto/` file — one wire object with its parts — are
 vocabularies and stay whole; a repository's private transaction adapter (`AccountTransactionAdapter`
 beside `AccountStoreRepository`, five such) is the same behaviour's second face and stays beside
-it. Two files do not meet it, both task 133's: `core/disclosure/use-cases/read-wizard-step.use-case.ts`
-— 1,222 lines, one use case beside two private resolver classes and nine helpers — and
-`identity/account/use-cases/manage-totp.use-case.ts`, where `ManageTotp` and `ConsumeRecoveryCode`
-are two use cases in one file.
+it. One file does not meet it, task 133.2's: `core/disclosure/use-cases/read-wizard-step.use-case.ts`
+— 1,222 lines, one use case beside two private resolver classes and nine helpers. The second,
+`identity/account/use-cases/manage-totp.use-case.ts`, held `ManageTotp` and `ConsumeRecoveryCode`
+until task 133.1 gave the latter `consume-recovery-code.use-case.ts`.
 
 A module is a unit of ownership, not a URL prefix. Several own no routes at all
 (`platform/configuration`, `billing/entitlement`); that is correct. **`core/comparatives` left

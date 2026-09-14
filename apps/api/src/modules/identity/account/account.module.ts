@@ -23,7 +23,8 @@ import { ResendVerificationEmail } from './use-cases/resend-verification-email.u
 import { ResetPassword } from './use-cases/reset-password.use-case';
 import { AccountSecondFactor } from './use-cases/account-second-factor';
 import { ChangePassword } from './use-cases/change-password.use-case';
-import { ConsumeRecoveryCode, ManageTotp } from './use-cases/manage-totp.use-case';
+import { ConsumeRecoveryCode } from './use-cases/consume-recovery-code.use-case';
+import { ManageTotp } from './use-cases/manage-totp.use-case';
 import { SECOND_FACTOR } from './interfaces/second-factor.interface';
 import { VerifyEmail } from './use-cases/verify-email.use-case';
 

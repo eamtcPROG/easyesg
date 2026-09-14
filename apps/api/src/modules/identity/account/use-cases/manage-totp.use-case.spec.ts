@@ -7,18 +7,20 @@ import {
   TotpCodeInvalidError,
   TotpNotEnrolledError,
 } from '../errors/account.errors';
-import { hashRecoveryCode, RECOVERY_CODE_COUNT } from '../domain/recovery-code';
+import { RECOVERY_CODE_COUNT } from '../domain/recovery-code';
 import { ACCOUNT_STATUS } from '../models/account.model';
 import { FakeAccountStore, FakePasswordHasher } from '../testing/account-store.fake';
-import { ConsumeRecoveryCode, ManageTotp } from './manage-totp.use-case';
+// A collaborator here, not a subject: the re-issue case observes that an old code stops spending.
+import { ConsumeRecoveryCode } from './consume-recovery-code.use-case';
+import { ManageTotp } from './manage-totp.use-case';
 
 /**
- * UC-193 and UC-195 (NFR-95; task 27.2).
+ * UC-193 (NFR-95; task 27.2).
  *
  * What is pinned here is everything §12.5.6's task-27.2 row decided and no browser journey can
  * reach cheaply: that a wrong password refuses each of the three password-gated operations, that a
- * provider-only account is admitted without one, that an unconfirmed enrolment activates nothing,
- * and that a spent code is spent.
+ * provider-only account is admitted without one, and that an unconfirmed enrolment activates
+ * nothing. That a spent code is spent is `consume-recovery-code.use-case.spec.ts`'s, since task 133.1.
  */
 const PASSWORD = 'ParolaMea1!';
 const OTHER_ACCOUNT = 'account-2';
@@ -242,46 +244,5 @@ describe('ManageTotp (UC-193, NFR-95)', () => {
         totp.confirm({ accountId: 'account-1', code: totpCodeAt(offer.secret, now) ?? '' }),
       ).rejects.toThrow(AuthRateLimitedError);
     });
-  });
-});
-
-describe('ConsumeRecoveryCode (UC-195)', () => {
-  const now = new Date('2026-08-26T10:00:00Z');
-  let store: FakeAccountStore;
-  let consume: ConsumeRecoveryCode;
-
-  beforeEach(() => {
-    store = new FakeAccountStore();
-    consume = new ConsumeRecoveryCode(store, () => now);
-    store.recoveryCodes.push(
-      { accountId: 'account-1', codeHash: hashRecoveryCode('0123456789ABCDEF'), spentAt: null },
-      { accountId: OTHER_ACCOUNT, codeHash: hashRecoveryCode('FEDCBA9876543210'), spentAt: null },
-    );
-  });
-
-  it('spends a code once and refuses it thereafter', async () => {
-    expect(await consume.execute({ accountId: 'account-1', code: '0123456789ABCDEF' })).toBe(true);
-    expect(await consume.execute({ accountId: 'account-1', code: '0123456789ABCDEF' })).toBe(false);
-  });
-
-  it('accepts the code as printed and as retyped', async () => {
-    // Grouped, lower case, and with the letter O where a zero was printed — the three things a
-    // person does when copying from paper.
-    expect(
-      await consume.execute({ accountId: 'account-1', code: 'o123-4567-89ab-cdef' }),
-    ).toBe(true);
-  });
-
-  it('refuses a code belonging to a different account', async () => {
-    // Scoped by account as well as by hash: the codes are unique, but a lookup by hash alone
-    // would make one account's code a credential against another's if two ever collided.
-    expect(await consume.execute({ accountId: 'account-1', code: 'FEDCBA9876543210' })).toBe(false);
-    expect(store.recoveryCodes[1].spentAt).toBeNull();
-  });
-
-  it('refuses an unrecognised code without disclosing that it is unrecognised', async () => {
-    // Both refusals answer `false` — NFR-64's uniform response. The store knows the difference
-    // and keeps it; the caller cannot tell a spent code from one that never existed.
-    expect(await consume.execute({ accountId: 'account-1', code: 'ZZZZZZZZZZZZZZZZ' })).toBe(false);
   });
 });

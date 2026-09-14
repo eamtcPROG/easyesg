@@ -2,7 +2,7 @@ import { verifyTotp } from '@api/modules/platform/admin/domain/totp';
 import type { Clock } from '@api/contracts/clock.port';
 import type { AccountStore } from '../interfaces/account-store.interface';
 import type { SecondFactor } from '../interfaces/second-factor.interface';
-import { ConsumeRecoveryCode } from './manage-totp.use-case';
+import { ConsumeRecoveryCode } from './consume-recovery-code.use-case';
 
 /**
  * `SecondFactor` over this module's own store (task 27.3).

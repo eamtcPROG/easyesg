@@ -8,7 +8,7 @@ import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { totpCodeAt } from '../src/modules/platform/admin/domain/totp';
 import { RECOVERY_CODE_COUNT } from '../src/modules/identity/account/domain/recovery-code';
-import { ConsumeRecoveryCode } from '../src/modules/identity/account/use-cases/manage-totp.use-case';
+import { ConsumeRecoveryCode } from '../src/modules/identity/account/use-cases/consume-recovery-code.use-case';
 import { connectAs } from './support/database';
 import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
