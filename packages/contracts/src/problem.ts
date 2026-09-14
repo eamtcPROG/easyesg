@@ -42,6 +42,9 @@ export const PROBLEM_TYPE = {
   EmailUnverified: 'https://easyesg.md/problems/email-unverified',
   /** FR-4's lockout — S-01 offers the reset route, its only release before Phase 8. */
   AccountLocked: 'https://easyesg.md/problems/account-locked',
+  /** The admin realm's lockout (task 144) — A-01 offers its recovery sign-in beside the refusal, the one
+   *  release that needs no other operator, since a locked account never reaches the factor step (task 151). */
+  AdminAccountLocked: 'https://easyesg.md/problems/admin-account-locked',
   /** FR-82: the provider is disabled or unregistered — the callback shows "use email and
    *  password" rather than a retry (task 24). */
   SocialProviderUnavailable: 'https://easyesg.md/problems/social-provider-unavailable',

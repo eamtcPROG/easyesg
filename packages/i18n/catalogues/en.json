@@ -255,7 +255,7 @@
   "platform": {
     "admin": {
       "credential_invalid": "The address or the password is not right, so no session was created. Check both and try again.",
-      "account_locked": "This account is locked after too many failed attempts, so signing in is not possible right now. Ask another platform administrator to unlock it.",
+      "account_locked": "This account is locked after too many failed attempts, so signing in is not possible right now. Sign in with one of your recovery codes, which also unlocks it, or ask another platform administrator to unlock it.",
       "factor_invalid": "That code is not valid right now, so sign-in did not complete. Open your authenticator app and enter the code it is showing now.",
       "session_expired": "The administration session has expired, so the request was not processed. Sign in again to continue.",
       "session_invalid": "The administration session is no longer valid, so the request was not processed. Sign in again to continue.",

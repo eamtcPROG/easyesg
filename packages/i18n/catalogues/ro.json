@@ -255,7 +255,7 @@
   "platform": {
     "admin": {
       "credential_invalid": "Adresa sau parola nu sunt corecte, așa că sesiunea nu a fost creată. Verificați-le și încercați din nou.",
-      "account_locked": "Contul a fost blocat după prea multe încercări eșuate, deci autentificarea nu este posibilă acum. Cereți altui administrator de platformă să îl deblocheze.",
+      "account_locked": "Contul a fost blocat după prea multe încercări eșuate, deci autentificarea nu este posibilă acum. Intrați cu unul dintre codurile de recuperare, care îl și deblochează, sau cereți altui administrator de platformă să îl deblocheze.",
       "factor_invalid": "Codul introdus nu este valabil în acest moment, așa că autentificarea nu s-a finalizat. Deschideți aplicația de autentificare și introduceți codul afișat acum.",
       "session_expired": "Sesiunea de administrare a expirat, deci cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
       "session_invalid": "Sesiunea de administrare nu mai este valabilă, așa că cererea nu a fost procesată. Autentificați-vă din nou pentru a continua.",
