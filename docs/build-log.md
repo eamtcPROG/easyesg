@@ -20146,3 +20146,134 @@ before any code.
   requests; `rerender-defer-reads` declined for the notice's subscription to that query, which re-renders one
   callout. `vercel-composition-patterns`: no boolean prop was added — the factor step takes an `onRecover`
   callback, and A-01's steps stay distinct components, the property its screen docblock pins.
+
+## Task 67.9 — A-07 support access, and the organization's consent to it · 2026-09-14
+
+UC-85 and UC-86 across all three applications. A Platform Administrator asks an organization for access to its
+reports from A-02's record; an Organization Administrator of that organization grants or declines it from a banner
+in the tenant app; a grant lets the operator who asked read the organization's reports and module values,
+read-only, for 60 minutes under a countdown, every read written to the log before it runs; either side ends it,
+and an unanswered request lapses after 24 hours with nothing running to expire it. A-07 holds the request form,
+what is in progress, the grant's read view and the log; A-08 gains the support-access column. Two open-question
+batches, every answer on the recommended option, written into FR-78, BR-ACC-6, UC-85, UC-86, `actors.md`,
+`design_spec.md` (A-07, A-08, UX-124) and `architecture.md` §12.5.6 before any code.
+
+### The owner's decisions
+
+§12.5.6's task-67.9 row carries all eight; in short: **the organization consents** (an amendment to FR-78, taken
+from A-07's artboard); a grant opens **the organization's reports, read-only, scoped by RLS** as `esg_app`, not
+through `BYPASSRLS`; **60 minutes fixed, read-only fixed**, no extension; **any Platform Administrator ends any
+grant, and every one reads the whole log**; **any active Organization Administrator answers, from a banner**;
+**24 hours to answer**; **every member sees running access, and any administrator ends it**; **A-08 counts each
+operator's requests in 30 days**.
+
+### Four rules the build needed, recorded in §12.5.6
+
+- **Consent is the database's**: the log's unbound insert policy never admits a grant or a decline, and the
+  organization's admits one only for the bound organization with the bound member as actor.
+- **A grant is the asking operator's alone to read under** — the banner the organization answered names that
+  operator — while any Platform Administrator may still end it.
+- **One waiting or running request per operator per organization**; a second is `support-access-outstanding`.
+- **A-07's form names the organization from the register by id** — `GET /admin/organizations/{id}`, logged as
+  A-02's page is.
+
+### Routine calls, stated
+
+- **The lifecycle is rows, the state a fold.** `supportAccessRequestOf` reads a request and its decisions against
+  the clock: the first grant or decline before the lapse wins, an end counts only inside the grant's hour.
+- **A read under a grant borrows S-06's and S-07's services** — `DisclosureModule` exports `ReportService` and
+  `WizardService` — run inside a READ ONLY, organization-bound transaction that `SupportAccessGrantedReads` lends
+  to the request context, because an admin-realm request carries none. The access row is written first, on its
+  own unbound connection; a failed write refuses the read.
+- **The operator's own history and the request lookups read through a bound READ ONLY connection**
+  (`bound-read-only.ts`), not `esg_admin_ro`; **the log and A-08's count read through `AdminReadOnly`**, since
+  both span every organization — and so both are themselves logged.
+- **Tenant writes carry no `@AuditAction`**: their record is the log row naming the member who wrote it.
+- **Contracts mirror four vocabularies** (`support-access.ts`), each held to the wire by `SameSet`, which moved into
+  its own module for its second reader. **`PROBLEM_TYPE` gains `SupportAccessRequired` and not
+  `SupportAccessOutstanding`**: A-07's grant view switches to *access ended* on the first, and no client branches on
+  the second — its refusal is shown as worded.
+- **The banner sits in the `(app)` layout behind a `<Suspense>` with no fallback** — `shell-boundary-per-reading-region`
+  considered and declined: the banner's ordinary state is absent, so a skeleton would reserve and collapse a band on
+  nearly every render. Its time left is written at render, on the server's clock; the console's countdown is live.
+- **No confirmation on grant, decline or end**, in either app: the banner states what a grant does before its button
+  does, and an end takes nothing from anyone that a new request cannot ask for again.
+- **The console's log polls only while a request waits or a grant runs** (`logIsMoving`) — every read of it writes
+  an acquisition row, and an idle open tab would otherwise write 120 an hour. **The grant reads never refetch on their
+  own** (no focus refetch, nothing kept after unmount, their own key root), since each writes an access row.
+- **The grant view finds its grant on the log's first page**, which the in-progress region already read. A grant is
+  at most 85 minutes old, so it falls off page one only past 50 requests in that time — stated, not guarded.
+- **Two known limits of A-07's read view**: module values show no unit — a unit's words are the tenant app's
+  catalogue copy (OQ-43), and a second catalogue for one screen is not this task's — and **the reason is a
+  single-line field**, since the console's bound form controls hold no multi-line one and adding one is a
+  `packages/ui` inventory change (UX-89) of its own.
+- **The log shows an access's module, never its report id**: the subject is `<report id>/<module>`, and the id is
+  an internal identifier (`accessModuleOf`).
+- **Russian says *поддержка сможет*** where Romanian and English need no pronoun, rather than gendering the operator.
+
+### What the gates found
+
+- **`openapi:emit` exited 1 and printed nothing.** `@UseGuards` builds a guard as an injectable of the controller's
+  own module, so `SupportAccessModule` needed `AdminSessionService` visible to it — and exporting `AdminRealmGuard`
+  itself, the first attempt, changes nothing. Preview mode caught it, which `emit-openapi.ts` said it could not;
+  the docblock now says what it can, and that `logger: false` with the default `abortOnError` hides the reason.
+  The one-liner that shows it: boot `AppModule` with `{ preview: true, abortOnError: false }` and log the rejection.
+- **`migrations:check` found the `down` deleting nothing.** The owner is subject to `FORCE ROW LEVEL SECURITY` and
+  the log has no DELETE policy, so `DELETE ... WHERE entry_kind <> 'acquisition'` removed no row, silently, and
+  `purpose SET NOT NULL` failed on the rows it left — `apps/api/CLAUDE.md`'s own recorded trap, met again. The
+  `down` lifts `FORCE` on the parent around that one statement. **The first precedent for a migration disabling
+  `no_mutate`**, inside its transaction, and lossy by necessity: the grant half cannot be held by the table it
+  reverts to.
+- **Task 67.3's register suite asserted `permission denied` on `SELECT`**; `esg_app` now holds SELECT, and the test
+  asserts what is true instead — admitted, and nothing visible unbound.
+- **Lint**: the fakes' `async` methods with no `await`, rewritten to the house's `Promise.resolve`. **Typecheck**: A-08's
+  roster fixture lacked the new field, and a spec helper's `as const` made a readonly list. **`folder-shape`**: the
+  feature's scaffold `index.ts` beside its built folders. **`docs:check`**: five counts this task moved.
+- **Not found by a gate**: `t-heading-4` is not a type role — nothing fails on an unknown class, so four sub-headings
+  would have rendered unstyled; they are `t-body-strong`. And **the component trees broke
+  `components-region-anatomy`** — each region was one flat folder — found by reading that rule against the diff
+  after the tree was built; 31 files moved into `section/`, parts, `states/` and `shared/` by a script that
+  rewrote every relative specifier, `vi.mock` paths included, and `useNow`, with one reader, left `shared/` for a
+  private hook in the countdown.
+
+### Searched
+
+- **`SameSet`**: one private copy, in `admin.ts` — moved, not copied.
+- **An Organization Administrator predicate in `apps/web`**: none — `mayAdminister` joins `mayWrite`.
+- **`tools/prove-boundaries.sh` for a `support-access` fixture** before deleting the scaffold barrel: none.
+- **`.gitignore` against the new `support-access/` directories**: `git check-ignore` names nothing, and
+  `git status --untracked-files=all` lists every file.
+- **Every `t-` class in the new trees** against the type roles `packages/ui` and the console declare.
+
+### Skills, read against the diff
+
+`one-kind-per-folder` (`components-region-anatomy`, `components-mirror-the-return`, `shared-admission-test` —
+applied, and the restructure is its finding); `one-idea-per-file` (`shell-composes-only`: A-07's heading left the
+shell; `pure-logic-leaves-the-component`: the address, the read arms, the countdown, a field's display and an
+access's module are `tools/` with a spec each; `shell-boundary-per-reading-region` declined, above);
+`nestjs-best-practices` (`arch-avoid-circular-deps`: `SupportAccessModule` imports `AdminModule` and
+`DisclosureModule` and neither imports it back; `error-throw-http-exceptions` declined as always, `DomainError`);
+`vercel-react-best-practices` (`server-parallel-fetching`: the banner reads beside the global tier and its three
+reads start together; `rerender-memo`: A-07's columns are memoised on their inputs, `reactCompiler` being off).
+
+### Verification
+
+- `@easyesg/api`: **950 tests across 111 suites**; `pnpm e2e` **1,068 tests across 44 suites**, the 14 of
+  `support-access.e2e-spec.ts` among them — consent held by the policies, expiry and lapse written in the past, the
+  reads equal to the organization's own; `pnpm migrations:check` green with **56** invariants after the `down`'s fix.
+- **The contract**: 70 paths to **80**, and a fresh api build, emit and regeneration reproduce `v1.json` and
+  `v1.ts` byte for byte — `openapi:check`'s property, proven without staging anything.
+- `@easyesg/contracts` typecheck clean; `@easyesg/web` typecheck clean and **576 tests across 49 files**;
+  `@easyesg/admin` typecheck clean and **220 tests across 25 files** — both after the moves, `folder-shape.spec.ts`
+  counting a case per directory; `pnpm routes:check` exit 0 after the moves; `pnpm lint` clean; `pnpm docs:check`
+  40 claims.
+- **The full `pnpm e2e:web`: 195 of 196**, the new cross-app journey passing. The one failure was an `identity`
+  wizard journey — a combobox option detached under its click, timing out — in a run that shared the machine with
+  the typecheck, test and build runs this task started beside it. **Re-run alone against the same bundles, three
+  times: 3 of 3.** Its two `⨯ The destination stream closed early` lines carry digest `2667547900`.
+- **After the 31-file move, against bundles rebuilt from the moved trees**: the cross-app journey — the one test
+  that drives every moved component in both apps — **1 of 1**. The full run above predates the move; the move is
+  otherwise proven by both typechecks, both unit suites and the console's build.
+- **Not run**: `pnpm e2e:worker` — no consumer changed. **The review agents and `gates:clean` did not run**, under
+  the owner's standing rule for a sub-step; 67's parent close gets both, and this diff is one that close must run
+  cold — files moved, `packages/contracts` changed, and a generated artefact regenerated.
