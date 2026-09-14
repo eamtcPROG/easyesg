@@ -24,20 +24,25 @@ import type { AdminFactorRequest } from '@easyesg/contracts';
  * rule, same autofill — because the control's whole design is to keep the single-input properties
  * the plain field already had.
  *
- * Still drawn by the artboard and still not here, each with its owner: the **code-window
- * countdown** (`CodeField` exposes a `hint` slot for it; the value it counts is this realm's
- * five-minute challenge, and nothing here reaches it) and the **recovery-code route** — the admin
- * realm has no recovery codes, task 27.2 built them for the tenant realm only, so that link has
- * no implementation to point at. `factor.totpHelp` states the five-minute bound in words
- * meanwhile, so the operator is not left to discover it by being timed out.
+ * **The recovery-code route is here since task 151**, task 144 having given the realm recovery
+ * codes: it opens A-01's third step for the address this challenge verified. **The artboard draws
+ * two links, *Use a recovery code* and *Lost your device?*, and this is one** — the second is the
+ * question the first answers, and two controls opening one step would be two names for one action.
+ *
+ * Still drawn by the artboard and still not here: the **code-window countdown** (`CodeField`
+ * exposes a `hint` slot for it; the value it counts is this realm's five-minute challenge, and
+ * nothing here reaches it). `factor.totpHelp` states the five-minute bound in words meanwhile, so
+ * the operator is not left to discover it by being timed out.
  */
 export function FactorStep({
   busy,
   onSubmit,
+  onRecover,
   onChangeAccount,
 }: {
   busy: boolean;
   onSubmit: (command: AdminFactorRequest) => void;
+  onRecover: () => void;
   onChangeAccount: () => void;
 }) {
   const t = useTranslations('realm.signIn');
@@ -67,10 +72,19 @@ export function FactorStep({
         {t('factor.submit')}
       </Button>
 
+      <p className="t-caption flex flex-wrap gap-x-[var(--space-1)]">
+        <span>{t('factor.lostDevice')}</span>
+        <TextLink asChild>
+          <button type="button" onClick={onRecover} className="cursor-pointer">
+            {t('factor.recover')}
+          </button>
+        </TextLink>
+      </p>
+
       <p className="t-caption">
         <TextLink asChild>
           <button type="button" onClick={onChangeAccount} className="cursor-pointer">
-            {t('factor.changeAccount')}
+            {t('changeAccount')}
           </button>
         </TextLink>
       </p>

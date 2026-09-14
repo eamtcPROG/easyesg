@@ -14,6 +14,7 @@ import { Route as FocusRouteImport } from './routes/_focus';
 import { Route as RealmRouteImport } from './routes/_realm';
 import { Route as FocusSignInRouteImport } from './routes/_focus/sign-in';
 import { Route as RealmAccountsRouteImport } from './routes/_realm/accounts';
+import { Route as RealmCredentialsRouteImport } from './routes/_realm/credentials';
 import { Route as RealmIdentityProvidersRouteImport } from './routes/_realm/identity-providers';
 import { Route as RealmMetricsRouteImport } from './routes/_realm/metrics';
 import { Route as RealmNotificationTemplatesRouteImport } from './routes/_realm/notification-templates';
@@ -57,6 +58,11 @@ const FocusSignInRoute = FocusSignInRouteImport.update({
 const RealmAccountsRoute = RealmAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
+  getParentRoute: () => RealmRoute,
+} as any);
+const RealmCredentialsRoute = RealmCredentialsRouteImport.update({
+  id: '/credentials',
+  path: '/credentials',
   getParentRoute: () => RealmRoute,
 } as any);
 const RealmIdentityProvidersRoute = RealmIdentityProvidersRouteImport.update({
@@ -172,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute;
   '/sign-in': typeof FocusSignInRoute;
   '/accounts': typeof RealmAccountsRoute;
+  '/credentials': typeof RealmCredentialsRoute;
   '/identity-providers': typeof RealmIdentityProvidersRoute;
   '/metrics': typeof RealmMetricsRoute;
   '/notification-templates': typeof RealmNotificationTemplatesRoute;
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute;
   '/sign-in': typeof FocusSignInRoute;
   '/accounts': typeof RealmAccountsRoute;
+  '/credentials': typeof RealmCredentialsRoute;
   '/identity-providers': typeof RealmIdentityProvidersRoute;
   '/metrics': typeof RealmMetricsRoute;
   '/notification-templates': typeof RealmNotificationTemplatesRoute;
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/_realm': typeof RealmRouteWithChildren;
   '/_focus/sign-in': typeof FocusSignInRoute;
   '/_realm/accounts': typeof RealmAccountsRoute;
+  '/_realm/credentials': typeof RealmCredentialsRoute;
   '/_realm/identity-providers': typeof RealmIdentityProvidersRoute;
   '/_realm/metrics': typeof RealmMetricsRoute;
   '/_realm/notification-templates': typeof RealmNotificationTemplatesRoute;
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/'
     | '/sign-in'
     | '/accounts'
+    | '/credentials'
     | '/identity-providers'
     | '/metrics'
     | '/notification-templates'
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/'
     | '/sign-in'
     | '/accounts'
+    | '/credentials'
     | '/identity-providers'
     | '/metrics'
     | '/notification-templates'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/_realm'
     | '/_focus/sign-in'
     | '/_realm/accounts'
+    | '/_realm/credentials'
     | '/_realm/identity-providers'
     | '/_realm/metrics'
     | '/_realm/notification-templates'
@@ -373,6 +385,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts';
       fullPath: '/accounts';
       preLoaderRoute: typeof RealmAccountsRouteImport;
+      parentRoute: typeof RealmRoute;
+    };
+    '/_realm/credentials': {
+      id: '/_realm/credentials';
+      path: '/credentials';
+      fullPath: '/credentials';
+      preLoaderRoute: typeof RealmCredentialsRouteImport;
       parentRoute: typeof RealmRoute;
     };
     '/_realm/identity-providers': {
@@ -539,6 +558,7 @@ const FocusRouteWithChildren = FocusRoute._addFileChildren(FocusRouteChildren);
 
 interface RealmRouteChildren {
   RealmAccountsRoute: typeof RealmAccountsRoute;
+  RealmCredentialsRoute: typeof RealmCredentialsRoute;
   RealmIdentityProvidersRoute: typeof RealmIdentityProvidersRoute;
   RealmMetricsRoute: typeof RealmMetricsRoute;
   RealmNotificationTemplatesRoute: typeof RealmNotificationTemplatesRoute;
@@ -563,6 +583,7 @@ interface RealmRouteChildren {
 
 const RealmRouteChildren: RealmRouteChildren = {
   RealmAccountsRoute: RealmAccountsRoute,
+  RealmCredentialsRoute: RealmCredentialsRoute,
   RealmIdentityProvidersRoute: RealmIdentityProvidersRoute,
   RealmMetricsRoute: RealmMetricsRoute,
   RealmNotificationTemplatesRoute: RealmNotificationTemplatesRoute,

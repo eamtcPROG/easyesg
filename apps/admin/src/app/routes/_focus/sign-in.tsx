@@ -1,6 +1,6 @@
 /**
- * A-01 — Admin sign-in · PA, BO · UC-68 · Focus · Phase 2 (task 23; two-step handshake since
- * the 24 Aug 2026 review)
+ * A-01 — Admin sign-in · PA, BO · UC-68, UC-212 · Focus · Phase 2 (task 23; two-step handshake
+ * since the 24 Aug 2026 review; the recovery sign-in since task 151)
  *
  * Elevated sign-in for the administrative realm: the credential opens a sealed five-minute
  * challenge, the mandatory TOTP code completes it (FR-75, NFR-65) — this surface shares no
@@ -13,13 +13,16 @@
  * `?redirect=` is the realm guard's UX-38: the screen the closed-by-default `_realm` boundary
  * turned away. It round-trips the browser, so only a same-app path survives; everything else
  * lands on the operator's console home — A-02 for a Platform Administrator, A-10 for a Billing
- * Operator (A-01's exit, `design_spec.md` §5.2; task 67.1).
+ * Operator (A-01's exit, `design_spec.md` §5.2; task 67.1). **A recovery sign-in lands on A-19
+ * instead, whatever `?redirect=` carried** (task 151): a code was just spent, perhaps for a lost
+ * authenticator, and A-19 is where both are put right.
  */
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { ADMIN_SESSION_QUERY_KEY } from '~/realm/queries/session';
 import { SignInScreen } from '~/realm/components/sign-in/sign-in-screen';
 import { consoleHomeFor } from '~/realm/tools/console-home';
+import { CREDENTIALS_ARRIVAL } from '~/realm/tools/credentials-arrival';
 import { readSignInNotice, type SignInNotice } from '~/realm/tools/sign-in-notice';
 
 /** Same-app paths only — a crafted link must not turn sign-in into an open redirect. */
@@ -50,6 +53,12 @@ function AdminSignInRoute() {
         // is about to run asks the api nothing.
         queryClient.setQueryData(ADMIN_SESSION_QUERY_KEY, account);
         void navigate({ to: safeRealmPath(target) ?? consoleHomeFor(account.role) });
+      }}
+      onRecovered={({ account }) => {
+        queryClient.setQueryData(ADMIN_SESSION_QUERY_KEY, account);
+        // The count of codes left is not carried: A-19 reads it, and a number of spare credentials
+        // has no place in a history entry (`credentials-arrival.ts`).
+        void navigate({ to: '/credentials', search: { notice: CREDENTIALS_ARRIVAL.RECOVERED } });
       }}
     />
   );

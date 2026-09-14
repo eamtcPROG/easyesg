@@ -5,6 +5,8 @@ import {
   type AdminChallengeRequest,
   type AdminChallengeResponse,
   type AdminFactorRequest,
+  type AdminRecoveredSession,
+  type AdminRecoveryRequest,
   type AdminSessionResponse,
   type ApiOutcome,
 } from '@easyesg/contracts';
@@ -76,6 +78,20 @@ export function completeSignIn(
         ? { ...outcome, value: outcome.value.account }
         : outcome,
     );
+}
+
+/**
+ * UC-212's way back (task 144; A-01's third step since task 151): the address, the password and one
+ * recovery code together. The code is judged before the password, it is spent, a lock is released,
+ * and success is a full session that says how many codes remain.
+ */
+export function recoverSignIn(
+  command: AdminRecoveryRequest,
+): Promise<ApiOutcome<AdminRecoveredSession>> {
+  return api.post<AdminRecoveryRequest, AdminRecoveredSession>(
+    `${ADMIN_SESSION_PATH}/recovery`,
+    command,
+  );
 }
 
 /** FR-5's shape for the realm: server-side revocation plus the cleared cookie, in one call. */

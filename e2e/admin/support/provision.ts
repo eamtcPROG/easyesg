@@ -59,9 +59,9 @@ export function provisionOperator({ email, password, totpSecret, role }: Operato
   });
 }
 
-/** Cleanup runs as the migration owner — `esg_app` deliberately holds no DELETE (task 23's
+/** The migration owner's connection — `esg_app` deliberately holds no DELETE (task 23's
  *  migration), and that grant split is not this suite's to work around. */
-export async function cleanupOperators(prefix: string): Promise<void> {
+async function asMigrator(work: (client: Client) => Promise<void>): Promise<void> {
   const client = new Client({
     host: process.env.DB_HOST ?? 'localhost',
     port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
@@ -71,12 +71,32 @@ export async function cleanupOperators(prefix: string): Promise<void> {
   });
   await client.connect();
   try {
+    await work(client);
+  } finally {
+    await client.end();
+  }
+}
+
+export async function cleanupOperators(prefix: string): Promise<void> {
+  await asMigrator(async (client) => {
     await client.query(`DELETE FROM identity.auth_attempt WHERE attempt_key LIKE $1`, [
       `%${prefix}%`,
     ]);
     await client.query(`DELETE FROM identity.admin_invitation WHERE email LIKE $1`, [`${prefix}%`]);
     await client.query(`DELETE FROM identity.admin_account WHERE email LIKE $1`, [`${prefix}%`]);
-  } finally {
-    await client.end();
-  }
+  });
+}
+
+/**
+ * A lockout, as the handshake's own counter leaves one (task 151) — written rather than earned,
+ * because the ten refusals that earn it are task 144's api e2e to prove, and A-01's journey needs
+ * only a lock to exist.
+ */
+export async function lockOperator(email: string): Promise<void> {
+  await asMigrator(async (client) => {
+    await client.query(
+      `UPDATE identity.admin_account SET locked_at = now(), failed_attempts = 10 WHERE email = $1`,
+      [email],
+    );
+  });
 }

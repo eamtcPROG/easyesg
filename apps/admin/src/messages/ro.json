@@ -46,7 +46,8 @@
         "totpHelp": "Codul se schimbă la 30 de secunde; aveți cinci minute pentru acest pas, apoi autentificarea reîncepe.",
         "totpMissing": "Codul de verificare lipsește, iar al doilea factor este obligatoriu pe această suprafață. Completați codul înainte de a continua.",
         "submit": "Continuați în consolă",
-        "changeAccount": "Folosiți alt cont"
+        "lostDevice": "Ați pierdut dispozitivul?",
+        "recover": "Folosiți un cod de recuperare"
       },
       "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
       "problemTitle": "Autentificarea nu a reușit",
@@ -58,7 +59,17 @@
           "title": "Contul de operator a fost creat",
           "body": "Autentificați-vă cu adresa la care ați primit invitația, parola aleasă și codul din aplicația de autentificare."
         }
-      }
+      },
+      "recovery": {
+        "title": "Intrați cu un cod de recuperare",
+        "lede": "Pentru când nu aveți aplicația de autentificare sau contul este blocat. Codul folosit nu mai poate fi folosit a doua oară, iar un cont blocat se deblochează.",
+        "codeLabel": "Cod de recuperare",
+        "codeHelp": "Unul dintre codurile primite când ați emis setul, de forma XXXX-XXXX-XXXX-XXXX.",
+        "codeMissing": "Codul de recuperare lipsește, deci nu vă putem autentifica fără aplicația de autentificare. Completați unul dintre codurile nefolosite.",
+        "submit": "Intrați în consolă"
+      },
+      "changeAccount": "Folosiți alt cont",
+      "lockedRecover": "Intrați cu un cod de recuperare"
     },
     "chrome": {
       "bar": "Consola de administrare",
@@ -77,7 +88,8 @@
         "accounts": "Conturi de administrator"
       },
       "account": "Contul dumneavoastră",
-      "signOut": "Ieșiți din consolă"
+      "signOut": "Ieșiți din consolă",
+      "credentials": "Datele de autentificare"
     },
     "unreachable": {
       "title": "Serverul nu poate fi contactat",
@@ -93,15 +105,6 @@
         "passwordLabel": "Parolă nouă",
         "passwordMissing": "Parola lipsește, deci contul nu poate fi pregătit. Alegeți o parolă înainte de a continua.",
         "passwordWeak": "Parola nu îndeplinește toate cerințele de mai jos, deci contul nu poate fi pregătit. Completați cerințele rămase.",
-        "requirements": {
-          "length": "Între {minimum} și {maximum} de caractere",
-          "lowercase": "O literă mică",
-          "uppercase": "O literă mare",
-          "digit": "O cifră",
-          "further": "Încă un caracter, de exemplu un semn de punctuație",
-          "met": "îndeplinită",
-          "unmet": "neîndeplinită"
-        },
         "submit": "Continuați",
         "show": "Arătați",
         "hide": "Ascundeți"
@@ -127,7 +130,87 @@
       "problemTitle": "Contul nu a putut fi creat",
       "realmNote": "Invitațiile sunt trimise de un administrator de platformă. Parola și al doilea factor alese aici sunt cunoscute doar de dumneavoastră."
     },
-    "refusalFallback": "Cererea nu a putut fi procesată. Încercați din nou peste câteva momente."
+    "refusalFallback": "Cererea nu a putut fi procesată. Încercați din nou peste câteva momente.",
+    "passwordRequirements": {
+      "length": "Între {minimum} și {maximum} de caractere",
+      "lowercase": "O literă mică",
+      "uppercase": "O literă mare",
+      "digit": "O cifră",
+      "further": "Încă un caracter, de exemplu un semn de punctuație",
+      "met": "îndeplinită",
+      "unmet": "neîndeplinită"
+    },
+    "credentials": {
+      "title": "Datele de autentificare",
+      "summary": "Parola, al doilea factor și codurile de recuperare ale contului {email}. Le schimbați singur, fără ajutorul altui operator.",
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+      "show": "Arătați",
+      "hide": "Ascundeți",
+      "arrival": {
+        "title": "Ați intrat cu un cod de recuperare",
+        "body": "{remaining, plural, =0 {Nu v-a mai rămas niciun cod nefolosit, așa că emiteți un set nou mai jos.} one {V-a mai rămas # cod nefolosit.} few {V-au mai rămas # coduri nefolosite.} other {V-au mai rămas # de coduri nefolosite.}} Dacă ați pierdut aplicația de autentificare, configurați una nouă aici; un set nou de coduri îl înlocuiește pe cel vechi.",
+        "bodyUncounted": "Codul folosit nu mai funcționează. Dacă ați pierdut aplicația de autentificare, configurați una nouă aici; un set nou de coduri îl înlocuiește pe cel vechi."
+      },
+      "notice": {
+        "refusedTitle": "Modificarea nu a fost făcută",
+        "passwordChangedTitle": "Parola a fost schimbată",
+        "passwordChangedBody": "{sessions, plural, =0 {Folosiți parola nouă la următoarea autentificare.} one {Folosiți parola nouă la următoarea autentificare. # altă sesiune a contului a fost închisă, iar aceasta rămâne deschisă.} few {Folosiți parola nouă la următoarea autentificare. # alte sesiuni ale contului au fost închise, iar aceasta rămâne deschisă.} other {Folosiți parola nouă la următoarea autentificare. # de alte sesiuni ale contului au fost închise, iar aceasta rămâne deschisă.}}",
+        "factorReplacedTitle": "Aplicația nouă de autentificare este activă",
+        "factorReplacedBody": "Codul se cere de acum din aplicația nouă, iar cea veche nu mai funcționează. Codurile de recuperare au rămas aceleași."
+      },
+      "password": {
+        "heading": "Parolă",
+        "description": "Parola cu care intrați în consolă. Cea nouă se aplică imediat.",
+        "label": "Parola nouă",
+        "missing": "Parola nouă lipsește, deci parola nu poate fi schimbată. Completați parola nouă înainte de a continua.",
+        "weak": "Parola nouă nu îndeplinește toate cerințele de mai jos, deci nu poate fi folosită. Completați cerințele rămase.",
+        "terminate": "Închideți celelalte sesiuni ale contului",
+        "terminateHelp": "Orice alt browser în care sunteți conectat va cere o nouă autentificare. Sesiunea din care faceți schimbarea rămâne deschisă.",
+        "submit": "Schimbați parola"
+      },
+      "factor": {
+        "heading": "Al doilea factor",
+        "description": "Aplicația de autentificare care vă dă codul cerut la fiecare intrare în consolă.",
+        "standing": "Al doilea factor este activ. Dacă schimbați telefonul sau ați pierdut aplicația, configurați una nouă — cea actuală funcționează până confirmați un cod din cea nouă.",
+        "begin": "Configurați o aplicație nouă",
+        "enrolmentHeading": "Scanați simbolul sau introduceți cheia în aplicația nouă",
+        "enrolmentHelp": "Codul se schimbă la 30 de secunde. Aplicația actuală rămâne valabilă până confirmați codul de mai jos.",
+        "symbolLabel": "Simbol QR care conține cheia pentru aplicația de autentificare",
+        "codeLabel": "Cod de verificare din aplicația nouă",
+        "codeHelp": "Introduceți codul de șase cifre afișat acum de aplicația nouă.",
+        "codeMissing": "Codul de verificare lipsește, deci aplicația nouă nu poate fi activată. Completați codul afișat de aplicația nouă.",
+        "confirm": "Activați aplicația nouă",
+        "abandon": "Renunțați"
+      },
+      "recoveryCodes": {
+        "heading": "Coduri de recuperare",
+        "description": "Un cod vă permite să intrați o dată fără aplicația de autentificare și deblochează un cont blocat.",
+        "loading": "Se încarcă codurile de recuperare",
+        "noneTitle": "Nu ați emis încă niciun set de coduri de recuperare",
+        "none": "Fără coduri de recuperare, dacă pierdeți aplicația de autentificare nu mai puteți intra în consolă. Emiteți un set și păstrați-l într-un loc sigur.",
+        "issue": "Emiteți coduri de recuperare",
+        "remaining": "{remaining, plural, one {# cod nefolosit} few {# coduri nefolosite} other {# de coduri nefolosite}} din setul emis pe {issuedAt}.",
+        "reissue": "Emiteți un set nou",
+        "reissueHelp": "Un set nou îl înlocuiește pe cel actual: codurile rămase din el nu vor mai funcționa.",
+        "exhaustedTitle": "Nu mai aveți coduri de recuperare",
+        "exhaustedBody": "Toate codurile din setul emis pe {issuedAt} au fost folosite, așa că pierderea aplicației de autentificare v-ar lăsa fără acces la consolă.",
+        "issuedHeading": "Codurile noi de recuperare",
+        "issuedHelp": "Le vedeți acum o singură dată. Păstrați-le într-un loc sigur, în afara acestui calculator — fiecare poate fi folosit o dată. Codurile setului anterior nu mai funcționează.",
+        "issuedListLabel": "Codurile de recuperare",
+        "issuedDone": "Le-am păstrat",
+        "unavailable": {
+          "title": "Codurile de recuperare nu au putut fi încărcate",
+          "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se vede câte coduri vă mai rămân. Parola și al doilea factor pot fi schimbate în continuare.",
+          "action": "Încercați din nou"
+        }
+      },
+      "confirm": {
+        "heading": "Confirmarea modificărilor",
+        "help": "Fiecare modificare de mai sus cere parola cu care vă autentificați acum. Câmpul se golește după fiecare modificare, mai puțin cât timp configurați o aplicație nouă, a cărei confirmare o cere din nou.",
+        "label": "Parola actuală",
+        "missing": "Parola actuală lipsește, deci modificarea nu poate fi autorizată. Completați parola cu care vă autentificați."
+      }
+    }
   },
   "platform": {
     "organizations": {

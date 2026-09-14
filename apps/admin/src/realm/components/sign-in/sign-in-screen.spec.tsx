@@ -1,30 +1,33 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'use-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import ro from '~/messages/ro.json';
 import { CONSOLE_LOCALE, CONSOLE_TIME_ZONE, formats } from '~/i18n';
-import { beginSignIn, completeSignIn } from '../../queries/session';
+import { beginSignIn, completeSignIn, recoverSignIn } from '../../queries/session';
 import { SignInScreen } from './sign-in-screen';
 
 /**
- * A-01 against the real Romanian catalogue — the two-step handshake as the screen carries it.
- * The session module is the mocked seam; under test are the screen's own duties: the staged
- * flow (credential → factor with the server-verified address shown), the UX-111 summaries, the
- * api's refusals rendered as received, and the one branch it owns — a lapsed challenge sends
- * the flow back to the credential step.
+ * A-01 against the real Romanian catalogue — the handshake as the screen carries it. The session
+ * module is the mocked seam; under test are the screen's own duties: the staged flow (credential →
+ * factor with the server-verified address shown), the UX-111 summaries, the api's refusals rendered
+ * as received, and the branches it owns — a lapsed challenge sends the flow back to the credential
+ * step, and since task 151 the recovery step opens from the factor step or from a lockout refusal.
  */
 vi.mock('../../queries/session', () => ({
   beginSignIn: vi.fn(),
   completeSignIn: vi.fn(),
+  recoverSignIn: vi.fn(),
 }));
 
 const beginMock = vi.mocked(beginSignIn);
 const completeMock = vi.mocked(completeSignIn);
+const recoverMock = vi.mocked(recoverSignIn);
 
 const onSignedIn = vi.fn();
+const onRecovered = vi.fn();
 
 const renderScreen = () => {
   const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
@@ -38,10 +41,17 @@ const renderScreen = () => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </IntlProvider>
   );
-  return render(<SignInScreen onSignedIn={onSignedIn} />, { wrapper });
+  return render(<SignInScreen onSignedIn={onSignedIn} onRecovered={onRecovered} />, { wrapper });
 };
 
 const EMAIL = 'operator@easyesg.md';
+const RECOVERY_CODE = 'ABCD-EFGH-JKLM-NPQR';
+
+const submitCredential = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.type(screen.getByLabelText('Adresa de e-mail'), EMAIL);
+  await user.type(screen.getByLabelText('Parolă'), 'Parola123!');
+  await user.click(screen.getByRole('button', { name: 'Continuați' }));
+};
 
 const openChallenge = async (user: ReturnType<typeof userEvent.setup>) => {
   beginMock.mockResolvedValue({
@@ -49,10 +59,14 @@ const openChallenge = async (user: ReturnType<typeof userEvent.setup>) => {
     value: { email: EMAIL, expiresAt: Date.now() + 5 * 60 * 1000 },
     messages: [],
   });
-  await user.type(screen.getByLabelText('Adresa de e-mail'), EMAIL);
-  await user.type(screen.getByLabelText('Parolă'), 'Parola123!');
-  await user.click(screen.getByRole('button', { name: 'Continuați' }));
+  await submitCredential(user);
   await screen.findByRole('heading', { name: 'Confirmați al doilea factor' });
+};
+
+const openRecoveryFromFactor = async (user: ReturnType<typeof userEvent.setup>) => {
+  await openChallenge(user);
+  await user.click(screen.getByRole('button', { name: 'Folosiți un cod de recuperare' }));
+  await screen.findByRole('heading', { name: 'Intrați cu un cod de recuperare' });
 };
 
 beforeEach(() => {
@@ -173,11 +187,117 @@ describe('A-01 · admin sign-in screen (two-step handshake)', () => {
     beginMock.mockResolvedValue({ status: 'unreachable' });
     renderScreen();
 
-    await user.type(screen.getByLabelText('Adresa de e-mail'), EMAIL);
-    await user.type(screen.getByLabelText('Parolă'), 'Parola123!');
-    await user.click(screen.getByRole('button', { name: 'Continuați' }));
+    await submitCredential(user);
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('Serverul nu poate fi contactat');
+  });
+});
+
+describe('A-01 · the recovery sign-in (task 151)', () => {
+  it('opens from the factor step for the verified address, asks for the password again, and hands the session up', async () => {
+    const user = userEvent.setup();
+    const session = {
+      account: { id: 'a', email: EMAIL, role: 'platform_administrator' },
+      expiresAt: Date.now() + 8 * 60 * 60 * 1000,
+      recoveryCodesRemaining: 9,
+    } as const;
+    recoverMock.mockResolvedValue({ status: 'ok', value: session, messages: [] });
+    renderScreen();
+    await openRecoveryFromFactor(user);
+
+    expect(screen.getByLabelText('Adresa de e-mail')).toHaveValue(EMAIL);
+    // Nothing from step one survives into this form: the credential step's form unmounted with it.
+    expect(screen.getByLabelText('Parolă')).toHaveValue('');
+
+    await user.type(screen.getByLabelText('Parolă'), 'Parola123!');
+    await user.type(screen.getByLabelText('Cod de recuperare'), RECOVERY_CODE);
+    await user.click(screen.getByRole('button', { name: 'Intrați în consolă' }));
+
+    await waitFor(() => expect(onRecovered).toHaveBeenCalledWith(session));
+    expect(recoverMock.mock.calls[0][0]).toEqual({
+      email: EMAIL,
+      password: 'Parola123!',
+      recoveryCode: RECOVERY_CODE,
+    });
+    expect(onSignedIn).not.toHaveBeenCalled();
+  });
+
+  it('offers the recovery step on a lockout refusal, for the address that was refused', async () => {
+    const user = userEvent.setup();
+    beginMock.mockResolvedValue({
+      status: 'problem',
+      problem: {
+        type: 'https://easyesg.md/problems/admin-account-locked',
+        status: 403,
+        title: 'Cont de operator blocat',
+        detail: 'Contul a fost blocat după prea multe încercări eșuate.',
+      },
+    });
+    renderScreen();
+    await submitCredential(user);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Cont de operator blocat');
+    await user.click(within(alert).getByRole('button', { name: 'Intrați cu un cod de recuperare' }));
+
+    expect(screen.getByRole('heading', { name: 'Intrați cu un cod de recuperare' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Adresa de e-mail')).toHaveValue(EMAIL);
+    // The refusal that offered the step has been acted on, so it goes.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('offers no recovery on any other refusal of the credential', async () => {
+    const user = userEvent.setup();
+    beginMock.mockResolvedValue({
+      status: 'problem',
+      problem: {
+        type: 'https://easyesg.md/problems/credential-invalid',
+        status: 401,
+        title: 'Autentificarea nu a reușit',
+        detail: 'Adresa sau parola nu sunt corecte.',
+      },
+    });
+    renderScreen();
+    await submitCredential(user);
+
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('keeps a refused recovery on its step with what was typed, the refusal as received', async () => {
+    const user = userEvent.setup();
+    recoverMock.mockResolvedValue({
+      status: 'problem',
+      problem: {
+        type: 'https://easyesg.md/problems/credential-invalid',
+        status: 401,
+        title: 'Autentificarea nu a reușit',
+        detail: 'Adresa, parola sau codul de recuperare nu sunt corecte ori codul a fost deja folosit.',
+      },
+    });
+    renderScreen();
+    await openRecoveryFromFactor(user);
+
+    await user.type(screen.getByLabelText('Parolă'), 'Parola123!');
+    await user.type(screen.getByLabelText('Cod de recuperare'), RECOVERY_CODE);
+    await user.click(screen.getByRole('button', { name: 'Intrați în consolă' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('codul a fost deja folosit');
+    expect(screen.getByRole('heading', { name: 'Intrați cu un cod de recuperare' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Cod de recuperare')).toHaveValue(RECOVERY_CODE);
+    expect(onRecovered).not.toHaveBeenCalled();
+  });
+
+  it('returns from the recovery step to an empty credential step', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+    await openRecoveryFromFactor(user);
+
+    await user.click(screen.getByRole('button', { name: 'Folosiți alt cont' }));
+
+    expect(screen.getByRole('heading', { name: 'Autentificare operator' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Adresa de e-mail')).toHaveValue('');
   });
 });

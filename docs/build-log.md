@@ -20021,3 +20021,128 @@ thing to read is whether the response carries `x-correlation-id`**: every answer
   breaks no suite that makes ~1 000 supertest requests through it. `pnpm docs:check` — 40 claims.
 - **No application code changed**: the fix is `test/support` and `jest-e2e.json`. CI has probably never met
   this — a fresh runner has no desktop tool binding loopback ports — and the patch is harmless there.
+
+## Task 151 — A-19, the operator's own credentials, and A-01's recovery sign-in · 2026-09-14
+
+Task 144's console face. An operator can now change their own password, replace a lost authenticator and
+issue recovery codes on A-19, from the account menu, as either privilege level; and A-01 gains the
+recovery sign-in 144 built the route for — a third step in the card, landing on A-19 with a notice. One
+open-question batch, all three answers on the recommended option, written into `design_spec.md` §5.2
+(A-01's controls, states and exits; A-19's entry points and its UX-90 state pass; the chrome paragraph)
+before any code.
+
+### The owner's decisions
+
+- **The recovery sign-in is a third step in A-01's card, with two ways in**: the factor step's link,
+  carrying the address the challenge verified, and the lockout refusal on the credential step, carrying
+  the address that was refused — a locked account never reaches the factor step, and the row's own case
+  was a locked or authenticator-less operator. The address is prefilled and never in the URL.
+- **A recovery sign-in lands on A-19 whatever `?redirect=` carried**, with a notice naming the codes
+  left and that a lost authenticator is set up again there.
+- **A-19 is reached from the account menu only**, for both roles — not the console navigation, which is
+  drawn per realm, so a personal screen under *Platformă* or *Facturare* would read as that realm's work.
+
+### Routine calls, stated
+
+- **The screen lives in `realm/`, not `features/`**, A-01's reason: it serves both privilege levels and
+  belongs to neither context. Its route is `/credentials` under `_realm`.
+- **S-28's shape and none of its code** — NFR-65 keeps the realms disjoint, and `design_spec.md` already
+  called the two siblings rather than one screen with a flag.
+- **Only the recovery-code region reads.** Every operator holds a password and a factor, so neither
+  section has anything to load, and a failed read is the screen's *partial* state with a retry for that
+  region alone.
+- **`realm-read.ts` moved from `features/platform/admin/shared/tools/` to `realm/tools/`**
+  (`shared-how-many-siblings`): A-19 is a realm screen, which `admin-realm-is-a-leaf` forbids importing
+  `features/**`, so the reader that appeared is what moved it up. The emptied `shared/` went with it.
+- **`PasswordRequirements` extracted to `realm/components/shared/`** on its second reader, with its keys
+  moving from `realm.invitation.password.requirements` to `realm.passwordRequirements`; and
+  `realm.signIn.factor.changeAccount` became `realm.signIn.changeAccount`, read by two steps.
+- **`PROBLEM_TYPE.AdminAccountLocked` joins the contracts mirror** — the registry's bar is that a client
+  branches on the type to take a *different action*, and A-01 now does.
+- **The lockout's link carries `begin.variables.email`**, the address the refused request carried, rather
+  than the field's current value: that is the account the api said is locked.
+- **The count of codes left is not carried to A-19.** The recovery response has it, but a number of spare
+  credentials has no place in a history entry; A-19's arrival notice reads the same query its region makes,
+  and says its sentence without the count while that read has no answer.
+- **The artboard's two links, *Use a recovery code* and *Lost your device?*, are one control** — the second
+  is the question the first answers, and two controls opening one step would be two names for one action.
+
+### Where A-19 departs from S-28, and why
+
+- **An open enrolment and a set of codes shown once are two fields, not one stage.** S-28's union held
+  them exclusive because its codes were what enabling answered; here they are two sections' work, and a
+  union would have discarded a staged secret — the only copy — the moment codes were issued beside it.
+- **A notice names its section**, and is drawn inside it: a refused confirming code is read where the code
+  was typed. One value still, so two outcomes at once stay unrepresentable.
+- **One write at a time for the whole record.** One password field and one place a pending write is
+  recorded; a concurrent write would spend the same password and place its refusal in the wrong section.
+- **The current-password field is required**, where S-28's admits an empty value for a provider-only
+  account; an operator always holds a password. **It is cleared once a write settles, except while an
+  enrolment is open** — its confirmation asks for the same password, so it is typed once, as §5.2 A-19
+  says — **and always after a password change**, which leaves it holding a password the account no longer
+  has. `reauthenticationOutlives` derives the exception from the reducer rather than listing events.
+- **The writes are the sections' own `useMutation`s**, the console's data layer, where S-28 runs Server
+  Actions through one `perform`; the provider owns `authorise` (validate the field, record the pending
+  section, run) and `settle` (outcome to event), so no section reads an outcome's discriminator.
+
+### Task 144's one deferral, closed here
+
+- **`platform.admin.account_locked` names the recovery code**, in all three catalogues, each written in its
+  own language. Task 144 held the copy back because A-01 had no affordance to point at; its lockout refusal
+  now carries one. The sentence keeps the other remedy — another Platform Administrator — because an
+  operator who never issued codes still has only that one.
+
+### Searched
+
+- **`realm-read`'s importers**: five, under A-02 and A-08, repointed through `~/realm/tools/realm-read`.
+- **`.gitignore` against the new `credentials/` folder** — the rule that once excluded S-28's whole
+  feature: `git check-ignore -v` names nothing, and `git status --untracked-files=all` lists every file.
+- **`A-19` and `task 151` across the docs set and the CLAUDE.md files**: the chrome paragraph in
+  `design_spec.md` §5.2 still said A-19 *joins the menu when task 151 builds it*, and the root and admin
+  `CLAUDE.md` rows counted 27 route files and six live screens; all three corrected.
+- **What asserts the lockout's wording**: nothing — only the two error classes name the key.
+
+### Verification
+
+- **The retention rule is proven to bite.** With `reauthenticationOutlives` returning `false`, 2 of 19
+  fail — the reducer's *keeps the password while an enrolment is open* and the screen's *keeps the current
+  password for a re-enrolment's confirming step*; restored, 19 of 19.
+- `@easyesg/admin` typecheck clean and **181 tests across 20 files** — all 20 spec files on disk collected,
+  `folder-shape.spec.ts` counting one case per directory; `@easyesg/contracts` typecheck clean;
+  `@easyesg/web` typecheck clean and **560** tests; `pnpm lint` clean.
+- `pnpm docs:check` — 40 claims, **after it caught one of this task's**: `packages/ui/CLAUDE.md` counted 26
+  files importing `@easyesg/ui/forms`, and A-01's recovery step and A-19's three forms make 30.
+- The admin build regenerates `route-tree.gen.ts` with the one new route (+21 lines), byte-identical across a
+  second build — `routes:check`'s property, asserted before the file was committed.
+- The wording change: `@easyesg/i18n` **130** tests, parity included; `@easyesg/api` **914 across 103
+  suites**, whose message-key spec is what would miss a key. No api e2e run: no api code changed, and
+  nothing in either e2e suite asserts that sentence.
+- **The first full `pnpm e2e:web` — 190 of 195 — found one defect of this task's, in its own journey.** The
+  password-change journey signed in three times for one address, and a full handshake spends two of the
+  five attempts §12.5.6 allows per quarter hour, successes included: the third handshake's factor step was
+  throttled, and the journey waited for a navigation that could not come. The re-enrolment journey spends
+  exactly five, which is why it passed. The journey now proves the new password where a password is judged
+  — the credential step — and `signIn`'s docblock states the budget. The other four failures were
+  `identity` journeys (`organization-profile` ×2, `reports`, `wizard`), all while the web server logged the
+  api timing out on `GET /memberships`, `/organization` and `/organizations/legal-forms` — none reaches code
+  this task changed.
+- **The re-run, against bundles built after every change above: 50 of 50** — the `admin` project's 18
+  journeys, the six new ones included, and the 32 of the three `identity` files that had failed. Its one
+  `⨯ The destination stream closed early` line is `apps/web/CLAUDE.md`'s abandoned stream, digest
+  `2667547900`, not a render that threw.
+- **Not run:** `pnpm e2e` and `pnpm e2e:worker`, since no api code and no consumer changed. **The review agents
+  and `gates:clean` did not run**, under the owner's standing rule — and this is a diff where the cold run would
+  otherwise be the required one: a file moved, `packages/contracts` and `packages/i18n` changed, and a generated
+  route tree moved with them. CI runs the full set on the push.
+- **Skills read against the diff.** `one-kind-per-folder`: `components-mirror-the-return` — A-19's
+  `components/` is one folder per child of the screen's return plus `section/` and `shared/`, A-08's shape;
+  `components-region-anatomy` found `factor/` holding its section and its enrolment part flat, and split them
+  into `section/` and `enrolment/`; `shared-admission-test` — both `shared/` files carry theirs;
+  `shared-how-many-siblings` moved `realm-read.ts` and `PasswordRequirements`. `one-idea-per-file`:
+  `pure-logic-leaves-the-component` — four `tools/` modules, each with its spec. `vercel-react-best-practices`:
+  `rerender-no-inline-components` considered for the screens' `header()`, `body()` and `atRest()` — functions
+  called during render, not components React could remount; the context value and its callbacks are
+  memoized, AD-9's reason; the arrival notice and the recovery-code region share one query rather than two
+  requests; `rerender-defer-reads` declined for the notice's subscription to that query, which re-renders one
+  callout. `vercel-composition-patterns`: no boolean prop was added — the factor step takes an `onRecover`
+  callback, and A-01's steps stay distinct components, the property its screen docblock pins.

@@ -59,4 +59,37 @@ describe('signInReducer (A-01, UC-68)', () => {
       signInReducer({ ...onFactor, failure: refusal }, { type: SIGN_IN_EVENT.RESTARTED }),
     ).toEqual({ step: { kind: 'credential' }, failure: null });
   });
+
+  // Task 151 — the recovery sign-in, and its two ways in.
+  it('opens the recovery step from the factor step for the verified address, dropping the refusal', () => {
+    expect(
+      signInReducer(
+        { ...onFactor, failure: refusal },
+        { type: SIGN_IN_EVENT.RECOVERY_OPENED, email: 'ana@easyesg.md' },
+      ),
+    ).toEqual({ step: { kind: 'recovery', email: 'ana@easyesg.md' }, failure: null });
+  });
+
+  it('opens the recovery step from a lockout on the credential step, for the refused address', () => {
+    expect(
+      signInReducer(
+        { ...INITIAL_SIGN_IN_STATE, failure: refusal },
+        { type: SIGN_IN_EVENT.RECOVERY_OPENED, email: 'ana@easyesg.md' },
+      ),
+    ).toEqual({ step: { kind: 'recovery', email: 'ana@easyesg.md' }, failure: null });
+  });
+
+  it('keeps a refused recovery on its step, and restarts from it with nothing carried', () => {
+    const onRecovery: SignInState = {
+      step: { kind: STEP.Recovery, email: 'ana@easyesg.md' },
+      failure: null,
+    };
+    expect(signInReducer(onRecovery, { type: SIGN_IN_EVENT.REFUSED, failure: refusal })).toEqual({
+      step: { kind: 'recovery', email: 'ana@easyesg.md' },
+      failure: refusal,
+    });
+    expect(
+      signInReducer({ ...onRecovery, failure: refusal }, { type: SIGN_IN_EVENT.RESTARTED }),
+    ).toEqual({ step: { kind: 'credential' }, failure: null });
+  });
 });

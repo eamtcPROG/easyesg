@@ -20,12 +20,15 @@ invisible because nothing in this directory said the rules applied.
 
 ## Current state
 
-**A-01, the chrome, A-02, A-08 and A-20.** Route files cover the eighteen scaffolded screens (`A-01` …
-`A-18`) and A-20. **A-02's organization register is live since task 67.3** —
+**A-01, the chrome, A-02, A-08, A-19 and A-20.** Route files cover the eighteen scaffolded screens
+(`A-01` … `A-18`), A-19 and A-20. **A-02's organization register is live since task 67.3** —
 `features/platform/admin/organization-register/`, reading `GET /admin/organizations` through
 `AdminRealmGuard` — and **A-08's accounts and system audit log since task 67.4**, in
 `features/platform/admin/admin-accounts/`, with **A-20**, the invitation acceptance, in
-`realm/components/invitation/`. Every other screen behind the realm still returns `null`. What is live, from task 23: `src/realm/` — the API client, the session
+`realm/components/invitation/`. **A-19, the operator's own credentials, since task 151**, in
+`realm/components/credentials/` — both privilege levels, from the account menu — with A-01's
+**recovery sign-in** as that screen's third step, landing on A-19. Every other screen behind the realm
+still returns `null`. What is live, from task 23: `src/realm/` — the API client, the session
 query and the two-step sign-in screen — plus `_realm`'s closed-by-default guard, and a third
 Playwright project driving the journey **cross-origin against the built bundle**. **From task 67.1,
 the console chrome** on every screen behind the guard: `GlobalBar` in the console's tone naming the
@@ -92,9 +95,11 @@ src/
 │  │            styles/ — and the generated route-tree.gen.ts, the one file the router places beside them
 │  └─ routes/   _focus (A-01, A-20) · _realm (everything behind the guard) — both pathless
 ├─ realm/       api/ (the one API client) · components/ (sign-in/ A-01's screen · invitation/ A-20's ·
-│               chrome/ the realm layout's chrome · shared/ the realm chip and the refusal callout) ·
-│               queries/ (the session, the invitation) · tools/ (the two reducers, each role's home, the
-│               navigation's sections, A-01's notice, the realm reads' arms, the email shape). A LEAF (see below)
+│               credentials/ A-19's · chrome/ the realm layout's chrome · shared/ the realm chip, the
+│               refusal callout and the password requirements) · queries/ (the session, the invitation,
+│               A-19's credentials) · tools/ (the three reducers, each role's home, the navigation's
+│               sections, the two arrival notices, the realm reads' arms, A-19's read and code standing,
+│               the email shape). A LEAF (see below)
 ├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until
 │               built; platform/admin/ holds organization-register/ (A-02, task 67.3) and admin-accounts/
 │               (A-08, task 67.4)
@@ -158,7 +163,9 @@ src/
   holds both rules and the destination table, which holds A-02 and A-08 for a Platform Administrator. A hidden link refuses nothing:
   `AdminRealmGuard` (task 67.3) is what stops a Billing Operator reaching A-02 by typing its
   address. **A screen that ships adds its destination in the same change**, with its label under
-  `realm.chrome.destinations` — the table's type will not accept a key the catalogue lacks.
+  `realm.chrome.destinations` — the table's type will not accept a key the catalogue lacks. **A-19 is
+  the one screen that does not**, by decision (project owner, 14 Sep 2026, task 151): it is the
+  operator's own and belongs to neither realm's section, so it is the account menu's first item.
 
 - **`defaultPreload: 'intent'` is safe here and is not in the tenant app.** Every admin route is
   already behind the realm guard; preloading a tenant route can warm data the viewer may lose
