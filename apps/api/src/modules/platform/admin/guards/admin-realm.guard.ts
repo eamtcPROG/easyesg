@@ -27,6 +27,8 @@ const SET_COOKIE = 'set-cookie';
  * **It writes `adminAccountId`, never `actorId`.** `actorId` is the tenant actor that
  * `core.capture_field_change` attributes writes to; an admin account id there would attribute a
  * tenant write to an account from another realm's table. The register's acquisition log reads this.
+ * **The session id goes beside it since task 144** — `adminSessionId`, for the password change that ends
+ * the operator's other sessions and must spare this one.
  *
  * **Fail-closed at every gap**, as `RequiresRoleGuard` is: no metadata means the decorator was not
  * applied and the guard stands aside — which cannot happen, since only `@RequiresAdminRole` applies
@@ -56,7 +58,10 @@ export class AdminRealmGuard implements CanActivate {
     if (!required.includes(view.identity.role)) throw new AdminInsufficientRoleError();
 
     const ctx = requestContext();
-    if (ctx) ctx.adminAccountId = view.identity.id;
+    if (ctx) {
+      ctx.adminAccountId = view.identity.id;
+      ctx.adminSessionId = view.sessionId;
+    }
     return true;
   }
 }

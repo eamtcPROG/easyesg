@@ -131,4 +131,23 @@ describe('AuditInterceptor (task 67.4, FR-159)', () => {
       { action: 'admin.account.reactivated', actorId: null, targetId: ACCOUNT },
     ]);
   });
+
+  it('names the operator’s own account as the target of a change they make to themselves (task 144)', async () => {
+    const audit = new RecordingAuditLog();
+
+    await run({
+      audit,
+      // A route parameter and a result id are both present, and neither is the target: the session is.
+      context: contextFor(
+        handlerWith({ action: 'admin.password.changed', target: { from: AUDIT_TARGET.OPERATOR } }),
+        { accountId: ACCOUNT },
+      ),
+      next: { handle: () => of({ id: ACCOUNT, otherSessionsTerminated: 0 }) },
+      adminAccountId: OPERATOR,
+    });
+
+    expect(audit.recorded).toEqual([
+      { action: 'admin.password.changed', actorId: OPERATOR, targetId: OPERATOR },
+    ]);
+  });
 });

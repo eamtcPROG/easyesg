@@ -69,7 +69,7 @@ export class AuditInterceptor implements NestInterceptor {
         await this.audit.record({
           action: declaration.action,
           actorId,
-          targetId: targetOf({ declaration, params, result }),
+          targetId: targetOf({ declaration, params, result, actorId }),
         });
         return result;
       }),
@@ -81,8 +81,10 @@ const targetOf = (input: {
   readonly declaration: AuditDeclaration;
   readonly params: Request['params'];
   readonly result: unknown;
+  readonly actorId: string | null;
 }): string | null => {
   const { target } = input.declaration;
+  if (target.from === AUDIT_TARGET.OPERATOR) return input.actorId;
   if (target.from === AUDIT_TARGET.PARAM) {
     const value = input.params[target.name];
     return typeof value === 'string' ? value : null;

@@ -274,3 +274,17 @@ export type AcceptAdminInvitationRequest = components['schemas']['AcceptAdminInv
 export type AcceptedAdminInvitation = components['schemas']['AcceptedAdminInvitationResponseDto'];
 /** One entry of A-08's system audit log — parties flattened into id and address. */
 export type SystemAuditLogEntry = components['schemas']['SystemAuditLogEntryResponseDto'];
+
+// platform — A-19's operator credentials and A-01's recovery sign-in (FR-80, UC-212; task 144).
+/** What A-19 reads: when the recovery codes were issued and how many remain — never a code. */
+export type AdminCredentials = components['schemas']['AdminCredentialsResponseDto'];
+export type ChangeAdminPasswordRequest = components['schemas']['ChangeAdminPasswordRequestDto'];
+export type AdminPasswordChanged = components['schemas']['AdminPasswordChangedResponseDto'];
+/** The current password, which every A-19 write asks for. */
+export type AdminReauthenticationRequest = components['schemas']['AdminReauthenticationRequestDto'];
+export type ConfirmAdminReenrolmentRequest = components['schemas']['ConfirmAdminReenrolmentRequestDto'];
+/** A new set of ten recovery codes — the only response that ever carries them. */
+export type AdminRecoveryCodes = components['schemas']['AdminRecoveryCodesResponseDto'];
+export type AdminRecoveryRequest = components['schemas']['AdminRecoveryRequestDto'];
+/** A recovery sign-in's session, with how many codes remain. */
+export type AdminRecoveredSession = components['schemas']['AdminRecoveredSessionResponseDto'];

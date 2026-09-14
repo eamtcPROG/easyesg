@@ -24,11 +24,17 @@ export const AUDIT_TARGET = {
   PARAM: 'param',
   /** The handler's result carries the row's `id` — something the request created. */
   RESULT: 'result',
+  /**
+   * The operator's own account — a change an operator makes to themselves, which no route parameter
+   * names because the session does (task 144, A-19).
+   */
+  OPERATOR: 'operator',
 } as const;
 
 export type AuditTarget =
   | { readonly from: typeof AUDIT_TARGET.PARAM; readonly name: string }
-  | { readonly from: typeof AUDIT_TARGET.RESULT };
+  | { readonly from: typeof AUDIT_TARGET.RESULT }
+  | { readonly from: typeof AUDIT_TARGET.OPERATOR };
 
 export interface AuditDeclaration {
   readonly action: string;

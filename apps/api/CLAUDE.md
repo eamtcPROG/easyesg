@@ -54,7 +54,7 @@ traps each one left — grouped by area rather than by the task that built it.
   nothing else, opaque refresh rows rotated by conditional consume with a 30 s race grace and
   reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
   §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
-  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4);
+  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144);
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`);
   opt-in TOTP and password change (27); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`); invitations and acceptance (`GET/POST /invitations`,
@@ -122,6 +122,17 @@ traps each one left — grouped by area rather than by the task that built it.
   since this task, so every admin-realm write carries the Origin proof. The log is read through
   `esg_admin_ro` (a platform row is invisible to `esg_app`), logged as an acquisition under
   `system_audit_log`, with column grants on the two realm tables' `(id, email)`.
+- **An operator's own credentials, and a way back in without an authenticator** (task 144; §12.5.6's
+  task-144 row). **`POST /auth/admin/session/recovery` judges the recovery code before the password** and
+  admits a locked account, releasing the lock — swap those two and the lock stops ending password guessing
+  while every spec asserting a success stays green; `recover-admin-sign-in.use-case.spec.ts` records the
+  hashes the hasher was asked about to hold the order. A-19's four writes re-authenticate, **the
+  confirmation of a re-enrolment included**, under one `admin-reauthentication:<ip>:<account>` window that
+  feeds no lockout — keyed on the account id, so a test drain by address misses it. A re-enrolment stages
+  `admin_account.staged_totp_secret` (sealed) beside the factor in force and promotes it under the row's
+  lock. `identity.admin_recovery_code` is the one realm table `esg_app` may `DELETE` from, and codes exist
+  only once A-19 issues them. `AdminRealmGuard` writes `adminSessionId` beside `adminAccountId`, for the
+  password change that spares the session asking, and `@AuditAction` gains a third target, `operator`.
 - **Social sign-in matches on `(provider, subject)`, never email** (task 24; §9.1 calls the
   email-match variant an account-takeover path). `openid-client` 6.8.7 is a plain static import —
   ESM-only, and on `module: nodenext`/Node 26 `require(esm)` loads it, the OQ-48 revisit, proven for

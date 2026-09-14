@@ -62,6 +62,24 @@ export interface AdminSessionTransaction {
   issueRefreshToken(sessionId: string, tokenHash: Buffer, at: Date): Promise<void>;
 
   revokeSession(sessionId: string, reason: AdminSessionRevokedReason, at: Date): Promise<void>;
+
+  /**
+   * Whether this account holds an unspent recovery code with this digest (task 144) — read, never spent:
+   * a recovery sign-in judges the code before the password and spends it only once both have held.
+   */
+  holdsUnspentRecoveryCode(input: { readonly accountId: string; readonly codeHash: Buffer }): Promise<boolean>;
+
+  /** The conditional spend — false when a concurrent request spent it first, which decides the race once. */
+  spendRecoveryCode(input: {
+    readonly accountId: string;
+    readonly codeHash: Buffer;
+    readonly at: Date;
+  }): Promise<boolean>;
+
+  countUnspentRecoveryCodes(accountId: string): Promise<number>;
+
+  /** Clears `locked_at` and `failed_attempts` together — a recovery sign-in's release (task 144). */
+  releaseLock(accountId: string, at: Date): Promise<void>;
 }
 
 export interface AdminSessionStore {

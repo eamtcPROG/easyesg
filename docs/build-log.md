@@ -19807,3 +19807,117 @@ illustration, which reads the same now that the file meets the rule.
   `gates:clean` did not run, under the owner's standing rule; 133's parent close is where the moved file
   makes `gates:clean` the required run.
 
+## Task 144 — the operator's own credentials, and a recovery sign-in that reaches a locked account · 2026-09-14
+
+The admin realm's only credential routes were the session handshake: an operator could not change their
+own password, replace a lost authenticator or hold a recovery code, and a locked-out sole operator had
+nothing but shell access to `admin:provision --unlock`. This task is the api half of UC-212 — A-19's
+password change, second-factor re-enrolment and recovery codes, and a recovery sign-in beside the
+handshake; task 151 is its console face. Two open-question batches, every answer but one on the
+recommended option, all recorded in `architecture.md` §12.5.6's task-144 row before any code.
+
+### The owner's decisions, and why the first batch could not be skipped
+
+- **A recovery code gets a route of its own, and it reaches a locked account.** The row's stated case — *a
+  locked-out sole operator with no shell access* — did not survive task 67.4 as the row scoped it: 67.4
+  moved lockout release to A-08, which needs a second operator, and `BeginAdminSignIn` refuses a locked
+  account before it verifies anything. A recovery code accepted at the factor step, the tenant's task-27.3
+  shape, would have rescued a lost authenticator and left the row's own case exactly where it was.
+  `POST /auth/admin/session/recovery` takes the address, the password and a code in one request, **judges
+  the code before the password**, and releases the lock with the session.
+- **A-01's affordance for it is task 151's**, beside A-19; 144 stays api-only as its row reads.
+  `design_spec.md` §5.2 A-01 and 151's row are amended now.
+- **Both roles.** A-19 and UC-212 named the Platform Administrator alone, while a Billing Operator holds the
+  same password and mandatory factor and A-08 deliberately has no second-factor reset — so *PA only* would
+  have turned a Billing Operator's lost phone into a removal and a new invitation.
+- **Recovery codes are minted only by A-19's explicit issue.** A-20 and the CLI are unchanged, and a
+  re-enrolment leaves the set alone: the codes belong to the account, not the device.
+- **The confirming step of a re-enrolment carries the current password** — the one answer that departs from
+  the tenant precedent. Task 27.2 takes the password at `begin` only, which leaves an abandoned staging
+  guessable from a stolen session for as long as it sits; in this realm a hit swaps an operator's factor.
+- **A recovery sign-in issues a full session**, not one confined to A-19.
+- **133.1 first**, though its stated reason did not hold — its own entry, above.
+
+### Routine calls, stated
+
+- **A port of its own, `AdminCredentialStore`**, rather than more methods on `AdminSessionStore` — sign-in
+  and rotation have no business replacing a password — or on `AdminAccountStore`, A-08's, which
+  deliberately opens no secret. The recovery sign-in's four new methods *do* go on `AdminSessionStore`,
+  because what it ends in is a session.
+- **The staged factor is a column, `admin_account.staged_totp_secret`**, not a table: task 23's argument
+  that an operator has exactly one factor in force still holds, and a re-enrolment is at most one secret
+  beside it. **Each `begin` mints a fresh secret**, where A-20 answers the same one twice — there a reload
+  must not invalidate a scan; here every call re-proves the password and returns the only copy.
+- **A password change releases no lock and clears no failure count.** The tenant change does, because a
+  replaced password is where that realm's reset link lands; this realm has no reset flow.
+- **A recovery refusal counts toward FR-4's lockout** wherever an account resolved — the lockout must cover
+  every credential guess, the admin store header's own argument — and **its window is its own key**, so an
+  operator who spent sign-in's window against a lost phone can still recover.
+- **Six audit actions and a third interceptor target, `operator`**: a change an operator makes to themselves
+  is named by the session, not by a route parameter. The two recovery events are written by the use case,
+  since the request carries no session; A-19's four writes by `AuditInterceptor`.
+- **`issuedAdminSession`**, the session assembly `CompleteAdminSignIn` did inline, extracted so a recovery
+  sign-in computes the realm's lifetimes in the same place rather than in a second copy.
+- **Status codes follow the tenant's**: `200` for the password change (`POST /account/password`'s), `201`
+  for a staging and an issue, `204` for a confirmation. A-19's refusals are `403` and `409`, never `401`,
+  which the console reads as *sign in again*.
+
+### Deferred, and recorded
+
+- **`platform.admin.account_locked` still tells the operator to ask another administrator.** Naming a
+  recovery code there becomes true when A-01 can offer one, which is task 151; changing the copy now would
+  point at an affordance the screen does not have.
+
+### Corrections found in passing
+
+- `architecture.md` §12.5.6's task-23 paragraph still credited task 144 with account creation and lockout
+  release, which 67.4 took on 13 Sep 2026. Corrected; a sweep for *creation and lockout release* across the
+  docs set and the CLAUDE.md files found no other copy.
+- **`actors.md`'s actor table counted PA at 22**, ranges `UC-68 … UC-88, UC-176`, while `use_cases.md` has
+  counted 23 since UC-212 was appended on 12 Sep — so the shares summed to 99%. It is 23 and 11% with UC-212
+  in the ranges, and BO's row names the use case it now shares, still counted once, under PA.
+
+### Searched
+
+`UC-212` and `A-19` across the docs set, for every place the actor is listed — the register row and count
+line, the UC body, the inventory and traceability rows, `actors.md`. `SYSTEM_AUDIT_ACTION`'s mirrors, each
+of which fails the build on a missing member: `packages/contracts/src/admin.ts`'s `SameSet` against the
+generated enum, and A-08's `LOG_ACTION_LABEL` with its `satisfies` and its catalogue labels.
+
+### Verification
+
+- **The ordering the recovery route rests on is proven to bite.** With `RecoverAdminSignIn` changed to verify
+  the password before looking for the code, `recover-admin-sign-in.use-case.spec.ts` fails 1 of 8 — *judges
+  the code before the password* — because the hasher records a digest it should never have been asked
+  about; restored, 8 of 8.
+- `pnpm --filter @easyesg/api typecheck` clean; `pnpm --filter @easyesg/api test` — **914 across 103
+  suites**, 27 more cases than 133.1's run: five use-case specs and the interceptor's `operator` target.
+- `pnpm openapi:check` clean against the staged contract — **70 paths, 17 under `/auth`**; `pnpm
+  migrations:check` — apply, revert, apply, and **56 invariants**, the staged column classified as sealed.
+- The packages' dependents: `@easyesg/contracts` and `@easyesg/admin` typecheck clean, admin **135** tests;
+  `@easyesg/web` typecheck clean, **560** tests; `@easyesg/i18n` **130**, the catalogues' parity included.
+  `pnpm lint` clean; `pnpm docs:check` — 40 claims; `pnpm routes:check` clean.
+- **`pnpm e2e` — 1 003 across 42 suites on the third full run**, 25 more than the last: the new suite's five
+  journeys and the admin route matrix's twenty, five routes × four actors. It includes `totp.e2e-spec.ts`,
+  resolving `ConsumeRecoveryCode` from the booted application, which is task 133.1's boot proof.
+- **The two runs before it each failed once, in a different suite, and neither is explained.** Run one:
+  `prior-period.e2e-spec.ts` — `POST /periods` answered `401` with a bearer the previous test had just used.
+  Run two: `admin-session.e2e-spec.ts`'s lockout test — a well-formed wrong-password challenge answered
+  `400`, a status nothing in the admin module raises. Neither suite reaches code this task changed; each
+  passed alone (6 of 6; 20 of 20, twice) and in the other full runs. With task 67.4's unreproduced
+  route-matrix mismatch this is the **third response that fits no path its request could take**, and a
+  pattern is not something to close in passing: it is flagged as its own task, with the three occurrences,
+  to capture the response bodies a failure has so far never printed.
+- **Not run:** the browser suite, since no console markup changed — the admin workspace gained six log-label
+  keys and their catalogue copy, and A-19 and A-01's affordance are task 151's; `pnpm e2e:worker`, since no
+  consumer changed. **The review agents and `gates:clean` did not run**, under the owner's standing rule —
+  and this diff is one where the cold run would otherwise be the required one: a generated artefact
+  changed, `packages/*` changed, and 133.1 moved a file. CI runs the full set on the push.
+- **Skills read against the diff.** `nestjs-best-practices`: `db-use-transactions` applied — the spend,
+  release and session in one unit, the replacement and the termination in one, the staged factor read,
+  judged and promoted under one row lock; `security-rate-limiting` declined by name — the windows are
+  §12.5.6's `admitAuthAttempt` substrate, whose per-account half needs the body, not `@nestjs/throttler`;
+  `error-throw-http-exceptions` declined as always, refusals being `DomainError`s. `one-idea-per-file`'s
+  `file-one-behaviour-api`: one use case per file, the two shared functions — `reauthenticate-operator.ts`
+  and `issued-admin-session.ts` — a file each, and A-19's refusals a vocabulary file of their own.
+

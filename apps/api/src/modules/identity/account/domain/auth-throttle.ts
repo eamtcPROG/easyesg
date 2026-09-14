@@ -271,3 +271,29 @@ export const totpConfirmationThrottleKey = (
   clientIp: string | undefined,
   accountId: string,
 ): string => throttleKey('totp-confirmation', clientIp, accountId);
+
+/**
+ * **The admin realm's re-authentication** — A-19's four writes (task 144; `architecture.md` §12.5.6's
+ * task-144 row): the password change, both steps of a re-enrolment and the issue of recovery codes.
+ * `reauthenticationThrottleKey`'s shape and every reason it gives — a password oracle behind a stolen
+ * session, its own segment, keyed on the account, rate without lockout — over the other realm, whose keys
+ * carry their own prefix so neither realm spends the other's window.
+ *
+ * **One window over the four, the confirmation included.** It carries the current password as well as the
+ * code, so a wrong code spends an attempt of this same budget — which is why no separate confirmation key
+ * is needed to bound the guessing `totpConfirmationThrottleKey` bounds in the tenant realm.
+ */
+export const adminReauthenticationThrottleKey = (
+  clientIp: string | undefined,
+  accountId: string,
+): string => throttleKey('admin-reauthentication', clientIp, accountId);
+
+/**
+ * **The admin realm's recovery sign-in** (task 144) — the password and a recovery code, for an operator
+ * whose authenticator is lost or whose account is locked. **Its own segment**, so an operator who
+ * exhausted sign-in's window against a lost authenticator can still recover. Keyed on the presented
+ * address, as sign-in's is, because the account is not known until it is looked up; a success spends it,
+ * like sign-in, since the route issues a session.
+ */
+export const adminRecoveryThrottleKey = (clientIp: string | undefined, email: string): string =>
+  throttleKey('admin-recovery', clientIp, email);

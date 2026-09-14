@@ -278,7 +278,11 @@
         "accepted": "Invitația a fost deja folosită, iar contul există. Autentificați-vă în consolă cu adresa și parola alese.",
         "unknown": "Linkul nu mai este valabil — poate a fost înlocuit de o invitație retrimisă —, deci contul nu poate fi creat cu el. Folosiți cel mai recent e-mail de invitație sau cereți o invitație nouă."
       },
-      "enrolment_missing": "Al doilea factor nu a fost pregătit, așa că nu există niciun cod de confirmat. Reveniți la pasul de configurare a aplicației de autentificare și încercați din nou."
+      "enrolment_missing": "Al doilea factor nu a fost pregătit, așa că nu există niciun cod de confirmat. Reveniți la pasul de configurare a aplicației de autentificare și încercați din nou.",
+      "reauthentication_failed": "Parola actuală nu este corectă, așa că nu a fost modificat nimic. Introduceți parola cu care vă autentificați și încercați din nou.",
+      "reenrolment_missing": "Nicio aplicație de autentificare nouă nu așteaptă confirmarea, așa că nu există nimic de confirmat. Reluați configurarea aplicației de autentificare pentru a obține un cod nou de scanat.",
+      "reenrolment_code_invalid": "Codul nu corespunde în acest moment noii aplicații de autentificare, așa că al doilea factor nu a fost schimbat. Introduceți codul afișat acum de noua aplicație.",
+      "recovery_refused": "Adresa, parola sau codul de recuperare nu sunt corecte ori codul a fost deja folosit, așa că sesiunea nu a fost creată. Verificați toate trei și încercați din nou cu un cod nefolosit."
     }
   }
 }

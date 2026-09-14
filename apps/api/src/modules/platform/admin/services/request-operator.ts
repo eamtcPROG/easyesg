@@ -15,3 +15,14 @@ export const requestOperatorId = (): string => {
   if (operatorId === undefined) throw new AdminSessionInvalidError();
   return operatorId;
 };
+
+/**
+ * The admin session the request acts on (task 144) — `AdminRealmGuard` writes it beside the operator, and
+ * `requestOperatorId`'s rule holds: from the request, never the body, or a caller could nominate which of
+ * their sessions a password change spares.
+ */
+export const requestOperatorSessionId = (): string => {
+  const sessionId = requestContext()?.adminSessionId;
+  if (sessionId === undefined) throw new AdminSessionInvalidError();
+  return sessionId;
+};

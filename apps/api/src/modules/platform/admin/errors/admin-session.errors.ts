@@ -33,9 +33,25 @@ export class AdminFactorInvalidError extends DomainError {
 }
 
 /**
+ * A recovery sign-in refused (task 144) — an unknown or inactive address, a wrong or spent code, or a wrong
+ * password, **one document for all of them** (NFR-64). Its own key rather than `credential_invalid`'s,
+ * because the true sentence names the code as well; the same type and status, because it is the same kind
+ * of refusal.
+ */
+export class AdminRecoveryRefusedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.CredentialInvalid;
+  readonly status = 401;
+
+  constructor() {
+    super('platform.admin.recovery_refused');
+  }
+}
+
+/**
  * Ten consecutive failures (§12.5.6) — its own slug rather than the tenant `account-locked`,
  * because the catalogue's "what now" differs: the tenant answer is the reset link, and this
- * realm has none. Release is a PA action (task 67) or the provisioning CLI.
+ * realm has none. Release is a PA action on A-08 (task 67.4), a recovery sign-in (task 144) or the
+ * provisioning CLI.
  */
 export class AdminAccountLockedError extends DomainError {
   readonly problemType: ProblemTypeSlug = ProblemType.AdminAccountLocked;

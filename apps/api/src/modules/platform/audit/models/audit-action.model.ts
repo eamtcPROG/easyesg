@@ -41,6 +41,16 @@ export const AUDIT_ACTION = {
   ADMIN_SIGN_IN_BLOCKED: 'admin.sign_in.blocked',
   /** Refused before anything was verified, because the window is spent (§12.5.6). */
   ADMIN_SIGN_IN_THROTTLED: 'admin.sign_in.throttled',
+  /**
+   * A sign-in with the password and a recovery code (task 144): the code spent, any lock released, a
+   * session issued. Written by its use case, since the request carries no session.
+   */
+  ADMIN_SIGN_IN_RECOVERED: 'admin.sign_in.recovered',
+  /**
+   * A recovery sign-in refused — one action for an unknown address, a wrong or spent code and a wrong
+   * password, because the wire keeps them one answer and the log must not become the oracle it prevents.
+   */
+  ADMIN_SIGN_IN_RECOVERY_REFUSED: 'admin.sign_in.recovery_refused',
   /** A Platform Administrator invited an operator (UC-87); the target is the invitation. */
   ADMIN_INVITATION_ISSUED: 'admin.invitation.issued',
   /** The invitation's link was replaced and sent again; the old link stopped working. */
@@ -58,6 +68,14 @@ export const AUDIT_ACTION = {
   ADMIN_ACCOUNT_LOCKOUT_RELEASED: 'admin.account.lockout_released',
   /** An account created by the provisioning CLI, which is the bootstrap and has no actor. */
   ADMIN_ACCOUNT_PROVISIONED: 'admin.account.provisioned',
+  /** An operator changed their own password on A-19 (task 144); the target is their own account. */
+  ADMIN_PASSWORD_CHANGED: 'admin.password.changed',
+  /** A new second factor was staged beside the one in force, waiting for its confirming code. */
+  ADMIN_FACTOR_REENROLMENT_STARTED: 'admin.factor.reenrolment_started',
+  /** The staged factor was confirmed and is now the one in force. */
+  ADMIN_FACTOR_REENROLLED: 'admin.factor.reenrolled',
+  /** A set of recovery codes was issued, replacing any set before it. */
+  ADMIN_RECOVERY_CODES_ISSUED: 'admin.recovery_codes.issued',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];

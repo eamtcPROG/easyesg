@@ -103,8 +103,16 @@ type Permission =
  * Every role, as `computeSurface` renders a multi-role declaration: sorted and joined, so the
  * table's spelling cannot depend on the order the decorator happened to list them in.
  */
-/** The admin realm's Platform Administrators — every console route so far (tasks 67.3, 67.4). */
+/** The admin realm's Platform Administrators — A-02 and A-08 (tasks 67.3, 67.4). */
 const PLATFORM_ADMINISTRATORS: Permission = `${PERMISSION.ADMIN}:${ADMIN_ROLE.PLATFORM_ADMINISTRATOR}`;
+
+/** Every operator, of either role — A-19's own credentials, which every operator holds (task 144). */
+const OPERATORS: Permission = `${PERMISSION.ADMIN}:${[
+  ADMIN_ROLE.BILLING_OPERATOR,
+  ADMIN_ROLE.PLATFORM_ADMINISTRATOR,
+]
+  .sort()
+  .join('+')}`;
 
 const ALL_MEMBERS: Permission = `${PERMISSION.ROLE}:${[
   MEMBERSHIP_ROLE.EDITOR,
@@ -168,6 +176,9 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /auth/admin/session': PERMISSION.PUBLIC,
   'GET /auth/admin/session': PERMISSION.PUBLIC,
   'DELETE /auth/admin/session': PERMISSION.PUBLIC,
+  // Task 144: the recovery sign-in — a way a realm session comes to exist without an authenticator, so
+  // public for the handshake's reason.
+  'POST /auth/admin/session/recovery': PERMISSION.PUBLIC,
   // A-20 (task 67.4): the bearer of an administrator invitation's link holds no session of any kind —
   // the token is the capability, the tenant invitation preview's class.
   'POST /auth/admin/invitation/preview': PERMISSION.PUBLIC,
@@ -189,6 +200,13 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /admin/invitations/:invitationId/email': PLATFORM_ADMINISTRATORS,
   'DELETE /admin/invitations/:invitationId': PLATFORM_ADMINISTRATORS,
   'GET /admin/audit-log': PLATFORM_ADMINISTRATORS,
+  // ── A-19 (task 144): the operator's own credentials — both roles, because every operator holds a
+  // password and a second factor, and each write declares an action naming the operator's own account.
+  'GET /admin/credentials': OPERATORS,
+  'POST /admin/credentials/password': OPERATORS,
+  'POST /admin/credentials/totp/enrolment': OPERATORS,
+  'POST /admin/credentials/totp/confirmation': OPERATORS,
+  'POST /admin/credentials/recovery-codes': OPERATORS,
 
   // ── A person's own account: credentials, second factor, linked identities (actors.md §5's first
   // row — CA, held by every other human actor "via CA"). `account` and not `role`, because these

@@ -536,6 +536,8 @@ const ENCRYPTED_SECRET_COLUMNS = [
   // Task 67.4: the factor staged on an administrator invitation until A-20's code confirms it — the
   // secret the account is then created with, so sealed the same way before it becomes one.
   'identity.admin_invitation.totp_secret',
+  // Task 144: a re-enrolment's factor, staged beside the one in force until its confirming code arrives.
+  'identity.admin_account.staged_totp_secret',
   'identity.totp_credential.secret',
 ];
 

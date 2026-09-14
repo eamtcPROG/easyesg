@@ -70,6 +70,8 @@ export const SYSTEM_AUDIT_ACTION = {
   ADMIN_SIGN_IN_FACTOR_REFUSED: 'admin.sign_in.factor_refused',
   ADMIN_SIGN_IN_BLOCKED: 'admin.sign_in.blocked',
   ADMIN_SIGN_IN_THROTTLED: 'admin.sign_in.throttled',
+  ADMIN_SIGN_IN_RECOVERED: 'admin.sign_in.recovered',
+  ADMIN_SIGN_IN_RECOVERY_REFUSED: 'admin.sign_in.recovery_refused',
   ADMIN_INVITATION_ISSUED: 'admin.invitation.issued',
   ADMIN_INVITATION_RESENT: 'admin.invitation.resent',
   ADMIN_INVITATION_REVOKED: 'admin.invitation.revoked',
@@ -79,6 +81,10 @@ export const SYSTEM_AUDIT_ACTION = {
   ADMIN_ACCOUNT_REMOVED: 'admin.account.removed',
   ADMIN_ACCOUNT_LOCKOUT_RELEASED: 'admin.account.lockout_released',
   ADMIN_ACCOUNT_PROVISIONED: 'admin.account.provisioned',
+  ADMIN_PASSWORD_CHANGED: 'admin.password.changed',
+  ADMIN_FACTOR_REENROLMENT_STARTED: 'admin.factor.reenrolment_started',
+  ADMIN_FACTOR_REENROLLED: 'admin.factor.reenrolled',
+  ADMIN_RECOVERY_CODES_ISSUED: 'admin.recovery_codes.issued',
 } as const;
 
 export type SystemAuditAction = (typeof SYSTEM_AUDIT_ACTION)[keyof typeof SYSTEM_AUDIT_ACTION];

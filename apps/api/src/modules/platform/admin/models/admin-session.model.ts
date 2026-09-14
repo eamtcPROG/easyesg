@@ -65,6 +65,11 @@ export const ADMIN_SESSION_REVOKED_REASON = {
   REFRESH_REUSED: 'refresh_reused',
   ACCOUNT_SUSPENDED: 'account_suspended',
   ACCOUNT_REMOVED: 'account_removed',
+  /**
+   * A password change that ended the operator's other sessions (task 144) — the tenant realm's reason
+   * from task 27.5, for its reason: a change made from A-19 is not a sign-out.
+   */
+  PASSWORD_CHANGED: 'password_changed',
 } as const;
 
 export type AdminSessionRevokedReason =

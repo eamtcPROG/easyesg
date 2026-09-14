@@ -62,6 +62,12 @@ export interface RequestContext {
    * writes to. The two realms keep separate tables (NFR-65); their actors keep separate fields.
    */
   adminAccountId?: string;
+  /**
+   * The admin session the request acts on — written by `AdminRealmGuard` beside `adminAccountId` since
+   * task 144, for one reader: a password change that ends the operator's other sessions spares this one.
+   * `sessionId` is the tenant realm's field, and the realms keep separate fields.
+   */
+  adminSessionId?: string;
   /** Opened by TenantTransactionGuard. Every tenant query runs on this (AD-14). */
   queryRunner?: QueryRunner;
 }

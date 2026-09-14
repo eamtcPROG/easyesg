@@ -1063,6 +1063,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/admin/session/recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign in with the password and a recovery code
+         * @description UC-212, for an operator whose authenticator is lost or whose account is locked (task 144). The recovery code is judged before the password; on success the code is spent, a lock is released and the session is established as a sealed httpOnly cookie — no token in the body. Refusals are one answer whatever was wrong, throttled per address, and count toward the lock.
+         */
+        post: operations["AdminSessionController_recover"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/organizations": {
         parameters: {
             query?: never;
@@ -1317,6 +1337,106 @@ export interface paths {
         get: operations["SystemAuditLogController_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the operator’s own credential state
+         * @description UC-212. When the current set of recovery codes was issued and how many remain — never a code and never a secret. The password and the second factor are always in force on an operator account.
+         */
+        get: operations["AdminCredentialsController_state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/credentials/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the operator’s own password
+         * @description UC-212 step one. Requires the current password, and optionally ends the operator’s other sessions — never the one making the request. Releases no lock. Recorded in the system audit log.
+         */
+        post: operations["AdminCredentialsController_changePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/credentials/totp/enrolment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stage a new second factor beside the one in force
+         * @description UC-212 step two, first half. Requires the current password, and answers a new secret and its otpauth URI — once. The factor in force keeps signing the operator in until a confirmation; asked again, this replaces the staged secret with a new one. Recorded in the system audit log.
+         */
+        post: operations["AdminCredentialsController_beginReenrolment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/credentials/totp/confirmation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm the staged second factor and put it in force
+         * @description UC-212 step two, second half. Requires the current password and a current code from the new authenticator; the staged secret then replaces the factor in force. Recovery codes and sessions are untouched. Recorded in the system audit log.
+         */
+        post: operations["AdminCredentialsController_confirmReenrolment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/credentials/recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue a set of recovery codes, replacing any before it
+         * @description UC-212 step three. Requires the current password, and answers ten single-use codes, shown once. Every code of an earlier set stops working. Recorded in the system audit log.
+         */
+        post: operations["AdminCredentialsController_issueRecoveryCodes"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2581,6 +2701,33 @@ export interface components {
              */
             totpCode: string;
         };
+        AdminRecoveredSessionResponseDto: {
+            account: components["schemas"]["AdminAccountDto"];
+            /**
+             * @description Unix epoch milliseconds, UTC. When the session dies if never used again — the earlier of its idle (8 h) and absolute (12 h) bounds.
+             * @example 1787444100000
+             */
+            expiresAt: number;
+            /** @description Unspent recovery codes left after the one this sign-in used. Zero is a real answer: the operator should issue a new set before they need one. */
+            recoveryCodesRemaining: number;
+        };
+        AdminRecoveryRequestDto: {
+            /**
+             * Format: email
+             * @example operator@easyesg.md
+             */
+            email: string;
+            /**
+             * Format: password
+             * @description The operator’s password.
+             */
+            password: string;
+            /**
+             * @description One unused recovery code, as printed or retyped — hyphens and letter case do not matter.
+             * @example 0123-4567-89AB-CDEF
+             */
+            recoveryCode: string;
+        };
         OrganizationRegisterRowResponseDto: {
             /** Format: uuid */
             id: string;
@@ -2710,7 +2857,7 @@ export interface components {
              * @description What happened.
              * @enum {string}
              */
-            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned";
+            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued";
             /**
              * Format: uuid
              * @description The operator who acted. Null for the provisioning command, and for a sign-in attempt against an address that matches no account.
@@ -2731,6 +2878,61 @@ export interface components {
              * @description The target’s address, where the target is an account or an invitation.
              */
             targetEmail: string | null;
+        };
+        AdminCredentialsResponseDto: {
+            /**
+             * @description Unix epoch milliseconds, UTC, when the current set of recovery codes was issued. Null until the operator issues a first set — nothing else creates one.
+             * @example 1789900000000
+             */
+            recoveryCodesIssuedAt: number | null;
+            /** @description Unspent codes of the current set. Zero when every one has been used, and zero when none was ever issued — the issue date tells the two apart. */
+            recoveryCodesRemaining: number;
+        };
+        AdminPasswordChangedResponseDto: {
+            /** @description How many other sessions were ended. Always 0 when the election was not made, and 0 is a normal answer when it was. */
+            otherSessionsTerminated: number;
+        };
+        ChangeAdminPasswordRequestDto: {
+            /**
+             * Format: password
+             * @description The password in force now. A change without the correct one is refused.
+             */
+            currentPassword: string;
+            /**
+             * Format: password
+             * @description The replacement, under the same policy as every password: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.
+             */
+            password: string;
+            /** @description End the operator’s **other** active sessions. Opt-in, and false when omitted; the session making this request is never one of them. */
+            terminateOtherSessions?: boolean;
+        };
+        AdminReauthenticationRequestDto: {
+            /**
+             * Format: password
+             * @description The operator’s current password. Every write on this screen asks for it.
+             */
+            password: string;
+        };
+        ConfirmAdminReenrolmentRequestDto: {
+            /**
+             * Format: password
+             * @description The operator’s current password.
+             */
+            password: string;
+            /**
+             * @description A current code from the authenticator the staged secret was entered into.
+             * @example 287082
+             */
+            code: string;
+        };
+        AdminRecoveryCodesResponseDto: {
+            /**
+             * @description Ten single-use codes, shown exactly once. Every code of an earlier set stopped working when these were issued.
+             * @example [
+             *       "0123-4567-89AB-CDEF"
+             *     ]
+             */
+            recoveryCodes: string[];
         };
     };
     responses: never;
@@ -5106,6 +5308,50 @@ export interface operations {
             };
         };
     };
+    AdminSessionController_recover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminRecoveryRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The session was established; the cookie carries it, and the body says how many codes remain. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminRecoveredSessionResponseDto"];
+                    };
+                };
+            };
+            /** @description The address, the password or the recovery code is not right, or the code was already used — one answer for all of them (problem type credential-invalid). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many recovery attempts for this address in the window. Identical either way. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     OrganizationRegisterController_list: {
         parameters: {
             query?: {
@@ -5761,7 +6007,7 @@ export interface operations {
                 /** @description Unix epoch milliseconds; only events at or after it. */
                 from?: number;
                 /** @description Only this kind of event. */
-                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned";
+                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued";
                 /** @description Only what this operator account did (uuid). */
                 operator?: unknown;
             };
@@ -5793,6 +6039,263 @@ export interface operations {
             };
             /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminCredentialsController_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The operator’s credential state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminCredentialsResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminCredentialsController_changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeAdminPasswordRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Changed; the body says how many other sessions ended. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminPasswordChangedResponseDto"];
+                    };
+                };
+            };
+            /** @description The new password does not meet the policy (problem type validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The current password is not right (problem type credential-invalid), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many attempts at the current password in the window (problem type rate-limited) — every write on this screen spends the same one. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminCredentialsController_beginReenrolment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReauthenticationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Staged: scan or type the secret, then confirm it with a current code. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminEnrolmentResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The current password is not right (problem type credential-invalid), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many attempts at the current password in the window (problem type rate-limited) — every write on this screen spends the same one. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminCredentialsController_confirmReenrolment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmAdminReenrolmentRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The new second factor is in force. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The current password is not right (problem type credential-invalid), the code is not current for the new authenticator (problem type factor-invalid), or the request came from another origin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No second factor is staged to confirm (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many attempts at the current password in the window (problem type rate-limited) — every write on this screen spends the same one. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminCredentialsController_issueRecoveryCodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReauthenticationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The new set — the only time the codes are shown. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AdminRecoveryCodesResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The current password is not right (problem type credential-invalid), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many attempts at the current password in the window (problem type rate-limited) — every write on this screen spends the same one. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

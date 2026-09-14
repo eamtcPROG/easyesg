@@ -340,6 +340,8 @@
           "signInFactorRefused": "Autentificare refuzată: cod greșit",
           "signInBlocked": "Autentificare refuzată: cont blocat",
           "signInThrottled": "Autentificare refuzată: prea multe încercări",
+          "signInRecovered": "Autentificare cu un cod de recuperare",
+          "signInRecoveryRefused": "Autentificare cu cod de recuperare refuzată",
           "invitationIssued": "A trimis o invitație",
           "invitationResent": "A retrimis o invitație",
           "invitationRevoked": "A retras o invitație",
@@ -348,7 +350,11 @@
           "accountReactivated": "A reactivat un cont",
           "accountRemoved": "A eliminat accesul unui cont",
           "accountLockoutReleased": "A deblocat un cont",
-          "accountProvisioned": "Cont creat cu instrumentul de configurare"
+          "accountProvisioned": "Cont creat cu instrumentul de configurare",
+          "passwordChanged": "Și-a schimbat parola",
+          "factorReenrolmentStarted": "A început reconfigurarea celui de-al doilea factor",
+          "factorReenrolled": "A reconfigurat al doilea factor",
+          "recoveryCodesIssued": "A emis coduri de recuperare"
         }
       }
     }

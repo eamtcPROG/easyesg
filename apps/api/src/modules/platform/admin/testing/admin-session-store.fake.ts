@@ -34,11 +34,19 @@ export interface FakeAdminRefreshToken {
   consumedAt: Date | null;
 }
 
+/** A recovery code as a recovery sign-in reads it (task 144) — its digest, and whether it was spent. */
+export interface FakeAdminRecoveryCode {
+  accountId: string;
+  codeHash: Buffer;
+  spentAt: Date | null;
+}
+
 interface Snapshot {
   accounts: AdminAccount[];
   sessions: FakeAdminSession[];
   refreshTokens: FakeAdminRefreshToken[];
   attempts: { key: string; at: Date }[];
+  recoveryCodes: FakeAdminRecoveryCode[];
 }
 
 export class FakeAdminSessionStore implements AdminSessionStore {
@@ -46,6 +54,7 @@ export class FakeAdminSessionStore implements AdminSessionStore {
   sessions: FakeAdminSession[] = [];
   refreshTokens: FakeAdminRefreshToken[] = [];
   attempts: { key: string; at: Date }[] = [];
+  recoveryCodes: FakeAdminRecoveryCode[] = [];
 
   rollbacks = 0;
 
@@ -74,6 +83,7 @@ export class FakeAdminSessionStore implements AdminSessionStore {
       sessions: this.sessions.map((session) => ({ ...session })),
       refreshTokens: this.refreshTokens.map((token) => ({ ...token })),
       attempts: this.attempts.map((attempt) => ({ ...attempt })),
+      recoveryCodes: this.recoveryCodes.map((code) => ({ ...code })),
     };
   }
 
@@ -82,6 +92,7 @@ export class FakeAdminSessionStore implements AdminSessionStore {
     this.sessions = snapshot.sessions;
     this.refreshTokens = snapshot.refreshTokens;
     this.attempts = snapshot.attempts;
+    this.recoveryCodes = snapshot.recoveryCodes;
   }
 }
 
@@ -228,6 +239,47 @@ class FakeAdminSessionTransaction implements AdminSessionTransaction {
       session.revokedReason = reason;
     }
     return Promise.resolve();
+  }
+
+  holdsUnspentRecoveryCode(input: { readonly accountId: string; readonly codeHash: Buffer }): Promise<boolean> {
+    return Promise.resolve(this.unspent(input) !== undefined);
+  }
+
+  /** The adapter's conditional `UPDATE … WHERE spent_at IS NULL`, modelled. */
+  spendRecoveryCode(input: {
+    readonly accountId: string;
+    readonly codeHash: Buffer;
+    readonly at: Date;
+  }): Promise<boolean> {
+    const code = this.unspent(input);
+    if (code === undefined) return Promise.resolve(false);
+    code.spentAt = input.at;
+    return Promise.resolve(true);
+  }
+
+  countUnspentRecoveryCodes(accountId: string): Promise<number> {
+    return Promise.resolve(
+      this.store.recoveryCodes.filter((code) => code.accountId === accountId && code.spentAt === null)
+        .length,
+    );
+  }
+
+  releaseLock(accountId: string): Promise<void> {
+    const index = this.store.accounts.findIndex((account) => account.id === accountId);
+    if (index !== -1) {
+      this.store.accounts[index] = { ...this.store.accounts[index], lockedAt: null, failedAttempts: 0 };
+    }
+    return Promise.resolve();
+  }
+
+  private unspent(input: {
+    readonly accountId: string;
+    readonly codeHash: Buffer;
+  }): FakeAdminRecoveryCode | undefined {
+    return this.store.recoveryCodes.find(
+      (code) =>
+        code.accountId === input.accountId && code.codeHash.equals(input.codeHash) && code.spentAt === null,
+    );
   }
 }
 

@@ -3102,6 +3102,62 @@
         ]
       }
     },
+    "/api/v1/auth/admin/session/recovery": {
+      "post": {
+        "description": "UC-212, for an operator whose authenticator is lost or whose account is locked (task 144). The recovery code is judged before the password; on success the code is spent, a lock is released and the session is established as a sealed httpOnly cookie — no token in the body. Refusals are one answer whatever was wrong, throttled per address, and count toward the lock.",
+        "operationId": "AdminSessionController_recover",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRecoveryRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The session was established; the cookie carries it, and the body says how many codes remain.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminRecoveredSessionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The address, the password or the recovery code is not right, or the code was already used — one answer for all of them (problem type credential-invalid).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many recovery attempts for this address in the window. Identical either way.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Sign in with the password and a recovery code",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/admin/organizations": {
       "get": {
         "description": "UC-69. Account-level metadata for every registered organization — name, IDNO, registration date, active entity count, report count and the most recent member sign-in — and never report content. Every read is recorded in the support access log before it runs.",
@@ -3840,6 +3896,8 @@
                 "admin.sign_in.factor_refused",
                 "admin.sign_in.blocked",
                 "admin.sign_in.throttled",
+                "admin.sign_in.recovered",
+                "admin.sign_in.recovery_refused",
                 "admin.invitation.issued",
                 "admin.invitation.resent",
                 "admin.invitation.revoked",
@@ -3848,7 +3906,11 @@
                 "admin.account.reactivated",
                 "admin.account.removed",
                 "admin.account.lockout_released",
-                "admin.account.provisioned"
+                "admin.account.provisioned",
+                "admin.password.changed",
+                "admin.factor.reenrolment_started",
+                "admin.factor.reenrolled",
+                "admin.recovery_codes.issued"
               ],
               "type": "string"
             }
@@ -3900,6 +3962,288 @@
           }
         },
         "summary": "Read the platform-wide system audit log",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/credentials": {
+      "get": {
+        "description": "UC-212. When the current set of recovery codes was issued and how many remain — never a code and never a secret. The password and the second factor are always in force on an operator account.",
+        "operationId": "AdminCredentialsController_state",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The operator’s credential state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminCredentialsResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read the operator’s own credential state",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/credentials/password": {
+      "post": {
+        "description": "UC-212 step one. Requires the current password, and optionally ends the operator’s other sessions — never the one making the request. Releases no lock. Recorded in the system audit log.",
+        "operationId": "AdminCredentialsController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeAdminPasswordRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changed; the body says how many other sessions ended.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminPasswordChangedResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The new password does not meet the policy (problem type validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The current password is not right (problem type credential-invalid), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many attempts at the current password in the window (problem type rate-limited) — every write on this screen spends the same one.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Change the operator’s own password",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/credentials/totp/enrolment": {
+      "post": {
+        "description": "UC-212 step two, first half. Requires the current password, and answers a new secret and its otpauth URI — once. The factor in force keeps signing the operator in until a confirmation; asked again, this replaces the staged secret with a new one. Recorded in the system audit log.",
+        "operationId": "AdminCredentialsController_beginReenrolment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReauthenticationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Staged: scan or type the secret, then confirm it with a current code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminEnrolmentResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The current password is not right (problem type credential-invalid), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many attempts at the current password in the window (problem type rate-limited) — every write on this screen spends the same one.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Stage a new second factor beside the one in force",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/credentials/totp/confirmation": {
+      "post": {
+        "description": "UC-212 step two, second half. Requires the current password and a current code from the new authenticator; the staged secret then replaces the factor in force. Recovery codes and sessions are untouched. Recorded in the system audit log.",
+        "operationId": "AdminCredentialsController_confirmReenrolment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmAdminReenrolmentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The new second factor is in force."
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The current password is not right (problem type credential-invalid), the code is not current for the new authenticator (problem type factor-invalid), or the request came from another origin.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "No second factor is staged to confirm (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many attempts at the current password in the window (problem type rate-limited) — every write on this screen spends the same one.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Confirm the staged second factor and put it in force",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/credentials/recovery-codes": {
+      "post": {
+        "description": "UC-212 step three. Requires the current password, and answers ten single-use codes, shown once. Every code of an earlier set stops working. Recorded in the system audit log.",
+        "operationId": "AdminCredentialsController_issueRecoveryCodes",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReauthenticationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new set — the only time the codes are shown.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AdminRecoveryCodesResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The current password is not right (problem type credential-invalid), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many attempts at the current password in the window (problem type rate-limited) — every write on this screen spends the same one.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Issue a set of recovery codes, replacing any before it",
         "tags": [
           "platform"
         ]
@@ -6909,6 +7253,53 @@
           "totpCode"
         ]
       },
+      "AdminRecoveredSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AdminAccountDto"
+          },
+          "expiresAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC. When the session dies if never used again — the earlier of its idle (8 h) and absolute (12 h) bounds.",
+            "example": 1787444100000
+          },
+          "recoveryCodesRemaining": {
+            "type": "number",
+            "description": "Unspent recovery codes left after the one this sign-in used. Zero is a real answer: the operator should issue a new set before they need one."
+          }
+        },
+        "required": [
+          "account",
+          "expiresAt",
+          "recoveryCodesRemaining"
+        ]
+      },
+      "AdminRecoveryRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "operator@easyesg.md"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "The operator’s password."
+          },
+          "recoveryCode": {
+            "type": "string",
+            "description": "One unused recovery code, as printed or retyped — hyphens and letter case do not matter.",
+            "example": "0123-4567-89AB-CDEF"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "recoveryCode"
+        ]
+      },
       "OrganizationRegisterRowResponseDto": {
         "type": "object",
         "properties": {
@@ -7184,6 +7575,8 @@
               "admin.sign_in.factor_refused",
               "admin.sign_in.blocked",
               "admin.sign_in.throttled",
+              "admin.sign_in.recovered",
+              "admin.sign_in.recovery_refused",
               "admin.invitation.issued",
               "admin.invitation.resent",
               "admin.invitation.revoked",
@@ -7192,7 +7585,11 @@
               "admin.account.reactivated",
               "admin.account.removed",
               "admin.account.lockout_released",
-              "admin.account.provisioned"
+              "admin.account.provisioned",
+              "admin.password.changed",
+              "admin.factor.reenrolment_started",
+              "admin.factor.reenrolled",
+              "admin.recovery_codes.issued"
             ],
             "description": "What happened."
           },
@@ -7229,6 +7626,110 @@
           "actorEmail",
           "targetId",
           "targetEmail"
+        ]
+      },
+      "AdminCredentialsResponseDto": {
+        "type": "object",
+        "properties": {
+          "recoveryCodesIssuedAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Unix epoch milliseconds, UTC, when the current set of recovery codes was issued. Null until the operator issues a first set — nothing else creates one.",
+            "example": 1789900000000
+          },
+          "recoveryCodesRemaining": {
+            "type": "number",
+            "description": "Unspent codes of the current set. Zero when every one has been used, and zero when none was ever issued — the issue date tells the two apart."
+          }
+        },
+        "required": [
+          "recoveryCodesIssuedAt",
+          "recoveryCodesRemaining"
+        ]
+      },
+      "AdminPasswordChangedResponseDto": {
+        "type": "object",
+        "properties": {
+          "otherSessionsTerminated": {
+            "type": "number",
+            "description": "How many other sessions were ended. Always 0 when the election was not made, and 0 is a normal answer when it was."
+          }
+        },
+        "required": [
+          "otherSessionsTerminated"
+        ]
+      },
+      "ChangeAdminPasswordRequestDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "The password in force now. A change without the correct one is refused."
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "The replacement, under the same policy as every password: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character."
+          },
+          "terminateOtherSessions": {
+            "type": "boolean",
+            "description": "End the operator’s **other** active sessions. Opt-in, and false when omitted; the session making this request is never one of them."
+          }
+        },
+        "required": [
+          "currentPassword",
+          "password"
+        ]
+      },
+      "AdminReauthenticationRequestDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "The operator’s current password. Every write on this screen asks for it."
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "ConfirmAdminReenrolmentRequestDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "The operator’s current password."
+          },
+          "code": {
+            "type": "string",
+            "description": "A current code from the authenticator the staged secret was entered into.",
+            "example": "287082"
+          }
+        },
+        "required": [
+          "password",
+          "code"
+        ]
+      },
+      "AdminRecoveryCodesResponseDto": {
+        "type": "object",
+        "properties": {
+          "recoveryCodes": {
+            "description": "Ten single-use codes, shown exactly once. Every code of an earlier set stopped working when these were issued.",
+            "example": [
+              "0123-4567-89AB-CDEF"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "recoveryCodes"
         ]
       }
     }

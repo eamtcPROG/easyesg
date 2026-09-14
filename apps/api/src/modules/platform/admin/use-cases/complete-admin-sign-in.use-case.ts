@@ -6,11 +6,7 @@ import {
 import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
 import { mintRefreshToken } from '@api/modules/identity/session/domain/refresh-token';
 import type { AdminChallengePayload } from '../domain/admin-challenge-codec';
-import {
-  ADMIN_ACCESS_TOKEN_TTL_MS,
-  adminChallengeHasExpired,
-  adminSessionExpiresAt,
-} from '../domain/admin-session-expiry';
+import { adminChallengeHasExpired } from '../domain/admin-session-expiry';
 import { verifyTotp } from '../domain/totp';
 import {
   AdminAccountLockedError,
@@ -23,6 +19,7 @@ import type { IssuedAdminSession } from '../models/admin-session.model';
 import type { Clock } from '@api/contracts/clock.port';
 import type { SystemAuditLog } from '@api/contracts/system-audit-log.port';
 import { AUDIT_ACTION, auditSubject } from '@api/modules/platform/audit/models/audit-action.model';
+import { issuedAdminSession } from './issued-admin-session';
 
 export interface CompleteAdminSignInCommand {
   readonly challenge: AdminChallengePayload;
@@ -118,17 +115,13 @@ export class CompleteAdminSignIn {
       subject,
     });
 
-    const accessTokenExpiresAt = new Date(now.getTime() + ADMIN_ACCESS_TOKEN_TTL_MS);
-    return {
-      identity: { id: account.id, email: account.email, role: account.role },
-      sessionId: session.id,
-      accessToken: await this.tokens.sign(session.id, accessTokenExpiresAt),
-      accessTokenExpiresAt,
+    // The session assembly a recovery sign-in shares (task 144), so the realm's lifetimes live in one place.
+    return issuedAdminSession({
+      tokens: this.tokens,
+      account,
+      session,
       refreshToken: minted.value,
-      refreshTokenExpiresAt: adminSessionExpiresAt({
-        sessionCreatedAt: session.createdAt,
-        tokenIssuedAt: now,
-      }),
-    };
+      now,
+    });
   }
 }

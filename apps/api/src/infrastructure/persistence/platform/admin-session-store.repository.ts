@@ -334,4 +334,54 @@ class AdminSessionTransactionAdapter implements AdminSessionTransaction {
       [sessionId, at, reason],
     );
   }
+
+  /** Scoped by account as well as by digest (the tenant consumption's reason): a code is one account's credential. */
+  async holdsUnspentRecoveryCode(input: {
+    readonly accountId: string;
+    readonly codeHash: Buffer;
+  }): Promise<boolean> {
+    const rows = returnedRows<{ id: string }>(
+      await this.queryRunner.query(
+        `SELECT id FROM identity.admin_recovery_code
+          WHERE account_id = $1 AND code_hash = $2 AND spent_at IS NULL`,
+        [input.accountId, input.codeHash],
+      ),
+    );
+    return rows.length > 0;
+  }
+
+  async spendRecoveryCode(input: {
+    readonly accountId: string;
+    readonly codeHash: Buffer;
+    readonly at: Date;
+  }): Promise<boolean> {
+    const result = (await this.queryRunner.query(
+      `UPDATE identity.admin_recovery_code
+          SET spent_at = $3
+        WHERE account_id = $1 AND code_hash = $2 AND spent_at IS NULL
+        RETURNING id`,
+      [input.accountId, input.codeHash, input.at],
+    )) as unknown;
+    return returnedRows<{ id: string }>(result).length > 0;
+  }
+
+  async countUnspentRecoveryCodes(accountId: string): Promise<number> {
+    const rows = returnedRows<{ remaining: number }>(
+      await this.queryRunner.query(
+        `SELECT count(*)::int AS remaining FROM identity.admin_recovery_code
+          WHERE account_id = $1 AND spent_at IS NULL`,
+        [accountId],
+      ),
+    );
+    return rows[0]?.remaining ?? 0;
+  }
+
+  async releaseLock(accountId: string, at: Date): Promise<void> {
+    await this.queryRunner.query(
+      `UPDATE identity.admin_account
+          SET locked_at = NULL, failed_attempts = 0, updated_at = $2
+        WHERE id = $1`,
+      [accountId, at],
+    );
+  }
 }

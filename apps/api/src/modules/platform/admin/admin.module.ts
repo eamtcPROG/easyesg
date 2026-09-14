@@ -6,6 +6,7 @@ import { JwtAdminTokens } from '@api/infrastructure/adapters/token-signer/jwt-ad
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
 import { AdminReadOnly } from '@api/infrastructure/persistence/admin-readonly';
 import { AdminAccountStoreRepository } from '@api/infrastructure/persistence/platform/admin-account-store.repository';
+import { AdminCredentialStoreRepository } from '@api/infrastructure/persistence/platform/admin-credential-store.repository';
 import { AdminInvitationBearerStoreRepository } from '@api/infrastructure/persistence/platform/admin-invitation-bearer-store.repository';
 import { SystemAuditLogReaderRepository } from '@api/infrastructure/persistence/platform/system-audit-log-reader.repository';
 import { AuditModule } from '@api/modules/platform/audit/audit.module';
@@ -18,6 +19,7 @@ import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/a
 import type { PasswordHasher } from '@api/modules/identity/account/interfaces/password-hasher.interface';
 import { AdminInvitationEmailHandler } from './consumers/admin-invitation-email.handler';
 import { AdminAccountsController } from './controllers/admin-accounts.controller';
+import { AdminCredentialsController } from './controllers/admin-credentials.controller';
 import { AdminInvitationAcceptanceController } from './controllers/admin-invitation-acceptance.controller';
 import { AdminInvitationsController } from './controllers/admin-invitations.controller';
 import { AdminSessionController } from './controllers/admin-session.controller';
@@ -29,6 +31,10 @@ import {
   ADMIN_ACCOUNT_STORE,
   type AdminAccountStore,
 } from './interfaces/admin-account-store.interface';
+import {
+  ADMIN_CREDENTIAL_STORE,
+  type AdminCredentialStore,
+} from './interfaces/admin-credential-store.interface';
 import {
   ADMIN_INVITATION_BEARER_STORE,
   type AdminInvitationBearerStore,
@@ -47,20 +53,27 @@ import {
   type SystemAuditLogReader,
 } from './interfaces/system-audit-log-reader.interface';
 import { AdminAccountsService } from './services/admin-accounts.service';
+import { AdminCredentialsService } from './services/admin-credentials.service';
 import { AdminInvitationAcceptanceService } from './services/admin-invitation-acceptance.service';
 import { AdminInvitationsService } from './services/admin-invitations.service';
 import { AdminSessionService } from './services/admin-session.service';
 import { OrganizationRegisterService } from './services/organization-register.service';
 import { SystemAuditLogService } from './services/system-audit-log.service';
 import { AcceptAdminInvitation } from './use-cases/accept-admin-invitation.use-case';
+import { BeginAdminReenrolment } from './use-cases/begin-admin-reenrolment.use-case';
 import { BeginAdminSignIn } from './use-cases/begin-admin-sign-in.use-case';
 import { ChangeAdminAccountStatus } from './use-cases/change-admin-account-status.use-case';
+import { ChangeAdminPassword } from './use-cases/change-admin-password.use-case';
 import { CompleteAdminSignIn } from './use-cases/complete-admin-sign-in.use-case';
+import { ConfirmAdminReenrolment } from './use-cases/confirm-admin-reenrolment.use-case';
 import { InviteAdministrator } from './use-cases/invite-administrator.use-case';
+import { IssueAdminRecoveryCodes } from './use-cases/issue-admin-recovery-codes.use-case';
 import { ListAdminRoster } from './use-cases/list-admin-roster.use-case';
 import { ListOrganizationRegister } from './use-cases/list-organization-register.use-case';
 import { ListSystemAuditLog } from './use-cases/list-system-audit-log.use-case';
 import { PreviewAdminInvitation } from './use-cases/preview-admin-invitation.use-case';
+import { ReadAdminCredentials } from './use-cases/read-admin-credentials.use-case';
+import { RecoverAdminSignIn } from './use-cases/recover-admin-sign-in.use-case';
 import { ReleaseAdminLockout } from './use-cases/release-admin-lockout.use-case';
 import { ResendAdminInvitation } from './use-cases/resend-admin-invitation.use-case';
 import { ResolveAdminSession } from './use-cases/resolve-admin-session.use-case';
@@ -78,8 +91,9 @@ import { StageAdminEnrolment } from './use-cases/stage-admin-enrolment.use-case'
  * register, the realm's first route beyond its handshake, reached through `AdminRealmGuard` and read
  * through `esg_admin_ro` with every acquisition logged (§12.5.6's task-67.3 row). **Task 67.4 fills in
  * FR-80 and FR-81** — A-08's accounts, their invitations and lifecycle, the system audit log's read,
- * and A-20's acceptance beside the handshake (§12.5.6's task-67.4 row). FR-82/83 are tasks 67.11 and
- * later.
+ * and A-20's acceptance beside the handshake (§12.5.6's task-67.4 row). **Task 144 fills in FR-80's other
+ * half** — the operator's own password, second factor and recovery codes (A-19), and the recovery sign-in
+ * beside the handshake (§12.5.6's task-144 row). FR-82/83 are tasks 67.11 and later.
  *
  * **What this module deliberately borrows from `identity`, and why that is not a boundary
  * breach:** the Argon2id hasher port, the refresh-token mint/hash, and the throttle domain
@@ -179,6 +193,38 @@ const httpProviders: Provider[] = [
     inject: [SYSTEM_AUDIT_LOG_READER],
     useFactory: (reader: SystemAuditLogReader) => new ListSystemAuditLog(reader),
   },
+  // A-19 (task 144): the operator's own credentials, over a store of their own that seals the staged factor.
+  { provide: ADMIN_CREDENTIAL_STORE, useClass: AdminCredentialStoreRepository },
+  AdminCredentialsService,
+  {
+    provide: ReadAdminCredentials,
+    inject: [ADMIN_CREDENTIAL_STORE],
+    useFactory: (store: AdminCredentialStore) => new ReadAdminCredentials(store),
+  },
+  {
+    provide: ChangeAdminPassword,
+    inject: [ADMIN_CREDENTIAL_STORE, ADMIN_PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AdminCredentialStore, hasher: PasswordHasher, now: Clock) =>
+      new ChangeAdminPassword(store, hasher, now),
+  },
+  {
+    provide: BeginAdminReenrolment,
+    inject: [ADMIN_CREDENTIAL_STORE, ADMIN_PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AdminCredentialStore, hasher: PasswordHasher, now: Clock) =>
+      new BeginAdminReenrolment(store, hasher, now),
+  },
+  {
+    provide: ConfirmAdminReenrolment,
+    inject: [ADMIN_CREDENTIAL_STORE, ADMIN_PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AdminCredentialStore, hasher: PasswordHasher, now: Clock) =>
+      new ConfirmAdminReenrolment(store, hasher, now),
+  },
+  {
+    provide: IssueAdminRecoveryCodes,
+    inject: [ADMIN_CREDENTIAL_STORE, ADMIN_PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AdminCredentialStore, hasher: PasswordHasher, now: Clock) =>
+      new IssueAdminRecoveryCodes(store, hasher, now),
+  },
   {
     // The store opens `totp_secret` on the way out (task 27.1). Registered here rather than
     // globally because this is the only module holding a sealed column today; task 27.2's
@@ -235,6 +281,18 @@ const httpProviders: Provider[] = [
     inject: [ADMIN_SESSION_STORE, CLOCK],
     useFactory: (store: AdminSessionStore, now: Clock) => new SignOutAdmin(store, now),
   },
+  {
+    // Task 144: the recovery sign-in, over the session store because what it ends in is a session.
+    provide: RecoverAdminSignIn,
+    inject: [ADMIN_SESSION_STORE, ADMIN_PASSWORD_HASHER, ADMIN_TOKENS, SYSTEM_AUDIT_LOG, CLOCK],
+    useFactory: (
+      store: AdminSessionStore,
+      hasher: PasswordHasher,
+      tokens: AdminTokens,
+      audit: SystemAuditLog,
+      now: Clock,
+    ) => new RecoverAdminSignIn(store, hasher, tokens, audit, now),
+  },
 ];
 
 /** The worker sends A-08's invitation email and nothing else of this module (task 67.4). */
@@ -253,6 +311,7 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
           AdminInvitationsController,
           AdminInvitationAcceptanceController,
           SystemAuditLogController,
+          AdminCredentialsController,
         ],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
 })

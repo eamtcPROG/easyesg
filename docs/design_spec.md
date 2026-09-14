@@ -324,7 +324,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-16 | Revenue, VAT export, billing audit ledger | BO | UC-160 … 164 | Dashboard + Index |
 | A-17 | Notification categories and templates | PA | UC-176 | Editor + Publish |
 | A-18 | Identity provider configuration | PA | UC-70 | Editor |
-| A-19 | My credentials (operator's own password, second factor, recovery codes) | PA | UC-212 | Record |
+| A-19 | My credentials (operator's own password, second factor, recovery codes) | PA, BO | UC-212 | Record |
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | Focus |
 
 **Count:** 55 screens — 35 tenant (`S-01 … S-35`) and 20 administrative (`A-01 … A-20`). **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
@@ -1037,13 +1037,13 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Archetype:** Focus.
 - **Entry points:** direct arrival at the administrative host; A-20's success, which lands here with the new operator's account created and a notice saying so (task 67.4).
 - **Layout and regions:** single column, centred, one primary action. No further per-screen layout is specified in the source.
-- **Content and data shown:** credential entry; the second factor challenge.
-- **Controls and actions:** authenticate; complete the second factor.
-- **States:** loading — initial; error — recoverable (failed credential, failed factor); error — permission.
-- **Validation behaviour:** multi-factor authentication is mandatory (FR-75). Elevated credentials are held apart from ordinary tenant accounts. **UX-108** applies: no cognitive function test, and password managers and paste shall work.
+- **Content and data shown:** credential entry; the second factor challenge; **the recovery sign-in — the address, the password and one recovery code together** (task 144).
+- **Controls and actions:** authenticate; complete the second factor; **sign in with a recovery code instead, where the authenticator is lost or the account is locked** — the one way back from a lock that needs no other operator (`architecture.md` §12.5.6's task-144 row). The api route shipped with task 144; this screen's affordance for it is task 151's.
+- **States:** loading — initial; error — recoverable (failed credential, failed factor; **a recovery sign-in refused — one answer for a wrong address, password or code, or a code already used**); error — permission; **success after a recovery sign-in — a notice saying how many codes remain and that the second factor should be set up again on A-19**.
+- **Validation behaviour:** multi-factor authentication is mandatory (FR-75). Elevated credentials are held apart from ordinary tenant accounts. **UX-108** applies: no cognitive function test, and password managers and paste shall work. **A recovery sign-in judges the code before the password**, so a lock still ends password guessing, and it spends the code and releases the lock together.
 - **Exits:** the console home for the operator's privilege level — **A-02 for a Platform Administrator, A-10 for a Billing Operator** (project owner, 13 Sep 2026, task 67.1). PA's is the register support triage starts from, and the first destination in its section; BO's is the reconciliation workspace — the largest of the daily exception queues actors.md gives the role, and the one A-11, A-13 and A-14's work routes from. A same-app address carried by the realm guard's `?redirect=` still wins over the home. **Until a billing screen renders, a Billing Operator lands on an address whose screen has not shipped**, which is the consequence accepted with the choice rather than a gap in it.
-- **Use cases:** UC-68.
-- **FRs:** FR-75.
+- **Use cases:** UC-68, UC-212.
+- **FRs:** FR-75, FR-80.
 
 ### A-02 — Organization register
 
@@ -1305,14 +1305,14 @@ The administrative console shares tokens and primitives with the tenant applicat
 ### A-19 — My credentials
 
 - **Purpose:** let an operator rotate their own password, second factor and recovery codes without another operator acting.
-- **Primary actors:** PA.
+- **Primary actors:** PA, BO — **a Billing Operator holds the same password and mandatory second factor, and A-08 has no second-factor reset** (project owner, 14 Sep 2026, task 144).
 - **Archetype:** Record.
-- **Entry points:** console navigation; the account menu; a lost or replaced authenticator device.
+- **Entry points:** console navigation; the account menu; a lost or replaced authenticator device; **A-01's notice after a recovery sign-in**.
 - **Layout and regions:** Record archetype — identity header, grouped sections per credential, explicit save per section, change attribution.
-- **Content and data shown:** password state; second-factor state; how many recovery codes remain unspent; **during re-enrolment, the Enrolment code component — the QR symbol beside the base32 secret it encodes** (§11.5).
-- **Controls and actions:** change password, optionally terminating other sessions; re-enrol a second factor; issue or re-issue recovery codes. **Every one of them asks for the current password**, on the rule task 27.5 established for the tenant realm: a route that changes a credential from behind a session must not let a stolen session outlive the password its owner reaches for.
+- **Content and data shown:** password state; second-factor state; how many recovery codes remain unspent **and when the set was issued — or that none has been, since this screen is the only thing that mints them** (task 144); **during re-enrolment, the Enrolment code component — the QR symbol beside the base32 secret it encodes** (§11.5).
+- **Controls and actions:** change password, optionally terminating other sessions; re-enrol a second factor; issue or re-issue recovery codes. **Every one of them asks for the current password**, on the rule task 27.5 established for the tenant realm: a route that changes a credential from behind a session must not let a stolen session outlive the password its owner reaches for. **Here that includes the confirming step of a re-enrolment**, which carries the current password as well as the code (§12.5.6's task-144 row), so a stolen session alone never completes one — the field stays filled across the two steps, so it is typed once.
 - **States:** loading — initial; error — recoverable; success; **enrolling** — the staged state holding the secret and its QR until a current code confirms it.
-- **Validation behaviour:** re-enrolment activates only on a confirming code, so a scan that silently failed cannot lock the operator out. A recovery code is single-use and the remaining count is shown rather than the codes themselves. Consequence disclosure on *terminate my other sessions* (UX-70).
+- **Validation behaviour:** re-enrolment activates only on a confirming code, so a scan that silently failed cannot lock the operator out — the factor in force keeps signing them in until then. A recovery code is single-use and the remaining count is shown rather than the codes themselves. Consequence disclosure on *terminate my other sessions* (UX-70).
 - **Exits:** back to the console home. A password change that terminates other sessions leaves this one live — FR-7's *other*, applied here.
 - **Use cases:** UC-212.
 - **FRs:** FR-80.
@@ -2202,7 +2202,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-33 | Help article | VI, CA | UC-181 | FR-61, FR-64 |
 | S-34 | Write to support | VI, CA | UC-182 | — (G-9) |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | FR-12 |
-| A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | FR-75 |
+| A-01 | Admin sign-in (MFA) | PA, BO | UC-68, UC-212 | FR-75, FR-80 |
 | A-02 | Organization register | PA | UC-69 | FR-76, FR-77 |
 | A-03 | Content and translation console | PA | UC-71 … 74 | FR-61, FR-62, FR-63, FR-64, FR-74 |
 | A-04 | Taxonomy versions, mappings, migration runs | PA | UC-75 … 79 | FR-65, FR-66, FR-67, FR-68, FR-69, FR-70 |
@@ -2220,7 +2220,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | A-16 | Revenue, VAT export, billing audit ledger | BO | UC-160 … 164 | FR-148, FR-149, FR-150, FR-151, FR-152 |
 | A-17 | Notification categories and templates | PA | UC-176 | FR-173 |
 | A-18 | Identity provider configuration | PA | UC-70 | FR-82 |
-| A-19 | My credentials | PA | UC-212 | FR-80 |
+| A-19 | My credentials | PA, BO | UC-212 | FR-80 |
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | FR-80, FR-75 |
 | *(global tier)* | User menu — log out | CA | UC-06 | FR-5 |
 | *(inline)* | Re-authentication over preserved context | CA | UC-07 | FR-5 |

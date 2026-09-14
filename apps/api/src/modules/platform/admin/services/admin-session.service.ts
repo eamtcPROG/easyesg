@@ -23,6 +23,10 @@ import {
 } from '../use-cases/begin-admin-sign-in.use-case';
 import { CompleteAdminSignIn } from '../use-cases/complete-admin-sign-in.use-case';
 import {
+  RecoverAdminSignIn,
+  type RecoverAdminSignInCommand,
+} from '../use-cases/recover-admin-sign-in.use-case';
+import {
   RESOLVED_ADMIN_SESSION,
   ResolveAdminSession,
 } from '../use-cases/resolve-admin-session.use-case';
@@ -42,8 +46,15 @@ export interface AdminChallengeView {
  */
 export interface AdminSessionView {
   readonly identity: AdminIdentity;
+  /** The session this view is about — `AdminRealmGuard` writes it into the request context (task 144). */
+  readonly sessionId: string;
   readonly expiresAt: Date;
   readonly setCookies?: readonly string[];
+}
+
+/** A recovery sign-in's view (task 144): the session, and how many codes the operator has left. */
+export interface AdminRecoveredSessionView extends AdminSessionView {
+  readonly recoveryCodesRemaining: number;
 }
 
 /**
@@ -59,6 +70,7 @@ export class AdminSessionService {
   constructor(
     private readonly beginSignInUseCase: BeginAdminSignIn,
     private readonly completeSignInUseCase: CompleteAdminSignIn,
+    private readonly recoverUseCase: RecoverAdminSignIn,
     private readonly resolveUseCase: ResolveAdminSession,
     private readonly signOutUseCase: SignOutAdmin,
     @Inject(ADMIN_TOKENS) private readonly tokens: AdminTokens,
@@ -111,8 +123,27 @@ export class AdminSessionService {
     });
     return {
       identity: issued.identity,
+      sessionId: issued.sessionId,
       expiresAt: issued.refreshTokenExpiresAt,
       setCookies: [this.sessionCookie(issued), clearedAdminChallengeCookie()],
+    };
+  }
+
+  /**
+   * UC-212's way back in (task 144): the password and a recovery code, answered with the session cookie —
+   * and the challenge's clear too, since a half-open A-01 handshake is moot once the operator is in.
+   */
+  async recover(input: Omit<RecoverAdminSignInCommand, 'clientIp'>): Promise<AdminRecoveredSessionView> {
+    const recovered = await this.recoverUseCase.execute({
+      ...input,
+      clientIp: requestContext()?.clientIp,
+    });
+    return {
+      identity: recovered.identity,
+      sessionId: recovered.sessionId,
+      expiresAt: recovered.refreshTokenExpiresAt,
+      setCookies: [this.sessionCookie(recovered), clearedAdminChallengeCookie()],
+      recoveryCodesRemaining: recovered.recoveryCodesRemaining,
     };
   }
 
@@ -130,11 +161,13 @@ export class AdminSessionService {
     if (resolved.kind === RESOLVED_ADMIN_SESSION.CURRENT) {
       return {
         identity: resolved.identity,
+        sessionId: resolved.sessionId,
         expiresAt: new Date(payload.refreshTokenExpiresAt),
       };
     }
     return {
       identity: resolved.issued.identity,
+      sessionId: resolved.issued.sessionId,
       expiresAt: resolved.issued.refreshTokenExpiresAt,
       setCookies: [this.sessionCookie(resolved.issued)],
     };

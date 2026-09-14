@@ -20,6 +20,8 @@ import {
 import { AdminChallengeRequestDto } from '../dto/admin-challenge.request.dto';
 import { AdminChallengeResponseDto } from '../dto/admin-challenge.response.dto';
 import { AdminFactorRequestDto } from '../dto/admin-factor.request.dto';
+import { AdminRecoveredSessionResponseDto } from '../dto/admin-recovered-session.response.dto';
+import { AdminRecoveryRequestDto } from '../dto/admin-recovery.request.dto';
 import { AdminSessionResponseDto } from '../dto/admin-session.response.dto';
 import { AdminOriginGuard } from '../guards/admin-origin.guard';
 import { AdminSessionService } from '../services/admin-session.service';
@@ -145,6 +147,41 @@ export class AdminSessionController {
     );
     if (view.setCookies) response.setHeader(SET_COOKIE, [...view.setCookies]);
     return new AdminSessionResponseDto(view);
+  }
+
+  @Post('session/recovery')
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Sign in with the password and a recovery code',
+    description:
+      'UC-212, for an operator whose authenticator is lost or whose account is locked (task 144). The ' +
+      'recovery code is judged before the password; on success the code is spent, a lock is released and ' +
+      'the session is established as a sealed httpOnly cookie — no token in the body. Refusals are one ' +
+      'answer whatever was wrong, throttled per address, and count toward the lock.',
+  })
+  @ApiObjectResponse(AdminRecoveredSessionResponseDto, {
+    status: 201,
+    description: 'The session was established; the cookie carries it, and the body says how many codes remain.',
+  })
+  @ApiResponse({
+    status: 401,
+    description:
+      'The address, the password or the recovery code is not right, or the code was already used — one ' +
+      'answer for all of them (problem type credential-invalid).',
+    content: { [PROBLEM_MEDIA_TYPE]: {} },
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many recovery attempts for this address in the window. Identical either way.',
+    content: { [PROBLEM_MEDIA_TYPE]: {} },
+  })
+  async recover(
+    @Body() body: AdminRecoveryRequestDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<AdminRecoveredSessionResponseDto> {
+    const view = await this.adminSessionService.recover(body);
+    if (view.setCookies) response.setHeader(SET_COOKIE, [...view.setCookies]);
+    return new AdminRecoveredSessionResponseDto(view);
   }
 
   @Get('session')
