@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, useLocation } from '@tanstack/react-router';
-import { REALM_READ } from '../../../../shared/tools/realm-read';
+import { REALM_READ } from '~/realm/tools/realm-read';
 import { adminRosterQuery } from '../../../queries/admin-roster';
 import type { AccountsSearch } from '../../../tools/accounts-search';
 import { readRosterOutcome } from '../../../tools/roster-read';

@@ -94,10 +94,10 @@ src/
 ├─ realm/       api/ (the one API client) · components/ (sign-in/ A-01's screen · invitation/ A-20's ·
 │               chrome/ the realm layout's chrome · shared/ the realm chip and the refusal callout) ·
 │               queries/ (the session, the invitation) · tools/ (the two reducers, each role's home, the
-│               navigation's sections, A-01's notice, the email shape). A LEAF (see below)
+│               navigation's sections, A-01's notice, the realm reads' arms, the email shape). A LEAF (see below)
 ├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until
-│               built; platform/admin/ holds organization-register/ (A-02, task 67.3), admin-accounts/
-│               (A-08, task 67.4) and the shared/ both read
+│               built; platform/admin/ holds organization-register/ (A-02, task 67.3) and admin-accounts/
+│               (A-08, task 67.4)
 ├─ shared/      what BOTH contexts need — index-view.tsx, the Index archetype's chrome bound once. A LEAF
 ├─ i18n/        use-intl wiring, the console locale, formats, the expansion harness, global.d.ts
 ├─ lib/         env (build-time only) and vite-env.d.ts beside it, pagination

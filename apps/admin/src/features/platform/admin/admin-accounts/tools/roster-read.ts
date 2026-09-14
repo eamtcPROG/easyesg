@@ -1,5 +1,5 @@
 import { API_OUTCOME, type AdminRosterRow, type ApiOutcome, type ListResult } from '@easyesg/contracts';
-import { REALM_READ, realmReadFailureOf, type RealmReadFailure } from '../../shared/tools/realm-read';
+import { REALM_READ, realmReadFailureOf, type RealmReadFailure } from '~/realm/tools/realm-read';
 
 /**
  * A-08's account table read, as the arm its section draws (task 67.4). The roster is unpaginated —

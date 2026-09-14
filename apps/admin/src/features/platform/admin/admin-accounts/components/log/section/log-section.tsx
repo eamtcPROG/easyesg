@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ADMIN_ROSTER_KIND } from '@easyesg/contracts';
-import { REALM_READ } from '../../../../shared/tools/realm-read';
+import { REALM_READ } from '~/realm/tools/realm-read';
 import { adminRosterQuery } from '../../../queries/admin-roster';
 import { systemAuditLogQuery } from '../../../queries/system-audit-log';
 import { logViewOf, type AccountsSearch } from '../../../tools/accounts-search';

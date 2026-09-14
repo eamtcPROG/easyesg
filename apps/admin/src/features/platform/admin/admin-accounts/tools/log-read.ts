@@ -5,7 +5,7 @@ import {
   type SystemAuditLogEntry,
 } from '@easyesg/contracts';
 import type { IndexPage } from '@easyesg/ui';
-import { REALM_READ, realmReadFailureOf, type RealmReadFailure } from '../../shared/tools/realm-read';
+import { REALM_READ, realmReadFailureOf, type RealmReadFailure } from '~/realm/tools/realm-read';
 import { LOG_PAGE_SIZE } from './accounts-search';
 
 /**
