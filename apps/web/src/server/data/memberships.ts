@@ -58,3 +58,12 @@ export const readActiveMembership = async (): Promise<AccountMembership | null> 
  */
 export const mayWrite = (membership: AccountMembership | null): boolean =>
   membership !== null && membership.role !== MEMBERSHIP_ROLE.VIEWER;
+
+/**
+ * Whether this membership is an Organization Administrator's — the one role that answers a support-access request
+ * or ends running access (task 67.9; FR-78 as amended 14 Sep 2026). Beside `mayWrite` for its reason, and like it
+ * **presentation only**: it decides whether the banner offers *End access*, and the route refuses anyone else.
+ * `null` reads as not, the safe direction.
+ */
+export const mayAdminister = (membership: AccountMembership | null): boolean =>
+  membership?.role === MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR;

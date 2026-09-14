@@ -1181,5 +1181,27 @@
         }
       }
     }
+  },
+  "supportAccess": {
+    "unknownOperator": "Un administrator EasyESG",
+    "ticket": "Tichet de asistență",
+    "reason": "Motiv",
+    "awaiting": {
+      "title": "{operator} de la EasyESG cere acces la rapoartele organizației",
+      "body": "Dacă acordați accesul, poate citi rapoartele și valorile lor timp de 60 de minute, fără a putea modifica ceva. Toți membrii organizației vor vedea că accesul este în curs, iar orice administrator îl poate încheia.",
+      "lapses": "Dacă nu răspundeți, cererea expiră la {time}.",
+      "grant": "Acordați acces pentru 60 de minute",
+      "decline": "Refuzați"
+    },
+    "active": {
+      "title": "{operator} de la EasyESG citește acum rapoartele organizației",
+      "body": "Accesul este doar pentru citire și se încheie singur la {time}, {left}.",
+      "endNote": "Un administrator al organizației îl poate încheia oricând.",
+      "end": "Încheiați accesul acum"
+    },
+    "unreachable": {
+      "title": "Răspunsul dumneavoastră nu a ajuns la EasyESG",
+      "body": "Alegerea nu a putut fi înregistrată, așa că cererea a rămas neschimbată. Încercați din nou peste câteva momente."
+    }
   }
 }

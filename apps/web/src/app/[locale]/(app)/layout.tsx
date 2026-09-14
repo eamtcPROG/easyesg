@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
+import { SupportAccessBanners } from '@/features/support-access/components/section/support-access-banners';
 import { GlobalTier } from '@/shared/global-tier';
 
 /**
@@ -41,9 +42,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   // screen" includes the two `(app)` screens that are NOT in that group: S-04, where there is no
   // organization to name yet, and S-35, where the read that would name it has just failed. Both
   // are the band's designed empty state rather than a second layout.
+  //
+  // UX-124's support-access banners since task 67.9, here for the global tier's reason: *every signed-in screen*.
+  // **Behind a boundary with no fallback**, deliberately against the one-skeleton-per-reading-region rule: the
+  // banner's ordinary state is absent, so a skeleton would reserve and then collapse a band on nearly every render,
+  // while no fallback lets the page flush without waiting on `GET /support-access` and the banner arrive after.
   return (
     <>
       <GlobalTier />
+      <Suspense fallback={null}>
+        <SupportAccessBanners />
+      </Suspense>
       {children}
     </>
   );

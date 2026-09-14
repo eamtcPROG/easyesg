@@ -1,0 +1,27 @@
+import { useState, useTransition } from 'react';
+import { API_OUTCOME } from '@/lib/api-outcome';
+import { failureNotice, type Notice, type NoticeCopy } from '@/lib/notice';
+import type { SupportAccessActionResult } from '../../actions/action-results';
+
+/**
+ * One answer or end, sent (task 67.9) — the pending flag the buttons wear, and the refusal they show. Shared by
+ * the banner's two control sets, which is its admission here.
+ *
+ * **No success value at all**: the action revalidates the layout, so on success the banner holding these controls
+ * is re-rendered from the server as whatever is now true, and a success notice would describe a banner that has
+ * already changed. The refusal is one value — `null` until a send is refused, cleared when the next one starts.
+ */
+export function useSupportAccessAction(unreachable: NoticeCopy) {
+  const [pending, startTransition] = useTransition();
+  const [refusal, setRefusal] = useState<Notice | null>(null);
+
+  const run = (send: () => Promise<SupportAccessActionResult>) => {
+    setRefusal(null);
+    startTransition(async () => {
+      const outcome = await send();
+      if (outcome.status !== API_OUTCOME.Ok) setRefusal(failureNotice({ outcome, unreachable }));
+    });
+  };
+
+  return { pending, refusal, run } as const;
+}

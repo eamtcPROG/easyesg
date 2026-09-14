@@ -13,7 +13,7 @@ every screen. Cite them; do not re-derive them.
 Identity, organization, periods, reports, entities and the wizard are live; the calculator,
 validation, preview and export, notifications, checkout and billing and the public tier are the
 sixteen addresses `AddressNotice` answers for. What exists: 43 page routes across six route groups,
-7 layouts, a not-found boundary, 4 route handlers, the next-intl wiring, 14 feature folders (seven built),
+7 layouts, a not-found boundary, 4 route handlers, the next-intl wiring, 15 feature folders (eight built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/archived_tasks.md`
@@ -191,6 +191,13 @@ Three things to know before touching it:
   `SubContent` portals as a sibling of the layer that gets `auto` back — so the language submenu is
   unclickable. It is also the right semantics for chrome hanging off a header.
 
+**UX-124's support-access banner** (task 67.9) sits beside the global tier in the `(app)` layout, behind a
+`<Suspense>` with **no fallback** — its ordinary state is absent, so a skeleton would reserve and then collapse a band
+on nearly every render. `features/support-access/` holds it: `server/data/support-access.ts` reads
+`GET /support-access`, whose API decides what each member is shown (pending requests to an Organization Administrator
+only, running access to everyone), and three Server Actions answer or end, each revalidating the `(app)` layout. A
+failed read draws nothing, and `mayAdminister`, beside `mayWrite`, decides only whether *End access* is offered.
+
 **Every address answers something (task 103).** `shared/address-notice.tsx` is the anatomy under §8.1's two
 address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the sixteen routes whose screens have not
 shipped, and `error — not found` for an address that does not exist. `design_spec.md` §4.5
@@ -283,7 +290,7 @@ src/
 ├─ proxy.ts        Next 16's middleware. Locale AND session — see below
 ├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
-├─ features/       14 domains, mirroring apps/api/src/modules names
+├─ features/       15 domains, mirroring apps/api/src/modules names
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter)
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
@@ -777,10 +784,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **72 files here are Client Components** (13 Sep 2026: thirteen under
+  **74 files here are Client Components** (14 Sep 2026: thirteen under
   `organization/access/components/` since task 142 split the invite panel into its arms, ten under
   `credentials/components/`, seven under `shared/`, the rest
-  across the wizard's controls and the two record forms' sections), so the three
+  across the wizard's controls and the two record forms' sections and task 67.9's support-access banner's two control sets), so the three
   cases above are live questions in every one of them — `access-context.tsx` is the worked example,
   where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two
   consumers per row. When this paragraph was written there were seven, all under `identity/`, and

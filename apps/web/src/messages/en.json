@@ -1181,5 +1181,27 @@
         }
       }
     }
+  },
+  "supportAccess": {
+    "unknownOperator": "An EasyESG administrator",
+    "ticket": "Support ticket",
+    "reason": "Reason",
+    "awaiting": {
+      "title": "{operator} from EasyESG is asking to read your organization’s reports",
+      "body": "If you grant access, they can read the reports and their values for 60 minutes and cannot change anything. Every member of the organization will see that access is running, and any administrator can end it.",
+      "lapses": "If nobody answers, the request lapses at {time}.",
+      "grant": "Grant access for 60 minutes",
+      "decline": "Decline"
+    },
+    "active": {
+      "title": "{operator} from EasyESG is reading your organization’s reports now",
+      "body": "Access is read-only and ends by itself at {time}, {left}.",
+      "endNote": "An administrator of the organization can end it at any time.",
+      "end": "End access now"
+    },
+    "unreachable": {
+      "title": "Your answer did not reach EasyESG",
+      "body": "Your choice could not be recorded, so the request is unchanged. Try again in a few moments."
+    }
   }
 }
