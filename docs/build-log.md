@@ -20840,3 +20840,62 @@ the rewritten comments state their reason and count nothing outside their files.
 
 **Not run**: the unit suites, `gates:clean` and the review agents — the change reaches the browser suite and nothing
 else, and the owner's standing rule for a row like this is the gates its change reaches.
+
+## Task 157 — Five identity routes read in `page.tsx` · 2026-09-15
+
+Offered at task 155's second review as a separate session, and started by the owner. S-01's registration, sign-in and
+factor step and S-02's reset request and verification each held their read, their strings or their branch in the
+route file, against `one-idea-per-file`'s `shell-composes-only`, and none was on `apps/web/CLAUDE.md`'s deferred
+list. **Fixed rather than deferred**: each page now pins the locale and renders one section — `register-section`,
+`sign-in-section`, `factor-section`, `request-reset-section` and `verify-section` — shaped like task 155's
+`complete-account-section`, `grant-password-section` and `set-password-section`. Every `(identity)` route is a shell
+now, which the guide's deferral paragraph says.
+
+### Routine calls, stated
+
+- **Each section is a sibling of its forms, not a `section/` folder.** Each journey's `components/` holds files only
+  and one screen's parts, so a folder for one file would make it hold both — `one-kind-per-folder`'s
+  `folder-files-or-folders` — which is where `reset/components/set-password-section.tsx` already sat.
+- **`searchParams` is handed on unawaited**, and the section awaits it in the same `Promise.all` as its translations.
+- **The factor section hands `FactorForm` only `expiresAt`**, as the page did, and says why in its docblock: the held
+  challenge proves a password was verified moments ago, and a Client Component's props are serialised into the page.
+  `section-pass-what-was-read` is declined there for that reason, as `grant-password-section` declines it for the grant.
+  The shell passes the locale so the bounce to the password step keeps the reader's language.
+- **`reset` reads nothing but its words and still has a section**: the rule is that a route resolves no string at all.
+- **No namespace constants for these five.** Each section names the namespace where its page used to, and the page keeps
+  only its `generateMetadata` literal, which the skill allows — so no new spelling site; a constant per identity
+  namespace would be a sweep over every form that already spells them, not this row's.
+- **The comments moved with the code they explain** — the providers-inside-the-card note to `sign-in-section`, NFR-64's
+  note to `factor-section` — and each page's docblock keeps its screen's story.
+
+### Searched
+
+- **Every `page.tsx` under `app/[locale]` that still reads, translates, awaits its query or redirects**: six by pattern —
+  `reports/[reportId]`, `entities/[entityId]`, `entities/[entityId]/periods/[periodId]`, `entities/new`,
+  `create-organization` and `organization-unavailable` — and a seventh, `account/credentials`, whose `Promise.all` the
+  pattern missed and a read caught. They are exactly the guide's seven deferred routes, so that list stays true.
+- **The `(identity)` group**: all nine routes are shells — these five, and `register/password`, `complete-account`,
+  `set-password` and `invitation/[token]` from earlier tasks.
+
+### Skills, read against the diff
+
+`one-idea-per-file` (`shell-composes-only` applied to the five; `section-reads-parts-render`; `section-pass-what-was-read`
+declined once, with its reason; `reason-docblock-carries-the-why` — the sections count nothing outside their files).
+`one-kind-per-folder` (`folder-files-or-folders`: the flat `components/` stay files-only; the folder-shape invariant ran
+in the unit suite). `vercel-react-best-practices` (`async-parallel`: translations and the query in one `Promise.all`;
+`async-suspense-boundaries`: the provider list's boundary moved intact, still streaming behind the form).
+
+### Verification
+
+- **`@easyesg/web` typecheck clean; `pnpm --filter @easyesg/web test` 636 tests across 57 files**, the folder-shape
+  invariant among them; `pnpm exec eslint --no-cache` over the changed route files and the four journeys' `components/`:
+  clean; `pnpm docs:check` 40 claims.
+- **`pnpm e2e:web --project identity --project expansion`: 185 of 185** in 5.4 minutes, over a fresh build — every
+  journey through the five screens: S-01's registration and sign-in, the provider journeys, the factor step and its
+  bounce without a challenge, S-02's verification and reset, their axe scans, and the +40% harness on `/register` and
+  `/verify`. Its three `⨯ The destination stream closed early` lines all carry digest `2667547900`, the one earlier
+  entries record, beside the credentials, entities, invitation and organization-profile journeys; every test around
+  them passed.
+
+**Not run**: `gates:clean` and the review agents — the change reaches `apps/web`'s route files and one guide sentence,
+and the owner's standing rule is the gates a change reaches.

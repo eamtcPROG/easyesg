@@ -1,10 +1,4 @@
-import { Suspense } from 'react';
-import { getTranslations } from 'next-intl/server';
-import { SOCIAL_SIGN_IN_INTENT } from '@easyesg/contracts';
-import { SignInForm } from '@/features/identity/sign-in/components/sign-in-form';
-import { SocialNoticeCallout } from '@/features/identity/social/components/social-notice';
-import { SocialProviders } from '@/features/identity/social/components/social-providers';
-import styles from '@/features/identity/shared/styles/identity-screens.module.css';
+import { SignInSection } from '@/features/identity/sign-in/components/sign-in-section';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -16,13 +10,13 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * buttons are plain anchors that need no JavaScript.
  *
  * `?return=` is `proxy.ts`'s UX-38 hand-off — the screen the session gate turned away, to be
- * resumed after sign-in. It rides through the form to the action — and through the provider
- * flow's sealed transaction cookie — each path sanitizing it (it round-trips the browser, so it
- * is attacker-shapeable) before redirecting. `?notice=` is the provider callback's outcome
- * report, validated against a closed vocabulary before anything renders.
+ * resumed after sign-in. `?notice=` is the provider callback's outcome report.
  *
  * `design_spec.md` §5 owns this screen's content, controls and states; prototypes in
  * `design/screens/` are the rendered reference — values extracted, markup never copied (OQ-10).
+ *
+ * **This file is a shell** (task 157, `shell-composes-only`): it pins the locale and renders the
+ * section, which reads the query and draws the screen.
  */
 type Props = {
   params: LocaleParams;
@@ -35,33 +29,5 @@ export default async function SignInPage({ params, searchParams }: Props) {
   // A caller who already holds a session never reaches here — `(session-issuing)/layout.tsx` is
   // the gate, once, for every screen in this group (UX-136, task 112).
   await activateRequestLocale(params);
-  const t = await getTranslations('identity.signIn');
-  const { return: returnTo, notice } = await searchParams;
-
-  return (
-    <>
-      <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-      <p className={`t-body ${styles.subtitle}`}>{t('subtitle')}</p>
-      <div className={styles.notice}>
-        <SocialNoticeCallout notice={notice} />
-      </div>
-      {/* The providers go INSIDE the form's card, below the rule, which is where the artboard
-          draws them at all three widths (§5's S-01 Layout row, amended 4 Sep 2026) — so they are
-          handed in as a slot rather than rendered as a sibling.
-
-          Still streamed (async-suspense-boundaries): the provider list is an API round trip and
-          S-01's credential form must not wait on it. Passing the boundary as an element keeps that
-          true across the move — a Server Component cannot be imported by the Client Component that
-          renders the card, but its already-rendered output can be handed to it. With the api
-          unreachable the component renders null and password sign-in stands alone. */}
-      <SignInForm
-        returnTo={returnTo}
-        providers={
-          <Suspense fallback={null}>
-            <SocialProviders intent={SOCIAL_SIGN_IN_INTENT.SIGN_IN} returnTo={returnTo} />
-          </Suspense>
-        }
-      />
-    </>
-  );
+  return <SignInSection searchParams={searchParams} />;
 }

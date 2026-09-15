@@ -594,7 +594,9 @@ conditional render, which is how it ends up half-suppressed on one screen.
   `entities/[entityId]/periods/[periodId]`, `entities/new`, `create-organization` and
   `organization-unavailable`. The owner's scope for 134 was files declaring two components, which
   these do not; they are the next sweep, and until it lands a new route should follow the shells,
-  not these.
+  not these. **Every `(identity)` route is a shell since task 157**, which gave the shape to the five
+  still translating or branching in `page.tsx` — S-01's registration, sign-in and factor step, and
+  S-02's reset request and verification — so this group has no deferral of its own.
 
 - **Never import `next/link` or `next/navigation`'s locale-aware members.** Use
   `@/i18n/navigation`. A raw `next/link` renders a working-looking anchor that drops the locale

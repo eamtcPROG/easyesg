@@ -1,10 +1,4 @@
-import { Suspense } from 'react';
-import { getTranslations } from 'next-intl/server';
-import { SOCIAL_SIGN_IN_INTENT } from '@easyesg/contracts';
-import { RegisterForm } from '@/features/identity/register/components/register-form';
-import { SocialNoticeCallout } from '@/features/identity/social/components/social-notice';
-import { SocialProviders } from '@/features/identity/social/components/social-providers';
-import styles from '@/features/identity/shared/styles/identity-screens.module.css';
+import { RegisterSection } from '@/features/identity/register/components/register-section';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -27,6 +21,9 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * other arrival; a stale one changes nothing, because the API ignores it.
  * `design_spec.md` §5 owns this screen's content, controls and states; the Identity prototype
  * is the rendered reference — values extracted, markup never copied (OQ-10).
+ *
+ * **This file is a shell** (task 157, `shell-composes-only`): it pins the locale and renders the
+ * section, which reads the query and draws the screen.
  */
 type Props = {
   params: LocaleParams;
@@ -39,23 +36,5 @@ export default async function RegisterPage({ params, searchParams }: Props) {
   // A signed-in reader never reaches here: `(session-issuing)/layout.tsx` gates the whole group,
   // so completing this form cannot silently swap their session to a second account (UX-136).
   await activateRequestLocale(params);
-  const t = await getTranslations('identity.register');
-  const { notice, invitation, return: returnTo } = await searchParams;
-
-  return (
-    <>
-      <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-      <p className={`t-body ${styles.subtitle}`}>{t('subtitle')}</p>
-      <div className={styles.notice}>
-        <SocialNoticeCallout notice={notice} />
-      </div>
-      <RegisterForm invitationToken={invitation} returnTo={returnTo} />
-      {/* Streams behind the form (async-suspense-boundaries): the provider list is an API
-          round trip, and S-01's credential form must not wait on it — with the api
-          unreachable, the component renders null and password sign-in stands alone. */}
-      <Suspense fallback={null}>
-        <SocialProviders intent={SOCIAL_SIGN_IN_INTENT.REGISTER} returnTo={returnTo} />
-      </Suspense>
-    </>
-  );
+  return <RegisterSection searchParams={searchParams} />;
 }

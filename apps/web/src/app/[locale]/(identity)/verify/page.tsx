@@ -1,7 +1,4 @@
-import { getTranslations } from 'next-intl/server';
-import { ConfirmEmail } from '@/features/identity/verify/components/confirm-email';
-import { VerificationPending } from '@/features/identity/verify/components/verification-pending';
-import styles from '@/features/identity/shared/styles/identity-screens.module.css';
+import { VerifySection } from '@/features/identity/verify/components/verify-section';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -23,6 +20,9 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * unverified and the journey detours through here — so the return path has to survive the detour,
  * or the invitee finishes verifying with nowhere to go and the invitation is orphaned. It is
  * sanitised where it is finally used, by the sign-in route, exactly as the proxy's own is.
+ *
+ * **This file is a shell** (task 157, `shell-composes-only`): it pins the locale and renders the
+ * section, which reads the query and picks the surface.
  */
 type Props = {
   params: LocaleParams;
@@ -33,13 +33,5 @@ export const generateMetadata = localizedPageTitle('identity.verify');
 
 export default async function VerifyPage({ params, searchParams }: Props) {
   await activateRequestLocale(params);
-  const t = await getTranslations('identity.verify');
-  const { token, return: returnTo } = await searchParams;
-
-  return (
-    <>
-      <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-      {token ? <ConfirmEmail token={token} returnTo={returnTo} /> : <VerificationPending />}
-    </>
-  );
+  return <VerifySection searchParams={searchParams} />;
 }
