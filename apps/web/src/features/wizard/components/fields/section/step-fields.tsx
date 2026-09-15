@@ -5,7 +5,6 @@ import {
   type DisclosureAxis,
   type DisclosureField as DisclosureFieldShape,
   type DisclosureOption,
-  type DisclosureState,
 } from '@easyesg/contracts';
 import { Button, BUTTON_VARIANT, Fieldset } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
@@ -55,10 +54,6 @@ import styles from '../styles/step.module.css';
  * decision a reader of this file can see, on `Callout`'s `action={null}` precedent — not a slot
  * that was forgotten.
  *
- * **Markers come from the catalogue by state**, resolved on the server and handed down as a record,
- * because a translator call cannot take a value the API supplies (S-13's page records the same
- * reason for legal forms).
- *
  * **A typed axis's rows are a `Fieldset` per ordinal, and the reporter may add one** (task 36.2).
  * Without the grouping a two-site B1 reads *Address of site, Address of site, City of site, City of
  * site* in the standard's own order, with nothing saying which belongs to which; without the add
@@ -78,8 +73,6 @@ export function StepFields({
   derivationInputs,
   priorValues,
   readOnly,
-  markerLabels,
-  carriedLabel,
 }: {
   readonly fields: readonly DisclosureFieldShape[];
   /**
@@ -95,10 +88,6 @@ export function StepFields({
   /** Last year's comparable answers, by §7.3's natural key (FR-46, UC-45; task 36.14). */
   readonly priorValues: ReadonlyMap<string, PriorValue>;
   readonly readOnly: boolean;
-  /** §6.4's label per state, in the reader's language. `ok` carries no marker and is unused. */
-  readonly markerLabels: Readonly<Record<DisclosureState, string>>;
-  /** UX-32's "carried" mark, shown until the value is edited. */
-  readonly carriedLabel: string;
 }) {
   const tField = useTranslations(FIELD_MESSAGES);
   const tGroup = useTranslations(GROUP_MESSAGES);
@@ -107,7 +96,7 @@ export function StepFields({
   // `StepField` with the state it needs (task 91.4).
   const { change } = useAutosaveContext();
 
-  // Axis to the word for one of its rows. Built like `markerLabels` on the page above — the
+  // Axis to the word for one of its rows. Built like `markerLabels` in `field/step-field.tsx` — the
   // catalogue is indexed by a literal, and an axis it does not name gets a neutral word rather than
   // a taxonomy identifier on a screen.
   const rowNames: Readonly<Record<string, string>> = {
@@ -365,8 +354,6 @@ export function StepFields({
         // UX-13's own rule is that read-only keeps the layout and removes the affordance, which is
         // exactly what a computed figure wants — it is shown, beside the values it came from.
         readOnly={readOnly || derived.has(served.elementKey)}
-        markerLabels={markerLabels}
-        carriedLabel={carriedLabel}
         chosenUnit={units[served.elementKey] ?? null}
         onChooseUnit={(code) => chooseUnit(served.elementKey, code)}
         prior={priorValues.get(writeKey(served)) ?? null}

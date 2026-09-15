@@ -1,9 +1,11 @@
 'use client';
 
 import { Button, BUTTON_VARIANT, Combobox, type ComboboxOption } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import type { DisclosureOption } from '@easyesg/contracts';
 import { membersOf, draftOfMembers } from '../../../tools/values';
+import { FIELD_MESSAGES } from '../shared/step-messages';
 import styles from '../styles/step.module.css';
 
 /**
@@ -24,12 +26,15 @@ import styles from '../styles/step.module.css';
  * **Chosen members are removed from the offered set**, as the activity picker does: choosing twice
  * is not something the store would refuse — it would hold the member twice — so the control makes it
  * unrepresentable rather than refusing it afterwards.
+ *
+ * **Its words are its own** (task 158), from the field namespace. The field's name is the one string
+ * still passed in, because it is the api's (OQ-58) and differs per field.
  */
 export function ChoiceSet({
   options,
   draft,
   onCommit,
-  labels,
+  label,
   readOnly,
   labelledBy,
 }: {
@@ -37,22 +42,14 @@ export function ChoiceSet({
   /** The answer as stored: members separated by spaces. */
   readonly draft: string;
   readonly onCommit: (draft: string) => void;
-  readonly labels: {
-    readonly label: string;
-    readonly placeholder: string;
-    readonly prompt: string;
-    readonly empty: string;
-    readonly remove: (member: string) => string;
-    readonly removeShort: string;
-    readonly none: string;
-    /** Named because the busy indicator is not the sole carrier of anything (Combobox's rule). */
-    readonly loading: string;
-    /** For a member the taxonomy names in no locale the platform holds — never its key. */
-    readonly unnamed: string;
-  };
+  /** The field's name as the api serves it, for the combobox's hidden label. */
+  readonly label: string;
   readonly readOnly: boolean;
   readonly labelledBy: string;
 }) {
+  const t = useTranslations(FIELD_MESSAGES);
+  // For a member the taxonomy names in no locale the platform holds — never its key.
+  const unnamed = t('unnamed');
   // One value nothing else moves with — the case the reducer rule leaves to a single `useState`.
   const [query, setQuery] = useState('');
   const chosen = membersOf(draft);
@@ -68,12 +65,12 @@ export function ChoiceSet({
   // shown. The published code is a reference someone can cite; the key is internal jargon.
   const wordFor = (member: string): string => {
     const option = wording.get(member);
-    return option?.label ?? option?.code ?? labels.unnamed;
+    return option?.label ?? option?.code ?? unnamed;
   };
 
   if (readOnly) {
     return chosen.length === 0 ? (
-      <p className={styles.readOnlyEmpty}>{labels.none}</p>
+      <p className={styles.readOnlyEmpty}>{t('unanswered')}</p>
     ) : (
       <p className={styles.readOnlyValue}>{chosen.map(wordFor).join(', ')}</p>
     );
@@ -100,7 +97,7 @@ export function ChoiceSet({
     }
     offered.push({
       value: option.value,
-      label: option.label ?? option.code ?? labels.unnamed,
+      label: option.label ?? option.code ?? unnamed,
       ...(option.label !== null && option.code !== null ? { description: option.code } : {}),
     });
   }
@@ -108,7 +105,7 @@ export function ChoiceSet({
   return (
     <div className={styles.choiceSet}>
       {chosen.length === 0 ? (
-        <p className={styles.readOnlyEmpty}>{labels.none}</p>
+        <p className={styles.readOnlyEmpty}>{t('unanswered')}</p>
       ) : (
         <ul className={styles.chosen}>
           {chosen.map((member) => (
@@ -117,17 +114,17 @@ export function ChoiceSet({
               <Button
                 variant={BUTTON_VARIANT.SUBTLE}
                 type="button"
-                aria-label={labels.remove(wordFor(member))}
+                aria-label={t('choiceRemove', { member: wordFor(member) })}
                 onClick={() => onCommit(draftOfMembers(chosen.filter((held) => held !== member)))}
               >
-                {labels.removeShort}
+                {t('choiceRemoveShort')}
               </Button>
             </li>
           ))}
         </ul>
       )}
       <Combobox
-        label={labels.label}
+        label={label}
         labelHidden
         aria-labelledby={labelledBy}
         value=""
@@ -139,10 +136,11 @@ export function ChoiceSet({
         query={query}
         onQueryChange={setQuery}
         options={offered}
-        placeholder={labels.placeholder}
-        promptLabel={labels.prompt}
-        emptyLabel={labels.empty}
-        loadingLabel={labels.loading}
+        placeholder={t('choose')}
+        promptLabel={t('choicePrompt')}
+        emptyLabel={t('choiceEmpty')}
+        // Named because the busy indicator is not the sole carrier of anything (Combobox's rule).
+        loadingLabel={t('choiceLoading')}
       />
     </div>
   );

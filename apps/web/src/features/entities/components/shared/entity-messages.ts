@@ -1,7 +1,8 @@
 /**
- * S-13's record namespace, declared once (task 134): the form, its controls and its three sections
- * read it. In `components/shared/` on that folder's one admission test; the list reads
- * `organization.entities` and is not a reader of this.
+ * S-13's record namespace, declared once (task 134): the form, its controls, its sections and — since
+ * task 158, when it stopped taking its words as props — the activity picker read it. In
+ * `components/shared/` on that folder's one admission test; the list reads `organization.entities` and
+ * is not a reader of this.
  */
 export const ENTITY_RECORD_MESSAGES = 'organization.entities.record' as const;
 

@@ -1,7 +1,9 @@
 'use client';
 
 import { Button, BUTTON_VARIANT, TextField } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { FIELD_MESSAGES } from '../shared/step-messages';
 import styles from '../styles/step.module.css';
 
 const DECLARING = { CLOSED: 'closed', DRAFTING: 'drafting' } as const;
@@ -29,34 +31,27 @@ type Declaring = { readonly kind: typeof DECLARING.CLOSED } | { readonly kind: t
  * having to know not to write it. There are no named events worth a reducer here — the two
  * transitions are *open* and *close*.
  *
- * **Presentational strings arrive as props**, as everywhere else in this feature: the control owns
- * the flow, the caller owns the words.
+ * **Its words are its own** (task 158), from the field namespace's `notAvailable` keys. This docblock
+ * used to say *"the control owns the flow, the caller owns the words"*, but the caller never chose
+ * them — it passed this control's own catalogue keys, resolved one level up.
  */
 export function NotAvailableDeclaration({
   declared,
   onDeclare,
   onResume,
-  labels,
 }: {
   /** Whether this field already carries FR-32's state. Its reason is rendered by the anatomy. */
   readonly declared: boolean;
   readonly onDeclare: (reason: string) => void;
   readonly onResume: () => void;
-  readonly labels: {
-    readonly declare: string;
-    readonly reason: string;
-    readonly reasonHelp: string;
-    readonly confirm: string;
-    readonly cancel: string;
-    readonly resume: string;
-  };
 }) {
+  const t = useTranslations(`${FIELD_MESSAGES}.notAvailable`);
   const [state, setState] = useState<Declaring>({ kind: DECLARING.CLOSED });
 
   if (declared) {
     return (
       <Button variant={BUTTON_VARIANT.SUBTLE} type="button" onClick={onResume}>
-        {labels.resume}
+        {t('resume')}
       </Button>
     );
   }
@@ -68,7 +63,7 @@ export function NotAvailableDeclaration({
         type="button"
         onClick={() => setState({ kind: DECLARING.DRAFTING, reason: '' })}
       >
-        {labels.declare}
+        {t('declare')}
       </Button>
     );
   }
@@ -77,11 +72,11 @@ export function NotAvailableDeclaration({
   return (
     <div className={styles.declaration}>
       <TextField
-        label={labels.reason}
+        label={t('reason')}
         // §7.4's own promise, said where the reason is typed: *"the stated reason is carried into
         // both export formats"*. **Not UX-30** (spec review, 8 Sep 2026) — that rule sits in §6.5
         // beneath UX-29 and governs the *section* rationale, which is task 36.13's.
-        help={labels.reasonHelp}
+        help={t('reasonHelp')}
         value={reason}
         onChange={(event) => setState({ kind: DECLARING.DRAFTING, reason: event.currentTarget.value })}
       />
@@ -98,14 +93,14 @@ export function NotAvailableDeclaration({
           }}
           disabled={reason.trim() === ''}
         >
-          {labels.confirm}
+          {t('confirm')}
         </Button>
         <Button
           variant={BUTTON_VARIANT.SUBTLE}
           type="button"
           onClick={() => setState({ kind: DECLARING.CLOSED })}
         >
-          {labels.cancel}
+          {t('cancel')}
         </Button>
       </div>
     </div>

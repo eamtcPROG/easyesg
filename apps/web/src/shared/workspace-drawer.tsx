@@ -1,12 +1,13 @@
 'use client';
 
-import { BrandMark, ChromeDrawer, type SwitcherLocale } from '@easyesg/ui';
-import type { Locale } from '@easyesg/i18n';
+import { BrandMark, ChromeDrawer } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { signOutAction } from '@/features/identity/shared/actions/actions';
+import { useLocaleNames } from './use-locale-names';
 import { WORKSPACE_SECTIONS } from './workspace-sections';
 import styles from './workspace-drawer.module.css';
 
@@ -15,8 +16,10 @@ import styles from './workspace-drawer.module.css';
  *
  * **A Client Component for the same two reasons `AccountCorner` is one**: `usePathname` marks the
  * current section, and language is URL state, so a locale choice is a link to *this* address in
- * another locale and only the browser knows what that address is. Labels arrive as props, resolved
- * by `GlobalTier` on the server.
+ * another locale and only the browser knows what that address is. **Its words are its own** (task
+ * 158), read from `chrome` the way `WorkspaceNavigation` reads the same section names — they used to
+ * arrive as props from `GlobalTier`, which made the band and the drawer two places to resolve one
+ * tier's labels.
  *
  * **It renders its own sign-out form rather than borrowing the account corner's.** Both are hidden
  * forms driven by a `form=`-associated submit button — the shape `account-corner.tsx` documents,
@@ -33,18 +36,6 @@ import styles from './workspace-drawer.module.css';
 const SIGN_OUT_FORM = 'workspace-drawer-sign-out';
 
 export interface WorkspaceDrawerProps {
-  readonly locale: Locale;
-  readonly locales: readonly SwitcherLocale<Locale>[];
-  readonly labels: {
-    readonly menu: string;
-    readonly close: string;
-    readonly sections: string;
-    readonly credentials: string;
-    readonly signOut: string;
-    readonly language: string;
-  };
-  /** The five section names in the reader's language, in the tier's own order. */
-  readonly sectionLabels: Readonly<Record<string, string>>;
   /**
    * The organization's switcher (task 83.2), at the head of the panel — the compact bar names no organization
    * (`design_spec.md` UX-2's amendment), so this is where it is. Absent when the session acts for none.
@@ -52,13 +43,10 @@ export interface WorkspaceDrawerProps {
   readonly organization?: ReactNode;
 }
 
-export function WorkspaceDrawer({
-  locale,
-  locales,
-  labels,
-  sectionLabels,
-  organization,
-}: WorkspaceDrawerProps) {
+export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
+  const t = useTranslations('chrome');
+  const tSections = useTranslations('chrome.workspaceNav');
+  const { locale, locales } = useLocaleNames();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -71,23 +59,22 @@ export function WorkspaceDrawer({
     <>
       <form id={SIGN_OUT_FORM} action={signOutAction.bind(null, undefined)} hidden />
       <ChromeDrawer
-        label={labels.menu}
-        closeLabel={labels.close}
-        sectionsLabel={labels.sections}
+        label={t('drawer.label')}
+        closeLabel={t('drawer.close')}
+        // The band's own accessible name, reused: the drawer IS the workspace tier at this frame, so a
+        // second name for it would describe two navigations.
+        sectionsLabel={tSections('label')}
         brand={<BrandMark />}
         linkComponent={Link}
-        items={WORKSPACE_SECTIONS.map((section) => ({
-          ...section,
-          label: sectionLabels[section.key] ?? section.key,
-        }))}
+        items={WORKSPACE_SECTIONS.map((section) => ({ ...section, label: tSections(section.key) }))}
         isActive={(item) => item.href === pathname}
         organization={organization}
         actions={
           <>
             <Link className={styles.action} href={ROUTES.ACCOUNT_CREDENTIALS}>
-              {labels.credentials}
+              {t('accountMenu.credentials')}
             </Link>
-            <p className={styles.group}>{labels.language}</p>
+            <p className={styles.group}>{t('language')}</p>
             {locales.map((entry) => (
               <Link
                 key={entry.code}
@@ -110,7 +97,7 @@ export function WorkspaceDrawer({
                 event.currentTarget.form?.requestSubmit();
               }}
             >
-              {labels.signOut}
+              {t('accountMenu.signOut')}
             </button>
           </>
         }

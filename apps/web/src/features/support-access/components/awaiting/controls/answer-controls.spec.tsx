@@ -1,7 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { API_OUTCOME } from '@/lib/api-outcome';
+import ro from '@/messages/ro.json';
 import { declineSupportAccessAction, grantSupportAccessAction } from '../../../actions/actions';
 import { AnswerControls } from './answer-controls';
 
@@ -9,8 +11,11 @@ import { AnswerControls } from './answer-controls';
  * The banner's *Grant* and *Decline*, against stubbed actions (task 67.9).
  *
  * The browser suite drives the journey; what is pinned here is what no journey can reach without contriving a
- * race — a refusal shown as the API worded it (another administrator answered first), the bundled copy when no
- * answer arrived, and that each button sends its own verb for this request and nothing else.
+ * race — a refusal shown as the API worded it (another administrator answered first), the catalogue's copy when
+ * no answer arrived, and that each button sends its own verb for this request and nothing else.
+ *
+ * **Mounted under a provider carrying `supportAccess`**, because the controls and their hook read their own words
+ * (task 158) — so the buttons are found by the catalogue's wording rather than by strings this spec invented.
  */
 vi.mock('../../../actions/actions', () => ({
   grantSupportAccessAction: vi.fn(),
@@ -18,14 +23,14 @@ vi.mock('../../../actions/actions', () => ({
   endSupportAccessAction: vi.fn(),
 }));
 
-const LABELS = { grant: 'Acordați acces pentru 60 de minute', decline: 'Refuzați' };
-const UNREACHABLE = {
-  title: 'Răspunsul dumneavoastră nu a ajuns la EasyESG',
-  body: 'Alegerea nu a putut fi înregistrată.',
-};
+const WORDS = ro.supportAccess;
 
 const renderControls = () =>
-  render(<AnswerControls requestId="request-1" labels={LABELS} unreachable={UNREACHABLE} />);
+  render(
+    <NextIntlClientProvider locale="ro" messages={{ supportAccess: ro.supportAccess }}>
+      <AnswerControls requestId="request-1" />
+    </NextIntlClientProvider>,
+  );
 
 describe('the answer controls (task 67.9)', () => {
   beforeEach(() => {
@@ -41,12 +46,12 @@ describe('the answer controls (task 67.9)', () => {
     });
     renderControls();
 
-    await userEvent.click(screen.getByRole('button', { name: LABELS.grant }));
+    await userEvent.click(screen.getByRole('button', { name: WORDS.awaiting.grant }));
 
-    await waitFor(() => expect(screen.getByRole('button', { name: LABELS.grant })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: WORDS.awaiting.grant })).toBeEnabled());
     expect(grantSupportAccessAction).toHaveBeenCalledWith({ requestId: 'request-1' });
     expect(declineSupportAccessAction).not.toHaveBeenCalled();
-    expect(screen.queryByText(UNREACHABLE.title)).toBeNull();
+    expect(screen.queryByText(WORDS.unreachable.title)).toBeNull();
   });
 
   it('shows a refused answer in the API’s own words', async () => {
@@ -61,7 +66,7 @@ describe('the answer controls (task 67.9)', () => {
     });
     renderControls();
 
-    await userEvent.click(screen.getByRole('button', { name: LABELS.decline }));
+    await userEvent.click(screen.getByRole('button', { name: WORDS.awaiting.decline }));
 
     expect(await screen.findByText('Cererea nu mai așteaptă un răspuns')).toBeInTheDocument();
     expect(
@@ -76,10 +81,11 @@ describe('the answer controls (task 67.9)', () => {
       .mockReturnValueOnce(new Promise(() => undefined));
     renderControls();
 
-    await userEvent.click(screen.getByRole('button', { name: LABELS.grant }));
-    expect(await screen.findByText(UNREACHABLE.title)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: WORDS.awaiting.grant }));
+    expect(await screen.findByText(WORDS.unreachable.title)).toBeInTheDocument();
+    expect(screen.getByText(WORDS.unreachable.body)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: LABELS.grant }));
-    await waitFor(() => expect(screen.queryByText(UNREACHABLE.title)).toBeNull());
+    await userEvent.click(screen.getByRole('button', { name: WORDS.awaiting.grant }));
+    await waitFor(() => expect(screen.queryByText(WORDS.unreachable.title)).toBeNull());
   });
 });

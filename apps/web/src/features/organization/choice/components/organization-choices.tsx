@@ -1,11 +1,13 @@
 'use client';
 
-import type { AccountMembership, MembershipRole } from '@easyesg/contracts';
+import type { AccountMembership } from '@easyesg/contracts';
 import { Button, BUTTON_VARIANT, Callout } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { useRouter } from '@/i18n/navigation';
-import { failureNotice, type Notice, type NoticeCopy } from '@/lib/notice';
+import { failureNotice, type Notice } from '@/lib/notice';
 import { chooseOrganizationAction } from '../actions/actions';
+import { CHOICE_MESSAGES } from './choice-messages';
 import styles from './choice.module.css';
 
 /**
@@ -20,23 +22,21 @@ import styles from './choice.module.css';
  * **Every row waits on any choice**, because a second choice sent while the first is on its way would race
  * it to the session, and the reader could not tell which one won.
  *
- * It takes the memberships as read, not a projection of them (`section-pass-what-was-read`); what it adds
- * is the words, which arrive resolved.
+ * It takes the memberships as read, not a projection of them (`section-pass-what-was-read`), and **its words
+ * are its own** (task 158): the list's name and the unreachable copy from S-37's namespace, the role names
+ * from `organization.access.roles` — which stays a literal, as at its other readers, until someone decides
+ * that namespace's feature-level home (`shared-namespace-declared-once`).
  */
 export function OrganizationChoices({
   memberships,
   returnTo,
-  labels,
 }: {
   readonly memberships: readonly AccountMembership[];
   /** The address S-37 was reached with, for the action to judge — never followed here. */
   readonly returnTo?: string;
-  readonly labels: {
-    readonly list: string;
-    readonly roles: Readonly<Record<MembershipRole, string>>;
-    readonly unreachable: NoticeCopy;
-  };
 }) {
+  const t = useTranslations(CHOICE_MESSAGES);
+  const roles = useTranslations('organization.access.roles');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [refusal, setRefusal] = useState<Notice | null>(null);
@@ -49,7 +49,12 @@ export function OrganizationChoices({
       // its `RedirectBoundary`, which remounts this screen away. The check is for the type alone — and it is
       // safe here only because S-37 unmounts on the way out, where the switch's provider does not (task 83.2).
       if (failure === undefined) return;
-      setRefusal(failureNotice({ outcome: failure, unreachable: labels.unreachable }));
+      setRefusal(
+        failureNotice({
+          outcome: failure,
+          unreachable: { title: t('unreachable.title'), body: t('unreachable.body') },
+        }),
+      );
       router.refresh();
     });
   };
@@ -61,7 +66,7 @@ export function OrganizationChoices({
           {refusal.body}
         </Callout>
       )}
-      <ul className={styles.choices} aria-label={labels.list}>
+      <ul className={styles.choices} aria-label={t('listLabel')}>
         {memberships.map((membership) => (
           <li key={membership.id}>
             <Button
@@ -72,7 +77,7 @@ export function OrganizationChoices({
               onClick={() => choose(membership.organizationId)}
             >
               <span className={styles.name}>{membership.organizationName}</span>
-              <span className={`t-caption ${styles.role}`}>{labels.roles[membership.role]}</span>
+              <span className={`t-caption ${styles.role}`}>{roles(membership.role)}</span>
             </Button>
           </li>
         ))}

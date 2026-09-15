@@ -7,7 +7,7 @@ import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { readSession } from '@/server/session/session';
 import { periodRoute } from '@/lib/routes';
 import { priorValuesOf } from '../../tools/comparatives';
-import { labelledOptions, markerLabelsOf } from '../../tools/step-words';
+import { labelledOptions } from '../../tools/step-words';
 import { AutosaveBanner } from '../banner/autosave-banner';
 import { ReadOnlyBanner } from '../banner/read-only-banner';
 import { StepFields } from '../fields/section/step-fields';
@@ -68,7 +68,6 @@ export async function WizardStep({
   const summary = read.modules.find((m) => m.module === module);
   const outstanding = summary === undefined ? 0 : summary.total - summary.answered;
   const readOnly = read.readOnly !== null;
-  const markerLabels = markerLabelsOf(messages.organization.wizard.field.markers);
   const fields = labelledOptions(read.step.fields, messages.organization.countries);
 
   return (
@@ -106,8 +105,6 @@ export async function WizardStep({
           derivationInputs={read.step.derivationInputs}
           priorValues={priorValuesOf(read.prior)}
           readOnly={readOnly}
-          markerLabels={markerLabels}
-          carriedLabel={t('field.carried')}
         />
       </WizardShell>
     </AutosaveProvider>

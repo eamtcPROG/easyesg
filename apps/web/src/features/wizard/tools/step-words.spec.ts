@@ -6,7 +6,7 @@ import {
   type DisclosureOption,
 } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
-import { labelledOptions, markerLabelsOf } from './step-words';
+import { labelledOptions } from './step-words';
 
 const option = (over: Partial<DisclosureOption>): DisclosureOption => ({
   value: 'MD',
@@ -44,15 +44,6 @@ const field = (options: DisclosureOption[] | null): DisclosureField => ({
   carriedForward: false,
   applicable: true,
   applicabilityCause: null,
-});
-
-describe('markerLabelsOf', () => {
-  it('words every state, and a state the catalogue does not word is empty rather than a key', () => {
-    const labels = markerLabelsOf({ missing: 'Lipsă' });
-    expect(labels[DISCLOSURE_STATE.MISSING]).toBe('Lipsă');
-    expect(labels[DISCLOSURE_STATE.ERROR]).toBe('');
-    expect(Object.keys(labels).sort()).toEqual(Object.values(DISCLOSURE_STATE).sort());
-  });
 });
 
 describe('labelledOptions', () => {

@@ -1,7 +1,6 @@
 'use client';
 
-import { LOCALES } from '@easyesg/i18n';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { LocaleChoice } from '@/shared/locale-choice';
@@ -16,21 +15,16 @@ import { LocaleChoice } from '@/shared/locale-choice';
  *
  * **The switcher itself moved to `src/shared/locale-choice.tsx` (task 74.1)** for the reason the
  * footer moved: the public chrome carries the same control, and a second copy of the wiring is
- * what UX-89 forbids. What is left here is this header's own composition — the help link and the
- * labels, resolved from the catalogue a reader who cannot read the current language still needs.
+ * what UX-89 forbids. What is left here is this header's own composition — the help link beside a
+ * switcher that, since task 158, resolves its own words and takes nothing from this file.
  */
 export function IdentityHeaderActions() {
   const t = useTranslations('chrome');
-  const locale = useLocale();
 
   return (
     <>
       <Link href={ROUTES.HELP_CENTRE}>{t('helpCentre')}</Link>
-      <LocaleChoice
-        label={t('language')}
-        locale={locale}
-        locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
-      />
+      <LocaleChoice />
     </>
   );
 }

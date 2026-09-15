@@ -1,11 +1,11 @@
 'use client';
 
 import { BrandMark, ChromeDrawer } from '@easyesg/ui';
-import type { Locale } from '@easyesg/i18n';
-import type { SwitcherLocale } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
+import { useLocaleNames } from './use-locale-names';
 import styles from './workspace-drawer.module.css';
 
 /**
@@ -28,20 +28,13 @@ import styles from './workspace-drawer.module.css';
  * render, they are not the marketing home, and they have no hero to carry a sign-in. At `compact`
  * their sign-in now costs a tap. That is the design's trade at this frame rather than this file's,
  * and UX-76 is satisfied because nothing is unavailable — it moved.
+ *
+ * **Its words are its own** (task 158), read from `chrome` rather than passed down by
+ * `PublicHeader`, so the drawer takes no props at all.
  */
-export interface PublicDrawerProps {
-  readonly locale: Locale;
-  readonly locales: readonly SwitcherLocale<Locale>[];
-  readonly labels: {
-    readonly menu: string;
-    readonly close: string;
-    readonly signIn: string;
-    readonly register: string;
-    readonly language: string;
-  };
-}
-
-export function PublicDrawer({ locale, locales, labels }: PublicDrawerProps) {
+export function PublicDrawer() {
+  const t = useTranslations('chrome');
+  const { locale, locales } = useLocaleNames();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -51,21 +44,21 @@ export function PublicDrawer({ locale, locales, labels }: PublicDrawerProps) {
 
   return (
     <ChromeDrawer
-      label={labels.menu}
-      closeLabel={labels.close}
+      label={t('drawer.label')}
+      closeLabel={t('drawer.close')}
       // Named although no list is rendered today: the prop is what the section nav will be
       // announced as, and leaving it unset would make adding the list a two-place change.
-      sectionsLabel={labels.menu}
+      sectionsLabel={t('drawer.label')}
       brand={<BrandMark />}
       actions={
         <>
           <Link className={styles.action} href={ROUTES.REGISTER}>
-            {labels.register}
+            {t('publicHeader.register')}
           </Link>
           <Link className={styles.action} href={ROUTES.SIGN_IN}>
-            {labels.signIn}
+            {t('publicHeader.signIn')}
           </Link>
-          <p className={styles.group}>{labels.language}</p>
+          <p className={styles.group}>{t('language')}</p>
           {locales.map((entry) => (
             <Link
               key={entry.code}

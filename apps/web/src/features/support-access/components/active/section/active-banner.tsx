@@ -2,6 +2,7 @@ import type { SupportAccessRequest } from '@easyesg/contracts';
 import { Banner, CALLOUT_INTENT } from '@easyesg/ui';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { RequestDetails } from '../../shared/request-details';
+import { SUPPORT_ACCESS_MESSAGES } from '../../shared/support-access-messages';
 import { EndControl } from '../controls/end-control';
 
 /**
@@ -26,21 +27,13 @@ export async function ActiveBanner({
   // one is not a state this banner can describe honestly, so it says nothing rather than guessing a time.
   if (request.expiresAt === null) return null;
 
-  const [t, format] = await Promise.all([getTranslations('supportAccess'), getFormatter()]);
+  const [t, format] = await Promise.all([getTranslations(SUPPORT_ACCESS_MESSAGES), getFormatter()]);
 
   return (
     <Banner
       intent={CALLOUT_INTENT.WARNING}
       title={t('active.title', { operator: request.requesterEmail ?? t('unknownOperator') })}
-      action={
-        mayEnd ? (
-          <EndControl
-            requestId={request.id}
-            label={t('active.end')}
-            unreachable={{ title: t('unreachable.title'), body: t('unreachable.body') }}
-          />
-        ) : null
-      }
+      action={mayEnd ? <EndControl requestId={request.id} /> : null}
     >
       <p>
         {t('active.body', {

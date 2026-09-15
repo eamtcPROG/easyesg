@@ -1,4 +1,3 @@
-import { MEMBERSHIP_ROLE, type MembershipRole } from '@easyesg/contracts';
 import type { Locale } from '@easyesg/i18n';
 import { FocusColumn, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
@@ -22,10 +21,9 @@ import styles from './choice.module.css';
  * go through `readMemberships()`'s per-request cache, which the global tier above has already filled, so
  * the list below is the answer the branch judged and no second call is made.
  *
- * **Every string the list shows is resolved here** and handed down, the role names among them, so the
- * list's spec needs no catalogue and the client bundle carries no lookup. `organization.access.roles` stays a
- * literal, as at its other readers, until someone decides the namespace's feature-level home
- * (`shared-namespace-declared-once`).
+ * **It resolves only the words it renders itself** — the heading, the subtitle and the way to create another
+ * organization. The list is a Client Component that reads its own, role names included (task 158); it used
+ * to take them all as props from here.
  */
 export async function ChooseOrganizationSection({
   searchParams,
@@ -34,11 +32,10 @@ export async function ChooseOrganizationSection({
   readonly searchParams: Promise<{ return?: string }>;
   readonly locale: Locale;
 }) {
-  const [target, memberships, t, tRoles, { return: returnTo }] = await Promise.all([
+  const [target, memberships, t, { return: returnTo }] = await Promise.all([
     destinationForHeldSession(),
     readMemberships(),
     getTranslations(CHOICE_MESSAGES),
-    getTranslations('organization.access.roles'),
     searchParams,
   ]);
 
@@ -50,23 +47,11 @@ export async function ChooseOrganizationSection({
   // state that reaches here; the check is for the type.
   if (memberships === null) return null;
 
-  const roles = Object.fromEntries(
-    Object.values(MEMBERSHIP_ROLE).map((role) => [role, tRoles(role)]),
-  ) as Record<MembershipRole, string>;
-
   return (
     <FocusColumn>
       <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
       <p className={`t-body ${styles.subtitle}`}>{t('subtitle')}</p>
-      <OrganizationChoices
-        memberships={memberships}
-        returnTo={returnTo}
-        labels={{
-          list: t('listLabel'),
-          roles,
-          unreachable: { title: t('unreachable.title'), body: t('unreachable.body') },
-        }}
-      />
+      <OrganizationChoices memberships={memberships} returnTo={returnTo} />
       <p className={`t-body ${styles.create}`}>
         <TextLink asChild>
           <Link href={ROUTES.CREATE_ORGANIZATION}>{t('createAnother')}</Link>

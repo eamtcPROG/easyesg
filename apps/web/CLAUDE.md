@@ -189,12 +189,14 @@ send it.
 
 **§4.2's global tier** (task 30.1). `shared/global-tier.tsx` is a Server Component in the
 `(app)` layout — so it is on every authenticated screen including the three in no inner group,
-S-04, S-35 and S-37, where it renders its designed empty state and names no organization. It resolves
-every string with `getTranslations` and hands them down, because `shared/account-corner.tsx` is a
-Client Component only for `usePathname`/`useSearchParams` (a language choice is a link to this
-address in another locale) and giving it `useTranslations` would put the `chrome` catalogue in the
-bundle. `server/data/memberships.ts` is the read, wrapped in React `cache()` — the band and S-05 read the
-same collection in one render pass.
+S-04, S-35 and S-37, where it renders its designed empty state and names no organization. It hands down
+only what the server alone holds — the session's account and the memberships — and **each control in the
+band reads its own words**: `shared/account-corner.tsx`, `shared/workspace-drawer.tsx` and the
+organization switcher are Client Components calling `useTranslations`, and the locale names come from
+`shared/use-locale-names.ts` (task 158 — the rule sits beside the one-provider rule below). Until then
+the tier resolved every string and passed it down, *"so the `chrome` catalogue never reaches the
+bundle"*, which task 99 had already made untrue. `server/data/memberships.ts` is the read, wrapped in
+React `cache()` — the band and S-05 read the same collection in one render pass.
 
 Three things to know before touching it:
 
@@ -691,6 +693,31 @@ conditional render, which is how it ends up half-suppressed on one screen.
   another screen's namespace is the tell** that a string does not live where it belongs.
   `identity.unreachable` is the outstanding case and is *not* a `forms` string — its honest home is
   `chrome`, and moving it is a catalogue change with readers to update.
+
+- **A Client Component reads its own words; catalogue text does not arrive as a prop** (task 158,
+  15 Sep 2026, project owner). Under the one provider above, `useTranslations` works in every Client
+  Component, so a parent — Server or Client — resolving strings for a child and passing them as
+  `labels`, `label` or a `NoticeCopy` is a second place to resolve the same keys, and it discards the
+  key typing `global.d.ts` exists for: a `string` prop accepts anything. The inventory for task 158
+  found twenty-two Client Components receiving catalogue text that way and converted twelve. The
+  reasons had lapsed twice over — task 99 serves every namespace, and the ICU translator was already
+  in the chunk every route loads (measured in `.next`; `architecture.md` §12.5.6's task-158 row).
+
+  **Three kinds of text still cross a prop, and each is a decision rather than a leftover:**
+  - *Per-caller wording* — a shared component that says different words on different screens:
+    `IndexView`'s caption and empty state, `PolicyPasswordField`'s label, `SignOut`'s two wordings,
+    `PasswordForm`'s intro. The component cannot know which; its caller does.
+  - *Data* — a label the api serves (OQ-58's disclosure labels, a field's or an axis's name), and
+    every `packages/ui` prop, since that package owns no text (UX-79).
+  - *Records keyed by a value the api supplies*, built on the server from `getMessages()` — countries,
+    legal forms, the wizard's `labelledOptions` — because a translator call cannot take a code the api
+    sends. Left as they are by the owner's scope for task 158. A record over a vocabulary known when
+    the code is written is not this case, which is why `StepField` reads its markers by literal key.
+
+  **No gate enforces it** (owner's decision): this bullet and review. The shape to look for is a
+  `labels={{ … t(…) … }}` handed to a component under `src/`, and a spec that mounts no
+  `NextIntlClientProvider` is where it tends to hide — *"the list's spec needs no catalogue"* was the
+  reason S-37's section gave for passing role names down.
 
 - **Formatting has one home.** `src/i18n/formats.ts` declares named formats; components reach
   them by name through `useFormatter()`. `toFixed`, `toLocaleString` and `new Intl.*Format` are

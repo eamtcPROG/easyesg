@@ -1,7 +1,7 @@
 # Tasks
 
 **What is left, in the order it will be delivered.** The closed rows are in
-[archived_tasks.md](archived_tasks.md) — 88 numbers and 173 of them — and moving them out is what
+[archived_tasks.md](archived_tasks.md) — 89 numbers and 174 of them — and moving them out is what
 lets this file answer *what is left* without a reader filtering a third of it away first.
 
 The order is the **Stage** sequence below, authored 12 Sep 2026 and **independent of the task

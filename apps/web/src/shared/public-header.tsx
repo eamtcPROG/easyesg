@@ -1,6 +1,5 @@
 import { BUTTON_TONE, BrandMark, Button, GlobalBar } from '@easyesg/ui';
-import { LOCALES } from '@easyesg/i18n';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { LocaleChoice } from './locale-choice';
@@ -36,9 +35,12 @@ import styles from './public-header.module.css';
  * language choice; routes to the help centre and the legal set"*) and the artboards do not draw
  * one. §5 governs content; the prototype governs values. On a surface whose entire chrome is this
  * band, it is also the only place a reader can change language at all.
+ *
+ * **`LocaleChoice` and `PublicDrawer` take nothing from here** (task 158): both are Client Components
+ * that read `chrome` themselves, so this band resolves only the words it renders.
  */
 export async function PublicHeader() {
-  const [t, locale] = await Promise.all([getTranslations('chrome'), getLocale()]);
+  const t = await getTranslations('chrome');
 
   return (
     <GlobalBar
@@ -51,11 +53,7 @@ export async function PublicHeader() {
       actions={
         <>
           <div className={styles.actions}>
-            <LocaleChoice
-              label={t('language')}
-              locale={locale}
-              locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
-            />
+            <LocaleChoice />
             <Link className={styles.link} href={ROUTES.SIGN_IN}>
               {t('publicHeader.signIn')}
             </Link>
@@ -69,17 +67,7 @@ export async function PublicHeader() {
           {/* The 390 frame's own band: brand and a hamburger, the three above collapsed into it
               (task 109). One of the two regions is always `display: none`, so neither offers the
               same destination twice. */}
-          <PublicDrawer
-            locale={locale}
-            locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
-            labels={{
-              menu: t('drawer.label'),
-              close: t('drawer.close'),
-              signIn: t('publicHeader.signIn'),
-              register: t('publicHeader.register'),
-              language: t('language'),
-            }}
-          />
+          <PublicDrawer />
         </>
       }
     />

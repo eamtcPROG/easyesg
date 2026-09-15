@@ -51,8 +51,6 @@ export function StepField({
   served,
   named,
   readOnly,
-  markerLabels,
-  carriedLabel,
   chosenUnit,
   onChooseUnit,
   prior,
@@ -60,8 +58,6 @@ export function StepField({
   readonly served: DisclosureFieldShape;
   readonly named?: string | null;
   readonly readOnly: boolean;
-  readonly markerLabels: Readonly<Record<DisclosureState, string>>;
-  readonly carriedLabel: string;
   /** The unit this field's ELEMENT is answered in, where the reporter has chosen one. */
   readonly chosenUnit: string | null;
   readonly onChooseUnit: (code: string) => void;
@@ -71,6 +67,21 @@ export function StepField({
   const t = useTranslations(`${FIELD_MESSAGES}.sync`);
   const tField = useTranslations(FIELD_MESSAGES);
   const tUnit = useTranslations(`${FIELD_MESSAGES}.units`);
+  const tMarker = useTranslations(`${FIELD_MESSAGES}.markers`);
+  // §6.4's word per state — read here since task 158, where the step's section built the same record on
+  // the server from `getMessages()` and threaded it through `StepFields`. Literal keys, as `unitNames`
+  // below, so a state the catalogue does not word fails `pnpm typecheck` rather than rendering an empty
+  // marker. `ok` is the absence of a marker, so there is no word to read for it.
+  const markerLabels: Readonly<Record<DisclosureState, string>> = {
+    [DISCLOSURE_STATE.OK]: '',
+    [DISCLOSURE_STATE.MISSING]: tMarker('missing'),
+    [DISCLOSURE_STATE.INCONSISTENCY]: tMarker('inconsistency'),
+    [DISCLOSURE_STATE.ERROR]: tMarker('error'),
+    [DISCLOSURE_STATE.INVALID_URL]: tMarker('invalid_url'),
+    [DISCLOSURE_STATE.NOT_AVAILABLE]: tMarker('not_available'),
+    [DISCLOSURE_STATE.NOT_MATERIAL]: tMarker('not_material'),
+    [DISCLOSURE_STATE.NIL_RETURN]: tMarker('nil_return'),
+  };
   // Code to symbol. Built with literal keys like `rowNames` in `section/step-fields.tsx`, so the catalogue lookup is
   // type-checked: `t(code)` is not, and a missing symbol would be a blank beside a number.
   const unitNames: Readonly<Record<string, string>> = {
@@ -98,7 +109,7 @@ export function StepField({
   };
   const marker =
     sync === SAVE_STATE.SAVED
-      ? markerFor(field, markerLabels, { carried: carriedLabel, calculated: tField('calculated') })
+      ? markerFor(field, markerLabels, { carried: tField('carried'), calculated: tField('calculated') })
       : { label: syncLabels[sync], tone: SYNC_TONE[sync] };
   // Last year's answer in this field's own value column, or '' where it holds none there.
   const priorDraft = prior === null ? '' : priorDraftOf({ field, prior });
@@ -200,14 +211,6 @@ export function StepField({
           declared={field.state === DISCLOSURE_STATE.NOT_AVAILABLE}
           onDeclare={(reason) => change(notAvailableWrite(field, reason))}
           onResume={() => change(resumeWrite(field))}
-          labels={{
-            declare: tField('notAvailable.declare'),
-            reason: tField('notAvailable.reason'),
-            reasonHelp: tField('notAvailable.reasonHelp'),
-            confirm: tField('notAvailable.confirm'),
-            cancel: tField('notAvailable.cancel'),
-            resume: tField('notAvailable.resume'),
-          }}
         />
       }
       readOnly={readOnly}

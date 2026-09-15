@@ -1,16 +1,22 @@
 import type { AccountMembership } from '@easyesg/contracts';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { API_OUTCOME } from '@/lib/api-outcome';
+import ro from '@/messages/ro.json';
 import { chooseOrganizationAction } from '../actions/actions';
 import { OrganizationChoices } from './organization-choices';
 
 /**
  * S-37's list against a stubbed action (task 83.3). The browser suite drives the choice end to end; what is
  * pinned here is what a journey reaches only by contriving a race — a refusal shown as the API worded it,
- * the bundled copy when no answer arrived, the list read again after either, and every row held while a
+ * the catalogue's copy when no answer arrived, the list read again after either, and every row held while a
  * choice is on its way.
+ *
+ * **Mounted under a provider carrying the whole `organization` namespace**, because the list reads its own
+ * words from two of its children — `choice` and `access.roles` (task 158) — and next-intl treats `messages`
+ * as atomic: a subset naming only `choice` would render every role as an empty string.
  */
 vi.mock('../actions/actions', () => ({ chooseOrganizationAction: vi.fn() }));
 
@@ -32,18 +38,14 @@ const MEMBERSHIPS = [
   membership('org-b', 'Beta SRL', 'organization_administrator'),
 ];
 
-const LABELS = {
-  list: 'Organizațiile dumneavoastră',
-  roles: {
-    editor: 'Editare',
-    viewer: 'Doar vizualizare',
-    organization_administrator: 'Administrator al organizației',
-  },
-  unreachable: { title: 'Alegerea nu a ajuns la EasyESG', body: 'Nu s-a schimbat nimic.' },
-};
+const WORDS = ro.organization.choice;
 
 const renderChoices = () =>
-  render(<OrganizationChoices memberships={MEMBERSHIPS} returnTo="/reports" labels={LABELS} />);
+  render(
+    <NextIntlClientProvider locale="ro" messages={{ organization: ro.organization }}>
+      <OrganizationChoices memberships={MEMBERSHIPS} returnTo="/reports" />
+    </NextIntlClientProvider>,
+  );
 
 const rowFor = (name: string) => screen.getByRole('button', { name: new RegExp(name) });
 
@@ -59,7 +61,7 @@ describe('the organization choices (S-37, task 83.3)', () => {
     expect(screen.getAllByRole('button')).toHaveLength(2);
     expect(rowFor('Alfa SRL')).toHaveTextContent('Editare');
     expect(rowFor('Beta SRL')).toHaveTextContent('Administrator al organizației');
-    expect(screen.getByRole('list', { name: LABELS.list })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: WORDS.listLabel })).toBeInTheDocument();
   });
 
   it('sends the organization chosen and the address to go on to, and says nothing of its own', async () => {
@@ -70,7 +72,7 @@ describe('the organization choices (S-37, task 83.3)', () => {
 
     await waitFor(() => expect(rowFor('Beta SRL')).toBeEnabled());
     expect(chooseOrganizationAction).toHaveBeenCalledWith({ organizationId: 'org-b', returnTo: '/reports' });
-    expect(screen.queryByText(LABELS.unreachable.title)).toBeNull();
+    expect(screen.queryByText(WORDS.unreachable.title)).toBeNull();
     expect(refresh).not.toHaveBeenCalled();
   });
 
@@ -99,8 +101,8 @@ describe('the organization choices (S-37, task 83.3)', () => {
 
     await userEvent.click(rowFor('Alfa SRL'));
 
-    expect(await screen.findByText(LABELS.unreachable.title)).toBeInTheDocument();
-    expect(screen.getByText(LABELS.unreachable.body)).toBeInTheDocument();
+    expect(await screen.findByText(WORDS.unreachable.title)).toBeInTheDocument();
+    expect(screen.getByText(WORDS.unreachable.body)).toBeInTheDocument();
   });
 
   it('holds every row while a choice is on its way', async () => {

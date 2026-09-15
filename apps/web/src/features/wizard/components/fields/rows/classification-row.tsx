@@ -7,7 +7,7 @@ import type {
 } from '@easyesg/contracts';
 import { Fieldset } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { StepClassificationEntry } from '../../../tools/step-layout';
 import { MemberPicker, memberName } from '../controls/member-picker';
 import { FIELD_MESSAGES, GROUP_MESSAGES } from '../shared/step-messages';
@@ -72,37 +72,6 @@ export function ClassificationRow({
       ? tGroup('unassignedRow', { name: axisName })
       : memberName(byValue.get(member), tField('unnamed'));
 
-  /**
-   * **Memoized, or it defeats the memo it feeds** (convention review at task 36's parent close,
-   * 9 Sep 2026). `MemberPicker`'s filter has `labels` in its dependency array, and this object was
-   * a fresh literal on every render — so the memo whose own docblock says it exists because
-   * `reactCompiler` is off recomputed a filter, a `toLocaleLowerCase` and a `slice` over **842 waste
-   * entries** on every autosave acknowledgement. `apps/web/CLAUDE.md` names this exact case: *"a
-   * non-primitive passed as a prop into a `memo()`'d child, or into a `useEffect`/`useMemo`
-   * dependency array — recreated each render, it defeats the thing it feeds"*.
-   */
-  const pickerLabels = useMemo(
-    () => ({
-      label: axisName,
-      placeholder: tField('choose'),
-      prompt: tField('choicePrompt'),
-      empty: tField('choiceEmpty'),
-      loading: tField('choiceLoading'),
-      unnamed: tField('unnamed'),
-      hazardous: tGroup('hazardous'),
-      nonHazardous: tGroup('nonHazardous'),
-      // **The wire decides whether to say it, and the catalogue says what** (task 36.8).
-      // `memberLanguage` is `null` wherever the names are in the reader's own — B4's
-      // pollutants are worded in the catalogues — so the note appears only where a domain is
-      // published in a language the reader did not ask for, and stops appearing on its own
-      // the day one is translated.
-      language: domain?.memberLanguage == null ? null : tGroup('domainLanguage'),
-    }),
-    // `domain.memberLanguage` rather than `domain`: the object identity of the axis is not what
-    // the wording depends on, and the axes list is itself memoized upstream.
-    [axisName, tField, tGroup, domain?.memberLanguage],
-  );
-
   return (
     <Fieldset
       // **The legend is marked too, not just the listbox** (WCAG 2.2 SC 3.1.2): once a member is
@@ -131,7 +100,9 @@ export function ClassificationRow({
           // WCAG 2.2 SC 3.1.2: the api answers which language the names are in, so the listbox is
           // marked rather than left for a screen reader to pronounce as Romanian (task 36.8).
           memberLang={domain.memberLanguage}
-          labels={pickerLabels}
+          // The axis's name is the one word the picker cannot read for itself: it is the domain's own
+          // where EFRAG publishes one, and the legend above says the same name (task 158).
+          label={axisName}
         />
       ) : null}
       {/*

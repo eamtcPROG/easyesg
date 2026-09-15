@@ -21314,3 +21314,104 @@ free where the layout ran and one request from a refused screen on a navigation.
   the rest of `pnpm e2e` — the fixes reach the api through two docblocks, one catalogue sentence no suite asserts and the
   memberships suite, which ran; `facade:check`, `routes:check`, `image:check`, `eslint:prove`, `boundaries:prove` — no
   generated artefact, admin route, Dockerfile, selector or rule changed. All of them ran green in the cold run above.
+
+## Task 158 — Client Components read their own words · 2026-09-15
+
+Raised by the owner: *the web is not using next-intl capabilities for client components, it is not using
+`useTranslations`, it passes the labels*. Twenty-two Client Components in `apps/web` received catalogue text as props
+from the component above them. The decision is `architecture.md` §12.5.6's task-158 row; the rule and its three
+exceptions are `apps/web/CLAUDE.md`'s, beside the one-provider rule.
+
+### Two questions, asked before any code
+
+- **Where the line falls.** Offered: the label bundles *and* the server-built records keyed by api values (countries,
+  legal forms), the label bundles only, or everything including per-caller wording. The owner's answer — *focus only
+  labels that work next-intl* — is read as the label props a component can resolve itself with `useTranslations` over
+  keys known when the code is written. **One routine call inside it**: `StepFields`' `markerLabels` is a record, but over
+  `DISCLOSURE_STATE`, so it converted with `carriedLabel`; countries and legal forms are keyed by codes the api sends and
+  stayed.
+- **A gate.** Offered a spec failing when a Server Component passes translator output into an `apps/web` Client
+  Component. The owner chose the rule alone.
+
+### Why the recorded reason no longer held — measured, not argued
+
+The chrome passed words down *"so the `chrome` catalogue never reaches the bundle"* (task 30.1), and
+`global-tier.tsx` kept a bundle argument after task 99 ended the payload one. In the `.next` build of 15 Sep 2026 the
+chunk holding use-intl's `IntlMessageFormat` and ICU parser is listed in the client-reference manifest of all 31
+`(app)` routes and every `(public)` route — and `OrganizationCorner`, in the same band, already called
+`useTranslations`.
+
+### What changed
+
+- **Chrome.** `AccountCorner`, `WorkspaceDrawer`, `PublicDrawer` and `LocaleChoice` read `chrome` themselves; the last two
+  take no props. `shared/use-locale-names.ts` replaces the `LOCALES.map` each caller wrote. `GlobalTier` and
+  `PublicHeader` lose `getLocale()` and pass only what the server alone holds.
+- **S-37.** `OrganizationChoices` reads `organization.choice` and `organization.access.roles`; its section no longer
+  builds a roles record.
+- **Support access.** `SUPPORT_ACCESS_MESSAGES` in `components/shared/`, since the controls reading their own words would
+  otherwise have multiplied the literal (`shared-namespace-declared-once`). The controls narrow to `.awaiting` and
+  `.active`; the unreachable copy moved into `useSupportAccessAction`, which both control sets were only forwarding.
+- **Wizard.** `StepField` reads its markers by literal key, so a missing word is now a type error where `markerLabelsOf`
+  rendered `''`; `markerLabelsOf` and its spec case are deleted. `NotAvailableDeclaration`, `ChoiceSet` and `MemberPicker`
+  read the field and group namespaces; `ChoiceSet` keeps `label` (the api's field name) and `MemberPicker` keeps `label`
+  (the axis's name). `ClassificationRow`'s memoized `pickerLabels` is gone: the picker's filter now depends on strings,
+  so there is no object identity to keep stable. `DisclosureControl` spells `FIELD_MESSAGES` instead of the literal.
+- **S-13.** `ActivityPicker` reads `${ENTITY_RECORD_MESSAGES}.identity`.
+
+### Routine calls, stated
+
+- **`use-locale-names.ts` carries no `'use client'`**: a hook imported only by Client Components needs none, so *"87 files
+  here are Client Components"* stands and `docs:check` agrees.
+- **Each changed spec mounts `NextIntlClientProvider` with the whole namespace its component reads** — `organization`,
+  `supportAccess` — because `messages` is atomic, and asserts the Romanian catalogue's wording rather than invented
+  strings.
+- **`RequestDetails` still takes its two labels from the banners.** It is not a Client Component, so it is outside the
+  owner's request; recorded rather than silently widened.
+- **`member-picker.tsx`'s `memberName` docblock** sat above `MAX_OFFERED`; it moved onto `memberName` while the file was
+  rewritten.
+
+### Searched
+
+- **Every JSX attribute in `apps/web/src` whose value calls a translator or reads `getMessages()` and lands on an
+  `apps/web` `'use client'` module**, by a TypeScript-AST walk (translators bound directly or destructured from
+  `Promise.all`, one level of local indirection): 22 components before, 13 after — the 13 being the three kinds the rule
+  keeps. The walk's first version missed Server callers that destructure `t` from `Promise.all`, which reading
+  `global-tier.tsx` exposed.
+- **`apps/admin`**: no `labels={{ … }}` handed to any component, and 92 files already call `useTranslations`.
+- **Every statement of the old reason**: the docblocks of `account-corner`, `workspace-drawer`, `locale-choice`,
+  `global-tier`, `identity-chrome`, `choose-organization-section`, `not-available`, `step-fields` and `step-words`, and
+  `apps/web/CLAUDE.md`'s chrome paragraph.
+
+### Skills, read against the diff
+
+`one-idea-per-file`: `reason-docblock-carries-the-why` — the two new files name their readers and count nothing, and the
+edited `step-messages.ts` and `entity-messages.ts` lost their counts of readers; `pure-logic-leaves-the-component`
+declined for the marker labels, which are catalogue lookups by literal key rather than logic, so `markerLabelsOf` was
+deleted, not moved. `one-kind-per-folder`: `shared-admission-test`, `shared-namespace-declared-once` —
+`organization.access.roles` stays a literal, as that rule says for a namespace two screens share.
+`vercel-react-best-practices`: `rerender-dependencies` (the picker's memo on primitive strings), `server-parallel-fetching`
+(`GlobalTier`'s `Promise.all` smaller, still parallel), and the bundle question measured above.
+`vercel-composition-patterns` was not loaded: no component API gained a prop — every change removed props.
+
+### Verification
+
+- `pnpm --filter @easyesg/web typecheck`, `pnpm lint`: clean. `web` unit suite: 63 files, 739 tests.
+  `pnpm docs:check`: 40 claims.
+- `pnpm e2e:web --project identity --project expansion`, **first run: no test ran.** Postgres went through crash recovery
+  as Playwright started — its log shows an untracked child process exiting with code 2, then *terminating any other
+  active server processes* and reinitialising, ready again about 90 seconds later — and the api could not connect within
+  Playwright's 60-second server wait. Not this change: the container did not restart and was not OOM-killed. The
+  container's `CMD-SHELL` healthcheck timing out under load is the candidate cause, offered as a separate task rather
+  than fixed here. **Rerun: 199 of 199 in 9.1 minutes.** The server log printed four `⨯ Error: The destination stream
+  closed early.`, all digest `2667547900`, and nothing else.
+- **Mutants**, each file restored and compared by SHA-256, each red on its own spec: the grant and decline read from
+  `.active` (3 of 3 red); the hook's unreachable title from the wrong key (1 of 3); the end button from the wrong key
+  (1 of 1); role names from the wrong namespace (1 of 5); the list's name from the wrong key (1 of 5); *nothing chosen*
+  from the wrong key (1 of 7); the remove button's name dropping the member (1 of 7). The four specs green again after
+  restore, 16 of 16.
+- **Not run, and why.** No review agents, so no model to state, and no `gates:clean`: the owner's standing rule for a
+  childless task that stays in one workspace. A changed prop type is on the cold-run list, but every file importing a
+  changed type was itself edited — `typecheck` confirms none was left — so the lint cache re-read each; CI runs the full
+  set on push. `pnpm e2e`, `e2e:worker`, `openapi:check`, `migrations:check`: nothing outside `apps/web` changed. **The
+  chrome's four components have no unit spec and were not mutation-tested**; `e2e/web/global-tier.spec.ts` and
+  `public-header.spec.ts`, in the rerun above, are what hold their words.

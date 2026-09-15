@@ -50,23 +50,7 @@ export function IdentitySection({
         disabled={archived}
         options={legalForms}
       />
-      {archived ? null : (
-        <ActivityPicker
-          chosen={codes}
-          onChange={onCodesChangeAction}
-          labels={{
-            label: t('identity.activity'),
-            help: t('identity.activityHelp'),
-            placeholder: t('identity.activityPlaceholder'),
-            prompt: t('identity.activityPrompt'),
-            empty: t('identity.activityEmpty'),
-            searching: t('identity.activitySearching'),
-            remove: (name) => t('identity.activityRemove', { activity: name }),
-            removeShort: t('identity.activityRemoveShort'),
-            none: t('identity.activityNone'),
-          }}
-        />
-      )}
+      {archived ? null : <ActivityPicker chosen={codes} onChange={onCodesChangeAction} />}
     </RecordSection>
   );
 }

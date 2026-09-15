@@ -2,6 +2,7 @@ import type { SupportAccessRequest } from '@easyesg/contracts';
 import { Banner, CALLOUT_INTENT } from '@easyesg/ui';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { RequestDetails } from '../../shared/request-details';
+import { SUPPORT_ACCESS_MESSAGES } from '../../shared/support-access-messages';
 import { AnswerControls } from '../controls/answer-controls';
 
 /**
@@ -11,19 +12,13 @@ import { AnswerControls } from '../controls/answer-controls';
  * when it lapses unanswered.
  */
 export async function AwaitingBanner({ request }: { readonly request: SupportAccessRequest }) {
-  const [t, format] = await Promise.all([getTranslations('supportAccess'), getFormatter()]);
+  const [t, format] = await Promise.all([getTranslations(SUPPORT_ACCESS_MESSAGES), getFormatter()]);
 
   return (
     <Banner
       intent={CALLOUT_INTENT.ATTENTION}
       title={t('awaiting.title', { operator: request.requesterEmail ?? t('unknownOperator') })}
-      action={
-        <AnswerControls
-          requestId={request.id}
-          labels={{ grant: t('awaiting.grant'), decline: t('awaiting.decline') }}
-          unreachable={{ title: t('unreachable.title'), body: t('unreachable.body') }}
-        />
-      }
+      action={<AnswerControls requestId={request.id} />}
     >
       <p>{t('awaiting.body')}</p>
       <RequestDetails request={request} labels={{ ticket: t('ticket'), reason: t('reason') }} />

@@ -1,6 +1,5 @@
 import { BrandMark, GlobalBar, SWITCHER_TONE } from '@easyesg/ui';
-import { getLocale, getTranslations } from 'next-intl/server';
-import { LOCALES } from '@easyesg/i18n';
+import { getTranslations } from 'next-intl/server';
 import { OrganizationCorner } from '@/features/organization/switcher/components/organization-corner';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
@@ -8,7 +7,6 @@ import { readMemberships } from '@/server/data/memberships';
 import { readSession } from '@/server/session/session';
 import { AccountCorner } from './account-corner';
 import { WorkspaceDrawer } from './workspace-drawer';
-import { WORKSPACE_SECTIONS } from './workspace-sections';
 import styles from './global-tier.module.css';
 
 /**
@@ -20,15 +18,15 @@ import styles from './global-tier.module.css';
  * active organization. `proxy.ts` guarantees a cookie above this point but not a READABLE one — an
  * unsealable cookie renders nothing here, and the first data call's 401 is what surfaces it.
  *
- * **Every string the account corner shows is resolved here and handed down as a prop.** `AccountCorner`
- * needs the browser only for the current address — a language choice is a link to the same page in another
- * locale — so it takes two hooks and no messages. The organization's control is the exception, and says why
- * in its own file: its note counts unsent answers, which only the browser knows.
+ * **What it hands down is what only the server holds** — the session's account, and the memberships.
+ * The band's own words are resolved here; each control below it is a Client Component that reads
+ * `chrome` itself through `useTranslations` (task 158).
  *
- * This used to be argued from payload — the catalogue reached the browser only where a scoped
- * provider named it, so a `useTranslations` here meant shipping `chrome`. **Task 99 ended that**:
- * one provider at the root serves every route group, so the argument above is what actually
- * survives, and it is about the client bundle rather than about the message payload.
+ * **This used to hand every string down as a prop**, argued first from payload — the catalogue reached
+ * the browser only where a scoped provider named it, so a `useTranslations` below meant shipping
+ * `chrome` — and, once task 99's single provider ended that, from the client bundle. Neither held by
+ * then: `OrganizationCorner`, in this same band, already called `useTranslations`, so the translator
+ * was in the page regardless. `architecture.md` §12.5.6's task-158 row carries the measurement.
  *
  * **The tier carries what renders, and nothing else** (29 Aug 2026, project owner). §4.2's global
  * tier is *organization switcher · notification centre · user menu · help*, and two of those four
@@ -43,13 +41,12 @@ import styles from './global-tier.module.css';
  * S-35 and S-37 keep the band's empty state.
  */
 export async function GlobalTier() {
-  const [session, memberships, t, locale] = await Promise.all([
+  const [session, memberships, t] = await Promise.all([
     readSession(),
     // Independent of the session read — both are needed and neither feeds the other, so awaiting
     // them in sequence would be a waterfall on the most-rendered path in the product.
     readMemberships(),
     getTranslations('chrome'),
-    getLocale(),
   ]);
   if (!session) return null;
 
@@ -76,32 +73,9 @@ export async function GlobalTier() {
               email={session.account.email}
               displayName={session.account.displayName}
               monogram={session.account.monogram}
-              locale={locale}
-              locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
-              labels={{
-                account: t('accountMenu.label'),
-                credentials: t('accountMenu.credentials'),
-                signOut: t('accountMenu.signOut'),
-                language: t('language'),
-              }}
             />
           </span>
           <WorkspaceDrawer
-            locale={locale}
-            locales={LOCALES.map((code) => ({ code, label: t(`locales.${code}`) }))}
-            labels={{
-              menu: t('drawer.label'),
-              close: t('drawer.close'),
-              // The band's own accessible name, reused: the drawer IS the workspace tier at this
-              // frame, so a second name for it would describe two navigations.
-              sections: t('workspaceNav.label'),
-              credentials: t('accountMenu.credentials'),
-              signOut: t('accountMenu.signOut'),
-              language: t('language'),
-            }}
-            sectionLabels={Object.fromEntries(
-              WORKSPACE_SECTIONS.map((section) => [section.key, t(`workspaceNav.${section.key}`)]),
-            )}
             organization={
               resolved ? (
                 <OrganizationCorner memberships={resolved} tone={SWITCHER_TONE.DEFAULT} />

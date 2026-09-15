@@ -1,9 +1,11 @@
 'use client';
 
 import { Button, BUTTON_VARIANT, Combobox, type ComboboxOption } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import type { NaceCodeMatch } from '@easyesg/contracts';
 import { searchActivityCodesAction } from '../../actions/actions';
+import { ENTITY_RECORD_MESSAGES } from '../shared/entity-messages';
 import styles from '../styles/entities.module.css';
 
 /**
@@ -21,28 +23,20 @@ import styles from '../styles/entities.module.css';
  * **Chosen codes are removed from the offered set.** Adding a code twice is not an error the API
  * would refuse — it would simply store a duplicate — so the control makes it unrepresentable
  * instead of refusing it afterwards.
+ *
+ * **Its words are its own** (task 158), from the record's `identity` keys, which `IdentitySection`
+ * used to resolve and pass in as a `labels` object.
  */
 export interface ActivityPickerProps {
   /** The codes the entity holds, with the words for the ones the classifier still carries. */
   readonly chosen: readonly NaceCodeMatch[];
   readonly onChange: (chosen: readonly NaceCodeMatch[]) => void;
-  readonly labels: {
-    readonly label: string;
-    readonly help: string;
-    readonly placeholder: string;
-    readonly prompt: string;
-    readonly empty: string;
-    readonly searching: string;
-    readonly remove: (activity: string) => string;
-    /** The visible word on the remove control — the accessible name carries which activity. */
-    readonly removeShort: string;
-    readonly none: string;
-  };
 }
 
 const DEBOUNCE_MS = 250;
 
-export function ActivityPicker({ chosen, onChange, labels }: ActivityPickerProps) {
+export function ActivityPicker({ chosen, onChange }: ActivityPickerProps) {
+  const t = useTranslations(`${ENTITY_RECORD_MESSAGES}.identity`);
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<readonly NaceCodeMatch[]>([]);
   const [searching, startSearch] = useTransition();
@@ -68,12 +62,12 @@ export function ActivityPicker({ chosen, onChange, labels }: ActivityPickerProps
   return (
     <div className={styles.activityPicker}>
       <Combobox
-        label={labels.label}
-        help={labels.help}
-        placeholder={labels.placeholder}
-        promptLabel={labels.prompt}
-        emptyLabel={labels.empty}
-        loadingLabel={labels.searching}
+        label={t('activity')}
+        help={t('activityHelp')}
+        placeholder={t('activityPlaceholder')}
+        promptLabel={t('activityPrompt')}
+        emptyLabel={t('activityEmpty')}
+        loadingLabel={t('activitySearching')}
         loading={searching}
         options={offered}
         // Never holds a value: choosing ADDS to the list below and clears the box, which is what
@@ -90,7 +84,7 @@ export function ActivityPicker({ chosen, onChange, labels }: ActivityPickerProps
       />
 
       {chosen.length === 0 ? (
-        <p className={`t-caption ${styles.sub}`}>{labels.none}</p>
+        <p className={`t-caption ${styles.sub}`}>{t('activityNone')}</p>
       ) : (
         <ul className={styles.chips}>
           {chosen.map((match) => (
@@ -100,7 +94,7 @@ export function ActivityPicker({ chosen, onChange, labels }: ActivityPickerProps
               <Button
                 type="button"
                 variant={BUTTON_VARIANT.SUBTLE}
-                aria-label={labels.remove(match.label)}
+                aria-label={t('activityRemove', { activity: match.label })}
                 onClick={() => onChange(chosen.filter((held) => held.code !== match.code))}
               >
                 {/* A word, not a glyph. `lucide-react` is `packages/ui`'s dependency and not this
@@ -108,7 +102,7 @@ export function ActivityPicker({ chosen, onChange, labels }: ActivityPickerProps
                     say "remove" would be a dependency for a thing the catalogue already has. The
                     visible word is short and the accessible name carries the activity, so a screen
                     reader hears "remove Manufacture of bread" rather than "remove" three times. */}
-                {labels.removeShort}
+                {t('activityRemoveShort')}
               </Button>
             </li>
           ))}

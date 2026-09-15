@@ -1,9 +1,10 @@
 'use client';
 
-import { LanguageSwitcher, SWITCHER_TONE, type SwitcherLocale } from '@easyesg/ui';
-import type { Locale } from '@easyesg/i18n';
+import { LanguageSwitcher, SWITCHER_TONE } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
+import { useLocaleNames } from './use-locale-names';
 
 /**
  * The language switcher, wired to this app's router — the one copy, shared by the two chromes
@@ -14,27 +15,19 @@ import { Link, usePathname } from '@/i18n/navigation';
  * current address is knowable only in the browser. The query string rides along because a
  * verification token must survive the switch (UX-4: the address restores the state).
  *
- * **Every string arrives as a prop, and that is what let it be shared.** `IdentityHeaderActions`
- * resolved its own through `useTranslations('chrome')`, which works only where a layout has put
- * the `chrome` catalogue into a client provider — the `(identity)` layout does and the `(public)`
- * one does not, since §5.1b's public screens are the ones the framework may cache and shipping a
- * catalogue to them buys nothing (NFR-43). Taking labels as props removes the dependency instead
- * of duplicating the component around it.
+ * **Its words are its own, and it takes no props** (task 158). From task 74.1 it took every string
+ * as a prop, because `useTranslations('chrome')` then worked only where a layout had put `chrome`
+ * into a scoped client provider — the `(identity)` layout did and the `(public)` one did not. Task
+ * 99's single provider at the root ended that, so both chromes render `<LocaleChoice />` and the
+ * catalogue reaches it the way it reaches every other Client Component.
  *
  * The third copy of this wiring is `AccountCorner`'s, and it stays a copy on purpose: the global
  * tier renders the choice as a Radix *submenu* of the account menu, whose second `DropdownMenu.Root`
  * would break the keyboard contract the first is carrying.
  */
-export interface LocaleChoiceProps {
-  /** Accessible name for the trigger, resolved by the caller on the server. */
-  readonly label: string;
-  /** The locale this page is being read in. */
-  readonly locale: Locale;
-  /** Every registered locale, each labelled with its own name for itself. */
-  readonly locales: readonly SwitcherLocale<Locale>[];
-}
-
-export function LocaleChoice({ label, locale, locales }: LocaleChoiceProps) {
+export function LocaleChoice() {
+  const t = useTranslations('chrome');
+  const { locale, locales } = useLocaleNames();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -45,7 +38,7 @@ export function LocaleChoice({ label, locale, locales }: LocaleChoiceProps) {
   return (
     <LanguageSwitcher
       tone={SWITCHER_TONE.HEADER}
-      label={label}
+      label={t('language')}
       current={current}
       locales={locales}
       renderItem={(entry) => (

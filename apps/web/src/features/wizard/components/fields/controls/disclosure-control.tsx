@@ -17,6 +17,7 @@ import {
   storedDraftOf,
   writeFor,
 } from '../../../tools/values';
+import { FIELD_MESSAGES } from '../shared/step-messages';
 import { ChoiceSet } from './choice-set';
 import styles from '../styles/step.module.css';
 
@@ -66,7 +67,7 @@ export function DisclosureControl({
   readonly labelledBy: string;
   readonly onCommit: (write: DisclosureValueWrite) => void;
 }) {
-  const t = useTranslations('organization.wizard.field');
+  const t = useTranslations(FIELD_MESSAGES);
   // One value, because its three parts move together (the reducer rule): `draft` is what the input
   // shows, `committed` is what this control last sent, `server` is what the field arrived holding.
   // A blur with `draft === committed` writes nothing.
@@ -108,17 +109,7 @@ export function DisclosureControl({
           onCommit={() => undefined}
           readOnly
           labelledBy={labelledBy}
-          labels={{
-            label,
-            placeholder: '',
-            prompt: '',
-            empty: '',
-            remove: () => '',
-            removeShort: '',
-            none: t('unanswered'),
-            loading: '',
-            unnamed: t('unnamed'),
-          }}
+          label={label}
         />
       );
     }
@@ -166,17 +157,7 @@ export function DisclosureControl({
         onCommit={commit}
         readOnly={false}
         labelledBy={labelledBy}
-        labels={{
-          label,
-          placeholder: t('choose'),
-          prompt: t('choicePrompt'),
-          empty: t('choiceEmpty'),
-          remove: (member) => t('choiceRemove', { member }),
-          removeShort: t('choiceRemoveShort'),
-          none: t('unanswered'),
-          loading: t('choiceLoading'),
-          unnamed: t('unnamed'),
-        }}
+        label={label}
       />
     );
   }

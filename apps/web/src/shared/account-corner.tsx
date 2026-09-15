@@ -1,20 +1,25 @@
 'use client';
 
-import { AccountMenu, type SwitcherLocale } from '@easyesg/ui';
-import type { Locale } from '@easyesg/i18n';
+import { AccountMenu } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { signOutAction } from '@/features/identity/shared/actions/actions';
+import { useLocaleNames } from './use-locale-names';
 
 /**
  * The global tier's account corner (task 30.1) — §4.2's *user menu (profile, language, sign out)*.
  *
- * **A Client Component for one reason, and it is the same one `IdentityHeaderActions` has:**
- * language is URL state (`routing.ts`), so choosing one is a link to *this* address in another
- * locale, and the current address is knowable only in the browser. Everything else arrives as a
- * prop — the labels resolved by `GlobalTier` on the server, so the `chrome` catalogue never reaches
- * the bundle for this component.
+ * **A Client Component for one reason, and it is the same one `LocaleChoice` has:** language is URL
+ * state (`routing.ts`), so choosing one is a link to *this* address in another locale, and the
+ * current address is knowable only in the browser. The account arrives as props, because only the
+ * server reads the session (AD-9).
+ *
+ * **Its words are its own** (task 158): `useTranslations('chrome')`, against the catalogue the root
+ * provider already serves every page. They used to arrive as a `labels` prop resolved by `GlobalTier`,
+ * so that *"the `chrome` catalogue never reaches the bundle"* — a reason task 99's single provider had
+ * already ended; `architecture.md` §12.5.6's task-158 row records the rule that replaced it.
  *
  * **Sign-out is a form outside the menu, associated by id.** Radix portals the menu to
  * `document.body`, so a `<form>` wrapping the item would be a form element inside `role="menu"`,
@@ -36,37 +41,16 @@ import { signOutAction } from '@/features/identity/shared/actions/actions';
  */
 const SIGN_OUT_FORM = 'global-tier-sign-out';
 
-export interface AccountCornerLabels {
-  readonly account: string;
-  readonly credentials: string;
-  readonly signOut: string;
-  readonly language: string;
-}
-
 export interface AccountCornerProps {
   readonly email: string;
   /** UX-137's derived pair, computed once by the api and carried on the session. */
   readonly displayName: string;
   readonly monogram: string | null;
-  readonly locale: Locale;
-  /**
-   * Every locale with its own name in that language, resolved on the server — an array rather than
-   * a lookup, so this component neither reads the registry nor needs a fallback for a code the
-   * catalogue is missing. A bare `ro` rendered where `Română` belongs is exactly the silent wrong
-   * answer a `?? code` would produce.
-   */
-  readonly locales: readonly SwitcherLocale<Locale>[];
-  readonly labels: AccountCornerLabels;
 }
 
-export function AccountCorner({
-  email,
-  displayName,
-  monogram,
-  locale,
-  locales,
-  labels,
-}: AccountCornerProps) {
+export function AccountCorner({ email, displayName, monogram }: AccountCornerProps) {
+  const t = useTranslations('chrome');
+  const { locale, locales } = useLocaleNames();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -82,14 +66,14 @@ export function AccountCorner({
     <>
       <form id={SIGN_OUT_FORM} action={signOutAction.bind(null, undefined)} hidden />
       <AccountMenu
-        label={labels.account}
+        label={t('accountMenu.label')}
         email={email}
         displayName={displayName}
         monogram={monogram}
         items={[
           {
             key: 'credentials',
-            node: <Link href={ROUTES.ACCOUNT_CREDENTIALS}>{labels.credentials}</Link>,
+            node: <Link href={ROUTES.ACCOUNT_CREDENTIALS}>{t('accountMenu.credentials')}</Link>,
           },
           {
             key: 'sign-out',
@@ -102,13 +86,13 @@ export function AccountCorner({
                   event.currentTarget.form?.requestSubmit();
                 }}
               >
-                {labels.signOut}
+                {t('accountMenu.signOut')}
               </button>
             ),
           },
         ]}
         language={{
-          label: labels.language,
+          label: t('language'),
           current,
           locales,
           renderItem: (entry) => (
