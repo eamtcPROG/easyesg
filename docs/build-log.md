@@ -21415,3 +21415,71 @@ deleted, not moved. `one-kind-per-folder`: `shared-admission-test`, `shared-name
   set on push. `pnpm e2e`, `e2e:worker`, `openapi:check`, `migrations:check`: nothing outside `apps/web` changed. **The
   chrome's four components have no unit spec and were not mutation-tested**; `e2e/web/global-tier.spec.ts` and
   `public-header.spec.ts`, in the rerun above, are what hold their words.
+
+## The dev database reinitialised under its own healthcheck — `init: true` on `postgres` · 2026-09-15
+
+Not a numbered task, by the owner's choice. Found by task 158's first browser run, which never reached a test: every
+api connection met `the database system is in recovery mode`, and Playwright's 60-second server wait ran out. The
+decision is `architecture.md` §12.5.10's last paragraph.
+
+### What the log said
+
+The container had not restarted — no OOM kill, restart count 0, up three and a half days. Postgres itself had: at
+14:24:20 UTC an *untracked child process* exited with code 2, the postmaster logged *terminating any other active
+server processes*, reinitialised, and accepted connections again at 14:25:54. The host was building api, web and admin
+at the time. Nothing in the repository runs `docker compose exec` automatically.
+
+### Confirmed, not assumed
+
+- **The source.** `postmaster.c` at `REL_18_4`: a reaped PID matching no child the postmaster forked is logged when its
+  status is 0 or 1 (`EXIT_STATUS_0`, `EXIT_STATUS_1`) and otherwise handed to `HandleChildCrash`. `pg_isready` exits 2
+  on *no response*, after its 3-second default timeout (PostgreSQL 18's own page; Context7 had no entry).
+- **The history.** 21 untracked children in three and a half days — against roughly 30,000 probes — 19 exiting 0, one
+  exiting 1 during the recovery, one exiting 2. So only the occasional process whose supervisor stopped waiting reaches
+  PID 1, not every probe. Two of the exit-0s line up with this session's own `docker compose exec … psql` calls, both of
+  which returned no output: an exec can be orphaned there too.
+- **A synthetic reproduction**, a throwaway Compose project with no ports and no named volumes: a probe outliving a
+  1-second timeout had its child reaped by the postmaster every time, 6 of 6, in shell form and in exec form alike,
+  because the exec'd `sh` still forks; with `init: true`, none. A fast probe with no init: none.
+- **The real probe**, the stack's own `CMD-SHELL pg_isready` form against an unroutable address, where a direct run
+  takes 4 seconds and exits 2: **11 crash recoveries in 100 seconds** without init; none with `init: true`; none in exec
+  form — `pg_isready` is then the exec'd process itself, so no in-container parent dies. `/bin/sh` in the image is dash
+  0.5.12, and it forks here.
+
+### The change
+
+`init: true` on the `postgres` service, with a comment saying why, and nothing else. `docker-init` becomes PID 1, reaps
+orphans, and forwards the image's `STOPSIGNAL SIGINT`, so stopping the service is still PostgreSQL's fast shutdown.
+
+### Declined, with the reason
+
+- **The exec form of the probe.** It avoided the orphan for `pg_isready`, but gives up the shell's expansion of
+  `$POSTGRES_USER` and `$POSTGRES_DB` — the literal names would be a second copy of the environment — and it does
+  nothing for an orphan left by `docker compose exec`, which the history shows reaching PID 1 the same way.
+- **`init: true` on `redis`.** Redis has no crash path for a child it did not fork, and the same late-exiting probe
+  against a Redis PID 1 left neither a zombie nor a log line in 100 seconds. The task was to change nothing else.
+
+### Routine calls, stated
+
+- **Both reproductions ran as throwaway Compose projects in the session's scratchpad**, torn down with `down -v`
+  and checked for leftovers; the dev stack was not touched until the fix.
+- **`docker top -o args` drops the PID column**, so two reproduction lines printed *Couldn't find PID field*; the
+  `Init` field beside them is what those lines report.
+
+### Verification
+
+- `pnpm dev:down && pnpm dev:up` (volumes kept — the script's definition was checked before it ran): healthy, `Init=true`,
+  PID 1 `/sbin/docker-init -- docker-entrypoint.sh postgres` with `postgres` beneath it; `redis` still `Init=<nil>`.
+  Stopping `postgres` logged *received fast shutdown request*, *shutting down*, *database system is shut down*, and it
+  started healthy again.
+- `pnpm migrations:check`: 56 of 56.
+- `pnpm e2e:web --project identity --project expansion`: **198 of 199.** The red was `home.spec.ts:266`, the
+  pending-boundary count — 3 where it asserts 2 — on a stack restarted minutes earlier under build load. Rerun alone
+  against the same build with `--repeat-each 3`: 3 of 3. Neither this log nor `apps/web/CLAUDE.md` records that check
+  failing before, so this is its first recorded transient; **a second occurrence on a warm stack would make it a
+  finding** about the count, not about this change.
+- **Postgres logged no untracked child and no crash handling** from `dev:up` through the full suite and the rerun.
+- `pnpm docs:check`: 40 claims.
+- **CI reaches the change**: two gate jobs run `pnpm dev:up` and a third runs `docker compose -f
+  infra/compose/docker-compose.yml up -d --wait`, so the next push exercises `init: true` there. No review agents,
+  under the owner's standing rule; no application code changed, so no unit or api suite was rerun.

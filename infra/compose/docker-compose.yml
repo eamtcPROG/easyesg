@@ -19,6 +19,14 @@ services:
     image: postgres:18.4
     container_name: easyesg-postgres
     restart: unless-stopped
+    # An init process is PID 1, not the postmaster (architecture.md §12.5.10). A process started
+    # inside the container whose parent dies there — a healthcheck probe's child when Docker kills
+    # the probe at its timeout, or a `docker compose exec` — is reparented to PID 1, and PostgreSQL
+    # 18's postmaster treats any such "untracked child process" exiting with a status other than 0
+    # or 1 as a crashed backend: every connection dropped and the server reinitialised. A
+    # `pg_isready` orphan exiting 2 under host load did exactly that. docker-init reaps orphans and
+    # forwards the image's SIGINT, so shutdown is unchanged.
+    init: true
     environment:
       # The image superuser. Deliberately NOT esg_app: §7.6 requires the application role to
       # be non-superuser and non-BYPASSRLS, and a dev database where the app connects as
