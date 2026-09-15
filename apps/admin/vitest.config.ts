@@ -21,6 +21,14 @@ export default defineConfig({
       // intent, but Vite 6+ REPLACES the default conditions rather than extending them, and an
       // alias states it without that trap.
       '@easyesg/i18n': fileURLToPath(new URL('../../packages/i18n/src/index.ts', import.meta.url)),
+      // Same reasoning, and `apps/web`'s config has carried it since that app first read the
+      // package: @easyesg/validation dual-builds for Node consumers (OQ-47). Missing here from task
+      // 151, when A-19 first imported it. Every local run passed on a `dist/` left by an earlier
+      // build; CI's isolated `BILLING_ENABLED=false` job met the tree without one first (14 Sep 2026),
+      // and task 155's `gates:clean` reproduced it.
+      '@easyesg/validation': fileURLToPath(
+        new URL('../../packages/validation/src/index.ts', import.meta.url),
+      ),
     },
   },
   test: {
