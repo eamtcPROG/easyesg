@@ -69,8 +69,11 @@ for (const frame of FRAMES) {
     await page.setViewportSize(frame);
     await page.goto('/account/credentials');
 
-    // The clause the old location could never satisfy.
-    await expect(page.getByText('·').first()).toBeVisible();
+    // The clause the old location could never satisfy — held to S-28's own heading, padded, rather
+    // than to whatever padded string the page happens to show first.
+    await expect(
+      page.getByRole('heading', { level: 1, name: exactlyPadded('Date de autentificare') }),
+    ).toBeVisible();
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

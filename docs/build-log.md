@@ -20791,3 +20791,52 @@ invariants**, `pnpm e2e` **1,190 tests across 46 suites**, `pnpm e2e:worker` **2
 205** in 4.8 minutes, its one `⨯ The destination stream closed early` carrying digest `2667547900`. Before it:
 `@easyesg/web` typecheck and unit suite, `@easyesg/api` typecheck and the identity specs (447 tests), the account-setup
 e2e suite **8 of 8**, lint over every file the round touched, and the two single-filter mutants above.
+
+## Task 156 — The expansion specs proved some padded string, not their screen's own · 2026-09-15
+
+Offered at task 155's close as a separate session, and started by the owner. Every expansion spec under `e2e/web`
+that checked the pseudolocale's padding with `getByText('·').first()` now asserts its own screen's h1 through
+`exactlyPadded` — the shape task 155 gave `complete-account.expansion.spec.ts`. **Five sites, and not the ones the
+request guessed at**: `create-organization`, `credentials`, `entities` (twice — the index and the new-entity
+record) and `organization-profile`, plus the harness's own `expansion.spec.ts` for `/register` and `/verify`.
+`home` and `wizard` never carried the loose check.
+
+### Routine calls, stated
+
+- **The h1, over any other string on the screen.** It is catalogue text on every one of these screens, it is the one
+  string each is guaranteed to render in the state the spec reaches, and a role-and-name locator is strict — two
+  matches throw — so a duplicate fails the check where `.first()` quietly picked one. The headings, from
+  `apps/web/src/messages/ro.json`: S-04 *Configurați-vă organizația* (`organization.create.title`), S-28 *Date de
+  autentificare* (`identity.credentials.title`, `RecordShell`'s h1), S-13 *Entități raportoare*
+  (`organization.entities.title`, rendered by `entities-section.tsx`, since `IndexShell` renders none) and *Adăugați o
+  entitate* (`organization.entities.record.createTitle` — the record has no entity yet, so no name for its h1), S-15
+  *Profilul organizației* (`organization.profile.title`), `/register` *Creați-vă contul* and `/verify` *Confirmați-vă
+  adresa de e-mail*, which heads the resend surface a bare `/verify` draws.
+- **`expansion.spec.ts` had a second defect under the first**: `await page.getByText('·').first().isVisible()`
+  answers once, without waiting, so the check raced the page. It is a web-first assertion now, which waits.
+- **A Romanian literal in each spec rather than a catalogue read**: these specs already locate by Romanian text, and
+  a spec reading the catalogue it is checking would pass on whatever the catalogue said.
+
+### Searched
+
+- **`getByText('·')` anywhere in `e2e/`**: the five sites above; none left.
+- **`.first()`, `.last()`, `.nth(` across every `*expansion*` spec**: none beyond the five.
+- **Whether `exactlyPadded` can pass on an unpadded server**: it cannot — its pattern demands at least one `·`, the
+  7 Sep 2026 correction its docblock records — so every one of these assertions fails where the padded catalogue did
+  not arrive. Reasoned from the helper, not run against the unpadded instance, which the `identity` project's
+  `testIgnore` keeps these specs away from.
+
+### Skills, read against the diff
+
+None of the four code skills binds a Playwright spec's shape; `one-idea-per-file` was read for its docblock rule, and
+the rewritten comments state their reason and count nothing outside their files.
+
+### Verification
+
+- **`pnpm e2e:web --project expansion`: 28 of 28** in 53.9 seconds, over a fresh build of the api, web and admin
+  bundles — every expansion spec, the five changed among them: S-04, S-28, S-15 and S-13 (its index and its new-entity
+  record) at the three frames each, and `/register` and `/verify` at the three. The web server printed no error.
+- **`pnpm exec eslint --no-cache`** over the five changed specs: clean.
+
+**Not run**: the unit suites, `gates:clean` and the review agents — the change reaches the browser suite and nothing
+else, and the owner's standing rule for a row like this is the gates its change reaches.

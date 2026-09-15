@@ -60,7 +60,10 @@ for (const frame of FRAMES) {
     await page.setViewportSize(frame);
     await page.goto('/organization');
 
-    await expect(page.getByText('·').first()).toBeVisible();
+    // The padded catalogue reached S-15 itself — its own heading, not merely some string on the page.
+    await expect(
+      page.getByRole('heading', { level: 1, name: exactlyPadded('Profilul organizației') }),
+    ).toBeVisible();
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

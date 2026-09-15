@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { exactlyPadded } from './support/expansion';
 
 /**
  * The +40% expansion harness on the new screens (UX-94; task 20's deliverable says it must
@@ -16,9 +17,10 @@ const FRAMES = [
   { width: 390, height: 844 },
 ];
 
+/** Each screen's own heading, so the padding is proven on this screen's strings, not on any string. */
 const SCREENS = [
-  { path: '/register', action: 'Creați contul' },
-  { path: '/verify', action: 'Trimiteți linkul' },
+  { path: '/register', heading: 'Creați-vă contul', action: 'Creați contul' },
+  { path: '/verify', heading: 'Confirmați-vă adresa de e-mail', action: 'Trimiteți linkul' },
 ];
 
 for (const screen of SCREENS) {
@@ -27,9 +29,11 @@ for (const screen of SCREENS) {
       await page.setViewportSize(frame);
       await page.goto(screen.path);
 
-      // The padded catalogue actually arrived — otherwise this asserts nothing.
-      const padded = await page.getByText('·').first().isVisible();
-      expect(padded).toBe(true);
+      // The padded catalogue actually arrived on this screen — otherwise this asserts nothing. A web-first
+      // assertion rather than `isVisible()`, which answered once, without waiting for the page to settle.
+      await expect(
+        page.getByRole('heading', { level: 1, name: exactlyPadded(screen.heading) }),
+      ).toBeVisible();
 
       // No horizontal overflow: the document is no wider than the viewport.
       const overflow = await page.evaluate(

@@ -52,8 +52,12 @@ const FRAMES = [
   { width: 390, height: 844 },
 ];
 
-const noSidewaysScroll = async (page: Page): Promise<void> => {
-  await expect(page.getByText('·').first()).toBeVisible();
+/**
+ * The padded catalogue reached this screen — its own heading, not merely some string on the page — and
+ * nothing scrolls sideways.
+ */
+const noSidewaysScroll = async (page: Page, heading: string): Promise<void> => {
+  await expect(page.getByRole('heading', { level: 1, name: exactlyPadded(heading) })).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
@@ -66,10 +70,10 @@ for (const frame of FRAMES) {
     await page.setViewportSize(frame);
 
     await page.goto('/entities');
-    await noSidewaysScroll(page);
+    await noSidewaysScroll(page, 'Entități raportoare');
 
     await page.goto('/entities/new');
-    await noSidewaysScroll(page);
+    await noSidewaysScroll(page, 'Adăugați o entitate');
     await expect(page.getByRole('button', { name: /Adăugați entitatea/ })).toBeVisible();
   });
 }

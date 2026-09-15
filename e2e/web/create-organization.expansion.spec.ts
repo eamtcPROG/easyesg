@@ -72,9 +72,12 @@ for (const frame of FRAMES) {
     await page.setViewportSize(frame);
     await page.reload();
 
-    // The padded catalogue actually arrived — without this the rest asserts nothing, which is
-    // exactly what the frames in `credentials.spec.ts` were doing from the wrong project.
-    await expect(page.getByText('·').first()).toBeVisible();
+    // The padded catalogue reached S-04 itself — its own heading, not merely some string on the page.
+    // Without it the rest asserts nothing, which is exactly what the frames in `credentials.spec.ts`
+    // were doing from the wrong project.
+    await expect(
+      page.getByRole('heading', { level: 1, name: exactlyPadded('Configurați-vă organizația') }),
+    ).toBeVisible();
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
