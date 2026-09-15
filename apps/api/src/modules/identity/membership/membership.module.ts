@@ -4,17 +4,24 @@ import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { MembershipStoreRepository } from '@api/infrastructure/persistence/identity/membership-store.repository';
 import { MembersController } from './controllers/members.controller';
 import { MembershipsController } from './controllers/memberships.controller';
+import { SessionOrganizationController } from './controllers/session-organization.controller';
 import {
   ACCOUNT_MEMBERSHIP_STORE,
   type AccountMembershipStore,
 } from './interfaces/account-membership-store.interface';
 import { MEMBERSHIP_STORE, type MembershipStore } from './interfaces/membership-store.interface';
+import {
+  SESSION_ORGANIZATION_STORE,
+  type SessionOrganizationStore,
+} from './interfaces/session-organization-store.interface';
 import { AccountMembershipStoreRepository } from '@api/infrastructure/persistence/identity/account-membership-store.repository';
+import { SessionOrganizationStoreRepository } from '@api/infrastructure/persistence/identity/session-organization-store.repository';
 import { MembershipService } from './services/membership.service';
 import { ChangeMemberRole } from './use-cases/change-member-role.use-case';
 import { ListMembers } from './use-cases/list-members.use-case';
 import { ListOwnMemberships } from './use-cases/list-own-memberships.use-case';
 import { RemoveMember } from './use-cases/remove-member.use-case';
+import { SwitchActiveOrganization } from './use-cases/switch-active-organization.use-case';
 
 /**
  * `identity/membership` — FR-12, FR-56, FR-58, FR-59, FR-60
@@ -44,6 +51,8 @@ const httpProviders: Provider[] = [
    * both here is what keeps a caller from reaching for whichever it can see.
    */
   { provide: ACCOUNT_MEMBERSHIP_STORE, useClass: AccountMembershipStoreRepository },
+  // The switch's write (task 83.1) — its own port, on the account store's transaction discipline.
+  { provide: SESSION_ORGANIZATION_STORE, useClass: SessionOrganizationStoreRepository },
   { provide: CLOCK, useValue: () => new Date() },
   {
     provide: ListMembers,
@@ -65,10 +74,18 @@ const httpProviders: Provider[] = [
     inject: [MEMBERSHIP_STORE, CLOCK],
     useFactory: (store: MembershipStore, now: Clock) => new RemoveMember(store, now),
   },
+  {
+    provide: SwitchActiveOrganization,
+    inject: [SESSION_ORGANIZATION_STORE],
+    useFactory: (store: SessionOrganizationStore) => new SwitchActiveOrganization(store),
+  },
 ];
 
 @Module({
-  controllers: mode === APP_MODE.WORKER ? [] : [MembersController, MembershipsController],
+  controllers:
+    mode === APP_MODE.WORKER
+      ? []
+      : [MembersController, MembershipsController, SessionOrganizationController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
 })
 export class MembershipModule {}

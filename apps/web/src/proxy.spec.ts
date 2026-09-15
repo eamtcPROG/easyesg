@@ -31,6 +31,7 @@ vi.mock('next/headers', () => ({
   cookies: () => Promise.reject(new Error('the proxy has no request scope — that is the point')),
 }));
 
+import { REQUESTED_PATH_HEADER } from '@/lib/requested-path';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
 import { sealSession, unsealSession, type SessionPayload } from '@/server/session/session-codec';
 import proxy from './proxy';
@@ -295,6 +296,22 @@ describe('proxy · page-load rotation', () => {
  * sent to S-36 from every address that needs a session. The case that would cost a session is the one
  * where a rotation ran first, and it is the last one here.
  */
+/**
+ * S-37's gate believes the address this header names (task 83.3), so a header of that name sent by the browser
+ * must not be: the proxy sets it, replacing what arrived, where appending would put the browser's address first.
+ */
+describe('proxy · the address asked for', () => {
+  it('stamps the address, replacing a header of that name the browser sent', async () => {
+    const request = new NextRequest('http://web.test/en/verify?token=abc', {
+      headers: { [REQUESTED_PATH_HEADER]: '/account/credentials' },
+    });
+
+    const response = await proxy(request);
+
+    expect(response.headers.get(`x-middleware-request-${REQUESTED_PATH_HEADER}`)).toBe('/en/verify?token=abc');
+  });
+});
+
 describe('proxy · an account completing its setup', () => {
   const inSetup = (overrides: Partial<SessionPayload> = {}): SessionPayload =>
     sessionWith({ ...overrides, account: { ...sessionWith().account, status: 'awaiting_setup' } });

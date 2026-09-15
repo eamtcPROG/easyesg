@@ -7,6 +7,7 @@ import {
   FLUSH_FAILURE,
   autosaveReducer,
   canFlush,
+  flushIsBlocked,
   flushSnapshot,
   initialAutosaveState,
   saveStateOf,
@@ -194,5 +195,34 @@ describe('syncStateOf (§4.10 per-field marker)', () => {
       failure: { kind: FLUSH_FAILURE.UNREACHABLE },
     });
     expect(syncStateOf(failed, key)).toBe(SAVE_STATE.FAILED);
+  });
+});
+
+/**
+ * Stuck, as against on its way (task 83.2). The organization switch waits for the second and asks the
+ * reader about the first (UX-37), so a queue merely in flight must not read as blocked.
+ */
+describe('flushIsBlocked', () => {
+  it('is not blocked while a change is only on its way', () => {
+    const dirty = changed(online(), write('A', '1'));
+    expect(flushIsBlocked(dirty)).toBe(false);
+    expect(flushIsBlocked(started(dirty))).toBe(false);
+  });
+
+  it('is blocked offline', () => {
+    const offline = autosaveReducer(changed(online(), write('A', '1')), {
+      type: AUTOSAVE_EVENT.CONNECTION_CHANGED,
+      connection: CONNECTION.OFFLINE,
+    });
+    expect(flushIsBlocked(offline)).toBe(true);
+  });
+
+  it('is blocked by a standing failure, and not once another attempt is asked for', () => {
+    const failed = autosaveReducer(started(changed(online(), write('A', '1'))), {
+      type: AUTOSAVE_EVENT.FLUSH_FAILED,
+      failure: { kind: FLUSH_FAILURE.UNREACHABLE },
+    });
+    expect(flushIsBlocked(failed)).toBe(true);
+    expect(flushIsBlocked(autosaveReducer(failed, { type: AUTOSAVE_EVENT.RETRY_REQUESTED }))).toBe(false);
   });
 });

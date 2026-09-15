@@ -255,6 +255,14 @@ export const canFlush = (state: AutosaveState): boolean =>
   state.connection === CONNECTION.ONLINE &&
   state.failure === null;
 
+/**
+ * Whether what is unsent is **stuck** rather than on its way (task 83.2): offline, or a standing failure.
+ * The organization switch waits for answers that are merely going, and asks the reader (UX-37) about
+ * answers that cannot — so the difference between the two is this predicate, not a timer.
+ */
+export const flushIsBlocked = (state: AutosaveState): boolean =>
+  state.connection === CONNECTION.OFFLINE || state.failure !== null;
+
 /** The dirty writes, in sequence order, for the next flush — and the sequences to remember. */
 export const flushSnapshot = (
   state: AutosaveState,

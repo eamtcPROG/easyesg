@@ -4,6 +4,8 @@ import { EntityRecordForm } from '@/features/entities/components/form/entity-rec
 import styles from '@/features/entities/components/styles/entities.module.css';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '@/server/api/api-client';
+import { isPermissionRefusal } from '@/server/data/tenant-read';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -28,6 +30,8 @@ export default async function NewEntityPage({ params }: { params: LocaleParams }
     getMessages(),
   ]);
 
+  // A choice not made is S-37's to answer, and this read is where a navigation meets it (the gate says why).
+  if (isPermissionRefusal(organization)) await redirectToChoiceIfOwed();
   const country = organization.status === API_OUTCOME.Ok ? organization.value.countryCode : null;
   const formLabels: Readonly<Record<string, string>> = messages.organization.legalForms;
   const legalForms =

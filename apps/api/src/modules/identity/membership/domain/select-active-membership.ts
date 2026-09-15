@@ -5,8 +5,8 @@ export interface ActiveMembershipSelection {
   readonly memberships: readonly AccountMembership[];
   /**
    * What the session says was active — `identity.session.active_organization_id` (task 25.1),
-   * written by 25.4's post-sign-in branch and by the global-tier switcher (30.1). Null on a session
-   * that has not chosen yet.
+   * written by an invitation's acceptance (26.2), an organization's founding (29.1) and the switch
+   * (`PUT /session/organization`, task 83.1). Null on a session that has not chosen yet.
    */
   readonly preferredOrganizationId: string | null;
 }

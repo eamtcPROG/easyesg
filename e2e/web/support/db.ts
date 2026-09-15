@@ -149,6 +149,38 @@ export async function grantMembership(input: {
 }
 
 /**
+ * Withdraws an account's membership in one organization the way S-16's removal does (FR-59) — the row
+ * stays and stops granting — so a choice left stale by a removal can be met (task 83.3). Bound to the
+ * organization, because `identity.membership`'s `UPDATE` policy is the organization's alone.
+ */
+export async function removeMembership(input: {
+  readonly email: string;
+  readonly organizationId: string;
+}): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    const removed = await client.query(
+      `UPDATE identity.membership m SET status = 'removed', removed_at = now()
+         FROM identity.account a
+        WHERE m.account_id = a.id AND lower(a.email) = lower($1) AND m.organization_id = $2
+          AND m.status = 'active'`,
+      [input.email, input.organizationId],
+    );
+    // A removal that matched nothing is a fixture that did not do what the test believes it did.
+    if (removed.rowCount !== 1) throw new Error(`removeMembership matched ${removed.rowCount} rows`);
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
  * Fills `count` seats in an organization with bare accounts holding active memberships (task 142), so
  * S-16's seat region can be reached at and near its ceiling without registering a person per seat.
  *

@@ -1,9 +1,10 @@
-import { BrandMark, GlobalBar } from '@easyesg/ui';
+import { BrandMark, GlobalBar, SWITCHER_TONE } from '@easyesg/ui';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { LOCALES } from '@easyesg/i18n';
+import { OrganizationCorner } from '@/features/organization/switcher/components/organization-corner';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { readActiveMembership } from '@/server/data/memberships';
+import { readMemberships } from '@/server/data/memberships';
 import { readSession } from '@/server/session/session';
 import { AccountCorner } from './account-corner';
 import { WorkspaceDrawer } from './workspace-drawer';
@@ -15,14 +16,14 @@ import styles from './global-tier.module.css';
  * `SessionStrip`, which named this task as its owner and is deleted with it.
  *
  * A Server Component, for the reason the strip was one: the session is read server-side (AD-9 — no
- * token or session detail may reach browser JavaScript), and so is the membership that names the
+ * token or session detail may reach browser JavaScript), and so are the memberships that name the
  * active organization. `proxy.ts` guarantees a cookie above this point but not a READABLE one — an
  * unsealable cookie renders nothing here, and the first data call's 401 is what surfaces it.
  *
- * **Every string is resolved here and handed down as a prop.** `AccountCorner` needs the browser
- * only for the current address — a language choice is a link to the same page in another locale —
- * so it takes two hooks and no messages, and resolving its words in this Server Component is the
- * cheaper composition: no `useTranslations`, no lookup, and the strings are already in hand.
+ * **Every string the account corner shows is resolved here and handed down as a prop.** `AccountCorner`
+ * needs the browser only for the current address — a language choice is a link to the same page in another
+ * locale — so it takes two hooks and no messages. The organization's control is the exception, and says why
+ * in its own file: its note counts unsent answers, which only the browser knows.
  *
  * This used to be argued from payload — the catalogue reached the browser only where a scoped
  * provider named it, so a `useTranslations` here meant shipping `chrome`. **Task 99 ended that**:
@@ -34,20 +35,25 @@ import styles from './global-tier.module.css';
  * have no screen yet: S-26 is task 50.2 and the help centre's placement across both chromes is
  * task 77.5's, which its row claims explicitly. A chrome entry leading to a blank page teaches the
  * reader that the product is broken rather than unfinished, which is `WorkspaceNavigation`'s rule
- * and the same judgement made again. The organization region is a name rather than a switcher for
- * a different reason, stated on `GlobalBar`: the switch is a session write and its route is
- * task 83's.
+ * and the same judgement made again.
+ *
+ * **The organization is a switcher since task 83.2**, drawn twice: in the band from the medium frame up,
+ * and in the compact drawer below it, where `design_spec.md` UX-2's amendment moves it. It is drawn only
+ * when the session acts for an organization — the api's `active`, never a guess of this file's — so S-04,
+ * S-35 and S-37 keep the band's empty state.
  */
 export async function GlobalTier() {
-  const [session, active, t, locale] = await Promise.all([
+  const [session, memberships, t, locale] = await Promise.all([
     readSession(),
     // Independent of the session read — both are needed and neither feeds the other, so awaiting
     // them in sequence would be a waterfall on the most-rendered path in the product.
-    readActiveMembership(),
+    readMemberships(),
     getTranslations('chrome'),
     getLocale(),
   ]);
   if (!session) return null;
+
+  const resolved = memberships?.some((membership) => membership.active) ? memberships : null;
 
   return (
     <GlobalBar
@@ -58,7 +64,7 @@ export async function GlobalTier() {
         </Link>
       }
       organization={
-        active ? { label: t('globalBar.organization'), name: active.organizationName } : undefined
+        resolved ? <OrganizationCorner memberships={resolved} tone={SWITCHER_TONE.HEADER} /> : undefined
       }
       actions={
         <>
@@ -96,6 +102,11 @@ export async function GlobalTier() {
             sectionLabels={Object.fromEntries(
               WORKSPACE_SECTIONS.map((section) => [section.key, t(`workspaceNav.${section.key}`)]),
             )}
+            organization={
+              resolved ? (
+                <OrganizationCorner memberships={resolved} tone={SWITCHER_TONE.DEFAULT} />
+              ) : undefined
+            }
           />
         </>
       }

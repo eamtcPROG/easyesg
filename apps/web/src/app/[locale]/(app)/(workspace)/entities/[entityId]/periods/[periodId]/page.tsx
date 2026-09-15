@@ -4,6 +4,7 @@ import { PeriodRecordForm } from '@/features/periods/components/period-record-fo
 import styles from '@/features/periods/components/periods.module.css';
 import { readPeriodRecord } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { ROUTES } from '@/lib/routes';
@@ -33,6 +34,8 @@ export default async function ReportingPeriodRecordPage({ params }: Props) {
   ]);
 
   if (read.status === TENANT_READ.FORBIDDEN) {
+    // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
+    await redirectToChoiceIfOwed();
     return (
       <Callout
         intent={CALLOUT_INTENT.WARNING}

@@ -13,17 +13,16 @@ import styles from '../../styles/home.module.css';
  * root `CLAUDE.md` forbids for the reason a swap compiles and renders a plausible wrong answer.
  *
  * **The active one is marked in words as well as by the chip.** Colour is never the sole carrier
- * (UX-102), and this list has no other way to say which organization is which until task 83's
- * switcher makes it choosable — at which point this row grows an affordance and the sentence above
- * it in `memberships-list.tsx` about *information, not a control* stops being true.
+ * (UX-102). The row stays information rather than a control even now that the organizations are
+ * choosable: OQ-6 gives the switching to the global tier's switcher (task 83.2), and to S-37 where the
+ * session has chosen none — and `memberships-switch-note.tsx` says where the switcher is.
  *
  * **Its own translator, not the list's.** The row is the thing that renames when the copy changes,
  * and `getTranslations` resolves against a catalogue the request has already read — a microtask, not
  * a round trip, which is the distinction `overview-loading.tsx` draws for a Suspense fallback.
  *
- * **The role namespace stays a literal here**, as it is in `organization-heading.tsx`: two sites in
- * this screen and two more in S-16, so merging it would mean a module `home/` and `access/` both
- * read — a feature-level shared thing, and a bigger decision than this split.
+ * **The role namespace stays a literal here**, as it is at its other readers, so merging it would mean a
+ * module more than one feature reads — a feature-level shared thing, and a bigger decision than this split.
  */
 export async function MembershipRow({ membership }: { readonly membership: AccountMembership }) {
   const [t, tRoles] = await Promise.all([

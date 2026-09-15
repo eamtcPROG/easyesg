@@ -3,6 +3,7 @@
 import { BrandMark, ChromeDrawer, type SwitcherLocale } from '@easyesg/ui';
 import type { Locale } from '@easyesg/i18n';
 import { useSearchParams } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { signOutAction } from '@/features/identity/shared/actions/actions';
@@ -44,9 +45,20 @@ export interface WorkspaceDrawerProps {
   };
   /** The five section names in the reader's language, in the tier's own order. */
   readonly sectionLabels: Readonly<Record<string, string>>;
+  /**
+   * The organization's switcher (task 83.2), at the head of the panel — the compact bar names no organization
+   * (`design_spec.md` UX-2's amendment), so this is where it is. Absent when the session acts for none.
+   */
+  readonly organization?: ReactNode;
 }
 
-export function WorkspaceDrawer({ locale, locales, labels, sectionLabels }: WorkspaceDrawerProps) {
+export function WorkspaceDrawer({
+  locale,
+  locales,
+  labels,
+  sectionLabels,
+  organization,
+}: WorkspaceDrawerProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -69,6 +81,7 @@ export function WorkspaceDrawer({ locale, locales, labels, sectionLabels }: Work
           label: sectionLabels[section.key] ?? section.key,
         }))}
         isActive={(item) => item.href === pathname}
+        organization={organization}
         actions={
           <>
             <Link className={styles.action} href={ROUTES.ACCOUNT_CREDENTIALS}>

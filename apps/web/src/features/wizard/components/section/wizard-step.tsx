@@ -3,6 +3,7 @@ import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { readWizardStep } from '@/server/data/wizard';
 import { TENANT_READ } from '@/server/data/tenant-read';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { readSession } from '@/server/session/session';
 import { periodRoute } from '@/lib/routes';
 import { priorValuesOf } from '../../tools/comparatives';
@@ -47,6 +48,8 @@ export async function WizardStep({
   ]);
 
   if (read.status === TENANT_READ.FORBIDDEN) {
+    // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
+    await redirectToChoiceIfOwed();
     return (
       <Callout intent={CALLOUT_INTENT.ERROR} title={t('forbidden.title')} action={null}>
         {t('forbidden.body')}

@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { readPeriodList } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { ROUTES, newPeriodRoute } from '@/lib/routes';
 import { applyPeriodView, readPeriodView, toPeriodRows } from '../tools/periods';
@@ -32,6 +33,8 @@ export async function PeriodsSection({
 
   let body: ReactNode;
   if (read.status === TENANT_READ.FORBIDDEN) {
+    // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
+    await redirectToChoiceIfOwed();
     body = (
       <Callout
         intent={CALLOUT_INTENT.WARNING}

@@ -1,18 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { POST_SIGN_IN, postSignInTarget } from './post-sign-in';
+import { awaitsOrganizationChoice, POST_SIGN_IN, postSignInTarget } from './post-sign-in';
 import type { AccountMembership } from '@easyesg/contracts';
 
-const membership = (organizationId: string): AccountMembership => ({
+const membership = (organizationId: string, active = false): AccountMembership => ({
   id: `m-${organizationId}`,
   organizationId,
   organizationName: `Org ${organizationId}`,
   role: 'editor',
   joinedAt: 1_787_000_000_000,
-  // `false` is not a filler: this branch runs on a session that has just been created and has
-  // therefore resolved no organization, which is the one state in which every row is unmarked.
-  // `postSignInTarget` branches on the COUNT — §4.3 is navigation — so marking one would suggest
-  // an input it does not read.
-  active: false,
+  // `false` unless a case says otherwise: a session just created has chosen nothing, and among several
+  // memberships that leaves every row unmarked — the state the several arm reads since task 83.3.
+  active,
 });
 
 const RETURN_TO = { href: '/reports/42', locale: undefined };
@@ -30,21 +28,32 @@ describe('postSignInTarget (§4.3)', () => {
   });
 
   it('sends a single membership to home (S-05)', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: [membership('a')], returnTo: null })).toEqual({
+    expect(postSignInTarget({ awaitingSetup: false, memberships: [membership('a', true)], returnTo: null })).toEqual({
       href: POST_SIGN_IN.HOME,
     });
   });
 
-  // `design_spec.md` OQ-6: the choosing is the global-tier switcher's, on S-05 — not a screen of
-  // its own, which is why "several" and "one" share a destination.
-  it('sends several memberships to home as well, where the switcher chooses', () => {
+  // Task 83.3 (`design_spec.md` S-37): the choice is a screen of its own. Until then this arm landed on
+  // S-05 for the global-tier switcher to choose, and this case asserted that.
+  it('sends several memberships with none chosen to choose one (S-37)', () => {
     expect(
       postSignInTarget({ awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo: null }),
+    ).toEqual({ href: POST_SIGN_IN.CHOOSE_ORGANIZATION });
+  });
+
+  /** A held session may already carry a choice — S-35 re-resolving, UX-136's guard — and then there is nothing to ask. */
+  it('sends several memberships to home when the session has chosen one', () => {
+    expect(
+      postSignInTarget({
+        awaitingSetup: false,
+        memberships: [membership('a'), membership('b', true)],
+        returnTo: null,
+      }),
     ).toEqual({ href: POST_SIGN_IN.HOME });
   });
 
   it('honours a deep link when exactly one organization resolves (UX-38)', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: [membership('a')], returnTo: RETURN_TO })).toEqual({
+    expect(postSignInTarget({ awaitingSetup: false, memberships: [membership('a', true)], returnTo: RETURN_TO })).toEqual({
       href: '/reports/42',
       locale: undefined,
     });
@@ -54,14 +63,14 @@ describe('postSignInTarget (§4.3)', () => {
     expect(
       postSignInTarget({
         awaitingSetup: false,
-        memberships: [membership('a')],
+        memberships: [membership('a', true)],
         returnTo: { href: '/reports/42', locale: 'en' },
       }),
     ).toEqual({ href: '/reports/42', locale: 'en' });
   });
 
   /**
-   * The two arms where a preserved intention cannot be honoured. Returning them to a route inside
+   * A preserved intention that cannot be honoured yet. Returning a member of nothing to a route inside
    * `(app)` would land them on a screen that cannot render without an organization — so the branch
    * wins, which is the decision taken 25 Aug 2026.
    */
@@ -71,10 +80,18 @@ describe('postSignInTarget (§4.3)', () => {
     });
   });
 
-  it('ignores a deep link when several organizations are open and none is chosen', () => {
+  /** Several and none chosen can honour it once the reader has chosen, so S-37 carries it (task 83.3). */
+  it('carries a deep link to S-37 when several organizations are held and none is chosen', () => {
     expect(
       postSignInTarget({ awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo: RETURN_TO }),
-    ).toEqual({ href: POST_SIGN_IN.HOME });
+    ).toEqual({ href: '/choose-organization?return=%2Freports%2F42', locale: undefined });
+    expect(
+      postSignInTarget({
+        awaitingSetup: false,
+        memberships: [membership('a'), membership('b')],
+        returnTo: { href: '/reports/42', locale: 'en' },
+      }),
+    ).toEqual({ href: '/choose-organization?return=%2Freports%2F42', locale: 'en' });
   });
 
   /**
@@ -91,6 +108,28 @@ describe('postSignInTarget (§4.3)', () => {
     expect(postSignInTarget({ awaitingSetup: false, memberships: null, returnTo: RETURN_TO })).toEqual({
       href: POST_SIGN_IN.ORGANIZATION_UNAVAILABLE,
     });
+  });
+});
+
+/**
+ * The one reading of *a choice is owed* (task 83.3), which the branch above and the gate on the workspace
+ * and the wizard both take — so the two cannot disagree about it.
+ */
+describe('awaitsOrganizationChoice (S-37)', () => {
+  it('is owed for several memberships with none of them active', () => {
+    expect(awaitsOrganizationChoice([membership('a'), membership('b')])).toBe(true);
+    expect(awaitsOrganizationChoice([membership('a'), membership('b'), membership('c')])).toBe(true);
+  });
+
+  it('is not owed once one of several is active', () => {
+    expect(awaitsOrganizationChoice([membership('a'), membership('b', true)])).toBe(false);
+  });
+
+  /** Not by count alone in the other direction either: nothing to choose among is S-04's, not S-37's. */
+  it('is not owed for one membership or none', () => {
+    expect(awaitsOrganizationChoice([membership('a', true)])).toBe(false);
+    expect(awaitsOrganizationChoice([membership('a')])).toBe(false);
+    expect(awaitsOrganizationChoice([])).toBe(false);
   });
 });
 
@@ -130,13 +169,31 @@ describe('a return path that renders without an organization (task 26.3)', () =>
         memberships: [membership('a'), membership('b')],
         returnTo: { href: '/reports', locale: undefined },
       }),
-    ).toEqual({ href: POST_SIGN_IN.HOME });
+    ).toEqual({ href: '/choose-organization?return=%2Freports', locale: undefined });
+  });
+
+  /**
+   * **The account's own screens need no organization**, so a deep link to one is honoured without a choice
+   * (task 83's parent close): S-37's gate lets them render in this state, and the branch agrees with it.
+   */
+  it('honours a deep link to the account’s own screen without asking for a choice', () => {
+    expect(
+      postSignInTarget({
+        awaitingSetup: false,
+        memberships: [membership('a'), membership('b')],
+        returnTo: { href: '/account/credentials', locale: 'en' },
+      }),
+    ).toEqual({ href: '/account/credentials', locale: 'en' });
   });
 
   /**
    * The narrowing the review asked for (26 Aug 2026). These four render without an organization,
    * so the first version of the predicate — the bare inverse of the session gate — honoured them:
    * `?return=/sign-in` sent someone who had just authenticated back to the sign-in form.
+   *
+   * **The single-membership arm is asserted since task 83.3**, because it still did that: it honoured any
+   * return path at all, and no case here gave it one of these four. Nor is one carried into S-37, where it
+   * would be honoured after the choice instead.
    */
   it.each(['/sign-in', '/register', '/reset', '/set-password'])(
     'refuses to return a signed-in caller to %s',
@@ -145,9 +202,12 @@ describe('a return path that renders without an organization (task 26.3)', () =>
       expect(postSignInTarget({ awaitingSetup: false, memberships: [], returnTo })).toEqual({
         href: POST_SIGN_IN.CREATE_ORGANIZATION,
       });
+      expect(postSignInTarget({ awaitingSetup: false, memberships: [membership('a', true)], returnTo })).toEqual({
+        href: POST_SIGN_IN.HOME,
+      });
       expect(
         postSignInTarget({ awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo }),
-      ).toEqual({ href: POST_SIGN_IN.HOME });
+      ).toEqual({ href: POST_SIGN_IN.CHOOSE_ORGANIZATION });
     },
   );
 
@@ -194,7 +254,7 @@ describe('an account still completing its setup (task 155)', () => {
   /** Unjudged on purpose: whether `/reports/42` is honoured depends on memberships nobody has read. */
   it('carries a deep link into (app) along too, for the branch to judge after setup', () => {
     expect(
-      postSignInTarget({ awaitingSetup: true, memberships: [membership('a')], returnTo: RETURN_TO }),
+      postSignInTarget({ awaitingSetup: true, memberships: [membership('a', true)], returnTo: RETURN_TO }),
     ).toEqual({ href: '/complete-account?return=%2Freports%2F42', locale: undefined });
   });
 });

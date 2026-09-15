@@ -1,6 +1,7 @@
 import { readActiveMembership } from '@/server/data/memberships';
 import { readOrganizationPeriods } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { toOverviewRows } from '../../../tools/overview';
 import { AttentionRegion } from '../regions/attention-region';
 import { EverythingRegion } from '../regions/everything-region';
@@ -72,6 +73,8 @@ export async function OverviewSection() {
   ]);
 
   if (read.status !== TENANT_READ.READY) {
+    // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
+    if (read.status === TENANT_READ.FORBIDDEN) await redirectToChoiceIfOwed();
     return <OverviewUnavailable reason={read.status} />;
   }
 

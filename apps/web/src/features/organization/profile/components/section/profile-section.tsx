@@ -3,6 +3,7 @@ import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { readOrganizationProfile } from '@/server/data/organization-profile';
 import { TENANT_READ } from '@/server/data/tenant-read';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { OrganizationProfileForm } from '../form/organization-profile-form';
@@ -26,6 +27,8 @@ export async function ProfileSection() {
 
   let body: ReactNode;
   if (read.status === TENANT_READ.FORBIDDEN) {
+    // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
+    await redirectToChoiceIfOwed();
     body = (
       <Callout
         intent={CALLOUT_INTENT.WARNING}

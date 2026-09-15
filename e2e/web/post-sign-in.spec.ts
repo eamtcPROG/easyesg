@@ -60,7 +60,7 @@ test('a member of nothing is sent to create an organization', async ({ page }) =
   await page.waitForURL('**/create-organization');
 });
 
-/** The "one" arm. Both "one" and "several" land on S-05; the switcher chooses (OQ-6). */
+/** The "one" arm. "Several, none chosen" is S-37's since task 83.3, in `choose-organization.spec.ts`. */
 test('a member of one organization is sent to home', async ({ page }) => {
   const email = addressFor('one');
   await registerAndVerify(page, email);

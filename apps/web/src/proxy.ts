@@ -4,6 +4,7 @@ import { ACCOUNT_STATUS } from '@easyesg/contracts';
 import { toLocale, type Locale } from '@easyesg/i18n';
 import { routing } from '@/i18n/routing';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
+import { REQUESTED_PATH_HEADER } from '@/lib/requested-path';
 import { completesAccountSetup, issuesSession, requiresSession } from '@/lib/route-access';
 import {
   accessTokenIsStale,
@@ -122,6 +123,12 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   // that does neither still pays nothing, not even an unseal.
   const rotated =
     requiresSession(pathname) || issuesSession(pathname) ? await rotateIfDue(request) : null;
+
+  // **Task 83.3: the address asked for, for S-37's gate**, which renders in a layout and is given no
+  // pathname. Set on the request and before routing, for the rotation's reason above — next-intl clones
+  // `request.headers` downstream — and set rather than appended, so a header of this name sent by the
+  // browser is replaced rather than believed.
+  request.headers.set(REQUESTED_PATH_HEADER, pathname + request.nextUrl.search);
 
   // Locale first: it may return a redirect (bare path → negotiated locale) or a rewrite, and
   // either way it establishes the locale the sign-in redirect below has to preserve.

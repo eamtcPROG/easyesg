@@ -2,6 +2,7 @@ import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { readAccessView } from '../../tools/access';
@@ -42,6 +43,8 @@ export async function AccessSection({
   let body: ReactNode;
   let counter: ReactNode = null;
   if (read.status === ACCESS_READ.FORBIDDEN) {
+    // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
+    await redirectToChoiceIfOwed();
     body = (
       <Callout
         intent={CALLOUT_INTENT.WARNING}

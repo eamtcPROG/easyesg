@@ -96,11 +96,13 @@ export {
   type AccountMenuLanguage,
   type AccountMenuProps,
 } from './navigation/account-menu';
+export { GlobalBar, type GlobalBarProps } from './navigation/global-bar';
+// Task 83.2: the band's organization region, made the control it was drawn as.
 export {
-  GlobalBar,
-  type GlobalBarOrganization,
-  type GlobalBarProps,
-} from './navigation/global-bar';
+  OrganizationSwitcher,
+  type OrganizationSwitcherItem,
+  type OrganizationSwitcherProps,
+} from './navigation/organization-switcher';
 export { SWITCHER_TONE, type SwitcherTone } from './navigation/language-switcher-vocabulary';
 export {
   LanguageSwitcher,

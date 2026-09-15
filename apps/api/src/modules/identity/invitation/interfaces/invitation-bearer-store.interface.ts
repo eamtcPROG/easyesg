@@ -157,7 +157,8 @@ export interface InvitationBearerTransaction {
   /**
    * Points the session at the organization just joined (§12.5.6's task-26.2 row), so S-03's exit —
    * "S-05 in the newly joined organization" — holds for someone who already belonged elsewhere.
-   * The third writer of that column, after 25.4's post-sign-in branch and ahead of 30.1's switcher.
+   * One of that column's three writers, beside 29.1's founding and task 83.1's switch; the
+   * post-sign-in branch selects among memberships and writes nothing.
    *
    * **`accountId` is passed so the write can be scoped to a session that account actually owns.**
    * `identity.session` carries no row-level security — it belongs to an account rather than to a

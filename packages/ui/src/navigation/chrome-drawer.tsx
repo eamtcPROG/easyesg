@@ -59,6 +59,12 @@ export interface ChromeDrawerProps<TItem extends WorkspaceNavItem = WorkspaceNav
    * unreachable, which **UX-76** prohibits without an explicit statement.
    */
   readonly actions?: ReactNode;
+  /**
+   * The active organization and its control, at the head of the panel (task 83.2). **The organization
+   * is the drawer's at this frame** — `design_spec.md` UX-2's amendment moves it out of the compact bar
+   * — so it arrives here or it is unreachable, UX-76's reason again. Rendered, never introspected.
+   */
+  readonly organization?: ReactNode;
 }
 
 export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>({
@@ -70,6 +76,7 @@ export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
   isActive = () => false,
   linkComponent,
   actions,
+  organization,
 }: ChromeDrawerProps<TItem>) {
   const Link = linkComponent ?? Anchor;
   const [open, setOpen] = useState(false);
@@ -102,9 +109,18 @@ export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
            *
            * Re-tapping the section already open closes it too, which a route-change listener would
            * miss: the pathname does not change, and the reader still expects the panel to go.
+           *
+           * **Since task 83.2 a menu is opened from inside the panel** — the organization's switcher —
+           * so two refinements, each the rule above read correctly. The control that **opens** a menu
+           * leaves nothing, so `[aria-haspopup]` is passed over: closing on it would unmount the menu it
+           * just opened. A row **chosen** in that menu leaves, whatever element Radix draws it as, so
+           * `[role^="menuitem"]` counts as an entry — and it arrives here at all only because React
+           * bubbles a portalled menu's events through the tree that rendered it, not the DOM.
            */
           onClick={(event) => {
-            if ((event.target as HTMLElement).closest('a, button')) setOpen(false);
+            const target = event.target as HTMLElement;
+            if (target.closest('[aria-haspopup]')) return;
+            if (target.closest('a, button, [role^="menuitem"]')) setOpen(false);
           }}
         >
           {/* Required by Radix and hidden by design: the wordmark below already names the panel,
@@ -117,6 +133,8 @@ export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
               <X aria-hidden="true" />
             </Dialog.Close>
           </div>
+
+          {organization ? <div className={styles.organization}>{organization}</div> : null}
 
           {items.length > 0 ? (
             <nav aria-label={sectionsLabel}>

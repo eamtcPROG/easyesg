@@ -16,8 +16,24 @@
       "cookies": "Cookie policy"
     },
     "globalBar": {
-      "label": "Application header",
-      "organization": "Active organisation"
+      "label": "Application header"
+    },
+    "organizationSwitcher": {
+      "label": "Active organisation",
+      "create": "Create another organisation",
+      "unsent": "{count, plural, one {One answer has not been sent yet; it is sent before switching.} other {# answers have not been sent yet; they are sent before switching.}}",
+      "confirm": {
+        "title": "Switch organisation with unsent answers?",
+        "object": "{count, plural, one {One answer could not be sent} other {# answers could not be sent}}",
+        "consequence": "The answers stay on this device and are sent once you return to their organisation and open the report here. On another device they will not appear until then.",
+        "retained": "Everything already confirmed as saved stays saved.",
+        "proceed": "Switch anyway",
+        "cancel": "Stay here"
+      },
+      "unreachable": {
+        "title": "The switch did not reach EasyESG",
+        "body": "You are still working in the same organisation. Try again in a moment."
+      }
     },
     "publicHeader": {
       "label": "Site header",
@@ -401,6 +417,16 @@
     }
   },
   "organization": {
+    "choice": {
+      "title": "Choose an organisation",
+      "subtitle": "Your account belongs to several organisations. Choose the one you are working in for this session; you can change it at any time from “Active organisation”, in the header or in the menu.",
+      "listLabel": "Your organisations",
+      "createAnother": "Create another organisation",
+      "unreachable": {
+        "title": "Your choice did not reach EasyESG",
+        "body": "The organisation you chose could not be opened, so nothing has changed. Try again in a moment."
+      }
+    },
     "create": {
       "title": "Set up your organisation",
       "subtitle": "This is the company the report is filed for. You become its administrator and can invite colleagues as soon as it exists.",
@@ -484,7 +510,7 @@
         "heading": "Your organisations",
         "lede": "The organisations you have access to, and the role you hold in each.",
         "active": "Active now",
-        "switchNote": "You view and edit the active organisation’s details under <organization>Organisation</organization>.",
+        "switchNote": "You change the organisation you are working in from “Active organisation”, in the header or in the menu.",
         "unreachable": {
           "title": "We could not load your organisations",
           "body": "The rest of the page works; only this list could not be read.",

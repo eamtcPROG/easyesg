@@ -43,6 +43,9 @@ const SEGMENT = {
   INVITATION: 'invitation',
   // (identity), behind a session — task 155
   COMPLETE_ACCOUNT: 'complete-account',
+  // (app), and in no organization's scope — task 83.3
+  ACCOUNT: 'account',
+  CHOOSE_ORGANIZATION: 'choose-organization',
 } as const;
 
 /**
@@ -73,10 +76,27 @@ export const UNAUTHENTICATED_SEGMENTS = new Set<string>([
  * segment, this is the marketing home" and returned public. Every authenticated route in Romanian
  * would have been reachable with no session — failing open, invisibly, on the one branch no test
  * covered because every test URL was prefixed.
+ *
+ * **And the path alone, since task 83.3.** The proxy hands this a bare pathname, but a return path
+ * arrives with its query — and `/sign-in?return=…` split on `/` alone reads its first segment as
+ * `sign-in?return=…`, which no set names, so the gate called a credential entry point authenticated and
+ * §4.3's branch would honour it as a destination. Found by S-37's exit, whose `/choose-organization?return=…`
+ * read the same way.
  */
 export function routeSegment(pathname: string): string | undefined {
-  const [first, second] = pathname.split('/').filter(Boolean);
-  return isLocale(first) ? second : first;
+  return routeSegments(pathname)[0];
+}
+
+/**
+ * Every segment after the locale, without the query — `routeSegment`'s reading, whole (task 83's parent
+ * close). **Exported for the switch's landing rule**, which reads two segments where the gates read one: its
+ * own copy of this split and of the locale strip was a second place the reading could drift, the defect the
+ * paragraph above records having fixed once already.
+ */
+export function routeSegments(pathname: string): string[] {
+  const [path] = pathname.split(/[?#]/, 1);
+  const segments = path.split('/').filter(Boolean);
+  return segments.length > 0 && isLocale(segments[0]) ? segments.slice(1) : segments;
 }
 
 /** The proxy's gate, and the predicate §4.3's branch reads in the other direction. */
@@ -97,6 +117,39 @@ export function requiresSession(pathname: string): boolean {
  */
 export function completesAccountSetup(pathname: string): boolean {
   return routeSegment(pathname) === SEGMENT.COMPLETE_ACCOUNT;
+}
+
+/**
+ * Is this S-37 — the screen a reader holding several memberships and no choice is sent to (task 83.3)?
+ * The gate never asks it, since S-37 sits outside both groups the gate guards; S-37's own exit does, so a
+ * return path naming S-37 cannot send a reader who has just chosen straight back to choose again.
+ */
+export function choosesOrganization(pathname: string): boolean {
+  return routeSegment(pathname) === SEGMENT.CHOOSE_ORGANIZATION;
+}
+
+/**
+ * Does this address need an organization chosen before it can render (task 83.3)? Asked by S-37's gate,
+ * which sits on `(app)`'s two organization-scoped groups — the workspace and the wizard — and so is only
+ * asked about their addresses.
+ *
+ * **The account's own screens are the exception.** S-28 lives inside `(workspace)` for its chrome and
+ * reads nothing of an organization's, so turning a reader away from it would make changing a password wait
+ * on a choice it has nothing to do with — `design_spec.md` UX-3's amendment keeps the account's screens
+ * where they are for the same reason.
+ */
+export function needsOrganization(pathname: string): boolean {
+  return requiresSession(pathname) && !isAccountScreen(pathname);
+}
+
+/**
+ * Is this one of the account's own screens — the same in every organization (task 83)? **Declared once for
+ * its two readers**: `needsOrganization` above, and the switch's landing rule, which keeps the address across
+ * a switch for the reason the gate lets it render (`design_spec.md` UX-3's amendment). Each held its own
+ * `'account'` until task 83's parent close.
+ */
+export function isAccountScreen(pathname: string): boolean {
+  return routeSegment(pathname) === SEGMENT.ACCOUNT;
 }
 
 /**

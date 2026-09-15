@@ -2,8 +2,11 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  choosesOrganization,
   completesAccountSetup,
   issuesSession,
+  needsOrganization,
+  routeSegments,
   requiresSession,
   SESSION_ENTRY_SEGMENTS,
   SESSION_ISSUING_SEGMENTS,
@@ -41,6 +44,23 @@ describe('requiresSession — the closed-by-default gate', () => {
    *  is authenticated rather than public. */
   it('gates an address the app does not know', () => {
     expect(requiresSession('/en/something-nobody-declared')).toBe(true);
+  });
+
+  /**
+   * **A return path carries its query, and the query is not its segment** (task 83.3). Split on `/` alone,
+   * `/sign-in?return=%2Fhome` read as the segment `sign-in?return=%2Fhome` — named by no set, so gated —
+   * which is the direction that honours a credential entry point as a destination.
+   */
+  it.each(['/sign-in?return=%2Fhome', '/en/sign-in?return=%2Fhome', '/verify?token=abc', '/?x=1', '/en#top'])(
+    'admits %s, whose query is not part of its segment',
+    (pathname) => {
+      expect(requiresSession(pathname)).toBe(false);
+    },
+  );
+
+  it('still gates an authenticated address carrying a query', () => {
+    expect(requiresSession('/reports?filters=state,draft')).toBe(true);
+    expect(requiresSession('/home?arrived=organization')).toBe(true);
   });
 });
 
@@ -189,5 +209,64 @@ describe('completesAccountSetup — S-36, the exception to the setup redirect (t
   /** The link path's password step is served where no session is needed — the account has none yet. */
   it('keeps the link path’s password step reachable without one', () => {
     expect(requiresSession('/register/password')).toBe(false);
+  });
+});
+
+/**
+ * S-37's gate on the workspace and the wizard (task 83.3). What it holds back is every screen an
+ * organization scopes; what it must not is the account's own — S-28 reads nothing of an organization's.
+ */
+describe('routeSegments — the whole reading (task 83’s parent close)', () => {
+  it('answers every segment after the locale, without the query or the fragment', () => {
+    expect(routeSegments('/en/organization/users?filters=role,editor')).toEqual(['organization', 'users']);
+    expect(routeSegments('/organization/users#top')).toEqual(['organization', 'users']);
+  });
+
+  it('answers nothing for the marketing home, in any locale form', () => {
+    expect(routeSegments('/')).toEqual([]);
+    expect(routeSegments('/ru')).toEqual([]);
+  });
+});
+
+describe('needsOrganization — S-37’s gate (task 83.3)', () => {
+  it.each([
+    '/home',
+    '/en/reports',
+    '/reports/42/b1',
+    '/entities/new',
+    '/ru/entities/7/periods/9',
+    '/organization/users',
+  ])('holds %s until an organization is chosen', (pathname) => {
+    expect(needsOrganization(pathname)).toBe(true);
+  });
+
+  it.each(['/account/credentials', '/en/account/credentials'])(
+    'leaves the account’s own screen %s alone',
+    (pathname) => {
+      expect(needsOrganization(pathname)).toBe(false);
+    },
+  );
+
+  it('never holds an address that needs no session', () => {
+    expect(needsOrganization('/sign-in')).toBe(false);
+    expect(needsOrganization('/')).toBe(false);
+  });
+});
+
+/** S-37 itself, which its own exit must not send a reader back to (task 83.3). */
+describe('choosesOrganization — S-37 (task 83.3)', () => {
+  it.each(['/choose-organization', '/en/choose-organization', '/ru/choose-organization'])(
+    'recognises %s in every locale form',
+    (pathname) => {
+      expect(choosesOrganization(pathname)).toBe(true);
+    },
+  );
+
+  it.each(['/home', '/create-organization', '/organization'])('is not %s', (pathname) => {
+    expect(choosesOrganization(pathname)).toBe(false);
+  });
+
+  it('needs a session, so the proxy gates it and rotates for the read it makes', () => {
+    expect(requiresSession('/choose-organization')).toBe(true);
   });
 });

@@ -4,6 +4,7 @@ import { EntityRecordForm } from '@/features/entities/components/form/entity-rec
 import styles from '@/features/entities/components/styles/entities.module.css';
 import { readEntityRecord } from '@/server/data/entities';
 import { TENANT_READ } from '@/server/data/tenant-read';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 import { ROUTES } from '@/lib/routes';
@@ -42,6 +43,8 @@ export default async function EntityRecordPage({
   ]);
 
   if (read.status === TENANT_READ.FORBIDDEN) {
+    // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
+    await redirectToChoiceIfOwed();
     return (
       <div className={styles.screen}>
         <Callout

@@ -1,20 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { GlobalBar } from './global-bar';
 import { GLOBAL_BAR_TONE } from './global-bar-vocabulary';
 
 /**
  * The band's two renderings, which are the two §8.1 states it has (task 30.1).
  *
- * Both are reachable in a browser, and neither is cheap there: the second needs an account holding
- * several memberships with no stated preference, or an API that fails only for the layout's read.
- * As a component spec they are two assertions.
+ * Both are reachable in a browser, and neither is cheap there: the second needs an account with no
+ * organization resolved, or an API that fails only for the layout's read. As a component spec they
+ * are two assertions.
  *
- * The organization region's accessible naming is the interesting one. UX-2 requires the active
- * organization to be *visible*, and a company name alone in a banner does not tell a screen-reader
- * user that it is the scope everything below is filtered by.
+ * **Since task 83.2 the organization region is a slot the app's switcher fills**, so what is asserted
+ * is that the band carries it inside its landmark; the switcher's own naming is
+ * `organization-switcher.spec.tsx`'s. That the region is absent below the medium frame is a stylesheet
+ * rule jsdom cannot see, and `e2e/web/organization-switcher.spec.ts` holds it at 390.
  */
-const bar = (organization?: { label: string; name: string }) =>
+const bar = (organization?: ReactNode) =>
   render(
     <GlobalBar
       label="easyesg"
@@ -25,24 +27,26 @@ const bar = (organization?: { label: string; name: string }) =>
   );
 
 describe('GlobalBar', () => {
-  it('names the active organization, with its role stated for a screen reader', () => {
-    bar({ label: 'Active organization', name: 'Brutăria Lina SRL' });
+  it('carries the organization control it is given, inside the banner', () => {
+    bar(<button type="button">Active organization: Brutăria Lina SRL</button>);
 
-    // One element carrying both halves: the label is clipped, not removed, so it is in the
-    // accessibility tree and out of the layout.
-    expect(screen.getByText('Active organization')).toBeInTheDocument();
-    expect(screen.getByText('Brutăria Lina SRL')).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toContainElement(
+      screen.getByRole('button', { name: 'Active organization: Brutăria Lina SRL' }),
+    );
   });
 
   it('renders brand and actions with no organization region when none is resolved', () => {
     bar();
 
     // S-04's own artboard: a verified account belonging to nothing sees exactly this. The same
-    // rendering covers the failed membership read and the unchosen-preference state — the chrome
-    // never guesses a name, and never fails the screen it frames.
+    // rendering covers the failed membership read and S-37's choosing — the chrome never guesses a
+    // name, and never fails the screen it frames.
     expect(screen.getByRole('link', { name: 'easyESG' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Account' })).toBeInTheDocument();
-    expect(screen.queryByText('Active organization')).toBeNull();
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    // The region is absent, not merely empty: the brand stands alone in its half of the band, with no divider
+    // beside it. A count of buttons cannot see an empty wrapper or a divider hidden from assistive technology.
+    expect(screen.getByRole('link', { name: 'easyESG' }).parentElement?.children).toHaveLength(1);
   });
 
   it('is a banner landmark, so the tier is skippable rather than read on every screen', () => {

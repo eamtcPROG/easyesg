@@ -9,14 +9,14 @@ component that only works in one of them is a defect here, not a variant.
 `'use client'` vocabulary rule, the `Slot` rule, UX-89's "reuse or add to the inventory", the four
 homes of state — it is written at root because it holds for `apps/web` and `apps/admin` too, and
 restating it here would create the second copy that drifts. This file carries what is true of
-*these 53 components*: where things are, what has already bitten someone, and what finishing looks like.
+*these 54 components*: where things are, what has already bitten someone, and what finishing looks like.
 
 ## Current state
 
-53 components in nine folders, 28 spec files, `src/styles/tokens.css` at 460 lines — **light and
+54 components in nine folders, 29 spec files, `src/styles/tokens.css` at 460 lines — **light and
 dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
 schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
-`.spec.ts` rather than a `.spec.tsx` and so is *not* in the 28: it renders nothing, it parses the
+`.spec.ts` rather than a `.spec.tsx` and so is *not* in the 29: it renders nothing, it parses the
 stylesheet. Not every
 component has its own spec — `forms/forms.spec.tsx` covers several together — so per-file absence
 is not itself a gap.
@@ -27,7 +27,7 @@ is not itself a gap.
 | `form/` | 11 | The presentational controls — `value`/`onChange`/`ref`, no form library |
 | `forms/` | 8 | The react-hook-form binding. **A separate entry point** — see the traps |
 | `feedback/` | 4 | Banner, Callout, EmptyState, ConsequenceDialogue |
-| `navigation/` | 8 | GlobalBar — the console's band too, through a tone — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
+| `navigation/` | 9 | GlobalBar — the console's band too, through a tone — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, task 83.2's OrganizationSwitcher, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
 | `data-display/` | 4 | DataTable, StatusChip, and task 143's EnrolmentCode with its loading arm |
 | `disclosure/` | 1 | DisclosureField — the anatomy every B1–B11 module reuses (task 36.1) |
 | `domain/` | 5 | ReportingPeriodPicker, SaveStateIndicator, VersionPinIndicator, and §6.10's two from task 142 — UsageCounter beside an action, EntitlementGate after a refused one |
@@ -58,7 +58,7 @@ something quiet, and a stale `dist/` is one failure mode this package cannot hav
 
 ```
 src/
-├─ index.ts        The barrel — 55 exports. `@easyesg/ui`
+├─ index.ts        The barrel — 56 exports. `@easyesg/ui`
 ├─ forms/index.ts  The react-hook-form binding. `@easyesg/ui/forms`, NOT in the barrel
 ├─ styles/         tokens.css — reached as `@easyesg/ui/src/styles/tokens.css`
 ├─ archetypes/     The nine §4.6 page templates. README.md is the map
@@ -127,7 +127,7 @@ src/
   Server Component as `undefined`, a button in the wrong colours, every gate green). When you add a
   vocabulary, add the sibling module — not an `as const` at the top of the component.
 
-- **26 of the 53 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
+- **27 of the 54 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
   or a handler of its own. `Button` carried it from task 20 without needing it, and the day it
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never
@@ -154,6 +154,8 @@ src/
   children across the boundary. No syntax selector can see that. Safe today only because both its
   callers are Client Components: `apps/web/src/shared/account-corner.tsx`, and since task 67.1 the
   console's `realm/components/chrome/console-account.tsx`, in an app with no server tier at all.
+  `organization-switcher.tsx`'s `closingItem` is the same gap since task 83.2; its one caller, `apps/web`'s
+  `organization-corner.tsx`, is a Client Component.
 
 ## Before you add a component
 

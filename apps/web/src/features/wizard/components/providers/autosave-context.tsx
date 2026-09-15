@@ -3,7 +3,14 @@
 import type { SaveState } from '@easyesg/ui';
 import { createContext, use, useMemo, useState, type ReactNode } from 'react';
 import { browserPendingWriteStore, pendingWriteScope, useAutosave } from '@/client/autosave';
-import { hasUnsynced, saveStateOf, unsyncedCount, type AutosaveState } from '../../tools/autosave-state';
+import { useReportUnsentWork, type UnsentWork } from '@/client/unsent-work/unsent-work';
+import {
+  flushIsBlocked,
+  hasUnsynced,
+  saveStateOf,
+  unsyncedCount,
+  type AutosaveState,
+} from '../../tools/autosave-state';
 
 /**
  * S-07's draft-integrity state, in one place every region of the step reads from (task 35.2).
@@ -62,6 +69,14 @@ export function AutosaveProvider({
     }),
     [state, change, retry, durable],
   );
+
+  // Task 83.2: the step's standing, told to the `(app)` layout's registry, so an organization switch in
+  // the global tier sends these answers first or asks before leaving them (UX-3, UX-37). Memoized over
+  // primitives, because the state object moves on changes the registry has no interest in.
+  const unsynced = unsyncedCount(state);
+  const blocked = flushIsBlocked(state);
+  const unsentWork = useMemo<UnsentWork>(() => ({ unsynced, blocked, retry }), [unsynced, blocked, retry]);
+  useReportUnsentWork(unsentWork);
 
   return <AutosaveContext.Provider value={value}>{children}</AutosaveContext.Provider>;
 }

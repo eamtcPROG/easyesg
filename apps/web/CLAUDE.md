@@ -12,7 +12,7 @@ every screen. Cite them; do not re-derive them.
 
 Identity, organization, periods, reports, entities and the wizard are live; the calculator,
 validation, preview and export, notifications, checkout and billing and the public tier are the
-sixteen addresses `AddressNotice` answers for. What exists: 45 page routes across six route groups,
+sixteen addresses `AddressNotice` answers for. What exists: 46 page routes across six route groups,
 7 layouts, a not-found boundary, 4 route handlers, the next-intl wiring, 15 feature folders (eight built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
@@ -24,7 +24,7 @@ the seam it sits on rather than by the task that built it.
 
 **Transport decision (task 20):** unauthenticated identity calls travel by **Server Action** —
 the Next server tier calls the public API as the ordinary client AD-9 says it is.
-`src/server/api/api-client.ts` is the full client seam: `api.get / getList / post / patch / delete`,
+`src/server/api/api-client.ts` is the full client seam: `api.get / getList / post / put / patch / delete`,
 each returning one `ApiOutcome<T>` (envelope unwrapped — `messages[]` included, because
 `WARNING` is how AD-5's `allow_with_warning` reaches a caller — problem+json as received,
 202/204 as Ok-with-no-value, network/timeout/gateway failures as `unreachable`). List queries
@@ -114,7 +114,9 @@ The one interim this left — the `(app)` layout's `SessionStrip`, carrying sign
 global tier existed — is **gone since task 30.1**, deleted rather than left dead.
 
 **§4.3's post-sign-in branch** (task 25.4). `features/identity/shared/tools/post-sign-in.ts` holds the
-rule — none → S-04, one → S-05, several → S-05 where the switcher chooses (OQ-6) — and
+rule — none → S-04, one → S-05, several → S-37 until one is chosen and S-05 after (task 83.3,
+`design_spec.md` S-37; `shared/organization-choice-gate.tsx` answers the same state on any workspace or
+wizard address, reading the proxy's `REQUESTED_PATH_HEADER` to carry it) — and
 `server/session/post-sign-in.ts` the seam that reads `/memberships` and applies it. Both sign-in flows exit
 through it; a provider session is the same session (UC-05). Three things to know before touching
 it: **`?return=` is honoured where the destination can actually render** — refined 25 Aug 2026 by
@@ -186,8 +188,8 @@ send it.
 ### The chrome
 
 **§4.2's global tier** (task 30.1). `shared/global-tier.tsx` is a Server Component in the
-`(app)` layout — so it is on every authenticated screen including the two outside `(workspace)`,
-S-04 and S-35, where it renders its designed empty state and names no organization. It resolves
+`(app)` layout — so it is on every authenticated screen including the three in no inner group,
+S-04, S-35 and S-37, where it renders its designed empty state and names no organization. It resolves
 every string with `getTranslations` and hands them down, because `shared/account-corner.tsx` is a
 Client Component only for `usePathname`/`useSearchParams` (a language choice is a link to this
 address in another locale) and giving it `useTranslations` would put the `chrome` catalogue in the
@@ -196,10 +198,15 @@ same collection in one render pass.
 
 Three things to know before touching it:
 
-- **The organization region is a plate, not a switcher.** Switching writes the session and its route
-  is **task 83**'s; the band names what `GET /memberships` marks `active`, which is `AuthGuard`'s own
-  `selectActiveMembership` answer projected onto the read. Never derive it here — "the only
-  membership" is right until someone holds two.
+- **The organization region is the switcher since task 83.2.** `features/organization/switcher/` holds
+  it: the band and the compact drawer each draw `OrganizationCorner` over `packages/ui`'s
+  `OrganizationSwitcher`, and the flow — unsent answers sent first or asked about (UX-3, UX-37), the
+  write, the landing and a refusal below the band — lives once in `OrganizationSwitchProvider` at the
+  `(app)` layout, because the drawer closes on a choice and would unmount anything inside it. The
+  landing's role check is the api's (`switch-landing.ts` names the read each screen makes), and the
+  wizard reports what it holds unsent through `client/unsent-work/`. The band still names only what
+  `GET /memberships` marks `active`, which is `AuthGuard`'s own `selectActiveMembership` answer
+  projected onto the read. Never derive it here — "the only membership" is right until someone holds two.
 - **Sign-out submits explicitly.** The menu item is a `type="submit"` button associated by `form=`
   with a form outside the Radix portal, and its `onClick` cancels the default and calls
   `requestSubmit()`. Without that the menu's close unmounts the button before the click's default
@@ -309,10 +316,10 @@ src/
 ├─ app/            routes only, thin. No logic, no data access
 ├─ features/       15 domains, mirroring apps/api/src/modules names
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
-├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter)
+├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter), S-37's gate
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
-├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), polling
-└─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths
+├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), unsent-work, polling
+└─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths, requested-path
 ```
 
 Route groups carry no URL segment, which is the whole reason there are six. **The table is the
@@ -325,7 +332,7 @@ issues a session and is never gated:
 | `(public)` | None. **The only zone where `"use cache"` is legal** (§14.2) | Marketing, legal, help |
 | `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03, S-36 |
 | `(identity)/(session-issuing)` | None of its own. **UX-136's gate, once for the group** (task 112) — membership of the directory *is* what makes a screen refuse a caller who already holds a session | S-01 sign in and its factor step, S-01 register |
-| `(app)` | Global tier | S-04 and S-35 — the two authenticated screens in no inner group |
+| `(app)` | Global tier | S-04, S-35 and S-37 — the three authenticated screens in no inner group |
 | `(app)/(workspace)` | Global tier + workspace tier | S-05, S-06, S-13…S-28 |
 | `(app)/(wizard)` | Global tier only; module rail replaces the workspace tier | S-07…S-12 |
 
@@ -803,10 +810,12 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **82 files here are Client Components** (14 Sep 2026: thirteen under
+  **87 files here are Client Components** (15 Sep 2026: thirteen under
   `organization/access/components/` since task 142 split the invite panel into its arms, ten under
   `credentials/components/`, seven under `shared/`, seven under `identity/setup/components/` since
-  task 155's S-36, one under `identity/shared/components/` since its second review shared the password field, the rest
+  task 155's S-36, one under `identity/shared/components/` since its second review shared the password field, one under
+  `organization/choice/components/` since task 83.3's S-37, three under `organization/switcher/components/`
+  and one under `client/unsent-work/` since task 83.2's switcher, the rest
   across the wizard's controls and the two record forms' sections and task 67.9's support-access banner's two control sets), so the three
   cases above are live questions in every one of them — `access-context.tsx` is the worked example,
   where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two

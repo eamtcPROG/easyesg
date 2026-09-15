@@ -20899,3 +20899,418 @@ in the unit suite). `vercel-react-best-practices` (`async-parallel`: translation
 
 **Not run**: `gates:clean` and the review agents — the change reaches `apps/web`'s route files and one guide sentence,
 and the owner's standing rule is the gates a change reaches.
+
+## Task 83.1 — The switch route, and the three decisions its screens needed first · 2026-09-15
+
+The next row in Stage 1's order — Batch B runs 155 → 83 — and taken as a group rather than a row: 83.2's own
+description leaves UX-3's landing rule to be decided, and reading the Workspace and Components artboards against
+§4.2 and §4.3 surfaced two more questions whose answers change what 83.2 builds. So both batches went to the
+owner before the route was written, and the answers were written into the documents that own them before any code.
+
+### Decided, and where it is written
+
+- **UX-3's equivalent screen is the same section.** An account's own screen stays; a section's own screen stays
+  where the role held in the new organization may open it; a record's screen, or a form creating one, goes to its
+  section's screen; anything else, and a section that role may not open, goes home. **The api answers whether the
+  role opens it** — the owner chose that over the same mapping with no role check and over *always home*, and it
+  keeps a second copy of `route-permissions.ts` out of the web tier. `design_spec.md` UX-3, amended.
+- **At compact width the organization is the drawer's.** Offered the artboard's band under the bar, the owner put
+  the name and the switch control in the workspace drawer; asked again, because UX-2 says *visible at all times*,
+  whether the bar keeps the name too, the owner answered *drawer only*. UX-2 is amended with what that gives up, and
+  §4.2 carries a note beside the tier table.
+- **§4.3's *Choose organization* step is a screen, and it answers the state wherever it is met.** S-37, appended to
+  §4.4 with a §5 entry and a traceability row, chosen over a *choose an organization* prompt in the bar; *wherever
+  met* chosen over *only after sign-in*, so a choice left stale by a removal reaches it too. **Task 83.3 is
+  appended for it** — a sub-step of its own because it closes without 83.2's chrome — and 83.2's row records the
+  first two decisions and the draft note's wording.
+- `architecture.md` §12.5.6's task-83 row carries all three, with the route's implementation calls below.
+
+### Routine calls, stated
+
+- **One refusal for three causes** — a membership never held, one held as `removed`, an id naming no
+  organization — as `404 not-found`, which is `MemberNotFoundError`'s reasoning: telling them apart would say
+  which organization ids exist. A new error class, `MembershipNotHeldError`, because the sentence differs; no new
+  problem type, because the web tier's reading of the three does not.
+- **The write is the check.** One conditional `UPDATE` rather than a read and then a write, so a removal cannot
+  land between them. `selectActiveMembership` already degrades a choice that goes stale afterwards, so the read
+  side needed no change.
+- **Its own transaction, binding only `app.current_user`.** The request's transaction may have the organization
+  being left bound, and while one is bound only its memberships are readable (task 130) — so on the request's runner
+  every switch *away* would be refused. That sentence is a claim a mutant carries, below, not only a docblock.
+- **A port of its own, `SessionOrganizationStore`,** rather than a method on `AccountMembershipStore`: that
+  port's reader lists memberships and never writes a session. They share the transaction discipline and nothing else.
+- **In `identity/membership`**, which owns FR-12 by its module header; `SessionOrganizationController` beside
+  `MembershipsController`, at the path task 30.1's row fixed. **`204`, and nothing reissued**: the access token
+  names the session and nothing of authorization consequence (AD-12).
+- **No contract alias yet.** Nothing reads the request type until 83.2, and an alias with no reader is a name
+  nobody holds to the generated schema.
+
+### Searched
+
+*The post-sign-in branch writes the active organization* — the claim `task.md`'s split corrected on task 83's own
+row on 12 Sep and nowhere else. A grep across `docs/`, `apps/api/src`, `apps/web/src` and `packages/` found it
+five times. Three were living text and are corrected: `architecture.md` §6.5's paragraph on the session record,
+`select-active-membership.ts`, and `invitation-bearer-store.interface.ts`, which also called acceptance *the third
+writer* of a column with three. Two are left: `1787702400000-identity-membership.ts`'s comment, because a
+migration is frozen history, and §12.5.6's task-26.2 row, a dated record of what its author believed that day.
+`memberships.controller.ts` now names the controller the route lives on.
+
+### Skills, read against the diff
+
+`nestjs-best-practices`: `db-use-transactions` — one statement, in a transaction because `set_config(..., true)`
+lasts only for one; `security-validate-all-input` — `@IsUUID` on the one field, the global pipe's whitelist refusing
+the rest, and the suite's two `400` cases; `error-throw-http-exceptions` declined by name, the refusal being a
+`DomainError` as `apps/api/CLAUDE.md` requires. `one-idea-per-file`: `file-one-behaviour-api` — the port, the
+adapter, the use case, the controller and the DTO a file each, the refusal joining `membership.errors.ts` because a
+module's refusals are a vocabulary; `reason-docblock-carries-the-why` — no docblock counts anything outside its own
+file; `reason-measure-structural-claims` — the mutants below.
+
+### Verification
+
+- `pnpm --filter @easyesg/api typecheck` and `pnpm lint`: clean.
+- `pnpm --filter @easyesg/api test`: 126 suites, 1,072 tests — two new, the use case's.
+- `pnpm e2e`: 46 suites, 1,205 tests, none failing; the log carries no unhandled rejection and no Nest dependency warning. The route matrix drove the new route against every actor from its one line in `route-permissions.ts`.
+- `pnpm openapi:check`, on a staged tree: green — `v1.json` gains one path and one schema, 89 paths, and the regenerated client matches.
+- `pnpm docs:check`: 40 claims green, the root file's path count moved from 88 to 89.
+- **Seven mutants, each of which bit on the case written for it** — a source file changed in place, the one suite that guards it run, the file restored and compared by SHA-256, after a baseline run of the suite at 16 of 16. The status predicate ignored turned *refuses a membership that was removed* red; the session id dropped from the predicate, *moves only the session that asked*; the membership check removed, the three refusal cases; the organization being left bound, as the request's own runner binds it, *switches away from the organization the request is bound to* — and the idempotent case, which starts from a bound Alpha; no account bound, the six cases that need a membership found. In the use case, the session and the account swapped turned the store-input case red, and the refusal never raised, the not-found case. **The first run reported all seven as missed**, with the right failure counts: its parser read `✕` lines, which a piped jest never prints. The parser was changed to read the `●` failure headers and the run repeated; the names above are the second run's.
+
+**Not run, and why.** `pnpm e2e:worker`: no consumer changed. `pnpm migrations:check`: no migration — the write uses
+task 25.1's column under the session-persistence migration's existing column grant. `pnpm e2e:web`: nothing in
+`apps/web` changed, and the contract gained a path and a schema no screen reads yet. `gates:clean` and the three
+reviews belong to task 83's parent close.
+
+## Task 83.3 — S-37, and the gate that meets its state wherever it is met · 2026-09-15
+
+**Taken before 83.2, though numbered after it.** The switcher's browser journey needs an account holding
+several memberships to reach an organization it has chosen, and until S-37 existed the only way there was
+writing the session's column from a fixture. S-37 needs 83.1's route and nothing of 83.2's chrome, which is
+what made it a sub-step of its own. A number is an identifier here, not an order.
+
+### What shipped
+
+- **S-37 at `/choose-organization`**, in `(app)` beside S-04 and S-35: a shell; a section that asks §4.3's
+  branch whether the screen applies and redirects where it does not; and a list whose every row is the
+  inventory's `Button` holding a name over a role, in S-05's row idiom. `features/organization/choice/` holds
+  `actions/`, `components/` and `tools/` — `organization/`'s per-screen split gaining its fifth screen.
+- **§4.3's branch**: several memberships and none chosen go to S-37, carrying a deep link into `(app)` as
+  `?return=`; several with one chosen go to S-05 or the deep link. `awaitsOrganizationChoice` is the one
+  reading of *a choice is owed*, taken by the branch and by the gate, and it reads the api's `active` marker.
+- **The gate**, `shared/organization-choice-gate.tsx`, rendered first in the workspace's layout and the
+  wizard's, outside every boundary so its redirect precedes the first flush. It learns the requested address
+  from a request header the proxy now stamps, `REQUESTED_PATH_HEADER` — a layout is given no pathname — and
+  it leaves the account's own screens alone (`needsOrganization`), as UX-3's amendment does.
+- **The choice**: `chooseOrganizationAction` sends `PUT /session/organization` through a new `put` verb,
+  revalidates the `(app)` layout and redirects by `choiceExit` — the return path where it needs a session and
+  is neither S-37 nor S-36, S-05 otherwise. A refusal is shown in the api's words and the list read again.
+- **`organization.choice`** in three catalogues, each authored in its own language; **`SwitchActiveOrganizationRequest`**,
+  the alias 83.1 held back until it had a reader.
+
+### Two defects found on the way, and fixed
+
+- **`routeSegment` read a first segment with its query attached.** `/sign-in?return=…` read as the segment
+  `sign-in?return=…`, which no set names, so `requiresSession` called a credential entry point authenticated.
+  The proxy never met it, because it passes a bare pathname; a return path carries its query, and the branch
+  now judges return paths with `requiresSession`. `choice-exit.spec.ts`'s `/en/choose-organization?return=…`
+  case is what went red. It now splits on `?` and `#` first, and `route-access.spec.ts` holds five queried paths.
+- **The single-membership arm honoured any return path**, `?return=/sign-in` among them: the four credential
+  entry points were asserted against the member-of-nothing and several arms and never against this one. It
+  now honours a return path only where it needs a session, and the case asserts all three arms.
+
+### Routine calls, stated
+
+- **The subtitle does not say the choice can be changed from the switcher**, though S-37's §5 entry does. It is
+  not true until 83.2 turns the plate into a control, and a note stating a guarantee nothing implements is what
+  task 30.1 left out of the band. 83.2 owes that clause.
+- **S-37's States line is amended**: a membership list that cannot be read is S-35's, not this screen's — the
+  section asks the branch, and the branch answers S-35 for it. The line had described a state no reader reaches.
+- **No `loading.tsx`**: the page waits on the list the global tier above has already read.
+- **Words resolved in the section and handed to the list**, so the list's spec needs no catalogue.
+- **`section-pass-what-was-read` over `server-serialization`**: the list takes the memberships as read. It is a
+  handful of rows, where the second rule's size argument has nothing to act on.
+- **No `useCallback` on the choose handler**: it goes to a `Button` nothing memoizes, which `apps/web/CLAUDE.md`
+  names as the case where a handler's identity observes nothing.
+
+### Searched
+
+*Every statement of where several memberships land*: `post-sign-in.ts`'s docblock and `POST_SIGN_IN`, its spec,
+`apps/web/CLAUDE.md`'s branch paragraph and `e2e/web/post-sign-in.spec.ts`'s one-arm comment — all changed.
+S-05's `memberships-switch-note.tsx` still points at S-15, and stays for 83.2, whose row owns it. *Every
+judgement of a path split on `/` alone*: `routeSegment` only — `splitLocalePrefix` already splits the query off first.
+
+### Skills, read against the diff
+
+`vercel-react-best-practices`: `async-parallel` (the section's five reads in one `Promise.all`, the gate's three);
+`server-serialization` and the memoization rule, declined above with their reasons. `one-idea-per-file`:
+`shell-composes-only` (the page), `section-reads-parts-render`, `pure-logic-leaves-the-component` (`choiceExit` and
+`awaitsOrganizationChoice`, each with a spec), `reason-docblock-carries-the-why`. `one-kind-per-folder`:
+`screen-three-kinds`, `folder-files-or-folders` (a files-only `components/`, held by the folder-shape spec),
+`shared-admission-test` (the gate names its two readers), `shared-namespace-declared-once` (`choice-messages.ts`).
+`vercel-composition-patterns`: no boolean prop added — `Button`'s `className` is additive.
+
+### Verification
+
+- `pnpm --filter @easyesg/web typecheck` and `pnpm lint`: clean.
+- `pnpm --filter @easyesg/web test`: 59 files, 684 tests — `choice-exit.spec.ts` and `organization-choices.spec.tsx` new, `post-sign-in.spec.ts` and `route-access.spec.ts` extended; the folder-shape spec holds `organization/choice/`.
+- `pnpm --filter @easyesg/admin test` (29 files, 246 tests) and `pnpm routes:check`: green — the contract alias is a `packages/*` change, so admin's row runs. The contracts package has neither a test script nor a build step: its `main` is its source.
+- `pnpm e2e:web`, all three projects: **213 of 214 on the first run.** The one red was `home.spec.ts`'s several-memberships case, whose helper waited for `/home` — the landing this sub-step replaced with S-37. Every other suite that seeds several memberships for one account passed, which is the shape search this failure asked for. The helper now chooses on S-37, and the case asserts the chosen organization's row marked *Activă acum* and the other's not, where it had asserted only that both names appeared. Rerun with `choose-organization.spec.ts`: 13 of 13. The full run's server log carries the known `destination stream closed early` (digest `2667547900`) and the rerun's nothing.
+- `pnpm docs:check`: 40 claims green — `page.tsx` routes 45 → 46, Client Components 82 → 83.
+- **Eleven mutants, each of which bit on the case written for it**, every file restored and compared by SHA-256. Nine at unit level: the path read with its query attached turned the five queried-path cases and S-37's queried exit red; the account's screens held by the gate, both credentials cases; a choice read by count alone, both cases resting on `active`; the resolved arm honouring any return path, and the several arm carrying one to S-37, each the four credential entry points; `choiceExit` sending a reader back to S-37, and into S-36, each its refusal; the list not read again after a refusal, and its rows left open while a choice is on its way, each its case. Two in the browser, each on its own build: the proxy stamping no requested address turned the gate journey and the stale-choice journey red, since both lose their `?return=`; the gate missing from the wizard's layout turned the gate journey red at the report's step.
+- **Three runs that ran nothing are recorded as such.** Playwright's `--project` is variadic, so file filters placed after it were read as project names: the first rerun and both browser mutants exited with *project not found* before a test ran, and the mutant script, whose parser also read `✘` lines a piped run never prints, logged the two as missed. Both are fixed, and the script now refuses a run that reports no summary rather than scoring it.
+
+**Not run, and why.** `pnpm e2e` and `pnpm e2e:worker`: nothing in `apps/api` changed. `gates:clean` and the three
+reviews belong to task 83's parent close.
+
+## Task 83.2 — The switcher, and a flow that outlives the menu it starts in · 2026-09-15
+
+The last of task 83's three sub-steps, taken after 83.3 so its journeys could start from a real sign-in
+with two memberships rather than from a session column written by a fixture. Every decision it needed was
+recorded before 83.1: UX-3's equivalent screen, the compact frame's drawer, and the draft note's wording.
+
+### What shipped
+
+- **`OrganizationSwitcher`** in `packages/ui`'s navigation folder — §11.5's entry, drawn from the Components
+  specimen: a trigger naming the active organization; a menu with an optional note, one radio row per
+  organization (its name over the role held there, `aria-checked` and a check on the current one), and a
+  closing entry to create another. It takes `LanguageSwitcher`'s `SWITCHER_TONE`, whose two surfaces are its
+  two: the band, and the drawer's light panel.
+- **`GlobalBar`'s organization region is a slot**, and task 30.1's plate is gone with its `GlobalBarOrganization`
+  type. Below 640px the region is not drawn, per UX-2's amendment. **`ChromeDrawer` gains an organization
+  block** at the head of its panel.
+- **The flow lives once, in `OrganizationSwitchProvider` at the `(app)` layout.** The choice is a handler; a
+  choice made while answers are unsent waits for them, and one made while they cannot go opens UX-37's
+  dialogue in the wizard's own words. `switchOrganizationAction` writes the session, asks the landing screen's
+  own read — home on a permission refusal — revalidates the layout and **answers the landing**, which the
+  provider navigates to in its own transition. A refusal is shown below the band until the next choice or the
+  next screen. `switch-state.ts` is the reducer,
+  `switch-landing.ts` the rule, each with a spec.
+- **`client/unsent-work/`**, a registry the wizard's `AutosaveProvider` reports into — how many answers wait,
+  whether sending them is stuck, and a retry — with `flushIsBlocked` beside `canFlush` in `autosave-state.ts`.
+- **S-05's switch note** names the organization menu rather than linking to S-15, and **S-37's subtitle** gains
+  the clause 83.3 held back: the choice can be changed from that menu. Both now state something true.
+
+### Why the flow is not in the switcher
+
+**The drawer closes the moment a row is chosen, and the menu does too.** A flow held by either would be
+unmounted with its wait, its question and its refusal before the api had answered. So the switcher only hands
+over a key, and the provider — above the band, the drawer and the screen — carries the choice through. That
+also fixed where a refusal can be said: below the band, not in a menu that has already gone.
+
+**`ChromeDrawer`'s close rule needed two refinements to hold a menu at all**, each the existing rule read
+correctly. A control that opens a menu is not a destination, so `[aria-haspopup]` is passed over; a menu row
+is one, whatever element Radix draws it as, so `[role^="menuitem"]` counts — and it reaches the panel's handler
+only because React bubbles a portalled menu's events through the tree that rendered it. The drawer's spec
+asserts both against the real switcher, not a stand-in, because Radix's behaviour is what the rule reads.
+
+### Found on the way
+
+- **The switch redirected, and the switcher stayed busy after every switch that had landed.** The full browser
+  run was 217 of 218, and the red was the compact journey: it reopened the drawer onto a trigger naming the old
+  organization with `aria-busy` still set, while the screen behind it already named the new one. Next 16.3 hands a
+  redirecting action's caller a *rejected* promise so that its `RedirectBoundary` remounts the calling component —
+  the installed `server-action-reducer.js` says so beside the `reject`, and Context7's Next.js material agrees. The
+  caller here is the provider in the `(app)` layout, which no such remount reaches, so its transition never ended.
+  The wide journeys were green only because they checked the switcher's name and never whether it had stopped
+  being busy. **The action now answers the landing** and the provider navigates in a transition marked again after
+  the `await`; the provider spec asserts pending ends, and every browser journey asserts the trigger is no longer
+  busy. S-37's choice keeps its redirect, because S-37 unmounts on the way out, and its two comments that said a
+  redirecting action returns `undefined` to its caller are corrected. **Searched**: every client caller awaiting a
+  redirecting action inside a transition — S-36's steps and sign-out, sign-in, the invitation, S-37 — and each one
+  unmounts on the navigation it causes; the global tier's two sign-outs submit form actions.
+- **Radix's `onValueChange` fires for a click on the checked radio row.** The switcher's spec assumed otherwise
+  and went red; the component now compares the key before handing it over, and its docblock says so.
+- **`packages/ui` cannot import `react-dom`.** The drawer spec's first draft built a fake portalled row with
+  `createPortal`, which pnpm's strict resolution refused — the reason the spec uses the real switcher.
+- **`ConsequenceDialogue` is an `alertdialog`**, not a `dialog`; the provider spec's first query missed it.
+- **Lint refused `sub === 'users'`** in the landing rule; its segments are now a file-internal `as const`.
+
+### Routine calls, stated
+
+- **Probes for every section**, not only the administrator's two. The reports and entities reads admit every
+  role today, but the owner's decision was that the api answers, and a probe skipped for a section that admits
+  everyone is a role table by omission.
+- **The query is not carried across a switch**: a filter over one organization's reports says nothing about another's.
+- **The note's count is not pinned in the browser**: B1's arrival default is pending offline too.
+- **`useTranslations` in the three client files**, since the note's plural counts what only the browser holds.
+
+### Searched
+
+*Every statement that the organization region is a plate, or that switching is task 83's future*: `GlobalBar`'s
+docblock and spec, `global-tier.tsx`, `apps/web/CLAUDE.md`'s chrome bullet, S-05's switch note and
+`membership-row.tsx`'s docblock — all rewritten. *Every other seeding of several memberships in the browser
+suite* was already answered by 83.3's full run. *Other readers of `GlobalBarOrganization`*: none in either app.
+
+### Skills, read against the diff
+
+`vercel-composition-patterns`: `architecture-avoid-boolean-props` (no boolean props — `pendingKey` and `note`
+are values), `state-lift-state` (the flow lifted into the provider for its four readers),
+`patterns-children-over-render-props` (the closing entry is a node). `vercel-react-best-practices`:
+`rerender-move-effect-to-event` — the choice is a handler, and the provider's two effects are declined as
+events because each reacts to something the reader did not just do, unsent answers draining or stalling and a
+navigation; `rerender-dependencies` (primitive dependencies, and the autosave report memoized over them);
+`server-serialization` (the memberships as read, a handful of rows). `one-idea-per-file` and `one-kind-per-folder`:
+`switcher/` holds `actions/`, `components/` and `tools/`, `components/` holds files only, and the folder-shape
+spec held it.
+
+### Verification
+
+- `pnpm --filter @easyesg/ui typecheck`: clean; `pnpm --filter @easyesg/ui test`: 30 files, 316 tests — `organization-switcher.spec.tsx` new, `global-bar.spec.tsx` and `chrome-drawer.spec.tsx` changed.
+- `pnpm --filter @easyesg/web typecheck` and `pnpm lint`: clean. The typecheck caught what vitest does not check: the provider spec's success fixture, written `as const`, carried a readonly `messages` the outcome type refuses.
+- `pnpm --filter @easyesg/web test`: 63 files, 730 tests — the switch's reducer, its landing rule, its provider and the unsent-work registry new, `autosave-state.spec.ts` extended; the folder-shape spec holds `switcher/`.
+- `pnpm --filter @easyesg/admin test` (29 files, 246 tests) and `pnpm routes:check`: green — `packages/ui` reaches the console.
+- `pnpm e2e:web`, all three projects: **217 of 218**, the red being the compact journey that found the busy switcher, above. After the fix, typecheck, lint and a rerun of `organization-switcher.spec.ts`, `choose-organization.spec.ts` and `accessibility.spec.ts`: 26 of 26, with nothing in the server log. The rest of the suite was green on the full run, and the parent close's `gates:clean` runs all of it again.
+- `pnpm docs:check`: 40 claims green — `packages/ui` components 53 → 54, spec files 28 → 29, client modules 26 → 27, barrel exports 55 → 56; `apps/web` Client Components 83 → 87.
+- **Ten mutants, each of which bit on the case written for it.** In the browser, the defect itself: the compact journey reopened the drawer onto a trigger still busy after its switch had landed, and every switcher journey now asserts the trigger is not. At unit level, each file restored and compared by SHA-256: the current row handed over as a choice, and the rows left open while a switch is on its way, each turned its switcher case red; the drawer closing on the control that opens a menu turned both drawer cases red, and the drawer standing after a row is chosen turned the closing case red; a stalled wait never becoming the question turned the reducer's case and the provider's two dialogue cases red; users and access landing with no probe, its landing case; the provider never navigating, the landing case and the pending-ends case; a report never withdrawn, the registry's unmount case; a standing failure read as on its way, `flushIsBlocked`'s failure case.
+
+**Not run, and why.** `pnpm e2e` and `pnpm e2e:worker`: nothing in `apps/api` changed. `gates:clean` and the three
+reviews are task 83's parent close, which this sub-step triggers.
+
+## Task 83 — The organization switcher closed, and the gate a layout could not be alone · 2026-09-15
+
+The parent close for 83.1, 83.3 and 83.2: the full gate set cold, the boot proof, and the three reviews over the whole
+parent diff (`bd66d1a` to the working tree). The reviews found one deliverable unmet — S-37 did not meet a stale choice
+on an in-app navigation — and the fixes below answer every finding but four, each declined with its reason.
+
+### The full set, cold
+
+**`gates:clean`, because the diff reaches `packages/*`** — `packages/contracts` regenerated for 83.1's route,
+`packages/ui` gaining the switcher, `packages/i18n` gaining a refusal — and those are the cases the root file puts on the
+required-cold list. All sixteen green: `typecheck`, `lint`, `docs:check` (40 claims), the unit suites (`i18n` 130, `ui`
+316, `validation` 36, `admin` 246, `api` 1,072 in 126 suites, `web` 730), `boundaries` (1,629 modules), `openapi:check`,
+`facade:check`, `routes:check`, `migrations:check` (56), `pnpm e2e` (46 suites, 1,205 tests), `pnpm e2e:worker` (2) and
+`pnpm e2e:web` (218 in 5.5 minutes). **The boot proof is those last three**, HTTP, worker and both front ends. **What the
+run printed beyond its assertions**: six `⨯ Error: The destination stream closed early.`, every one digest `2667547900`,
+which `apps/web/CLAUDE.md` attributes to streams the browser abandoned; no other `⨯`, no Nest warning. The api unit
+suite printed jest's *"A worker process has failed to exit gracefully"* once; the rerun after the fixes and task 155's
+cold run did not, so it is recorded as intermittent rather than chased.
+
+### The reviews, on opus
+
+All three on `opus`, per the frontmatter. The first launch of each was refused by a usage limit (HTTP 429) and relaunched
+once it reset. **Spec review**: nine findings, three it could not class and four unanchored concerns. **Gate integrity**:
+six checks that could not fail on their subject, three that claimed more than they checked, two unchecked statements.
+**Conventions**: nine violations and six observations no rule covers.
+
+### What the reviews found, and what changed
+
+- **S-37's gate never met a choice left stale by an in-app navigation** (spec review, and the one deliverable row 83.3
+  claimed and did not meet). The gate sat in the workspace's and the wizard's layouts, and a layout is not rendered again
+  when a link inside its group is followed, so a removal landing mid-session met the next screen's own refusal instead of
+  S-37. **A `template.tsx` was the first answer and is not one**: Next 16.3's bundled `template.md` says a template remounts
+  when its segment's child changes, and that remount replays the server output cached with the parent segment — the
+  server check inside it would not run again. **The gate is now asked where the state actually surfaces**: each
+  organization-scoped screen's permission arm calls `redirectToChoiceIfOwed` — the `FORBIDDEN` arms of S-05's overview,
+  S-06 and report creation, S-13's list and record, S-14's list and record, S-15, S-16 and the wizard's step, the report
+  entry before its 404, and entity creation's refused read — because that arm renders on every navigation. The layouts
+  keep `OrganizationChoiceGate`, which answers a page load `307` before the first byte. **Both are measured**:
+  `choose-organization.spec.ts` asserts the `307` (the convention review's point that the docblock claimed it unmeasured),
+  and a new journey follows the workspace tier's link after a removal, holding the same document throughout by a window
+  marker, so no page load can answer it. Proven on one mutant build: the entities screen's arm without the gate left the link journey waiting for S-37 until its timeout, and the workspace layout's gate wrapped in a `Suspense` boundary answered `200` where the journey expects `307`.
+- **OQ-6 and §4.5 still said the switcher alone owns the switch** (spec review). S-37 made that false: a session acting
+  for no organization has no switcher. `design_spec.md`'s §4.5 row, the OQ-6 callout (amended, citing the owner's S-37
+  decision), register row and traceability row now name S-37 for that state, and `membership-row.tsx`,
+  `memberships-switch-note.tsx` and `memberships.controller.ts` say so.
+- **UX-2's amendment names the organization in the drawer *in full*, and the drawer cut it** (spec review). The switcher's
+  `.name` truncation applied to both tones; it now truncates on the band and wraps in the drawer. The compact journey gives
+  its organizations a legal form spelled out and measures the name's own box, which an accessible name cannot show.
+- **The switch's refusal said "you are still working in the one you had", which is false on S-37** (spec review, NFR-79).
+  `membership_not_held` now reads *nothing has changed* in all three catalogues, which is true on both screens.
+- **The draft note's wording was recorded as the owner's decision in a tracking file** (spec review). The owner's two
+  answers on 83.2 were UX-3's landing and the compact frame; the note's wording was this task's call, and so was not
+  carrying a query across a switch. Both are now `architecture.md` §12.5.6's task-83 row as routine calls, stated so they
+  can be overturned; the archived row points there, and task 30.1's deferral of the note is marked closed.
+- **Citations**: §6.5 now names the route and both callers as the column's writer; §12.5.6 cited §17.5 for FR-12's
+  ownership, which §17.5 does not say — the module header does; a journey cited UX-38, which governs session expiry, and
+  now cites S-37's exits; S-37's subtitle says the choice is for *this session*; S-37's and S-05's sentences named an
+  "organisation menu" no control carries and now name *Active organisation* and where it is; the dialogue's consequence adds
+  that the answers go once the reader is back in their organization.
+- **The branch and the gate disagreed about the account's screens** (spec review, unanchored). The gate let S-28 render
+  with no choice made while §4.3's branch sent `?return=/account/credentials` through S-37. The several-and-none arm now
+  honours an account screen directly, with its own case.
+- **The api's refusals could not see a store that bound the target organization** (gate integrity). Gamma's only member
+  was `removed`'s, so *this account is not a member* and *nobody is* answered alike. Another account now holds an active
+  Gamma membership. Proven: the store binding the target organization turned this case and the removed-membership case red.
+- **"Takes an organization id and nothing else" never sent anything else** (gate integrity). A third case sends
+  `sessionId` beside the id and expects `400`. 83.1's entry credited the whitelist to *the suite's two `400` cases*, neither
+  of which reached it; this is the case that does. Proven: `forbidNonWhitelisted` switched off turned it red.
+- **Two equivalent-screen arms read an address the page already had** (gate integrity). Each arm now waits for the switcher
+  to stop being busy before reading the address, since the band is renamed before the landing commits.
+- **S-05's membership journey chose the organization that also sorts first** (gate integrity), so *chosen* and *first row*
+  were one assertion. `signedIn` takes the organization to choose, and the journey chooses the second.
+- **One of the five queried-path cases passed on the unfixed code** (gate integrity): `/invitation/tok?x=1` carries its
+  query in a segment `routeSegment` never reads. It is `/verify?token=abc` now. 83.3's entry says the five went red; four
+  did then, and all five do now.
+- **S-37's empty band looked for the name least likely to appear** (gate integrity). It now asserts no switcher at all.
+- **Overclaims** (gate integrity): the provider spec's landing address equalled the address switched on, so pushing either
+  passed — it lands on `/reports` from `/entities` now; the *pending ends* docblock claimed to hold the redirect defect,
+  which a resolving stub cannot produce, and now says the browser suite holds it; the band's empty-region case counted
+  buttons, which an empty wrapper does not change, and now measures the brand standing alone. **Unchecked statements**: the
+  proxy *sets* the requested-address header rather than appending it, now a proxy case; the registry's separate effects
+  are an order of calls, not a difference a reader sees, and the comment now says that instead.
+- **The account-screen exemption and the address reading were declared twice** (conventions). `route-access.ts` exports
+  `routeSegments` and `isAccountScreen`; `needsOrganization` and `switchLanding` both read them, and the landing rule's own
+  split, locale strip and `'account'` are gone.
+- **The switch action built its own Ok outcome and dropped the api's `messages`** (conventions). It projects with
+  `mapOutcome`. *Searched*: no other action in `apps/web` builds one — the seam and autosave's transport are the only other
+  sites, and both are where outcomes are made.
+- **Three mutually exclusive choice fields** (conventions) are one `choice` at a `CHOICE_STAGE`, with `choiceAt` and
+  `pendingOrganizationId` beside the reducer, each with a case.
+- **A refusal was stored and cleared by an effect** (conventions, `pure-derive-during-render`). **Taken in part.**
+  `visibleFailure(state, pathname)` derives what a render shows, so the next screen's first render no longer draws the last
+  screen's refusal. `NAVIGATED` stays, as forgetting only: the address alone cannot tell a reader who stayed from one who
+  left and came back, and deleting it would bring a refusal back on a return — the provider spec's new case holds that.
+- **Smaller**: `session-organization.controller.ts` and `memberships.controller.ts` record why no entitlement key applies
+  (`members.controller.ts` records nothing either and is left: whether a plan keys a role change is task 54's entitlement
+  catalogue to say, not a sentence to write in passing); `apps/web/CLAUDE.md`'s route count, seam verbs, `(app)` row and
+  folder notes; the role namespace's literal sites say why they stay literal, and `membership-row.tsx` states no count; the
+  provider spec passes `formats`; `chrome.globalBar.organization`, which nothing read, is gone from the three catalogues;
+  the root file's archive count; the switcher named beside `account-menu.tsx` as the second caller-obligation `asChild` seam
+  in the root file and `packages/ui/CLAUDE.md`.
+
+### Declined, with the reason
+
+- **`": "` inside `OrganizationSwitcher`'s accessible name** (conventions, no rule): it joins the label to the name for
+  SC 2.5.3 and reads the same in all three locales; a composed-name prop would move one character into every caller.
+- **`choice.module.css` restyling the inventory `Button`'s box** (conventions, no rule): S-37 is its one reader, which is
+  UX-89's third step — the application's until a second reader needs it.
+- **`switch-landing.ts` restating each screen's read path** (conventions, no rule): the section reads take a view and
+  answer a screen's arms, where the probe needs one refusal. What that costs is stated rather than hidden: **a screen that
+  changes its read leaves its probe asking the old question, and nothing fails.**
+- **The switch cannot see a queue left in IndexedDB once the wizard is closed** (spec review, unanchored): the registry
+  reports only what a mounted step holds. Nothing is discarded — the queue is the account's and goes when the report is
+  next opened — and the dialogue's consequence now says it waits for a return to that organization.
+
+- **The spec review's three unclassed items.** The query not carried across a switch is recorded, above. The drawer's step at 639px is forced rather than chosen: the drawer exists only below the band's 640px boundary, which `design_spec.md` already records as the interim while OQ-13 is open. S-37's States amendment is 83.3's reading of the owner's entry — a list that cannot be read is §4.3's branch's S-35, as after sign-in — dated in the document that owns it, and left as it is.
+
+### Searched
+
+*Every organization-scoped screen's permission arm* — `TENANT_READ.FORBIDDEN` and `ACCESS_READ.FORBIDDEN` across
+`apps/web`, ten arms, plus the two reads that refuse without one (the report entry's `notFound`, entity creation's legal
+forms). *Every `'account'` segment literal* — `route-access.ts` and `switch-landing.ts`. *Every sentence naming the
+organisation menu* — S-37's subtitle and S-05's note, three catalogues each. *Every copy of OQ-6's reading* — four places
+in `design_spec.md`, two web docblocks, the memberships controller. *Every caller-obligation `asChild` wrapper in
+`packages/ui`'s navigation* — `account-menu.tsx` and `organization-switcher.tsx`. *Every hand-built Ok outcome in
+`apps/web`*, above.
+
+### Skills, read against the diff
+
+`one-idea-per-file`: `pure-derive-during-render` (taken in part, above), `reason-measure-structural-claims` (the `307`
+measured, and the gate's docblock states only what its two journeys hold), `pure-logic-leaves-the-component` (the three
+readings in `switch-state.ts`, each with a case). `vercel-react-best-practices`: `rerender-derived-state-no-effect`, the
+same finding from the render-count side; `server-cache-react` — the gate's membership read is `readMemberships()`'s,
+free where the layout ran and one request from a refused screen on a navigation. `one-kind-per-folder`:
+`shared-admission-test` — the gate's readers now span five features, and its docblock says so;
+`shared-namespace-declared-once`. `nestjs-best-practices`: `security-validate-all-input`, the third `400` case.
+
+### Verification, after the fixes
+
+- `pnpm typecheck`, `pnpm lint`: clean. Unit suites: `web` 63 files, 740 tests (730 → 740: the reducer's readings, the
+  refusal's return, the account-screen deep link, `routeSegments`, the proxy's header); `ui` 316; `i18n` 130; `api` 1,072;
+  `admin` 246. `pnpm docs:check`: 40 claims. `pnpm boundaries`: 1,629 modules, no violation.
+- `pnpm openapi:check`: no diff — the two controller docblocks are comments, not decorators.
+- `memberships.e2e-spec.ts` alone: 16 of 16.
+- `pnpm e2e:web`, all three projects: 219 of 219 in 6.2 minutes — the cold run's 218 and the link journey. The server log printed five `⨯ Error: The destination stream closed early.`, all digest `2667547900`, and nothing else.
+- **Mutants**, every file restored and compared by SHA-256. **Eleven at unit level**, each red on the case written for it: a refusal shown on every screen; a refusal never forgotten, the reducer's case and the provider's return case; a sent choice pending after its transition, the reading and the provider's pending case; any choice made a question; an answer ending a choice that was no question; the provider pushing the address it switched on; the landing rule dropping the account's screen; an address read with its query attached, which now turns all five queried-path cases red and `routeSegments`'s; the account-screen deep link sent through S-37; the requested address appended; the band drawing an empty region. **Two on one run of the memberships suite**, 3 of 16 red: the store binding the target organization turned the never-belonged and removed-membership cases red, and the pipe dropping an undeclared member the third `400` case. **Six in the browser, on one build**, each red at the assertion aimed at it: the entities arm without the gate, at the link journey's wait for S-37; the layout's gate in a boundary, `200` for `307`; the drawer cutting the name, its box narrower than its content; the account's screen landing home, `/home` for `/account/credentials`, read once the switcher was no longer busy; S-05 marking the first membership, *Activă acum* missing from the chosen row; the band falling back to a membership, a switcher found in S-37's band.
+- **Not rerun after the fixes, and why**: `migrations:check` and `pnpm e2e:worker` — no migration and no consumer changed;
+  the rest of `pnpm e2e` — the fixes reach the api through two docblocks, one catalogue sentence no suite asserts and the
+  memberships suite, which ran; `facade:check`, `routes:check`, `image:check`, `eslint:prove`, `boundaries:prove` — no
+  generated artefact, admin route, Dockerfile, selector or rule changed. All of them ran green in the cold run above.

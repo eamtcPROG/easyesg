@@ -96,6 +96,14 @@
   white-space: nowrap;
 }
 
+/* The organization and its control, under the head and above the sections (task 83.2) — on the panel's
+   light surface, so its control takes the `default` tone, with the rule the specimen draws below. */
+.organization {
+  display: flex;
+  padding: var(--space-4) var(--page-gutter);
+  border-block-end: 1px solid var(--border-default);
+}
+
 .list {
   display: flex;
   flex-direction: column;

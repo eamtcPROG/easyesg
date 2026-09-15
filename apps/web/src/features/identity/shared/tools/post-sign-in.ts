@@ -1,8 +1,8 @@
 import type { AccountMembership } from '@easyesg/contracts';
 import type { LocalizedPath } from '@/lib/locale-path';
-import { isReturnableAfterSignIn } from '@/lib/route-access';
+import { isReturnableAfterSignIn, needsOrganization, requiresSession } from '@/lib/route-access';
 import type { Locale } from '@easyesg/i18n';
-import { ROUTES, completeAccountRoute } from '@/lib/routes';
+import { ROUTES, chooseOrganizationRoute, completeAccountRoute } from '@/lib/routes';
 
 /**
  * **In `identity/shared/tools/` on one test — read by more than one journey: `sign-in/`, `invitation/` and `social/`, and by two `server/session/` seams.**
@@ -10,9 +10,10 @@ import { ROUTES, completeAccountRoute } from '@/lib/routes';
  * §4.3's post-sign-in branch (FR-12, UC-16) — task 25.4.
  *
  * The flow chart is three arrows from one decision: **no memberships → S-04**, create the first
- * organization; **exactly one → S-05**, the home it scopes; **several → S-05**, where the
- * global-tier switcher chooses (`design_spec.md` OQ-6 assigns the *switch* half of UC-16 there
- * rather than to a screen, and 30.5's row confirms both branches land on it).
+ * organization; **exactly one → S-05**, the home it scopes; **several → S-37**, to choose which of
+ * them to act for, unless the session has chosen one already. Until task 83.3 the several arm landed
+ * on S-05 too, for the global-tier switcher to choose; the project owner gave §4.3's *Choose
+ * organization* step a screen of its own instead (`design_spec.md` S-37, 15 Sep 2026).
  *
  * **The web branches on the count, and the API resolves the active organization. Decided
  * 25 Aug 2026.** `selectActiveMembership` in `apps/api` owns "one membership and no preference
@@ -21,6 +22,10 @@ import { ROUTES, completeAccountRoute } from '@/lib/routes';
  * owners: §4.3 is navigation and names URLs the API has no business knowing, AD-12 is authorization.
  * **If either moves, check the other**; that is the recorded cost of not putting a design_spec
  * concept into the wire contract.
+ *
+ * **Since task 83.3 the several arm also reads which organization the API resolved** — its `active`
+ * marker, never a guess of this file's — because several memberships resolve only through a choice, and
+ * a held session may already carry one. `awaitsOrganizationChoice` below is that one reading.
  *
  * **`?return=` is honoured when the destination can actually render** — refined 25 Aug 2026 (task
  * 26.3, project owner), from "only when an organization resolves". UX-38's deep-link contract sends
@@ -54,8 +59,10 @@ import { ROUTES, completeAccountRoute } from '@/lib/routes';
 export const POST_SIGN_IN = {
   /** S-04 (UC-49) — a verified account that belongs to nothing. Task 30.2 builds it. */
   CREATE_ORGANIZATION: ROUTES.CREATE_ORGANIZATION,
-  /** S-05. Both the "one" and "several" branches land here. Task 30.5 builds it. */
+  /** S-05 — one membership, or several with one chosen. Task 30.5 builds it. */
   HOME: ROUTES.HOME,
+  /** S-37 — several memberships, and none chosen for this session (task 83.3). */
+  CHOOSE_ORGANIZATION: ROUTES.CHOOSE_ORGANIZATION,
   /** S-35 — the membership read failed, so the branch could not be taken at all. */
   ORGANIZATION_UNAVAILABLE: ROUTES.ORGANIZATION_UNAVAILABLE,
   /** S-36 — the account is still completing its setup, so no other arm applies yet (task 155). */
@@ -99,6 +106,18 @@ export const targetLocale = (target: PostSignInTarget, fallback: Locale): Locale
   target.locale ?? fallback;
 
 /**
+ * Several memberships, and none of them the organization this session acts for — the state S-37
+ * resolves (task 83.3). **Read by this branch and by the gate on the workspace and the wizard**, so the
+ * two cannot disagree about when a choice is owed.
+ *
+ * It reads the API's `active` marker rather than counting alone: one membership resolves by itself, so
+ * its row is marked; several resolve only through a choice, and an unmarked list is exactly what a
+ * choice left stale by a removal looks like too.
+ */
+export const awaitsOrganizationChoice = (memberships: readonly AccountMembership[]): boolean =>
+  memberships.length > 1 && !memberships.some((membership) => membership.active);
+
+/**
  * The branch itself: pure, so every arm is a line of spec rather than a browser journey.
  *
  * `memberships` is `null` when the read failed — distinct from `[]`, which is the real and ordinary
@@ -133,14 +152,30 @@ export const postSignInTarget = (input: {
       : { href: POST_SIGN_IN.CREATE_ORGANIZATION };
   }
 
-  // Exactly one membership is the only state in which an organization is already resolved, so it is
-  // the only one where a deep link INTO `(app)` can be honoured. A destination that renders without
-  // a session renders without an organization too, so it is honoured from any arm — see the header.
-  if (
-    input.returnTo &&
-    (input.memberships.length === 1 || isReturnableAfterSignIn(input.returnTo.href))
-  ) {
+  // A destination that renders without a session renders without an organization too, so it is
+  // honoured from any arm — see the header.
+  if (input.returnTo && isReturnableAfterSignIn(input.returnTo.href)) {
     return { href: input.returnTo.href, locale: input.returnTo.locale };
   }
-  return { href: POST_SIGN_IN.HOME };
+
+  // Several, and none chosen (task 83.3): S-37 asks. A deep link needing an organization rides along for
+  // it to honour once one is in scope. **One to the account's own screens needs none and is honoured now**
+  // — S-37's gate lets those screens render in this state, and until task 83's parent close the branch sent
+  // the reader through S-37 to reach one. Anything else was answered above or is a credential entry point.
+  if (awaitsOrganizationChoice(input.memberships)) {
+    if (input.returnTo && requiresSession(input.returnTo.href)) {
+      return needsOrganization(input.returnTo.href)
+        ? { href: chooseOrganizationRoute(input.returnTo.href), locale: input.returnTo.locale }
+        : { href: input.returnTo.href, locale: input.returnTo.locale };
+    }
+    return { href: POST_SIGN_IN.CHOOSE_ORGANIZATION };
+  }
+
+  // An organization is resolved — one membership, or several with one chosen — so a deep link into
+  // `(app)` can render. **Only one that needs a session**: a credential entry point also renders
+  // without an organization, and until task 83.3 a single membership sent `?return=/sign-in` back to
+  // the sign-in form, because this arm honoured any return path at all.
+  return input.returnTo && requiresSession(input.returnTo.href)
+    ? { href: input.returnTo.href, locale: input.returnTo.locale }
+    : { href: POST_SIGN_IN.HOME };
 };

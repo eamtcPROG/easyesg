@@ -46,9 +46,14 @@ test.afterAll(async () => {
 async function signedIn(
   page: Page,
   label: string,
-  options: { readonly extraOrganizations?: number; readonly role?: 'editor' | 'viewer' } = {},
+  options: {
+    readonly extraOrganizations?: number;
+    readonly role?: 'editor' | 'viewer';
+    /** The organization S-37 is answered with when there are several — the primary one unless named. */
+    readonly choosing?: string;
+  } = {},
 ): Promise<{ readonly email: string; readonly organizationId: string }> {
-  const { extraOrganizations = 0, role } = options;
+  const { extraOrganizations = 0, role, choosing = `${RUN_PREFIX}-${label}` } = options;
   const email = addressFor(label);
 
   await page.goto('/register');
@@ -80,7 +85,16 @@ async function signedIn(
   // **Wait for §4.3's branch to land before returning.** Not optional, and the trap
   // `users-access.spec.ts` documents: a `goto` issued before the redirect settles races the session
   // cookie, so the request arrives without one and the closed-by-default gate correctly bounces it
-  // to sign-in. Every actor here holds at least one membership, so the branch lands on `/home`.
+  // to sign-in. One membership lands on `/home`; several land on S-37 since task 83.3, where the
+  // primary organization is chosen unless the caller names another — the one every other caller reads.
+  if (extraOrganizations > 0) {
+    await page.waitForURL('**/choose-organization');
+    await page
+      .getByRole('main')
+      .getByRole('button')
+      .filter({ has: page.getByText(choosing, { exact: true }) })
+      .click();
+  }
   await page.waitForURL('**/home');
   return { email, organizationId };
 }
@@ -119,16 +133,20 @@ test('the home greets the reader and states the organization and role (UX-137, U
 test('the membership list states where the reader belongs, and which is active', async ({
   page,
 }) => {
-  // Several memberships with no stated preference resolve no active organization (UX-2 makes the
-  // choice deliberate), which is exactly the state task 83's switcher exists to end — so the
-  // heading names none of them and the list is the only thing that can.
-  await signedIn(page, 'several', { extraOrganizations: 1 });
+  // Several memberships reach S-05 only once one is chosen (UX-2 makes the choice deliberate; S-37
+  // asks for it since task 83.3), so the list states both and marks the one the session chose — the
+  // `active` the api resolves, drawn in words beside the chip (UX-102).
+  // The organization chosen is the list's second row, so the row marked is the choice and not the first row —
+  // a tier that marked row 0 would pass a choice of the organization that sorts first.
+  await signedIn(page, 'several', { extraOrganizations: 1, choosing: `${RUN_PREFIX}-several-0` });
 
-  // Scoped to the list rather than the page: with several memberships the heading names none of
-  // them, but the band and the heading are still places the same string can appear.
+  // Scoped to the list rather than the page: the band and the heading name the chosen organization too.
   const list = page.getByRole('list').filter({ hasText: `${RUN_PREFIX}-several` });
-  await expect(list.getByText(`${RUN_PREFIX}-several`, { exact: true })).toBeVisible();
-  await expect(list.getByText(`${RUN_PREFIX}-several-0`, { exact: true })).toBeVisible();
+  const row = (name: string) =>
+    list.getByRole('listitem').filter({ has: page.getByText(name, { exact: true }) });
+  await expect(row(`${RUN_PREFIX}-several-0`)).toContainText('Activă acum');
+  await expect(row(`${RUN_PREFIX}-several`)).toBeVisible();
+  await expect(row(`${RUN_PREFIX}-several`)).not.toContainText('Activă acum');
 });
 
 test('an edited ?joined= announces nothing', async ({ page }) => {

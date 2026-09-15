@@ -2,6 +2,7 @@ import { redirect } from '@/i18n/navigation';
 import { notFound } from 'next/navigation';
 import { readWizardModules, resumeModule } from '@/server/data/wizard';
 import { TENANT_READ } from '@/server/data/tenant-read';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { activateRequestLocale, type LocaleParams } from '@/i18n/page';
 import { reportStepRoute } from '@/lib/routes';
 
@@ -26,6 +27,8 @@ export default async function ReportEntryPage({ params }: Props) {
   // 'as-needed'` serves Romanian unprefixed, so a hand-built path would be wrong for one of three.
   const locale = await activateRequestLocale(params as unknown as LocaleParams);
   const read = await readWizardModules(reportId);
+  // A choice not made is S-37's to answer, not a 404's (`organization-choice-gate.tsx` says why here).
+  if (read.status === TENANT_READ.FORBIDDEN) await redirectToChoiceIfOwed();
   if (read.status !== TENANT_READ.READY) notFound();
 
   // Not named `module`: Next reserves that identifier, and the rule exists because assigning it

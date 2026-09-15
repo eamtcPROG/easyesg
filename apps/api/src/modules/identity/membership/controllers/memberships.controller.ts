@@ -16,10 +16,14 @@ import { RequiresAccount } from '../decorators/requires-account.decorator';
  *
  * There is no `POST` and no `PUT` here. Joining an organization is accepting an invitation (UC-15,
  * task 26.2) or creating one (UC-49, task 29); *switching* the active organization writes the
- * session rather than this collection, and is `PUT /api/v1/session/organization` — task 83, split
- * out of task 30.1 on 29 Aug 2026 so the global tier could ship without waiting on a new route.
- * `design_spec.md` OQ-6 assigns the behaviour to the switcher; this collection only reports which
- * membership the current request resolved to, in `active`.
+ * session rather than this collection, and is `PUT /api/v1/session/organization` on
+ * `SessionOrganizationController` — task 83.1, split out of task 30.1 on 29 Aug 2026 so the global
+ * tier could ship without waiting on a new route.
+ * `design_spec.md` OQ-6 assigns the behaviour to the switcher, and to S-37 where the session has chosen none;
+ * this collection only reports which membership the current request resolved to, in `active`.
+ *
+ * **No entitlement gate, and none is owed** (`apps/api/CLAUDE.md`, *Before you add a route*): an account
+ * reads its own memberships before any organization, and so any plan, is in scope.
  */
 @ApiTags('identity')
 @Controller('memberships')

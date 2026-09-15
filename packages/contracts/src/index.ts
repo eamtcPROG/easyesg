@@ -146,6 +146,9 @@ export type SocialProvidersResponse = components['schemas']['SocialProvidersResp
 // screen, which CLAUDE.md's user-facing-text rule forbids in terms.
 export type Organization = components['schemas']['OrganizationResponseDto'];
 export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequestDto'];
+// The switch's body (task 83.1), read since task 83.3 by S-37's choice.
+export type SwitchActiveOrganizationRequest =
+  components['schemas']['SwitchActiveOrganizationRequestDto'];
 export type UpdateOrganizationRequest =
   components['schemas']['UpdateOrganizationProfileRequestDto'];
 export type CountryLegalForms = components['schemas']['CountryLegalFormsResponseDto'];

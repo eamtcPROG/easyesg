@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { WizardProviders } from '@/features/wizard/components/providers/wizard-providers';
+import { OrganizationChoiceGate } from '@/shared/organization-choice-gate';
 
 /**
  * The wizard shell - S-07 and everything reached from inside a report.
@@ -21,7 +22,15 @@ import { WizardProviders } from '@/features/wizard/components/providers/wizard-p
  * only so typing does not produce announcement noise). It moves to *saving* only once the
  * NFR-38 budget of p95 <= 250 ms is exceeded, and never shows a false *saved*: the
  * acknowledgement follows the durable commit, which is the whole content of NFR-56.
+ *
+ * **And S-37's gate, since task 83.3**, outside the providers: a report belongs to an organization, so
+ * a reader holding several memberships and no choice is sent to choose, with the step's address kept.
  */
 export default function WizardLayout({ children }: { children: ReactNode }) {
-  return <WizardProviders>{children}</WizardProviders>;
+  return (
+    <>
+      <OrganizationChoiceGate />
+      <WizardProviders>{children}</WizardProviders>
+    </>
+  );
 }

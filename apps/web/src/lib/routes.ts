@@ -57,6 +57,8 @@ export const ROUTES = {
   HOME: '/home',
   /** S-35 — the membership read failed, so §4.3's branch could not be taken. */
   ORGANIZATION_UNAVAILABLE: '/organization-unavailable',
+  /** S-37 — several memberships, and none chosen for this session (task 83.3). */
+  CHOOSE_ORGANIZATION: '/choose-organization',
   /** S-15 — the organization profile and its identifiers (task 30.3). */
   ORGANIZATION: '/organization',
   /** S-13 — the entities index (task 30.4.2). */
@@ -149,6 +151,14 @@ export const withQuery = (path: RoutePath, query: string): string =>
  */
 export const completeAccountRoute = (returnTo?: string | null): string =>
   withQuery(ROUTES.COMPLETE_ACCOUNT, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
+
+/**
+ * S-37 carrying the address to go on to once an organization is chosen (task 83.3) — the deep link
+ * sign-in was asked for, or the screen the gate on the workspace and the wizard turned the reader away
+ * from. Encoded here for `completeAccountRoute`'s reason: it rides inside another address's query string.
+ */
+export const chooseOrganizationRoute = (returnTo?: string | null): string =>
+  withQuery(ROUTES.CHOOSE_ORGANIZATION, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
 
 /**
  * S-07's steps (task 35.1). **The module is in the path, not in a query or in React state** — UX-4

@@ -39,34 +39,11 @@
   background: var(--globalbar-divider);
 }
 
+/* The region the organization's control stands in (task 83.2). It gives the control room to truncate
+   and nothing else — the control draws its own surface. */
 .organization {
-  display: inline-flex;
-  align-items: center;
-  min-block-size: 38px;
+  display: flex;
   min-inline-size: 0;
-  margin: 0;
-  padding: 0 var(--space-4);
-  border: 1px solid var(--globalbar-plate-border);
-  border-radius: var(--radius-1);
-}
-
-/* Read, never seen. `clip-path: inset(50%)` rather than `display: none`, which removes it from the
-   accessibility tree along with the layout — the same technique `select.module.css` uses. */
-.organizationLabel {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.organizationName {
-  overflow: hidden;
-  font: 400 14px/1.4 var(--font-text);
-  color: var(--globalbar-text);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* The console's band (task 67.1): `--consolebar-*`, and the artboard's 46px. Selected by the
@@ -108,9 +85,11 @@
     gap: var(--space-4);
   }
 
-  /* The divider earns its place at 1440 and costs 17px of a 390 frame that the organization's own
-     name needs. The plate's border already separates the two regions. */
-  .divider {
+  /* **The organization is the drawer's at this frame** — `design_spec.md` UX-2's amendment (task 83.2).
+     `display: none` rather than clipping, so a screen reader is not offered the control twice: the
+     drawer carries the same one. The divider goes with it, having nothing left to divide. */
+  .divider,
+  .organization {
     display: none;
   }
 }

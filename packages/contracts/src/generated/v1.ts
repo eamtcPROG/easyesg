@@ -552,6 +552,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/session/organization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Choose the organization this session acts for
+         * @description From the next request on, every organization-scoped read and write, and the role they are judged against, are those of the organization chosen. Only this session changes: another device signed in to the same account keeps its own choice. Nothing is reissued, because the organization is read from the session on every request and never carried in a token.
+         */
+        put: operations["SessionOrganizationController_choose"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invitations": {
         parameters: {
             query?: never;
@@ -2273,6 +2293,13 @@ export interface components {
             joinedAt: number;
             /** @description Whether this request is acting for this organization. Exactly one membership carries it once a preference is settled; **none does** while the caller holds several and has stated no preference, which is a normal state and the one the organization switcher resolves. It is resolved per request from the session and is never a property of the membership row. */
             active: boolean;
+        };
+        SwitchActiveOrganizationRequestDto: {
+            /**
+             * Format: uuid
+             * @description The organization this session acts for from its next request on — one the signed-in account is an active member of, as `GET /memberships` lists them. Choosing the organization already active is permitted and changes nothing.
+             */
+            organizationId: string;
         };
         InvitationResponseDto: {
             /**
@@ -4746,6 +4773,46 @@ export interface operations {
             };
             /** @description No signed-in account (problem type authentication-required). */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SessionOrganizationController_choose: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchActiveOrganizationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The session acts for that organization. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No signed-in account (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The signed-in account is not an active member of that organization — it never was, its access was removed, or no organization has that id; one answer for all three (problem type not-found). The session keeps the organization it had. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

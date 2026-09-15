@@ -59,7 +59,7 @@ traps each one left — grouped by area rather than by the task that built it.
   setup a provider registration completes (`GET /account/setup`, `POST /account/setup/{password,profile}`,
   `POST /auth/account-setup/password`) (155);
   opt-in TOTP and password change (27); memberships and roles (`GET/PATCH/DELETE /members`,
-  `GET /memberships`); invitations and acceptance (`GET/POST /invitations`,
+  `GET /memberships`), and choosing among them (`PUT /session/organization`, 83.1); invitations and acceptance (`GET/POST /invitations`,
   `POST /invitations/{id}/email`, `DELETE /invitations/{id}`,
   `POST /invitations/{preview,acceptance}`); and S-16's union read model (`GET /access`, 131).
 - **Organization** (`core/organization`, `core/entity`; task 29): organizations and reporting

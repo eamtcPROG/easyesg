@@ -77,6 +77,22 @@ export class MemberNotFoundError extends DomainError {
 }
 
 /**
+ * The switch named an organization the account is not an active member of (task 83.1) — never
+ * was, was removed from (FR-59), or no organization has that id. **One answer for the three**, for
+ * `MemberNotFoundError`'s reason: a distinction would tell the caller which organization ids exist.
+ * `404` rather than `403`: what the caller named is not among *their* organizations, which is a
+ * fact about the name rather than a permission they could go and obtain.
+ */
+export class MembershipNotHeldError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('identity.membership.membership_not_held');
+  }
+}
+
+/**
  * FR-60's refusal. `409` because the request is well-formed and the *organization's* state is what
  * refuses it — nothing about the submitted role is invalid, which is why this is not a validation
  * finding.

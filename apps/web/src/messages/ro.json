@@ -16,8 +16,24 @@
       "cookies": "Politica de cookie-uri"
     },
     "globalBar": {
-      "label": "Antetul aplicației",
-      "organization": "Organizația activă"
+      "label": "Antetul aplicației"
+    },
+    "organizationSwitcher": {
+      "label": "Organizația activă",
+      "create": "Creați o altă organizație",
+      "unsent": "{count, plural, one {Un răspuns nu a fost încă trimis; va fi trimis înainte de schimbare.} few {# răspunsuri nu au fost încă trimise; vor fi trimise înainte de schimbare.} other {# de răspunsuri nu au fost încă trimise; vor fi trimise înainte de schimbare.}}",
+      "confirm": {
+        "title": "Schimbați organizația cu răspunsuri netrimise?",
+        "object": "{count, plural, one {Un răspuns nu a putut fi trimis} few {# răspunsuri nu au putut fi trimise} other {# de răspunsuri nu au putut fi trimise}}",
+        "consequence": "Răspunsurile rămân pe acest dispozitiv și vor fi trimise după ce reveniți în organizația lor și deschideți raportul de aici. Pe alt dispozitiv nu vor apărea până atunci.",
+        "retained": "Tot ce a fost deja confirmat ca salvat rămâne salvat.",
+        "proceed": "Schimbați oricum",
+        "cancel": "Rămâneți aici"
+      },
+      "unreachable": {
+        "title": "Schimbarea nu a ajuns la EasyESG",
+        "body": "Lucrați în continuare în aceeași organizație. Încercați din nou peste câteva momente."
+      }
     },
     "publicHeader": {
       "label": "Antetul site-ului",
@@ -401,6 +417,16 @@
     }
   },
   "organization": {
+    "choice": {
+      "title": "Alegeți organizația",
+      "subtitle": "Contul dumneavoastră face parte din mai multe organizații. Alegeți-o pe cea în care lucrați în această sesiune; o puteți schimba oricând din „Organizația activă”, în antet sau în meniu.",
+      "listLabel": "Organizațiile dumneavoastră",
+      "createAnother": "Creați o altă organizație",
+      "unreachable": {
+        "title": "Alegerea nu a ajuns la EasyESG",
+        "body": "Nu am putut deschide organizația aleasă, așa că nu s-a schimbat nimic. Încercați din nou peste câteva momente."
+      }
+    },
     "create": {
       "title": "Configurați-vă organizația",
       "subtitle": "Aceasta este compania pentru care se depune raportul. Deveniți administratorul ei și puteți invita colegi imediat ce există.",
@@ -484,7 +510,7 @@
         "heading": "Organizațiile dumneavoastră",
         "lede": "Organizațiile la care aveți acces și rolul pe care îl aveți în fiecare.",
         "active": "Activă acum",
-        "switchNote": "Datele organizației active le vedeți și le modificați în <organization>Organizație</organization>.",
+        "switchNote": "Organizația în care lucrați o schimbați din „Organizația activă”, în antet sau în meniu.",
         "unreachable": {
           "title": "Nu am putut încărca lista organizațiilor",
           "body": "Restul paginii funcționează; doar această listă nu a putut fi citită.",

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { OrganizationChoiceGate } from '@/shared/organization-choice-gate';
 import { WorkspaceNavigation } from '@/shared/workspace-navigation';
 import styles from './layout.module.css';
 
@@ -20,11 +21,15 @@ import styles from './layout.module.css';
  * rather than a fragment of `identity.register`, which is the part of that history worth keeping:
  * `packages/ui` owns no text (UX-79), so the app supplies those two words, and they belong to no
  * screen.
+ *
+ * **S-37's gate renders first since task 83.3**: a reader holding several memberships and no choice is
+ * sent to choose before any screen below draws the refusals that state produces. The wizard's layout
+ * carries the same gate, since the two groups are siblings and neither sees the other.
  */
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
-
   return (
     <>
+      <OrganizationChoiceGate />
       {/* The tier itself is `packages/ui`'s WorkspaceNav, wired in `shared/` — task 26.4 built it
           because S-16 was the first screen in this group and had no way to be reached. Task 30.1
           added the global tier above it; the nav stays OUTSIDE the `<main>` below, which is why

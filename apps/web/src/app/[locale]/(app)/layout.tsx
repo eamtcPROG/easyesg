@@ -1,4 +1,7 @@
 import { Suspense, type ReactNode } from 'react';
+import { UnsentWorkProvider } from '@/client/unsent-work/unsent-work';
+import { OrganizationSwitchNotice } from '@/features/organization/switcher/components/organization-switch-notice';
+import { OrganizationSwitchProvider } from '@/features/organization/switcher/components/organization-switch-provider';
 import { SupportAccessBanners } from '@/features/support-access/components/section/support-access-banners';
 import { GlobalTier } from '@/shared/global-tier';
 
@@ -47,13 +50,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   // **Behind a boundary with no fallback**, deliberately against the one-skeleton-per-reading-region rule: the
   // banner's ordinary state is absent, so a skeleton would reserve and then collapse a band on nearly every render,
   // while no fallback lets the page flush without waiting on `GET /support-access` and the banner arrive after.
+  //
+  // **Task 83.2's two providers wrap all of it**, and the order is the dependency: the switch reads what is
+  // unsent, and the tier's switcher and the wizard's autosave — in `children` — are both beneath the two. Both
+  // are Client Components handed this layout's server children, which they render and never introspect. The
+  // refusal notice sits directly below the band, where a switch made from a closed menu can still be answered.
   return (
-    <>
-      <GlobalTier />
-      <Suspense fallback={null}>
-        <SupportAccessBanners />
-      </Suspense>
-      {children}
-    </>
+    <UnsentWorkProvider>
+      <OrganizationSwitchProvider>
+        <GlobalTier />
+        <OrganizationSwitchNotice />
+        <Suspense fallback={null}>
+          <SupportAccessBanners />
+        </Suspense>
+        {children}
+      </OrganizationSwitchProvider>
+    </UnsentWorkProvider>
   );
 }

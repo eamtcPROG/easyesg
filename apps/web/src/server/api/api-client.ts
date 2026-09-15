@@ -69,6 +69,7 @@ const METHOD = {
   Get: 'GET',
   Post: 'POST',
   Patch: 'PATCH',
+  Put: 'PUT',
   Delete: 'DELETE',
 } as const;
 
@@ -276,6 +277,11 @@ export const api = {
 
   patch: <TBody, TObject>(path: string, body: TBody): Promise<ApiOutcome<TObject>> =>
     requestObject<TObject>(METHOD.Patch, path, body),
+
+  /** An idempotent write to a path naming what it replaces — the session's organization since task
+   *  83.3. The API's one `PUT` answers 204, so `undefined` is its `TObject`. */
+  put: <TBody, TObject>(path: string, body: TBody): Promise<ApiOutcome<TObject>> =>
+    requestObject<TObject>(METHOD.Put, path, body),
 
   /**
    * `delete` returns `undefined` by default because the API's deletes answer 204 — and it

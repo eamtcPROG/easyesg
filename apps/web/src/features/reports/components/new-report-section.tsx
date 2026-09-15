@@ -2,6 +2,7 @@ import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { readReportCreation } from '@/server/data/reports';
 import { TENANT_READ } from '@/server/data/tenant-read';
+import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { creationChoice } from '../tools/report-creation';
@@ -29,6 +30,9 @@ export async function NewReportSection({
     readReportCreation(entityId),
     getTranslations(REPORT_CREATION_MESSAGES),
   ]);
+
+  // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
+  if (read.status === TENANT_READ.FORBIDDEN) await redirectToChoiceIfOwed();
 
   return (
     <div className={styles.screen}>

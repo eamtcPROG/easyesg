@@ -3,6 +3,10 @@ import { ChangeMemberRole, type ChangeMemberRoleCommand } from '../use-cases/cha
 import { ListMembers } from '../use-cases/list-members.use-case';
 import { ListOwnMemberships } from '../use-cases/list-own-memberships.use-case';
 import { RemoveMember, type RemoveMemberCommand } from '../use-cases/remove-member.use-case';
+import {
+  SwitchActiveOrganization,
+  type SwitchActiveOrganizationCommand,
+} from '../use-cases/switch-active-organization.use-case';
 import { AuthenticationRequiredError } from '../errors/membership.errors';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
 import type { AccountMembershipView, OrganizationMember } from '../models/membership.model';
@@ -27,6 +31,7 @@ import type { AccountMembershipView, OrganizationMember } from '../models/member
  * `AccountService` resolves the negotiated locale. That resolution has to happen at this layer
  * precisely so it cannot happen at the layer above — an account id arriving in a query string would
  * turn "my organizations" into "that person's organizations", and the endpoint would answer it.
+ * **`switchActive` is the second** (task 83.1), and resolves the session beside the account.
  */
 @Injectable()
 export class MembershipService {
@@ -35,6 +40,7 @@ export class MembershipService {
     private readonly listOwnMemberships: ListOwnMemberships,
     private readonly changeMemberRole: ChangeMemberRole,
     private readonly removeMemberUseCase: RemoveMember,
+    private readonly switchActiveOrganization: SwitchActiveOrganization,
   ) {}
 
   list(): Promise<OrganizationMember[]> {
@@ -62,6 +68,25 @@ export class MembershipService {
     return this.listOwnMemberships.execute({
       accountId,
       activeOrganizationId: context?.organizationId ?? null,
+    });
+  }
+
+  /**
+   * **The session is resolved here for the reason the account is**: a session id from the wire would
+   * let a caller name which session to move. Reaching this with either missing is a wiring defect
+   * rather than a request — `AuthGuard` sets both — so it is refused as a 401 rather than asserted.
+   */
+  switchActive(
+    input: Omit<SwitchActiveOrganizationCommand, 'accountId' | 'sessionId'>,
+  ): Promise<void> {
+    const context = requestContext();
+    if (context?.actorId === undefined || context.sessionId === undefined) {
+      throw new AuthenticationRequiredError();
+    }
+    return this.switchActiveOrganization.execute({
+      organizationId: input.organizationId,
+      accountId: context.actorId,
+      sessionId: context.sessionId,
     });
   }
 

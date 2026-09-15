@@ -218,6 +218,50 @@ test('axe finds no violations on the password step a confirmation link opens', a
 });
 
 /**
+ * S-37 (task 83.3) — a list whose every row is a button holding two lines, a name and a role, on the
+ * Focus column under the global tier's empty state. Reached the only way it is reached: two memberships
+ * and a sign-in that has chosen neither.
+ */
+test('axe finds no violations on the choose-organization screen', async ({ page }) => {
+  const email = `${RUN_PREFIX}-choice@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  organizations.push(
+    await grantMembership({ email, organizationName: `${RUN_PREFIX}-alpha`, role: 'editor' }),
+  );
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX}-beta` }));
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/choose-organization');
+  await expect(page.getByRole('heading', { name: 'Alegeți organizația', level: 1 })).toBeVisible();
+  await scan(page);
+
+  // Task 83.2: the switcher **open**, on the screen the choice lands on — a radio group of organizations, a
+  // note-free menu and a closing link, none of which is in the DOM until somebody opens it.
+  await page
+    .getByRole('main')
+    .getByRole('button')
+    .filter({ hasText: `${RUN_PREFIX}-beta` })
+    .click();
+  await page.waitForURL('**/home');
+  await page.getByRole('banner').getByRole('button', { name: /^Organizația activă: / }).click();
+  await expect(page.getByRole('menuitemradio')).toHaveCount(2);
+  await scan(page);
+});
+
+/**
  * S-04 (task 30.2) — the first Focus screen **inside** the authenticated shell, which is the
  * reason it is scanned separately from the four at the top.
  *

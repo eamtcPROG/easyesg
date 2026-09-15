@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-36`, `A-01` … `A-20` |
+| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-37`, `A-01` … `A-20` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -204,7 +204,11 @@ User account  (personal: profile, credentials, language, notification preference
 
 **UX-2** The active organization shall be visible at all times on every authenticated screen, and shall never be inferred from a URL segment or a request header — it is a property of the session (UC-16).
 
+**Amended 15 Sep 2026 (project owner, task 83) — at compact width the active organization is in the drawer.** Below the medium frame the global bar names no organization; the workspace drawer names it in full, with the switcher's control beside it. `EasyESG Workspace.dc.html` draws a band under the bar at that frame instead, and the drawer was chosen over it. What that gives up is stated here rather than left to be discovered: **at compact width the organization is one tap away, not visible at all times.** The truncated name compact width drew until then — a long name cut to `Fa…` at 375 px — did not meet the sentence above either.
+
 **UX-3** Switching the active organization shall return the user to the equivalent screen in the new organization where one exists, and to that organization's home otherwise. It shall never silently discard unsaved work; unsynced changes are flushed first.
+
+**The equivalent screen, decided 15 Sep 2026 (project owner, task 83).** A screen belonging to the account rather than to an organization — its credentials — is the same in every organization and stays. A section's own screen — Home, Reports, Entities & periods, Organization, Users & access — is its own equivalent, where the role held in the new organization may open it. A screen for one record — a report, an entity, a period — and a form that creates one are equivalent to their section's screen, because the record belongs to the organization just left. Anything else, and a section the new role may not open, returns to that organization's home. **Whether the new role may open a section is the api's answer after the switch**, never a table of roles kept in a front end: the role is read from the membership on every request (AD-12).
 
 **UX-4** Every addressable state — a report module, a validation finding, an invoice, an admin queue filter — shall have a stable, shareable, bookmarkable address that restores the same state on load. Deep links are how notifications discharge P6.
 
@@ -232,6 +236,8 @@ the branch point a signed-in reader lands on; the tier makes all six peers reach
 them, which is what a persistent tier means. The brand mark also links Home (a web convention the
 artboards keep) and that is not a duplicate: the tier states where you are, the brandmark does not.
 
+**Amended 15 Sep 2026 (project owner, task 83) — at compact width the switcher is the drawer's.** Below the medium frame the global tier's organization switcher sits in the workspace drawer, beside the name it switches, and the bar carries neither. UX-2 records what that costs.
+
 **UX-5** The wizard shall suppress the workspace tier and replace it with the module list, so that the user's only navigational choice inside a report is *which module*. Exit from the wizard shall be a single, always-visible, explicitly labelled control that states that work is saved.
 
 ### 4.3 Primary navigation flow
@@ -243,7 +249,8 @@ graph LR
     Z -->|yes| B{"Memberships"}
     B -->|none| C["Create organization<br/>UC-49"]
     B -->|one| D["Home"]
-    B -->|many| E["Choose organization<br/>UC-16"] --> D
+    B -->|many, one chosen| D
+    B -->|many, none chosen| E["Choose organization<br/>S-37"] --> D
     D --> F["Reports<br/>UC-17"]
     D --> G["Entities & periods<br/>UC-52…58"]
     D --> H["Organization<br/>UC-50, 51"]
@@ -309,6 +316,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-34 | Write to support | VI, CA | UC-182 | Focus |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | Focus |
 | S-36 | Complete your account | CA | UC-02, UC-03 | Focus |
+| S-37 | Choose organization | CA | UC-16 | Focus |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | Focus |
 | A-02 | Organization register | PA | UC-69 | Index |
 | A-03 | Content and translation console | PA | UC-71 … 74 | Editor + Publish |
@@ -330,7 +338,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-19 | My credentials (operator's own password, second factor, recovery codes) | PA, BO | UC-212 | Record |
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | Focus |
 
-**Count:** 56 screens — 36 tenant (`S-01 … S-36`) and 20 administrative (`A-01 … A-20`). **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
+**Count:** 57 screens — 37 tenant (`S-01 … S-37`) and 20 administrative (`A-01 … A-20`). **S-37 was added 15 Sep 2026** with task 83, when §4.3's *Choose organization* step became a screen of its own rather than a prompt in the global tier. **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -340,13 +348,15 @@ Three use cases are served by global-tier elements and inline patterns rather th
 |---|---|
 | UC-06 — log out | User menu, with draft flush per UX-37 |
 | UC-07 — re-authenticate after session expiry | Inline over preserved context, UX-38 |
-| UC-16 — switch active organization | Global switcher, UX-2, UX-3 |
+| UC-16 — switch active organization | Global switcher, UX-2, UX-3 — and S-37 where the session has chosen no organization (OQ-6, amended) |
 
 `SYS` use cases have no screen of their own and terminate in a destination named under UX-61.
 
 **UX-7** No screen shall exist that is not traceable to at least one use case, and no use case with a human actor shall be without a screen, a named global-tier pattern or a **named exemption below**. **Amended 18 Aug 2026 (OQ-5) — two exemption classes, each exhaustively enumerated.** *Pattern-discharged:* **UC-35** (autosave in-progress report data) and **UC-36** (resume an in-progress report draft), both discharged by the draft-integrity pattern inside S-07 (UX-34 … UX-39) — they are continuous behaviours of a screen, not destinations, and inventing inventory entries for them would make the inventory describe things that are not screens. *Inactive at MVP:* **UC-122** (pay through the merchant-of-record checkout), registered as an adapter and inactive per D-8 and FR-114; it gains a screen when the rail is activated, not before. Any addition to either list is an amendment to this rule, not a note. The inventory in §4.4 remains the coverage contract.
 
 > **Resolved 18 Aug 2026 (OQ-6) — UC-16 is split by behaviour, not assigned twice.** UC-16 is *View memberships **and** switch active organization*, which is two behaviours in one use case. **S-05 owns "view memberships"** — the list of organizations the user belongs to is screen content. **The global-tier switcher owns "switch active organization"** — changing session scope is a persistent global action available from every screen, not a behaviour of any one of them. A coverage audit counts UC-16 once, against both owners, with no double count.
+
+> **Amended 15 Sep 2026 (project owner, task 83) — where the session has chosen no organization, the switch is S-37's.** The switcher names the organization a session acts for, so a session acting for none has no switcher to choose from: the global tier draws its empty state (UX-2). §4.3's *Choose organization* step is therefore a screen, S-37, and it owns *switch active organization* in exactly that state — after sign-in, and wherever a choice left stale by a removal is met. A coverage audit still counts UC-16 once, now against three owners of three behaviours: S-05 views the memberships, the switcher switches between them, and S-37 chooses where none is chosen.
 
 > **Resolved 9 Sep 2026 (task 103) — an address that resolves to no screen is a pattern, not a
 > screen.** Two surfaces answer a request that reaches no destination: **not found**, where the
@@ -413,7 +423,7 @@ Three limits on what follows must be stated plainly, because the alternative is 
 - **Controls and actions:** sign in with password; sign in with a provider; register; request a password reset; **choose whether the session persists on this device — the choice governs the credential form, the provider choices being plain anchors that carry no client state**; **supply a second-factor code, or a recovery code instead, where the account has one enrolled**.
 - **States:** loading — initial; **second factor required** — a staged step reached only after a correct password on an *enrolled* account, offering the code field and the route to a recovery code (UC-194, UC-195; added 26 Aug 2026); error — recoverable (failed credential, rate-limited, locked out after threshold, per FR-4); error — recoverable (a wrong or spent second-factor code, which leaves the user on the staged step to retype it and counts toward the same FR-4 threshold); error — recoverable (verification pending — the account is unverified and the presented password was **correct**; the answer names verification as the blocker and routes to S-02's resend. Added 21 Aug 2026, `architecture.md` OQ-57 — a wrong password on an unverified account stays inside the uniform failed-credential state); error — permission (an identity presented that is linked to no account is offered registration rather than silently signed in, UC-05).
 - **Validation behaviour:** credential failures are rate-limited and locked out after a threshold. **UX-108** applies with force here: no cognitive function test shall be required to sign in, and password managers and paste shall work everywhere.
-- **Exits:** per §4.3 — no memberships → S-04; exactly one membership → S-05; more than one → organization choice then S-05. Registration by password exits to the verification challenge (S-02).
+- **Exits:** per §4.3 — no memberships → S-04; exactly one membership → S-05; more than one → S-05 where the session names one still held, and S-37 otherwise (added 15 Sep 2026, task 83). Registration by password exits to the verification challenge (S-02).
 - **Use cases:** UC-01, UC-02, UC-03 (provider-asserted case), UC-04, UC-05, **UC-194, UC-195**.
 - **FRs:** FR-1, FR-2, FR-4, FR-82. **Requirements:** NFR-95.
 
@@ -917,7 +927,7 @@ makes a new screen an amendment. It is numbered 35 because S-29 … S-34 are the
 - **Controls and actions:** retry; sign out.
 - **States:** error — recoverable (its only state; the screen *is* an error state).
 - **Validation behaviour:** none of its own.
-- **Exits:** the branch, re-run — so S-04, S-05, or back here. Sign-out exits to S-01.
+- **Exits:** the branch, re-run — so S-04, S-05, S-37, or back here. Sign-out exits to S-01.
 - **Use cases:** UC-16 (failure path).
 - **FRs:** FR-12.
 
@@ -974,10 +984,49 @@ carries the decisions behind it.
   **UX-108** — paste and password-manager autofill work on every field; both names required (FR-2 and `architecture.md` §12.5.6's task-155 row (2); FR-9 names the two
   fields, UX-137 derives the display name from them). Nothing else is reachable while the account is in setup: the api refuses it, and every
   `(app)` route sends it here.
-- **Exits:** §4.3's branch — S-04, S-05 or S-35 — or S-03 when the registration began there. Sign-out
+- **Exits:** §4.3's branch — S-04, S-05, S-35 or S-37 — or S-03 when the registration began there. Sign-out
   exits to S-01.
 - **Use cases:** UC-02, UC-03.
 - **FRs:** FR-2, FR-3, FR-9.
+
+### S-37 — Choose organization
+
+**Added 15 Sep 2026 (task 83), and an addition to the inventory** — UX-7 makes a new screen an
+amendment, and the identifier is appended after S-36. §4.3 always drew this step; until then it had no
+screen, and the post-sign-in branch sent the reader to S-05 to choose from the global tier. The project
+owner chose a screen of its own, answering the state wherever it is met; `architecture.md` §12.5.6's
+task-83 row carries the decisions.
+
+- **Purpose:** ask an account that belongs to several organizations, and has chosen none for this
+  session, which one to act for — rather than open a workspace whose every read is refused because no
+  organization is in scope. UX-2 makes the choice deliberate, so the platform never picks one.
+- **Primary actors:** CA.
+- **Archetype:** Focus.
+- **Entry points:** §4.3's branch after sign-in, by password or by provider, when several memberships
+  are held and the session names none of them; **and any screen that needs an active organization,
+  requested in that same state** — the workspace and the wizard alike. That includes a session whose
+  chosen organization has since removed the account (FR-59), which leaves a choice that no longer
+  resolves. No navigation links to it; arriving is always a consequence. A reader for whom an
+  organization is resolved, or who holds no membership at all, is answered by §4.3's branch rather than
+  by this screen — UX-136's reading, applied to organization scope.
+- **Layout and regions:** single column, centred (the Focus fixed elements); the organizations as one
+  list, each entry the choice itself.
+- **Content and data shown:** each organization the account is an active member of, with its name and
+  the role held in it — the role alone, as the switcher's detail line is (task 30.1); a sentence saying
+  the choice applies to this session and can be changed from the organization switcher at any time.
+- **Controls and actions:** choose an organization; create another organization (S-04). Sign-out is
+  the global tier's.
+- **States:** ready; pending — async (a choice's submission); error — recoverable (no answer arrived, whose
+  way out is choosing again); error — recoverable (the organization chosen no longer counts the account
+  among its members, whose way out is the list read again and another choice). **A list that cannot be
+  read is not a state of this screen** (amended 15 Sep 2026, task 83.3): the screen asks §4.3's branch
+  whether it applies, and the branch answers S-35 for that, as it does after sign-in.
+- **Validation behaviour:** none of its own. The api admits a choice only among the account's own active
+  memberships.
+- **Exits:** the address that was requested, when a screen needing an organization sent the reader here
+  — as S-01's `?return=` is honoured — and the chosen organization's S-05 otherwise.
+- **Use cases:** UC-16.
+- **FRs:** FR-12.
 
 ### 5.1b Public tier screens
 
@@ -2257,6 +2306,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-34 | Write to support | VI, CA | UC-182 | — (G-9) |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | FR-12 |
 | S-36 | Complete your account | CA | UC-02, UC-03 | FR-2, FR-3, FR-9 |
+| S-37 | Choose organization | CA | UC-16 | FR-12 |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68, UC-212 | FR-75, FR-80 |
 | A-02 | Organization register | PA | UC-69 | FR-76, FR-77 |
 | A-03 | Content and translation console | PA | UC-71 … 74 | FR-61, FR-62, FR-63, FR-64, FR-74 |
@@ -2321,7 +2371,7 @@ All identifiers cited in this document fall inside `UC-01` … `UC-182` (extende
 |---|---|---|
 | Two RC use cases have no screen in the inventory | UC-35 (autosave in-progress report data) and UC-36 (resume an in-progress report draft) are RC use cases discharged by the draft-integrity pattern (§6.7) inside S-07, but neither appears in any *Serves* column. UX-7 requires every human-actor use case to have a screen or a named global-tier pattern; the pattern exists, the inventory entry does not | OQ-5 |
 | One OA use case has no screen | UC-122 (pay through the merchant-of-record checkout) is an OA use case, registered as an adapter and inactive at MVP (D-8, FR-114). No screen serves it, which is consistent with its inactivity but leaves UX-7 formally unmet | OQ-5 |
-| ~~UC-16 is listed twice~~ | **Resolved** — split by behaviour: S-05 owns *view memberships*, the global-tier switcher owns *switch active organization* | OQ-6, closed |
+| ~~UC-16 is listed twice~~ | **Resolved** — split by behaviour: S-05 owns *view memberships*, the global-tier switcher owns *switch active organization*, and S-37 owns it where none is chosen (amended 15 Sep 2026, task 83) | OQ-6, closed |
 | ~~§13.2 FR ranges do not align with the FR register in four rows~~ **Resolved — all four corrected in §13.2** | *Surfaces and IA* cites FR-56 … 60, which are the users-and-access requirements rather than IA. *Disclosure field* cites FR-13 … 40, which begins at organization creation rather than at report authoring (FR-24). *Validation* cites FR-41 … 45, whereas validation is FR-40 … FR-44 and FR-45 is a comparatives requirement. *Applicability* cites FR-46, which is the prior-period display requirement, whereas applicability is FR-28 | OQ-9 |
 | ~~Two archetype labels are not among the nine~~ | **Resolved** — *Wizard sub-flow* (S-09) and *Comparison* (S-18) are compositions inheriting their base's full state set | OQ-7, closed |
 | ~~One internal cross-reference does not resolve~~ | **Resolved** — UX-25 now cites UC-42, FR-44, BR-VAL-4; UX-122 stands on FR-50, FR-51, NFR-20 | OQ-8, closed |
@@ -2359,7 +2409,7 @@ Artefacts this specification governs, **with their delivered locations as of 18 
 | OQ-3 | **AGE's written position on licensing MUD** for (a) a commercial deployment and (b) a public-sector deployment of this platform. Until it exists, UX-131 stands and MUD contributes convention only — no code, no asset, no token value | Determines whether the MUD-approximating second theme can ship, and what "MUD conformance" costs in a public-sector tender | Owned outside the design team |
 | OQ-4 | **Closed 18 Aug 2026 — the machine states (UC-37, FR-40) are canonical; the design states are presentation labels derived from them.** The mapping is declared once in `packages/contracts`. Reconciliation exposed that the eight design states span three axes, not one: six are field validation outcomes, `not_material` is section-level materiality (FR-41) and `nil_return` is answer semantics. See the resolved vocabulary note in §6.4. | Resolved. The component contract, the API and the test suite are written against one enum — `ValidationState` — and the two mis-filed states move to the axes that own them, which the flat list could not express simultaneously. | Requirements owner with design — decided |
 | OQ-5 | **Closed 18 Aug 2026 — UX-7 gains two exhaustively enumerated exemption classes**, rather than the inventory gaining invented entries. *Pattern-discharged:* UC-35 and UC-36, inside S-07's draft-integrity pattern. *Inactive at MVP:* UC-122, per D-8/FR-114. | Resolved. The question offered exactly this choice and the exemption is the right half: UC-35 and UC-36 are continuous behaviours of a screen rather than destinations, so an inventory entry for them would make the inventory describe things that are not screens — weakening the coverage contract UX-7 exists to hold. Both lists are closed sets; adding to either is an amendment to UX-7. | Design — decided |
-| OQ-6 | **Closed 18 Aug 2026 — split by behaviour, not assigned twice.** S-05 owns *view memberships* (screen content); the global-tier switcher owns *switch active organization* (a session-scope action available everywhere). | Resolved, and the double count is gone: a coverage audit counts UC-16 once, against two owners of two distinct behaviours. The apparent duplication was the use case's own name — "view memberships **and** switch active organization" — carrying two behaviours that genuinely live in different places. | Design — decided |
+| OQ-6 | **Closed 18 Aug 2026 — split by behaviour, not assigned twice.** S-05 owns *view memberships* (screen content); the global-tier switcher owns *switch active organization* (a session-scope action available everywhere). **Amended 15 Sep 2026 (project owner, task 83):** S-37 owns the switch where the session has chosen no organization, since the switcher needs one to name (§4.5). | Resolved, and the double count is gone: a coverage audit counts UC-16 once, against two owners of two distinct behaviours. The apparent duplication was the use case's own name — "view memberships **and** switch active organization" — carrying two behaviours that genuinely live in different places. | Design — decided |
 | OQ-7 | **Closed 18 Aug 2026 — they are compositions, not archetypes**, and the inheritance rule is now stated: a composition inherits the complete state set of its base and defines none of its own. *Wizard sub-flow* (S-09) composes Wizard; *Comparison* (S-18) composes Index/Status. | Resolved. UX-8 is satisfied because a composition has a full state definition, inherited. Promoting them to archetypes ten and eleven was rejected: it would put two names on one state set, which is the same defect OQ-4 found in the validation vocabulary. | Design — decided |
 | OQ-8 | **Closed 18 Aug 2026 — the citation is corrected to the obligation it actually depends on.** UX-25 now cites **UC-42, FR-44 and BR-VAL-4** (export permitted with unresolved findings after explicit warning, gaps marked visibly). The source's "§15.4" was unresolvable — its §15 has no numbered subsections. | Resolved. Traceability from the normative rule to its obligation holds. UX-122's citation was checked in the same pass and needs no change — it stands on FR-50, FR-51 and NFR-20, which resolve. | Design — decided |
 | OQ-9 | **Closed 18 Aug 2026 — all four corrected in §13.2**, with the source's values struck through rather than deleted. *Surfaces and IA* ~~FR-56 … 60~~ → **FR-12, FR-23, FR-75** (the FRs UC-16 and UC-67 actually discharge, plus the administrative-surface split). *Disclosure field* ~~FR-13 … 40~~ → **FR-24 … FR-32**. *Validation* ~~FR-41 … 45~~ → **FR-40 … FR-44**. *Applicability* ~~FR-46~~ → **FR-28**. | Resolved. The traceability table is what a reviewer uses to check that a design discharges its requirements, and three of the four wrong ranges would have produced a **false pass** — citing requirements the design does not discharge while omitting the ones it does. Ranges verified against `architecture.md` §17.5's component-to-FR map. | Design, with the requirements owner — decided |

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChromeDrawer } from './chrome-drawer';
+import { OrganizationSwitcher } from './organization-switcher';
 import type { NavLinkComponent } from './nav-link';
 
 /**
@@ -141,6 +142,57 @@ describe('ChromeDrawer', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
 
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/ru/home');
+  });
+
+  /**
+   * Task 83.2: the organization's switcher lives in the panel at this frame, and it opens a menu that
+   * Radix portals out of the panel. **The real switcher, not a stand-in**, because what the close rule
+   * reads — the trigger's `aria-haspopup`, the row's role, and React bubbling a portalled event through
+   * the tree that rendered it — is Radix's behaviour, and a fake would assert the rule against itself.
+   */
+  const withSwitcher = (onChoose: (key: string) => void = () => undefined) =>
+    render(
+      <ChromeDrawer
+        label="Menu"
+        closeLabel="Close"
+        sectionsLabel="Sections"
+        brand={<span>easyESG</span>}
+        items={SECTIONS}
+        organization={
+          <OrganizationSwitcher
+            label="Active organization"
+            organizations={[
+              { key: 'org-a', name: 'Brutăria Lina SRL', detail: 'Organization administrator' },
+              { key: 'org-b', name: 'Grupul Lina', detail: 'Editor' },
+            ]}
+            currentKey="org-a"
+            onChoose={onChoose}
+            closingItem={<a href="/create-organization">Create another organization</a>}
+          />
+        }
+      />,
+    );
+
+  it('carries the organization’s switcher, and opening it leaves the panel standing', async () => {
+    withSwitcher();
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    await userEvent.click(screen.getByRole('button', { name: /Active organization/ }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getAllByRole('menuitemradio')).toHaveLength(2);
+  });
+
+  it('closes once an organization is chosen in that menu, though the menu is portalled out of it', async () => {
+    const chosen: string[] = [];
+    withSwitcher((key) => chosen.push(key));
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await userEvent.click(screen.getByRole('button', { name: /Active organization/ }));
+
+    await userEvent.click(screen.getAllByRole('menuitemradio')[1]);
+
+    expect(chosen).toEqual(['org-b']);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('omits the secondary block when the caller gives none', async () => {

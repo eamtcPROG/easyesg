@@ -1,0 +1,46 @@
+/* S-37. Spacing and column rhythm only: each choice is the inventory's `Button`, laid out as S-05's
+   membership rows are, with the whole row the action (UX-89). */
+
+.title {
+  margin: 0 0 var(--space-3);
+  color: var(--text-default);
+}
+
+.subtitle {
+  margin: 0 0 var(--space-6);
+  color: var(--text-body);
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+
+/* The row is the choice, so the button fills it and its two lines stack at the start — a name that
+   wraps under +40% pushes the role down rather than off the row (UX-94). */
+.choice {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  width: 100%;
+  height: auto;
+  padding-block: var(--space-4);
+  text-align: start;
+  white-space: normal;
+}
+
+.name {
+  overflow-wrap: anywhere;
+}
+
+.role {
+  color: var(--text-muted);
+}
+
+.create {
+  margin: 0;
+}

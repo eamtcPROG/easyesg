@@ -1436,6 +1436,44 @@
         ]
       }
     },
+    "/api/v1/session/organization": {
+      "put": {
+        "description": "From the next request on, every organization-scoped read and write, and the role they are judged against, are those of the organization chosen. Only this session changes: another device signed in to the same account keeps its own choice. Nothing is reissued, because the organization is read from the session on every request and never carried in a token.",
+        "operationId": "SessionOrganizationController_choose",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchActiveOrganizationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The session acts for that organization."
+          },
+          "401": {
+            "description": "No signed-in account (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The signed-in account is not an active member of that organization — it never was, its access was removed, or no organization has that id; one answer for all three (problem type not-found). The session keeps the organization it had.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Choose the organization this session acts for",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/invitations": {
       "get": {
         "description": "The other half of \"who can see our ESG data\": people invited but not yet joined. Unpaginated by design — the collection is bounded by the organization’s seat ceiling, which counts every invitation listed here. An invitation whose link has lapsed still appears, because it is what holds the invited address; resending it restores a working link.",
@@ -6421,6 +6459,19 @@
           "role",
           "joinedAt",
           "active"
+        ]
+      },
+      "SwitchActiveOrganizationRequestDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The organization this session acts for from its next request on — one the signed-in account is an active member of, as `GET /memberships` lists them. Choosing the organization already active is permitted and changes nothing."
+          }
+        },
+        "required": [
+          "organizationId"
         ]
       },
       "InvitationResponseDto": {
