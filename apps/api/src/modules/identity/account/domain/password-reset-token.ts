@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+import { ACCOUNT_SETUP_PROOF_WINDOW_MS } from './account-setup';
 
 /**
  * Password reset token issue and hash (FR-6, NFR-64; §12.5.6 — reset lifetime 60 min).
@@ -24,13 +25,24 @@ export interface IssuedPasswordResetToken {
   readonly expiresAt: Date;
 }
 
-export function issuePasswordResetToken(now: Date): IssuedPasswordResetToken {
+const mint = (now: Date, lifetimeMs: number): IssuedPasswordResetToken => {
   const value = randomBytes(TOKEN_BYTES).toString('base64url');
-  return {
-    value,
-    hash: hashPasswordResetToken(value),
-    expiresAt: new Date(now.getTime() + PASSWORD_RESET_TOKEN_TTL_MS),
-  };
+  return { value, hash: hashPasswordResetToken(value), expiresAt: new Date(now.getTime() + lifetimeMs) };
+};
+
+export function issuePasswordResetToken(now: Date): IssuedPasswordResetToken {
+  return mint(now, PASSWORD_RESET_TOKEN_TTL_MS);
+}
+
+/**
+ * The grant a consumed confirmation link hands an account holding no password (task 155; §12.5.6's
+ * task-155 row). **A reset token by construction**: it is the same exchange of proven mailbox control
+ * for a credential, claimed once through the same table — so it is not a fourth token kind. What
+ * differs is its life, the setup proof's quarter-hour rather than a reset's hour, because it is handed
+ * straight back to the browser that has just proved the address rather than waiting in an inbox.
+ */
+export function issueAccountSetupGrant(now: Date): IssuedPasswordResetToken {
+  return mint(now, ACCOUNT_SETUP_PROOF_WINDOW_MS);
 }
 
 export function hashPasswordResetToken(value: string): Buffer {

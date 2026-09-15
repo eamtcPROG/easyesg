@@ -75,6 +75,15 @@ export interface AccountTransaction {
   markAccountVerified(accountId: string, at: Date): Promise<Account>;
 
   /**
+   * UC-03 for an account holding no password (task 155): the address is proven and the account
+   * enters setup rather than `active`, carrying the abandoned-setup deadline it is deleted at.
+   */
+  enterAccountSetup(setup: { readonly accountId: string; readonly expiresAt: Date }, at: Date): Promise<Account>;
+
+  /** Setup complete (task 155): `active`, and the abandoned-setup deadline cleared with it. */
+  activateAccount(accountId: string, at: Date): Promise<Account>;
+
+  /**
    * The invitation a registration presented, or null when the token names none — FR-3's third
    * route to a verified account (§12.5.6's task-26.2 row, task 26.2).
    *
@@ -103,8 +112,16 @@ export interface AccountTransaction {
   issuePasswordResetToken(token: NewPasswordResetToken): Promise<void>;
 
   /**
+   * Whether a live reset link — a `reset`, unconsumed and unexpired at `at` — carries this hash. **Read
+   * before the password is hashed** (task 155), so a public request presenting an unknown value costs an
+   * indexed read rather than an Argon2id derivation; the claim below still decides single use.
+   */
+  passwordResetTokenIsLive(tokenHash: Buffer, at: Date): Promise<boolean>;
+
+  /**
    * Single-use by conditional UPDATE, for `claimVerificationToken`'s reason exactly; expiry is
-   * the caller's comparison, and an expired claim un-claims by rollback, harmlessly.
+   * the caller's comparison, and an expired claim un-claims by rollback, harmlessly. **Claims a
+   * `reset` only** — a setup grant in the same table is `AccountSetupTransaction`'s (task 155).
    */
   claimPasswordResetToken(tokenHash: Buffer, at: Date): Promise<ClaimedPasswordResetToken | null>;
 

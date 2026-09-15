@@ -1,5 +1,6 @@
 import 'server-only';
 import type { RefreshSessionRequest, SessionResponse } from '@easyesg/contracts';
+import type { Locale } from '@easyesg/i18n';
 import { cookies } from 'next/headers';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { LOCALE_COOKIE, REFRESH_COOKIE } from '@/lib/session-cookie';
@@ -169,13 +170,21 @@ export async function establishSession(issued: {
   const { session, remembered } = issued;
   const payload = toPayload(session, remembered);
   await headerJar.write(sessionCookie(payload));
-  const store = await cookies();
-  store.set(LOCALE_COOKIE, session.account.locale, {
+  await rememberLocale(session.account.locale);
+  return payload;
+}
+
+/**
+ * OQ-32's locale cookie, from a profile preference the caller has just learned — at sign-in, and since
+ * task 155 when S-36's second step saves the language the person chose. One writer, so the two cannot
+ * disagree about the cookie's attributes.
+ */
+export async function rememberLocale(locale: Locale): Promise<void> {
+  (await cookies()).set(LOCALE_COOKIE, locale, {
     sameSite: 'lax',
     path: '/',
     maxAge: SECONDS_PER_YEAR,
   });
-  return payload;
 }
 
 /** Sign-out's local half: the cookie is gone whatever the API answered (FR-5's server-side
@@ -238,7 +247,25 @@ export async function refreshSession(input: {
   readonly jar: SessionJar;
 }): Promise<RefreshResult> {
   if (!accessTokenIsStale(input.current)) return { session: input.current };
+  return exchangeOnce(input);
+}
 
+/**
+ * Rotate **now**, whatever the access token's age (task 155) — for a Server Action whose own write has
+ * changed what the session's identity block says: an account completing its setup is `active`, with a
+ * name and a language it did not have. The API answers a refresh with the account as it stands, so
+ * rotation is the honest way to re-read it; patching the sealed payload here would be a second copy of
+ * the account, free to disagree with the first.
+ */
+export function renewSession(current: SessionPayload): Promise<RefreshResult> {
+  return exchangeOnce({ current, jar: headerJar });
+}
+
+/** The single flight both rotations share, keyed on the token being spent. */
+function exchangeOnce(input: {
+  readonly current: SessionPayload;
+  readonly jar: SessionJar;
+}): Promise<RefreshResult> {
   const existing = inflightRefreshes.get(input.current.refreshToken);
   if (existing) return existing;
   const flight = exchangeRefreshToken(input.current, input.jar).finally(() => {

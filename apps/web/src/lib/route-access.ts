@@ -41,6 +41,8 @@ const SEGMENT = {
   RESET: 'reset',
   SET_PASSWORD: 'set-password',
   INVITATION: 'invitation',
+  // (identity), behind a session — task 155
+  COMPLETE_ACCOUNT: 'complete-account',
 } as const;
 
 /**
@@ -82,6 +84,19 @@ export function requiresSession(pathname: string): boolean {
   const segment = routeSegment(pathname);
   if (!segment) return false; // the marketing home, at `/` or `/{locale}`
   return !UNAUTHENTICATED_SEGMENTS.has(segment);
+}
+
+/**
+ * Is this S-36 — the one address that needs a session and admits an account still completing its
+ * setup (task 155)? `proxy.ts` sends such an account here from every other address that needs a
+ * session, so this is the exception that keeps that redirect from pointing at itself.
+ *
+ * It is not in `UNAUTHENTICATED_SEGMENTS`, and must not be: the screen reads the account's setup
+ * through the session, so the closed-by-default gate — and the page-load rotation that rides on it —
+ * both have to reach it.
+ */
+export function completesAccountSetup(pathname: string): boolean {
+  return routeSegment(pathname) === SEGMENT.COMPLETE_ACCOUNT;
 }
 
 /**

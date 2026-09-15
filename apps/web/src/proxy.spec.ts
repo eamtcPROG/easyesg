@@ -46,7 +46,7 @@ const sessionWith = (overrides: Partial<SessionPayload> = {}): SessionPayload =>
   refreshToken: 'refresh-token-1',
   refreshTokenExpiresAt: Date.now() + 7 * DAY_MS,
   remembered: true,
-  account: { id: 'a', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro' },
+  account: { id: 'a', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro', status: 'active' },
   ...overrides,
 });
 
@@ -287,5 +287,70 @@ describe('proxy · page-load rotation', () => {
 
     expect(response.headers.get('location')).toBeNull();
     expect(setCookie(response)).not.toContain(`${REFRESH_COOKIE}=;`);
+  });
+});
+
+/**
+ * The proxy's job since task 155 (§12.5.6's task-155 row): an account still completing its setup is
+ * sent to S-36 from every address that needs a session. The case that would cost a session is the one
+ * where a rotation ran first, and it is the last one here.
+ */
+describe('proxy · an account completing its setup', () => {
+  const inSetup = (overrides: Partial<SessionPayload> = {}): SessionPayload =>
+    sessionWith({ ...overrides, account: { ...sessionWith().account, status: 'awaiting_setup' } });
+
+  it('sends it to S-36 from an address that needs a session, carrying where it was headed', async () => {
+    const response = await proxy(requestFor('/en/reports?period=1', inSetup()));
+
+    const location = response.headers.get('location') ?? '';
+    expect(new URL(location).pathname).toBe('/en/complete-account');
+    expect(new URL(location).searchParams.get('return')).toBe('/en/reports?period=1');
+  });
+
+  it('lets it reach S-36 itself — the exception that keeps the redirect from pointing at itself', async () => {
+    const response = await proxy(requestFor('/en/complete-account', inSetup()));
+
+    expect(response.headers.get('location')).toBeNull();
+  });
+
+  it('leaves an address that needs no session alone', async () => {
+    const response = await proxy(requestFor('/en/invitation/tok', inSetup()));
+
+    expect(response.headers.get('location')).toBeNull();
+  });
+
+  it('never turns an active account away', async () => {
+    const response = await proxy(requestFor('/en/reports', sessionWith()));
+
+    expect(response.headers.get('location')).toBeNull();
+  });
+
+  /**
+   * **The rotation has already spent the refresh token by the time this redirect is built.** A redirect
+   * that did not carry the successor would leave the browser presenting the consumed value next — which
+   * the API reads as theft past its 30 s grace, and answers by revoking the session.
+   */
+  it('carries a rotated successor on the redirect', async () => {
+    refreshAnswers(inSetup({ accessToken: 'rotated-access-token', refreshToken: 'refresh-token-2' }));
+
+    const response = await proxy(
+      requestFor('/en/reports', inSetup({ accessTokenExpiresAt: Date.now() + 5_000 })),
+    );
+
+    expect(response.headers.get('location')).toContain('/en/complete-account');
+    const header = setCookie(response);
+    const sealed = header.split(`${REFRESH_COOKIE}=`)[1]?.split(';')[0] ?? '';
+    expect(unsealSession({ sealed, secret: SECRET })?.refreshToken).toBe('refresh-token-2');
+  });
+
+  /** The status is read after rotation, so a setup finished on another device lets the next address through. */
+  it('reads the status the rotation just learned', async () => {
+    refreshAnswers(sessionWith({ accessToken: 'rotated-access-token', refreshToken: 'refresh-token-2' }));
+
+    const response = await proxy(
+      requestFor('/en/reports', inSetup({ accessTokenExpiresAt: Date.now() + 5_000 })),
+    );
+
+    expect(response.headers.get('location')).toBeNull();
   });
 });

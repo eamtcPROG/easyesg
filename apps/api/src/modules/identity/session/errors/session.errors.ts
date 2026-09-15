@@ -105,3 +105,18 @@ export class FactorInvalidError extends DomainError {
     super('identity.session.factor_invalid');
   }
 }
+
+/**
+ * Task 155 (§12.5.6's task-155 row): the session is sound and the account behind it is still completing
+ * its setup, so every route but its setup routes refuses it. `403` rather than `401`: the caller is
+ * authenticated and signing in again changes nothing — the way on is S-36, where the web tier's proxy
+ * sends an account its session cookie calls in setup before this refusal is ever reached.
+ */
+export class AccountSetupRequiredError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.AccountSetupRequired;
+  readonly status = 403;
+
+  constructor() {
+    super('identity.setup.required');
+  }
+}

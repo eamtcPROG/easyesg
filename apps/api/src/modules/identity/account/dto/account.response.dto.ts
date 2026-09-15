@@ -28,8 +28,9 @@ export class AccountResponseDto {
     // ACCOUNT_STATUS is contract order — reordering it is a contract diff openapi:check flags.
     enum: Object.values(ACCOUNT_STATUS),
     description:
-      'No application data is reachable while an account is unverified (FR-1). An unverified ' +
-      'account expires 7 days after registration.',
+      'No application data is reachable while an account is unverified (FR-1), or while it is ' +
+      'awaiting setup — a password and both name parts still to give. Either expires 7 days after ' +
+      'registration if not completed.',
   })
   readonly status: AccountStatus;
 

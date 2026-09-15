@@ -1,17 +1,19 @@
 'use client';
 
-import { evaluatePasswordPolicy, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@easyesg/validation';
-import { Button, Callout, CALLOUT_INTENT, Panel, RequirementList, TextLink } from '@easyesg/ui';
-import { FormPasswordField, FormSummary } from '@easyesg/ui/forms';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { Link } from '@/i18n/navigation';
+import { ROUTES } from '@/lib/routes';
+import { PolicyPasswordField } from '../../shared/components/policy-password-field';
 import { resetPasswordAction } from '../actions/actions';
 import type { ResetPasswordResult } from '../actions/action-results';
+import type { SetPasswordKind } from '../tools/set-password-kind';
 import styles from '../../shared/styles/identity-screens.module.css';
-import { ROUTES } from '@/lib/routes';
+import { SET_PASSWORD_MESSAGES, setPasswordWordingFor } from './set-password-messages';
 
 /**
  * S-02 · Set a new password from a reset link (FR-6, UC-09) — `/set-password?token=…`.
@@ -20,9 +22,12 @@ import { ROUTES } from '@/lib/routes';
  * states that consequence before it happens — the info callout is not decoration, it is the
  * disclosure S-02's validation-behaviour row requires.
  *
- * The policy block reuses `identity.register`'s catalogue entries deliberately: it is the same
- * policy (§9.8 — one evaluation shared with the API), and a second authored copy of the same
- * five sentences in three locales is drift waiting for a rewording.
+ * **Worded for the account the link was sent to** (task 155; §12.5.6's task-155 row (8)): the section
+ * hands over the `kind` the link decided, and `setPasswordWordingFor` picks the sentences that say *new*
+ * or *changed*; the rest is true for either account and stays single.
+ *
+ * The password field and its policy are `PolicyPasswordField`, the one wiring S-01's registration and
+ * S-36 share with this form.
  *
  * States (§8.1 subset): rest · submitting · invalid · success (every session out, S-01
  * offered) · error — recoverable (expired/consumed link as received, the request route as the
@@ -32,40 +37,17 @@ interface SetPasswordInput {
   password: string;
 }
 
-export function SetPasswordForm({ token }: { token: string }) {
-  const t = useTranslations('identity.setPassword');
-  // The password POLICY strings (OQ-51), genuinely shared with the register screen that
-  // declares them — this borrow is what its name says it is.
-  const tPolicy = useTranslations('identity.register');
-  // The reveal toggle's accessible names. `packages/ui` owns no text (UX-79), so the app supplies
-  // them — and they belong to no feature, which is why they are `forms` rather than borrowed from
-  // whichever screen happened to declare them first.
+export function SetPasswordForm({ token, kind }: { token: string; kind: SetPasswordKind }) {
+  const t = useTranslations(SET_PASSWORD_MESSAGES);
+  const worded = useTranslations(setPasswordWordingFor(kind));
+  // The summary's title. `packages/ui` owns no text (UX-79), so the app supplies it — and it belongs to
+  // no feature, which is why it is `forms` rather than borrowed from whichever screen declared it first.
   const tForms = useTranslations('forms');
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<ResetPasswordResult | null>(null);
 
   const { control, handleSubmit } = useForm<SetPasswordInput>({ mode: 'onTouched' });
-
-  // `useWatch`, not `watch()` — see register-form: one field's subscription, and the API
-  // `react-hooks/incompatible-library` does not refuse to compile.
-  const password = useWatch({ control, name: 'password' }) ?? '';
-  const verdict = evaluatePasswordPolicy(password);
-
-  const requirements = [
-    {
-      key: 'length',
-      label: tPolicy('requirements.length', {
-        minimum: PASSWORD_MIN_LENGTH,
-        maximum: PASSWORD_MAX_LENGTH,
-      }),
-      met: verdict.length,
-    },
-    { key: 'lowercase', label: tPolicy('requirements.lowercase'), met: verdict.lowercase },
-    { key: 'uppercase', label: tPolicy('requirements.uppercase'), met: verdict.uppercase },
-    { key: 'digit', label: tPolicy('requirements.digit'), met: verdict.digit },
-    { key: 'further', label: tPolicy('requirements.further'), met: verdict.further },
-  ];
 
   const submit = handleSubmit((input) => {
     startTransition(async () => {
@@ -77,14 +59,14 @@ export function SetPasswordForm({ token }: { token: string }) {
     return (
       <Callout
         intent={CALLOUT_INTENT.SUCCESS}
-        title={t('successTitle')}
+        title={worded('successTitle')}
         action={
           <TextLink asChild>
             <Link href={ROUTES.SIGN_IN}>{t('successAction')}</Link>
           </TextLink>
         }
       >
-        {t('successBody')}
+        {worded('successBody')}
       </Callout>
     );
   }
@@ -117,39 +99,20 @@ export function SetPasswordForm({ token }: { token: string }) {
         </Callout>
       ) : null}
 
-      <Callout intent={CALLOUT_INTENT.INFO} title={t('consequenceTitle')} action={t('consequenceAction')}>
-        {t('consequenceBody')}
+      <Callout
+        intent={CALLOUT_INTENT.INFO}
+        title={t('consequenceTitle')}
+        action={worded('consequenceAction')}
+      >
+        {worded('consequenceBody')}
       </Callout>
 
       <Panel className={styles.formPanel}>
         <div className={styles.fields}>
-          <div className={styles.passwordGroup}>
-            <FormPasswordField
-              control={control}
-              name="password"
-              label={t('passwordLabel')}
-              help={tPolicy('pasteHint')}
-              autoComplete="new-password"
-              revealLabel={tForms('show')}
-              concealLabel={tForms('hide')}
-              rules={{
-                validate: (value) =>
-                  evaluatePasswordPolicy(value ?? '').satisfied ||
-                  tPolicy('passwordPolicy', {
-                    minimum: PASSWORD_MIN_LENGTH,
-                    maximum: PASSWORD_MAX_LENGTH,
-                  }),
-              }}
-            />
-            <RequirementList
-              items={requirements}
-              metLabel={tPolicy('met')}
-              unmetLabel={tPolicy('unmet')}
-            />
-          </div>
+          <PolicyPasswordField control={control} name="password" label={worded('passwordLabel')} />
 
           <Button type="submit" busy={pending}>
-            {t('submit')}
+            {worded('submit')}
           </Button>
         </div>
       </Panel>

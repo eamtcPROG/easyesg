@@ -1,3 +1,4 @@
+import type { Account } from '@api/modules/identity/account/models/account.model';
 import type { AccountMembership } from '@api/modules/identity/membership/models/membership.model';
 import type { SessionLifetimeAnchors } from '../domain/session-expiry';
 
@@ -14,6 +15,11 @@ import type { SessionLifetimeAnchors } from '../domain/session-expiry';
  */
 export interface ResolvedRequestIdentity {
   readonly accountId: string;
+  /**
+   * The account's status and setup deadline, read with the session (task 155) — so the guard refuses an
+   * account in setup, and treats one past its deadline as no account, without a second read.
+   */
+  readonly account: Pick<Account, 'status' | 'setupExpiresAt'>;
   /** The two instants `sessionHasExpired` needs — sign-in, and the current refresh token's issuance. */
   readonly anchors: SessionLifetimeAnchors;
   /** Non-null once the session has been ended: sign-out, reuse detection, or a password reset. */

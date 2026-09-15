@@ -16,12 +16,16 @@ vi.mock('../actions/actions', () => ({
   resendVerificationAction: vi.fn(),
 }));
 
+/** The router the confirm surface pushes an account confirmed into setup with (task 155). */
+const push = vi.hoisted(() => vi.fn());
+
 vi.mock('@/i18n/navigation', () => ({
   Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
     <a href={String(href)} {...rest}>
       {children}
     </a>
   ),
+  useRouter: () => ({ push }),
 }));
 
 const verify = vi.mocked(verifyEmailAction);
@@ -99,6 +103,28 @@ describe('S-02 · confirm surface (?token=…)', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Confirmați adresa' })).toBeEnabled(),
     );
+  });
+
+  /**
+   * Task 155 (§12.5.6's task-155 row (4)): a provider registration whose provider did not assert the
+   * address holds no password, so its confirmation opens the password step — where the grant the
+   * action held is waiting — and never offers a sign-in it has no credential for. The deep link rides
+   * to the action, which holds it with the grant.
+   */
+  it('sends an account confirmed into setup to its password step, carrying the return path', async () => {
+    const user = userEvent.setup();
+    verify.mockResolvedValue({
+      status: 'ok',
+      value: { id: '018…', email: EMAIL, status: 'awaiting_setup' },
+      messages: [],
+    });
+    render(withIntl(<ConfirmEmail token={TOKEN} returnTo="/invitation/tok" />));
+
+    await user.click(screen.getByRole('button', { name: 'Confirmați adresa' }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/register/password'));
+    expect(verify).toHaveBeenCalledWith({ token: TOKEN, returnTo: '/invitation/tok' });
+    expect(screen.queryByRole('link', { name: 'Mergeți la autentificare' })).not.toBeInTheDocument();
   });
 });
 

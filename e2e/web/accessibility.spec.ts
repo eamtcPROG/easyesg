@@ -3,7 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cleanupAccounts,
   cleanupOrganizations,
+  dropCredential,
   grantMembership,
+  moveIntoSetup,
   seedOpenPeriod,
   seedReport,
   verificationTokenFor,
@@ -150,6 +152,68 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   // somebody clicks. A component spec pins the roles; only axe judges them in a real page.
   await accountTrigger(page, { email }).click();
   await expect(page.getByRole('menuitem', { name: 'Date de autentificare' })).toBeVisible();
+  await scan(page);
+});
+
+/**
+ * S-36 (task 155) — both steps, on one sign-in, because they are two different forms: a password
+ * field with its live requirement list, then two name fields and the language select. The account is
+ * moved into setup after signing in rather than registered through the provider stub, since what is
+ * under the scan is the screen and not the way to it (`social.spec.ts` drives that).
+ */
+test('axe finds no violations on both steps of the complete-your-account screen', async ({ page }) => {
+  const email = `${RUN_PREFIX}-setup@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/create-organization');
+
+  await moveIntoSetup({ email, holdsPassword: true });
+  await page.goto('/complete-account');
+  await expect(page.getByText('Pasul 2 din 2')).toBeVisible();
+  await scan(page);
+
+  await moveIntoSetup({ email, holdsPassword: false });
+  await page.goto('/complete-account');
+  await expect(page.getByText('Pasul 1 din 2')).toBeVisible();
+  await scan(page);
+});
+
+/**
+ * S-36's password step on S-02's path (task 155) — its own opening sentence and the *keep me signed in*
+ * checkbox the session arm does not carry, so it is a different form under the scan. Reached the way a
+ * provider registration that did not assert the address reaches it, minus the provider: a registration
+ * whose credential is removed before its confirmation link is followed is exactly that account's shape.
+ */
+test('axe finds no violations on the password step a confirmation link opens', async ({ page }) => {
+  const email = `${RUN_PREFIX}-grant@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ion');
+  await page.getByLabel('Nume de familie').fill('Rusu');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+
+  await dropCredential({ email });
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+  await page.waitForURL('**/register/password');
+  await expect(page.getByText('Pasul 1 din 2')).toBeVisible();
+  await expect(page.getByLabel('Țineți-mă autentificat pe acest dispozitiv')).toBeVisible();
   await scan(page);
 });
 

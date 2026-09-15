@@ -1,3 +1,4 @@
+import { accountHasLapsed } from '@api/modules/identity/account/domain/account-expiry';
 import type { Account } from '@api/modules/identity/account/models/account.model';
 import { REFRESH_REUSE_GRACE_MS, hashRefreshToken, mintRefreshToken } from '../domain/refresh-token';
 import { ACCESS_TOKEN_TTL_MS, sessionExpiresAt, sessionHasExpired } from '../domain/session-expiry';
@@ -98,15 +99,17 @@ export class RefreshSession {
         return { kind: REFRESH_OUTCOME.EXPIRED };
       }
 
+      // For the response's identity block, and read before anything is spent. The account outliving
+      // its session is guaranteed by the FK — a deleted account cascades its sessions, so the token
+      // lookup would have missed — **but one past its setup deadline is no account** (OQ-52, task
+      // 155), so its session ends here rather than rotating into a token every route would refuse.
+      const account = await tx.findAccountById(presented.accountId);
+      if (account === null || accountHasLapsed(account, now)) return { kind: REFRESH_OUTCOME.INVALID };
+
       if (!(await tx.consumeRefreshToken(presented.tokenId, now))) {
         return { kind: REFRESH_OUTCOME.INVALID };
       }
       await tx.issueRefreshToken(presented.sessionId, next.hash, now);
-
-      // For the response's identity block. The account outliving its session is guaranteed by
-      // the FK — a deleted account cascades its sessions, so the token lookup would have missed.
-      const account = await tx.findAccountById(presented.accountId);
-      if (account === null) return { kind: REFRESH_OUTCOME.INVALID };
 
       return {
         kind: REFRESH_OUTCOME.ROTATED,

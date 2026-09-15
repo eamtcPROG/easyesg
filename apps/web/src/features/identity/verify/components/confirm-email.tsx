@@ -1,10 +1,11 @@
 'use client';
 
+import { ACCOUNT_STATUS } from '@easyesg/contracts';
 import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { API_OUTCOME } from '@/lib/api-outcome';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { verifyEmailAction } from '../actions/actions';
 import { forgetPendingVerification } from '../../shared/store/pending-verification-store';
 import type { VerifyResult } from '../actions/action-results';
@@ -27,19 +28,29 @@ import { ROUTES } from '@/lib/routes';
  * success (account active, next step offered — never a bare toast for a consequential action) ·
  * error — recoverable (the problem's own three-part text as received, with the resend route as
  * the way out, per §8.4's finding-to-destination rule) · unreachable (bundled catalogue).
+ *
+ * **An account confirmed into setup does not reach the success state** (task 155): a provider
+ * registration whose provider did not assert the address holds no password, so the confirmation
+ * opens its password step — at `/register/password`, where the grant the action has just held is
+ * waiting — rather than offering a sign-in it has no credential for.
  */
 export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: string }) {
   const t = useTranslations('identity.verify');
   const tCommon = useTranslations('identity');
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<VerifyResult | null>(null);
 
   const confirm = () => {
     startTransition(async () => {
-      const outcome = await verifyEmailAction({ token });
+      const outcome = await verifyEmailAction({ token, returnTo });
       if (outcome.status === API_OUTCOME.Ok) {
         // The challenge is answered; the pending screen's stored address has no reader left.
         forgetPendingVerification();
+        if (outcome.value.status === ACCOUNT_STATUS.AWAITING_SETUP) {
+          router.push(ROUTES.REGISTER_PASSWORD);
+          return;
+        }
       }
       setResult(outcome);
     });

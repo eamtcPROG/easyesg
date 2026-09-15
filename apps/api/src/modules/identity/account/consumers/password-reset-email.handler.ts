@@ -5,8 +5,11 @@ import type { AppConfig } from '@api/config/configuration';
 import { EMAIL_PORT, type EmailPort } from '@api/contracts/email.port';
 import { HandlesJob, type JobContext, type JobHandler } from '@api/infrastructure/queue/job-handler';
 import {
+  PASSWORD_LINK_INTENT,
+  PASSWORD_LINK_INTENT_PARAM,
   PASSWORD_RESET_REQUESTED,
   PASSWORD_RESET_TEMPLATE,
+  PASSWORD_SETUP_TEMPLATE,
   type PasswordResetRequested,
 } from '../constants/account.constants';
 
@@ -21,6 +24,10 @@ import {
  * and the token is consumed by an explicit POST, never by opening the URL — the same
  * mail-scanner defence as verification, load-bearing here because this token replaces a
  * credential.
+ *
+ * **Two wordings, one link** (task 155). An account holding no password is sent the *set a password*
+ * message; the link, its lifetime and what consuming it does are identical, so the choice is the
+ * template and nothing else.
  */
 @Injectable()
 @HandlesJob(PASSWORD_RESET_REQUESTED)
@@ -38,11 +45,13 @@ export class PasswordResetEmailHandler implements JobHandler {
       this.config.get('web.publicUrl', { infer: true }),
     );
     link.searchParams.set('token', event.token);
+    // Only the page's words: S-02 reads it to say *set a password*, and the token decides the rest.
+    if (!event.holdsPassword) link.searchParams.set(PASSWORD_LINK_INTENT_PARAM, PASSWORD_LINK_INTENT.SETUP);
 
     await this.email.send({
       to: event.email,
       locale: event.locale,
-      templateKey: PASSWORD_RESET_TEMPLATE,
+      templateKey: event.holdsPassword ? PASSWORD_RESET_TEMPLATE : PASSWORD_SETUP_TEMPLATE,
       params: { resetUrl: link.toString() },
       idempotencyKey: context.jobId,
     });
@@ -51,7 +60,7 @@ export class PasswordResetEmailHandler implements JobHandler {
 
 /** Validates rather than casts — `VerificationEmailHandler.readEvent`'s argument, verbatim. */
 function readEvent(payload: Record<string, unknown>): PasswordResetRequested {
-  const { accountId, email, locale, token } = payload;
+  const { accountId, email, locale, token, holdsPassword } = payload;
 
   if (
     typeof accountId !== 'string' ||
@@ -67,5 +76,8 @@ function readEvent(payload: Record<string, unknown>): PasswordResetRequested {
     email,
     token,
     locale: toLocale(locale),
+    // A row written before task 155 carries no flag, and every such row was a reset of a held
+    // password — `RequestPasswordReset` issued to active accounts only — so absent reads as held.
+    holdsPassword: typeof holdsPassword === 'boolean' ? holdsPassword : true,
   };
 }

@@ -28,6 +28,13 @@ export const ProblemType = {
   AdminAccountLocked: 'admin-account-locked',
   AdminAccountExists: 'admin-account-exists',
   EmailUnverified: 'email-unverified',
+  /** Task 155: an account still in setup reached a route other than its setup routes. Its own slug rather than
+   *  `membership-required`, because the way out is a different screen — S-36 — and a front end cannot branch on
+   *  wording. */
+  AccountSetupRequired: 'account-setup-required',
+  /** Task 155: the proof a first password needs — a provider sign-in, or a confirmation link, no older than fifteen
+   *  minutes — has lapsed. Disclosed only to a caller holding that account's session or its grant. */
+  AccountSetupProofStale: 'account-setup-proof-stale',
   /** FR-82: the provider is not registered or is disabled — refused for sign-in and registration
    *  alike, which is the "stops new registrations" half; existing accounts keep their OTHER
    *  credentials, which is why this never says anything about the account. */

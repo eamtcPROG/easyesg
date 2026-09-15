@@ -1,5 +1,5 @@
 import type { Locale } from '@easyesg/i18n';
-import { unverifiedAccountHasExpired } from '../domain/account-expiry';
+import { accountHasLapsed } from '../domain/account-expiry';
 import { emailIdentityKey, normaliseEmail } from '../domain/email-address';
 import { passwordMeetsPolicy } from '../domain/password-policy';
 import { EmailAlreadyRegisteredError, PasswordPolicyViolationError } from '../errors/account.errors';
@@ -78,7 +78,8 @@ export class RegisterAccount {
       // read-then-write check and one of them would be wrong.
       const existing = await tx.findAccountByEmail(email);
       if (existing) {
-        if (!unverifiedAccountHasExpired(existing, now)) throw new EmailAlreadyRegisteredError();
+        // An abandoned setup past its deadline is reclaimed on the same terms (task 155).
+        if (!accountHasLapsed(existing, now)) throw new EmailAlreadyRegisteredError();
         await tx.deleteAccount(existing.id);
       }
 

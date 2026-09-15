@@ -1,9 +1,10 @@
 import createMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
+import { ACCOUNT_STATUS } from '@easyesg/contracts';
 import { toLocale, type Locale } from '@easyesg/i18n';
 import { routing } from '@/i18n/routing';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
-import { issuesSession, requiresSession } from '@/lib/route-access';
+import { completesAccountSetup, issuesSession, requiresSession } from '@/lib/route-access';
 import {
   accessTokenIsStale,
   liveSession,
@@ -11,7 +12,7 @@ import {
   type SessionCookie,
   type SessionJar,
 } from '@/server/session/session';
-import { ROUTES } from '@/lib/routes';
+import { completeAccountRoute, ROUTES } from '@/lib/routes';
 
 /**
  * One proxy module, two responsibilities.
@@ -33,6 +34,10 @@ import { ROUTES } from '@/lib/routes';
  * of which may write cookies and both of which already rotate. S-16 is the first Server Component
  * to read the API during render, where a cookie write throws, so without this a member returning
  * after twenty minutes met a 401 and an error screen holding a session with six days left on it.
+ *
+ * **Since task 155, a fourth: an account still completing its setup is sent to S-36** from every
+ * address that needs a session but S-36's own (§12.5.6's task-155 row). The API refuses such an
+ * account everything but its setup routes, so rendering the address would only draw refusals.
  */
 const handleI18nRouting = createMiddleware(routing);
 
@@ -95,6 +100,13 @@ async function rotateIfDue(request: NextRequest): Promise<RotationOutcome | null
   return outcome;
 }
 
+/** A renewed successor, set on whichever response this request finally answers with. */
+function carryRenewal(response: NextResponse, rotated: RotationOutcome | null): void {
+  if (rotated?.kind !== ROTATION.Renewed) return;
+  const { name, value, ...attributes } = rotated.cookie;
+  response.cookies.set(name, value, attributes);
+}
+
 export default async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
   // **Read before rotation, because rotation may delete it.** A refused refresh clears the cookie
@@ -114,21 +126,21 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   // Locale first: it may return a redirect (bare path → negotiated locale) or a rewrite, and
   // either way it establishes the locale the sign-in redirect below has to preserve.
   const response = handleI18nRouting(request);
-  if (rotated?.kind === ROTATION.Renewed) {
-    const { name, value, ...attributes } = rotated.cookie;
-    response.cookies.set(name, value, attributes);
-  }
+  carryRenewal(response, rotated);
   if (rotated?.kind === ROTATION.Ended) response.cookies.delete(REFRESH_COOKIE);
 
   // A redirect from locale negotiation is terminal — the request will arrive again, resolved.
   if (response.headers.has('location')) return response;
+
+  // After rotation, so it reads the successor — a status the rotation just learned included.
+  const held = liveSession(request.cookies.get(REFRESH_COOKIE)?.value);
 
   // **`liveSession`, not `cookies.has`** (task 112). The gate and `readSession` are two readings
   // of one fact — *does this request carry a session* — and while this one asked only whether a
   // cookie was present, a value that failed to unseal passed it: the screen rendered
   // authenticated, `api-client` had no token, and the reader met an error state instead of the
   // sign-in that would have fixed it. Failing closed here is what makes the two agree.
-  if (requiresSession(pathname) && !liveSession(request.cookies.get(REFRESH_COOKIE)?.value)) {
+  if (requiresSession(pathname) && !held) {
     const signIn = new URL(localePath(localeOf(pathname), ROUTES.SIGN_IN), request.url);
     // UX-38: session expiry returns the user to the exact screen they were on, with queued
     // changes submitted — never to a blank sign-in that loses their place.
@@ -148,6 +160,26 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
     // (OQ-35), so the browser holds it until the tab closes and would present a dead value on every
     // navigation until then.
     if (presented) redirected.cookies.delete(REFRESH_COOKIE);
+    return redirected;
+  }
+
+  // **Task 155: an account still completing its setup belongs on S-36.** The address it asked for
+  // rides along as `?return=`, for the sign-in redirect's UX-38 reason — S-36 hands it to §4.3's
+  // branch once the account is active.
+  if (
+    requiresSession(pathname) &&
+    held?.account.status === ACCOUNT_STATUS.AWAITING_SETUP &&
+    !completesAccountSetup(pathname)
+  ) {
+    const setup = new URL(
+      localePath(localeOf(pathname), completeAccountRoute(pathname + request.nextUrl.search)),
+      request.url,
+    );
+    const redirected = NextResponse.redirect(setup);
+    // **A renewed successor must ride on this redirect too.** The rotation above has already spent
+    // the refresh token; a browser left holding it presents a consumed value on its next request,
+    // which the API reads as theft past its 30 s grace and answers by revoking the session.
+    carryRenewal(redirected, rotated);
     return redirected;
   }
 

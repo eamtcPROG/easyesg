@@ -39,12 +39,21 @@ export {
 } from './outcome';
 
 // identity — /api/v1/auth (FR-1, FR-3; task 19)
-export { ACCOUNT_STATUS, type AccountStatus } from './account';
+export { ACCOUNT_STATUS, isAccountStatus, type AccountStatus } from './account';
 export type RegisterAccountRequest = components['schemas']['RegisterAccountRequestDto'];
 export type VerifyEmailRequest = components['schemas']['VerifyEmailRequestDto'];
 export type ResendVerificationEmailRequest =
   components['schemas']['ResendVerificationEmailRequestDto'];
 export type AccountResponse = components['schemas']['AccountResponseDto'];
+/** The confirmation's answer since task 155 — the account, and the setup grant for one holding no password. */
+export type EmailVerifiedResponse = components['schemas']['EmailVerifiedResponseDto'];
+
+// identity — an account's setup (FR-2, FR-3; task 155, S-36)
+export type AccountSetup = components['schemas']['AccountSetupResponseDto'];
+export type SetFirstPasswordRequest = components['schemas']['SetFirstPasswordRequestDto'];
+export type SetFirstPasswordByGrantRequest =
+  components['schemas']['SetFirstPasswordByGrantRequestDto'];
+export type SaveSetupProfileRequest = components['schemas']['SaveSetupProfileRequestDto'];
 
 // identity — sessions and password reset (FR-4, FR-5, FR-6; task 21)
 export type SignInRequest = components['schemas']['SignInRequestDto'];

@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-34`, `A-01` … `A-20` |
+| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-36`, `A-01` … `A-20` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -238,7 +238,9 @@ artboards keep) and that is not a duplicate: the tier states where you are, the 
 
 ```mermaid
 graph LR
-    A["Sign in"] --> B{"Memberships"}
+    A["Sign in"] --> Z{"Account set up"}
+    Z -->|no| Y["Complete your account<br/>S-36"] --> B
+    Z -->|yes| B{"Memberships"}
     B -->|none| C["Create organization<br/>UC-49"]
     B -->|one| D["Home"]
     B -->|many| E["Choose organization<br/>UC-16"] --> D
@@ -306,6 +308,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-33 | Help article | VI, CA | UC-181 | *escalated — OQ-17* |
 | S-34 | Write to support | VI, CA | UC-182 | Focus |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | Focus |
+| S-36 | Complete your account | CA | UC-02, UC-03 | Focus |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | Focus |
 | A-02 | Organization register | PA | UC-69 | Index |
 | A-03 | Content and translation console | PA | UC-71 … 74 | Editor + Publish |
@@ -327,7 +330,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-19 | My credentials (operator's own password, second factor, recovery codes) | PA, BO | UC-212 | Record |
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | Focus |
 
-**Count:** 55 screens — 35 tenant (`S-01 … S-35`) and 20 administrative (`A-01 … A-20`). **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
+**Count:** 56 screens — 36 tenant (`S-01 … S-36`) and 20 administrative (`A-01 … A-20`). **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -441,11 +444,11 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Archetype:** Focus.
 - **Entry points:** a time-limited verification link; a single-use, time-limited reset link; the reset-request route from S-01.
 - **Layout and regions:** single column, centred, one primary action. No further per-screen layout is specified in the source.
-- **Content and data shown:** the address being verified or reset; the password policy; for a reset request, a response identical whether or not the address is registered (UC-08).
+- **Content and data shown:** the address being verified or reset; the password policy; for a reset request, a response identical whether or not the address is registered (UC-08). **For an account holding no password, the set-password step and its success read as setting a password rather than replacing one** — the link sent to such an account says so (added 14 Sep 2026, task 155; `architecture.md` §12.5.6's task-155 row (8)).
 - **Controls and actions:** request a reset; set a new password; confirm verification; **request a new confirmation link** (added 20 Aug 2026, `architecture.md` OQ-55 — the link expires in 24 h while the unverified account lives 7 days, so this is the state's only exit). Like the reset request, its response is identical whether or not the address is registered.
 - **States:** loading — initial; success (account active, next step offered); error — recoverable (link expired, link already consumed, password fails policy).
 - **Validation behaviour:** password policy enforced on entry with the three-part message formula (§8.2). **The policy is stated as of 20 Aug 2026** — ≥ 8 and ≤ 128 characters requiring a lowercase letter, an uppercase letter, a digit and one further character (`architecture.md` §12.5.6, OQ-51); it is displayed before entry rather than only on failure, and **UX-108** binds here as it does on S-01, so paste and password-manager autofill must work on every field. Account enumeration is prevented by an invariant response. Consuming a reset link invalidates all existing sessions for the account (FR-6), which the screen must state as a consequence before it happens (P5).
-- **Exits:** on verification, the founding-organization flow (S-04) or a pending invitation (S-03) becomes available; on reset completion, S-01.
+- **Exits:** on verification, the founding-organization flow (S-04) or a pending invitation (S-03) becomes available — **or, for an account registered through a provider, S-36's password step, open for 15 minutes from the confirmation** (added 14 Sep 2026, task 155); on reset completion, S-01.
 - **Use cases:** UC-03, UC-08, UC-09.
 - **FRs:** FR-3, FR-6.
 
@@ -460,7 +463,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Controls and actions:** create an account by password; create an account by provider; sign in to link an existing account; accept. **Amended 25 Aug 2026 (task 26.3's unknowns batch, project owner):** the first three are **routes, not forms**. S-03 hands off to S-01 carrying `?return=` back to itself, rather than hosting a second copy of the registration and sign-in forms — which keeps this screen a true Focus (one task, one primary action, and `accept` is it) and keeps S-01 the single place a credential is entered. The registration route additionally carries the invitation, so the account it creates is already verified (FR-3, `architecture.md` §12.5.6's task-26.2 row); without that the invitee would wait for a second email in the one flow that amendment exists to spare them.
 - **States:** loading — initial; error — recoverable (invitation expired, already used, revoked — and **not found**, added 25 Aug 2026: a mistyped or truncated link is its own sentence rather than a variant of "expired", and `architecture.md` §12.5.6's task-26.2 row carries the four as a closed vocabulary the API publishes); error — permission (a provider identity asserting an address other than the invited one is refused, UC-15 — **and equally an existing session signed in as any other address**, which is the same refusal reached without a provider). **The permission state carries its own resolving action (25 Aug 2026):** it names the address the invitation is bound to alongside the one currently signed in, and offers to sign out and return here as the invited person — the second way out being to ask the administrator for an invitation to the address actually in use.
 - **Validation behaviour:** the invitation binds to the invited email address; a social sign-in is accepted only where the provider asserts that same address.
-- **Exits:** S-05 in the newly joined organization.
+- **Exits:** S-05 in the newly joined organization. **An invitee who registered through a provider completes S-36 first and returns here to accept** (added 14 Sep 2026, task 155).
 - **Use cases:** UC-15.
 - **FRs:** FR-11.
 
@@ -925,6 +928,56 @@ grounds that the branch has not resolved *where the user belongs*, so sending th
 organization overview asserts an organization — and until task 30.5 builds S-05 they would see a
 blank page rather than an explanation. The cost is recorded: two screens now own a "could not load
 your organizations" state, and 30.5 must not duplicate this one's wording.
+
+### S-36 — Complete your account
+
+**Added 14 Sep 2026 (task 155), and an addition to the inventory** — UX-7 makes a new screen an
+amendment, and the identifier is appended after S-35. `architecture.md` §12.5.6's task-155 row
+carries the decisions behind it.
+
+- **Purpose:** finish an account registered through Google or Microsoft before it can do anything
+  else — a password, so the account survives its provider being withdrawn (UC-70), and the two name
+  parts a provider's single display name cannot be trusted to split (OQ-16's closure; UX-137 derives
+  the display name from them).
+- **Primary actors:** CA.
+- **Archetype:** Focus.
+- **Entry points:** §4.3's branch, whenever the signed-in account is in setup — after a provider
+  registration, and at the next sign-in of an account that was active with no password; S-02's
+  confirmation, where the provider did not assert the address; and a provider registration begun on
+  S-03. No navigation reaches it; arriving is always a consequence. **On S-02's path the password step
+  is served at S-01's registration address** — `/register/password`, while the confirmation's single-use
+  grant is held — as S-01's factor step is served at `/sign-in/factor`: the account has no session until
+  the password is set, so it cannot yet reach an address that needs one. **That step issues a session,
+  so UX-136 binds it**, and serving it inside the registration address is what puts it under that gate:
+  a caller already holding a session is answered by §4.3's branch rather than the form, which would
+  otherwise replace the session held with the confirmed account's (moved from `/verify/password` on
+  15 Sep 2026, task 155's second parent-close review). The name step that follows is at S-36's own
+  address.
+- **Layout and regions:** single column, centred, one primary action per step (the Focus fixed
+  elements); the two steps in order, the second reached only once the first is done, with the step's
+  position stated.
+- **Content and data shown:** step one — the account's address and the password policy, stated
+  before entry (OQ-51); step two — the given name and the family name, the given name pre-filled from
+  what the provider sent, and the interface language, pre-selected from the account's own.
+- **Controls and actions:** set the password; save the names and language; sign out, on both steps
+  wherever a session is held. On S-02's path, where there is none yet, **keep me signed in on this
+  device** sits beside the password, because that step signs the person in (`architecture.md`
+  §12.5.6's task-155 row (4)), and S-01 is the way on once the grant has lapsed.
+- **States:** loading — initial; pending — async (a step's submission); error — recoverable (the
+  password fails the policy; a name is missing; **the 15-minute window for the first password has
+  closed**, whose way out is signing in with the provider again, or requesting a password link from
+  S-01, which an account in setup is sent like an active one — UC-08); error — the setup cannot be read
+  (whose way out is signing out and in again, S-01 being closed to a reader who holds a session);
+  success (the account active,
+  and the next destination offered).
+- **Validation behaviour:** the password policy with the three-part message formula (§8.2), and
+  **UX-108** — paste and password-manager autofill work on every field; both names required (FR-2 and `architecture.md` §12.5.6's task-155 row (2); FR-9 names the two
+  fields, UX-137 derives the display name from them). Nothing else is reachable while the account is in setup: the api refuses it, and every
+  `(app)` route sends it here.
+- **Exits:** §4.3's branch — S-04, S-05 or S-35 — or S-03 when the registration began there. Sign-out
+  exits to S-01.
+- **Use cases:** UC-02, UC-03.
+- **FRs:** FR-2, FR-3, FR-9.
 
 ### 5.1b Public tier screens
 
@@ -2203,6 +2256,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-33 | Help article | VI, CA | UC-181 | FR-61, FR-64 |
 | S-34 | Write to support | VI, CA | UC-182 | — (G-9) |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | FR-12 |
+| S-36 | Complete your account | CA | UC-02, UC-03 | FR-2, FR-3, FR-9 |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68, UC-212 | FR-75, FR-80 |
 | A-02 | Organization register | PA | UC-69 | FR-76, FR-77 |
 | A-03 | Content and translation console | PA | UC-71 … 74 | FR-61, FR-62, FR-63, FR-64, FR-74 |

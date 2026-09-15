@@ -47,6 +47,13 @@ export interface SocialSignInTransaction {
   /** UC-03's automatic satisfaction: the provider asserted the address verified. */
   markAccountVerified(accountId: string, at: Date): Promise<Account>;
 
+  /**
+   * The same satisfaction for an account holding no password (task 155) — it enters setup rather
+   * than `active`, carrying the abandoned-setup deadline. `AccountTransaction.enterAccountSetup`'s
+   * contract, restated for this store's callers.
+   */
+  enterAccountSetup(setup: { readonly accountId: string; readonly expiresAt: Date }, at: Date): Promise<Account>;
+
   /** OQ-52's reclaim, exactly as the account store's — cascade takes tokens and identities. */
   deleteAccount(accountId: string): Promise<void>;
 

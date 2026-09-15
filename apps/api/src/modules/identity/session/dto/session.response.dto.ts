@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { displayName, monogram } from '@api/modules/identity/account/domain/display-name';
 import { LOCALES, type Locale } from '@easyesg/i18n';
 import type { EpochMillis } from '@api/contracts/types/time';
+import { ACCOUNT_STATUS, type AccountStatus } from '@api/modules/identity/account/models/account.model';
 import { SIGN_IN_OUTCOME, type IssuedSession } from '../models/session.model';
 
 /**
@@ -47,9 +48,18 @@ export class SessionAccountDto {
   @ApiProperty({ type: String, example: 'AP', nullable: true })
   readonly monogram: string | null;
 
+  /**
+   * The account's lifecycle status (task 155) — admitted on this block's own criterion: the web tier
+   * needs it at exactly this moment, to send an account in setup to S-36 before anything else is read,
+   * since every other session-bearing route refuses such an account.
+   */
+  @ApiProperty({ enum: Object.values(ACCOUNT_STATUS) })
+  readonly status: AccountStatus;
+
   constructor(account: IssuedSession['account']) {
     this.id = account.id;
     this.email = account.email;
+    this.status = account.status;
     this.displayName = displayName(account, account.email);
     this.monogram = monogram(account);
     this.locale = account.locale;

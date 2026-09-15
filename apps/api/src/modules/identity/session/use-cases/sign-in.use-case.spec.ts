@@ -60,6 +60,7 @@ describe('SignIn (UC-04, FR-4)', () => {
     givenName: null,
     familyName: null,
     verifiedAt: new Date('2026-08-01T00:00:00Z'),
+    setupExpiresAt: null,
     createdAt: new Date('2026-08-01T00:00:00Z'),
     updatedAt: new Date('2026-08-01T00:00:00Z'),
     ...overrides,
@@ -164,6 +165,28 @@ describe('SignIn (UC-04, FR-4)', () => {
         CredentialInvalidError,
       );
       expect(store.credentials.get('account-1')?.failedAttempts).toBe(0);
+    });
+
+    it('treats an account abandoned in setup past its deadline as no account (task 155)', async () => {
+      store.seedAccount(
+        account({ status: ACCOUNT_STATUS.AWAITING_SETUP, setupExpiresAt: new Date(now.getTime() - 1) }),
+        credential(),
+      );
+
+      await expect(signIn.execute({ email, password: 'Parola123!' })).rejects.toBeInstanceOf(
+        CredentialInvalidError,
+      );
+    });
+
+    it('signs in an account in setup that holds a password — its session reaches S-36 (task 155)', async () => {
+      store.seedAccount(
+        account({ status: ACCOUNT_STATUS.AWAITING_SETUP, setupExpiresAt: null }),
+        credential(),
+      );
+
+      await expect(signIn.execute({ email, password: 'Parola123!' })).resolves.toMatchObject({
+        kind: 'signed_in',
+      });
     });
   });
 

@@ -64,7 +64,7 @@ describe('ResendVerificationEmail (FR-3, OQ-55)', () => {
       const reissued = (store.effects[1].payload as unknown as EmailVerificationRequested).token;
 
       await expect(new VerifyEmail(store, () => LATER).execute({ token: reissued })).resolves.toMatchObject({
-        status: 'active',
+        account: { status: 'active' },
       });
     });
 

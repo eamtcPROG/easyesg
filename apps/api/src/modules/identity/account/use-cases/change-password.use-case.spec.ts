@@ -48,6 +48,7 @@ describe('ChangePassword (UC-10, FR-7)', () => {
       givenName: null,
       familyName: null,
       verifiedAt: now,
+      setupExpiresAt: null,
       createdAt: now,
       updatedAt: now,
     });

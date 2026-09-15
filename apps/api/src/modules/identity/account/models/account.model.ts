@@ -24,6 +24,13 @@ import type { Locale } from '@easyesg/i18n';
  */
 export const ACCOUNT_STATUS = {
   UNVERIFIED: 'unverified',
+  /**
+   * Task 155 (§12.5.6's task-155 row): the address is proven and the account may sign in, but it has
+   * not yet set a password and both name parts, so `AuthGuard` refuses it every route but the setup
+   * routes. Declared between the other two because it is the lifecycle's middle — and declaration
+   * order is contract order.
+   */
+  AWAITING_SETUP: 'awaiting_setup',
   ACTIVE: 'active',
 } as const;
 
@@ -49,6 +56,13 @@ export interface Account {
   readonly givenName: string | null;
   readonly familyName: string | null;
   readonly verifiedAt: Date | null;
+  /**
+   * When an abandoned setup stops being an account — seven days after registration (task 155).
+   * **Null for every account not in setup, and for one moved into setup from `active`**, which may
+   * hold organizations and is never deleted by that rule: the status alone cannot tell the two kinds
+   * of setup apart, so the deadline is carried here.
+   */
+  readonly setupExpiresAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -90,11 +104,27 @@ export interface ClaimedVerificationToken {
   readonly expiresAt: Date;
 }
 
+/**
+ * What a password-reset token row is for (task 155) — `identity.password_reset_token.purpose`'s CHECK,
+ * mirrored. **One table, two uses, and each route claims only its own**: a `reset` is the link UC-08
+ * emails, spent by `POST /auth/password-reset`; an `account_setup` grant is what a consumed confirmation
+ * link hands an account holding no password, spent by `POST /auth/account-setup/password`, which signs
+ * the person in. Without the distinction a reset link would sign its holder in.
+ */
+export const PASSWORD_RESET_TOKEN_PURPOSE = {
+  RESET: 'reset',
+  ACCOUNT_SETUP: 'account_setup',
+} as const;
+
+export type PasswordResetTokenPurpose =
+  (typeof PASSWORD_RESET_TOKEN_PURPOSE)[keyof typeof PASSWORD_RESET_TOKEN_PURPOSE];
+
 /** Mirrors `NewVerificationToken` for FR-6's reset challenge — same shape, different object. */
 export interface NewPasswordResetToken {
   readonly accountId: string;
   readonly tokenHash: Buffer;
   readonly expiresAt: Date;
+  readonly purpose: PasswordResetTokenPurpose;
 }
 
 export interface ClaimedPasswordResetToken {

@@ -1,15 +1,15 @@
 'use client';
 
-import { evaluatePasswordPolicy, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@easyesg/validation';
-import { Button, Callout, CALLOUT_INTENT, Panel, RequirementList, TextLink } from '@easyesg/ui';
-import { FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { ACCOUNT_STATUS } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { Link, useRouter } from '@/i18n/navigation';
 import { registerAction } from '../actions/actions';
+import { PolicyPasswordField } from '../../shared/components/policy-password-field';
 import { rememberPendingVerification } from '../../shared/store/pending-verification-store';
 import styles from '../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
@@ -24,7 +24,8 @@ import { ROUTES } from '@/lib/routes';
  * received; unreachable from the bundled catalogue) · success (exit to the S-02 challenge).
  *
  * The password policy is displayed before entry and answers itself while typing (S-02's
- * "enforced on entry", via `@easyesg/validation` — the same evaluation the API runs, §9.8).
+ * "enforced on entry", via `@easyesg/validation` — the same evaluation the API runs, §9.8), through
+ * `PolicyPasswordField`, the one wiring S-02's set-password form and S-36 share with this one.
  * UX-108: nothing here blocks paste or autofill; `autoComplete="new-password"` invites the
  * password manager.
  */
@@ -61,27 +62,6 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
   const [failure, setFailure] = useState<ApiFailure | null>(null);
 
   const { control, handleSubmit } = useForm<RegisterInput>({ mode: 'onTouched' });
-
-  // `useWatch`, not `watch()`: it subscribes to this one field instead of re-rendering the form
-  // on every change, and it is the API React Compiler can memoize — `watch()` is what
-  // `react-hooks/incompatible-library` was warning about here.
-  const password = useWatch({ control, name: 'password' }) ?? '';
-  const verdict = evaluatePasswordPolicy(password);
-
-  const requirements = [
-    {
-      key: 'length',
-      label: t('requirements.length', {
-        minimum: PASSWORD_MIN_LENGTH,
-        maximum: PASSWORD_MAX_LENGTH,
-      }),
-      met: verdict.length,
-    },
-    { key: 'lowercase', label: t('requirements.lowercase'), met: verdict.lowercase },
-    { key: 'uppercase', label: t('requirements.uppercase'), met: verdict.uppercase },
-    { key: 'digit', label: t('requirements.digit'), met: verdict.digit },
-    { key: 'further', label: t('requirements.further'), met: verdict.further },
-  ];
 
   const submit = handleSubmit((input) => {
     setFailure(null);
@@ -186,30 +166,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
             }}
           />
 
-          <div className={styles.passwordGroup}>
-            <FormPasswordField
-              control={control}
-              name="password"
-              label={t('passwordLabel')}
-              help={t('pasteHint')}
-              autoComplete="new-password"
-              revealLabel={tForms('show')}
-              concealLabel={tForms('hide')}
-              rules={{
-                validate: (value) =>
-                  evaluatePasswordPolicy(value ?? '').satisfied ||
-                  t('passwordPolicy', {
-                    minimum: PASSWORD_MIN_LENGTH,
-                    maximum: PASSWORD_MAX_LENGTH,
-                  }),
-              }}
-            />
-            <RequirementList
-              items={requirements}
-              metLabel={t('met')}
-              unmetLabel={t('unmet')}
-            />
-          </div>
+          <PolicyPasswordField control={control} name="password" label={t('passwordLabel')} />
 
           <Button type="submit" busy={pending}>
             {t('submit')}

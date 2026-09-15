@@ -1,5 +1,7 @@
 import type { EmailVerificationRequested } from '../constants/account.constants';
 import { UNVERIFIED_ACCOUNT_TTL_MS } from '../domain/account-expiry';
+import { ACCOUNT_SETUP_PROOF_WINDOW_MS } from '../domain/account-setup';
+import { hashPasswordResetToken } from '../domain/password-reset-token';
 import { VERIFICATION_TOKEN_TTL_MS } from '../domain/verification-token';
 import { VerificationTokenInvalidError } from '../errors/account.errors';
 import { FakeAccountStore, FakePasswordHasher } from '../testing/account-store.fake';
@@ -30,12 +32,14 @@ describe('VerifyEmail (UC-03, FR-3)', () => {
     token = (store.effects[0].payload as unknown as EmailVerificationRequested).token;
   });
 
-  it('activates the account', async () => {
+  it('activates an account that holds a password, and answers no grant', async () => {
     const at = new Date(REGISTERED_AT.getTime() + 60_000);
-    const account = await verifyAt(at).execute({ token: token });
+    const verified = await verifyAt(at).execute({ token: token });
 
-    expect(account.status).toBe('active');
-    expect(account.verifiedAt).toEqual(at);
+    expect(verified.account.status).toBe('active');
+    expect(verified.account.verifiedAt).toEqual(at);
+    expect(verified.setupGrant).toBeNull();
+    expect(store.resetTokens).toHaveLength(0);
   });
 
   it('refuses a token that was never issued', async () => {
@@ -64,7 +68,9 @@ describe('VerifyEmail (UC-03, FR-3)', () => {
 
   it('accepts a token one millisecond before it lapses', async () => {
     const justInTime = new Date(REGISTERED_AT.getTime() + VERIFICATION_TOKEN_TTL_MS - 1);
-    await expect(verifyAt(justInTime).execute({ token: token })).resolves.toMatchObject({ status: 'active' });
+    await expect(verifyAt(justInTime).execute({ token: token })).resolves.toMatchObject({
+      account: { status: 'active' },
+    });
   });
 
   /**
@@ -91,5 +97,51 @@ describe('VerifyEmail (UC-03, FR-3)', () => {
     expect(store.accounts[0].status).toBe('unverified');
     expect(store.accounts[0].verifiedAt).toBeNull();
     expect(store.rollbacks).toBe(1);
+  });
+
+  /**
+   * Task 155 (§12.5.6's task-155 row (4)). A provider registration whose provider did not assert the
+   * address holds no password; registration is run for real and its credential removed, which is that
+   * account's shape exactly — an unverified row, a live challenge, no credential.
+   */
+  describe('an account holding no password (task 155)', () => {
+    beforeEach(() => {
+      store.credentials.delete(store.accounts[0].id);
+    });
+
+    it('enters setup with the deadline registration set, and answers a single-use grant good for a quarter-hour', async () => {
+      const at = new Date(REGISTERED_AT.getTime() + 60_000);
+      const verified = await verifyAt(at).execute({ token: token });
+
+      expect(verified.account.status).toBe('awaiting_setup');
+      expect(verified.account.verifiedAt).toEqual(at);
+      expect(verified.account.setupExpiresAt).toEqual(
+        new Date(REGISTERED_AT.getTime() + UNVERIFIED_ACCOUNT_TTL_MS),
+      );
+
+      expect(verified.setupGrant).not.toBeNull();
+      expect(store.resetTokens).toHaveLength(1);
+      expect(store.resetTokens[0].tokenHash.equals(hashPasswordResetToken(verified.setupGrant ?? ''))).toBe(
+        true,
+      );
+      expect(store.resetTokens[0].expiresAt).toEqual(new Date(at.getTime() + ACCOUNT_SETUP_PROOF_WINDOW_MS));
+      expect(verified.setupGrantExpiresAt).toEqual(store.resetTokens[0].expiresAt);
+      // A grant, not a reset link: the route that signs its holder in claims nothing else.
+      expect(store.resetTokens[0].purpose).toBe('account_setup');
+    });
+
+    it('retires an outstanding reset link, so the grant is the one live challenge', async () => {
+      store.resetTokens.push({
+        accountId: store.accounts[0].id,
+        tokenHash: hashPasswordResetToken('an-older-link'),
+        expiresAt: new Date(REGISTERED_AT.getTime() + 60 * 60 * 1000),
+        consumedAt: null,
+        purpose: 'reset',
+      });
+
+      await verifyAt(new Date(REGISTERED_AT.getTime() + 60_000)).execute({ token: token });
+
+      expect(store.resetTokens.filter((t) => t.consumedAt === null)).toHaveLength(1);
+    });
   });
 });

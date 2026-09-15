@@ -1,10 +1,11 @@
 import 'server-only';
-import type { AccountMembership } from '@easyesg/contracts';
+import { ACCOUNT_STATUS, type AccountMembership } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { sanitizeReturnPath } from '@/lib/locale-path';
 import { postSignInTarget, type PostSignInTarget } from '@/features/identity/shared/tools/post-sign-in';
 import { api } from '../api/api-client';
 import { readMemberships } from '../data/memberships';
+import { readSession } from './session';
 
 /**
  * The server seam for §4.3's branch: read the caller's memberships, then decide (task 25.4).
@@ -19,11 +20,20 @@ import { readMemberships } from '../data/memberships';
  * `unreachable` outcome — a timeout, a gateway failure, the API down — lands in the same arm as a
  * problem document, because to the person waiting they are one fact with one remedy. Both functions
  * below share that, through the one pure `postSignInTarget`.
+ *
+ * **Both ask the session first whether its account is still completing its setup** (task 155), and
+ * read no memberships when it is: the API refuses such an account that read, and the refusal would
+ * otherwise land it on S-35 as *organization unavailable* — a wrong screen stated as a fact. The
+ * status comes from the sealed cookie, which for `resolvePostSignIn` is the one its caller has just
+ * written and which a refresh keeps current for the other.
  */
+
+const awaitingSetup = async (): Promise<boolean> =>
+  (await readSession())?.account.status === ACCOUNT_STATUS.AWAITING_SETUP;
 
 /**
  * For a caller that has **just established a session** — the password action, the factor step, the
- * provider callback.
+ * provider callback, and S-36 once the account is active.
  *
  * One place does both the read and the decision, so the password and provider flows exit
  * identically: a provider session is the same session (UC-05), and task 24 recorded its
@@ -51,10 +61,16 @@ import { readMemberships } from '../data/memberships';
  * than papered over with a test that proves nothing.
  */
 export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTarget> => {
+  const returnPath = sanitizeReturnPath(returnTo);
+  if (await awaitingSetup()) {
+    return postSignInTarget({ awaitingSetup: true, memberships: null, returnTo: returnPath });
+  }
+
   const outcome = await api.getList<AccountMembership>('/memberships');
   return postSignInTarget({
+    awaitingSetup: false,
     memberships: outcome.status === API_OUTCOME.Ok ? outcome.value.items : null,
-    returnTo: sanitizeReturnPath(returnTo),
+    returnTo: returnPath,
   });
 };
 
@@ -73,4 +89,6 @@ export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTa
  * which is the dead argument task 112's own review found here once already.
  */
 export const destinationForHeldSession = async (): Promise<PostSignInTarget> =>
-  postSignInTarget({ memberships: await readMemberships(), returnTo: null });
+  (await awaitingSetup())
+    ? postSignInTarget({ awaitingSetup: true, memberships: null, returnTo: null })
+    : postSignInTarget({ awaitingSetup: false, memberships: await readMemberships(), returnTo: null });

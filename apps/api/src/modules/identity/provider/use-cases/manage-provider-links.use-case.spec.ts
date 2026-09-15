@@ -82,6 +82,7 @@ describe('ManageProviderLinks (UC-11, UC-12, FR-8)', () => {
     givenName: null,
     familyName: null,
     verifiedAt: now,
+    setupExpiresAt: null,
     createdAt: now,
     updatedAt: now,
   });

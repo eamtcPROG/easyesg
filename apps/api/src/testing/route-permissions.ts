@@ -8,6 +8,7 @@ import {
   REQUIRES_ACCOUNT,
 } from '@api/modules/identity/membership/constants/membership.constants';
 import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
+import { ADMITS_ACCOUNT_IN_SETUP } from '@api/modules/identity/session/constants/account-setup-gate.constants';
 import {
   AUDIT_ACTION_METADATA,
   type AuditDeclaration,
@@ -88,6 +89,13 @@ export const PERMISSION = {
    * judged by `AdminRealmGuard` from the realm's sealed cookie, never by the tenant guard.
    */
   ADMIN: 'admin',
+  /**
+   * An authenticated account, **including one still completing its setup** (task 155) —
+   * `@AdmitsAccountInSetup`, which composes `@RequiresAccount`. Its own kind rather than `account`,
+   * because `AuthGuard` refuses an account in setup every `account` and `role` route: the two kinds
+   * admit different people, so a table that spelled them alike would say something false.
+   */
+  SETUP: 'setup',
 } as const;
 
 type PermissionKind = (typeof PERMISSION)[keyof typeof PERMISSION];
@@ -96,6 +104,7 @@ type PermissionKind = (typeof PERMISSION)[keyof typeof PERMISSION];
 type Permission =
   | typeof PERMISSION.PUBLIC
   | typeof PERMISSION.ACCOUNT
+  | typeof PERMISSION.SETUP
   | `${typeof PERMISSION.ROLE}:${string}`
   | `${typeof PERMISSION.ADMIN}:${string}`;
 
@@ -164,6 +173,9 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /auth/social/providers': PERMISSION.PUBLIC,
   'POST /auth/social/:provider/challenge': PERMISSION.PUBLIC,
   'POST /auth/social/:provider/session': PERMISSION.PUBLIC,
+  // The confirmation link's first password (task 155). Public for the funnel's reason: the account
+  // holds no session until this succeeds, and the single-use grant the link minted stands in for one.
+  'POST /auth/account-setup/password': PERMISSION.PUBLIC,
 
   // ── The admin realm. **`public` here means public to the TENANT guard and nothing more**: this
   // surface carries no bearer, and NFR-65 gives it a separate credential store, a sealed
@@ -239,6 +251,13 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /account/providers': PERMISSION.ACCOUNT,
   'POST /account/providers/:provider': PERMISSION.ACCOUNT,
   'POST /account/providers/:provider/removal': PERMISSION.ACCOUNT,
+
+  // ── An account's setup (task 155; S-36). The only session-bearing routes an account in setup
+  // reaches, and open to every other signed-in account besides — an active account reading its own
+  // setup is told it is complete, and its writes are refused as such.
+  'GET /account/setup': PERMISSION.SETUP,
+  'POST /account/setup/password': PERMISSION.SETUP,
+  'POST /account/setup/profile': PERMISSION.SETUP,
 
   // ── Memberships: which organizations this account belongs to (UC-16). `account`, not `role` —
   // its caller is by definition someone who may belong to nothing, and `@RequiresRole` would
@@ -405,6 +424,8 @@ function permissionOf(controller: Constructor, handler: object): Permission | nu
   const roles = read<string[]>(REQUIRED_ROLES);
   if (roles !== undefined && roles.length > 0) return `${PERMISSION.ROLE}:${[...roles].sort().join('+')}`;
 
+  // Before `REQUIRES_ACCOUNT`, which the setup marker composes and therefore always carries.
+  if (read<boolean>(ADMITS_ACCOUNT_IN_SETUP) === true) return PERMISSION.SETUP;
   if (read<boolean>(REQUIRES_ACCOUNT) === true) return PERMISSION.ACCOUNT;
   return null;
 }

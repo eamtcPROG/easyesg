@@ -12,7 +12,7 @@ const payload: SessionPayload = {
   refreshToken: 'opaque-refresh-token',
   refreshTokenExpiresAt: 1_788_048_000_000,
   remembered: true,
-  account: { id: 'c0ffee00-0000-7000-8000-000000000001', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro' },
+  account: { id: 'c0ffee00-0000-7000-8000-000000000001', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro', status: 'active' },
 };
 
 describe('the session cookie codec (OQ-33)', () => {
@@ -130,5 +130,31 @@ describe('the identity block sealed before task 140', () => {
 
     expect(opened?.account.displayName).toBe(payload.account.displayName);
     expect(opened?.account.monogram).toBe(payload.account.monogram);
+  });
+});
+
+/**
+ * The account status sealed since task 155 — what the proxy sends an account in setup to S-36 on.
+ * Tolerant like the members above, and for a reason that is a fact rather than a convenience: every
+ * session sealed before the field existed was issued to an active account.
+ */
+describe('the account status in the sealed payload (task 155)', () => {
+  it('carries a status through the seal unchanged', () => {
+    const sealed = sealSession({ ...payload, account: { ...payload.account, status: 'awaiting_setup' } }, SECRET);
+
+    expect(unsealSession({ sealed, secret: SECRET })?.account.status).toBe('awaiting_setup');
+  });
+
+  it('opens a payload sealed before the field existed as active', () => {
+    const { status: _dropped, ...account } = payload.account;
+    const sealed = sealJson({ ...payload, account }, SECRET);
+
+    expect(unsealSession({ sealed, secret: SECRET })?.account.status).toBe('active');
+  });
+
+  it('reads a status outside the vocabulary as active, rather than refusing the session', () => {
+    const sealed = sealJson({ ...payload, account: { ...payload.account, status: 'suspended' } }, SECRET);
+
+    expect(unsealSession({ sealed, secret: SECRET })?.account.status).toBe('active');
   });
 });

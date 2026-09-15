@@ -13,6 +13,8 @@ import {
   type NewAccount,
   type NewPasswordResetToken,
   type NewVerificationToken,
+  PASSWORD_RESET_TOKEN_PURPOSE,
+  type PasswordResetTokenPurpose,
 } from '../models/account.model';
 import { EmailAlreadyRegisteredError } from '../errors/account.errors';
 import { emailIdentityKey } from '../domain/email-address';
@@ -49,6 +51,11 @@ interface StoredToken {
   consumedAt: Date | null;
 }
 
+/** A reset token carries what it is for, as the table's `purpose` column does (task 155). */
+interface StoredResetToken extends StoredToken {
+  purpose: PasswordResetTokenPurpose;
+}
+
 /** A session as FR-6's revocation sees it — enough to assert "every live one died". */
 export interface FakeSession {
   id: string;
@@ -63,7 +70,7 @@ interface Snapshot {
   totp: [string, TotpEnrolment][];
   recoveryCodes: StoredRecoveryCode[];
   tokens: StoredToken[];
-  resetTokens: StoredToken[];
+  resetTokens: StoredResetToken[];
   sessions: FakeSession[];
   attempts: { key: string; at: Date }[];
   effects: AccountEffect[];
@@ -75,7 +82,7 @@ export class FakeAccountStore implements AccountStore {
   totp = new Map<string, TotpEnrolment>();
   recoveryCodes: StoredRecoveryCode[] = [];
   tokens: StoredToken[] = [];
-  resetTokens: StoredToken[] = [];
+  resetTokens: StoredResetToken[] = [];
   sessions: FakeSession[] = [];
   attempts: { key: string; at: Date }[] = [];
   effects: AccountEffect[] = [];
@@ -225,6 +232,7 @@ export class FakeAccountStore implements AccountStore {
           givenName: null,
           familyName: null,
           verifiedAt: null,
+          setupExpiresAt: null,
           createdAt: now,
           updatedAt: now,
         };
@@ -294,6 +302,35 @@ export class FakeAccountStore implements AccountStore {
         return Promise.resolve(verified);
       },
 
+      enterAccountSetup(
+        setup: { readonly accountId: string; readonly expiresAt: Date },
+        at: Date,
+      ): Promise<Account> {
+        const index = store.accounts.findIndex((a) => a.id === setup.accountId);
+        const inSetup: Account = {
+          ...store.accounts[index],
+          status: ACCOUNT_STATUS.AWAITING_SETUP,
+          verifiedAt: at,
+          setupExpiresAt: setup.expiresAt,
+          updatedAt: at,
+        };
+        store.accounts[index] = inSetup;
+        return Promise.resolve(inSetup);
+      },
+
+      activateAccount(accountId: string, at: Date): Promise<Account> {
+        const index = store.accounts.findIndex((a) => a.id === accountId);
+        // Status and deadline together — the CHECK the migration adds refuses one without the other.
+        const active: Account = {
+          ...store.accounts[index],
+          status: ACCOUNT_STATUS.ACTIVE,
+          setupExpiresAt: null,
+          updatedAt: at,
+        };
+        store.accounts[index] = active;
+        return Promise.resolve(active);
+      },
+
       deleteAccount(accountId: string): Promise<void> {
         store.accounts = store.accounts.filter((a) => a.id !== accountId);
         store.credentials.delete(accountId);
@@ -326,11 +363,27 @@ export class FakeAccountStore implements AccountStore {
         return Promise.resolve();
       },
 
+      passwordResetTokenIsLive(tokenHash: Buffer, at: Date): Promise<boolean> {
+        const token = store.resetTokens.find(
+          (t) =>
+            t.tokenHash.equals(tokenHash) &&
+            t.purpose === PASSWORD_RESET_TOKEN_PURPOSE.RESET &&
+            !t.consumedAt,
+        );
+        return Promise.resolve(token !== undefined && token.expiresAt.getTime() > at.getTime());
+      },
+
       claimPasswordResetToken(
         tokenHash: Buffer,
         at: Date,
       ): Promise<ClaimedPasswordResetToken | null> {
-        const token = store.resetTokens.find((t) => t.tokenHash.equals(tokenHash) && !t.consumedAt);
+        // The adapter's WHERE clause, modelled: a `reset`, unconsumed — never a setup grant.
+        const token = store.resetTokens.find(
+          (t) =>
+            t.tokenHash.equals(tokenHash) &&
+            t.purpose === PASSWORD_RESET_TOKEN_PURPOSE.RESET &&
+            !t.consumedAt,
+        );
         if (!token) return Promise.resolve(null);
         token.consumedAt = at;
         return Promise.resolve({ accountId: token.accountId, expiresAt: token.expiresAt });

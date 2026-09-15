@@ -20532,3 +20532,262 @@ configuration-store e2e suites **26 of 26**; `@easyesg/admin` typecheck clean, *
 clean; **`pnpm lint` cold, exit 0**; `pnpm boundaries` clean over 1,530 modules; `pnpm docs:check` 40 claims. The
 browser journeys the fixes reach, on bundles rebuilt from them — the three social sign-in cases and A-18's journey —
 **4 of 4**. Not re-run: the full `pnpm e2e` and `pnpm e2e:web`, whose other suites no fix reaches.
+
+## Task 155 — A social registration completes with a password and a name · 2026-09-14
+
+An account registered through Google or Microsoft is held in a third status, `awaiting_setup`, until it holds a
+password and both name parts; the api refuses it every session-bearing route but its setup routes, and S-36
+*Complete your account* walks it through the two steps. The first password rests on a provider sign-in, or a
+confirmation link, no older than fifteen minutes; a setup abandoned there lapses seven days after registration,
+while an active account moved into setup by the migration carries no deadline and never lapses. The reset email and
+the page its link opens are worded for an account setting its first password. Three open-question batches before
+any code, two more questions at the parent-close review, all written into FR-2, FR-3, FR-4, UC-02, UC-03, UC-08,
+UC-09, OQ-35, OQ-52, `design_spec.md` S-02 and S-36, and `architecture.md` §12.5.6 before the code that follows them.
+
+### The owner's decisions
+
+§12.5.6's task-155 row carries them, numbered; in short. **A waiting status**, refused everything but setting the
+password, the names and language, and signing out (1), **active only when both steps are done** (2), **deleted seven
+days after registration if abandoned, never if moved from active** (3). **The first password's proof is recent**: the
+session's provider sign-in, or the confirmation link itself, within fifteen minutes, and the link path signs the
+person in (4). **An invitee takes both steps and returns to the invitation** (5). **A setup-only names call** (6), **one
+new screen** (7), **the reset email's own wording** (8). Existing social-only accounts take the same steps at their
+next sign-in.
+
+**At the parent-close review the owner took two more**, both raised by the spec review as closed in passing. **The
+link path's password step asks *keep me signed in on this device*** — the code had given it the provider's remembered
+lifetime, which OQ-35's reason (buttons that cannot carry a toggled answer) does not reach; FR-4 and OQ-35 now name
+this second path that can express the choice. **S-02's set-password page takes the first-password wording too**,
+chosen by `intent=setup` on the link the worker sends — the email decision had covered the email alone.
+
+### Routine calls, stated
+
+- **The gate is `AuthGuard`'s**, from the account's status and deadline read in the same identity join as the
+  session; `@AdmitsAccountInSetup` opens a route, so a route added later is closed to a setup account by default.
+  Public routes never reach the check; **refresh ends a setup past its deadline**, reading the account before
+  anything is spent.
+- **The provider-sign-in proof is `identity.session.created_at`**: an account holding no password can hold no session
+  but a provider sign-in's, and refresh keeps the instant.
+- **The link's grant is a password-reset token with a fifteen-minute life, told apart by the row's `purpose`**
+  (`reset` or `account_setup`); each route claims only its own, and consuming a grant revokes every session the
+  account held (FR-6). The column's backfill default is dropped at once, so every writer says which it issues.
+- **Both token routes look the token up before hashing the password** — the convention review's rate-limit finding,
+  answered with the cheaper property: a value naming no live token costs an index probe, never an Argon2id derivation.
+- **The setup routes are `identity/provider`'s**, FR-2's module: `GET /account/setup`, `POST
+  /account/setup/{password,profile}`, public `POST /auth/account-setup/password`. They admit an active account too,
+  whose writes are refused 409 — a gate answering it differently would be a second place setup is judged.
+- **A lapsed setup is `authentication-required`**, as an expired session is; the reset email carries `holdsPassword`
+  from the credential's existence, a row written before the flag reading as held.
+- **`account-row.ts` is the one account mapper** for the four identity adapters that read the row. The statement
+  copies across the adapters (`activateAccount`, `createSession`, the claims) stay: each adapter implements its own
+  port, and after `purpose` the two claims are no longer copies.
+- **The web cookie's missing `status` reads as `active`**, recorded in §12.5.6's web-cookie row with the one account
+  it misreads and why that is accepted before any deployment holds accounts.
+- **The proxy sends an account in setup to S-36 with `?return=`**, carrying a rotated cookie on the redirect; setup
+  completion renews the session before §4.3's branch; on S-02's path the step lives at `/register/password` — inside `(session-issuing)`, since the second
+  review — holding the grant, its expiry as the api answered it, and the address, in a sealed httpOnly cookie.
+- **The migration's `down` is lossy** and says so.
+
+### What the gates found
+
+- **The api unit suite, at 155.1**: `ResendVerificationEmail`'s spec expected the old `VerifyEmail` answer.
+- **`@easyesg/web` typecheck, at 155.2**: four `SessionPayload` fixtures lacked `status`; `verify.spec` had no
+  `useRouter` in its navigation mock.
+- **`docs:check`**: three counts — the forms binding's import sites 30 to 32, `page.tsx` routes 43 to 45, Client
+  Components 74 to 81.
+- **After the review fixes, the api unit suite**: two failures, both specs of this task. The social-completion case
+  had its registration moved six days back and its expected deadline left at *now* — the gate-integrity finding, now
+  red on exactly the mix-up it named; and a reset rollback case assumed an expired link reaches the claim, which the
+  look-up now refuses first, so it drives a link running out between the two instead.
+- **`gates:clean`, the first cold run since task 151 — a defect of that task's, not this one's.** `@easyesg/admin`'s
+  credentials spec could not resolve `@easyesg/validation`: A-19's password section imports it, the package's
+  `exports` send a Vite consumer to `dist/`, and `apps/admin/vitest.config.ts` never gained the source alias
+  `apps/web`'s config has carried since that app first read the package. Every warm run passed on a `dist/` some
+  earlier build had left — the rule *a gate must not depend on state a previous command left behind*, met again.
+  **Reproduced before fixing**, on the cleaned tree with no `packages/validation/dist`: 1 of 29 files failed to load;
+  with the alias, **29 of 29 files, 246 tests**, the package still unbuilt. **Searched**: every workspace with a
+  Vitest config against the dual-built packages it imports — `apps/web` aliases both it reads, `packages/ui` reads
+  neither, and no workspace's tests import `@easyesg/vsme`.
+- **Not found by a gate**: the backfill proof on the dev database ran nothing after its first statement, because
+  `docker compose exec -T` drank the heredoc's stdin; `</dev/null` on the exec.
+
+### Searched
+
+- **Public routes that hash a password before looking anything up**: nine `hasher.hash` sites. `ResetPassword` had
+  the grant route's shape and gained the same look-up; `AcceptAdminInvitation` presents its invitation first;
+  `RegisterAccount` has no token to look up and is throttled; sign-in's dummy hash is timing uniformity by design.
+- **Web readers of `account-setup-required`**: none, so the contract's docblock claiming a redirect now says what
+  happens.
+- **`.first()` in the expansion specs**: this task's copy tightened to S-36's padded heading; five older specs carry
+  the same line, offered to the owner as a separate session rather than appended as a row.
+- **Route files that read**: at the first review `sign-in/factor/page.tsx`; at the second, `set-password` was made a
+  shell here and five more identity routes found reading — `register`, `sign-in`, `sign-in/factor`, `reset`, `verify` —
+  none on `apps/web/CLAUDE.md`'s deferred list. Offered to the owner together as one separate session rather than
+  appended as a row.
+- **Every `.gitignore` rule against the new files**: `git check-ignore` names none of the fifty-eight untracked
+  paths' new directories or the review's ten new files, and `git status --untracked-files=all` lists every one.
+
+### Skills, read against the diff
+
+`one-idea-per-file` (`shell-composes-only`: both S-36 routes pin the locale and render a section, `searchParams`
+handed on unawaited; `section-pass-what-was-read`: the steps take the whole setup — **declined once, with its
+reason**: the link section hands its step the address and not the held grant, because a Client Component's props are
+serialised into the page; `pure-logic-leaves-the-component`: the step, the put-back and the S-02 wording are `tools/`
+with specs; `reason-docblock-carries-the-why`: four ordinals counting other files' contents removed;
+`file-one-behaviour-api`: five use cases, one file each). `one-kind-per-folder` (`shared-namespace-declared-once`:
+`SETUP_MESSAGES`; `shared-admission-test` on both shared files; `components-region-anatomy`: `section/ · steps/ ·
+states/ · shared/`). `nestjs-best-practices` (`security-rate-limiting` read and answered by the look-up above rather
+than a throttle, a 256-bit grant being unguessable and the Argon2id derivation being the cost; `di-interface-segregation`:
+the setup store is its own port; `security-validate-all-input`: `remember` optional and boolean, the grant bounded to
+43 characters). `vercel-react-best-practices` (`server-serialization`: only the address crosses to the client;
+`rerender-*`: one `useState` for the checkbox, nothing it moves with). `vercel-composition-patterns`, **loaded at the
+second review**, which found it unrecorded while `PasswordForm` grew slots: `patterns-explicit-variants` applied — the
+two steps are the variants, and what each adds it composes, the link step's checkbox as `children` and the session
+step's sign-out beside the form, where the first round had given the form a `beforeSubmit` and a `footer`;
+`patterns-children-over-render-props` applied to that slot; `architecture-compound-components` declined, a form with
+two callers and no shared state to put in a context; `lapsed` kept as a prop, because it replaces the form in a state
+only the form detects.
+
+### Verification
+
+- **155.1**: `@easyesg/api` **1,059 tests across 125 suites**; `pnpm migrations:check` **56 invariants**; `pnpm e2e`
+  **1,187 across 46 suites**; `pnpm e2e:worker` **2 of 2**; typecheck and lint clean; the contract regenerated
+  byte-stable; the backfill proven on the dev database — a social-only account moved with no deadline, a password
+  account left active.
+- **155.2**: `@easyesg/web` **610 tests**; **the full `pnpm e2e:web` 202 of 202** in 5.4 minutes — the provider
+  registration through both steps to S-04, the unconfirmed-provider journey through `/verify/password`, S-36 at +40%
+  in three frames, axe over both steps. Its one server line, `⨯ The destination stream closed early`, carries digest
+  `2667547900`, the one earlier entries record.
+
+### The reviews — all three on opus, over the whole task diff
+
+**Spec review — fourteen findings; two were the owner's to decide (above), twelve acted on.**
+- **A reset link could be spent on the public grant route, sign its holder in, and leave its sessions alive** —
+  against FR-6 and UC-09. The `purpose` column and the revocation above; the api e2e drives both directions.
+- **The web cookie's `active` default was recorded nowhere**, and **the contract promised a redirect nothing
+  implements**: the §12.5.6 web-cookie row, and a docblock that says what happens.
+- **FR-2 and UC-02 deleted every abandoned setup**, against decision (3), and FR-2's criterion named sign-out as the
+  only open route; **FR-3's criterion** still activated on the link; **UC-09** had no setup clause; **OQ-52's register
+  row** did not carry the rule two docblocks cited as amended; **UX-137** was cited for what OQ-16's closure says. All
+  amended.
+- **S-36 offered sign-out only on its failure states, and the link step named no address**: sign-out below both steps
+  (the account menu's own words), the address carried in the sealed grant.
+- **The backfill was unproven**, and **the link step had no axe scan**: both below.
+- **Task 155's row still said its questions were undecided**: it points at §12.5.6.
+- Not acted on: *155.1 has no entry of its own* — this entry is both sub-steps'.
+
+**Convention review — seven findings, all acted on, and seven observations no rule covers.**
+- **A public route ran Argon2id before looking its grant up**: the look-up, on both token routes.
+- **`verify/password/page.tsx` read, branched and resolved text in the shell**, and S-36's page awaited
+  `searchParams`: a section each.
+- **The session step took a projection**; **`identity.setup` was a literal in eight files**; **four docblocks counted
+  other files' contents**; **`SETUP_STEP_COUNT` restated its vocabulary's size**; **no entitlement record on the two
+  controllers**. All fixed.
+- Of the observations: refresh minting for a lapsed setup, the contract's false promise, the proxy spelling `?return=`
+  by hand, the setup name check copied twice in the api, the quarter-hour restated in the web tier, and two stale
+  counts in `apps/api/CLAUDE.md` were acted on; the statement copies across adapters were not, for the reason above.
+
+**Gate-integrity review — seven findings, all acted on.**
+- **The backfill had no check**: the api e2e runs the migration's `down` then `up` over rows in the earlier shape
+  inside a rolled-back transaction. **Proven to bite**, and stated here as the second review corrected it: with moved
+  accounts given a seven-day deadline and the `purpose` filter removed from **both** the setup store's look-up and its
+  claim, exactly this case and the link case went red, 2 of 7, the files restored byte-identical. The first draft of
+  this sentence said *the claim's filter*; removed alone, either filter was hidden by the other.
+- **Two CHECKs had no refusal test**: `account_setup_expires_only_in_setup`, `account_status_known`, and the new
+  `password_reset_token_purpose_known` and its dropped default, each asserted by SQLSTATE and constraint name.
+- **`holdsPassword` could come from the status**: an account in setup holding a password.
+- **The web half of the grant was untested**: a spec for the sealed cookie (window, clearing, put-back cannot stretch
+  it, foreign shape), one for which refusals put it back, a component spec for the lapsed state and the checkbox, the
+  browser journey opening `/verify/password` with no grant, and the api spec asserting the grant unspent after both
+  409s.
+- **The deadline anchor on the vouched-later path was invisible to its spec**: the fixture now registers six days
+  earlier.
+- **The account row's deadline outside `AuthGuard`**: the lapsed refresh now reads it through `account-row.ts` and is
+  asserted over HTTP.
+- **§4.3's setup short-circuit and the expansion spec's `.first()`**: a server spec for both seams, and S-36's padded
+  heading.
+
+### Verification after the fixes
+
+**`pnpm gates:clean`, run twice cold.** The first run stopped at `@easyesg/admin`'s unit suite — the task-151
+defect above. The second, after the alias, passed lint, `eslint:prove` (every selector rejects its violation and
+every carve-out still passes), typecheck, `image:check`, `docs:check` (40 claims), every workspace's unit suite —
+`@easyesg/i18n` 130 tests across 5 files, `@easyesg/ui` 307 across 29, `@easyesg/validation` 36 across 2,
+`@easyesg/admin` 246 across 29, `@easyesg/api` **1,070 across 125 suites**, `@easyesg/web` **628 across 55 files** —
+`boundaries` clean over 1,586 modules and 5,585 dependencies, `boundaries:prove`, and the build. **It stopped at
+`openapi:check`, which cannot pass on an uncommitted task**: its `git diff --exit-code` compares the regenerated
+contract with the commit, and this task adds four routes. What the gate proves was proven directly instead — the
+contract regenerated from the cold build reproduced `v1.json` and `v1.ts` byte for byte, checksums taken before and
+after — and the chain's remainder ran in its order on the same tree: `facade:check` and `routes:check` clean,
+`pnpm migrations:check` **56 invariants**, `pnpm e2e` **1,189 tests across 46 suites**, `pnpm e2e:worker` **2 of 2**,
+and **`pnpm e2e:web` 203 of 203** in 4.6 minutes. Its four `⨯ The destination stream closed early` lines all carry
+digest `2667547900`, in the entities, invitation, organization-profile and post-sign-in journeys, none of which this
+task reaches. Before the cold runs, the api e2e suites the fixes reach — account setup, password reset, social
+sign-in, the route matrix and the session suites — **574 of 574**, and the two mutants above.
+
+### The second reviews — all three on opus, over the whole task diff again
+
+The owner asked for the reviews again once the first round's fixes were in. Twenty findings between them, each checked
+against the code before acting; all acted on except where stated.
+
+**Spec review — eight findings.**
+- **`/verify/password` issued a session outside UX-136's gate**: a reader signed in as one account, following another
+  account's confirmation link, could replace their session with it. The step moved to `/register/password`, inside
+  `(session-issuing)`, whose layout answers a held session with §4.3's branch — S-01's factor step, at
+  `/sign-in/factor`, is the precedent. `route-access.spec.ts` now looks for the page inside the group, since the
+  segment comparison could not see it moved back out; S-36's entry points and `apps/web/CLAUDE.md` say where and why.
+- **Three amendments this entry claimed had not been made**: FR-3's acceptance criterion, OQ-35's register row, and
+  S-36's *both names required* still citing FR-9 and UX-137. All made; the claim is true now.
+- **The link step had no +40% check**: the expansion spec reaches it and holds it at all three frames.
+- **S-36 listed no failed-read state**, **the lifetimes row lacked the grant's fifteen minutes**, and **the archived row
+  kept a resolved assumption**: all amended.
+- The three it was unsure were decisions — the revocation reason, the session path revoking nothing, and the cookie
+  deferral's owner — are recorded in §12.5.6's task-155 row and its web-cookie row. The grant route's 403 no longer
+  overlaps its 409 in the contract.
+
+**Convention review — six findings, all acted on.**
+- **`set-password/page.tsx` read and branched in the shell**, and **the wording choice was written in two files**: a
+  `set-password-section.tsx` works out the kind once, and `set-password-messages.ts` holds the one choice both read.
+- **The password field and its policy were wired three times** — S-01's registration, S-02's set-password form and
+  S-36: `identity/shared/components/policy-password-field.tsx`, read by all three.
+- **`vercel-composition-patterns` unread** while `PasswordForm` grew slots: read, applied and recorded above.
+- **The rewritten docblocks counted again**, one naming a reader that was not one: they name their readers.
+- **Both `(identity)` loading screens spelled their namespace**: they import it.
+- Of the observations: the account-row sentence in `apps/api/CLAUDE.md` now says the guard's join is the exception by
+  design. Left: the sign-in redirect's `'return'` spelled by hand in `proxy.ts`, which predates this task; the name
+  length's three copies, field-level UX in the forms beside the DTO's rule; and root `CLAUDE.md`'s Stage 1 sentence,
+  which describes the Stage's make-up rather than what remains.
+
+**Gate-integrity review — seven findings, all acted on.**
+- **Neither `purpose` filter was guarded alone, and a look-up answering `true` was invisible over HTTP** — each filter
+  hid the other, and the claim refused what a broken look-up admitted, after a hash nobody sees. The account-setup e2e
+  now asks both stores directly for every kind of token, at the look-up and at the claim. **Proven to bite, one mutant
+  per run**: the setup store's claim without its filter, 1 of 8 red on a claimed reset link; the account store's
+  look-up answering `true`, 1 of 8 red on a live-looking grant; the files restored byte-identical.
+- **The rewritten `account_verified_at_matches_status` had no refusal case**: an account in setup with no proven
+  address is refused by SQLSTATE and constraint name.
+- **The link action's `remember` pass-through and put-back were unguarded** — the browser's cookie check reads the web
+  tier's own flag: `setup/actions/actions.spec.ts` asserts the answer reaches the API, the grant is put back after no
+  answer and not after a stale one, and a lapse asks nothing.
+- **The refresh spec's *spending nothing* could not fail**: it asserts the presented token unconsumed and no successor.
+- **S-02's first-password wording, S-36's sign-out and the verify action's expiry** were unguarded: a browser case reads
+  both wordings off real pages and pins the web tier's end of `intent`; the social journeys find sign-out on both
+  steps; `verify/actions/actions.spec.ts` asserts the grant is sealed with the address, the API's expiry and the deep
+  link.
+- **The admin alias's record was wrong**: CI's isolated `BILLING_ENABLED=false` job met the tree without `dist/` first,
+  on 14 Sep, and this task's `gates:clean` reproduced it. The config comment says so. Its guard is run order — the
+  removal fails wherever admin's tests run before anything builds the package, as CI's job does — recorded as the limit.
+
+### Verification after the second fixes
+
+**`pnpm gates:clean`, once, cold, over the staged tree** — staged so that `openapi:check`'s `git diff --exit-code`
+compares the regenerated contract with what is about to be committed, which let the chain run whole this time. Lint,
+`eslint:prove` (every selector rejects its violation and every carve-out still passes), typecheck, `image:check`,
+`docs:check` (40 claims), every workspace's unit suite — `@easyesg/i18n` 130 tests across 5 files, `@easyesg/ui` 307
+across 29, `@easyesg/validation` 36 across 2, `@easyesg/admin` 246 across 29, `@easyesg/api` **1,070 across 125
+suites**, `@easyesg/web` **636 across 57 files** — `boundaries` clean over 1,591 modules and 5,604 dependencies,
+`boundaries:prove`, the build, `openapi:check`, `facade:check`, `routes:check`, `pnpm migrations:check` **56
+invariants**, `pnpm e2e` **1,190 tests across 46 suites**, `pnpm e2e:worker` **2 of 2**, and **`pnpm e2e:web` 205 of
+205** in 4.8 minutes, its one `⨯ The destination stream closed early` carrying digest `2667547900`. Before it:
+`@easyesg/web` typecheck and unit suite, `@easyesg/api` typecheck and the identity specs (447 tests), the account-setup
+e2e suite **8 of 8**, lint over every file the round touched, and the two single-filter mutants above.

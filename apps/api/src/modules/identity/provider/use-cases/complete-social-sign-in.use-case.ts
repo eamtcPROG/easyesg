@@ -1,4 +1,7 @@
-import { unverifiedAccountHasExpired } from '@api/modules/identity/account/domain/account-expiry';
+import {
+  accountHasLapsed,
+  setupDeadlineFor,
+} from '@api/modules/identity/account/domain/account-expiry';
 import {
   admitAuthAttempt,
   socialSignInThrottleKey,
@@ -93,6 +96,12 @@ type SocialSignInResolution =
  * attaches to an existing account) and registration. The asserted email drifting from the
  * account's is expected and recorded, not resolved.
  *
+ * **A registration ends in setup since task 155** (§12.5.6's task-155 row): the account holds no
+ * password and at best half a name, so it enters `awaiting_setup` — at once when the provider asserts
+ * the address, or when its confirmation link is consumed otherwise — and the session issued here
+ * reaches S-36's routes and nothing else until the account is complete. An account abandoned there
+ * past its deadline is reclaimed on this path exactly as an expired unverified one is.
+ *
  * Password lockout deliberately does NOT gate this path: the lock is a state of the password
  * credential after guessed passwords, and FR-82's "existing accounts able to authenticate by
  * another credential" names provider identities as exactly that other credential. A provider
@@ -163,11 +172,9 @@ export class CompleteSocialSignIn {
       const account = await tx.findAccountById(identity.accountId);
       // The FK makes a dangling identity unrepresentable; this narrows the type, not the world.
       if (account !== null) {
-        if (
-          account.status === ACCOUNT_STATUS.UNVERIFIED &&
-          unverifiedAccountHasExpired(account, now)
-        ) {
-          // OQ-52: past the window the record behaves exactly like no account. The cascade takes
+        if (accountHasLapsed(account, now)) {
+          // OQ-52: past the window — an unverified account's, or since task 155 an abandoned
+          // setup's — the record behaves exactly like no account. The cascade takes
           // the identity with it, so the flow continues on the unlinked branch below.
           await tx.deleteAccount(account.id);
         } else {
@@ -179,10 +186,7 @@ export class CompleteSocialSignIn {
     const email = normaliseEmail(assertion.email);
     const existing = await tx.findAccountByEmail(email);
     if (existing) {
-      if (
-        existing.status === ACCOUNT_STATUS.UNVERIFIED &&
-        unverifiedAccountHasExpired(existing, now)
-      ) {
+      if (accountHasLapsed(existing, now)) {
         await tx.deleteAccount(existing.id);
       } else {
         // UC-02's alternate flow, BR-ID-3: no duplicate, no silent link. The route to linking is
@@ -206,6 +210,9 @@ export class CompleteSocialSignIn {
       emailVerifiedAsserted: assertion.emailVerified,
       // UC-03 satisfied by the provider's assertion, or an ordinary unverified account otherwise.
       verifiedAt: assertion.emailVerified ? now : null,
+      // Task 155: an asserted address enters setup at once and is deleted seven days from now if
+      // abandoned there; an unasserted one is given its deadline when its link is consumed.
+      setupExpiresAt: assertion.emailVerified ? setupDeadlineFor({ createdAt: now }) : null,
       // FR-2's `displayName` acquires its home here (task 139). `identity-provider.port.ts` has
       // carried it as "Never persisted today" since task 24 — received, parsed, discarded.
       //
@@ -255,7 +262,14 @@ export class CompleteSocialSignIn {
         assertion.emailVerified &&
         emailIdentityKey(assertion.email) === emailIdentityKey(account.email);
       if (!vouchesForAccountAddress) return { kind: RESOLUTION.VERIFICATION_REQUIRED };
-      resolved = await tx.markAccountVerified(account.id, now);
+      // Task 155: an account holding no password enters setup rather than `active` — which, linked
+      // and unverified, is every provider registration whose provider did not assert it at first.
+      resolved = (await tx.hasPasswordCredential(account.id))
+        ? await tx.markAccountVerified(account.id, now)
+        : await tx.enterAccountSetup(
+            { accountId: account.id, expiresAt: setupDeadlineFor(account) },
+            now,
+          );
     }
 
     return this.createSessionFor(tx, resolved, now);

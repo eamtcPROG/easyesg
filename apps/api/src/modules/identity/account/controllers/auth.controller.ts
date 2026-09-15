@@ -3,6 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '@api/app/decorators/public.decorator';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { AccountResponseDto } from '../dto/account.response.dto';
+import { EmailVerifiedResponseDto } from '../dto/email-verified.response.dto';
 import { RegisterAccountRequestDto } from '../dto/register-account.request.dto';
 import { RequestPasswordResetRequestDto } from '../dto/request-password-reset.request.dto';
 import { ResendVerificationEmailRequestDto } from '../dto/resend-verification-email.request.dto';
@@ -73,11 +74,13 @@ export class AuthController {
     description:
       'Consumes the single-use token from the verification link and activates the account. The ' +
       'token is sent in the body rather than followed as a link so that a mail scanner opening ' +
-      'the URL cannot consume it.',
+      'the URL cannot consume it. An account that holds no password — registered through a ' +
+      'provider that did not confirm the address — is not activated but enters setup, and the ' +
+      'response carries a single-use grant that sets its first password within 15 minutes.',
   })
-  @ApiObjectResponse(AccountResponseDto, {
+  @ApiObjectResponse(EmailVerifiedResponseDto, {
     status: 200,
-    description: 'The account is active.',
+    description: 'The address is confirmed: the account is active, or in setup with its grant.',
   })
   @ApiResponse({
     status: 400,
@@ -86,8 +89,8 @@ export class AuthController {
       'that has itself expired. The four are deliberately indistinguishable.',
     content: { 'application/problem+json': {} },
   })
-  async verify(@Body() body: VerifyEmailRequestDto): Promise<AccountResponseDto> {
-    return new AccountResponseDto(await this.accountService.verify(body));
+  async verify(@Body() body: VerifyEmailRequestDto): Promise<EmailVerifiedResponseDto> {
+    return new EmailVerifiedResponseDto(await this.accountService.verify(body));
   }
 
   @Post('verification-email')

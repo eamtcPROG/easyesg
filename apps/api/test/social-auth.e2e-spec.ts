@@ -46,7 +46,7 @@ interface SessionBody {
   accessToken: string;
   refreshToken: string;
   refreshTokenExpiresAt: number;
-  account: { id: string; email: string; locale: string };
+  account: { id: string; email: string; locale: string; status: string };
 }
 
 const object = <T>(response: { body: unknown }): T => (response.body as Envelope<T>).object;
@@ -186,6 +186,9 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
     const registered = object<SessionBody>(await completeFlow('register', 201));
     expect(registered.account.email).toBe(email);
     expect(registered.refreshToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    // Task 155: a provider registration is not yet an active account — it owes a password and a name.
+    // `account-setup.e2e-spec.ts` is where that setup is driven; here it is only the answer's shape.
+    expect(registered.account.status).toBe('awaiting_setup');
 
     // FR-2: the account's credential IS the provider identity — no password row exists.
     const credentials = await owner.query<{ count: string }[]>(

@@ -25,8 +25,13 @@ export interface AccountName {
   readonly familyName: string | null;
 }
 
-/** Trims and treats whitespace-only as absent: a name-shaped hole is not a name. */
-const present = (part: string | null | undefined): string | null => {
+/**
+ * A name part as it counts: trimmed, and absent when only whitespace — a name-shaped hole is not a name.
+ * **Exported because setup judges a part the same way** (task 155): whether an account's name is
+ * complete, and whether the name its setup saves is one, so the chrome and the gate cannot disagree
+ * about whether a name was given.
+ */
+export const presentNamePart = (part: string | null | undefined): string | null => {
   const trimmed = part?.trim();
   return trimmed ? trimmed : null;
 };
@@ -37,8 +42,8 @@ const present = (part: string | null | undefined): string | null => {
  * correct for an account whose provider asserted no name.
  */
 export const displayName = (name: AccountName, emailFallback: string): string => {
-  const given = present(name.givenName);
-  const family = present(name.familyName);
+  const given = presentNamePart(name.givenName);
+  const family = presentNamePart(name.familyName);
 
   if (given && family) return `${given} ${family}`;
   return given ?? family ?? emailFallback;
@@ -58,7 +63,7 @@ export const displayName = (name: AccountName, emailFallback: string): string =>
  */
 export const monogram = (name: AccountName): string | null => {
   const initial = (part: string | null) => {
-    const value = present(part);
+    const value = presentNamePart(part);
     return value ? (Array.from(value)[0]?.toLocaleUpperCase() ?? null) : null;
   };
 

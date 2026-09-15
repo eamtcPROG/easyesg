@@ -2,7 +2,7 @@ import type { AccountMembership } from '@easyesg/contracts';
 import type { LocalizedPath } from '@/lib/locale-path';
 import { isReturnableAfterSignIn } from '@/lib/route-access';
 import type { Locale } from '@easyesg/i18n';
-import { ROUTES } from '@/lib/routes';
+import { ROUTES, completeAccountRoute } from '@/lib/routes';
 
 /**
  * **In `identity/shared/tools/` on one test — read by more than one journey: `sign-in/`, `invitation/` and `social/`, and by two `server/session/` seams.**
@@ -58,6 +58,8 @@ export const POST_SIGN_IN = {
   HOME: ROUTES.HOME,
   /** S-35 — the membership read failed, so the branch could not be taken at all. */
   ORGANIZATION_UNAVAILABLE: ROUTES.ORGANIZATION_UNAVAILABLE,
+  /** S-36 — the account is still completing its setup, so no other arm applies yet (task 155). */
+  COMPLETE_ACCOUNT: ROUTES.COMPLETE_ACCOUNT,
 } as const;
 
 export type PostSignInPath = (typeof POST_SIGN_IN)[keyof typeof POST_SIGN_IN];
@@ -105,9 +107,23 @@ export const targetLocale = (target: PostSignInTarget, fallback: Locale): Locale
  * which invites them to make a second one.
  */
 export const postSignInTarget = (input: {
+  /**
+   * The session's account is still completing its setup (task 155). Decided first, and the seam does
+   * not read memberships at all when it is true: the API refuses such an account that read.
+   */
+  readonly awaitingSetup: boolean;
   readonly memberships: readonly AccountMembership[] | null;
   readonly returnTo: LocalizedPath | null;
 }): PostSignInTarget => {
+  // §12.5.6's task-155 row: an account in setup reaches S-36 and nothing else. A deep link rides
+  // along unjudged — whether it is honoured is this function's question once setup is done, when
+  // S-36 asks it again — and its locale is kept, so S-36 speaks the language the reader arrived in.
+  if (input.awaitingSetup) {
+    return input.returnTo
+      ? { href: completeAccountRoute(input.returnTo.href), locale: input.returnTo.locale }
+      : { href: POST_SIGN_IN.COMPLETE_ACCOUNT };
+  }
+
   if (input.memberships === null) return { href: POST_SIGN_IN.ORGANIZATION_UNAVAILABLE };
   if (input.memberships.length === 0) {
     // Even here a session-free destination is honoured: the member-of-nothing arriving from an

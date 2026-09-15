@@ -35,7 +35,7 @@ export interface paths {
         put?: never;
         /**
          * Verify control of a registered email address
-         * @description Consumes the single-use token from the verification link and activates the account. The token is sent in the body rather than followed as a link so that a mail scanner opening the URL cannot consume it.
+         * @description Consumes the single-use token from the verification link and activates the account. The token is sent in the body rather than followed as a link so that a mail scanner opening the URL cannot consume it. An account that holds no password — registered through a provider that did not confirm the address — is not activated but enters setup, and the response carries a single-use grant that sets its first password within 15 minutes.
          */
         post: operations["AuthController_verify"];
         delete?: never;
@@ -402,6 +402,86 @@ export interface paths {
          * @description Removes the identity (UC-12), unless it is the account’s **last remaining credential** — BR-ID-4, counted across the password and every linked provider rather than assumed. An account with no usable credential is unrecoverable and takes its organization memberships with it, so the refusal names the way out: set a password first.
          */
         post: operations["ProviderLinkController_unlink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the signed-in account’s setup
+         * @description Which of the two steps the account still owes — a password, and its given name, family name and interface language — with the values to pre-fill. An active account is told it is complete.
+         */
+        get: operations["AccountSetupController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/setup/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set the first password of an account in setup
+         * @description There is no current password to ask for, so the proof is recent: the session must come from a provider sign-in made within the last 15 minutes. The account becomes active if it already holds both name parts.
+         */
+        post: operations["AccountSetupController_setPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/setup/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save the name and language of an account in setup
+         * @description Both name parts and the interface language. Usable only while the account is in setup; the account becomes active if it already holds a password.
+         */
+        post: operations["AccountSetupController_saveProfile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/account-setup/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set the first password with the grant an address confirmation answered with
+         * @description For an account registered through a provider that did not confirm the address: the confirmation opens the password step for 15 minutes. The grant works once; the person is signed in once the password is set, with the same session shape as any other sign-in.
+         */
+        post: operations["AccountSetupGrantController_setPassword"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1753,10 +1833,10 @@ export interface components {
              */
             email: string;
             /**
-             * @description No application data is reachable while an account is unverified (FR-1). An unverified account expires 7 days after registration.
+             * @description No application data is reachable while an account is unverified (FR-1), or while it is awaiting setup — a password and both name parts still to give. Either expires 7 days after registration if not completed.
              * @enum {string}
              */
-            status: "unverified" | "active";
+            status: "unverified" | "awaiting_setup" | "active";
             /**
              * @description Unix epoch milliseconds, UTC.
              * @example 1787356800000
@@ -1788,6 +1868,39 @@ export interface components {
             familyName: string;
             /** @description An organization invitation being acted on. When it is still usable and was sent to this same address, the account is created already confirmed and no confirmation email is sent — the invitation link is itself proof the address was reached. Anything else is ignored and registration proceeds normally. */
             invitationToken?: string;
+        };
+        EmailVerifiedResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: email
+             * @example ana.popescu@example.md
+             */
+            email: string;
+            /**
+             * @description No application data is reachable while an account is unverified (FR-1), or while it is awaiting setup — a password and both name parts still to give. Either expires 7 days after registration if not completed.
+             * @enum {string}
+             */
+            status: "unverified" | "awaiting_setup" | "active";
+            /**
+             * @description Unix epoch milliseconds, UTC.
+             * @example 1787356800000
+             */
+            createdAt: number;
+            /**
+             * @description Unix epoch milliseconds, UTC. Null while the account is unverified.
+             * @example 1787360400000
+             */
+            verifiedAt?: number | null;
+            /** @example Ana Popescu */
+            displayName: string;
+            /** @description For an account that holds no password — registered through a provider that did not confirm the address — a single-use grant that sets its first password within 15 minutes and signs it in. Null for every other account, which is active and signs in as before. */
+            setupGrant: string | null;
+            /**
+             * @description When the setup grant stops working. Unix epoch milliseconds, UTC — 15 minutes after the confirmation. Null exactly when setupGrant is.
+             * @example 1790380800000
+             */
+            setupGrantExpiresAt: number | null;
         };
         VerifyEmailRequestDto: {
             /** @description The value from the verification link. Single-use and valid for 24 hours from issue. */
@@ -1890,6 +2003,8 @@ export interface components {
             displayName: string;
             /** @example AP */
             monogram: string | null;
+            /** @enum {string} */
+            status: "unverified" | "awaiting_setup" | "active";
         };
         SessionResponseDto: {
             /**
@@ -2046,6 +2161,61 @@ export interface components {
              * @description The account’s current password, on the same rule as linking: an attacker on a stolen session must not be able to strip the owner’s other provider.
              */
             password?: string;
+        };
+        AccountSetupResponseDto: {
+            /**
+             * @description `awaiting_setup` until the account holds a password and both name parts; `active` once it does.
+             * @enum {string}
+             */
+            status: "unverified" | "awaiting_setup" | "active";
+            /**
+             * Format: email
+             * @example ana.popescu@example.md
+             */
+            email: string;
+            /**
+             * @description As stored. For an account registered through a provider, the name the provider asserted, until the account saves its own.
+             * @example Ana
+             */
+            givenName: string | null;
+            /** @example Popescu */
+            familyName: string | null;
+            /**
+             * @description The interface language persisted on the account (FR-10).
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+            /** @description Whether the account holds a password — the first step is done when it does. */
+            passwordSet: boolean;
+        };
+        SetFirstPasswordRequestDto: {
+            /**
+             * Format: password
+             * @description The account’s first password, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.
+             */
+            password: string;
+        };
+        SaveSetupProfileRequestDto: {
+            /** @example Ana */
+            givenName: string;
+            /** @example Popescu */
+            familyName: string;
+            /**
+             * @description The interface language to persist on the account (FR-10).
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+        };
+        SetFirstPasswordByGrantRequestDto: {
+            /** @description The single-use grant the address confirmation answered with. It lasts 15 minutes from the confirmation. */
+            grant: string;
+            /**
+             * Format: password
+             * @description The account’s first password, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.
+             */
+            password: string;
+            /** @description Whether the session persists on this device. Absent or false grants the shorter lifetime. */
+            remember?: boolean;
         };
         MemberResponseDto: {
             /**
@@ -3490,14 +3660,14 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The account is active. */
+            /** @description The address is confirmed: the account is active, or in setup with its grant. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ResultObjectDto"] & {
-                        object?: components["schemas"]["AccountResponseDto"];
+                        object?: components["schemas"]["EmailVerifiedResponseDto"];
                     };
                 };
             };
@@ -4261,6 +4431,178 @@ export interface operations {
                 };
             };
             /** @description The account holds no identity for that provider, or removing it would leave no credential at all (BR-ID-4). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AccountSetupController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account’s setup as it stands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AccountSetupResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AccountSetupController_setPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetFirstPasswordRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The password is set; the setup as it now stands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AccountSetupResponseDto"];
+                    };
+                };
+            };
+            /** @description The password does not meet the policy. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The sign-in behind this session is 15 minutes old or more (problem type account-setup-proof-stale). Sign in with the provider again, then set the password. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is not in setup, or already holds a password. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AccountSetupController_saveProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveSetupProfileRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The name and language are saved; the setup as it now stands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AccountSetupResponseDto"];
+                    };
+                };
+            };
+            /** @description A name part is missing, only whitespace, or too long, or the language is not offered. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is not in setup. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AccountSetupGrantController_setPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetFirstPasswordByGrantRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The password is set and the session issued. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SessionResponseDto"];
+                    };
+                };
+            };
+            /** @description The password does not meet the policy, or the grant is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The grant is not usable — unknown, already used, past its 15 minutes, or its account passed its setup deadline (problem type account-setup-proof-stale). Sign in with the provider, or request a password link. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The account is not in setup, or already holds a password. */
             409: {
                 headers: {
                     [name: string]: unknown;

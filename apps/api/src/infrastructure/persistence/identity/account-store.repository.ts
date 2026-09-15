@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
-import { toLocale } from '@easyesg/i18n';
 import { SECRET_CIPHER, type SecretCipher } from '@api/contracts/secret-cipher.port';
 import { EmailAlreadyRegisteredError } from '@api/modules/identity/account/errors/account.errors';
 import { hashInvitationToken } from '@api/modules/identity/invitation/domain/invitation-token';
@@ -20,6 +19,7 @@ import {
   type ClaimedVerificationToken,
   type NewAccount,
   type NewPasswordResetToken,
+  PASSWORD_RESET_TOKEN_PURPOSE,
   type NewVerificationToken,
 } from '@api/modules/identity/account/models/account.model';
 import {
@@ -31,6 +31,7 @@ import { SESSION_REVOKED_REASON } from '@api/modules/identity/session/models/ses
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
 import { returnedRows } from '../returned-rows';
+import { ACCOUNT_COLUMNS, toAccount, type AccountRow } from './account-row';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
 /**
@@ -81,37 +82,11 @@ export class AccountStoreRepository implements AccountStore {
 }
 
 /** Rows as PostgreSQL returns them: snake_case, and `timestamptz` already parsed to `Date` by `pg`. */
-interface AccountRow {
-  id: string;
-  email: string;
-  status: string;
-  locale: string;
-  given_name: string | null;
-  family_name: string | null;
-  verified_at: Date | null;
-  created_at: Date;
-  updated_at: Date;
-}
-
 interface VerificationTokenRow {
   account_id: string;
   token_hash: Buffer;
   expires_at: Date;
 }
-
-const toAccount = (row: AccountRow): Account => ({
-  id: row.id,
-  email: row.email,
-  // The CHECK constraint `account_status_known` is what makes this narrowing safe; it is asserted
-  // rather than re-validated because a status the database rejects cannot be in a row.
-  status: row.status as Account['status'],
-  locale: toLocale(row.locale),
-  givenName: row.given_name,
-  familyName: row.family_name,
-  verifiedAt: row.verified_at,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
 
 /**
  * `23505` is PostgreSQL's `unique_violation` SQLSTATE. The constraint name is what says *which*
@@ -137,9 +112,6 @@ const isEmailUniqueViolation = (error: unknown): boolean => {
     driverError.constraint === ACCOUNT_EMAIL_UNIQUE_INDEX
   );
 };
-
-const ACCOUNT_COLUMNS =
-  'id, email, status, locale, given_name, family_name, verified_at, created_at, updated_at';
 
 class AccountTransactionAdapter implements AccountTransaction {
   constructor(
@@ -292,6 +264,39 @@ class AccountTransactionAdapter implements AccountTransaction {
     return toAccount(rows[0]);
   }
 
+  async enterAccountSetup(
+    setup: { readonly accountId: string; readonly expiresAt: Date },
+    at: Date,
+  ): Promise<Account> {
+    // UC-03 for an account holding no password (task 155): proven, and in setup rather than active,
+    // with its deadline — one statement, so no reader sees the address proven and the deadline absent.
+    const rows = returnedRows<AccountRow>(
+      await this.queryRunner.query(
+        `UPDATE identity.account
+            SET status = $3, verified_at = $2, setup_expires_at = $4, updated_at = $2
+          WHERE id = $1
+          RETURNING ${ACCOUNT_COLUMNS}`,
+        [setup.accountId, at, ACCOUNT_STATUS.AWAITING_SETUP, setup.expiresAt],
+      ),
+    );
+    return toAccount(rows[0]);
+  }
+
+  async activateAccount(accountId: string, at: Date): Promise<Account> {
+    // Setup complete (task 155): active, and the deadline cleared in the same statement — the
+    // `account_setup_expires_only_in_setup` CHECK refuses the one without the other.
+    const rows = returnedRows<AccountRow>(
+      await this.queryRunner.query(
+        `UPDATE identity.account
+            SET status = $3, setup_expires_at = NULL, updated_at = $2
+          WHERE id = $1
+          RETURNING ${ACCOUNT_COLUMNS}`,
+        [accountId, at, ACCOUNT_STATUS.ACTIVE],
+      ),
+    );
+    return toAccount(rows[0]);
+  }
+
   countRecentAuthAttempts(key: string, since: Date): Promise<number> {
     return countRecentAuthAttempts(this.queryRunner, key, since);
   }
@@ -313,24 +318,37 @@ class AccountTransactionAdapter implements AccountTransaction {
 
   async issuePasswordResetToken(token: NewPasswordResetToken): Promise<void> {
     await this.queryRunner.query(
-      `INSERT INTO identity.password_reset_token (account_id, token_hash, expires_at)
-       VALUES ($1, $2, $3)`,
-      [token.accountId, token.tokenHash, token.expiresAt],
+      `INSERT INTO identity.password_reset_token (account_id, token_hash, expires_at, purpose)
+       VALUES ($1, $2, $3, $4)`,
+      [token.accountId, token.tokenHash, token.expiresAt, token.purpose],
     );
+  }
+
+  async passwordResetTokenIsLive(tokenHash: Buffer, at: Date): Promise<boolean> {
+    // `token_hash` is UNIQUE, so this is one index probe whatever the table holds.
+    const rows = (await this.queryRunner.query(
+      `SELECT EXISTS (
+         SELECT 1 FROM identity.password_reset_token
+          WHERE token_hash = $1 AND purpose = $2 AND consumed_at IS NULL AND expires_at > $3
+       ) AS live`,
+      [tokenHash, PASSWORD_RESET_TOKEN_PURPOSE.RESET, at],
+    )) as { live: boolean }[];
+    return rows[0]?.live === true;
   }
 
   async claimPasswordResetToken(
     tokenHash: Buffer,
     at: Date,
   ): Promise<ClaimedPasswordResetToken | null> {
-    // The same conditional UPDATE as `claimVerificationToken`, for the same single-use argument.
+    // The same conditional UPDATE as `claimVerificationToken`, for the same single-use argument —
+    // narrowed to a `reset`, so a setup grant never reaches the route that only replaces a password.
     const rows = returnedRows<{ account_id: string; expires_at: Date }>(
       await this.queryRunner.query(
         `UPDATE identity.password_reset_token
             SET consumed_at = $2
-          WHERE token_hash = $1 AND consumed_at IS NULL
+          WHERE token_hash = $1 AND purpose = $3 AND consumed_at IS NULL
           RETURNING account_id, expires_at`,
-        [tokenHash, at],
+        [tokenHash, at, PASSWORD_RESET_TOKEN_PURPOSE.RESET],
       ),
     );
     if (rows.length === 0) return null;

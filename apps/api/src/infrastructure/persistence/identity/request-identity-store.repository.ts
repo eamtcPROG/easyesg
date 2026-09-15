@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
+import type { Account } from '@api/modules/identity/account/models/account.model';
 import type {
   RequestIdentityStore,
   ResolvedRequestIdentity,
@@ -17,6 +18,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface SessionRow {
   account_id: string;
+  account_status: string;
+  setup_expires_at: Date | null;
   session_created_at: Date;
   session_remembered: boolean;
   token_issued_at: Date | null;
@@ -43,6 +46,10 @@ interface MembershipRow {
  * statements, one transaction, one connection. `identity.session` carries no RLS of its own (a
  * session belongs to an account, and an account exists before any organization), which is what
  * makes the first statement possible with nothing bound.
+ *
+ * **The account's status and setup deadline are joined into the first statement** (task 155), since
+ * `identity.account` carries no row security either and the guard needs both on every request. A
+ * session always has its account — the foreign key cascades — so the join is inner.
  *
  * **`app.current_org` is deliberately left unset for the whole transaction.**
  * `organization_directory_select` is conditioned on exactly that (task 25.3), so binding a tenant
@@ -83,6 +90,11 @@ export class RequestIdentityStoreRepository implements RequestIdentityStore {
 
       return {
         accountId: session.account_id,
+        account: {
+          // The CHECK constraint `account_status_known` is what makes this narrowing safe.
+          status: session.account_status as Account['status'],
+          setupExpiresAt: session.setup_expires_at,
+        },
         anchors: {
           sessionCreatedAt: session.session_created_at,
           // §12.5.6's two pairs: the guard must judge this session against the one it was granted
@@ -113,12 +125,15 @@ export class RequestIdentityStoreRepository implements RequestIdentityStore {
   private async readSession(runner: QueryRunner, sessionId: string): Promise<SessionRow | null> {
     const rows = (await runner.query(
       `SELECT s.account_id,
+              a.status                 AS account_status,
+              a.setup_expires_at,
               s.created_at             AS session_created_at,
               s.remembered             AS session_remembered,
               s.revoked_at,
               s.active_organization_id,
               t.issued_at              AS token_issued_at
          FROM identity.session s
+         JOIN identity.account a ON a.id = s.account_id
          LEFT JOIN identity.refresh_token t
            ON t.session_id = s.id AND t.consumed_at IS NULL
         WHERE s.id = $1`,

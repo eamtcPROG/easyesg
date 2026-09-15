@@ -78,6 +78,11 @@ export interface NewProviderAccount {
   readonly assertedEmail: string;
   readonly emailVerifiedAsserted: boolean;
   readonly verifiedAt: Date | null;
+  /**
+   * The abandoned-setup deadline, set together with `verifiedAt` (task 155): a proven address enters
+   * setup at once, and the adapter writes the status the two imply. Null while the address is unproven.
+   */
+  readonly setupExpiresAt: Date | null;
   /** FR-2's asserted name, seeding `given_name` only — the use case records why it is not split. */
   readonly givenName: string | null;
 }

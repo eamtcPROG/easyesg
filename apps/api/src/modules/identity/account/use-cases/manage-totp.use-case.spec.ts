@@ -42,6 +42,7 @@ describe('ManageTotp (UC-193, NFR-95)', () => {
         givenName: null,
         familyName: null,
         verifiedAt: now,
+        setupExpiresAt: null,
         createdAt: now,
         updatedAt: now,
       });

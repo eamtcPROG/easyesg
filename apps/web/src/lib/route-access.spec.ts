@@ -1,7 +1,8 @@
-import { readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  completesAccountSetup,
   issuesSession,
   requiresSession,
   SESSION_ENTRY_SEGMENTS,
@@ -130,6 +131,17 @@ describe('the route group and the vocabulary are one list', () => {
   it('names exactly the segments `issuesSession` answers true for', () => {
     expect(segmentsUnder(GROUP).sort()).toEqual([...SESSION_ISSUING_SEGMENTS].sort());
   });
+
+  /**
+   * S-36's password step on S-02's path issues a session, so it must sit under this group's layout —
+   * UX-136's gate — and not merely under a segment the proxy rotates on. Task 155's second review found
+   * it at `/verify/password`, outside, where a signed-in reader could replace their session. The segment
+   * comparison above cannot see a page moved back out, since `verify` is in neither list, so the file is
+   * looked for where it must be.
+   */
+  it('holds S-36’s link-path password step, which issues a session', () => {
+    expect(existsSync(join(GROUP, 'register', 'password', 'page.tsx'))).toBe(true);
+  });
 });
 
 /**
@@ -146,5 +158,36 @@ describe('a screen that issues a session must be reachable without one', () => {
     expect(
       [...SESSION_ISSUING_SEGMENTS].filter((segment) => !UNAUTHENTICATED_SEGMENTS.has(segment)),
     ).toEqual([]);
+  });
+});
+
+/**
+ * S-36 and the redirect that sends an account in setup to it (task 155). Two properties, and each is
+ * the other's failure: S-36 must be the exception, or the proxy redirects it to itself; and it must
+ * still need a session, or neither the gate nor the page-load rotation reaches the read it makes.
+ */
+describe('completesAccountSetup — S-36, the exception to the setup redirect (task 155)', () => {
+  it.each(['/complete-account', '/en/complete-account', '/ru/complete-account'])(
+    'recognises %s in every locale form',
+    (pathname) => {
+      expect(completesAccountSetup(pathname)).toBe(true);
+    },
+  );
+
+  it.each(['/home', '/reports/42', '/register/password', '/sign-in', '/'])(
+    'is no exception for %s',
+    (pathname) => {
+      expect(completesAccountSetup(pathname)).toBe(false);
+    },
+  );
+
+  it('needs a session, so the gate and the rotation both reach it', () => {
+    expect(requiresSession('/complete-account')).toBe(true);
+    expect(requiresSession('/en/complete-account')).toBe(true);
+  });
+
+  /** The link path's password step is served where no session is needed — the account has none yet. */
+  it('keeps the link path’s password step reachable without one', () => {
+    expect(requiresSession('/register/password')).toBe(false);
   });
 });

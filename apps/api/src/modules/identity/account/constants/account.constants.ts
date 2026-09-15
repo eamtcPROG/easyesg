@@ -41,6 +41,24 @@ export const PASSWORD_RESET_REQUESTED = 'identity.password_reset.requested';
 export const PASSWORD_RESET_TEMPLATE = 'identity.password_reset';
 
 /**
+ * The same link, worded for an account holding no password (task 155, §12.5.6's task-155 row (8)) —
+ * *set a password* rather than *reset*, and without telling the reader their current password stays
+ * unchanged, which for this account is false.
+ */
+export const PASSWORD_SETUP_TEMPLATE = 'identity.password_setup';
+
+/**
+ * The set-password link's wording flag (task 155; §12.5.6's task-155 row (8)) — the query parameter
+ * S-02 reads to word its step as setting a first password. **Presentational only**: the token alone
+ * decides what consuming the link does, so a link edited to carry or drop it changes S-02's sentences
+ * and nothing else. `apps/web`'s `set-password-kind.ts` reads the same literal, and each side's spec
+ * pins it.
+ */
+export const PASSWORD_LINK_INTENT_PARAM = 'intent';
+
+export const PASSWORD_LINK_INTENT = { SETUP: 'setup' } as const;
+
+/**
  * Carries the raw token under OQ-54's decision and its bounds: the table holds the SHA-256,
  * `esg_app` cannot read the outbox back, and the payload is the one durable place the usable
  * value exists on its way to the account holder.
@@ -50,4 +68,10 @@ export interface PasswordResetRequested {
   readonly email: string;
   readonly locale: Locale;
   readonly token: string;
+  /**
+   * Whether the account held a password when the link was requested (task 155) — the worker's one
+   * input to which wording it sends. Decided here, on the request's transaction, because the worker
+   * reads no credential and should not start.
+   */
+  readonly holdsPassword: boolean;
 }

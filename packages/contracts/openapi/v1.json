@@ -59,7 +59,7 @@
     },
     "/api/v1/auth/verify-email": {
       "post": {
-        "description": "Consumes the single-use token from the verification link and activates the account. The token is sent in the body rather than followed as a link so that a mail scanner opening the URL cannot consume it.",
+        "description": "Consumes the single-use token from the verification link and activates the account. The token is sent in the body rather than followed as a link so that a mail scanner opening the URL cannot consume it. An account that holds no password — registered through a provider that did not confirm the address — is not activated but enters setup, and the response carries a single-use grant that sets its first password within 15 minutes.",
         "operationId": "AuthController_verify",
         "parameters": [],
         "requestBody": {
@@ -74,7 +74,7 @@
         },
         "responses": {
           "200": {
-            "description": "The account is active.",
+            "description": "The address is confirmed: the account is active, or in setup with its grant.",
             "content": {
               "application/json": {
                 "schema": {
@@ -85,7 +85,7 @@
                     {
                       "properties": {
                         "object": {
-                          "$ref": "#/components/schemas/AccountResponseDto"
+                          "$ref": "#/components/schemas/EmailVerifiedResponseDto"
                         }
                       }
                     }
@@ -1047,6 +1047,220 @@
           }
         },
         "summary": "Unlink a provider identity",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/account/setup": {
+      "get": {
+        "description": "Which of the two steps the account still owes — a password, and its given name, family name and interface language — with the values to pre-fill. An active account is told it is complete.",
+        "operationId": "AccountSetupController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The account’s setup as it stands.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AccountSetupResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read the signed-in account’s setup",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/account/setup/password": {
+      "post": {
+        "description": "There is no current password to ask for, so the proof is recent: the session must come from a provider sign-in made within the last 15 minutes. The account becomes active if it already holds both name parts.",
+        "operationId": "AccountSetupController_setPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetFirstPasswordRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The password is set; the setup as it now stands.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AccountSetupResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The password does not meet the policy.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The sign-in behind this session is 15 minutes old or more (problem type account-setup-proof-stale). Sign in with the provider again, then set the password.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The account is not in setup, or already holds a password.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Set the first password of an account in setup",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/account/setup/profile": {
+      "post": {
+        "description": "Both name parts and the interface language. Usable only while the account is in setup; the account becomes active if it already holds a password.",
+        "operationId": "AccountSetupController_saveProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSetupProfileRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The name and language are saved; the setup as it now stands.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AccountSetupResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A name part is missing, only whitespace, or too long, or the language is not offered.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The account is not in setup.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Save the name and language of an account in setup",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/account-setup/password": {
+      "post": {
+        "description": "For an account registered through a provider that did not confirm the address: the confirmation opens the password step for 15 minutes. The grant works once; the person is signed in once the password is set, with the same session shape as any other sign-in.",
+        "operationId": "AccountSetupGrantController_setPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetFirstPasswordByGrantRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The password is set and the session issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SessionResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The password does not meet the policy, or the grant is malformed.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The grant is not usable — unknown, already used, past its 15 minutes, or its account passed its setup deadline (problem type account-setup-proof-stale). Sign in with the provider, or request a password link.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The account is not in setup, or already holds a password.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Set the first password with the grant an address confirmation answered with",
         "tags": [
           "identity"
         ]
@@ -5285,9 +5499,10 @@
             "type": "string",
             "enum": [
               "unverified",
+              "awaiting_setup",
               "active"
             ],
-            "description": "No application data is reachable while an account is unverified (FR-1). An unverified account expires 7 days after registration."
+            "description": "No application data is reachable while an account is unverified (FR-1), or while it is awaiting setup — a password and both name parts still to give. Either expires 7 days after registration if not completed."
           },
           "createdAt": {
             "type": "integer",
@@ -5351,6 +5566,64 @@
           "password",
           "givenName",
           "familyName"
+        ]
+      },
+      "EmailVerifiedResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ana.popescu@example.md"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "awaiting_setup",
+              "active"
+            ],
+            "description": "No application data is reachable while an account is unverified (FR-1), or while it is awaiting setup — a password and both name parts still to give. Either expires 7 days after registration if not completed."
+          },
+          "createdAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC.",
+            "example": 1787356800000
+          },
+          "verifiedAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Unix epoch milliseconds, UTC. Null while the account is unverified.",
+            "example": 1787360400000
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Ana Popescu"
+          },
+          "setupGrant": {
+            "type": "string",
+            "nullable": true,
+            "description": "For an account that holds no password — registered through a provider that did not confirm the address — a single-use grant that sets its first password within 15 minutes and signs it in. Null for every other account, which is active and signs in as before."
+          },
+          "setupGrantExpiresAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "When the setup grant stops working. Unix epoch milliseconds, UTC — 15 minutes after the confirmation. Null exactly when setupGrant is.",
+            "example": 1790380800000
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "status",
+          "createdAt",
+          "displayName",
+          "setupGrant",
+          "setupGrantExpiresAt"
         ]
       },
       "VerifyEmailRequestDto": {
@@ -5550,6 +5823,14 @@
             "type": "string",
             "example": "AP",
             "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "awaiting_setup",
+              "active"
+            ]
           }
         },
         "required": [
@@ -5557,7 +5838,8 @@
           "email",
           "locale",
           "displayName",
-          "monogram"
+          "monogram",
+          "status"
         ]
       },
       "SessionResponseDto": {
@@ -5902,6 +6184,125 @@
             "description": "The account’s current password, on the same rule as linking: an attacker on a stolen session must not be able to strip the owner’s other provider."
           }
         }
+      },
+      "AccountSetupResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "awaiting_setup",
+              "active"
+            ],
+            "description": "`awaiting_setup` until the account holds a password and both name parts; `active` once it does."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ana.popescu@example.md"
+          },
+          "givenName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Ana",
+            "description": "As stored. For an account registered through a provider, the name the provider asserted, until the account saves its own."
+          },
+          "familyName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Popescu"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The interface language persisted on the account (FR-10)."
+          },
+          "passwordSet": {
+            "type": "boolean",
+            "description": "Whether the account holds a password — the first step is done when it does."
+          }
+        },
+        "required": [
+          "status",
+          "email",
+          "givenName",
+          "familyName",
+          "locale",
+          "passwordSet"
+        ]
+      },
+      "SetFirstPasswordRequestDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "The account’s first password, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character."
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "SaveSetupProfileRequestDto": {
+        "type": "object",
+        "properties": {
+          "givenName": {
+            "type": "string",
+            "example": "Ana",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "familyName": {
+            "type": "string",
+            "example": "Popescu",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The interface language to persist on the account (FR-10)."
+          }
+        },
+        "required": [
+          "givenName",
+          "familyName",
+          "locale"
+        ]
+      },
+      "SetFirstPasswordByGrantRequestDto": {
+        "type": "object",
+        "properties": {
+          "grant": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "description": "The single-use grant the address confirmation answered with. It lasts 15 minutes from the confirmation."
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "The account’s first password, under the same policy as registration: minimum 8 and maximum 128 characters, with at least one lowercase letter, one uppercase letter, one digit and one further character."
+          },
+          "remember": {
+            "type": "boolean",
+            "description": "Whether the session persists on this device. Absent or false grants the shorter lifetime."
+          }
+        },
+        "required": [
+          "grant",
+          "password"
+        ]
       },
       "MemberResponseDto": {
         "type": "object",

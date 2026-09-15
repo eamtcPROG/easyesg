@@ -21,6 +21,7 @@ describe('RequestPasswordReset (UC-08, FR-6)', () => {
       givenName: null,
       familyName: null,
       verifiedAt: new Date('2026-08-01T00:00:00Z'),
+      setupExpiresAt: null,
       createdAt: new Date('2026-08-01T00:00:00Z'),
       updatedAt: new Date('2026-08-01T00:00:00Z'),
       ...overrides,
@@ -41,6 +42,8 @@ describe('RequestPasswordReset (UC-08, FR-6)', () => {
     expect(store.resetTokens[0].expiresAt).toEqual(
       new Date(now.getTime() + PASSWORD_RESET_TOKEN_TTL_MS),
     );
+    // A reset link, never a setup grant: the route that signs its holder in must not claim it.
+    expect(store.resetTokens[0].purpose).toBe('reset');
 
     expect(store.effects).toHaveLength(1);
     const effect = store.effects[0];
@@ -75,6 +78,62 @@ describe('RequestPasswordReset (UC-08, FR-6)', () => {
 
       expect(store.resetTokens).toHaveLength(0);
       expect(store.effects).toHaveLength(0);
+    });
+
+    it('an account abandoned in setup past its deadline gets none — it is no account (task 155)', async () => {
+      seedAccount({
+        status: ACCOUNT_STATUS.AWAITING_SETUP,
+        setupExpiresAt: new Date(now.getTime() - 1),
+      });
+
+      await expect(request.execute({ email })).resolves.toBeUndefined();
+
+      expect(store.resetTokens).toHaveLength(0);
+      expect(store.effects).toHaveLength(0);
+    });
+  });
+
+  describe('an account in setup, and the wording the worker picks (task 155)', () => {
+    it('sends an account in setup the link, marked as holding no password', async () => {
+      seedAccount({ status: ACCOUNT_STATUS.AWAITING_SETUP, setupExpiresAt: null });
+
+      await request.execute({ email });
+
+      expect(store.resetTokens).toHaveLength(1);
+      expect(store.effects[0].payload).toMatchObject({ holdsPassword: false });
+    });
+
+    it('marks an account holding a password as holding one', async () => {
+      seedAccount();
+      store.credentials.set('account-1', {
+        accountId: 'account-1',
+        passwordHash: 'hashed:Parola123!',
+        failedAttempts: 0,
+        lockedAt: null,
+      });
+
+      await request.execute({ email });
+
+      expect(store.effects[0].payload).toMatchObject({ holdsPassword: true });
+    });
+
+    /**
+     * The state that tells "holds a password" from "is active" apart: an account in setup whose reset
+     * already set the password and whose name is still owed. Read from its status, the flag would send
+     * it the *set a password* email for a password it has.
+     */
+    it('marks an account in setup that already holds a password as holding one', async () => {
+      seedAccount({ status: ACCOUNT_STATUS.AWAITING_SETUP, setupExpiresAt: null });
+      store.credentials.set('account-1', {
+        accountId: 'account-1',
+        passwordHash: 'hashed:Parola123!',
+        failedAttempts: 0,
+        lockedAt: null,
+      });
+
+      await request.execute({ email });
+
+      expect(store.effects[0].payload).toMatchObject({ holdsPassword: true });
     });
   });
 

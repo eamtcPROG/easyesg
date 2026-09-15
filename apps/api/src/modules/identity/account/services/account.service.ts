@@ -12,7 +12,11 @@ import {
   type ResendVerificationEmailCommand,
 } from '../use-cases/resend-verification-email.use-case';
 import { ResetPassword, type ResetPasswordCommand } from '../use-cases/reset-password.use-case';
-import { VerifyEmail, type VerifyEmailCommand } from '../use-cases/verify-email.use-case';
+import {
+  VerifyEmail,
+  type EmailVerified,
+  type VerifyEmailCommand,
+} from '../use-cases/verify-email.use-case';
 
 /**
  * A use case's command minus the fields THIS layer supplies from ambient request context.
@@ -70,7 +74,7 @@ export class AccountService {
     });
   }
 
-  verify(input: AccountServiceInput<VerifyEmailCommand>): Promise<Account> {
+  verify(input: AccountServiceInput<VerifyEmailCommand>): Promise<EmailVerified> {
     return this.verifyEmail.execute(input);
   }
 

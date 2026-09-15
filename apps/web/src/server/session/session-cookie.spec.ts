@@ -25,7 +25,7 @@ const payload = (remembered: boolean): SessionPayload => ({
   refreshToken: 'opaque-refresh-token',
   refreshTokenExpiresAt: Date.now() + 12 * 60 * 60 * 1000,
   remembered,
-  account: { id: 'c0ffee00-0000-7000-8000-000000000001', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro' },
+  account: { id: 'c0ffee00-0000-7000-8000-000000000001', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro', status: 'active' },
 });
 
 describe('the session cookie’s persistence (OQ-35, §12.5.6)', () => {

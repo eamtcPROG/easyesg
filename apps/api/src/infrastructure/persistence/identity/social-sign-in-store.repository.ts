@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
-import { toLocale } from '@easyesg/i18n';
 import type { AccountEffect } from '@api/modules/identity/account/interfaces/account-store.interface';
 import type {
   Account,
@@ -25,6 +24,7 @@ import type { SocialProvider } from '@api/contracts/identity-provider.port';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
 import { returnedRows } from '../returned-rows';
+import { ACCOUNT_COLUMNS, toAccount, type AccountRow } from './account-row';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
 /**
@@ -56,18 +56,6 @@ export class SocialSignInStoreRepository implements SocialSignInStore {
 }
 
 /** Rows as PostgreSQL returns them: snake_case, `timestamptz` parsed to `Date` by `pg`. */
-interface AccountRow {
-  id: string;
-  email: string;
-  status: string;
-  locale: string;
-  given_name: string | null;
-  family_name: string | null;
-  verified_at: Date | null;
-  created_at: Date;
-  updated_at: Date;
-}
-
 interface ProviderIdentityRow {
   id: string;
   account_id: string;
@@ -85,18 +73,6 @@ interface SessionRow {
   revoked_at: Date | null;
 }
 
-const toAccount = (row: AccountRow): Account => ({
-  id: row.id,
-  email: row.email,
-  status: row.status as Account['status'],
-  locale: toLocale(row.locale),
-  givenName: row.given_name,
-  familyName: row.family_name,
-  verifiedAt: row.verified_at,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
-
 /** The CHECK constraint guarantees membership; the cast narrows the type, not the world. */
 const toProviderIdentity = (row: ProviderIdentityRow): ProviderIdentity => ({
   id: row.id,
@@ -106,8 +82,6 @@ const toProviderIdentity = (row: ProviderIdentityRow): ProviderIdentity => ({
   assertedEmail: row.asserted_email,
   emailVerifiedAsserted: row.email_verified_asserted,
 });
-
-const ACCOUNT_COLUMNS = 'id, email, status, locale, given_name, family_name, verified_at, created_at, updated_at';
 
 const PROVIDER_IDENTITY_COLUMNS =
   'id, account_id, provider, subject, asserted_email, email_verified_asserted';
@@ -297,6 +271,23 @@ class SocialSignInTransactionAdapter implements SocialSignInTransaction {
     return toAccount(rows[0]);
   }
 
+  async enterAccountSetup(
+    setup: { readonly accountId: string; readonly expiresAt: Date },
+    at: Date,
+  ): Promise<Account> {
+    // The account repository's statement, for its reason (task 155).
+    const rows = returnedRows<AccountRow>(
+      await this.queryRunner.query(
+        `UPDATE identity.account
+            SET status = $3, verified_at = $2, setup_expires_at = $4, updated_at = $2
+          WHERE id = $1
+          RETURNING ${ACCOUNT_COLUMNS}`,
+        [setup.accountId, at, ACCOUNT_STATUS.AWAITING_SETUP, setup.expiresAt],
+      ),
+    );
+    return toAccount(rows[0]);
+  }
+
   async deleteAccount(accountId: string): Promise<void> {
     // Cascade takes the credential, tokens AND any provider identities — OQ-52's reclaim stays
     // one statement.
@@ -309,14 +300,16 @@ class SocialSignInTransactionAdapter implements SocialSignInTransaction {
       // credential, NO row in `identity.credential` ("no password set" needs no null).
       const rows = returnedRows<AccountRow>(
         await this.queryRunner.query(
-          `INSERT INTO identity.account (email, locale, status, verified_at, given_name)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO identity.account (email, locale, status, verified_at, setup_expires_at, given_name)
+           VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING ${ACCOUNT_COLUMNS}`,
           [
             account.email,
             account.locale,
-            account.verifiedAt ? ACCOUNT_STATUS.ACTIVE : ACCOUNT_STATUS.UNVERIFIED,
+            // Task 155: a proven address enters setup, never `active` — the account holds no password.
+            account.verifiedAt ? ACCOUNT_STATUS.AWAITING_SETUP : ACCOUNT_STATUS.UNVERIFIED,
             account.verifiedAt,
+            account.setupExpiresAt,
             // Trimmed to the column's bound rather than rejected: a provider's claim is not a form
             // field and failing a sign-up over its length would be the platform's problem made the
             // person's. `null` where the claim is absent, which UX-137's fallback covers.

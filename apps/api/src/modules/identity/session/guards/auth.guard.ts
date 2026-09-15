@@ -3,14 +3,17 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { IS_ADMIN_REALM } from '@api/app/decorators/admin-realm.marker';
 import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
+import { setupHasLapsed } from '@api/modules/identity/account/domain/account-expiry';
+import { ACCOUNT_STATUS } from '@api/modules/identity/account/models/account.model';
 import { selectActiveMembership } from '@api/modules/identity/membership/domain/select-active-membership';
 import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
 import type { Clock } from '@api/contracts/clock.port';
+import { ADMITS_ACCOUNT_IN_SETUP } from '../constants/account-setup-gate.constants';
 import type { AccessTokenVerifier } from '../interfaces/access-token-signer.interface';
 import type { RequestIdentityStore } from '../interfaces/request-identity-store.interface';
 import { sessionHasExpired } from '../domain/session-expiry';
-import { SessionExpiredError } from '../errors/session.errors';
+import { AccountSetupRequiredError, SessionExpiredError } from '../errors/session.errors';
 
 const BEARER = /^Bearer (.+)$/;
 
@@ -37,11 +40,19 @@ const BEARER = /^Bearer (.+)$/;
  * later, which §12.5.6 recorded as a deferral against exactly this task. FR-58's "next request, not
  * next login" is the same property seen from the role's side.
  *
- * **Two refusals, and the distinction is for the client rather than the user.**
+ * **Three refusals, and the distinctions are for the client rather than the user.**
  * `authentication-required` means there is nothing to work with — no token, a token this API did
- * not issue, a session that does not exist. `session-expired` means the token was genuinely ours
- * and the session behind it is over, which is the signal to refresh or to re-authenticate in place
- * with work preserved (UC-07, UX-38). Collapsing them would make the web tier guess.
+ * not issue, a session that does not exist, or an account abandoned in setup past its deadline.
+ * `session-expired` means the token was genuinely ours and the session behind it is over, which is
+ * the signal to refresh or to re-authenticate in place with work preserved (UC-07, UX-38).
+ * `account-setup-required` (task 155) means the session is sound and its account has a password or a
+ * name still to give, which is the signal to send it to S-36. Collapsing any two would make the web
+ * tier guess.
+ *
+ * **The setup refusal lives here rather than in the two account guards** because this is the one
+ * place every session-bearing route passes through, and a route marked `@AdmitsAccountInSetup` is
+ * the only exception — so a route added later is closed to an account in setup by omission, the same
+ * way it is closed to an anonymous caller.
  *
  * **A resolved actor with no organization is a success, not a refusal**, and this is the case that
  * makes UC-16 work: a verified account that belongs to nothing, or one that belongs to several and
@@ -82,8 +93,23 @@ export class AuthGuard implements CanActivate {
     // cascades the session), or a token minted against a database that has since been replaced.
     if (identity === null) throw new AuthenticationRequiredError();
 
-    if (identity.revokedAt !== null || sessionHasExpired(identity.anchors, this.now())) {
+    const now = this.now();
+    if (identity.revokedAt !== null || sessionHasExpired(identity.anchors, now)) {
       throw new SessionExpiredError();
+    }
+
+    // Task 155. An account past its abandoned-setup deadline is no account (OQ-52's point-of-use
+    // rule, amended for this state), so its session authenticates nothing — the answer a deleted
+    // account's session gets, and the one that sends the web tier back to sign-in.
+    if (setupHasLapsed(identity.account, now)) throw new AuthenticationRequiredError();
+
+    // An account still completing its setup reaches its setup routes and nothing else (§12.5.6's
+    // task-155 row). Before membership resolution, because what it may reach does not depend on it.
+    if (
+      identity.account.status === ACCOUNT_STATUS.AWAITING_SETUP &&
+      !marked(ADMITS_ACCOUNT_IN_SETUP)
+    ) {
+      throw new AccountSetupRequiredError();
     }
 
     const active = selectActiveMembership({
@@ -97,7 +123,8 @@ export class AuthGuard implements CanActivate {
     const ctx = requestContext();
     if (ctx) {
       ctx.actorId = identity.accountId;
-      // Task 26.2's one reader: acceptance writes the joined organization onto this session.
+      // Task 26.2's one reader: acceptance writes the joined organization onto this session; task
+      // 155's first password reads the session's creation instant as its proof.
       ctx.sessionId = sessionId;
       ctx.organizationId = active?.organizationId;
       ctx.role = active?.role;

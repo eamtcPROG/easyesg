@@ -44,6 +44,12 @@ export const ROUTES = {
   RESET: '/reset',
   /** S-02 — set a new password from a reset link. */
   SET_PASSWORD: '/set-password',
+  /** S-36 — an account completing its setup: its password, then its name and language (task 155). */
+  COMPLETE_ACCOUNT: '/complete-account',
+  /** S-36's password step on S-02's path — served under S-01's registration address while the
+   *  confirmation's grant is held, inside the session-issuing group UX-136 gates, as S-01's factor step
+   *  is served at `/sign-in/factor` (task 155, `design_spec.md` S-36). */
+  REGISTER_PASSWORD: '/register/password',
 
   /** S-04 — a verified account that belongs to nothing (UC-49). Task 30.2 builds it. */
   CREATE_ORGANIZATION: '/create-organization',
@@ -135,6 +141,14 @@ export const periodRoute = (input: {
  */
 export const withQuery = (path: RoutePath, query: string): string =>
   query ? `${path}?${query}` : path;
+
+/**
+ * S-36 carrying the address to go on to once setup is done (task 155) — S-03's invitation, or the
+ * address an account in setup was turned away from. Encoded once, here, because it rides inside
+ * another address's query string, and the post-sign-in branch and S-36's own actions both build it.
+ */
+export const completeAccountRoute = (returnTo?: string | null): string =>
+  withQuery(ROUTES.COMPLETE_ACCOUNT, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
 
 /**
  * S-07's steps (task 35.1). **The module is in the path, not in a query or in React state** — UX-4

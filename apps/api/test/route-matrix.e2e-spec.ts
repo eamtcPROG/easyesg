@@ -52,6 +52,8 @@ const EMAILS = {
   viewer: 'viewer@matrix.test',
   /** Signed in and a member of nothing — the state `membership-required` exists for. */
   stranger: 'stranger@matrix.test',
+  /** Signed in and still completing its setup — the state `account-setup-required` exists for (task 155). */
+  inSetup: 'setup@matrix.test',
 };
 
 /**
@@ -67,6 +69,8 @@ const ACTOR = {
   EDITOR: 'editor',
   /** OA. */
   ADMINISTRATOR: 'administrator',
+  /** CA before setup is complete (task 155) — refused everything but its setup routes. */
+  IN_SETUP: 'in-setup',
 } as const;
 
 type ActorName = (typeof ACTOR)[keyof typeof ACTOR];
@@ -102,6 +106,11 @@ function expectedFor(permission: Permission, actor: ActorName): string {
   if (permission === PERMISSION.PUBLIC) return ADMITTED;
 
   if (actor === ACTOR.ANONYMOUS) return ProblemType.AuthenticationRequired;
+  if (permission === PERMISSION.SETUP) return ADMITTED;
+
+  // Task 155: an account still in setup reaches its setup routes and is refused every other one —
+  // before any membership question, because the guard answers it first.
+  if (actor === ACTOR.IN_SETUP) return ProblemType.AccountSetupRequired;
   if (permission === PERMISSION.ACCOUNT) return ADMITTED;
 
   // `role:a+b+c` — the roles the declaration actually names, not the ones this file assumes.
@@ -133,11 +142,12 @@ const TENANT_ROUTES = Object.entries(SURFACE).filter(
     !route.includes('/auth/admin') && !permission.startsWith(`${PERMISSION.ADMIN}:`),
 );
 
-/** The three ways the guard chain refuses on the tenant surface. */
+/** The four ways the guard chain refuses on the tenant surface — the fourth since task 155. */
 const REFUSALS = [
   ProblemType.AuthenticationRequired,
   ProblemType.MembershipRequired,
   ProblemType.InsufficientRole,
+  ProblemType.AccountSetupRequired,
 ] as const;
 
 /**
@@ -270,6 +280,14 @@ describe('the permission matrix reaches every route (task 28.2, actors.md §5)',
     for (const name of [ACTOR.STRANGER, ACTOR.VIEWER, ACTOR.EDITOR, ACTOR.ADMINISTRATOR]) {
       tokens.set(name, accounts[name].accessToken);
     }
+
+    // **An account in setup, made by moving a signed-in one there** — the state a password reset
+    // leaves a provider account in (a password held, the name still owed). The token needs no
+    // re-issue for the reason given above: the guard reads the account's status per request.
+    await owner.query(`UPDATE identity.account SET status = 'awaiting_setup' WHERE id = $1`, [
+      accounts.inSetup.accountId,
+    ]);
+    tokens.set(ACTOR.IN_SETUP, accounts.inSetup.accessToken);
   }, 120_000);
 
   afterAll(async () => {

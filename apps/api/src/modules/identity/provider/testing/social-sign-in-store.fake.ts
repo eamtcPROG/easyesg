@@ -169,6 +169,23 @@ export class FakeSocialSignInStore implements SocialSignInStore {
         return Promise.resolve(verified);
       },
 
+      enterAccountSetup(
+        setup: { readonly accountId: string; readonly expiresAt: Date },
+        at: Date,
+      ): Promise<Account> {
+        const account = store.accounts.find((a) => a.id === setup.accountId);
+        if (!account) return Promise.reject(new Error('no such account'));
+        const inSetup: Account = {
+          ...account,
+          status: ACCOUNT_STATUS.AWAITING_SETUP,
+          verifiedAt: at,
+          setupExpiresAt: setup.expiresAt,
+          updatedAt: at,
+        };
+        store.accounts = store.accounts.map((a) => (a.id === setup.accountId ? inSetup : a));
+        return Promise.resolve(inSetup);
+      },
+
       deleteAccount(accountId: string): Promise<void> {
         store.accounts = store.accounts.filter((a) => a.id !== accountId);
         // The cascade the schema provides: identities and tokens go with the account.
@@ -188,11 +205,13 @@ export class FakeSocialSignInStore implements SocialSignInStore {
         const created: Account = {
           id: `account-${store.nextId++}`,
           email: account.email,
-          status: account.verifiedAt ? ACCOUNT_STATUS.ACTIVE : ACCOUNT_STATUS.UNVERIFIED,
+          // The adapter's mapping, modelled: a proven address enters setup (task 155).
+          status: account.verifiedAt ? ACCOUNT_STATUS.AWAITING_SETUP : ACCOUNT_STATUS.UNVERIFIED,
           locale: account.locale,
           givenName: null,
           familyName: null,
           verifiedAt: account.verifiedAt,
+          setupExpiresAt: account.setupExpiresAt,
           createdAt: account.verifiedAt ?? new Date(0),
           updatedAt: account.verifiedAt ?? new Date(0),
         };

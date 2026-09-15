@@ -28,6 +28,12 @@
     "email-unverified": {
       "title": "Address not confirmed yet"
     },
+    "account-setup-required": {
+      "title": "Account setup not finished"
+    },
+    "account-setup-proof-stale": {
+      "title": "Confirm it is you again"
+    },
     "rate-limited": {
       "title": "Too many attempts"
     },
@@ -205,6 +211,14 @@
       "provider_unavailable": "This way of signing in is not available right now. Use your email address and password, or try again later.",
       "email_unverified": "The account’s address is not verified yet, so no session was created. Open the link in the verification email, or ask for it to be sent again.",
       "redirect_rejected": "The sign-in request did not start from an allowed address, so it was refused. Go back to the sign-in page and start again from there."
+    },
+    "setup": {
+      "required": "Your account is not set up yet, so this could not be opened. Set your password and your name first — it takes a minute.",
+      "session_stale": "More than 15 minutes have passed since you signed in with your provider, so the password was not set. Sign in with the provider again, then set the password straight away.",
+      "grant_invalid": "This step is no longer open, so the password was not set — after you confirm your address it stays open for 15 minutes and works once. Sign in with your provider, or ask for a password link from the sign-in page.",
+      "not_pending": "This account is already set up, so there is nothing left to complete. Continue to the application.",
+      "password_already_set": "This account already has a password, so a first one was not set. Continue with the next step.",
+      "names_required": "Both your given name and your family name are needed, so nothing was saved. Fill in both and save again."
     }
   },
   "core": {
@@ -251,6 +265,10 @@
       "password_reset": {
         "subject": "Reset your password",
         "body": "Hello,\n\nWe received a request to reset the password for the easyesg account with this email address. Open the link below to choose a new password:\n\n{resetUrl}\n\nThe link is valid for 60 minutes and works only once. After the password changes, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for a reset, ignore this message: your current password stays unchanged."
+      },
+      "password_setup": {
+        "subject": "Set a password for your account",
+        "body": "Hello,\n\nWe received a request to set a password for the easyesg account with this email address. The account signs in through a provider and has no password yet. Open the link below to choose one:\n\n{resetUrl}\n\nThe link is valid for 60 minutes and works only once. After the password is set, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for this, ignore this message: the account stays without a password, and you keep signing in through your provider."
       },
       "invitation": {
         "subject": "You have been invited to {organizationName}",

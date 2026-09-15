@@ -34,10 +34,24 @@ import {
 } from '@api/modules/identity/account/interfaces/password-hasher.interface';
 import { BeginSocialSignIn } from './use-cases/begin-social-sign-in.use-case';
 import { CompleteSocialSignIn } from './use-cases/complete-social-sign-in.use-case';
+import { AccountSetupStoreRepository } from '@api/infrastructure/persistence/identity/account-setup-store.repository';
+import { AccountSetupController } from './controllers/account-setup.controller';
+import { AccountSetupGrantController } from './controllers/account-setup-grant.controller';
+import {
+  ACCOUNT_SETUP_STORE,
+  type AccountSetupStore,
+} from './interfaces/account-setup-store.interface';
+import { AccountSetupService } from './services/account-setup.service';
+import { ReadAccountSetup } from './use-cases/read-account-setup.use-case';
+import { SaveSetupProfile } from './use-cases/save-setup-profile.use-case';
+import { SetFirstPassword } from './use-cases/set-first-password.use-case';
+import { SetFirstPasswordByGrant } from './use-cases/set-first-password-by-grant.use-case';
 
 /**
  * `identity/provider` — FR-2, FR-4's social half, FR-82 (UC-02, UC-05, UC-70's data substrate);
- * task 24, §12.5.6's task-24 rows.
+ * task 24, §12.5.6's task-24 rows. Since task 155 it also completes an account's setup — S-36's read
+ * and two writes, and the confirmation link's first password — because FR-2's registration is what
+ * leaves one owed, and this module already issues the sessions that setup needs.
  *
  * OIDC identities matched on subject identifier, never on email. `SessionModule`'s wiring notes
  * hold — `useFactory` for the framework-free use cases, HTTP-only in substance (the worker
@@ -53,8 +67,10 @@ const { mode } = configuration();
 const httpProviders: Provider[] = [
   SocialAuthService,
   ProviderLinkService,
+  AccountSetupService,
   { provide: SOCIAL_PROVIDER_CATALOG, useClass: SocialProviderCatalogService },
   { provide: SOCIAL_SIGN_IN_STORE, useClass: SocialSignInStoreRepository },
+  { provide: ACCOUNT_SETUP_STORE, useClass: AccountSetupStoreRepository },
   { provide: CLOCK, useValue: () => new Date() },
   {
     provide: IDENTITY_PROVIDER_PORT,
@@ -117,10 +133,39 @@ const httpProviders: Provider[] = [
       now: Clock,
     ) => new CompleteSocialSignIn(catalog, port, store, signer, now),
   },
+  {
+    provide: ReadAccountSetup,
+    inject: [ACCOUNT_SETUP_STORE],
+    useFactory: (store: AccountSetupStore) => new ReadAccountSetup(store),
+  },
+  {
+    provide: SetFirstPassword,
+    inject: [ACCOUNT_SETUP_STORE, PASSWORD_HASHER, CLOCK],
+    useFactory: (store: AccountSetupStore, hasher: PasswordHasher, now: Clock) =>
+      new SetFirstPassword(store, hasher, now),
+  },
+  {
+    provide: SetFirstPasswordByGrant,
+    inject: [ACCOUNT_SETUP_STORE, PASSWORD_HASHER, ACCESS_TOKEN_SIGNER, CLOCK],
+    useFactory: (
+      store: AccountSetupStore,
+      hasher: PasswordHasher,
+      signer: AccessTokenSigner,
+      now: Clock,
+    ) => new SetFirstPasswordByGrant(store, hasher, signer, now),
+  },
+  {
+    provide: SaveSetupProfile,
+    inject: [ACCOUNT_SETUP_STORE, CLOCK],
+    useFactory: (store: AccountSetupStore, now: Clock) => new SaveSetupProfile(store, now),
+  },
 ];
 
 @Module({
-  controllers: mode === APP_MODE.WORKER ? [] : [SocialAuthController, ProviderLinkController],
+  controllers:
+    mode === APP_MODE.WORKER
+      ? []
+      : [SocialAuthController, ProviderLinkController, AccountSetupController, AccountSetupGrantController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
 })
 export class ProviderModule {}

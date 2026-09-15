@@ -68,6 +68,13 @@ export const PROBLEM_TYPE = {
   /** Another operator saved a provider's configuration after this one was read (task 67.11). A-18 reloads the
    *  values in force and says so, rather than showing the refusal over a form that no longer matches them. */
   IdentityProviderChanged: 'https://easyesg.md/problems/identity-provider-changed',
+  /** An account still completing its setup reached a route other than its setup routes (task 155). The web tier's proxy
+   *  sends an account its session cookie calls in setup to S-36 before any route is asked; a cookie sealed before that
+   *  task reads as active and meets this refusal on screen until its next rotation (architecture.md's web cookie row). */
+  AccountSetupRequired: 'https://easyesg.md/problems/account-setup-required',
+  /** The proof a first password needs has lapsed — the provider sign-in or the confirmation link is older than a
+   *  quarter-hour (task 155). S-36 offers signing in with the provider again rather than a retry. */
+  AccountSetupProofStale: 'https://easyesg.md/problems/account-setup-proof-stale',
 } as const;
 
 export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

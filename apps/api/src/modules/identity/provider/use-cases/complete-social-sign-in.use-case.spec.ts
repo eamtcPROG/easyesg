@@ -43,6 +43,7 @@ describe('CompleteSocialSignIn (UC-02, UC-05; FR-2, FR-4)', () => {
     givenName: null,
     familyName: null,
     verifiedAt: new Date('2026-08-01T00:00:00Z'),
+    setupExpiresAt: null,
     createdAt: new Date('2026-08-01T00:00:00Z'),
     updatedAt: new Date('2026-08-01T00:00:00Z'),
     ...overrides,
@@ -121,8 +122,36 @@ describe('CompleteSocialSignIn (UC-02, UC-05; FR-2, FR-4)', () => {
       expect(store.accounts[0].email).toBe('Ana.Popescu@example.md');
     });
 
-    it('activates a linked unverified account when the provider vouches for its own address', async () => {
+    it('confirms a linked unverified account the provider vouches for — into setup, since it holds no password (task 155)', async () => {
+      // Registered six days ago, so a deadline counted from registration and one counted from this
+      // sign-in are different instants and the assertion below can tell which the use case chose.
+      const registeredAt = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+      store.seedAccount(
+        account({ status: ACCOUNT_STATUS.UNVERIFIED, verifiedAt: null, createdAt: registeredAt }),
+      );
+      store.seedIdentity({
+        id: 'identity-1',
+        accountId: 'account-1',
+        provider: SOCIAL_PROVIDER.GOOGLE,
+        subject: 'google-subject-1',
+        assertedEmail: 'Ana.Popescu@example.md',
+        emailVerifiedAsserted: false,
+      });
+
+      const issued = await completeWith(assertion({ emailVerified: true })).execute(command());
+
+      expect(issued.account.status).toBe(ACCOUNT_STATUS.AWAITING_SETUP);
+      expect(store.accounts[0].verifiedAt).toEqual(now);
+      // The deadline registration set — seven days from registration, not from this sign-in, so no path
+      // through the two states outlasts a week (§12.5.6's lifetime row).
+      expect(store.accounts[0].setupExpiresAt).toEqual(
+        new Date(registeredAt.getTime() + 7 * 24 * 60 * 60 * 1000),
+      );
+    });
+
+    it('activates a linked unverified account that holds a password, as before', async () => {
       store.seedAccount(account({ status: ACCOUNT_STATUS.UNVERIFIED, verifiedAt: null, createdAt: now }));
+      store.passwords.set('account-1', 'hashed:Parola123!');
       store.seedIdentity({
         id: 'identity-1',
         accountId: 'account-1',
@@ -135,7 +164,7 @@ describe('CompleteSocialSignIn (UC-02, UC-05; FR-2, FR-4)', () => {
       const issued = await completeWith(assertion({ emailVerified: true })).execute(command());
 
       expect(issued.account.status).toBe(ACCOUNT_STATUS.ACTIVE);
-      expect(store.accounts[0].verifiedAt).toEqual(now);
+      expect(issued.account.setupExpiresAt).toBeNull();
     });
 
     it('refuses a linked unverified account when the assertion vouches for a DIFFERENT address', async () => {
@@ -160,12 +189,14 @@ describe('CompleteSocialSignIn (UC-02, UC-05; FR-2, FR-4)', () => {
   });
 
   describe('UC-02 — register through the provider', () => {
-    it('creates an ACTIVE account with the identity as its credential when the address is asserted verified', async () => {
+    it('creates an account IN SETUP with the identity as its credential when the address is asserted verified (task 155)', async () => {
       const issued = await completeWith(assertion()).execute(
         command({ intent: SOCIAL_SIGN_IN_INTENT.REGISTER }),
       );
 
-      expect(issued.account.status).toBe(ACCOUNT_STATUS.ACTIVE);
+      expect(issued.account.status).toBe(ACCOUNT_STATUS.AWAITING_SETUP);
+      // Seven days from registration, which is now.
+      expect(issued.account.setupExpiresAt).toEqual(new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000));
       expect(issued.account.email).toBe('Ana.Popescu@example.md');
       expect(store.identities).toHaveLength(1);
       expect(store.identities[0].subject).toBe('google-subject-1');
@@ -220,7 +251,38 @@ describe('CompleteSocialSignIn (UC-02, UC-05; FR-2, FR-4)', () => {
 
       expect(issued.account.id).not.toBe('expired-account');
       expect(store.accounts).toHaveLength(1);
-      expect(store.accounts[0].status).toBe(ACCOUNT_STATUS.ACTIVE);
+      expect(store.accounts[0].status).toBe(ACCOUNT_STATUS.AWAITING_SETUP);
+    });
+
+    it('reclaims an account abandoned in setup past its deadline, then registers (task 155)', async () => {
+      store.seedAccount(
+        account({
+          id: 'abandoned-account',
+          status: ACCOUNT_STATUS.AWAITING_SETUP,
+          setupExpiresAt: new Date(now.getTime() - 1),
+        }),
+      );
+
+      const issued = await completeWith(assertion()).execute(
+        command({ intent: SOCIAL_SIGN_IN_INTENT.REGISTER }),
+      );
+
+      expect(issued.account.id).not.toBe('abandoned-account');
+      expect(store.accounts).toHaveLength(1);
+    });
+
+    it('never reclaims an account moved into setup, which carries no deadline (task 155)', async () => {
+      store.seedAccount(
+        account({
+          status: ACCOUNT_STATUS.AWAITING_SETUP,
+          setupExpiresAt: null,
+          createdAt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+        }),
+      );
+
+      await expect(
+        completeWith(assertion()).execute(command({ intent: SOCIAL_SIGN_IN_INTENT.REGISTER })),
+      ).rejects.toBeInstanceOf(SocialEmailInUseError);
     });
   });
 

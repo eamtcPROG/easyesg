@@ -1,4 +1,4 @@
-import { unverifiedAccountHasExpired } from '@api/modules/identity/account/domain/account-expiry';
+import { accountHasLapsed } from '@api/modules/identity/account/domain/account-expiry';
 import {
   LOCKOUT_THRESHOLD,
   admitAuthAttempt,
@@ -108,11 +108,9 @@ export class SignIn {
     if (gate.limited) throw new AuthRateLimitedError();
 
     // OQ-52: an unverified account past its 7-day window has stopped holding the address, so it
-    // behaves exactly like no account — enforced at the point of use, as task 19 established.
-    const expired =
-      gate.account !== null &&
-      gate.account.status === ACCOUNT_STATUS.UNVERIFIED &&
-      unverifiedAccountHasExpired(gate.account, now);
+    // behaves exactly like no account — enforced at the point of use, as task 19 established. Since
+    // task 155 the same holds for an account abandoned in setup past its deadline.
+    const expired = gate.account !== null && accountHasLapsed(gate.account, now);
     const account = expired ? null : gate.account;
     const credential = expired ? null : gate.credential;
 

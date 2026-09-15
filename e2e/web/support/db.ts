@@ -637,3 +637,56 @@ export async function seedPriorPeriod(input: {
     await client.end();
   }
 }
+
+/**
+ * Moves the account at `email` into setup (task 155), so S-36's two steps can be reached by a scan
+ * without driving a provider registration through the stub for each one.
+ *
+ * `holdsPassword: true` leaves the credential and clears the family name — S-36's second step, since
+ * an account holding everything setup asks for is not in setup. `false` also removes the credential,
+ * which is the first step. The account's status is what S-36 reads, and it reads it from the API, so
+ * the session cookie's own copy — still *active* from the sign-in — does not stand in the way.
+ */
+export async function moveIntoSetup(input: {
+  readonly email: string;
+  readonly holdsPassword: boolean;
+}): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query(
+      `UPDATE identity.account SET status = 'awaiting_setup', family_name = NULL
+        WHERE lower(email) = lower($1)`,
+      [input.email],
+    );
+    if (!input.holdsPassword) {
+      await client.query(
+        `DELETE FROM identity.credential c USING identity.account a
+          WHERE c.account_id = a.id AND lower(a.email) = lower($1)`,
+        [input.email],
+      );
+    }
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * Removes the credential of the account at `email` (task 155). Done before its confirmation link is
+ * followed, that leaves a provider registration's shape where the provider did not assert the address —
+ * an unverified row, a live challenge, no password — so S-36's password step on S-02's path can be
+ * reached without the provider stub.
+ */
+export async function dropCredential(input: { readonly email: string }): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query(
+      `DELETE FROM identity.credential c USING identity.account a
+        WHERE c.account_id = a.id AND lower(a.email) = lower($1)`,
+      [input.email],
+    );
+  } finally {
+    await client.end();
+  }
+}

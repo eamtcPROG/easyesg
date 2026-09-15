@@ -29,6 +29,7 @@ describe('RefreshSession (AD-12)', () => {
     givenName: null,
     familyName: null,
     verifiedAt: new Date('2026-08-01T00:00:00Z'),
+    setupExpiresAt: null,
     createdAt: new Date('2026-08-01T00:00:00Z'),
     updatedAt: new Date('2026-08-01T00:00:00Z'),
   };
@@ -182,6 +183,40 @@ describe('RefreshSession (AD-12)', () => {
       await expect(refresh.execute({ refreshToken: raw })).rejects.toBeInstanceOf(
         SessionExpiredError,
       );
+    });
+  });
+
+  /**
+   * Task 155 (OQ-52, §12.5.6's task-155 row): an account past its setup deadline is no account, so its
+   * session ends at the next rotation rather than minting a token every route would refuse — and it
+   * ends before anything is spent, so a moved account's absent deadline is no deadline at all.
+   */
+  describe('an account in setup', () => {
+    const inSetup = (setupExpiresAt: Date | null): Account => ({
+      ...account,
+      status: ACCOUNT_STATUS.AWAITING_SETUP,
+      setupExpiresAt,
+    });
+
+    it('ends the session of an account past its setup deadline, spending nothing', async () => {
+      store.accounts[0] = inSetup(new Date(now.getTime() - 1));
+      seedSession();
+
+      await expect(refresh.execute({ refreshToken: raw })).rejects.toBeInstanceOf(
+        SessionInvalidError,
+      );
+      // Nothing spent and nothing issued: the presented token is still unconsumed, and no successor exists.
+      expect(store.refreshTokens).toHaveLength(1);
+      expect(store.refreshTokens[0].consumedAt).toBeNull();
+    });
+
+    it('rotates the session of an account moved into setup, which carries no deadline', async () => {
+      store.accounts[0] = inSetup(null);
+      seedSession();
+
+      const issued = await refresh.execute({ refreshToken: raw });
+
+      expect(issued.account.status).toBe('awaiting_setup');
     });
   });
 });

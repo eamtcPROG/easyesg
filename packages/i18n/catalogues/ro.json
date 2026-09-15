@@ -28,6 +28,12 @@
     "email-unverified": {
       "title": "Adresă neconfirmată"
     },
+    "account-setup-required": {
+      "title": "Configurarea contului nu este finalizată"
+    },
+    "account-setup-proof-stale": {
+      "title": "Confirmați din nou că sunteți dumneavoastră"
+    },
     "rate-limited": {
       "title": "Prea multe încercări"
     },
@@ -205,6 +211,14 @@
       "provider_unavailable": "Acest mod de autentificare nu este disponibil momentan. Folosiți adresa de e-mail și parola, sau încercați mai târziu.",
       "email_unverified": "Adresa contului nu este încă verificată, așa că sesiunea nu a fost creată. Deschideți linkul din e-mailul de verificare sau cereți retrimiterea lui.",
       "redirect_rejected": "Cererea de autentificare nu a pornit de la o adresă permisă, deci a fost respinsă. Reveniți la pagina de autentificare și începeți din nou de acolo."
+    },
+    "setup": {
+      "required": "Contul dumneavoastră nu este încă configurat, așa că pagina nu poate fi deschisă. Setați mai întâi parola și numele — durează un minut.",
+      "session_stale": "Au trecut mai mult de 15 minute de când v-ați autentificat prin furnizor, așa că parola nu a fost setată. Autentificați-vă din nou prin furnizor, apoi setați parola imediat.",
+      "grant_invalid": "Acest pas nu mai este deschis, așa că parola nu a fost setată — după confirmarea adresei rămâne deschis 15 minute și poate fi folosit o singură dată. Autentificați-vă prin furnizor sau cereți un link pentru parolă de pe pagina de autentificare.",
+      "not_pending": "Contul este deja configurat, deci nu mai este nimic de finalizat. Continuați în aplicație.",
+      "password_already_set": "Contul are deja o parolă, așa că nu a fost setată una nouă. Continuați cu pasul următor.",
+      "names_required": "Sunt necesare atât prenumele, cât și numele de familie, așa că nu s-a salvat nimic. Completați ambele câmpuri și salvați din nou."
     }
   },
   "core": {
@@ -251,6 +265,10 @@
       "password_reset": {
         "subject": "Resetați-vă parola",
         "body": "Bună ziua,\n\nAm primit o cerere de resetare a parolei pentru contul easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a alege o parolă nouă:\n\n{resetUrl}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După schimbarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut resetarea, ignorați acest mesaj: parola actuală rămâne neschimbată."
+      },
+      "password_setup": {
+        "subject": "Setați o parolă pentru contul dumneavoastră",
+        "body": "Bună ziua,\n\nAm primit o cerere de setare a unei parole pentru contul easyesg cu această adresă de e-mail. Contul se autentifică prin furnizor și nu are încă o parolă. Deschideți linkul de mai jos pentru a alege una:\n\n{resetUrl}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După setarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut acest lucru, ignorați mesajul: contul rămâne fără parolă și continuați să vă autentificați prin furnizor."
       },
       "invitation": {
         "subject": "Ați fost invitat în organizația {organizationName}",

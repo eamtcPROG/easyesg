@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
-import { toLocale } from '@easyesg/i18n';
 import type {
   Account,
   Credential,
@@ -18,6 +17,7 @@ import type {
 } from '@api/modules/identity/session/models/session.model';
 import { CORE_DATA_SOURCE } from '../data-source';
 import { returnedRows } from '../returned-rows';
+import { ACCOUNT_COLUMNS, toAccount, type AccountRow } from './account-row';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
 /**
@@ -53,18 +53,6 @@ export class SessionStoreRepository implements SessionStore {
 }
 
 /** Rows as PostgreSQL returns them: snake_case, `timestamptz` parsed to `Date` by `pg`. */
-interface AccountRow {
-  id: string;
-  email: string;
-  status: string;
-  locale: string;
-  given_name: string | null;
-  family_name: string | null;
-  verified_at: Date | null;
-  created_at: Date;
-  updated_at: Date;
-}
-
 interface CredentialRow {
   account_id: string;
   password_hash: string;
@@ -90,21 +78,6 @@ interface PresentedRefreshTokenRow {
   session_remembered: boolean;
   session_revoked_at: Date | null;
 }
-
-const toAccount = (row: AccountRow): Account => ({
-  id: row.id,
-  email: row.email,
-  status: row.status as Account['status'],
-  locale: toLocale(row.locale),
-  givenName: row.given_name,
-  familyName: row.family_name,
-  verifiedAt: row.verified_at,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
-
-const ACCOUNT_COLUMNS = 'id, email, status, locale, given_name, family_name, verified_at, created_at, updated_at';
-
 
 class SessionTransactionAdapter implements SessionTransaction {
   constructor(private readonly queryRunner: QueryRunner) {}

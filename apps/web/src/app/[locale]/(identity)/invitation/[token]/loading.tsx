@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Panel, Spinner } from '@easyesg/ui';
+import { INVITATION_MESSAGES } from '@/features/identity/invitation/components/shared/invitation-messages';
 import styles from '@/features/identity/shared/styles/identity-screens.module.css';
 
 /**
@@ -27,7 +28,7 @@ import styles from '@/features/identity/shared/styles/identity-screens.module.cs
  * layout whose shape is known, and here the arm that renders is exactly what is unknown).
  */
 export default async function AcceptInvitationLoading() {
-  const t = await getTranslations('identity.invitation');
+  const t = await getTranslations(INVITATION_MESSAGES);
 
   return (
     <>

@@ -152,6 +152,8 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
       const [queued] = await queuedReset(email);
       expect(queued).toBeDefined();
       token = queued.payload.token;
+      // An account holding a password is told so, and the worker words the email as a reset (task 155).
+      expect(queued.payload.holdsPassword).toBe(true);
 
       // The table holds the hash of exactly what the payload carries — and never the value.
       const stored = await owner.query<{ count: string; window_ok: boolean }[]>(
@@ -182,6 +184,7 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
       expect(link.pathname).toBe('/ro/set-password');
       expect(link.searchParams.get('token')).toBe(token);
       expect(emailPort.sent[0].idempotencyKey).toBe(queued.idempotency_key);
+      expect(emailPort.sent[0].templateKey).toBe('identity.password_reset');
     });
 
     it('consuming it replaces the password and terminates every session', async () => {
@@ -288,12 +291,14 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
     }, 30_000);
   });
 
-  describe('a social-only account (UC-09’s alternate flow; task 67.11)', () => {
-    it('is sent the same link, and consuming it gives the account its first password', async () => {
+  describe('a social-only account (UC-09’s alternate flow; task 67.11) — in setup since task 155', () => {
+    it('is sent the link worded for no password; consuming it sets the first password and keeps the name step', async () => {
       const email = addressFor('social-only');
+      // The shape task 155's migration leaves an active account holding no password in: in setup,
+      // with no deadline, and owing its family name.
       const [account] = await owner.query<{ id: string }[]>(
         `INSERT INTO identity.account (email, locale, status, verified_at, given_name)
-         VALUES ($1, 'ro', 'active', now(), 'Ana')
+         VALUES ($1, 'ro', 'awaiting_setup', now(), 'Ana')
          RETURNING id`,
         [email],
       );
@@ -305,7 +310,25 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
 
       await requestReset(email).expect(202);
       const [queued] = await queuedReset(email);
+      expect(queued.payload.holdsPassword).toBe(false);
+
+      // The worker words it for an account with no password (§12.5.6's task-155 row (8)).
+      const emailPort = new RecordingEmailPort();
+      await new PasswordResetEmailHandler(emailPort, stubConfig(PUBLIC_WEB_URL)).handle(queued.payload, {
+        jobId: queued.idempotency_key,
+        jobName: PASSWORD_RESET_REQUESTED,
+        attempt: 1,
+      });
+      expect(emailPort.sent[0].templateKey).toBe('identity.password_setup');
+
       await resetPassword(queued.payload.token).expect(204);
+
+      // The reset set the password half of setup; the family name is still owed, so setup stands.
+      const [after] = await owner.query<{ status: string }[]>(
+        `SELECT status FROM identity.account WHERE id = $1`,
+        [account.id],
+      );
+      expect(after.status).toBe('awaiting_setup');
 
       // The account signs in with the password it never had, and keeps the provider it signed up with.
       await signIn(email, NEW_PASSWORD).expect(201);

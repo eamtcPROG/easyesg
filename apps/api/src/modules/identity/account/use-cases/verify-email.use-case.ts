@@ -1,8 +1,9 @@
-import { unverifiedAccountHasExpired } from '../domain/account-expiry';
+import { setupDeadlineFor, unverifiedAccountHasExpired } from '../domain/account-expiry';
+import { issueAccountSetupGrant } from '../domain/password-reset-token';
 import { hashVerificationToken, verificationTokenMatches } from '../domain/verification-token';
 import { VerificationTokenInvalidError } from '../errors/account.errors';
 import type { AccountStore } from '../interfaces/account-store.interface';
-import type { Account } from '../models/account.model';
+import { PASSWORD_RESET_TOKEN_PURPOSE, type Account } from '../models/account.model';
 import type { Clock } from '@api/contracts/clock.port';
 
 /**
@@ -19,10 +20,28 @@ import type { Clock } from '@api/contracts/clock.port';
  * window the conditional UPDATE closes, and the window is as wide as a double-clicked link.
  * Rejections after the claim roll it back with the rest of the transaction, which is correct: a
  * token rejected for expiry is no more usable un-claimed than claimed.
+ *
+ * **Two outcomes since task 155** (§12.5.6's task-155 row (4)). An account holding a password is
+ * activated, as it always was. One holding none is a provider registration whose provider did not
+ * assert the address: it enters setup rather than `active`, and the link it has just consumed opens
+ * its password step — a single-use grant, answered in the response with its expiry, that lasts a
+ * quarter-hour.
  */
 export interface VerifyEmailCommand {
   /** The single-use value from the verification link. */
   readonly token: string;
+}
+
+/** What a consumed confirmation link produced. */
+export interface EmailVerified {
+  readonly account: Account;
+  /**
+   * For an account holding no password, the grant that sets its first password and signs it in
+   * (task 155). Null for every other account, which is active and signs in as before.
+   */
+  readonly setupGrant: string | null;
+  /** When that grant stops working — null exactly when there is none. */
+  readonly setupGrantExpiresAt: Date | null;
 }
 
 export class VerifyEmail {
@@ -31,7 +50,7 @@ export class VerifyEmail {
     private readonly now: Clock,
   ) {}
 
-  async execute(command: VerifyEmailCommand): Promise<Account> {
+  async execute(command: VerifyEmailCommand): Promise<EmailVerified> {
     const presentedToken = command.token;
     const presentedHash = hashVerificationToken(presentedToken);
 
@@ -66,7 +85,31 @@ export class VerifyEmail {
       // rows is the Phase 6 sweep's job; refusing to activate one is this method's.
       if (unverifiedAccountHasExpired(account, now)) throw new VerificationTokenInvalidError();
 
-      return tx.markAccountVerified(account.id, now);
+      if ((await tx.findCredential(account.id)) !== null) {
+        return {
+          account: await tx.markAccountVerified(account.id, now),
+          setupGrant: null,
+          setupGrantExpiresAt: null,
+        };
+      }
+
+      // Task 155. The deadline is the one registration set — seven days from then, not from now —
+      // and outstanding reset links are retired first, so the grant is the account's one live
+      // challenge (the reset flow's rule, since the grant lives in the same table).
+      const inSetup = await tx.enterAccountSetup(
+        { accountId: account.id, expiresAt: setupDeadlineFor(account) },
+        now,
+      );
+      const grant = issueAccountSetupGrant(now);
+      await tx.invalidateOutstandingPasswordResetTokens(account.id, now);
+      await tx.issuePasswordResetToken({
+        accountId: account.id,
+        tokenHash: grant.hash,
+        expiresAt: grant.expiresAt,
+        purpose: PASSWORD_RESET_TOKEN_PURPOSE.ACCOUNT_SETUP,
+      });
+
+      return { account: inSetup, setupGrant: grant.value, setupGrantExpiresAt: grant.expiresAt };
     });
   }
 }

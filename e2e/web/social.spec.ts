@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { Client } from 'pg';
 import { OidcProviderStub } from '../../apps/api/test/support/oidc-provider-stub';
-import { cleanupAccounts } from './support/db';
+import { cleanupAccounts, verificationTokenFor } from './support/db';
 import {
   publishIdentityProvider,
   restoreIdentityProviderSeed,
@@ -16,6 +16,11 @@ import { accountTrigger } from './support/session';
  * prove is the flow's *shape*: that a click with no JavaScript assumptions leaves the app,
  * comes back, and lands signed in — or lands on S-01 with the one notice the branch names.
  *
+ * **Since task 155 a registration lands on S-36 before it lands anywhere else**, and the two
+ * journeys through it are here: the provider that asserted the address, and the one that did not,
+ * whose confirmation link opens the password step under S-01's registration address. The API's half of each is
+ * `apps/api/test/account-setup.e2e-spec.ts`.
+ *
  * The stub provider runs inside this test process; both the browser and the api reach it on
  * 127.0.0.1. The provider is enabled by a configuration publish (FR-82's no-redeploy half) and
  * the seed payload is restored afterwards so the store leaves the run as `config:seed` expects.
@@ -23,6 +28,7 @@ import { accountTrigger } from './support/session';
 const API_URL = 'http://localhost:3000';
 const WEB_ORIGIN = 'http://localhost:3100';
 const PREFIX = 'task24web-';
+const NEW_PASSWORD = 'Parola-Noua1!';
 
 const stub = new OidcProviderStub();
 const run = Date.now();
@@ -77,7 +83,7 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     await stub.stop();
   });
 
-  test('registers through the provider and lands signed in (UC-02 → the task-22 exit)', async ({
+  test('registers through the provider, completes the account on S-36, and lands signed in (UC-02 → S-36 → §4.3)', async ({
     page,
   }) => {
     const email = addressFor('register');
@@ -91,14 +97,31 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     await page.goto('/register');
     await page.getByRole('link', { name: 'Continuați cu Google' }).click();
 
-    // Through the stub and back: the callback established the session and took §4.3's branch
-    // (task 25.4, replacing task 22's interim exit). A provider session is the same session
-    // (UC-05), so a brand-new account belonging to nothing lands on S-04 exactly as a password
-    // sign-in does — which is the point of routing both through one decision.
+    // Through the stub and back: the callback established the session and took §4.3's branch —
+    // which, for an account that owes a password and a name, is S-36 (task 155).
+    await expect(page).toHaveURL(/\/complete-account$/);
+    await expect(page.getByText('Pasul 1 din 2')).toBeVisible();
+    // S-36's controls: signing out is on offer at rest on the session's password step too.
+    await expect(page.getByRole('button', { name: 'Ieșiți din cont', exact: true })).toBeVisible();
+
+    // And every address that needs a session sends it back there, carrying where it was headed.
+    await page.goto('/home');
+    await expect(page).toHaveURL(/\/complete-account\?return=%2Fhome$/);
+
+    await page.getByLabel('Parola', { exact: true }).fill(NEW_PASSWORD);
+    await page.getByRole('button', { name: 'Salvați parola' }).click();
+
+    await expect(page.getByText('Pasul 2 din 2')).toBeVisible();
+    // The provider's display name, seeded whole into the given name, is the person's to split.
+    await expect(page.getByLabel('Prenume')).toHaveValue('Ana Popescu');
+    await page.getByLabel('Prenume').fill('Ana');
+    await page.getByLabel('Nume de familie').fill('Popescu');
+    await page.getByRole('button', { name: 'Salvați și continuați' }).click();
+
+    // Active now. `/home` is not a deep link §4.3 honours for a member of nothing, so the branch
+    // lands on S-04 exactly as a password sign-in would.
     await expect(page).toHaveURL(/\/create-organization$/);
-    await expect(
-      accountTrigger(page, { email }),
-    ).toBeVisible();
+    await expect(accountTrigger(page, { email })).toBeVisible();
   });
 
   test('a sign-in that matches no account is offered registration (UC-05 alternate)', async ({
@@ -147,5 +170,54 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
 
     await expect(page).toHaveURL(/\/sign-in\?notice=social-email-in-use$/);
     await expect(page.getByText('Există deja un cont cu această adresă')).toBeVisible();
+  });
+
+  test('a provider that did not confirm the address: the link opens the password step, then S-36 asks for the name (UC-03, task 155)', async ({
+    page,
+  }) => {
+    const email = addressFor('unconfirmed');
+    stub.nextClaims = {
+      sub: `${PREFIX}unconfirmed-${run}`,
+      email,
+      email_verified: false,
+      name: 'Ion Rusu',
+    };
+
+    // With no grant held the step is not there to open: S-02's address answers instead.
+    await page.goto('/register/password');
+    await expect(page).toHaveURL(/\/verify$/);
+
+    await page.goto('/register');
+    await page.getByRole('link', { name: 'Continuați cu Google' }).click();
+    await expect(page).toHaveURL(/\/sign-in\?notice=social-verify-sent$/);
+
+    await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+    await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+    // The grant the confirmation held opens S-36's password step, under S-01's registration address —
+    // the account has no session yet — naming the address it belongs to.
+    await expect(page).toHaveURL(/\/register\/password$/);
+    await expect(page.getByText(email, { exact: false })).toBeVisible();
+    await page.getByLabel('Parola', { exact: true }).fill(NEW_PASSWORD);
+    // S-01's choice, asked here because this step signs the person in (§12.5.6's task-155 row (4)).
+    await page.getByLabel('Țineți-mă autentificat pe acest dispozitiv').check();
+    await page.getByRole('button', { name: 'Salvați parola' }).click();
+
+    // Signed in once the password is set, and on to the name step at S-36's own address — on a session
+    // kept on this device, which only the ticked box asks for: a declined session's cookie has no expiry.
+    await expect(page).toHaveURL(/\/complete-account$/);
+    const sessionCookie = (await page.context().cookies()).find(
+      (cookie) => cookie.name === 'easyesg_session',
+    );
+    expect(sessionCookie?.expires).toBeGreaterThan(Date.now() / 1000);
+    await expect(page.getByText('Pasul 2 din 2')).toBeVisible();
+    // S-36's controls: signing out is on offer at rest on a step reached with a session.
+    await expect(page.getByRole('button', { name: 'Ieșiți din cont', exact: true })).toBeVisible();
+    await page.getByLabel('Prenume').fill('Ion');
+    await page.getByLabel('Nume de familie').fill('Rusu');
+    await page.getByRole('button', { name: 'Salvați și continuați' }).click();
+
+    await expect(page).toHaveURL(/\/create-organization$/);
+    await expect(accountTrigger(page, { email, displayName: 'Ion Rusu' })).toBeVisible();
   });
 });

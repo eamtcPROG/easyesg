@@ -410,13 +410,13 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
 - **Main success scenario:**
   1. The user selects a provider.
   2. The platform requests only minimum profile scopes — identifier, email address, display name.
-  3. The system creates an account holding the provider identity as its credential, **not yet active**.
+  3. The system creates an account holding the provider identity as its credential, **in a setup state in which it can do nothing but complete its setup and sign out**.
   4. Where the provider asserts the email is verified, UC-03 is satisfied without a separate verification email.
-  5. **The user sets a password meeting the password policy, and the account becomes active.**
-  6. **The user confirms their given name, family name and interface language, both names required, and continues to §4.3's branch.**
+  5. **The user sets a password meeting the password policy — within 15 minutes of the provider sign-in, or of confirming the address where the provider did not assert it.**
+  6. **The user confirms their given name, family name and interface language, both names required; the account becomes active, and the user continues to §4.3's branch — or back to the invitation they registered from (UC-15).**
 
   *Steps 3, 5 and 6 amended 14 Sep 2026 (project owner; built by task 155): the account previously held no password at all, which left it stranded whenever its provider was disabled (UC-70).*
-- **Alternate flows:** Where an account already exists for the asserted address, no duplicate is created; the user is routed through identity linking (UC-11) after proving control of the existing account.
+- **Alternate flows:** Where an account already exists for the asserted address, no duplicate is created; the user is routed through identity linking (UC-11) after proving control of the existing account. **An account abandoned in setup is deleted seven days after registration — except an account moved into setup from active, which may hold organizations and is never deleted by that rule**; a session older than 15 minutes signs in at the provider again before setting the password (amended 14 Sep 2026, task 155).
 - **Postconditions:** An account exists with a provider identity credential and a password, and both name parts set. *(Amended 14 Sep 2026; previously "and no password".)*
 - **Business rules:** Social sign-in is in MVP scope; enterprise SSO is not (D-6). A provider assertion alone is never sufficient to attach to an existing account.
 - **Related FRs:** FR-2
@@ -433,9 +433,9 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   1. The user follows the verification link.
   2. The account transitions from unverified to active.
   3. The founding-organization flow (UC-49) or a pending invitation (UC-15) becomes available.
-- **Alternate flows:** Satisfied automatically where a social provider asserts an already-verified address. **For an account registered through a provider, verification satisfied either way does not make the account active: it becomes active when its password is set** (UC-02 step 5; amended 14 Sep 2026, project owner; task 155).
+- **Alternate flows:** Satisfied automatically where a social provider asserts an already-verified address. **For an account registered through a provider, verification satisfied either way does not make the account active: it enters setup (UC-02), and confirming by link opens the password step for 15 minutes** (amended 14 Sep 2026, project owner; task 155).
 - **Exception flows:** Unverified accounts expire after a defined window.
-- **Postconditions:** The account is active — or, for an account registered through a provider, verified and awaiting its password (UC-02).
+- **Postconditions:** The account is active — or, for an account registered through a provider, in setup (UC-02).
 - **Related FRs:** FR-3
 - **Related UCs:** UC-01, UC-02, UC-15, UC-49
 
@@ -514,7 +514,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   1. The user enters their email address.
   2. The system issues a single-use, time-limited reset link.
   3. The system returns an identical response whether or not the address is registered.
-- **Alternate flows:** Where the address belongs to a social-only account with no password, the same single-use link is sent, and completing it gives the account its first password (UC-09's alternate flow). **Amended 14 Sep 2026** (project owner, task 67.11): this line previously directed such a user to sign in with their provider instead, which contradicted UC-09 — and once a provider is disabled through UC-70 that direction is a dead end, stranding exactly the accounts FR-82 says a withdrawal must not strand.
+- **Alternate flows:** Where the address belongs to a social-only account with no password, the same single-use link is sent, and completing it gives the account its first password (UC-09's alternate flow). **Its message is worded as setting a password rather than resetting one, and an account still in setup (UC-02) is sent it too** (amended 14 Sep 2026, project owner, task 155). **Amended 14 Sep 2026** (project owner, task 67.11): this line previously directed such a user to sign in with their provider instead, which contradicted UC-09 — and once a provider is disabled through UC-70 that direction is a dead end, stranding exactly the accounts FR-82 says a withdrawal must not strand.
 - **Business rules:** The endpoint cannot be used to enumerate accounts.
 - **Related FRs:** FR-6
 - **Related UCs:** UC-09
@@ -530,7 +530,7 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   1. The user follows the link and sets a new password meeting the password policy.
   2. The link is consumed on use.
   3. All existing sessions for that account are invalidated.
-- **Alternate flows:** A social-only account completing this flow gains a password credential in addition to its linked identity. This is the recovery path for an account whose only provider has been disabled (UC-70), and since 14 Sep 2026 UC-08 sends such an account the same link (task 67.11).
+- **Alternate flows:** A social-only account completing this flow gains a password credential in addition to its linked identity. This is the recovery path for an account whose only provider has been disabled (UC-70), and since 14 Sep 2026 UC-08 sends such an account the same link (task 67.11). **An account still in setup (UC-02) completing this flow sets the password half of its setup: it becomes active if both name parts are already held, and is otherwise asked for them on S-36; the page the link opens is worded as setting a password, not replacing one** (amended 14 Sep 2026, project owner, task 155; `architecture.md` §12.5.6's task-155 row).
 - **Postconditions:** The account holds a new password; no prior session remains valid.
 - **Related FRs:** FR-6
 - **Related UCs:** UC-08, UC-12

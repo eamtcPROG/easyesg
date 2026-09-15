@@ -12,7 +12,7 @@ every screen. Cite them; do not re-derive them.
 
 Identity, organization, periods, reports, entities and the wizard are live; the calculator,
 validation, preview and export, notifications, checkout and billing and the public tier are the
-sixteen addresses `AddressNotice` answers for. What exists: 43 page routes across six route groups,
+sixteen addresses `AddressNotice` answers for. What exists: 45 page routes across six route groups,
 7 layouts, a not-found boundary, 4 route handlers, the next-intl wiring, 15 feature folders (eight built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
@@ -126,6 +126,23 @@ proxy's own list — the gate and the branch must not disagree about which route
 **`null` memberships and `[]` are different answers** — could not read (S-35) versus belongs to
 nothing (S-04); and **the rule carries no `server-only`** deliberately, since importing the
 API client there would make every arm untestable outside a browser.
+
+**An account completing its setup** (task 155; §12.5.6's task-155 row). The sealed session carries
+the account's `status`, and three places read it. `proxy.ts` sends an account `awaiting_setup` to
+S-36 (`/complete-account`) from every address that needs a session, with `?return=` — **and carries
+a rotated successor on that redirect**, because the rotation has already spent the refresh token and
+a browser left presenting it reads as theft. §4.3's branch sends one there before reading
+memberships the API would refuse it. And S-36's actions **renew** the session when setup completes
+(`renewSession`), because a cookie still saying *in setup* would be turned straight back by the
+proxy. Two things to know before touching it: **the step comes from the API's read, never from the
+cookie** — `setupStepOf` over `GET /account/setup` — so a stale cookie changes where the proxy sends
+a reader and never which step they see; and **on S-02's path the password step is served at
+`/register/password`**, from a sealed grant cookie (`server/sealed/setup-grant.ts`, the factor
+challenge's shape), because that account has no session until the password is set — **inside
+`(session-issuing)`**, because completing it issues one, so UX-136's layout turns away a reader who
+already holds a session. It was `/verify/password` until task 155's second review found a signed-in
+reader could replace their session there; `route-access.spec.ts` compares that group's first segments
+with `SESSION_ISSUING_SEGMENTS`, which is why the step lives under `register` rather than a new one.
 
 **The provider flow** (task 24). `/auth/social/{provider}/start|callback` are Route
 Handlers OUTSIDE `[locale]` — they are the redirect URIs registered at the providers, so they
@@ -306,7 +323,7 @@ issues a session and is never gated:
 | Group | Layout it establishes | Screens |
 | --- | --- | --- |
 | `(public)` | None. **The only zone where `"use cache"` is legal** (§14.2) | Marketing, legal, help |
-| `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03 |
+| `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03, S-36 |
 | `(identity)/(session-issuing)` | None of its own. **UX-136's gate, once for the group** (task 112) — membership of the directory *is* what makes a screen refuse a caller who already holds a session | S-01 sign in and its factor step, S-01 register |
 | `(app)` | Global tier | S-04 and S-35 — the two authenticated screens in no inner group |
 | `(app)/(workspace)` | Global tier + workspace tier | S-05, S-06, S-13…S-28 |
@@ -784,9 +801,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **74 files here are Client Components** (14 Sep 2026: thirteen under
+  **82 files here are Client Components** (14 Sep 2026: thirteen under
   `organization/access/components/` since task 142 split the invite panel into its arms, ten under
-  `credentials/components/`, seven under `shared/`, the rest
+  `credentials/components/`, seven under `shared/`, seven under `identity/setup/components/` since
+  task 155's S-36, one under `identity/shared/components/` since its second review shared the password field, the rest
   across the wizard's controls and the two record forms' sections and task 67.9's support-access banner's two control sets), so the three
   cases above are live questions in every one of them — `access-context.tsx` is the worked example,
   where `useCallback` and `useMemo` are load-bearing because a rebuilt context value re-renders two

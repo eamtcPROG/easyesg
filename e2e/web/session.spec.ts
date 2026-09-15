@@ -191,6 +191,27 @@ test('a bare set-password arrival explains itself and offers the request route',
 });
 
 /**
+ * S-02 worded for the account its link was sent to (task 155; §12.5.6's task-155 row (8)). The worker
+ * adds `intent=setup` for an account holding no password, and this is the web tier's end of that wire —
+ * the parameter's name and value read on a real page, the heading, label and action all taking the first
+ * password's words. Rendering spends nothing, so any token will do; the reset wording is the control.
+ */
+test('a set-password link for an account holding no password is worded as setting its first (task 155)', async ({
+  page,
+}) => {
+  await page.goto('/set-password?token=not-spent-by-rendering&intent=setup');
+  await expect(page.getByRole('heading', { level: 1, name: 'Setați o parolă', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Parola', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Salvați parola', exact: true })).toBeVisible();
+
+  await page.goto('/set-password?token=not-spent-by-rendering');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Setați o parolă nouă', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Salvați parola nouă', exact: true })).toBeVisible();
+});
+
+/**
  * S-01's *Keep me signed in on this device* (§12.5.6, OQ-35 amended 4 Sep 2026), across the two
  * halves that have to agree — and they are held by different systems, which is the whole reason
  * this is a browser test rather than two unit tests.

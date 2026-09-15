@@ -55,6 +55,7 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
       givenName: null,
       familyName: null,
       verifiedAt: now,
+      setupExpiresAt: null,
       createdAt: now,
       updatedAt: now,
     };

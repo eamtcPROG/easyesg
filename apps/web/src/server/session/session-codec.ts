@@ -1,5 +1,6 @@
 import 'server-only';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
+import { ACCOUNT_STATUS, isAccountStatus, type AccountStatus } from '@easyesg/contracts';
 import { isLocale, type Locale } from '@easyesg/i18n';
 
 /**
@@ -42,6 +43,13 @@ export interface SessionPayload {
     displayName: string;
     monogram: string | null;
     locale: Locale;
+    /**
+     * The account's lifecycle status (task 155) — what `proxy.ts` sends an account still completing its
+     * setup to S-36 on, and what §4.3's branch reads before asking for memberships the API would refuse
+     * such an account. Refreshed on every rotation, since the API answers a refresh with the account as
+     * it stands.
+     */
+    status: AccountStatus;
   };
 }
 
@@ -103,7 +111,7 @@ function readPayload(parsed: unknown): SessionPayload | null {
   if (!isRecord(parsed) || !isRecord(parsed.account)) return null;
   const { accessToken, accessTokenExpiresAt, refreshToken, refreshTokenExpiresAt, remembered } =
     parsed;
-  const { id, email, locale, displayName, monogram } = parsed.account;
+  const { id, email, locale, displayName, monogram, status } = parsed.account;
   if (
     typeof accessToken !== 'string' ||
     typeof accessTokenExpiresAt !== 'number' ||
@@ -139,6 +147,11 @@ function readPayload(parsed: unknown): SessionPayload | null {
       locale,
       displayName: typeof displayName === 'string' && displayName ? displayName : email,
       monogram: typeof monogram === 'string' && monogram ? monogram : null,
+      // **Tolerant again, and `active` is the fact rather than a guess.** A cookie sealed before task
+      // 155 belongs to a session the API issued then, and it issued sessions to active accounts only.
+      // An account that migration moved into setup since is refused by the API until the next
+      // rotation — at most fifteen minutes — brings its status in, and no deployment held one.
+      status: isAccountStatus(status) ? status : ACCOUNT_STATUS.ACTIVE,
     },
   };
 }

@@ -55,7 +55,9 @@ traps each one left — grouped by area rather than by the task that built it.
   reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
   §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
   `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9); A-18's identity providers (`GET /admin/identity-providers`, `POST /admin/identity-providers/{provider}/{configuration,enablement,disablement}`) (67.11);
-  social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`);
+  social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`), and the
+  setup a provider registration completes (`GET /account/setup`, `POST /account/setup/{password,profile}`,
+  `POST /auth/account-setup/password`) (155);
   opt-in TOTP and password change (27); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`); invitations and acceptance (`GET/POST /invitations`,
   `POST /invitations/{id}/email`, `DELETE /invitations/{id}`,
@@ -156,6 +158,18 @@ traps each one left — grouped by area rather than by the task that built it.
   154 re-points at OpenBao; the e2e suites get Google's secret from `apps/api/.env`, which `ConfigModule` loads, so the
   secret-missing refusal is a unit spec's. **`setCredentialPassword` is an upsert** (UC-09's alternate flow): a
   social-only account holds no `identity.credential` row, and a reset used to refuse it as a dead link.
+- **An account in setup reaches only what `@AdmitsAccountInSetup` marks** (task 155; §12.5.6's task-155 row).
+  `AuthGuard` reads the account's status and setup deadline in the same identity join as the session, and refuses
+  every other route with `account-setup-required` — so **a route added later is closed to a setup account by
+  default**, which is the direction the rule wants, and the route-matrix e2e's in-setup actor proves it per row. A
+  lapsed deadline answers `authentication-required`, as an expired session does; a *null* deadline is a moved
+  legacy account and never lapses. **The first password's proof is the session's own `created_at`** within 15
+  minutes: an account holding no password can only have signed in through a provider, so that timestamp is the
+  provider sign-in. **The confirmation link's grant is a password-reset token** with a 15-minute life, spent by
+  the public `POST /auth/account-setup/password`, which then issues the session. The account row's shape is
+  `infrastructure/persistence/identity/account-row.ts`, shared by the four identity adapters that map the whole
+  row — a column those adapters read goes there once, not into four copies. The guard's identity join is the
+  exception by design: it reads the two columns it judges, beside the session, and never maps an account.
 - **Social sign-in matches on `(provider, subject)`, never email** (task 24; §9.1 calls the
   email-match variant an account-takeover path). `openid-client` 6.8.7 is a plain static import —
   ESM-only, and on `module: nodenext`/Node 26 `require(esm)` loads it, the OQ-48 revisit, proven for
@@ -166,9 +180,9 @@ traps each one left — grouped by area rather than by the task that built it.
   boot-fatal). The completion use case returns outcomes and throws AFTER commit — the
   unverified-registration path must commit account + challenge while answering 403. The social
   throttle key is per (IP, provider), the account being unknowable before the exchange, so suites
-  sharing a stack share ONE §12.5.6 window; both e2e suites drain
+  sharing a stack share ONE §12.5.6 window; every e2e suite that completes a provider flow drains
   `attempt_key LIKE 'social-sign-in:%'` for that reason. `test/support/oidc-provider-stub.ts` is a
-  minimal Authorization Server both e2e suites (and the browser suite, by relative import) drive a
+  minimal Authorization Server those suites (and the browser suite, by relative import) drive a
   real code flow against; `AUTH_SOCIAL_ALLOW_INSECURE=true` is what lets discovery hit its http
   issuer, and is never set in production.
 - **`identity.membership` is `identity`, not `core`** (25.1 — §7.1's one permitted cross-schema
@@ -1062,7 +1076,7 @@ prove different things and are worth keeping apart:
   declaration, a route whose permission **changed** (`GET /members` moving from OA to any
   authenticated account is a privilege escalation that compiles and passes every other test), and a
   route **deleted** while its row stayed, which is how such a table normally rots into fiction.
-- **`test/route-matrix.e2e-spec.ts`** drives every tenant route × five actors over real HTTP and
+- **`test/route-matrix.e2e-spec.ts`** drives every tenant route × six actors over real HTTP and
   **derives** the expected outcome from that same table. One table, two claims: a declaration
   nothing enforces is a comment, and enforcement nobody wrote down is the surface someone
   remembered. Both were verified to bite — the hermetic one on a changed and on a missing
