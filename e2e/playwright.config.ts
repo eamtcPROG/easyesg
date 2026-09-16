@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { STACK_API_BASE, STACK_ORIGIN, STACK_PORT } from './stack';
 
 /**
  * Browser e2e for `apps/web` (task 20 — the first one). Runs against the SAME stack the api
@@ -7,6 +8,15 @@ import { defineConfig, devices } from '@playwright/test';
  * ships, not `next dev`'s approximation of it. `pree2e:web` builds all of it, so `pnpm
  * e2e:web` is runnable on its own (CLAUDE.md: a script must not depend on state a previous
  * command left behind).
+ *
+ * **Every server below is one this run started, on every machine** (task 102). The suite shares
+ * the dev stack's ports (`stack.ts` says why), so `pree2e:web` first stops this repository's dev
+ * servers (`tools/stop-dev-servers.mjs`), and `reuseExistingServer` is `false` behind it. Until task
+ * 102 it was `!process.env.CI`, and Playwright adopted anything answering the address and said so
+ * only under `DEBUG=pw:webserver` — so this docblock's promise held in CI and was false, silently, on
+ * the machine where someone was working. **A run that fails at start with `… is already used`** is a
+ * server that started between the stop and the suite; the stop script refuses a process that is not
+ * this repository's rather than ending it, and says which.
  *
  * The config lives in `e2e/` rather than at the repo root so `e2e/tsconfig.json` covers it —
  * type-aware lint has no project for root-level files; the root script passes `--config`.
@@ -19,12 +29,6 @@ import { defineConfig, devices } from '@playwright/test';
  * is IN the outbox row the moment registration commits (P-8, OQ-54) — the worker would only
  * turn it into an email. The spec reads the row as `esg_worker`, exactly like the api e2e.
  */
-const API_PORT = 3000;
-const WEB_PORT = 3100;
-const EXPANSION_PORT = 3101;
-// The console's dev port, which is also what the api's ADMIN_ORIGIN defaults to — served here
-// from `vite preview` over `dist/`, the artefact the image ships (task 23).
-const ADMIN_PORT = 3200;
 
 /** The Compose stack's synthetic dev credentials (infra/compose/.env.example) as fallbacks,
  *  so the suite runs identically on a laptop and in CI's database job. */
@@ -34,9 +38,16 @@ const dbEnv = {
   DB_NAME: process.env.DB_NAME ?? 'esg',
 };
 
+/**
+ * What every server entry below shares. **`reuseExistingServer: false` is also Playwright's default**,
+ * so an entry added without this spread is still started rather than adopted; it is written out so
+ * the choice is read here rather than inferred from a default nobody chose.
+ */
+const STARTED_BY_THIS_RUN = { reuseExistingServer: false, timeout: 60_000 } as const;
+
 const webEnv = {
   NODE_ENV: 'production',
-  API_BASE_URL: `http://localhost:${API_PORT}/api/v1`,
+  API_BASE_URL: STACK_API_BASE,
   BILLING_ENABLED: process.env.BILLING_ENABLED ?? 'true',
   // Synthetic and e2e-only — but load-bearing since task 22: it seals the session cookie the
   // sign-in journey sets and the pass-through unseals (OQ-33).
@@ -79,7 +90,7 @@ export default defineConfig({
       name: 'identity',
       testMatch: /web\/.*\.spec\.ts/,
       testIgnore: /expansion/,
-      use: { baseURL: `http://localhost:${WEB_PORT}` },
+      use: { baseURL: STACK_ORIGIN.WEB },
     },
     {
       name: 'expansion',
@@ -90,25 +101,26 @@ export default defineConfig({
       // claim and cannot fail on the thing it names. `identity`'s `testIgnore: /expansion/`
       // already keeps these files out of it, so the two sets stay disjoint by construction.
       testMatch: /web\/.*expansion.*\.spec\.ts/,
-      use: { baseURL: `http://localhost:${EXPANSION_PORT}` },
+      use: { baseURL: STACK_ORIGIN.EXPANSION },
     },
     {
       name: 'admin',
       testMatch: /admin\/.*\.spec\.ts/,
-      use: { baseURL: `http://localhost:${ADMIN_PORT}` },
+      use: { baseURL: STACK_ORIGIN.CONSOLE },
     },
   ],
   webServer: [
     {
+      ...STARTED_BY_THIS_RUN,
       command: 'node dist/main.js',
       cwd: '../apps/api',
-      url: `http://localhost:${API_PORT}/health`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
+      url: `${STACK_ORIGIN.API}/health`,
+      // These win over `apps/api/.env`, which sets `PORT` and `PUBLIC_WEB_URL` for the dev stack:
+      // `@nestjs/config` copies a file's keys into `process.env` only where they are absent.
       env: {
         ...dbEnv,
         MODE: 'http',
-        PORT: String(API_PORT),
+        PORT: String(STACK_PORT.API),
         DB_USER: process.env.DB_USER ?? 'esg_app',
         DB_PASSWORD: process.env.DB_PASSWORD ?? 'devonly-app',
         // Task 67.3 — the HTTP tier refuses to start without `esg_admin_ro`, the console's reader
@@ -125,39 +137,46 @@ export default defineConfig({
         // `provisionOperator` seals it on the way in. Both are this one key.
         SECRET_ENCRYPTION_KEY:
           process.env.SECRET_ENCRYPTION_KEY ?? 'devonly-secret-encryption-key',
-        ADMIN_ORIGIN: `http://localhost:${ADMIN_PORT}`,
+        ADMIN_ORIGIN: STACK_ORIGIN.CONSOLE,
+        // Read today only by the worker's mail consumers, which this run does not start — set so
+        // that a later reader in the HTTP tier cannot send a browser to a developer's server.
+        PUBLIC_WEB_URL: STACK_ORIGIN.WEB,
         BILLING_ENABLED: process.env.BILLING_ENABLED ?? 'true',
       },
     },
     {
+      ...STARTED_BY_THIS_RUN,
       command: 'node apps/web/.next/standalone/apps/web/server.js',
       cwd: '..',
-      url: `http://localhost:${WEB_PORT}/health`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
-      env: { ...webEnv, PORT: String(WEB_PORT) },
+      url: `${STACK_ORIGIN.WEB}/health`,
+      // `PUBLIC_WEB_URL` is the app's own origin, which `social-flow.ts` builds its redirects and
+      // its OAuth callback from. Stated rather than left to its default, which is right only
+      // because this server listens on the dev port.
+      env: { ...webEnv, PORT: String(STACK_PORT.WEB), PUBLIC_WEB_URL: STACK_ORIGIN.WEB },
     },
     {
+      ...STARTED_BY_THIS_RUN,
       command: 'node apps/web/.next/standalone/apps/web/server.js',
       cwd: '..',
-      url: `http://localhost:${EXPANSION_PORT}/health`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
+      url: `${STACK_ORIGIN.EXPANSION}/health`,
+      // Its own origin, and not one the api's redirect allowlist carries — which is why no provider
+      // journey runs in the `expansion` project.
       env: {
         ...webEnv,
-        PORT: String(EXPANSION_PORT),
+        PORT: String(STACK_PORT.EXPANSION),
+        PUBLIC_WEB_URL: STACK_ORIGIN.EXPANSION,
         EASYESG_PSEUDOLOCALE: '1',
       },
     },
     {
+      ...STARTED_BY_THIS_RUN,
       // The console, served from its built bundle — `vite preview` over `dist/`, which
       // `pree2e:web` produced. Its API base URL is a BUILD input (VITE_*, one artefact per
-      // environment); the default in src/lib/env.ts targets this stack's api port.
+      // environment); the default in src/lib/env.ts targets this stack's api port, which is why
+      // the suite keeps the dev ports rather than building a second console for others (task 102).
       command: 'pnpm --filter @easyesg/admin start:prod',
       cwd: '..',
-      url: `http://localhost:${ADMIN_PORT}/`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
+      url: `${STACK_ORIGIN.CONSOLE}/`,
     },
   ],
 });

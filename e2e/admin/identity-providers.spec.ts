@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { STACK_API_BASE, STACK_ORIGIN } from '../stack';
 import { restoreIdentityProviderSeed } from '../web/support/provider-config';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator } from './support/provision';
 import { currentTotpCode } from './support/totp';
@@ -22,7 +23,7 @@ import { currentTotpCode } from './support/totp';
  * `e2e/web/social.spec.ts` already relies on. The seed payload is republished afterwards.
  */
 const RUN_PREFIX = `e2e-providers-${process.pid}-${Date.now()}`;
-const WEB_ORIGIN = 'http://localhost:3100';
+const WEB_ORIGIN = STACK_ORIGIN.WEB;
 const OPERATOR = `${RUN_PREFIX}-pa@easyesg.md`;
 const PASSWORD = 'Parola123!';
 const TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
@@ -110,7 +111,7 @@ test('an operator registers Google, enables it onto the sign-in screen, and disa
 
   // Gone because it is disabled, not because the read failed: S-01 draws no provider block when its read fails, so
   // the api's own answer is asserted first, then the rendered screen.
-  const offered = await visitor.request.get('http://localhost:3000/api/v1/auth/social/providers');
+  const offered = await visitor.request.get(`${STACK_API_BASE}/auth/social/providers`);
   expect(offered.ok()).toBe(true);
   expect(((await offered.json()) as { object: { providers: string[] } }).object.providers).not.toContain('google');
   await signInScreen.reload();

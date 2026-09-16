@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { Client } from 'pg';
 import { OidcProviderStub } from '../../apps/api/test/support/oidc-provider-stub';
+import { STACK_ORIGIN } from '../stack';
 import { cleanupAccounts, verificationTokenFor } from './support/db';
 import {
   publishIdentityProvider,
@@ -25,8 +26,8 @@ import { accountTrigger } from './support/session';
  * 127.0.0.1. The provider is enabled by a configuration publish (FR-82's no-redeploy half) and
  * the seed payload is restored afterwards so the store leaves the run as `config:seed` expects.
  */
-const API_URL = 'http://localhost:3000';
-const WEB_ORIGIN = 'http://localhost:3100';
+const API_URL = STACK_ORIGIN.API;
+const WEB_ORIGIN = STACK_ORIGIN.WEB;
 const PREFIX = 'task24web-';
 const NEW_PASSWORD = 'Parola-Noua1!';
 

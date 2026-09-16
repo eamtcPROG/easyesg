@@ -21766,3 +21766,92 @@ Both in `e2e/admin/session.spec.ts`, beside the closed-direction journey that ha
 - **Which run, and why.** The narrow per-row run for `apps/admin`: nothing moved or was renamed, no package,
   generator or build hook changed, and the one new file is added rather than relocated — so `gates:clean`
   would see nothing a warm run does not. No review agents, under the owner's standing rule for a childless row.
+
+## Task 102 — The browser suite stops the dev servers, then starts its own · 2026-09-16
+
+`e2e/playwright.config.ts` promised *"the artefact the image ships, not `next dev`'s approximation of it"*
+and served the stack on the ports a developer's own servers use — api 3000, web 3100, console 3200 — with
+`reuseExistingServer: !process.env.CI`. Read from Playwright 1.62.1's source rather than its docs: a server
+counts as running when its `url` answers, and the reuse is recorded only under `DEBUG=pw:webserver`. So
+locally the suite ran against whatever answered, and said nothing.
+
+### Three answers, and why the last one is right
+
+The row left the remedy to the owner, and the decision moved twice in one afternoon; the order is worth
+keeping because each answer was corrected by something concrete.
+
+1. **"It will not happen often."** Put back as the record: `expansion.ts`'s stale unpadded server that made
+   every frame green, task 92's run adopting the owner's dev servers and dying when they were stopped, and
+   the two 15-hour-old orphans task 113's pre-run check found. The cause is ordinary — the dev stack is up
+   while the suite runs, on identical ports.
+2. **Ports of the suite's own**, which was built and run green (226 of 226 with decoys on the dev ports).
+   It needed a **second console build**, because Vite inlines the api address: a bundle aimed at 4000 is a
+   different artefact from the one `pree2e:web` makes.
+3. **The owner's objection to that is the principle it breaks**: the build under test should be the build
+   that ships, differing only in its environment. I agreed, and pointed out that the console already
+   breaks it by design — §18's deferred question on the console's address assumes one build per
+   environment, and the image ships the dev fallback — so the principled fix is a serve-time setting.
+   The owner declined that as more than this needs: *stop the dev servers before the suite starts*.
+   That keeps one console build and closes the defect, at the stated cost that a run stops them.
+
+The own-ports version was reverted, not kept alongside: `dist-e2e`, its four ignore entries and the
+dependencies-only `pree2e:web` selection are gone.
+
+### What shipped
+
+- **`e2e/stack.ts`** — the dev ports, declared once and read by the config, by the stop script and by the
+  three specs that had restated the api's and the web app's origins as literals. It stayed through the
+  reversal because the duplication was real either way.
+- **`tools/stop-dev-servers.mjs`**, first in `pree2e:web` and before the builds. For each port it finds
+  the listener, and only when that process runs from this repository — its working directory, since
+  `next dev`'s server renames itself `next-server (v16.3.0)` and its command line then names no path —
+  signals its **process group**, waits for the port, and escalates to `SIGKILL`. It judges every
+  listener before acting, so a refusal leaves nothing half done. It reads the ports from `stack.ts`
+  directly: Node 26 strips types on import, checked before relying on it.
+- **Why the group**, measured on the three real dev servers started as terminal jobs (each in its own
+  session): stopping only the process on the port ended `next dev` and `vite` with it and **left
+  `nest start --watch` and its `pnpm` running**, ready to restart the api on the next edit mid-run.
+- **What it refuses**: a listener from outside the repository (3000 is a common default); a listener in
+  this run's own process group, which signalling would stop the run itself; and — the guard that matters
+  most — a group id that is not a positive number. `ps` answers nothing for a process that exits between
+  two lookups, `Number('')` is `0`, and signalling `-0` signals the caller's own group.
+- **Skipped when `CI` is set**: a runner starts with nothing listening.
+- **`reuseExistingServer: false`** on all four entries, through one spread, as the backstop for anything
+  that starts between the stop and the suite.
+- **Two origins that had been right only by coincidence are now stated**: each web server's
+  `PUBLIC_WEB_URL`, which `social-flow.ts` redirects through, and the api's. Both runtimes put the
+  suite's values over their env files — `@nestjs/config` copies a file's keys only where `process.env`
+  lacks them (4.0.4's source), and `apps/api/.env` does set `PORT` and `PUBLIC_WEB_URL`.
+
+### Proof, and the mutations
+
+- **The case it is for**: the three real dev servers plus a stand-in orphan in the repository root —
+  all four stopped, and no process of the three jobs left, the watcher included.
+- **A process from elsewhere**: a stand-in on 3000 started outside the repository, with the console's
+  dev server on 3200 — refused, named, exit 1, **both left running**. **Mutation: remove the repository
+  check** → the same process is killed.
+- **Mutation: signal the listener instead of its group** → the api's watcher and `pnpm` survive, and the
+  script **reports success**. That silent half-stop is the reason the group is the unit.
+- **Same job**: a repository listener backgrounded in the running shell — refused, left running.
+- **Not demonstrated, deliberately**: the positive-group guard. Exercising it means signalling group 0,
+  which is this shell; the reasoning is in the function's docblock instead.
+- **The Playwright side of the backstop**, from the own-ports build of this task and unchanged by the
+  reversal: a stand-in on a suite port fails the run at start with `… is already used`; with the old
+  setting restored the same stand-in is adopted silently and served the journey's `GET /sign-in`.
+- **The whole of it, as the owner works**: the three real dev servers running, then `pnpm e2e:web`, all
+  three projects since the config reaches every one. The run's first step stopped all three — the api's
+  watcher with them, no process of the three jobs left — built, and passed **226 of 226 in 5.6 minutes**,
+  every port free afterwards. The five `⨯ Error: The destination stream closed early.` lines carry digest
+  `2667547900`, the abandoned stream `apps/web/CLAUDE.md` records; task 93's run printed five too.
+
+### Verification
+
+- `pnpm lint` (which type-checks `e2e/` through its project service, and lints the new tool);
+  `pnpm docs:check`, 40 claims, after 92 numbers / 177 rows → 93 / 178.
+- `pnpm e2e:web`, above: **226 of 226**.
+- **Which run, and why.** The whole browser suite, and no `gates:clean`. The one required-cold case the
+  diff touches is the `pre` hook, and its new step reads no build output — it ran first, before every
+  build, in the run above — while the build selection is back to what it was. **In CI** the script
+  exits on `CI` before it looks for `lsof`, but only after importing `e2e/stack.ts`, which needs Node's
+  type stripping — the pinned 26.7.0 has it, and it is the same Node the local run used. No review
+  agents, under the owner's standing rule for a childless row.

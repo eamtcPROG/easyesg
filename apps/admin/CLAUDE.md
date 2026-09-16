@@ -94,7 +94,7 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 | here | `pnpm build` | `vite build`. **Needs the environment it is built for** — see the env trap |
 | here | `pnpm start:dev` / `start:prod` | Port 3200 both ways; `start:prod` previews `dist/` |
 | here | `pnpm test` | Vitest, `--passWithNoTests` |
-| root | `pnpm e2e:web` | Includes the `admin` Playwright project, which runs against `vite preview` |
+| root | `pnpm e2e:web` | Includes the `admin` Playwright project, which runs against `vite preview`. **Stops your dev server on 3200 first** (task 102) |
 
 ## Where things live
 
@@ -266,4 +266,7 @@ Two checks this app needs that the tenant app does not:
   `ro.json` is the moment to check.
 - **The e2e project runs against the built bundle, cross-origin.** `pnpm e2e:web` includes it. A
   change that works under `start:dev` and not under `vite preview` is a build-time/runtime
-  difference, and this app has one class of those by construction: `VITE_*` inlining.
+  difference, and this app has one class of those by construction: `VITE_*` inlining. **That
+  inlining is why the suite shares this app's dev port** (task 102): a suite on other ports would
+  need a second console built for them, and the suite should test the build that ships. So
+  `pree2e:web` stops your dev server first, and you start it again when the run is done.

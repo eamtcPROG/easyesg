@@ -15,8 +15,10 @@
  * `expandString` appends `PAD` until a string is 40% longer and returns early only when
  * `value.length >= ceil(value.length * 1.4)`, which no non-empty string satisfies — so **every**
  * string this project renders carries at least one `·`, and admitting zero admitted the one state
- * that means the harness did not run. It is not theoretical: `reuseExistingServer` is on outside
- * CI, so a stale unpadded server on port 3101 made every frame green while proving nothing.
+ * that means the harness did not run. It was not theoretical: `reuseExistingServer` was on outside
+ * CI until task 102, so a stale unpadded server on port 3101 made every frame green while proving
+ * nothing. The suite now stops the dev servers and starts every server itself, and the guard
+ * stays — it is what proves the padded catalogue arrived, whatever answered.
  * `expansion.spec.ts` states the premise in its own words — *"the padded catalogue actually
  * arrived — otherwise this asserts nothing"* — and this makes it true of every caller rather than
  * of the four suites that remembered to assert it separately.

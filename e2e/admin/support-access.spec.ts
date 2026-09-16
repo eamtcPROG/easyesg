@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { STACK_ORIGIN } from '../stack';
 import {
   cleanupAccounts,
   cleanupOrganizations as cleanupTenantOrganizations,
@@ -24,7 +25,7 @@ import { currentTotpCode } from './support/totp';
  * the two sessions cannot share a cookie jar.
  */
 const RUN_PREFIX = `e2e-support-${process.pid}-${Date.now()}`;
-const WEB_ORIGIN = 'http://localhost:3100';
+const WEB_ORIGIN = STACK_ORIGIN.WEB;
 const OPERATOR = `${RUN_PREFIX}-pa@easyesg.md`;
 const OWNER = `${RUN_PREFIX}-oa@example.md`;
 const PASSWORD = 'Parola123!';

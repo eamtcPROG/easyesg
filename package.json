@@ -30,7 +30,7 @@
     "clean": "./tools/clean-build-outputs.sh",
     "e2e": "pnpm --filter @easyesg/api test:e2e",
     "e2e:worker": "pnpm --filter @easyesg/api test:worker",
-    "pree2e:web": "pnpm --filter @easyesg/api... --filter @easyesg/web... --filter @easyesg/admin... build && ./tools/assemble-web-standalone.sh",
+    "pree2e:web": "node tools/stop-dev-servers.mjs && pnpm --filter @easyesg/api... --filter @easyesg/web... --filter @easyesg/admin... build && ./tools/assemble-web-standalone.sh",
     "e2e:web": "playwright test --config e2e/playwright.config.ts",
     "gates": "pnpm lint && pnpm eslint:prove && pnpm typecheck && pnpm image:check && pnpm docs:check && pnpm test && pnpm boundaries && pnpm boundaries:prove && pnpm build && pnpm openapi:check && pnpm facade:check && pnpm routes:check && pnpm migrations:check && pnpm e2e && pnpm e2e:worker && pnpm e2e:web",
     "gates:scoped": "./tools/gates-scoped.sh",
