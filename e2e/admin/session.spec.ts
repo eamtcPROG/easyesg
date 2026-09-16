@@ -91,6 +91,74 @@ test('the realm is closed by default, admits credential + code, and signs out (U
   await page.waitForURL('**/sign-in?*redirect=*');
 });
 
+/**
+ * **The gate runs in the other direction too** (task 113; UX-136, §5.2's A-01 entry points).
+ *
+ * `_realm` has turned an unauthenticated arrival away since task 23 and nothing did the reverse, so
+ * an operator holding a live session who typed this address, followed a bookmark or pressed back was
+ * served the form — and submitting it re-ran the whole handshake and rotated the sealed cookie
+ * underneath a session that was working. The test above proves the closed direction; this proves the
+ * open one, **by address**, which is the only way it can be entered.
+ */
+test('a live session is turned away from A-01, to the destination the address asked for', async ({
+  page,
+}) => {
+  const email = emailFor('held');
+  provision(email, OPERATOR_ROLE.PLATFORM_ADMINISTRATOR);
+
+  await page.goto('/sign-in');
+  await signIn(page, email);
+  await page.waitForURL('**/organizations');
+
+  // Typed, bookmarked, or arrived at by the back button: the form is not served to a live session.
+  await page.goto('/sign-in');
+  await page.waitForURL('**/organizations');
+  await expect(consoleBar(page)).toBeVisible();
+
+  // A same-app `?redirect=` still wins over the home — A-01's own exit rule, rather than a second
+  // rule about where an operator belongs written three lines away from the first.
+  await page.goto('/sign-in?redirect=%2Faccounts');
+  await page.waitForURL('**/accounts');
+
+  // And the arrival notice buys no exemption. It is in the address, so a carve-out on it would be a
+  // way back to the form that anyone could write into a link (§12.5.6's task-113 row).
+  await page.goto('/sign-in?notice=invitation-accepted');
+  await page.waitForURL('**/organizations');
+});
+
+/**
+ * **The half that makes the gate above safe to have**, and the reason it is a journey rather than a
+ * unit case: it needs a warm console whose session dies underneath it.
+ *
+ * Six sections navigate here when their own read answers 401, and until task 113 none of them told
+ * `adminSessionQuery` what they had just learned — so the console went on believing it was signed in
+ * for the rest of that entry's minute. Harmless while A-01 served the form to anyone; with a gate on
+ * A-01 the stale answer sends the operator straight back to the screen that had refused them, which
+ * refuses them again, without end. What fails here if the recording is dropped is not an assertion
+ * about a cache: it is that A-01 never renders at all.
+ */
+test('a read that finds the session gone reaches A-01 rather than bouncing off it', async ({
+  page,
+  context,
+}) => {
+  const email = emailFor('lapsed');
+  provision(email, OPERATOR_ROLE.PLATFORM_ADMINISTRATOR);
+
+  await page.goto('/sign-in');
+  await signIn(page, email);
+  await page.waitForURL('**/organizations');
+  await expect(page.getByRole('heading', { level: 1, name: 'Organizații' })).toBeVisible();
+
+  // The session ends server-side while the console's own answer is still cached as signed-in; the
+  // search is what asks the api again without reloading the page, which would refill that cache.
+  await context.clearCookies();
+  await page.getByLabel('Căutați după nume sau IDNO').fill('sesiune-încheiată');
+  await page.getByRole('button', { name: 'Căutați', exact: true }).click();
+
+  await page.waitForURL('**/sign-in?*redirect=*');
+  await expect(page.getByRole('heading', { name: 'Autentificare operator' })).toBeVisible();
+});
+
 test('a wrong code refuses distinctly and the challenge survives for the retype', async ({
   page,
 }) => {

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Navigate, useLocation } from '@tanstack/react-router';
+import { SessionEnded } from '~/realm/components/shared/session-ended';
 import { REALM_READ } from '~/realm/tools/realm-read';
 import { identityProvidersQuery } from '../../../queries/identity-providers';
 import type { IdentityProvidersSearch } from '../../../tools/identity-providers-search';
@@ -21,7 +21,6 @@ export function ProvidersSection({
   readonly onSearchChange: (next: IdentityProvidersSearch) => void;
 }) {
   const query = useQuery(identityProvidersQuery());
-  const href = useLocation({ select: (location) => location.href });
 
   if (query.data === undefined) {
     return query.isError ? <ProvidersUnavailable onRetry={() => void query.refetch()} /> : <ProvidersLoading />;
@@ -30,7 +29,7 @@ export function ProvidersSection({
   const read = readProvidersOutcome(query.data);
   switch (read.kind) {
     case REALM_READ.SIGNED_OUT:
-      return <Navigate to="/sign-in" search={{ redirect: href }} />;
+      return <SessionEnded />;
     case REALM_READ.FORBIDDEN:
       return <ProvidersForbidden />;
     case REALM_READ.UNAVAILABLE:

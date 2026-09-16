@@ -105,7 +105,7 @@ src/
 │  └─ routes/   _focus (A-01, A-20) · _realm (everything behind the guard) — both pathless
 ├─ realm/       api/ (the one API client) · components/ (sign-in/ A-01's screen · invitation/ A-20's ·
 │               credentials/ A-19's · chrome/ the realm layout's chrome · shared/ the realm chip, the
-│               refusal callout and the password requirements) · queries/ (the session, the invitation,
+│               refusal callout, the password requirements and the ended-session exit) · queries/ (the session, the invitation,
 │               A-19's credentials) · tools/ (the three reducers, each role's home, the navigation's
 │               sections, the two arrival notices, the realm reads' arms, A-19's read and code standing,
 │               the email shape). A LEAF (see below)
@@ -156,12 +156,34 @@ src/
   token is the capability, and the api judges it on every call, spending a per-IP window on each
   link that does not resolve.
 
+  **And since task 113 the gate runs the other way on A-01**, which UX-136 requires of any screen
+  whose completion issues a session: an operator holding a live one is redirected to `?redirect=` or
+  their console home rather than served the form, or submitting it re-runs the handshake and rotates
+  the cookie underneath a session that was working. **Two things about it are not `apps/web`'s.**
+  The gate is the *probe* — OQ-17 puts the cookie on the api's origin, httpOnly, so there is no local
+  fact to read — and it is affordable because `index` and `_realm` resolve the same 60-second entry,
+  so the two ordinary anonymous arrivals ask nothing and only a bookmark straight to `/sign-in` costs
+  a bare 401. And **a probe that cannot answer renders the form**: `_realm` is closed by default and a
+  thrown probe keeps it closed, this screen is open by default and a thrown probe keeps it open, which
+  is one rule read in each direction. The boundary that refuses an attacker is the api's cookie; this
+  gate spares an operator a mistake, so failing open costs nothing and failing closed would put the
+  console's only way in behind the api being reachable.
+
+- **A read that learns the session ended must say so, and `<SessionEnded />` is how** (task 113).
+  `realm/components/shared/session-ended.tsx` is the `SIGNED_OUT` arm for all six sections that draw
+  one — it writes `null` into `adminSessionQuery` and *then* navigates to A-01, in one effect so the
+  order is the file's rather than React's child-first effect order. A bare `<Navigate to="/sign-in">`
+  leaves the console believing it is signed in for the rest of that entry's minute, which with A-01's
+  gate above is an endless bounce between the screen and the form.
+
   **The redirect is validated where it is consumed, not where it is set.** `_realm`'s guard puts
   `location.href` in the search param; `_focus/sign-in.tsx`'s `safeRealmPath` is what refuses
   anything that is not a same-app path — leading `/`, but not `//` and not `/\`, the two forms a
   browser reads as an origin. An open redirect on the console's sign-in is worth more to an
   attacker than on any tenant screen, and the check is three lines away from the navigation it
-  guards precisely so a reader of that navigation meets it.
+  guards precisely so a reader of that navigation meets it. **It has two consumers in that file
+  since task 113** — the completed sign-in and the gate above — and stays inline rather than moving
+  to `tools/` with a spec, because that last sentence is the reason it is where it is.
 
 - **This chrome has no organization selector, and must not grow one.** D-5 gives a Platform
   Administrator no standing access to organization data. A selector here would be that standing

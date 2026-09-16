@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Navigate, useLocation } from '@tanstack/react-router';
+import { SessionEnded } from '~/realm/components/shared/session-ended';
 import { REALM_READ } from '~/realm/tools/realm-read';
 import { adminRosterQuery } from '../../../queries/admin-roster';
 import type { AccountsSearch } from '../../../tools/accounts-search';
@@ -26,7 +26,6 @@ export function RosterSection({
   readonly onSearchChange: (next: AccountsSearch) => void;
 }) {
   const query = useQuery(adminRosterQuery());
-  const href = useLocation({ select: (location) => location.href });
 
   if (query.data === undefined) {
     return query.isError ? <RosterUnavailable onRetry={() => void query.refetch()} /> : <RosterLoading />;
@@ -35,7 +34,7 @@ export function RosterSection({
   const read = readRosterOutcome(query.data);
   switch (read.kind) {
     case REALM_READ.SIGNED_OUT:
-      return <Navigate to="/sign-in" search={{ redirect: href }} />;
+      return <SessionEnded />;
     case REALM_READ.FORBIDDEN:
       return <RosterForbidden />;
     case REALM_READ.UNAVAILABLE:

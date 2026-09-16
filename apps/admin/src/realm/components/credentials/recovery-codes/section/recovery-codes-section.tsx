@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { Navigate, useLocation } from '@tanstack/react-router';
 import { RecordSection } from '@easyesg/ui';
 import type { ReactNode } from 'react';
 import { useTranslations } from 'use-intl';
@@ -7,6 +6,7 @@ import { adminCredentialsQuery } from '../../../../queries/credentials';
 import { readCredentialsOutcome } from '../../../../tools/credentials-read';
 import { CREDENTIALS_SECTION } from '../../../../tools/credentials-state';
 import { REALM_READ } from '../../../../tools/realm-read';
+import { SessionEnded } from '../../../shared/session-ended';
 import { useCredentials } from '../../shared/credentials-context';
 import { SectionNotice } from '../../shared/section-notice';
 import { RecoveryCodesIssued } from '../issued/recovery-codes-issued';
@@ -30,7 +30,6 @@ export function RecoveryCodesSection() {
   const t = useTranslations('realm.credentials.recoveryCodes');
   const { codes } = useCredentials();
   const query = useQuery(adminCredentialsQuery());
-  const href = useLocation({ select: (location) => location.href });
 
   const retry = () => void query.refetch();
 
@@ -41,7 +40,7 @@ export function RecoveryCodesSection() {
     const read = readCredentialsOutcome(query.data);
     switch (read.kind) {
       case REALM_READ.SIGNED_OUT:
-        return <Navigate to="/sign-in" search={{ redirect: href }} />;
+        return <SessionEnded />;
       case REALM_READ.FORBIDDEN:
       case REALM_READ.UNAVAILABLE:
         return <RecoveryCodesUnavailable onRetry={retry} />;

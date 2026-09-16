@@ -16,10 +16,31 @@
  * Operator (A-01's exit, `design_spec.md` §5.2; task 67.1). **A recovery sign-in lands on A-19
  * instead, whatever `?redirect=` carried** (task 151): a code was just spent, perhaps for a lost
  * authenticator, and A-19 is where both are put right.
+ *
+ * **The gate runs in both directions since task 113** (UX-136; §12.5.6's task-113 row). `_realm` has
+ * turned an unauthenticated arrival away since task 23 and nothing did the reverse, so an operator
+ * holding a live session who typed this address, followed a bookmark or pressed back was served the
+ * form — and submitting it re-ran the whole handshake and rotated the sealed cookie underneath a
+ * session that was working. **The probe is the only fact available**: OQ-17 makes the cookie the
+ * api's, httpOnly and on the api's origin, so there is nothing local to read. It costs little,
+ * measured rather than assumed — `/` and `_realm` resolve the same 60-second entry, so the two ways
+ * an anonymous operator ordinarily arrives here ask nothing, and a cookie-less `GET` is refused
+ * before any database work.
+ *
+ * **A probe that cannot answer renders the form, and the asymmetry with `_realm` is the point**:
+ * that guard is closed by default and a thrown probe keeps it closed; this screen is open by
+ * default and a thrown probe keeps it open. Nothing is given away — the boundary that refuses an
+ * attacker is the api's cookie, and this gate only spares an operator an accidental re-handshake —
+ * while the opposite arm would make the console's only way in depend on the api being reachable.
+ *
+ * **`defaultPreload: 'intent'` runs this guard on hover and cannot act on it** (verified against the
+ * router's own preloading guide, 16 Sep 2026): the speculative lane executes `beforeLoad` but does
+ * not reuse its terminal outcomes, redirects among them, so A-20's *go to sign in* link warms the
+ * probe and moves nobody. The redirect is re-derived on the real navigation.
  */
 import { useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { ADMIN_SESSION_QUERY_KEY } from '~/realm/queries/session';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { ADMIN_SESSION_QUERY_KEY, adminSessionQuery } from '~/realm/queries/session';
 import { SignInScreen } from '~/realm/components/sign-in/sign-in-screen';
 import { consoleHomeFor } from '~/realm/tools/console-home';
 import { CREDENTIALS_ARRIVAL } from '~/realm/tools/credentials-arrival';
@@ -37,6 +58,18 @@ export const Route = createFileRoute('/_focus/sign-in')({
     // A-20's success (task 67.4): the account an invitation became exists, and it signs in here.
     notice: readSignInNotice(search.notice),
   }),
+  beforeLoad: async ({ context, search }) => {
+    // `null` twice over, and the two mean different things to everyone but this gate: no session,
+    // or a probe that could not say. Both leave the form standing, per the docblock above.
+    // **The catch is on the probe alone, deliberately.** Widened to a `try` around the redirect it
+    // would swallow the redirect too — the defect the router's own guide needs `isRedirect()` to
+    // avoid, and one that would silently return this screen to having no gate at all.
+    const account = await context.queryClient.ensureQueryData(adminSessionQuery).catch(() => null);
+    if (account === null) return;
+    // The same exit a completed sign-in takes, rather than a second rule about where an operator
+    // belongs — and `?notice=` buys no exemption, since it is in the address anyone can write.
+    throw redirect({ to: safeRealmPath(search.redirect) ?? consoleHomeFor(account.role) });
+  },
   component: AdminSignInRoute,
 });
 

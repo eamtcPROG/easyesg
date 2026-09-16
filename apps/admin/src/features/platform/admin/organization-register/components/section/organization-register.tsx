@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Navigate, useLocation } from '@tanstack/react-router';
+import { SessionEnded } from '~/realm/components/shared/session-ended';
 import { organizationRegisterQuery } from '../../queries/organization-register';
 import { REGISTER_READ, readRegisterOutcome } from '../../tools/register-read';
 import { registerViewOf, type RegisterSearch } from '../../tools/register-search';
@@ -27,7 +27,6 @@ export function OrganizationRegister({
 }) {
   const view = registerViewOf(search);
   const query = useQuery(organizationRegisterQuery(view));
-  const href = useLocation({ select: (location) => location.href });
 
   if (query.data === undefined) {
     return query.isError ? (
@@ -40,7 +39,7 @@ export function OrganizationRegister({
   const read = readRegisterOutcome({ outcome: query.data, page: view.page });
   switch (read.kind) {
     case REGISTER_READ.SIGNED_OUT:
-      return <Navigate to="/sign-in" search={{ redirect: href }} />;
+      return <SessionEnded />;
     case REGISTER_READ.FORBIDDEN:
       return <RegisterForbidden />;
     case REGISTER_READ.UNAVAILABLE:

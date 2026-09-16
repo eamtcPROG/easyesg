@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Navigate, useLocation } from '@tanstack/react-router';
 import { useTranslations } from 'use-intl';
+import { SessionEnded } from '~/realm/components/shared/session-ended';
 import { REALM_READ } from '~/realm/tools/realm-read';
 import { supportAccessLogQuery } from '../../../queries/support-access';
 import { inProgressOf, readLogOutcome } from '../../../tools/support-access-read';
@@ -32,7 +32,6 @@ export function InProgressSection({
 }) {
   const t = useTranslations('platform.supportAccess.inProgress');
   const query = useQuery(supportAccessLogQuery(1));
-  const href = useLocation({ select: (location) => location.href });
 
   if (query.data === undefined) {
     return query.isError ? (
@@ -45,7 +44,7 @@ export function InProgressSection({
   const read = readLogOutcome({ outcome: query.data, page: 1 });
   switch (read.kind) {
     case REALM_READ.SIGNED_OUT:
-      return <Navigate to="/sign-in" search={{ redirect: href }} />;
+      return <SessionEnded />;
     case REALM_READ.FORBIDDEN:
       return <SupportAccessForbidden />;
     case REALM_READ.UNAVAILABLE:

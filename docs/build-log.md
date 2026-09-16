@@ -21676,3 +21676,93 @@ default because the menu's close unmounts the button before the default submit r
 - **Which run, and why.** The narrow per-row run for `apps/web`: nothing moved, no package, generator or
   build hook changed, so `gates:clean` would see nothing a warm run does not. No review agents, under the
   owner's standing rule for a childless row.
+
+## Task 113 — A-01 is gated in the other direction too · 2026-09-16
+
+Task 112 gave the tenant app a gate in both directions and its sweep found the console has the same hole:
+`_realm`'s `beforeLoad` has turned an unauthenticated arrival away since task 23, and **A-01 had no
+`beforeLoad` at all**. An operator holding a live realm session who typed the address, followed a bookmark or
+pressed back got the form — and submitting it re-ran the two-step TOTP handshake and rotated the sealed
+cookie underneath a session that was working. Same defect, and the row was right that it is not the same fix.
+
+### The measurement that changed the decision
+
+The row framed the cost as *a `GET /auth/admin/session` on **every** anonymous load of A-01*, and that is not
+what the code does. `index.tsx` and `_realm.tsx` already resolve `adminSessionQuery` — one entry, `staleTime:
+60_000` — so an arrival at the root and a bounce off the realm guard, which are the two ways an anonymous
+operator ordinarily reaches A-01, read the cache and ask nothing. `AdminSessionService.resolve` throws before
+any database work when the cookie is absent, so the one genuinely new request — a bookmark straight to
+`/sign-in` — is a bare 401. **Put to the owner as that measurement rather than as the row's estimate**, with a
+cache-only gate and a recorded limitation as the alternatives; the probe was taken.
+
+The cache-only variant is worth recording as declined, because it is the cheap answer and it is wrong in a way
+no test would show: it catches a back-button press inside the SPA and silently misses a typed address, a
+bookmark and a cold reload — which is the whole of the case the defect describes.
+
+### The second decision: a probe that cannot answer renders the form
+
+`adminSessionQuery` throws rather than answering when the api is unreachable. `_realm` lets that through and
+is right to: it is closed by default, so an unprovable session keeps it closed. A-01 is **open** by default, so
+the same rule read in its own direction keeps it open. That is not a weakened gate — the boundary that refuses
+an attacker is the api's cookie, which no answer here touches; this gate spares an operator an accidental
+re-handshake. Failing the other way would put the console's only way in behind the api being reachable, during
+exactly the incident an operator needs it.
+
+### The half nothing had asked for, and the reason the gate is not a two-line change
+
+Six sections render the `SIGNED_OUT` arm when their own read answers 401 — A-02, A-08, A-18, A-07's two and
+A-19's recovery codes — and every one of them navigated to A-01 while leaving `adminSessionQuery` holding the
+account for the rest of its minute. **The console believed it was signed in while every screen was being
+refused.** Harmless while A-01 served the form to anyone; with a gate on A-01 it is an endless bounce — the
+screen 401s, sends the operator to A-01, the stale answer sends them back, and so on.
+
+`realm/components/shared/session-ended.tsx` records the ending and *then* navigates, **in one effect**: a
+`<Navigate>` rendered beside an effect would put the navigation in a child, whose effects run first, so the
+ordering the fix depends on would be a property of the tree rather than of anything written in the file. It
+replaced six copies of the bare `<Navigate to="/sign-in" search={{ redirect: href }} />` and, with them, six
+`useLocation` calls.
+
+### What else was decided rather than left implicit
+
+- **The destination is A-01's own exit** — `safeRealmPath(search.redirect) ?? consoleHomeFor(account.role)`.
+  §5.2's A-01 row already states that rule for a completed sign-in, so a second one three lines away would be
+  a second source of truth about where an operator belongs.
+- **`safeRealmPath` stays inline**, though it now has two consumers and decides more than it used to.
+  `apps/admin/CLAUDE.md` records *why* it is where it is — *three lines away from the navigation it guards
+  precisely so a reader of that navigation meets it* — and moving it to `tools/` with a spec would trade that
+  for a unit test. Considered and declined, with the line added to that bullet.
+- **A carve-out on `?notice=` was declined.** A-20's hand-off lands on `/sign-in?notice=invitation-accepted`,
+  and standing aside for it would be a bypass anyone could write into a link. The consequence is real and is
+  stated in §5.2 instead: an operator accepting an invitation for a **second** account while signed in as
+  their first is returned to their first account's home and signs out to use the new one.
+- **UX-136 amended** to say it binds the administrative realm, with each realm's destination its own — the
+  rule was authored while reading `apps/web`, so *the branch above* named §4.3's and nothing said the console
+  was in scope.
+
+### The journeys, and the mutations that prove them
+
+Both in `e2e/admin/session.spec.ts`, beside the closed-direction journey that has been there since task 23.
+
+- *a live session is turned away from A-01* — plain, with `?redirect=%2Faccounts`, and with the notice.
+  **Mutation: remove `beforeLoad`** → times out on `waitForURL('**/organizations')` at the line that names the
+  claim.
+- *a read that finds the session gone reaches A-01 rather than bouncing off it* — sign in, `clearCookies()`,
+  then search, which is what asks the api again without a reload that would refill the cache.
+  **Mutation: remove the `setQueryData(…, null)`** → the URL still reaches `/sign-in?redirect=`, so
+  `waitForURL` passes, and **A-01 never renders**. That is the bounce exactly, and it is why the assertion is
+  on the heading rather than on the address.
+
+### Verification
+
+- `apps/admin` unit: **29 files, 246 tests**; `pnpm --filter @easyesg/admin typecheck`; `pnpm lint`;
+  `pnpm routes:check`; `pnpm docs:check` (40 claims, after 91 numbers / 176 rows → 92 / 177).
+- Browser, the `admin` project on the rebuilt bundle: **22 of 22**, both new journeys among them, and 22 of 22
+  again after the two mutations were reverted.
+- **Two orphaned `webServer` processes were holding 3101 and 3200** — 15 h old, left behind when the task-92
+  run was killed with `pkill -f 'playwright[.]config'`, which takes the Playwright process and not its
+  children. Under task 102's `reuseExistingServer: !CI` the suite would have adopted a stale console bundle
+  and said nothing. Killed before the run; **check the four ports before believing an `e2e:web` result** until
+  102 closes.
+- **Which run, and why.** The narrow per-row run for `apps/admin`: nothing moved or was renamed, no package,
+  generator or build hook changed, and the one new file is added rather than relocated — so `gates:clean`
+  would see nothing a warm run does not. No review agents, under the owner's standing rule for a childless row.

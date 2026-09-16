@@ -1,5 +1,5 @@
 import type { ApiFailure } from '@easyesg/contracts';
-import { Navigate, useLocation } from '@tanstack/react-router';
+import { SessionEnded } from '~/realm/components/shared/session-ended';
 import { GRANT_READ, grantReadFailureOf } from '../../../tools/support-access-read';
 import { SupportAccessForbidden } from '../../shared/support-access-forbidden';
 import { SupportAccessUnavailable } from '../../shared/support-access-unavailable';
@@ -19,14 +19,13 @@ export function GrantFailure({
   readonly onRetry: () => void;
   readonly onClose: () => void;
 }) {
-  const href = useLocation({ select: (location) => location.href });
   const read = grantReadFailureOf(failure);
 
   switch (read.kind) {
     case GRANT_READ.ENDED:
       return <GrantEnded onClose={onClose} />;
     case GRANT_READ.SIGNED_OUT:
-      return <Navigate to="/sign-in" search={{ redirect: href }} />;
+      return <SessionEnded />;
     case GRANT_READ.FORBIDDEN:
       return <SupportAccessForbidden />;
     case GRANT_READ.UNAVAILABLE:
