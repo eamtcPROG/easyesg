@@ -1,0 +1,95 @@
+/* Re-authentication over a preserved screen (task 92) — the Identity artboard's "Re-authenticate, in
+   place": the screen stays behind a scrim, the dialogue sits at --elevation-2 (UX-86 names this surface),
+   centred from medium up and a bottom sheet at compact, "so the keyboard has room". Token values only
+   (UX-127); the breakpoints are the ones packages/ui's drawer and shells already cut at. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+}
+
+.dialogue {
+  position: fixed;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  /* The artboard's 460px card. */
+  inline-size: min(28.75rem, calc(100vw - var(--space-7)));
+  max-block-size: calc(100vh - var(--space-7));
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-7);
+  border: 1px solid var(--border-default);
+  /* §11's largest radius: "dialogues — nothing is rounder". */
+  border-radius: var(--radius-3);
+  background: var(--surface-raised);
+  box-shadow: var(--elevation-2);
+  color: var(--text-default);
+}
+
+.title {
+  margin: 0 0 var(--space-3);
+}
+
+.explanation {
+  margin: 0 0 var(--space-5);
+  color: var(--text-body);
+}
+
+.body,
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-body);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.action {
+  inline-size: 100%;
+}
+
+/* The account is named in the label where the frame has room for it (1440); the 834 and 390 frames drop
+   it, and the address still reaches a password manager through the form's username field. */
+.address {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .address {
+    display: inline;
+  }
+}
+
+@media (max-width: 39.9375rem) {
+  .dialogue {
+    inset-block: auto 0;
+    inset-inline: 0;
+    transform: none;
+    inline-size: 100%;
+    padding: var(--space-5) var(--space-5) var(--space-6);
+    border-block-end: 0;
+    border-radius: var(--radius-3) var(--radius-3) 0 0;
+  }
+
+  /* The sheet's grip — the artboard's 40 × 4 bar, decoration only. */
+  .dialogue::before {
+    content: '';
+    display: block;
+    inline-size: 2.5rem;
+    block-size: 0.25rem;
+    margin: 0 auto var(--space-5);
+    border-radius: var(--radius-1);
+    background: var(--border-default);
+  }
+}

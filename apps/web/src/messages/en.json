@@ -189,6 +189,24 @@
       "lapsedBody": "More than five minutes have passed since you entered your password, so this confirmation is no longer valid and your account stays closed.",
       "lapsedAction": "Sign in again"
     },
+    "reauthenticate": {
+      "title": "Confirm it is you to continue",
+      "passwordLede": "Enter your password and you return to exactly where you left off.",
+      "passwordLabel": "Password<address> for {email}</address>",
+      "passwordMissing": "The password is missing, so we can't confirm it's you. Enter your account's password to continue.",
+      "factorLede": "Your password was correct. Enter the code as well, and you return to exactly where you left off.",
+      "summaryTitle": "The field below needs attention before you can continue",
+      "continue": "Continue where I left off",
+      "restart": "Back to the password",
+      "signOut": "Sign out and finish later",
+      "problemTitle": "We couldn't confirm it's you",
+      "problemBody": "The request could not be processed, so your session stays closed. Try again.",
+      "lockedAction": "Reset your password",
+      "lapsedTitle": "The confirmation has expired",
+      "lapsedBody": "More than five minutes have passed since you entered your password, so the code is no longer accepted. Enter your password again.",
+      "accountChangedTitle": "Another account is signed in on this browser",
+      "accountChangedBody": "Someone signed in to a different account on this browser in the meantime, so we won't replace it or send your changes under it. To continue with your own account, sign out — which signs the other account out of this browser too."
+    },
     "resetRequest": {
       "title": "Reset your password",
       "subtitle": "We will email you a link from which you set a new password.",
@@ -1195,6 +1213,12 @@
         },
         "unnamed": "Unnamed",
         "yes": "Yes"
+      },
+      "session": {
+        "expired": "Your session expired while {module} was open.",
+        "nothingWaiting": "Nothing was lost — everything you entered is saved.",
+        "waiting": "Nothing was lost — {count, plural, one {one change is waiting on this device and will be sent} other {# changes are waiting on this device and will be sent}} as soon as you continue.",
+        "notDurable": "This browser cannot keep unsent changes once the tab is closed, so signing out loses them."
       },
       "leave": {
         "title": "Leave with unsent changes?",

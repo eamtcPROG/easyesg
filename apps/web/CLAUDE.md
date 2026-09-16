@@ -13,7 +13,7 @@ every screen. Cite them; do not re-derive them.
 Identity, organization, periods, reports, entities and the wizard are live; the calculator,
 validation, preview and export, notifications, checkout and billing and the public tier are the
 sixteen addresses `AddressNotice` answers for. What exists: 46 page routes across six route groups,
-7 layouts, a not-found boundary, 4 route handlers, the next-intl wiring, 15 feature folders (eight built),
+7 layouts, a not-found boundary, 7 route handlers, the next-intl wiring, 15 feature folders (eight built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/archived_tasks.md`
@@ -145,6 +145,25 @@ challenge's shape), because that account has no session until the password is se
 already holds a session. It was `/verify/password` until task 155's second review found a signed-in
 reader could replace their session there; `route-access.spec.ts` compares that group's first segments
 with `SESSION_ISSUING_SEGMENTS`, which is why the step lives under `register` rather than a new one.
+
+**Re-authentication over the preserved wizard** (task 92; `architecture.md` §12.5.6's task-92 row). A
+session that ends under an open S-07 is re-established in a dialogue over the step, never by a redirect
+(UX-38). `features/identity/reauthenticate/` holds the dialogue, its password and code stages, and under
+`handlers/` the flow of three Route Handlers — `GET /auth/session` says whether the session is still
+held and `DELETE` ends it, `POST /auth/session/password` and `/auth/session/factor` sign in again — with
+`client/session/` as the browser's half. Three things to know before touching it: **its requests are Route
+Handlers, not Server Actions, and the first reason is measured** — any cookie a Server Action sets or
+deletes re-renders the current page (Next's `action-handler.js`), so the factor stage's challenge cookie,
+written while no session exists, would re-render S-07 without one and unmount the dialogue it is part of;
+the sign-out joins them because a Server Action posts to the page's own address, which the proxy gates
+(read, not measured). **A field the dialogue focuses is not one the reader touched**: both stages validate
+on submit, since validating on blur put the summary above *sign out and finish later* between its press
+and release, and the click never landed; **the session's end is autosave's
+state** — `session` beside `connection` in `autosave-state.ts`, ended by a flush answered `401` or by the
+rail's and the exit's probe, and nothing flushes until the dialogue resumes it; and **the dialogue is bound
+to the page's account** — it signs in the address the page was rendered for, refuses while this browser
+holds someone else's session, and restores the organization the page was read under. A reload, a typed
+address and the global tier's links still meet the proxy's `?return=`.
 
 **The provider flow** (task 24). `/auth/social/{provider}/start|callback` are Route
 Handlers OUTSIDE `[locale]` — they are the redirect URIs registered at the providers, so they
@@ -320,7 +339,7 @@ src/
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter), S-37's gate
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
-├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), unsent-work, polling
+├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), unsent-work, polling, session (task 92 — the probe and the re-authentication posts)
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths, requested-path
 ```
 
@@ -837,7 +856,8 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **87 files here are Client Components** (15 Sep 2026: thirteen under
+  **96 files here are Client Components** (15 Sep 2026: six under `identity/reauthenticate/components/` and
+  three in the wizard — the rail's link, the session hook and the dialogue's mount — since task 92; thirteen under
   `organization/access/components/` since task 142 split the invite panel into its arms, ten under
   `credentials/components/`, seven under `shared/`, seven under `identity/setup/components/` since
   task 155's S-36, one under `identity/shared/components/` since its second review shared the password field, one under

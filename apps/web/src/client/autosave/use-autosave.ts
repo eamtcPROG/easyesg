@@ -102,6 +102,10 @@ export interface AutosaveHandle {
   readonly change: (write: QueuedWrite) => void;
   /** Another attempt after a failure — the banner's retry, and the backoff timer's. */
   readonly retry: () => void;
+  /** A navigation found the session gone (task 92): nothing flushes, and the step's dialogue opens. */
+  readonly endSession: () => void;
+  /** The reader signed in again over the step (task 92): what waited is sent. */
+  readonly resume: () => void;
   /** Whether the queue survives this tab — what the memory fallback gives up. */
   readonly durable: boolean;
 }
@@ -274,6 +278,8 @@ export function useAutosave(input: {
     [],
   );
   const retry = useCallback(() => dispatch({ type: AUTOSAVE_EVENT.RETRY_REQUESTED }), []);
+  const endSession = useCallback(() => dispatch({ type: AUTOSAVE_EVENT.SESSION_ENDED }), []);
+  const resume = useCallback(() => dispatch({ type: AUTOSAVE_EVENT.SESSION_RESUMED }), []);
 
-  return { state, change, retry, durable: store.durable };
+  return { state, change, retry, endSession, resume, durable: store.durable };
 }

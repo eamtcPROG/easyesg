@@ -1,8 +1,8 @@
 import { WizardModuleItem } from '@easyesg/ui';
 import type { DisclosureModuleSummary } from '@easyesg/contracts';
-import { Link } from '@/i18n/navigation';
 import { reportStepRoute } from '@/lib/routes';
 import styles from './module-rail.module.css';
+import { StepLink } from './step-link';
 
 /**
  * S-07's persistent module list (UX-5), as the rail's items.
@@ -49,11 +49,12 @@ export function ModuleRail({
           href={reportStepRoute({ reportId, module: module.module })}
           label={module.module}
           current={module.module === current}
-          // The locale-aware `Link`, injected: `packages/ui` holds no router, and the component
+          // The locale-aware link, injected: `packages/ui` holds no router, and the component
           // builds the anchor so that `aria-current="step"` lands where a screen reader reads it
           // (task 106). It used to receive a finished `<Link>` as children, which is why the
-          // attribute could only reach the `<li>`.
-          linkComponent={Link}
+          // attribute could only reach the `<li>`. Since task 92 it asks whether the session is still
+          // held before a step change (`step-link.tsx`).
+          linkComponent={StepLink}
           indicator={
             /*
              * Three states, and the order between them is a decision (task 36.13). **Omitted is

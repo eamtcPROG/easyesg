@@ -15,7 +15,7 @@ import { API_OUTCOME } from "@/lib/api-outcome";
 import { Link } from "@/i18n/navigation";
 import { ROUTES } from "@/lib/routes";
 import { completeFactorAction } from '../actions/actions';
-import { ANSWER_LENGTH, FACTOR_ANSWER, type FactorAnswerKind } from "../tools/factor";
+import { ANSWER_LENGTH, FACTOR_ANSWER, type FactorAnswerKind } from "../../shared/tools/factor";
 import {
   FACTOR_EVENT,
   FACTOR_STANDING,

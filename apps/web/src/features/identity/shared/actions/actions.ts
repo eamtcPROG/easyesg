@@ -1,9 +1,7 @@
 'use server';
 
-import type { SignOutRequest } from '@easyesg/contracts';
 import { getLocale } from 'next-intl/server';
-import { api } from '@/server/api/api-client';
-import { destroySession, readSession } from '@/server/session/session';
+import { endHeldSession } from '@/server/session/end-held-session';
 import { redirect } from '@/i18n/navigation';
 import { sanitizeReturnPath } from '@/lib/locale-path';
 import { ROUTES } from '@/lib/routes';
@@ -23,21 +21,17 @@ import { ROUTES } from '@/lib/routes';
  *
  * **One `actions/` per journey** (task 134): this file kept sign-out, whose readers are the chrome
  * and S-03's permission state rather than any one journey; `register/`, `sign-in/`, `verify/`,
- * `reset/` and `invitation/` each carry their own beside the components that call them.
+ * `reset/` and `invitation/` each carry their own beside the components that call them. **The one
+ * identity request that is not an action here** is task 92's re-authentication dialogue, whose three
+ * requests go to `/auth/session` handlers for the reasons `architecture.md` §12.5.6 records.
  */
 /**
- * FR-5, UC-06. The API call authenticates by the refresh token itself (task 21: possession is
- * the proof, and it works after the access token expired). The cookie is cleared whatever the
- * API answered: the person asked to leave THIS browser, and refusing because of a network blip
- * would strand them signed in; a termination the API never heard leaves a row its idle and
- * absolute lifetimes still bound (OQ-35).
+ * FR-5, UC-06. The two halves — the api's termination by refresh token, and the cookie cleared whatever
+ * the api answered — are `endHeldSession`'s, shared since task 92 with the dialogue's sign-out, which
+ * cannot be a Server Action; the reasons for each half are written there.
  */
 export async function signOutAction(returnTo?: string): Promise<void> {
-  const session = await readSession();
-  if (session) {
-    await api.delete<SignOutRequest>('/auth/session', { refreshToken: session.refreshToken });
-  }
-  await destroySession();
+  await endHeldSession();
 
   // `returnTo` is S-03's permission state (task 26.3): someone opened an invitation while signed
   // in as a different address, and the way out is to sign out and come back to THIS invitation

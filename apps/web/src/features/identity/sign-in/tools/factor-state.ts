@@ -1,11 +1,7 @@
 import { PROBLEM_TYPE } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
-import {
-  FACTOR_ANSWER,
-  FACTOR_LAPSED,
-  type CompleteFactorFailure,
-  type FactorAnswerKind,
-} from './factor';
+import { FACTOR_ANSWER, FACTOR_LAPSED, type FactorAnswerKind } from '../../shared/tools/factor';
+import type { CompleteFactorFailure } from '../actions/action-results';
 
 /**
  * S-01's factor step as one value and the events that move it.

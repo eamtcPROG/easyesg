@@ -189,6 +189,24 @@
       "lapsedBody": "Au trecut mai mult de cinci minute de la introducerea parolei, deci confirmarea nu mai este valabilă și contul rămâne închis.",
       "lapsedAction": "Autentificați-vă din nou"
     },
+    "reauthenticate": {
+      "title": "Confirmați că sunteți dumneavoastră ca să continuați",
+      "passwordLede": "Introduceți parola și reveniți exact unde ați rămas.",
+      "passwordLabel": "Parola<address> pentru {email}</address>",
+      "passwordMissing": "Parola lipsește, deci nu putem confirma că sunteți dumneavoastră. Introduceți parola contului pentru a continua.",
+      "factorLede": "Parola a fost corectă. Introduceți și codul, apoi reveniți exact unde ați rămas.",
+      "summaryTitle": "Câmpul de mai jos are nevoie de atenție înainte de a putea continua",
+      "continue": "Continuați de unde ați rămas",
+      "restart": "Înapoi la parolă",
+      "signOut": "Ieșiți din cont și continuați mai târziu",
+      "problemTitle": "Nu am putut confirma că sunteți dumneavoastră",
+      "problemBody": "Cererea nu a putut fi procesată, deci sesiunea rămâne închisă. Încercați din nou.",
+      "lockedAction": "Resetați-vă parola",
+      "lapsedTitle": "Confirmarea a expirat",
+      "lapsedBody": "Au trecut mai mult de cinci minute de la introducerea parolei, deci codul nu mai este acceptat. Introduceți din nou parola.",
+      "accountChangedTitle": "În acest browser s-a intrat în alt cont",
+      "accountChangedBody": "Între timp, în acest browser s-a intrat în alt cont, așa că nu îl înlocuim și nu trimitem modificările în numele lui. Ca să continuați cu contul dumneavoastră, ieșiți din cont — iar celălalt cont va fi deconectat din acest browser."
+    },
     "resetRequest": {
       "title": "Resetați-vă parola",
       "subtitle": "Vă trimitem pe e-mail un link din care setați o parolă nouă.",
@@ -1195,6 +1213,12 @@
         },
         "unnamed": "Fără denumire",
         "yes": "Da"
+      },
+      "session": {
+        "expired": "Sesiunea a expirat în timp ce secțiunea {module} era deschisă.",
+        "nothingWaiting": "Nimic nu s-a pierdut — tot ce ați completat este salvat.",
+        "waiting": "Nimic nu s-a pierdut — {count, plural, one {o modificare așteaptă pe acest dispozitiv și va fi trimisă} few {# modificări așteaptă pe acest dispozitiv și vor fi trimise} other {# de modificări așteaptă pe acest dispozitiv și vor fi trimise}} imediat ce continuați.",
+        "notDurable": "Acest browser nu poate păstra modificările netrimise după închiderea filei, deci ieșirea din cont le pierde."
       },
       "leave": {
         "title": "Ieșiți cu modificări netrimise?",

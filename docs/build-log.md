@@ -21483,3 +21483,121 @@ orphans, and forwards the image's `STOPSIGNAL SIGINT`, so stopping the service i
 - **CI reaches the change**: two gate jobs run `pnpm dev:up` and a third runs `docker compose -f
   infra/compose/docker-compose.yml up -d --wait`, so the next push exercises `init: true` there. No review agents,
   under the owner's standing rule; no application code changed, so no unit or api suite was rerun.
+
+## Task 92 — Inline re-authentication over the preserved wizard · 2026-09-15
+
+UX-38's second sentence, on the one screen that holds queued work: a session that ends under an open S-07
+is re-established in a dialogue over the step, the queue drains, and the reporter never leaves. Task 35.3
+proved the *"queued changes are submitted"* half through the proxy's `?return=`; this is the inline half
+OQ-60 split off, and 35.3's return-path journey now asserts the opposite of what it asserted.
+
+### Four decisions, in two batches
+
+`architecture.md` §12.5.6's task-92 row carries all four, with the routine calls beneath them.
+
+1. **Password, then the second factor inside the same dialogue** — no provider hand-off, since task 155
+   every active account holds a password. The recommendation, taken.
+2. **Writes and wizard navigations.** A flush answered `401` opens it, and so do the module rail and the
+   exit control, which ask `GET /auth/session` before they leave. **The recommendation was writes alone;
+   the owner widened it.** A reload, a typed address and the global tier's links still meet the proxy.
+3. **`apps/web`, in `features/identity/reauthenticate/`**, over Radix `Dialog`, under UX-89 as amended
+   14 Sep. The recommendation, taken.
+4. **Route Handlers under `/auth/session`, not Server Actions** — the second batch, raised after the first
+   because it was a measurement rather than an option the sources held: `action-handler.js`'s
+   `isCookieRevalidated` re-renders the current page whenever an action sets or deletes a cookie, and a
+   factor account's password stage holds its challenge in one while no session exists, so S-07 would
+   re-render without a session and unmount the dialogue.
+
+`design_spec.md`'s UX-136 paragraph, which said UX-38 is unmet and task 92 owns it for S-07, now says where
+it is met and where it still is not.
+
+### What was built
+
+- **`features/identity/reauthenticate/`** — `handlers/`: the password, code, standing and sign-out flows,
+  and the two rules both submissions share (another account's session in the browser is refused before the
+  api is asked; a sign-in answering someone other than the screen's account is ended before a cookie is
+  written); `tools/`: the answer reader, the command reader and the dialogue's reducer; `components/`: the
+  dialogue, its two stages, the refusal notice and *sign out and finish later*.
+- **`app/auth/session/`** — three route shells beside task 24's `/auth/social/…`, outside the matcher.
+- **`client/session/`** — the probe, the two posts, the sign-out, and the paths, which a spec holds to
+  handlers on disk: a path string is invisible to `typecheck` and to every spec that stubs `fetch`.
+- **Autosave's reducer gained `session` beside `connection`.** A `401` flush ends it, the probe ends it,
+  resuming clears the refusal with it; `canFlush`, `flushIsBlocked` and both save-state derivations read it.
+- **S-07** reads the active membership and the locale for the dialogue; the rail injects `StepLink` where it
+  injected `Link`; the exit asks first; the banner defers to the dialogue.
+- **Two extractions for a second reader**: `isCrossSiteWrite` out of the pass-through into
+  `server/session/same-origin.ts`, with a spec of its own, and `endHeldSession` out of `signOutAction`.
+- **`factor.ts` moved up** from `sign-in/tools/` to `identity/shared/tools/`, since two journeys read it, and
+  `CompleteFactorFailure` went to `sign-in/actions/action-results.ts`, whose type it always was.
+- `radix-ui` added to `apps/web` through the catalog, at the §12.1 pin.
+
+### What the browser found that no unit could
+
+- **B1's arrival default opens the dialogue before the reporter types.** Three B1 journeys failed at the
+  Tab. The trace held one `PUT …/values` answered `401` between `clearCookies` and the blur — B1's
+  committed-on-arrival default (FR-27, `autosave.spec.ts`) — and Radix's modal hiding the field from the
+  accessibility tree. The product was right: a refused write opens the dialogue whoever made it. The
+  journeys moved to B3, which commits nothing on arrival, and assert *one change is waiting*, so a B3 that
+  gains a default fails there rather than passing on the wrong write.
+- **Sign out and finish later never clicked.** The dialogue focuses the password field, pressing the button
+  blurred it, `onTouched` validation put the summary and the inline message above the button between press
+  and release, and the button moved out from under the pointer — a person would meet the same thing. The
+  password stage validates on submit, as the code stage already did.
+- **A diagnosis written up as measured, and it was not.** Before that was found, the missing sign-out
+  request was put down to the proxy gating a session-less Server Action's `POST` to the page's own address —
+  which `proxy.ts` does, as written — and the sign-out moved to `DELETE /auth/session` on that reason,
+  recorded as *measured* in four places. The absence had the other cause. The handler stays, so the
+  dialogue's three requests share one transport, and each of those places now says *read from the proxy*:
+  the §12.5.6 row, `apps/web/CLAUDE.md` and two docblocks. **Whether `signOutAction` would have worked from
+  the dialogue is unmeasured**, and nothing here claims otherwise.
+- **The first full run was invalid**, on task 102's `reuseExistingServer`: dev servers were up, Playwright
+  adopted the api and web on their ports, and stopping them mid-run refused every connection. Rerun with the
+  ports free, against the bundle the gate claims to test.
+
+### Routine calls, stated so they can be overturned
+
+- After resuming, the reader stays on the step; the navigation that found the session gone is not replayed.
+- The artboard's *"the last change saved 3 minutes ago"* ships as how many changes are waiting on this device.
+- `remembered` is carried from the page's session; the organization it was read under is restored through
+  `PUT /session/organization`, whose answer is not read — a removed membership meets the step's own arm.
+- A same-account session still held is signed in again rather than trusted: a revoked session's cookie
+  survives a relayed `401`, and trusting it would reopen the dialogue on every write.
+- The code stage's controls read `identity.factor`, S-01's step's words, rather than a copy.
+- The password label names the address from 64rem up, as the 1440 frame does; the 834 and 390 frames drop it.
+
+### Rules opened, and what came of them
+
+- **`vercel-react-best-practices`**: `bundle-dynamic-imports` considered for a dialogue that rarely opens, and
+  declined — it opens in tabs left open for hours or days, the ones most likely to have outlived a deploy and
+  to 404 a lazily fetched chunk. Nothing new is memoized by hand; the autosave context's value lists its two
+  new callbacks, both `useCallback`s over `dispatch`.
+- **`one-idea-per-file` / `one-kind-per-folder`**: `reauthenticate/` holds `components/ · handlers/ · tools/`;
+  `factor.ts` moved on `shared-how-many-siblings`; no `vi.mock` string and no `prove-boundaries.sh` fixture
+  named the moved path (grepped).
+- **`vercel-composition-patterns`**: no boolean prop added; the dialogue takes its caller's words as a node.
+
+### Not covered, and said so
+
+- A reload, a typed address and the global tier's links inside the wizard still redirect; UX-136 says so.
+- UX-37's warning before a sign-out that abandons a queue is task 93's; here the dialogue's sentence carries it.
+- `accessibility.spec.ts` does not scan the open dialogue, no expansion frame renders it at +40%, and no
+  journey asserts the bottom sheet at 390.
+
+### Verification
+
+- `apps/web` unit: **76 files, 799 tests.** The four handler specs **proven to bite by seeding**: the
+  another-account refusal returning `false` failed two, the account check disabled failed one; both files
+  restored byte-identical from a copy, and re-run green.
+- `pnpm --filter @easyesg/web typecheck`, `pnpm lint`, `pnpm boundaries` (1,667 modules), `pnpm docs:check`
+  (40 claims, after the Client Component count 87 → 96 and the forms import sites 33 → 35).
+- Browser, on the rebuilt bundle: `resume.spec.ts` with `session`, `global-tier` and `invitation` — **23 of
+  23**, the last three being the journeys `signOutAction`'s extraction reaches. Then the full identity and
+  expansion projects, ports free, on the same bundle: **202 of 202** in 4.9 minutes. The server logged
+  `⨯ Error: The destination stream closed early.` four times, **every one digest `2667547900`** —
+  `apps/web/CLAUDE.md`'s abandoned-stream case — during entities, organization-profile, post-sign-in and one
+  wizard journey, and none during the re-authentication journeys.
+- **Which run, and why.** The narrow per-row run for `apps/web`, not `gates:clean`: the one moved file is
+  application source with no built copy to go stale, and no package, generator or build hook changed. No
+  review agents, under the owner's standing rule for a childless row — though this one adds three
+  unauthenticated endpoints to the identity surface, which is the routing table's own case for a review, so
+  it is offered rather than run.

@@ -199,6 +199,65 @@ describe('syncStateOf (§4.10 per-field marker)', () => {
 });
 
 /**
+ * The session's end (task 92; UX-38): a `401` is a refusal of the session rather than of the values, and
+ * nothing leaves until the reader signs in again over the step.
+ */
+describe('the session’s standing', () => {
+  const refusedWith = (state: AutosaveState, status: number) =>
+    autosaveReducer(started(state), {
+      type: AUTOSAVE_EVENT.FLUSH_FAILED,
+      failure: {
+        kind: FLUSH_FAILURE.REFUSED,
+        problem: { type: 'https://easyesg.md/problems/authentication-required', status },
+      },
+    });
+
+  it('ends on a write refused 401, and on nothing else the api refuses with', () => {
+    const dirty = changed(online(), write('A', '1'));
+    expect(refusedWith(dirty, 401).session).toBe('ended');
+    // A locked period is 409 and a role 403: refusals of the write, not of the session.
+    expect(refusedWith(dirty, 403).session).toBe('held');
+    expect(refusedWith(dirty, 409).session).toBe('held');
+    const unreachable = autosaveReducer(started(dirty), {
+      type: AUTOSAVE_EVENT.FLUSH_FAILED,
+      failure: { kind: FLUSH_FAILURE.UNREACHABLE },
+    });
+    expect(unreachable.session).toBe('held');
+  });
+
+  it('holds every flush while ended — a retry, a reconnection and a new change included', () => {
+    const ended = refusedWith(changed(online(), write('A', '1')), 401);
+    expect(canFlush(ended)).toBe(false);
+    expect(canFlush(autosaveReducer(ended, { type: AUTOSAVE_EVENT.RETRY_REQUESTED }))).toBe(false);
+    expect(canFlush(changed(ended, write('B', '2')))).toBe(false);
+    expect(saveStateOf(ended)).toBe(SAVE_STATE.FAILED);
+    expect(syncStateOf(ended, writeKey({ elementKey: 'A' }))).toBe(SAVE_STATE.FAILED);
+    expect(flushIsBlocked(ended)).toBe(true);
+  });
+
+  it('is ended by a navigation’s probe with nothing pending, and says nothing is lost', () => {
+    const probed = autosaveReducer(online(), { type: AUTOSAVE_EVENT.SESSION_ENDED });
+    expect(probed.session).toBe('ended');
+    expect(saveStateOf(probed)).toBe(SAVE_STATE.SAVED);
+    expect(autosaveReducer(probed, { type: AUTOSAVE_EVENT.SESSION_ENDED })).toBe(probed);
+
+    // A change arriving while ended waits, and reads as not saved rather than as on its way.
+    const waiting = changed(probed, write('A', '1'));
+    expect(canFlush(waiting)).toBe(false);
+    expect(saveStateOf(waiting)).toBe(SAVE_STATE.FAILED);
+  });
+
+  it('flushes what waited once the session is resumed, the refusal gone with it', () => {
+    const ended = refusedWith(changed(online(), write('A', '1')), 401);
+    const resumed = autosaveReducer(ended, { type: AUTOSAVE_EVENT.SESSION_RESUMED });
+    expect(resumed.session).toBe('held');
+    expect(resumed.failure).toBeNull();
+    expect(canFlush(resumed)).toBe(true);
+    expect(resumed.pending).toEqual(ended.pending);
+  });
+});
+
+/**
  * Stuck, as against on its way (task 83.2). The organization switch waits for the second and asks the
  * reader about the first (UX-37), so a queue merely in flight must not read as blocked.
  */

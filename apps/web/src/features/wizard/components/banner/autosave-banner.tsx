@@ -4,6 +4,7 @@ import { BUTTON_VARIANT, Banner, Button, CALLOUT_INTENT } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { failureNotice } from '@/lib/notice';
+import { SESSION_STANDING } from '@/lib/session-standing';
 import { CONNECTION, FLUSH_FAILURE } from '../../tools/autosave-state';
 import { useAutosaveContext } from '../providers/autosave-context';
 
@@ -31,6 +32,10 @@ export function AutosaveBanner() {
   const { state, unsynced, hasUnsynced, retry, durable } = useAutosaveContext();
 
   if (!hasUnsynced) return null;
+
+  // An ended session is the re-authentication dialogue's to say (task 92), over this banner; a second
+  // vehicle for one condition would offer a retry the same refusal would meet again.
+  if (state.session === SESSION_STANDING.ENDED) return null;
 
   if (state.connection === CONNECTION.OFFLINE) {
     return (

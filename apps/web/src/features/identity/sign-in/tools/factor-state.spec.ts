@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { PROBLEM_TYPE } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
-import { FACTOR_ANSWER, FACTOR_LAPSED, type CompleteFactorFailure } from './factor';
+import { FACTOR_ANSWER, FACTOR_LAPSED } from '../../shared/tools/factor';
+import type { CompleteFactorFailure } from '../actions/action-results';
 import {
   FACTOR_EVENT,
   FACTOR_STANDING,

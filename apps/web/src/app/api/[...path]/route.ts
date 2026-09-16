@@ -2,6 +2,7 @@ import { PROBLEM_TYPE, type ProblemDocument } from '@easyesg/contracts';
 import { NextResponse, type NextRequest } from 'next/server';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
+import { isCrossSiteWrite } from '@/server/session/same-origin';
 import { readSession, withFreshAccessToken } from '@/server/session/session';
 
 /**
@@ -52,15 +53,6 @@ const PROBLEM_MEDIA_TYPE = 'application/problem+json';
 /** RFC 9457's "the status code is the whole story" type — this tier's deliberate non-answer. */
 const ABOUT_BLANK = 'about:blank';
 
-/** The one safe method this handler forwards; everything else is a write and proves origin. */
-const SAFE_METHOD = 'GET';
-
-/**
- * The `Sec-Fetch-Site` value the same-origin proof accepts — file-internal, unexported, per
- * the closed-vocabulary rule's "declared once is about the declaration, not the location".
- */
-const FETCH_SITE_SAME_ORIGIN = 'same-origin';
-
 /** Headers copied from the browser's request. Cookie stays; Authorization is replaced. */
 const FORWARDED_REQUEST_HEADERS = ['content-type', 'accept', 'accept-language', 'traceparent'];
 
@@ -81,20 +73,6 @@ function problem(document: ProblemDocument): NextResponse {
   });
 }
 
-/**
- * OQ-33's same-origin proof. `same-origin` alone passes — `same-site` would admit a sibling
- * subdomain, which NFR-65 treats as a separate trust zone (the admin surface lives on one).
- */
-function isSameOriginWrite(request: NextRequest): boolean {
-  const fetchSite = request.headers.get('sec-fetch-site');
-  if (fetchSite) return fetchSite === FETCH_SITE_SAME_ORIGIN;
-  const origin = request.headers.get('origin');
-  if (origin) return origin === request.nextUrl.origin;
-  // Neither header: not a browser fetch, so there is no ambient cookie being ridden — and
-  // without the cookie the session check below refuses anyway.
-  return true;
-}
-
 /** TS's `RequestInit` has not caught up with fetch duplex streaming; Node's undici requires
  *  `duplex: 'half'` whenever the body is a stream. */
 interface StreamingRequestInit extends RequestInit {
@@ -102,7 +80,8 @@ interface StreamingRequestInit extends RequestInit {
 }
 
 async function forward(request: NextRequest): Promise<NextResponse> {
-  if (request.method !== SAFE_METHOD && !isSameOriginWrite(request)) {
+  // OQ-33's proof lives in `server/session/same-origin.ts` since task 92 gave it two more readers.
+  if (isCrossSiteWrite(request)) {
     // `about:blank` per RFC 9457: the status code is the whole story. Deliberately no detail —
     // a cross-site forger gets nothing to calibrate against.
     return problem({ type: ABOUT_BLANK, status: 403 });

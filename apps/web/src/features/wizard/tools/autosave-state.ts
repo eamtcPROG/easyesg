@@ -5,6 +5,7 @@ import type {
   ProblemDocument,
 } from '@easyesg/contracts';
 import { SAVE_STATE, type SaveState } from '@easyesg/ui';
+import { SESSION_STANDING, endsSession, type SessionStanding } from '@/lib/session-standing';
 
 /**
  * The wizard's draft-integrity state (task 35.2; UC-35, FR-37, FR-38, UX-34 … UX-37) — what is
@@ -28,6 +29,12 @@ import { SAVE_STATE, type SaveState } from '@easyesg/ui';
  * *failed*; pending past NFR-38's budget is *saving*; and pending inside the budget is still
  * *saved*, because UX-36 moves the indicator only when the budget is exceeded — a save that lands
  * in 80 ms never flickers through *saving*.
+ *
+ * **Whether a session is held is part of it since task 92**, beside `connection` and for the same reason:
+ * both answer *can a write go now*. A write refused `401` ends the session, as does a navigation that asks
+ * the session tier and hears the same; while it is ended nothing flushes, the organization switch counts
+ * the queue as blocked (task 83.2), and the step's re-authentication dialogue is open. Resuming clears the
+ * refusal with it, so what waited is sent in the next flush.
  *
  * Pure, and in its own module, so every transition is a unit spec — including the ones a browser
  * journey cannot reach without contriving the timing.
@@ -88,6 +95,8 @@ export interface AutosaveState {
   readonly inFlight: Readonly<Record<string, number>> | null;
   readonly connection: Connection;
   readonly failure: FlushFailure | null;
+  /** Whether the api will accept a write from this browser — ended by a `401`, held again by signing in (task 92). */
+  readonly session: SessionStanding;
   /** NFR-38's 250 ms has passed with something still unacknowledged (UX-36). */
   readonly budgetExceeded: boolean;
   /** What the API acknowledged since the step was read — overlays the server-rendered field. */
@@ -118,6 +127,10 @@ export const AUTOSAVE_EVENT = {
   BUDGET_ELAPSED: 'budget_elapsed',
   /** The reader, or the backoff timer, asked for another attempt after a failure. */
   RETRY_REQUESTED: 'retry_requested',
+  /** A navigation asked the session tier and heard the session has ended (task 92). */
+  SESSION_ENDED: 'session_ended',
+  /** The reader signed in again over the step, as the account the queue belongs to (task 92). */
+  SESSION_RESUMED: 'session_resumed',
 } as const;
 
 export type AutosaveEvent =
@@ -131,7 +144,9 @@ export type AutosaveEvent =
   | { readonly type: typeof AUTOSAVE_EVENT.FLUSH_FAILED; readonly failure: FlushFailure }
   | { readonly type: typeof AUTOSAVE_EVENT.CONNECTION_CHANGED; readonly connection: Connection }
   | { readonly type: typeof AUTOSAVE_EVENT.BUDGET_ELAPSED }
-  | { readonly type: typeof AUTOSAVE_EVENT.RETRY_REQUESTED };
+  | { readonly type: typeof AUTOSAVE_EVENT.RETRY_REQUESTED }
+  | { readonly type: typeof AUTOSAVE_EVENT.SESSION_ENDED }
+  | { readonly type: typeof AUTOSAVE_EVENT.SESSION_RESUMED };
 
 /** NFR-38: the acknowledgement budget. Past it the indicator moves to *saving* (UX-36). */
 export const ACKNOWLEDGEMENT_BUDGET_MS = 250;
@@ -160,6 +175,7 @@ export const initialAutosaveState = (input: { readonly online: boolean }): Autos
   inFlight: null,
   connection: input.online ? CONNECTION.ONLINE : CONNECTION.OFFLINE,
   failure: null,
+  session: SESSION_STANDING.HELD,
   budgetExceeded: false,
   committed: {},
   hydrated: false,
@@ -220,7 +236,17 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
     }
 
     case AUTOSAVE_EVENT.FLUSH_FAILED:
-      return { ...state, inFlight: null, failure: event.failure };
+      return {
+        ...state,
+        inFlight: null,
+        failure: event.failure,
+        // A `401` is not a refusal of the values but of the session: UX-38's signal, the pass-through's
+        // `authentication-required` or the api's `session-expired` alike.
+        session:
+          event.failure.kind === FLUSH_FAILURE.REFUSED && endsSession(event.failure.problem.status)
+            ? SESSION_STANDING.ENDED
+            : state.session,
+      };
 
     case AUTOSAVE_EVENT.CONNECTION_CHANGED:
       return state.connection === event.connection
@@ -238,6 +264,13 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
     case AUTOSAVE_EVENT.RETRY_REQUESTED:
       return state.failure === null ? state : { ...state, failure: null };
 
+    case AUTOSAVE_EVENT.SESSION_ENDED:
+      return state.session === SESSION_STANDING.ENDED ? state : { ...state, session: SESSION_STANDING.ENDED };
+
+    case AUTOSAVE_EVENT.SESSION_RESUMED:
+      // The refusal was the session's, so it goes with it: what waited leaves in the next flush.
+      return { ...state, session: SESSION_STANDING.HELD, failure: null };
+
     default:
       return state;
   }
@@ -248,11 +281,12 @@ export const hasUnsynced = (state: AutosaveState): boolean =>
 
 export const unsyncedCount = (state: AutosaveState): number => Object.keys(state.pending).length;
 
-/** Whether a flush may leave now: something to send, nothing on the wire, a network to send it on, and no standing refusal. */
+/** Whether a flush may leave now: something to send, nothing on the wire, a network and a session to send it on, and no standing refusal. */
 export const canFlush = (state: AutosaveState): boolean =>
   hasUnsynced(state) &&
   state.inFlight === null &&
   state.connection === CONNECTION.ONLINE &&
+  state.session === SESSION_STANDING.HELD &&
   state.failure === null;
 
 /**
@@ -261,7 +295,9 @@ export const canFlush = (state: AutosaveState): boolean =>
  * answers that cannot — so the difference between the two is this predicate, not a timer.
  */
 export const flushIsBlocked = (state: AutosaveState): boolean =>
-  state.connection === CONNECTION.OFFLINE || state.failure !== null;
+  state.connection === CONNECTION.OFFLINE ||
+  state.failure !== null ||
+  state.session === SESSION_STANDING.ENDED;
 
 /** The dirty writes, in sequence order, for the next flush — and the sequences to remember. */
 export const flushSnapshot = (
@@ -277,7 +313,8 @@ export const flushSnapshot = (
 export function saveStateOf(state: AutosaveState): SaveState {
   if (!hasUnsynced(state)) return SAVE_STATE.SAVED;
   if (state.connection === CONNECTION.OFFLINE) return SAVE_STATE.QUEUED;
-  if (state.failure !== null) return SAVE_STATE.FAILED;
+  // An ended session holds a flush as surely as a refusal does, and must never read as on its way.
+  if (state.failure !== null || state.session === SESSION_STANDING.ENDED) return SAVE_STATE.FAILED;
   if (state.budgetExceeded) return SAVE_STATE.SAVING;
   return SAVE_STATE.SAVED;
 }
@@ -292,6 +329,6 @@ export function saveStateOf(state: AutosaveState): SaveState {
 export function syncStateOf(state: AutosaveState, key: string): SaveState {
   if (!(key in state.pending)) return SAVE_STATE.SAVED;
   if (state.connection === CONNECTION.OFFLINE) return SAVE_STATE.QUEUED;
-  if (state.failure !== null) return SAVE_STATE.FAILED;
+  if (state.failure !== null || state.session === SESSION_STANDING.ENDED) return SAVE_STATE.FAILED;
   return SAVE_STATE.SAVING;
 }

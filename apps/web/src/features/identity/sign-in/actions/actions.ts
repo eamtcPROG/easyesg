@@ -16,8 +16,8 @@ import { consumeFactorChallenge, holdFactorChallenge } from '@/server/sealed/fac
 import { resolvePostSignIn } from '@/server/session/post-sign-in';
 import { establishSession } from '@/server/session/session';
 import { targetLocale } from '../../shared/tools/post-sign-in';
-import { FACTOR_LAPSED, type CompleteFactorFailure } from '../tools/factor';
-import type { SignInFailure } from './action-results';
+import { FACTOR_LAPSED } from '../../shared/tools/factor';
+import type { CompleteFactorFailure, SignInFailure } from './action-results';
 
 /** S-01 sign-in and its factor step (FR-4, UC-04, UC-194, UC-195). The transport rule is stated once, in `shared/actions/actions.ts`. */
 /**
