@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { INVITATION_STANDING, type InvitationPreview } from '@easyesg/contracts';
-import { INVITATION_VIEW, invitationHandOff, invitationView } from './invitation';
+import {
+  INVITATION_REMEDY,
+  INVITATION_VIEW,
+  invitationHandOff,
+  invitationRemedy,
+  invitationView,
+  tellsTheReaderToSignIn,
+} from './invitation';
 
 /**
  * S-03's branch (UC-15) — five arms, three of them error states, all decided with no API, no
@@ -130,4 +137,46 @@ describe('invitationHandOff (UX-38, design_spec S-03)', () => {
     expect(links.register).not.toContain('tok/en+value');
     expect(links.returnPath).not.toContain('tok/en+value');
   });
+});
+
+/**
+ * S-03's two remedies (task 114). A signed-in reader was told to sign in; the rule now lives here, so
+ * it is a line of spec for both surfaces rather than a browser journey each.
+ */
+describe('invitationRemedy (task 114, UX-136)', () => {
+  const SIGN_IN = '/sign-in?return=%2Finvitation%2Ftok';
+
+  it('sends a reader with no session to sign in, by the address the surface chose', () => {
+    expect(invitationRemedy({ destination: null, signIn: SIGN_IN })).toEqual({
+      kind: INVITATION_REMEDY.SIGN_IN,
+      href: SIGN_IN,
+    });
+  });
+
+  /**
+   * The destination is §4.3's branch, never a fixed `/home` — a member of nothing sent to S-05 lands
+   * in an empty workspace, which is the reason UX-136's first clause exists.
+   */
+  it.each(['/home', '/create-organization', '/choose-organization'])(
+    'sends a signed-in reader where their session belongs (%s), never to sign in',
+    (href) => {
+      expect(invitationRemedy({ destination: { href }, signIn: SIGN_IN })).toEqual({
+        kind: INVITATION_REMEDY.HOME,
+        href,
+      });
+    },
+  );
+});
+
+describe('tellsTheReaderToSignIn (task 114)', () => {
+  it('is the already-used sentence, which says "if you accepted it yourself, sign in"', () => {
+    expect(tellsTheReaderToSignIn(INVITATION_STANDING.CONSUMED)).toBe(true);
+  });
+
+  it.each([INVITATION_STANDING.EXPIRED, INVITATION_STANDING.REVOKED, INVITATION_STANDING.UNKNOWN])(
+    'is not the %s sentence, which never mentions signing in',
+    (standing) => {
+      expect(tellsTheReaderToSignIn(standing)).toBe(false);
+    },
+  );
 });

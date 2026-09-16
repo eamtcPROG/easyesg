@@ -223,3 +223,98 @@ test('a session on another address is offered the way out (UC-15)', async ({ pag
   await page.waitForURL('**/sign-in**');
   expect(new URL(page.url()).searchParams.get('return')).toBe(`/invitation/${token}`);
 });
+
+// ── The ways out fit the reader (task 114) ──────────────────────────────────────────────────────
+
+const HOME_ACTION = 'Mergeți la pagina principală';
+const SIGN_IN_ACTION = 'Mergeți la autentificare';
+
+/** Signs a fresh account in and leaves it where §4.3 sends a member of nothing. */
+async function aSignedInMemberOfNothing(page: Page, label: string): Promise<string> {
+  const email = addressFor(label);
+  await registerAndVerify(page, email);
+  await page.goto('/sign-in');
+  await signIn(page, email);
+  await page.waitForURL('**/create-organization');
+  return email;
+}
+
+/**
+ * **The unusable-link exit, from both standings, on one link.** Until task 114 a signed-in reader
+ * holding a spent link was told to sign in, twice — by the exit and by the sentence above it. The
+ * reader here spent the link themselves, so the sentence's own condition holds and their home is where
+ * the organization now is; clearing the session turns the same link back into the signed-out screen.
+ */
+test('a spent link offers a signed-in reader their home page and a signed-out one sign-in', async ({
+  page,
+}) => {
+  const organization = await anOrganization('spent');
+  const email = await aSignedInMemberOfNothing(page, 'spent');
+  const token = await issueInvitation({ organizationId: organization.id, email });
+  await page.goto(`/invitation/${token}`);
+  await page.getByRole('button', { name: 'Acceptați invitația' }).click();
+  await page.waitForURL('**/home?joined=created');
+
+  await page.goto(`/invitation/${token}`);
+  await expect(page.getByText('Invitație deja folosită')).toBeVisible();
+  await expect(page.getByText(/printre organizațiile dumneavoastră/)).toBeVisible();
+  await expect(page.getByText(/autentificați-vă/)).toHaveCount(0);
+  await expect(page.getByRole('link', { name: SIGN_IN_ACTION })).toHaveCount(0);
+  const home = page.getByRole('link', { name: HOME_ACTION });
+  await expect(home).toHaveCount(1);
+  await home.click();
+  await page.waitForURL('**/home');
+
+  await page.context().clearCookies();
+  await page.goto(`/invitation/${token}`);
+  await expect(page.getByText('Invitație deja folosită')).toBeVisible();
+  await expect(page.getByText(/autentificați-vă/)).toBeVisible();
+  await expect(page.getByRole('link', { name: HOME_ACTION })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: SIGN_IN_ACTION })).toHaveAttribute('href', '/sign-in');
+});
+
+/**
+ * **The refused-acceptance callout, signed in.** The screen offers acceptance only to a signed-in
+ * reader, so this callout said *go to sign in* to every reader who ever saw it. Withdrawn between the
+ * render and the press, the refusal leaves the session standing, and the way out is where that session
+ * belongs — S-04 for this member of nothing, not a fixed home they would find empty.
+ */
+test('a refused acceptance offers a signed-in reader where their session belongs', async ({ page }) => {
+  const organization = await anOrganization('refused');
+  const email = await aSignedInMemberOfNothing(page, 'refused');
+  const token = await issueInvitation({ organizationId: organization.id, email });
+  await page.goto(`/invitation/${token}`);
+  await expect(page.getByRole('button', { name: 'Acceptați invitația' })).toBeVisible();
+
+  await revokeInvitations(organization.id, email);
+  await page.getByRole('button', { name: 'Acceptați invitația' }).click();
+
+  const home = page.getByRole('link', { name: HOME_ACTION });
+  await expect(home).toHaveAttribute('href', '/create-organization');
+  await expect(page.getByRole('link', { name: SIGN_IN_ACTION })).toHaveCount(0);
+  await home.click();
+  await page.waitForURL('**/create-organization');
+});
+
+/**
+ * **The same callout, when the session ended while the reader was deciding.** The invitation was usable
+ * a moment ago, so sign-in carries the way back to it — the one refusal where signing in is the true
+ * remedy, and the arm that would silently vanish if every refusal were treated as a held session.
+ */
+test('a refused acceptance whose session ended offers sign-in and the way back', async ({ page }) => {
+  const organization = await anOrganization('lapsed');
+  const email = await aSignedInMemberOfNothing(page, 'lapsed');
+  const token = await issueInvitation({ organizationId: organization.id, email });
+  await page.goto(`/invitation/${token}`);
+  await expect(page.getByRole('button', { name: 'Acceptați invitația' })).toBeVisible();
+
+  await page.context().clearCookies();
+  await page.getByRole('button', { name: 'Acceptați invitația' }).click();
+
+  const signIn = page.getByRole('link', { name: SIGN_IN_ACTION });
+  await expect(signIn).toHaveCount(1);
+  await expect(page.getByRole('link', { name: HOME_ACTION })).toHaveCount(0);
+  await signIn.click();
+  await page.waitForURL('**/sign-in**');
+  expect(new URL(page.url()).searchParams.get('return')).toBe(`/invitation/${token}`);
+});

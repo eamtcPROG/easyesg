@@ -1,5 +1,6 @@
 import type { InvitationPreview } from '@easyesg/contracts';
-import type { ApiFailure, ApiOutcome } from '@/lib/api-outcome';
+import type { API_OUTCOME, ApiFailure, ApiOutcome } from '@/lib/api-outcome';
+import type { InvitationRemedy } from '../tools/invitation';
 
 /**
  * S-03's two calls (UC-15, task 26.3).
@@ -11,5 +12,17 @@ import type { ApiFailure, ApiOutcome } from '@/lib/api-outcome';
  */
 export type InvitationPreviewResult = ApiOutcome<InvitationPreview>;
 
-/** Success redirects to the joined organization's home, so only failures cross the RSC wire. */
-export type AcceptInvitationFailure = ApiFailure | undefined;
+type RefusedAcceptance = Extract<ApiFailure, { status: typeof API_OUTCOME.Problem }>;
+
+/**
+ * Success redirects to the joined organization's home, so only failures cross the RSC wire.
+ *
+ * **A refusal carries its remedy** (task 114): the callout's way out depends on whether the reader
+ * still holds a session, which only the server can tell, and on where that session now belongs —
+ * resolved after the attempt rather than before it. An unreachable api carries none: its callout
+ * offers no link.
+ */
+export type AcceptInvitationFailure =
+  | (RefusedAcceptance & { readonly remedy: InvitationRemedy })
+  | Exclude<ApiFailure, RefusedAcceptance>
+  | undefined;

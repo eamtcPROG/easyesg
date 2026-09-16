@@ -4,9 +4,12 @@ import type { AcceptedInvitation, InvitationPreview, InvitationTokenRequest } fr
 import { getLocale } from 'next-intl/server';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { withQuery } from '@/lib/routes';
+import { endsSession } from '@/lib/session-standing';
 import { redirect } from '@/i18n/navigation';
 import { api } from '@/server/api/api-client';
+import { destinationForHeldSession } from '@/server/session/post-sign-in';
 import { POST_SIGN_IN } from '../../shared/tools/post-sign-in';
+import { invitationHandOff, invitationRemedy } from '../tools/invitation';
 import type { AcceptInvitationFailure, InvitationPreviewResult } from './action-results';
 
 /** S-03's two calls (UC-15, FR-11). The transport rule is stated once, in `shared/actions/actions.ts`. */
@@ -41,9 +44,15 @@ export async function previewInvitationAction(
  * (`architecture.md` §12.5.6's task-26.2 row). So the redirect is unconditional, and `/home`
  * resolves to the organization just joined without this tier knowing which it was.
  *
- * `postSignInTarget` is deliberately NOT consulted. Its job is to choose among none / one /
- * several, and none of those questions is open here — the answer is the organization on the
+ * `postSignInTarget` is deliberately NOT consulted **on success**. Its job is to choose among none /
+ * one / several, and none of those questions is open here — the answer is the organization on the
  * invitation, chosen by the person who clicked.
+ *
+ * **A refusal is where it is consulted** (task 114): the callout's way out must fit the reader. At
+ * 401 the session has ended, so it is sign-in and back to this invitation, which was usable when the
+ * screen rendered; any other refusal leaves the session as it was, so it is §4.3's branch for that
+ * session, read now rather than at render so it describes the state after the attempt. The held
+ * session's reading is the right one because a refusal establishes nothing.
  */
 export async function acceptInvitationAction(
   input: InvitationTokenRequest,
@@ -52,7 +61,17 @@ export async function acceptInvitationAction(
     '/invitations/acceptance',
     input,
   );
-  if (outcome.status !== API_OUTCOME.Ok) return outcome;
+  if (outcome.status === API_OUTCOME.Unreachable) return outcome;
+  if (outcome.status === API_OUTCOME.Problem) {
+    const sessionEnded = endsSession(outcome.problem.status);
+    return {
+      ...outcome,
+      remedy: invitationRemedy({
+        destination: sessionEnded ? null : await destinationForHeldSession(),
+        signIn: invitationHandOff(input.token).signIn,
+      }),
+    };
+  }
 
   // **The grant travels to S-05 in the address** (task 30.5, closing a review note of 26 Aug 2026).
   // Without it the three grants are indistinguishable and somebody who *already had access* sees

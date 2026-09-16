@@ -1,5 +1,6 @@
 import { INVITATION_STANDING, type InvitationPreview } from '@easyesg/contracts';
 import { ROUTES } from '@/lib/routes';
+import type { PostSignInTarget } from '../../shared/tools/post-sign-in';
 
 /**
  * S-03's branch (UC-15, FR-11) — task 26.3.
@@ -130,6 +131,53 @@ export const invitationView = (input: {
     ? { kind: INVITATION_VIEW.ACCEPT, invitation }
     : { kind: INVITATION_VIEW.WRONG_ACCOUNT, invitation, signedInAs: input.signedInAs };
 };
+
+/**
+ * The two remedies S-03's error surfaces offer (task 114; `architecture.md` §12.5.6's task-114 row).
+ *
+ * The unusable-link exit and the refused-acceptance callout used to read *"Go to sign in"* to
+ * everyone — including a reader the screen already knew was signed in, for whom the words described
+ * something that cannot happen. Each now offers the one that fits the reader it has.
+ */
+export const INVITATION_REMEDY = {
+  /** A session is held: the home page §4.3's branch resolves for it. */
+  HOME: 'home',
+  /** No session, or the one there was has ended: sign in. */
+  SIGN_IN: 'sign_in',
+} as const;
+
+export type InvitationRemedyKind = (typeof INVITATION_REMEDY)[keyof typeof INVITATION_REMEDY];
+
+export interface InvitationRemedy {
+  readonly kind: InvitationRemedyKind;
+  readonly href: string;
+}
+
+/**
+ * Which remedy, and where it leads. **The caller says where signing in leads**, because the two
+ * surfaces differ on it: a spent link sends a reader to plain sign-in — returning them to a link
+ * that cannot be used would be a loop with a sentence in it — while a refused acceptance whose
+ * session ended sends them back to this invitation, which was usable a moment ago.
+ */
+export const invitationRemedy = (input: {
+  /** §4.3's branch for the session held, or `null` when there is no session to resolve. */
+  readonly destination: PostSignInTarget | null;
+  /** Where signing in leads from this surface. */
+  readonly signIn: string;
+}): InvitationRemedy =>
+  input.destination === null
+    ? { kind: INVITATION_REMEDY.SIGN_IN, href: input.signIn }
+    : { kind: INVITATION_REMEDY.HOME, href: input.destination.href };
+
+/**
+ * The standings whose sentence tells the reader to sign in, and therefore have a signed-in wording as
+ * well — today only the already-used one (*"if you accepted it yourself, sign in"*). A type guard, so
+ * the screen's `standing.${standing}.bodySignedIn` key is checked against the catalogue: widening this
+ * to a second standing fails to compile until that standing's sentence is written.
+ */
+export const tellsTheReaderToSignIn = (
+  standing: UnusableStanding,
+): standing is typeof INVITATION_STANDING.CONSUMED => standing === INVITATION_STANDING.CONSUMED;
 
 /**
  * The hand-off S-03 sends a signed-out visitor on, and the way back (`design_spec.md` S-03/S-01,

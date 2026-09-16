@@ -6,10 +6,9 @@ import { useState, useTransition } from 'react';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { Link } from '@/i18n/navigation';
 import { acceptInvitationAction } from '../../actions/actions';
-import type { UsableInvitation } from '../../tools/invitation';
+import { INVITATION_REMEDY, type UsableInvitation } from '../../tools/invitation';
 import type { AcceptInvitationFailure } from '../../actions/action-results';
 import styles from '../../../shared/styles/identity-screens.module.css';
-import { ROUTES } from '@/lib/routes';
 
 /**
  * S-03's primary action (UC-15, FR-11) — the one arm of the branch that changes anything.
@@ -27,6 +26,11 @@ import { ROUTES } from '@/lib/routes';
  * States (§8.1 subset): rest (the invitation restated, one primary action) · accepting
  * (pending-async) · error — recoverable (the problem's own three-part text as received, per §8.4's
  * finding-to-destination rule) · unreachable (bundled catalogue).
+ *
+ * **The refusal's way out is the one the action resolved** (task 114): this screen is reached only
+ * with a session, so the callout offered *"Go to sign in"* to someone who had one. The action now
+ * says which fits — the reader's home page, or sign-in and back here when the session ended while
+ * they were deciding.
  */
 export function AcceptInvitation({
   token,
@@ -57,7 +61,9 @@ export function AcceptInvitation({
           title={failure.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
-              <Link href={ROUTES.SIGN_IN}>{t('problemAction')}</Link>
+              <Link href={failure.remedy.href}>
+                {failure.remedy.kind === INVITATION_REMEDY.HOME ? t('homeAction') : t('problemAction')}
+              </Link>
             </TextLink>
           }
         >

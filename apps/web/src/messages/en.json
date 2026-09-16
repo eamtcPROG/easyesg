@@ -350,6 +350,7 @@
       "problemTitle": "The invitation could not be accepted",
       "problemBody": "Something stopped the invitation being accepted, so you have not been added to the organisation. Refresh the page and try again.",
       "problemAction": "Go to sign in",
+      "homeAction": "Go to the home page",
       "wrongAccountTitle": "The invitation is for another address",
       "wrongAccountBody": "The invitation was sent to {invited} and you are signed in as {current}, so this account cannot use it. Sign out and sign in with the invited address.",
       "signInAsInvited": "Sign out and sign in as {invited}",
@@ -362,7 +363,8 @@
         },
         "consumed": {
           "title": "Invitation already used",
-          "body": "This invitation has already been used, so the link no longer works. If you accepted it yourself, sign in; otherwise ask an administrator of the organisation for a new invitation."
+          "body": "This invitation has already been used, so the link no longer works. If you accepted it yourself, sign in; otherwise ask an administrator of the organisation for a new invitation.",
+          "bodySignedIn": "This invitation has already been used, so the link no longer works. If you accepted it yourself, the organisation is already one of yours; otherwise ask an administrator of the organisation for a new invitation."
         },
         "revoked": {
           "title": "Invitation withdrawn",

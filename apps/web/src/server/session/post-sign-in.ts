@@ -75,8 +75,9 @@ export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTa
 };
 
 /**
- * For a caller that **establishes nothing and only reads** — S-35 re-resolving on render, and
- * UX-136's guard on `(identity)/(session-issuing)`.
+ * For a caller that **establishes nothing and only reads** — S-35 re-resolving on render,
+ * UX-136's guard on `(identity)/(session-issuing)`, and since task 114 S-03's two remedies: the
+ * unusable-link exit on render, and a refused acceptance, which changes no session.
  *
  * Same branch, over `readMemberships()`'s request-scoped memoization. That is the whole of the
  * difference, and it is worth one function: `/organization-unavailable` sits inside `(app)`, whose
@@ -84,8 +85,8 @@ export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTa
  * `/memberships` calls in one render pass** — precisely what `server/memberships.ts` says its
  * `cache()` exists to prevent, arriving through the one screen that was not using it.
  *
- * **No `?return=`.** Neither caller has one to honour: a layout cannot see `searchParams`, and S-35
- * is a destination rather than a hand-off. Taking the parameter would be a seam nobody supplies,
+ * **No `?return=`.** No caller has one to honour: a layout cannot see `searchParams`, S-35 is a
+ * destination rather than a hand-off, and S-03's remedy is the reader's home, not a way back. Taking the parameter would be a seam nobody supplies,
  * which is the dead argument task 112's own review found here once already.
  */
 export const destinationForHeldSession = async (): Promise<PostSignInTarget> =>

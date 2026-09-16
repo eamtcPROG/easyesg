@@ -21855,3 +21855,97 @@ dependencies-only `pree2e:web` selection are gone.
   exits on `CI` before it looks for `lsof`, but only after importing `e2e/stack.ts`, which needs Node's
   type stripping — the pinned 26.7.0 has it, and it is the same Node the local run used. No review
   agents, under the owner's standing rule for a childless row.
+
+## Task 114 — S-03's two remedies fit the reader they have · 2026-09-16
+
+Task 112's parent-close review asked which controls **point at** `/sign-in` from surfaces a signed-in reader
+can be on, and found two on S-03 that said *"Mergeți la autentificare"* to someone who held a session: the
+exit under an unusable link, and the callout after a refused acceptance — which only a signed-in reader can
+ever see. Both links already round-tripped to the reader's home through UX-136's gate; the words were the
+defect.
+
+### Decisions (project owner, one batch)
+
+- **A signed-in reader is offered their own home page**, in the wording the product's other home exits
+  already use — *Mergeți la pagina principală*, *Go to the home page*, *Перейти на главную* — rather than a
+  label per destination. Declined with it: keeping `/sign-in` as the address under a home label, which would
+  work only because another screen redirects.
+- **The already-used sentence is fixed in the same change.** Its signed-out wording ends *"if you accepted it
+  yourself, sign in"* — the same defect in prose, found reading the catalogue for the controls. The other
+  three unusable sentences never mention signing in.
+
+### Where the destination comes from, and when it is read
+
+- **§4.3's branch for the session held** — `destinationForHeldSession`, the reading UX-136's gate and S-35
+  already share. So a member of nothing is sent to S-04 rather than to an empty S-05, and the link lands
+  exactly where signing in would have. The unit cases say `/create-organization` and `/choose-organization`
+  alongside `/home` so a later "just link to home" fails.
+- **Only where it is drawn.** The unusable arm resolves it in S-03's section, after the preview (the arm is
+  not known before) and only when a session exists — `async-defer-await` and
+  `async-cheap-condition-before-await`, the section's three reads still in parallel ahead of it. The accept
+  arm does **not** resolve it on render: the action resolves it when an acceptance is refused, which is both
+  cheaper — the ordinary accept render reads nothing more — and truer, since it describes the state after
+  the attempt.
+- **A refusal at 401 is a session that ended**, read through task 92's `endsSession` rather than a second
+  comparison. Its remedy is sign-in **with the way back to this invitation**, which was usable a moment ago.
+  A spent link opened signed out keeps plain sign-in: sending someone back to a link that cannot be used is a
+  loop. Found while designing the action rather than asked about — the callout's old *"Go to sign in"* was
+  right for exactly this one refusal, and treating every refusal as a held session would have made it wrong.
+- **The failure type carries the remedy** only on its problem arm (`RefusedAcceptance & { remedy }`); an
+  unreachable api offers no link, as before.
+
+### What shipped
+
+`INVITATION_REMEDY`, `invitationRemedy` and the type guard `tellsTheReaderToSignIn` in S-03's `tools/`,
+beside the branch they extend and outside any directive, since the client callout reads the vocabulary.
+`Unusable` takes the remedy object rather than a boolean (`section-pass-what-was-read`) and picks the label,
+the link and — through the guard, so `standing.${standing}.bodySignedIn` is a checked key — the wording.
+`AcceptInvitation` reads the remedy off the failure. Two catalogue keys per locale, authored in each rather
+than translated: `homeAction`, and `standing.consumed.bodySignedIn`. `destinationForHeldSession`'s docblock
+lists S-03 among its callers.
+
+### Proof
+
+- **Unit**: eight cases in `invitation.spec.ts` (sign-in by the surface's own address; three branch
+  destinations; the guard true for one standing and false for three), and the first spec for S-03's actions
+  — 401, three other refusals, unreachable, success. **Three mutations, each failing its own**: swapping the
+  remedy's arms (eight failures across both files), the guard naming the wrong standing (two), a 401 treated
+  as a held session (one).
+- **Browser**, three cases in `invitation.spec.ts`: a spent link from both standings on one link — this
+  reader spent it, so the signed-in sentence's condition holds; a refused acceptance signed in, withdrawn
+  between render and press, landing on S-04; and the same with the session cleared before the press, landing
+  on sign-in with `return` pointing here. **Two rebuilds so the mutations could not mask each other**:
+  blinding both controls to a held session failed the first two and passed the third; treating a 401 as held
+  failed only the third.
+
+### The sweep, and what it found
+
+Every Romanian string mentioning signing in, read for whether a signed-in reader can see it. The address
+notices already branch on the session; S-03's other controls and S-36's are deliberate switches or
+signed-out by construction. Two S-02 exits were not, and they are the **opposite shape** to this task's —
+the words are right and UX-136's gate sends the reader elsewhere — so they were **measured with a throwaway
+probe** (run once, removed, not committed) before being written down:
+
+- **A reset completed on a device that is signed in** → *Go to sign in* → `/organization-unavailable`, the
+  band still naming the account. The api ended every session; `resetPasswordAction` left this browser's
+  cookie, whose access token the proxy had no reason yet to rotate, so the gate resolved §4.3's branch with a
+  revoked token and S-35 told the reader *"Autentificarea a reușit"*. (S-35 also rendered no `h1`; noted,
+  not pursued.)
+- **Another account's address confirmed while signed in** → *Go to sign in* → the held account's `/home`.
+
+Both are **task 160**, appended to Stage 1's Batch B after this one. Neither was fixed in passing: the first
+is a session-ending change in a credential flow, the second needs copy and a decision.
+
+### Verification
+
+- `apps/web` unit **78 files, 819 tests**; `pnpm --filter @easyesg/web typecheck`; `pnpm lint`;
+  `pnpm docs:check`, 40 claims, after 93 numbers / 178 rows → 94 / 179 and 159 tasks → 160.
+- `pnpm e2e:web --project identity --project expansion`: **207 of 207**, the three new cases among them. Its
+  three `⨯ … destination stream closed early` lines carry the known digest `2667547900`.
+- **Which run, and why.** The per-row run for `apps/web`; nothing moved, no package or generator changed.
+  No review agents, under the owner's standing rule for a childless row.
+- **Skills, read against the diff**: `vercel-react-best-practices` — the two `async-` rules above, and
+  `server-serialization` (the remedy crossing the wire is two strings); `one-idea-per-file` — the new
+  logic is in `tools/` with its spec, and the section still reads while the parts render;
+  `one-kind-per-folder` — the one new file is a spec in `actions/`. `vercel-composition-patterns` not
+  opened: no component gained a boolean prop.

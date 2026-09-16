@@ -1,9 +1,11 @@
 import { getTranslations } from 'next-intl/server';
 import { API_OUTCOME } from '@/lib/api-outcome';
+import { ROUTES } from '@/lib/routes';
+import { destinationForHeldSession } from '@/server/session/post-sign-in';
 import { readSession } from '@/server/session/session';
 import styles from '../../../shared/styles/identity-screens.module.css';
 import { previewInvitationAction } from '../../actions/actions';
-import { INVITATION_VIEW, invitationView } from '../../tools/invitation';
+import { INVITATION_VIEW, invitationRemedy, invitationView } from '../../tools/invitation';
 import { AcceptInvitation } from '../parts/accept-invitation';
 import { InvitationSummary } from '../parts/invitation-summary';
 import { INVITATION_MESSAGES } from '../shared/invitation-messages';
@@ -26,6 +28,12 @@ import { WrongAccount } from '../states/wrong-account';
  * The branch itself is `tools/invitation.ts`, deliberately: it reaches no API, so its five arms —
  * three of them error states — are a unit spec rather than five browser journeys. Every state below
  * takes what was read — the whole invitation, never a projection of it.
+ *
+ * **A third read, only for the unusable arm and only for a session** (task 114): where that session
+ * belongs, so a signed-in reader holding a spent link is offered their home page rather than told to
+ * sign in. It follows the preview because the arm is not known until the preview answers, and it is
+ * the rare arm (`async-defer-await`); the accept arm resolves its own remedy only when an acceptance
+ * is refused, in the action.
  */
 export async function InvitationSection({ token }: { readonly token: string }) {
   const [preview, session, t] = await Promise.all([
@@ -39,6 +47,17 @@ export async function InvitationSection({ token }: { readonly token: string }) {
     signedInAs: session?.account.email ?? null,
   });
 
+  const unusable =
+    view.kind === INVITATION_VIEW.UNUSABLE
+      ? {
+          standing: view.standing,
+          remedy: invitationRemedy({
+            destination: session === null ? null : await destinationForHeldSession(),
+            signIn: ROUTES.SIGN_IN,
+          }),
+        }
+      : null;
+
   return (
     <>
       <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
@@ -51,8 +70,8 @@ export async function InvitationSection({ token }: { readonly token: string }) {
         <SignedOut token={token} invitation={view.invitation} />
       ) : view.kind === INVITATION_VIEW.WRONG_ACCOUNT ? (
         <WrongAccount token={token} invitation={view.invitation} signedInAs={view.signedInAs} />
-      ) : view.kind === INVITATION_VIEW.UNUSABLE ? (
-        <Unusable standing={view.standing} />
+      ) : unusable !== null ? (
+        <Unusable standing={unusable.standing} remedy={unusable.remedy} />
       ) : (
         <Unreachable />
       )}
