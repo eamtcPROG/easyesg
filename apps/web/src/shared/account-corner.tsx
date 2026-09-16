@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { signOutAction } from '@/features/identity/shared/actions/actions';
+import { useSignOut } from '@/features/identity/shared/components/sign-out-provider';
 import { useLocaleNames } from './use-locale-names';
 
 /**
@@ -21,25 +21,24 @@ import { useLocaleNames } from './use-locale-names';
  * so that *"the `chrome` catalogue never reaches the bundle"* — a reason task 99's single provider had
  * already ended; `architecture.md` §12.5.6's task-158 row records the rule that replaced it.
  *
- * **Sign-out is a form outside the menu, associated by id.** Radix portals the menu to
- * `document.body`, so a `<form>` wrapping the item would be a form element inside `role="menu"`,
- * which ARIA does not admit — and a `<form>` between `Content` and `Item` is the shape that reads
- * fine and announces wrongly. HTML's `form` attribute associates a submit button with a form
- * anywhere in the document, which is exactly the case it exists for. The action is bound with no
- * return path: this is a plain "leave", not S-03's "leave and come back as somebody else" (task
- * 26.3 gave the action that parameter), and binding is what keeps the signature a form action,
- * since React would otherwise pass `FormData` into it.
+ * **Sign-out is a form outside the menu, associated by id** — and since task 93 that form is the
+ * `(app)` layout's, in `SignOutProvider`, which the drawer's control shares. Radix portals the menu to
+ * `document.body`, so a `<form>` wrapping the item would be a form element inside `role="menu"`, which
+ * ARIA does not admit — and a `<form>` between `Content` and `Item` is the shape that reads fine and
+ * announces wrongly. HTML's `form` attribute associates a submit button with a form anywhere in the
+ * document, which is exactly the case it exists for, and it is what still signs a reader out before
+ * hydration.
  *
- * **And it submits explicitly, because the implicit submission loses a race it cannot be seen to
- * lose.** A click on a `type="submit"` button submits as the click's *default action*, after the
+ * **Once hydrated the press is handed over, and that is what the implicit submission could never
+ * do.** A click on a `type="submit"` button submits as the click's *default action*, after the
  * handlers; selecting a Radix menu item closes the menu in one of those handlers, so React unmounts
  * the portal — button included — before the default action runs. Nothing errors: the menu closes
- * and the person stays signed in, which is the worst shape a sign-out defect can take. So the
- * handler cancels the default and calls `requestSubmit()` on the form, which dispatches
- * synchronously while the button is still attached. Found by `e2e/web/global-tier.spec.ts`, which
- * exists for this; no unit test and no type could have seen it.
+ * and the person stays signed in, which is the worst shape a sign-out defect can take. The handler
+ * therefore cancels the default and asks the provider, which is above the menu and so outlives its
+ * closing — and being above it is also what lets a sign-out wait for unsent answers (UX-37, task 93).
+ * The race was found by `e2e/web/global-tier.spec.ts`, which exists for it; no unit test and no type
+ * could have seen it.
  */
-const SIGN_OUT_FORM = 'global-tier-sign-out';
 
 export interface AccountCornerProps {
   readonly email: string;
@@ -50,6 +49,7 @@ export interface AccountCornerProps {
 
 export function AccountCorner({ email, displayName, monogram }: AccountCornerProps) {
   const t = useTranslations('chrome');
+  const { formId, requestSignOut } = useSignOut();
   const { locale, locales } = useLocaleNames();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -64,7 +64,6 @@ export function AccountCorner({ email, displayName, monogram }: AccountCornerPro
 
   return (
     <>
-      <form id={SIGN_OUT_FORM} action={signOutAction.bind(null, undefined)} hidden />
       <AccountMenu
         label={t('accountMenu.label')}
         email={email}
@@ -80,10 +79,10 @@ export function AccountCorner({ email, displayName, monogram }: AccountCornerPro
             node: (
               <button
                 type="submit"
-                form={SIGN_OUT_FORM}
+                form={formId}
                 onClick={(event) => {
                   event.preventDefault();
-                  event.currentTarget.form?.requestSubmit();
+                  requestSignOut();
                 }}
               >
                 {t('accountMenu.signOut')}

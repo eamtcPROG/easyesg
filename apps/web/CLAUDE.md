@@ -228,10 +228,15 @@ Three things to know before touching it:
   wizard reports what it holds unsent through `client/unsent-work/`. The band still names only what
   `GET /memberships` marks `active`, which is `AuthGuard`'s own `selectActiveMembership` answer
   projected onto the read. Never derive it here — "the only membership" is right until someone holds two.
-- **Sign-out submits explicitly.** The menu item is a `type="submit"` button associated by `form=`
-  with a form outside the Radix portal, and its `onClick` cancels the default and calls
-  `requestSubmit()`. Without that the menu's close unmounts the button before the click's default
-  action runs, and sign-out silently does nothing. `e2e/web/global-tier.spec.ts` is what holds it.
+- **Sign-out is the layout's, and the controls hand their press to it** (task 93). `SignOutProvider` in
+  the `(app)` layout owns the form, the wait and UX-37's question; the menu item and the drawer's button
+  are `type="submit"` buttons associated by `form=`, which is what still signs a reader out before
+  hydration, and once hydrated each cancels that default and calls `requestSignOut()`. Two reasons, and
+  the first is older: the menu's close unmounts the button before a click's default action runs, so an
+  implicit submit silently does nothing (`e2e/web/global-tier.spec.ts` holds that); and a sign-out has to
+  outlive that close to send what is unsent first, or ask where it cannot (`autosave.spec.ts`'s two
+  journeys). A `<form>` may not wrap the item at all — Radix portals the menu, and ARIA does not admit a
+  form inside `role="menu"`.
 - **`AccountMenu` is `modal={false}`.** A modal Radix root puts `pointer-events: none` on `body`, and
   `SubContent` portals as a sibling of the layer that gets `auto` back — so the language submenu is
   unclickable. It is also the right semantics for chrome hanging off a header.
@@ -856,7 +861,8 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **96 files here are Client Components** (15 Sep 2026: six under `identity/reauthenticate/components/` and
+  **97 files here are Client Components** (16 Sep 2026: the sign-out provider since task 93; six under
+  `identity/reauthenticate/components/` and
   three in the wizard — the rail's link, the session hook and the dialogue's mount — since task 92; thirteen under
   `organization/access/components/` since task 142 split the invite panel into its arms, ten under
   `credentials/components/`, seven under `shared/`, seven under `identity/setup/components/` since

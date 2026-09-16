@@ -21601,3 +21601,78 @@ it is met and where it still is not.
   review agents, under the owner's standing rule for a childless row — though this one adds three
   unauthenticated endpoints to the identity surface, which is the routing table's own case for a review, so
   it is offered rather than run.
+
+## Task 93 — Sign-out sends what is unsent, or asks · 2026-09-16
+
+OQ-60's second half, and UX-37's third trigger: *"warned again — with a chance to cancel — on any …
+sign-out … that would abandon a queue"*, which is also UC-06's third step. The switch (task 83.2) and the
+wizard's exit (35.2) already answered it for their own leaving; this is the last one, on a surface that had
+been closed since task 30.1.
+
+### The decision, and what it declined
+
+**Set 16 Sep 2026 (project owner): while the queue drains, the reader is shown nothing beyond what the
+screen already says.** In the wizard that is the save-state indicator and the unsynced banner; everywhere
+else there is nothing unsent to wait for; and NFR-38 budgets the wait at 250 ms p95. Declined with the
+reason: a note in the account menu on the switcher's model, and keeping the pressed item busy — each adds a
+slot or a boolean to `AccountMenu`, which UX-89 warns about, for a state whose ordinary life is a quarter of
+a second. The dialogue is put to the reader only when the queue **cannot** go: offline, refused, or no
+session to send it with (task 92's field). `architecture.md` §12.5.6's task-93 row carries it.
+
+### What was built
+
+- **`sign-out-state.ts`** in `identity/shared/tools/` — three stages and four events: a request either
+  leaves at once, waits for the queue, or (once waiting has learned the queue is stuck) asks; a second press
+  while one is in hand changes nothing.
+- **`SignOutProvider`** in `identity/shared/components/`, rendered by the `(app)` layout inside
+  `UnsentWorkProvider`: it owns the form, the wait, UX-37's dialogue, and `useSignOut()` — which hands each
+  control the form id and the press.
+- **The account corner and the compact drawer** lost their own hidden forms and hand the press over. Both
+  keep the `form=` association, so a press the browser handles before hydration still signs out — a browser
+  running no script has no queue to guard.
+- **`chrome.signOut.confirm.*` in three locales**, the switcher's dialogue with one clause changed: what
+  stays on this device is sent the next time this account opens the report here, which task 35.2's
+  account-scoped key is what makes true.
+
+### Why the flow is not in the controls
+
+Task 83.2's lesson, one trigger along: the account menu and the compact drawer each close on the press, so a
+wait, a question and a submission held inside either would be unmounted mid-flight. The provider above both
+is also what made the pre-existing race survivable — `account-corner.tsx` already cancelled the click's
+default because the menu's close unmounts the button before the default submit runs.
+
+### The journeys, and one correction while writing them
+
+- **Sending first is observable only if the write is held.** The journey holds `PUT …/values` open with
+  `page.route`, presses sign-out, and asserts that nothing is asked and the reader has not left; releasing
+  the write lets the sign-out complete and the value land.
+- **The blocked journey cannot take the browser offline.** Signing out is itself a request to the server, so
+  an offline browser cannot sign out at all — which would have tested the network rather than the guard. It
+  refuses the write with `409` instead, the shape of a period locked mid-session (FR-22), which stops the
+  queue with the connection up.
+- **One assertion was written weakly and fixed before it ran**: after cancelling, the first draft checked
+  that the *offline* marker was absent, which it always is here. It asserts the failed marker is present
+  instead — the queue is still held, which is the claim.
+
+### Not covered, and said so
+
+- **S-36's and S-03's sign-outs are unchanged and cannot be covered**: their screens are outside the `(app)`
+  layout that holds the registry, so no queue can exist behind them. Task 92's dialogue states the same
+  consequence in its own words, having no session left to send anything with.
+- The provider's wiring has no unit spec; the reducer has one, and the two browser journeys drive the wiring.
+
+### Verification
+
+- `apps/web` unit: **77 files, 805 tests**; `pnpm --filter @easyesg/web typecheck`; `pnpm lint`;
+  `pnpm docs:check` (40 claims, after the Client Component count 96 → 97).
+- Browser, identity and expansion on the rebuilt bundle: **203 of 204**, the two new journeys among the
+  passes. The red was `home.spec.ts:266`'s pending-boundary count — **3 where it asserts 2** — which the
+  15 Sep entry had already met once and had already ruled on: *a second occurrence makes it a finding about
+  the count*. It is **task 159** now. The count is taken over the whole response, and the `(app)` layout has
+  held a third boundary since task 67.9 — the support-access banner, `fallback={null}` — whose read resolves
+  before the shell flushes unless the host has just built three apps. **Not this change**: the new provider
+  adds no boundary, and the same journey passed **24 of 24** (eight journeys, three repeats) alone on the
+  same bundle minutes later.
+- **Which run, and why.** The narrow per-row run for `apps/web`: nothing moved, no package, generator or
+  build hook changed, so `gates:clean` would see nothing a warm run does not. No review agents, under the
+  owner's standing rule for a childless row.

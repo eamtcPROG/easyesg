@@ -18,6 +18,16 @@
     "globalBar": {
       "label": "Antetul aplicației"
     },
+    "signOut": {
+      "confirm": {
+        "title": "Ieșiți din cont cu răspunsuri netrimise?",
+        "object": "{count, plural, one {Un răspuns nu a putut fi trimis} few {# răspunsuri nu au putut fi trimise} other {# de răspunsuri nu au putut fi trimise}}",
+        "consequence": "Răspunsurile rămân pe acest dispozitiv și vor fi trimise data viitoare când intrați în acest cont de aici și deschideți raportul. Pe alt dispozitiv nu vor apărea până atunci.",
+        "retained": "Tot ce a fost deja confirmat ca salvat rămâne salvat.",
+        "proceed": "Ieșiți oricum",
+        "cancel": "Rămâneți în cont"
+      }
+    },
     "organizationSwitcher": {
       "label": "Organizația activă",
       "create": "Creați o altă organizație",

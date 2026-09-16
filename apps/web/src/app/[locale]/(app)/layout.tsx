@@ -2,6 +2,7 @@ import { Suspense, type ReactNode } from 'react';
 import { UnsentWorkProvider } from '@/client/unsent-work/unsent-work';
 import { OrganizationSwitchNotice } from '@/features/organization/switcher/components/organization-switch-notice';
 import { OrganizationSwitchProvider } from '@/features/organization/switcher/components/organization-switch-provider';
+import { SignOutProvider } from '@/features/identity/shared/components/sign-out-provider';
 import { SupportAccessBanners } from '@/features/support-access/components/section/support-access-banners';
 import { GlobalTier } from '@/shared/global-tier';
 
@@ -55,16 +56,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   // unsent, and the tier's switcher and the wizard's autosave — in `children` — are both beneath the two. Both
   // are Client Components handed this layout's server children, which they render and never introspect. The
   // refusal notice sits directly below the band, where a switch made from a closed menu can still be answered.
+  // **And task 93's sign-out beneath the registry too**, for the switch's reason: both controls that offer
+  // it — the band's menu and the compact drawer — close on the press, so the wait, the question and the
+  // submission live above them.
   return (
     <UnsentWorkProvider>
-      <OrganizationSwitchProvider>
-        <GlobalTier />
-        <OrganizationSwitchNotice />
-        <Suspense fallback={null}>
-          <SupportAccessBanners />
-        </Suspense>
-        {children}
-      </OrganizationSwitchProvider>
+      <SignOutProvider>
+        <OrganizationSwitchProvider>
+          <GlobalTier />
+          <OrganizationSwitchNotice />
+          <Suspense fallback={null}>
+            <SupportAccessBanners />
+          </Suspense>
+          {children}
+        </OrganizationSwitchProvider>
+      </SignOutProvider>
     </UnsentWorkProvider>
   );
 }

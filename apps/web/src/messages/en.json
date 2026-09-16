@@ -18,6 +18,16 @@
     "globalBar": {
       "label": "Application header"
     },
+    "signOut": {
+      "confirm": {
+        "title": "Sign out with unsent answers?",
+        "object": "{count, plural, one {One answer could not be sent} other {# answers could not be sent}}",
+        "consequence": "The answers stay on this device and are sent the next time you sign in to this account here and open the report. On another device they will not appear until then.",
+        "retained": "Everything already confirmed as saved stays saved.",
+        "proceed": "Sign out anyway",
+        "cancel": "Stay signed in"
+      }
+    },
     "organizationSwitcher": {
       "label": "Active organisation",
       "create": "Create another organisation",

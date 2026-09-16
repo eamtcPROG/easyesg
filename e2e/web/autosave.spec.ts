@@ -7,6 +7,7 @@ import {
   seedReport,
   verificationTokenFor,
 } from './support/db';
+import { accountTrigger } from './support/session';
 
 /**
  * S-07's draft-integrity pattern (task 35.2; UC-35, FR-37, FR-38, UX-34 … UX-37) — the claims the
@@ -278,4 +279,95 @@ test('a view-only member sees the same step read-only, told why and what restore
   await expect(page.getByRole('status', { name: SAVE_STATE_REGION })).toHaveCount(0);
   // The question is still on the screen, with its answer state.
   await expect(page.getByRole('group', { name: EMPLOYEES.label })).toBeVisible();
+});
+
+/**
+ * UX-37's third trigger, and UC-06's third step (task 93): a sign-out that would abandon the queue sends it
+ * first where it can, and asks where it cannot.
+ *
+ * **Both journeys hold the write rather than pulling the connection**, and the second one is why: signing
+ * out is itself a request to the server, so a browser taken offline could not sign out at all. A refused
+ * write — a period locked while the reporter typed (FR-22) — blocks the queue with the network up, which is
+ * the state UX-37's question exists for.
+ */
+const signOutFromMenu = async (page: Page, email: string) => {
+  await accountTrigger(page, { email }).click();
+  await page.getByRole('menuitem', { name: 'Ieșiți din cont' }).click();
+};
+
+test('signing out while a change is still going sends it first (UC-06, UX-37)', async ({ page }) => {
+  const email = addressFor('signout-sends');
+  const { reportId, organizationId } = await signedInWithReport(page, 'signout-sends');
+  await openB1(page, reportId);
+  // B1 commits a default on arrival (FR-27), so the step settles before the only change that matters here.
+  await expect(saveState(page)).toHaveText(/Salvat/u);
+
+  // The write is held open, so *sent first* is observable rather than a race this test would win anyway.
+  let release = (): void => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/v1/reports/*/values', async (route) => {
+    await held;
+    await route.continue();
+  });
+
+  await answer(page, { label: EMPLOYEES.label, value: '9' });
+  await signOutFromMenu(page, email);
+
+  // Nothing is asked, and the reader has not left: the sign-out is waiting for the answer to go.
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/reports/${reportId}/B1$`, 'u'));
+
+  release();
+  await page.waitForURL('**/sign-in');
+  await expect
+    .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: EMPLOYEES.elementKey }))
+    .toMatchObject({ valueNumeric: '9' });
+});
+
+test('signing out while a change cannot be sent asks first, with a chance to stay (UX-37, UC-06)', async ({
+  page,
+}) => {
+  const email = addressFor('signout-asks');
+  const { reportId, organizationId } = await signedInWithReport(page, 'signout-asks');
+  await openB1(page, reportId);
+  await expect(saveState(page)).toHaveText(/Salvat/u);
+
+  // The api refuses the write, as a period locked mid-session would (FR-22): the queue is stuck with the
+  // connection up, which is the only state in which a sign-out would abandon anything.
+  await page.route('**/api/v1/reports/*/values', (route) =>
+    route.fulfill({
+      status: 409,
+      contentType: 'application/problem+json',
+      body: JSON.stringify({ type: 'https://easyesg.md/problems/period-locked', status: 409 }),
+    }),
+  );
+
+  await answer(page, { label: EMPLOYEES.label, value: '4' });
+  await expect(saveState(page)).toHaveText(/Salvarea nu a reușit/u);
+
+  await signOutFromMenu(page, email);
+  const dialogue = page.getByRole('alertdialog');
+  await expect(dialogue).toBeVisible();
+  await expect(dialogue).toContainText('Ieșiți din cont cu răspunsuri netrimise?');
+
+  // The chance to cancel UX-37 asks for: the reader stays signed in, and so does the queue.
+  await dialogue.getByRole('button', { name: 'Rămâneți în cont' }).click();
+  await expect(dialogue).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/reports/${reportId}/B1$`, 'u'));
+  // Still held: the field's own marker says so, where the shell's indicator would also answer for B1's
+  // arrival default. *În așteptare* is the offline marker and cannot appear here, so it would prove nothing.
+  await expect(
+    page.getByRole('group', { name: EMPLOYEES.label, exact: true }).getByText('Nesalvat', { exact: true }),
+  ).toHaveCount(1);
+
+  // Asked again and answered, the session ends and the answer stays on this device, unsent.
+  await signOutFromMenu(page, email);
+  await expect(dialogue).toBeVisible();
+  await dialogue.getByRole('button', { name: 'Ieșiți oricum' }).click();
+  await page.waitForURL('**/sign-in');
+  expect(
+    await disclosureValueOf({ organizationId, reportId, elementKey: EMPLOYEES.elementKey }),
+  ).toBeNull();
 });

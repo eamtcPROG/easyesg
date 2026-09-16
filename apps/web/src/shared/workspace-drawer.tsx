@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { signOutAction } from '@/features/identity/shared/actions/actions';
+import { useSignOut } from '@/features/identity/shared/components/sign-out-provider';
 import { useLocaleNames } from './use-locale-names';
 import { WORKSPACE_SECTIONS } from './workspace-sections';
 import styles from './workspace-drawer.module.css';
@@ -21,11 +21,11 @@ import styles from './workspace-drawer.module.css';
  * arrive as props from `GlobalTier`, which made the band and the drawer two places to resolve one
  * tier's labels.
  *
- * **It renders its own sign-out form rather than borrowing the account corner's.** Both are hidden
- * forms driven by a `form=`-associated submit button — the shape `account-corner.tsx` documents,
- * because Radix portals its surface and ARIA does not admit a `<form>` inside `role="menu"`. Reusing
- * the corner's id would have been one form and two buttons, and would have made the drawer's
- * sign-out depend silently on a sibling being rendered.
+ * **Its sign-out is the layout's, shared with the account corner since task 93.** Each rendered its own
+ * hidden form until then, so that neither depended on a sibling being rendered; now both depend on
+ * `SignOutProvider`, which the `(app)` layout renders above both — the only place a sign-out can wait for
+ * unsent answers, since this panel closes on the press (UX-37). The button keeps its `form=`
+ * association, which is what still signs a reader out before hydration.
  *
  * **What it carries is what renders.** The specimen's *Plan & billing*, *Notifications* and *Help
  * centre* are Phase 7's, task 50.2's and task 77.5's. The **language choice is here although the
@@ -33,8 +33,6 @@ import styles from './workspace-drawer.module.css';
  * account menu, so a locale switch omitted here would be a task made unavailable by viewport, which
  * UX-76 prohibits without an explicit statement of why and what device to use.
  */
-const SIGN_OUT_FORM = 'workspace-drawer-sign-out';
-
 export interface WorkspaceDrawerProps {
   /**
    * The organization's switcher (task 83.2), at the head of the panel — the compact bar names no organization
@@ -46,6 +44,7 @@ export interface WorkspaceDrawerProps {
 export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
   const t = useTranslations('chrome');
   const tSections = useTranslations('chrome.workspaceNav');
+  const { formId, requestSignOut } = useSignOut();
   const { locale, locales } = useLocaleNames();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -57,7 +56,6 @@ export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
 
   return (
     <>
-      <form id={SIGN_OUT_FORM} action={signOutAction.bind(null, undefined)} hidden />
       <ChromeDrawer
         label={t('drawer.label')}
         closeLabel={t('drawer.close')}
@@ -89,12 +87,13 @@ export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
             <button
               className={styles.action}
               type="submit"
-              form={SIGN_OUT_FORM}
+              form={formId}
               onClick={(event) => {
                 // The panel closes on click, unmounting the button before the default submit runs
-                // — the same race `account-corner.tsx` records for the portalled menu.
+                // — the same race `account-corner.tsx` records for the portalled menu. The provider
+                // above the panel is what carries the sign-out through it, and what waits for a queue.
                 event.preventDefault();
-                event.currentTarget.form?.requestSubmit();
+                requestSignOut();
               }}
             >
               {t('accountMenu.signOut')}
