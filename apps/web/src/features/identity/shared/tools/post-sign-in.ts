@@ -67,6 +67,12 @@ export const POST_SIGN_IN = {
   ORGANIZATION_UNAVAILABLE: ROUTES.ORGANIZATION_UNAVAILABLE,
   /** S-36 — the account is still completing its setup, so no other arm applies yet (task 155). */
   COMPLETE_ACCOUNT: ROUTES.COMPLETE_ACCOUNT,
+  /**
+   * S-01 — the api has ended the session this browser still carries a cookie for (task 160): a reset, a
+   * sign-out elsewhere, *sign out other devices*. **The one destination outside `(app)`**, and UX-136's
+   * gate reads it as *no session* and serves the form rather than redirecting to itself.
+   */
+  SESSION_ENDED: ROUTES.SIGN_IN,
 } as const;
 
 export type PostSignInPath = (typeof POST_SIGN_IN)[keyof typeof POST_SIGN_IN];
@@ -118,6 +124,15 @@ export const awaitsOrganizationChoice = (memberships: readonly AccountMembership
   memberships.length > 1 && !memberships.some((membership) => membership.active);
 
 /**
+ * Whether the branch answered that the api has ended the session (task 160) — read by UX-136's gate, which
+ * serves the form for it, and by S-03's remedy, which treats it as no session. One reading beside the
+ * vocabulary rather than an address comparison at each reader: `SESSION_ENDED` shares its address with
+ * sign-in, and no honoured `?return=` can be that address, because `isReturnableAfterSignIn` excludes it.
+ */
+export const endsHeldSession = (target: PostSignInTarget): boolean =>
+  target.href === POST_SIGN_IN.SESSION_ENDED;
+
+/**
  * The branch itself: pure, so every arm is a line of spec rather than a browser journey.
  *
  * `memberships` is `null` when the read failed — distinct from `[]`, which is the real and ordinary
@@ -127,6 +142,12 @@ export const awaitsOrganizationChoice = (memberships: readonly AccountMembership
  */
 export const postSignInTarget = (input: {
   /**
+   * The api answered **401** to the read this branch rests on (task 160; `architecture.md` §12.5.6's
+   * task-160 row) — the session is gone, whatever the cookie says. Decided before everything else: no
+   * other arm is true of a reader holding nothing.
+   */
+  readonly sessionEnded: boolean;
+  /**
    * The session's account is still completing its setup (task 155). Decided first, and the seam does
    * not read memberships at all when it is true: the API refuses such an account that read.
    */
@@ -134,6 +155,8 @@ export const postSignInTarget = (input: {
   readonly memberships: readonly AccountMembership[] | null;
   readonly returnTo: LocalizedPath | null;
 }): PostSignInTarget => {
+  if (input.sessionEnded) return { href: POST_SIGN_IN.SESSION_ENDED };
+
   // §12.5.6's task-155 row: an account in setup reaches S-36 and nothing else. A deep link rides
   // along unjudged — whether it is honoured is this function's question once setup is done, when
   // S-36 asks it again — and its locale is kept, so S-36 speaks the language the reader arrived in.

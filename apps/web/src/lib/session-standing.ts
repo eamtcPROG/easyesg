@@ -1,3 +1,5 @@
+import { API_OUTCOME, type ApiOutcome } from './api-outcome';
+
 /**
  * Whether this browser still holds a session the api will accept — the one fact S-07's re-authentication
  * turns on (task 92; UX-38, UC-07), learned in two places that must agree.
@@ -26,3 +28,11 @@ export const SESSION_ENDED_STATUS = 401;
 
 /** Whether an answer at this status means the session has ended. `undefined` is a status nobody sent. */
 export const endsSession = (status: number | undefined): boolean => status === SESSION_ENDED_STATUS;
+
+/**
+ * Whether an api answer says the session has ended (task 160) — the question every read made during render
+ * now asks before it concludes *could not load*. The sealed cookie outlives a session ended elsewhere until
+ * its access token falls due, so a 401 here is the api knowing something the cookie does not.
+ */
+export const outcomeEndsSession = (outcome: ApiOutcome<unknown>): boolean =>
+  outcome.status === API_OUTCOME.Problem && endsSession(outcome.problem.status);

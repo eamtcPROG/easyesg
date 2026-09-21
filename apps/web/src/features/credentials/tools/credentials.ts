@@ -14,6 +14,11 @@ export const SECTION_READ = {
   READY: 'ready',
   /** No answer, or one this tier could not read. Same fact and remedy as the API being down. */
   UNREACHABLE: 'unreachable',
+  /**
+   * The api refused the session itself (task 160) — a whole-screen fact rather than a section's, so no
+   * section draws it: the screen sends the reader to sign in, which is why `SectionRead` has no such arm.
+   */
+  SIGNED_OUT: 'signed_out',
 } as const;
 
 export type SectionReadStatus = (typeof SECTION_READ)[keyof typeof SECTION_READ];

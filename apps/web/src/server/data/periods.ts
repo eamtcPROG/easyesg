@@ -2,7 +2,7 @@ import 'server-only';
 import type { PeriodReopening, ReportingEntity, ReportingPeriod } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
-import { TENANT_READ, isPermissionRefusal } from './tenant-read';
+import { TENANT_READ, endedSessionIn, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 
 /**
  * S-14's reads (task 32.1.2) — the periods of one entity, and one period with its amendments.
@@ -25,8 +25,7 @@ export type PeriodListRead =
       readonly entity: ReportingEntity;
       readonly periods: readonly ReportingPeriod[];
     }
-  | { readonly status: typeof TENANT_READ.FORBIDDEN }
-  | { readonly status: typeof TENANT_READ.UNREACHABLE };
+  | TenantReadRefusal;
 
 export async function readPeriodList(entityId: string): Promise<PeriodListRead> {
   // Independent reads, so they do not queue (`async-parallel`). Both are tenant-scoped by the
@@ -36,6 +35,7 @@ export async function readPeriodList(entityId: string): Promise<PeriodListRead> 
     api.getList<ReportingPeriod>(`/periods?reportingEntityId=${encodeURIComponent(entityId)}`),
   ]);
 
+  if (endedSessionIn(entity, periods)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(entity) || isPermissionRefusal(periods)) {
     return { status: TENANT_READ.FORBIDDEN };
   }
@@ -61,12 +61,12 @@ export async function readPeriodList(entityId: string): Promise<PeriodListRead> 
  */
 export type OverviewRead =
   | { readonly status: typeof TENANT_READ.READY; readonly periods: readonly ReportingPeriod[] }
-  | { readonly status: typeof TENANT_READ.FORBIDDEN }
-  | { readonly status: typeof TENANT_READ.UNREACHABLE };
+  | TenantReadRefusal;
 
 export async function readOrganizationPeriods(): Promise<OverviewRead> {
   const periods = await api.getList<ReportingPeriod>('/periods');
 
+  if (endedSessionIn(periods)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(periods)) return { status: TENANT_READ.FORBIDDEN };
   if (periods.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 
@@ -85,8 +85,7 @@ export type PeriodRecordRead =
        */
       readonly reopenings: readonly PeriodReopening[];
     }
-  | { readonly status: typeof TENANT_READ.FORBIDDEN }
-  | { readonly status: typeof TENANT_READ.UNREACHABLE };
+  | TenantReadRefusal;
 
 export async function readPeriodRecord(input: {
   readonly entityId: string;
@@ -98,6 +97,7 @@ export async function readPeriodRecord(input: {
     api.getList<PeriodReopening>(`/periods/${input.periodId}/reopenings`),
   ]);
 
+  if (endedSessionIn(entity, period)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(entity) || isPermissionRefusal(period)) {
     return { status: TENANT_READ.FORBIDDEN };
   }

@@ -2,9 +2,11 @@ import 'server-only';
 import { ACCOUNT_STATUS, type AccountMembership } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { sanitizeReturnPath } from '@/lib/locale-path';
+import { outcomeEndsSession } from '@/lib/session-standing';
 import { postSignInTarget, type PostSignInTarget } from '@/features/identity/shared/tools/post-sign-in';
 import { api } from '../api/api-client';
-import { readMemberships } from '../data/memberships';
+import { readAccountSetup } from '../data/account-setup';
+import { readMembershipsOutcome } from '../data/memberships';
 import { readSession } from './session';
 
 /**
@@ -26,6 +28,11 @@ import { readSession } from './session';
  * otherwise land it on S-35 as *organization unavailable* — a wrong screen stated as a fact. The
  * status comes from the sealed cookie, which for `resolvePostSignIn` is the one its caller has just
  * written and which a refresh keeps current for the other.
+ *
+ * **Both tell a session the api has ended from a read that failed** (task 160; §12.5.6's task-160 row).
+ * The cookie outlives a session ended elsewhere until its access token falls due, and a 401 on the read
+ * the branch rests on is the api saying so — the branch answers sign-in for it rather than S-35's
+ * *sign-in succeeded*. Only a failure other than that is S-35's.
  */
 
 const awaitingSetup = async (): Promise<boolean> =>
@@ -63,11 +70,17 @@ const awaitingSetup = async (): Promise<boolean> =>
 export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTarget> => {
   const returnPath = sanitizeReturnPath(returnTo);
   if (await awaitingSetup()) {
-    return postSignInTarget({ awaitingSetup: true, memberships: null, returnTo: returnPath });
+    return postSignInTarget({
+      sessionEnded: false,
+      awaitingSetup: true,
+      memberships: null,
+      returnTo: returnPath,
+    });
   }
 
   const outcome = await api.getList<AccountMembership>('/memberships');
   return postSignInTarget({
+    sessionEnded: outcomeEndsSession(outcome),
     awaitingSetup: false,
     memberships: outcome.status === API_OUTCOME.Ok ? outcome.value.items : null,
     returnTo: returnPath,
@@ -79,17 +92,40 @@ export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTa
  * UX-136's guard on `(identity)/(session-issuing)`, and since task 114 S-03's two remedies: the
  * unusable-link exit on render, and a refused acceptance, which changes no session.
  *
- * Same branch, over `readMemberships()`'s request-scoped memoization. That is the whole of the
+ * Same branch, over the memberships read's request-scoped memoization (`readMembershipsOutcome`, which
+ * `readMemberships` is built on, so the two share one call). That is the whole of the
  * difference, and it is worth one function: `/organization-unavailable` sits inside `(app)`, whose
  * layout renders the global tier, so the page and the tier were issuing **two identical
  * `/memberships` calls in one render pass** — precisely what `server/memberships.ts` says its
  * `cache()` exists to prevent, arriving through the one screen that was not using it.
  *
  * **No `?return=`.** No caller has one to honour: a layout cannot see `searchParams`, S-35 is a
- * destination rather than a hand-off, and S-03's remedy is the reader's home, not a way back. Taking the parameter would be a seam nobody supplies,
- * which is the dead argument task 112's own review found here once already.
+ * destination rather than a hand-off, and S-03's and S-02's remedies are the reader's home, not a way
+ * back. Taking the parameter would be a seam nobody supplies, which is the dead argument task 112's own
+ * review found here once already.
+ *
+ * **A session still completing setup is asked too, which it was not until task 160.** The branch sends it to
+ * S-36 without reading memberships the api would refuse it, so nothing here could tell that it had ended —
+ * and S-36 now sends an ended session to sign in, which would bounce straight back to S-36 through the gate.
+ * `GET /account/setup` admits every live session, active or in setup, so a 401 there is the ending itself.
+ * It costs a read only for such a session, which the proxy sends to S-36 rather than here.
  */
-export const destinationForHeldSession = async (): Promise<PostSignInTarget> =>
-  (await awaitingSetup())
-    ? postSignInTarget({ awaitingSetup: true, memberships: null, returnTo: null })
-    : postSignInTarget({ awaitingSetup: false, memberships: await readMemberships(), returnTo: null });
+export const destinationForHeldSession = async (): Promise<PostSignInTarget> => {
+  if (await awaitingSetup()) {
+    const setup = await readAccountSetup();
+    return postSignInTarget({
+      sessionEnded: outcomeEndsSession(setup),
+      awaitingSetup: true,
+      memberships: null,
+      returnTo: null,
+    });
+  }
+
+  const outcome = await readMembershipsOutcome();
+  return postSignInTarget({
+    sessionEnded: outcomeEndsSession(outcome),
+    awaitingSetup: false,
+    memberships: outcome.status === API_OUTCOME.Ok ? outcome.value.items : null,
+    returnTo: null,
+  });
+};

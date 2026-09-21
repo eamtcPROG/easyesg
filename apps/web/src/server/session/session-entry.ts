@@ -1,7 +1,7 @@
 import 'server-only';
 import type { Locale } from '@easyesg/i18n';
 import { redirect } from '@/i18n/navigation';
-import { targetLocale } from '@/features/identity/shared/tools/post-sign-in';
+import { endsHeldSession, targetLocale } from '@/features/identity/shared/tools/post-sign-in';
 import { destinationForHeldSession } from './post-sign-in';
 import { readSession } from './session';
 
@@ -32,8 +32,11 @@ import { readSession } from './session';
  * what makes it legal here (a cookie write during render throws) — the same property
  * `organization-unavailable/page.tsx` relies on to re-resolve the branch on every render.
  *
- * It cannot loop: every destination the branch can answer is inside `(app)`, and no `(app)` route
- * issues a session.
+ * It cannot loop: every destination the branch redirects to is inside `(app)`, and no `(app)` route
+ * issues a session. **The one answer outside `(app)` is not redirected to** (task 160): a session the api
+ * has ended is answered *sign-in*, which is this screen, so the gate treats it as the no-session case it
+ * is and serves the form. The cookie stays until that form replaces it — a render cannot clear it — and
+ * is harmless meanwhile, because every reader of the branch now asks the api rather than the cookie.
  *
  * **It has exactly one caller, and that is the point.** `(identity)/(session-issuing)/layout.tsx`
  * gates the whole route group at once, so membership of that directory is the predicate and there
@@ -50,7 +53,10 @@ export const redirectWhenSignedIn = async (input: {
   // **No `?return=`, and that is the shape's one cost.** A layout cannot see `searchParams`, and
   // the branch's own destination is the right answer for a request that already carries a session:
   // a `?return=` arriving here is a leftover from a bounce something else has since answered, not
-  // UX-38's mid-work expiry — that reader has no session and never reaches this line.
+  // UX-38's mid-work expiry — that reader has no session and never reaches this line. **Except one
+  // whose session the api has ended** (task 160), sent here by a screen with the address kept: the
+  // branch says so, and the form below is served with that `?return=` intact.
   const target = await destinationForHeldSession();
+  if (endsHeldSession(target)) return;
   redirect({ href: target.href, locale: targetLocale(target, input.locale) });
 };

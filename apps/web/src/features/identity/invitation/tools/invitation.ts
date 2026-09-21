@@ -1,6 +1,6 @@
 import { INVITATION_STANDING, type InvitationPreview } from '@easyesg/contracts';
-import { ROUTES } from '@/lib/routes';
-import type { PostSignInTarget } from '../../shared/tools/post-sign-in';
+import { ROUTES, signInRoute } from '@/lib/routes';
+import { endsHeldSession, type PostSignInTarget } from '../../shared/tools/post-sign-in';
 
 /**
  * S-03's branch (UC-15, FR-11) — task 26.3.
@@ -160,12 +160,16 @@ export interface InvitationRemedy {
  * session ended sends them back to this invitation, which was usable a moment ago.
  */
 export const invitationRemedy = (input: {
-  /** §4.3's branch for the session held, or `null` when there is no session to resolve. */
+  /**
+   * §4.3's branch for the session held, or `null` when there is no session to resolve. A branch answering
+   * that the api has ended the session is a reader without one, too (task 160) — offered sign-in, never a
+   * home-page label over the sign-in address.
+   */
   readonly destination: PostSignInTarget | null;
   /** Where signing in leads from this surface. */
   readonly signIn: string;
 }): InvitationRemedy =>
-  input.destination === null
+  input.destination === null || endsHeldSession(input.destination)
     ? { kind: INVITATION_REMEDY.SIGN_IN, href: input.signIn }
     : { kind: INVITATION_REMEDY.HOME, href: input.destination.href };
 
@@ -197,7 +201,7 @@ export const invitationHandOff = (token: string) => {
   const returnPath = `${INVITATION_PATH}/${encodeURIComponent(token)}`;
   return {
     /** S-01's sign-in surface: come back here once a session exists. */
-    signIn: `${ROUTES.SIGN_IN}?return=${encodeURIComponent(returnPath)}`,
+    signIn: signInRoute(returnPath),
     /** S-01's registration surface, carrying the invitation as well as the way back. */
     register: `${ROUTES.REGISTER}?invitation=${encodeURIComponent(token)}&return=${encodeURIComponent(returnPath)}`,
     /** What `SocialProviders` threads through the OAuth transaction (task 24). */

@@ -1,6 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { API_OUTCOME } from '@/lib/api-outcome';
+import { outcomeEndsSession } from '@/lib/session-standing';
 import { readAccountSetup } from '@/server/data/account-setup';
+import { redirectToSignIn } from '@/server/session/sign-in-redirect';
 import styles from '../../../shared/styles/identity-screens.module.css';
 import { SETUP_STEP, setupStepOf } from '../../tools/setup-step';
 import { SETUP_MESSAGES } from '../shared/setup-messages';
@@ -32,6 +34,10 @@ export async function CompleteAccountSection({
     getTranslations(SETUP_MESSAGES),
     searchParams,
   ]);
+
+  // Task 160: the api has ended the session — sign in, keeping the way on that S-36 was holding. It
+  // cannot bounce back here: the branch asks this same read for a session in setup, and answers sign-in.
+  if (outcomeEndsSession(setup)) return redirectToSignIn({ returnTo: returnTo ?? null });
 
   const step = setup.status === API_OUTCOME.Ok ? setupStepOf(setup.value) : null;
 

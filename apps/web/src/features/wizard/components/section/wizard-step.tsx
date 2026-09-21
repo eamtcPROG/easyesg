@@ -7,6 +7,7 @@ import { readWizardStep } from '@/server/data/wizard';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { readSession } from '@/server/session/session';
+import { redirectToSignIn } from '@/server/session/sign-in-redirect';
 import { periodRoute, reportStepRoute } from '@/lib/routes';
 import { priorValuesOf } from '../../tools/comparatives';
 import { labelledOptions } from '../../tools/step-words';
@@ -58,6 +59,10 @@ export async function WizardStep({
     getLocale(),
   ]);
 
+  // Task 160: the api has ended the session this browser still names — sign in, and back to this step.
+  // Not UX-38's dialogue: nothing is in hand on a render, and answers queued before it wait in the
+  // account-keyed store for the step to load again (task 92's row sends a reload the same way).
+  if (read.status === TENANT_READ.SIGNED_OUT) return redirectToSignIn();
   if (read.status === TENANT_READ.FORBIDDEN) {
     // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
     await redirectToChoiceIfOwed();

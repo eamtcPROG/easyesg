@@ -8,7 +8,9 @@ import type {
 import { API_OUTCOME, mapOutcome } from '@/lib/api-outcome';
 import { api } from '@/server/api/api-client';
 import { holdSetupGrant } from '@/server/sealed/setup-grant';
+import { accountStillSignedIn } from '@/server/session/held-account';
 import { toAccountSummary } from '../../shared/tools/account-summary';
+import { heldAccountOtherThan } from '../../shared/tools/held-account';
 import type { ResendResult, VerifyResult } from './action-results';
 
 /** S-02 verify and resend (FR-3, UC-02). The transport rule is stated once, in `shared/actions/actions.ts`. */
@@ -37,7 +39,15 @@ export async function verifyEmailAction(command: VerifyEmailCommand): Promise<Ve
       returnTo: command.returnTo,
     });
   }
-  return mapOutcome(outcome, toAccountSummary);
+  if (outcome.status !== API_OUTCOME.Ok) return outcome;
+
+  // Task 160: a reader signed in as another account is offered to switch or to stay, rather than a
+  // sign-in the gate would turn away — and, for an account confirmed into setup, rather than the grant's
+  // password step, which sits behind the same gate. The held session is asked of the api, so one that
+  // has ended elsewhere is cleared here and the ordinary success follows.
+  const account = toAccountSummary(outcome.value);
+  const heldAccount = heldAccountOtherThan({ held: await accountStillSignedIn(), email: account.email });
+  return { ...outcome, value: { ...account, heldAccount } };
 }
 
 export async function resendVerificationAction(

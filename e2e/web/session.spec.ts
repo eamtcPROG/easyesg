@@ -2,7 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   cleanupAccounts,
   cleanupOrganizations,
+  endSessionsOf,
   grantMembership,
+  moveIntoSetup,
   passwordResetTokenFor,
   verificationTokenFor,
 } from './support/db';
@@ -261,4 +263,153 @@ test.describe('session persistence (OQ-35)', () => {
     expect(secondsLeft).toBeGreaterThan(6 * day);
     expect(secondsLeft).toBeLessThanOrEqual(7 * day);
   });
+});
+
+// ── A session the api has ended (task 160) ──────────────────────────────────────────────────────
+
+const SIGN_IN_HEADING = 'Autentificați-vă';
+
+/** A verified account with one organization, signed in and on its home. */
+async function aSignedInMember(page: Page, label: string): Promise<string> {
+  const email = addressFor(label);
+  await registerAndVerify(page, email);
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} ${label}` }));
+  await signIn(page, email, PASSWORD);
+  await page.waitForURL('**/home');
+  return email;
+}
+
+/** S-02's reset, from the request to the success, for `email` — in whatever session the page holds. */
+async function resetPasswordOf(page: Page, email: string): Promise<void> {
+  await page.goto('/reset');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByRole('button', { name: 'Trimiteți linkul' }).click();
+  await expect(page.getByText('Cererea a fost înregistrată')).toBeVisible();
+  await page.goto(`/set-password?token=${await passwordResetTokenFor(email)}`);
+  await page.getByLabel('Parola nouă').fill(NEW_PASSWORD);
+  await page.getByRole('button', { name: 'Salvați parola nouă' }).click();
+  await expect(page.getByText('Parola a fost schimbată')).toBeVisible();
+}
+
+/**
+ * **The finding, from S-02's side.** A reset ends every session of its account, this browser's included —
+ * and the cookie used to outlive it, so *Go to sign in* met UX-136's gate, which resolved §4.3's branch
+ * with a refused token and landed on S-35 telling the reader that sign-in had succeeded. The action now
+ * clears the cookie, and the gate would serve the form even if it had not.
+ */
+test('a reset finished while signed in as the same account reaches the sign-in form (task 160)', async ({
+  page,
+}) => {
+  const email = await aSignedInMember(page, 'reset-own');
+  await resetPasswordOf(page, email);
+
+  await expect(page.getByRole('button', { name: /^Ieșiți și autentificați-vă/ })).toHaveCount(0);
+  expect((await page.context().cookies()).some((c) => c.name === 'easyesg_session')).toBe(false);
+
+  await page.getByRole('link', { name: 'Mergeți la autentificare' }).click();
+  await page.waitForURL('**/sign-in');
+  await expect(page.getByRole('heading', { name: SIGN_IN_HEADING })).toBeVisible();
+  await signIn(page, email, NEW_PASSWORD);
+  await page.waitForURL('**/home');
+});
+
+/**
+ * **A reset for another account ends only that account's sessions**, so this browser's survives — and the
+ * sign-in the success would offer would be turned away to this account's home. It names the account held
+ * and offers to switch or to stay; staying continues as that account.
+ */
+test('a reset finished for another account offers to switch or to stay (task 160)', async ({ page }) => {
+  const other = addressFor('reset-other');
+  await registerAndVerify(page, other);
+  const holder = await aSignedInMember(page, 'reset-holder');
+
+  await resetPasswordOf(page, other);
+
+  await expect(page.getByRole('status')).toContainText(holder);
+  await expect(page.getByRole('button', { name: 'Ieșiți și autentificați-vă' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Mergeți la autentificare' })).toHaveCount(0);
+  await page.getByRole('link', { name: `Continuați ca ${holder}` }).click();
+  await page.waitForURL('**/home');
+});
+
+/**
+ * **A confirmation reached while signed in is always for another address** — a signed-in account is a
+ * verified one. The success names both, and switching signs the holder out and opens sign-in, where the
+ * confirmed account signs in.
+ */
+test('a confirmation reached while signed in as another account offers to switch (task 160)', async ({
+  page,
+}) => {
+  const confirmed = addressFor('confirm-other');
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ion');
+  await page.getByLabel('Nume de familie').fill('Rusu');
+  await page.getByLabel('E-mail de serviciu').fill(confirmed);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  const holder = await aSignedInMember(page, 'confirm-holder');
+
+  await page.goto(`/verify?token=${await verificationTokenFor(confirmed)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  const status = page.getByRole('status');
+  await expect(status).toContainText(confirmed);
+  await expect(status).toContainText(holder);
+  await expect(page.getByRole('link', { name: `Continuați ca ${holder}` })).toHaveAttribute('href', '/home');
+  await expect(page.getByRole('link', { name: 'Mergeți la autentificare' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: `Ieșiți și autentificați-vă ca ${confirmed}` }).click();
+  await page.waitForURL('**/sign-in');
+  await signIn(page, confirmed, PASSWORD);
+  await page.waitForURL('**/create-organization');
+});
+
+/**
+ * **The cause, on the screens that read.** A session ended on another device leaves this browser's cookie
+ * standing until its access token falls due, and every read in that window was answered *could not load*.
+ * A workspace screen now sends the reader to sign in with its address kept; S-35 sends them to sign in
+ * rather than saying sign-in succeeded; the sign-in gate serves the form. S-28 is asked separately because
+ * *sign out other devices* is its own control.
+ */
+test('a session ended elsewhere is sent to sign in, and back to the screen asked for (task 160)', async ({
+  page,
+}) => {
+  const email = await aSignedInMember(page, 'ended');
+
+  await endSessionsOf({ email });
+  await page.goto('/organization-unavailable');
+  await page.waitForURL('**/sign-in');
+  await expect(page.getByRole('heading', { name: SIGN_IN_HEADING })).toBeVisible();
+
+  await page.goto('/reports');
+  await page.waitForURL('**/sign-in?**');
+  expect(new URL(page.url()).searchParams.get('return')).toBe('/reports');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/reports');
+
+  await endSessionsOf({ email });
+  await page.goto('/account/credentials');
+  await page.waitForURL('**/sign-in?**');
+  expect(new URL(page.url()).searchParams.get('return')).toBe('/account/credentials');
+});
+
+/**
+ * **The loop this could have been.** The branch sends a session still in setup to S-36 without reading
+ * memberships, and S-36 now sends an ended session to sign in — so, unless the branch asked the setup read
+ * too, the gate would send it straight back, and the browser would give up on the redirects.
+ */
+test('a session in setup that the api has ended reaches the sign-in form (task 160)', async ({ page }) => {
+  const email = addressFor('ended-setup');
+  await registerAndVerify(page, email);
+  await moveIntoSetup({ email, holdsPassword: true });
+  await signIn(page, email, PASSWORD);
+  await page.waitForURL('**/complete-account**');
+
+  await endSessionsOf({ email });
+  await page.goto('/complete-account');
+  await page.waitForURL('**/sign-in');
+  await expect(page.getByRole('heading', { name: SIGN_IN_HEADING })).toBeVisible();
 });

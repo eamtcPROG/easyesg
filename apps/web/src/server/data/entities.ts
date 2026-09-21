@@ -3,7 +3,7 @@ import type { CountryLegalForms, NaceCodeMatch, ReportingEntity } from '@easyesg
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { toEntityRows, type EntityRow } from '@/features/entities/tools/entities';
 import { api } from '../api/api-client';
-import { TENANT_READ, isPermissionRefusal } from './tenant-read';
+import { TENANT_READ, endedSessionIn, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 
 /**
  * S-13's reads (task 30.4.2) — the list, and the words its codes stand for.
@@ -21,8 +21,7 @@ export type EntityListRead =
       readonly status: typeof TENANT_READ.READY;
       readonly rows: readonly EntityRow[];
     }
-  | { readonly status: typeof TENANT_READ.FORBIDDEN }
-  | { readonly status: typeof TENANT_READ.UNREACHABLE };
+  | TenantReadRefusal;
 
 /** Resolves a set of codes to words, tolerating a failure by answering none of them. */
 const resolveActivity = async (
@@ -42,6 +41,7 @@ const resolveActivity = async (
 export async function readEntityList(): Promise<EntityListRead> {
   const entities = await api.getList<ReportingEntity>('/entities');
 
+  if (endedSessionIn(entities)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(entities)) return { status: TENANT_READ.FORBIDDEN };
   if (entities.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 
@@ -61,8 +61,7 @@ export type EntityRecordRead =
       /** The organization's country vocabulary, for the legal-form select. */
       readonly countries: readonly CountryLegalForms[];
     }
-  | { readonly status: typeof TENANT_READ.FORBIDDEN }
-  | { readonly status: typeof TENANT_READ.UNREACHABLE };
+  | TenantReadRefusal;
 
 export async function readEntityRecord(entityId: string): Promise<EntityRecordRead> {
   const [entity, vocabulary] = await Promise.all([
@@ -70,6 +69,7 @@ export async function readEntityRecord(entityId: string): Promise<EntityRecordRe
     api.getList<CountryLegalForms>('/organizations/legal-forms'),
   ]);
 
+  if (endedSessionIn(entity)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(entity)) return { status: TENANT_READ.FORBIDDEN };
   if (entity.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 

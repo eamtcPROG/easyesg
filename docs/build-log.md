@@ -21949,3 +21949,111 @@ is a session-ending change in a credential flow, the second needs copy and a dec
   logic is in `tools/` with its spec, and the section still reads while the parts render;
   `one-kind-per-folder` — the one new file is a spec in `actions/`. `vercel-composition-patterns` not
   opened: no component gained a boolean prop.
+
+## Task 160 — A session the api has ended is one this tier no longer holds · 2026-09-16
+
+Task 114's sweep found two S-02 exits that sent a signed-in reader somewhere other than sign-in, and measured
+both with a throwaway probe: a reset finished on a signed-in device landed on S-35, which said sign-in had
+succeeded; confirming another account's address while signed in landed on the held account's home. Reading
+for the first one found a cause far wider than S-02.
+
+### The cause
+
+**Every read this tier makes during render mapped the api's 401 onto *could not load*.** The sealed cookie
+outlives a session ended elsewhere — a reset, *sign out other devices* on S-28, a sign-out on another device —
+until its access token falls due and the proxy's rotation is refused, up to fifteen minutes. In that window
+the proxy lets the reader through, §4.3's branch answered S-35 (whose first sentence is that sign-in
+succeeded), and every workspace screen answered *try again later*, a remedy no retry satisfies.
+
+### Decisions (project owner, two batches)
+
+- **Fix the cause, not the reset alone** — over a reset-only fix with the wider case filed.
+- **The whole class in this task** — after I corrected my own description of that option: I had said the
+  resolver fix covered every way a session ends, and it did not reach the eleven screens reading through
+  `TENANT_READ`. Put back to the owner before building, who took all of it.
+- **Switch, or stay** for a success reached while another account is signed in: name the account, a button
+  that signs out and opens sign-in, and a link that continues as the current account — S-03's wrong-account
+  control plus a way home, since a Focus screen has no navigation.
+
+### What shipped
+
+- **One predicate**, `outcomeEndsSession`, beside task 92's `endsSession`: a problem answered 401. A 403 — a
+  live session refused something — is unchanged. The reports spec kept a warning worth reading against this:
+  *"401 means both no session and wrong password"*. That is true of credential routes; on a signed-in read no
+  credential travels, which is task 92's reading and the assumption §12.5.6's row states.
+- **§4.3's branch gains `SESSION_ENDED`** (its address is sign-in), decided before every other arm and read
+  by `endsHeldSession`. The held-session resolver learns it from the memberships read — which now keeps its
+  outcome, `readMembershipsOutcome`, with `readMemberships` built on it so a render still asks once — and,
+  **for a session still in setup, from `GET /account/setup`**, a read it skipped until now. Without that one,
+  S-36 sending an ended session to sign in and the gate sending it straight back to S-36 would loop; the
+  journey for it is the one that failed with the read removed.
+- **UX-136's gate serves the form** for `SESSION_ENDED`: its docblock said *"every destination the branch can
+  answer is inside `(app)`"*, and this is the first that is not. S-35 and S-37 redirect to it; S-03's remedy
+  (task 114) reads it as no session.
+- **`TENANT_READ.SIGNED_OUT`**, and one `TenantReadRefusal` union replacing the `FORBIDDEN | UNREACHABLE` pair
+  written out at eleven reads. Each of the six data modules asks `endedSessionIn` before its permission arm,
+  report creation's second stage included. **All eleven screens** answer it with `return redirectToSignIn()`
+  — sign-in with the address the proxy stamps, from `REQUESTED_PATH_HEADER`. Typecheck named ten of them;
+  **the wizard's redirector was found by reading**: its `!== READY` swallowed the new arm and would have
+  answered an ended session with a 404. `apps/web/CLAUDE.md` records both the `return` (TypeScript does not
+  narrow past an awaited `Promise<never>`) and that trap.
+- **S-28**: `SECTION_READ.SIGNED_OUT` as a whole-screen fact — sections still draw ready or unreachable, since
+  §8.1's partial state is per section and an ended session is not. **S-36** keeps the way on it was holding
+  rather than its own address, which would have put one return inside another.
+- **S-02**: `accountStillSignedIn` asks the resolver after the action and clears an ended session there — a
+  Server Action is one of the two places a cookie write is legal. A reset of this browser's own account now
+  reaches the sign-in form with no cookie left; a surviving session is another account's (a reset ends only
+  its own account's sessions; a signed-in account is always a verified one), and `SignedInElsewhere` offers
+  switch or stay. **A confirmation into setup reached while signed in takes that state too**, rather than the
+  grant's password step, which sits behind the same gate — found while wiring the verify action.
+- **Two builders moved onto `signInRoute`** while there: S-02's confirmation link and S-03's hand-off each
+  built `/sign-in?return=…` by hand.
+- **Copy** in three locales: the confirmation's body and switch label, the reset's body in both wordings
+  (reset and first password), the shared *continue as*. **One wording was changed after a journey failed on
+  it**: the reset body began with the title's four words, *"Parola a fost schimbată"*, so the page said it
+  twice — reworded to say whose password it is rather than making the locator exact.
+
+### Proof
+
+- **Unit**: forty-five new cases across twelve specs, six of them new — the branch's new arm and its
+  predicate (including that a `?return=` of `/sign-in` is never honoured, the claim `endsHeldSession` rests
+  on), both resolvers' 401 paths and their non-401 failures, the setup read, the tenant arm, the gate, the
+  redirect helper with and without an explicit return, the held-account helper and comparison, S-02's two
+  actions and the confirmation screen's switch-or-stay. **Eight seeded mutations, each failing its own spec.**
+- **Browser**, five journeys in `session.spec.ts` against a new `endSessionsOf` helper, which fails if it
+  revoked nothing: a reset on the same account reaching the form with the cookie gone; a reset for another
+  account offering switch or stay; a confirmation as another account, switching and signing in as the
+  confirmed one; a session ended elsewhere meeting S-35 (plain sign-in, as a destination has no way back to
+  keep), then `/reports` and S-28 (sign-in with the address kept), signing back in landing on `/reports`; and
+  a session in setup, ended, reaching the form.
+- **Three rebuilds, so the mutations could not mask each other**, each failing exactly the journeys
+  predicted: the gate's line and switch-or-stay removed → four of five failed, the same-account reset
+  passed; a 401 no longer an ending → the three ended-session journeys failed, the two other-account ones
+  passed; the setup read removed → only the setup journey failed.
+
+### Verification
+
+- `apps/web` unit **84 files, 864 tests**; `pnpm --filter @easyesg/web typecheck`; `pnpm lint`;
+  `pnpm docs:check`, 40 claims, after 94 numbers / 179 rows → 95 / 180.
+- `pnpm e2e:web --project identity --project expansion`: **212 of 212**, the five new journeys among them.
+  Seven `⨯ … destination stream closed early` lines, all digest `2667547900` — the abandoned-stream class
+  `apps/web/CLAUDE.md` records; a few more than usual, consistent with the new redirects that arrive inside a
+  boundary's stream.
+- **The run took 10.5 minutes, twice the 5.2 of task 114's**, and that was read before being set aside: the
+  report puts 599 of the 632 seconds inside tests, so it was not server start-up; the load average over the
+  run window was **56–73** with another editor's extension host at 78% CPU; and the two slowest files,
+  re-run as the load fell, took 108 seconds against the run's 131. The new code adds reads only where a
+  session has ended, a reset or confirmation completes, or a session is in setup — none of which an ordinary
+  journey reaches — so nothing in the diff accounts for a general slowdown.
+- **Which run, and why.** The per-row run for `apps/web`, and no `gates:clean`: no file moved or was
+  renamed, and no package, generator or build input changed. **Types did change** — `TENANT_READ`'s unions,
+  S-02's result types — which is the case CLAUDE.md names for a cold `lint`; `pnpm lint` ran after every
+  type edit here and each touched file's bytes changed with it, so the cache had nothing stale to serve. No
+  review agents, under the owner's standing rule for a childless row.
+- **Skills, read against the diff**: `vercel-react-best-practices` — `async-defer-await` (the setup read only
+  for a session in setup; the held-account read only after S-02 succeeds), `async-parallel` (the redirect
+  helper's header and locale); `one-idea-per-file` — the comparison is a tool with its spec, each new server
+  helper one behaviour with its spec, and the sections still read while the parts render;
+  `one-kind-per-folder` — the new files sit in folders of files, which `folder-shape.spec.ts` re-checked in
+  the unit run. `SignedInElsewhere` takes wording as props, which task 158's rule admits as per-caller
+  wording, and gains no boolean.

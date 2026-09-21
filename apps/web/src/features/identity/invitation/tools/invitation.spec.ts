@@ -157,6 +157,14 @@ describe('invitationRemedy (task 114, UX-136)', () => {
    * The destination is §4.3's branch, never a fixed `/home` — a member of nothing sent to S-05 lands
    * in an empty workspace, which is the reason UX-136's first clause exists.
    */
+  /** Task 160: the branch's answer for a session the api has ended is sign-in, and so is the remedy. */
+  it('treats a session the api has ended as no session', () => {
+    expect(invitationRemedy({ destination: { href: '/sign-in' }, signIn: SIGN_IN })).toEqual({
+      kind: INVITATION_REMEDY.SIGN_IN,
+      href: SIGN_IN,
+    });
+  });
+
   it.each(['/home', '/create-organization', '/choose-organization'])(
     'sends a signed-in reader where their session belongs (%s), never to sign in',
     (href) => {

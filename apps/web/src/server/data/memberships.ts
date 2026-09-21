@@ -21,9 +21,16 @@ import { api } from '../api/api-client';
  * has a screen (S-35) because there the answer decides where the person goes.
  */
 export const readMemberships = cache(async (): Promise<AccountMembership[] | null> => {
-  const outcome = await api.getList<AccountMembership>('/memberships');
+  const outcome = await readMembershipsOutcome();
   return outcome.status === API_OUTCOME.Ok ? outcome.value.items : null;
 });
+
+/**
+ * The same read with its outcome kept — for §4.3's held-session branch, which must tell a session the api
+ * has ended from a read that failed (task 160). **One request between the two**: both are `cache()`d and
+ * `readMemberships` is built on this, so a layout and the branch in one render still ask once.
+ */
+export const readMembershipsOutcome = cache(() => api.getList<AccountMembership>('/memberships'));
 
 /**
  * The organization this request is acting for, or `null`.

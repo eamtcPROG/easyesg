@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { awaitsOrganizationChoice, POST_SIGN_IN, postSignInTarget } from './post-sign-in';
+import { awaitsOrganizationChoice, endsHeldSession, POST_SIGN_IN, postSignInTarget } from './post-sign-in';
 import type { AccountMembership } from '@easyesg/contracts';
 
 const membership = (organizationId: string, active = false): AccountMembership => ({
@@ -22,13 +22,13 @@ const RETURN_TO = { href: '/reports/42', locale: undefined };
  */
 describe('postSignInTarget (§4.3)', () => {
   it('sends an account that belongs to nothing to create its first organization (S-04)', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: [], returnTo: null })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [], returnTo: null })).toEqual({
       href: POST_SIGN_IN.CREATE_ORGANIZATION,
     });
   });
 
   it('sends a single membership to home (S-05)', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: [membership('a', true)], returnTo: null })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [membership('a', true)], returnTo: null })).toEqual({
       href: POST_SIGN_IN.HOME,
     });
   });
@@ -37,7 +37,7 @@ describe('postSignInTarget (§4.3)', () => {
   // S-05 for the global-tier switcher to choose, and this case asserted that.
   it('sends several memberships with none chosen to choose one (S-37)', () => {
     expect(
-      postSignInTarget({ awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo: null }),
+      postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo: null }),
     ).toEqual({ href: POST_SIGN_IN.CHOOSE_ORGANIZATION });
   });
 
@@ -45,6 +45,7 @@ describe('postSignInTarget (§4.3)', () => {
   it('sends several memberships to home when the session has chosen one', () => {
     expect(
       postSignInTarget({
+        sessionEnded: false,
         awaitingSetup: false,
         memberships: [membership('a'), membership('b', true)],
         returnTo: null,
@@ -53,7 +54,7 @@ describe('postSignInTarget (§4.3)', () => {
   });
 
   it('honours a deep link when exactly one organization resolves (UX-38)', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: [membership('a', true)], returnTo: RETURN_TO })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [membership('a', true)], returnTo: RETURN_TO })).toEqual({
       href: '/reports/42',
       locale: undefined,
     });
@@ -62,6 +63,7 @@ describe('postSignInTarget (§4.3)', () => {
   it('keeps the deep link’s own locale, which the URL makes authoritative (OQ-32)', () => {
     expect(
       postSignInTarget({
+        sessionEnded: false,
         awaitingSetup: false,
         memberships: [membership('a', true)],
         returnTo: { href: '/reports/42', locale: 'en' },
@@ -75,7 +77,7 @@ describe('postSignInTarget (§4.3)', () => {
    * wins, which is the decision taken 25 Aug 2026.
    */
   it('ignores a deep link when the account belongs to nothing', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: [], returnTo: RETURN_TO })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [], returnTo: RETURN_TO })).toEqual({
       href: POST_SIGN_IN.CREATE_ORGANIZATION,
     });
   });
@@ -83,10 +85,11 @@ describe('postSignInTarget (§4.3)', () => {
   /** Several and none chosen can honour it once the reader has chosen, so S-37 carries it (task 83.3). */
   it('carries a deep link to S-37 when several organizations are held and none is chosen', () => {
     expect(
-      postSignInTarget({ awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo: RETURN_TO }),
+      postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo: RETURN_TO }),
     ).toEqual({ href: '/choose-organization?return=%2Freports%2F42', locale: undefined });
     expect(
       postSignInTarget({
+        sessionEnded: false,
         awaitingSetup: false,
         memberships: [membership('a'), membership('b')],
         returnTo: { href: '/reports/42', locale: 'en' },
@@ -99,13 +102,13 @@ describe('postSignInTarget (§4.3)', () => {
    * invite someone whose organizations failed to load to create a second one (S-35).
    */
   it('sends an unreadable membership list to the organization-unavailable screen', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: null, returnTo: null })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: null, returnTo: null })).toEqual({
       href: POST_SIGN_IN.ORGANIZATION_UNAVAILABLE,
     });
   });
 
   it('ignores a deep link when the list could not be read', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: null, returnTo: RETURN_TO })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: null, returnTo: RETURN_TO })).toEqual({
       href: POST_SIGN_IN.ORGANIZATION_UNAVAILABLE,
     });
   });
@@ -146,7 +149,7 @@ describe('a return path that renders without an organization (task 26.3)', () =>
   const invitation = { href: '/invitation/tok', locale: undefined };
 
   it('is honoured for a member of nothing', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: [], returnTo: invitation })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [], returnTo: invitation })).toEqual({
       href: '/invitation/tok',
       locale: undefined,
     });
@@ -154,17 +157,18 @@ describe('a return path that renders without an organization (task 26.3)', () =>
 
   it('is honoured for someone who has not chosen among several', () => {
     expect(
-      postSignInTarget({ awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo: invitation }),
+      postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo: invitation }),
     ).toEqual({ href: '/invitation/tok', locale: undefined });
   });
 
   /** The original rule still holds where it was written for: `(app)` needs an organization. */
   it('does not widen the rule for a destination that needs one', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: [], returnTo: { href: '/reports', locale: undefined } })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [], returnTo: { href: '/reports', locale: undefined } })).toEqual({
       href: POST_SIGN_IN.CREATE_ORGANIZATION,
     });
     expect(
       postSignInTarget({
+        sessionEnded: false,
         awaitingSetup: false,
         memberships: [membership('a'), membership('b')],
         returnTo: { href: '/reports', locale: undefined },
@@ -179,6 +183,7 @@ describe('a return path that renders without an organization (task 26.3)', () =>
   it('honours a deep link to the account’s own screen without asking for a choice', () => {
     expect(
       postSignInTarget({
+        sessionEnded: false,
         awaitingSetup: false,
         memberships: [membership('a'), membership('b')],
         returnTo: { href: '/account/credentials', locale: 'en' },
@@ -199,14 +204,14 @@ describe('a return path that renders without an organization (task 26.3)', () =>
     'refuses to return a signed-in caller to %s',
     (entry) => {
       const returnTo = { href: entry, locale: undefined };
-      expect(postSignInTarget({ awaitingSetup: false, memberships: [], returnTo })).toEqual({
+      expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [], returnTo })).toEqual({
         href: POST_SIGN_IN.CREATE_ORGANIZATION,
       });
-      expect(postSignInTarget({ awaitingSetup: false, memberships: [membership('a', true)], returnTo })).toEqual({
+      expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [membership('a', true)], returnTo })).toEqual({
         href: POST_SIGN_IN.HOME,
       });
       expect(
-        postSignInTarget({ awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo }),
+        postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [membership('a'), membership('b')], returnTo }),
       ).toEqual({ href: POST_SIGN_IN.CHOOSE_ORGANIZATION });
     },
   );
@@ -214,13 +219,13 @@ describe('a return path that renders without an organization (task 26.3)', () =>
   /** The marketing home is not a destination the branch should prefer over S-04 either. */
   it('refuses to return a member of nothing to the marketing home', () => {
     expect(
-      postSignInTarget({ awaitingSetup: false, memberships: [], returnTo: { href: '/', locale: undefined } }),
+      postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: [], returnTo: { href: '/', locale: undefined } }),
     ).toEqual({ href: POST_SIGN_IN.CREATE_ORGANIZATION });
   });
 
   /** A failed membership read still wins: the branch could not be taken at all (S-35). */
   it('does not override the unavailable arm (arm unchanged by task 155)', () => {
-    expect(postSignInTarget({ awaitingSetup: false, memberships: null, returnTo: invitation })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: false, memberships: null, returnTo: invitation })).toEqual({
       href: POST_SIGN_IN.ORGANIZATION_UNAVAILABLE,
     });
   });
@@ -233,10 +238,10 @@ describe('a return path that renders without an organization (task 26.3)', () =>
  */
 describe('an account still completing its setup (task 155)', () => {
   it('goes to S-36, whatever the memberships say', () => {
-    expect(postSignInTarget({ awaitingSetup: true, memberships: [], returnTo: null })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: true, memberships: [], returnTo: null })).toEqual({
       href: POST_SIGN_IN.COMPLETE_ACCOUNT,
     });
-    expect(postSignInTarget({ awaitingSetup: true, memberships: null, returnTo: null })).toEqual({
+    expect(postSignInTarget({ sessionEnded: false, awaitingSetup: true, memberships: null, returnTo: null })).toEqual({
       href: POST_SIGN_IN.COMPLETE_ACCOUNT,
     });
   });
@@ -244,6 +249,7 @@ describe('an account still completing its setup (task 155)', () => {
   it('carries an invitation along, and keeps the locale it named', () => {
     expect(
       postSignInTarget({
+        sessionEnded: false,
         awaitingSetup: true,
         memberships: null,
         returnTo: { href: '/invitation/tok', locale: 'en' },
@@ -254,7 +260,48 @@ describe('an account still completing its setup (task 155)', () => {
   /** Unjudged on purpose: whether `/reports/42` is honoured depends on memberships nobody has read. */
   it('carries a deep link into (app) along too, for the branch to judge after setup', () => {
     expect(
-      postSignInTarget({ awaitingSetup: true, memberships: [membership('a', true)], returnTo: RETURN_TO }),
+      postSignInTarget({ sessionEnded: false, awaitingSetup: true, memberships: [membership('a', true)], returnTo: RETURN_TO }),
     ).toEqual({ href: '/complete-account?return=%2Freports%2F42', locale: undefined });
+  });
+});
+
+/**
+ * The branch's fourth answer (task 160): the api has ended the session the cookie still names. It wins
+ * over every other input, because none of them is true of a reader holding nothing — least of all S-35's
+ * *sign-in succeeded*, which is where a failed read used to land.
+ */
+describe('postSignInTarget — a session the api has ended (task 160)', () => {
+  it.each([
+    ['memberships that could not be read', { awaitingSetup: false, memberships: null }],
+    ['a single membership', { awaitingSetup: false, memberships: [membership('a', true)] }],
+    ['an account still completing setup', { awaitingSetup: true, memberships: null }],
+  ])('sends the reader to sign in, whatever the cookie said — %s', (_label, facts) => {
+    expect(postSignInTarget({ sessionEnded: true, returnTo: RETURN_TO, ...facts })).toEqual({
+      href: '/sign-in',
+    });
+  });
+
+  it('is read by `endsHeldSession`, and no other answer is', () => {
+    expect(endsHeldSession({ href: POST_SIGN_IN.SESSION_ENDED })).toBe(true);
+    for (const href of [
+      POST_SIGN_IN.HOME,
+      POST_SIGN_IN.CREATE_ORGANIZATION,
+      POST_SIGN_IN.CHOOSE_ORGANIZATION,
+      POST_SIGN_IN.ORGANIZATION_UNAVAILABLE,
+      POST_SIGN_IN.COMPLETE_ACCOUNT,
+    ]) {
+      expect(endsHeldSession({ href })).toBe(false);
+    }
+  });
+
+  /** The claim `endsHeldSession`'s docblock rests on: a deep link to sign-in is never honoured. */
+  it('never honours a return path that is the sign-in address itself', () => {
+    const target = postSignInTarget({
+      sessionEnded: false,
+      awaitingSetup: false,
+      memberships: [membership('a', true)],
+      returnTo: { href: '/sign-in', locale: undefined },
+    });
+    expect(endsHeldSession(target)).toBe(false);
   });
 });

@@ -16,6 +16,9 @@ vi.mock('../actions/actions', () => ({
   resendVerificationAction: vi.fn(),
 }));
 
+/** The sign-out the switch-or-stay state's form posts to (task 160) — a Server Action, so stubbed here. */
+vi.mock('../../shared/actions/actions', () => ({ signOutAction: vi.fn() }));
+
 /** The router the confirm surface pushes an account confirmed into setup with (task 155). */
 const push = vi.hoisted(() => vi.fn());
 
@@ -50,7 +53,7 @@ describe('S-02 · confirm surface (?token=…)', () => {
     const user = userEvent.setup();
     verify.mockResolvedValue({
       status: 'ok',
-      value: { id: '018…', email: EMAIL, status: 'active' },
+      value: { id: '018…', email: EMAIL, status: 'active', heldAccount: null },
       messages: [],
     });
     render(withIntl(<ConfirmEmail token={TOKEN} />));
@@ -115,7 +118,7 @@ describe('S-02 · confirm surface (?token=…)', () => {
     const user = userEvent.setup();
     verify.mockResolvedValue({
       status: 'ok',
-      value: { id: '018…', email: EMAIL, status: 'awaiting_setup' },
+      value: { id: '018…', email: EMAIL, status: 'awaiting_setup', heldAccount: null },
       messages: [],
     });
     render(withIntl(<ConfirmEmail token={TOKEN} returnTo="/invitation/tok" />));
@@ -126,6 +129,40 @@ describe('S-02 · confirm surface (?token=…)', () => {
     expect(verify).toHaveBeenCalledWith({ token: TOKEN, returnTo: '/invitation/tok' });
     expect(screen.queryByRole('link', { name: 'Mergeți la autentificare' })).not.toBeInTheDocument();
   });
+});
+
+/**
+ * Task 160: a reader signed in as another account confirms this address. The sign-in the ordinary success
+ * offers would be turned away by the gate, to that account's home — so the success names both and offers to
+ * switch or to stay, and never the sign-in link.
+ */
+describe('S-02 · confirm surface, signed in as another account (task 160)', () => {
+  const HELD = { email: 'ion.popa@example.md', home: '/home' };
+
+  it.each([['an active account', 'active'], ['an account confirmed into setup', 'awaiting_setup']] as const)(
+    'offers to switch or to stay after confirming %s, and nothing else',
+    async (_label, status) => {
+      const user = userEvent.setup();
+      verify.mockResolvedValue({
+        status: 'ok',
+        value: { id: '018…', email: EMAIL, status, heldAccount: HELD },
+        messages: [],
+      });
+      render(withIntl(<ConfirmEmail token={TOKEN} returnTo="/invitation/tok" />));
+
+      await user.click(screen.getByRole('button', { name: 'Confirmați adresa' }));
+
+      const status_ = await screen.findByRole('status');
+      expect(status_).toHaveTextContent('Adresa este confirmată');
+      expect(status_).toHaveTextContent(EMAIL);
+      expect(status_).toHaveTextContent(HELD.email);
+      expect(screen.getByRole('button', { name: `Ieșiți și autentificați-vă ca ${EMAIL}` })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: `Continuați ca ${HELD.email}` })).toHaveAttribute('href', '/home');
+      expect(screen.queryByRole('link', { name: 'Mergeți la autentificare' })).not.toBeInTheDocument();
+      // Not the grant's password step either: it sits behind the same gate.
+      expect(push).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe('S-02 · waiting/resend surface', () => {

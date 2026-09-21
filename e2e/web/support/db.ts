@@ -722,3 +722,29 @@ export async function dropCredential(input: { readonly email: string }): Promise
     await client.end();
   }
 }
+
+/**
+ * Ends every live session of the account at `email` as a sign-out on another device does (task 160): the
+ * row the api judges on each request is revoked, and this browser's cookie is left exactly as it was —
+ * the state in which the cookie still names a session the api refuses, which §4.3's branch, every
+ * workspace read and S-02's successes must now tell apart from a live one.
+ *
+ * **It fails when it revoked nothing**, because a revoke that matched no row reads, two steps later, as a
+ * product that ignored an ended session rather than as a helper that did not run.
+ */
+export async function endSessionsOf(input: { readonly email: string }): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    const result = await client.query(
+      `UPDATE identity.session s
+          SET revoked_at = now(), revoked_reason = 'signed_out'
+         FROM identity.account a
+        WHERE s.account_id = a.id AND lower(a.email) = lower($1) AND s.revoked_at IS NULL`,
+      [input.email],
+    );
+    if ((result.rowCount ?? 0) === 0) throw new Error(`No live session to end for ${input.email}`);
+  } finally {
+    await client.end();
+  }
+}

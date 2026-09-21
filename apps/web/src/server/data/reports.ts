@@ -3,7 +3,7 @@ import type { Report, ReportingEntity, ReportingPeriod } from '@easyesg/contract
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { toReportRows, type ReportRow } from '@/features/reports/tools/reports';
 import { api } from '../api/api-client';
-import { TENANT_READ, isPermissionRefusal } from './tenant-read';
+import { TENANT_READ, endedSessionIn, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 
 /**
  * S-06's read, and the two the creation flow needs (tasks 32.2.2, 32.3).
@@ -19,12 +19,12 @@ import { TENANT_READ, isPermissionRefusal } from './tenant-read';
  */
 export type ReportListRead =
   | { readonly status: typeof TENANT_READ.READY; readonly rows: readonly ReportRow[] }
-  | { readonly status: typeof TENANT_READ.FORBIDDEN }
-  | { readonly status: typeof TENANT_READ.UNREACHABLE };
+  | TenantReadRefusal;
 
 export async function readReportList(): Promise<ReportListRead> {
   const reports = await api.getList<Report>('/reports');
 
+  if (endedSessionIn(reports)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(reports)) return { status: TENANT_READ.FORBIDDEN };
   if (reports.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 
@@ -54,12 +54,12 @@ export type ReportCreationRead =
       /** Empty until an entity is chosen, and empty again when every period of it is taken. */
       readonly periods: readonly ReportingPeriod[];
     }
-  | { readonly status: typeof TENANT_READ.FORBIDDEN }
-  | { readonly status: typeof TENANT_READ.UNREACHABLE };
+  | TenantReadRefusal;
 
 export async function readReportCreation(entityId?: string): Promise<ReportCreationRead> {
   const entities = await api.getList<ReportingEntity>('/entities');
 
+  if (endedSessionIn(entities)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(entities)) return { status: TENANT_READ.FORBIDDEN };
   if (entities.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 
@@ -79,6 +79,7 @@ export async function readReportCreation(entityId?: string): Promise<ReportCreat
     api.getList<Report>(`/reports?reportingEntityId=${encodeURIComponent(entityId)}`),
   ]);
 
+  if (endedSessionIn(periods, existing)) return { status: TENANT_READ.SIGNED_OUT };
   if (periods.status !== API_OUTCOME.Ok || existing.status !== API_OUTCOME.Ok) {
     // The entities arrived; the periods did not. Reported as unreachable rather than as an empty
     // period list, because "this entity has no open period" and "we could not ask" are different

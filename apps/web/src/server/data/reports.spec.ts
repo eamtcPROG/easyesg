@@ -46,6 +46,15 @@ const refusal = (type: string) => ({
 
 const unreachable = { status: API_OUTCOME.Unreachable } as const;
 
+/**
+ * **A 401 on a signed-in read is the session, not a password** (task 160; task 92's `endsSession`) — no
+ * credential travels on these reads, so the only thing the api can be refusing is the session itself.
+ */
+const sessionEnded = {
+  status: API_OUTCOME.Problem,
+  problem: { status: 401, type: PROBLEM_TYPE.AuthenticationRequired, title: 'no' },
+};
+
 const period = (over: Record<string, unknown> = {}) => ({
   id: 'p1',
   reportingEntityId: 'e1',
@@ -116,6 +125,12 @@ describe('readReportList', () => {
     getList.mockResolvedValueOnce(unreachable);
     expect((await readReportList()).status).toBe(TENANT_READ.UNREACHABLE);
   });
+
+  /** Task 160: an ended session is neither — the screen sends the reader to sign in. */
+  it('tells an ended session apart from both', async () => {
+    getList.mockResolvedValueOnce(sessionEnded);
+    expect((await readReportList()).status).toBe(TENANT_READ.SIGNED_OUT);
+  });
 });
 
 describe('readReportCreation', () => {
@@ -184,6 +199,16 @@ describe('readReportCreation', () => {
       .mockResolvedValueOnce(ok([]));
 
     expect((await readReportCreation('e1')).status).toBe(TENANT_READ.UNREACHABLE);
+  });
+
+  /** Task 160: the second stage has no permission arm to stand in front of, and asks anyway. */
+  it('reports an ended session from the second stage too', async () => {
+    getList
+      .mockResolvedValueOnce(ok([{ id: 'e1', name: 'Aurora SRL' }]))
+      .mockResolvedValueOnce(sessionEnded)
+      .mockResolvedValueOnce(ok([]));
+
+    expect((await readReportCreation('e1')).status).toBe(TENANT_READ.SIGNED_OUT);
   });
 
   it('reports a permission refusal from the entities read', async () => {

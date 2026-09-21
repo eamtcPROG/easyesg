@@ -10,7 +10,8 @@ import { verifyEmailAction } from '../actions/actions';
 import { forgetPendingVerification } from '../../shared/store/pending-verification-store';
 import type { VerifyResult } from '../actions/action-results';
 import styles from '../../shared/styles/identity-screens.module.css';
-import { ROUTES } from '@/lib/routes';
+import { SignedInElsewhere } from '../../shared/components/signed-in-elsewhere';
+import { ROUTES, signInRoute } from '@/lib/routes';
 
 /**
  * S-02 · the verification link's landing surface (UC-03) — `/verify?token=…`.
@@ -33,6 +34,11 @@ import { ROUTES } from '@/lib/routes';
  * registration whose provider did not assert the address holds no password, so the confirmation
  * opens its password step — at `/register/password`, where the grant the action has just held is
  * waiting — rather than offering a sign-in it has no credential for.
+ *
+ * **A reader signed in as another account is offered to switch or to stay** (task 160): the sign-in this
+ * success offers would be turned away by the gate, and so would the grant's password step, which sits
+ * behind the same gate — so neither is offered, and signing in again as the confirmed account is the way
+ * on for both.
  */
 export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: string }) {
   const t = useTranslations('identity.verify');
@@ -47,7 +53,7 @@ export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: st
       if (outcome.status === API_OUTCOME.Ok) {
         // The challenge is answered; the pending screen's stored address has no reader left.
         forgetPendingVerification();
-        if (outcome.value.status === ACCOUNT_STATUS.AWAITING_SETUP) {
+        if (outcome.value.heldAccount === null && outcome.value.status === ACCOUNT_STATUS.AWAITING_SETUP) {
           router.push(ROUTES.REGISTER_PASSWORD);
           return;
         }
@@ -57,15 +63,25 @@ export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: st
   };
 
   if (result?.status === API_OUTCOME.Ok) {
+    const { email: confirmed, heldAccount } = result.value;
+    if (heldAccount !== null) {
+      return (
+        <SignedInElsewhere
+          heldAccount={heldAccount}
+          title={t('successTitle')}
+          body={t('otherAccountBody', { confirmed, current: heldAccount.email })}
+          switchLabel={t('otherAccountAction', { confirmed })}
+          returnTo={returnTo}
+        />
+      );
+    }
     return (
       <Callout
         intent={CALLOUT_INTENT.SUCCESS}
         title={t('successTitle')}
         action={
           <TextLink asChild>
-            <Link href={returnTo ? `${ROUTES.SIGN_IN}?return=${encodeURIComponent(returnTo)}` : '/sign-in'}>
-              {t('successAction')}
-            </Link>
+            <Link href={signInRoute(returnTo)}>{t('successAction')}</Link>
           </TextLink>
         }
       >

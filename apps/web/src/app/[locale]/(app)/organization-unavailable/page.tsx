@@ -20,7 +20,9 @@ import { destinationForHeldSession } from '@/server/session/post-sign-in';
  * it from a Server Component safe (a cookie write here would throw).
  *
  * It cannot loop: reaching the render below means the read failed, and a successful read never
- * resolves to this route.
+ * resolves to this route. **A read the api refused because the session has ended does not render it
+ * either** (task 160): the branch answers sign-in for that, so this page redirects there — the screen's
+ * first sentence says sign-in succeeded, which for that reader is no longer true.
  *
  * Sign-out is deliberately absent from the screen: the `(app)` layout's account corner carries it
  * (task 22's interim strip, task 30.1's real global tier), and a second sign-out control here

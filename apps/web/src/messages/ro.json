@@ -155,6 +155,8 @@
       "successTitle": "Adresa este confirmată",
       "successBody": "Contul dumneavoastră este activ. De aici vă puteți autentifica și vă puteți crea organizația.",
       "successAction": "Mergeți la autentificare",
+      "otherAccountBody": "Adresa {confirmed} este confirmată, dar în acest browser sunteți autentificat ca {current}. Ca să folosiți contul confirmat, ieșiți mai întâi din cel curent.",
+      "otherAccountAction": "Ieșiți și autentificați-vă ca {confirmed}",
       "problemTitle": "Linkul nu a putut fi folosit",
       "problemBody": "Adresa nu a fost confirmată din cauza unei erori la procesarea cererii.",
       "problemAction": "Cereți un link nou"
@@ -243,6 +245,8 @@
       "successTitle": "Parola a fost schimbată",
       "successBody": "Toate sesiunile existente au fost închise. De aici vă puteți autentifica cu parola nouă.",
       "successAction": "Mergeți la autentificare",
+      "otherAccountBody": "Parola nouă aparține altui cont decât cel cu care sunteți autentificat în acest browser ({current}). Ca să o folosiți, ieșiți mai întâi din contul curent.",
+      "otherAccountAction": "Ieșiți și autentificați-vă",
       "problemTitle": "Linkul nu a putut fi folosit",
       "problemBody": "Parola nu a fost schimbată din cauza unei erori la procesarea cererii.",
       "requestNew": "Cereți un link nou",
@@ -258,7 +262,11 @@
       "passwordLabel": "Parola",
       "submit": "Salvați parola",
       "successTitle": "Parola a fost setată",
-      "successBody": "Toate sesiunile existente au fost închise. De aici vă puteți autentifica cu parola aleasă."
+      "successBody": "Toate sesiunile existente au fost închise. De aici vă puteți autentifica cu parola aleasă.",
+      "otherAccountBody": "Parola aleasă aparține altui cont decât cel cu care sunteți autentificat în acest browser ({current}). Ca să o folosiți, ieșiți mai întâi din contul curent."
+    },
+    "signedInElsewhere": {
+      "continueAs": "Continuați ca {current}"
     },
     "setup": {
       "title": "Finalizați-vă contul",

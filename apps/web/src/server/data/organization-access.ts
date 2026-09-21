@@ -1,6 +1,6 @@
 import 'server-only';
 import { API_OUTCOME, type ApiOutcome, type ListResult } from '@/lib/api-outcome';
-import { TENANT_READ, isPermissionRefusal } from './tenant-read';
+import { TENANT_READ, endedSessionIn, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 import {
   ACCESS_ROW_KIND,
   ACCESS_PAGE_SIZE,
@@ -42,8 +42,7 @@ export type AccessRead =
       /** The ceiling and the seats held against it (task 142) — a fact about the organization. */
       readonly seats: SeatConsumption;
     }
-  | { readonly status: typeof TENANT_READ.FORBIDDEN }
-  | { readonly status: typeof TENANT_READ.UNREACHABLE };
+  | TenantReadRefusal;
 
 /** The wire's flat row — a union in both tiers, flat between them (`AccessRowResponseDto`). */
 interface AccessRowWire {
@@ -123,6 +122,7 @@ export const readOrganizationAccess = async (view: AccessView): Promise<AccessRe
     api.get<SeatConsumption>('/access/seats'),
   ]);
 
+  if (endedSessionIn(listed, administrators, seats)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(listed) || isPermissionRefusal(administrators) || isPermissionRefusal(seats)) {
     return { status: TENANT_READ.FORBIDDEN };
   }

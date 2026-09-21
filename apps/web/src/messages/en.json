@@ -155,6 +155,8 @@
       "successTitle": "Your address is confirmed",
       "successBody": "Your account is active. From here you can sign in and create your organization.",
       "successAction": "Go to sign-in",
+      "otherAccountBody": "The address {confirmed} is confirmed, but this browser is signed in as {current}. To use the confirmed account, sign out of the current one first.",
+      "otherAccountAction": "Sign out and sign in as {confirmed}",
       "problemTitle": "The link could not be used",
       "problemBody": "The address was not confirmed because the request could not be processed.",
       "problemAction": "Request a new link"
@@ -243,6 +245,8 @@
       "successTitle": "Your password has been changed",
       "successBody": "All existing sessions have been signed out. From here you can sign in with the new password.",
       "successAction": "Go to sign-in",
+      "otherAccountBody": "The new password belongs to a different account from the one this browser is signed in as ({current}). To use it, sign out of the current account first.",
+      "otherAccountAction": "Sign out and sign in",
       "problemTitle": "The link could not be used",
       "problemBody": "The password was not changed because of an error while processing the request.",
       "requestNew": "Request a new link",
@@ -258,7 +262,11 @@
       "passwordLabel": "Password",
       "submit": "Save the password",
       "successTitle": "Your password is set",
-      "successBody": "All existing sessions have been signed out. From here you can sign in with the password you chose."
+      "successBody": "All existing sessions have been signed out. From here you can sign in with the password you chose.",
+      "otherAccountBody": "The password you chose belongs to a different account from the one this browser is signed in as ({current}). To use it, sign out of the current account first."
+    },
+    "signedInElsewhere": {
+      "continueAs": "Continue as {current}"
     },
     "setup": {
       "title": "Complete your account",

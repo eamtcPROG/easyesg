@@ -13,6 +13,7 @@ import { resetPasswordAction } from '../actions/actions';
 import type { ResetPasswordResult } from '../actions/action-results';
 import type { SetPasswordKind } from '../tools/set-password-kind';
 import styles from '../../shared/styles/identity-screens.module.css';
+import { SignedInElsewhere } from '../../shared/components/signed-in-elsewhere';
 import { SET_PASSWORD_MESSAGES, setPasswordWordingFor } from './set-password-messages';
 
 /**
@@ -28,6 +29,11 @@ import { SET_PASSWORD_MESSAGES, setPasswordWordingFor } from './set-password-mes
  *
  * The password field and its policy are `PolicyPasswordField`, the one wiring S-01's registration and
  * S-36 share with this form.
+ *
+ * **A session this browser still holds after the reset is another account's** (task 160): a reset ends only
+ * its own account's sessions, and the action has already cleared this browser's if it was one of them. So
+ * that success names the account and offers to switch or to stay, since the sign-in offered otherwise
+ * would be turned away by the gate.
  *
  * States (§8.1 subset): rest · submitting · invalid · success (every session out, S-01
  * offered) · error — recoverable (expired/consumed link as received, the request route as the
@@ -56,6 +62,17 @@ export function SetPasswordForm({ token, kind }: { token: string; kind: SetPassw
   });
 
   if (result?.status === API_OUTCOME.Ok) {
+    const { heldAccount } = result.value;
+    if (heldAccount !== null) {
+      return (
+        <SignedInElsewhere
+          heldAccount={heldAccount}
+          title={worded('successTitle')}
+          body={worded('otherAccountBody', { current: heldAccount.email })}
+          switchLabel={t('otherAccountAction')}
+        />
+      );
+    }
     return (
       <Callout
         intent={CALLOUT_INTENT.SUCCESS}

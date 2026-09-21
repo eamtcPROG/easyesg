@@ -145,6 +145,14 @@ export const withQuery = (path: RoutePath, query: string): string =>
   query ? `${path}?${query}` : path;
 
 /**
+ * S-01 carrying the address to come back to (UX-38) — the proxy's shape for a closed route, now also
+ * the one a screen uses when its own read learns the session has ended (task 160), and the one S-03 and
+ * S-02 hand an invitee. Encoded once, here, for the same reason as the two builders below.
+ */
+export const signInRoute = (returnTo?: string | null): string =>
+  withQuery(ROUTES.SIGN_IN, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
+
+/**
  * S-36 carrying the address to go on to once setup is done (task 155) — S-03's invitation, or the
  * address an account in setup was turned away from. Encoded once, here, because it rides inside
  * another address's query string, and the post-sign-in branch and S-36's own actions both build it.

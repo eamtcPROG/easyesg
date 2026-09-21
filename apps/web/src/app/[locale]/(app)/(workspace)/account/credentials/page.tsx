@@ -1,6 +1,8 @@
 import { CredentialsBoard } from '@/features/credentials/components/credentials-board';
+import { SECTION_READ } from '@/features/credentials/tools/credentials';
 import { readCredentials } from '@/server/data/credentials';
 import { readPendingLink } from '@/server/sealed/pending-link';
+import { redirectToSignIn } from '@/server/session/sign-in-redirect';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -38,6 +40,9 @@ export default async function CredentialsPage({ params }: { params: LocaleParams
   // In parallel: the two section reads and the pending-link cookie are independent, and a
   // settings screen should not pay a second round trip for an ordering that does not exist.
   const [read, pending] = await Promise.all([readCredentials(), readPendingLink()]);
+  // Task 160: the api has ended the session — sign in, and back to this screen. Reached from *sign out
+  // other devices* on another device, which is this screen's own control.
+  if (read.status === SECTION_READ.SIGNED_OUT) return redirectToSignIn();
 
   return (
     /* Its own provider since task 99. This screen had none and relied on the workspace
