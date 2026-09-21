@@ -55,14 +55,17 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * worked example, and the reason no read got slower. What the split removed is the *coupling*: the
  * screen no longer blocks on its slowest read before drawing any of itself.
  *
- * **Every region that reads has a boundary and a skeleton; exactly one of them currently streams.**
+ * **Every region that reads has a boundary and a skeleton; two of them currently stream.**
  * The overview makes an HTTP call (`GET /periods`) nothing else on the screen makes, and its
  * fallback is emitted into the shell — measured in `e2e/web/home.spec.ts` against the served HTML. The
  * heading and the membership list read memberships, which is React-`cache()`d and awaited by
- * `GlobalTier` **outside any boundary** in the `(app)` layout: the shell therefore cannot flush
- * before their content is ready, so React inlines it and their skeletons never appear. The same spec
- * asserts that too, so the day the global tier gains a boundary of its own the change in behaviour
- * is visible rather than silent.
+ * `GlobalTier` **outside any boundary** in the `(app)` layout, so the shell cannot flush before that
+ * data is ready: the heading is inlined and its skeleton never appears, while the list — a section,
+ * a list and a row per membership since task 128, each awaiting its own translators — is still
+ * resolving when the shell goes out, and its skeleton does. The same spec counts the boundaries still
+ * pending **inside this screen's `<main>`** (task 159), so a boundary in a layout above — the
+ * support-access banner's is one — cannot answer for this screen. This paragraph said *exactly one*
+ * until then, and that the spec would notice a layout's boundary; it did, as a failure about S-05.
  *
  * **They are here anyway, and the reason is UX-90 rather than optimism**: a region that can wait has
  * a `loading` state whether or not this composition lets it be seen, and an undefined state is a

@@ -271,21 +271,31 @@ test('the overview streams behind its boundary, so the shell does not wait for i
 
   const response = await page.goto('/home');
   const html = (await response?.text()) ?? '';
+  const occurrences = (within: string, needle: string) => within.split(needle).length - 1;
 
-  const fallback = html.indexOf('role="status"');
+  // **This screen's share of the shell** (task 159). The `(workspace)` layout wraps the route in the
+  // response's only `<main>`, and the shell closes it before any streamed segment arrives — so the
+  // slice between the two tags is S-05's markup as it was flushed, and nothing the layouts above
+  // render can answer a question asked of it.
+  expect(occurrences(html, '<main'), 'one main landmark, so it bounds this screen alone').toBe(1);
+  const mainAt = html.indexOf('<main');
+  const screen = html.slice(mainAt, html.indexOf('</main>'));
+
+  const fallback = screen.indexOf('role="status"');
   const filings = html.indexOf(`${RUN_PREFIX}-streaming-Brutăria`);
 
-  expect(fallback, 'the fallback rendered into the shell').toBeGreaterThan(-1);
+  expect(fallback, "the overview's fallback rendered into this screen's shell").toBeGreaterThan(-1);
   expect(filings, 'the filings arrived in the same response').toBeGreaterThan(-1);
-  expect(fallback, 'the shell flushed before the overview resolved').toBeLessThan(filings);
+  expect(mainAt + fallback, 'the shell flushed before the overview resolved').toBeLessThan(filings);
 
   /*
-    **And the other two boundaries are inert today, which is asserted rather than assumed.**
-    `OrganizationHeading` and `MembershipsSection` have boundaries and skeletons of their own —
-    UX-90 requires the state to be defined — but neither can be seen: both read memberships, which
-    is React-`cache()`d and awaited by `GlobalTier` **outside any boundary** in the `(app)` layout,
-    so the shell cannot flush before their content exists and React inlines it instead of emitting a
-    fallback.
+    **And the other two boundaries are asserted rather than assumed: the heading's is inert, and the
+    memberships list's has streamed since task 128.** `OrganizationHeading` and `MembershipsSection`
+    have boundaries and skeletons of their own — UX-90 requires the state to be defined — and both
+    read memberships, which is React-`cache()`d and awaited by `GlobalTier` **outside any boundary**
+    in the `(app)` layout, so the shell cannot flush before their *data* exists. The heading's content
+    is therefore inlined; the list's is not, for the reason the count below gives. (This paragraph
+    called both inert until task 159, a correction the comment on the count had already made.)
 
     **Both assertions below replaced ones that could not fail on their subject** (task 126, found by
     the gate-integrity review, which measured rather than read).
@@ -301,9 +311,19 @@ test('the overview streams behind its boundary, so the shell does not wait for i
     resolves before `GET /periods` returns whichever way the region renders, so React flushes it
     first either way: the assertion said "resolves before the periods call", which is
     unconditionally true. What actually distinguishes the two states is **how many boundaries were
-    still pending when the shell flushed** — React SSR writes `<!--$?-->` for each one. Exactly one
-    is the claim this screen makes, and the day the global tier gains a boundary of its own it
-    becomes two and this goes red.
+    still pending when the shell flushed** — React SSR writes `<!--$?-->` for each one.
+
+    **Counted over the whole response until task 159, which was a different sentence from the one
+    the assertion makes.** This comment predicted the failure — *the day the global tier gains a
+    boundary of its own it becomes two and this goes red* — and the boundary arrived in task 67.9,
+    in the `(app)` layout rather than the tier, with nobody rereading it: UX-124's support-access
+    banner, behind `fallback={null}`, whose read resolves before the shell flushes unless the host
+    is busy. Two full runs straight after building three apps answered 3; the same journey then
+    passed alone each time. So the count is taken inside `<main>`, which no layout's boundary is in.
+    **Proven both ways:** a lock held on the banner's table for the request answered 3 over the
+    response and 2 here, three runs of three, with the extra marker directly after the band's
+    `</header>`; the overview's boundary removed answered 0 in both, and the fallback check above
+    went red first.
 
     **Markers that can only be markup.** A first draft measured the skeletons' own CSS-module class
     names and found them at byte 15,785 — in the **stylesheet**, which carries every class whether or
@@ -311,8 +331,7 @@ test('the overview streams behind its boundary, so the shell does not wait for i
     and the 2,260 above is the third instance of that family: a marker that is real markup, but not
     the markup the sentence names.
   */
-  const occurrences = (needle: string) => html.split(needle).length - 1;
-  const hgroup = html.indexOf('<hgroup');
+  const hgroup = screen.indexOf('<hgroup');
 
   // **Two, since task 128 — and the number is the assertion rather than a detail.** It was one:
   // the overview's, with the heading and the membership list inlined because both read memberships
@@ -326,10 +345,10 @@ test('the overview streams behind its boundary, so the shell does not wait for i
   // rather than by measurement". The construction argument was wrong, and this is the first browser
   // run since — tasks 128, 129 and 130 all waived the suite.
   expect(
-    occurrences('<!--$?-->'),
-    'two boundaries were still pending when the shell flushed — the overview and the memberships list',
+    occurrences(screen, '<!--$?-->'),
+    "two of this screen's boundaries were still pending when the shell flushed — the overview and the memberships list",
   ).toBe(2);
-  expect(occurrences('<hgroup'), 'S-05 draws exactly one hgroup, so it marks this region alone')
+  expect(occurrences(html, '<hgroup'), 'S-05 draws exactly one hgroup, so it marks this region alone')
     .toBe(1);
   expect(hgroup, "the heading's own markup was inlined, not streamed").toBeLessThan(fallback);
 });

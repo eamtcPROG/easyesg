@@ -57,7 +57,8 @@ import styles from '../styles/home.module.css';
  * layout, so the shell cannot flush before this content exists and React inlines it.
  * `heading-loading.tsx` carries the state UX-90 requires either way, and `e2e/web/home.spec.ts`
  * asserts it: the `hgroup` this function returns is in the shell ahead of the overview's fallback,
- * and exactly one boundary was pending when that shell flushed. **Both of those replaced checks that
+ * and this one is not among the boundaries still pending inside `<main>` when that shell flushed —
+ * the overview's and the membership list's (task 159). **Both of those replaced checks that
  * could not fail here** (task 126) — the old one located the organization's *name*, whose first
  * occurrence is `GlobalTier`'s plate in the band 3,280 bytes earlier, so it measured the layout and
  * would have stayed green with this region streaming.

@@ -26,18 +26,21 @@ import { MembershipsSwitchNote } from './memberships-switch-note';
  * `components/shared/` and lost the `Overview` in its name, because the level of a region's heading
  * was never the overview's business — it follows from this screen having one `h1`.
  *
- * **It has a boundary whose fallback never renders** — the same correction as the heading's, for the
- * same reason. This read *"not behind a Suspense boundary"* until task 125's fourth pass added one,
- * and outlived the fact by a commit. The promise it awaits is already in flight for the chrome above
- * it, so the shell has this region's content the moment it can flush at all;
- * `memberships-loading.tsx`, beside this file because `page.tsx` pairs the two, holds the state.
+ * **It has a boundary, and its fallback renders.** This read *"not behind a Suspense boundary"* until
+ * task 125's fourth pass added one, and outlived the fact by a commit; then *"whose fallback never
+ * renders"* until task 159, having outlived task 128 the same way. The promise it awaits is already
+ * in flight for the chrome above it, so the *data* is ready the moment the shell can flush — but since
+ * task 128 this region is a section, a list and a row per membership, each awaiting its own
+ * translators, and that subtree is still resolving when the shell goes out. `memberships-loading.tsx`,
+ * beside this file because `page.tsx` pairs the two, is the skeleton the shell carries.
  *
  * **The spec pins that by counting pending boundaries, not by position** (task 126). The check that
  * used to stand here compared this region's heading to the filings — true whichever way this region
  * renders, because its read resolves before `GET /periods` returns either way. What distinguishes
  * inlined from streamed is how many boundaries were still pending when the shell flushed, which
- * React writes into the HTML as `<!--$?-->`; `e2e/web/home.spec.ts` requires exactly one, so this
- * region gaining a real wait turns it red.
+ * React writes into the HTML as `<!--$?-->`; `e2e/web/home.spec.ts` requires two inside this screen's
+ * `<main>` — the overview's and this one — so this region becoming inlined turns it red, and a
+ * layout's boundary above cannot (task 159).
  *
  * States (§8.1): ready · error — recoverable (`states/`). There is no `empty`: §4.3's post-sign-in
  * branch sends a reader who belongs to nothing to S-04, so anyone who can see this screen holds at

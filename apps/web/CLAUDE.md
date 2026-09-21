@@ -611,19 +611,27 @@ conditional render, which is how it ends up half-suppressed on one screen.
   in the shell ahead of the content.
 
   S-05 is the worked example in both directions. Its three region boundaries all have skeletons, and
-  exactly **one** streams: the overview's fallback lands at byte 5,862 with its filings at 8,482,
-  while the heading's `hgroup` (5,532) and the membership region's heading (6,664) are *inlined* —
-  they read memberships, which is React-`cache()`d and awaited by `GlobalTier` **outside any
-  boundary** in the `(app)` layout, so the shell cannot flush before their content exists. The inert
-  two are kept because UX-90 wants the `loading` state defined and because the global tier may yet
-  gain a boundary. **A boundary that buys nothing is not a defect; a boundary silently claiming to
-  buy something is.**
+  **two** stream: the overview's fallback lands at offset 5,731 of the served HTML with its filings at
+  10,259, and the membership list's skeleton at 6,421 — its data is ready, but since task 128 its rows
+  each await their own translators and are still resolving when the shell goes out. The heading's
+  `hgroup` (5,372) is *inlined*: it reads memberships, which is React-`cache()`d and awaited by
+  `GlobalTier` **outside any boundary** in the `(app)` layout, so the shell cannot flush before its
+  content exists. The inert one is kept because UX-90 wants the `loading` state defined. **A boundary
+  that buys nothing is not a defect; a boundary silently claiming to buy something is.** *(Measured
+  21 Sep 2026, task 159. This paragraph said exactly one streamed, with task 126's offsets, until
+  then — task 128 changed the membership list's shape and nothing reread it.)*
 
   **How to count what streamed, and why the obvious markers do not** (task 126, from the
   gate-integrity review). React SSR writes **`<!--$?-->` per boundary still pending when the shell
-  flushes**, so `occurrences('<!--$?-->') === 1` *is* the claim "exactly one region streams" — and it
-  is what `e2e/web/home.spec.ts` asserts, proven to bite by making the heading suspend, which took it
-  to 2. The two position checks it replaced could not fail on their subjects. One located the
+  flushes**, so the count *is* the claim how many regions stream — two, since task 128 — and it is
+  what `e2e/web/home.spec.ts` asserts, proven to bite by making the heading suspend when the claim was
+  one, which took it to two. **Count inside the screen's `<main>`, never over the response** (task
+  159). A layout's boundary is in the same HTML: the `(app)` layout's support-access banner, behind
+  `fallback={null}`, has a read that is fast unless the host is busy, and on two full runs straight
+  after a build it was still pending — the whole-response count answered 3, a failure about S-05
+  that S-05 had not caused. The `(workspace)` layout's `<main>` holds the route alone and the shell
+  closes it before any streamed segment, so the slice between the two tags is the screen's share of
+  the shell. The two position checks the count replaced could not fail on their subjects. One located the
   organization's name and called it the heading; the name's first occurrence is at byte **2,260**,
   which is `GlobalTier`'s organization **plate** in the band — the `h1` is at 5,540, and the check
   would have stayed green with the heading streaming. (That 2,260 was recorded in this file and in

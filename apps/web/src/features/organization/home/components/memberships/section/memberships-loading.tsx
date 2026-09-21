@@ -9,10 +9,12 @@ import styles from '../../styles/home.module.css';
  * which is active (task 83's switcher is what ends that). The heading and lede bars sit above them
  * as the real region draws them.
  *
- * **Like `heading-loading.tsx`, it is defined rather than observed.** `readMemberships` is the same
- * memoized promise the global tier awaits outside any boundary, so the shell has this region's
- * content the moment it can flush at all. See that file for the measurement and for why the state is
- * still worth having.
+ * **Unlike `heading-loading.tsx`, it is observed.** `readMemberships` is the same memoized promise
+ * the global tier awaits outside any boundary, so the data is ready the moment the shell can flush —
+ * but the region's rows each await their own translators since task 128, and the shell goes out
+ * before they have, so this is the markup it carries in their place. `e2e/web/home.spec.ts` counts it
+ * among the boundaries still pending inside `<main>`. This paragraph said *defined rather than
+ * observed* until task 159, having outlived task 128.
  */
 export function MembershipsLoading() {
   return (

@@ -22,8 +22,9 @@ import styles from '../styles/home.module.css';
  *
  * **What the suite actually asserts is the positive form, not this fallback's absence** (task 126,
  * correcting a sentence above that claimed otherwise). `e2e/web/home.spec.ts` counts React's
- * pending-boundary markers in the shell and requires exactly **one** — the overview's — and finds
- * this region's `hgroup` inlined ahead of it. Nothing looks for the skeleton's absence, and a
+ * pending-boundary markers in this screen's share of the shell — two since task 128, the overview's
+ * and the membership list's, and counted inside `<main>` since task 159 — and finds this region's
+ * `hgroup` inlined ahead of them. Nothing looks for the skeleton's absence, and a
  * class-name marker could not: the stylesheet carries every class whether or not the element
  * rendered, which is the trap that file records twice.
  */

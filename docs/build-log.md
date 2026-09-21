@@ -22057,3 +22057,83 @@ succeeded), and every workspace screen answered *try again later*, a remedy no r
   `one-kind-per-folder` — the new files sit in folders of files, which `folder-shape.spec.ts` re-checked in
   the unit run. `SignedInElsewhere` takes wording as props, which task 158's rule admits as per-caller
   wording, and gains no boolean.
+
+## Task 159 — S-05's pending-boundary count answers for S-05 · 2026-09-21
+
+`e2e/web/home.spec.ts`'s streaming journey counted React's `<!--$?-->` markers over the whole response and
+called the answer *the overview and the memberships list*. The `(app)` layout has carried a third boundary since
+task 67.9 — UX-124's support-access banner, `fallback={null}` — whose read resolves before the shell flushes
+unless the host is busy, so two full runs straight after a build answered 3 (the 15 Sep compose entry, task 93),
+and each time the journey passed alone minutes later. The comment above the assertion had predicted exactly this —
+*"the day the global tier gains a boundary of its own it becomes two and this goes red"* — and the boundary arrived
+in the layout, not the tier, without anyone rereading it.
+
+### Decision
+
+**The count is taken over this screen's boundaries** — the row's first option, taken as a judgement rather than
+asked: the second, re-cutting the sentence to what the whole response can carry, would leave a claim about S-05
+that a layout can answer, which is the defect. The screen's share of the shell is the slice between `<main` and
+`</main>`: the `(workspace)` layout wraps the route in the response's only `<main>`, and React writes the shell —
+`</main>` included — before any streamed segment, so a boundary above it cannot answer and a nested one resolved
+later is not *pending when the shell flushed*. The spec asserts `<main` occurs once, the same shape as the
+`<hgroup` check beside it. **The fallback and the heading's `hgroup` are read inside the slice too**: neither
+can be answered by a layout today, but a support-access request pending or running renders a `Banner` — always
+`role="status"` — above `<main>`, which would have pointed `indexOf('role="status"')` at the layout and turned
+`hgroup < fallback` red for it: the family of marker the spec's own comment already lists three instances of.
+
+**No permanent test machinery.** The slow layout read was reproduced once, for the proof, with a lock rather than
+a code mutation, and not kept as a journey — a test of the test, with a database lock in the suite, to guard a
+slice that is asserted in place.
+
+### Proof, both ways
+
+- **The layout's read slow, on the build that ships**: a temporary block held `LOCK TABLE
+  audit.support_access_log IN ACCESS EXCLUSIVE MODE` as the migration owner for 1.5 s across the `goto` — the
+  table `GET /support-access` reads; nothing else the shell waited on was held, or it would have waited with it
+  and the banner resolved in time. Three runs of three: **3 pending over the response, 2 inside `<main>`**, the
+  extra marker directly after the band's `</header>` and before the workspace `<nav>`. The old assertion would have failed all three; the new one passed all three. `</main>` sat at 7,100
+  and the first streamed segment at 7,630, which is the ordering the slice rests on, measured.
+- **The overview inline**: its `Suspense` removed and the web app rebuilt. **0 pending in both counts** — not 1,
+  since a shell that waits for `GET /periods` also outwaits the membership rows — and the journey went red on the
+  fallback check first, `-1` inside `<main>`.
+- Without the lock, on the same build: 2 and 2, the overview's `B:0` and the membership list's `B:1`, both inside
+  `<main>`.
+
+### Five docblocks and `apps/web/CLAUDE.md` still said *exactly one* region streams
+
+Task 128 split the membership list into a section, a list and a row per membership, each awaiting its own
+translators, and its skeleton has rendered ever since — the spec's comment on the count said so, and nothing else
+was reread. **Searched** for the claim's shape — *exactly one*, *never renders*, *inert*, *defined rather than
+observed* — across `features/organization/home/`, the route and `apps/web/CLAUDE.md`, and corrected each site:
+`page.tsx`, `heading-loading.tsx`, `organization-heading.tsx`, `memberships-section.tsx`,
+`memberships-loading.tsx`, and the worked example in `apps/web/CLAUDE.md`, re-measured from the served HTML: the
+heading's `hgroup` at 5,372, the overview's fallback at 5,731 with its filings at 10,259, and the membership list's
+skeleton at 6,421, where task 126 had found that region's heading inlined. The heading's own statements that its
+fallback is inert are true, and stay.
+
+**Stage 1's count was one short.** Task 93 appended 159 on 16 Sep and `task.md`'s *"Thirty-one numbers"* sentence,
+which enumerates the appended ones, never named it; the root `CLAUDE.md`'s clause copied the omission. Both now
+read thirty-two, 159 among the sixteen appended.
+
+### Verification
+
+- `apps/web` unit **84 files, 864 tests**; `pnpm --filter @easyesg/web typecheck`; `pnpm lint`, whose type-aware
+  rules read `e2e/` through its analysis-only tsconfig (a direct `tsc -p e2e/tsconfig.json` stops at the `node` type
+  library before reading a file, and is no gate); `pnpm docs:check`, 40 claims, after 95 numbers / 180 rows →
+  96 / 181.
+- `pnpm e2e:web --project identity --project expansion` on a fresh build: **210 of 212 in 14.9 minutes**, the
+  streaming journey among the passes — a full run straight after building three apps, the circumstance the old
+  count failed in twice. **The two reds were axe scans timing out at 30 s** — S-16's and the second-factor step's —
+  both in the run's first minutes, while the host (8 GiB, 7.8 GB of swap in use, another browser holding 64 content
+  processes) stood at a load average of **224**. Rerun alone on the same build at a load of 31: **4 of 4**, two
+  repeats each. Five `⨯ … destination stream closed early` lines, all digest `2667547900`, the abandoned-stream
+  class `apps/web/CLAUDE.md` records.
+- **Which run, and why.** The per-row run for `apps/web`, since five of its docblocks changed, and the browser
+  suite the spec belongs to. No `gates:clean`: nothing moved or was renamed, and no type, package, generator or
+  build input changed — the `apps/web` edits are comments. No review agents, under the owner's standing rule for a
+  childless row.
+- **Skills, read against the diff**: `one-idea-per-file`'s `reason-measure-structural-claims` is the rule the five
+  docblocks broke — *exactly one streams* was a structural claim task 128's change made false and nobody
+  re-measured — and the corrections rest on the served HTML, `B:0` and `B:1` both inside `<main>`, rather than on
+  an argument; the worked example in `apps/web/CLAUDE.md` carries today's offsets.
+  `vercel-react-best-practices` has nothing to read: no component's code changed.
