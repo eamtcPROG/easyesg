@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { isNotificationCategoryKey } from '@api/contracts/notification.port';
+import { isUuid } from '@api/contracts/types/uuid';
 import { HandlesJob, type JobContext, type JobHandler } from '@api/infrastructure/queue/job-handler';
 import { NOTIFICATION_RAISED, type NotificationRaised } from '../constants/notification.constants';
 import { DeliverNotification } from '../use-cases/deliver-notification.use-case';
@@ -10,8 +11,8 @@ import { DeliverNotification } from '../use-cases/deliver-notification.use-case'
  * The general case of the path verification email already takes — `NotificationPort.raise()` writes an outbox
  * row on the producer's transaction, the dispatcher enqueues it as `platform.notification.raised`, and
  * `OutboxConsumer` routes it here. **This is the adapter and nothing more**: it validates the payload and hands
- * it to `DeliverNotification`, where the flow's decisions live framework-free, then says which recipients named
- * no account.
+ * it to `DeliverNotification`, where the flow's decisions live framework-free — recording the notice and each
+ * delivery since task 50.1.1 — then says which recipients named no account.
  */
 @Injectable()
 @HandlesJob(NOTIFICATION_RAISED)
@@ -21,7 +22,8 @@ export class NotificationRaisedHandler implements JobHandler {
   constructor(private readonly deliver: DeliverNotification) {}
 
   async handle(payload: Record<string, unknown>, context: JobContext): Promise<void> {
-    const { unresolved } = await this.deliver.execute({ notice: readEvent(payload), deliveryId: context.jobId });
+    const { notice, organizationId } = readEvent(payload);
+    const { unresolved } = await this.deliver.execute({ notice, organizationId, deliveryId: context.jobId });
     if (unresolved.length > 0) {
       this.logger.warn(
         `${NOTIFICATION_RAISED} ${context.jobId}: ${unresolved.length} recipient(s) name no account and were skipped`,
@@ -34,15 +36,24 @@ export class NotificationRaisedHandler implements JobHandler {
  * Validates the payload rather than asserting over it — `VerificationEmailHandler.readEvent`'s argument: the row
  * was written by this application, so a malformed one is a genuine fault, and throwing puts the job in the
  * failed set with the reason rather than sending to `undefined`.
+ *
+ * **The organization is the dispatcher's, not the producer's**: it travels on the job beside the payload the
+ * outbox row carried, and it is what the store's every statement is bound to — so a value that is not a UUID is
+ * refused here rather than reaching `app.current_org`, where the policies' cast would fail the job less legibly.
  */
-function readEvent(payload: Record<string, unknown>): NotificationRaised {
-  const { categoryKey, recipientUserIds, subjectRef, deepLink, params } = payload;
+function readEvent(payload: Record<string, unknown>): {
+  readonly notice: NotificationRaised;
+  readonly organizationId: string;
+} {
+  const { categoryKey, recipientUserIds, subjectRef, recipientScope, deepLink, params, organizationId } = payload;
 
   if (
+    !isUuid(organizationId) ||
     !isNotificationCategoryKey(categoryKey) ||
     !Array.isArray(recipientUserIds) ||
     !recipientUserIds.every((id) => typeof id === 'string') ||
     typeof subjectRef !== 'string' ||
+    typeof recipientScope !== 'string' ||
     typeof deepLink !== 'string' ||
     !deepLink.startsWith('/') ||
     typeof params !== 'object' ||
@@ -53,10 +64,14 @@ function readEvent(payload: Record<string, unknown>): NotificationRaised {
   }
 
   return {
-    categoryKey,
-    recipientUserIds,
-    subjectRef,
-    deepLink,
-    params: params as Record<string, unknown>,
+    notice: {
+      categoryKey,
+      recipientUserIds,
+      subjectRef,
+      recipientScope,
+      deepLink,
+      params: params as Record<string, unknown>,
+    },
+    organizationId,
   };
 }

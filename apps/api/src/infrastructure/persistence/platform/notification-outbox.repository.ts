@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { NotificationPort, RaiseNotificationCommand } from '@api/contracts/notification.port';
 import {
+  DEFAULT_RECIPIENT_SCOPE,
   NOTIFICATION_RAISED,
   type NotificationRaised,
 } from '@api/modules/platform/notification/constants/notification.constants';
@@ -17,7 +18,8 @@ import { TenantRepository } from '../tenant-repository';
  * one; 51.2's schedules decide where theirs comes from.
  *
  * **The notice's id is the outbox row's key**, generated here in the originating transaction (AD-6), and the
- * record 50.1 adds adopts it. The payload carries what the producer named and no address (row (4)).
+ * record task 50.1.1 writes on the worker adopts it. The payload carries what the producer named, its audience
+ * resolved to the default when it named none, and no address (row (4)).
  */
 @Injectable()
 export class NotificationOutboxRepository extends TenantRepository<never> implements NotificationPort {
@@ -34,6 +36,7 @@ export class NotificationOutboxRepository extends TenantRepository<never> implem
       categoryKey: command.categoryKey,
       recipientUserIds: command.recipientUserIds,
       subjectRef: command.subjectRef,
+      recipientScope: command.recipientScope ?? DEFAULT_RECIPIENT_SCOPE,
       deepLink: command.deepLink,
       params: command.params ?? {},
     };

@@ -8,7 +8,7 @@ import type { NotificationCategoryCatalog } from './notification-category-catalo
  * The channels a notice goes out on, and the owner's rule for when its category's behaviour cannot be read (task
  * 49.3). Literals on purpose: they are what an operator publishes.
  */
-describe('CategoryChannels (task 49.3)', () => {
+describe('CategoryChannels (tasks 49.3, 50.1.1)', () => {
   const channels = (behaviour: NotificationCategoryBehaviour | null) =>
     new CategoryChannels({ behaviourOf: () => behaviour } as unknown as NotificationCategoryCatalog);
 
@@ -49,12 +49,12 @@ describe('CategoryChannels (task 49.3)', () => {
     expect(() => channels(null).channelsFor({ categoryKey: optional })).toThrow('sent on nothing');
   });
 
-  // Both delivery paths ask here, so the refusal holds for each until 50.1 lifts it in this one place.
-  it.each([[['in_app']], [['in_app', 'email']]] as const)('refuses a category travelling in-app (%j)', (list) => {
-    expect(() =>
+  // Task 50.1.1 lifted 49.3's refusal here: a raised notice has a store to land in-app in, so the channels stand.
+  it.each([[['in_app']], [['in_app', 'email']]] as const)('answers a category travelling in-app (%j)', (list) => {
+    expect(
       channels({ channels: list, classification: 'transactional' }).channelsFor({
         categoryKey: NOTIFICATION_CATEGORY.INVITATION,
       }),
-    ).toThrow('task 50.1');
+    ).toEqual(list);
   });
 });

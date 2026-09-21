@@ -59,8 +59,16 @@ export interface RaiseNotificationCommand {
   organizationId: string;
   /** Recipients by user id; language resolves per recipient, not per notification (FR-169). */
   recipientUserIds: string[];
-  /** What raised it — used for deduplication on (category, subject) per FR-167. */
+  /**
+   * What raised it. With the category and the audience it is FR-167's key: while a notice is open, raising it
+   * again reaches only the recipients it names that the notice has not reached (§12.5.6's task-50.1 row (6)).
+   */
   subjectRef: string;
+  /**
+   * The audience, named by the producer — one audience per subject when omitted. Two raises about one subject
+   * that must stay two notices name two audiences; the label is never derived from who the recipients are.
+   */
+  recipientScope?: string;
   /** Deep link to the object that raised it (FR-162), so acting on it needs no navigation. */
   deepLink: string;
   params?: Record<string, unknown>;
@@ -69,11 +77,12 @@ export interface RaiseNotificationCommand {
 export interface NotificationPort {
   /**
    * Raises a notice **on the caller's own request transaction** (task 49.3, P-8): it commits with the decision
-   * that caused it or not at all. Dispatch happens on the worker, from the outbox, by the category's behaviour.
-   * The id is the outbox row's key, which 50.1's record adopts.
+   * that caused it or not at all. Dispatch happens on the worker, from the outbox, by the category's behaviour,
+   * and records the notice and each delivery (task 50.1.1). The id is the outbox row's key, which a new notice
+   * adopts; a raise folded into an open notice is delivered as part of that one.
    *
-   * **FR-167's `cancel` returns with 50.1's store**, which is what it cancels; until then a method here could
-   * only pretend (§12.5.6's task-49.3 row (5)).
+   * **FR-167's `cancel` returns with task 50.1.3**, which is what writes a cancellation; until then a method here
+   * could only pretend (§12.5.6's task-49.3 row (5)).
    */
   raise(command: RaiseNotificationCommand): Promise<{ notificationId: string }>;
 }

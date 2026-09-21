@@ -22633,3 +22633,121 @@ through `randomUUID()` — and the docblock and the spec's label now say so.
   The root `CLAUDE.md`'s *an operation over a vocabulary lives with the vocabulary* is why it sits beside nothing but
   its own pattern, in the layer every caller may reach.
 
+
+## Task 50.1.1 — The record, in-app delivery and deduplication · 2026-09-21
+
+The first of task 50.1's four: a raised notice is now **recorded once**, in a sixth domain schema, and each person
+it reaches on each channel is **a delivery row** — FR-160's *one record, N deliveries*, and FR-170's evidence. In-app
+delivery exists, because writing the row is the delivery; a repeated raise of an open notice is folded into it.
+Nothing raises through the in-app channel yet — no category travels in-app until 50.3 registers the reminder — so the
+proof is a producer's transaction in the e2e and a stubbed channel decision answering both channels.
+
+### Decisions (project owner, two batches)
+
+The first batch, before any code: **four sub-steps** (50.1.1 … 50.1.4); **a new `notification` schema**, over `core`
+and over `audit`; **read is per recipient**, on the in-app delivery rather than the notice, with FR-160's acceptance
+amended to say so; and **UC-175's manual reminder becomes 50.3**, which task 50's row owned and no sub-step carried.
+The second, once the migration was being designed and two questions surfaced that the first had not reached:
+
+- **FR-167's key names its audience.** `(organization, category, subject, recipient scope)`, where the scope is a
+  label the **producer** names — `RaiseNotificationCommand.recipientScope`, one audience by default — and never a
+  digest of the recipient list, so a notice whose audience grows is still one notice. While a notice is open, raising
+  it again delivers to the recipients it names that the notice has not yet reached, and to them alone; once it is
+  cancelled, a raise opens a new notice; repeating at an interval is 51.2's.
+- **An email delivery is recorded when the provider accepts it** — outcome `accepted`; a provider error fails the job
+  and writes no row, and 51.4 adds bounces and the bounded retry.
+
+`architecture.md` §12.5.6's task-50.1 row carries all seven, and §7.1 gains the schema. Three sentences counted
+schemas — §5.2's, the paragraph after §7.1's table, and `apps/api/CLAUDE.md`'s foundation list — and the new one
+made each false; each now says what it means without the number, and `schema-invariants.e2e-spec.ts`'s
+`DOMAIN_SCHEMAS` gains `notification`, without which none of its invariants would have looked at the new tables.
+
+### What shipped
+
+- **The migration**: `notification.notification` — the outbox key as its id, with no default, since an id minted
+  there would be a second name for one notice — and `notification.delivery`, referencing it by `(id,
+  organization_id)`, §7.3's composite key. Organization and account by id, unenforced (row (2), NFR-109). The state
+  and its instants are paired by `CHECK`s; read and dismissed are refused on an email row; channel and outcome are
+  closed vocabularies mirrored by `NOTIFICATION_STATE` and `DELIVERY_OUTCOME`. RLS enabled and forced on both,
+  policies `TO PUBLIC`. **`esg_worker` gets what the dispatch does and nothing more** — open, mark delivered, insert a
+  delivery — and **`esg_app` gets nothing**: 50.1.2's centre brings its read, its read-state write and the policies
+  they need, in its own migration.
+- **`NOTIFICATION_STORE`**, module-internal: no other context reads a notice's record. Four operations, each its own
+  transaction bound to the job's organization and each safe to repeat — `open`, `deliverInApp`, `recordEmailAccepted`,
+  `markDelivered`.
+- **`DeliverNotification` over it**: channels, then recipients, then the notice opened — by its own id when the job is
+  a redelivery, folded into the open notice for its key, or recorded under the raise's id — then **in-app first**, so
+  the centre fills with no provider in the path (FR-168), then each email, recorded once accepted, then the notice
+  marked delivered. What is owed on each channel is `stillOwed`, pure with its spec, derived from what is recorded on
+  every run. **A folded raise delivers the notice as recorded**: it contributes recipients, and they receive what the
+  others received.
+- **49.3's in-app refusal moved**: out of `CategoryChannels`, which both paths share, and into
+  `NotificationEmailService` alone — the address path with no notice to record an in-app delivery on, until 50.1.4
+  moves its handlers onto `raise()`. With the refusal there and an empty channel list unreadable, every category that
+  passes that path goes by email, so its *does not travel by email* branch was unreachable and went, with its test.
+- **The handler reads the organization the dispatcher puts beside the payload**, refusing one that is not a UUID
+  rather than letting the policies' cast fail the job less legibly, and the payload's new `recipientScope`.
+
+### Measured, not reasoned
+
+- **The conflict target restates the index's predicate as a literal, and the first reason given for it was
+  wrong.** The adapter's docblock first said a bind parameter there *matches no index at all*. Measured: under a
+  custom plan — which is what the driver's unnamed statements get — `ON CONFLICT (…) WHERE state <> $1` infers
+  `notification_open_key` and deduplicates (`INSERT 0 1`, then `INSERT 0 0`); under `plan_cache_mode =
+  force_generic_plan` it fails with *"no unique or exclusion constraint matching the ON CONFLICT specification"*. So
+  the literal, interpolated from `NOTIFICATION_STATE`, is what keeps the insert independent of the plan cache, and the
+  docblock and `apps/api/CLAUDE.md` now say that. The ordinary reads bind the state as a parameter and use the index
+  — `EXPLAIN` with `enable_seqscan = off`, as are the by-id reads (`notification_pkey`, `delivery_once`).
+- **Cleaning up a notice is its own problem.** Neither table has a `DELETE` policy or a parent to cascade from, so a
+  plain owner `DELETE` removes nothing under `FORCE` — the task 26.1 trap. `test/support/notification-store.ts` lifts
+  `FORCE` inside the deleting transaction and restores it before the commit, so no other session sees the table
+  unforced; 49.3's dispatch e2e now writes notices too, and uses it.
+
+### Proof
+
+- **Unit**: `stillOwed`'s four cases; `DeliverNotification` over a fake store modelling the record's rules — the
+  record under the raise's id, in-app before any email, a provider failure leaving in-app delivered and the notice
+  `raised`, a rerun completing only the email, a redelivered job reaching nobody twice, a folded raise reaching only
+  its newcomer with the recorded content and the first notice's key, two audiences as two notices, a cancelled
+  notice delivering nothing more. The handler spec gains the organization and the audience, and three refusals.
+- **`test/notification-store.e2e-spec.ts`, new**, over the real schema: recorded once under the outbox key with four
+  delivery rows for two recipients on two channels, unread; a rerun job; a folded raise; a new notice after a
+  cancellation, with the cancelled one's job delivering nothing when run again; **two concurrent opens of one key
+  answering one notice**; invisible to another organization, which cannot write a delivery for it either; the request
+  tier refused both tables; read state refused on an email row.
+- **Every check fails when its guard goes**, each mutation run and reverted: the adapter skipping its lookup by own
+  id fails the cancellation case; the use case owing everyone fails the rerun and fold cases; never marking delivered
+  fails two; the dedup index without its predicate fails the cancellation case (*"open notice closed while it was
+  admitted"*), and with no index at all seven of eight fail; `notification.delivery` unclassified fails four schema
+  invariants and its `FORCE` dropped fails five. **One mutation needed help to fail**: a read-then-write `admit` loses
+  the race only if the two transactions interleave, and it did so reliably once a 200 ms pause sat between its read
+  and its write. The concurrent case is a probe of the race, not a proof of its absence — the proof is that `open`
+  writes through `ON CONFLICT`, which a reviewer can read.
+
+### Carried forward, not decided here
+
+- **50.1.4 meets a secret at rest.** A verification or reset link carries its raw token in the deep link; recorded
+  as a notice's `deep_link`, it would put the token in a second durable place beside the outbox payload, which OQ-54
+  keeps as the only one. Whether the record stores the path without its token, or the address notices carry no
+  record-side link at all, is 50.1.4's question to raise before it starts.
+
+### Verification
+
+- `pnpm --filter @easyesg/api test`: **140 suites, 1,173 tests**. `pnpm --filter @easyesg/api typecheck`; `pnpm lint`,
+  after four `no-unsafe-assignment` findings on annotated `QueryRunner.query` results, rewritten in the assertion
+  form `apps/api/CLAUDE.md` prescribes for that overload; `pnpm boundaries`; `pnpm docs:check`, 40 claims.
+- `pnpm migrations:check`: apply, revert, re-apply, **56 invariants**, with the two tables classified.
+- `pnpm e2e`: **49 suites, 1,220 tests, 96 seconds**, a clean exit and no error line in the log. `pnpm e2e:worker`:
+  **7 of 7** — the boot resolves `NOTIFICATION_STORE` into `DeliverNotification`, and the routing check still reaches
+  `NotificationRaisedHandler`.
+- **Which run, and why.** The api row, plus `migrations:check` for the migration and `e2e:worker` for the consumer. No
+  controller or DTO changed, so no `openapi:check`; nothing reaches a browser, so no `e2e:web`. A sub-step closes on
+  its own gates: no `gates:clean` and no review agents, which run when task 50.1's last sub-step closes it.
+- **Skills, read against the diff.** `nestjs-best-practices`: `di-use-interfaces-tokens` and
+  `arch-use-repository-pattern` applied — the store is a port with a token and one adapter. **`db-use-transactions`
+  declined, with a reason**: the flow is several short transactions on purpose, because a provider call sits between
+  its steps and cannot be rolled back, and every step is re-derived from what is recorded, so a rerun completes the
+  work. **`db-avoid-n-plus-one` declined for the email rows**: one insert per accepted message is the evidence for
+  each message accepted before a later failure, which a batch at the end would lose; in-app is one statement.
+  `one-idea-per-file`: the predicate left the use case for `domain/` with its spec; the store's transaction helper is
+  the repository's own second face and stays beside it; the port file is one contract, its commands included.

@@ -6,7 +6,7 @@ import type { EmailChannel } from '../interfaces/email-channel.interface';
 /**
  * The one caller of `EmailPort` (tasks 49.2, 49.3). It decides nothing about channels — its callers have —
  * and owns the one default a message needs: **a category's wording is its own key**, unless the category names
- * a second (FR-173). What lands here next is 51.4's: the delivery outcome and the suppressed address.
+ * a second (FR-173). What lands here next is 51.4's: the suppressed address, and what the provider reports back.
  */
 @Injectable()
 export class EmailChannelService implements EmailChannel {

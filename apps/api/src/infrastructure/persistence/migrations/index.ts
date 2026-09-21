@@ -41,6 +41,7 @@ import { AdminAccountManagement1790121600000 } from './1790121600000-admin-accou
 import { AdminCredentials1790208000000 } from './1790208000000-admin-credentials';
 import { SupportAccessGrants1790294400000 } from './1790294400000-support-access-grants';
 import { AccountSetup1790380800000 } from './1790380800000-account-setup';
+import { NotificationStore1790467200000 } from './1790467200000-notification-store';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -100,4 +101,5 @@ export const migrations = [
   AdminCredentials1790208000000,
   SupportAccessGrants1790294400000,
   AccountSetup1790380800000,
+  NotificationStore1790467200000,
 ];

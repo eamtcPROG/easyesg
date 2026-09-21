@@ -11,7 +11,7 @@ import { NotificationEmailService } from './notification-email.service';
  * A category's email for the outbox handlers (task 49.2; category-driven since 49.3), through the module's one
  * email channel: the category decides whether it goes by email, and what reaches the provider is exact.
  */
-describe('NotificationEmailService (tasks 49.2, 49.3)', () => {
+describe('NotificationEmailService (tasks 49.2, 49.3, 50.1.1)', () => {
   class RecordingEmailPort implements EmailPort {
     readonly sent: EmailMessage[] = [];
 
@@ -71,7 +71,7 @@ describe('NotificationEmailService (tasks 49.2, 49.3)', () => {
     expect(warned.join('\n')).toContain('floor');
   });
 
-  // The same refusal as a raised notice's (§12.5.6's task-49.3 row (5)) — this path used to drop the in-app half.
+  // 49.3's refusal, kept on this path alone by 50.1.1: an address has no notice to record an in-app delivery on.
   it.each([[['in_app']], [['in_app', 'email']]] as const)(
     'fails a category travelling in-app (%j) before sending anything',
     async (channels) => {
@@ -86,19 +86,6 @@ describe('NotificationEmailService (tasks 49.2, 49.3)', () => {
       expect(provider.sent).toEqual([]);
     },
   );
-
-  // Unreachable while in-app is refused, and live the day 50.1 lifts that: an in-app-only category sends no email.
-  it('sends nothing for a category whose channels exclude email, and says so', async () => {
-    const provider = new RecordingEmailPort();
-    const service = new NotificationEmailService(new EmailChannelService(provider), {
-      channelsFor: () => ['in_app'],
-    } as unknown as CategoryChannels);
-
-    await service.send({ ...base, categoryKey: NOTIFICATION_CATEGORY.INVITATION });
-
-    expect(provider.sent).toEqual([]);
-    expect(warned.join('\n')).toContain('does not travel by email');
-  });
 
   it('lets a provider failure reach the job, so the queue records it', async () => {
     const failing: EmailPort = { send: () => Promise.reject(new Error('provider down')) };

@@ -30,8 +30,11 @@ import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/a
 // one. Like the flag, this never overrides an already-set variable, so Compose and CI beat a stale
 // local file rather than the other way round.
 
-/** §7.1's five. `migration` is infrastructure and `public` holds only extensions. */
-const DOMAIN_SCHEMAS = ['identity', 'core', 'billing', 'config', 'audit'];
+/**
+ * §7.1's six — five until task 50.1.1 added `notification`. `migration` is infrastructure and `public` holds only
+ * extensions.
+ */
+const DOMAIN_SCHEMAS = ['identity', 'core', 'billing', 'config', 'audit', 'notification'];
 
 /**
  * The one method both `DataSource` and `QueryRunner` offer, declared structurally rather than as
@@ -66,7 +69,7 @@ const crossSchemaForeignKeys = (x: Executor) =>
     [DOMAIN_SCHEMAS],
   );
 
-/** Columns of the five domain schemas whose rendered SQL type is one of `types`. */
+/** Columns of the domain schemas whose rendered SQL type is one of `types`. */
 const columnsOfType = (x: Executor, types: string[]) =>
   x.query<{ location: string; type: string }[]>(
     `SELECT n.nspname || '.' || c.relname || '.' || a.attname AS location,
@@ -333,6 +336,19 @@ const UNAUDITED_TABLES = [
    * record of an amendment that could be amended is not a record.
    */
   'core.period_reopening',
+  /**
+   * `notification.notification` (task 50.1.1) is written by the worker from a raised event, never by a person: no
+   * member changes a notice, so there is no value whose author FR-54 could ask after. The raise itself is the
+   * producer's decision and is attributed where that decision is stored.
+   */
+  'notification.notification',
+  /**
+   * `notification.delivery` (task 50.1.1) is itself FR-170's evidence — who was reached, on which channel, when —
+   * written once per recipient and channel. Its only changing values from 50.1.2 are the recipient's own read and
+   * dismissed markers, which record presence rather than a changed value: `identity.membership.last_active_at`'s
+   * argument, one table over.
+   */
+  'notification.delivery',
 ];
 
 const auditedTablesMissingCapture = (x: Executor) =>

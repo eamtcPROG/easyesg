@@ -5,9 +5,13 @@ import type { NotificationEmail } from '@api/contracts/notification-email.port';
  * (tasks 49.2, 49.3; AD-11, FR-157).
  *
  * Both of the module's delivery paths reach it — the category email the outbox handlers ask for, and a raised
- * notice's per-recipient message — after each has decided its channels. So what FR-170 and FR-171 add at the
- * provider's edge (the delivery record, a suppressed address refused) is written here once and reaches every
- * message; a second class calling `EmailPort` would be a second place to forget it.
+ * notice's per-recipient message — after each has decided its channels. So what FR-171 adds at the provider's
+ * edge, a suppressed address refused, is written here once and reaches every message; a second class calling
+ * `EmailPort` would be a second place to forget it.
+ *
+ * **FR-170's delivery row is not written here** (task 50.1.1): it hangs off a notice's record, which only a raised
+ * notice has, so `DeliverNotification` records it once this resolves. A resolved `send` is the provider's
+ * acceptance, and a rejected one records nothing.
  */
 export interface EmailChannel {
   send(email: NotificationEmail): Promise<void>;

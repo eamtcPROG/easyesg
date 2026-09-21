@@ -10,8 +10,9 @@ user-facing-text conventions. This file carries only what you need in your hands
 ## Current state
 
 Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91, 130, 131), and so is the
-notification core (49) — categories, one mail path, `raise()` and delivery by category, email only; the
-calculator, validation, export, the in-app centre and preferences, billing, the console's screens, edge and deploy, the
+notification core (49) — categories, one mail path, `raise()` and delivery by category — with its store since
+50.1.1, each notice recorded once and each delivery a row per recipient and channel; the calculator, validation,
+export, the in-app centre's reads and preferences, billing, the console's screens, edge and deploy, the
 public tier and the Comprehensive Module are not (37 onward). `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -26,9 +27,10 @@ traps each one left — grouped by area rather than by the task that built it.
 - **The port surface** in `contracts/`, OpenAPI emission diffed by `pnpm openapi:check`, and message
   resolution (`app/messages/`) — locale negotiation plus catalogue lookup over `packages/i18n`'s
   committed catalogues (OQ-43); the api resolves wording because the worker has no client.
-- **The migration runner**: §7.1's five schemas plus `btree_gist`, `core.organization` as the tenant
-  root, applying and reverting cleanly from an empty database, with §7's schema invariants asserted
-  by `migrations:check` — each proving its own rule bites.
+- **The migration runner**: §7.1's schemas — five from the baseline, `notification` since task
+  50.1.1 — plus `btree_gist`, `core.organization` as the tenant root, applying and reverting
+  cleanly from an empty database, with §7's schema invariants asserted by `migrations:check` —
+  each proving its own rule bites.
 - **RLS `ENABLED` and `FORCED`** from `core.organization` down, proven isolated as both `esg_app`
   and the owning role, with a test that drops `FORCE` in a rolled-back transaction and watches
   isolation collapse.
@@ -74,7 +76,8 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  the in-app centre, the email channel's evidence and suppression, and preferences (50 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
+  the in-app centre's API and screen, cancellation, the email channel's bounces and suppression, and preferences
+  (50 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -439,6 +442,32 @@ Four things to know before touching it:
   `PeriodsController` carry — master data is OA-owned (D-2), a report is the Contributor's workspace
   (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.
 
+
+**Notification**
+
+**The store is the worker's, and nothing else writes it** (task 50.1.1; §12.5.6's task-50.1 row). The
+`notification` schema — `notification.notification`, one row per notice, and `notification.delivery`, one per
+recipient and channel — is written by `NotificationStoreRepository` on the worker, as `esg_worker`, each statement
+in a short transaction of its own bound to the job's organization (`app.current_org` only; nobody is acting).
+`esg_app` holds no privilege on either table until 50.1.2's centre brings its read. Four things to know:
+
+- **FR-167's deduplication is `notification_open_key`**, a partial unique index over
+  `(organization, category, subject, recipient_scope) WHERE state <> 'cancelled'`, and `open` inserts against it
+  with `ON CONFLICT … DO NOTHING`. **The conflict target restates that predicate as a literal**: PostgreSQL infers a
+  partial index from a predicate it can prove when planning, so a bind parameter there works under the driver's
+  custom plans and fails the statement under a generic one (*"no unique or exclusion constraint matching the ON
+  CONFLICT specification"*, measured with `plan_cache_mode = force_generic_plan`). The ordinary reads bind the state
+  as a parameter and use the index either way — measured with `enable_seqscan = off`.
+- **What is owed is derived from what is recorded, every run.** `DeliverNotification` writes in-app, then sends
+  each email and records it once the provider accepts, then marks the notice delivered — so a job run again after
+  any failure completes the work rather than repeating it, and the email's idempotency key is the notice and the
+  recipient. A raise folded into an open notice delivers **the notice as recorded**, to the recipients it adds.
+- **A redelivered job finds its notice by its own id first**, which is what keeps a job for a *cancelled* notice
+  from joining the open one a later raise created. Nothing cancels until 50.1.3, so only the e2e's hand-written
+  cancellation exercises it.
+- **Cleaning up needs `deleteNotificationsOf`** (`test/support/notification-store.ts`). Neither table has a
+  `DELETE` policy or a parent to cascade from, so a plain `DELETE` as the owner removes nothing under `FORCE`; the
+  helper lifts `FORCE` inside the transaction that deletes and restores it before committing.
 
 ### Withholding a column from the application
 

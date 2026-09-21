@@ -7,8 +7,10 @@ import { NOTIFICATION_RECIPIENTS, type NotificationRecipientsPort } from '@api/c
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
 import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationOutboxRepository } from '@api/infrastructure/persistence/platform/notification-outbox.repository';
+import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
 import { NotificationRaisedHandler } from './consumers/notification-raised.handler';
 import { EMAIL_CHANNEL, type EmailChannel } from './interfaces/email-channel.interface';
+import { NOTIFICATION_STORE, type NotificationStore } from './interfaces/notification-store.interface';
 import { CategoryChannels } from './services/category-channels.service';
 import { EmailChannelService } from './services/email-channel.service';
 import { NotificationCategoryCatalog } from './services/notification-category-catalog.service';
@@ -28,7 +30,9 @@ import { DeliverNotification } from './use-cases/deliver-notification.use-case';
  * credentials.
  *
  * **Raising is the HTTP side's, delivering the worker's** (task 49.3): `NOTIFICATION_PORT` writes an outbox row on
- * the producer's request transaction, and `NotificationRaisedHandler` delivers it by the category's behaviour.
+ * the producer's request transaction, and `NotificationRaisedHandler` delivers it by the category's behaviour —
+ * recording the notice and each delivery in the `notification` schema since task 50.1.1, which only the worker
+ * writes.
  *
  * Boundary: `modules/core/**` and `modules/billing/**` may not import each other.
  * Both may import `contracts/**`. Enforced by dependency-cruiser, not by review.
@@ -37,8 +41,9 @@ const { mode } = configuration();
 
 /**
  * What sends: the category catalogue and the channel seam over it, the one email channel, the category email the
- * outbox handlers ask for, who a notice reaches, and the raised notice's use case and handler. **All of it on the
- * worker** — the catalogue included, since nothing in the request tier asks a category's behaviour.
+ * outbox handlers ask for, who a notice reaches, the store a notice is recorded in, and the raised notice's use
+ * case and handler. **All of it on the worker** — the catalogue included, since nothing in the request tier asks a
+ * category's behaviour.
  */
 const workerProviders: Provider[] = [
   NotificationCategoryCatalog,
@@ -46,16 +51,18 @@ const workerProviders: Provider[] = [
   { provide: EMAIL_CHANNEL, useClass: EmailChannelService },
   { provide: NOTIFICATION_EMAIL_PORT, useClass: NotificationEmailService },
   { provide: NOTIFICATION_RECIPIENTS, useClass: NotificationRecipientsRepository },
+  { provide: NOTIFICATION_STORE, useClass: NotificationStoreRepository },
   {
     // Framework-free, so `useFactory` over its ports (`apps/api/CLAUDE.md`, "No `@Injectable` means no `useClass`").
     provide: DeliverNotification,
-    inject: [NOTIFICATION_RECIPIENTS, EMAIL_CHANNEL, CategoryChannels, ConfigService],
+    inject: [NOTIFICATION_RECIPIENTS, EMAIL_CHANNEL, CategoryChannels, NOTIFICATION_STORE, ConfigService],
     useFactory: (
       recipients: NotificationRecipientsPort,
       email: EmailChannel,
       channels: CategoryChannels,
+      store: NotificationStore,
       config: ConfigService<AppConfig, true>,
-    ) => new DeliverNotification(recipients, email, channels, config.get('web.publicUrl', { infer: true })),
+    ) => new DeliverNotification(recipients, email, channels, store, config.get('web.publicUrl', { infer: true })),
   },
   NotificationRaisedHandler,
 ];

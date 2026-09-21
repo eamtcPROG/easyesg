@@ -7,6 +7,7 @@ import { ConfigurationStore } from '../src/infrastructure/configuration/configur
 import { seedConfiguration } from '../src/infrastructure/configuration/seed-configuration';
 import { NotificationRecipientsRepository } from '../src/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationOutboxRepository } from '../src/infrastructure/persistence/platform/notification-outbox.repository';
+import { NotificationStoreRepository } from '../src/infrastructure/persistence/platform/notification-store.repository';
 import { runInRequestContext } from '../src/infrastructure/persistence/request-context';
 import { NotificationRaisedHandler } from '../src/modules/platform/notification/consumers/notification-raised.handler';
 import { NOTIFICATION_RAISED } from '../src/modules/platform/notification/constants/notification.constants';
@@ -15,6 +16,7 @@ import { EmailChannelService } from '../src/modules/platform/notification/servic
 import { NotificationCategoryCatalog } from '../src/modules/platform/notification/services/notification-category-catalog.service';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { connectAs } from './support/database';
+import { deleteNotificationsOf } from './support/notification-store';
 
 /**
  * **A notification raised and dispatched by category through the outbox** — task 49.3's expected result, over the
@@ -78,6 +80,7 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
       NOTIFICATION_RAISED,
       ORG,
     ]);
+    if (owner) await deleteNotificationsOf(owner, ORG);
     await owner?.query(`DELETE FROM identity.account WHERE email LIKE $1`, [`${SUITE}-%@example.md`]);
     for (const source of [app, owner, worker]) if (source?.isInitialized) await source.destroy();
   });
@@ -167,11 +170,16 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
         new NotificationRecipientsRepository(worker),
         new EmailChannelService(provider),
         new CategoryChannels(new NotificationCategoryCatalog(store)),
+        new NotificationStoreRepository(worker),
         'https://app.easyesg.md',
       ),
     );
 
-    await handler.handle(row.payload, { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 });
+    // What the dispatcher enqueues: the row's payload, with the row's organization beside it.
+    await handler.handle(
+      { ...row.payload, organizationId: row.organization_id },
+      { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 },
+    );
 
     expect(
       provider.sent
