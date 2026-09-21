@@ -30,6 +30,29 @@ export const NOTIFICATION_CATEGORY = {
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];
 
+const CATEGORY_KEYS: readonly string[] = Object.values(NOTIFICATION_CATEGORY);
+
+/** Whether an unvalidated value — an outbox payload's, say — names a category. Beside the vocabulary it narrows to. */
+export const isNotificationCategoryKey = (value: unknown): value is NotificationCategoryKey =>
+  typeof value === 'string' && CATEGORY_KEYS.includes(value);
+
+/**
+ * The system categories nobody may turn off — declared here, in code, and not only in each category's artefact
+ * (task 49.3, project owner; §12.5.6's task-49.3 row).
+ *
+ * **In code because an artefact can be unreadable**, and a notice whose artefact cannot be read must still know
+ * whether it was mandatory. So a mandatory category's artefact classified `optional` is refused rather than
+ * obeyed — no operator can make one optional — and one that is absent or malformed still sends, by email, the
+ * floor. Whoever adds a category decides here whether it belongs: FR-163 names security, account, invoice
+ * delivery, payment failure and service restriction as the kinds a recipient may not switch off.
+ */
+export const MANDATORY_NOTIFICATION_CATEGORIES: ReadonlySet<NotificationCategoryKey> = new Set([
+  NOTIFICATION_CATEGORY.EMAIL_VERIFICATION,
+  NOTIFICATION_CATEGORY.PASSWORD_RESET,
+  NOTIFICATION_CATEGORY.INVITATION,
+  NOTIFICATION_CATEGORY.ADMIN_INVITATION,
+]);
+
 export interface RaiseNotificationCommand {
   /** Category from the configuration-held catalogue (FR-173). */
   categoryKey: NotificationCategoryKey;
@@ -44,9 +67,15 @@ export interface RaiseNotificationCommand {
 }
 
 export interface NotificationPort {
+  /**
+   * Raises a notice **on the caller's own request transaction** (task 49.3, P-8): it commits with the decision
+   * that caused it or not at all. Dispatch happens on the worker, from the outbox, by the category's behaviour.
+   * The id is the outbox row's key, which 50.1's record adopts.
+   *
+   * **FR-167's `cancel` returns with 50.1's store**, which is what it cancels; until then a method here could
+   * only pretend (§12.5.6's task-49.3 row (5)).
+   */
   raise(command: RaiseNotificationCommand): Promise<{ notificationId: string }>;
-  /** FR-167 — cancel and stop repetition the moment the condition clears. */
-  cancel(target: { readonly categoryKey: string; readonly subjectRef: string }): Promise<void>;
 }
 
 export const NOTIFICATION_PORT = Symbol('NOTIFICATION_PORT');

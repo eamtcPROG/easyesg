@@ -1,30 +1,39 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { EMAIL_PORT, type EmailPort } from '@api/contracts/email.port';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { NotificationEmail, NotificationEmailPort } from '@api/contracts/notification-email.port';
+import { EMAIL_CHANNEL, type EmailChannel } from '../interfaces/email-channel.interface';
+import { NOTIFICATION_CHANNEL } from '../models/notification-category.model';
+import { CategoryChannels } from './category-channels.service';
 
 /**
- * The one caller of `EmailPort` (task 49.2; AD-11, FR-157).
+ * A category's email, for the outbox handlers that build their own message (task 49.2; category-driven since
+ * task 49.3).
  *
- * **It passes the message through, today, and that is the whole of 49.2**: what moved is who holds the provider
- * port, not how a message travels. The four notices that send reach it from their outbox handlers exactly as
- * they reached the provider before. What this place is for arrives with the tasks that need it here and nowhere
- * else — 49.3's category behaviour (which channels a category travels on), 51.4's delivery evidence and
- * suppression (FR-170, FR-171) — so each is written once and reaches every notice.
+ * A handler that composes its own link — identity's routing knowledge rather than this module's — reaches the
+ * notification module here, naming its category. **The category decides**: the message goes by email only if
+ * the category's behaviour sends it by email, by `CategoryChannels`' rule — a mandatory category still goes by
+ * email when its artefact cannot be read, an optional one fails, and one travelling in-app fails until 50.1.
  *
- * **Category behaviour is deliberately not read yet** (§12.5.6's task-49.2 row (5)): what a category whose
- * behaviour is unreadable does is 49.3's decision, and reading it here first would take that decision early.
+ * **A category without email among its channels sends nothing here, and says so at `warn`** — which while in-app
+ * is refused can only mean a job that has already failed, and after 50.1 means an in-app-only category. Whether a
+ * mandatory category may be published without email is A-17's to refuse (task 67.10, §12.5.6's task-49.3 row (2)),
+ * not this seam's to overrule. These handlers move onto `raise()` with 50.1's record (row (6)), and this port goes
+ * with them.
  */
 @Injectable()
 export class NotificationEmailService implements NotificationEmailPort {
-  constructor(@Inject(EMAIL_PORT) private readonly email: EmailPort) {}
+  private readonly logger = new Logger(NotificationEmailService.name);
+
+  constructor(
+    @Inject(EMAIL_CHANNEL) private readonly emailChannel: EmailChannel,
+    private readonly categoryChannels: CategoryChannels,
+  ) {}
 
   async send(email: NotificationEmail): Promise<void> {
-    await this.email.send({
-      to: email.to,
-      locale: email.locale,
-      templateKey: email.templateKey ?? email.categoryKey,
-      params: email.params,
-      idempotencyKey: email.idempotencyKey,
-    });
+    const channels = this.categoryChannels.channelsFor({ categoryKey: email.categoryKey });
+    if (!channels.includes(NOTIFICATION_CHANNEL.EMAIL)) {
+      this.logger.warn(`Notification category ${email.categoryKey} does not travel by email; nothing was sent`);
+      return;
+    }
+    await this.emailChannel.send(email);
   }
 }

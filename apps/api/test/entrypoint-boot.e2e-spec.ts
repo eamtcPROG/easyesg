@@ -3,7 +3,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { APP_MODE } from '../src/config/configuration';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
+import type { Job } from 'bullmq';
+import { OutboxConsumer } from '../src/infrastructure/queue/outbox-consumer';
+import { EMAIL_VERIFICATION_REQUESTED, PASSWORD_RESET_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
+import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
 import { AuthGuard } from '../src/modules/identity/session/guards/auth.guard';
+import { ADMIN_INVITATION_ISSUED } from '../src/modules/platform/admin/constants/admin-invitation.constants';
+import { NOTIFICATION_RAISED } from '../src/modules/platform/notification/constants/notification.constants';
 
 /**
  * AD-1's backstop: **one image, two entrypoints, and both of them boot.**
@@ -66,6 +72,25 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       expect(() => {
         app.get(AuthGuard, { strict: false });
       }).toThrow();
+    });
+
+    /**
+     * **Every job the worker must answer reaches a handler** (task 49's parent close, from its gate review). A boot
+     * proves the providers resolve, not that a handler is routed: with a `@HandlesJob` line deleted everything else
+     * stays green, and the first real job lands in the failed set as *"No handler is registered"*. So each is given
+     * to the real consumer with an empty payload — a routed job fails on its handler's own payload check, which
+     * sends nothing; an unrouted one fails on the routing, and this is the one place that can tell the two apart.
+     */
+    it.each([
+      NOTIFICATION_RAISED,
+      EMAIL_VERIFICATION_REQUESTED,
+      PASSWORD_RESET_REQUESTED,
+      INVITATION_ISSUED,
+      ADMIN_INVITATION_ISSUED,
+    ])('routes %s to its handler', async (name) => {
+      const job = { id: 'boot-probe', name, data: {}, attemptsMade: 0 } as unknown as Job<Record<string, unknown>>;
+
+      await expect(app.get(OutboxConsumer, { strict: false }).process(job)).rejects.toThrow(/payload/);
     });
   } else {
     it('provides AuthGuard, which is what the pipeline binds by useExisting', () => {

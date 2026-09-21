@@ -1392,7 +1392,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Content and data shown:** the category catalogue — default channels, transactional-or-optional classification, deadline lead times, and the interval at which an outstanding-report notice repeats; the rendered in-app and email wording per locale, read-only, so an operator can see what a classification change affects.
 - **Controls and actions:** edit a category's behaviour; publish; revert.
 - **States:** loading — initial; pending — async (publication); error — recoverable; success with revert.
-- **Validation behaviour:** transactional classification determines non-suppressibility on S-27, so reclassifying a category is a consequence-disclosing action naming what changes for recipients (FR-163, UX-65). Email templates shall degrade to plain text and shall not depend on images or external CSS to be comprehensible (UX-66) — a template-level obligation this editor must enforce.
+- **Validation behaviour:** transactional classification determines non-suppressibility on S-27, so reclassifying a category is a consequence-disclosing action naming what changes for recipients (FR-163, UX-65). **A mandatory system category cannot be reclassified at all** (amended 21 Sep 2026, task 49.3): code declares it, so the editor shows its classification as fixed rather than offering a choice the platform would refuse to obey. Email templates shall degrade to plain text and shall not depend on images or external CSS to be comprehensible (UX-66) — a template-level obligation this editor must enforce.
 - **Exits:** A-08 records the publication.
 - **Use cases:** UC-176.
 - **FRs:** FR-173.

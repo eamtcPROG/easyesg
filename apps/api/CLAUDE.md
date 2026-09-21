@@ -9,8 +9,9 @@ user-facing-text conventions. This file carries only what you need in your hands
 
 ## Current state
 
-Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91, 130, 131); the
-calculator, validation, export, notifications, billing, the console's screens, edge and deploy, the
+Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91, 130, 131), and so is the
+notification core (49) — categories, one mail path, `raise()` and delivery by category, email only; the
+calculator, validation, export, the in-app centre and preferences, billing, the console's screens, edge and deploy, the
 public tier and the Comprehensive Module are not (37 onward). `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -73,7 +74,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  notifications (49 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
+  the in-app centre, the email channel's evidence and suppression, and preferences (50 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -471,7 +472,7 @@ taken 25 Aug and had been overtaken by tasks 29, 30, 31 and 33, which is the fai
 current-state list has): **one of the four edge guards** — `EntitlementGuard` (task 54; `AdminRealmGuard` shipped with
 task 67.3 and `AuditInterceptor` with task 67.4, both under Identity above). No **disclosure
 value** store (task 34), no calculator, validation, comparatives, export or trace body, and no
-`billing` or `platform` body beyond `admin`, `configuration`, `localization` and `taxonomy`.
+`billing` or `platform` body beyond `admin`, `configuration`, `localization`, `notification` (task 49) and `taxonomy`.
 
 **Read the module tree and `src/testing/route-permissions.ts` rather than a list here.** That table
 is the surface, it is a gate, and it cannot go stale — which is exactly why enumerating controllers

@@ -9,10 +9,11 @@ import type { NotificationCategoryKey } from './notification.port';
  * `EmailPort`, has one caller — the notification module — which is what task 19 built it for: *"the same port
  * with the notification service as its caller later"*. So there is one mail path, and the evidence the platform
  * owes for it — FR-170's delivery records, FR-171's suppression of an address that hard-bounces — is added in
- * one place and reaches every notice at once. `email-port-behind-notification` refuses a second path.
+ * one place and reaches every notice at once — the module's one email channel (`EmailChannelService`) —
+ * and `email-port-behind-notification` refuses a second path anywhere under `apps/api/src`.
  *
  * **It names the category, not a template.** A category's wording resolves by its key (FR-173), so the key is
- * the message; `templateKey` exists for the one category that has a second wording.
+ * the message; `templateKey` exists for a category that has a second wording.
  */
 export interface NotificationEmail {
   readonly categoryKey: NotificationCategoryKey;

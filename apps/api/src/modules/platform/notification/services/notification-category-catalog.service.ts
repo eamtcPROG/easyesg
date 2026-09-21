@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { NotificationCategoryKey } from '@api/contracts/notification.port';
+import { MANDATORY_NOTIFICATION_CATEGORIES, type NotificationCategoryKey } from '@api/contracts/notification.port';
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { NOTIFICATION_CATEGORY_CONFIG_KIND } from '../constants/notification-category.constants';
 import { readNotificationCategory } from '../domain/notification-category';
-import type { NotificationCategoryBehaviour } from '../models/notification-category.model';
+import {
+  NOTIFICATION_CLASSIFICATION,
+  type NotificationCategoryBehaviour,
+} from '../models/notification-category.model';
 
 /**
  * The notification category catalogue, over the configuration store (task 49.1; FR-173, UC-176).
@@ -18,6 +21,11 @@ import type { NotificationCategoryBehaviour } from '../models/notification-categ
  * stop. **What raising a category with no behaviour does is task 49.3's**, where dispatch is decided; this
  * reader only refuses to guess, since a guessed channel list for a transactional notice is a verification
  * email sent nowhere or somewhere nobody chose.
+ *
+ * **A mandatory category classified `optional` is refused too** (task 49.3): code declares which categories
+ * nobody may turn off (`MANDATORY_NOTIFICATION_CATEGORIES`), and an artefact that says otherwise is an operator
+ * error, not a decision this reader may carry out. It reads as no behaviour, which dispatch answers with the
+ * mandatory floor.
  */
 @Injectable()
 export class NotificationCategoryCatalog {
@@ -44,6 +52,16 @@ export class NotificationCategoryCatalog {
       this.logger.error(
         `Configuration entry ${artefact} (revision ${entry.revision}) is malformed — it needs a non-empty list of distinct channels and a classification; the category has no behaviour until it is replaced`,
       );
+      return null;
+    }
+    if (
+      MANDATORY_NOTIFICATION_CATEGORIES.has(query.categoryKey) &&
+      behaviour.classification === NOTIFICATION_CLASSIFICATION.OPTIONAL
+    ) {
+      this.logger.error(
+        `Configuration entry ${artefact} (revision ${entry.revision}) classifies a mandatory category as optional, which code does not allow; the category has no behaviour until it is replaced`,
+      );
+      return null;
     }
     return behaviour;
   }

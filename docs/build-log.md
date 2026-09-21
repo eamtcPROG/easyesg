@@ -22385,3 +22385,190 @@ the callers the row keeps unchanged. `architecture.md` §12.5.6 carries the task
   with its spec, the port file a vocabulary kept whole; `nestjs-best-practices` — the provider the handlers need is
   exported by the module that owns it rather than re-registered beside them, and worker-only providers stay out of
   the HTTP graph, which `openapi:check` boots in preview.
+
+## Task 49.3 — Category-driven dispatch, and the categories nobody may turn off · 2026-09-21
+
+The last of task 49's three: a notice's category now decides the channels it goes out on, for the four notices
+that send and for a notice raised through the general path, which this task builds — `raise()` onto the outbox,
+a consumer on the worker that delivers by the category. Nothing produces through `raise()` yet; the proof is a
+producer's transaction in the e2e, over the real grants.
+
+### Decisions (project owner, two passes)
+
+- **What a notice does when its category's behaviour cannot be read** was the question 49.1 deferred. The owner's
+  first answer — *"there must be mandatory system categories; a user cannot disable them"* — was put back, because
+  which categories are mandatory lived only in each category's artefact, the one thing that could not be read. The
+  second pass settled it: **mandatory is declared in code**, `MANDATORY_NOTIFICATION_CATEGORIES` beside the
+  vocabulary; a mandatory category's artefact classified `optional` is refused; an unreadable mandatory category
+  still goes by **email**, the floor; an unreadable optional category **fails its job**.
+- **`raise()` built now**, over waiting for 50.1's store: email only, and no deduplication or cancellation, until
+  the record exists.
+- **Recipients resolved at dispatch, from identity**, over carrying addresses in the command.
+
+`architecture.md` §12.5.6 carries the task-49.3 row (1)–(5); 50.1's row gains what waits for the record.
+
+### What shipped
+
+- **`raise()`** — `NotificationOutboxRepository`, a `TenantRepository` for its request runner and nothing else, so
+  a notice commits with the decision that raised it or not at all. The payload names the category, the users, the
+  subject, the deep link and the params, and no address. The notice's id is the outbox row's key. A notice to
+  nobody is refused at the source.
+- **`NotificationRaisedHandler`** on the worker: the category's channels, decided once; **a category travelling
+  in-app fails the job before anything is sent**, since there is no store to deliver it to until 50.1 and a half
+  delivered silently is worse than a job named in the failed set; each recipient's address and language from
+  `NOTIFICATION_RECIPIENTS`; one message per recipient with the outbox key and the user as its idempotency key, so
+  a re-driven job asks the provider for the same messages; an id naming no account skipped and said at `warn`.
+  The deep link is made absolute per recipient's locale, prefixed always, for `VerificationEmailHandler`'s reason.
+- **`CategoryChannels`**, the seam that asks the catalogue and `dispatchChannels` (pure, with its spec) and turns
+  *may go out on nothing* into a thrown error. The four handlers' mail (`NotificationEmailService`, 49.2) and the
+  raised notice both go through it.
+- **`NOTIFICATION_RECIPIENTS`** over `identity.account` as `esg_worker`, whose SELECT task 19 already granted; an id
+  that is not a UUID is not sent to the database, where `ANY($1::uuid[])` would have refused the whole batch.
+- **`NotificationPort.cancel` withdrawn** until 50.1 implements it — a method on a port with no store behind it could
+  only pretend.
+- **One judgement recorded rather than taken**: a mandatory category published *without* email — readable, and so
+  obeyed — sends nothing, and would silence a verification link, which has no centre to land in. Whether a
+  mandatory category may be published that way is A-17's to refuse (task 67.10); this task's seam warns and obeys.
+
+### Proof
+
+- **Unit**: the dispatch rule both ways; the catalogue's refusal of a mandatory category classified optional; the
+  channel seam for every mandatory category's floor and for an optional one — reached with a key the vocabulary will
+  hold one day, since no optional category exists yet; the email service's category-driven cases; the handler's
+  per-recipient delivery, the skipped id, the in-app refusal, the mandatory floor, and four broken payloads.
+- **e2e**, `notification-dispatch.e2e-spec.ts`, new: a notice raised inside a producer's transaction commits with
+  it and carries no address; one raised inside a transaction that rolls back leaves no row; and the committed one,
+  delivered by the real handler over the real recipients adapter and the seeded catalogue, reaches each account in
+  its own language with its own link and key, the id naming nobody skipped.
+- **Six seeded mutations, each caught.** The one worth keeping: **`raise()` on a transaction of its own** passed all
+  42 unit cases and failed only the e2e's rolled-back case — the property P-8 exists for is visible to one test, and
+  that test needs a database. The in-app refusal, the mandatory floor and the mandatory refusal removed each failed
+  the unit specs only; a single idempotency key and a single language for every recipient failed both.
+
+### A run that failed, and what it was
+
+The first full `pnpm e2e` over this change **failed 38 of 1,210 tests in five suites, took 2,514 seconds where the two
+runs before it today took 183, and then would not exit.** Read before anything was changed:
+
+- **One failure was this task's**: 49.1's own e2e published the invitation category as `optional` to prove a change
+  propagates, and 49.3 refuses exactly that, since the invitation is mandatory. It now publishes a permitted change —
+  the channels, transactional. I had searched the unit specs for that pattern and not the e2e suites.
+- **Thirty-seven were timeouts** — hooks at 30 and 180 seconds in suites this change does not reach (tenant isolation,
+  seats, the operator's credentials, organizations) — with the host's load average above 100 for the run. Rerun alone
+  at a load near 20, four of the five passed in 37 seconds.
+- **The fifth, tenant isolation, then failed on a duplicate key**, and the cause is worth knowing: its `beforeEach`
+  opens a transaction and inserts fixed-id rows that `afterEach` rolls back. Under load the hook passed its 30-second
+  timeout, Jest ran the rollback, and **the hook, still running, inserted two accounts on a runner with no transaction
+  left** — each committing on its own. Only those two rows leaked; they were deleted by their fixed ids, and the suite
+  passed 59 of 59. **A suite whose setup can outlive its rollback leaves state behind on a slow host**; that is not
+  this task's to fix, and it is recorded here so the next slow run is recognised rather than debugged from scratch.
+- The run that would not exit was the same cause: suites whose hooks timed out never destroyed their connections.
+
+### Verification
+
+- `apps/api` unit **133 suites, 1,120 tests**; `pnpm --filter @easyesg/api typecheck`; `pnpm lint` (three errors of
+  mine fixed first — a `../../` import where the alias is required, and two casts the compiler's narrowing had made
+  unnecessary); `pnpm boundaries`; `pnpm docs:check`, 40 claims.
+- `pnpm e2e`, rerun after the fixes above: **48 suites, 1,210 tests, 288 seconds, no timeout, a clean exit**, at a
+  load of 14–18. `pnpm e2e:worker` **2 of 2** — the worker graph gained four providers and a job the outbox consumer now
+  routes, so the boot is the proof they resolve.
+- **Which run, and why.** The api row with its consumer clause. No controller or DTO, so no `openapi:check`; no
+  migration — the grant the recipients adapter uses is task 19's. This is the last sub-step of 49, so the parent's
+  close follows: the gate set and the three review agents over 49.1–49.3 together.
+- **Skills, read against the diff**: `one-idea-per-file`'s `file-one-behaviour-api` — the rule is a pure function with
+  its spec, and each of the seam, the handler and the two adapters one behaviour with a spec or an e2e;
+  `nestjs-best-practices` — worker-only providers stay out of the HTTP graph and the HTTP one out of the worker's, and
+  the recipients adapter injects the global data source rather than importing identity's module, which imports this
+  one.
+
+## Task 49 — Notification core, the parent's close · 2026-09-21
+
+49.1, 49.2 and 49.3 closed today, and so the parent: the gate set over a cleaned tree, the boot proof, and the
+three review agents over the whole diff since `4f3ae1d`. **The reviews found eighteen things across the three
+sub-steps, and fixing them changed the code**, so the gate set ran over the fixed tree, not the one reviewed.
+
+### Review — on `opus`, per the agents' frontmatter
+
+**`spec-review`, nine findings.** Three needed the owner, answered in one batch, each the recommended option:
+
+- **The four notices sent to an address would never get a record or delivery evidence.** 49.2 had deferred
+  whether they become raised notices to 49.3, and 49.3 did not take it up — a question closed by omission, which is
+  the shape this review exists to find. **They move onto `raise()` with 50.1**, whose record admits an address
+  recipient; 50.1's row carries it (§12.5.6's task-49.3 row (6)).
+- **The address dispatch sends to.** FR-9 and UC-13 name a *contact email*, UC-173 a *contact address*; dispatch
+  reads the sign-in address. **Recorded as an assumption until 52.3**, which decides whether contact email is a
+  field of its own (row (4)); the recipients adapter is the one read that would move.
+- **FR-169's one-click unsubscribe had no owner** once optional categories could send email. **52.2's**, and no
+  optional category sends email before it lands (row (7)).
+
+The other six were fixes within decisions already taken: the in-app refusal enforced on one path only (code —
+below); the worker-side producers named for one owner where the architecture shows four (row (3) now names 51.2's
+schedules, 44.2's completion notice, 60.4's charge failures and 67.7's runs, and 51.2's row says it decides first);
+the mandatory-without-email interim living only in `build-log.md` (now row (2), and 67.10's row carries what A-17
+must refuse); FR-173, AD-4's artefact table and A-17's validation text not amended for *mandatory in code* (all
+three amended); FR-166's re-export arm with no run behind it unplaced (67.6, by the owner's rule); 67.7's and 67.8's
+expected results not naming the notice their descriptions gained, and 67.8 narrowing *existing* reports to *open*
+ones (both corrected).
+
+**`convention-review`, four violations**, all fixed:
+
+- **Two classes called `EmailPort.send`** — `NotificationEmailService` and 49.3's handler — so FR-171's suppression,
+  added to one, would have missed the other, and the *category's own key is its wording* default was written twice.
+  Now **`EmailChannelService` is the one caller**, behind a module-internal `EMAIL_CHANNEL`; both paths reach it after
+  deciding their channels.
+- **The in-app refusal on one path.** The category email the four handlers ask for sent the email half of an
+  `['in_app','email']` category and dropped the rest silently — a state 49.1's own e2e publishes as permitted. The
+  refusal moved into `CategoryChannels`, which both paths call, so 50.1 lifts it in one place; a category published
+  in-app only now fails its job rather than sending nothing quietly, which also closes the *mandatory published
+  without email* interim for as long as the refusal stands.
+- **UC-173's flow lived in a framework consumer**, with no use case. **`DeliverNotification`**, framework-free and
+  registered by `useFactory`, holds the decisions; the handler validates the payload and reports the unresolved.
+- **Five docblocks counted things outside their own file** ("the four", "none does yet") — the rule restated
+  instead, the count left to the specs that measure it.
+
+**`gate-integrity-review`, five findings**, every one given a check that fails — each proven by the agent's own
+proposed mutation, run after the fixes, failing exactly the new check:
+
+- **Nothing checked that `platform.notification.raised` is routed.** Deleting its `@HandlesJob` left every suite green
+  — the worker boot proves providers resolve, not that a job reaches one. **The worker's boot spec now gives the real
+  `OutboxConsumer` each job the worker must answer**, all five, with an empty payload: a routed job fails on its
+  handler's payload check, an unrouted one on the routing. Deleting the decorator, or the handler from the module,
+  fails it.
+- **The two invitation handlers had no test at all**; swapping their categories passed everything. Each now has a
+  spec asserting its category, link and language — the swap fails both.
+- **The catalogue's mandatory refusal was tested in one direction** — nothing asked whether an optional category's own
+  `optional` is accepted. A case for it.
+- **The non-UUID filter and the empty-recipient refusal had no test.** Two e2e cases.
+- **The boundary rule held only `modules/`**, narrower than the port's docblock. Widened to all of `apps/api/src`
+  outside the notification module and the adapters; nothing else imported the port, so it starts green.
+
+**Two things reported and not changed.** The UUID pattern is now written in four repositories — a shared helper is
+worth a task of its own, not a widening of this one. And **`build-log.md`'s 49.2 entry says `docs:check` "counts the
+names" of the api rule list; it counts the rules against the word, and would not notice a stale name** — corrected
+here rather than by editing a closed entry.
+
+**Also found by this close, not by a review:** the first full `pnpm e2e` over 49.3 failed on load and left two
+committed fixture rows behind — `tenant-isolation.e2e-spec.ts`'s setup can outlive its own rollback on a slow host
+(49.3's entry has the mechanism). Recorded; the suite is not this task's.
+
+### Verification — the parent's close
+
+- **`pnpm gates:clean`, over the fixed tree: exit 0**, at a load average under 16. Lint; the ESLint selectors'
+  proofs; typecheck; `image:check`; `docs:check`, 40 claims; unit — api **137 suites, 1,133 tests**, web **85 files,
+  883**, admin **29 files, 246**, and the packages'; `boundaries`; `boundaries:prove`, all 24 rules rejecting their
+  fixtures, the widened one included; `build`; `openapi:check` and `facade:check`, both regenerating to no diff;
+  `routes:check`; `migrations:check` — apply, revert, re-apply, **56 invariants**; `e2e` **48 suites, 1,212 tests**;
+  `e2e:worker` **7 of 7**, the routing cases among them; `e2e:web` **235 of 235 in 7.5 minutes** across identity,
+  expansion and admin. Four `⨯ … destination stream closed early` lines, all digest `2667547900`, the
+  abandoned-stream class `apps/web/CLAUDE.md` records.
+- **Which run, and why `gates:clean`.** Required, not chosen: 49.1 added seed artefacts, which the cold-run list names,
+  and types changed across the group — the port, the command's key, the withdrawn `cancel`. **A first `gates:clean`
+  was stopped part-way, deliberately**: it had passed its unit stage over the tree the reviews were reading, and the
+  fixes were about to change that tree, so finishing it would have proved code that does not ship.
+- **The boot proof**, in the table's terms: HTTP by `pnpm e2e`, the worker by `pnpm e2e:worker` — which now also proves
+  every job the worker must answer is routed — and `web`/`admin` by `pnpm e2e:web`.
+- **Every review mutation re-run after its fix**, each failing exactly its new check: the non-UUID filter and the
+  empty-recipient refusal removed (the dispatch e2e, one case each); the handler's `@HandlesJob` deleted and the
+  handler left out of the module (the worker boot, one routing case each); the two invitation categories swapped (both
+  handlers' specs).
+

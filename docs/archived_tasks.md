@@ -1,6 +1,6 @@
 # Archived tasks
 
-The closed half of the execution plan: **97 task numbers, 182 rows**, filed under the phase
+The closed half of the execution plan: **98 task numbers, 186 rows**, filed under the phase
 headings they were sliced and closed under. [task.md](task.md) holds what is left; this file holds
 what is done, so that neither has to be read through to answer the other's question.
 
@@ -155,6 +155,19 @@ file, which is what finally makes *(continued)* accurate: 85–115 first, 122–
 | 36.12 | B11 — corruption and bribery | **api+web** | UC-29 (FR-24, FR-30) — Convictions and fines, where **absence is a positive statement** rather than an empty field — the distinction 36.13 exists to keep. **Scope corrected 9 Sep 2026** (`architecture.md` §12.5.6): FR-30's nil return shipped with 36.10, so B11's stated deliverable was already met — what this row could not predict is that B11's fine is the **fourth Basic-module monetary disclosure** and the one that made the deferred reporting-currency question unavoidable, since XBRL admits no monetary fact without an ISO 4217 unit. A migration, and task 30.2's deferral superseded | B11 complete; a nil return is distinguishable from an unanswered one | DONE |
 | 36.13 | A section omitted as classified or sensitive | **api+web** | UC-30 (FR-31): a reasoned **section** exclusion. **Narrowed 8 Sep 2026** (`architecture.md` §12.5.6): UC-31 and FR-32's *field*-level explained gap shipped with task 36.5, which is 36.13's own *"every module above needs both"* argument applied to the half that could be built — its storage has existed since task 34.1, while FR-31's section rationale has no column at all and `§7.1`'s `core.section_declaration` is unbuilt. What remains here is UX-29 and UX-30. **Rewritten 9 Sep 2026** (`architecture.md` §12.5.6): reading the VSME text found FR-31 specified an omission ground the standard does not have — ¶19 permits only *classified or sensitive information*, ¶21 requires B1–B11 reported, and there is no materiality assessment — so `core.section_declaration` was **withdrawn unbuilt** rather than left unbuilt, the mechanism being an ordinary B1 field that already shipped. What this delivers is a declaration that is reversible, carries **no rationale** (¶24(b) asks which disclosure, never why), and shows the module a **distinct third state** on the rail — neither complete nor incomplete | A section declared omitted satisfies validation and reads as its own state on the module list | DONE |
 | 36.14 | Prior-period values and carry-forward | web | UC-45 and UC-46 (FR-46, FR-47) over 34.3: last year's value beside this year's input, and one action to carry an unchanged one forward | Prior-period values visible in the wizard; carry-forward writes through the store | DONE |
+
+---
+
+## Phase 6 — Notifications (§15.4 #6)
+
+**Filed here because 49 was sliced under it**, though the Stage order of 12 Sep 2026 delivers it in Stage 1's Batch C. The rest of the phase — 50 … 52 — is still in `task.md`.
+
+| # | Name | Scope | Description | Expected result (deliverables) | Status |
+| --- | --- | --- | --- | --- | --- |
+| **49** | **Notification core** | api | Categories with behaviour in the config store (AD-4); task 19's minimal mail port absorbed, not duplicated | Category-driven dispatch; behaviour changes without redeploy | DONE |
+| 49.1 | Categories as configuration | api+config | Category **behaviour** — channel, cadence, whether opt-out is permitted — as rows in task 16's store (AD-4). **Wording is not here**: `architecture.md` OQ-43 narrowed the store to behaviour, and templates ship as committed catalogues | A category's behaviour changes with no redeploy **Shipped**: four categories, each its own `notification_category` artefact scoped by its key, email-only and transactional; the reader fails closed; a publication proven to reach a replica on its next poll (§12.5.6's task-49.1 row) | DONE |
+| 49.2 | Task 19's mail port absorbed | api | The minimal `EmailPort` built at task 19 moves behind this module rather than being duplicated beside it (P-7). Task 19's row said the notification system "must not wait for it"; this is the other half of that sentence, and skipping it leaves two mail paths | One mail port in the codebase, not two; task 19's callers unchanged **Shipped as one mail *path***, not one port: `NOTIFICATION_EMAIL_PORT` for producers and `EmailPort` the provider port, whose one caller is the notification module; *callers unchanged* read as the use cases writing the outbox events (§12.5.6's task-49.2 row). `email-port-behind-notification` holds it | DONE |
+| 49.3 | Category-driven dispatch | api | Every notification raised as a category and routed through the outbox onto task 15's queue — the path verification email already takes, so nothing new is invented for the general case | A notification dispatched by category through the outbox **Shipped**: mandatory system categories declared in code; `raise()` on the producer's transaction; `DeliverNotification` on the worker by the category's channels, recipients from identity, email only; in-app, deduplication and cancellation left to 50.1 (§12.5.6's task-49.3 row) | DONE |
 
 ---
 

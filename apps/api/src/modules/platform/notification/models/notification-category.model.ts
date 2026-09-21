@@ -6,9 +6,8 @@
  * that raises it.
  *
  * **No cadence yet, on purpose.** FR-173 also names deadline lead times and a repeat interval, which only
- * FR-165's deadline and FR-164's outstanding-report notices have. None of the four categories registered
- * today repeats, so the fields arrive with the task that raises those notices (51.2) rather than as optional
- * members nothing reads.
+ * FR-165's deadline and FR-164's outstanding-report notices have, so the fields arrive with the task that raises
+ * those notices (51.2) rather than as optional members nothing reads.
  */
 
 /** FR-160's channels: the in-app centre (FR-168) and email (FR-169). */

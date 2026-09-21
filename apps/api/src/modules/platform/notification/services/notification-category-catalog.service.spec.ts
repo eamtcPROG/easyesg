@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
+import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from '@api/contracts/notification.port';
 import type { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
 import { NOTIFICATION_CATEGORY_CONFIG_KIND } from '../constants/notification-category.constants';
@@ -38,13 +38,41 @@ describe('NotificationCategoryCatalog (task 49.1)', () => {
   afterEach(() => jest.restoreAllMocks());
 
   it('reads the behaviour in force for the category asked about, quietly', () => {
-    const catalog = build({ channels: ['in_app', 'email'], classification: 'optional' });
+    const catalog = build({ channels: ['in_app', 'email'], classification: 'transactional' });
 
     expect(catalog.behaviourOf({ categoryKey: NOTIFICATION_CATEGORY.INVITATION })).toEqual({
       channels: ['in_app', 'email'],
+      classification: 'transactional',
+    });
+    expect(logged).toEqual([]);
+  });
+
+  // A category outside the mandatory set, reached with a key the vocabulary will hold one day: the refusal below is
+  // keyed on that set, and must not refuse an optional category's own classification.
+  it('reads an optional category classified optional, quietly', () => {
+    const optional = 'billing.trial_ending' as NotificationCategoryKey;
+    const store = {
+      get: (query: { kind: string; scope: string }) =>
+        query.scope === optional
+          ? { kind: query.kind, scope: query.scope, revision: 1, payload: { channels: ['email'], classification: 'optional' } }
+          : undefined,
+    } as unknown as ConfigurationStore;
+
+    expect(new NotificationCategoryCatalog(store).behaviourOf({ categoryKey: optional })).toEqual({
+      channels: ['email'],
       classification: 'optional',
     });
     expect(logged).toEqual([]);
+  });
+
+  // **Code declares what nobody may turn off** (task 49.3): an artefact saying otherwise is refused, not obeyed.
+  it('refuses a mandatory category classified optional, naming the revision to replace', () => {
+    const catalog = build({ channels: ['email'], classification: 'optional' }, 5);
+
+    expect(catalog.behaviourOf({ categoryKey: NOTIFICATION_CATEGORY.INVITATION })).toBeNull();
+    expect(logged).toHaveLength(1);
+    expect(logged[0]).toContain('revision 5');
+    expect(logged[0]).toContain('mandatory');
   });
 
   it('asks the store by the category key as the scope, and answers nothing for another', () => {

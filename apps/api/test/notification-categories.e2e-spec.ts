@@ -86,7 +86,9 @@ describe('notification categories as configuration (task 49.1)', () => {
       await publisher.publish({
         kind: NOTIFICATION_CATEGORY_CONFIG_KIND,
         scope,
-        payload: { channels: ['in_app', 'email'], classification: 'optional' },
+        // Transactional: the invitation is mandatory since task 49.3, so an `optional` artefact is refused — the
+        // change under test is the channels, which an operator may publish.
+        payload: { channels: ['in_app', 'email'], classification: 'transactional' },
         expectedRevision: seeded.revision,
       });
 
@@ -94,7 +96,7 @@ describe('notification categories as configuration (task 49.1)', () => {
       expect(await store.refreshIfStale()).toBe(true);
       expect(catalog.behaviourOf({ categoryKey: scope })).toEqual({
         channels: ['in_app', 'email'],
-        classification: 'optional',
+        classification: 'transactional',
       });
     } finally {
       await publisher.revert({ kind: NOTIFICATION_CATEGORY_CONFIG_KIND, scope, toRevision: seeded.revision });
