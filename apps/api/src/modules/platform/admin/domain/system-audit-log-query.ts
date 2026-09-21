@@ -1,5 +1,6 @@
 import { isAuditAction } from '@api/modules/platform/audit/models/audit-action.model';
 import type { SystemAuditLogQuery } from '../models/system-audit-log.model';
+import { isUuid } from '@api/contracts/types/uuid';
 
 /**
  * A-08's log filters, narrowed from what arrived (task 67.4; UC-88) — `organization-register-query`'s
@@ -15,8 +16,6 @@ import type { SystemAuditLogQuery } from '../models/system-audit-log.model';
  * calendar day into the two instants that bound it in the operator's own zone, because which instant
  * "13 September" starts at is the reader's question and not the server's.
  */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
-
 /** Up to fifteen digits — every epoch millisecond until the year 33658, and nothing that overflows. */
 const EPOCH_MILLIS = /^\d{1,15}$/u;
 
@@ -31,7 +30,7 @@ export const toSystemAuditLogQuery = (input: {
   readonly to: unknown;
   readonly fallbackTake: number;
 }): SystemAuditLogQuery => ({
-  operatorId: typeof input.operator === 'string' && UUID.test(input.operator) ? input.operator : null,
+  operatorId: isUuid(input.operator) ? input.operator : null,
   action: isAuditAction(input.action) ? input.action : null,
   from: instantOf(input.from),
   to: instantOf(input.to),

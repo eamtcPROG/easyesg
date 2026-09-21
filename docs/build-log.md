@@ -22572,3 +22572,64 @@ committed fixture rows behind — `tenant-isolation.e2e-spec.ts`'s setup can out
   handler left out of the module (the worker boot, one routing case each); the two invitation categories swapped (both
   handlers' specs).
 
+
+## Task 162 — One UUID shape check, not four · 2026-09-21
+
+Found by task 49's parent-close convention review, as a thing reported and not changed there: the RFC 9562 textual
+pattern was declared four times. Each copy guarded a `$1::uuid` or `ANY($1::uuid[])` cast, so that a value which is
+not a UUID answers *not found* (the two session stores — an unknown session is a 401, not a 500), *skipped* (the
+notification recipients adapter — one bad id must not lose the batch) or *filter dropped* (A-08's log-query
+narrower — a hand-edited address shows the unfiltered log) instead of PostgreSQL's `invalid input syntax for type
+uuid`.
+
+### Measured before merging
+
+**The four were one value.** Three read `/^[0-9a-f]{8}-…-[0-9a-f]{12}$/i`; the domain copy read the same with `iu`.
+The `u` flag was checked rather than assumed to be harmless: over every Unicode code point, `[0-9a-f]` matches the
+same 22 characters under `i` and under `iu` — no character outside ASCII case-folds onto `a`–`f`. So the merge
+changes no answer anywhere, and a full-width lookalike stays refused, which the spec pins.
+
+### A departure from the brief, and why
+
+The brief placed the helper in `infrastructure/persistence/`, on the premise that all four sites were repositories;
+**the fourth is `modules/platform/admin/domain/system-audit-log-query.ts`**, and a domain file may not import
+infrastructure — dependencies point inward only. So it is **`isUuid` in `contracts/types/uuid.ts`**, which both layers
+already import, and which imports nothing, so `contracts-is-a-leaf` holds. `contracts/types/time.ts` is the
+precedent: a primitive's narrowing living beside it, read by domain files, use cases and repositories alike. The
+docblock carries the reason every caller had written for itself, once.
+
+**Also corrected while writing it**: the first draft of that docblock said `uuidv7()` ids sit beside
+`gen_random_uuid()` ones. **No migration uses `gen_random_uuid()`** — the database mints v7 ids and this tier v4 ones
+through `randomUUID()` — and the docblock and the spec's label now say so.
+
+### Proof
+
+- **`contracts/types/uuid.spec.ts`**, new: accepts v4, v7, nil, an unused version nibble, and both cases; refuses the
+  short, the long, the unhyphenated, the braced, a URN prefix, whitespace, a trailing newline, a letter past `f`, a
+  full-width lookalike, and every value that is not a string.
+- **One mutation, `isUuid` answering yes to any string** — every site's guard removed at once — **and a site nothing
+  noticed.** It failed the new spec, A-08's log-query spec, `admin-session.e2e-spec.ts` and
+  `notification-dispatch.e2e-spec.ts`: three of the four sites. **The tenant session store's guard had no test at
+  all**, before this task as after it — a forged token's `sub: "hello"` answering 500 rather than 401 would have
+  passed everything. `request-identity-store.repository.spec.ts`, new, pins it both ways against a data source that
+  records whether it was reached; with the mutation back in, it fails too, so all four sites now answer to a test.
+- **A runner that is no baseline**, recorded because it cost a minute to recognise: plain `pnpm exec jest` after a
+  `gates:clean` fails five unrelated suites, because it skips the api's `pretest`, which rebuilds the i18n catalogues
+  the clean removed. Every count here is the package's own `test` script.
+
+### Verification
+
+- `pnpm --filter @easyesg/api test`: **139 suites, 1,160 tests**, the two new specs among them.
+- `pnpm --filter @easyesg/api typecheck`; `pnpm lint`; `pnpm boundaries` — the domain file now imports
+  `contracts/types`, which it may, and `contracts-is-a-leaf` still holds; `pnpm docs:check`, 40 claims, after 98
+  numbers / 186 rows → 99 / 187 and 161 → 162 tasks.
+- `pnpm e2e`: **48 suites, 1,212 tests, 113 seconds**, a clean exit — run before the tenant store's spec was added,
+  which is unit-only and reaches nothing the e2e suite does.
+- **Which run, and why.** The api row: unit and e2e, no controller, DTO, migration or consumer changed, so no
+  `openapi:check`, `migrations:check` or `e2e:worker`. A childless row closed on its own gates — no review agents and no
+  `gates:clean`, under the owner's standing rule.
+- **Skills, read against the diff**: `one-idea-per-file` — the predicate is one idea with its spec, and its docblock
+  carries the reason each site had written for itself, once; the sites keep only the comment on why *they* guard.
+  The root `CLAUDE.md`'s *an operation over a vocabulary lives with the vocabulary* is why it sits beside nothing but
+  its own pattern, in the layer every caller may reach.
+

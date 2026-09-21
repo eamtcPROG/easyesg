@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
 import { SECRET_CIPHER, type SecretCipher } from '@api/contracts/secret-cipher.port';
+import { isUuid } from '@api/contracts/types/uuid';
 import type {
   AdminSessionStore,
   AdminSessionTransaction,
@@ -108,9 +109,6 @@ interface PresentedAdminRefreshTokenRow {
   session_created_at: Date;
   session_revoked_at: Date | null;
 }
-
-/** RFC 9562 textual form, any version — `RequestIdentityStoreRepository`'s guard, for its reason. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * The row is the storage representation; `AdminAccount` is the domain's. `totp_secret` arrives
@@ -264,7 +262,7 @@ class AdminSessionTransactionAdapter implements AdminSessionTransaction {
   async findSessionForRequest(sessionId: string): Promise<AdminRequestSession | null> {
     // A token's `sub` is whatever was signed and `admin_session.id` is a `uuid` column, so a
     // non-uuid would raise `invalid input syntax for type uuid` and turn a 401 into a 500.
-    if (!UUID.test(sessionId)) return null;
+    if (!isUuid(sessionId)) return null;
 
     const rows = returnedRows<AdminRequestSessionRow>(
       await this.queryRunner.query(

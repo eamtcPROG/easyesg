@@ -7,9 +7,7 @@ import type {
   NotificationRecipientsPort,
 } from '@api/contracts/notification-recipients.port';
 import { CORE_DATA_SOURCE } from '../data-source';
-
-/** The shape an account id takes; anything else is asked about as nothing rather than cast into a 500. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid } from '@api/contracts/types/uuid';
 
 /**
  * `NOTIFICATION_RECIPIENTS` over `identity.account` (task 49.3; FR-169; §12.5.6's task-49.3 row (4)).
@@ -27,7 +25,7 @@ export class NotificationRecipientsRepository implements NotificationRecipientsP
   constructor(@InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource) {}
 
   async resolve(query: { readonly userIds: readonly string[] }): Promise<NotificationRecipient[]> {
-    const ids = query.userIds.filter((id) => UUID.test(id));
+    const ids = query.userIds.filter(isUuid);
     if (ids.length === 0) return [];
 
     const rows: { id: string; email: string; locale: string }[] = await this.dataSource.query(

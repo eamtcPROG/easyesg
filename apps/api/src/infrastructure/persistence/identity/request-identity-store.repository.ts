@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
+import { isUuid } from '@api/contracts/types/uuid';
 import type { Account } from '@api/modules/identity/account/models/account.model';
 import type {
   RequestIdentityStore,
@@ -12,9 +13,6 @@ import {
   type MembershipRole,
 } from '@api/modules/identity/membership/models/membership.model';
 import { CORE_DATA_SOURCE } from '../data-source';
-
-/** RFC 9562 textual form, any version — narrower checks would reject a valid future id. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface SessionRow {
   account_id: string;
@@ -68,7 +66,7 @@ export class RequestIdentityStoreRepository implements RequestIdentityStore {
     // forged token carrying `sub: "hello"` would reach the query and raise `invalid input syntax
     // for type uuid`, turning a 401 into a 500 and handing the prober a signal. Shaped here rather
     // than in the guard because the column type is this adapter's knowledge, not the guard's.
-    if (!UUID.test(sessionId)) return null;
+    if (!isUuid(sessionId)) return null;
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
