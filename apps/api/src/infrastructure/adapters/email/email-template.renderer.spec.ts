@@ -1,5 +1,5 @@
 import { LOCALES, type Locale } from '@easyesg/i18n';
-import { EMAIL_VERIFICATION_TEMPLATE } from '@api/modules/identity/account/constants/account.constants';
+import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import { initialiseCatalogue } from '@api/app/messages/catalogue';
 import { renderEmail } from './email-template.renderer';
 
@@ -17,7 +17,7 @@ describe('email template rendering (OQ-43)', () => {
   const params = { verificationUrl: 'https://easyesg.md/ro/verify?token=abc' };
 
   it.each(LOCALES)('renders the verification template in %s', (locale: Locale) => {
-    const { subject, body } = renderEmail(locale, EMAIL_VERIFICATION_TEMPLATE, params);
+    const { subject, body } = renderEmail(locale, NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params);
 
     expect(subject.trim()).not.toBe('');
     expect(body).toContain(params.verificationUrl);
@@ -25,7 +25,7 @@ describe('email template rendering (OQ-43)', () => {
 
   it('renders differently per locale, so nothing is falling back to one language', () => {
     const subjects = LOCALES.map(
-      (locale: Locale) => renderEmail(locale, EMAIL_VERIFICATION_TEMPLATE, params).subject,
+      (locale: Locale) => renderEmail(locale, NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params).subject,
     );
     expect(new Set(subjects).size).toBe(LOCALES.length);
   });
@@ -42,9 +42,9 @@ describe('email template rendering (OQ-43)', () => {
   });
 
   it('carries no internal identifier into what a person reads', () => {
-    const { subject, body } = renderEmail('ro', EMAIL_VERIFICATION_TEMPLATE, params);
+    const { subject, body } = renderEmail('ro', NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params);
     // CLAUDE.md names these by shape: no FR-/UC-/NFR-/OQ- identifier, no enum member, no key.
     expect(`${subject}\n${body}`).not.toMatch(/\b(FR|UC|NFR|AD|DR|UX|OQ|BR)-\d+/);
-    expect(`${subject}\n${body}`).not.toContain(EMAIL_VERIFICATION_TEMPLATE);
+    expect(`${subject}\n${body}`).not.toContain(NOTIFICATION_CATEGORY.EMAIL_VERIFICATION);
   });
 });

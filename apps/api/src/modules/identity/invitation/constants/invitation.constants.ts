@@ -1,5 +1,4 @@
 import type { Locale } from '@easyesg/i18n';
-import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 
 /**
  * The invitation email as it travels: an outbox `event_type`, which the dispatcher turns into a
@@ -12,14 +11,6 @@ import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
  * recipient can see.
  */
 export const INVITATION_ISSUED = 'identity.invitation.issued';
-
-/**
- * Catalogue key for the message itself. Template wording is a committed catalogue, not
- * configuration (OQ-43): a genuinely new notice cannot exist until code calls for it, so the
- * wording may as well ship with the release that introduces the call. It is the notice's category
- * key (FR-173: wording resolves by category key; task 49.1), so it is that vocabulary's member.
- */
-export const INVITATION_TEMPLATE = NOTIFICATION_CATEGORY.INVITATION;
 
 /**
  * **This payload carries the raw token** (OQ-54, closed 20 Aug 2026), on the same terms as the

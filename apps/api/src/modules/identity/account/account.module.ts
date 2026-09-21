@@ -2,7 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
 import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
-import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
+import { NotificationModule } from '@api/modules/platform/notification/notification.module';
 import { AccountStoreRepository } from '@api/infrastructure/persistence/identity/account-store.repository';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
@@ -172,7 +172,7 @@ const httpProviders: Provider[] = [
 const workerProviders: Provider[] = [VerificationEmailHandler, PasswordResetEmailHandler];
 
 @Module({
-  imports: mode === APP_MODE.WORKER ? [EmailModule] : [],
+  imports: mode === APP_MODE.WORKER ? [NotificationModule] : [],
   // `SECOND_FACTOR` only — the sign-in path asks two questions and gets exactly two methods
   // (ISP). Nothing else here is exported, so `ManageTotp`'s password-gated methods stay
   // unreachable from an unauthenticated route.

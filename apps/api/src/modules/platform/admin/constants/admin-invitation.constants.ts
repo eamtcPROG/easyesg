@@ -1,5 +1,3 @@
-import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
-
 /**
  * The administrator invitation email as it travels (task 67.4): an outbox `event_type`, which the
  * dispatcher turns into a job name, which `AdminInvitationEmailHandler` claims (AD-10's single
@@ -7,10 +5,6 @@ import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
  * resend, because the invitee sees one kind of message with a different link in it.
  */
 export const ADMIN_INVITATION_ISSUED = 'platform.admin_invitation.issued';
-
-/** Catalogue key for the message (OQ-43 — committed wording, rendered on the worker), which is its
- *  notification category's key (FR-173, task 49.1). */
-export const ADMIN_INVITATION_TEMPLATE = NOTIFICATION_CATEGORY.ADMIN_INVITATION;
 
 /**
  * **This payload carries the raw token** (OQ-54), on the tenant invitation's terms:

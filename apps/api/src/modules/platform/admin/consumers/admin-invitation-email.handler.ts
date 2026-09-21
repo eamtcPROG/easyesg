@@ -2,11 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SOURCE_LOCALE } from '@easyesg/i18n';
 import type { AppConfig } from '@api/config/configuration';
-import { EMAIL_PORT, type EmailPort } from '@api/contracts/email.port';
+import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
+import { NOTIFICATION_EMAIL_PORT, type NotificationEmailPort } from '@api/contracts/notification-email.port';
 import { HandlesJob, type JobContext, type JobHandler } from '@api/infrastructure/queue/job-handler';
 import {
   ADMIN_INVITATION_ISSUED,
-  ADMIN_INVITATION_TEMPLATE,
   type AdminInvitationIssued,
 } from '../constants/admin-invitation.constants';
 
@@ -28,7 +28,7 @@ import {
 @HandlesJob(ADMIN_INVITATION_ISSUED)
 export class AdminInvitationEmailHandler implements JobHandler {
   constructor(
-    @Inject(EMAIL_PORT) private readonly email: EmailPort,
+    @Inject(NOTIFICATION_EMAIL_PORT) private readonly email: NotificationEmailPort,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
@@ -43,7 +43,7 @@ export class AdminInvitationEmailHandler implements JobHandler {
     await this.email.send({
       to: event.email,
       locale: SOURCE_LOCALE,
-      templateKey: ADMIN_INVITATION_TEMPLATE,
+      categoryKey: NOTIFICATION_CATEGORY.ADMIN_INVITATION,
       params: { invitationUrl: link.toString() },
       // The outbox row's key, arriving as the job id — a redelivery sends the same message, a resend a
       // new one, since its key carries the new expiry.

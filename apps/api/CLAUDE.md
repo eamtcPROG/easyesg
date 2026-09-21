@@ -1379,11 +1379,18 @@ pass baked into finishing a task since 24 Aug 2026, and `apps/api` — the works
 
 ## Boundary rules
 
-Nine, in `.dependency-cruiser.cjs`: `core-not-to-billing`, `billing-not-to-core`,
+Ten, in `.dependency-cruiser.cjs`: `core-not-to-billing`, `billing-not-to-core`,
 `api-no-unresolvable`, `controllers-not-to-use-cases`, `cross-cutting-not-to-modules`,
-`api-not-to-contracts-package`, `contracts-is-a-leaf`, `domain-free-of-frameworks`, `no-circular`.
+`api-not-to-contracts-package`, `contracts-is-a-leaf`, `domain-free-of-frameworks`,
+`email-port-behind-notification`, `no-circular`.
 
-All nine have a fixture in `tools/prove-boundaries.sh` proving they reject a real violation. Keep
+**`email-port-behind-notification` is AD-11's one mail path** (task 49.2): nothing under `modules/` but
+`platform/notification` may import `EmailPort` or the email adapters. A module that has mail to send
+sends a notification category's email through `NOTIFICATION_EMAIL_PORT`, which the notification module
+exports in worker mode — so FR-170's delivery evidence and FR-171's suppression, when they land, have one
+place to live and reach every notice at once.
+
+All ten have a fixture in `tools/prove-boundaries.sh` proving they reject a real violation. Keep
 that true: if you add or edit a rule, add its fixture in the same change. A rule that matches nothing
 looks exactly like a rule that passes — `domain-free-of-frameworks` shipped inert on its first run
 because dependency-cruiser matches npm dependencies by *resolved* path, so `^@nestjs` never matched

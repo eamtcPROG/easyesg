@@ -22322,3 +22322,66 @@ and the appended 37.3.
   are one behaviour each with a spec each, and the model file is a vocabulary kept whole with the two narrowings
   beside it; `nestjs-best-practices` — the catalogue injects the global store rather than importing its module,
   and is provided by the module whose dispatch will read it, exported nowhere until something outside needs it.
+
+## Task 49.2 — Task 19's mail port behind the notification module · 2026-09-21
+
+The other half of task 19's sentence, *"task 49's notification system absorbs the port later; it must not wait
+for it"*. There was already one `EmailPort`; what there was not yet was one **caller** of it. Four outbox
+handlers — verification, reset, organization invitation, operator invitation — each injected the provider port
+and sent, so 49.3's general dispatch would have been a second mail path beside them, and FR-170's delivery
+evidence and FR-171's suppression would have had two places to be written, or one to be forgotten.
+
+### Decision (project owner, one question)
+
+**A notification-owned mail port** — `NOTIFICATION_EMAIL_PORT`, `contracts/notification-email.port.ts` — which the
+four handlers call naming the category, with the notification module the only caller of `EmailPort`. That is the
+reading the provider port's own docblock gave in task 19: *"the same port with the notification service as its
+caller later"*. Chosen over the notification module providing `EMAIL_PORT` itself, which was the smallest diff and
+would have made one token mean both what callers use and the provider behind it, with the category derived from a
+template key that task 155's first-password wording breaks; and over raising the four as notifications now, which
+needs 49.3's dispatch and a recipient that is an address, and changes the use cases that write the outbox events —
+the callers the row keeps unchanged. `architecture.md` §12.5.6 carries the task-49.2 row.
+
+### What shipped
+
+- **The port** names the category, an address rather than a user (an invitee may hold no account), the locale, the
+  params and the idempotency key — and a wording only where the category has a second. It **returns nothing**: the
+  provider's handle is 51.4's to match bounces against, inside the module.
+- **`NotificationEmailService`**, the one caller of `EmailPort`, passes the message through. **It reads no category
+  behaviour yet**, deliberately: what a category with unreadable behaviour does is 49.3's, as 49.1's row records,
+  and reading it here would take that decision early.
+- **The notification module owns the email adapter module**, in worker mode only, as the sending always was, and
+  exports the port there; the account, invitation and admin modules import it instead of the adapter module.
+- **The four template constants are gone.** Each was an alias of a category member since 49.1, and a handler now
+  names the category; `PASSWORD_SETUP_TEMPLATE` stays, as the reset category's second wording.
+- **`email-port-behind-notification`**, the tenth api boundary rule, with its fixture: nothing under `modules/`
+  outside `platform/notification` may import `EmailPort` or the adapters. The sites were fixed first, so it starts
+  green. `apps/api/CLAUDE.md`'s rule list, the config's numbering and the two stated totals moved with it, and
+  `docs:check` is what found the api list — it counts the names.
+- The e2e suites that drive the registration and reset handlers over real outbox rows now record the notification
+  port, and assert the category.
+
+### Proof
+
+- **Unit**: the service sends the category's own wording unless a second is named, passes everything else through,
+  gives the producer nothing back, and lets a provider failure reach the job so the queue retries it. The reset
+  handler's spec asserts one category and two wordings.
+- **`boundaries:prove`**: all 24 rules reject their fixtures, the new one included. It ran twice — my command
+  chained it — and passed both times.
+- **Two mutations.** The service ignoring the second wording failed its spec. **The notification module exporting
+  nothing** in worker mode passed every unit spec and every api e2e suite — the e2e suites build the handlers
+  directly — and **failed only the worker boot**, which exited while resolving the handlers' port. That is the
+  worker's entry in the boot table doing its job: the wiring this task moved is visible to exactly one run.
+
+### Verification
+
+- `apps/api` unit **130 suites, 1,099 tests**; `pnpm --filter @easyesg/api typecheck`; `pnpm lint`;
+  `pnpm boundaries`; `pnpm boundaries:prove`, 24 of 24; `pnpm e2e` **47 suites, 1,207 tests**; `pnpm e2e:worker`
+  **2 of 2**; `pnpm docs:check`, 40 claims.
+- **Which run, and why.** The api row with its consumer clause — `e2e:worker`, since four consumers changed — and the
+  boundary pair, because a rule was added. No controller or DTO, so no `openapi:check`; no migration. A sub-step:
+  no `gates:clean`, no review agents; 49 closes with 49.3.
+- **Skills, read against the diff**: `one-idea-per-file`'s `file-one-behaviour-api` — the service is one behaviour
+  with its spec, the port file a vocabulary kept whole; `nestjs-best-practices` — the provider the handlers need is
+  exported by the module that owns it rather than re-registered beside them, and worker-only providers stay out of
+  the HTTP graph, which `openapi:check` boots in preview.

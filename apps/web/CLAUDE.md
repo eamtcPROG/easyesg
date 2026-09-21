@@ -352,7 +352,7 @@ Run lint and boundary checks from the **repo root**; they are workspace-wide.
 | --- | --- | --- |
 | root | `pnpm lint` | One flat config at the root; this package has no `lint` script of its own. Next 16 removed `next lint`, so this is the **only** lint gate — AD-9: without it "every gate in AD-13's table silently turns off" |
 | root | `pnpm boundaries` | dependency-cruiser over five roots, `apps/web/src` among them |
-| root | `pnpm boundaries:prove` | Asserts each of the 23 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
+| root | `pnpm boundaries:prove` | Asserts each of the 24 rules still **rejects** a real violation. Run after touching `.dependency-cruiser.cjs` |
 | here | `pnpm typecheck` | `tsc --noEmit` |
 | here | `pnpm build` | Needs **no** environment. Nothing under `[locale]` prerenders, so the build never reaches the message loader, and `src/lib/env.ts` resolves through getters so a secret is a runtime input rather than a build input |
 | here | `pnpm start:dev` / `test` | |

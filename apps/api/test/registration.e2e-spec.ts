@@ -7,7 +7,7 @@ import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { configureHttpApp } from '../src/main.http';
 import type { AppConfig } from '../src/config/configuration';
-import type { EmailDispatched, EmailMessage, EmailPort } from '../src/contracts/email.port';
+import type { NotificationEmail, NotificationEmailPort } from '../src/contracts/notification-email.port';
 import { EMAIL_VERIFICATION_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
 import { VerificationEmailHandler } from '../src/modules/identity/account/consumers/verification-email.handler';
 import { hashVerificationToken } from '../src/modules/identity/account/domain/verification-token';
@@ -25,11 +25,12 @@ import { hashVerificationToken } from '../src/modules/identity/account/domain/ve
  *    RLS on that table);
  *  - the payload carries the raw token while `identity.verification_token` holds only its SHA-256
  *    (OQ-54), asserted by hashing what the payload carried and finding it in the table;
- *  - the consumer turns that into an `EmailPort` call with a link the API will accept back.
+ *  - the consumer turns that into the notification module's email for the category, with a link the API
+ *    will accept back (the notification module, not the consumer, holds the provider since task 49.2).
  *
  * The consumer is constructed directly rather than by booting a worker, the way
  * `outbox.e2e-spec.ts` drives the dispatcher: `MODE` is read at module-definition time, so one
- * process cannot host both entrypoints, and a fake `EmailPort` is what lets the message itself be
+ * process cannot host both entrypoints, and a fake of that port is what lets the message itself be
  * asserted rather than inferred from a log line.
  */
 
@@ -55,12 +56,12 @@ const connect = async (userKey: string, passwordKey: string, applicationName: st
   return dataSource;
 };
 
-class RecordingEmailPort implements EmailPort {
-  readonly sent: EmailMessage[] = [];
+class RecordingEmailPort implements NotificationEmailPort {
+  readonly sent: NotificationEmail[] = [];
 
-  send(message: EmailMessage): Promise<EmailDispatched> {
-    this.sent.push(message);
-    return Promise.resolve({ providerMessageId: 'recorded' });
+  send(email: NotificationEmail): Promise<void> {
+    this.sent.push(email);
+    return Promise.resolve();
   }
 }
 
@@ -201,6 +202,7 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
       expect(emailPort.sent).toHaveLength(1);
       const [message] = emailPort.sent;
       expect(message.to).toBe(email);
+      expect(message.categoryKey).toBe('identity.email_verification');
       // §8.4: the outbound call carries the key generated in the originating transaction.
       expect(message.idempotencyKey).toBe(queued.idempotency_key);
 

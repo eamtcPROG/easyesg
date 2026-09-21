@@ -7,7 +7,7 @@ import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { configureHttpApp } from '../src/main.http';
 import type { AppConfig } from '../src/config/configuration';
-import type { EmailDispatched, EmailMessage, EmailPort } from '../src/contracts/email.port';
+import type { NotificationEmail, NotificationEmailPort } from '../src/contracts/notification-email.port';
 import {
   EMAIL_VERIFICATION_REQUESTED,
   PASSWORD_RESET_REQUESTED,
@@ -46,12 +46,12 @@ const connect = async (userKey: string, passwordKey: string, applicationName: st
   return dataSource;
 };
 
-class RecordingEmailPort implements EmailPort {
-  readonly sent: EmailMessage[] = [];
+class RecordingEmailPort implements NotificationEmailPort {
+  readonly sent: NotificationEmail[] = [];
 
-  send(message: EmailMessage): Promise<EmailDispatched> {
-    this.sent.push(message);
-    return Promise.resolve({ providerMessageId: 'recorded' });
+  send(email: NotificationEmail): Promise<void> {
+    this.sent.push(email);
+    return Promise.resolve();
   }
 }
 
@@ -184,7 +184,9 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
       expect(link.pathname).toBe('/ro/set-password');
       expect(link.searchParams.get('token')).toBe(token);
       expect(emailPort.sent[0].idempotencyKey).toBe(queued.idempotency_key);
-      expect(emailPort.sent[0].templateKey).toBe('identity.password_reset');
+      // The category, with no second wording named: the reset's own is the category's key (task 49.2).
+      expect(emailPort.sent[0].categoryKey).toBe('identity.password_reset');
+      expect(emailPort.sent[0].templateKey).toBeUndefined();
     });
 
     it('consuming it replaces the password and terminates every session', async () => {
@@ -319,6 +321,7 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
         jobName: PASSWORD_RESET_REQUESTED,
         attempt: 1,
       });
+      expect(emailPort.sent[0].categoryKey).toBe('identity.password_reset');
       expect(emailPort.sent[0].templateKey).toBe('identity.password_setup');
 
       await resetPassword(queued.payload.token).expect(204);

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { ConfigService } from '@nestjs/config';
 import { LOCALES } from '@easyesg/i18n';
 import type { AppConfig } from '@api/config/configuration';
-import type { EmailDispatched, EmailMessage, EmailPort } from '@api/contracts/email.port';
+import type { NotificationEmail, NotificationEmailPort } from '@api/contracts/notification-email.port';
 import type { JobContext } from '@api/infrastructure/queue/job-handler';
 import { PasswordResetEmailHandler } from './password-reset-email.handler';
 
@@ -20,12 +20,14 @@ import { PasswordResetEmailHandler } from './password-reset-email.handler';
 describe('PasswordResetEmailHandler — the wording it picks (task 155)', () => {
   const CATALOGUES = join(__dirname, '../../../../../../../packages/i18n/catalogues');
 
-  class RecordingEmailPort implements EmailPort {
-    readonly sent: EmailMessage[] = [];
+  // The notification module's port since task 49.2 — the handler names the category, and a wording only where
+  // the category has a second one.
+  class RecordingEmailPort implements NotificationEmailPort {
+    readonly sent: NotificationEmail[] = [];
 
-    send(message: EmailMessage): Promise<EmailDispatched> {
-      this.sent.push(message);
-      return Promise.resolve({});
+    send(email: NotificationEmail): Promise<void> {
+      this.sent.push(email);
+      return Promise.resolve();
     }
   }
 
@@ -33,22 +35,29 @@ describe('PasswordResetEmailHandler — the wording it picks (task 155)', () => 
   const context = { jobId: 'job-1' } as JobContext;
   const payload = { accountId: 'account-1', email: 'ana@example.md', locale: 'ro', token: 'token-1' };
 
-  const deliver = async (extra: Record<string, unknown>): Promise<EmailMessage> => {
+  const deliver = async (extra: Record<string, unknown>): Promise<NotificationEmail> => {
     const port = new RecordingEmailPort();
     await new PasswordResetEmailHandler(port, config).handle({ ...payload, ...extra }, context);
     return port.sent[0];
   };
 
+  // One category, two wordings: the reset's is the category's own key, so it names none.
   it('words the link as a reset for an account holding a password', async () => {
-    expect((await deliver({ holdsPassword: true })).templateKey).toBe('identity.password_reset');
+    const sent = await deliver({ holdsPassword: true });
+    expect(sent.categoryKey).toBe('identity.password_reset');
+    expect(sent.templateKey).toBeUndefined();
   });
 
-  it('words it as setting a password for an account holding none', async () => {
-    expect((await deliver({ holdsPassword: false })).templateKey).toBe('identity.password_setup');
+  it('words it as setting a password for an account holding none, under the same category', async () => {
+    const sent = await deliver({ holdsPassword: false });
+    expect(sent.categoryKey).toBe('identity.password_reset');
+    expect(sent.templateKey).toBe('identity.password_setup');
   });
 
   it('reads a row written before the flag existed as a reset — every such row was one', async () => {
-    expect((await deliver({})).templateKey).toBe('identity.password_reset');
+    const sent = await deliver({});
+    expect(sent.categoryKey).toBe('identity.password_reset');
+    expect(sent.templateKey).toBeUndefined();
   });
 
   /**

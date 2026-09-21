@@ -2,11 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { toLocale } from '@easyesg/i18n';
 import type { AppConfig } from '@api/config/configuration';
-import { EMAIL_PORT, type EmailPort } from '@api/contracts/email.port';
+import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
+import { NOTIFICATION_EMAIL_PORT, type NotificationEmailPort } from '@api/contracts/notification-email.port';
 import { HandlesJob, type JobContext, type JobHandler } from '@api/infrastructure/queue/job-handler';
 import {
   INVITATION_ISSUED,
-  INVITATION_TEMPLATE,
   type InvitationIssued,
 } from '../constants/invitation.constants';
 
@@ -16,14 +16,15 @@ import {
  * The far end of the chain UC-60 starts: `IssueInvitation` writes an outbox row in the same
  * transaction as the invitation, the dispatcher enqueues it as a job named
  * `identity.invitation.issued`, and `OutboxConsumer` routes it here by that name. Nothing in the
- * request tier ever calls `EmailPort`.
+ * request tier ever sends mail, and since task 49.2 this hands the notification module the category's
+ * email rather than reaching the provider itself (AD-11).
  *
  * **One handler for issue and resend alike**, because the recipient sees one kind of message with a
  * different link in it. A second event type would be a second template and a second thing to keep
  * in step for a distinction nobody outside the code can observe.
  *
  * It is an adapter, not a use case, and has no use case behind it on purpose: there is no domain
- * decision here. It reads a payload, builds a URL and calls a port — `VerificationEmailHandler`
+ * decision here. It reads a payload, builds a URL and sends the category's email — `VerificationEmailHandler`
  * carries the same reasoning at length.
  *
  * **The link is built here** for that handler's two reasons: its shape is `apps/web`'s route table
@@ -43,7 +44,7 @@ import {
 @HandlesJob(INVITATION_ISSUED)
 export class InvitationEmailHandler implements JobHandler {
   constructor(
-    @Inject(EMAIL_PORT) private readonly email: EmailPort,
+    @Inject(NOTIFICATION_EMAIL_PORT) private readonly email: NotificationEmailPort,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
@@ -68,7 +69,7 @@ export class InvitationEmailHandler implements JobHandler {
     await this.email.send({
       to: event.email,
       locale: event.locale,
-      templateKey: INVITATION_TEMPLATE,
+      categoryKey: NOTIFICATION_CATEGORY.INVITATION,
       params: { organizationName: event.organizationName, invitationUrl: link.toString() },
       // §8.4's idempotency key, generated in the originating transaction — it is the outbox row's
       // key, arriving here as the job id. A redelivered job therefore asks the provider to send the

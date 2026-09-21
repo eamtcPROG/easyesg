@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
 import { Argon2PasswordHasher } from '@api/infrastructure/adapters/password-hasher/argon2-password.hasher';
 import { JwtAdminTokens } from '@api/infrastructure/adapters/token-signer/jwt-admin-tokens';
-import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
+import { NotificationModule } from '@api/modules/platform/notification/notification.module';
 import { AdminReadOnly } from '@api/infrastructure/persistence/admin-readonly';
 import { AdminAccountStoreRepository } from '@api/infrastructure/persistence/platform/admin-account-store.repository';
 import { AdminCredentialStoreRepository } from '@api/infrastructure/persistence/platform/admin-credential-store.repository';
@@ -353,7 +353,7 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
 
 @Module({
   // `AuditModule` provides the log's writer to both sign-in and acceptance; the worker needs only mail.
-  imports: mode === APP_MODE.WORKER ? [EmailModule] : [AuditModule],
+  imports: mode === APP_MODE.WORKER ? [NotificationModule] : [AuditModule],
   controllers:
     mode === APP_MODE.WORKER
       ? []

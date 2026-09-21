@@ -2,13 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { toLocale } from '@easyesg/i18n';
 import type { AppConfig } from '@api/config/configuration';
-import { EMAIL_PORT, type EmailPort } from '@api/contracts/email.port';
+import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
+import { NOTIFICATION_EMAIL_PORT, type NotificationEmailPort } from '@api/contracts/notification-email.port';
 import { HandlesJob, type JobContext, type JobHandler } from '@api/infrastructure/queue/job-handler';
 import {
   PASSWORD_LINK_INTENT,
   PASSWORD_LINK_INTENT_PARAM,
   PASSWORD_RESET_REQUESTED,
-  PASSWORD_RESET_TEMPLATE,
   PASSWORD_SETUP_TEMPLATE,
   type PasswordResetRequested,
 } from '../constants/account.constants';
@@ -33,7 +33,7 @@ import {
 @HandlesJob(PASSWORD_RESET_REQUESTED)
 export class PasswordResetEmailHandler implements JobHandler {
   constructor(
-    @Inject(EMAIL_PORT) private readonly email: EmailPort,
+    @Inject(NOTIFICATION_EMAIL_PORT) private readonly email: NotificationEmailPort,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
@@ -51,7 +51,9 @@ export class PasswordResetEmailHandler implements JobHandler {
     await this.email.send({
       to: event.email,
       locale: event.locale,
-      templateKey: event.holdsPassword ? PASSWORD_RESET_TEMPLATE : PASSWORD_SETUP_TEMPLATE,
+      categoryKey: NOTIFICATION_CATEGORY.PASSWORD_RESET,
+      // The category's second wording (task 155); the reset's own is the category's key.
+      ...(event.holdsPassword ? {} : { templateKey: PASSWORD_SETUP_TEMPLATE }),
       params: { resetUrl: link.toString() },
       idempotencyKey: context.jobId,
     });

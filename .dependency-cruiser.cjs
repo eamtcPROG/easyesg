@@ -5,8 +5,8 @@
  * silently matches nothing looks identical to a rule that passes." Every rule below has a
  * counter-fixture in tools/prove-boundaries.sh, which asserts each one still rejects it.
  *
- * Rules 1-8 guard apps/api; 9-14 guard apps/web and packages/ui; 15-21 guard apps/admin and the
- * separation between the two front ends; 22 guards packages/i18n; no-circular guards everything
+ * Rules 1-9 guard apps/api; 10-15 guard apps/web and packages/ui; 16-22 guard apps/admin and the
+ * separation between the two front ends; 23 guards packages/i18n; no-circular guards everything
  * cruised. The `boundaries` script names all five roots — a rule anchored at a path that is never
  * walked is inert in the same invisible way.
  */
@@ -103,6 +103,20 @@ module.exports = {
         // and the rule looks green while enforcing nothing.
         path: 'node_modules/(@nestjs|typeorm|express|ioredis|bullmq)(/|$)',
       },
+    },
+    {
+      name: 'email-port-behind-notification',
+      comment:
+        'AD-11, FR-157, task 49.2: one mail path. The notification module is the one caller of EmailPort and ' +
+        'the one importer of its adapters; every other module sends a category\'s email through ' +
+        'NOTIFICATION_EMAIL_PORT, so the delivery evidence and suppression FR-170 and FR-171 owe for every ' +
+        'notice have one place to live. A module reaching the provider directly is a second way to send mail.',
+      severity: 'error',
+      from: {
+        path: '^apps/api/src/modules/',
+        pathNot: '^apps/api/src/modules/platform/notification/',
+      },
+      to: { path: '^apps/api/src/(contracts/email\\.port|infrastructure/adapters/email/)' },
     },
     {
       name: 'web-not-to-commerce',

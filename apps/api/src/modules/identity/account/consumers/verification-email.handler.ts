@@ -2,11 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { toLocale } from '@easyesg/i18n';
 import type { AppConfig } from '@api/config/configuration';
-import { EMAIL_PORT, type EmailPort } from '@api/contracts/email.port';
+import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
+import { NOTIFICATION_EMAIL_PORT, type NotificationEmailPort } from '@api/contracts/notification-email.port';
 import { HandlesJob, type JobContext, type JobHandler } from '@api/infrastructure/queue/job-handler';
 import {
   EMAIL_VERIFICATION_REQUESTED,
-  EMAIL_VERIFICATION_TEMPLATE,
   type EmailVerificationRequested,
 } from '../constants/account.constants';
 
@@ -16,10 +16,11 @@ import {
  * This is the far end of the chain registration starts: `RegisterAccount` writes an outbox row in
  * the same transaction as the account, the dispatcher enqueues it as a job named
  * `identity.email_verification.requested`, and `OutboxConsumer` routes it here by that name.
- * Nothing in the request tier ever calls `EmailPort`.
+ * Nothing in the request tier ever sends mail, and since task 49.2 nothing here reaches the provider
+ * either: the message goes to the notification module, the one caller of `EmailPort` (AD-11).
  *
  * It is an adapter, not a use case, and has no use case behind it on purpose: there is no domain
- * decision here. It reads a payload, builds a URL and calls a port. A `SendVerificationEmail` class
+ * decision here. It reads a payload, builds a URL and hands the notification module the category's email. A `SendVerificationEmail` class
  * in `use-cases/` would be the thin pass-through CLAUDE.md warns against — orchestration with
  * nothing to orchestrate.
  *
@@ -41,7 +42,7 @@ import {
 @HandlesJob(EMAIL_VERIFICATION_REQUESTED)
 export class VerificationEmailHandler implements JobHandler {
   constructor(
-    @Inject(EMAIL_PORT) private readonly email: EmailPort,
+    @Inject(NOTIFICATION_EMAIL_PORT) private readonly email: NotificationEmailPort,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
@@ -61,7 +62,7 @@ export class VerificationEmailHandler implements JobHandler {
     await this.email.send({
       to: event.email,
       locale: event.locale,
-      templateKey: EMAIL_VERIFICATION_TEMPLATE,
+      categoryKey: NOTIFICATION_CATEGORY.EMAIL_VERIFICATION,
       params: { verificationUrl: link.toString() },
       // §8.4's idempotency key, generated in the originating transaction — it is the outbox row's
       // key, arriving here as the job id. A redelivered job therefore asks the provider to send

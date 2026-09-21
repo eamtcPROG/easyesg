@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import type { EmailMessage } from '@api/contracts/email.port';
-import { EMAIL_VERIFICATION_TEMPLATE } from '@api/modules/identity/account/constants/account.constants';
+import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import { initialiseCatalogue } from '@api/app/messages/catalogue';
 
 const sendMail = jest.fn();
@@ -30,7 +30,7 @@ const SETTINGS = {
 const MESSAGE: EmailMessage = {
   to: 'recipient@example.md',
   locale: 'ro',
-  templateKey: EMAIL_VERIFICATION_TEMPLATE,
+  templateKey: NOTIFICATION_CATEGORY.EMAIL_VERIFICATION,
   params: { verificationUrl: 'https://example.md/verify?token=abc' },
   idempotencyKey: 'outbox-row-1',
 };

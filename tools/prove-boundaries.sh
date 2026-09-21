@@ -101,6 +101,11 @@ prove api-not-to-contracts-package \
   "$API/__boundary_fixture.ts" \
   "export * from '../../../packages/contracts/src/index';"
 
+prove email-port-behind-notification \
+  "$API/modules/identity/account/consumers/__boundary_fixture.ts" \
+  "import { EMAIL_PORT } from '@api/contracts/email.port';
+export const violation = EMAIL_PORT;"
+
 prove web-not-to-commerce \
   "$WEB/features/reporting/__boundary_fixture.ts" \
   "import { } from '../commerce';

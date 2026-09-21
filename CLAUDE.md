@@ -50,7 +50,7 @@ proving it rejects a real violation, plus the four config blocks' spread matrix)
 `pnpm typecheck`, `pnpm image:check`, `pnpm docs:check` (40 countable claims these
 files make, each checked against the repository and each proven to notice a changed number),
 `pnpm test`, `pnpm boundaries`,
-`pnpm boundaries:prove` (23 rules, each with a fixture proving it rejects a real violation),
+`pnpm boundaries:prove` (24 rules, each with a fixture proving it rejects a real violation),
 `pnpm build`, `pnpm openapi:check`, `pnpm facade:check`, `pnpm routes:check`,
 `pnpm migrations:check`, `pnpm e2e`, `pnpm e2e:worker`, `pnpm e2e:web`. **CI runs exactly these**
 (`.github/workflows/gates.yml`, three gate jobs in parallel then `images`) — adding a gate
