@@ -1,4 +1,5 @@
 import type { Locale } from '@easyesg/i18n';
+import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 
 /**
  * The verification email as it travels: an outbox `event_type`, which the dispatcher turns into a
@@ -12,9 +13,10 @@ export const EMAIL_VERIFICATION_REQUESTED = 'identity.email_verification.request
 /**
  * Catalogue key for the message itself. Template wording is a committed catalogue, not
  * configuration (OQ-43): a genuinely new notice cannot exist until code calls for it, so the
- * wording may as well ship with the release that introduces the call.
+ * wording may as well ship with the release that introduces the call. It is the notice's category
+ * key (FR-173: wording resolves by category key; task 49.1), so it is that vocabulary's member.
  */
-export const EMAIL_VERIFICATION_TEMPLATE = 'identity.email_verification';
+export const EMAIL_VERIFICATION_TEMPLATE = NOTIFICATION_CATEGORY.EMAIL_VERIFICATION;
 
 /**
  * **This payload carries the raw token** (OQ-54, closed 20 Aug 2026). `identity.verification_token`
@@ -38,7 +40,7 @@ export interface EmailVerificationRequested {
 /** FR-6's reset email as it travels — same pattern as the verification event above (task 21). */
 export const PASSWORD_RESET_REQUESTED = 'identity.password_reset.requested';
 
-export const PASSWORD_RESET_TEMPLATE = 'identity.password_reset';
+export const PASSWORD_RESET_TEMPLATE = NOTIFICATION_CATEGORY.PASSWORD_RESET;
 
 /**
  * The same link, worded for an account holding no password (task 155, §12.5.6's task-155 row (8)) —

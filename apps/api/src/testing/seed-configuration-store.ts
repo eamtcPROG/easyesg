@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
-import { scheduledWindows } from '@api/infrastructure/configuration/seed-configuration';
+import { parseSeedName, scheduledWindows } from '@api/infrastructure/configuration/seed-configuration';
 
 /**
  * The shipped `config/seed/` artefacts, behind the configuration store's read surface.
@@ -72,15 +72,17 @@ export function readSeedEntries(directory = resolve(process.cwd(), '../../config
   return readdirSync(directory)
     .filter((name) => name.endsWith('.json'))
     .map((name) => {
-      const [, kind, scope] = /^([a-z0-9-]+)\.([a-z0-9-]+)\.json$/.exec(name) ?? [];
+      // The loader's own parser (task 49.1), so a file it would skip or name differently is skipped or
+      // named the same way here — this read its own copy of the pattern until then.
+      const parsed = parseSeedName(name);
+      if (!parsed) return [];
       const file = JSON.parse(readFileSync(resolve(directory, name), 'utf8')) as Record<
         string,
         unknown
       >;
-      return expand(kind?.replaceAll('-', '_') ?? '', scope ?? '', file);
+      return expand(parsed.kind, parsed.scope, file);
     })
-    .flat()
-    .filter((entry) => entry.kind !== '');
+    .flat();
 }
 
 /**

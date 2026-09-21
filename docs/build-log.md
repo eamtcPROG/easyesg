@@ -22242,3 +22242,83 @@ twelve `endedSessionIn` checks, `TENANT_READ.SIGNED_OUT`, `endedSessionIn` itsel
   the S-36 builder keeps its predicate private beside it, with a spec. `vercel-react-best-practices` — the
   `.tsx` edits are removals; the redirect adds no await to any path that did not already make the request, and
   the S-35 and S-37 readings share the chrome's memoized read (`server-cache-react`) rather than adding one.
+
+## Task 49.1 — Notification categories as configuration · 2026-09-21
+
+FR-173's catalogue made real in the smallest form the requirements allow: each category's behaviour — the
+channels it travels on and whether a recipient may turn it off — as its own artefact in task 16's store, read
+through one validated reader that fails closed. Nothing raises a category through it yet; 49.3 is the first
+consumer.
+
+### Decisions (project owner, two passes)
+
+- **Only the four notices that send today are registered** — email verification, password reset, organization
+  invitation, operator invitation — each email-only and transactional, and every later category by the task
+  that first raises it. FR-173's own amendment is the reason: a category cannot exist unless code raises it, so a
+  row with no producer is behaviour nothing exhibits, and S-27 would draw a preference over a notice that never
+  sends. 51.2's *"the categories 49.1 registered"* was reworded to match.
+- **One artefact per category**, scoped by the key, over one catalogue artefact: A-17 publishes and reverts one
+  category in one action (NFR-85).
+- **The plan gap the reading found**: FR-164's outstanding-report, FR-165's deadline and FR-166's report-update
+  notices had no task raising them, though 121.2 corrects their recipients. The owner first folded all three into
+  51.2 — on my option text, which named only task 41 as a dependency. **FR-166's are in Stages 2 and 5** (task
+  37's factor sets, 67.7's migration runs), which would have held Stage 1 open until Stage 5, so it was put back:
+  FR-164 and FR-165 are 51.2's, which waits for task 41.3 only; FR-166's version half is 67.7's, its factor half a
+  new 37.3, and **its threshold half 67.8's** — the third change class FR-166 names, which my second question also
+  left out, placed by the rule the owner chose (the task making the change raises its notice) and recorded as
+  that rule applied rather than as a decision of its own.
+
+`architecture.md` §12.5.6 carries the task-49.1 row, (1)–(6); `task.md` carries the amended 51.2, 67.7 and 67.8
+and the appended 37.3.
+
+### What shipped, and the three judgement calls inside it
+
+- **`NOTIFICATION_CATEGORY` in `contracts/notification.port.ts`**, beside `RaiseNotificationCommand.categoryKey`,
+  which it now types. The producers sit in identity and the admin realm, and `contracts/` is the one surface
+  across contexts. **The four template constants became its members** — FR-173 resolves wording by category key,
+  so the key and the template key were one value declared twice. `identity.password_setup`, task 155's
+  first-password wording of the reset, stays its own template: one trigger, one category, two wordings.
+- **The seed file name admits a dot and an underscore in its scope.** The loader's pattern refused both, and the
+  keys carry both because they are message-catalogue paths; a hyphenated second spelling of each key was the
+  alternative, and a second vocabulary to keep in step. **`testing/seed-configuration-store.ts` had its own copy
+  of the pattern** — the double its own docblock says must not parse differently from the loader — so the parser
+  is exported and the double imports it.
+- **No cadence in the payload.** FR-173 names lead times and a repeat interval, which only FR-164's and FR-165's
+  notices have; none of the four repeats, so the fields arrive with 51.2 rather than as optional members nothing
+  reads. The reader ignores members it does not know, so that publication can precede the release reading it.
+- **The reader refuses a payload whole** — no channels, an empty list, a channel twice, a word outside either
+  vocabulary — and the catalogue logs the revision to replace, per read. **What dispatch does with a category that
+  has no behaviour is 49.3's**, recorded rather than guessed: a guessed channel list for a transactional notice is
+  a verification email sent nowhere.
+
+### Proof
+
+- **Unit**: the reader's cases; the catalogue's fail-closed cases; the loader's name parsing, new, with the dotted
+  scope; and the shipped set held to exactly the vocabulary — every member readable as email-only and
+  transactional, and no artefact whose scope no code raises.
+- **e2e**, `notification-categories.e2e-spec.ts`, new: the real loader names all four, the real store serves them
+  through the reader, a publication reaches a replica on its next poll, and one revert puts the seeded revision
+  back. It seeds what it reads and restores what it changes.
+- **Five seeded mutations**, the last run twice. The catalogue caching its first answer failed the e2e alone (a unit fake cannot
+  see a publication); asking another scope failed both; a channel accepted twice failed the reader's spec; a seed
+  ahead of its producer failed the vocabulary case; the parser left narrow failed the unit double's cases — **and
+  passed the e2e**, which is the finding worth keeping. The rows outlive the run that wrote them, so a suite
+  reading the store alone stays green on a loader that no longer names the files: *a gate must not depend on
+  state a previous command left behind*, one layer down. The suite now asserts what the seed run reported naming,
+  and with the pattern narrowed again it fails.
+
+### Verification
+
+- `apps/api` unit **129 suites, 1,095 tests**; `pnpm --filter @easyesg/api typecheck`; `pnpm lint`;
+  `pnpm e2e` **47 suites, 1,207 tests**, the new suite among them; `pnpm e2e:worker` **2 of 2** — the module now
+  registers a provider in both modes. The e2e suite was tightened after the full run; the tightened suite passed
+  alone, 2 of 2, and a test-only change reaches nothing else. `pnpm docs:check`, 40 claims, after the seed count
+  moved to 22 — written in digits, because the check's number words stop at twenty and every figure above twenty
+  in that file is already a numeral.
+- **Which run, and why.** The per-row run for `apps/api`: no controller or DTO, so no `openapi:check`; no
+  migration; no front end reads anything changed. No `gates:clean` — a sub-step, and nothing moved. No review
+  agents, under the owner's standing rule; 49 closes when 49.2 and 49.3 do.
+- **Skills, read against the diff**: `one-idea-per-file`'s `file-one-behaviour-api` — the reader and the catalogue
+  are one behaviour each with a spec each, and the model file is a vocabulary kept whole with the two narrowings
+  beside it; `nestjs-best-practices` — the catalogue injects the global store rather than importing its module,
+  and is provided by the module whose dispatch will read it, exported nowhere until something outside needs it.

@@ -23,9 +23,21 @@ import { ConfigurationStore } from './configuration-store.service';
 
 const SEED_DIRECTORY = resolve(process.cwd(), '../../config/seed');
 
-/** `<kind>.<scope>.json` — `factor-set.md.json` is kind `factor_set`, scope `md`. */
-function parseSeedName(fileName: string): { kind: string; scope: string } | null {
-  const match = /^([a-z0-9-]+)\.([a-z0-9-]+)\.json$/.exec(fileName);
+/**
+ * `<kind>.<scope>.json` — `factor-set.md.json` is kind `factor_set`, scope `md`.
+ *
+ * **The kind is the first segment and the scope is everything between it and `.json`**, dots and
+ * underscores included (task 49.1): a notification category is scoped by its key, which is also the
+ * message-catalogue path its wording resolves by (FR-173) — `notification-category.identity.password_reset.json`
+ * is kind `notification_category`, scope `identity.password_reset`. A scope spelled differently from the key
+ * would be a second vocabulary to keep in step. The kind still folds dashes to underscores; the scope is
+ * taken as written, which every earlier file already relied on (`2026-05-01`).
+ *
+ * Exported for `testing/seed-configuration-store.ts`, which reads the same files and must name them the
+ * same way — a second copy of this pattern is how a double comes to read artefacts the loader does not.
+ */
+export function parseSeedName(fileName: string): { kind: string; scope: string } | null {
+  const match = /^([a-z0-9-]+)\.([a-z0-9._-]+)\.json$/.exec(fileName);
   if (!match) return null;
   return { kind: match[1].replaceAll('-', '_'), scope: match[2] };
 }
