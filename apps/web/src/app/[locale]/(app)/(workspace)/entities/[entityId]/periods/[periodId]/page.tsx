@@ -4,7 +4,6 @@ import { PeriodRecordForm } from '@/features/periods/components/period-record-fo
 import styles from '@/features/periods/components/periods.module.css';
 import { readPeriodRecord } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
-import { redirectToSignIn } from '@/server/session/sign-in-redirect';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
@@ -34,8 +33,6 @@ export default async function ReportingPeriodRecordPage({ params }: Props) {
     readPeriodRecord({ entityId, periodId }),
   ]);
 
-  // Task 160: the api has ended the session this browser still names — sign in, and back here.
-  if (read.status === TENANT_READ.SIGNED_OUT) return redirectToSignIn();
   if (read.status === TENANT_READ.FORBIDDEN) {
     // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
     await redirectToChoiceIfOwed();

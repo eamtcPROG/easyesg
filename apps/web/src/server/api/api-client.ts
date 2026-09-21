@@ -10,7 +10,9 @@ import { API_OUTCOME, type ApiFailure, type ApiOutcome, type ListResult } from '
 import { buildListQuery, type ListQuery } from '@/lib/pagination';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
 import { env } from '@/lib/env';
+import { outcomeEndsSession } from '@/lib/session-standing';
 import { unsealLiveSession } from '../session/session-codec';
+import { redirectToSignIn } from '../session/sign-in-redirect';
 
 /**
  * The typed client for the public API. **The only place that knows the wire conventions — and
@@ -55,6 +57,14 @@ import { unsealLiveSession } from '../session/session-codec';
  *
  * `API_BASE_URL` carries the `/api/v1` prefix (the committed `.env.example` convention), so
  * `path` here is version-relative: `/auth/register`, never `/api/v1/auth/register`.
+ *
+ * **A session the api has ended is answered here, and nowhere else** (task 161; `architecture.md`
+ * §12.5.6's task-161 row). The sealed cookie outlives a session ended elsewhere until its access token
+ * falls due, so a request can carry a bearer the api refuses. When it does — `authentication-required`
+ * or `session-expired`, on a request this seam attached the bearer to — the caller is sent to sign in
+ * with the address it asked for kept, whatever it was: a read during render, a write from a Server
+ * Action. Task 160 put that check on each screen and each data module instead, and two screens that
+ * read during render were never given it; here a read added tomorrow has it already.
  */
 const PROBLEM_MEDIA_TYPE = 'application/problem+json';
 
@@ -92,6 +102,11 @@ type Method = (typeof METHOD)[keyof typeof METHOD];
  */
 const REQUEST_CONTEXT = {
   Ambient: 'ambient',
+  /**
+   * Ambient context, and **an ended session handed back as the outcome** rather than answered with a
+   * redirect (task 161). For §4.3's branch alone — `observingApi` below says why.
+   */
+  Observed: 'observed',
   Detached: 'detached',
 } as const;
 
@@ -158,7 +173,7 @@ async function send(
   body?: unknown,
   context: RequestContext = REQUEST_CONTEXT.Ambient,
 ): Promise<{ response: Response } | ApiFailure> {
-  const ambient = context === REQUEST_CONTEXT.Ambient;
+  const ambient = context !== REQUEST_CONTEXT.Detached;
   const locale = ambient ? await getLocale() : null;
   const authorization = ambient ? await sessionAuthorization() : {};
 
@@ -200,9 +215,15 @@ async function send(
       readProblemDocument(body, response.status),
     );
     // Only unparseable JSON reaches null here — `readProblemDocument` repairs everything else.
-    return problem
-      ? { status: API_OUTCOME.Problem, problem }
-      : { status: API_OUTCOME.Unreachable };
+    if (!problem) return { status: API_OUTCOME.Unreachable };
+    const failure = { status: API_OUTCOME.Problem, problem } as const;
+    // **Only where this seam sent the bearer**: without one the refusal is the caller's to answer —
+    // S-02's setup grant holds no session — and a public route never reads a bearer, so sign-in's own
+    // reads cannot send it to itself.
+    if (context === REQUEST_CONTEXT.Ambient && 'authorization' in authorization && outcomeEndsSession(failure)) {
+      return redirectToSignIn();
+    }
+    return failure;
   }
 
   if (!response.ok) {
@@ -246,9 +267,10 @@ async function requestObject<TObject>(
 async function requestList<TObject>(
   path: string,
   query?: ListQuery,
+  context?: RequestContext,
 ): Promise<ApiOutcome<ListResult<TObject>>> {
   const search = buildListQuery(query);
-  const sent = await send(METHOD.Get, search ? `${path}?${search}` : path);
+  const sent = await send(METHOD.Get, search ? `${path}?${search}` : path, undefined, context);
   if (!('response' in sent)) return sent;
 
   const envelope = await readBody(sent.response, path, (body) =>
@@ -292,6 +314,25 @@ export const api = {
     path: string,
     body?: TBody,
   ): Promise<ApiOutcome<TObject>> => requestObject<TObject>(METHOD.Delete, path, body),
+} as const;
+
+/**
+ * The two reads with **an ended session handed back** instead of answered (task 161).
+ *
+ * One caller, named rather than general, like `detachedApi` below: §4.3's branch
+ * (`server/session/post-sign-in.ts`), where *the session has ended* is an answer its callers act on
+ * themselves. The sign-in gate serves the form for it — a redirect to sign-in would be a redirect to
+ * itself — S-02's actions clear the cookie with it, S-03 offers sign-in beside the invitation with it,
+ * and the branch after a sign-in maps it like any other answer. None of them renders the chrome, whose
+ * memberships read goes through `api` and redirects. Anything else reaching for this is a read that has
+ * quietly gone back to answering *could not load* for a session that has ended.
+ */
+export const observingApi = {
+  get: <TObject>(path: string): Promise<ApiOutcome<TObject>> =>
+    requestObject<TObject>(METHOD.Get, path, undefined, REQUEST_CONTEXT.Observed),
+
+  getList: <TObject>(path: string, query?: ListQuery): Promise<ApiOutcome<ListResult<TObject>>> =>
+    requestList<TObject>(path, query, REQUEST_CONTEXT.Observed),
 } as const;
 
 /**

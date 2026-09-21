@@ -1,3 +1,4 @@
+import { PROBLEM_TYPE } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiOutcome } from './api-outcome';
 
 /**
@@ -30,9 +31,21 @@ export const SESSION_ENDED_STATUS = 401;
 export const endsSession = (status: number | undefined): boolean => status === SESSION_ENDED_STATUS;
 
 /**
- * Whether an api answer says the session has ended (task 160) — the question every read made during render
- * now asks before it concludes *could not load*. The sealed cookie outlives a session ended elsewhere until
- * its access token falls due, so a 401 here is the api knowing something the cookie does not.
+ * `AuthGuard`'s two refusals of a bearer — the only answers that mean *the session this request carried is
+ * not held*. Named by type rather than by status (task 161): a 401 is also a wrong password,
+ * `credential-invalid`, which the form that asked must see.
+ */
+const SESSION_ENDED_PROBLEMS: readonly string[] = [
+  PROBLEM_TYPE.AuthenticationRequired,
+  PROBLEM_TYPE.SessionExpired,
+];
+
+/**
+ * Whether an api answer says the session has ended (task 160; keyed on the problem type since task 161).
+ * The sealed cookie outlives a session ended elsewhere until its access token falls due, so this is the api
+ * knowing something the cookie does not. **The api client asks it of every request that carried the bearer**
+ * (`server/api/api-client.ts`), and §4.3's branch asks it of the reads it makes through the client that
+ * hands the ending back.
  */
 export const outcomeEndsSession = (outcome: ApiOutcome<unknown>): boolean =>
-  outcome.status === API_OUTCOME.Problem && endsSession(outcome.problem.status);
+  outcome.status === API_OUTCOME.Problem && SESSION_ENDED_PROBLEMS.includes(outcome.problem.type);

@@ -1,7 +1,6 @@
 import { readActiveMembership } from '@/server/data/memberships';
 import { readOrganizationPeriods } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
-import { redirectToSignIn } from '@/server/session/sign-in-redirect';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { toOverviewRows } from '../../../tools/overview';
 import { AttentionRegion } from '../regions/attention-region';
@@ -73,9 +72,6 @@ export async function OverviewSection() {
     readActiveMembership(),
   ]);
 
-  // Task 160: the api has ended the session this browser still names — sign in, and back here. Inside
-  // this region's boundary, so the redirect arrives in the stream.
-  if (read.status === TENANT_READ.SIGNED_OUT) return redirectToSignIn();
   if (read.status !== TENANT_READ.READY) {
     // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
     if (read.status === TENANT_READ.FORBIDDEN) await redirectToChoiceIfOwed();

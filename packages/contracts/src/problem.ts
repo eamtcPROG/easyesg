@@ -38,6 +38,9 @@ export const PROBLEM_CONTENT_TYPE = 'application/problem+json';
 export const PROBLEM_TYPE = {
   /** Minted by the web pass-through when a request arrives with no usable session (task 22). */
   AuthenticationRequired: 'https://easyesg.md/problems/authentication-required',
+  /** `AuthGuard`'s other refusal of a bearer: the session passed its idle or absolute bound. With the one
+   *  above, what `apps/web`'s api client reads as *this session has ended* (task 161). */
+  SessionExpired: 'https://easyesg.md/problems/session-expired',
   /** OQ-57: correct password, unverified address — S-01 routes to the resend challenge. */
   EmailUnverified: 'https://easyesg.md/problems/email-unverified',
   /** FR-4's lockout — S-01 offers the reset route, its only release before Phase 8. */

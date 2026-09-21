@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { ROUTES } from '@/lib/routes';
-import { destinationForHeldSession } from '@/server/session/post-sign-in';
+import { observeHeldSession } from '@/server/session/post-sign-in';
 import { readSession } from '@/server/session/session';
 import styles from '../../../shared/styles/identity-screens.module.css';
 import { previewInvitationAction } from '../../actions/actions';
@@ -52,7 +52,7 @@ export async function InvitationSection({ token }: { readonly token: string }) {
       ? {
           standing: view.standing,
           remedy: invitationRemedy({
-            destination: session === null ? null : await destinationForHeldSession(),
+            destination: session === null ? null : await observeHeldSession(),
             signIn: ROUTES.SIGN_IN,
           }),
         }

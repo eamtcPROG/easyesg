@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * Where a screen sends a reader whose session the api has ended (task 160): sign-in, keeping the address
- * the proxy stamped — or, for a screen whose address is itself a hand-off, the way on it was holding.
+ * Where the api client sends a caller whose session the api has ended (tasks 160, 161): sign-in, keeping
+ * the address the proxy stamped.
  */
 vi.mock('server-only', () => ({}));
 
@@ -22,7 +22,7 @@ beforeEach(() => {
   requestedPath.value = '/en/reports?page=2';
 });
 
-describe('redirectToSignIn (task 160)', () => {
+describe('redirectToSignIn (tasks 160, 161)', () => {
   it('keeps the address asked for, in the reader’s language', async () => {
     await redirectToSignIn();
 
@@ -36,23 +36,6 @@ describe('redirectToSignIn (task 160)', () => {
     requestedPath.value = null;
 
     await redirectToSignIn();
-
-    expect(redirect).toHaveBeenCalledWith({ href: '/sign-in', locale: 'en' });
-  });
-
-  it('keeps the way on a hand-off screen was holding, rather than its own address', async () => {
-    requestedPath.value = '/complete-account?return=%2Finvitation%2Ft';
-
-    await redirectToSignIn({ returnTo: '/invitation/t' });
-
-    expect(redirect).toHaveBeenCalledWith({
-      href: `/sign-in?return=${encodeURIComponent('/invitation/t')}`,
-      locale: 'en',
-    });
-  });
-
-  it('keeps no way on when the hand-off screen held none', async () => {
-    await redirectToSignIn({ returnTo: null });
 
     expect(redirect).toHaveBeenCalledWith({ href: '/sign-in', locale: 'en' });
   });

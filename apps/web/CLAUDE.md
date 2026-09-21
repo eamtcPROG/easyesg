@@ -126,27 +126,29 @@ task 26.3, from "only where an organization resolves". The override exists becau
 person must be returned to. `rendersWithoutOrganization` reads `lib/route-access.ts`, which is the
 proxy's own list — the gate and the branch must not disagree about which routes need a session;
 **`null` memberships and `[]` are different answers** — could not read (S-35) versus belongs to
-nothing (S-04) — **and a read refused at 401 is neither** (task 160): the session has ended, and the
-branch answers sign-in; and **the rule carries no `server-only`** deliberately, since importing the
+nothing (S-04) — **and an ended session is neither** (tasks 160, 161): the branch answers sign-in, or
+never sees it, because the api client has already redirected; and **the rule carries no `server-only`** deliberately, since importing the
 API client there would make every arm untestable outside a browser.
 
-**A session the api has ended is one this tier no longer holds** (task 160; `architecture.md` §12.5.6's
-task-160 row). The sealed cookie outlives a session ended elsewhere — a reset, *sign out other devices*,
-a sign-out on another device — until its access token falls due and the proxy's rotation is refused, so
-for up to fifteen minutes the proxy lets such a reader through and every read they meet is refused 401.
-Three things follow, and each has a failing state:
+**A session the api has ended is answered once, by the api client** (tasks 160, 161; `architecture.md`
+§12.5.6's task-161 row). The sealed cookie outlives a session ended elsewhere — a reset, *sign out other
+devices*, a sign-out on another device — until its access token falls due and the proxy's rotation is
+refused, so for up to fifteen minutes the proxy lets such a reader through and every request they make is
+refused. Three things follow, and each has a failing state:
 
-- **Every read made during render asks `outcomeEndsSession` before it concludes *could not load***
-  (`lib/session-standing.ts`, beside task 92's `endsSession`). `TENANT_READ` and S-28's `SECTION_READ`
-  carry a `SIGNED_OUT` arm, taken before the permission arm, and a screen answers it with
-  `redirectToSignIn()` (`server/session/sign-in-redirect.ts`) — sign-in with the address the proxy
-  stamped as `?return=`. **Write it as `return redirectToSignIn()`**: TypeScript does not narrow past an
-  `await` of a `Promise<never>`, and a reader that tests `!== READY` swallows the arm without a type
-  error — the wizard's redirector answered an ended session with a 404 that way until it was read by hand.
-- **§4.3's branch answers `SESSION_ENDED`, whose address is sign-in**, and `endsHeldSession` reads it.
-  UX-136's gate serves the form for it instead of redirecting to itself; S-35 and S-37 redirect there.
-  **A session in setup is asked too**, through `GET /account/setup`, or S-36 sending an ended session to
-  sign in and the gate sending it back to S-36 would loop — `session.spec.ts` has the journey.
+- **`server/api/api-client.ts` sends the caller to sign in, and nothing else does.** Any request it
+  attached the session's bearer to — a read during render or a write from a Server Action — that is
+  answered `authentication-required` or `session-expired` redirects to sign-in with the address the proxy
+  stamped as `?return=` (`server/session/sign-in-redirect.ts`). **No screen and no data module carries a
+  check**, and a new one must not: task 160 put a `SIGNED_OUT` arm in two read vocabularies and a redirect
+  on thirteen screens, and two screens that read during render were never given it. The predicate is the
+  problem *type* (`outcomeEndsSession`, `lib/session-standing.ts`), because a wrong password is a 401 too.
+- **§4.3's branch has two readings.** `destinationForHeldSession` — S-35, S-37 — reads what the chrome
+  reads, so an ended session redirects them exactly as it redirects the global tier. `observeHeldSession`
+  reads through **`observingApi`**, which hands the ending back: UX-136's gate serves the form for it, S-02
+  clears the cookie with it, S-03 offers sign-in with it. **Reaching for `observingApi` anywhere else is the
+  defect** — it is a read gone back to answering *could not load*. A session in setup is asked through
+  `GET /account/setup`, or S-36 and the gate would bounce an ended one between them.
 - **The cookie is cleared only where a cookie can be written** — `accountStillSignedIn`
   (`server/session/held-account.ts`), called by S-02's two actions. Elsewhere the next sign-in replaces
   it, and the gate serving the form is what makes it harmless meanwhile.

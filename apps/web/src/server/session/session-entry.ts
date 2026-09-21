@@ -2,7 +2,7 @@ import 'server-only';
 import type { Locale } from '@easyesg/i18n';
 import { redirect } from '@/i18n/navigation';
 import { endsHeldSession, targetLocale } from '@/features/identity/shared/tools/post-sign-in';
-import { destinationForHeldSession } from './post-sign-in';
+import { observeHeldSession } from './post-sign-in';
 import { readSession } from './session';
 
 /**
@@ -56,7 +56,7 @@ export const redirectWhenSignedIn = async (input: {
   // UX-38's mid-work expiry — that reader has no session and never reaches this line. **Except one
   // whose session the api has ended** (task 160), sent here by a screen with the address kept: the
   // branch says so, and the form below is served with that `?return=` intact.
-  const target = await destinationForHeldSession();
+  const target = await observeHeldSession();
   if (endsHeldSession(target)) return;
   redirect({ href: target.href, locale: targetLocale(target, input.locale) });
 };

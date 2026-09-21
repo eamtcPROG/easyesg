@@ -10,10 +10,10 @@ import { SignOut } from '../shared/sign-out';
  * S-36's **error** state for the read itself (task 155) — the screen could not learn which step the
  * account owes.
  *
- * The API's problem is rendered as received where there is one: an account abandoned in setup past its
- * deadline is answered `authentication-required`, whose own detail says to sign in again. The way on
- * is leaving in every case, for `SignOut`'s reason — S-01 would send a reader still holding the
- * session straight back here.
+ * The API's problem is rendered as received where there is one. An account abandoned in setup past its
+ * deadline is not among them since task 160: the api answers it `authentication-required`, and the api
+ * client sends such a reader to sign in before this renders (task 161). The way on is leaving in every
+ * case, for `SignOut`'s reason — S-01 would send a reader still holding the session straight back here.
  */
 export function SetupUnavailable({ failure }: { readonly failure: ApiFailure }) {
   const t = useTranslations(SETUP_MESSAGES);

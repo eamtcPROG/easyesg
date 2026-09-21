@@ -9,10 +9,10 @@ vi.mock('server-only', () => ({}));
 
 const readSession = vi.hoisted(() => vi.fn());
 const destroySession = vi.hoisted(() => vi.fn());
-const destinationForHeldSession = vi.hoisted(() => vi.fn());
+const observeHeldSession = vi.hoisted(() => vi.fn());
 
 vi.mock('./session', () => ({ readSession, destroySession }));
-vi.mock('./post-sign-in', () => ({ destinationForHeldSession }));
+vi.mock('./post-sign-in', () => ({ observeHeldSession }));
 
 import { accountStillSignedIn } from './held-account';
 
@@ -26,12 +26,12 @@ describe('accountStillSignedIn (task 160)', () => {
     readSession.mockResolvedValue(null);
 
     expect(await accountStillSignedIn()).toBeNull();
-    expect(destinationForHeldSession).not.toHaveBeenCalled();
+    expect(observeHeldSession).not.toHaveBeenCalled();
     expect(destroySession).not.toHaveBeenCalled();
   });
 
   it('clears a session the api has ended, and reports none', async () => {
-    destinationForHeldSession.mockResolvedValue({ href: '/sign-in' });
+    observeHeldSession.mockResolvedValue({ href: '/sign-in' });
 
     expect(await accountStillSignedIn()).toBeNull();
     expect(destroySession).toHaveBeenCalledOnce();
@@ -40,7 +40,7 @@ describe('accountStillSignedIn (task 160)', () => {
   it.each(['/home', '/create-organization', '/organization-unavailable'])(
     'reports a surviving session with where it belongs (%s), and clears nothing',
     async (href) => {
-      destinationForHeldSession.mockResolvedValue({ href });
+      observeHeldSession.mockResolvedValue({ href });
 
       expect(await accountStillSignedIn()).toEqual({ email: 'ana.popa@example.md', home: href });
       expect(destroySession).not.toHaveBeenCalled();

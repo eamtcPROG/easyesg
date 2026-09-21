@@ -368,19 +368,28 @@ test('a confirmation reached while signed in as another account offers to switch
 /**
  * **The cause, on the screens that read.** A session ended on another device leaves this browser's cookie
  * standing until its access token falls due, and every read in that window was answered *could not load*.
- * A workspace screen now sends the reader to sign in with its address kept; S-35 sends them to sign in
- * rather than saying sign-in succeeded; the sign-in gate serves the form. S-28 is asked separately because
- * *sign out other devices* is its own control.
+ * Every screen now sends the reader to sign in with its address kept — S-35 included, rather than saying
+ * sign-in succeeded — and the sign-in gate serves the form. S-28 is asked separately because *sign out
+ * other devices* is its own control.
+ *
+ * **Since task 161 no screen does it**: the api client answers the ending once, for every request, and
+ * `/entities/new` is here because task 160's per-screen arms never reached it — a screen that reads during
+ * render and was redirected by nothing until the rule moved to the seam.
  */
-test('a session ended elsewhere is sent to sign in, and back to the screen asked for (task 160)', async ({
+test('a session ended elsewhere is sent to sign in, and back to the screen asked for (tasks 160, 161)', async ({
   page,
 }) => {
   const email = await aSignedInMember(page, 'ended');
 
   await endSessionsOf({ email });
   await page.goto('/organization-unavailable');
-  await page.waitForURL('**/sign-in');
+  await page.waitForURL('**/sign-in?**');
+  expect(new URL(page.url()).searchParams.get('return')).toBe('/organization-unavailable');
   await expect(page.getByRole('heading', { name: SIGN_IN_HEADING })).toBeVisible();
+
+  await page.goto('/entities/new');
+  await page.waitForURL('**/sign-in?**');
+  expect(new URL(page.url()).searchParams.get('return')).toBe('/entities/new');
 
   await page.goto('/reports');
   await page.waitForURL('**/sign-in?**');
@@ -397,19 +406,53 @@ test('a session ended elsewhere is sent to sign in, and back to the screen asked
 });
 
 /**
+ * **Writes meet the same rule** (task 161; the owner's *reads and writes*). The screen rendered while the
+ * session held and the save is what finds it gone: the Server Action's write is refused
+ * `authentication-required` before any validation, and the api client sends the reader to sign in from
+ * inside the action, with the screen's address kept — where task 160 drew the refusal above the form.
+ */
+test('a save made after the session ended elsewhere is sent to sign in, and back (task 161)', async ({
+  page,
+}) => {
+  const email = await aSignedInMember(page, 'ended-write');
+  await page.goto('/organization');
+  await page.getByLabel('Localitatea').fill('Bălți');
+
+  await endSessionsOf({ email });
+  await page.getByRole('button', { name: 'Salvați modificările' }).click();
+  await page.waitForURL('**/sign-in?**');
+  expect(new URL(page.url()).searchParams.get('return')).toBe('/organization');
+  await expect(page.getByRole('heading', { name: SIGN_IN_HEADING })).toBeVisible();
+});
+
+/**
  * **The loop this could have been.** The branch sends a session still in setup to S-36 without reading
  * memberships, and S-36 now sends an ended session to sign in — so, unless the branch asked the setup read
- * too, the gate would send it straight back, and the browser would give up on the redirects.
+ * too, the gate would send it straight back, and the browser would give up on the redirects. And since task
+ * 161 the way back is S-36's own address, which must not come back wrapped in itself.
  */
-test('a session in setup that the api has ended reaches the sign-in form (task 160)', async ({ page }) => {
+test('a session in setup that the api has ended reaches the sign-in form, and S-36 again (tasks 160, 161)', async ({
+  page,
+}) => {
   const email = addressFor('ended-setup');
   await registerAndVerify(page, email);
   await moveIntoSetup({ email, holdsPassword: true });
   await signIn(page, email, PASSWORD);
   await page.waitForURL('**/complete-account**');
 
+  // S-36 holding a way on, so the return below is an address with a return of its own (task 161).
+  const heldWayOn = `/complete-account?return=${encodeURIComponent('/reports')}`;
   await endSessionsOf({ email });
-  await page.goto('/complete-account');
-  await page.waitForURL('**/sign-in');
+  await page.goto(heldWayOn);
+  await page.waitForURL('**/sign-in?**');
+  expect(new URL(page.url()).searchParams.get('return')).toBe(heldWayOn);
   await expect(page.getByRole('heading', { name: SIGN_IN_HEADING })).toBeVisible();
+
+  // **Back on S-36 with its own way on, not S-36 wrapped in S-36** — the branch wraps an account in setup
+  // in S-36's address, and `completeAccountRoute` answers an address that is already S-36's as it is.
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/complete-account?**');
+  expect(new URL(page.url()).searchParams.get('return')).toBe('/reports');
 });

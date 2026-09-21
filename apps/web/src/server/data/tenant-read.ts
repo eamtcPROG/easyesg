@@ -1,7 +1,6 @@
 import 'server-only';
 import { PROBLEM_TYPE } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
-import { outcomeEndsSession } from '@/lib/session-standing';
 
 /**
  * What a tenant-scoped Server Component read can answer — the three arms every such screen draws
@@ -27,12 +26,6 @@ export const TENANT_READ = {
   FORBIDDEN: 'forbidden',
   /** No answer, or one this tier could not read. Same fact and same remedy as the API being down. */
   UNREACHABLE: 'unreachable',
-  /**
-   * The api refused the session itself — ended elsewhere while this browser's cookie still names it
-   * (task 160). Not a screen state at all: the screen sends the reader to sign in with the address kept
-   * (`server/session/sign-in-redirect.ts`), because *try again later* is a remedy no retry can satisfy.
-   */
-  SIGNED_OUT: 'signed_out',
 } as const;
 
 export type TenantReadStatus = (typeof TENANT_READ)[keyof typeof TENANT_READ];
@@ -55,17 +48,12 @@ export const isPermissionRefusal = (outcome: ApiOutcome<unknown>): boolean =>
 
 /**
  * The arms every tenant read shares beside its own ready one — declared once, because the pair of them was
- * written out at each of eleven reads, and task 160's third would otherwise have been eleven more edits.
+ * written out at each of eleven reads (task 160).
+ *
+ * **There is no *signed out* arm, and that is task 161's point.** A session the api has ended never reaches
+ * a screen as an answer: the api client sends the reader to sign in from inside the read
+ * (`server/api/api-client.ts`), so no read here, and no screen drawing one, has anything to check.
  */
 export type TenantReadRefusal =
-  | { readonly status: typeof TENANT_READ.SIGNED_OUT }
   | { readonly status: typeof TENANT_READ.FORBIDDEN }
   | { readonly status: typeof TENANT_READ.UNREACHABLE };
-
-/**
- * Whether any of a screen's reads was refused because the session has ended (task 160). **Asked before
- * the permission arm**: a 401 is not a refusal of this screen, and a reader whose session has gone must
- * not be told whose screen it is.
- */
-export const endedSessionIn = (...outcomes: readonly ApiOutcome<unknown>[]): boolean =>
-  outcomes.some(outcomeEndsSession);

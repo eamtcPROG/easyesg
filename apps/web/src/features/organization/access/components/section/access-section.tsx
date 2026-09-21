@@ -2,7 +2,6 @@ import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
-import { redirectToSignIn } from '@/server/session/sign-in-redirect';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
@@ -40,9 +39,6 @@ export async function AccessSection({
 }) {
   const view = readAccessView(await searchParams);
   const [read, t] = await Promise.all([readOrganizationAccess(view), getTranslations(ACCESS_MESSAGES)]);
-
-  // Task 160: the api has ended the session this browser still names — sign in, and back here.
-  if (read.status === ACCESS_READ.SIGNED_OUT) return redirectToSignIn();
 
   let body: ReactNode;
   let counter: ReactNode = null;

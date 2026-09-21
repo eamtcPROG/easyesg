@@ -22137,3 +22137,108 @@ read thirty-two, 159 among the sixteen appended.
   re-measured — and the corrections rest on the served HTML, `B:0` and `B:1` both inside `<main>`, rather than on
   an argument; the worked example in `apps/web/CLAUDE.md` carries today's offsets.
   `vercel-react-best-practices` has nothing to read: no component's code changed.
+
+## Task 161 — One place answers a session the api has ended · 2026-09-21
+
+The owner's objection to task 160, the day after it landed: *the way task 160 was implemented is not clean,
+it is repetitive — I am looking for a solution that will not require the check on every page*. Task 160 had
+put a *signed out* arm in `TENANT_READ` and in S-28's `SECTION_READ`, a check in each of six data modules
+(twelve sites) and a redirect on thirteen screens. Counting them for the answer found the argument's best
+evidence: **two routes that read the api during render, `entities/new` and `create-organization`, had no
+arm** — task 160's per-screen rule had already been forgotten twice, on the day it shipped.
+
+### Decisions (project owner, one batch)
+
+- **The api client answers it**, over the `(app)` layout alone (which rests on the global tier's read staying
+  outside every boundary, the property task 159 was about) and over a helper in each data module (the same
+  repetition one layer down).
+- **Reads and writes alike**, over reads only. That choice is what made the predicate the problem *type*: a
+  write's 401 is also `credential-invalid`, a wrong password on S-28 or in the re-authentication dialogue, and
+  must reach its form. The api already separates the two — `AuthGuard` refuses a bearer only
+  `authentication-required` or `session-expired` — so the exception list that option had anticipated was not
+  needed.
+
+`architecture.md` §12.5.6 carries the task-161 row, and task 160's row is marked superseded in its (2), (4)
+and assumption. `design_spec.md` UX-136's paragraph gains the save.
+
+### What the seam had to know that the screens never did
+
+- **Only a request the seam attached the bearer to.** Without one the refusal is the caller's: the password
+  step S-02's setup grant serves at `/register/password` holds no session, and whatever the api refuses there
+  is its own form's to explain. And public routes return before `AuthGuard` reads a bearer, so S-01's
+  provider list — rendered while a stale cookie is still present — and every `/auth/session*` route cannot
+  trigger it; sign-in cannot redirect to itself. Read from the guard before relying on it.
+- **Who must see the ending rather than be sent away by it.** Swept every caller of the api client: §4.3's
+  branch as the gate, S-02 and S-03 use it — the gate would redirect to itself, S-02 clears the cookie, S-03
+  offers sign-in beside the invitation — and the branch after a sign-in. They read through **`observingApi`**,
+  a third request context beside `Ambient` and `Detached`, with one caller module, as `detachedApi` has the
+  proxy. The re-authentication handlers were the other candidate: their one authenticated call ignores its
+  outcome and runs on a session written earlier in the same request, so they stay on the ordinary client.
+- **Two redirects that could race.** S-35 and S-37 follow the branch with `redirect(target.href)`, and the
+  chrome's memberships read would now redirect too, with the address kept — whichever threw first would decide
+  the response. The branch therefore has **two readings over one body**: `destinationForHeldSession` over the
+  chrome's own cached reads, so an ended session gives the same redirect from the same read, and
+  `observeHeldSession` over `observingApi`, for the callers that render no chrome.
+- **S-36 inside S-36.** Task 160 had S-36 pass the way on it held rather than its own address. One rule keeps
+  the address instead, and the branch wraps an account in setup in S-36's address — so `completeAccountRoute`
+  now answers an address that is already S-36's as it is, a property of the builder rather than a screen's
+  exception.
+
+### What changed in behaviour, and what did not
+
+- **A save after the session ended** now reaches sign-in with the screen's address kept, where task 160 drew
+  the api's refusal above the form.
+- **S-35 and S-36 reached with no return** now keep their own address as `?return=`, where task 160 sent plain
+  sign-in; the branch settles either — S-35 re-resolves on arrival and moves on, S-36 is where an account in
+  setup belongs. Two journeys' expectations moved with it.
+- Unchanged: the branch's *session ended* answer, the gate serving the form, the cookie cleared only in S-02's
+  actions, switch-or-stay, and task 114's own 401 short-circuit in the acceptance action, which still answers
+  the case where the cookie is gone and no bearer was sent.
+
+### Removed
+
+Task 160's hunks on the eleven screens and on S-28 and S-36 were reverse-applied from its commit — they had not
+changed since — so what came out is exactly what went in: 41 lines on the screens, 29 on S-28 and S-36, the
+twelve `endedSessionIn` checks, `TENANT_READ.SIGNED_OUT`, `endedSessionIn` itself, `SECTION_READ.SIGNED_OUT`,
+`CredentialsScreenRead`, `redirectToSignIn`'s `returnTo` variant, and task 160's 401 cases in `reports.spec.ts`.
+`TenantReadRefusal` stays, as the two arms it now names.
+
+### Proof
+
+- **Unit**: the rule's own cases in `api-client.spec.ts` — both problem types redirect a read; a list read,
+  post, patch, put and delete the same; a wrong password with the bearer is handed back; a 403 is handed back;
+  the same refusal without a bearer is handed back; `observingApi` hands it back with the bearer attached.
+  `post-sign-in.spec.ts` rewritten around the three seams and which client each reads; `lib/routes.spec.ts`,
+  new, for S-36 never wrapping itself; `session-standing.spec.ts` keyed on the type. **Seven seeded mutations,
+  each failing its own spec**: the seam's redirect removed (seven cases), the predicate back on the status (two),
+  the bearer condition dropped (one), `observingApi` redirecting (one), the following seam reading the
+  observing client (one), the observing seam reading the chrome's (three), S-36 wrapping itself (one).
+- **Browser**: task 160's journeys, two expectations moved (S-35 and S-36 keep their address), and three
+  additions — `/entities/new`, a route task 160 missed, sending an ended session to sign in; **a save** on
+  S-15 made after the session ended elsewhere, reaching sign-in with `/organization` kept; and S-36 holding a
+  way on, signing in and landing on S-36 with that way on intact rather than nested.
+- **One mutation rebuild**, the seam's redirect disabled: exactly the three journeys resting on it failed, each
+  at its sign-in wait — S-35's step, the save, S-36 — and the three resting on `observeHeldSession` (the two
+  resets and the confirmation) passed. With no screen holding a check any more, nothing else redirected.
+  Restored and rebuilt: six of six.
+
+### Verification
+
+- `apps/web` unit **85 files, 883 tests**; `apps/admin` unit **29 files, 246 tests**; typecheck for web, admin
+  and contracts (contracts has no test script); `pnpm routes:check`; `pnpm lint`, and then **a cold `eslint`
+  over web, admin, contracts and `e2e/`** — clean — because a type changed, not only files: `TENANT_READ`'s
+  union and a contracts vocabulary, which the lint cache's per-file key would not re-read in files whose bytes
+  stayed the same. `pnpm docs:check`, 40 claims.
+- `pnpm e2e:web --project identity --project expansion --project admin` on a fresh build — all three, since
+  `packages/contracts` reaches both front ends: **235 of 235 in 6.5 minutes**. One `⨯ … destination stream
+  closed early` line, digest `2667547900`, the abandoned-stream class `apps/web/CLAUDE.md` records.
+- **Which run, and why.** The per-row runs for `apps/web`, `apps/admin` and `packages/contracts`. No
+  `gates:clean`: nothing moved or was renamed, no generator or build hook changed, and `packages/contracts`
+  resolves from source (`main` is `./src/index.ts`), so there is no `dist/` to be stale — the one cold-run
+  risk left, the lint cache over a changed type, is what the cold `eslint` answered. No review agents, under
+  the owner's standing rule for a childless row.
+- **Skills, read against the diff**: `one-idea-per-file` — the rule is one idea in the one file every request
+  passes through; the branch's two readings are one body over two sets of reads rather than two copies of it;
+  the S-36 builder keeps its predicate private beside it, with a spec. `vercel-react-best-practices` — the
+  `.tsx` edits are removals; the redirect adds no await to any path that did not already make the request, and
+  the S-35 and S-37 readings share the chrome's memoized read (`server-cache-react`) rather than adding one.

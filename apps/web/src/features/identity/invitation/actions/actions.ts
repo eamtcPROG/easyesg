@@ -7,7 +7,7 @@ import { withQuery } from '@/lib/routes';
 import { endsSession } from '@/lib/session-standing';
 import { redirect } from '@/i18n/navigation';
 import { api } from '@/server/api/api-client';
-import { destinationForHeldSession } from '@/server/session/post-sign-in';
+import { observeHeldSession } from '@/server/session/post-sign-in';
 import { POST_SIGN_IN } from '../../shared/tools/post-sign-in';
 import { invitationHandOff, invitationRemedy } from '../tools/invitation';
 import type { AcceptInvitationFailure, InvitationPreviewResult } from './action-results';
@@ -67,7 +67,7 @@ export async function acceptInvitationAction(
     return {
       ...outcome,
       remedy: invitationRemedy({
-        destination: sessionEnded ? null : await destinationForHeldSession(),
+        destination: sessionEnded ? null : await observeHeldSession(),
         signIn: invitationHandOff(input.token).signIn,
       }),
     };

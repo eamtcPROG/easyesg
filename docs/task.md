@@ -1,7 +1,7 @@
 # Tasks
 
 **What is left, in the order it will be delivered.** The closed rows are in
-[archived_tasks.md](archived_tasks.md) — 96 numbers and 181 of them — and moving them out is what
+[archived_tasks.md](archived_tasks.md) — 97 numbers and 182 of them — and moving them out is what
 lets this file answer *what is left* without a reader filtering a third of it away first.
 
 The order is the **Stage** sequence below, authored 12 Sep 2026 and **independent of the task
@@ -101,7 +101,7 @@ change their own password; a multi-membership account cannot switch organization
 organization can invite past any plan. None of that was identity debt in this file, because it was
 filed under notifications, under operations, and under work found outside the plan.
 
-**Thirty-two numbers: sixteen existing groups and sixteen new ones (139–151, 155 appended 14 Sep 2026, and 159 and 160 appended 16 Sep 2026 by tasks 93 and 114).** Three batches, and
+**Thirty-three numbers: sixteen existing groups and seventeen new ones (139–151, 155 appended 14 Sep 2026, 159 and 160 appended 16 Sep 2026 by tasks 93 and 114, and 161 appended 21 Sep 2026 by the project owner).** Three batches, and
 the batch is a sequence rather than a heading — a heading is something a commit message could cite,
 and only task numbers may be cited.
 
@@ -128,7 +128,7 @@ with `135` and `133.1` pulled in immediately before the work they precede and `1
 when they are cheapest.
 
 **Batch B — identity completed:** 139 → 140 → 141 → 142 → 143 → 67.1 → 145 → 67.3 → 67.4 → 144 →
-151 → 67.9 → 67.11 → 155 → 83 → 92 → 93 → 113 → 114 → 160. Two orderings inside it are load-bearing and are
+151 → 67.9 → 67.11 → 155 → 83 → 92 → 93 → 113 → 114 → 160 → 161. Two orderings inside it are load-bearing and are
 stated on the rows themselves: **67.4 before 144**, or seven state-changing admin routes ship with no
 `AuditInterceptor` to attribute them; and **145 before 67.3**, because the per-request lookup is what
 `AdminRealmGuard` is built around.

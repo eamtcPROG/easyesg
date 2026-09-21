@@ -21,9 +21,15 @@ vi.mock('next/headers', () => ({
     }),
 }));
 
+/** Next's `redirect` throws, and so does this stand-in — the call must not come back as an outcome. */
+const redirectToSignIn = vi.hoisted(() =>
+  vi.fn(() => Promise.reject(new Error('NEXT_REDIRECT sign-in'))),
+);
+vi.mock('../session/sign-in-redirect', () => ({ redirectToSignIn }));
+
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
-import { api } from './api-client';
+import { api, observingApi } from './api-client';
 import { sealSession, type SessionPayload } from '../session/session-codec';
 
 const fetchMock = vi.fn();
@@ -45,6 +51,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   fetchMock.mockReset();
+  redirectToSignIn.mockClear();
 });
 
 const lastCall = () => {
@@ -392,5 +399,106 @@ describe('unusable response bodies (readEvent-style guards)', () => {
         problem: { status: 409, detail: 'resolved' },
       });
     });
+  });
+});
+
+/**
+ * **A session the api has ended is answered here, once** (task 161; `architecture.md` §12.5.6's task-161
+ * row). Task 160 asked it of every screen; the cases below are what replaced thirteen of those checks, so
+ * each names the half of the rule that would otherwise go unguarded.
+ */
+describe('a request the api refuses because the session has ended (task 161)', () => {
+  const SECRET = 'spec-secret-0000000000000000000000000000';
+
+  const holdSession = () =>
+    cookieJar.set(
+      REFRESH_COOKIE,
+      sealSession(
+        {
+          accessToken: 'revoked-elsewhere',
+          accessTokenExpiresAt: Date.now() + 10 * 60 * 1000,
+          refreshToken: 'refresh-token-1',
+          refreshTokenExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+          remembered: false,
+          account: { id: 'a', email: 'ana@example.md', displayName: 'Ana Popescu', monogram: 'AP', locale: 'ro', status: 'active' },
+        },
+        SECRET,
+      ),
+    );
+
+  // A fresh response per call: a body can be read once, and one case below makes two requests.
+  const answer = (slug: string, status = 401) =>
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(
+        jsonResponse(
+          { type: `https://easyesg.md/problems/${slug}`, status, title: 't' },
+          { status, contentType: 'application/problem+json' },
+        ),
+      ),
+    );
+
+  it.each(['authentication-required', 'session-expired'])(
+    'sends a read that carried the bearer to sign in when refused %s',
+    async (slug) => {
+      holdSession();
+      answer(slug);
+
+      await expect(api.get('/reports')).rejects.toThrow('NEXT_REDIRECT');
+      expect(redirectToSignIn).toHaveBeenCalledOnce();
+    },
+  );
+
+  // Reads and writes alike (owner): a Server Action's write meets the same ending.
+  it.each([
+    ['a list read', () => api.getList('/reports')],
+    ['a post', () => api.post('/reports', {})],
+    ['a patch', () => api.patch('/organization', {})],
+    ['a put', () => api.put('/session/organization', {})],
+    ['a delete', () => api.delete('/invitations/x')],
+  ])('sends %s to sign in the same way', async (_label, call) => {
+    holdSession();
+    answer('authentication-required');
+
+    await expect(call()).rejects.toThrow('NEXT_REDIRECT');
+  });
+
+  // **Why it reads the type and not the status**: a wrong password is a 401 too, and belongs to the form.
+  it('hands back a wrong password, though it is answered 401 with the bearer attached', async () => {
+    holdSession();
+    answer('credential-invalid');
+
+    const outcome = await api.put('/account/password', {});
+
+    expect(outcome.status).toBe(API_OUTCOME.Problem);
+    expect(redirectToSignIn).not.toHaveBeenCalled();
+  });
+
+  it('hands back a refusal of a live session, which is not an ending', async () => {
+    holdSession();
+    answer('insufficient-role', 403);
+
+    expect((await api.get('/access')).status).toBe(API_OUTCOME.Problem);
+    expect(redirectToSignIn).not.toHaveBeenCalled();
+  });
+
+  // Without a bearer the refusal is the caller's: S-02's setup grant holds no session.
+  it('hands back the same refusal to a request that carried no bearer', async () => {
+    answer('authentication-required');
+
+    expect((await api.post('/account/setup/password', {})).status).toBe(API_OUTCOME.Problem);
+    expect(redirectToSignIn).not.toHaveBeenCalled();
+  });
+
+  it("hands the ending back through the observing client, for §4.3's branch", async () => {
+    holdSession();
+    answer('authentication-required');
+
+    const read = await observingApi.get('/account/setup');
+    const list = await observingApi.getList('/memberships');
+
+    expect(read.status).toBe(API_OUTCOME.Problem);
+    expect(list.status).toBe(API_OUTCOME.Problem);
+    expect(lastCall().init.headers).toMatchObject({ authorization: 'Bearer revoked-elsewhere' });
+    expect(redirectToSignIn).not.toHaveBeenCalled();
   });
 });

@@ -3,7 +3,6 @@ import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { readOrganizationProfile } from '@/server/data/organization-profile';
 import { TENANT_READ } from '@/server/data/tenant-read';
-import { redirectToSignIn } from '@/server/session/sign-in-redirect';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
@@ -25,9 +24,6 @@ export async function ProfileSection() {
     getTranslations(PROFILE_MESSAGES),
     getMessages(),
   ]);
-
-  // Task 160: the api has ended the session this browser still names — sign in, and back here.
-  if (read.status === TENANT_READ.SIGNED_OUT) return redirectToSignIn();
 
   let body: ReactNode;
   if (read.status === TENANT_READ.FORBIDDEN) {

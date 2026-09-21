@@ -146,8 +146,8 @@ export const withQuery = (path: RoutePath, query: string): string =>
 
 /**
  * S-01 carrying the address to come back to (UX-38) — the proxy's shape for a closed route, now also
- * the one a screen uses when its own read learns the session has ended (task 160), and the one S-03 and
- * S-02 hand an invitee. Encoded once, here, for the same reason as the two builders below.
+ * the one the api client uses when a request learns the session has ended (tasks 160, 161), and the one
+ * S-03 and S-02 hand an invitee. Encoded once, here, for the same reason as the two builders below.
  */
 export const signInRoute = (returnTo?: string | null): string =>
   withQuery(ROUTES.SIGN_IN, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
@@ -156,9 +156,19 @@ export const signInRoute = (returnTo?: string | null): string =>
  * S-36 carrying the address to go on to once setup is done (task 155) — S-03's invitation, or the
  * address an account in setup was turned away from. Encoded once, here, because it rides inside
  * another address's query string, and the post-sign-in branch and S-36's own actions both build it.
+ *
+ * **Never S-36 inside itself** (task 161). An address that is already S-36's is answered as it is: a
+ * reader in setup whose session ended on S-36 is sent to sign in with S-36's address kept, and the branch
+ * then wraps that return in S-36 again — which would bury the way on S-36 was holding one query deeper.
+ * The branch hands this a path with its locale already split off, so the bare route is the one compared.
  */
 export const completeAccountRoute = (returnTo?: string | null): string =>
-  withQuery(ROUTES.COMPLETE_ACCOUNT, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
+  returnTo && isCompleteAccountAddress(returnTo)
+    ? returnTo
+    : withQuery(ROUTES.COMPLETE_ACCOUNT, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
+
+const isCompleteAccountAddress = (path: string): boolean =>
+  path === ROUTES.COMPLETE_ACCOUNT || path.startsWith(`${ROUTES.COMPLETE_ACCOUNT}?`);
 
 /**
  * S-37 carrying the address to go on to once an organization is chosen (task 83.3) — the deep link

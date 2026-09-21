@@ -11,7 +11,7 @@ import {
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
 import { readActiveMembership } from './memberships';
-import { TENANT_READ, endedSessionIn, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
+import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 
 /**
  * S-07's reads (task 35.1) over task 89's routes — and, from task 35.2, the report itself.
@@ -78,7 +78,6 @@ export async function readWizardStep(input: {
     readActiveMembership(),
   ]);
 
-  if (endedSessionIn(modules, step, report)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(modules) || isPermissionRefusal(step) || isPermissionRefusal(report)) {
     return { status: TENANT_READ.FORBIDDEN };
   }
@@ -125,7 +124,6 @@ export type WizardModulesRead =
 /** The list alone — what the entry segment needs to choose a step (UX-10). */
 export async function readWizardModules(reportId: string): Promise<WizardModulesRead> {
   const modules = await api.getList<DisclosureModuleSummary>(`/reports/${reportId}/modules`);
-  if (endedSessionIn(modules)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(modules)) return { status: TENANT_READ.FORBIDDEN };
   if (modules.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
   return { status: TENANT_READ.READY, modules: modules.value.items };

@@ -1,7 +1,7 @@
 import 'server-only';
 import { endsHeldSession } from '@/features/identity/shared/tools/post-sign-in';
 import type { HeldAccount } from '@/features/identity/shared/tools/held-account';
-import { destinationForHeldSession } from './post-sign-in';
+import { observeHeldSession } from './post-sign-in';
 import { destroySession, readSession } from './session';
 
 /**
@@ -22,7 +22,7 @@ export async function accountStillSignedIn(): Promise<HeldAccount | null> {
   const session = await readSession();
   if (session === null) return null;
 
-  const home = await destinationForHeldSession();
+  const home = await observeHeldSession();
   if (endsHeldSession(home)) {
     await destroySession();
     return null;

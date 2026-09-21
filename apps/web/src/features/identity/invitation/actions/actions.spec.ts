@@ -8,12 +8,12 @@ import { API_OUTCOME } from '@/lib/api-outcome';
  * answers which refusal, and that the session is read only when there is one to read.
  */
 const post = vi.hoisted(() => vi.fn());
-const destinationForHeldSession = vi.hoisted(() => vi.fn());
+const observeHeldSession = vi.hoisted(() => vi.fn());
 const redirect = vi.hoisted(() => vi.fn());
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/server/api/api-client', () => ({ api: { post } }));
-vi.mock('@/server/session/post-sign-in', () => ({ destinationForHeldSession }));
+vi.mock('@/server/session/post-sign-in', () => ({ observeHeldSession }));
 vi.mock('@/i18n/navigation', () => ({ redirect }));
 vi.mock('next-intl/server', () => ({ getLocale: () => Promise.resolve('ro') }));
 
@@ -27,7 +27,7 @@ const refusal = (status: number) => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  destinationForHeldSession.mockResolvedValue({ href: '/create-organization' });
+  observeHeldSession.mockResolvedValue({ href: '/create-organization' });
 });
 
 describe('acceptInvitationAction (task 114)', () => {
@@ -42,7 +42,7 @@ describe('acceptInvitationAction (task 114)', () => {
       ...refusal(401),
       remedy: { kind: 'sign_in', href: '/sign-in?return=%2Finvitation%2Ftok%252Fen' },
     });
-    expect(destinationForHeldSession).not.toHaveBeenCalled();
+    expect(observeHeldSession).not.toHaveBeenCalled();
   });
 
   /**
@@ -56,14 +56,14 @@ describe('acceptInvitationAction (task 114)', () => {
       ...refusal(status),
       remedy: { kind: 'home', href: '/create-organization' },
     });
-    expect(destinationForHeldSession).toHaveBeenCalledOnce();
+    expect(observeHeldSession).toHaveBeenCalledOnce();
   });
 
   it('returns an unreachable api as it is, with no remedy and no session read', async () => {
     post.mockResolvedValue({ status: API_OUTCOME.Unreachable });
 
     expect(await acceptInvitationAction({ token: TOKEN })).toEqual({ status: API_OUTCOME.Unreachable });
-    expect(destinationForHeldSession).not.toHaveBeenCalled();
+    expect(observeHeldSession).not.toHaveBeenCalled();
   });
 
   it('redirects a success to the home page with the grant, reading no destination', async () => {
@@ -72,6 +72,6 @@ describe('acceptInvitationAction (task 114)', () => {
     await acceptInvitationAction({ token: TOKEN });
 
     expect(redirect).toHaveBeenCalledWith({ href: '/home?joined=created', locale: 'ro' });
-    expect(destinationForHeldSession).not.toHaveBeenCalled();
+    expect(observeHeldSession).not.toHaveBeenCalled();
   });
 });

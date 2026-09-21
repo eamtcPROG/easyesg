@@ -19,6 +19,10 @@ import { api } from '../api/api-client';
  * sends someone to S-04, while `null` means we could not find out. The global tier renders without
  * its organization region in both cases and states nothing it does not know; sign-in's own failure
  * has a screen (S-35) because there the answer decides where the person goes.
+ *
+ * **A session the api has ended is neither** (tasks 160, 161): the api client sends the reader to sign in
+ * from inside this read. The global tier awaits it outside every boundary in the `(app)` layout, so on
+ * every authenticated screen that redirect is answered before anything is sent.
  */
 export const readMemberships = cache(async (): Promise<AccountMembership[] | null> => {
   const outcome = await readMembershipsOutcome();
@@ -26,9 +30,10 @@ export const readMemberships = cache(async (): Promise<AccountMembership[] | nul
 });
 
 /**
- * The same read with its outcome kept — for §4.3's held-session branch, which must tell a session the api
- * has ended from a read that failed (task 160). **One request between the two**: both are `cache()`d and
- * `readMemberships` is built on this, so a layout and the branch in one render still ask once.
+ * The same read with its outcome kept — for §4.3's branch as S-35 and S-37 follow it, which must tell `[]`
+ * from a read that failed (task 160). **One request between the two**: both are `cache()`d and
+ * `readMemberships` is built on this, so a layout and the branch in one render still ask once — and, since
+ * task 161, give the same redirect when the session has ended, because it is the same read.
  */
 export const readMembershipsOutcome = cache(() => api.getList<AccountMembership>('/memberships'));
 

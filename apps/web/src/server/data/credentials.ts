@@ -1,6 +1,5 @@
 import 'server-only';
 import { API_OUTCOME, mapOutcome, type ApiOutcome } from '@/lib/api-outcome';
-import { outcomeEndsSession } from '@/lib/session-standing';
 import {
   SECTION_READ,
   type CredentialsRead,
@@ -28,24 +27,13 @@ const section = <T>(outcome: ApiOutcome<T>): SectionRead<T> =>
     ? { status: SECTION_READ.READY, value: outcome.value }
     : { status: SECTION_READ.UNREACHABLE };
 
-/**
- * The screen's read: its two sections, or — when either read was refused because the session has ended —
- * the one fact that overrides both (task 160). Partial is a state of the screen; an ended session is not.
- */
-export type CredentialsScreenRead =
-  | ({ readonly status: typeof SECTION_READ.READY } & CredentialsRead)
-  | { readonly status: typeof SECTION_READ.SIGNED_OUT };
-
-export async function readCredentials(): Promise<CredentialsScreenRead> {
+export async function readCredentials(): Promise<CredentialsRead> {
   const [factor, providers] = await Promise.all([
     api.get<TotpState>('/account/totp'),
     api.getList<LinkedProvider>('/account/providers'),
   ]);
 
-  if ([factor, providers].some(outcomeEndsSession)) return { status: SECTION_READ.SIGNED_OUT };
-
   return {
-    status: SECTION_READ.READY,
     factor: section(factor),
     // Projected, then classified by the same helper the other half uses. The list's `.items` was
     // the whole reason this branch was hand-inlined, and `mapOutcome` is what that projection is

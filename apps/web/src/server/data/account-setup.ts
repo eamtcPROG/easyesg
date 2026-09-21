@@ -9,8 +9,11 @@ import { api } from '../api/api-client';
  *
  * **Not `cache()`d, unlike `memberships.ts`.** It has one reader, once per render, and a memoized
  * answer is exactly the stale one right after a step's action has changed it. The outcome is returned
- * whole, because S-36 draws a failure it can name — a lapsed setup answers `authentication-required`
- * — differently from one it cannot.
+ * whole, because S-36 draws the api's own sentence where there is one.
+ *
+ * **A lapsed setup never reaches S-36 as an answer** (tasks 160, 161): the api refuses it
+ * `authentication-required`, which is an ended session to the api client, so the reader is sent to sign in
+ * from inside this read — and the gate there serves the form, because §4.3's branch asks the same read.
  */
 export const readAccountSetup = (): Promise<ApiOutcome<AccountSetup>> =>
   api.get<AccountSetup>('/account/setup');

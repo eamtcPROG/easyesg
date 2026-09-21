@@ -3,7 +3,7 @@ import type { Report, ReportingEntity, ReportingPeriod } from '@easyesg/contract
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { toReportRows, type ReportRow } from '@/features/reports/tools/reports';
 import { api } from '../api/api-client';
-import { TENANT_READ, endedSessionIn, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
+import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 
 /**
  * S-06's read, and the two the creation flow needs (tasks 32.2.2, 32.3).
@@ -24,7 +24,6 @@ export type ReportListRead =
 export async function readReportList(): Promise<ReportListRead> {
   const reports = await api.getList<Report>('/reports');
 
-  if (endedSessionIn(reports)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(reports)) return { status: TENANT_READ.FORBIDDEN };
   if (reports.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 
@@ -59,7 +58,6 @@ export type ReportCreationRead =
 export async function readReportCreation(entityId?: string): Promise<ReportCreationRead> {
   const entities = await api.getList<ReportingEntity>('/entities');
 
-  if (endedSessionIn(entities)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(entities)) return { status: TENANT_READ.FORBIDDEN };
   if (entities.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 
@@ -79,7 +77,6 @@ export async function readReportCreation(entityId?: string): Promise<ReportCreat
     api.getList<Report>(`/reports?reportingEntityId=${encodeURIComponent(entityId)}`),
   ]);
 
-  if (endedSessionIn(periods, existing)) return { status: TENANT_READ.SIGNED_OUT };
   if (periods.status !== API_OUTCOME.Ok || existing.status !== API_OUTCOME.Ok) {
     // The entities arrived; the periods did not. Reported as unreachable rather than as an empty
     // period list, because "this entity has no open period" and "we could not ask" are different

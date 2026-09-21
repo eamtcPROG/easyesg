@@ -1,10 +1,10 @@
 import 'server-only';
-import { ACCOUNT_STATUS, type AccountMembership } from '@easyesg/contracts';
-import { API_OUTCOME } from '@/lib/api-outcome';
+import { ACCOUNT_STATUS, type AccountMembership, type AccountSetup } from '@easyesg/contracts';
+import { API_OUTCOME, type ApiOutcome, type ListResult } from '@/lib/api-outcome';
 import { sanitizeReturnPath } from '@/lib/locale-path';
 import { outcomeEndsSession } from '@/lib/session-standing';
 import { postSignInTarget, type PostSignInTarget } from '@/features/identity/shared/tools/post-sign-in';
-import { api } from '../api/api-client';
+import { observingApi } from '../api/api-client';
 import { readAccountSetup } from '../data/account-setup';
 import { readMembershipsOutcome } from '../data/memberships';
 import { readSession } from './session';
@@ -29,10 +29,13 @@ import { readSession } from './session';
  * status comes from the sealed cookie, which for `resolvePostSignIn` is the one its caller has just
  * written and which a refresh keeps current for the other.
  *
- * **Both tell a session the api has ended from a read that failed** (task 160; §12.5.6's task-160 row).
- * The cookie outlives a session ended elsewhere until its access token falls due, and a 401 on the read
- * the branch rests on is the api saying so — the branch answers sign-in for it rather than S-35's
- * *sign-in succeeded*. Only a failure other than that is S-35's.
+ * **A session the api has ended is the branch's own answer here, or no answer at all** (tasks 160, 161;
+ * §12.5.6's task-161 row). The api client sends every caller whose session has ended to sign in, from
+ * inside the read — which is right for a screen and wrong for the callers that must *act* on the ending:
+ * the sign-in gate, which would redirect to itself; S-02, which clears the cookie; S-03, which offers
+ * sign-in beside the invitation; and the branch just after a sign-in. Those read through `observingApi`,
+ * which hands the ending back, and the branch answers *session ended* for it. The one reading that follows
+ * the rule instead is `destinationForHeldSession`, for the two screens inside `(app)`.
  */
 
 const awaitingSetup = async (): Promise<boolean> =>
@@ -78,7 +81,7 @@ export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTa
     });
   }
 
-  const outcome = await api.getList<AccountMembership>('/memberships');
+  const outcome = await observingApi.getList<AccountMembership>('/memberships');
   return postSignInTarget({
     sessionEnded: outcomeEndsSession(outcome),
     awaitingSetup: false,
@@ -87,32 +90,25 @@ export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTa
   });
 };
 
+/** The two reads the branch rests on for a session this request arrived with. */
+interface HeldSessionReads {
+  readonly memberships: () => Promise<ApiOutcome<ListResult<AccountMembership>>>;
+  readonly setup: () => Promise<ApiOutcome<AccountSetup>>;
+}
+
 /**
- * For a caller that **establishes nothing and only reads** — S-35 re-resolving on render,
- * UX-136's guard on `(identity)/(session-issuing)`, and since task 114 S-03's two remedies: the
- * unusable-link exit on render, and a refused acceptance, which changes no session.
+ * The branch for the session this request arrived with, over whichever reads it is handed — the two
+ * exported readings below differ in nothing else.
  *
- * Same branch, over the memberships read's request-scoped memoization (`readMembershipsOutcome`, which
- * `readMemberships` is built on, so the two share one call). That is the whole of the
- * difference, and it is worth one function: `/organization-unavailable` sits inside `(app)`, whose
- * layout renders the global tier, so the page and the tier were issuing **two identical
- * `/memberships` calls in one render pass** — precisely what `server/memberships.ts` says its
- * `cache()` exists to prevent, arriving through the one screen that was not using it.
- *
- * **No `?return=`.** No caller has one to honour: a layout cannot see `searchParams`, S-35 is a
- * destination rather than a hand-off, and S-03's and S-02's remedies are the reader's home, not a way
- * back. Taking the parameter would be a seam nobody supplies, which is the dead argument task 112's own
- * review found here once already.
- *
- * **A session still completing setup is asked too, which it was not until task 160.** The branch sends it to
- * S-36 without reading memberships the api would refuse it, so nothing here could tell that it had ended —
- * and S-36 now sends an ended session to sign in, which would bounce straight back to S-36 through the gate.
- * `GET /account/setup` admits every live session, active or in setup, so a 401 there is the ending itself.
- * It costs a read only for such a session, which the proxy sends to S-36 rather than here.
+ * **A session still completing setup is asked too, which it was not until task 160.** The branch sends it
+ * to S-36 without reading memberships the api would refuse it, so nothing here could tell that it had
+ * ended — and S-36 sends an ended session to sign in, which would bounce straight back to S-36 through the
+ * gate. `GET /account/setup` admits every live session, active or in setup, so its refusal is the ending
+ * itself. It costs a read only for such a session, which the proxy sends to S-36 rather than here.
  */
-export const destinationForHeldSession = async (): Promise<PostSignInTarget> => {
+const heldSessionTarget = async (reads: HeldSessionReads): Promise<PostSignInTarget> => {
   if (await awaitingSetup()) {
-    const setup = await readAccountSetup();
+    const setup = await reads.setup();
     return postSignInTarget({
       sessionEnded: outcomeEndsSession(setup),
       awaitingSetup: true,
@@ -121,7 +117,7 @@ export const destinationForHeldSession = async (): Promise<PostSignInTarget> => 
     });
   }
 
-  const outcome = await readMembershipsOutcome();
+  const outcome = await reads.memberships();
   return postSignInTarget({
     sessionEnded: outcomeEndsSession(outcome),
     awaitingSetup: false,
@@ -129,3 +125,39 @@ export const destinationForHeldSession = async (): Promise<PostSignInTarget> => 
     returnTo: null,
   });
 };
+
+/**
+ * For a screen inside `(app)` that **follows** the branch — S-35 re-resolving on render, S-37's section.
+ *
+ * Over the chrome's own reads, through the ordinary client: the memberships read's request-scoped
+ * memoization (`readMembershipsOutcome`, which the global tier's `readMemberships` is built on, so the two
+ * share one call) and `readAccountSetup`. **So an ended session never comes back from here** — the read
+ * sends the reader to sign in first, exactly as the chrome's does in the same render, and the two cannot
+ * race to different addresses (task 161). The memoization was the reason for this function before that
+ * was: `/organization-unavailable`'s page and the tier were issuing **two identical `/memberships` calls
+ * in one render pass**, which is what `server/data/memberships.ts` says its `cache()` exists to prevent.
+ *
+ * **No `?return=`.** No caller has one to honour: S-35 is a destination rather than a hand-off, and S-37
+ * carries its own. Taking the parameter would be a seam nobody supplies, which is the dead argument task
+ * 112's own review found here once already.
+ */
+export const destinationForHeldSession = (): Promise<PostSignInTarget> =>
+  heldSessionTarget({ memberships: readMembershipsOutcome, setup: readAccountSetup });
+
+/**
+ * For a caller that **acts on** the branch's answer, the ending included — UX-136's guard on
+ * `(identity)/(session-issuing)`, which serves the form for it; S-02's `accountStillSignedIn`, which clears
+ * the cookie for it; and S-03's two remedies, on render and on a refused acceptance, which offer sign-in
+ * for it (task 161).
+ *
+ * Through `observingApi`, so the ending is handed back rather than answered with a redirect, and
+ * **uncached** on purpose: none of these callers renders the chrome, so there is no second read in the
+ * request to share with — and sharing the chrome's would hand its redirect to a caller that must not have
+ * one. The same `?return=` reasoning as above: a layout cannot see `searchParams`, and S-03's and S-02's
+ * remedies are the reader's home, not a way back.
+ */
+export const observeHeldSession = (): Promise<PostSignInTarget> =>
+  heldSessionTarget({
+    memberships: () => observingApi.getList<AccountMembership>('/memberships'),
+    setup: () => observingApi.get<AccountSetup>('/account/setup'),
+  });

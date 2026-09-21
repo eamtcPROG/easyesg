@@ -2,7 +2,7 @@ import 'server-only';
 import type { CountryLegalForms, Organization } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
-import { TENANT_READ, endedSessionIn, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
+import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 
 /**
  * S-15's read — the profile and the vocabulary its two selects are built from (task 30.3).
@@ -36,7 +36,6 @@ export async function readOrganizationProfile(): Promise<OrganizationProfileRead
     api.getList<CountryLegalForms>('/organizations/legal-forms'),
   ]);
 
-  if (endedSessionIn(profile)) return { status: TENANT_READ.SIGNED_OUT };
   if (isPermissionRefusal(profile)) return { status: TENANT_READ.FORBIDDEN };
   if (profile.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 
