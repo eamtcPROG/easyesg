@@ -338,6 +338,9 @@
       "not_awaiting": "Cererea de acces nu mai așteaptă un răspuns — a primit deja unul sau termenul de așteptare a trecut —, așa că răspunsul nu a fost înregistrat. Reîncărcați pagina pentru a vedea starea ei.",
       "not_active": "Accesul de suport nu este în curs — nu a fost acordat, s-a încheiat deja sau a expirat —, așa că nu a fost nimic de încheiat. Reîncărcați pagina pentru a vedea starea lui.",
       "required": "Accesul de suport pentru această organizație nu este activ pentru dumneavoastră, așa că datele ei nu au fost citite. Trimiteți o cerere nouă și așteptați ca organizația să o accepte."
+    },
+    "notification": {
+      "not_found": "Această notificare nu se află printre notificările dumneavoastră, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea notificările actuale."
     }
   }
 }

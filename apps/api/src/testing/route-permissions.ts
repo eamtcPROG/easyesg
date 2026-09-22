@@ -290,6 +290,13 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /invitations/:invitationId/email': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'DELETE /invitations/:invitationId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
 
+  // ── The notification centre (task 50.1.2; UC-165 … UC-167). Every member has one — a notice reaches a person
+  // whatever their role — and each sees and marks only their own, which the schema's policies hold (BR-NOT-5).
+  'GET /notifications': ALL_MEMBERS,
+  'GET /notifications/unread-count': ALL_MEMBERS,
+  'POST /notifications/:notificationId/read': ALL_MEMBERS,
+  'POST /notifications/:notificationId/dismiss': ALL_MEMBERS,
+
   // ── Support access, the organization's side (task 67.9; UC-85, UX-124). Every member reads whether
   // EasyESG holds access right now — the banner is everyone's — and only an Organization Administrator
   // answers a request or ends running access, because consent is the organization's to give.

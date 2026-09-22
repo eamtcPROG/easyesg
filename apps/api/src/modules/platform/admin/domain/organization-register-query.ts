@@ -1,4 +1,4 @@
-import { SORT_DIRECTION } from '@api/app/dto/request-list.dto';
+import { SORT_DIRECTION, type ListQueryInput } from '@api/contracts/types/list-query';
 import {
   ORGANIZATION_REGISTER_SORT,
   isOrganizationRegisterSort,
@@ -17,11 +17,8 @@ import {
  * name may contain the grammar's `,` and `|`, which would split a search into facets nobody typed.
  * It is trimmed, cut to a length no name reaches, and `null` when nothing is left.
  */
-export interface RegisterListInput {
-  readonly order: readonly { readonly field: string; readonly direction: string }[];
-  readonly skip: number;
-  readonly take: number | undefined;
-}
+/** The compact query without its facets: A-02 has none, and its search is a parameter of its own. */
+export type RegisterListInput = Omit<ListQueryInput, 'filters'>;
 
 /** By name: a support request names an organization, and triage starts by finding it. */
 export const DEFAULT_REGISTER_SORT = ORGANIZATION_REGISTER_SORT.NAME;

@@ -466,6 +466,21 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     'organization_id',
     'report_id',
   ],
+  /**
+   * A delivery is FR-170's evidence, and the request tier writes two things on it: the recipient's own read and
+   * dismissed markers (task 50.1.2). Everything else — who was reached, on which channel, when, with what outcome —
+   * is the dispatcher's record of what it did, and a recipient who could edit it could rewrite whether a notice
+   * reached them. The two granted markers are write-once besides, by `notification.keep_read_state`.
+   */
+  'notification.delivery': [
+    'channel',
+    'dispatched_at',
+    'id',
+    'notification_id',
+    'organization_id',
+    'outcome',
+    'recipient_account_id',
+  ],
 };
 
 /**

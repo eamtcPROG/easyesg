@@ -1115,6 +1115,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the caller’s notifications in the active organization
+         * @description The notices addressed to the caller that are still in their centre — not dismissed, not withdrawn — each with its title and text in the negotiated language and a link to what raised it. Read state is the caller’s own: a colleague reading the same notice leaves it unread here.
+         */
+        get: operations["NotificationCentreController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How many of the caller’s notifications are unread
+         * @description The count the global tier shows on every screen. Dismissed and withdrawn notices are not counted, and a colleague’s reading changes nothing here.
+         */
+        get: operations["NotificationCentreController_unreadCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{notificationId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark a notification read, for the caller alone
+         * @description Records that the caller read it. Marking it again keeps the first time. Other recipients are unaffected.
+         */
+        post: operations["NotificationCentreController_read"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{notificationId}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss a notification from the caller’s centre
+         * @description Takes it out of the caller’s list and unread count. Dismissing does not mark it read: one dismissed unopened stays recorded as never read. Dismissing it again changes nothing; other recipients are unaffected.
+         */
+        post: operations["NotificationCentreController_dismiss"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/support-access": {
         parameters: {
             query?: never;
@@ -3128,6 +3208,44 @@ export interface components {
             availability: "available" | "no_prior_period" | "no_prior_report";
             prior: components["schemas"]["PriorReportPinDto"] | null;
             values: components["schemas"]["PriorPeriodValueDto"][];
+        };
+        NotificationItemResponseDto: {
+            /**
+             * Format: uuid
+             * @description The notice. The handle its read and dismiss actions take; the same for every recipient of it.
+             */
+            id: string;
+            /**
+             * @description What kind of notice this is — a key for the client to act on, never text to show.
+             * @enum {string}
+             */
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation";
+            /** @description The notice’s title in the negotiated language. Absent when the category has no in-app wording. */
+            title?: string;
+            /** @description The notice’s text in the negotiated language. Absent when the category has no in-app wording. */
+            body?: string;
+            /**
+             * @description The path in the tenant application of the object that raised the notice, without a locale prefix — selecting the notice opens it (FR-162).
+             * @example /reports/0192f000-0000-7000-8000-000000000001
+             */
+            deepLink: string;
+            /**
+             * @description Unix epoch milliseconds, UTC, when the notice reached this recipient’s centre.
+             * @example 1790553600000
+             */
+            receivedAt: number;
+            /**
+             * @description Unix epoch milliseconds, UTC, when this recipient first marked it read. Null while unread; another recipient reading the same notice leaves it null here.
+             * @example null
+             */
+            readAt: number | null;
+        };
+        UnreadCountResponseDto: {
+            /**
+             * @description Notices in this recipient’s centre they have not read. A dismissed notice is not counted.
+             * @example 3
+             */
+            unread: number;
         };
         SupportAccessDecisionResponseDto: {
             /** @enum {string} */
@@ -6049,6 +6167,117 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    NotificationCentreController_list: {
+        parameters: {
+            query?: {
+                /** @description Notices per page, 25 unless given. `-1` (all rows) is refused on this route. */
+                onpage?: number;
+                /** @description 1-based. */
+                page?: number;
+                /** @description One ordering, `received,<asc|desc>`. Defaults to `received,desc` — newest first. */
+                order?: unknown;
+                /** @description Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation. A value outside these, or a field this route does not define, is ignored rather than refused. */
+                filters?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the centre. `total` counts notices the facets admit and is what pages are counted from; `unfiltered` counts the centre before them, which tells an empty page whether nothing has arrived yet or the facets matched nothing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["NotificationItemResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    NotificationCentreController_unreadCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The unread count. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["UnreadCountResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    NotificationCentreController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notificationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Read. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The caller holds no notice with this id in the active organization — including one addressed to a colleague, which is not distinguished from one that does not exist (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    NotificationCentreController_dismiss: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notificationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dismissed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The caller holds no notice with this id in the active organization — including one addressed to a colleague, which is not distinguished from one that does not exist (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
             };
         };
     };

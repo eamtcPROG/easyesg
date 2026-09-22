@@ -6,16 +6,27 @@ import { NOTIFICATION_EMAIL_PORT } from '@api/contracts/notification-email.port'
 import { NOTIFICATION_RECIPIENTS, type NotificationRecipientsPort } from '@api/contracts/notification-recipients.port';
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
 import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
+import { NotificationCentreStoreRepository } from '@api/infrastructure/persistence/platform/notification-centre-store.repository';
 import { NotificationOutboxRepository } from '@api/infrastructure/persistence/platform/notification-outbox.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
 import { NotificationRaisedHandler } from './consumers/notification-raised.handler';
+import { NotificationCentreController } from './controllers/notification-centre.controller';
 import { EMAIL_CHANNEL, type EmailChannel } from './interfaces/email-channel.interface';
+import {
+  NOTIFICATION_CENTRE_STORE,
+  type NotificationCentreStore,
+} from './interfaces/notification-centre-store.interface';
 import { NOTIFICATION_STORE, type NotificationStore } from './interfaces/notification-store.interface';
 import { CategoryChannels } from './services/category-channels.service';
 import { EmailChannelService } from './services/email-channel.service';
 import { NotificationCategoryCatalog } from './services/notification-category-catalog.service';
+import { NotificationCentreService } from './services/notification-centre.service';
 import { NotificationEmailService } from './services/notification-email.service';
+import { CountUnreadNotifications } from './use-cases/count-unread-notifications.use-case';
 import { DeliverNotification } from './use-cases/deliver-notification.use-case';
+import { DismissNotification } from './use-cases/dismiss-notification.use-case';
+import { ListNotifications } from './use-cases/list-notifications.use-case';
+import { MarkNotificationRead } from './use-cases/mark-notification-read.use-case';
 
 /**
  * `platform/notification` — FR-157, FR-160 … FR-173
@@ -31,8 +42,9 @@ import { DeliverNotification } from './use-cases/deliver-notification.use-case';
  *
  * **Raising is the HTTP side's, delivering the worker's** (task 49.3): `NOTIFICATION_PORT` writes an outbox row on
  * the producer's request transaction, and `NotificationRaisedHandler` delivers it by the category's behaviour —
- * recording the notice and each delivery in the `notification` schema since task 50.1.1, which only the worker
- * writes.
+ * recording the notice and each delivery in the `notification` schema since task 50.1.1. **The recipient's centre
+ * is the HTTP side's too** (task 50.1.2): `/notifications` reads that schema under the request's tenant binding and
+ * writes only the recipient's own read and dismissed markers.
  *
  * Boundary: `modules/core/**` and `modules/billing/**` may not import each other.
  * Both may import `contracts/**`. Enforced by dependency-cruiser, not by review.
@@ -67,11 +79,36 @@ const workerProviders: Provider[] = [
   NotificationRaisedHandler,
 ];
 
-/** What raises: an outbox row on the producer's own request transaction. */
-const httpProviders: Provider[] = [{ provide: NOTIFICATION_PORT, useClass: NotificationOutboxRepository }];
+/**
+ * The centre's use cases, framework-free, each over the one store — so `useFactory` over its token
+ * (`apps/api/CLAUDE.md`, "No `@Injectable` means no `useClass`").
+ */
+const centreUseCases: Provider[] = [
+  ListNotifications,
+  CountUnreadNotifications,
+  MarkNotificationRead,
+  DismissNotification,
+].map((useCase) => ({
+  provide: useCase,
+  inject: [NOTIFICATION_CENTRE_STORE],
+  useFactory: (store: NotificationCentreStore) => new useCase(store),
+}));
+
+/**
+ * What raises — an outbox row on the producer's own request transaction — and the recipient's centre (task
+ * 50.1.2), which reads the store under the request's tenant binding and writes nothing but the recipient's own
+ * read state.
+ */
+const httpProviders: Provider[] = [
+  { provide: NOTIFICATION_PORT, useClass: NotificationOutboxRepository },
+  { provide: NOTIFICATION_CENTRE_STORE, useClass: NotificationCentreStoreRepository },
+  ...centreUseCases,
+  NotificationCentreService,
+];
 
 @Module({
   imports: mode === APP_MODE.WORKER ? [EmailModule] : [],
+  controllers: mode === APP_MODE.WORKER ? [] : [NotificationCentreController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
   exports: mode === APP_MODE.WORKER ? [NOTIFICATION_EMAIL_PORT] : [NOTIFICATION_PORT],
 })

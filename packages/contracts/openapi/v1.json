@@ -3178,6 +3178,174 @@
         ]
       }
     },
+    "/api/v1/notifications": {
+      "get": {
+        "description": "The notices addressed to the caller that are still in their centre — not dismissed, not withdrawn — each with its title and text in the negotiated language and a link to what raised it. Read state is the caller’s own: a colleague reading the same notice leaves it unread here.",
+        "operationId": "NotificationCentreController_list",
+        "parameters": [
+          {
+            "name": "onpage",
+            "required": false,
+            "in": "query",
+            "description": "Notices per page, 25 unless given. `-1` (all rows) is refused on this route.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "One ordering, `received,<asc|desc>`. Defaults to `received,desc` — newest first.",
+            "schema": {}
+          },
+          {
+            "name": "filters",
+            "required": false,
+            "in": "query",
+            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation. A value outside these, or a field this route does not define, is ignored rather than refused.",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the centre. `total` counts notices the facets admit and is what pages are counted from; `unfiltered` counts the centre before them, which tells an empty page whether nothing has arrived yet or the facets matched nothing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/NotificationItemResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "List the caller’s notifications in the active organization",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "description": "The count the global tier shows on every screen. Dismissed and withdrawn notices are not counted, and a colleague’s reading changes nothing here.",
+        "operationId": "NotificationCentreController_unreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The unread count.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/UnreadCountResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "How many of the caller’s notifications are unread",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notificationId}/read": {
+      "post": {
+        "description": "Records that the caller read it. Marking it again keeps the first time. Other recipients are unaffected.",
+        "operationId": "NotificationCentreController_read",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Read."
+          },
+          "404": {
+            "description": "The caller holds no notice with this id in the active organization — including one addressed to a colleague, which is not distinguished from one that does not exist (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Mark a notification read, for the caller alone",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notificationId}/dismiss": {
+      "post": {
+        "description": "Takes it out of the caller’s list and unread count. Dismissing does not mark it read: one dismissed unopened stays recorded as never read. Dismissing it again changes nothing; other recipients are unaffected.",
+        "operationId": "NotificationCentreController_dismiss",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Dismissed."
+          },
+          "404": {
+            "description": "The caller holds no notice with this id in the active organization — including one addressed to a colleague, which is not distinguished from one that does not exist (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Dismiss a notification from the caller’s centre",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/admin/support-access": {
       "get": {
         "description": "UC-86. Every support-access request, newest first: who asked, over which organization, for what reason, what the organization decided and who decided it, how it ended, and every read made under it. Read-only: nothing edits an entry. Reading it is recorded in the same log.",
@@ -8563,6 +8731,71 @@
           "availability",
           "prior",
           "values"
+        ]
+      },
+      "NotificationItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The notice. The handle its read and dismiss actions take; the same for every recipient of it."
+          },
+          "categoryKey": {
+            "type": "string",
+            "enum": [
+              "identity.email_verification",
+              "identity.password_reset",
+              "identity.invitation",
+              "platform.admin_invitation"
+            ],
+            "description": "What kind of notice this is — a key for the client to act on, never text to show."
+          },
+          "title": {
+            "type": "string",
+            "description": "The notice’s title in the negotiated language. Absent when the category has no in-app wording."
+          },
+          "body": {
+            "type": "string",
+            "description": "The notice’s text in the negotiated language. Absent when the category has no in-app wording."
+          },
+          "deepLink": {
+            "type": "string",
+            "example": "/reports/0192f000-0000-7000-8000-000000000001",
+            "description": "The path in the tenant application of the object that raised the notice, without a locale prefix — selecting the notice opens it (FR-162)."
+          },
+          "receivedAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC, when the notice reached this recipient’s centre.",
+            "example": 1790553600000
+          },
+          "readAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Unix epoch milliseconds, UTC, when this recipient first marked it read. Null while unread; another recipient reading the same notice leaves it null here.",
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "categoryKey",
+          "deepLink",
+          "receivedAt",
+          "readAt"
+        ]
+      },
+      "UnreadCountResponseDto": {
+        "type": "object",
+        "properties": {
+          "unread": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Notices in this recipient’s centre they have not read. A dismissed notice is not counted.",
+            "example": 3
+          }
+        },
+        "required": [
+          "unread"
         ]
       },
       "SupportAccessDecisionResponseDto": {

@@ -1,6 +1,7 @@
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import { ACCESS_FILTER_ANY, ACCESS_SORT, ACCESS_STANDING } from '../models/access.model';
-import { DEFAULT_ACCESS_SORT, toAccessQuery, type ListQueryInput } from './access-query';
+import type { ListQueryInput } from '@api/contracts/types/list-query';
+import { DEFAULT_ACCESS_SORT, toAccessQuery } from './access-query';
 
 /**
  * §6.8's compact query, narrowed to what S-16 can be asked (task 131).

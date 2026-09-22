@@ -338,6 +338,9 @@
       "not_awaiting": "The access request is no longer waiting for an answer — it was already answered or its wait ran out — so your answer was not recorded. Reload the page to see where it stands.",
       "not_active": "Support access is not running — it was never granted, has already ended or has expired — so there was nothing to end. Reload the page to see where it stands.",
       "required": "Support access to this organization is not active for you, so its data was not read. Send a new request and wait for the organization to grant it."
+    },
+    "notification": {
+      "not_found": "This notification is not among yours, so nothing changed. Reload the page to see your current notifications."
     }
   }
 }

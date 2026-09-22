@@ -5,13 +5,8 @@ import {
   DEFAULT_ON_PAGE, DEFAULT_PAGE, LIST_GROUP_SEPARATOR, LIST_VALUE_SEPARATOR,
   MAX_ON_PAGE, ON_PAGE_ALL,
 } from '../constants/pagination.constants';
-import {
-  RequestFilterDto,
-  RequestListDto,
-  RequestSortCriteriaDto,
-  SORT_DIRECTION,
-  isSortDirection,
-} from '../dto/request-list.dto';
+import { SORT_DIRECTION, isSortDirection } from '@api/contracts/types/list-query';
+import { RequestFilterDto, RequestListDto, RequestSortCriteriaDto } from '../dto/request-list.dto';
 
 declare module 'express' {
   interface Request {

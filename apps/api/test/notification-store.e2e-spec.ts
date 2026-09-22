@@ -298,13 +298,23 @@ describe('the notification store (task 50.1.1)', () => {
     ).rejects.toThrow('row-level security');
   });
 
-  // Row (3): the worker writes this schema, and task 50.1.2's centre brings the request tier's read with it.
-  it('grants the request tier nothing', async () => {
+  /**
+   * Row (3): the worker writes this schema. Task 50.1.2's centre gave the request tier a read — of the bound
+   * recipient's rows only, which `notification-centre.e2e-spec.ts` holds — so with an organization bound and no
+   * recipient it reads nothing, and it writes no notice or delivery at all.
+   */
+  it('shows the request tier nothing without a recipient, and lets it write no notice', async () => {
+    expect(await asOrganization(app, ORG, (run) => run(`SELECT id FROM notification.notification`))).toEqual([]);
+    expect(await asOrganization(app, ORG, (run) => run(`SELECT id FROM notification.delivery`))).toEqual([]);
     await expect(
-      asOrganization(app, ORG, (run) => run(`SELECT id FROM notification.notification`)),
-    ).rejects.toThrow('permission denied');
-    await expect(
-      asOrganization(app, ORG, (run) => run(`SELECT id FROM notification.delivery`)),
+      asOrganization(app, ORG, (run) =>
+        run(
+          `INSERT INTO notification.notification
+                  (id, organization_id, category_key, subject_ref, recipient_scope, deep_link)
+           VALUES (gen_random_uuid(), $1, 'identity.invitation', 's', 'default', '/x')`,
+          [ORG],
+        ),
+      ),
     ).rejects.toThrow('permission denied');
   });
 

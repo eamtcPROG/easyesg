@@ -22751,3 +22751,109 @@ made each false; each now says what it means without the number, and `schema-inv
   each message accepted before a later failure, which a batch at the end would lose; in-app is one statement.
   `one-idea-per-file`: the predicate left the use case for `domain/` with its spec; the store's transaction helper is
   the repository's own second face and stays beside it; the port file is one contract, its commands included.
+
+## Task 50.1.2 — The centre's API · 2026-09-22
+
+UC-165 and UC-167 over HTTP: a recipient lists their notices in the active organization, sees an unread count, and
+marks a notice read or dismisses it — **for themselves alone**, which the database holds rather than the queries.
+No category travels in-app until 50.3, so the items list today without words; the absence is the rule under test.
+
+### Decisions (project owner, one batch)
+
+Four, each the recommended option, recorded as §12.5.6's task-50.1 rows (8) … (11):
+
+- **The centre is a tenant route, `/notifications`**, the organization from the session as for `/members`. §6.8's
+  table said `/me/notifications`, and no route had ever been built under `/me` — the account's own routes shipped
+  as `/account/*`, which do not change with the organization, and the centre does. §6.8's table is corrected: the
+  Identity row now names `/account/*`, and Notifications has a row of its own.
+- **Dismissing hides a notice and leaves its read time as it stands.** One dismissed unopened was never read, and
+  `read_at` is FR-170's evidence of reading.
+- **The API resolves a notice's in-app wording**, from `packages/i18n` under `notification.<category>.in_app.*`,
+  beside the email wording, in the request's language. The 50.2 and 50.3 rows now carry it.
+- **The list filters on read state and category**, newest first by default.
+
+### What shipped
+
+- **The migration**: `esg_app` may select both tables and update `read_at` and `dismissed_at` only. **Three
+  restrictive policies, `TO esg_app`**, narrow it to the bound recipient — a delivery is visible and writable when it
+  is `app.current_user`'s, a notice when it has a delivery that is. They name the role rather than `PUBLIC`, task 12's
+  default, because the worker binds no user and a restrictive policy on every role would hide from the dispatcher
+  the deliveries it must see to know who was already reached. **`notification.keep_read_state`** makes both markers
+  write-once. **`delivery_centre`**, a partial index over the centre's rows, serves the list and the minute poll.
+- **`NOTIFICATION_CENTRE_STORE`**, on the request's own transaction, naming neither the recipient nor the
+  organization. One CTE, `centre`, defines what the centre holds — in-app, not dismissed, notice not cancelled — and
+  the page, both counts and the unread count read it, so they cannot describe different sets.
+- **Four framework-free use cases** behind `NotificationCentreService`, which narrows the query and turns each
+  entry into words. The notice's parameters never reach the wire. A key with no entry leaves its part absent.
+- **`NotificationCentreController`**, every member's; its read and dismiss answer 404 for a notice the recipient holds
+  no in-app delivery of — **a colleague's included**, which the policies make indistinguishable from one that never
+  existed. Both writes are idempotent. The refusal's wording is authored in all three catalogues.
+- **What 50.1.3's row owns, partly held here**: a cancelled notice leaves the centre and the count, because the one
+  `centre` clause excludes it. 50.1.3 still owns writing a cancellation.
+
+### Found on the way, and fixed
+
+- **`ListQueryInput` and `SORT_DIRECTION` moved to `contracts/types/list-query.ts`.** The centre's narrowing was the
+  third domain file to need them. S-16's `access-query.ts` declared the input shape locally, saying a domain file
+  may not import `app/dto` — while importing `SORT_DIRECTION` from `app/dto/request-list.dto.ts`, which carries
+  `@nestjs/swagger`, in its first line. **`domain-free-of-frameworks` checks a domain file's own imports, not what
+  they import**, so that passed; A-02's `organization-register-query.ts` did the same and declared a second copy of
+  the shape. Both now import the one module, which imports nothing; the DTO and the interceptor import from it.
+  *Searched*: every `readonly filters` declaration and every importer of the sort vocabulary under `apps/api`.
+- **50.1.1's store suite asserted the fact this task changes**, *"grants the request tier nothing"*, and the first full
+  `pnpm e2e` failed on it — the one failure of 1,251. It was not updated with the grant, which is the miss; it now
+  states what holds instead: with an organization bound and no recipient, the request tier reads nothing from either
+  table and writes neither.
+- **The contract's path count was an unchecked claim.** The root file said 89 paths; the four routes made it 93,
+  and `docs:check` passed regardless. It now checks both numbers in that sentence — 42 claims.
+
+### Measured, not reasoned
+
+- **The centre's reads use an index, and `delivery_centre` is one they can use.** As `esg_app` with
+  `enable_seqscan = off`, the unread count ran on `delivery_once` with an index condition on its recipient and
+  channel columns, which are not its leading one — chosen on an empty table. With `delivery_once` dropped inside a rolled-back transaction,
+  the page and the count both ran on `delivery_centre`, the page with no sort step because the index carries the
+  order. So the partial index is usable; which of the two the planner picks is a question of table size, not of
+  shape.
+
+### Proof
+
+- **Unit**: the narrowing's seven cases; both write use cases' found and not-found answers; the service's wording —
+  which key, in which language, with which parameters, and absence when unanswered — against a stubbed catalogue,
+  since no in-app wording exists yet; the permission table's four new rows.
+- **`test/notification-centre.e2e-spec.ts`, new**, over HTTP and two members of one organization: the list newest
+  first with counts; read for the recipient alone, the colleague's same notice still unread; the first read time
+  kept; both facets, paging and oldest first; a dismissal leaving the list and the count with `read_at` still null; a
+  colleague's notice, a missing one and an email-only one all 404; a withdrawn notice leaving the centre; and under
+  the API, as `esg_app`: only the recipient's deliveries and notices visible, a colleague's delivery not writable, a
+  delivery's record not writable at all, a read time not movable.
+- **Every guard fails its check when removed**, each run and reverted. The code side: dismissed or cancelled rows
+  left in `centre`; a second read moving the time. The database side: the delivery read policy, the write-once
+  trigger. **Two mutations survived at first, and each was a case missing rather than a guard dead.** Dropping the
+  update policy changed nothing, because PostgreSQL applies SELECT policies to an UPDATE that reads a column, and
+  every update the suite wrote read one; a blanket update reading nothing is the shape only the update policy stops,
+  and a case now makes it. Dropping the notice's read policy changed nothing, because every read reached notices
+  through the recipient's deliveries; a direct read of the notice table is now a case.
+
+### Verification
+
+- Unit: `@easyesg/api` **144 suites, 1,187 tests**; the dependents of the two packages touched — `@easyesg/i18n` 5
+  files, `@easyesg/web` 883 tests, `@easyesg/admin` 246. `pnpm typecheck` across all three apps; `pnpm lint`, after
+  one `no-unnecessary-type-assertion` in the new suite; `pnpm boundaries`; `pnpm docs:check`, 42 claims.
+- `pnpm migrations:check`: apply, revert, re-apply, **56 invariants**, with the delivery's withheld columns declared.
+  `pnpm openapi:check`: the contract and its generated types regenerated and committed — 93 paths.
+- `pnpm e2e`: the first run **1,250 of 1,251**, the stale 50.1.1 case above; after it, **50 suites, 1,251 tests,
+  120 seconds**, a clean exit and no error line in the log. `pnpm e2e:worker`: **7 of 7** — the centre is HTTP-only,
+  and the worker still boots without it.
+- **Which run, and why.** The api row with `openapi:check` for the controller and `migrations:check` for the
+  migration; `e2e:worker` because the module's providers split by mode changed. **`packages/i18n` and
+  `packages/contracts` changed, so every dependent's unit suite and typecheck ran; `e2e:web` did not.** The
+  catalogue change is a message key with no markup — `CLAUDE.md`'s own example of a change that cannot reach a
+  browser journey — and the web reads only `catalogues/disclosure/`, not the three root catalogues; the contract
+  gained types for four paths no screen calls until 50.2. A sub-step: no `gates:clean` and no review agents.
+- **Skills, read against the diff.** `nestjs-best-practices`: `security-use-guards` — the route is closed by
+  `@RequiresRole` at the class and tabled in `route-permissions.ts`; `di-use-interfaces-tokens` —
+  `NOTIFICATION_CENTRE_STORE`; `api-use-dto-serialization` — epoch milliseconds at the DTO boundary, the parameters
+  never serialized; `db-avoid-n-plus-one` — the page is one statement over one CTE, the counts one more.
+  `one-idea-per-file`: four use cases, one file each; the narrowing pure with its spec; the store's marker vocabulary
+  internal to its file, because nothing else writes those columns.

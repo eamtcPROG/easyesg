@@ -11,8 +11,9 @@ user-facing-text conventions. This file carries only what you need in your hands
 
 Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91, 130, 131), and so is the
 notification core (49) — categories, one mail path, `raise()` and delivery by category — with its store since
-50.1.1, each notice recorded once and each delivery a row per recipient and channel; the calculator, validation,
-export, the in-app centre's reads and preferences, billing, the console's screens, edge and deploy, the
+50.1.1, each notice recorded once and each delivery a row per recipient and channel, and each recipient's centre
+since 50.1.2; the calculator, validation, export, notification preferences, billing, the console's screens, edge and
+deploy, the
 public tier and the Comprehensive Module are not (37 onward). `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -76,8 +77,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  the in-app centre's API and screen, cancellation, the email channel's bounces and suppression, and preferences
-  (50 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
+  cancellation, the email channel's bounces and suppression, and preferences (50 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -468,6 +468,23 @@ in a short transaction of its own bound to the job's organization (`app.current_
 - **Cleaning up needs `deleteNotificationsOf`** (`test/support/notification-store.ts`). Neither table has a
   `DELETE` policy or a parent to cascade from, so a plain `DELETE` as the owner removes nothing under `FORCE`; the
   helper lifts `FORCE` inside the transaction that deletes and restores it before committing.
+
+**The centre is the request tier's, and it reads only the bound recipient's rows** (task 50.1.2; §12.5.6's
+task-50.1 rows (8) … (11)). `GET /notifications`, `GET /notifications/unread-count` and `POST
+/notifications/{id}/{read,dismiss}` run on the request's own transaction through `NotificationCentreStoreRepository`,
+whose statements name neither recipient nor organization. Three things hold that true, and each has cost a
+reading to see:
+
+- **Three restrictive policies `TO esg_app`**, not `TO PUBLIC`: a delivery is visible and writable when it is
+  `app.current_user`'s, a notice when it has a delivery that is. Naming the role is the deliberate exception to
+  task 12's default — the worker binds no user, and a restrictive policy on every role would hide from the
+  dispatcher the deliveries it has to see.
+- **An UPDATE that reads a column is also filtered by the SELECT policies**, so the update policy only matters
+  for a blanket statement that reads nothing — which is why `notification-centre.e2e-spec.ts` issues one. A test
+  written only with `WHERE` clauses cannot tell the update policy from its absence.
+- **`read_at` and `dismissed_at` are write-once**, by `notification.keep_read_state`; the store writes each with
+  `COALESCE(…, now())`. Dismissing never writes `read_at`. The wording is resolved in `NotificationCentreService`
+  from `notification.<category>.in_app.{title,body}`; a key with no entry leaves the member absent.
 
 ### Withholding a column from the application
 

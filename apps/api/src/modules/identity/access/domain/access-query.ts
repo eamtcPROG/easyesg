@@ -1,4 +1,4 @@
-import { SORT_DIRECTION } from '@api/app/dto/request-list.dto';
+import { SORT_DIRECTION, type ListQueryInput } from '@api/contracts/types/list-query';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import {
   ACCESS_FILTER_ANY,
@@ -13,11 +13,9 @@ import {
 /**
  * §6.8's compact list query, narrowed to what S-16 can be asked (task 131).
  *
- * **Structural input rather than `RequestListDto`.** That class lives in `app/dto/` and carries
- * `@nestjs/swagger` decorators; `domain/` may not import a framework (`domain-free-of-frameworks`),
- * and this file is where the rules are, so the shape is declared locally and the DTO satisfies it by
- * construction. The consequence worth having is that every branch below is a unit spec with no Nest
- * container, no request and no database.
+ * **Structural input rather than `RequestListDto`** — `ListQueryInput`, in `contracts/types/list-query.ts`, which
+ * says why a domain file reads the shape rather than the class. The consequence worth having is that every branch
+ * below is a unit spec with no Nest container, no request and no database.
  *
  * **An unreadable parameter falls back rather than refusing.** A hand-edited or stale query string
  * should show the list, not a 400 about the query string — the same rule `readAccessView` applies in
@@ -29,13 +27,6 @@ import {
  * shared across three projects and one screen's route has no standing to reject another's grammar;
  * what it must not do is let an unknown field silently become a filter.
  */
-export interface ListQueryInput {
-  readonly filters: readonly { readonly field: string; readonly values: readonly string[] }[];
-  readonly order: readonly { readonly field: string; readonly direction: string }[];
-  readonly skip: number;
-  readonly take: number | undefined;
-}
-
 /** Recency first: an administrator opening this screen is looking at who is here now. */
 export const DEFAULT_ACCESS_SORT = ACCESS_SORT.ACTIVITY;
 

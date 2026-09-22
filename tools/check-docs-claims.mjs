@@ -268,6 +268,25 @@ const CLAIMS = [
   },
 
   {
+    // The wire contract's size (task 50.1.2, which found it unchecked when its four routes made it 93). It is the
+    // emitted document, not the controllers, because the sentence is about `openapi/v1.json`, and `openapi:check`
+    // already holds that file equal to what the controllers emit.
+    what: 'OpenAPI paths in the committed contract',
+    file: 'CLAUDE.md',
+    pattern: /`openapi\/v1\.json` carries (\d+) paths/,
+    actual: () => Object.keys(JSON.parse(read('packages/contracts/openapi/v1.json')).paths).length,
+  },
+  {
+    what: 'OpenAPI paths under /auth',
+    file: 'CLAUDE.md',
+    pattern: /carries \d+ paths, (\d+) under `\/auth`/,
+    actual: () =>
+      Object.keys(JSON.parse(read('packages/contracts/openapi/v1.json')).paths).filter((path) =>
+        path.startsWith('/api/v1/auth/'),
+      ).length,
+  },
+
+  {
     // **The manifest checks its own size, and that is the gate's failing state.**
     // Every other entry here proves a document right. None of them notices if this array is
     // emptied: a `CLAIMS` with two entries left in it passes, prints a cheerful line, and checks
