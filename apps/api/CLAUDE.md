@@ -450,7 +450,7 @@ Four things to know before touching it:
 `notification` schema — `notification.notification`, one row per notice, and `notification.delivery`, one per
 recipient and channel — is written by `NotificationStoreRepository` on the worker, as `esg_worker`, each statement
 in a short transaction of its own bound to the job's organization (`app.current_org` only; nobody is acting).
-`esg_app` reaches them only through 50.1.2's centre, below — its reads and its read state. Four things to know:
+`esg_app` reaches them only through 50.1.2's centre, below — its reads and its read state. Five things to know:
 
 - **FR-167's deduplication is `notification_open_key`**, a partial unique index over
   `(organization, category, subject, recipient_scope) WHERE state <> 'cancelled'`, and `open` inserts against it
@@ -465,6 +465,12 @@ in a short transaction of its own bound to the job's organization (`app.current_
   recipient. A raise folded into an open notice delivers **the notice as recorded**, to the recipients it adds.
 - **A redelivered job finds its notice by its own id first**, which is what keeps a job for a *cancelled* notice
   from joining the open one a later raise created — the case 50.1.3's cancellation makes reachable.
+- **`application` says which application the notice's link opens** (task 165; §12.5.6's task-165 row), `web` or
+  `console`, and it is **written at open and never in the `DO UPDATE`** — a fold adds recipients and moves
+  `last_raised_at`, and rewrites nothing the notice says. Every caller already had the value: it is what
+  `NOTIFICATION_DELIVERY` makes `deep_link` absolute against, so a link stored as `/invitation` no longer needs
+  its category read to say where it leads (NFR-109). `esg_app` may read it, beside the other twelve columns the
+  centre sees; `sealed_link` stays withheld.
 - **Cleaning up needs `deleteNotificationsOf`** (`test/support/notification-store.ts`). Neither table has a
   `DELETE` policy or a parent to cascade from, so a plain `DELETE` as the owner removes nothing under `FORCE`; the
   helper lifts `FORCE` inside the transaction that deletes and restores it before committing.

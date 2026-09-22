@@ -44,6 +44,8 @@ interface NoticeRow {
   organization_id: string;
   subject_ref: string;
   deep_link: string;
+  /** Which application the link opens (task 165) — the record's own answer, with no mapping from the category. */
+  application: string;
   sealed_link: string | null;
   state: string;
   clear: string;
@@ -103,7 +105,7 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
     (
       (await asOrganization(worker, organizationId, (run) =>
         run(
-          `SELECT id, organization_id, subject_ref, deep_link, sealed_link, state,
+          `SELECT id, organization_id, subject_ref, deep_link, application, sealed_link, state,
                   (to_jsonb(n) - 'sealed_link')::text AS clear
              FROM notification.notification n WHERE subject_ref = $1`,
           [key],
@@ -136,6 +138,8 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
       id: noticeIdFor(key),
       organization_id: PLATFORM_ORGANIZATION_ID,
       deep_link: '/verify',
+      // Task 165: a platform notice whose link opens the tenant application, which only the record now says.
+      application: 'web',
       state: 'delivered',
     });
     // Row (15): the link it sent, sealed — and the token in no column kept in the clear.
@@ -166,7 +170,7 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
     expect(message).toMatchObject({ to: `${SUITE}-invitee@example.md`, locale: 'ro' });
     expect(message.params).toEqual({ organizationName: 'Brutăria', link: `${WEB}/ro/invitation/invite-token-1` });
     const notice = await noticeFor(key, ORG);
-    expect(notice).toMatchObject({ organization_id: ORG, deep_link: '/invitation' });
+    expect(notice).toMatchObject({ organization_id: ORG, deep_link: '/invitation', application: 'web' });
     expect(notice?.clear).not.toContain('invite-token-1');
     expect(await deliveriesOf(noticeIdFor(key), ORG)).toEqual([
       {
@@ -188,7 +192,12 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
     });
 
     expect(message.params.link).toBe(`${CONSOLE}/invitation/admin-token-1`);
-    expect(await noticeFor(key, PLATFORM_ORGANIZATION_ID)).toMatchObject({ deep_link: '/invitation' });
+    // The pair task 165 exists for: the same `/invitation` path as an organization's invitation, and the record says
+    // which application opens it — without the reader knowing what the category means.
+    expect(await noticeFor(key, PLATFORM_ORGANIZATION_ID)).toMatchObject({
+      deep_link: '/invitation',
+      application: 'console',
+    });
     expect(await deliveriesOf(noticeIdFor(key), PLATFORM_ORGANIZATION_ID)).toEqual([
       {
         recipient_account_id: null,

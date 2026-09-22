@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { SOURCE_LOCALE } from '@easyesg/i18n';
+import { NOTICE_APPLICATION } from '../src/contracts/notification-delivery.port';
 import type { EmailDispatched, EmailMessage, EmailPort } from '../src/contracts/email.port';
 import { NOTIFICATION_CATEGORY } from '../src/contracts/notification.port';
 import { NotificationRecipientsRepository } from '../src/infrastructure/persistence/identity/notification-recipients.repository';
@@ -285,6 +286,43 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     expect(await noticesAbout(`${SUITE}:rerun`)).toHaveLength(1);
   });
 
+  /**
+   * Task 165: a raised notice's record says which application its link opens — `web`, since every producer of one is
+   * the tenant tier's — and **a fold leaves it as the notice was opened**, like the link and the parameters beside it.
+   *
+   * **The fold is driven at the store with the other application**, because the raise path names one value and a
+   * second raise could never disagree with the first: moving `application` into the `ON CONFLICT … DO UPDATE` would
+   * be invisible to a case that folds `web` into `web`.
+   */
+  it('records the application a raised notice opens, and keeps it when a later raise is folded in', async () => {
+    const subjectRef = `${SUITE}:application`;
+    const first = await raise({ recipientUserIds: [ana], subjectRef });
+    await dispatch(first);
+    const applicationOf = async () =>
+      (
+        (await asOrganization(worker, ORG, (run) =>
+          run(`SELECT application FROM notification.notification WHERE id = $1`, [first]),
+        )) as { application: string }[]
+      )[0]?.application;
+
+    expect(await applicationOf()).toBe('web');
+
+    await notificationStore(worker).open({
+      organizationId: ORG,
+      notificationId: randomUUID(),
+      categoryKey: NOTIFICATION_CATEGORY.INVITATION,
+      subjectRef,
+      recipientScope: 'default',
+      raisedAtMicros: Date.now() * 1000,
+      deepLink: '/invitation/abc',
+      application: NOTICE_APPLICATION.CONSOLE,
+      params: {},
+    });
+
+    expect(await applicationOf()).toBe('web');
+    expect(await noticesAbout(subjectRef)).toHaveLength(1);
+  });
+
   it('folds a second raise of an open notice into it, reaching only the recipient it adds', async () => {
     const first = await raise({ recipientUserIds: [ana], subjectRef: `${SUITE}:folded` });
     await dispatch(first);
@@ -474,7 +512,14 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     const settled: string[] = [];
     const waiting = [
       store
-        .open({ ...key, notificationId: randomUUID(), raisedAtMicros: Date.now() * 1000, deepLink: '/invitation/abc', params: {} })
+        .open({
+          ...key,
+          notificationId: randomUUID(),
+          raisedAtMicros: Date.now() * 1000,
+          deepLink: '/invitation/abc',
+          application: NOTICE_APPLICATION.WEB,
+          params: {},
+        })
         .then(() => settled.push('open')),
       store.cancel({ ...key, cancelledAtMicros: Date.now() * 1000 }).then(() => settled.push('cancel')),
     ];
@@ -514,6 +559,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
       notificationId: randomUUID(),
       raisedAtMicros,
       deepLink: '/invitation/abc',
+      application: NOTICE_APPLICATION.WEB,
       params: {},
     });
     await waitersOnAdvisoryLocks(1);
@@ -545,6 +591,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
         recipientScope: 'default',
         raisedAtMicros: Date.now() * 1000,
         deepLink: '/invitation/abc',
+        application: NOTICE_APPLICATION.WEB,
         params: {},
       });
 
@@ -630,8 +677,8 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
       asOrganization(worker, ORG, (run) =>
         run(
           `INSERT INTO notification.notification
-                  (id, organization_id, subject_ref, recipient_scope, deep_link, ${columns})
-           VALUES (gen_random_uuid(), $1, 'constraint-probe', 'default', '/x', ${values})`,
+                  (id, organization_id, subject_ref, recipient_scope, deep_link, application, ${columns})
+           VALUES (gen_random_uuid(), $1, 'constraint-probe', 'default', '/x', 'web', ${values})`,
           [ORG],
         ),
       );

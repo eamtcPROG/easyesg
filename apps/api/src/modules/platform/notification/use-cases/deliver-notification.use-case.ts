@@ -1,3 +1,4 @@
+import { NOTICE_APPLICATION } from '@api/contracts/notification-delivery.port';
 import type { NotificationRecipientsPort } from '@api/contracts/notification-recipients.port';
 import type { EpochMicros } from '@api/contracts/types/time';
 import type { NotificationRaised } from '../constants/notification.constants';
@@ -72,6 +73,9 @@ export class DeliverNotification {
       recipientScope: notice.recipientScope,
       raisedAtMicros: command.raisedAtMicros,
       deepLink: notice.deepLink,
+      // Every raised notice opens the tenant application: its producers are the tenant tier's, and the origin this
+      // flow makes links absolute against is `PUBLIC_WEB_URL` (task 165).
+      application: NOTICE_APPLICATION.WEB,
       params: notice.params,
     });
     if (record.state === NOTIFICATION_STATE.CANCELLED) return { unresolved };

@@ -114,6 +114,19 @@ const apiModulesIn = (context) => directoriesIn(join('apps/api/src/modules', con
 const gatesChain = () =>
   JSON.parse(read('package.json')).scripts.gates.split('&&').map((s) => s.trim());
 
+/**
+ * A task table's rows, and the top-level numbers over them — the plan files' two countable facts.
+ * The pattern is the one the `DONE`-in-place claim above already uses, so a row shape that stops
+ * matching stops matching for both rather than making one of them quietly count less.
+ */
+const planRows = (path) =>
+  read(path)
+    .split('\n')
+    .map((line) => /^\|\s*\*{0,2}(\d+)(?:\.\d+)*\*{0,2}\s*\|/.exec(line))
+    .filter(Boolean);
+const archivedRows = () => planRows('docs/archived_tasks.md');
+const archivedNumbers = () => new Set(archivedRows().map((m) => m[1]));
+
 // ── The claims ──────────────────────────────────────────────────────────────────────────────────
 //
 // Add one whenever a document states a number a reader would act on. Leave one out where the
@@ -350,6 +363,42 @@ const CLAIMS = [
       }
       return [...status.values()].filter((s) => s.every((v) => v === 'DONE')).length;
     },
+  },
+
+  // ── The archive's own size, claimed twice and guarded neither time until task 165 ──
+  //
+  // `archived_tasks.md`'s preamble and `task.md`'s opening sentence each state how much has closed,
+  // and both were stale the moment task 50's group moved — 99/187 against an actual 100/197, for a
+  // day, while the root `CLAUDE.md`'s copy of the same two numbers was updated in the same edit and
+  // was right. That asymmetry is the whole argument: the guarded copy stayed true and the unguarded
+  // ones did not, which is the 11 Sep audit's finding repeating rather than a new one.
+  //
+  // **Unlike the plan-size claim above, these move on every close**, and that is deliberate here.
+  // That one counts the union so a closing task cannot churn it; these two are *about* the closing,
+  // so a number that did not move would be the error. Closing a task already edits both files.
+  {
+    what: 'task numbers in the archive',
+    file: 'docs/archived_tasks.md',
+    pattern: /\*\*(\d+) task numbers, \d+ rows\*\*/,
+    actual: () => archivedNumbers().size,
+  },
+  {
+    what: 'rows in the archive',
+    file: 'docs/archived_tasks.md',
+    pattern: /\*\*\d+ task numbers, (\d+) rows\*\*/,
+    actual: () => archivedRows().length,
+  },
+  {
+    what: 'task numbers in the archive, as counted by the active plan',
+    file: 'docs/task.md',
+    pattern: /— (\d+) numbers and \d+ of them —/,
+    actual: () => archivedNumbers().size,
+  },
+  {
+    what: 'rows in the archive, as counted by the active plan',
+    file: 'docs/task.md',
+    pattern: /— \d+ numbers and (\d+) of them —/,
+    actual: () => archivedRows().length,
   },
 
   // The 11 Sep 2026 audit found twelve stale numbers across the five files, and every one was

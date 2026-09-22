@@ -1,3 +1,4 @@
+import type { NoticeApplication } from '@api/contracts/notification-delivery.port';
 import type { NotificationCategoryKey } from '@api/contracts/notification.port';
 import type { EpochMicros } from '@api/contracts/types/time';
 import type { NotificationChannel } from '../models/notification-category.model';
@@ -46,6 +47,11 @@ export interface OpenNotificationCommand extends NoticeRef {
   /** The raise's outbox time — the database's clock, in microseconds — which its key's cancellation is ordered against. */
   readonly raisedAtMicros: EpochMicros;
   readonly deepLink: string;
+  /**
+   * Which application `deepLink` opens (task 165) — the value the delivery already resolves its origin from, kept on
+   * the record so a reader of the table needs no mapping from the category (NFR-109).
+   */
+  readonly application: NoticeApplication;
   readonly params: Record<string, unknown>;
   /**
    * The absolute link as sent, where it carries a secret — a verification, reset or invitation token (task 50.1.4,

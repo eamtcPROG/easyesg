@@ -196,10 +196,12 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
    */
   private async admit(runner: QueryRunner, command: OpenNotificationCommand): Promise<NoticeRow> {
     const [notice] = (await runner.query(
+      // `application` is written here and never in the `DO UPDATE`: a fold contributes recipients and a later raise
+      // time, and leaves what the notice says and where it leads as it was opened (task 165; row (18)).
       `INSERT INTO notification.notification
-              (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, params,
+              (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, application, params,
                raised_at, last_raised_at, sealed_link)
-       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, ${atMicros('$8')}, ${atMicros('$8')}, $9)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, ${atMicros('$9')}, ${atMicros('$9')}, $10)
        ON CONFLICT (organization_id, category_key, subject_ref, recipient_scope)
           WHERE state <> '${NOTIFICATION_STATE.CANCELLED}'
        DO UPDATE SET last_raised_at = GREATEST(notification.notification.last_raised_at, EXCLUDED.last_raised_at)
@@ -211,6 +213,7 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
         command.subjectRef,
         command.recipientScope,
         command.deepLink,
+        command.application,
         JSON.stringify(command.params),
         command.raisedAtMicros,
         command.sealedLink === undefined ? null : this.cipher.seal(command.sealedLink),

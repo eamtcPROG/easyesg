@@ -110,6 +110,7 @@ describe('DeliverLinkNotice (task 50.1.4)', () => {
         recipientScope: 'default',
         raisedAtMicros: invitation.occurredAtMicros,
         deepLink: '/invitation',
+        application: 'web',
         params: { organizationName: 'Brutăria' },
         sealedLink: 'https://app.easyesg.md/ru/invitation/token-1',
       },
@@ -134,11 +135,15 @@ describe('DeliverLinkNotice (task 50.1.4)', () => {
     expect(store.opened[0].organizationId).toBe('00000000-0000-0000-0000-000000000000');
   });
 
-  it('links the console without a language in its path', async () => {
-    const { deliver, sent } = build();
+  // Task 165: the command's application decides the link's origin AND what the notice records — so the record is
+  // asserted here too, where the value is not `web`. Every other case in this file is, so the `toEqual` above
+  // would pass a use case that wrote the literal.
+  it('links the console without a language in its path, and records the console', async () => {
+    const { deliver, sent, store } = build();
     await deliver.execute({ ...invitation, application: 'console', linkPath: '/invitation/token-2' });
 
     expect(sent[0].params.link).toBe('https://admin.easyesg.md/invitation/token-2');
+    expect(store.opened[0].application).toBe('console');
   });
 
   it("carries the category's second wording when one is named", async () => {

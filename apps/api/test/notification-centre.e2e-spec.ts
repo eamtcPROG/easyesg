@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import type { DataSource } from 'typeorm';
+import { NOTICE_APPLICATION } from '../src/contracts/notification-delivery.port';
 import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from '../src/contracts/notification.port';
@@ -93,6 +94,7 @@ describe('the notification centre (tasks 50.1.2, 50.2.1)', () => {
       recipientScope: 'default',
       raisedAtMicros: Date.now() * 1000,
       deepLink: `/reports/${input.id}`,
+      application: NOTICE_APPLICATION.WEB,
       params: { organizationName: 'Centru SRL' },
     });
     if (input.inApp.length > 0) await store.deliverInApp({ ...ref, recipientIds: input.inApp });

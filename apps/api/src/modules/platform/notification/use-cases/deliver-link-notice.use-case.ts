@@ -85,6 +85,7 @@ export class DeliverLinkNotice {
       recipientScope: DEFAULT_RECIPIENT_SCOPE,
       raisedAtMicros: command.occurredAtMicros,
       deepLink: command.deepLink,
+      application: command.application,
       params: command.params,
       sealedLink: link,
     });

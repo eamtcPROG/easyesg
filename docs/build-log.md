@@ -23614,3 +23614,106 @@ notifications delivered and read from the browser* — is met end to end, by two
 the browser suite runs no worker, so a reminder raised there is proven as far as the row it commits, and
 `report-reminder.e2e-spec.ts` carries that row through the worker's delivery into the recipient's centre, in their
 language.
+
+## Task 165 — Which application a notice's link opens · 2026-09-22
+
+Appended by task 50.1's parent close, from its spec review, and taken next because the record it corrects had been
+live for exactly one task. `notification.notification.deep_link` is a **path**, and since 50.1.4 it may open either
+application: the organization's invitation and the operator's both store `/invitation`, the operator's under the
+reserved platform organization. Only `category_key` told them apart — knowledge a reader of the table had to bring,
+where NFR-109 asks that delivery records be readable *independently of the notification centre*.
+
+### Decisions (project owner, one batch, before the code)
+
+Recorded as §12.5.6's new task-165 row.
+
+- **(1) A column, written when the notice opens** (recommended), not a derivation from the category. The value was
+  never unknown: every handler already passes `application` to `NOTIFICATION_DELIVERY`, which is what makes the link
+  absolute against that application's origin. The record was the one reader obliged to infer what every writer held.
+  A derivation would also have to be re-derived at every read, and would be wrong the first time a category serves
+  both applications.
+- **(2) Rows written before it are backfilled by category, as the writer would have** (recommended):
+  `platform.admin_invitation` is the console's and every other category the tenant application's, which is what each
+  handler passes today. A category registered later writes its own value and never meets that statement. The mapping
+  is a **literal** in the migration, like every migration's vocabulary — a migration is frozen history, and
+  interpolating a constant that can later be renamed would silently rewrite what it says.
+- **(3) `esg_app` may read it** — the owner's decision, over withholding it until a reader exists. Nothing in the
+  request tier reads it today; granting it now means the task that first needs it changes no migration.
+
+### What shipped
+
+- **The migration** (`1790812800000-notice-application.ts`): the column, the backfill, `SET NOT NULL` with a `CHECK`
+  over the two values, and the column grant re-issued to `esg_app` — `REVOKE` the twelve, `GRANT` the thirteen, since
+  a column grant is not additive in a way a reader can see. `sealed_link` stays withheld, which is the whole reason
+  that grant enumerates columns at all.
+- **`OpenNotificationCommand.application`**, and the store's `admit()` inserting it as `$7` — **never in the
+  `DO UPDATE`**. That is row (18) of the task-50.1 row applied rather than restated: a raise folded into an open
+  notice adds recipients and moves `last_raised_at`, and rewrites nothing the notice says or where it leads.
+- **Both delivery paths name it**: `DeliverLinkNotice` passes `command.application`, the value it already resolved the
+  origin from; `DeliverNotification` passes `web`, with the reason stated where a reader will ask it — the notices it
+  delivers link into the tenant application, whose origin is `PUBLIC_WEB_URL`.
+
+### The backfill lifts `FORCE`, and it is the *loud* member of a family this repository already knows
+
+`notification.notification`'s policies scope every row to the bound organization; `FORCE ROW LEVEL SECURITY` subjects
+the owner to its own policies; a migration binds no organization. So the plain `UPDATE` matches nothing and reports
+`UPDATE 0` — `apps/api/CLAUDE.md`'s *a cleanup that deletes from a table with no `DELETE` policy removes nothing and
+says so quietly*, in its update form. The statement is wrapped in `NO FORCE` / `FORCE`, as task 50.1.3's backfill and
+50.1.4's lossy `down` are, and DDL is transactional so no other session sees the table unforced.
+
+**Task 164's row was extended in the same edit**, from two data steps to three, because a row predicting a case is
+wrong the moment the case arrives and is not listed. It also gained the distinction this one introduces: the other
+two fail **silently**, while this one is followed by `SET NOT NULL`, so on a populated database an unlifted `UPDATE`
+makes the migration *raise*. That is a difference in symptom and not in coverage — on the empty tables every gate
+runs against, the column is null nowhere and the step passes either way, which is exactly what task 164 exists to fix.
+
+### What the checks caught, and the one they would not have
+
+Three mutations, each run and each restored:
+
+- `, application = EXCLUDED.application` appended to the store's `DO UPDATE` → the new store case fails (1 of 26).
+  That case folds a `console` raise into a `web` notice, which the raise path cannot produce today — the store is
+  where the rule lives, so that is where it is held.
+- the operator-invitation handler's `CONSOLE` changed to `WEB` → two cases of `notification-address-notices` fail.
+- `DeliverLinkNotice` writing the literal `NOTICE_APPLICATION.WEB` instead of `command.application` → the hermetic
+  console case fails.
+
+**The third mutation is there because the unit suite went red on its own first, and the reason was instructive.**
+`deliver-link-notice.use-case.spec.ts` asserts the whole opened command with `toEqual`, so a new field made it fail
+rather than pass under-asserting — the shape `route-permissions.spec.ts` is built on, working. But reading the
+failure showed **every case in that file passed `application: 'web'`**, so the use case could have written the
+literal and the hermetic suite would have agreed. Only the e2e would have caught it. The existing console case —
+which asserted the *link's* origin — now asserts the record too, and it is the mutation above that proves it.
+
+### Two count claims were stale, and neither was guarded
+
+Closing this task meant editing the archive's size, and both statements of it were already wrong: `archived_tasks.md`'s
+preamble and `task.md`'s opening sentence read *99 numbers, 187 rows* against an actual 100/197, stale since task 50's
+group moved a day earlier — while the root `CLAUDE.md`'s copy of the same two numbers had been updated in that same
+close and was right. **The guarded copy stayed true and the unguarded ones did not**, which is the 11 Sep audit's
+finding recurring rather than a new one, so it graduates: `docs:check` gains four claims (42 → 46, and a seventh
+document), the two numbers in each of the two files. They move on every close, unlike the plan-size claim above them,
+and that is deliberate — that one counts the union so a closing task cannot churn it; these are *about* the closing.
+The gate then failed on its own size claim before passing, which is the circularity working.
+
+### Verification, and the run this was closed on
+
+165 is a childless top-level row, so the run is the gates its change reaches, not the full set (the owner's standing
+decision of 13 Sep 2026). The change is `apps/api` plus documents:
+
+- `pnpm lint` and `pnpm typecheck` — clean, and **lint was re-run over a deleted eslint cache**. That is the one
+  required-cold case this diff hits: a *type* changed rather than a file (`OpenNotificationCommand` gained a field),
+  and `--cache-strategy content` skips a file whose own bytes are unchanged while `@typescript-eslint`'s type-aware
+  rules read the whole program. Clearing the cache buys exactly what `gates:clean` would buy here; nothing moved, no
+  `packages/*` changed and no generated artefact moved, so the rest of a cold run would have been waste.
+- `pnpm --filter @easyesg/api test` — 152 suites, 1,259 tests.
+- `pnpm migrations:check` — apply → revert → apply → 61 invariant cases.
+- `pnpm e2e` — 52 suites, 1,303 tests. `pnpm e2e:worker` — 8, the `MODE=worker` boot proof, which this task needs
+  because both changed use cases run there and nowhere else.
+- `pnpm docs:check` — 46 claims across seven documents.
+
+**`openapi:check` was not run and did not need to be**: no controller, DTO or `packages/contracts` file changed —
+`NoticeApplication` was already on the delivery port, and the centre's DTO does not carry the new column — every notice
+a tenant's centre shows opens the tenant application, which is the task-165 row's (3) stated the other way round.
+**The three review agents did not run**, per the same standing decision; the diff is one migration, four api files and
+their specs.
