@@ -57,7 +57,7 @@ export interface GlobalBarProps {
   readonly brand: ReactNode;
   /** The active organization's control; absent when none is resolved — see the state list above. */
   readonly organization?: ReactNode;
-  /** The account corner: the user menu today, the notification centre when S-26 exists. */
+  /** The band's own controls: the notification bell, the account corner, and the compact frame's drawer trigger. */
   readonly actions: ReactNode;
   /** The surface the band is drawn on. Absent is the tenant and public band. */
   readonly tone?: GlobalBarTone;

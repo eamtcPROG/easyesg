@@ -37,10 +37,12 @@ import styles from './workspace-drawer.module.css';
  */
 export interface WorkspaceDrawerProps {
   /**
-   * The organization's switcher (task 83.2), at the head of the panel — the compact bar names no organization
-   * (`design_spec.md` UX-2's amendment), so this is where it is. Absent when the session acts for none.
+   * The organization the session acts for, absent when it acts for none: its **switcher** (task 83.2), at the head of
+   * the panel — the compact bar names no organization (`design_spec.md` UX-2's amendment), so this is where it is —
+   * and its **id**, which keys the *Notifications* row's count to it (`notifications-query-keys.ts`). One value, so the
+   * row and the switcher cannot disagree about whether there is an organization.
    */
-  readonly organization?: ReactNode;
+  readonly organization?: { readonly switcher: ReactNode; readonly id: string };
 }
 
 export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
@@ -68,12 +70,12 @@ export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
         linkComponent={Link}
         items={WORKSPACE_SECTIONS.map((section) => ({ ...section, label: tSections(section.key) }))}
         isActive={(item) => item.href === pathname}
-        organization={organization}
+        organization={organization?.switcher}
         actions={
           <>
             {/* The centre is the active organization's (UC-165), so its row is offered exactly when the
                 organization's control is — a second flag for the same fact would be free to disagree. */}
-            {organization ? <NotificationsEntry className={styles.action} /> : null}
+            {organization ? <NotificationsEntry organizationId={organization.id} className={styles.action} /> : null}
             <Link className={styles.action} href={ROUTES.ACCOUNT_CREDENTIALS}>
               {t('accountMenu.credentials')}
             </Link>

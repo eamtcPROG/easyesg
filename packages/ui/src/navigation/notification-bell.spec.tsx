@@ -1,17 +1,17 @@
 import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { createRef } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { NotificationBell } from './notification-bell';
 
-/** The band's notification entry (task 50.2.1): one link, named with its count, the count drawn only when there is one. */
+/** The band's notification entry (task 50.2.2): one button, named with its count, taking what a trigger hands it. */
 describe('NotificationBell', () => {
-  it("is one link to the centre, named by the caller's sentence, with the count drawn and not read twice", () => {
-    render(<NotificationBell href="/notifications" label="Notifications, 4 unread" count={4} />);
+  it("is one button named by the caller's sentence, with the count drawn and not read twice", () => {
+    render(<NotificationBell label="Notifications, 4 unread" count={4} />);
 
-    const link = screen.getByRole('link', { name: 'Notifications, 4 unread' });
-    expect(link).toHaveAttribute('href', '/notifications');
-    expect(link).toHaveTextContent('4');
-    // The badge is inside the link and hidden, so the name stays the sentence alone.
+    const bell = screen.getByRole('button', { name: 'Notifications, 4 unread' });
+    expect(bell).toHaveAttribute('type', 'button');
+    expect(bell).toHaveTextContent('4');
     expect(screen.getByText('4').closest('[aria-hidden="true"]')).not.toBeNull();
   });
 
@@ -19,25 +19,24 @@ describe('NotificationBell', () => {
     ['unknown', null],
     ['zero', 0],
   ])('draws no count while it is %s', (_case, count) => {
-    render(<NotificationBell href="/notifications" label="Notifications" count={count} />);
+    render(<NotificationBell label="Notifications" count={count} />);
 
-    expect(screen.getByRole('link', { name: 'Notifications' })).not.toHaveTextContent(/\d/);
+    expect(screen.getByRole('button', { name: 'Notifications' })).not.toHaveTextContent(/\d/);
   });
 
-  it('says so when the reader is on the centre itself', () => {
-    render(<NotificationBell href="/notifications" label="Notifications" count={null} current />);
-
-    expect(screen.getByRole('link', { name: 'Notifications' })).toHaveAttribute('aria-current', 'page');
-  });
-
-  it("uses the caller's router when given one", () => {
-    const Routed = ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => (
-      <a href={`/ro${href}`} className={className} data-routed="yes">
-        {children}
-      </a>
+  // What a Radix `Popover.Trigger asChild` merges onto its child: a handler, the popup's state, and the ref.
+  it('spreads what a trigger hands it onto the button', async () => {
+    const onClick = vi.fn();
+    const ref = createRef<HTMLButtonElement>();
+    render(
+      <NotificationBell label="Notificări" count={2} onClick={onClick} aria-expanded="true" aria-controls="panel" ref={ref} />,
     );
-    render(<NotificationBell href="/notifications" label="Notificări" count={2} linkComponent={Routed} />);
 
-    expect(screen.getByRole('link', { name: 'Notificări' })).toHaveAttribute('data-routed', 'yes');
+    const bell = screen.getByRole('button', { name: 'Notificări' });
+    await userEvent.click(bell);
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(bell).toHaveAttribute('aria-expanded', 'true');
+    expect(bell).toHaveAttribute('aria-controls', 'panel');
+    expect(ref.current).toBe(bell);
   });
 });

@@ -272,25 +272,36 @@ on nearly every render. `features/support-access/` holds it: `server/data/suppor
 only, running access to everyone), and three Server Actions answer or end, each revalidating the `(app)` layout. A
 failed read draws nothing, and `mayAdminister`, beside `mayWrite`, decides only whether *End access* is offered.
 
-**The notification centre's bell and its count** (task 50.2.1; §12.5.6's task-50.2 rows (1) … (4)). The band draws
-`packages/ui`'s `NotificationBell` — there because the icon set is, `architecture.md` §12.1 — through
-`features/notifications/count/`'s corner, and the compact drawer draws the same count on its *Notifications* row; both only
-while the session acts for an organization, whose centre it is. Four things to know before touching them:
+**The notification centre's bell, its count and its panel** (tasks 50.2.1, 50.2.2; §12.5.6's task-50.2 rows (1) … (5)).
+The band draws `packages/ui`'s `NotificationBell` at every frame — there because the icon set is, `architecture.md`
+§12.1 — as the trigger of `features/notifications/panel/`'s Radix Popover, and the compact drawer draws the same count
+on its *Notifications* row as well, which leads to S-26; both only while the session acts for an organization, whose
+centre it is. **The bell is outside the global tier's `.wide` switch**, which hides what the drawer carries instead: the
+compact bar keeps it beside the drawer's trigger, as all three 390 artboards draw it — 50.2.1 put it inside, and at a
+phone's width the count was only in the drawer. Five things to know before touching them:
 
 - **The count is the browser's poll**, `client/notifications/use-unread-count.ts` on OQ-36's minute
   (`client/polling/poll-schedule.ts`), stopped while the tab is hidden. **Its run of failures lives in the query's own
   data**, because TanStack Query resets `fetchFailureCount` at the start of every fetch — with retries off it never
   passes one, and OQ-36's backoff reads the run across polls.
-- **S-26's actions invalidate it**, so the badge follows the reader's own mark rather than the next poll; the key is
-  `client/notifications/unread-count-key.ts`, directive-free because the hook beside it is a client module.
+- **Every mark invalidates it**, from S-26 or the panel, so the badge follows the reader's own mark rather than the
+  next poll; the keys are `client/notifications/notifications-query-keys.ts`, one scope over the count and the panel's
+  views, directive-free because the hook beside it is a client module. **Each key carries the organization the band
+  was rendered for**: an organization switch lands client-side, so the `(app)` layout's query client outlives it, and
+  a key without the organization drew the one left for up to a minute — found by task 50.2's parent-close review, and
+  `notifications.spec.ts`'s switch journey fails on it. The id partitions the cache and never chooses what is read.
 - **Opening a notice is a real link** that sends the read mark as a `keepalive` request beside the navigation
   (`mark-notice-opened.ts`) — a Server Action's answer would be abandoned by the very navigation it rode on.
 - **The Notification item is this app's, not the design system's** — only the tenant application has a centre (UX-89
-  as amended) — and it is directive-free, so the list renders it on the server and 50.2.2's panel will render it inside
-  a Client Component. *Today* in its time is decided on the server, since it depends on the clock.
+  as amended) — and it is directive-free, in `notifications/shared/`, so S-26's list renders it on the server and the
+  panel inside a Client Component. *Today* in its time is worded on the server for S-26 and in the browser for the
+  panel, whose list is never server-rendered — the clock rule's scope, above.
+- **The panel's list is read when it opens**, through the pass-through (`client/notifications/read-notices.ts`), each
+  view its own key under the one scope a mark invalidates, and **its view is held inside the popover's content**, which
+  Radix unmounts on close — so every opening starts on *Unread*, as the artboards draw it.
 
 **Every address answers something (task 103).** `shared/address-notice.tsx` is the anatomy under §8.1's two
-address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the sixteen routes whose screens have not
+address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the fifteen routes whose screens have not
 shipped, and `error — not found` for an address that does not exist. `design_spec.md` §4.5
 records them as **patterns, not screens**: UX-7 governs destinations serving a use case, and
 these are the answer when none applies, so §4.4's count stays at 52 and neither gained an
@@ -386,7 +397,7 @@ src/
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter), S-37's gate
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
-├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), unsent-work, polling, session (task 92 — the probe and the re-authentication posts)
+├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), unsent-work, polling, session (task 92 — the probe and the re-authentication posts), notifications (task 50.2 — the count's poll, the panel's read, the opening mark), query (the one Query client)
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths, requested-path
 ```
 
@@ -809,6 +820,13 @@ conditional render, which is how it ends up half-suppressed on one screen.
   NFR-34's test on a small case — a Moldovan company's legal statement must not change answer
   with the reader's timezone.
 
+  **Its scope is what is server-rendered and hydrated** (amended 22 Sep 2026, project owner, task 50.2.2;
+  `architecture.md` §12.5.6's task-50.2 row (5)). Both reasons need a render on each side: two evaluations to
+  disagree, and a timezone to change the answer. A Client Component drawing what it fetched after an interaction —
+  the notification panel's list, opened by the bell — has neither: nothing of it is in the server's HTML, and
+  next-intl's formatter in the browser carries the configured timezone, not the reader's. There it may word *today*
+  from the browser's clock. What it gives up is a wrong device clock mislabelling a notice near midnight.
+
 - **`requestLocale` and `setRequestLocale`, not `next/root-params`.** next-intl marks both
   deprecated — the strikethrough in `[locale]/layout.tsx` is expected, not an oversight — but root
   params throw inside a Route Handler (Next E1043) and the module is a compiler-replaced
@@ -911,10 +929,12 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **105 files here are Client Components** (22 Sep 2026: eight since task 50.2.1 — the unread count's hook under
-  `client/notifications/`, the band's bell and the drawer's row under `notifications/count/components/`, and five
-  of S-26's under `notifications/centre/components/`; the Query provider moved from the wizard to `client/query/`
-  and is not among them; the sign-out provider since task 93; six under
+  **116 files here are Client Components** (22 Sep 2026: twelve since task 50.2.2, the notification panel's under
+  `notifications/panel/components/`, with the band's old bell corner gone into it; seven since task 50.2.1 — the
+  unread count's hook under `client/notifications/`, the drawer's row under `notifications/count/components/`, the
+  action hook, the notice link and, since the parent close, the one *mark all* S-26 and the panel share under
+  `notifications/shared/components/`, and S-26's own under `notifications/centre/components/`; the Query provider moved from the wizard to `client/query/` and is not among
+  them; the sign-out provider since task 93; six under
   `identity/reauthenticate/components/` and
   three in the wizard — the rail's link, the session hook and the dialogue's mount — since task 92; thirteen under
   `organization/access/components/` since task 142 split the invite panel into its arms, ten under

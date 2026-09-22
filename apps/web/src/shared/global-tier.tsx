@@ -1,6 +1,6 @@
 import { BrandMark, GlobalBar, SWITCHER_TONE } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import { NotificationsCorner } from '@/features/notifications/count/components/notifications-corner';
+import { NotificationsPanel } from '@/features/notifications/panel/components/section/notifications-panel';
 import { OrganizationCorner } from '@/features/organization/switcher/components/organization-corner';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
@@ -35,9 +35,10 @@ import styles from './global-tier.module.css';
  * leading to a blank page teaches the reader that the product is broken rather than unfinished,
  * which is `WorkspaceNavigation`'s rule and the same judgement made again.
  *
- * **The notification centre's bell since task 50.2.1**, drawn only when the session acts for an
- * organization — the centre is the active organization's (UC-165), so S-04, S-35 and S-37 have no
- * centre to lead to, exactly as they have no organization to name.
+ * **The notification centre's bell since task 50.2.1, and the panel it opens since 50.2.2**, at every frame
+ * — UX-62's count *visible from any screen*, which the three workspace artboards draw in the compact bar too —
+ * and only when the session acts for an organization: the centre is the active organization's (UC-165), so
+ * S-04, S-35 and S-37 have no centre to lead to, exactly as they have no organization to name.
  *
  * **The organization is a switcher since task 83.2**, drawn twice: in the band from the medium frame up,
  * and in the compact drawer below it, where `design_spec.md` UX-2's amendment moves it. It is drawn only
@@ -54,7 +55,8 @@ export async function GlobalTier() {
   ]);
   if (!session) return null;
 
-  const resolved = memberships?.some((membership) => membership.active) ? memberships : null;
+  const active = memberships?.find((membership) => membership.active);
+  const resolved = active ? memberships : null;
 
   return (
     <GlobalBar
@@ -69,11 +71,13 @@ export async function GlobalTier() {
       }
       actions={
         <>
+          {/* The bell at every frame — the compact bar draws it beside the drawer's trigger, as the
+              wider ones draw it beside the avatar. */}
+          {active ? <NotificationsPanel organizationId={active.organizationId} /> : null}
           {/* The account corner at `medium` and `wide`; the drawer carries its entries at
               `compact`, where the artboards draw no avatar in the bar. One of the two is always
               `display: none`, so neither is offered twice. */}
           <span className={styles.wide}>
-            {resolved ? <NotificationsCorner /> : null}
             <AccountCorner
               email={session.account.email}
               displayName={session.account.displayName}
@@ -82,9 +86,12 @@ export async function GlobalTier() {
           </span>
           <WorkspaceDrawer
             organization={
-              resolved ? (
-                <OrganizationCorner memberships={resolved} tone={SWITCHER_TONE.DEFAULT} />
-              ) : undefined
+              active && resolved
+                ? {
+                    switcher: <OrganizationCorner memberships={resolved} tone={SWITCHER_TONE.DEFAULT} />,
+                    id: active.organizationId,
+                  }
+                : undefined
             }
           />
         </>

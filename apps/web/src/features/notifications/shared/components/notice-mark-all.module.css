@@ -1,0 +1,6 @@
+/* *Mark all as read* and its refusal beneath it (task 50.2.1), wherever it is drawn. */
+.markAll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

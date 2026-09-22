@@ -10,14 +10,17 @@
   /* The artboard's 32px — above WCAG 2.2's 24px minimum, and not a first-use control (§11.5's rule). */
   inline-size: 32px;
   block-size: 32px;
+  padding: 0;
+  border: 0;
   border-radius: var(--radius-1);
   background: var(--globalbar-control-surface);
   color: var(--globalbar-text);
-  text-decoration: none;
+  cursor: pointer;
 }
 
+/* Stronger under the pointer, and while its panel is open — the state a popover trigger announces. */
 .bell:hover,
-.bell[aria-current='page'] {
+.bell[aria-expanded='true'] {
   background: var(--globalbar-control-surface-hover);
 }
 

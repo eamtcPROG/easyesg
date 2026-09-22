@@ -27,7 +27,7 @@ is not itself a gap.
 | `form/` | 11 | The presentational controls — `value`/`onChange`/`ref`, no form library |
 | `forms/` | 8 | The react-hook-form binding. **A separate entry point** — see the traps |
 | `feedback/` | 4 | Banner, Callout, EmptyState, ConsequenceDialogue |
-| `navigation/` | 10 | GlobalBar — the console's band too, through a tone — task 50.2.1's NotificationBell, the band's notification entry, here because the icon set is — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, task 83.2's OrganizationSwitcher, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
+| `navigation/` | 10 | GlobalBar — the console's band too, through a tone — task 50.2.1's NotificationBell, the band's notification entry and since 50.2.2 its panel's trigger, here because the icon set is — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, task 83.2's OrganizationSwitcher, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
 | `data-display/` | 4 | DataTable, StatusChip, and task 143's EnrolmentCode with its loading arm |
 | `disclosure/` | 1 | DisclosureField — the anatomy every B1–B11 module reuses (task 36.1) |
 | `domain/` | 5 | ReportingPeriodPicker, SaveStateIndicator, VersionPinIndicator, and §6.10's two from task 142 — UsageCounter beside an action, EntitlementGate after a refused one |

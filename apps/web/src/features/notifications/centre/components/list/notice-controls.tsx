@@ -3,11 +3,11 @@
 import type { NotificationItem as Notice } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { dismissNotificationAction, markNotificationReadAction } from '../../actions/actions';
-import { noticeTitleId } from '../../tools/notice-title-id';
-import { CentreActionRefusal } from '../shared/centre-action-refusal';
+import { dismissNotificationAction, markNotificationReadAction } from '../../../shared/actions/actions';
+import { NoticeActionRefusal } from '../../../shared/components/notice-action-refusal';
+import { useNoticeAction } from '../../../shared/components/use-notice-action';
+import { noticeTitleId } from '../../../shared/tools/notice-title-id';
 import { CENTRE_MESSAGES } from '../shared/centre-messages';
-import { useCentreAction } from '../shared/use-centre-action';
 
 /**
  * One notice's two controls on S-26 (task 50.2.1; UC-167; §12.5.6's task-50.1 row (9)): *mark as read* while it is
@@ -20,7 +20,7 @@ import { useCentreAction } from '../shared/use-centre-action';
  */
 export function NoticeControls({ notice }: { readonly notice: Pick<Notice, 'id' | 'readAt'> }) {
   const t = useTranslations(CENTRE_MESSAGES);
-  const { pending, refusal, run } = useCentreAction();
+  const { pending, refusal, run } = useNoticeAction();
   const notificationId = notice.id;
   const describedBy = noticeTitleId(notice.id);
 
@@ -46,7 +46,7 @@ export function NoticeControls({ notice }: { readonly notice: Pick<Notice, 'id' 
       >
         {t('dismiss')}
       </Button>
-      {refusal === null ? null : <CentreActionRefusal notice={refusal} />}
+      {refusal === null ? null : <NoticeActionRefusal notice={refusal} />}
     </>
   );
 }

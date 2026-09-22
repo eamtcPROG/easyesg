@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { POLL_INTERVAL, nextPollDelay } from '@/client/polling/poll-schedule';
 import { readUnreadCount } from './read-unread-count';
-import { UNREAD_COUNT_QUERY_KEY } from './unread-count-key';
+import { unreadCountQueryKey } from './notifications-query-keys';
 import { settleUnreadCount, type UnreadCountState } from './unread-count-state';
 
 /**
@@ -12,15 +12,17 @@ import { settleUnreadCount, type UnreadCountState } from './unread-count-state';
  * **One query, however many read it**: two components mounting this hook share one fetch and one schedule, because
  * the key is one. **Stopped while the tab is hidden** (`refetchIntervalInBackground: false`), which is the control
  * that makes OQ-36's budget hold rather than the interval itself. `null` until the first read answers — the badge
- * draws nothing rather than a zero it does not know.
+ * draws nothing rather than a zero it does not know — and again after an organization switch, whose count is a key
+ * of its own (`notifications-query-keys.ts` says why).
  */
-export function useUnreadCount(): number | null {
+export function useUnreadCount(organizationId: string): number | null {
   const client = useQueryClient();
+  const queryKey = unreadCountQueryKey(organizationId);
   const { data } = useQuery({
-    queryKey: UNREAD_COUNT_QUERY_KEY,
+    queryKey,
     queryFn: async (): Promise<UnreadCountState> =>
       settleUnreadCount({
-        previous: client.getQueryData<UnreadCountState>(UNREAD_COUNT_QUERY_KEY),
+        previous: client.getQueryData<UnreadCountState>(queryKey),
         read: await readUnreadCount(),
       }),
     refetchInterval: (query) =>

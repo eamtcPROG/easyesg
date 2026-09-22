@@ -4,7 +4,7 @@ import type { NotificationItem as Notice } from '@easyesg/contracts';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { markNoticeOpened } from '@/client/notifications/mark-notice-opened';
-import { UNREAD_COUNT_QUERY_KEY } from '@/client/notifications/unread-count-key';
+import { NOTIFICATIONS_QUERY_SCOPE } from '@/client/notifications/notifications-query-keys';
 import { Link } from '@/i18n/navigation';
 
 /**
@@ -14,9 +14,12 @@ import { Link } from '@/i18n/navigation';
  * **A real link** (UX-63): it navigates before hydration, opens in a new tab and copies as an address, all of which
  * a button pretending to be a link would lose. The mark rides beside the navigation as a `keepalive` request
  * (`mark-notice-opened.ts` says why not a Server Action), is sent only for a notice still unread, and refreshes the
- * band's count once it has landed. A middle click opens it too, so it marks too.
+ * band's count and the panel's list once it has landed. A middle click opens it too, so it marks too.
  *
  * Before hydration the link still leads to the notice and marks nothing, which the reader can do from S-26.
+ *
+ * **In `shared/` on one test: is it read by more than one surface?** Its one importer is the Notification item, and
+ * the item is drawn by S-26's list and the panel's — so it sits beside the item, where both reach it.
  *
  * **It takes the notice trimmed to what it reads**, since everything handed to a Client Component crosses the wire
  * (`server-serialization`): the item passes one such object to both its links, and Flight sends it once.
@@ -39,7 +42,7 @@ export function OpenNoticeLink({
     if (notice.readAt !== null) return;
     markNoticeOpened({
       notificationId: notice.id,
-      onSent: () => void client.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY }),
+      onSent: () => void client.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_SCOPE }),
     });
   };
 

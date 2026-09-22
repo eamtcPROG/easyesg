@@ -380,17 +380,6 @@ test('axe finds no violations on the entity record', async ({ page }) => {
 });
 
 /**
- * S-05 (tasks 30.5, 32.4) — the screen every sign-in lands on, and the richest composition axe
- * judges: a `banner`, a `navigation`, a `main`, and four `Panel` regions with their own headings
- * over UX-6's three questions.
- *
- * **It is scanned with filings, not empty**, which is task 32.4's addition and not a detail. The
- * empty screen is one `EmptyState` and a list of memberships; the populated one is where the
- * status chips, the overdue marker and a link per row live — and a status chip is exactly the
- * shape UX-102 is about, a colour whose meaning must also be in words. Scanning the empty version
- * would have judged the screen the least interesting way it renders.
- */
-/**
  * S-26 (task 50.2.1) with something in it: an unread notice and a read one, so the scan meets the item in both
  * states — the dot, the hidden *unread*, the controls described by their notice — the tabs, *mark all*, and the
  * band's bell carrying a count, which every other signed-in scan here meets with none.
@@ -429,10 +418,29 @@ test('axe finds no violations on the notification centre', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Notificări', level: 1 })).toBeVisible();
   // Named, so the scan is known to include what it claims: both items, and the bell with its count.
   await expect(page.getByRole('list', { name: 'Notificările dumneavoastră' }).getByRole('listitem')).toHaveCount(2);
-  await expect(page.getByRole('banner').getByRole('link', { name: 'Notificări, 1 necitită' })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Notificări, 1 necitită' })).toBeVisible();
+  await scan(page);
+
+  // Again with the panel open (task 50.2.2): a dialog over the page, its views as toggles, its list and its foot —
+  // none of which exist in the DOM until the bell is pressed.
+  await page.getByRole('banner').getByRole('button', { name: 'Notificări, 1 necitită' }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Notificări' }).getByRole('list', { name: 'Ultimele notificări' }).getByRole('listitem'),
+  ).toHaveCount(1);
   await scan(page);
 });
 
+/**
+ * S-05 (tasks 30.5, 32.4) — the screen every sign-in lands on, and the richest composition axe
+ * judges: a `banner`, a `navigation`, a `main`, and four `Panel` regions with their own headings
+ * over UX-6's three questions.
+ *
+ * **It is scanned with filings, not empty**, which is task 32.4's addition and not a detail. The
+ * empty screen is one `EmptyState` and a list of memberships; the populated one is where the
+ * status chips, the overdue marker and a link per row live — and a status chip is exactly the
+ * shape UX-102 is about, a colour whose meaning must also be in words. Scanning the empty version
+ * would have judged the screen the least interesting way it renders.
+ */
 test('axe finds no violations on the home screen', async ({ page }) => {
   const email = `${RUN_PREFIX}-home@example.md`;
 

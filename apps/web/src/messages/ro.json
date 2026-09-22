@@ -969,8 +969,7 @@
         },
         "unreachable": {
           "title": "Lista rapoartelor nu a putut fi încărcată",
-          "body": "Serviciul nu a răspuns, deci nu știm ce rapoarte există. Reîncărcați pagina peste câteva momente.",
-          "action": "Reîncărcați pagina"
+          "body": "Serviciul nu a răspuns, deci nu știm ce rapoarte există. Reîncărcați pagina peste câteva momente."
         }
       },
       "create": {
@@ -983,8 +982,7 @@
         },
         "unreachable": {
           "title": "Nu am putut afla pentru ce se poate crea un raport",
-          "body": "Serviciul nu a răspuns, deci nu știm ce entități și ce perioade sunt disponibile. Reîncărcați pagina peste câteva momente.",
-          "action": "Reîncărcați pagina"
+          "body": "Serviciul nu a răspuns, deci nu știm ce entități și ce perioade sunt disponibile. Reîncărcați pagina peste câteva momente."
         },
         "standard": {
           "title": "Standardul",
@@ -1076,8 +1074,7 @@
         },
         "unreachable": {
           "title": "Lista nu a putut fi încărcată",
-          "body": "Nu am reușit să obținem lista persoanelor cu acces. Nimic nu s-a schimbat între timp. Reîncărcați pagina peste câteva momente.",
-          "action": "Reîncărcați pagina"
+          "body": "Nu am reușit să obținem lista persoanelor cu acces. Nimic nu s-a schimbat între timp. Reîncărcați pagina peste câteva momente."
         }
       },
       "invite": {
@@ -1318,13 +1315,11 @@
     "centre": {
       "title": "Notificări",
       "lede": "Ce trebuie să știți în această organizație. Starea de citire este a dumneavoastră: ce citiți aici rămâne necitit pentru colegi.",
-      "unreadCount": "{count, plural, one {# notificare necitită} few {# notificări necitite} other {# de notificări necitite}}",
-      "show": {
-        "label": "Afișați",
-        "unread": "Necitite · {count}",
-        "all": "Toate"
+      "order": {
+        "label": "Ordinea",
+        "newest": "Cele mai noi întâi",
+        "oldest": "Cele mai vechi întâi"
       },
-      "markAll": "Marcați toate ca citite",
       "markRead": "Marcați ca citită",
       "dismiss": "Ascundeți",
       "list": "Notificările dumneavoastră",
@@ -1349,19 +1344,52 @@
         },
         "unreachable": {
           "title": "Notificările nu au putut fi încărcate",
-          "body": "Serviciul nu a răspuns, deci nu știm ce a sosit. Nimic nu se pierde: fiecare notificare rămâne aici până o citiți. Reîncărcați pagina peste câteva momente.",
-          "action": "Reîncărcați pagina"
-        },
-        "action": {
-          "title": "Modificarea nu a ajuns la EasyESG",
-          "body": "Notificarea a rămas cum era. Încercați din nou peste câteva momente."
+          "body": "Serviciul nu a răspuns, deci nu știm ce a sosit. Nimic nu se pierde: fiecare notificare rămâne aici până o citiți. Reîncărcați pagina peste câteva momente."
         }
       }
+    },
+    "panel": {
+      "title": "Notificări",
+      "close": "Închideți",
+      "list": "Ultimele notificări",
+      "loading": "Se încarcă notificările dumneavoastră.",
+      "empty": {
+        "firstUse": {
+          "title": "Nicio notificare deocamdată",
+          "body": "Aici apar lucrurile care au nevoie de atenția dumneavoastră."
+        },
+        "nothingUnread": {
+          "title": "Nimic necitit",
+          "body": "Ați citit tot ce a sosit.",
+          "action": "Vedeți toate"
+        }
+      },
+      "unreachable": {
+        "title": "Notificările nu au putut fi încărcate",
+        "body": "Serviciul nu a răspuns. Nimic nu se pierde: fiecare notificare rămâne până o citiți.",
+        "action": "Încercați din nou"
+      },
+      "note": "Starea de citire este doar a dumneavoastră.",
+      "all": "Toate notificările"
     },
     "item": {
       "untitled": "Notificare",
       "unread": "Necitită",
       "today": "Azi, {time}"
+    },
+    "action": {
+      "title": "Modificarea nu a ajuns la EasyESG",
+      "body": "Notificarea a rămas cum era. Încercați din nou peste câteva momente."
+    },
+    "lists": {
+      "unreadCount": "{count, plural, one {# notificare necitită} few {# notificări necitite} other {# de notificări necitite}}",
+      "show": {
+        "label": "Afișați",
+        "unread": "Necitite · {count}",
+        "unreadUncounted": "Necitite",
+        "all": "Toate"
+      },
+      "markAll": "Marcați toate ca citite"
     }
   }
 }

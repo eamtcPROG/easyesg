@@ -2,13 +2,13 @@ import type { NotificationItem as Notice } from '@easyesg/contracts';
 import type { IndexPage } from '@easyesg/ui';
 import { getFormatter, getNow, getTranslations } from 'next-intl/server';
 import type { CentreView } from '../../tools/centre-view';
-import { receivedLabel } from '../../tools/received-label';
+import { NOTICE_MESSAGES } from '../../../shared/components/notice-messages';
+import { NotificationItem } from '../../../shared/components/notification-item';
+import { receivedLabel } from '../../../shared/tools/received-label';
 import { CENTRE_MESSAGES } from '../shared/centre-messages';
 import styles from '../styles/centre.module.css';
 import { CentrePager } from './centre-pager';
 import { NoticeControls } from './notice-controls';
-import { NOTICE_MESSAGES } from './notice-messages';
-import { NotificationItem } from './notification-item';
 
 /**
  * S-26's list — one page of the recipient's notices, newest first, and the pager (task 50.2.1; UC-165 … UC-167).

@@ -105,8 +105,26 @@ interface Pairing {
   readonly what: string;
   readonly fg: string;
   readonly bg: string;
+  /**
+   * The opaque surface a translucent `bg` is drawn over (task 50.2) — the band's own white alphas, which measure
+   * nothing alone. The two are composited, as the browser does, and the result is what `fg` is measured against.
+   */
+  readonly over?: string;
   readonly floor: 4.5 | 3;
 }
+
+/** A translucent white-or-colour layer, `rgba(r, g, b, a)` — the one alpha shape `tokens.css` writes. */
+const RGBA = /^rgba\((\d+),\s*(\d+),\s*(\d+),\s*(0?\.\d+|1|0)\)$/;
+
+/** `layer` drawn over `base`, as one opaque colour: each channel mixed by the layer's alpha. */
+const composite = (layer: string, base: string): string => {
+  const parts = RGBA.exec(layer);
+  if (!parts) throw new Error(`tokens.css: "${layer}" is not a translucent colour this check can composite`);
+  const alpha = Number(parts[4]);
+  const under = channel(base);
+  const mixed = [1, 2, 3].map((i) => Math.round(alpha * Number(parts[i]) + (1 - alpha) * under[i - 1]));
+  return `#${mixed.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+};
 
 const TEXT: Pairing[] = [
   { what: 'default text on a card', fg: '--text-default', bg: '--surface-default', floor: 4.5 },
@@ -200,11 +218,30 @@ const NON_TEXT: Pairing[] = [
   { what: 'enrolment code modules on their plate', fg: '--enrolment-code-module', bg: '--enrolment-code-ground', floor: 4.5 },
   // The console nav's current-destination rule (task 67.1) against the surface it marks.
   { what: 'console nav current rule', fg: '--consolenav-current-rule', bg: '--consolenav-current-surface', floor: 3 },
+  // The band's notification bell (tasks 50.2.1, 50.2.2): its glyph on its own translucent control surface, at rest and
+  // hovered or open, each composited over the band — the glyph is what a reader must see to find the centre.
+  {
+    what: 'notification bell glyph',
+    fg: '--globalbar-text',
+    bg: '--globalbar-control-surface',
+    over: '--globalbar-surface',
+    floor: 3,
+  },
+  {
+    what: 'notification bell glyph, hovered or open',
+    fg: '--globalbar-text',
+    bg: '--globalbar-control-surface-hover',
+    over: '--globalbar-surface',
+    floor: 3,
+  },
 ];
 
 const ALL = [...TEXT, ...STATE_TEXT, ...TEXT_ON_TINT, ...STATE_ON_SURFACE, ...NON_TEXT];
 
-const measure = (p: Pairing, scheme: Scheme) => ratio(resolve(p.fg, scheme), resolve(p.bg, scheme));
+const backgroundOf = (p: Pairing, scheme: Scheme) =>
+  p.over === undefined ? resolve(p.bg, scheme) : composite(resolve(p.bg, scheme), resolve(p.over, scheme));
+
+const measure = (p: Pairing, scheme: Scheme) => ratio(resolve(p.fg, scheme), backgroundOf(p, scheme));
 
 /** Two decimals by arithmetic rather than by a format call. NFR-26's selector bans a format
  *  pattern chosen at a call site, and its own docblock puts specs in scope on purpose — so a
@@ -255,7 +292,7 @@ describe('tokens.css — UX-80 and UX-101', () => {
   });
 
   it.each(['light', 'dark'] as const)('%s: every semantic token resolves to a literal', (scheme) => {
-    const semantic = [...new Set(ALL.flatMap((p) => [p.fg, p.bg]))];
+    const semantic = [...new Set(ALL.flatMap((p) => [p.fg, p.bg, ...(p.over === undefined ? [] : [p.over])]))];
     for (const token of semantic) expect(() => resolve(token, scheme)).not.toThrow();
   });
 
@@ -385,7 +422,8 @@ describe('tokens.css — UX-80 and UX-101', () => {
         p,
         ok,
         line:
-          `| ${p.what} | \`${p.fg}\` on \`${p.bg}\` | ${round2(light)}:1 | ` +
+          `| ${p.what} | \`${p.fg}\` on \`${p.bg}\`${p.over === undefined ? '' : ` over \`${p.over}\``} | ` +
+          `${round2(light)}:1 | ` +
           `${round2(dark)}:1 | ${p.floor}:1 | ${ok ? 'pass' : 'FAIL'} |`,
       };
     });

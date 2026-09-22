@@ -24,10 +24,15 @@ describe('markNoticeOpened', () => {
     await vi.waitFor(() => expect(onSent).toHaveBeenCalledTimes(1));
   });
 
+  // A rejection left unhandled fails this run — vitest reports it as an error — so the case fails if the send's
+  // failure is let through, as well as if the count is refreshed for a mark that never landed.
   it('swallows a failed send, since the navigation it rides on has already begun', async () => {
     const send = vi.fn<typeof fetch>().mockRejectedValue(new TypeError('offline'));
+    const onSent = vi.fn();
 
-    expect(() => markNoticeOpened({ notificationId: 'n-1', fetch: send })).not.toThrow();
-    await Promise.resolve();
+    markNoticeOpened({ notificationId: 'n-1', onSent, fetch: send });
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onSent).not.toHaveBeenCalled();
   });
 });

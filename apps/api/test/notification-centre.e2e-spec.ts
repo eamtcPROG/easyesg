@@ -40,7 +40,8 @@ const NOTICE = {
   anaLatest: '01920000-0000-7000-8000-00000000c005',
   ivanOnly: '01920000-0000-7000-8000-00000000c004',
   anaEmailOnly: '01920000-0000-7000-8000-00000000c002',
-  anaFresh: '01920000-0000-7000-8000-00000000c007',
+  sharedFresh: '01920000-0000-7000-8000-00000000c007',
+  anaTwoChannels: '01920000-0000-7000-8000-00000000c008',
 } as const;
 
 interface Item {
@@ -329,25 +330,57 @@ describe('the notification centre (tasks 50.1.2, 50.2.1)', () => {
   /**
    * Task 50.2.1's *Mark all as read* (§12.5.6's task-50.2 row (2)): every notice the unread count counts, the caller's
    * alone, each keeping a time once written — and neither a dismissed nor a withdrawn notice, which left the centre
-   * unread and stay recorded that way. Ana is given one unread notice first, so Ivan's marking has one of hers to reach
-   * if it could.
+   * unread and stay recorded that way.
+   *
+   * Two notices are seeded for it, each so that one way of getting the statement wrong fails here. **`sharedFresh`
+   * reaches Ana and Ivan both, unread for each**: the statement picks its notices by id, so Ana's copy of one of Ivan's
+   * is the delivery it would reach if the recipient's policy did not bind the update — `both` cannot be, as Ana has
+   * already read it. **`anaTwoChannels` reaches Ana in-app and by email**: a notice's id names both deliveries, and a
+   * read time on the email one is refused by the delivery's own check, so a statement that lost its channel would fail
+   * her press rather than mark it.
    */
   it('marks read every notice the unread count counts, for the caller alone', async () => {
-    await seed({ id: NOTICE.anaFresh, categoryKey: NOTIFICATION_CATEGORY.INVITATION, inApp: [ana.accountId] });
-    expect(await unread(ana)).toBe(1);
-    expect(await unread(ivan)).toBe(2);
+    await seed({
+      id: NOTICE.sharedFresh,
+      categoryKey: NOTIFICATION_CATEGORY.INVITATION,
+      inApp: [ana.accountId, ivan.accountId],
+    });
+    await seed({
+      id: NOTICE.anaTwoChannels,
+      categoryKey: NOTIFICATION_CATEGORY.INVITATION,
+      inApp: [ana.accountId],
+      email: [ana.accountId],
+    });
+    expect(await unread(ana)).toBe(2);
+    expect(await unread(ivan)).toBe(3);
 
     await http().post('/api/v1/notifications/read').set(ivan.authorization).expect(204);
 
     expect(await unread(ivan)).toBe(0);
     const marked = (await list(ivan)).objects;
-    expect(ids({ objects: marked, total: 2, totalpages: 1 })).toEqual([NOTICE.ivanOnly, NOTICE.both]);
-    expect(marked.map((item) => item.readAt)).toEqual([expect.any(Number), expect.any(Number)]);
-    // BR-NOT-5: Ivan's marking reached none of Ana's deliveries.
-    expect(await unread(ana)).toBe(1);
+    expect(ids({ objects: marked, total: 3, totalpages: 1 })).toEqual([
+      NOTICE.sharedFresh,
+      NOTICE.ivanOnly,
+      NOTICE.both,
+    ]);
+    expect(marked.map((item) => item.readAt)).toEqual([expect.any(Number), expect.any(Number), expect.any(Number)]);
+    // BR-NOT-5: Ivan's marking reached none of Ana's deliveries, her copy of the notice they share included.
+    expect(await unread(ana)).toBe(2);
 
     await http().post('/api/v1/notifications/read').set(ana.authorization).expect(204);
     expect(await unread(ana)).toBe(0);
+    // Her in-app copy marked, and the email one — which carries no read state — left as it was.
+    const channels = await asRecipient(ana, (run) =>
+      run(
+        `SELECT channel, read_at IS NOT NULL AS read FROM notification.delivery
+          WHERE notification_id = $1 ORDER BY channel`,
+        [NOTICE.anaTwoChannels],
+      ),
+    );
+    expect(channels).toEqual([
+      { channel: 'email', read: false },
+      { channel: 'in_app', read: true },
+    ]);
     const outside = await asRecipient(ana, (run) =>
       run(
         `SELECT notification_id, read_at FROM notification.delivery
@@ -361,7 +394,9 @@ describe('the notification centre (tasks 50.1.2, 50.2.1)', () => {
       { notification_id: NOTICE.anaLatest, read_at: null },
     ]);
 
-    // A second press marks nothing new and keeps the first times.
+    // A second press marks nothing new and keeps the first times — held by the statement's own `read_at IS NULL`,
+    // which leaves a read delivery out of the set. The `COALESCE` beside it is for the race between the statement's
+    // snapshot and its row lock, which no single request here can stage.
     await http().post('/api/v1/notifications/read').set(ivan.authorization).expect(204);
     expect((await list(ivan)).objects.map((item) => item.readAt)).toEqual(marked.map((item) => item.readAt));
   });

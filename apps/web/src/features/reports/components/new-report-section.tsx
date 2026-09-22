@@ -59,7 +59,8 @@ export async function NewReportSection({
         <Callout
           intent={CALLOUT_INTENT.ERROR}
           title={t('unreachable.title')}
-          action={t('unreachable.action')}
+          // The body already says to reload, which is this screen's whole remedy.
+          action={null}
         >
           {t('unreachable.body')}
         </Callout>

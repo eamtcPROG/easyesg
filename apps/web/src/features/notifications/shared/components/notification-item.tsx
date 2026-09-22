@@ -2,8 +2,8 @@ import type { NotificationItem as Notice } from '@easyesg/contracts';
 import { STATUS_TONE, StatusChip } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { noticeTitleId } from '../../tools/notice-title-id';
-import styles from '../styles/centre.module.css';
+import { noticeTitleId } from '../tools/notice-title-id';
+import styles from './notification-item.module.css';
 import { NOTICE_MESSAGES } from './notice-messages';
 import { OpenNoticeLink } from './open-notice-link';
 
@@ -19,12 +19,13 @@ import { OpenNoticeLink } from './open-notice-link';
  * **Read state is not colour alone** (UX-102): an unread notice carries the dot and a stronger title, and the word
  * *unread* for assistive technology.
  *
- * Directive-free on purpose: the list renders it on the server, and a Client Component may render it too — both are
- * legal for a component with no hook of the browser's, which is what lets a second surface reuse it rather than copy
- * it.
+ * Directive-free on purpose: S-26's list renders it on the server and the panel (task 50.2.2) inside a Client
+ * Component — both are legal for a component with no hook of the browser's.
  *
- * States (§8.1, the applicable subset): unread · read · parts absent. Its controls arrive as a slot, so the list
- * can offer *mark read* and *dismiss* where the panel offers none.
+ * **In `shared/` on one test: is it read by more than one surface?** S-26's list and the panel.
+ *
+ * States (§8.1, the applicable subset): unread · read · parts absent. Its controls arrive as a slot, so S-26's list
+ * offers *mark read* and *dismiss* where the panel, as its artboard draws it, offers none.
  */
 export function NotificationItem({
   notice,

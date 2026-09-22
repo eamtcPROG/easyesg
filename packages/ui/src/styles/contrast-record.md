@@ -7,7 +7,7 @@ both; UX-101 sets the floors. This table is the record that deliverable asks for
 spec that generates it is the gate — so a token change that breaks a floor fails the build
 rather than silently making this file wrong.
 
-66 pairings, each measured in both schemes.
+68 pairings, each measured in both schemes.
 
 | Pairing | Tokens | Light | Dark | Floor | Verdict |
 | --- | --- | --- | --- | --- | --- |
@@ -77,3 +77,5 @@ rather than silently making this file wrong.
 | accent on its own tint | `--accent` on `--accent-tint` | 5.75:1 | 5.64:1 | 3:1 | pass |
 | enrolment code modules on their plate | `--enrolment-code-module` on `--enrolment-code-ground` | 17.33:1 | 17.33:1 | 4.5:1 | pass |
 | console nav current rule | `--consolenav-current-rule` on `--consolenav-current-surface` | 6.38:1 | 6.38:1 | 3:1 | pass |
+| notification bell glyph | `--globalbar-text` on `--globalbar-control-surface` over `--globalbar-surface` | 7.52:1 | 6.71:1 | 3:1 | pass |
+| notification bell glyph, hovered or open | `--globalbar-text` on `--globalbar-control-surface-hover` over `--globalbar-surface` | 5.58:1 | 5:1 | 3:1 | pass |

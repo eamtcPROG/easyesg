@@ -23299,3 +23299,190 @@ and `packages/contracts`, so every workspace's unit suite, both front ends' rows
 - **Searched for the shapes it found**: every `revalidatePath` in `apps/web` passes a type now; the other stylesheets
   under `features/notifications/` share no class name with a type role; the `not yet available` list is fifteen routes,
   counted from the files that render it.
+
+## Task 50.2.2 — The panel from the global tier · 2026-09-22
+
+The second of task 50.2's two: the band's bell opens the panel the commerce artboard draws — the latest notices through
+the same Notification item, the two views, *Mark all as read*, and the way to S-26.
+
+### Decision (project owner, one question)
+
+**The panel words *today* in the browser** (recommended), recorded as §12.5.6's task-50.2 row (5). `apps/web`'s rule
+against clock-derived text in a Client Component rests on two reasons — a server and a browser rendering the same text
+can disagree, and a reader's timezone can change the answer — and neither reaches a list fetched after the bell is
+pressed: nothing of it is in the server's HTML, and next-intl's formatter carries the configured zone. The rule is
+amended in `apps/web/CLAUDE.md` to what it covers, text that is server-rendered and hydrated; what it gives up is a
+wrong device clock mislabelling a notice near midnight.
+
+Taken on precedent and written into the row's implementation notes: **the latest ten**, the artboard drawing six;
+**the views switch inside the panel**, a floating panel being no address; **no per-notice controls**, as drawn; and
+**the bell becomes a button**, which without JavaScript opens nothing, as the account menu beside it does not.
+
+### What shipped
+
+- **A Radix Popover with `NotificationBell` as its trigger.** The bell turned from a link into a button that spreads
+  what the trigger hands it and forwards its ref; its stylesheet reads `aria-expanded` for the open surface. Focus in
+  and back, Escape, a click outside and the dialog's name are the library's. The panel closes when a link in it is
+  followed, by one delegated listener, since the navigation changes the page beneath it and would unmount nothing.
+- **The view is the content's own state** (`panel-content.tsx`). **Found on the way:** kept beside `open`, it outlived
+  the close and reopened the panel on whatever view was left; Radix unmounts the content on close, so state held there
+  starts every opening on *Unread*, as both artboards draw it.
+- **The list is read when the panel opens**, through the pass-through (`client/notifications/read-notices.ts`,
+  validated, `null` rather than a throw), stale at once and refetched on every mount, each view its own key under the
+  one scope a mark invalidates.
+- **The pieces the page and the panel both read moved to `notifications/shared/`** — the item, the actions and their
+  result type, the action hook and its refusal, the arm choice, the title id, the time label, the list query — the day
+  the panel became their second reader (`shared-how-many-siblings`). The band's link corner was deleted into the panel.
+- **The close control is a word.** A literal `×` is refused by lint's JSX-text rule, and the icon set is `packages/ui`'s;
+  the first, longer label wrapped the header, so the three catalogues say *Închideți*, *Close*, *Закрыть*.
+
+### Verification — the sub-step's run
+
+Scoped to what the panel reaches: the notification unit specs, `typecheck` and `lint` for `apps/web`, and the
+notification journeys, their +40% cases and the two axe scans against the built bundle — **12 of 12**. The full web
+suite, `packages/ui`'s and every other gate ran at the parent's close, below.
+
+## Task 50.2 — S-26 notification centre, the parent's close · 2026-09-22
+
+50.2.1 and 50.2.2 closed, and so the parent: the three review agents over the whole diff since `971e2fd` — 50.2.1's
+commit and 50.2.2 in the working tree — then the gate set over a cleaned tree and the boot proof. **The reviews found
+seventeen findings, two of them questions only the owner could answer, and — among their notes — a cross-tenant
+render**; fixing them changed code in `apps/web`, `apps/api`'s e2e suite and `packages/ui`'s contrast spec, and five
+documents, so the gate set ran over the fixed tree rather than the one reviewed.
+
+### Decisions (project owner, one batch at the close)
+
+Recorded as §12.5.6's task-50.2 rows (6) and (7), with S-26's entry amended:
+
+- **S-26 orders newest first or oldest first** (recommended) — §4.6's Index lists sort among its fixed elements, the
+  API has offered `order=received,asc` since 50.1.2, and neither artboard draws it. Two links beside the tabs, held as
+  `?order=`, newest first the default; the panel is always newest first. Added on the precedent of *mark read* and
+  *dismiss*, which S-26's control list required and the artboard did not draw.
+- **The category filter's home is a standing rule on task 51.2's row** — the owner chose this over the recommended
+  appended task. Row (4) had deferred it to *the task that registers the second category travelling in-app*, which no
+  row named; categories are registered by whichever task first raises them, so 51.2's row, which moves every remaining
+  category onto the outbox path, carries the obligation.
+
+### Review — on `opus`, per the agents' frontmatter
+
+**`spec-review`, four findings.** Two were the questions above.
+
+- **The compact bar had no bell.** 50.2.1 put it inside the global tier's `.wide` switch, which hides what the drawer
+  carries instead, and its docblock said *"the compact bar draws no bell"* — all three 390 artboards draw one, beside
+  the drawer's trigger. UX-62's *visible from any screen* and both sub-steps' expected results were met only through the
+  drawer. **The bell is drawn at every frame now**, the drawer's row stays beside it as the specimen draws both, and the
+  compact journey and the panel's +40% case both run at 390.
+- **Two deferrals rested on rows that did not carry them**: the retention sentence S-26 omits lands with task 163, whose
+  row now says so — `design_spec.md` OQ-11 gives S-26 *a retention behaviour to expose* — and widens to `web`; the
+  route to preferences lands with S-27, and task 52.3's row now says so.
+- Its *unsure* items: **S-26 renders `error — permission` and its state list did not name it** — added, S-06's addition
+  of 5 Sep applied where it holds; the close control's docblock claimed the icon set had *no close part*, and says now
+  that the one close glyph is drawn inside `ChromeDrawer`, not offered as a part. The other two — a best-effort opening
+  mark, the bell only with an organization — are routine and UC-165's respectively. Its *owed at close* list was the
+  close itself, the parent's Scope column (now `api+web+pkg:ui+pkg:contracts`), a stale path in `apps/web/CLAUDE.md`,
+  and **50.2.2's *in three locales* driven only in Romanian** — the locale journey now opens the panel in English and
+  Russian too.
+- Its pre-existing gap: task 150's row expects S-26's list to arrive *on the poll*, and only the count polls, so an
+  open panel's count refreshes while its list does not. Not this task's to close; 149 and 150 own it.
+
+**`convention-review`, seven violations**, all fixed:
+
+- **Four unreachable states repeated their own remedy as the action** — S-26's, and, searched for by body text in all
+  three catalogues, S-06's list, report creation and S-16's, which S-26 had copied. Each passes `action={null}` and the
+  four `action` keys are gone from `ro`, `en` and `ru`. The search matched only these four.
+- ***Mark all as read* was built twice**, the page's and the panel's differing only in emphasis. One
+  `NoticeMarkAll` in `shared/components/`, each surface passing its variant.
+- **The api half recorded no `EXPLAIN`** — measured below — and named no NestJS rule for `POST /notifications/read`.
+  Considered: `security-use-guards` (the route's `route-permissions.ts` row, under the closed-by-default chain),
+  `db-use-transactions` (the tenant transaction the statement runs on), `arch-single-responsibility` (one use case,
+  one statement) and `api-use-dto-serialization` (no body in, `204` out). Declined: `perf-use-caching`, for a write.
+- **Two `shared/` files carried no admission test** — `open-notice-link.tsx`, `action-results.ts` — and state theirs now.
+- **`'chrome.notifications'` was spelled in two files** — `NOTICE_ENTRY_MESSAGES`, beside the feature's other three.
+- **The time label restated the format names as a union** — derived from `i18n/formats.ts`'s keys.
+- **Three "not built yet" sentences outlived 50.2** — `apps/web/CLAUDE.md`'s *sixteen routes*, `ChromeDrawer`'s
+  *Notifications is task 50.2*, `GlobalBar`'s *when S-26 exists*. Searched for `sixteen` across the tenant app, the
+  design system and the root file: `return-destination.ts` counted *sixteen stub pages*, and states the property now.
+
+Its *not rules*, and the first was the most expensive thing the close found:
+
+- **An organization switch drew the organization left.** The switch lands client-side, so the `(app)` layout's query
+  client outlives it, and the notification keys carried no organization: the bell showed the old count until the next
+  minute's poll, and the panel drew the old list while reading the new one — one tenant's centre under another's name,
+  above the RLS boundary. **Each key carries the organization the band was rendered for** now, threaded from the global
+  tier into the bell and the drawer's row; the id partitions the cache and never chooses what is read. A journey
+  switches between two organizations with different centres, and **against the bundle built before the fix it fails**
+  where it should — the bell still counting one.
+- S-05's axe docblock had slid above S-26's new scan, and is back above its own test; `apps/web/CLAUDE.md`'s tree names
+  `client/notifications/` and `client/query/`; the panel read's private `NOTIFICATIONS_PATH` is `NOTICES_PASS_THROUGH`,
+  so one name no longer means two values; the panel's docblock no longer claims its listener *never reads the
+  elements*; `panelQueryKey` takes `NoticeShow` — `client/` already reads feature tools, autosave the wizard's; the
+  bell's glyph contrast is measured (below); an empty `centre/actions/` is gone.
+- Declined: the seeded notices' identical *Notificare* links — the absence rule under test until 50.3 words a
+  category, as the suite's docblock says.
+
+**`gate-integrity-review`, six checks that did not fail on their subject**, each given one that does:
+
+- **The switch journey's panel half** passed with the panel keyed without its organization, because the cached list is
+  drawn first and the assertions wait for the refetch. The reopen's read is now held, and the journey asserts the
+  panel's loading state and no notice of the first organization while it waits.
+- **The mark-all case could not fail on a statement that lost its channel**: no notice reached one reader on both
+  channels. `anaTwoChannels` does, and **dropping `channel = $1` fails the case** — run, then restored — since a read
+  time on an email delivery is refused by its own check. `sharedFresh` gives BR-NOT-5's line a delivery it could reach,
+  Ana's unread copy of one of Ivan's notices. **Its failing state cannot be isolated by one mutation**: the restrictive
+  `SELECT` policy binds the `UPDATE`'s `WHERE` as well as the `UPDATE` policy does, so dropping either one leaves the
+  other holding — the recipient is defended twice.
+- **The two +40% cases could not see a clipped control**: the panel is fixed and clips, S-26's list clips its rows, and
+  a document's scroll width counts neither. `overflowWithin` (`support/expansion.ts`) measures every element and run of
+  text inside a region against the region's own box. **The worded item at +40% is 50.3's**, whose row now says so —
+  every seeded notice is untitled until a category has in-app wording.
+- **The axe scan's *controls described by their notice*** was not a verdict axe gives. The item spec now pins the title
+  id both its controls and its action words are described by, and **stopping the link forwarding its id fails it**;
+  the journey asserts both controls' accessible description.
+- **`readUnreadCount`'s *not a whole number* case used `'4'`**, which the type check refuses first; `4.5` is its own
+  case now, and **dropping `Number.isSafeInteger` fails it**.
+- **The panel's *configured zone, not the machine's*** matched this host's zone and today's date. A second case sets
+  UTC+14, where the notice is from the evening before; **deciding *today* from the machine's clock fails it**.
+
+Its *bites, but not where it appears* notes, each acted on: `markNoticeOpened`'s swallow case asserts the callback is
+not run for a mark that never landed and says the unhandled rejection is what fails it; the mark-all case's comments
+say which clause holds a second press and that the `COALESCE` race has no case; the empty-centre journey said
+*neither control is offered* and the tabs are — as S-06's filters are over an empty list — so it asserts them; and
+**the bell's glyph on its translucent surface is measured**: `tokens.spec.ts` composites a translucent `bg` over the
+opaque surface named in a pairing's new `over`, and the glyph measures 7.52:1 / 6.71:1 at rest and 5.58:1 / 5:1 open,
+against 3:1. **A surface lightened to 0.85 white fails both schemes.**
+
+### The api's statement, measured
+
+`EXPLAIN` of `markAllRead`'s `UPDATE` as `esg_app`, under a tenant binding, `enable_seqscan = off`: every access is an
+index scan bounded by the bound recipient — `delivery_once` for the rows updated, `delivery_centre` for the centre's
+own set, `notification_open_key` for the notices, and the notice's recipient policy as a hashed subplan over
+`delivery_once`. Nothing reads a colleague's rows to filter them out.
+
+### Verification
+
+**`pnpm gates:clean`**, not `gates`: the parent moved and deleted files, changed `packages/ui`, and regenerated the
+contract in 50.2.1 — three of the cases the cold run is required for.
+
+- **Hermetic**: `lint`, `eslint:prove`, `typecheck`, `image:check`, `boundaries`, `boundaries:prove`, `build`,
+  `openapi:check`, `facade:check` and `routes:check` clean; `docs:check` **42 claims**. Unit: api **150 suites,
+  1,234 tests**; web **100 files, 970**; `packages/ui` **32 files, 330**; admin **29 files, 246**; and the other
+  packages' own.
+- **`migrations:check`**: apply, revert, re-apply, **61 schema invariant cases**.
+- **The boot proof**: `pnpm e2e` **51 suites, 1,287 tests**; `pnpm e2e:worker` **8 of 8**; `pnpm e2e:web`
+  **249 of 250**.
+- **The one failure was the new clipping check's, and the check was wrong.** The panel at 390 and +40% reached
+  17.2px past its edge — and the only thing there was the Badge's count in words, laid out at full length inside a
+  one-pixel clip and never painted. `overflowWithin` now skips text inside an element drawn at a pixel or less and
+  nothing else, and was proven both ways against the bundle the run built: **0px as shipped; 121px and 143px with the
+  panel's header forced not to wrap at 1440 and 390; 111px with an S-26 row's control forced wider at 390, where the
+  page's own scroll width still measured 0**. The six notification +40% cases re-ran **6 of 6**, with `lint` and
+  `typecheck` clean after — the helper is the only file the fix touched, and only that spec reads it.
+- **The switch journey against the bundle built before the fix** failed where it should — after the switch the bell
+  still counted the organization left — and passes on the fixed one.
+- **What the runs printed**: five `⨯ … destination stream closed early`, all digest `2667547900`, the abandoned-stream
+  class `apps/web/CLAUDE.md` records; the SMTP adapter's recorded NFR-27 notice; the dispatch suite's own case of a
+  recipient naming no account; and three unit specs' own error paths — the problem filter's leak case, the audit
+  interceptor's case with no operator, the catalogue read before it is initialised.
+- **Not run again after the fix**: the other 244 browser cases and the gates before them, since the fix touched one
+  test helper that only the notification +40% spec imports. What would falsify that is a CI run of this tree that
+  fails elsewhere in `e2e:web`.

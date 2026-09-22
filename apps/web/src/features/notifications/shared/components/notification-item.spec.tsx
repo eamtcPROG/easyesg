@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { markNoticeOpened } from '@/client/notifications/mark-notice-opened';
 import ro from '@/messages/ro.json';
+import { noticeTitleId } from '../tools/notice-title-id';
 import { NotificationItem } from './notification-item';
 
 /**
@@ -43,16 +44,35 @@ const NOTICE: Notice = {
   readAt: null,
 };
 
-const renderItem = (notice: Notice) =>
+const renderItem = (notice: Notice, controls?: ReactNode) =>
   render(
     <QueryClientProvider client={new QueryClient()}>
       <NextIntlClientProvider locale="ro" messages={{ notifications: ro.notifications }}>
-        <NotificationItem notice={notice} received="Azi, 12:02" />
+        <NotificationItem notice={notice} received="Azi, 12:02" controls={controls} />
       </NextIntlClientProvider>
     </QueryClientProvider>,
   );
 
+/** A control as S-26's are, described by its notice's title through the id the item gives it. */
+const describedControl = (notice: Notice) => (
+  <button type="button" aria-describedby={noticeTitleId(notice.id)}>
+    Ascundeți
+  </button>
+);
+
 describe('NotificationItem', () => {
+  it('gives its title the id its controls and its action words are described by', () => {
+    renderItem(NOTICE, describedControl(NOTICE));
+    expect(screen.getByRole('button', { name: 'Ascundeți' })).toHaveAccessibleDescription(NOTICE.title);
+    expect(screen.getByRole('link', { name: 'Utilizatori și acces' })).toHaveAccessibleDescription(NOTICE.title);
+  });
+
+  it('gives the id to the title link itself where the title is the link', () => {
+    const titleLink = { ...NOTICE, actionLabel: undefined };
+    renderItem(titleLink, describedControl(titleLink));
+    expect(screen.getByRole('button', { name: 'Ascundeți' })).toHaveAccessibleDescription(NOTICE.title);
+  });
+
   it("draws every part the API sent, its action words the link to what raised it", () => {
     renderItem(NOTICE);
 

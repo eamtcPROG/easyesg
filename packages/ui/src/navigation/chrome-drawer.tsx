@@ -17,8 +17,9 @@ import styles from './chrome-drawer.module.css';
  * this is the third frame's answer to a band of five destinations that does not fit one.
  *
  * **It carries what renders**, which is `GlobalTier`'s standing rule rather than a new one: the
- * specimen's *Plan & billing* is Phase 7's, *Notifications* is task 50.2 and *Help centre* is
- * 77.5, so none of the three is here and each arrives with its screen.
+ * specimen's *Plan & billing* is Phase 7's and *Help centre* is 77.5, so neither is here and each
+ * arrives with its screen; *Notifications* arrived with S-26 (task 50.2.1), as one of the caller's
+ * `actions`.
  *
  * **It takes data and builds its own anchors**, which is what makes it safe rather than careful.
  * A drawer needs `'use client'` for its open state, and `account-menu.tsx` records the hazard that

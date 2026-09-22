@@ -63,7 +63,8 @@ export async function AccessSection({
       <Callout
         intent={CALLOUT_INTENT.ERROR}
         title={t('error.unreachable.title')}
-        action={t('error.unreachable.action')}
+        // The body already says to reload, which is this screen's whole remedy.
+        action={null}
       >
         {t('error.unreachable.body')}
       </Callout>

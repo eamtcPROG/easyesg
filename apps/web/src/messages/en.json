@@ -969,8 +969,7 @@
         },
         "unreachable": {
           "title": "The report list could not be loaded",
-          "body": "The service did not answer, so we do not know which reports exist. Reload the page in a moment.",
-          "action": "Reload the page"
+          "body": "The service did not answer, so we do not know which reports exist. Reload the page in a moment."
         }
       },
       "create": {
@@ -983,8 +982,7 @@
         },
         "unreachable": {
           "title": "We could not find out what a report can be created for",
-          "body": "The service did not answer, so we do not know which entities and periods are available. Reload the page in a moment.",
-          "action": "Reload the page"
+          "body": "The service did not answer, so we do not know which entities and periods are available. Reload the page in a moment."
         },
         "standard": {
           "title": "Standard",
@@ -1076,8 +1074,7 @@
         },
         "unreachable": {
           "title": "The list could not be loaded",
-          "body": "We could not fetch the list of people with access. Nothing has changed in the meantime. Reload the page in a few moments.",
-          "action": "Reload the page"
+          "body": "We could not fetch the list of people with access. Nothing has changed in the meantime. Reload the page in a few moments."
         }
       },
       "invite": {
@@ -1318,13 +1315,11 @@
     "centre": {
       "title": "Notifications",
       "lede": "What you need to know in this organisation. Read state is yours alone: what you read here stays unread for your colleagues.",
-      "unreadCount": "{count, plural, one {# unread notification} other {# unread notifications}}",
-      "show": {
-        "label": "Show",
-        "unread": "Unread · {count}",
-        "all": "All"
+      "order": {
+        "label": "Order",
+        "newest": "Newest first",
+        "oldest": "Oldest first"
       },
-      "markAll": "Mark all as read",
       "markRead": "Mark as read",
       "dismiss": "Dismiss",
       "list": "Your notifications",
@@ -1349,19 +1344,52 @@
         },
         "unreachable": {
           "title": "Your notifications could not be loaded",
-          "body": "The service did not answer, so we do not know what has arrived. Nothing is lost: each notification stays here until you read it. Reload the page in a moment.",
-          "action": "Reload the page"
-        },
-        "action": {
-          "title": "The change did not reach EasyESG",
-          "body": "The notification is as it was. Try again in a moment."
+          "body": "The service did not answer, so we do not know what has arrived. Nothing is lost: each notification stays here until you read it. Reload the page in a moment."
         }
       }
+    },
+    "panel": {
+      "title": "Notifications",
+      "close": "Close",
+      "list": "Latest notifications",
+      "loading": "Loading your notifications.",
+      "empty": {
+        "firstUse": {
+          "title": "No notifications yet",
+          "body": "Things that need your attention arrive here."
+        },
+        "nothingUnread": {
+          "title": "Nothing unread",
+          "body": "You have read everything that has arrived.",
+          "action": "See all"
+        }
+      },
+      "unreachable": {
+        "title": "Your notifications could not be loaded",
+        "body": "The service did not answer. Nothing is lost: each notification stays until you read it.",
+        "action": "Try again"
+      },
+      "note": "Read state is yours alone.",
+      "all": "All notifications"
     },
     "item": {
       "untitled": "Notification",
       "unread": "Unread",
       "today": "Today, {time}"
+    },
+    "action": {
+      "title": "The change did not reach EasyESG",
+      "body": "The notification is as it was. Try again in a moment."
+    },
+    "lists": {
+      "unreadCount": "{count, plural, one {# unread notification} other {# unread notifications}}",
+      "show": {
+        "label": "Show",
+        "unread": "Unread · {count}",
+        "unreadUncounted": "Unread",
+        "all": "All"
+      },
+      "markAll": "Mark all as read"
     }
   }
 }

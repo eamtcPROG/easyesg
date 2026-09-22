@@ -10,8 +10,8 @@ import { readSession } from '@/server/session/session';
  * neither can assume a session: `/legal/terms` is reachable signed out and `/billing` is not.
  *
  * **It reads the session rather than taking the destination as a prop**, and that is the whole
- * reason it exists. The alternative is sixteen stub pages each passing the right route, which is
- * sixteen chances to pass the wrong one — and the failure is silent, because `/home` handed to a
+ * reason it exists. The alternative is every stub page passing the right route, each one a chance
+ * to pass the wrong one — and the failure is silent, because `/home` handed to a
  * signed-out reader does not error, it bounces through the proxy to sign-in with a `?return=`
  * they never asked for.
  */
