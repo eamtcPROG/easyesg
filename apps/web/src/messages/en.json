@@ -91,6 +91,10 @@
     "drawer": {
       "label": "Menu",
       "close": "Close the menu"
+    },
+    "notifications": {
+      "label": "Notifications",
+      "unreadLabel": "{count, plural, =0 {Notifications, none unread} other {Notifications, # unread}}"
     }
   },
   "forms": {
@@ -1308,6 +1312,56 @@
     "unreachable": {
       "title": "Your answer did not reach EasyESG",
       "body": "Your choice could not be recorded, so the request is unchanged. Try again in a few moments."
+    }
+  },
+  "notifications": {
+    "centre": {
+      "title": "Notifications",
+      "lede": "What you need to know in this organisation. Read state is yours alone: what you read here stays unread for your colleagues.",
+      "unreadCount": "{count, plural, one {# unread notification} other {# unread notifications}}",
+      "show": {
+        "label": "Show",
+        "unread": "Unread · {count}",
+        "all": "All"
+      },
+      "markAll": "Mark all as read",
+      "markRead": "Mark as read",
+      "dismiss": "Dismiss",
+      "list": "Your notifications",
+      "loading": "Loading your notifications.",
+      "empty": {
+        "firstUse": {
+          "title": "No notifications yet",
+          "body": "This is where things that need your attention arrive — a deadline coming up, a validation that has finished. Each stays here until you read or dismiss it, even if it arrived while you were away.",
+          "action": "Go to the home page"
+        },
+        "nothingUnread": {
+          "title": "Nothing unread",
+          "body": "You have read everything that has arrived. Read notifications stay under All.",
+          "action": "See all notifications"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "You do not have access to this organisation's notifications",
+          "body": "Your account is not an active member of the selected organisation, so its notifications cannot be shown.",
+          "action": "Go to the home page"
+        },
+        "unreachable": {
+          "title": "Your notifications could not be loaded",
+          "body": "The service did not answer, so we do not know what has arrived. Nothing is lost: each notification stays here until you read it. Reload the page in a moment.",
+          "action": "Reload the page"
+        },
+        "action": {
+          "title": "The change did not reach EasyESG",
+          "body": "The notification is as it was. Try again in a moment."
+        }
+      }
+    },
+    "item": {
+      "untitled": "Notification",
+      "unread": "Unread",
+      "today": "Today, {time}"
     }
   }
 }

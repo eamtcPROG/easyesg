@@ -748,3 +748,105 @@ export async function endSessionsOf(input: { readonly email: string }): Promise<
     await client.end();
   }
 }
+
+/**
+ * Notices in a member's centre, written the way the worker's dispatch writes them (task 50.2.1): each a delivered
+ * notice with one in-app delivery to the account, reaching it `minutesAgo` minutes ago, and read already where
+ * `read` says so. Returns their ids in the order given.
+ *
+ * **Seeded, because no category reaches a centre yet** — the first is 50.3's manual reminder — so no route can
+ * put a notice where S-26 would show it. As `esg_worker`, bound to the organization, because that is the one role
+ * that writes the schema and the binding its policies read; the account's id is looked up first as the owner.
+ *
+ * Every notice here is an invitation's, which has no in-app wording written, so each lists under the app's own
+ * *Notificare*: the suite tells them apart by where each leads, which is why every `deepLink` should differ.
+ */
+export async function seedNotices(input: {
+  readonly organizationId: string;
+  readonly email: string;
+  readonly notices: readonly {
+    readonly deepLink: string;
+    readonly minutesAgo: number;
+    readonly read?: boolean;
+  }[];
+}): Promise<string[]> {
+  const owner = new Client(asOwner());
+  await owner.connect();
+  let accountId: string;
+  try {
+    const found = await owner.query<{ id: string }>(
+      `SELECT id FROM identity.account WHERE lower(email) = lower($1)`,
+      [input.email],
+    );
+    if (!found.rows[0]) throw new Error(`No account for ${input.email} to seed notices for`);
+    accountId = found.rows[0].id;
+  } finally {
+    await owner.end();
+  }
+
+  const worker = new Client(asWorker());
+  await worker.connect();
+  try {
+    await worker.query('BEGIN');
+    await worker.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    const ids: string[] = [];
+    for (const [index, notice] of input.notices.entries()) {
+      const id = randomUUID();
+      const at = `now() - make_interval(mins => $3::int)`;
+      await worker.query(
+        `INSERT INTO notification.notification
+                (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, state,
+                 raised_at, last_raised_at, delivered_at)
+         VALUES ($1, $2, 'identity.invitation', $4, 'default', $5, 'delivered', ${at}, ${at}, ${at})`,
+        [id, input.organizationId, notice.minutesAgo, `e2e-web:${id}:${index}`, notice.deepLink],
+      );
+      await worker.query(
+        `INSERT INTO notification.delivery
+                (notification_id, organization_id, recipient_account_id, channel, outcome, dispatched_at, read_at)
+         VALUES ($1, $2, $4, 'in_app', 'delivered', ${at}, CASE WHEN $5 THEN ${at} END)`,
+        [id, input.organizationId, notice.minutesAgo, accountId, notice.read === true],
+      );
+      ids.push(id);
+    }
+    await worker.query('COMMIT');
+    return ids;
+  } catch (error) {
+    await worker.query('ROLLBACK');
+    throw error;
+  } finally {
+    await worker.end();
+  }
+}
+
+/**
+ * Removes the notices seeded for these organizations (task 50.2.1).
+ *
+ * **`FORCE` is lifted for the one transaction that deletes**, the api e2e's `deleteNotificationsOf` shape: neither
+ * table has a `DELETE` policy or a parent to cascade from, so a plain `DELETE` as the owner removes nothing and says
+ * so quietly (`apps/api/CLAUDE.md`). It must run before `cleanupOrganizations` or after — the rows reference the
+ * organization by id alone, which is why deleting the organization leaves them behind.
+ */
+export async function cleanupNotifications(organizationIds: readonly string[]): Promise<void> {
+  if (organizationIds.length === 0) return;
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    for (const table of ['notification.delivery', 'notification.notification']) {
+      await client.query(`ALTER TABLE ${table} NO FORCE ROW LEVEL SECURITY`);
+    }
+    await client.query(`DELETE FROM notification.delivery WHERE organization_id = ANY($1::uuid[])`, [organizationIds]);
+    await client.query(`DELETE FROM notification.notification WHERE organization_id = ANY($1::uuid[])`, [
+      organizationIds,
+    ]);
+    for (const table of ['notification.delivery', 'notification.notification']) {
+      await client.query(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
+    }
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.end();
+  }
+}

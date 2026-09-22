@@ -91,6 +91,10 @@
     "drawer": {
       "label": "Meniu",
       "close": "Închideți meniul"
+    },
+    "notifications": {
+      "label": "Notificări",
+      "unreadLabel": "{count, plural, =0 {Notificări, nimic necitit} one {Notificări, # necitită} few {Notificări, # necitite} other {Notificări, # de necitite}}"
     }
   },
   "forms": {
@@ -1308,6 +1312,56 @@
     "unreachable": {
       "title": "Răspunsul dumneavoastră nu a ajuns la EasyESG",
       "body": "Alegerea nu a putut fi înregistrată, așa că cererea a rămas neschimbată. Încercați din nou peste câteva momente."
+    }
+  },
+  "notifications": {
+    "centre": {
+      "title": "Notificări",
+      "lede": "Ce trebuie să știți în această organizație. Starea de citire este a dumneavoastră: ce citiți aici rămâne necitit pentru colegi.",
+      "unreadCount": "{count, plural, one {# notificare necitită} few {# notificări necitite} other {# de notificări necitite}}",
+      "show": {
+        "label": "Afișați",
+        "unread": "Necitite · {count}",
+        "all": "Toate"
+      },
+      "markAll": "Marcați toate ca citite",
+      "markRead": "Marcați ca citită",
+      "dismiss": "Ascundeți",
+      "list": "Notificările dumneavoastră",
+      "loading": "Se încarcă notificările dumneavoastră.",
+      "empty": {
+        "firstUse": {
+          "title": "Nicio notificare deocamdată",
+          "body": "Aici apar lucrurile care au nevoie de atenția dumneavoastră — un termen care se apropie sau o validare încheiată. Fiecare notificare rămâne aici până când o citiți sau o ascundeți, chiar dacă a sosit cât ați lipsit.",
+          "action": "Mergeți la pagina principală"
+        },
+        "nothingUnread": {
+          "title": "Nimic necitit",
+          "body": "Ați citit tot ce a sosit. Notificările citite rămân în lista „Toate”.",
+          "action": "Vedeți toate notificările"
+        }
+      },
+      "error": {
+        "permission": {
+          "title": "Nu aveți acces la notificările acestei organizații",
+          "body": "Contul dumneavoastră nu este membru activ al organizației selectate, deci notificările nu pot fi afișate.",
+          "action": "Mergeți la pagina principală"
+        },
+        "unreachable": {
+          "title": "Notificările nu au putut fi încărcate",
+          "body": "Serviciul nu a răspuns, deci nu știm ce a sosit. Nimic nu se pierde: fiecare notificare rămâne aici până o citiți. Reîncărcați pagina peste câteva momente.",
+          "action": "Reîncărcați pagina"
+        },
+        "action": {
+          "title": "Modificarea nu a ajuns la EasyESG",
+          "body": "Notificarea a rămas cum era. Încercați din nou peste câteva momente."
+        }
+      }
+    },
+    "item": {
+      "untitled": "Notificare",
+      "unread": "Necitită",
+      "today": "Azi, {time}"
     }
   }
 }

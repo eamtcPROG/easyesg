@@ -2,10 +2,12 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import {
   cleanupAccounts,
+  cleanupNotifications,
   cleanupOrganizations,
   dropCredential,
   grantMembership,
   moveIntoSetup,
+  seedNotices,
   seedOpenPeriod,
   seedReport,
   verificationTokenFor,
@@ -114,6 +116,7 @@ const PASSWORD = 'Parola123!';
 const organizations: string[] = [];
 
 test.afterAll(async () => {
+  await cleanupNotifications(organizations);
   await cleanupOrganizations(organizations);
   await cleanupAccounts(RUN_PREFIX);
 });
@@ -387,6 +390,49 @@ test('axe finds no violations on the entity record', async ({ page }) => {
  * shape UX-102 is about, a colour whose meaning must also be in words. Scanning the empty version
  * would have judged the screen the least interesting way it renders.
  */
+/**
+ * S-26 (task 50.2.1) with something in it: an unread notice and a read one, so the scan meets the item in both
+ * states — the dot, the hidden *unread*, the controls described by their notice — the tabs, *mark all*, and the
+ * band's bell carrying a count, which every other signed-in scan here meets with none.
+ */
+test('axe finds no violations on the notification centre', async ({ page }) => {
+  const email = `${RUN_PREFIX}-notices@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  const organizationId = await grantMembership({ email, organizationName: `${RUN_PREFIX}-notices-org` });
+  organizations.push(organizationId);
+  await seedNotices({
+    organizationId,
+    email,
+    notices: [
+      { deepLink: '/reports', minutesAgo: 2 },
+      { deepLink: '/entities', minutesAgo: 120, read: true },
+    ],
+  });
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/home');
+
+  await page.goto('/notifications?show=all');
+  await expect(page.getByRole('heading', { name: 'Notificări', level: 1 })).toBeVisible();
+  // Named, so the scan is known to include what it claims: both items, and the bell with its count.
+  await expect(page.getByRole('list', { name: 'Notificările dumneavoastră' }).getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Notificări, 1 necitită' })).toBeVisible();
+  await scan(page);
+});
+
 test('axe finds no violations on the home screen', async ({ page }) => {
   const email = `${RUN_PREFIX}-home@example.md`;
 

@@ -68,6 +68,8 @@ export const ROUTES = {
   ENTITY_NEW: '/entities/new',
   /** S-16 — users and access (task 26.4). */
   ORGANIZATION_USERS: '/organization/users',
+  /** S-26 — the notification centre (task 50.2.1), reached from the global tier's count. */
+  NOTIFICATIONS: '/notifications',
   /** S-28 — credentials and linked identities (task 27.7). The destination S-01's
    *  provider-collision refusal names, which is why it is a route constant and not a literal. */
   ACCOUNT_CREDENTIALS: '/account/credentials',

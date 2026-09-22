@@ -469,8 +469,9 @@ in a short transaction of its own bound to the job's organization (`app.current_
   helper lifts `FORCE` inside the transaction that deletes and restores it before committing.
 
 **The centre is the request tier's, and it reads only the bound recipient's rows** (task 50.1.2; §12.5.6's
-task-50.1 rows (8) … (11)). `GET /notifications`, `GET /notifications/unread-count` and `POST
-/notifications/{id}/{read,dismiss}` run on the request's own transaction through `NotificationCentreStoreRepository`,
+task-50.1 rows (8) … (11)). `GET /notifications`, `GET /notifications/unread-count`, `POST
+/notifications/{id}/{read,dismiss}` and — since task 50.2.1 — `POST /notifications/read`, every unread notice at
+once, run on the request's own transaction through `NotificationCentreStoreRepository`,
 whose statements name neither recipient nor organization. Three things hold that true, and each has cost a
 reading to see:
 
@@ -482,8 +483,12 @@ reading to see:
   for a blanket statement that reads nothing — which is why `notification-centre.e2e-spec.ts` issues one. A test
   written only with `WHERE` clauses cannot tell the update policy from its absence.
 - **`read_at` and `dismissed_at` are write-once**, by `notification.keep_read_state`; the store writes each with
-  `COALESCE(…, now())`. Dismissing never writes `read_at`. The wording is resolved in `NotificationCentreService`
-  from `notification.<category>.in_app.{title,body}`; a key with no entry leaves the member absent.
+  `COALESCE(…, now())`. Dismissing never writes `read_at`. **Mark all reuses the `centre` clause** the count
+  reads, so the two cannot describe different sets, and writes `COALESCE` too: a mark from another tab landing
+  inside the statement keeps its time rather than tripping the trigger. The wording is resolved in
+  `NotificationCentreService` from `notification.<category>.in_app.{title,body,action}` and, since task 50.2.1, the
+  category's name from `notification.<category>.name` (§12.5.6's task-50.2 row (3)); a key with no entry leaves the
+  member absent.
 
 **A cancellation outlives its notice, and every job carries its outbox row's time** (task 50.1.3; §12.5.6's
 task-50.1 rows (12), (13)). `NotificationPort.cancel()` names the raise's key and writes an outbox event on the

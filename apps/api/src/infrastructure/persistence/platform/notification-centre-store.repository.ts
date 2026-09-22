@@ -107,6 +107,24 @@ export class NotificationCentreStoreRepository extends TenantRepository<never> i
     return this.mark({ notificationId: command.notificationId, column: MARKER.DISMISSED });
   }
 
+  /**
+   * Every delivery the unread count counts, read at once — the `centre` clause again, so *mark all* and the count it
+   * clears cannot describe different sets. `COALESCE` rather than a plain `now()`: a mark from another tab landing
+   * between this statement's snapshot and its row lock keeps its own time, where overwriting it would be refused by
+   * `notification.keep_read_state` and fail the whole statement.
+   */
+  async markAllRead(): Promise<number> {
+    const result: unknown = await this.runner.query(
+      `WITH centre AS (${this.centre})
+       UPDATE notification.delivery SET ${MARKER.READ} = COALESCE(${MARKER.READ}, now())
+        WHERE channel = $1
+          AND notification_id IN (SELECT notification_id FROM centre WHERE read_at IS NULL)
+        RETURNING id`,
+      [NOTIFICATION_CHANNEL.IN_APP],
+    );
+    return returnedRows(result).length;
+  }
+
   /** The recipient's in-app delivery of one notice, its marker set if unset; the column is this file's alone. */
   private async mark(input: { readonly notificationId: string; readonly column: Marker }): Promise<boolean> {
     const result: unknown = await this.runner.query(

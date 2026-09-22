@@ -238,6 +238,11 @@
   --globalbar-plate-hover: rgba(255, 255, 255, 0.10);
   --globalbar-avatar-surface: var(--pine-100);
   --globalbar-avatar-text: var(--pine-800);
+  /* The band's notification entry (task 50.2.1), a square on the band's own light surface — the commerce
+     artboard's 14 % white at rest, stronger under the pointer and on the centre itself. White-over-brand for
+     the three rules' reason above. */
+  --globalbar-control-surface: rgba(255, 255, 255, 0.14);
+  --globalbar-control-surface-hover: rgba(255, 255, 255, 0.24);
 
   /* A button standing ON one of those two dark bands, added with the public chrome (task 74.1).
      It exists because `--accent` is `--pine-600` and both bands are `--pine-800`: a primary
@@ -248,6 +253,15 @@
   --button-band-surface: var(--slate-0);
   --button-band-surface-hover: var(--pine-50);
   --button-band-text: var(--pine-800);
+
+  /* §11.5's Badge (task 50.2.1): a count. *Quiet* is the artboards' light plate — the unread count on the bell,
+     in the compact drawer — and *alert* the same number beside S-26's heading, in the state colour a count asking
+     for attention takes. Alert reads tier 2 and so moves with the scheme on its own; quiet reads tier 1 and is
+     re-pointed in the dark block. */
+  --badge-quiet-surface: var(--pine-100);
+  --badge-quiet-text: var(--pine-800);
+  --badge-alert-surface: var(--state-error);
+  --badge-alert-text: var(--text-on-accent);
 
   /* The checkbox's tick (task 97). Tier 3 so a second theme moves it with the accent it sits on —
      §11.7's MUD-approximating theme is a real deliverable, and a tick hardcoded white would be
@@ -359,6 +373,8 @@
     --globalbar-text-muted: var(--pine-dark-200);
     --globalbar-avatar-surface: var(--pine-dark-600);
     --globalbar-avatar-text: var(--slate-dark-0);
+    --badge-quiet-surface: var(--pine-dark-600);
+    --badge-quiet-text: var(--slate-dark-0);
 
     --button-band-surface: var(--pine-dark-300);
     --button-band-surface-hover: var(--pine-dark-200);

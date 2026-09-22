@@ -69,10 +69,16 @@ export interface NotificationCentrePage {
   readonly total: number;
 }
 
-/** An entry in words: its wording resolved in the request's language, each part absent where none is written. */
+/**
+ * An entry in words: its wording resolved in the request's language, each part absent where none is written — the
+ * category's name and the notice's action text beside its title and body since task 50.2.1 (§12.5.6's task-50.2 row
+ * (3)).
+ */
 export interface NotificationCentreItem extends Omit<NotificationCentreEntry, 'params'> {
+  readonly categoryName: string | undefined;
   readonly title: string | undefined;
   readonly body: string | undefined;
+  readonly actionLabel: string | undefined;
 }
 
 /** A page of the centre in words, with the page's counts as the store answered them. */

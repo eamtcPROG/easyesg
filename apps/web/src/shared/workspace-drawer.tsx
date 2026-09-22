@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { useSignOut } from '@/features/identity/shared/components/sign-out-provider';
+import { NotificationsEntry } from '@/features/notifications/count/components/notifications-entry';
 import { useLocaleNames } from './use-locale-names';
 import { WORKSPACE_SECTIONS } from './workspace-sections';
 import styles from './workspace-drawer.module.css';
@@ -27,8 +28,9 @@ import styles from './workspace-drawer.module.css';
  * unsent answers, since this panel closes on the press (UX-37). The button keeps its `form=`
  * association, which is what still signs a reader out before hydration.
  *
- * **What it carries is what renders.** The specimen's *Plan & billing*, *Notifications* and *Help
- * centre* are Phase 7's, task 50.2's and task 77.5's. The **language choice is here although the
+ * **What it carries is what renders.** The specimen's *Plan & billing* and *Help centre* are Phase 7's
+ * and task 77.5's; its *Notifications*, with the count, is here since task 50.2.1, first below the rule
+ * as drawn, and only while the session acts for an organization. The **language choice is here although the
  * specimen omits it**, and that is UX-76 rather than a preference: the compact bar drops the
  * account menu, so a locale switch omitted here would be a task made unavailable by viewport, which
  * UX-76 prohibits without an explicit statement of why and what device to use.
@@ -69,6 +71,9 @@ export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
         organization={organization}
         actions={
           <>
+            {/* The centre is the active organization's (UC-165), so its row is offered exactly when the
+                organization's control is — a second flag for the same fact would be free to disagree. */}
+            {organization ? <NotificationsEntry className={styles.action} /> : null}
             <Link className={styles.action} href={ROUTES.ACCOUNT_CREDENTIALS}>
               {t('accountMenu.credentials')}
             </Link>

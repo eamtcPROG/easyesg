@@ -35,6 +35,7 @@ import { DeliverLinkNotice } from './use-cases/deliver-link-notice.use-case';
 import { DeliverNotification } from './use-cases/deliver-notification.use-case';
 import { DismissNotification } from './use-cases/dismiss-notification.use-case';
 import { ListNotifications } from './use-cases/list-notifications.use-case';
+import { MarkAllNotificationsRead } from './use-cases/mark-all-notifications-read.use-case';
 import { MarkNotificationRead } from './use-cases/mark-notification-read.use-case';
 
 /**
@@ -133,6 +134,7 @@ const centreUseCases: Provider[] = [
   CountUnreadNotifications,
   MarkNotificationRead,
   DismissNotification,
+  MarkAllNotificationsRead,
 ].map((useCase) => ({
   provide: useCase,
   inject: [NOTIFICATION_CENTRE_STORE],

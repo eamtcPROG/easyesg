@@ -7,7 +7,7 @@ both; UX-101 sets the floors. This table is the record that deliverable asks for
 spec that generates it is the gate — so a token change that breaks a floor fails the build
 rather than silently making this file wrong.
 
-64 pairings, each measured in both schemes.
+66 pairings, each measured in both schemes.
 
 | Pairing | Tokens | Light | Dark | Floor | Verdict |
 | --- | --- | --- | --- | --- | --- |
@@ -26,6 +26,8 @@ rather than silently making this file wrong.
 | global bar text | `--globalbar-text` on `--globalbar-surface` | 11.51:1 | 10.15:1 | 4.5:1 | pass |
 | global bar muted text | `--globalbar-text-muted` on `--globalbar-surface` | 6.93:1 | 6.84:1 | 4.5:1 | pass |
 | avatar initials | `--globalbar-avatar-text` on `--globalbar-avatar-surface` | 9.02:1 | 4.66:1 | 4.5:1 | pass |
+| badge count, quiet | `--badge-quiet-text` on `--badge-quiet-surface` | 9.02:1 | 4.66:1 | 4.5:1 | pass |
+| badge count, alert | `--badge-alert-text` on `--badge-alert-surface` | 6.62:1 | 7.1:1 | 4.5:1 | pass |
 | band button label | `--button-band-text` on `--button-band-surface` | 11.51:1 | 9.21:1 | 4.5:1 | pass |
 | band button label, hovered | `--button-band-text` on `--button-band-surface-hover` | 10.37:1 | 11.63:1 | 4.5:1 | pass |
 | console bar text | `--consolebar-text` on `--consolebar-surface` | 17.24:1 | 17.24:1 | 4.5:1 | pass |

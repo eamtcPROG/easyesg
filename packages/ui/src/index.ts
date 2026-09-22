@@ -38,6 +38,8 @@ export { Skeleton, type SkeletonProps } from './primitives/skeleton';
 // Directly, never through `skeleton.tsx` — a re-export routed through a component module is still
 // a client reference the day that module gains a directive.
 export { SKELETON_SHAPE, type SkeletonShape } from './primitives/skeleton-vocabulary';
+export { Badge, type BadgeProps } from './primitives/badge';
+export { BADGE_TONE, type BadgeTone } from './primitives/badge-vocabulary';
 export { Spinner } from './primitives/spinner';
 export { TextLink, type TextLinkProps } from './primitives/text-link';
 
@@ -117,6 +119,7 @@ export {
   type WorkspaceNavProps,
 } from './navigation/workspace-nav';
 export { ChromeDrawer, type ChromeDrawerProps } from './navigation/chrome-drawer';
+export { NotificationBell, type NotificationBellProps } from './navigation/notification-bell';
 // Task 67.1: the console's side navigation, and the Global bar's tone that draws the console's band.
 export {
   ConsoleNav,

@@ -33,7 +33,7 @@ const NOT_FOUND = {
 
 /**
  * `/api/v1/notifications` — the recipient's notification centre (task 50.1.2; UC-165 … UC-167; FR-161, FR-162;
- * §12.5.6's task-50.1 rows (8) … (11)).
+ * §12.5.6's task-50.1 rows (8) … (11)), and *mark all as read* since task 50.2.1 (the task-50.2 row (2)).
  *
  * **A tenant route, and every member's**: the organization is the session's, as for `/members`, and the recipient
  * is the signed-in account — no parameter names either, and the database answers only their rows (UC-165, FR-161). A
@@ -114,6 +114,20 @@ export class NotificationCentreController {
   @ApiObjectResponse(UnreadCountResponseDto, { status: 200, description: 'The unread count.' })
   async unreadCount(): Promise<UnreadCountResponseDto> {
     return new UnreadCountResponseDto(await this.centre.unreadCount());
+  }
+
+  @Post('read')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Mark every one of the caller’s unread notifications read',
+    description:
+      'Records read every notice the unread count counts, for the caller alone, each keeping the time it was first ' +
+      'marked. Dismissed notices are left as they are. Nothing unread is not an error.',
+  })
+  @ApiResponse({ status: 204, description: 'Read, all of them.' })
+  async readAll(): Promise<typeof NO_CONTENT_RESPONSE> {
+    await this.centre.markAllRead();
+    return NO_CONTENT_RESPONSE;
   }
 
   @Post(`:${NOTIFICATION_ID}/read`)

@@ -1,19 +1,29 @@
-import { NotYetAvailable } from '@/shared/not-yet-available';
+import { CentreSection } from '@/features/notifications/centre/components/section/centre-section';
+import { CENTRE_MESSAGES } from '@/features/notifications/centre/components/shared/centre-messages';
+import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
- * S-26 — Notification centre · CA · UC-165…167 · Index
+ * S-26 — Notification centre · CA · UC-165 … UC-167 · Index (task 50.2.1)
  *
- * FR-161: an unread count available from any screen, each item persisting until read or
- * dismissed rather than only while the user is present. Polling, not push — a push transport
- * exists nowhere in §5.4 or §10.4 and adding one is an amendment, not an implementation detail.
+ * Persistent storage for everything the system needs a person to know, never a stream of toasts (UX-62): a notice
+ * raised while the reader was away is waiting on return, each is a link to what raised it (UX-63), and read state is
+ * the reader's own (UX-64). Opening a notice records it read; *mark as read*, *dismiss* and *mark all as read* are
+ * the reader's own writes (`architecture.md` §12.5.6's task-50.2 rows (2) … (4)).
  *
- * Not built — but the address answers. It renders §8.1's `error — not yet available` state
- * (task 103) in place of the blank page it used to return; `design_spec.md` §4.5 records why
- * that state is a pattern rather than an `S-nn` row. `design_spec.md` §5 owns this screen's
- * content, controls and states; `design/IMPLEMENTATION_PLAN.md` owns when it lands.
- * Prototypes in `design/screens/` are the rendered reference — read them for values, never
- * copy their markup (OQ-10).
+ * States (§8.1): ready · empty — first use · empty — filtered · loading — initial (`loading.tsx`) · loading — refresh
+ * (a control's pending state) · error — recoverable · error — permission.
+ *
+ * **This file is a shell** (task 134, `shell-composes-only`): it pins the locale and renders the section, which
+ * reads, decides the arm and draws.
  */
-export default function NotificationCentrePage() {
-  return <NotYetAvailable />;
+type Props = {
+  params: LocaleParams;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export const generateMetadata = localizedPageTitle(CENTRE_MESSAGES);
+
+export default async function NotificationCentrePage({ params, searchParams }: Props) {
+  await activateRequestLocale(params);
+  return <CentreSection searchParams={searchParams} />;
 }

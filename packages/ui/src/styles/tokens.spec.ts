@@ -131,6 +131,9 @@ const TEXT: Pairing[] = [
   { what: 'global bar text', fg: '--globalbar-text', bg: '--globalbar-surface', floor: 4.5 },
   { what: 'global bar muted text', fg: '--globalbar-text-muted', bg: '--globalbar-surface', floor: 4.5 },
   { what: 'avatar initials', fg: '--globalbar-avatar-text', bg: '--globalbar-avatar-surface', floor: 4.5 },
+  // §11.5's Badge (task 50.2.1): a count in digits at 12px, so text's floor, in each of its two tones.
+  { what: 'badge count, quiet', fg: '--badge-quiet-text', bg: '--badge-quiet-surface', floor: 4.5 },
+  { what: 'badge count, alert', fg: '--badge-alert-text', bg: '--badge-alert-surface', floor: 4.5 },
   { what: 'band button label', fg: '--button-band-text', bg: '--button-band-surface', floor: 4.5 },
   { what: 'band button label, hovered', fg: '--button-band-text', bg: '--button-band-surface-hover', floor: 4.5 },
   // The console's chrome (task 67.1) — every text it draws, on the surface it draws it on.
@@ -281,6 +284,8 @@ describe('tokens.css — UX-80 and UX-101', () => {
      *  - **The global bar's three rules** are white-over-brand alpha on a band that is dark in BOTH
      *    schemes — the tier-3 comment on the global bar records why alpha rather than a pine step:
      *    it composites correctly against any brand colour, which is what makes it correct here too.
+     *    **The notification entry's two surfaces** (task 50.2.1) are the same white alpha on the same
+     *    band, for the same reason.
      *  - **The Enrolment code's plate** (task 143) is dark modules on a light ground in both schemes
      *    because a camera reads it, and decoding a reversed QR symbol is optional in ISO/IEC 18004 —
      *    a symbol that inverted with the scheme would be unreadable to any scanner omitting it.
@@ -291,6 +296,8 @@ describe('tokens.css — UX-80 and UX-101', () => {
       '--globalbar-divider',
       '--globalbar-plate-border',
       '--globalbar-plate-hover',
+      '--globalbar-control-surface',
+      '--globalbar-control-surface-hover',
       '--enrolment-code-module',
       '--enrolment-code-ground',
       '--consolebar-surface',

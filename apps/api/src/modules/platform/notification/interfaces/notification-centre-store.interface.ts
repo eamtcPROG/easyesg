@@ -23,6 +23,11 @@ export interface NotificationCentreStore {
   markRead(command: { readonly notificationId: string }): Promise<boolean>;
   /** Takes the notice out of the recipient's centre, once, and leaves its read time as it stands (row (9)). */
   dismiss(command: { readonly notificationId: string }): Promise<boolean>;
+  /**
+   * Records read every notice the unread count counts, each once (§12.5.6's task-50.2 row (2)), and answers how many
+   * it marked. A dismissed notice is left as it stands: it has left the centre, and nobody read it.
+   */
+  markAllRead(): Promise<number>;
 }
 
 export const NOTIFICATION_CENTRE_STORE = Symbol('NOTIFICATION_CENTRE_STORE');

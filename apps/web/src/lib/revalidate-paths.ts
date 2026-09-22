@@ -38,3 +38,6 @@ export const REPORTS_PATH = '/[locale]/(app)/(workspace)/reports';
 /** S-14's list and record — one family, so one call covers both. Creating a report changes whether
  *  a period is still free, which the periods screens show. */
 export const PERIODS_PATH = '/[locale]/(app)/(workspace)/entities/[entityId]/periods';
+
+/** S-26 — a mark or a dismissal changes what the centre lists and counts (task 50.2.1). */
+export const NOTIFICATIONS_PATH = '/[locale]/(app)/(workspace)/notifications';

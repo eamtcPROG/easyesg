@@ -3282,6 +3282,22 @@
         ]
       }
     },
+    "/api/v1/notifications/read": {
+      "post": {
+        "description": "Records read every notice the unread count counts, for the caller alone, each keeping the time it was first marked. Dismissed notices are left as they are. Nothing unread is not an error.",
+        "operationId": "NotificationCentreController_readAll",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Read, all of them."
+          }
+        },
+        "summary": "Mark every one of the caller’s unread notifications read",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/notifications/{notificationId}/read": {
       "post": {
         "description": "Records that the caller read it. Marking it again keeps the first time. Other recipients are unaffected.",
@@ -8751,6 +8767,10 @@
             ],
             "description": "What kind of notice this is — a key for the client to act on, never text to show."
           },
+          "categoryName": {
+            "type": "string",
+            "description": "The category’s name in the negotiated language, to show beside the notice. Absent when none is written."
+          },
           "title": {
             "type": "string",
             "description": "The notice’s title in the negotiated language. Absent when the category has no in-app wording."
@@ -8758,6 +8778,10 @@
           "body": {
             "type": "string",
             "description": "The notice’s text in the negotiated language. Absent when the category has no in-app wording."
+          },
+          "actionLabel": {
+            "type": "string",
+            "description": "The words of the link to what raised the notice — “Open the findings” — in the negotiated language. Absent when the category has none written, and then the title is the link."
           },
           "deepLink": {
             "type": "string",

@@ -10,10 +10,10 @@ every screen. Cite them; do not re-derive them.
 
 ## Current state
 
-Identity, organization, periods, reports, entities and the wizard are live; the calculator,
-validation, preview and export, notifications, checkout and billing and the public tier are the
-sixteen addresses `AddressNotice` answers for. What exists: 46 page routes across six route groups,
-7 layouts, a not-found boundary, 7 route handlers, the next-intl wiring, 15 feature folders (eight built),
+Identity, organization, periods, reports, entities, the wizard and the notification centre are live; the
+calculator, validation, preview and export, checkout and billing and the public tier are the
+fifteen addresses `AddressNotice` answers for. What exists: 46 page routes across six route groups,
+7 layouts, a not-found boundary, 7 route handlers, the next-intl wiring, 15 feature folders (nine built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/archived_tasks.md`
@@ -272,6 +272,23 @@ on nearly every render. `features/support-access/` holds it: `server/data/suppor
 only, running access to everyone), and three Server Actions answer or end, each revalidating the `(app)` layout. A
 failed read draws nothing, and `mayAdminister`, beside `mayWrite`, decides only whether *End access* is offered.
 
+**The notification centre's bell and its count** (task 50.2.1; §12.5.6's task-50.2 rows (1) … (4)). The band draws
+`packages/ui`'s `NotificationBell` — there because the icon set is, `architecture.md` §12.1 — through
+`features/notifications/count/`'s corner, and the compact drawer draws the same count on its *Notifications* row; both only
+while the session acts for an organization, whose centre it is. Four things to know before touching them:
+
+- **The count is the browser's poll**, `client/notifications/use-unread-count.ts` on OQ-36's minute
+  (`client/polling/poll-schedule.ts`), stopped while the tab is hidden. **Its run of failures lives in the query's own
+  data**, because TanStack Query resets `fetchFailureCount` at the start of every fetch — with retries off it never
+  passes one, and OQ-36's backoff reads the run across polls.
+- **S-26's actions invalidate it**, so the badge follows the reader's own mark rather than the next poll; the key is
+  `client/notifications/unread-count-key.ts`, directive-free because the hook beside it is a client module.
+- **Opening a notice is a real link** that sends the read mark as a `keepalive` request beside the navigation
+  (`mark-notice-opened.ts`) — a Server Action's answer would be abandoned by the very navigation it rode on.
+- **The Notification item is this app's, not the design system's** — only the tenant application has a centre (UX-89
+  as amended) — and it is directive-free, so the list renders it on the server and 50.2.2's panel will render it inside
+  a Client Component. *Today* in its time is decided on the server, since it depends on the clock.
+
 **Every address answers something (task 103).** `shared/address-notice.tsx` is the anatomy under §8.1's two
 address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the sixteen routes whose screens have not
 shipped, and `error — not found` for an address that does not exist. `design_spec.md` §4.5
@@ -311,9 +328,10 @@ Four things to know before touching it:
   (NFR-56). A key is acknowledged only if its sequence still equals the one sent — edit a field while
   its previous value is in flight and the newer edit survives. `architecture.md` §12.5.6 records why
   Query's mutation cache could not be the queue.
-- **The `QueryClientProvider` lives in the `[reportId]` layout, not in `(app)`.** Autosave is the
-  first Query consumer and lives entirely under `(wizard)`; the provider moves up when the
-  notification unread count (task 50.2) needs it on every screen. Do not create a second client.
+- **The `QueryClientProvider` is the `(app)` layout's since task 50.2.1** (`client/query/query-provider.tsx`).
+  Autosave was the first Query consumer and lived entirely under `(wizard)`, so the provider sat in the
+  `[reportId]` layout until the notification unread count needed it on every screen; it moved up, as recorded
+  in advance, and one client serves both. Do not create a second client.
 - **A step change persists and does not fire.** Unmount writes nothing; the queue is in IndexedDB and
   the next step's mount restores and flushes it. The exit control warns (UX-37); the rail does not,
   because a step change abandons nothing. The queue's key carries the **account id** from the sealed
@@ -806,7 +824,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
 - **TanStack Query is for client islands, and calling the API directly from one is a security
   bug, not a shortcut.** It is here for the three polls above plus autosave's flush — its first
   live consumer since task 35.2, as the *transport* of one mutation per step and not as the queue
-  (§12.1, shared catalog pin with `apps/admin`; the provider is the `[reportId]` layout's). Everything reachable server-side keeps going
+  (§12.1, shared catalog pin with `apps/admin`; the provider is the `(app)` layout's since task 50.2.1, when the unread count became the second consumer). Everything reachable server-side keeps going
   through `src/app/api/[...path]` and `src/server/session.ts` — that proxy is what holds the
   access token out of browser JavaScript (AD-9, AD-12). A `useQuery` whose `queryFn` fetches the
   API origin itself works perfectly in development and moves the token to exactly where AD-12
@@ -893,7 +911,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **97 files here are Client Components** (16 Sep 2026: the sign-out provider since task 93; six under
+  **105 files here are Client Components** (22 Sep 2026: eight since task 50.2.1 — the unread count's hook under
+  `client/notifications/`, the band's bell and the drawer's row under `notifications/count/components/`, and five
+  of S-26's under `notifications/centre/components/`; the Query provider moved from the wizard to `client/query/`
+  and is not among them; the sign-out provider since task 93; six under
   `identity/reauthenticate/components/` and
   three in the wizard — the rail's link, the session hook and the dialogue's mount — since task 92; thirteen under
   `organization/access/components/` since task 142 split the invite panel into its arms, ten under

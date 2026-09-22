@@ -40,6 +40,7 @@ const NOTICE = {
   anaLatest: '01920000-0000-7000-8000-00000000c005',
   ivanOnly: '01920000-0000-7000-8000-00000000c004',
   anaEmailOnly: '01920000-0000-7000-8000-00000000c002',
+  anaFresh: '01920000-0000-7000-8000-00000000c007',
 } as const;
 
 interface Item {
@@ -59,7 +60,7 @@ interface Page {
   unfiltered?: number;
 }
 
-describe('the notification centre (task 50.1.2)', () => {
+describe('the notification centre (tasks 50.1.2, 50.2.1)', () => {
   let app: NestExpressApplication;
   let owner: DataSource;
   let worker: DataSource;
@@ -323,5 +324,45 @@ describe('the notification centre (task 50.1.2)', () => {
         ]),
       ),
     ).rejects.toThrow('recorded once');
+  });
+
+  /**
+   * Task 50.2.1's *Mark all as read* (§12.5.6's task-50.2 row (2)): every notice the unread count counts, the caller's
+   * alone, each keeping a time once written — and neither a dismissed nor a withdrawn notice, which left the centre
+   * unread and stay recorded that way. Ana is given one unread notice first, so Ivan's marking has one of hers to reach
+   * if it could.
+   */
+  it('marks read every notice the unread count counts, for the caller alone', async () => {
+    await seed({ id: NOTICE.anaFresh, categoryKey: NOTIFICATION_CATEGORY.INVITATION, inApp: [ana.accountId] });
+    expect(await unread(ana)).toBe(1);
+    expect(await unread(ivan)).toBe(2);
+
+    await http().post('/api/v1/notifications/read').set(ivan.authorization).expect(204);
+
+    expect(await unread(ivan)).toBe(0);
+    const marked = (await list(ivan)).objects;
+    expect(ids({ objects: marked, total: 2, totalpages: 1 })).toEqual([NOTICE.ivanOnly, NOTICE.both]);
+    expect(marked.map((item) => item.readAt)).toEqual([expect.any(Number), expect.any(Number)]);
+    // BR-NOT-5: Ivan's marking reached none of Ana's deliveries.
+    expect(await unread(ana)).toBe(1);
+
+    await http().post('/api/v1/notifications/read').set(ana.authorization).expect(204);
+    expect(await unread(ana)).toBe(0);
+    const outside = await asRecipient(ana, (run) =>
+      run(
+        `SELECT notification_id, read_at FROM notification.delivery
+          WHERE channel = 'in_app' AND notification_id = ANY($1) ORDER BY notification_id`,
+        [[NOTICE.anaAdmin, NOTICE.anaLatest]],
+      ),
+    );
+    // The dismissed and the withdrawn notice: out of the centre, and still never read.
+    expect(outside).toEqual([
+      { notification_id: NOTICE.anaAdmin, read_at: null },
+      { notification_id: NOTICE.anaLatest, read_at: null },
+    ]);
+
+    // A second press marks nothing new and keeps the first times.
+    await http().post('/api/v1/notifications/read').set(ivan.authorization).expect(204);
+    expect((await list(ivan)).objects.map((item) => item.readAt)).toEqual(marked.map((item) => item.readAt));
   });
 });

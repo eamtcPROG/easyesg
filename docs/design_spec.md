@@ -852,10 +852,10 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Purpose:** be persistent storage for everything the system needs a human to know, not a stream of transient toasts.
 - **Primary actors:** CA.
 - **Archetype:** Index.
-- **Entry points:** the global tier, from any authenticated screen, with the unread count visible there (UX-62).
+- **Entry points:** the global tier, from any authenticated screen, with the unread count visible there (UX-62). **Amended 22 Sep 2026 (project owner, task 50.2):** the count opens a panel carrying the latest notices, the read-state tabs, *Mark all as read* and the way to this page, as the commerce artboard draws it (`architecture.md` §12.5.6, task-50.2 row (1)).
 - **Layout and regions:** Index fixed elements. Notification item component (§11.5) carrying category, subject link and read state.
 - **Content and data shown:** notifications addressed to the user in the active organization; unread count; category; the deep link to the object that raised each one (UX-63).
-- **Controls and actions:** open a notification; mark read; dismiss; route to preferences.
+- **Controls and actions:** open a notification, which records it read; mark read; mark all as read; dismiss; route to preferences. **Amended 22 Sep 2026 (project owner, task 50.2):** opening records the notice read, and *mark all as read* — drawn on both the page and the panel — marks every notice the unread count counts (`architecture.md` §12.5.6, task-50.2 row (2)). The list filters on read state — *Unread* and *All* — and the category filter waits until two categories can reach the centre (row (4)).
 - **States:** empty — first use (teaching empty state); empty — filtered; loading — initial; loading — refresh; error — recoverable.
 - **Validation behaviour:** none. Read state is per user: one recipient reading an organization-wide notice shall not clear it for colleagues (UX-64). A notice raised while the user was signed out is waiting on return (UX-62).
 - **Exits:** the subject of the notification — a module in S-07, a period in S-14, an invoice in S-22, and so on; S-27 for preferences.
@@ -2101,9 +2101,13 @@ container and every screen's measurements stay in that screen's stylesheet.
 
 **Feedback** — Inline field message · Callout (info · attention · warning · error · success) · Banner (persistent, page-level) · Toast (UX-67) · Empty state · Error state · Confirmation dialogue · Consequence dialogue (§6.14).
 
-**Navigation** — Global bar · Organization switcher · Workspace nav · **Chrome drawer** · **Console nav** · Wizard step list · Tabs · Breadcrumb · Pagination · Back-to-context
+**Navigation** — Global bar · Organization switcher · Workspace nav · **Chrome drawer** · **Console nav** · **Notification bell** · Wizard step list · Tabs · Breadcrumb · Pagination · Back-to-context
 
 **Console nav added 13 Sep 2026 (task 67.1)** — the administrative console's side navigation, drawn on every signed-in frame of `EasyESG Admin Console Screens.dc.html`: vertical, in headed sections, the current destination marked by a left rule and a weight change beside `aria-current`. **A row of its own rather than a Workspace nav variant**, because the anatomy differs — headed sections, a vertical list, and a count slot beside each destination that the artboard fills with exception-queue badges — which is UX-89's test rather than a skin. Its applicable §8.1 states are rest · hover · focus · current, and **empty**: a section with no destinations is omitted, and a navigation with none renders nothing — the console's state until its first screen ships (§5.2). **The Global bar serves the console through a tone, not a second band**: the anatomy is the band's — brand at one end, actions at the other — and what differs is the surface, dark neutral where the tenant band is brand-dark, which is what `BUTTON_TONE` and `SWITCHER_TONE` already express. The account menu takes the same tone, and on the console it has no language row — the console is Romanian-only (architecture.md OQ-42), so a submenu offering one choice would decide nothing. Both the band and the navigation hold the same dark values in both schemes, as the global bar's own rules do.
+
+**Notification bell added 22 Sep 2026 (task 50.2.1)** — the Global bar's *notification centre* entry (§4.2), drawn in the commerce artboard's global tier: a 32px control on the band's own light surface, the bell glyph, and the unread count at its corner as a Badge. **A part of the band rather than an application's component**, because the glyph comes from the icon set `packages/ui` alone holds (`architecture.md` §12.1); it takes its words, its address and its router from the caller, as every part of the band does. Its accessible name is the caller's whole sentence, count included, so the badge beside the glyph is hidden rather than read twice. Applicable §8.1 states: rest · hover · focus · current (on S-26) · count unknown · nothing unread — the last two draw the bell alone.
+
+**Badge built 22 Sep 2026 (task 50.2.1)** — the Primitive above, for a count: two tones, *quiet* (the band's light plate, the unread count on the bell and in the compact drawer) and *alert* (the same count beside S-26's heading, in the error state's colour), each pairing measured in both schemes. It draws the number and, where it stands alone, reads the caller's words in its place; it never takes the Status chip's pill radius, which the token set reserves for chips.
 
 **Chrome drawer added 10 Sep 2026 (task 108)** — §4.2's chrome at `compact`, drawn as
 `EasyESG Workspace.dc.html`'s specimen captioned *"390 · workspace tier as a drawer"*: the
@@ -2141,7 +2145,7 @@ would be a task made unavailable by viewport with no statement of why. control.
 | Consequence list | §6.10, §6.14 | Names affected objects before commit |
 | Payment rail selector | §6.11 | Availability with reasons |
 | Money summary | §6.11 | Net · VAT rate and basis · gross · currency |
-| Notification item | §6.12 | Category, subject link, read state |
+| Notification item | §6.12 | Category, subject link, read state. **Built in `apps/web`** (task 50.2.1): the tenant application is the only one with a centre, so UX-89 as amended puts it there until the console needs it |
 | Version pin indicator | §6.9 | Taxonomy / template / factor-set version in force |
 | Provenance chip | §6.13 | Who, when, from where |
 

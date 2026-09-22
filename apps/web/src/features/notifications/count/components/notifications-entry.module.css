@@ -1,0 +1,8 @@
+/* The drawer row's count sits at the row's end, as the specimen draws it. The row's padding, type and hover are
+   the drawer's own (`shared/workspace-drawer.module.css`), passed in rather than restated. */
+.entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}

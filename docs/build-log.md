@@ -23161,3 +23161,141 @@ As `esg_worker`, with `enable_seqscan = off` and the parameters bound as the sto
   api (nine sites, all moved); vocabularies restated in OpenAPI descriptions across every controller (two more, both
   derived); docblocks counting outside their file across the notification module and its test support; the stale
   phrasings above by phrase across the tree.
+
+## Task 50.2.1 — The page, the unread count, and the API they read · 2026-09-22
+
+The first of task 50.2's two. S-26 on screen, the unread count on every signed-in screen, and the two things the API
+did not yet give them. Everything is reached through the shipped routes except the notices, which are seeded, because
+no category reaches a centre until 50.3.
+
+### Decisions (project owner, one batch)
+
+Recorded as §12.5.6's new task-50.2 row, with S-26's entry point and control list amended in `design_spec.md` and
+§6.8's route table given the new route. All four were the recommended options:
+
+- **The count opens the panel the commerce artboard draws**, and 50.2 splits in two: this sub-step builds the page, the
+  count and the API they read; 50.2.2 builds the panel. Until then the count links to the page.
+- **Opening a notice records it read**, and **`POST /notifications/read` marks read every notice the unread count
+  counts** — the artboards' *Mark all as read*, drawn on both surfaces and absent from S-26's control list until now.
+- **The API resolves a category's name and a notice's action text**, `notification.<category>.name` and
+  `notification.<category>.in_app.action`, as `categoryName` and `actionLabel`, each absent where nothing is written.
+- **Read state alone for now.** The category filter waits until two categories can reach the centre, since a filter
+  over one filters nothing.
+
+Taken by the implementer on precedent, and written into the row's implementation notes: **the screen states no
+retention period** (the artboard's *kept for 18 months* is neither NFR-109's period nor enforced — task 23's
+precedent), and **the way to preferences arrives with S-27** (task 52.3).
+
+### What shipped
+
+- **The API half.** `MarkAllNotificationsRead` over a store `markAllRead()` that reuses the centre's own `centre` clause,
+  so *mark all* and the count it clears cannot describe different sets, and writes `COALESCE(read_at, now())` — a mark
+  from another tab landing between the statement's snapshot and its row lock keeps its time rather than tripping
+  `keep_read_state` and failing the statement. The item DTO gains `categoryName` and `actionLabel`; the contract
+  regenerates to 94 paths.
+- **S-26** (`features/notifications/centre/`), a shell over one section: the view off the address (`?show=`,
+  `?page=`, unread first as both artboards draw it), one read of the page and the count in parallel, and the arm chosen
+  by `centreArm` — the Index archetype's rule between its two empty states, restated as a function with a spec because
+  S-26 draws a list rather than `IndexShell`'s table. The heading carries the count as an alert Badge, the tabs as links
+  and *mark all*; the list carries §11.5's Notification item and the pager. Every state: ready, both empties, loading
+  (skeleton rows, UX-115), refresh (a control's pending), recoverable, permission.
+- **The Notification item, in `apps/web`** (UX-89 as amended — the tenant app is the only one with a centre; §11.5's row
+  now says so). Every notice is a link — its action words where the API sent them, otherwise its title, otherwise the
+  app's own word for a notice. Read state is the dot, a stronger title and a hidden word, never colour alone.
+- **Opening a notice** is a real link whose click sends the read mark as a `keepalive` request and refreshes the count
+  once it lands. A Server Action was the alternative and is wrong here: its answer streams back on the very navigation
+  the click starts, so it would be abandoned mid-stream.
+- **The count** (`client/notifications/`): read through the pass-through, settled against the previous poll, polled on
+  OQ-36's minute (`client/polling/poll-schedule.ts`, which replaced the scaffold), stopped while the tab is hidden, and
+  backed off full-jitter exponential to five minutes. **The run of failures is kept in the query's data**, because
+  TanStack Query 5.101.4 resets `fetchFailureCount` at the start of every fetch — read in the installed source — so
+  with retries off it never passes one. S-26's actions invalidate it, so the badge follows the reader's own mark.
+- **The band's bell and the drawer's row.** The bell is `packages/ui`'s `NotificationBell`, because the icon set is
+  `packages/ui`'s alone (§12.1); the count on it, in the drawer and beside the heading is §11.5's Badge, now built, with
+  its tier-3 tokens measured in both schemes. Both appear only while the session acts for an organization — the drawer
+  keys its row off its own organization slot rather than a second flag for the same fact.
+- **TanStack Query's client moved up** from the wizard to the `(app)` layout, as its docblock had recorded it would.
+
+### Proof
+
+- **The API**: `MarkAllNotificationsRead`'s spec; the service spec pinning the name's key without parameters and the
+  action's with them; and a centre e2e case in which Ivan's *mark all* reaches none of Ana's deliveries, Ana's reaches
+  neither her dismissed nor her withdrawn notice, and a second press keeps the first times. **Marking every unread
+  in-app delivery instead of the centre's own set fails that case.**
+- **The web**: specs for the view, the arm, the title id, the time label, the poll schedule, the count's read and its
+  settle, the beacon, and the Notification item — every part absent in turn, the title as the link, and an unread
+  notice marking itself on opening while a read one does not.
+- **In a browser** (`e2e/web/notifications.spec.ts`): the empty centre teaching; the band's count in words; the tabs as
+  addresses; one mark moving the list, the tab and the band at once; a dismissal; *mark all* landing on the filtered
+  state; opening a notice landing on its subject and the band catching up; English and Russian; and the compact drawer's
+  row. `notifications.expansion.spec.ts` at +40% on three frames, and an axe scan of S-26 with both item states and the
+  bell carrying a count.
+
+### Found on the way
+
+- **`revalidatePath` with a route-group path and no `type` does nothing**, and says so only as a server warning:
+  *"has no effect by default"*. The first browser run printed it; the list still refreshed because an action re-renders
+  the page it was called from, so no assertion was red. Every other action here passes the type; S-26's passes `'page'`.
+- **A closed vocabulary in a `'use client'` module** — the count's query key — was caught by lint's selector and moved
+  to a sibling module.
+- **S-26's `h1` rendered at body size, and only a screenshot showed it.** The item's title and the heading shared one
+  class name in the stylesheet, and the item's rule overrode `t-heading-1`; every assertion about the page's content
+  passed. The item's class is `noticeTitle` now, and the journey asserts the heading's computed size — **reintroducing
+  the collision fails it, 15px against 28px.**
+- **Two failures that did not reproduce.** A `packages/ui` run answered 326 of 327 once and passed four times after,
+  without naming the case; and `wizard.spec.ts`'s *omitted section on the rail* timed out once in the full browser run
+  waiting for a select's option, and passed five times alone. Neither is attributable to this diff from what was
+  observed; both are recorded here as first sightings, so a second one has something to be compared with.
+
+### The convention pass
+
+Read against the diff: `one-kind-per-folder`, `one-idea-per-file`, `vercel-react-best-practices`,
+`vercel-composition-patterns`, `nestjs-best-practices`. What it changed:
+
+- `components-region-anatomy`: the permission and unreachable arms were inline in the section, and are `states/` files
+  now; the section reads and chooses.
+- `pure-logic-leaves-the-component`: the arm choice and the title id left their components for `tools/`, with specs.
+- `move-names-keep-prefix`: `first-use`, `nothing-unread`, `item-controls` and `action-refusal` gained their prefixes.
+- `shared-namespace-declared-once`: the item's namespace moved beside its two readers in `list/`.
+- `reason-docblock-carries-the-why`: two docblocks described how 50.2.2 would be built, which is undecided; removed.
+- `server-serialization` against `section-pass-what-was-read`: the controls and the link take the notice **trimmed** to
+  what they read — the object, not a boolean projection, and only the fields that cross the wire — and the item passes
+  one such object to both its links, so Flight sends it once.
+- `architecture-avoid-boolean-props`: the drawer's new flag went, in favour of the slot that already says the same
+  thing. The bell's `current` stayed: it is `aria-current`, a state, not a mode.
+
+Declined with a reason: `IndexShell` itself, because S-26's rows are cards, not table rows — a difference in anatomy,
+which is UX-89's test; the Tabs specimen, because both artboards draw S-26's read state as outlined chips, the segmented
+shape, and only this app draws it.
+
+### Compared with the artboard
+
+S-26's frame, re-read against the built page. The differences are the ones recorded above — no retention line, no
+preferences link until 52.3, the panel in 50.2.2 — plus two of the spec's own: each item carries *mark as read* and
+*dismiss*, which S-26's control list requires and the artboard does not draw; and the category chip is neutral, where
+the artboard tints it by a grouping no category carries.
+
+### Verification
+
+The sub-step's run, from the table in the root `CLAUDE.md`: the change reaches `apps/api`, `apps/web`, `packages/ui`
+and `packages/contracts`, so every workspace's unit suite, both front ends' rows, and the whole browser suite.
+
+- **Unit**: api **150 suites, 1,234 tests**; `packages/ui` **32 files, 327**; web **94 files, 929**; admin **29 files,
+  246**; contracts' own. Typecheck, lint and `boundaries` clean; `routes:check` passes.
+- **`openapi:check`** failed on its first run only because the regenerated contract was not yet staged — the gate
+  compares the working tree to the index, so the diff it printed was exactly the new route and the two members — and
+  passes once staged.
+- **`pnpm e2e`**: **51 suites, 1,287 tests**. `e2e:worker` and `migrations:check` not run: no consumer and no
+  migration changed.
+- **`pnpm e2e:web`**: **242 of 244**. One failure was this change's: `address-states.spec.ts` still listed
+  `/notifications` among the addresses that answer *not yet available*, which S-26 no longer does — the address is out
+  of the list. The other is the wizard timeout above. Both re-run **12 of 12**. After the heading's fix, S-26's journey,
+  its +40% check and its axe scan re-run **9 of 9**.
+- **What the runs printed**: ten `⨯ … destination stream closed early`, all digest `2667547900`, the abandoned-stream
+  class `apps/web/CLAUDE.md` records; the SMTP adapter's recorded NFR-27 notice; and the dispatch suite's own case of a
+  recipient naming no account. `revalidatePath`'s warning, above, is gone.
+- **`docs:check`**: ten counts this sub-step moved — the contract's paths, `packages/ui`'s components, specs, exports,
+  vocabularies and token lines, `apps/web`'s built features and Client Components — corrected, **42 claims** agreeing.
+- **Searched for the shapes it found**: every `revalidatePath` in `apps/web` passes a type now; the other stylesheets
+  under `features/notifications/` share no class name with a type role; the `not yet available` list is fifteen routes,
+  counted from the files that render it.

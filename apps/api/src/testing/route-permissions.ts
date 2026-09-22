@@ -294,6 +294,7 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // whatever their role — and each sees and marks only their own, which the schema's policies hold (UC-165; BR-NOT-5 for the marks).
   'GET /notifications': ALL_MEMBERS,
   'GET /notifications/unread-count': ALL_MEMBERS,
+  'POST /notifications/read': ALL_MEMBERS,
   'POST /notifications/:notificationId/read': ALL_MEMBERS,
   'POST /notifications/:notificationId/dismiss': ALL_MEMBERS,
 

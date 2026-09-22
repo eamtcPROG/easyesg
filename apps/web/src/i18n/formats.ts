@@ -29,6 +29,8 @@ export const formats = {
     long: { day: 'numeric', month: 'long', year: 'numeric' },
     // Audit surfaces: S-12 field change history, provenance, delivery records.
     stamp: { dateStyle: 'medium', timeStyle: 'short' },
+    // The time of day alone — S-26's "Today, 09:02" (task 50.2.1), where the day is already said in words.
+    clock: { timeStyle: 'short' },
     /**
      * A bare year — the copyright notice, and later any year-only label.
      *

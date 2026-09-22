@@ -1,0 +1,210 @@
+/* S-26 · Index archetype (§4.6) with §11.5's Notification item for its rows — one stylesheet for every region, in
+   `styles/` of its own on S-16's precedent, since the section, the heading, the list, the states and the route's
+   `loading.tsx` all read it. Values from the commerce artboard's S-26 frame, through tokens (OQ-10). */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* The heading row, as drawn: title and lede at the start, the tabs and *mark all* at the end, wrapping beneath
+   where the row has no room for both. */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-3);
+}
+
+.title {
+  margin: 0;
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-body);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* The read-state tabs: two outlined chips, the one shown in the accent. */
+.tabs {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 36px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  color: var(--text-body);
+  font: 400 14px/20px var(--font-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: var(--surface-sunken);
+}
+
+.tab[aria-current] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.markAll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* The notices, one panel with a rule between rows, as the artboard draws them. */
+.notices {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+  overflow: hidden;
+}
+
+.row + .row {
+  border-block-start: 1px solid var(--border-default);
+}
+
+.notice {
+  display: flex;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+}
+
+/* An unread notice: the dot, a faint ground and a stronger title — never the colour alone (UX-102). */
+.notice[data-unread] {
+  background: var(--surface-sunken);
+}
+
+.marker {
+  flex-shrink: 0;
+  inline-size: 8px;
+  block-size: 8px;
+  margin-block-start: 9px;
+  border-radius: var(--radius-3);
+}
+
+.notice[data-unread] .marker {
+  background: var(--state-error);
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+}
+
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.noticeTitle {
+  color: var(--text-default);
+  font: 400 15px/22px var(--font-text);
+}
+
+.notice[data-unread] .noticeTitle {
+  font-weight: 600;
+}
+
+a.noticeTitle {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.time {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font: 400 13px/20px var(--font-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.body {
+  margin: 0;
+  color: var(--text-body);
+}
+
+.action {
+  align-self: flex-start;
+  color: var(--accent);
+  font: 500 14px/22px var(--font-text);
+}
+
+.itemControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+.loadingRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.loadingRow {
+  block-size: 88px;
+}
+
+.assistive {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

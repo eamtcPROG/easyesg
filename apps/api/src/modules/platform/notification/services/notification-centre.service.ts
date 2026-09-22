@@ -14,6 +14,7 @@ import type {
 import { CountUnreadNotifications } from '../use-cases/count-unread-notifications.use-case';
 import { DismissNotification } from '../use-cases/dismiss-notification.use-case';
 import { ListNotifications } from '../use-cases/list-notifications.use-case';
+import { MarkAllNotificationsRead } from '../use-cases/mark-all-notifications-read.use-case';
 import { MarkNotificationRead } from '../use-cases/mark-notification-read.use-case';
 
 /**
@@ -21,11 +22,13 @@ import { MarkNotificationRead } from '../use-cases/mark-notification-read.use-ca
  * words** (§12.5.6's task-50.1 row (10)).
  *
  * The wording is resolved here because this is the layer that holds the request's negotiated language, and the
- * use cases stay framework-free without it. Each entry's title and body are the category's in-app entries under
- * `notification.<category>.in_app` in `packages/i18n` — beside that category's email wording, so a category's words
- * have one home for both channels — interpolating the notice's own parameters, which never reach the wire. A key
- * with no entry leaves its part absent rather than printing the key, the problem document's rule: a notice from a
- * category whose in-app wording nobody has written yet still lists, with its link, and says nothing false.
+ * use cases stay framework-free without it. Each entry's title, body and action text are the category's in-app
+ * entries under `notification.<category>.in_app` in `packages/i18n`, and its category's name is
+ * `notification.<category>.name` (task 50.2.1, §12.5.6's task-50.2 row (3)) — beside that category's email wording, so
+ * a category's words have one home for both channels — interpolating the notice's own parameters, which never reach
+ * the wire. A key with no entry leaves its part absent rather than printing the key, the problem document's rule: a
+ * notice from a category whose in-app wording nobody has written yet still lists, with its link, and says nothing
+ * false.
  */
 @Injectable()
 export class NotificationCentreService {
@@ -34,6 +37,7 @@ export class NotificationCentreService {
     private readonly countUnread: CountUnreadNotifications,
     private readonly markNotificationRead: MarkNotificationRead,
     private readonly dismissNotification: DismissNotification,
+    private readonly markAllNotificationsRead: MarkAllNotificationsRead,
   ) {}
 
   /** The parsed list query, narrowed to what the centre can be asked — the read model's decision, not HTTP's. */
@@ -62,18 +66,24 @@ export class NotificationCentreService {
   dismiss(command: { readonly notificationId: string }): Promise<void> {
     return this.dismissNotification.execute(command);
   }
+
+  markAllRead(): Promise<void> {
+    return this.markAllNotificationsRead.execute();
+  }
 }
 
-/** One entry in the request's language: title and body from the category's in-app wording, parameters dropped. */
+/** One entry in the request's language: its category named and its in-app wording resolved, parameters dropped. */
 const inWords = (input: {
   readonly entry: NotificationCentreEntry;
   readonly locale: Locale;
 }): NotificationCentreItem => {
   const { params, ...entry } = input.entry;
-  const wording = `notification.${entry.categoryKey}.in_app`;
+  const category = `notification.${entry.categoryKey}`;
   return {
     ...entry,
-    title: translate(input.locale, `${wording}.title`, params),
-    body: translate(input.locale, `${wording}.body`, params),
+    categoryName: translate(input.locale, `${category}.name`),
+    title: translate(input.locale, `${category}.in_app.title`, params),
+    body: translate(input.locale, `${category}.in_app.body`, params),
+    actionLabel: translate(input.locale, `${category}.in_app.action`, params),
   };
 };

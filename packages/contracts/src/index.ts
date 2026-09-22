@@ -337,3 +337,9 @@ export type ConfigureIdentityProviderRequest = components['schemas']['ConfigureI
 export type IdentityProviderRevisionRequest = components['schemas']['IdentityProviderRevisionRequestDto'];
 /** The configuration revision a write just put in force. */
 export type IdentityProviderPublication = components['schemas']['IdentityProviderPublicationResponseDto'];
+
+// platform — S-26's notification centre (FR-161, FR-162; tasks 50.1.2, 50.2.1). The words arrive resolved in the
+// request's language, each absent where none is written; the category key is for the client to act on, never to show.
+/** One notice in the recipient's centre, with this recipient's read state. */
+export type NotificationItem = components['schemas']['NotificationItemResponseDto'];
+export type UnreadCount = components['schemas']['UnreadCountResponseDto'];

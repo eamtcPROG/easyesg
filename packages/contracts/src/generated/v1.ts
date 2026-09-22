@@ -1155,6 +1155,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark every one of the caller’s unread notifications read
+         * @description Records read every notice the unread count counts, for the caller alone, each keeping the time it was first marked. Dismissed notices are left as they are. Nothing unread is not an error.
+         */
+        post: operations["NotificationCentreController_readAll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/{notificationId}/read": {
         parameters: {
             query?: never;
@@ -3220,10 +3240,14 @@ export interface components {
              * @enum {string}
              */
             categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation";
+            /** @description The category’s name in the negotiated language, to show beside the notice. Absent when none is written. */
+            categoryName?: string;
             /** @description The notice’s title in the negotiated language. Absent when the category has no in-app wording. */
             title?: string;
             /** @description The notice’s text in the negotiated language. Absent when the category has no in-app wording. */
             body?: string;
+            /** @description The words of the link to what raised the notice — “Open the findings” — in the negotiated language. Absent when the category has none written, and then the title is the link. */
+            actionLabel?: string;
             /**
              * @description The path in the tenant application of the object that raised the notice, without a locale prefix — selecting the notice opens it (FR-162).
              * @example /reports/0192f000-0000-7000-8000-000000000001
@@ -6220,6 +6244,24 @@ export interface operations {
                         object?: components["schemas"]["UnreadCountResponseDto"];
                     };
                 };
+            };
+        };
+    };
+    NotificationCentreController_readAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Read, all of them. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

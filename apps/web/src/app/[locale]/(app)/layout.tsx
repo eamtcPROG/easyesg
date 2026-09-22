@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from 'react';
+import { QueryProvider } from '@/client/query/query-provider';
 import { UnsentWorkProvider } from '@/client/unsent-work/unsent-work';
 import { OrganizationSwitchNotice } from '@/features/organization/switcher/components/organization-switch-notice';
 import { OrganizationSwitchProvider } from '@/features/organization/switcher/components/organization-switch-provider';
@@ -59,18 +60,23 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   // **And task 93's sign-out beneath the registry too**, for the switch's reason: both controls that offer
   // it — the band's menu and the compact drawer — close on the press, so the wait, the question and the
   // submission live above them.
+  //
+  // **TanStack Query's client outermost since task 50.2.1**: the unread count in the band and the wizard's
+  // autosave in `children` are its two consumers, and they share one client.
   return (
-    <UnsentWorkProvider>
-      <SignOutProvider>
-        <OrganizationSwitchProvider>
-          <GlobalTier />
-          <OrganizationSwitchNotice />
-          <Suspense fallback={null}>
-            <SupportAccessBanners />
-          </Suspense>
-          {children}
-        </OrganizationSwitchProvider>
-      </SignOutProvider>
-    </UnsentWorkProvider>
+    <QueryProvider>
+      <UnsentWorkProvider>
+        <SignOutProvider>
+          <OrganizationSwitchProvider>
+            <GlobalTier />
+            <OrganizationSwitchNotice />
+            <Suspense fallback={null}>
+              <SupportAccessBanners />
+            </Suspense>
+            {children}
+          </OrganizationSwitchProvider>
+        </SignOutProvider>
+      </UnsentWorkProvider>
+    </QueryProvider>
   );
 }

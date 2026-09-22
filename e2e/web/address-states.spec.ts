@@ -34,7 +34,6 @@ const PUBLIC_ADDRESSES = [
 /** `(app)/(workspace)` — the proxy bounces these to sign-in without a session, so they need one. */
 const WORKSPACE_ADDRESSES = [
   '/account',
-  '/notifications',
   '/billing',
   '/billing/plans',
   '/billing/subscription',

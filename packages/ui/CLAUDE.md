@@ -9,11 +9,11 @@ component that only works in one of them is a defect here, not a variant.
 `'use client'` vocabulary rule, the `Slot` rule, UX-89's "reuse or add to the inventory", the four
 homes of state — it is written at root because it holds for `apps/web` and `apps/admin` too, and
 restating it here would create the second copy that drifts. This file carries what is true of
-*these 54 components*: where things are, what has already bitten someone, and what finishing looks like.
+*these 56 components*: where things are, what has already bitten someone, and what finishing looks like.
 
 ## Current state
 
-54 components in nine folders, 29 spec files, `src/styles/tokens.css` at 460 lines — **light and
+56 components in nine folders, 31 spec files, `src/styles/tokens.css` at 476 lines — **light and
 dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
 schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
 `.spec.ts` rather than a `.spec.tsx` and so is *not* in the 29: it renders nothing, it parses the
@@ -23,11 +23,11 @@ is not itself a gap.
 
 | Folder | Components | What it is |
 | --- | --- | --- |
-| `primitives/` | 7 | Button, Panel, Skeleton, Spinner, TextLink, BrandMark, ProviderButton |
+| `primitives/` | 8 | Button, Panel, Skeleton, Spinner, TextLink, BrandMark, ProviderButton, and task 50.2.1's Badge |
 | `form/` | 11 | The presentational controls — `value`/`onChange`/`ref`, no form library |
 | `forms/` | 8 | The react-hook-form binding. **A separate entry point** — see the traps |
 | `feedback/` | 4 | Banner, Callout, EmptyState, ConsequenceDialogue |
-| `navigation/` | 9 | GlobalBar — the console's band too, through a tone — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, task 83.2's OrganizationSwitcher, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
+| `navigation/` | 10 | GlobalBar — the console's band too, through a tone — task 50.2.1's NotificationBell, the band's notification entry, here because the icon set is — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, task 83.2's OrganizationSwitcher, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
 | `data-display/` | 4 | DataTable, StatusChip, and task 143's EnrolmentCode with its loading arm |
 | `disclosure/` | 1 | DisclosureField — the anatomy every B1–B11 module reuses (task 36.1) |
 | `domain/` | 5 | ReportingPeriodPicker, SaveStateIndicator, VersionPinIndicator, and §6.10's two from task 142 — UsageCounter beside an action, EntitlementGate after a refused one |
@@ -58,7 +58,7 @@ something quiet, and a stale `dist/` is one failure mode this package cannot hav
 
 ```
 src/
-├─ index.ts        The barrel — 56 exports. `@easyesg/ui`
+├─ index.ts        The barrel — 59 exports. `@easyesg/ui`
 ├─ forms/index.ts  The react-hook-form binding. `@easyesg/ui/forms`, NOT in the barrel
 ├─ styles/         tokens.css — reached as `@easyesg/ui/src/styles/tokens.css`
 ├─ archetypes/     The nine §4.6 page templates. README.md is the map
@@ -117,17 +117,17 @@ src/
   form read as a 32nd site. Worth knowing when reading this number: it counts *files that import the binding*, not
   forms, and splitting a form raises it without adding a form.
 
-- **The eight vocabularies live in directive-free sibling modules and are exported from the barrel
+- **The nine vocabularies live in directive-free sibling modules and are exported from the barrel
   *directly*.** `button-vocabulary.ts`, `data-table-vocabulary.ts`,
   `language-switcher-vocabulary.ts`, `version-pin-indicator-vocabulary.ts`,
   `nav-link-vocabulary.ts`, `skeleton-vocabulary.ts`, `usage-counter-vocabulary.ts`,
-  `global-bar-vocabulary.ts` — none carries
+  `global-bar-vocabulary.ts`, `badge-vocabulary.ts` — none carries
   `'use client'`, and a re-export routed through the component module would still be a client
   reference. The root file records what this cost when it was wrong (`BUTTON_TONE` reaching a
   Server Component as `undefined`, a button in the wrong colours, every gate green). When you add a
   vocabulary, add the sibling module — not an `as const` at the top of the component.
 
-- **27 of the 54 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
+- **27 of the 56 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
   or a handler of its own. `Button` carried it from task 20 without needing it, and the day it
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never
