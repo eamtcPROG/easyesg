@@ -7,13 +7,13 @@ import { NotificationCancelledHandler } from './notification-cancelled.handler';
  */
 describe('NotificationCancelledHandler (task 50.1.3)', () => {
   const ORGANIZATION = '44444444-4444-4444-8444-444444444444';
-  const OCCURRED_AT = 1_790_640_000_000;
+  const OCCURRED_AT = 1_790_640_000_000_000;
   const payload = {
     categoryKey: 'identity.invitation',
     subjectRef: 'invitation:1',
     recipientScope: 'default',
     organizationId: ORGANIZATION,
-    occurredAt: OCCURRED_AT,
+    occurredAtMicros: OCCURRED_AT,
   };
 
   const build = () => {
@@ -30,7 +30,7 @@ describe('NotificationCancelledHandler (task 50.1.3)', () => {
       categoryKey: 'identity.invitation',
       subjectRef: 'invitation:1',
       recipientScope: 'default',
-      cancelledAt: new Date(OCCURRED_AT),
+      cancelledAtMicros: OCCURRED_AT,
     });
   });
 
@@ -39,7 +39,7 @@ describe('NotificationCancelledHandler (task 50.1.3)', () => {
     ['no subject', { ...payload, subjectRef: undefined }],
     ['no audience', { ...payload, recipientScope: undefined }],
     ['an organization that is not a UUID', { ...payload, organizationId: 'org-1' }],
-    ['no time', { ...payload, occurredAt: undefined }],
+    ['no time', { ...payload, occurredAtMicros: undefined }],
   ])('fails a payload with %s rather than cancelling a guess', async (_label, broken) => {
     const { handler, execute } = build();
 

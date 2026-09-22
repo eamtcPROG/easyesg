@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { SOURCE_LOCALE } from '@easyesg/i18n';
-import { requestContext } from '@api/infrastructure/persistence/request-context';
+
+import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { Account } from '../models/account.model';
 import { RegisterAccount, type RegisterAccountCommand } from '../use-cases/register-account.use-case';
 import {
@@ -70,7 +70,7 @@ export class AccountService {
       // exists before the user has seen a settings screen. Persisted on the account because
       // FR-169 resolves email language per recipient from their record; the worker sending the
       // verification message has no request to negotiate from.
-      locale: requestContext()?.locale ?? SOURCE_LOCALE,
+      locale: requestLocale(),
     });
   }
 

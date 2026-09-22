@@ -7,11 +7,10 @@ import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from '../src/contracts/notification.port';
 import { configureHttpApp } from '../src/main.http';
-import { NotificationStoreRepository } from '../src/infrastructure/persistence/platform/notification-store.repository';
 import { returnedRows } from '../src/infrastructure/persistence/returned-rows';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
-import { asOrganization, connectAs, databaseNow } from './support/database';
-import { deleteNotificationsOf } from './support/notification-store';
+import { asOrganization, connectAs } from './support/database';
+import { deleteNotificationsOf, notificationStore } from './support/notification-store';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
@@ -30,12 +29,17 @@ import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } fro
  */
 const ORG = '01920000-0000-7000-8000-0000000050c1';
 const EMAILS = { ana: 'ana@centre.test', ivan: 'ivan@centre.test' };
+/**
+ * The ids sort in no relation to the order the notices are seeded in — the earliest received carries the largest id
+ * — so a centre ordered by id rather than by when each notice arrived fails the ordering and paging cases, where ids
+ * in seeding order would let it pass.
+ */
 const NOTICE = {
-  both: '01920000-0000-7000-8000-00000000c001',
-  anaAdmin: '01920000-0000-7000-8000-00000000c002',
-  anaLatest: '01920000-0000-7000-8000-00000000c003',
+  both: '01920000-0000-7000-8000-00000000c009',
+  anaAdmin: '01920000-0000-7000-8000-00000000c001',
+  anaLatest: '01920000-0000-7000-8000-00000000c005',
   ivanOnly: '01920000-0000-7000-8000-00000000c004',
-  anaEmailOnly: '01920000-0000-7000-8000-00000000c005',
+  anaEmailOnly: '01920000-0000-7000-8000-00000000c002',
 } as const;
 
 interface Item {
@@ -78,19 +82,19 @@ describe('the notification centre (task 50.1.2)', () => {
     readonly inApp: readonly string[];
     readonly email?: readonly string[];
   }) => {
-    const store = new NotificationStoreRepository(worker);
+    const store = notificationStore(worker);
     const ref = { notificationId: input.id, organizationId: ORG };
     await store.open({
       ...ref,
       categoryKey: input.categoryKey,
       subjectRef: `centre:${input.id}`,
       recipientScope: 'default',
-      raisedAt: await databaseNow(worker),
+      raisedAtMicros: Date.now() * 1000,
       deepLink: `/reports/${input.id}`,
       params: { organizationName: 'Centru SRL' },
     });
     if (input.inApp.length > 0) await store.deliverInApp({ ...ref, recipientIds: input.inApp });
-    for (const recipientId of input.email ?? []) await store.recordEmailAccepted({ ...ref, recipientId });
+    for (const accountId of input.email ?? []) await store.recordEmailAccepted({ ...ref, recipient: { accountId } });
     await store.markDelivered(ref);
   };
 
@@ -282,7 +286,7 @@ describe('the notification centre (task 50.1.2)', () => {
     // A notice's own record, read directly: only those addressed to Ana, by either channel — never Ivan's alone.
     const notices = await asRecipient(ana, (run) => run(`SELECT id FROM notification.notification ORDER BY id`));
     expect(notices).toEqual(
-      [NOTICE.both, NOTICE.anaAdmin, NOTICE.anaLatest, NOTICE.anaEmailOnly].map((id) => ({ id })),
+      [NOTICE.both, NOTICE.anaAdmin, NOTICE.anaLatest, NOTICE.anaEmailOnly].sort().map((id) => ({ id })),
     );
 
     /**
@@ -307,6 +311,15 @@ describe('the notification centre (task 50.1.2)', () => {
       asRecipient(ana, (run) =>
         run(`UPDATE notification.delivery SET read_at = now() - interval '1 day' WHERE notification_id = $1`, [
           NOTICE.both,
+        ]),
+      ),
+    ).rejects.toThrow('recorded once');
+
+    // The trigger's other half: a dismissal once recorded does not move either.
+    await expect(
+      asRecipient(ana, (run) =>
+        run(`UPDATE notification.delivery SET dismissed_at = now() - interval '1 day' WHERE notification_id = $1`, [
+          NOTICE.anaAdmin,
         ]),
       ),
     ).rejects.toThrow('recorded once');

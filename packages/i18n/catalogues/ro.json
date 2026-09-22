@@ -261,25 +261,25 @@
     "identity": {
       "email_verification": {
         "subject": "Confirmați-vă adresa de e-mail",
-        "body": "Bună ziua,\n\nCineva a creat un cont easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a confirma adresa și a activa contul:\n\n{verificationUrl}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată.\n\nDacă nu dumneavoastră ați creat contul, ignorați acest mesaj: fără confirmare contul nu poate fi folosit și se șterge automat după 7 zile."
+        "body": "Bună ziua,\n\nCineva a creat un cont easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a confirma adresa și a activa contul:\n\n{link}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată.\n\nDacă nu dumneavoastră ați creat contul, ignorați acest mesaj: fără confirmare contul nu poate fi folosit și se șterge automat după 7 zile."
       },
       "password_reset": {
         "subject": "Resetați-vă parola",
-        "body": "Bună ziua,\n\nAm primit o cerere de resetare a parolei pentru contul easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a alege o parolă nouă:\n\n{resetUrl}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După schimbarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut resetarea, ignorați acest mesaj: parola actuală rămâne neschimbată."
+        "body": "Bună ziua,\n\nAm primit o cerere de resetare a parolei pentru contul easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a alege o parolă nouă:\n\n{link}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După schimbarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut resetarea, ignorați acest mesaj: parola actuală rămâne neschimbată."
       },
       "password_setup": {
         "subject": "Setați o parolă pentru contul dumneavoastră",
-        "body": "Bună ziua,\n\nAm primit o cerere de setare a unei parole pentru contul easyesg cu această adresă de e-mail. Contul se autentifică prin furnizor și nu are încă o parolă. Deschideți linkul de mai jos pentru a alege una:\n\n{resetUrl}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După setarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut acest lucru, ignorați mesajul: contul rămâne fără parolă și continuați să vă autentificați prin furnizor."
+        "body": "Bună ziua,\n\nAm primit o cerere de setare a unei parole pentru contul easyesg cu această adresă de e-mail. Contul se autentifică prin furnizor și nu are încă o parolă. Deschideți linkul de mai jos pentru a alege una:\n\n{link}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După setarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut acest lucru, ignorați mesajul: contul rămâne fără parolă și continuați să vă autentificați prin furnizor."
       },
       "invitation": {
         "subject": "Ați fost invitat în organizația {organizationName}",
-        "body": "Bună ziua,\n\nAți fost invitat să vă alăturați organizației {organizationName} pe easyesg, platforma de raportare privind durabilitatea. Deschideți linkul de mai jos pentru a accepta invitația:\n\n{invitationUrl}\n\nLinkul este valabil 7 zile, poate fi folosit o singură dată și funcționează numai pentru această adresă de e-mail.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun acces."
+        "body": "Bună ziua,\n\nAți fost invitat să vă alăturați organizației {organizationName} pe easyesg, platforma de raportare privind durabilitatea. Deschideți linkul de mai jos pentru a accepta invitația:\n\n{link}\n\nLinkul este valabil 7 zile, poate fi folosit o singură dată și funcționează numai pentru această adresă de e-mail.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun acces."
       }
     },
     "platform": {
       "admin_invitation": {
         "subject": "Invitație în consola de administrare easyesg",
-        "body": "Bună ziua,\n\nAți fost invitat să deveniți operator în consola de administrare easyesg. Deschideți linkul de mai jos pentru a vă alege parola și a configura al doilea factor de autentificare:\n\n{invitationUrl}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată. Contul este creat abia după ce confirmați al doilea factor.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun cont."
+        "body": "Bună ziua,\n\nAți fost invitat să deveniți operator în consola de administrare easyesg. Deschideți linkul de mai jos pentru a vă alege parola și a configura al doilea factor de autentificare:\n\n{link}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată. Contul este creat abia după ce confirmați al doilea factor.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun cont."
       }
     }
   },

@@ -6,9 +6,11 @@ import { DEFAULT_ON_PAGE, MAX_ON_PAGE_ADMIN } from '@api/app/constants/paginatio
 import { RequestListDto } from '@api/app/dto/request-list.dto';
 import { ResultListDto } from '@api/app/dto/result-list.dto';
 import { ListQueryInterceptor } from '@api/app/interceptors/list-query.interceptor';
+import { SORT_DIRECTION } from '@api/contracts/types/list-query';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
 import { OrganizationRegisterRowResponseDto } from '../dto/organization-register-row.response.dto';
 import { ADMIN_ROLE } from '../models/admin-session.model';
+import { ORGANIZATION_REGISTER_SORT } from '../models/organization-register.model';
 import { OrganizationRegisterService } from '../services/organization-register.service';
 
 const PROBLEM_MEDIA_TYPE = 'application/problem+json';
@@ -58,8 +60,10 @@ export class OrganizationRegisterController {
     name: 'order',
     required: false,
     description:
-      'One ordering: `<name|registered|entities|reports|activity>,<asc|desc>`. Defaults to ' +
-      '`name,asc`. An ordering this route does not offer falls back to the default.',
+      `One ordering: \`<${Object.values(ORGANIZATION_REGISTER_SORT).join('|')}>,` +
+      `<${Object.values(SORT_DIRECTION).join('|')}>\`. Defaults to ` +
+      `\`${ORGANIZATION_REGISTER_SORT.NAME},${SORT_DIRECTION.ASC}\`. An ordering this route does not offer falls back ` +
+      'to the default.',
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: '1-based.' })
   @ApiQuery({

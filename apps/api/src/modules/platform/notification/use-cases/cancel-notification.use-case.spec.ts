@@ -10,7 +10,7 @@ describe('CancelNotification (task 50.1.3)', () => {
       categoryKey: 'identity.invitation',
       subjectRef: 'invitation:1',
       recipientScope: 'default',
-      cancelledAt: new Date('2026-09-22T09:00:00Z'),
+      cancelledAtMicros: 1_790_726_400_000_000,
     } as const;
 
     const store: NotificationCancellationStore = { cancel };

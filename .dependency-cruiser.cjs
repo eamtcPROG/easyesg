@@ -108,8 +108,8 @@ module.exports = {
       name: 'email-port-behind-notification',
       comment:
         'AD-11, FR-157, task 49.2: one mail path. The notification module is the one caller of EmailPort and ' +
-        'the one importer of its adapters; every other module sends a category\'s email through ' +
-        'NOTIFICATION_EMAIL_PORT, so the delivery evidence and suppression FR-170 and FR-171 owe for every ' +
+        'the one importer of its adapters; every other module raises through NOTIFICATION_PORT or, on the worker ' +
+        '(task 50.1.4), hands a notice to NOTIFICATION_DELIVERY, so the delivery evidence and suppression FR-170 and FR-171 owe for every ' +
         'notice have one place to live. A module reaching the provider directly is a second way to send mail. ' +
         'Everything under apps/api/src is held to it, not only modules/ (widened at task 49\'s close): the queue, ' +
         'app/ and a contracts re-export are as able to open a second path as a module is.',

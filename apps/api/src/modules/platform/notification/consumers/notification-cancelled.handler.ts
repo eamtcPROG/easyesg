@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { isNotificationCategoryKey } from '@api/contracts/notification.port';
 import { isUuid } from '@api/contracts/types/uuid';
-import { HandlesJob, type JobHandler } from '@api/infrastructure/queue/job-handler';
+import { HandlesJob, occurredAtMicrosOf, type JobHandler } from '@api/infrastructure/queue/job-handler';
 import { NOTIFICATION_CANCELLED } from '../constants/notification.constants';
 import type { CancelNoticeCommand } from '../interfaces/notification-cancellation-store.interface';
 import { CancelNotification } from '../use-cases/cancel-notification.use-case';
@@ -27,18 +27,22 @@ export class NotificationCancelledHandler implements JobHandler {
 
 /** Validated rather than asserted over, `NotificationRaisedHandler.readEvent`'s argument. */
 function readEvent(payload: Record<string, unknown>): CancelNoticeCommand {
-  const { categoryKey, subjectRef, recipientScope, organizationId, occurredAt } = payload;
+  const { categoryKey, subjectRef, recipientScope, organizationId } = payload;
 
   if (
     !isUuid(organizationId) ||
     !isNotificationCategoryKey(categoryKey) ||
     typeof subjectRef !== 'string' ||
-    typeof recipientScope !== 'string' ||
-    typeof occurredAt !== 'number' ||
-    !Number.isFinite(occurredAt)
+    typeof recipientScope !== 'string'
   ) {
     throw new Error(`${NOTIFICATION_CANCELLED} payload is missing a required field or names no category.`);
   }
 
-  return { organizationId, categoryKey, subjectRef, recipientScope, cancelledAt: new Date(occurredAt) };
+  return {
+    organizationId,
+    categoryKey,
+    subjectRef,
+    recipientScope,
+    cancelledAtMicros: occurredAtMicrosOf(payload, NOTIFICATION_CANCELLED),
+  };
 }

@@ -1,4 +1,63 @@
 import type { DataSource } from 'typeorm';
+import type { EmailPort } from '@api/contracts/email.port';
+import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
+import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
+import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
+import { NOTIFICATION_CHANNEL } from '@api/modules/platform/notification/models/notification-category.model';
+import { EmailChannelService } from '@api/modules/platform/notification/services/email-channel.service';
+import { NotificationDeliveryService } from '@api/modules/platform/notification/services/notification-delivery.service';
+import { DeliverLinkNotice } from '@api/modules/platform/notification/use-cases/deliver-link-notice.use-case';
+import { required } from './database';
+
+/**
+ * The worker's store over a connection, sealing with the key the entrypoints hold (task 50.1.4: it seals the link a
+ * verification, reset or invitation sent). One constructor for every suite, so none builds its own cipher.
+ */
+export const notificationStore = (worker: DataSource): NotificationStoreRepository =>
+  new NotificationStoreRepository(worker, new AesGcmSecretCipher(required('SECRET_ENCRYPTION_KEY')));
+
+/**
+ * `NOTIFICATION_DELIVERY` as the worker builds it, over a connection as `esg_worker` and a provider the suite records
+ * (task 50.1.4) — the real store, the real account lookup, the real email channel. **The channel decision is the one
+ * piece stubbed**, answering email: the category catalogue's rules are 49.3's suite, and a notice delivered from its
+ * producer's own event goes by email whatever else its category names (§12.5.6's task-50.1 row (20)). A suite driving
+ * one of those handlers wires this rather than a recording port, so what it proves is the path a deployment takes.
+ */
+export const linkNoticeDelivery = (input: {
+  readonly worker: DataSource;
+  readonly provider: EmailPort;
+  readonly webOrigin: string;
+  readonly consoleOrigin?: string;
+}): NotificationDeliveryService =>
+  new NotificationDeliveryService(
+    new DeliverLinkNotice(
+      new NotificationRecipientsRepository(input.worker),
+      new EmailChannelService(input.provider),
+      { channelsFor: () => [NOTIFICATION_CHANNEL.EMAIL] },
+      notificationStore(input.worker),
+      { web: input.webOrigin, console: input.consoleOrigin ?? 'http://localhost:3200' },
+    ),
+  );
+
+/**
+ * The outbox row's time as the dispatcher reads it — epoch microseconds, a `bigint` the driver answers as a string —
+ * for a suite's `SELECT` over `audit.outbox_event`, so the job it builds carries the time a deployment's would.
+ */
+export const OCCURRED_MICROS = `(extract(epoch FROM occurred_at) * 1000000)::bigint AS occurred_micros`;
+
+/**
+ * An outbox row as the dispatcher enqueues it: its payload, with the row's organization and time beside it. For a
+ * suite that hands a row to a handler itself, so the job it builds is the one a deployment would.
+ */
+export const asJob = (row: {
+  readonly payload: Record<string, unknown>;
+  readonly organization_id: string | null;
+  readonly occurred_micros: string;
+}): Record<string, unknown> => ({
+  ...row.payload,
+  organizationId: row.organization_id,
+  occurredAtMicros: Number(row.occurred_micros),
+});
 
 /**
  * Removes a suite's notices and their deliveries, as the owner (task 50.1.1).
@@ -18,6 +77,29 @@ export const deleteNotificationsOf = async (owner: DataSource, organizationId: s
     await runner.query(`ALTER TABLE notification.notification NO FORCE ROW LEVEL SECURITY`);
     // The deliveries go by the cascade from their notice.
     await runner.query(`DELETE FROM notification.notification WHERE organization_id = $1`, [organizationId]);
+    await runner.query(`ALTER TABLE notification.notification FORCE ROW LEVEL SECURITY`);
+    await runner.commitTransaction();
+  } catch (error) {
+    await runner.rollbackTransaction();
+    throw error;
+  } finally {
+    await runner.release();
+  }
+};
+
+/**
+ * Removes the notices a suite opened by their subjects, whatever organization holds them — a platform notice is
+ * recorded under the one reserved id (row (17)), which every suite shares, so an organization-wide clean would
+ * take other suites' notices with it. `deleteNotificationsOf`'s `FORCE` handling, for its reason.
+ */
+export const deleteNoticesAbout = async (owner: DataSource, subjectRefs: readonly string[]): Promise<void> => {
+  if (subjectRefs.length === 0) return;
+  const runner = owner.createQueryRunner();
+  await runner.connect();
+  await runner.startTransaction();
+  try {
+    await runner.query(`ALTER TABLE notification.notification NO FORCE ROW LEVEL SECURITY`);
+    await runner.query(`DELETE FROM notification.notification WHERE subject_ref = ANY($1)`, [subjectRefs]);
     await runner.query(`ALTER TABLE notification.notification FORCE ROW LEVEL SECURITY`);
     await runner.commitTransaction();
   } catch (error) {

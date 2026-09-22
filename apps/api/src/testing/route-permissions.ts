@@ -291,7 +291,7 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'DELETE /invitations/:invitationId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
 
   // ── The notification centre (task 50.1.2; UC-165 … UC-167). Every member has one — a notice reaches a person
-  // whatever their role — and each sees and marks only their own, which the schema's policies hold (BR-NOT-5).
+  // whatever their role — and each sees and marks only their own, which the schema's policies hold (UC-165; BR-NOT-5 for the marks).
   'GET /notifications': ALL_MEMBERS,
   'GET /notifications/unread-count': ALL_MEMBERS,
   'POST /notifications/:notificationId/read': ALL_MEMBERS,

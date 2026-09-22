@@ -249,8 +249,9 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
      */
     it("carries the row's organization and time onto the job, beside its payload", async () => {
       await seed('export-carried');
-      const [row] = await owner.query<{ occurred_at: Date }[]>(
-        `SELECT occurred_at FROM audit.outbox_event WHERE idempotency_key = 'export-carried'`,
+      const [row] = await owner.query<{ occurred_micros: string }[]>(
+        `SELECT (extract(epoch FROM occurred_at) * 1000000)::bigint AS occurred_micros
+           FROM audit.outbox_event WHERE idempotency_key = 'export-carried'`,
       );
       const carried: unknown[] = [];
       const capturing = {
@@ -262,7 +263,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
 
       expect(await new OutboxDispatcher(owner, capturing).dispatchBatch()).toBe(1);
       expect(carried).toEqual([
-        { reportId: 'r-1', organizationId: ORGANIZATION, occurredAt: row.occurred_at.getTime() },
+        { reportId: 'r-1', organizationId: ORGANIZATION, occurredAtMicros: Number(row.occurred_micros) },
       ]);
     });
 

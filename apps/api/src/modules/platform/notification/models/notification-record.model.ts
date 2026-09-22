@@ -27,3 +27,11 @@ export const DELIVERY_OUTCOME = {
 } as const;
 
 export type DeliveryOutcome = (typeof DELIVERY_OUTCOME)[keyof typeof DELIVERY_OUTCOME];
+
+/**
+ * The organization a notice that belongs to none is recorded under — an account's verification or reset, an
+ * operator's invitation (task 50.1.4; §12.5.6's task-50.1 row (17)). The nil UUID, which `core.organization` refuses
+ * to any organization by `CHECK`, so the worker binds it for a platform notice and the tenant tier, binding only an
+ * account's real memberships, never can. Mirrored literally in `1790726400000-address-notices.ts`.
+ */
+export const PLATFORM_ORGANIZATION_ID = '00000000-0000-0000-0000-000000000000';

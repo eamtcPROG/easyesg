@@ -17,7 +17,7 @@ import {
  * name may contain the grammar's `,` and `|`, which would split a search into facets nobody typed.
  * It is trimmed, cut to a length no name reaches, and `null` when nothing is left.
  */
-/** The compact query without its facets: A-02 has none, and its search is a parameter of its own. */
+// The compact query without its facets: A-02 has none, and its search is a parameter of its own.
 export type RegisterListInput = Omit<ListQueryInput, 'filters'>;
 
 /** By name: a support request names an organization, and triage starts by finding it. */

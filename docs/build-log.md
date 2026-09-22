@@ -22936,3 +22936,228 @@ Recorded as §12.5.6's task-50.1 rows (12) and (13), each the recommended option
   tokens by `useExisting`; `db-use-transactions` — each withdrawal is one transaction holding the key's lock, and the
   fold's two statements became one; `micro-use-queues` — the cancellation travels the outbox, never the request tier.
   `one-idea-per-file`: one use case, one handler, one port, each with its spec where it has logic of its own.
+
+## Task 50.1.4 — The four address notices onto the record · 2026-09-22
+
+The last of task 50.1's four. The owner decided at task 49's close that verification, reset and both invitations
+would move *onto `raise()`*, so every notice has one mechanism, one record and one place for FR-170's evidence.
+**`raise()` could not take them**: it writes on the request's tenant transaction, and registration and a reset have
+none — their stores emit on their own transactions, under natural keys that are not UUIDs. The batch below settled
+how to meet the decision's purpose instead of its letter.
+
+### Decisions (project owner, two batches)
+
+Recorded as §12.5.6's task-50.1 rows (14) … (17), with task-49.3 row (6) marked amended:
+
+- **The handlers hand off to delivery** (recommended): producers, events and handlers stay; each handler still names
+  its link, and passes the notice to `NOTIFICATION_DELIVERY` on the worker, the same record and delivery path a
+  raised notice takes. `NOTIFICATION_EMAIL_PORT` is retired.
+- **The record keeps the sent link, encrypted** — the owner chose this over the recommended token-free path. Asked
+  in a second question what that costs, since the link is built and sealed on the worker: **the worker holds
+  `SECRET_ENCRYPTION_KEY`** (recommended), the per-entrypoint rule holding as written because the worker now has a
+  caller for it.
+- **A recipient without an account is recorded by address** (recommended).
+- **A platform notice carries a reserved organization id** — the owner chose this over a nullable organization. The
+  nil UUID, which a `CHECK` on `core.organization` refuses to any organization, so the schema's policies, keys and
+  indexes stayed exactly as they were.
+
+### What shipped
+
+- **The migration**: `sealed_link identity.encrypted_secret` on the notice; `recipient_address` on the delivery, with
+  exactly one of it and the account naming each row, an in-app delivery always an account's, and a uniqueness of its
+  own; `organization_id_not_platform` on `core.organization`. The `down` removes address deliveries first, lifting
+  `FORCE` for that one statement.
+- **`NOTIFICATION_DELIVERY`** in the port surface — `DeliverNoticeCommand`, `NoticeRecipient` (an account resolved
+  at send time, or an address and a language), `NOTICE_APPLICATION` (the tenant application or the console) — and
+  behind it `NotificationDeliveryService` over **`DeliverLinkNotice`**: email only, an in-app channel ignored and a
+  category naming no email skipped and said (row (20), taken at the parent close); the recipient; the link made
+  absolute per application; the notice opened under `noticeIdFor(key)`, a name-based UUID of the issuance's natural
+  key, with the job's key as its subject so a resend is its own notice; the email once, keyed by the issuance as the
+  handlers always keyed it; and the delivery recorded.
+- **The four handlers**, each naming two paths — `deepLink` with no token, kept in the clear, and `linkPath` with it,
+  sealed — and a recipient: the account for verification and a reset, the address for both invitations. Verification
+  and a reset now reach the account's address and language as they stand when the email is sent, where they used to
+  take the ones captured at issue — the same values today, since no route changes an address.
+- **`occurredAtMicrosOf`** beside `JobContext`: the one reader of the time the dispatcher puts on every job, which the
+  two notification handlers now use too, rather than a copy of the check in each of six handlers — at microsecond
+  precision since the parent close, which the parent's entry records.
+- **The templates written against `{link}`** — five bodies in three catalogues, the placeholder renamed and nothing
+  else, completing task-49.3 row (8).
+- **The worker's cipher**, a third provider of `AesGcmSecretCipher` from the same key, and **CI's image job** gives
+  the worker container the key, its comment on the entrypoints' secrets corrected.
+
+### Proof
+
+- **Unit**: `DeliverLinkNotice`'s nine cases over a fake store — the address sent, the record under the name-based id
+  with the link to seal and the address as recipient, an account resolved at send time, the platform id, the
+  console's unprefixed link, the second wording, a rerun sending once, a vanished account skipped, in-app ignored and
+  a category with no email skipped;
+  `noticeIdFor` with its namespace pinned as a literal; each handler's command, the verification handler's for the
+  first time; and the renderer putting the link into **every template, in every language** — fifteen cases, the
+  check that `{link}` is what each wording is written against.
+- **`notification-address-notices.e2e-spec.ts`, new**: each of three handlers through the real delivery, the record
+  read back — the platform id, the clear path, the sealed link opening to the sent one with the token in no clear
+  column, the delivery naming the account or the address; a rerun sending once and a resend being a notice of its
+  own; and the reserved id refused to an organization. `registration.e2e-spec.ts` and `password-reset.e2e-spec.ts`
+  now drive their handlers from their real outbox rows through the real delivery, rather than a recording port.
+- **Each guard fails its check when removed**: the link not sealed; the token put into the clear path; the notice id
+  varying per run; one template left on its old placeholder.
+
+### Verification
+
+This sub-step closes its parent, so its gates are the parent's — task 50.1's entry, below, carries the run over the
+whole tree after the review's fixes.
+
+## Task 50.1 — The notification store, the parent's close · 2026-09-22
+
+50.1.1 … 50.1.4 closed, and so the parent: the three review agents over the whole diff since `1a84206` — 98 files,
+four sub-steps — then the gate set over a cleaned tree and the boot proof. **The reviews found thirty-one things,
+three of them questions only the owner could answer, and fixing them changed the code, the schema and six
+documents**, so the gate set ran over the fixed tree rather than the one reviewed.
+
+### Decisions (project owner, one batch at the close)
+
+Recorded as §12.5.6's task-50.1 rows (18) … (20), with the rulings the reviews found living only in this file moved
+into the row's implementation notes:
+
+- **A notice's content is fixed when it opens** — the owner chose this over the recommended *latest raise's
+  content*. A folded raise contributes recipients and moves `last_raised_at`, and they receive what the notice was
+  opened with; **a producer whose content changes cancels and raises again**. 51.2's row carries it, since its
+  outstanding-fields and deadline notices are the ones whose content moves.
+- **A platform notice is kept one year from when it was sent** (recommended) — NFR-109's *plus one year*, with no
+  organization to date it from; §12.5.7 gains the notification schema's retention row. **No task enforced
+  NFR-109's retention for any notice**, so the owner appended **task 163** for it.
+- **The four address notices send the email and ignore in-app** (recommended). Before this, `DeliverLinkNotice`
+  refused a category travelling in-app *before* sending, so an operator publishing `[email, in_app]` on a mandatory
+  identity category would have stopped every verification and reset email. A-17 refusing in-app for them is task
+  67.10's, and its row says so.
+
+### Review — on `opus`, per the agents' frontmatter
+
+**`spec-review`, eleven findings.** Three were the questions above. The rest were fixes within decisions taken:
+
+- **OQ-54's second copy was contained by row security alone.** 50.1.2 granted `esg_app` `SELECT` on the notice
+  table-wide, so 50.1.4's `sealed_link` arrived readable to the tier that mints the token and holds the key. **The
+  address-notices migration revokes it and grants every column but `sealed_link`** — the containment is a grant
+  again, as OQ-54 closed on — and OQ-54's register row, the token row and the secrets-at-rest row now say two
+  copies, the worker holding the key.
+- **Row (14) said each handler builds its own link; the code has the notification module make it absolute.** The
+  reason — an account's language is resolved only at send time — is now in the row, and row (1) no longer says
+  the four move *onto `raise()`*.
+- **Four rulings lived only here and in `apps/api/CLAUDE.md`**, and are §12.5.6's now: the restrictive policies
+  `TO esg_app` as the one exception to task 12's default, with what it costs; a tie resolving to the cancellation,
+  with the cancel-then-re-raise consequence; `occurred_at` as a transaction's *start*; and an in-flight dispatch
+  finishing the recipients it is sending to, as the bound on 50.1.3's *delivers nothing more*.
+- **Four citations said something their source does not**: BR-NOT-5 for hiding a colleague's notice (that is FR-161
+  and UC-165; BR-NOT-5 is the per-user mark), FR-170 for the sealed link, UC-172 on a flow that ignores in-app — each
+  corrected or removed — and FR-162 as *a path inside apps/web*, which 50.1.1's migration keeps as frozen history
+  and 50.1.4's now qualifies: the column may open the console.
+- **§7.1's `notification` row, the 50.1 parent row in `task.md`, and 50.1.4's own close** — amended; 50.1.4 closed.
+
+**`convention-review`, eight violations**, all fixed:
+
+- **The documents still described what 50.1.4 reversed** — 49.3 row (8)'s *templates not raised yet*, 50.1 row (1),
+  the parent row. Amended in place.
+- **Nine docblocks counted things outside their own file** — *the four notices*, *a fifth method*. Each now names the
+  property. The test-support one mattered: it justified stubbing the channel decision with *every one of the four is
+  email-only*, a claim no spec checked, and row (20) has since made it moot.
+- **`DeliverLinkNotice` took the whole `NotificationStore`** and its fake stubbed `deliverInApp` to reject.
+  `LinkNoticeStore` is a `Pick` of the three methods it calls, so never writing in-app is structural.
+- **OpenAPI descriptions restated vocabularies** in the centre's controller — and, searched for, in `access.controller`
+  and `organization-register.controller`. All three interpolate the members; the emitted contract is byte-identical.
+- **The tenant link's rule was written twice** — `noticeLink` in `domain/`, with a spec, called by both use cases.
+- **A ninth copy of `requestContext()?.locale ?? SOURCE_LOCALE`** — `requestLocale()` beside `requestContext()`, and
+  all nine sites on it.
+- **No EXPLAIN for 50.1.3's statements** — measured below.
+- **Test doubles used bare channel literals** — `NOTIFICATION_CHANNEL` members.
+
+Its five "not rules" were fixed too: `NotificationStoreRepository` joined the tenancy exceptions; `.env.example` says
+the worker reads the key; `EmailChannel` and `RegisterListInput` each have their own docblock back;
+`NotificationChannelDecision` has its own interface file rather than living in a use case another imports.
+
+**`gate-integrity-review`, twelve findings, eleven given a check that fails.** It ran while the first gate run held the
+database, so it proved nothing by mutation and reasoned each surviving mutation. **Nine of those mutations were then
+run against the fixed tree**, each restored afterwards — a source file by copy, a database object from its own
+definition read before the change — and each fails exactly the case written for it; the privilege and schema checks
+carry their own proving cases, which `migrations:check` runs:
+
+- **The request tier's privileges on the schema were one `INSERT` probe.** `GRANT INSERT ON notification.delivery TO
+  esg_app` — a recipient writing a colleague's delivery evidence — was green. **`NOTIFICATION_PRIVILEGES`** lists
+  every privilege each runtime role holds on the three tables, compared whole, with two proving cases: that grant,
+  and the sealed link readable again.
+- **`DOMAIN_SCHEMAS` could only check a schema someone listed.** Every schema is now a domain schema or in
+  `NON_DOMAIN_SCHEMAS`, and a `CREATE SCHEMA` proves it.
+- **"Delivers nothing more once cancelled" passed whatever the code did**: the re-dispatched row named only a recipient
+  already reached. A case with a provider refusing Ivan, then a cancellation, then the rerun — deleting the cancelled
+  guard fails it.
+- **The lock was proven to exist, not to come before the reads.** A case holds the key's lock, commits a cancellation
+  while `open` waits, and expects nothing opened; moving the lock after `supersededByCancellation` fails it. The
+  earlier lock case's 200 ms of silence became a poll of `pg_stat_activity` for a waiter on an advisory lock, and
+  removing the lock from `open` fails both lock cases.
+- **The tie had no case** — one producer transaction raising and cancelling one key, dispatched in either order; `>`
+  for `>=`, or `<` for `<=`, fails it.
+- **An older raise folded in after a newer one** — a case; `GREATEST` removed fails it.
+- **The dismissal half of `keep_read_state`** — a blanket update rewriting `dismissed_at`, refused; the function
+  re-created without that half fails it.
+- **The centre's fixture ordered by id and by receipt identically** — ids re-seeded out of receipt order, so
+  `ORDER BY notification_id` fails the three cases that read an order.
+- **Eight constraints had nothing violating them** — one table-driven case each, written as the worker so the row
+  reaches the constraint rather than a grant. Dropping one, `delivery_in_app_to_account`, fails its case alone.
+- **The concurrent-raises case's docblock claimed the index; since 50.1.3 the lock serializes them.** Rewritten to say
+  what it pins. And the resend assertion, `.not.toBe(first's id)`, passed with no notice at all — now `.toBe` the
+  resend's own name-based id.
+- **Not changed: the two steps that lift `FORCE` inside a migration** — 50.1.3's backfill and 50.1.4's lossy `down`.
+  `migrations:check` runs over empty tables, so removing the `NO FORCE`/`FORCE` pair passes it. Proving them needs a
+  migration test seeded between `up` and `down`, which the runner has no seam for — **task 164**, appended by the owner.
+
+**Its "looks wrong" note was a defect, and the largest change the close made.** The driver reads `occurred_at` into a
+`Date`, which keeps milliseconds, so two outbox rows within one millisecond tied — and a tie goes to the cancellation,
+so a raise made just after one could be refused. **Every job now carries `occurredAtMicros`**, read by the dispatcher
+as `(extract(epoch FROM occurred_at) * 1000000)::bigint`, and the store compares at the column's own precision;
+`EpochMicros` is an ordering value in the port surface and never reaches the wire. Reasoned, not measured — removed
+rather than measured, since the column already held what the comparison needed.
+
+**Reported, not changed.** The record does not say which application a `deep_link` opens — both invitations store
+`/invitation`, the console's under the platform id — so a record read without the centre, as NFR-109 requires,
+cannot tell them apart. The category separates them today; **task 165**, appended by the owner, makes the record say.
+
+**Also found by this close, not by a review:** five sentences in `apps/api/CLAUDE.md` and the store's docblock that
+50.1.3 and 50.1.4 had left behind — `DO NOTHING` where 50.1.3 wrote `DO UPDATE`, `occurredAt` in milliseconds, the
+in-app refusal row (20) replaced. Searched for by phrase across the tree; no other copy.
+
+### Measured
+
+As `esg_worker`, with `enable_seqscan = off` and the parameters bound as the store binds them:
+
+- **The cancellation lookup** is an `Index Scan using cancellation_key`, the time a filter on the one row.
+- **The cancel's `UPDATE`** is an `Index Scan using notification_open_key`, the state and `last_raised_at` as filters —
+  the partial index is usable for it, the same finding 50.1.1 made for the reads. The centre's reads were 50.1.2's
+  to measure, and its entry has them.
+
+### Verification — the parent's close
+
+- **`pnpm gates:clean`, over the fixed tree: exit 0.** Lint; the ESLint selectors' proofs; typecheck; `image:check`;
+  `docs:check`, **42 claims**; unit — api **149 suites, 1,232 tests**, web **85 files, 883**, admin **29 files,
+  246**, and the packages'; `boundaries`; `boundaries:prove`, all 24 rules rejecting their fixtures; `build`;
+  `openapi:check` and `facade:check`, both regenerating to no diff; `routes:check`; `migrations:check` — apply,
+  revert, re-apply, **61 invariant cases**; `e2e` **51 suites, 1,280 tests in 107 s**; `e2e:worker` **8 of 8**, the
+  cancellation's routing among them; `e2e:web` **235 of 235 in 8.1 minutes** across identity, expansion and admin.
+- **What the run printed, read rather than skimmed.** One `WARN` from `NotificationRaisedHandler` — a recipient
+  naming no account, skipped — which is the dispatch suite's own case for it. Two from the SMTP adapter naming the
+  recorded NFR-27 exception. Five `⨯ … destination stream closed early` lines, all digest `2667547900`, the
+  abandoned-stream class `apps/web/CLAUDE.md` records. Nothing else.
+- **Which run, and why `gates:clean`.** Required, not chosen: the diff deletes and moves files
+  (`notification-email.port.ts`, `notification-email.service.ts`, `NotificationEmail` and
+  `NotificationChannelDecision` moved), changes types across the port surface (`EpochMicros`, the delivery command,
+  the store's commands), regenerates the contract, and edits `packages/i18n`'s catalogues, whose `dist/` every app
+  reads. **A first `gates:clean` was stopped part-way, deliberately**, because the review fixes were about to change
+  the tree it was proving.
+- **Three edits landed after that run's lint and docs stages** — the store docblock rewrapped, `apps/api/CLAUDE.md`'s
+  five sentences, and the resend assertion tightened — so `pnpm lint`, `pnpm docs:check` and the address-notices
+  suite ran again over them: all green, the suite **6 of 6**.
+- **The boot proof**, in the table's terms: HTTP by `pnpm e2e`, the worker by `pnpm e2e:worker` — which routes both
+  notification jobs — and `web`/`admin` by `pnpm e2e:web`.
+- **Searched for the shapes the reviews found**, per *a rule is applied where it holds*: the locale fallback across the
+  api (nine sites, all moved); vocabularies restated in OpenAPI descriptions across every controller (two more, both
+  derived); docblocks counting outside their file across the notification module and its test support; the stale
+  phrasings above by phrase across the tree.

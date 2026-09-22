@@ -31,12 +31,13 @@ interface CentreRow {
 
 /**
  * `NOTIFICATION_CENTRE_STORE` — the recipient's centre, on the request's own transaction (task 50.1.2; FR-161,
- * BR-NOT-5; §12.5.6's task-50.1 rows (8) … (11)).
+ * UC-165, BR-NOT-5; §12.5.6's task-50.1 rows (8) … (11)).
  *
  * **No statement names the recipient or the organization.** The tenant transaction binds both, and the policies
  * task 50.1.2's migration adds answer `esg_app` with only the bound account's deliveries and the notices they
  * belong to — so a query here cannot reach a colleague's row by being written wrongly, which is the property
- * BR-NOT-5 needs and a `WHERE recipient_account_id = $n` would only have imitated.
+ * UC-165's *addressed to them* and BR-NOT-5's per-user marks need, and a `WHERE recipient_account_id = $n` would only
+ * have imitated.
  *
  * **What the centre holds is one clause**, `centre` below, shared by the page, both counts and the unread count so
  * the four cannot describe different sets: the recipient's in-app deliveries, not dismissed, of notices not

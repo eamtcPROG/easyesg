@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { SOURCE_LOCALE } from '@easyesg/i18n';
-import { requestContext } from '@api/infrastructure/persistence/request-context';
+
+import { requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { DisclosureValue } from '../models/disclosure-value.model';
 import type { DisclosureModuleSummary, DisclosureStep } from '../models/wizard-step.model';
 import { ReadWizardStep } from '../use-cases/read-wizard-step.use-case';
@@ -32,13 +32,13 @@ export class WizardService {
   modules(query: { readonly reportId: string }): Promise<readonly DisclosureModuleSummary[]> {
     // The list carries an applicability cause of its own since task 91.3, so it resolves the
     // request's locale exactly as `step` does — and falls back the same way, for the same reason.
-    return this.reads.modules({ ...query, locale: requestContext()?.locale ?? SOURCE_LOCALE });
+    return this.reads.modules({ ...query, locale: requestLocale() });
   }
 
   step(query: { readonly reportId: string; readonly module: string }): Promise<DisclosureStep> {
     // Falls back to source rather than throwing: a step with unresolved wording is still an
     // answerable step, and refusing it would make a missing header fatal to the whole product.
-    return this.reads.step({ ...query, locale: requestContext()?.locale ?? SOURCE_LOCALE });
+    return this.reads.step({ ...query, locale: requestLocale() });
   }
 
   write(command: {

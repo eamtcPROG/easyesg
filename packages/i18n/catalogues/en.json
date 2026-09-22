@@ -261,25 +261,25 @@
     "identity": {
       "email_verification": {
         "subject": "Confirm your email address",
-        "body": "Hello,\n\nSomeone created an easyesg account with this email address. Open the link below to confirm the address and activate the account:\n\n{verificationUrl}\n\nThe link is valid for 24 hours and works only once.\n\nIf you did not create the account, ignore this message: without confirmation the account cannot be used, and it is deleted automatically after 7 days."
+        "body": "Hello,\n\nSomeone created an easyesg account with this email address. Open the link below to confirm the address and activate the account:\n\n{link}\n\nThe link is valid for 24 hours and works only once.\n\nIf you did not create the account, ignore this message: without confirmation the account cannot be used, and it is deleted automatically after 7 days."
       },
       "password_reset": {
         "subject": "Reset your password",
-        "body": "Hello,\n\nWe received a request to reset the password for the easyesg account with this email address. Open the link below to choose a new password:\n\n{resetUrl}\n\nThe link is valid for 60 minutes and works only once. After the password changes, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for a reset, ignore this message: your current password stays unchanged."
+        "body": "Hello,\n\nWe received a request to reset the password for the easyesg account with this email address. Open the link below to choose a new password:\n\n{link}\n\nThe link is valid for 60 minutes and works only once. After the password changes, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for a reset, ignore this message: your current password stays unchanged."
       },
       "password_setup": {
         "subject": "Set a password for your account",
-        "body": "Hello,\n\nWe received a request to set a password for the easyesg account with this email address. The account signs in through a provider and has no password yet. Open the link below to choose one:\n\n{resetUrl}\n\nThe link is valid for 60 minutes and works only once. After the password is set, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for this, ignore this message: the account stays without a password, and you keep signing in through your provider."
+        "body": "Hello,\n\nWe received a request to set a password for the easyesg account with this email address. The account signs in through a provider and has no password yet. Open the link below to choose one:\n\n{link}\n\nThe link is valid for 60 minutes and works only once. After the password is set, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for this, ignore this message: the account stays without a password, and you keep signing in through your provider."
       },
       "invitation": {
         "subject": "You have been invited to {organizationName}",
-        "body": "Hello,\n\nYou have been invited to join {organizationName} on easyesg, the sustainability reporting platform. Open the link below to accept the invitation:\n\n{invitationUrl}\n\nThe link is valid for 7 days, works only once, and works only for this email address.\n\nIf you were not expecting this invitation, ignore this message: no access is created unless you accept it."
+        "body": "Hello,\n\nYou have been invited to join {organizationName} on easyesg, the sustainability reporting platform. Open the link below to accept the invitation:\n\n{link}\n\nThe link is valid for 7 days, works only once, and works only for this email address.\n\nIf you were not expecting this invitation, ignore this message: no access is created unless you accept it."
       }
     },
     "platform": {
       "admin_invitation": {
         "subject": "Invitation to the easyesg administration console",
-        "body": "Hello,\n\nYou have been invited to become an operator in the easyesg administration console. Open the link below to choose your password and set up your second sign-in factor:\n\n{invitationUrl}\n\nThe link is valid for 24 hours and can be used once. The account is created only after you confirm the second factor.\n\nIf you were not expecting this invitation, ignore this message: without acceptance, no account is created."
+        "body": "Hello,\n\nYou have been invited to become an operator in the easyesg administration console. Open the link below to choose your password and set up your second sign-in factor:\n\n{link}\n\nThe link is valid for 24 hours and can be used once. The account is created only after you confirm the second factor.\n\nIf you were not expecting this invitation, ignore this message: without acceptance, no account is created."
       }
     }
   },

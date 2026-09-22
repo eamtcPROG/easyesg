@@ -5,10 +5,7 @@ import type { EmailDispatched, EmailMessage, EmailPort } from '../src/contracts/
 import { NOTIFICATION_CATEGORY } from '../src/contracts/notification.port';
 import { NotificationRecipientsRepository } from '../src/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationOutboxRepository } from '../src/infrastructure/persistence/platform/notification-outbox.repository';
-import {
-  NotificationStoreRepository,
-  notificationKeyLockName,
-} from '../src/infrastructure/persistence/platform/notification-store.repository';
+import { notificationKeyLockName } from '../src/infrastructure/persistence/platform/notification-store.repository';
 import { runInRequestContext } from '../src/infrastructure/persistence/request-context';
 import { NotificationCancelledHandler } from '../src/modules/platform/notification/consumers/notification-cancelled.handler';
 import { NotificationRaisedHandler } from '../src/modules/platform/notification/consumers/notification-raised.handler';
@@ -18,9 +15,10 @@ import {
 } from '../src/modules/platform/notification/constants/notification.constants';
 import { EmailChannelService } from '../src/modules/platform/notification/services/email-channel.service';
 import { CancelNotification } from '../src/modules/platform/notification/use-cases/cancel-notification.use-case';
+import { NOTIFICATION_CHANNEL } from '../src/modules/platform/notification/models/notification-category.model';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { asOrganization, connectAs } from './support/database';
-import { deleteNotificationsOf } from './support/notification-store';
+import { asJob, deleteNotificationsOf, notificationStore, OCCURRED_MICROS } from './support/notification-store';
 
 /**
  * **The notification store** — task 50.1.1's expected result over the real schema, grants and policies: a raised
@@ -92,19 +90,23 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     ivan = await account('ivan', 'ru');
   }, 30_000);
 
-  beforeEach(() => {
-    provider = new RecordingEmailPort();
-    handler = new NotificationRaisedHandler(
+  /** The raised notice's handler over the real store, the channel decision answering both channels. */
+  const raisedHandlerWith = (emailPort: EmailPort) =>
+    new NotificationRaisedHandler(
       new DeliverNotification(
         new NotificationRecipientsRepository(worker),
-        new EmailChannelService(provider),
-        { channelsFor: () => ['in_app', 'email'] },
-        new NotificationStoreRepository(worker),
+        new EmailChannelService(emailPort),
+        { channelsFor: () => [NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.EMAIL] },
+        notificationStore(worker),
         'https://app.easyesg.md',
       ),
     );
+
+  beforeEach(() => {
+    provider = new RecordingEmailPort();
+    handler = raisedHandlerWith(provider);
     cancelledHandler = new NotificationCancelledHandler(
-      new CancelNotification(new NotificationStoreRepository(worker)),
+      new CancelNotification(notificationStore(worker)),
     );
   });
 
@@ -152,11 +154,8 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
       )
     ).notificationId;
 
-  /** A committed `cancel()` of the same category and default audience, answering its outbox key. */
-  const cancel = async (subjectRef: string): Promise<string> => {
-    await committed((port) =>
-      port.cancel({ categoryKey: NOTIFICATION_CATEGORY.INVITATION, organizationId: ORG, subjectRef }),
-    );
+  /** The outbox key of the latest cancellation of a subject. */
+  const cancelKeyOf = async (subjectRef: string): Promise<string> => {
     const [row] = await worker.query<{ idempotency_key: string }[]>(
       `SELECT idempotency_key FROM audit.outbox_event
         WHERE event_type = $1 AND organization_id = $2 AND payload->>'subjectRef' = $3
@@ -164,6 +163,31 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
       [NOTIFICATION_CANCELLED, ORG, subjectRef],
     );
     return row.idempotency_key;
+  };
+
+  /** A committed `cancel()` of the same category and default audience, answering its outbox key. */
+  const cancel = async (subjectRef: string): Promise<string> => {
+    await committed((port) =>
+      port.cancel({ categoryKey: NOTIFICATION_CATEGORY.INVITATION, organizationId: ORG, subjectRef }),
+    );
+    return cancelKeyOf(subjectRef);
+  };
+
+  /**
+   * Waits until this suite's worker connections hold `count` sessions waiting on an advisory lock — seen in
+   * `pg_stat_activity`, which a role reads in full for its own sessions — so a lock is shown held, not assumed.
+   */
+  const waitersOnAdvisoryLocks = async (count: number): Promise<void> => {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const [row] = await worker.query<{ waiting: number }[]>(
+        `SELECT count(*)::int AS waiting FROM pg_stat_activity
+          WHERE application_name = $1 AND wait_event_type = 'Lock' AND wait_event = 'advisory'`,
+        [`easyesg-${SUITE}-worker`],
+      );
+      if (row.waiting >= count) return;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    throw new Error(`fewer than ${count} session(s) ever waited on the key's lock`);
   };
 
   /**
@@ -175,13 +199,13 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
       event_type: string;
       payload: Record<string, unknown>;
       organization_id: string;
-      occurred_at: Date;
+      occurred_micros: string;
     }[] = await worker.query(
-      `SELECT event_type, payload, organization_id, occurred_at FROM audit.outbox_event WHERE idempotency_key = $1`,
+      `SELECT event_type, payload, organization_id, ${OCCURRED_MICROS} FROM audit.outbox_event WHERE idempotency_key = $1`,
       [outboxKey],
     );
     const [row] = rows;
-    const job = { ...row.payload, organizationId: row.organization_id, occurredAt: row.occurred_at.getTime() };
+    const job = asJob(row);
     const context = { jobId: outboxKey, jobName: row.event_type, attempt: 1 };
     await (row.event_type === NOTIFICATION_CANCELLED ? cancelledHandler : handler).handle(job, context);
   };
@@ -319,9 +343,70 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
 
     expect(await stateOf(opened)).toBe('cancelled');
     provider.sent.length = 0;
-    // A redelivered job for it, naming someone new: the notice is cancelled, so no one is reached.
+    // A redelivered job for it: the notice is cancelled, so it records and sends nothing more.
     await dispatch(opened);
     expect(provider.sent).toEqual([]);
+  });
+
+  /**
+   * **The recipients a cancelled notice had not yet reached are not reached** — the case that can fail. A redelivery
+   * of a job whose recipients were all reached owes nobody anything whatever the state, so the notice here is left
+   * half-sent: Ivan's email fails, the job fails, the notice is cancelled, and the job runs again.
+   */
+  it('reaches nobody it still owed once the notice is cancelled', async () => {
+    const opened = await raise({ recipientUserIds: [ana, ivan], subjectRef: `${SUITE}:half-sent` });
+    const failingForIvan: EmailPort = {
+      send: (message) =>
+        message.to === addressFor('ivan') ? Promise.reject(new Error('provider down')) : provider.send(message),
+    };
+    handler = raisedHandlerWith(failingForIvan);
+    await expect(dispatch(opened)).rejects.toThrow('provider down');
+    await dispatch(await cancel(`${SUITE}:half-sent`));
+
+    handler = raisedHandlerWith(provider);
+    provider.sent.length = 0;
+    await dispatch(opened);
+
+    expect(provider.sent).toEqual([]);
+    expect(await stateOf(opened)).toBe('cancelled');
+  });
+
+  // Row (12)'s tie: a raise and a cancellation in one transaction share a time, and the cancellation wins either way.
+  it('resolves a raise and a cancellation made in one transaction to the cancellation, in either order', async () => {
+    for (const [subject, cancelFirst] of [
+      [`${SUITE}:tie-raise-first`, false],
+      [`${SUITE}:tie-cancel-first`, true],
+    ] as const) {
+      const raised = await committed(async (port) => {
+        const { notificationId } = await port.raise({
+          categoryKey: NOTIFICATION_CATEGORY.INVITATION,
+          organizationId: ORG,
+          recipientUserIds: [ana],
+          subjectRef: subject,
+          deepLink: '/invitation/abc',
+        });
+        await port.cancel({ categoryKey: NOTIFICATION_CATEGORY.INVITATION, organizationId: ORG, subjectRef: subject });
+        return notificationId;
+      });
+      const withdrawal = await cancelKeyOf(subject);
+      for (const key of cancelFirst ? [withdrawal, raised] : [raised, withdrawal]) await dispatch(key);
+
+      expect((await noticesAbout(subject)).filter((notice) => notice.state !== 'cancelled')).toEqual([]);
+    }
+  });
+
+  // A newer raise folded in before an older one: the latest raise must stay the newer, or a cancellation made between
+  // the two would close a notice whose condition was found outstanding after it.
+  it('keeps the latest raise when an older one is folded in after a newer one', async () => {
+    const older = await raise({ recipientUserIds: [ana], subjectRef: `${SUITE}:out-of-order` });
+    const withdrawal = await cancel(`${SUITE}:out-of-order`);
+    const newer = await raise({ recipientUserIds: [ana], subjectRef: `${SUITE}:out-of-order` });
+
+    await dispatch(newer);
+    await dispatch(older);
+    await dispatch(withdrawal);
+
+    expect(await stateOf(newer)).toBe('delivered');
   });
 
   // Row (12): the case the per-key time exists for — the cancellation reaches a worker first.
@@ -374,7 +459,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
    * taken here from outside, and both operations are shown to wait for it and then finish.
    */
   it('makes an open and a cancellation of one key wait on the same lock', async () => {
-    const store = new NotificationStoreRepository(worker);
+    const store = notificationStore(worker);
     const key = {
       organizationId: ORG,
       categoryKey: NOTIFICATION_CATEGORY.INVITATION,
@@ -389,12 +474,12 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     const settled: string[] = [];
     const waiting = [
       store
-        .open({ ...key, notificationId: randomUUID(), raisedAt: new Date(), deepLink: '/invitation/abc', params: {} })
+        .open({ ...key, notificationId: randomUUID(), raisedAtMicros: Date.now() * 1000, deepLink: '/invitation/abc', params: {} })
         .then(() => settled.push('open')),
-      store.cancel({ ...key, cancelledAt: new Date() }).then(() => settled.push('cancel')),
+      store.cancel({ ...key, cancelledAtMicros: Date.now() * 1000 }).then(() => settled.push('cancel')),
     ];
-    // Unlocked, both statements answer in milliseconds; a fifth of a second of silence is the lock holding them.
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    // Both are shown waiting on an advisory lock, rather than inferred from a silence of some length.
+    await waitersOnAdvisoryLocks(2);
     expect(settled).toEqual([]);
 
     await holder.commitTransaction();
@@ -403,9 +488,54 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     expect([...settled].sort()).toEqual(['cancel', 'open']);
   });
 
-  // The index, not a read-then-write, is what makes this one notice: each open runs on its own connection.
+  /**
+   * **The lock is taken before anything is read** — the half of the lock the case above cannot see: an `open` that
+   * read its key's cancellation first and then waited would still wait. So while the lock is held elsewhere, a
+   * cancellation after this raise is committed under it; an `open` that reads after taking the lock sees it and opens
+   * nothing.
+   */
+  it('reads its key only once it holds the lock', async () => {
+    const store = notificationStore(worker);
+    const key = {
+      organizationId: ORG,
+      categoryKey: NOTIFICATION_CATEGORY.INVITATION,
+      subjectRef: `${SUITE}:lock-first`,
+      recipientScope: 'default',
+    };
+    const raisedAtMicros = Date.now() * 1000;
+    const holder = worker.createQueryRunner();
+    await holder.connect();
+    await holder.startTransaction();
+    await holder.query('SELECT set_config($1, $2, true)', ['app.current_org', ORG]);
+    await holder.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [notificationKeyLockName(key)]);
+
+    const opening = store.open({
+      ...key,
+      notificationId: randomUUID(),
+      raisedAtMicros,
+      deepLink: '/invitation/abc',
+      params: {},
+    });
+    await waitersOnAdvisoryLocks(1);
+    await holder.query(
+      `INSERT INTO notification.cancellation (organization_id, category_key, subject_ref, recipient_scope, cancelled_at)
+       VALUES ($1, $2, $3, $4, timestamptz 'epoch' + $5::bigint * interval '1 microsecond')`,
+      [ORG, key.categoryKey, key.subjectRef, key.recipientScope, raisedAtMicros + 1],
+    );
+    await holder.commitTransaction();
+    await holder.release();
+
+    expect((await opening).state).toBe('cancelled');
+    expect(await noticesAbout(`${SUITE}:lock-first`)).toEqual([]);
+  });
+
+  /**
+   * Two opens of one key at once are one notice. Since task 50.1.3 the key's lock runs them one after the other, so
+   * this pins the outcome; what `ON CONFLICT` itself contributes is the index, which the fold and rerun cases fail
+   * without.
+   */
   it('makes two concurrent raises of one key one notice', async () => {
-    const store = new NotificationStoreRepository(worker);
+    const store = notificationStore(worker);
     const opening = (notificationId: string) =>
       store.open({
         notificationId,
@@ -413,7 +543,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
         categoryKey: NOTIFICATION_CATEGORY.INVITATION,
         subjectRef: `${SUITE}:concurrent`,
         recipientScope: 'default',
-        raisedAt: new Date(),
+        raisedAtMicros: Date.now() * 1000,
         deepLink: '/invitation/abc',
         params: {},
       });
@@ -479,5 +609,65 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
         ),
       ),
     ).rejects.toThrow('delivery_read_state_in_app_only');
+  });
+
+  /**
+   * **Each constraint the schema states refuses what it names** — written as the worker, bound to the organization,
+   * so the row reaches the constraint rather than a grant or a policy. A constraint nothing violates is one a
+   * migration could drop with every case still green.
+   */
+  describe('refuses the rows its constraints exist to refuse', () => {
+    let notice: string;
+
+    // A nested `beforeAll` runs before the outer `beforeEach`, so it builds the handler it dispatches with.
+    beforeAll(async () => {
+      handler = raisedHandlerWith(new RecordingEmailPort());
+      notice = await raise({ recipientUserIds: [ana], subjectRef: `${SUITE}:constraints` });
+      await dispatch(notice);
+    });
+
+    const insertNotice = (columns: string, values: string) =>
+      asOrganization(worker, ORG, (run) =>
+        run(
+          `INSERT INTO notification.notification
+                  (id, organization_id, subject_ref, recipient_scope, deep_link, ${columns})
+           VALUES (gen_random_uuid(), $1, 'constraint-probe', 'default', '/x', ${values})`,
+          [ORG],
+        ),
+      );
+    const insertDelivery = (columns: string, values: string) =>
+      asOrganization(worker, ORG, (run) =>
+        run(
+          `INSERT INTO notification.delivery (notification_id, organization_id, outcome, ${columns})
+           VALUES ($1, $2, 'accepted', ${values})`,
+          [notice, ORG],
+        ),
+      );
+
+    it.each([
+      ['notification_category_key', () => insertNotice('category_key, last_raised_at', `'Not A Key', now()`)],
+      [
+        'notification_cancelled_at_matches_state',
+        () => insertNotice('category_key, last_raised_at, state', `'identity.invitation', now(), 'cancelled'`),
+      ],
+      [
+        'notification_delivered_at_matches_state',
+        () => insertNotice('category_key, last_raised_at, state', `'identity.invitation', now(), 'delivered'`),
+      ],
+      [
+        'notification_last_raised_after_first',
+        () =>
+          insertNotice(
+            'category_key, raised_at, last_raised_at',
+            `'identity.invitation', now(), now() - interval '1 second'`,
+          ),
+      ],
+      ['delivery_one_recipient', () => insertDelivery('channel', `'email'`)],
+      ['delivery_one_recipient', () => insertDelivery('channel, recipient_account_id, recipient_address', `'email', gen_random_uuid(), 'x@example.md'`)],
+      ['delivery_in_app_to_account', () => insertDelivery('channel, recipient_address', `'in_app', 'x@example.md'`)],
+      ['delivery_address_present', () => insertDelivery('channel, recipient_address', `'email', ''`)],
+    ])('%s', async (constraint, write) => {
+      await expect(write()).rejects.toThrow(constraint);
+    });
   });
 });

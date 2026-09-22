@@ -7,7 +7,6 @@ import { ConfigurationStore } from '../src/infrastructure/configuration/configur
 import { seedConfiguration } from '../src/infrastructure/configuration/seed-configuration';
 import { NotificationRecipientsRepository } from '../src/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationOutboxRepository } from '../src/infrastructure/persistence/platform/notification-outbox.repository';
-import { NotificationStoreRepository } from '../src/infrastructure/persistence/platform/notification-store.repository';
 import { runInRequestContext } from '../src/infrastructure/persistence/request-context';
 import { NotificationRaisedHandler } from '../src/modules/platform/notification/consumers/notification-raised.handler';
 import { NOTIFICATION_RAISED } from '../src/modules/platform/notification/constants/notification.constants';
@@ -16,7 +15,7 @@ import { EmailChannelService } from '../src/modules/platform/notification/servic
 import { NotificationCategoryCatalog } from '../src/modules/platform/notification/services/notification-category-catalog.service';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { connectAs } from './support/database';
-import { deleteNotificationsOf } from './support/notification-store';
+import { asJob, deleteNotificationsOf, notificationStore, OCCURRED_MICROS } from './support/notification-store';
 
 /**
  * **A notification raised and dispatched by category through the outbox** — task 49.3's expected result, over the
@@ -46,7 +45,7 @@ class RecordingEmailPort implements EmailPort {
 interface OutboxRow {
   event_type: string;
   organization_id: string | null;
-  occurred_at: Date;
+  occurred_micros: string;
   idempotency_key: string;
   payload: Record<string, unknown>;
 }
@@ -120,7 +119,7 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
 
   const outboxRow = async (notificationId: string): Promise<OutboxRow | undefined> => {
     const rows: OutboxRow[] = await worker.query(
-      `SELECT event_type, organization_id, occurred_at, idempotency_key, payload
+      `SELECT event_type, organization_id, ${OCCURRED_MICROS}, idempotency_key, payload
          FROM audit.outbox_event WHERE idempotency_key = $1`,
       [notificationId],
     );
@@ -172,14 +171,14 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
         new NotificationRecipientsRepository(worker),
         new EmailChannelService(provider),
         new CategoryChannels(new NotificationCategoryCatalog(store)),
-        new NotificationStoreRepository(worker),
+        notificationStore(worker),
         'https://app.easyesg.md',
       ),
     );
 
     // What the dispatcher enqueues: the row's payload, with the row's organization and time beside it.
     await handler.handle(
-      { ...row.payload, organizationId: row.organization_id, occurredAt: row.occurred_at.getTime() },
+      asJob(row),
       { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 },
     );
 

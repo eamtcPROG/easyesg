@@ -5,8 +5,8 @@ import type { NotificationCentrePage, NotificationCentreQuery } from '../models/
  *
  * **Every operation is on the request's own transaction and names no recipient**: the tenant transaction binds the
  * organization and the acting account, and the `notification` schema's policies answer only that account's rows
- * (BR-NOT-5). So *mine* is not a parameter a caller could get wrong — a colleague's notice is simply not there, and
- * asking to read it is asking about a notice that does not exist.
+ * (UC-165; BR-NOT-5 for what they mark). So *mine* is not a parameter a caller could get wrong — a colleague's notice
+ * is simply not there, and asking to read it is asking about a notice that does not exist.
  *
  * Module-internal, like `NOTIFICATION_STORE` beside it: the worker's store writes what a dispatch did, this one reads
  * what a recipient has and records what they did with it, and neither is another context's business.

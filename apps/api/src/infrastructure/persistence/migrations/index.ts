@@ -44,6 +44,7 @@ import { AccountSetup1790380800000 } from './1790380800000-account-setup';
 import { NotificationStore1790467200000 } from './1790467200000-notification-store';
 import { NotificationCentre1790553600000 } from './1790553600000-notification-centre';
 import { NotificationCancellation1790640000000 } from './1790640000000-notification-cancellation';
+import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
  * The migration set, registered explicitly rather than discovered by glob.
@@ -106,4 +107,5 @@ export const migrations = [
   NotificationStore1790467200000,
   NotificationCentre1790553600000,
   NotificationCancellation1790640000000,
+  AddressNotices1790726400000,
 ];

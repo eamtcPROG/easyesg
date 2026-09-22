@@ -1,4 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
+import type { EpochMicros } from '@api/contracts/types/time';
 
 /**
  * Name-based routing on AD-10's single queue.
@@ -53,3 +54,19 @@ export interface JobContext {
 export interface JobHandler {
   handle(payload: Record<string, unknown>, context: JobContext): Promise<void>;
 }
+
+/**
+ * The outbox row's time, which the dispatcher puts beside every job's payload as `occurredAtMicros` (tasks 50.1.3,
+ * 50.1's close) — when the transaction behind the job began, on the database's clock, in epoch microseconds.
+ *
+ * **One reader rather than one per handler**: every notification handler needs it, and a copy per handler is how
+ * one of them comes to accept a string where the rest refuse it. It throws rather than defaulting to *now*, because
+ * a time the dispatcher did not send is a malformed job, and *now* would order it after everything.
+ */
+export const occurredAtMicrosOf = (payload: Record<string, unknown>, jobName: string): EpochMicros => {
+  const { occurredAtMicros } = payload;
+  if (typeof occurredAtMicros !== 'number' || !Number.isSafeInteger(occurredAtMicros) || occurredAtMicros <= 0) {
+    throw new Error(`${jobName} payload carries no occurredAtMicros; the dispatcher puts one beside every job.`);
+  }
+  return occurredAtMicros;
+};

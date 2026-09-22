@@ -9,7 +9,7 @@ import { ProblemType, type ProblemTypeSlug } from '@api/app/filters/problem-type
 /**
  * The recipient holds no in-app delivery of this notice. **The same answer for a notice addressed to a colleague**
  * as for one that never existed: the policies make the two indistinguishable, and a 403 for the first would tell a
- * member that a notice they cannot read exists (BR-NOT-5).
+ * member that a notice addressed to someone else exists (UC-165: the centre is the notices *addressed to them*).
  */
 export class NotificationNotFoundError extends DomainError {
   readonly problemType: ProblemTypeSlug = ProblemType.NotFound;

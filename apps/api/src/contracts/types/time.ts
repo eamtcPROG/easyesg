@@ -15,6 +15,18 @@
 export type EpochMillis = number;
 
 /**
+ * When an outbox row's transaction began, as epoch **microseconds** — the database's own precision (task 50.1's
+ * parent close; §12.5.6's task-50.1 row, *how task 50.1 builds it*).
+ *
+ * **An ordering value, never a time to show or to convert**, and not the wire's `EpochMillis`: its one use is to
+ * order two outbox rows — a notice's raise against its key's cancellation — that parallel workers may process in
+ * either order. A `Date` keeps milliseconds only, so two transactions inside one millisecond would tie, and a tie is
+ * resolved as a cancellation. An integer count of microseconds is exact in a JavaScript number until the year 2255,
+ * and the database turns it back into a `timestamptz` with integer arithmetic, so nothing is rounded either way.
+ */
+export type EpochMicros = number;
+
+/**
  * A calendar date with legal force, as `YYYY-MM-DD`, paired with the timezone that determines it.
  *
  * NOT an instant, and the distinction is not stylistic. NFR-34 requires the originating timezone

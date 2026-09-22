@@ -11,8 +11,8 @@ user-facing-text conventions. This file carries only what you need in your hands
 
 Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91, 130, 131), and so is the
 notification core (49) — categories, one mail path, `raise()` and delivery by category — with its store since
-50.1.1, each notice recorded once and each delivery a row per recipient and channel, and each recipient's centre
-since 50.1.2; the calculator, validation, export, notification preferences, billing, the console's screens, edge and
+50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre
+since 50.1.2, cancellation since 50.1.3, and every notice the platform sends on the record since 50.1.4; the calculator, validation, export, notification preferences, billing, the console's screens, edge and
 deploy, the
 public tier and the Comprehensive Module are not (37 onward). `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
@@ -449,11 +449,11 @@ Four things to know before touching it:
 `notification` schema — `notification.notification`, one row per notice, and `notification.delivery`, one per
 recipient and channel — is written by `NotificationStoreRepository` on the worker, as `esg_worker`, each statement
 in a short transaction of its own bound to the job's organization (`app.current_org` only; nobody is acting).
-`esg_app` holds no privilege on either table until 50.1.2's centre brings its read. Four things to know:
+`esg_app` reaches them only through 50.1.2's centre, below — its reads and its read state. Four things to know:
 
 - **FR-167's deduplication is `notification_open_key`**, a partial unique index over
   `(organization, category, subject, recipient_scope) WHERE state <> 'cancelled'`, and `open` inserts against it
-  with `ON CONFLICT … DO NOTHING`. **The conflict target restates that predicate as a literal**: PostgreSQL infers a
+  with `ON CONFLICT … DO UPDATE`, which moves an open notice's latest raise forward and answers it. **The conflict target restates that predicate as a literal**: PostgreSQL infers a
   partial index from a predicate it can prove when planning, so a bind parameter there works under the driver's
   custom plans and fails the statement under a generic one (*"no unique or exclusion constraint matching the ON
   CONFLICT specification"*, measured with `plan_cache_mode = force_generic_plan`). The ordinary reads bind the state
@@ -463,8 +463,7 @@ in a short transaction of its own bound to the job's organization (`app.current_
   any failure completes the work rather than repeating it, and the email's idempotency key is the notice and the
   recipient. A raise folded into an open notice delivers **the notice as recorded**, to the recipients it adds.
 - **A redelivered job finds its notice by its own id first**, which is what keeps a job for a *cancelled* notice
-  from joining the open one a later raise created. Nothing cancels until 50.1.3, so only the e2e's hand-written
-  cancellation exercises it.
+  from joining the open one a later raise created — the case 50.1.3's cancellation makes reachable.
 - **Cleaning up needs `deleteNotificationsOf`** (`test/support/notification-store.ts`). Neither table has a
   `DELETE` policy or a parent to cascade from, so a plain `DELETE` as the owner removes nothing under `FORCE`; the
   helper lifts `FORCE` inside the transaction that deletes and restores it before committing.
@@ -494,8 +493,9 @@ in `notification-store.e2e-spec.ts` that fails without it:
 - **`notification.cancellation` keeps each key's latest cancellation time**, moved forward only, even where no
   notice was open — one to three worker replicas take jobs in either order, and a raise dispatched after the
   cancellation that came after it must open nothing.
-- **The comparison is between outbox times**, `occurred_at`, which the dispatcher puts on every job as `occurredAt`
-  (epoch milliseconds) beside `organizationId`. A handler that builds a job by hand in a test must carry both;
+- **The comparison is between outbox times**, `occurred_at`, which the dispatcher puts on every job as
+  `occurredAtMicros` beside `organizationId` — epoch **microseconds**, because the column holds them and two rows a
+  millisecond apart must still order; `EpochMicros` is an ordering value and never reaches the wire. A handler that builds a job by hand in a test must carry both;
   `outbox.e2e-spec.ts` is what fails if the dispatcher stops.
 - **A notice's `last_raised_at` is its latest raise, a fold included**, and a cancellation closes only a notice
   last raised no later than it.
@@ -503,6 +503,26 @@ in `notification-store.e2e-spec.ts` that fails without it:
   commit. A race cannot be shown absent by running it: the suite takes the lock itself, under
   `notificationKeyLockName`, and shows both operations waiting. A dispatch already sending when a cancellation lands
   finishes the recipients it is sending to.
+
+**The four address notices reach the record from their own events** (task 50.1.4; §12.5.6's task-50.1 rows (14) …
+(17)). Verification, a reset and both invitations keep their producers, events and handlers; each handler names its
+link's path and hands the notice to `NOTIFICATION_DELIVERY` (`DeliverLinkNotice`), which retired
+`NOTIFICATION_EMAIL_PORT`. Four things to know before touching them:
+
+- **Each issuance is its own notice**: its subject is the job's key and its id `noticeIdFor(key)`, a name-based UUID
+  where the key — a store's natural key — is not one. Changing the namespace in `domain/notice-id.ts` would give
+  every earlier issuance a second notice; the spec pins it as a literal.
+- **Two paths per link**: `deepLink` carries no secret and is kept in the clear; `linkPath` carries the token and is
+  made absolute, sent, and kept only in `notification.notification.sealed_link` (`identity.encrypted_secret`). So
+  **the worker holds `SECRET_ENCRYPTION_KEY`**, and a store built in a test takes a cipher — use
+  `notificationStore(worker)` from `test/support/notification-store.ts`.
+- **A platform notice lives under `PLATFORM_ORGANIZATION_ID`**, the nil UUID, which `core.organization` refuses by
+  `CHECK`; the worker binds it, the tenant tier never can. Clean up a platform notice by its subject
+  (`deleteNoticesAbout`), never by organization — every suite's platform notices share that id.
+- **A recipient without an account is recorded by address** (`recipient_address`), and exactly one of address and
+  account names each delivery; an in-app delivery is always an account's. **They go by email only** (row (20)):
+  `DeliverLinkNotice` ignores an in-app channel on their category and skips, with a warning, one naming no email — a
+  centre could show a notice whose token it cannot act on, and A-17 refusing in-app for them is task 67.10's.
 
 ### Withholding a column from the application
 
@@ -755,9 +775,11 @@ not error. So a bare `repository.find()` on a pooled connection succeeds and ret
 reads downstream as "this customer has no data" and survives review, staging and a demo.
 
 Deliberate exceptions, each with a stated reason: `modules/identity/*` (runs before a tenant
-exists), `platform/audit` and `platform/metering` (append-only, cross-tenant by design), and
+exists), `platform/audit` and `platform/metering` (append-only, cross-tenant by design),
 `infrastructure/persistence/admin-readonly.ts` (`esg_admin_ro`, `BYPASSRLS`, read-only, every
-acquisition logged).
+acquisition logged), and `NotificationStoreRepository` (task 50.1: the worker's, holding no request
+runner, so each statement opens its own transaction and binds `app.current_org` from the job — the
+reserved platform id for a notice that belongs to no organization).
 
 Tenant binding is `SELECT set_config('app.current_org', $1, true)` — a bind parameter, and
 transaction-local. Never `SET LOCAL` (utility syntax, no bind parameter, forces interpolation into
@@ -1317,7 +1339,9 @@ should hold a secret it has no caller for. `AccountModule` splits its providers 
 it so, the way `OutboxModule` already splits the dispatcher.
 
 `SECRET_ENCRYPTION_KEY` (task 27.1) joins the HTTP tier's list, and it is the one secret that is
-**also** read outside the tier: `admin:provision` seals with it, and `db:migrate` needs it only when
+**also** read outside the tier: **the worker holds it since task 50.1.4**, which gave it a caller — the
+notification store seals the link a verification, reset or invitation email carried (§12.5.6's task-50.1
+row (15)) — `admin:provision` seals with it, and `db:migrate` needs it only when
 rows already hold a plaintext secret to convert — a fresh database needs none, which is why CI's
 migrate step passes none. It is deliberately not derived from `AUTH_ADMIN_SECRET`: rotating a session
 secret costs one forced refresh and no data, while rotating this one makes every sealed column
@@ -1451,9 +1475,10 @@ Ten, in `.dependency-cruiser.cjs`: `core-not-to-billing`, `billing-not-to-core`,
 
 **`email-port-behind-notification` is AD-11's one mail path** (task 49.2): nothing under `modules/` but
 `platform/notification` may import `EmailPort` or the email adapters. A module that has mail to send
-sends a notification category's email through `NOTIFICATION_EMAIL_PORT`, which the notification module
-exports in worker mode — so FR-170's delivery evidence and FR-171's suppression, when they land, have one
-place to live and reach every notice at once.
+raises a notice through `NOTIFICATION_PORT`, or — since task 50.1.4, for a handler on the worker whose
+producer held no request transaction — hands it to `NOTIFICATION_DELIVERY`, which the notification module
+exports in worker mode. Either way it is recorded, and FR-170's delivery evidence and FR-171's suppression
+have one place to live and reach every notice at once.
 
 All ten have a fixture in `tools/prove-boundaries.sh` proving they reject a real violation. Keep
 that true: if you add or edit a rule, add its fixture in the same change. A rule that matches nothing

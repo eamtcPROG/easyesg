@@ -14,14 +14,29 @@ describe('email template rendering (OQ-43)', () => {
     await initialiseCatalogue();
   });
 
-  const params = { verificationUrl: 'https://easyesg.md/ro/verify?token=abc' };
+  const params = { link: 'https://easyesg.md/ro/verify?token=abc' };
 
   it.each(LOCALES)('renders the verification template in %s', (locale: Locale) => {
     const { subject, body } = renderEmail(locale, NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params);
 
     expect(subject.trim()).not.toBe('');
-    expect(body).toContain(params.verificationUrl);
+    expect(body).toContain(params.link);
   });
+
+  /**
+   * **Every template a notice sends is written against `{link}`** (§12.5.6's task-49.3 row (8), task 50.1.4): the
+   * delivery hands each message the link as `link` and nothing else, so a template still naming its own placeholder
+   * renders no link at all — the email arrives and cannot be acted on. Each wording, in each language.
+   */
+  const WORDINGS = [...Object.values(NOTIFICATION_CATEGORY), 'identity.password_setup'];
+  it.each(LOCALES.flatMap((locale: Locale) => WORDINGS.map((wording) => [locale, wording] as const)))(
+    'puts the link into %s %s',
+    (locale, wording) => {
+      const { body } = renderEmail(locale, wording, { ...params, organizationName: 'Brutăria' });
+
+      expect(body).toContain(params.link);
+    },
+  );
 
   it('renders differently per locale, so nothing is falling back to one language', () => {
     const subjects = LOCALES.map(

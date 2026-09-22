@@ -10,9 +10,11 @@ import type { Locale } from '@easyesg/i18n';
  * moves. What must not happen in between is a second way to send mail.
  *
  * **Since task 49.2 that later has arrived** (§12.5.6's task-49.2 row): the notification module is this
- * port's one caller, and a producer sends a category's email through `NOTIFICATION_EMAIL_PORT`
- * (`notification-email.port.ts`) instead. This is the provider port, and nothing else; the boundary
- * rule `email-port-behind-notification` refuses any other module that imports it or its adapters.
+ * port's one caller. A producer raises a notice through `NOTIFICATION_PORT`, or — one whose producer
+ * holds no request transaction, since task 50.1.4 — has its handler hand the notice to
+ * `NOTIFICATION_DELIVERY` (`notification-delivery.port.ts`). This is the provider port, and nothing
+ * else; the boundary rule `email-port-behind-notification` refuses any other module that imports it or
+ * its adapters.
  *
  * §12.5.2 fixes the vocabulary and it is deliberately narrow: **recipient, template key, locale,
  * idempotency key**. No subject, no body, no HTML. Two things follow. The wording is a catalogue

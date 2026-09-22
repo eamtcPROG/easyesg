@@ -8,11 +8,16 @@ import { ResultListDto } from '@api/app/dto/result-list.dto';
 import { NO_CONTENT_RESPONSE } from '@api/app/interceptors/global-response.interceptor';
 import { ListQueryInterceptor } from '@api/app/interceptors/list-query.interceptor';
 import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
+import { SORT_DIRECTION } from '@api/contracts/types/list-query';
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import { NotificationItemResponseDto } from '../dto/notification-item.response.dto';
 import { UnreadCountResponseDto } from '../dto/unread-count.response.dto';
-import { NOTIFICATION_READ_STATE } from '../models/notification-centre.model';
+import {
+  NOTIFICATION_CENTRE_FILTER,
+  NOTIFICATION_CENTRE_SORT,
+  NOTIFICATION_READ_STATE,
+} from '../models/notification-centre.model';
 import { NotificationCentreService } from '../services/notification-centre.service';
 
 const PROBLEM = { 'application/problem+json': {} };
@@ -31,7 +36,7 @@ const NOT_FOUND = {
  * §12.5.6's task-50.1 rows (8) … (11)).
  *
  * **A tenant route, and every member's**: the organization is the session's, as for `/members`, and the recipient
- * is the signed-in account — no parameter names either, and the database answers only their rows (BR-NOT-5). A
+ * is the signed-in account — no parameter names either, and the database answers only their rows (UC-165, FR-161). A
  * member of any role has a centre.
  *
  * **The writes are the recipient's own read state**, so they carry no audit action and no field-change trail: a
@@ -60,14 +65,17 @@ export class NotificationCentreController {
     name: 'filters',
     required: false,
     description:
-      `Compact facets, pipe-separated: \`read,<${Object.values(NOTIFICATION_READ_STATE).join('|')}>\` and ` +
-      `\`category,<key>[,<key>…]\` over ${Object.values(NOTIFICATION_CATEGORY).join(', ')}. A value outside ` +
+      `Compact facets, pipe-separated: \`${NOTIFICATION_CENTRE_FILTER.READ_STATE},` +
+      `<${Object.values(NOTIFICATION_READ_STATE).join('|')}>\` and \`${NOTIFICATION_CENTRE_FILTER.CATEGORY},<key>[,<key>…]\` ` +
+      `over ${Object.values(NOTIFICATION_CATEGORY).join(', ')}. A value outside ` +
       'these, or a field this route does not define, is ignored rather than refused.',
   })
   @ApiQuery({
     name: 'order',
     required: false,
-    description: 'One ordering, `received,<asc|desc>`. Defaults to `received,desc` — newest first.',
+    description:
+      `One ordering, \`${NOTIFICATION_CENTRE_SORT.RECEIVED},<${Object.values(SORT_DIRECTION).join('|')}>\`. ` +
+      `Defaults to \`${NOTIFICATION_CENTRE_SORT.RECEIVED},${SORT_DIRECTION.DESC}\` — newest first.`,
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: '1-based.' })
   @ApiQuery({

@@ -19,9 +19,9 @@ describe('NotificationRaisedHandler (tasks 49.3, 50.1.1, 50.1.3)', () => {
     deepLink: '/invitation/abc',
     params: { organizationName: 'Brutăria' },
   };
-  const OCCURRED_AT = 1_790_640_000_000;
+  const OCCURRED_AT = 1_790_640_000_000_000;
   /** What the dispatcher enqueues: the outbox row's payload, and the row's organization and time beside it. */
-  const payload = { ...notice, organizationId: ORGANIZATION, occurredAt: OCCURRED_AT };
+  const payload = { ...notice, organizationId: ORGANIZATION, occurredAtMicros: OCCURRED_AT };
 
   const build = (unresolved: readonly string[] = []) => {
     const execute = jest.fn().mockResolvedValue({ unresolved });
@@ -44,7 +44,7 @@ describe('NotificationRaisedHandler (tasks 49.3, 50.1.1, 50.1.3)', () => {
     expect(execute).toHaveBeenCalledWith({
       notice,
       organizationId: ORGANIZATION,
-      raisedAt: new Date(OCCURRED_AT),
+      raisedAtMicros: OCCURRED_AT,
       deliveryId: 'outbox-key-1',
     });
     expect(warned).toEqual([]);
@@ -63,8 +63,8 @@ describe('NotificationRaisedHandler (tasks 49.3, 50.1.1, 50.1.3)', () => {
     ['no audience', { ...payload, recipientScope: undefined }],
     ['no organization', { ...payload, organizationId: null }],
     ['an organization that is not a UUID', { ...payload, organizationId: 'org-1' }],
-    ['no time', { ...payload, occurredAt: undefined }],
-    ['a time that is not a number', { ...payload, occurredAt: '2026-09-22' }],
+    ['no time', { ...payload, occurredAtMicros: undefined }],
+    ['a time that is not a number', { ...payload, occurredAtMicros: '2026-09-22' }],
     ['a deep link that is not a path', { ...payload, deepLink: 'https://elsewhere.example/x' }],
     ['no params', { ...payload, params: null }],
   ])('fails a payload with %s rather than delivering to a guess', async (_label, broken) => {

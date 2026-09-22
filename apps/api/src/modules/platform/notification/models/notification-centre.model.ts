@@ -7,7 +7,7 @@ import type { NotificationCategoryKey } from '@api/contracts/notification.port';
  * **One entry is one in-app delivery**, the recipient's, joined to its notice: the delivery carries when it reached
  * them and whether they have read it, the notice carries what it is about. An email delivery is evidence and never
  * an entry, and a notice dismissed or cancelled has left the centre. Whose entries these are is not a field of any
- * query — the database answers only the bound recipient's (BR-NOT-5).
+ * query — the database answers only the bound recipient's (UC-165).
  */
 
 /** The read-state facet (row (11)), as the compact list format spells its values. */

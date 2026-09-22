@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { DataSource, QueryRunner } from 'typeorm';
+import { SECRET_CIPHER, type SecretCipher } from '@api/contracts/secret-cipher.port';
 import type {
   CancelNoticeCommand,
   NotificationCancellationStore,
@@ -41,13 +42,12 @@ interface NoticeRow {
  * what these statements recorded.
  *
  * **FR-167's deduplication is the index, not a read-then-write.** `open` inserts under the raise's id with
- * `ON CONFLICT … DO NOTHING` against `notification_open_key`, so two raises for one key meeting on two workers
- * produce one notice: the second waits for the first to commit, inserts nothing, and reads the notice the first
- * opened. The conflict target restates the index's predicate as a literal, because PostgreSQL infers a partial
- * index from a predicate it can prove when planning: a bind parameter there works under a custom plan and fails
- * the statement under a generic one — *"no unique or exclusion constraint matching the ON CONFLICT specification"*,
- * measured with `plan_cache_mode = force_generic_plan` — so the literal keeps the insert independent of the plan
- * cache. A raise meeting an open notice moves its `last_raised_at` forward in the same statement.
+ * `ON CONFLICT … DO UPDATE` against `notification_open_key`, so two raises for one key produce one notice: the
+ * second meets the first's row, moves its `last_raised_at` forward and answers it, in the same statement. The
+ * conflict target restates the index's predicate as a literal, because PostgreSQL infers a partial index from a
+ * predicate it can prove when planning: a bind parameter there works under a custom plan and fails the statement
+ * under a generic one — *"no unique or exclusion constraint matching the ON CONFLICT specification"*, measured with
+ * `plan_cache_mode = force_generic_plan` — so the literal keeps the insert independent of the plan cache.
  *
  * **A cancellation and a raise of one key are serialized by the key's lock** (task 50.1.3; §12.5.6's task-50.1 row
  * (12)): `open` and `cancel` each take a transaction-scoped advisory lock on the key before reading anything, so
@@ -58,7 +58,11 @@ interface NoticeRow {
  */
 @Injectable()
 export class NotificationStoreRepository implements NotificationStore, NotificationCancellationStore {
-  constructor(@InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource,
+    /** Seals the link a verification, reset or invitation sent — at the persistence boundary, never in a use case. */
+    @Inject(SECRET_CIPHER) private readonly cipher: SecretCipher,
+  ) {}
 
   open(command: OpenNotificationCommand): Promise<NotificationRecord> {
     return this.inOrganization(command.organizationId, async (runner) => {
@@ -83,7 +87,7 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
       const delivered = (await runner.query(
         `SELECT recipient_account_id, channel FROM notification.delivery WHERE notification_id = $1`,
         [notice.id],
-      )) as { recipient_account_id: string; channel: NotificationChannel }[];
+      )) as { recipient_account_id: string | null; channel: NotificationChannel }[];
       return {
         notificationId: notice.id,
         state: notice.state,
@@ -111,16 +115,26 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
     });
   }
 
+  /**
+   * An account's delivery, or an address's (task 50.1.4, row (16)) — each against the uniqueness its kind has, so a
+   * redelivered job records nothing twice either way. The address conflict target restates its partial index's
+   * predicate as a literal, `admit`'s reason.
+   */
   recordEmailAccepted(command: RecordEmailAcceptedCommand): Promise<void> {
+    const toAccount = 'accountId' in command.recipient;
     return this.inOrganization(command.organizationId, async (runner) => {
       await runner.query(
-        `INSERT INTO notification.delivery (notification_id, organization_id, recipient_account_id, channel, outcome)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (notification_id, recipient_account_id, channel) DO NOTHING`,
+        toAccount
+          ? `INSERT INTO notification.delivery (notification_id, organization_id, recipient_account_id, channel, outcome)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (notification_id, recipient_account_id, channel) DO NOTHING`
+          : `INSERT INTO notification.delivery (notification_id, organization_id, recipient_address, channel, outcome)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (notification_id, recipient_address, channel) WHERE recipient_address IS NOT NULL DO NOTHING`,
         [
           command.notificationId,
           command.organizationId,
-          command.recipientId,
+          toAccount ? command.recipient.accountId : command.recipient.address,
           NOTIFICATION_CHANNEL.EMAIL,
           DELIVERY_OUTCOME.ACCEPTED,
         ],
@@ -150,16 +164,16 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
       await runner.query(
         `INSERT INTO notification.cancellation
                 (organization_id, category_key, subject_ref, recipient_scope, cancelled_at)
-         VALUES ($1, $2, $3, $4, $5)
+         VALUES ($1, $2, $3, $4, ${atMicros('$5')})
          ON CONFLICT (organization_id, category_key, subject_ref, recipient_scope)
          DO UPDATE SET cancelled_at = GREATEST(notification.cancellation.cancelled_at, EXCLUDED.cancelled_at)`,
-        [...key, command.cancelledAt],
+        [...key, command.cancelledAtMicros],
       );
       await runner.query(
-        `UPDATE notification.notification SET state = $6, cancelled_at = $5
+        `UPDATE notification.notification SET state = $6, cancelled_at = ${atMicros('$5')}
           WHERE organization_id = $1 AND category_key = $2 AND subject_ref = $3 AND recipient_scope = $4
-            AND state <> $6 AND last_raised_at <= $5`,
-        [...key, command.cancelledAt, NOTIFICATION_STATE.CANCELLED],
+            AND state <> $6 AND last_raised_at <= ${atMicros('$5')}`,
+        [...key, command.cancelledAtMicros, NOTIFICATION_STATE.CANCELLED],
       );
     });
   }
@@ -169,8 +183,8 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
     const rows = (await runner.query(
       `SELECT 1 FROM notification.cancellation
         WHERE organization_id = $1 AND category_key = $2 AND subject_ref = $3 AND recipient_scope = $4
-          AND cancelled_at >= $5`,
-      [command.organizationId, command.categoryKey, command.subjectRef, command.recipientScope, command.raisedAt],
+          AND cancelled_at >= ${atMicros('$5')}`,
+      [command.organizationId, command.categoryKey, command.subjectRef, command.recipientScope, command.raisedAtMicros],
     )) as unknown[];
     return rows.length > 0;
   }
@@ -184,8 +198,8 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
     const [notice] = (await runner.query(
       `INSERT INTO notification.notification
               (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, params,
-               raised_at, last_raised_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $8)
+               raised_at, last_raised_at, sealed_link)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, ${atMicros('$8')}, ${atMicros('$8')}, $9)
        ON CONFLICT (organization_id, category_key, subject_ref, recipient_scope)
           WHERE state <> '${NOTIFICATION_STATE.CANCELLED}'
        DO UPDATE SET last_raised_at = GREATEST(notification.notification.last_raised_at, EXCLUDED.last_raised_at)
@@ -198,7 +212,8 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
         command.recipientScope,
         command.deepLink,
         JSON.stringify(command.params),
-        command.raisedAt,
+        command.raisedAtMicros,
+        command.sealedLink === undefined ? null : this.cipher.seal(command.sealedLink),
       ],
     )) as NoticeRow[];
     return notice;
@@ -222,6 +237,13 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
     }
   }
 }
+
+/**
+ * An outbox time in epoch microseconds, as a `timestamptz`, by integer arithmetic — so the microsecond the database
+ * wrote is the one compared (`EpochMicros`). A bind parameter's placeholder, never a value, is what is interpolated.
+ */
+const atMicros = (placeholder: string): string =>
+  `(timestamptz 'epoch' + ${placeholder}::bigint * interval '1 microsecond')`;
 
 interface NoticeKey {
   readonly organizationId: string;

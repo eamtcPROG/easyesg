@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { QueryRunner } from 'typeorm';
-import type { Locale } from '@easyesg/i18n';
+import { SOURCE_LOCALE, type Locale } from '@easyesg/i18n';
 import type { MembershipRole } from '@api/modules/identity/membership/models/membership.model';
 
 /**
@@ -77,3 +77,12 @@ const storage = new AsyncLocalStorage<RequestContext>();
 export const runInRequestContext = <T>(ctx: RequestContext, fn: () => T): T => storage.run(ctx, fn);
 
 export const requestContext = (): RequestContext | undefined => storage.getStore();
+
+/**
+ * The language this request negotiated, or the source locale where none was (OQ-46) — the fallback every reader of
+ * `requestContext().locale` had written for itself, nine times, before task 50.1's parent close gave it one home
+ * beside the value it reads.
+ */
+export function requestLocale(): Locale {
+  return requestContext()?.locale ?? SOURCE_LOCALE;
+}

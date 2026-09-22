@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { SOURCE_LOCALE } from '@easyesg/i18n';
-import { requestContext } from '@api/infrastructure/persistence/request-context';
+
+import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { Invitation, PendingInvitation } from '../models/invitation.model';
 import { IssueInvitation, type IssueInvitationCommand } from '../use-cases/issue-invitation.use-case';
 import { ListInvitations } from '../use-cases/list-invitations.use-case';
@@ -88,7 +88,7 @@ export class InvitationService {
       // Used only where the invited address has no account of its own — the fallback, not the
       // answer. `IssueInvitation` prefers the invitee's own stored locale, because FR-169 resolves
       // email language per recipient and this administrator is not the recipient.
-      inviterLocale: requestContext()?.locale ?? SOURCE_LOCALE,
+      inviterLocale: requestLocale(),
     });
   }
 

@@ -1,19 +1,18 @@
 import { NestFactory } from '@nestjs/core';
-import type { ConfigService } from '@nestjs/config';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { configureHttpApp } from '../src/main.http';
-import type { AppConfig } from '../src/config/configuration';
-import type { NotificationEmail, NotificationEmailPort } from '../src/contracts/notification-email.port';
+import type { EmailDispatched, EmailMessage, EmailPort } from '../src/contracts/email.port';
 import {
   EMAIL_VERIFICATION_REQUESTED,
   PASSWORD_RESET_REQUESTED,
 } from '../src/modules/identity/account/constants/account.constants';
 import { PasswordResetEmailHandler } from '../src/modules/identity/account/consumers/password-reset-email.handler';
 import { hashPasswordResetToken } from '../src/modules/identity/account/domain/password-reset-token';
+import { OCCURRED_MICROS, asJob, deleteNoticesAbout, linkNoticeDelivery } from './support/notification-store';
 
 /**
  * Password reset, end to end (FR-6, UC-08, UC-09 — assigned to task 21 by OQ-56).
@@ -46,17 +45,15 @@ const connect = async (userKey: string, passwordKey: string, applicationName: st
   return dataSource;
 };
 
-class RecordingEmailPort implements NotificationEmailPort {
-  readonly sent: NotificationEmail[] = [];
+/** The provider, recorded: the handler reaches it through the notification module's real delivery (task 50.1.4). */
+class RecordingEmailPort implements EmailPort {
+  readonly sent: EmailMessage[] = [];
 
-  send(email: NotificationEmail): Promise<void> {
-    this.sent.push(email);
-    return Promise.resolve();
+  send(message: EmailMessage): Promise<EmailDispatched> {
+    this.sent.push(message);
+    return Promise.resolve({});
   }
 }
-
-const stubConfig = (publicUrl: string) =>
-  ({ get: () => publicUrl }) as unknown as ConfigService<AppConfig, true>;
 
 interface ProblemDocument {
   type: string;
@@ -74,6 +71,8 @@ const PUBLIC_WEB_URL = 'https://app.easyesg.md';
 describe('password reset (UC-08, UC-09, FR-6)', () => {
   let app: NestExpressApplication;
   let owner: DataSource;
+  /** The issuances this suite handed to the delivery, whose notices it removes (task 50.1.4). */
+  const delivered: string[] = [];
   let worker: DataSource;
 
   const addressFor = (label: string) =>
@@ -94,6 +93,7 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
     await owner?.query(`DELETE FROM identity.auth_attempt WHERE attempt_key LIKE '%task21r-%'`);
     await owner?.query(`DELETE FROM identity.account WHERE email LIKE 'task21r-%@example.md'`);
     await owner?.query(`DELETE FROM audit.outbox_event WHERE payload->>'email' LIKE 'task21r-%'`);
+    if (owner) await deleteNoticesAbout(owner, delivered);
     await owner?.destroy();
     await worker?.destroy();
   });
@@ -122,9 +122,14 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
 
   const queuedReset = async (email: string) => {
     const rows = await worker.query<
-      { payload: Record<string, unknown> & { token: string }; idempotency_key: string }[]
+      {
+        payload: Record<string, unknown> & { token: string };
+        idempotency_key: string;
+        organization_id: string | null;
+        occurred_micros: string;
+      }[]
     >(
-      `SELECT payload, idempotency_key FROM audit.outbox_event
+      `SELECT payload, idempotency_key, organization_id, ${OCCURRED_MICROS} FROM audit.outbox_event
         WHERE event_type = $1 AND payload->>'email' = $2
         ORDER BY occurred_at DESC`,
       [PASSWORD_RESET_REQUESTED, email],
@@ -169,24 +174,26 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
 
     it('turns the row into an email whose link lands on the set-password screen', async () => {
       const emailPort = new RecordingEmailPort();
-      const handler = new PasswordResetEmailHandler(emailPort, stubConfig(PUBLIC_WEB_URL));
+      const handler = new PasswordResetEmailHandler(
+        linkNoticeDelivery({ worker, provider: emailPort, webOrigin: PUBLIC_WEB_URL }),
+      );
       const [queued] = await queuedReset(email);
+      delivered.push(queued.idempotency_key);
 
-      await handler.handle(queued.payload, {
+      await handler.handle(asJob(queued), {
         jobId: queued.idempotency_key,
         jobName: PASSWORD_RESET_REQUESTED,
         attempt: 1,
       });
 
       expect(emailPort.sent).toHaveLength(1);
-      const link = new URL(emailPort.sent[0].params.resetUrl as string);
+      const link = new URL(emailPort.sent[0].params.link as string);
       expect(link.origin).toBe(PUBLIC_WEB_URL);
       expect(link.pathname).toBe('/ro/set-password');
       expect(link.searchParams.get('token')).toBe(token);
       expect(emailPort.sent[0].idempotencyKey).toBe(queued.idempotency_key);
-      // The category, with no second wording named: the reset's own is the category's key (task 49.2).
-      expect(emailPort.sent[0].categoryKey).toBe('identity.password_reset');
-      expect(emailPort.sent[0].templateKey).toBeUndefined();
+      // The category's own wording, with no second one named: the reset's is the category's key (task 49.2).
+      expect(emailPort.sent[0].templateKey).toBe('identity.password_reset');
     });
 
     it('consuming it replaces the password and terminates every session', async () => {
@@ -316,12 +323,14 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
 
       // The worker words it for an account with no password (§12.5.6's task-155 row (8)).
       const emailPort = new RecordingEmailPort();
-      await new PasswordResetEmailHandler(emailPort, stubConfig(PUBLIC_WEB_URL)).handle(queued.payload, {
+      delivered.push(queued.idempotency_key);
+      await new PasswordResetEmailHandler(
+        linkNoticeDelivery({ worker, provider: emailPort, webOrigin: PUBLIC_WEB_URL }),
+      ).handle(asJob(queued), {
         jobId: queued.idempotency_key,
         jobName: PASSWORD_RESET_REQUESTED,
         attempt: 1,
       });
-      expect(emailPort.sent[0].categoryKey).toBe('identity.password_reset');
       expect(emailPort.sent[0].templateKey).toBe('identity.password_setup');
 
       await resetPassword(queued.payload.token).expect(204);

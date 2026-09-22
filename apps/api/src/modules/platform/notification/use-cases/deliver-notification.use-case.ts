@@ -1,16 +1,13 @@
-import type { NotificationCategoryKey } from '@api/contracts/notification.port';
 import type { NotificationRecipientsPort } from '@api/contracts/notification-recipients.port';
+import type { EpochMicros } from '@api/contracts/types/time';
 import type { NotificationRaised } from '../constants/notification.constants';
+import { noticeLink } from '../domain/notice-link';
 import { stillOwed } from '../domain/still-owed';
 import type { EmailChannel } from '../interfaces/email-channel.interface';
+import type { NotificationChannelDecision } from '../interfaces/notification-channel-decision.interface';
 import type { NotificationStore } from '../interfaces/notification-store.interface';
 import { NOTIFICATION_CHANNEL, type NotificationChannel } from '../models/notification-category.model';
 import { NOTIFICATION_STATE } from '../models/notification-record.model';
-
-/** The channel decision this use case asks for — `CategoryChannels`' shape, named so no framework class enters. */
-export interface NotificationChannelDecision {
-  channelsFor(query: { readonly categoryKey: NotificationCategoryKey }): readonly NotificationChannel[];
-}
 
 export interface DeliverNotificationCommand {
   readonly notice: NotificationRaised;
@@ -19,7 +16,7 @@ export interface DeliverNotificationCommand {
   /** The outbox row's key: the id a new notice adopts (§12.5.6's task-49.3 row (3)). */
   readonly deliveryId: string;
   /** The outbox row's time, which orders this raise against its key's cancellation (§12.5.6's task-50.1 row (12)). */
-  readonly raisedAt: Date;
+  readonly raisedAtMicros: EpochMicros;
 }
 
 export interface DeliverNotificationResult {
@@ -73,7 +70,7 @@ export class DeliverNotification {
       categoryKey: notice.categoryKey,
       subjectRef: notice.subjectRef,
       recipientScope: notice.recipientScope,
-      raisedAt: command.raisedAt,
+      raisedAtMicros: command.raisedAtMicros,
       deepLink: notice.deepLink,
       params: notice.params,
     });
@@ -89,18 +86,16 @@ export class DeliverNotification {
     }
 
     for (const recipient of owed(NOTIFICATION_CHANNEL.EMAIL)) {
-      // The locale prefix always, the source locale included, for `VerificationEmailHandler`'s reason: `apps/web`
-      // redirects the superfluous one, and teaching this module its routing would put a front-end rule here.
-      const link = new URL(`/${recipient.locale}${record.deepLink}`, this.webOrigin);
+      const link = noticeLink({ origin: this.webOrigin, path: record.deepLink, locale: recipient.locale });
       await this.email.send({
         categoryKey: notice.categoryKey,
         to: recipient.email,
         locale: recipient.locale,
         // `link` is the placeholder a raised category's templates are written against (§12.5.6's task-49.3 row).
-        params: { ...record.params, link: link.toString() },
+        params: { ...record.params, link },
         idempotencyKey: `${record.notificationId}:${recipient.userId}`,
       });
-      await this.store.recordEmailAccepted({ ...ref, recipientId: recipient.userId });
+      await this.store.recordEmailAccepted({ ...ref, recipient: { accountId: recipient.userId } });
     }
 
     await this.store.markDelivered(ref);

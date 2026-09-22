@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SOURCE_LOCALE } from '@easyesg/i18n';
-import { requestContext } from '@api/infrastructure/persistence/request-context';
+
+import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
 import {
   isSocialProvider,
   type ProviderAuthorizationChallenge,
@@ -59,7 +59,7 @@ export class SocialAuthService {
       provider: this.narrowProvider(input.provider),
       // The locale negotiated for this request (OQ-46) seeds FR-10's preference when the flow
       // registers; the address feeds §12.5.6's window — both ambient, both resolved here.
-      locale: requestContext()?.locale ?? SOURCE_LOCALE,
+      locale: requestLocale(),
       clientIp: requestContext()?.clientIp,
     });
   }

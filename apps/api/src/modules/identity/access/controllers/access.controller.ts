@@ -6,10 +6,12 @@ import { DEFAULT_ON_PAGE } from '@api/app/constants/pagination.constants';
 import { ResultListDto } from '@api/app/dto/result-list.dto';
 import { RequestListDto } from '@api/app/dto/request-list.dto';
 import { ListQueryInterceptor } from '@api/app/interceptors/list-query.interceptor';
+import { SORT_DIRECTION } from '@api/contracts/types/list-query';
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import { AccessRowResponseDto } from '../dto/access-row.response.dto';
 import { SeatConsumptionResponseDto } from '../dto/seat-consumption.response.dto';
+import { ACCESS_FILTER_FIELD, ACCESS_SORT } from '../models/access.model';
 import { AccessService } from '../services/access.service';
 
 /**
@@ -69,14 +71,16 @@ export class AccessController {
     name: 'filters',
     required: false,
     description:
-      'Compact facets: `role,<role>` and `standing,<standing>`, pipe-separated. A value outside ' +
-      'the published enum, or a field this route does not define, is ignored rather than refused.',
+      `Compact facets: \`${ACCESS_FILTER_FIELD.ROLE},<role>\` and \`${ACCESS_FILTER_FIELD.STANDING},<standing>\`, ` +
+      'pipe-separated. A value outside the published enum, or a field this route does not define, is ignored rather ' +
+      'than refused.',
   })
   @ApiQuery({
     name: 'order',
     required: false,
     description:
-      'One ordering: `<person|role|standing|activity>,<asc|desc>`. Defaults to `activity,desc` — ' +
+      `One ordering: \`<${Object.values(ACCESS_SORT).join('|')}>,<${Object.values(SORT_DIRECTION).join('|')}>\`. ` +
+      `Defaults to \`${ACCESS_SORT.ACTIVITY},${SORT_DIRECTION.DESC}\` — ` +
       'an administrator opening this screen is looking at who is here now. Role and standing order ' +
       'by rank rather than alphabetically: widest access first, needing-attention first.',
   })

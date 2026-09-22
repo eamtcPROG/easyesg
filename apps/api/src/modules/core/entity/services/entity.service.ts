@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SOURCE_LOCALE } from '@easyesg/i18n';
-import { requestContext } from '@api/infrastructure/persistence/request-context';
+
+import { requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { ReportingEntity } from '../models/reporting-entity.model';
 import {
   REPORTING_ENTITY_STORE,
@@ -50,7 +50,7 @@ export class EntityService {
   searchActivityCodes(input: { readonly query: string; readonly limit: number }): Promise<NaceCodeMatch[]> {
     return this.naceCodes.search({
       ...input,
-      locale: requestContext()?.locale ?? SOURCE_LOCALE,
+      locale: requestLocale(),
     });
   }
 
@@ -58,7 +58,7 @@ export class EntityService {
   resolveActivityCodes(input: { readonly codes: readonly string[] }): Promise<NaceCodeMatch[]> {
     return this.naceCodes.resolve({
       ...input,
-      locale: requestContext()?.locale ?? SOURCE_LOCALE,
+      locale: requestLocale(),
     });
   }
 

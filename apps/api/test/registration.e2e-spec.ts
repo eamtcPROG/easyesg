@@ -1,16 +1,15 @@
 import { NestFactory } from '@nestjs/core';
-import type { ConfigService } from '@nestjs/config';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { configureHttpApp } from '../src/main.http';
-import type { AppConfig } from '../src/config/configuration';
-import type { NotificationEmail, NotificationEmailPort } from '../src/contracts/notification-email.port';
+import type { EmailDispatched, EmailMessage, EmailPort } from '../src/contracts/email.port';
 import { EMAIL_VERIFICATION_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
 import { VerificationEmailHandler } from '../src/modules/identity/account/consumers/verification-email.handler';
 import { hashVerificationToken } from '../src/modules/identity/account/domain/verification-token';
+import { OCCURRED_MICROS, asJob, deleteNoticesAbout, linkNoticeDelivery } from './support/notification-store';
 
 /**
  * Signup → verify, end to end at the API (task 19's stated deliverable).
@@ -56,18 +55,15 @@ const connect = async (userKey: string, passwordKey: string, applicationName: st
   return dataSource;
 };
 
-class RecordingEmailPort implements NotificationEmailPort {
-  readonly sent: NotificationEmail[] = [];
+/** The provider, recorded: the handler reaches it through the notification module's real delivery (task 50.1.4). */
+class RecordingEmailPort implements EmailPort {
+  readonly sent: EmailMessage[] = [];
 
-  send(email: NotificationEmail): Promise<void> {
-    this.sent.push(email);
-    return Promise.resolve();
+  send(message: EmailMessage): Promise<EmailDispatched> {
+    this.sent.push(message);
+    return Promise.resolve({});
   }
 }
-
-/** Only `web.publicUrl` is read, so the surface a stub has to satisfy is one key. */
-const stubConfig = (publicUrl: string) =>
-  ({ get: () => publicUrl }) as unknown as ConfigService<AppConfig, true>;
 
 /**
  * `supertest` types `body` as `any`, which would disable type checking on every assertion below.
@@ -105,6 +101,8 @@ const PUBLIC_WEB_URL = 'https://app.easyesg.md';
 describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
   let app: NestExpressApplication;
   let owner: DataSource;
+  /** The issuances this suite handed to the delivery, whose notices it removes (task 50.1.4). */
+  const delivered: string[] = [];
   let worker: DataSource;
 
   // Unique per run, so a re-run against the same database is not blocked by the account the last
@@ -130,6 +128,7 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
     // their credentials and tokens by cascade.
     await owner?.query(`DELETE FROM identity.account WHERE email LIKE 'task19-%@example.md'`);
     await owner?.query(`DELETE FROM audit.outbox_event WHERE payload->>'email' LIKE 'task19-%'`);
+    if (owner) await deleteNoticesAbout(owner, delivered);
     await owner?.destroy();
     await worker?.destroy();
   });
@@ -140,9 +139,14 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
   /** The outbox row for an address, read as the only role permitted to read one. */
   const queuedVerification = async (email: string) => {
     const rows = await worker.query<
-      { payload: Record<string, unknown> & { token: string }; idempotency_key: string }[]
+      {
+        payload: Record<string, unknown> & { token: string };
+        idempotency_key: string;
+        organization_id: string | null;
+        occurred_micros: string;
+      }[]
     >(
-      `SELECT payload, idempotency_key FROM audit.outbox_event
+      `SELECT payload, idempotency_key, organization_id, ${OCCURRED_MICROS} FROM audit.outbox_event
         WHERE event_type = $1 AND payload->>'email' = $2
         ORDER BY occurred_at DESC`,
       [EMAIL_VERIFICATION_REQUESTED, email],
@@ -190,10 +194,13 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
 
     it('turns that row into an email carrying a link the API accepts back', async () => {
       const emailPort = new RecordingEmailPort();
-      const handler = new VerificationEmailHandler(emailPort, stubConfig(PUBLIC_WEB_URL));
+      const handler = new VerificationEmailHandler(
+        linkNoticeDelivery({ worker, provider: emailPort, webOrigin: PUBLIC_WEB_URL }),
+      );
       const [queued] = await queuedVerification(email);
+      delivered.push(queued.idempotency_key);
 
-      await handler.handle(queued.payload, {
+      await handler.handle(asJob(queued), {
         jobId: queued.idempotency_key,
         jobName: EMAIL_VERIFICATION_REQUESTED,
         attempt: 1,
@@ -202,13 +209,13 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
       expect(emailPort.sent).toHaveLength(1);
       const [message] = emailPort.sent;
       expect(message.to).toBe(email);
-      expect(message.categoryKey).toBe('identity.email_verification');
+      expect(message.templateKey).toBe('identity.email_verification');
       // §8.4: the outbound call carries the key generated in the originating transaction.
       expect(message.idempotencyKey).toBe(queued.idempotency_key);
 
       // The link is the contract between the mail and S-02, so it is parsed rather than matched:
       // the locale segment must be the recipient's and the token must survive URL encoding.
-      const link = new URL(message.params.verificationUrl as string);
+      const link = new URL(message.params.link as string);
       expect(link.origin).toBe(PUBLIC_WEB_URL);
       expect(link.pathname).toBe('/ro/verify');
       expect(link.searchParams.get('token')).toBe(token);

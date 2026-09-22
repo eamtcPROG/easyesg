@@ -31,7 +31,7 @@ const MESSAGE: EmailMessage = {
   to: 'recipient@example.md',
   locale: 'ro',
   templateKey: NOTIFICATION_CATEGORY.EMAIL_VERIFICATION,
-  params: { verificationUrl: 'https://example.md/verify?token=abc' },
+  params: { link: 'https://example.md/verify?token=abc' },
   idempotencyKey: 'outbox-row-1',
 };
 
@@ -75,7 +75,7 @@ describe('SmtpEmailAdapter', () => {
     // Rendered, not passed through: the caller supplies a catalogue key and the subject is prose.
     expect(sent.subject).toEqual(expect.any(String));
     expect(sent.subject).not.toBe(MESSAGE.templateKey);
-    expect(String(sent.text)).toContain(String(MESSAGE.params.verificationUrl));
+    expect(String(sent.text)).toContain(String(MESSAGE.params.link));
   });
 
   /** §8.4: the key travels so a provider-side duplicate is traceable to the outbox row. */

@@ -17,8 +17,8 @@ import { NotificationCategoryCatalog } from './notification-category-catalog.ser
  * category reaching the email floor is said at `warn`, beside the catalogue's own `error` naming the revision.
  *
  * **In-app is not refused here since task 50.1.1**, whose store is where an in-app notice lands. The refusal
- * 49.3 put here now lives in `NotificationEmailService` alone — the one path that still has no record to write an
- * in-app delivery to, until 50.1.4 moves its handlers onto `raise()`.
+ * 49.3 put here is, since task 50.1.4, `DeliverLinkNotice`'s rule of *email, never in-app* — for a notice whose link
+ * carries a token, which a centre could show but never act on.
  */
 @Injectable()
 export class CategoryChannels {

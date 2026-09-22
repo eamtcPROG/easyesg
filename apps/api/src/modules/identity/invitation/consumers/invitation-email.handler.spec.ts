@@ -1,58 +1,58 @@
-import type { ConfigService } from '@nestjs/config';
-import type { AppConfig } from '@api/config/configuration';
-import type { NotificationEmail, NotificationEmailPort } from '@api/contracts/notification-email.port';
+import type { DeliverNoticeCommand, NotificationDeliveryPort } from '@api/contracts/notification-delivery.port';
 import type { JobContext } from '@api/infrastructure/queue/job-handler';
 import { InvitationEmailHandler } from './invitation-email.handler';
 
 /**
- * The organization invitation's email (FR-11, FR-57; its category since task 49.2). The category key is what picks
- * its wording now (FR-173), so it is asserted as the wire value; nothing else constructed this handler until the
- * parent close of task 49 found it untested.
+ * The organization invitation's notice (FR-11, FR-57; its category since task 49.2, handed to the notification
+ * module's delivery since task 50.1.4). The category key picks its wording (FR-173), so it is asserted as the wire
+ * value; so is the recipient, an address and a language, since the invitee may hold no account (row (16)).
  */
-describe('InvitationEmailHandler (tasks 26.1, 49.2)', () => {
-  class RecordingEmailPort implements NotificationEmailPort {
-    readonly sent: NotificationEmail[] = [];
-
-    send(email: NotificationEmail): Promise<void> {
-      this.sent.push(email);
-      return Promise.resolve();
-    }
-  }
-
-  const config = { get: () => 'https://app.easyesg.md' } as unknown as ConfigService<AppConfig, true>;
+describe('InvitationEmailHandler (tasks 26.1, 49.2, 50.1.4)', () => {
+  const ORGANIZATION = '44444444-4444-4444-8444-444444444444';
   const payload = {
     invitationId: 'invitation-1',
     organizationName: 'Brutăria',
     email: 'ana@example.md',
     locale: 'ru',
     token: 'token/1',
+    organizationId: ORGANIZATION,
+    occurredAtMicros: 1_790_726_400_000_000,
   };
 
-  it("sends the invitation category's email, in the invitee's language, with the link to accept it", async () => {
-    const port = new RecordingEmailPort();
-    await new InvitationEmailHandler(port, config).handle(payload, { jobId: 'outbox-1' } as JobContext);
+  const handled = async (event: Record<string, unknown>): Promise<DeliverNoticeCommand[]> => {
+    const delivered: DeliverNoticeCommand[] = [];
+    const port: NotificationDeliveryPort = {
+      deliver: (command) => {
+        delivered.push(command);
+        return Promise.resolve();
+      },
+    };
+    await new InvitationEmailHandler(port).handle(event, { jobId: 'outbox-1' } as JobContext);
+    return delivered;
+  };
 
-    expect(port.sent).toEqual([
+  it("hands over the invitation for the invitee's address and language, in its organization", async () => {
+    expect(await handled(payload)).toEqual([
       {
-        to: 'ana@example.md',
-        locale: 'ru',
+        issuanceKey: 'outbox-1',
+        occurredAtMicros: 1_790_726_400_000_000,
+        organizationId: ORGANIZATION,
         categoryKey: 'identity.invitation',
-        params: {
-          organizationName: 'Brutăria',
-          invitationUrl: 'https://app.easyesg.md/ru/invitation/token%2F1',
-        },
-        idempotencyKey: 'outbox-1',
+        recipient: { address: 'ana@example.md', locale: 'ru' },
+        application: 'web',
+        deepLink: '/invitation',
+        // A path segment, encoded — `apps/web`'s `invitation/[token]` route.
+        linkPath: '/invitation/token%2F1',
+        params: { organizationName: 'Brutăria' },
       },
     ]);
   });
 
-  it('fails a payload missing a field rather than sending to a guess', async () => {
-    const port = new RecordingEmailPort();
-    const { token: _token, ...broken } = payload;
-
-    await expect(
-      new InvitationEmailHandler(port, config).handle(broken, { jobId: 'outbox-1' } as JobContext),
-    ).rejects.toThrow('payload');
-    expect(port.sent).toEqual([]);
+  it.each([
+    ['no token', { ...payload, token: undefined }],
+    ['no organization', { ...payload, organizationId: null }],
+    ['no time', { ...payload, occurredAtMicros: undefined }],
+  ])('fails a payload with %s rather than sending to a guess', async (_label, broken) => {
+    await expect(handled(broken)).rejects.toThrow('payload');
   });
 });

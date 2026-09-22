@@ -1,4 +1,5 @@
 import type { NotificationCategoryKey } from '@api/contracts/notification.port';
+import type { EpochMicros } from '@api/contracts/types/time';
 import type { NotificationChannel } from '../models/notification-category.model';
 import type { NotificationState } from '../models/notification-record.model';
 
@@ -42,10 +43,15 @@ export interface OpenNotificationCommand extends NoticeRef {
   readonly subjectRef: string;
   /** The producer-named audience (§12.5.6's task-50.1 row (6)); part of FR-167's key. */
   readonly recipientScope: string;
-  /** The raise's outbox time — the database's clock — which a cancellation of its key is ordered against. */
-  readonly raisedAt: Date;
+  /** The raise's outbox time — the database's clock, in microseconds — which its key's cancellation is ordered against. */
+  readonly raisedAtMicros: EpochMicros;
   readonly deepLink: string;
   readonly params: Record<string, unknown>;
+  /**
+   * The absolute link as sent, where it carries a secret — a verification, reset or invitation token (task 50.1.4,
+   * row (15)). The store keeps it sealed beside `deepLink`, which carries none; a raised notice passes nothing.
+   */
+  readonly sealedLink?: string;
 }
 
 export interface DeliverInAppCommand extends NoticeRef {
@@ -53,12 +59,15 @@ export interface DeliverInAppCommand extends NoticeRef {
 }
 
 export interface RecordEmailAcceptedCommand extends NoticeRef {
-  readonly recipientId: string;
+  readonly recipient: RecordedRecipient;
 }
 
-/** One recipient already reached on one channel. */
+/** Whom a delivery names: an account, or — for someone who holds none — the address it went to (row (16)). */
+export type RecordedRecipient = { readonly accountId: string } | { readonly address: string };
+
+/** One recipient already reached on one channel. `recipientId` is null for a delivery made to an address. */
 export interface RecordedDelivery {
-  readonly recipientId: string;
+  readonly recipientId: string | null;
   readonly channel: NotificationChannel;
 }
 

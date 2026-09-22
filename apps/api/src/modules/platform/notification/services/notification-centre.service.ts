@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { SOURCE_LOCALE, type Locale } from '@easyesg/i18n';
+import type { Locale } from '@easyesg/i18n';
 import { DEFAULT_ON_PAGE } from '@api/app/constants/pagination.constants';
 import { translate } from '@api/app/messages/catalogue';
 import type { ListQueryInput } from '@api/contracts/types/list-query';
-import { requestContext } from '@api/infrastructure/persistence/request-context';
+import { requestLocale } from '@api/infrastructure/persistence/request-context';
 import { toNotificationCentreQuery } from '../domain/notification-centre-query';
 import type {
   NotificationCentreEntry,
@@ -43,7 +43,7 @@ export class NotificationCentreService {
 
   async list(query: NotificationCentreQuery): Promise<NotificationCentreItemPage> {
     const page = await this.listNotifications.execute(query);
-    const locale = requestContext()?.locale ?? SOURCE_LOCALE;
+    const locale = requestLocale();
     return {
       items: page.entries.map((entry) => inWords({ entry, locale })),
       matched: page.matched,

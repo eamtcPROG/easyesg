@@ -486,6 +486,7 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     'organization_id',
     'outcome',
     'recipient_account_id',
+    'recipient_address',
   ],
 };
 
@@ -512,6 +513,69 @@ const byTable = (rows: { location: string; column: string }[]): Record<string, s
   for (const row of rows) (grouped[row.location] ??= []).push(row.column);
   return grouped;
 };
+
+/**
+ * ── What each runtime role may do on the notification schema (task 50.1's parent close) ──────────────────
+ *
+ * **Every privilege stated, in both directions.** The schema's guarantees are layered — row security narrows which
+ * rows, restrictive policies which recipient, grants which operations and columns — and the policies are `TO PUBLIC`
+ * with recipient narrowing on `SELECT` and `UPDATE` only. So a grant nobody meant (an `INSERT` on the delivery
+ * for the request tier, an `UPDATE` on the notice) would *work*, and no other check here would see it. Stated as
+ * the full set, a widened grant and a narrowed one fail alike. `table` is a table-wide grant; `columns` is a grant of
+ * some columns only, which `APP_IMMUTABLE_COLUMNS` and the `sealed_link` case pin by name.
+ */
+const NOTIFICATION_PRIVILEGES = [
+  'esg_admin_ro notification.cancellation SELECT table',
+  'esg_admin_ro notification.delivery SELECT table',
+  'esg_admin_ro notification.notification SELECT table',
+  'esg_app notification.delivery SELECT table',
+  'esg_app notification.delivery UPDATE columns',
+  'esg_app notification.notification SELECT columns',
+  'esg_worker notification.cancellation INSERT table',
+  'esg_worker notification.cancellation SELECT table',
+  'esg_worker notification.cancellation UPDATE table',
+  'esg_worker notification.delivery INSERT table',
+  'esg_worker notification.delivery SELECT table',
+  'esg_worker notification.notification INSERT table',
+  'esg_worker notification.notification SELECT table',
+  'esg_worker notification.notification UPDATE table',
+];
+
+const notificationPrivileges = (x: Executor) =>
+  x.query<{ held: string }[]>(
+    `SELECT r.role || ' notification.' || c.relname || ' ' || p.privilege || ' ' ||
+            CASE WHEN has_table_privilege(r.role, c.oid, p.privilege) THEN 'table' ELSE 'columns' END AS held
+       FROM (VALUES ('esg_app'), ('esg_worker'), ('esg_admin_ro')) AS r(role)
+      CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE')) AS p(privilege)
+       JOIN pg_class c ON c.relkind IN ('r', 'p')
+       JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'notification'
+      WHERE has_table_privilege(r.role, c.oid, p.privilege)
+         OR (p.privilege IN ('SELECT', 'INSERT', 'UPDATE') AND has_any_column_privilege(r.role, c.oid, p.privilege))
+      ORDER BY 1`,
+  );
+
+/**
+ * **`DOMAIN_SCHEMAS` is complete** — every other check here reads only the schemas it names, so a schema created and
+ * not listed would pass them all by being invisible. What is not a domain schema is named, with its reason.
+ */
+const NON_DOMAIN_SCHEMAS = [
+  'information_schema',
+  // TypeORM's applied-migration ledger (§7.1), bookkeeping rather than domain storage.
+  'migration',
+  'pg_catalog',
+  'pg_toast',
+  // Holds only extensions (§12.3).
+  'public',
+];
+
+const unlistedSchemas = (x: Executor) =>
+  x.query<{ schema: string }[]>(
+    `SELECT nspname AS schema FROM pg_namespace
+      WHERE NOT (nspname = ANY($1)) AND NOT (nspname = ANY($2)) AND nspname NOT LIKE 'pg\\_temp%'
+        AND nspname NOT LIKE 'pg\\_toast\\_temp%'
+      ORDER BY 1`,
+    [DOMAIN_SCHEMAS, NON_DOMAIN_SCHEMAS],
+  );
 
 /**
  * ── FR-22's lock, and the tables it has to reach (task 31.4) ─────────────────────────────────────
@@ -577,6 +641,9 @@ const ENCRYPTED_SECRET_COLUMNS = [
   // Task 144: a re-enrolment's factor, staged beside the one in force until its confirming code arrives.
   'identity.admin_account.staged_totp_secret',
   'identity.totp_credential.secret',
+  // Task 50.1.4: the link a verification, reset or invitation email carried, raw token included, kept on the
+  // notice as evidence of what was sent (§12.5.6's task-50.1 row (15)).
+  'notification.notification.sealed_link',
 ];
 
 /**
@@ -982,6 +1049,36 @@ describe('schema invariants (§7)', () => {
    * session silently becomes remembered, and nothing in the suite would say so. The backfill itself
    * is a one-shot historical fact no hermetic harness can model; the default is not.
    */
+  describe('each runtime role holds exactly its privileges on the notification schema (task 50.1)', () => {
+    it('holds', async () => {
+      expect((await notificationPrivileges(db)).map((row) => row.held)).toEqual(NOTIFICATION_PRIVILEGES);
+    });
+
+    it('catches a grant nobody meant — the request tier writing delivery evidence', async () => {
+      const caught = await provingViolation(
+        `GRANT INSERT ON notification.delivery TO esg_app`,
+        notificationPrivileges,
+      );
+      expect(caught.map((row) => row.held)).toContain('esg_app notification.delivery INSERT table');
+    });
+
+    it('catches the sealed link becoming readable to the request tier', async () => {
+      const caught = await provingViolation(`GRANT SELECT ON notification.notification TO esg_app`, notificationPrivileges);
+      expect(caught.map((row) => row.held)).toContain('esg_app notification.notification SELECT table');
+    });
+  });
+
+  describe('every schema is a domain schema or named as not one (task 50.1)', () => {
+    it('holds', async () => {
+      expect(await unlistedSchemas(db)).toEqual([]);
+    });
+
+    it('catches a schema created and not listed', async () => {
+      const caught = await provingViolation(`CREATE SCHEMA probe_unlisted`, unlistedSchemas);
+      expect(caught).toEqual([{ schema: 'probe_unlisted' }]);
+    });
+  });
+
   describe('a session defaults to the shorter lifetime (§12.5.6, OQ-35, task 97)', () => {
     const remberedDefault = (x: Executor) =>
       x.query<{ column_default: string | null }[]>(

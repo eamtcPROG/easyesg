@@ -1,10 +1,9 @@
-import type { NotificationEmail } from '@api/contracts/notification-email.port';
 import type {
   NotificationRecipient,
   NotificationRecipientsPort,
 } from '@api/contracts/notification-recipients.port';
 import type { NotificationRaised } from '../constants/notification.constants';
-import type { EmailChannel } from '../interfaces/email-channel.interface';
+import type { EmailChannel, NotificationEmail } from '../interfaces/email-channel.interface';
 import type {
   DeliverInAppCommand,
   NoticeRef,
@@ -16,7 +15,8 @@ import type {
 } from '../interfaces/notification-store.interface';
 import type { NotificationChannel } from '../models/notification-category.model';
 import type { NotificationState } from '../models/notification-record.model';
-import { DeliverNotification, type NotificationChannelDecision } from './deliver-notification.use-case';
+import type { NotificationChannelDecision } from '../interfaces/notification-channel-decision.interface';
+import { DeliverNotification } from './deliver-notification.use-case';
 
 /**
  * UC-172 … UC-174's flow over a raised notice (tasks 49.3, 50.1.1), hermetic and framework-free like the use case:
@@ -49,7 +49,7 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
   class FakeNotificationStore implements NotificationStore {
     readonly notices: Notice[] = [];
     /** Each key's latest cancellation, as `notification.cancellation` holds it. */
-    readonly cancellations = new Map<string, Date>();
+    readonly cancellations = new Map<string, number>();
 
     static key(command: { categoryKey: string; subjectRef: string; recipientScope: string }): string {
       return `${command.categoryKey}|${command.subjectRef}|${command.recipientScope}`;
@@ -64,7 +64,7 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
         notice.command.recipientScope === command.recipientScope;
       const own = this.notices.find((each) => each.command.notificationId === command.notificationId);
       const cancelledAt = this.cancellations.get(FakeNotificationStore.key(command));
-      if (!own && cancelledAt && cancelledAt >= command.raisedAt) {
+      if (!own && cancelledAt !== undefined && cancelledAt >= command.raisedAtMicros) {
         return Promise.resolve({
           notificationId: command.notificationId,
           state: 'cancelled',
@@ -94,7 +94,8 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
     }
 
     recordEmailAccepted(command: RecordEmailAcceptedCommand): Promise<void> {
-      this.record(command, command.recipientId, 'email');
+      if (!('accountId' in command.recipient)) throw new Error('a raised notice reaches accounts only');
+      this.record(command, command.recipient.accountId, 'email');
       return Promise.resolve();
     }
 
@@ -151,8 +152,8 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
       resolve: ({ userIds }) => Promise.resolve(people.filter((person) => userIds.includes(person.userId))),
     };
     const deliver = new DeliverNotification(recipients, email, decision, store, 'https://app.easyesg.md');
-    const run = (raised: NotificationRaised, deliveryId: string, raisedAt = new Date('2026-09-22T08:00:00Z')) =>
-      deliver.execute({ notice: raised, organizationId: ORGANIZATION, deliveryId, raisedAt });
+    const run = (raised: NotificationRaised, deliveryId: string, raisedAtMicros = 1_790_726_400_000_000) =>
+      deliver.execute({ notice: raised, organizationId: ORGANIZATION, deliveryId, raisedAtMicros });
     return { run, email, store };
   };
 
@@ -303,14 +304,14 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
     const { run, email, store } = build();
     store.cancellations.set(
       FakeNotificationStore.key({ categoryKey: 'identity.invitation', subjectRef: 'invitation:1', recipientScope: 'default' }),
-      new Date('2026-09-22T09:00:00Z'),
+      1_790_726_400_000_000,
     );
 
-    await run(notice({ recipientUserIds: [ANA] }), 'outbox-key-1', new Date('2026-09-22T08:59:59Z'));
+    await run(notice({ recipientUserIds: [ANA] }), 'outbox-key-1', 1_790_726_399_999_999);
     expect(email.sent).toEqual([]);
     expect(store.notices).toEqual([]);
 
-    await run(notice({ recipientUserIds: [ANA] }), 'outbox-key-2', new Date('2026-09-22T09:00:01Z'));
+    await run(notice({ recipientUserIds: [ANA] }), 'outbox-key-2', 1_790_726_400_000_001);
     expect(email.sent.map((sent) => sent.idempotencyKey)).toEqual([`outbox-key-2:${ANA}`]);
   });
 });

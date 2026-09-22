@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { EMAIL_PORT, type EmailPort } from '@api/contracts/email.port';
-import type { NotificationEmail } from '@api/contracts/notification-email.port';
-import type { EmailChannel } from '../interfaces/email-channel.interface';
+import type { EmailChannel, NotificationEmail } from '../interfaces/email-channel.interface';
 
 /**
  * The one caller of `EmailPort` (tasks 49.2, 49.3). It decides nothing about channels — its callers have —
