@@ -754,12 +754,15 @@ export async function endSessionsOf(input: { readonly email: string }): Promise<
  * notice with one in-app delivery to the account, reaching it `minutesAgo` minutes ago, and read already where
  * `read` says so. Returns their ids in the order given.
  *
- * **Seeded, because no category reaches a centre yet** — the first is 50.3's manual reminder — so no route can
- * put a notice where S-26 would show it. As `esg_worker`, bound to the organization, because that is the one role
- * that writes the schema and the binding its policies read; the account's id is looked up first as the owner.
+ * **Seeded, because this suite runs no worker** — the manual reminder (task 50.3) is raised by a route, but its
+ * delivery is the worker's, so no browser journey can carry one into a centre. As `esg_worker`, bound to the
+ * organization, because that is the one role that writes the schema and the binding its policies read; the
+ * account's id is looked up first as the owner.
  *
- * Every notice here is an invitation's, which has no in-app wording written, so each lists under the app's own
- * *Notificare*: the suite tells them apart by where each leads, which is why every `deepLink` should differ.
+ * A notice names no category by default, so it is an invitation's, which has no in-app wording written, and lists
+ * under the app's own *Notificare*: the suite tells such notices apart by where each leads, which is why every
+ * `deepLink` should differ. **A worded one names its category and parameters** — the reminder's, as its producer
+ * raises them — and reads in the category's own words.
  */
 export async function seedNotices(input: {
   readonly organizationId: string;
@@ -768,6 +771,9 @@ export async function seedNotices(input: {
     readonly deepLink: string;
     readonly minutesAgo: number;
     readonly read?: boolean;
+    /** A worded category's key, and the parameters its words interpolate (task 50.3); an unworded one when absent. */
+    readonly categoryKey?: string;
+    readonly params?: Record<string, unknown>;
   }[];
 }): Promise<string[]> {
   const owner = new Client(asOwner());
@@ -795,10 +801,18 @@ export async function seedNotices(input: {
       const at = `now() - make_interval(mins => $3::int)`;
       await worker.query(
         `INSERT INTO notification.notification
-                (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, state,
+                (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, params, state,
                  raised_at, last_raised_at, delivered_at)
-         VALUES ($1, $2, 'identity.invitation', $4, 'default', $5, 'delivered', ${at}, ${at}, ${at})`,
-        [id, input.organizationId, notice.minutesAgo, `e2e-web:${id}:${index}`, notice.deepLink],
+         VALUES ($1, $2, $6, $4, 'default', $5, $7::jsonb, 'delivered', ${at}, ${at}, ${at})`,
+        [
+          id,
+          input.organizationId,
+          notice.minutesAgo,
+          `e2e-web:${id}:${index}`,
+          notice.deepLink,
+          notice.categoryKey ?? 'identity.invitation',
+          JSON.stringify(notice.params ?? {}),
+        ],
       );
       await worker.query(
         `INSERT INTO notification.delivery
@@ -839,6 +853,8 @@ export async function cleanupNotifications(organizationIds: readonly string[]): 
     await client.query(`DELETE FROM notification.notification WHERE organization_id = ANY($1::uuid[])`, [
       organizationIds,
     ]);
+    // A raised notice's outbox row names users, not an address, so `cleanupAccounts` cannot find it (task 50.3).
+    await client.query(`DELETE FROM audit.outbox_event WHERE organization_id = ANY($1::uuid[])`, [organizationIds]);
     for (const table of ['notification.delivery', 'notification.notification']) {
       await client.query(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
     }
@@ -846,6 +862,33 @@ export async function cleanupNotifications(organizationIds: readonly string[]): 
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * The manual reminders an organization's outbox holds, oldest first (task 50.3) — what S-16's send committed, read
+ * as `esg_worker`, the one role that reads the outbox. What the worker makes of them is the api's e2e suite's to
+ * prove; this suite runs no worker, so the committed raise is where a browser journey's evidence ends.
+ */
+export async function remindersRaisedFor(organizationId: string): Promise<
+  { readonly recipientUserIds: readonly string[]; readonly deepLink: string; readonly params: Record<string, unknown> }[]
+> {
+  const client = new Client(asWorker());
+  await client.connect();
+  try {
+    const rows = await client.query<{ payload: { recipientUserIds: string[]; deepLink: string; params: Record<string, unknown> } }>(
+      `SELECT payload FROM audit.outbox_event
+        WHERE organization_id = $1 AND payload->>'categoryKey' = 'reporting.manual_reminder'
+        ORDER BY occurred_at`,
+      [organizationId],
+    );
+    return rows.rows.map(({ payload }) => ({
+      recipientUserIds: payload.recipientUserIds,
+      deepLink: payload.deepLink,
+      params: payload.params,
+    }));
   } finally {
     await client.end();
   }

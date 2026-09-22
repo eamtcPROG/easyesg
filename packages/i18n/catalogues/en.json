@@ -254,7 +254,10 @@
       "taxonomy_version_unavailable": "The version of the standard this report was created under is no longer available on the platform, so its questions cannot be shown. Your saved answers are not affected. Contact support; this is resolved on our side.",
       "unknown_derivation_input": "The value sent does not match anything the system calculates a figure from, so it could not be saved. Refresh the page and enter the value again.",
       "unknown_disclosure_dimension": "The category selected is not one the standard admits for this field, so the value could not be saved. Refresh the page and choose again from the list.",
-      "unknown_disclosure_element": "The field submitted is not part of the version of the standard this report was created under, so it could not be saved. Refresh the page to load the current questions."
+      "unknown_disclosure_element": "The field submitted is not part of the version of the standard this report was created under, so it could not be saved. Refresh the page to load the current questions.",
+      "reminder_not_outstanding": "The report is no longer open — its period has been locked or it is ready to file — so the reminder was not sent. Refresh the page to see the reports still open.",
+      "reminder_to_self": "You cannot send a reminder to yourself, so it was not sent. Choose the colleague you want to remind about the report.",
+      "reminder_recipient_not_found": "The person you chose is no longer part of this organization, so the reminder was not sent. Refresh the page to see the current members."
     }
   },
   "notification": {
@@ -280,6 +283,18 @@
       "admin_invitation": {
         "subject": "Invitation to the easyesg administration console",
         "body": "Hello,\n\nYou have been invited to become an operator in the easyesg administration console. Open the link below to choose your password and set up your second sign-in factor:\n\n{link}\n\nThe link is valid for 24 hours and can be used once. The account is created only after you confirm the second factor.\n\nIf you were not expecting this invitation, ignore this message: without acceptance, no account is created."
+      }
+    },
+    "reporting": {
+      "manual_reminder": {
+        "name": "Reminders",
+        "subject": "{senderName} is reminding you about the {entityName} report for {fiscalYear}",
+        "body": "Hello,\n\n{senderName} is reminding you about the sustainability report for {entityName} for {fiscalYear}.{noteGiven, select, given {\n\nTheir message:\n“{note}”} other {}}\n\nOpen the report here:\n\n{link}\n\nYou are receiving this because an administrator of your organization sent you a reminder.",
+        "in_app": {
+          "title": "{senderName} is reminding you about the {entityName} report for {fiscalYear}",
+          "body": "{noteGiven, select, given {“{note}”} other {Open the report to see what is still waiting to be filled in.}}",
+          "action": "Open the report"
+        }
       }
     }
   },

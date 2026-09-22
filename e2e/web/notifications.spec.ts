@@ -243,6 +243,47 @@ test.describe('S-26 — the notification centre', () => {
     await expect(page.getByRole('heading', { name: 'Notificări', level: 1 })).toBeVisible();
   });
 
+  test("a reminder reads in its own words — its category, the sender and the report, the note, and a way to it", async ({
+    page,
+  }) => {
+    await memberWith(page, {
+      label: 'worded',
+      notices: [
+        {
+          deepLink: '/reports',
+          minutesAgo: 2,
+          categoryKey: 'reporting.manual_reminder',
+          // The parameters `SendReportReminder` raises (task 50.3).
+          params: {
+            senderName: 'Ana Popescu',
+            entityName: 'Brutăria Lina',
+            fiscalYear: '2026',
+            noteGiven: 'given',
+            note: 'Lipsesc datele despre energie.',
+          },
+        },
+      ],
+    });
+    const title = 'Ana Popescu vă reamintește de raportul Brutăria Lina pentru 2026';
+
+    await page.goto('/notifications');
+    const item = centreList(page).getByRole('listitem');
+    await expect(item).toHaveCount(1);
+    await expect(item.getByText('Mementouri', { exact: true })).toBeVisible();
+    await expect(item.getByText(title)).toBeVisible();
+    await expect(item.getByText('„Lipsesc datele despre energie.”')).toBeVisible();
+    // With action words the link is the action, described by the title it acts on.
+    const action = item.getByRole('link', { name: 'Deschideți raportul' });
+    await expect(action).toHaveAttribute('href', '/reports');
+    await expect(action).toHaveAccessibleDescription(title);
+
+    // The panel draws the same item, through the same component.
+    await bell(page, 'Notificări, 1 necitită').click();
+    const inPanel = panel(page).getByRole('list', { name: 'Ultimele notificări' }).getByRole('listitem');
+    await expect(inPanel.getByText(title)).toBeVisible();
+    await expect(inPanel.getByRole('link', { name: 'Deschideți raportul' })).toBeVisible();
+  });
+
   test('the bell opens the panel: the latest notices, its two views, opening one, and mark all', async ({ page }) => {
     await memberWith(page, {
       label: 'panel',

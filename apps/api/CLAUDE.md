@@ -12,7 +12,8 @@ user-facing-text conventions. This file carries only what you need in your hands
 Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91, 130, 131), and so is the
 notification core (49) — categories, one mail path, `raise()` and delivery by category — with its store since
 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre
-since 50.1.2, cancellation since 50.1.3, and every notice the platform sends on the record since 50.1.4; the calculator, validation, export, notification preferences, billing, the console's screens, edge and
+since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, and its first
+producer through `raise()` since 50.3, UC-175's reminder; the calculator, validation, export, notification preferences, billing, the console's screens, edge and
 deploy, the
 public tier and the Comprehensive Module are not (37 onward). `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
@@ -508,6 +509,18 @@ in `notification-store.e2e-spec.ts` that fails without it:
   commit. A race cannot be shown absent by running it: the suite takes the lock itself, under
   `notificationKeyLockName`, and shows both operations waiting. A dispatch already sending when a cancellation lands
   finishes the recipients it is sending to.
+
+**The first producer is UC-175's reminder** (task 50.3; §12.5.6's task-50.3 row). `POST /reports/{id}/reminders`,
+an Organization Administrator's, in `core/disclosure` — `SendReportReminder` reads the report and the membership on
+the request's transaction through its own narrow `REMINDER_PARTIES` adapter and raises `reporting.manual_reminder`
+there, so a refusal raises nothing. Three things to know before touching it:
+
+- **Each press is its own notice**: the subject carries a fresh id, because FR-167 folds a repeat raise into an open
+  notice whose content is fixed when it opens — a shared key would lose the second note.
+- **The category is optional and publishes `in_app` alone** until task 52.2's one-click unsubscribe; its email
+  wording is authored and exercised by `report-reminder.wording.spec.ts`, and 52.2's row publishes the channel.
+- **The note's two sentences are an ICU `select` on `noteGiven`**, whose spellings are `REMINDER_NOTE`'s — two copies
+  of one vocabulary, bound by that same spec. The year travels as text, since ICU would give a number a separator.
 
 **The four address notices reach the record from their own events** (task 50.1.4; §12.5.6's task-50.1 rows (14) …
 (17)). Verification, a reset and both invitations keep their producers, events and handlers; each handler names its

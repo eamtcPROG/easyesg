@@ -23486,3 +23486,131 @@ contract in 50.2.1 — three of the cases the cold run is required for.
 - **Not run again after the fix**: the other 244 browser cases and the gates before them, since the fix touched one
   test helper that only the notification +40% spec imports. What would falsify that is a CI run of this tree that
   fails elsewhere in `e2e:web`.
+
+## Task 50.3 — The manual reminder, and task 50's close · 2026-09-22
+
+UC-175, which task 50's row had owned since 26 Aug 2026 and no sub-step carried: an administrator reminds a colleague
+about a report, from S-16, and it arrives in their centre. **The first category a producer raises through `raise()`,
+and the first that travels in-app** — so it is also where the notification core stops being infrastructure. Closing it
+closes task 50.
+
+### Decisions (project owner, two batches)
+
+Recorded as §12.5.6's new task-50.3 row, with UC-175 amended, S-16's controls and states amended, and §17.5's
+`core/disclosure` row widened. **Before the code**, except rows (6) … (8), which the close's reviews raised:
+
+- **(1) A reminder is about a report the administrator picks** (recommended) — one still `open`. Nothing assigns a
+  report to a person, and task 41.3's rollup, which would name what is outstanding in one, is not built; UC-175's
+  *outstanding report* is an open one until it is. With an optional note of at most 500 characters, task 67.9's bound
+  for a free-text reason.
+- **(2) The category is optional, and in-app only until task 52.2** (recommended). FR-163's kinds a recipient may not
+  switch off do not include a reminder, and the task-49.3 row's (7) ships the first optional category's email only once
+  52.2's one-click unsubscribe exists. Its email wording is authored now in all three catalogues and exercised by a
+  spec; 52.2's row publishes the channel, and decides whether the unsubscribe is a placeholder those bodies must gain.
+- **(3) Each press is its own notice** (recommended), no throttle: FR-167 folds a repeat raise into an open notice
+  whose content is fixed when it opens (the task-50.1 row's (18)), so a shared key would lose the second note.
+- **(4) Any active member but the sender** — the owner's choice over the recommended *members who can edit*: a
+  view-only member reads the report and may be the person who knows what is missing.
+- **(5) A panel below S-16's list** (recommended), the invite panel's anatomy rather than a row action with a form
+  inside a dialogue, which would be a new component.
+- **(6) The producer lives in `core/disclosure`** (recommended), not in the module §17.5 gives FR-173: the route
+  decides on a report's status and a membership, read on the one transaction it raises on. §17.5 amended.
+- **(7) A reminder is not cancelled when its report's period locks** (recommended). FR-167's cancellation binds the
+  notices that *watch* a condition — UC-169's and UC-170's, 51.2's — and a reminder is one person's message, which
+  stays as sent. **So its wording no longer claims the report is open**: the sentence shown when no note was written
+  says to open the report.
+- **(8) The `+40%` harness never pads API-resolved text** (recommended: record it, defer the fix). **Task 166** is
+  appended for it, and it is larger than this task: OQ-58 serves every wizard question's label the same way.
+
+### What shipped
+
+- **The API half.** `POST /reports/{id}/reminders`, the Organization Administrator's alone, over `SendReportReminder`
+  — framework-free, three refusals in the order a reader would ask them (the report is open, the recipient is an
+  active member, the recipient is not the sender), then one `raise()` on the request's transaction. Its two people are
+  read through `REMINDER_PARTIES`, this module's own narrow adapter over `identity.membership` under RLS and
+  `identity.account` by the actor's id, because neither identity module exports its store.
+- **The category**, `reporting.manual_reminder`: a `config/seed` artefact publishing `in_app` alone and `optional`,
+  and wording in three locales for both channels — the in-app title, body and action the centre resolves, and the
+  email for 52.2. **The note's two sentences are an ICU `select` on `noteGiven`**, whose spellings are
+  `REMINDER_NOTE`'s: two copies of one vocabulary, bound by a spec.
+- **S-16's reminder panel** (`access/components/remind/`): its own region under its own boundary — the person, the
+  report, the note, and the arms for no open report, no one but the sender, and reads that did not answer, which
+  offers a retry. The contract's own `maxLength` holds the note's bound on both sides.
+
+### The reviews — on `opus`, per the agents' frontmatter
+
+Over 50.3's diff alone. **50.1 and 50.2 were each reviewed whole at their own parent closes**, so the unreviewed part
+of task 50 was this sub-step; re-reading the other two would have repeated those runs rather than adding a reading.
+
+**`spec-review`, eight findings and two tracking notes.** Three became the owner's rows (6) … (8). The rest:
+**UC-175 was re-read in `architecture.md` and not amended in `use_cases.md`** — the rule is that the normative text
+moves in the same edit, and task 155 set the precedent; **S-16 gained an exit it did not list** (S-06, from the
+no-report state); **the row's precedent named the wrong mechanism** — `platform/support-access` calling `ReportService`
+is not what this does; **the failed-read state was called two things**, *partial* in the spec and *error — recoverable*
+in two docblocks; and **two deferrals pointed at rows that did not carry them** — 54.2 now names the reminder's
+entitlement question, 52.2 its email and the unsubscribe's shape.
+
+**`convention-review`, eight violations**, all fixed. Two were the diff's own rules applied incompletely:
+**`notification-categories.e2e-spec.ts` still held every category to email-only**, the twin of the two unit specs this
+task narrowed — it would have failed the gate run; and **three S-14 labels still passed a fiscal year as a number**,
+where ICU writes *2 026*, the trap the diff's own year-as-text rule avoids. Then: **the panel's reads sat in the
+list's section** and its region was threaded through the screen's provider, so two unrelated regions' specs had to
+supply it — it is `remind-section.tsx` now, an async region under its own `Suspense`, and the provider is as it was;
+**the namespace was spelled in five files** — `REMIND_MESSAGES`, the one subtree of S-16's that no other region reads;
+**a placeholder category key outlived its reason** in the catalogue spec; **two `shared/` docblocks did not name their
+new reader**; and **the form trimmed the note the API already trims**, so it sends what was written.
+
+**`gate-integrity-review`, three checks that would not fail on their subject**, each repaired and the repair proven:
+
+- **The no-note wording case could not fail.** Its `none` arm is built with an empty note, so *"does not contain the
+  note"* was vacuous and a body that lost its `other` branch would render `“”` unseen — proven by deleting the English
+  branch, which every one of the six worded surfaces passed. It now asserts positively: no quotation marks, a sentence
+  longer than the note, and the same answer whatever note is not shown. **The same mutation now fails it.**
+- **The +40% case never asserted the item was worded.** Seeded under a category with no wording — the item at its
+  narrowest, the state this task supersedes — all six tests passed. It asserts the category's name, the title and the
+  action words now.
+- **Nothing checked that the sender is not offered to themselves.** The rule is well covered as a function, and the
+  one place that supplies the sender had no check: the reviewer changed the id to the address, rebuilt and the journey
+  passed. It counts the options offered now, and names the administrator as absent.
+
+Its lesser notes, acted on: the note's bound is **held to the contract's published `maxLength`**, so lowering the API's
+would fail the web's spec; the non-open statuses are **derived from `REPORT_STATUS`** in both specs rather than listed;
+and two e2e cases were renamed to what they test — an id no organization holds, rather than *not this organization's*.
+
+### Verification
+
+**`pnpm gates:clean`**, not `gates`: the contract is regenerated and two packages changed — two of the cases the cold
+run is required for — and the browser journeys this task adds had never run.
+
+**It took four runs, and the three failures were each the cold run catching what a narrower one could not.** Each was
+mine, and each is the shape this repository already records:
+
+- **`typecheck`**: `translate` answers `string | undefined`, and the repaired wording assertion read `.length` off it.
+  I had typechecked `apps/api` before writing that line — *a gate must not depend on state a previous command left
+  behind* applied to my own order of work.
+- **`boundaries`**: `email-port-behind-notification` refused the wording spec's `renderEmail` import — no module but
+  `platform/notification` may reach the email adapters, a spec included. The email cases moved to the renderer's own
+  spec, where the import is legitimate; the in-app half stays beside the vocabulary it binds.
+- **`openapi:check`**: the regenerated contract was not staged, and the gate compares the working tree to the
+  **index** — task 50.2.1's own note, met again.
+
+The passing run:
+
+- **Hermetic**: `lint`, `eslint:prove`, `typecheck`, `image:check`, `boundaries`, `boundaries:prove`, `build`,
+  `openapi:check`, `facade:check`, `routes:check` clean; `docs:check` **42 claims**. Unit: api **152 suites, 1,259
+  tests**; web **102 files, 990**; `packages/ui` **32 files, 330**; admin **29 files, 246**; `packages/i18n` **130**;
+  the contracts' own **36**.
+- **`migrations:check`**: **61 schema invariant cases**.
+- **The boot proof**: `pnpm e2e` **52 suites, 1,302 tests** — the reminder's own suite among them, 9 cases;
+  `pnpm e2e:worker` **8 of 8**; `pnpm e2e:web` **252 of 252**, which is the first run of S-16's reminder journey, the
+  worded reminder on S-26 and in the panel, and the worded item at +40%.
+- **What the runs printed**: seven `⨯ … destination stream closed early`, all digest `2667547900` — the abandoned-stream
+  class `apps/web/CLAUDE.md` records; the SMTP adapter's recorded NFR-27 notice; and the dispatch suite's own case of a
+  recipient naming no account. Nothing else.
+
+**Task 50 closes with it**, and the group moves to `archived_tasks.md` under Phase 6 beside task 49: the store and the
+read state (50.1), S-26 and the panel (50.2), and the first producer (50.3). What the parent promised — *in-app
+notifications delivered and read from the browser* — is met end to end, by two halves that meet in the api's own e2e:
+the browser suite runs no worker, so a reminder raised there is proven as far as the row it commits, and
+`report-reminder.e2e-spec.ts` carries that row through the worker's delivery into the recipient's centre, in their
+language.

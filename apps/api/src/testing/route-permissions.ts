@@ -361,6 +361,9 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /reports/:id': ALL_MEMBERS,
   'POST /reports': WRITING_MEMBERS,
   'PATCH /reports/:id': WRITING_MEMBERS,
+  // UC-175's reminder about a report (task 50.3). The administrator's alone: UC-175's actor is the OA, and S-16,
+  // where it is sent from, is the administrator's screen.
+  'POST /reports/:id/reminders': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   // The prior period's answers for this report (task 34.3; UC-45, FR-45, FR-46). A read, so
   // every member, on FR-25's argument: a view-only member sees the same entries, and what last
   // year said is one of them.

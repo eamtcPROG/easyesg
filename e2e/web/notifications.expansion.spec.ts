@@ -17,8 +17,11 @@ import { exactlyPadded, overflowWithin } from './support/expansion';
  * and a read one — the tabs and *mark all* both render, and each item draws its time, its link and its two controls
  * padded.
  *
- * **The item's own words are not here yet.** No category has in-app wording until task 50.3, so every seeded notice
- * is untitled, with no text, category or action — the item at its narrowest. The worded item at +40% is 50.3's case.
+ * **The unread notice is a worded one** (task 50.3): the manual reminder, with its category's name, a title, a
+ * quoted note and action words, so the item is measured with every part drawn as well as the untitled read one with
+ * none. **Its words are not padded**: the api resolves them, and the one api both web instances share serves its
+ * catalogue unpadded, so they stand at their Romanian length while the app's own words around them grow — which is
+ * why the note is long, a sender's own text being as long as they make it in any language.
  *
  * **The panel too, at all three** (task 50.2.2): 380px at most and never wider than the frame, its header holding the
  * title, the count, *mark all* and the close, all padded.
@@ -51,7 +54,19 @@ async function signedIn(page: Page, label: string): Promise<void> {
     organizationId,
     email,
     notices: [
-      { deepLink: '/reports', minutesAgo: 3 },
+      // The worded item at its widest (task 50.3): a category's name, a title, a quoted note and action words.
+      {
+        deepLink: '/reports',
+        minutesAgo: 3,
+        categoryKey: 'reporting.manual_reminder',
+        params: {
+          senderName: 'Ana Popescu',
+          entityName: 'Brutăria Lina',
+          fiscalYear: '2026',
+          noteGiven: 'given',
+          note: 'Lipsesc datele despre consumul de energie pentru anul trecut, pe fiecare locație în parte.',
+        },
+      },
       { deepLink: '/entities', minutesAgo: 60 * 26, read: true },
     ],
   });
@@ -80,6 +95,11 @@ for (const frame of FRAMES) {
     await expect(page.getByRole('link', { name: exactlyPadded('Cele mai vechi întâi') })).toBeVisible();
     const list = page.getByRole('list', { name: exactlyPadded('Notificările dumneavoastră') });
     await expect(list.getByRole('listitem')).toHaveCount(2);
+    // The worded item really is worded — its category, its title and its action words, from the api. Seeded under a
+    // category with no wording, every assertion below still passes while the item draws at its narrowest.
+    await expect(list.getByText('Mementouri', { exact: true })).toBeVisible();
+    await expect(list.getByText('Ana Popescu vă reamintește de raportul Brutăria Lina pentru 2026')).toBeVisible();
+    await expect(list.getByRole('link', { name: 'Deschideți raportul' })).toBeVisible();
     // The list clips its rows, so a row's controls pushed past its edge would never widen the page.
     expect(await overflowWithin(list)).toBeLessThanOrEqual(1);
     const overflow = await page.evaluate(

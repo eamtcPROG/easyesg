@@ -929,7 +929,8 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **116 files here are Client Components** (22 Sep 2026: twelve since task 50.2.2, the notification panel's under
+  **121 files here are Client Components** (22 Sep 2026: five since task 50.3, S-16's reminder panel under
+  `organization/access/components/remind/`; twelve since task 50.2.2, the notification panel's under
   `notifications/panel/components/`, with the band's old bell corner gone into it; seven since task 50.2.1 — the
   unread count's hook under `client/notifications/`, the drawer's row under `notifications/count/components/`, the
   action hook, the notice link and, since the parent close, the one *mark all* S-26 and the panel share under

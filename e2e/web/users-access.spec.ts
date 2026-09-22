@@ -1,9 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   cleanupAccounts,
+  cleanupNotifications,
   cleanupOrganizations,
   grantMembership,
   organizationIdsForAccount,
+  remindersRaisedFor,
+  seedReport,
   seedSeatHolders,
   verificationTokenFor,
 } from './support/db';
@@ -37,6 +40,8 @@ const PASSWORD = 'Parola123!';
 const organizations: string[] = [];
 
 test.afterAll(async () => {
+  // The reminders' outbox rows name no address, so the account cleanup cannot find them (task 50.3).
+  await cleanupNotifications(organizations);
   await cleanupOrganizations(organizations);
   await cleanupAccounts(RUN_PREFIX);
 });
@@ -278,6 +283,43 @@ test('the view lives in the address, so a filtered list can be linked and reload
     'Doar vizualizare',
   );
   await expect(page.getByText('Nicio persoană nu corespunde filtrelor')).toBeVisible();
+});
+
+test('the administrator reminds a colleague about an open report, and the reminder is raised to them (UC-175)', async ({
+  page,
+}) => {
+  const administrator = await administratorOf(page, 'remind');
+  const organizationId = organizations[organizations.length - 1];
+  await seedSeatHolders({ organizationId, prefix: `${RUN_PREFIX}-remind-mate`, count: 1 });
+  const colleague = `${RUN_PREFIX}-remind-mate-seat-1@example.md`;
+
+  // With no report open there is nothing to remind about, and the panel says so rather than offering a form.
+  await openAccessScreen(page);
+  await expect(page.getByText('Niciun raport nu este deschis acum', { exact: false })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Raportul', exact: true })).toHaveCount(0);
+
+  const reportId = await seedReport({ organizationId, name: 'Brutăria Lina', fiscalYear: 2026 });
+  await openAccessScreen(page);
+
+  // Everyone but the sender: the organization holds two members, and only the colleague is offered.
+  await page.getByRole('combobox', { name: 'Persoana', exact: true }).click();
+  await expect(page.getByRole('option')).toHaveCount(1);
+  await expect(page.getByRole('option', { name: administrator })).toHaveCount(0);
+  await page.getByRole('option', { name: colleague }).click();
+  await choose(page, 'Raportul', 'Brutăria Lina · 2026');
+  await page.getByRole('textbox', { name: 'Notă (opțional)' }).fill('Lipsesc datele despre energie.');
+  await page.getByRole('button', { name: 'Trimiteți mementoul' }).click();
+
+  await expect(page.getByText(`Mementoul a fost trimis către ${colleague}.`)).toBeVisible();
+  // What the send committed: one reminder to the colleague, about that report, carrying the note. Its delivery is
+  // the worker's, which this suite does not run — the api's `report-reminder.e2e-spec.ts` carries it to the centre.
+  const raised = await remindersRaisedFor(organizationId);
+  expect(raised).toHaveLength(1);
+  expect(raised[0]).toMatchObject({
+    deepLink: `/reports/${reportId}`,
+    params: { entityName: 'Brutăria Lina', fiscalYear: '2026', noteGiven: 'given', note: 'Lipsesc datele despre energie.' },
+  });
+  expect(raised[0].recipientUserIds).toHaveLength(1);
 });
 
 test('someone who does not administer the organization is told so, not shown an error', async ({

@@ -183,3 +183,46 @@ export class UnknownDerivationInputError extends DomainError {
     super('core.report.unknown_derivation_input');
   }
 }
+
+/**
+ * UC-175's reminder names a report that is no longer open — its period locked, or the report ready to file or filed
+ * (§12.5.6's task-50.3 row (1)). **Under the generic conflict slug**, `PeriodLockStateError`'s reasoning: S-16
+ * offers open reports only, so this is a screen showing a state the report has moved on from, and refreshing it
+ * settles the question — nothing branches on it.
+ */
+export class ReportNotOutstandingError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.reminder_not_outstanding');
+  }
+}
+
+/**
+ * The reminder names its own sender (row (4)). S-16 never offers the sender, so this reaches only a caller writing
+ * the request by hand — which is why it is a refusal rather than a quiet no-op: a reminder nobody receives is not a
+ * reminder sent.
+ */
+export class ReminderToSelfError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.reminder_to_self');
+  }
+}
+
+/**
+ * No active member of the organization holds that membership — removed, or another tenant's, which RLS makes the
+ * same answer (`MemberNotFoundError`'s reasoning). **Its own key rather than that one's**, whose words say a change
+ * could not be applied: here what did not happen is a reminder being sent.
+ */
+export class ReminderRecipientNotFoundError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('core.report.reminder_recipient_not_found');
+  }
+}

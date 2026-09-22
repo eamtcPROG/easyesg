@@ -50,9 +50,9 @@ import type { AccessActionResult } from '../../actions/action-results';
  * publishes both through one context.
  *
  * **In `components/shared/` on one test: is it read by more than one sibling?** The section provides
- * it, and `board/` and `invite/` both read it — the board's notice, filters, list, cells and
- * confirmation, the invite panel and its form — so it sits where all three can see it, one level
- * above the regions.
+ * it, and `board/`, `invite/` and — since task 50.3 — `remind/` read it: the board's notice, filters,
+ * list, cells and confirmation, the invite panel and its form, the reminder panel and its form. So it
+ * sits where all of them can see it, one level above the regions.
  *
  * **What this is not.** It holds no server state — the rows arrive already read, filtered, sorted
  * and paged by the Server Component, and nothing here caches or refetches them. It is the screen's
@@ -99,7 +99,8 @@ interface AccessContextValue extends AccessState {
   readonly ask: (confirmation: Confirmation) => void;
   readonly dismiss: () => void;
   /**
-   * An action left for the server from a region that owns no row — the invite form.
+   * An action left for the server from a region that owns no row — the invite form, and the reminder form
+   * since task 50.3.
    *
    * Separate from `perform` because that panel runs its own transition and owns its own copy;
    * what it needs from here is only that the screen holds **one** notice, so its submission

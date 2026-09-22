@@ -201,6 +201,8 @@ export type Report = components['schemas']['ReportResponseDto'];
 /** Creating one (UC-18; task 32.3). Carries the period and an optional scope — the two version pins
  *  are copied from the period and are deliberately not fields (FR-66, DR-4). */
 export type CreateReportRequest = components['schemas']['CreateReportRequestDto'];
+/** UC-175's reminder about a report, sent from S-16 (task 50.3). */
+export type SendReportReminderRequest = components['schemas']['SendReportReminderRequestDto'];
 export type DisclosureModuleSummary = components['schemas']['DisclosureModuleSummaryDto'];
 export type DisclosureField = components['schemas']['DisclosureFieldDto'];
 /** One answer a choice field offers (task 91.1): `value` is the member's taxonomy-qualified name, what an answer stores. */

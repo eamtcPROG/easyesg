@@ -1015,6 +1015,26 @@ export interface paths {
         patch: operations["ReportsController_update"];
         trace?: never;
     };
+    "/api/v1/reports/{id}/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remind a member about an open report (UC-175)
+         * @description Raises a reminder to one active member of the organization, the sender excepted, naming the report, the sender and an optional note. Accepted rather than delivered: the notice is written on this request and delivered by the worker, and each reminder is a notice of its own. Only an Organization Administrator sends one.
+         */
+        post: operations["ReportsController_remind"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/modules": {
         parameters: {
             query?: never;
@@ -1088,26 +1108,6 @@ export interface paths {
          * @description EFRAG's Digital Template computes several Basic-module figures rather than asking for them, and some of what those formulas read carries no taxonomy element (UC-26, UC-27; §7.3). This writes those values and recomputes whatever they feed. Sending null for a value clears it, restoring the published offer. Refused while the report's period is locked (FR-22), by the database as well as by the use case.
          */
         put: operations["WizardController_writeDerivationInputs"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/reports/{id}/prior-period": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The prior period’s answers for this report
-         * @description Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.
-         */
-        get: operations["ComparativesController_priorPeriod"];
-        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -1209,6 +1209,26 @@ export interface paths {
          * @description Takes it out of the caller’s list and unread count. Dismissing does not mark it read: one dismissed unopened stays recorded as never read. Dismissing it again changes nothing; other recipients are unaffected.
          */
         post: operations["NotificationCentreController_dismiss"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/prior-period": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The prior period’s answers for this report
+         * @description Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.
+         */
+        get: operations["ComparativesController_priorPeriod"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2939,6 +2959,18 @@ export interface components {
              */
             scope?: "basic" | "basic_and_comprehensive";
         };
+        SendReportReminderRequestDto: {
+            /**
+             * Format: uuid
+             * @description The membership of the person to remind — any active member of the organization but the sender.
+             */
+            membershipId: string;
+            /**
+             * @description A note from the sender, shown to the person as written. Omitted, or only whitespace, is none.
+             * @example Mai lipsesc datele despre consumul de energie.
+             */
+            note?: string;
+        };
         ApplicabilityDriverDto: {
             /** @example NumberOfEmployees */
             elementKey: string;
@@ -3175,6 +3207,48 @@ export interface components {
         WriteDerivationInputsRequestDto: {
             values: components["schemas"]["DerivationInputWriteDto"][];
         };
+        NotificationItemResponseDto: {
+            /**
+             * Format: uuid
+             * @description The notice. The handle its read and dismiss actions take; the same for every recipient of it.
+             */
+            id: string;
+            /**
+             * @description What kind of notice this is — a key for the client to act on, never text to show.
+             * @enum {string}
+             */
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            /** @description The category’s name in the negotiated language, to show beside the notice. Absent when none is written. */
+            categoryName?: string;
+            /** @description The notice’s title in the negotiated language. Absent when the category has no in-app wording. */
+            title?: string;
+            /** @description The notice’s text in the negotiated language. Absent when the category has no in-app wording. */
+            body?: string;
+            /** @description The words of the link to what raised the notice — “Open the findings” — in the negotiated language. Absent when the category has none written, and then the title is the link. */
+            actionLabel?: string;
+            /**
+             * @description The path in the tenant application of the object that raised the notice, without a locale prefix — selecting the notice opens it (FR-162).
+             * @example /reports/0192f000-0000-7000-8000-000000000001
+             */
+            deepLink: string;
+            /**
+             * @description Unix epoch milliseconds, UTC, when the notice reached this recipient’s centre.
+             * @example 1790553600000
+             */
+            receivedAt: number;
+            /**
+             * @description Unix epoch milliseconds, UTC, when this recipient first marked it read. Null while unread; another recipient reading the same notice leaves it null here.
+             * @example null
+             */
+            readAt: number | null;
+        };
+        UnreadCountResponseDto: {
+            /**
+             * @description Notices in this recipient’s centre they have not read. A dismissed notice is not counted.
+             * @example 3
+             */
+            unread: number;
+        };
         PriorReportPinDto: {
             /** Format: uuid */
             reportId: string;
@@ -3228,48 +3302,6 @@ export interface components {
             availability: "available" | "no_prior_period" | "no_prior_report";
             prior: components["schemas"]["PriorReportPinDto"] | null;
             values: components["schemas"]["PriorPeriodValueDto"][];
-        };
-        NotificationItemResponseDto: {
-            /**
-             * Format: uuid
-             * @description The notice. The handle its read and dismiss actions take; the same for every recipient of it.
-             */
-            id: string;
-            /**
-             * @description What kind of notice this is — a key for the client to act on, never text to show.
-             * @enum {string}
-             */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation";
-            /** @description The category’s name in the negotiated language, to show beside the notice. Absent when none is written. */
-            categoryName?: string;
-            /** @description The notice’s title in the negotiated language. Absent when the category has no in-app wording. */
-            title?: string;
-            /** @description The notice’s text in the negotiated language. Absent when the category has no in-app wording. */
-            body?: string;
-            /** @description The words of the link to what raised the notice — “Open the findings” — in the negotiated language. Absent when the category has none written, and then the title is the link. */
-            actionLabel?: string;
-            /**
-             * @description The path in the tenant application of the object that raised the notice, without a locale prefix — selecting the notice opens it (FR-162).
-             * @example /reports/0192f000-0000-7000-8000-000000000001
-             */
-            deepLink: string;
-            /**
-             * @description Unix epoch milliseconds, UTC, when the notice reached this recipient’s centre.
-             * @example 1790553600000
-             */
-            receivedAt: number;
-            /**
-             * @description Unix epoch milliseconds, UTC, when this recipient first marked it read. Null while unread; another recipient reading the same notice leaves it null here.
-             * @example null
-             */
-            readAt: number | null;
-        };
-        UnreadCountResponseDto: {
-            /**
-             * @description Notices in this recipient’s centre they have not read. A dismissed notice is not counted.
-             * @example 3
-             */
-            unread: number;
         };
         SupportAccessDecisionResponseDto: {
             /** @enum {string} */
@@ -6006,6 +6038,44 @@ export interface operations {
             };
         };
     };
+    ReportsController_remind: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendReportReminderRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The reminder is raised, and will reach the member’s centre. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. Or no active member holds that membership. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The report is no longer open, or the membership is the sender’s own. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     WizardController_modules: {
         parameters: {
             query?: never;
@@ -6163,37 +6233,6 @@ export interface operations {
             };
         };
     };
-    ComparativesController_priorPeriod: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The prior period’s answers, each with its comparability verdict. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultObjectDto"] & {
-                        object?: components["schemas"]["PriorPeriodResponseDto"];
-                    };
-                };
-            };
-            /** @description No such report in the active organization. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     NotificationCentreController_list: {
         parameters: {
             query?: {
@@ -6203,7 +6242,7 @@ export interface operations {
                 page?: number;
                 /** @description One ordering, `received,<asc|desc>`. Defaults to `received,desc` — newest first. */
                 order?: unknown;
-                /** @description Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation. A value outside these, or a field this route does not define, is ignored rather than refused. */
+                /** @description Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder. A value outside these, or a field this route does not define, is ignored rather than refused. */
                 filters?: unknown;
             };
             header?: never;
@@ -6320,6 +6359,37 @@ export interface operations {
                 content: {
                     "application/problem+json": unknown;
                 };
+            };
+        };
+    };
+    ComparativesController_priorPeriod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The prior period’s answers, each with its comparability verdict. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["PriorPeriodResponseDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

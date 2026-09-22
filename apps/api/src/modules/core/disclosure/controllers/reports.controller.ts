@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
@@ -8,6 +8,7 @@ import {
   ReportResponseDto,
   UpdateReportRequestDto,
 } from '../dto/report.dto';
+import { SendReportReminderRequestDto } from '../dto/report-reminder.dto';
 import { NO_SUCH_REPORT } from '../errors/report.errors';
 import { ReportService } from '../services/report.service';
 
@@ -24,6 +25,9 @@ import { ReportService } from '../services/report.service';
  * **Reads are open to every member**, because FR-25 requires a view-only member to see "the same
  * entries without edit affordances", which needs the entries.
  *
+ * **The reminder is the administrator's alone** (task 50.3): UC-175's actor is the OA, and S-16, where it is sent
+ * from, is the administrator's screen. It writes nothing on the report — it raises a notice about it.
+ *
  * **No `DELETE`.** Nothing in UC-17 or UC-18 removes a report, and a report against a period that
  * has been reported on is the record of a filing — FR-22 locks it. The route does not exist rather
  * than existing and refusing.
@@ -34,7 +38,9 @@ import { ReportService } from '../services/report.service';
  *
  * **Recorded deferral: no entitlement gate until task 54.** `basic_and_comprehensive` is the paid
  * scope (`problem_overview.md` §6.1 row 15) and nothing here checks a plan for it; `apps/api
- * /CLAUDE.md` requires the key or the reason, and this is the reason.
+ * /CLAUDE.md` requires the key or the reason, and this is the reason. **The reminder route falls
+ * under the same deferral** (task 50.3): whether any plan limits a reminder is task 54's to say, with
+ * the rest of this controller's keys.
  */
 @ApiTags('report')
 @Controller('reports')
@@ -120,5 +126,27 @@ export class ReportsController {
     @Body() body: UpdateReportRequestDto,
   ): Promise<ReportResponseDto> {
     return new ReportResponseDto(await this.reports.update({ reportId: id, patch: body }));
+  }
+
+  @Post(':id/reminders')
+  @HttpCode(202)
+  @RequiresRole(MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR)
+  @ApiOperation({
+    summary: 'Remind a member about an open report (UC-175)',
+    description:
+      'Raises a reminder to one active member of the organization, the sender excepted, naming the report, the ' +
+      'sender and an optional note. Accepted rather than delivered: the notice is written on this request and ' +
+      'delivered by the worker, and each reminder is a notice of its own. Only an Organization Administrator ' +
+      'sends one.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 202, description: 'The reminder is raised, and will reach the member’s centre.' })
+  @ApiResponse({ status: 404, description: `${NO_SUCH_REPORT} Or no active member holds that membership.` })
+  @ApiResponse({
+    status: 409,
+    description: 'The report is no longer open, or the membership is the sender’s own.',
+  })
+  async remind(@Param('id', ParseUUIDPipe) id: string, @Body() body: SendReportReminderRequestDto): Promise<void> {
+    await this.reports.remind({ reportId: id, membershipId: body.membershipId, note: body.note });
   }
 }

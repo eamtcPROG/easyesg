@@ -3,6 +3,9 @@ import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { DerivationInputStoreRepository } from '@api/infrastructure/persistence/core/derivation-input-store.repository';
 import { DisclosureValueStoreRepository } from '@api/infrastructure/persistence/core/disclosure-value-store.repository';
+import { randomUUID } from 'node:crypto';
+import { NOTIFICATION_PORT, type NotificationPort } from '@api/contracts/notification.port';
+import { ReminderPartiesRepository } from '@api/infrastructure/persistence/core/reminder-parties.repository';
 import { ReportStoreRepository } from '@api/infrastructure/persistence/core/report-store.repository';
 import { ReportingPeriodStoreRepository } from '@api/infrastructure/persistence/core/reporting-period-store.repository';
 import {
@@ -14,6 +17,7 @@ import { TAXONOMY_REGISTRY, type TaxonomyRegistry } from '@api/contracts/taxonom
 import { ORGANIZATION_VOCABULARY } from '@api/modules/core/organization/interfaces/organization-vocabulary.interface';
 import { OrganizationModule } from '@api/modules/core/organization/organization.module';
 import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
+import { NotificationModule } from '@api/modules/platform/notification/notification.module';
 import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
 import { ReportsController } from './controllers/reports.controller';
 import { WizardController } from './controllers/wizard.controller';
@@ -44,12 +48,14 @@ import {
   TEMPLATE_DEFAULTS,
   type TemplateDefaults,
 } from './interfaces/template-default.interface';
+import { REMINDER_PARTIES, type ReminderParties } from './interfaces/reminder-parties.interface';
 import { REPORT_STORE, type ReportStore } from './interfaces/report-store.interface';
 import { ApplicabilityRulesService } from './services/applicability-rules.service';
 import { DisclosureFacade } from './services/disclosure-facade.service';
 import { ReportService } from './services/report.service';
 import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
+import { SendReportReminder } from './use-cases/send-report-reminder.use-case';
 import { ReadWizardStep, type WizardVocabulary } from './use-cases/read-wizard-step.use-case';
 import { WriteDerivationInputs } from './use-cases/write-derivation-inputs.use-case';
 import { WriteDisclosureValues } from './use-cases/write-disclosure-values.use-case';
@@ -75,7 +81,8 @@ import { WriteDisclosureValues } from './use-cases/write-disclosure-values.use-c
  * distinction `PeriodModule` draws against the taxonomy registry, whose cache must not be doubled.
  *
  * **Nothing here is registered on the worker.** No outbox job routes to this module; creating a
- * report is synchronous and emits no notification of its own.
+ * report is synchronous and emits no notification of its own. **A reminder raises one** (task 50.3), on the
+ * request's transaction through `NotificationModule`'s port, and the worker's notification consumer delivers it.
  */
 const { mode } = configuration();
 
@@ -188,6 +195,16 @@ const httpProviders: Provider[] = [
     useFactory: (reports: ReportStore, periods: ReportingPeriodStore, now: Clock) =>
       new CreateReport(reports, periods, now),
   },
+  // Task 50.3's reminder: the first producer to raise through `NOTIFICATION_PORT`, which `NotificationModule`
+  // exports on the HTTP side. Its two people are read by this module's own narrow adapter, for the reason
+  // `REPORTING_PERIOD_STORE` is registered here — neither identity module exports its store.
+  { provide: REMINDER_PARTIES, useClass: ReminderPartiesRepository },
+  {
+    provide: SendReportReminder,
+    inject: [REPORT_STORE, REMINDER_PARTIES, NOTIFICATION_PORT],
+    useFactory: (reports: ReportStore, parties: ReminderParties, notifications: NotificationPort) =>
+      new SendReportReminder(reports, parties, notifications, randomUUID),
+  },
 ];
 
 @Module({
@@ -195,7 +212,8 @@ const httpProviders: Provider[] = [
   // both hold a parsed cache, and a second registration is a second cache (PeriodModule's rule).
   // `OrganizationModule` for its vocabulary port (task 91.1): the wizard names NACE members in the
   // platform's own Romanian and Russian and offers the countries the platform registers.
-  imports: [TaxonomyModule, LocalizationModule, OrganizationModule],
+  // `NotificationModule` for `NOTIFICATION_PORT` (task 50.3), which the reminder raises through.
+  imports: [TaxonomyModule, LocalizationModule, OrganizationModule, NotificationModule],
   controllers: mode === APP_MODE.WORKER ? [] : [ReportsController, WizardController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
   // `ReportService` and `WizardService` since task 67.9: a read under a support-access grant runs exactly the

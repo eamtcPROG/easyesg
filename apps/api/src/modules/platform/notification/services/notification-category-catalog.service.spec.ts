@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from '@api/contracts/notification.port';
+import { MANDATORY_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import type { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
 import { NOTIFICATION_CATEGORY_CONFIG_KIND } from '../constants/notification-category.constants';
@@ -47,10 +47,10 @@ describe('NotificationCategoryCatalog (task 49.1)', () => {
     expect(logged).toEqual([]);
   });
 
-  // A category outside the mandatory set, reached with a key the vocabulary will hold one day: the refusal below is
-  // keyed on that set, and must not refuse an optional category's own classification.
+  // A category outside the mandatory set — the manual reminder, the first optional one (task 50.3): the refusal below
+  // is keyed on that set, and must not refuse an optional category's own classification.
   it('reads an optional category classified optional, quietly', () => {
-    const optional = 'billing.trial_ending' as NotificationCategoryKey;
+    const optional = NOTIFICATION_CATEGORY.MANUAL_REMINDER;
     const store = {
       get: (query: { kind: string; scope: string }) =>
         query.scope === optional
@@ -94,16 +94,28 @@ describe('NotificationCategoryCatalog (task 49.1)', () => {
     const shipped = readSeedEntries().filter((entry) => entry.kind === NOTIFICATION_CATEGORY_CONFIG_KIND);
 
     /**
-     * **The owner's decision, not a default this spec happens to know** (21 Sep 2026): the four notices that
-     * send today, each by email alone and none of them a recipient's to turn off. Changing a seed without
-     * changing §12.5.6's row fails here.
+     * **The owner's decision, not a default this spec happens to know** (21 Sep 2026): the four notices sent to an
+     * address, each by email alone and none of them a recipient's to turn off. Changing a seed without changing
+     * §12.5.6's row fails here.
      */
-    it.each(Object.values(NOTIFICATION_CATEGORY))('reads %s as email-only and transactional', (categoryKey) => {
+    it.each([...MANDATORY_NOTIFICATION_CATEGORIES])('reads %s as email-only and transactional', (categoryKey) => {
       const catalog = new NotificationCategoryCatalog(seedConfigurationStore(readSeedEntries()));
 
       expect(catalog.behaviourOf({ categoryKey })).toEqual({
         channels: ['email'],
         classification: 'transactional',
+      });
+      expect(logged).toEqual([]);
+    });
+
+    // The manual reminder (§12.5.6's task-50.3 row (2)): optional, and in-app alone until task 52.2's one-click
+    // unsubscribe lets an optional category send email.
+    it('reads the manual reminder as in-app only and optional', () => {
+      const catalog = new NotificationCategoryCatalog(seedConfigurationStore(readSeedEntries()));
+
+      expect(catalog.behaviourOf({ categoryKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER })).toEqual({
+        channels: ['in_app'],
+        classification: 'optional',
       });
       expect(logged).toEqual([]);
     });

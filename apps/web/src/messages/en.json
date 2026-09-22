@@ -1091,6 +1091,38 @@
         "sentAction": "You can send it again or withdraw it from the list above.",
         "failedAction": "Find the person on the list above and choose what to do next."
       },
+      "remind": {
+        "heading": "Send a reminder",
+        "intro": "Remind a colleague about a report that is still open. The reminder reaches their notifications, with your note if you add one.",
+        "loading": "Loading the people and the reports.",
+        "person": "Person",
+        "personPlaceholder": "Choose a person",
+        "personRequired": "Choose who the reminder is for, or it cannot be sent.",
+        "report": "Report",
+        "reportPlaceholder": "Choose a report",
+        "reportOption": "{entity} · {year}",
+        "reportRequired": "Choose the report you are reminding them about, so they know what is waiting.",
+        "note": "Note (optional)",
+        "noteHelp": "It appears in the reminder exactly as you write it.",
+        "noteCount": "{used} of {limit} characters",
+        "noteTooLong": "The note is longer than {limit} characters, so the reminder cannot be sent. Shorten it and send again.",
+        "submit": "Send the reminder",
+        "sent": "The reminder has been sent to {name}.",
+        "sentBody": "They find it in their notifications, with a link straight to the report.",
+        "noReport": {
+          "body": "No report is open at the moment, so there is nothing to remind anyone about. A reminder is about a report still being worked on.",
+          "action": "See the reports"
+        },
+        "noOne": {
+          "body": "No one but you has access to the organization yet, so there is no one to send a reminder to.",
+          "action": "Invite a colleague"
+        },
+        "unavailable": {
+          "title": "Reminders cannot be sent right now",
+          "body": "We could not read the organization’s members or reports, so we do not know what to offer here. The list above is correct.",
+          "retry": "Try again"
+        }
+      },
       "actions": {
         "changeRole": "Role for {email}",
         "remove": "Withdraw access",

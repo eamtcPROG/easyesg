@@ -150,7 +150,7 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
   return (
     <>
       <RecordShell
-        title={period ? t('record.titleYear', { year: period.fiscalYear }) : t('record.createTitle')}
+        title={period ? t('record.titleYear', { year: String(period.fiscalYear) }) : t('record.createTitle')}
         summary={period ? t('record.lede') : t('record.createLede')}
         actions={
           locked ? (
@@ -289,8 +289,8 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
       {period ? (
         <ConsequenceDialogue
           open={state.dialogue === PERIOD_DIALOGUE.LOCK}
-          object={t('record.titleYear', { year: period.fiscalYear })}
-          title={t('lock.title', { year: period.fiscalYear })}
+          object={t('record.titleYear', { year: String(period.fiscalYear) })}
+          title={t('lock.title', { year: String(period.fiscalYear) })}
           consequence={t('lock.consequence')}
           retained={`${t('lock.retained')} ${t('lock.compensating')}`}
           confirmLabel={t('lock.confirm')}

@@ -18,9 +18,9 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * the server's.
  *
  * **The seat region and UX-50's gate ship with task 142**, over the interim configured ceiling rather
- * than waiting for task 54.2, which changes the ceiling's source and not this screen. **One omission
- * remains, recorded rather than silent**: UC-175's manual reminder is task 50's, which now owns it; it
- * appeared in this screen's controls and in no task at all until this one was built.
+ * than waiting for task 54.2, which changes the ceiling's source and not this screen. **UC-175's manual
+ * reminder is the panel below the list since task 50.3** — it appeared in this screen's controls and in
+ * no task at all until task 26.4 built the screen, which is how it came to be task 50's.
  *
  * States (§8.1): ready · empty — first use · empty — filtered · error — permission · error —
  * recoverable. Loading is `loading.tsx`; the transient states of an action are the board's. *

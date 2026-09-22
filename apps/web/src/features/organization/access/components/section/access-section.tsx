@@ -1,6 +1,6 @@
 import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
@@ -11,6 +11,8 @@ import { AccessBoard } from '../board/section/access-board';
 import { AccessProvider } from '../shared/access-context';
 import { ACCESS_MESSAGES } from '../shared/access-messages';
 import { InviteMember } from '../invite/section/invite-member';
+import { RemindSection } from '../remind/section/remind-section';
+import { RemindLoading } from '../remind/states/remind-loading';
 import { SeatCounter } from '../heading/seat-counter';
 import styles from '../styles/access.module.css';
 
@@ -30,7 +32,9 @@ const INVITE_ANCHOR = 'invite-a-colleague';
  * theirs. **The seat region is computed here, once** (task 142): the counter beside the heading and
  * the invite panel's arm read the same value, so they cannot disagree about whether the organization
  * is full — and the counter renders only on the ready arm, since a refused or failed read has no
- * count to state.
+ * count to state. **The reminder panel is a region of its own** (task 50.3, `remind-section.tsx`): it
+ * reads under its own boundary inside the provider, so the list does not wait on its reads and a
+ * failure of either is the panel's partial state rather than the screen's.
  */
 export async function AccessSection({
   searchParams,
@@ -76,6 +80,10 @@ export async function AccessSection({
       <AccessProvider page={read.page} view={view} seats={seats} inviteAnchorId={INVITE_ANCHOR}>
         <AccessBoard />
         <InviteMember id={INVITE_ANCHOR} />
+        {/* A region of its own, under its own boundary: the list above does not wait on its reads. */}
+        <Suspense fallback={<RemindLoading />}>
+          <RemindSection />
+        </Suspense>
       </AccessProvider>
     );
   }

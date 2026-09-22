@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { NOTIFICATION_CATEGORY } from '../src/contracts/notification.port';
+import { MANDATORY_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORY } from '../src/contracts/notification.port';
 import { ConfigurationPublisher } from '../src/infrastructure/configuration/configuration-publisher.service';
 import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
 import { seedConfiguration, type SeedOutcome } from '../src/infrastructure/configuration/seed-configuration';
@@ -68,12 +68,18 @@ describe('notification categories as configuration (task 49.1)', () => {
 
     const { catalog } = await replicaCatalog();
 
-    for (const categoryKey of Object.values(NOTIFICATION_CATEGORY)) {
+    // The four mandatory categories by email alone, and the manual reminder (task 50.3) in-app alone and optional
+    // until task 52.2's unsubscribe lets an optional category send email.
+    for (const categoryKey of MANDATORY_NOTIFICATION_CATEGORIES) {
       expect(catalog.behaviourOf({ categoryKey })).toEqual({
         channels: ['email'],
         classification: 'transactional',
       });
     }
+    expect(catalog.behaviourOf({ categoryKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER })).toEqual({
+      channels: ['in_app'],
+      classification: 'optional',
+    });
   });
 
   it('answers a published change on the next poll, and the seeded behaviour again after one revert', async () => {

@@ -2836,12 +2836,12 @@ their numbers put them.
 
 - **Primary actor:** OA
 - **Module:** Notifications
-- **Preconditions:** A specific user has an outstanding report.
+- **Preconditions:** A specific user has an outstanding report. *(Amended 22 Sep 2026, project owner, task 50.3: an outstanding report is one of the organization's reports still open — not locked, ready to file or filed — until task 41.3's completion rollup can say what is outstanding in it; the user is any active member but the Administrator sending the reminder, whatever their role.)*
 - **Trigger:** The Administrator prompts the user without waiting for the next scheduled notice.
 - **Main success scenario:**
-  1. The Administrator selects the user and optionally adds a note.
+  1. The Administrator selects the user and the report and optionally adds a note. *(Amended 22 Sep 2026, project owner, task 50.3; previously "selects the user and optionally adds a note" — nothing assigns a report to a person, so the report is chosen.)*
   2. The reminder goes out through the same mechanism and is recorded the same way.
-- **Business rules:** Using the common mechanism keeps the delivery history from fragmenting.
+- **Business rules:** Using the common mechanism keeps the delivery history from fragmenting. **Each reminder is a notice of its own** (amended 22 Sep 2026, project owner, task 50.3), so a second one carries its own note rather than folding into the first.
 - **Related FRs:** FR-173
 - **Related UCs:** UC-67, UC-169, UC-172, UC-173, UC-174
 

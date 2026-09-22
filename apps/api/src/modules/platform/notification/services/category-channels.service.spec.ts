@@ -1,5 +1,9 @@
 import { Logger } from '@nestjs/common';
-import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from '@api/contracts/notification.port';
+import {
+  MANDATORY_NOTIFICATION_CATEGORIES,
+  NOTIFICATION_CATEGORY,
+  type NotificationCategoryKey,
+} from '@api/contracts/notification.port';
 import type { NotificationCategoryBehaviour } from '../models/notification-category.model';
 import { CategoryChannels } from './category-channels.service';
 import type { NotificationCategoryCatalog } from './notification-category-catalog.service';
@@ -12,12 +16,10 @@ describe('CategoryChannels (tasks 49.3, 50.1.1)', () => {
   const channels = (behaviour: NotificationCategoryBehaviour | null) =>
     new CategoryChannels({ behaviourOf: () => behaviour } as unknown as NotificationCategoryCatalog);
 
-  /**
-   * **An optional category is reached with a key the vocabulary will hold one day** — categories arrive with their
-   * producers. The cast is the whole of it: the rule is keyed on membership of the mandatory set, which is what is
-   * under test.
-   */
-  const optional = 'billing.trial_ending' as NotificationCategoryKey;
+  /** Every category outside the mandatory set — the manual reminder since task 50.3, the first optional one. */
+  const optional: readonly NotificationCategoryKey[] = Object.values(NOTIFICATION_CATEGORY).filter(
+    (categoryKey) => !MANDATORY_NOTIFICATION_CATEGORIES.has(categoryKey),
+  );
 
   let warned: string[] = [];
   beforeEach(() => {
@@ -37,7 +39,11 @@ describe('CategoryChannels (tasks 49.3, 50.1.1)', () => {
     expect(warned).toEqual([]);
   });
 
-  it.each(Object.values(NOTIFICATION_CATEGORY))(
+  it('has an optional category to hold to the rule below', () => {
+    expect(optional).toContain(NOTIFICATION_CATEGORY.MANUAL_REMINDER);
+  });
+
+  it.each([...MANDATORY_NOTIFICATION_CATEGORIES])(
     'sends mandatory %s by email when its behaviour cannot be read, and says so',
     (categoryKey) => {
       expect(channels(null).channelsFor({ categoryKey })).toEqual(['email']);
@@ -45,8 +51,8 @@ describe('CategoryChannels (tasks 49.3, 50.1.1)', () => {
     },
   );
 
-  it('fails an optional category whose behaviour cannot be read, rather than sending on a guess', () => {
-    expect(() => channels(null).channelsFor({ categoryKey: optional })).toThrow('sent on nothing');
+  it.each(optional)('fails optional %s when its behaviour cannot be read, rather than sending on a guess', (categoryKey) => {
+    expect(() => channels(null).channelsFor({ categoryKey })).toThrow('sent on nothing');
   });
 
   // Task 50.1.1 lifted 49.3's refusal here: a raised notice has a store to land in-app in, so the channels stand.

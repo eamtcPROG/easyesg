@@ -75,6 +75,8 @@ export const NOTICE_REGION = {
   LIST: 'list',
   /** The invite panel, beside the form that was submitted. */
   INVITE: 'invite',
+  /** The reminder panel (task 50.3), beside its form — the invite panel's reason, one panel further down. */
+  REMIND: 'remind',
 } as const;
 
 export type NoticeRegion = (typeof NOTICE_REGION)[keyof typeof NOTICE_REGION];

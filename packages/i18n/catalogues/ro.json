@@ -254,7 +254,10 @@
       "taxonomy_version_unavailable": "Versiunea standardului sub care a fost creat acest raport nu mai este disponibilă în platformă, așa că întrebările lui nu pot fi afișate. Răspunsurile salvate nu sunt afectate. Contactați echipa de asistență; se rezolvă de partea noastră.",
       "unknown_derivation_input": "Valoarea trimisă nu corespunde niciunui element din care sistemul calculează o cifră, așa că nu a putut fi salvată. Reîmprospătați pagina și introduceți din nou valoarea.",
       "unknown_disclosure_dimension": "Categoria selectată nu face parte din lista pe care standardul o admite pentru acest câmp, așa că valoarea nu a putut fi salvată. Reîmprospătați pagina și alegeți din nou din listă.",
-      "unknown_disclosure_element": "Câmpul trimis nu face parte din versiunea standardului sub care a fost creat acest raport, așa că nu a putut fi salvat. Reîmprospătați pagina pentru a încărca întrebările curente."
+      "unknown_disclosure_element": "Câmpul trimis nu face parte din versiunea standardului sub care a fost creat acest raport, așa că nu a putut fi salvat. Reîmprospătați pagina pentru a încărca întrebările curente.",
+      "reminder_not_outstanding": "Raportul nu mai este deschis — perioada lui a fost blocată sau raportul este gata de depunere —, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea rapoartele încă deschise.",
+      "reminder_to_self": "Nu vă puteți trimite un memento dumneavoastră, așa că nu a fost trimis. Alegeți colegul căruia doriți să-i amintiți de raport.",
+      "reminder_recipient_not_found": "Persoana aleasă nu mai face parte din această organizație, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea membrii actuali."
     }
   },
   "notification": {
@@ -280,6 +283,18 @@
       "admin_invitation": {
         "subject": "Invitație în consola de administrare easyesg",
         "body": "Bună ziua,\n\nAți fost invitat să deveniți operator în consola de administrare easyesg. Deschideți linkul de mai jos pentru a vă alege parola și a configura al doilea factor de autentificare:\n\n{link}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată. Contul este creat abia după ce confirmați al doilea factor.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun cont."
+      }
+    },
+    "reporting": {
+      "manual_reminder": {
+        "name": "Mementouri",
+        "subject": "{senderName} vă reamintește de raportul {entityName} pentru {fiscalYear}",
+        "body": "Bună ziua,\n\n{senderName} vă reamintește de raportul de durabilitate al {entityName} pentru {fiscalYear}.{noteGiven, select, given {\n\nMesajul său:\n„{note}”} other {}}\n\nDeschideți raportul de aici:\n\n{link}\n\nPrimiți acest mesaj pentru că un administrator al organizației v-a trimis un memento.",
+        "in_app": {
+          "title": "{senderName} vă reamintește de raportul {entityName} pentru {fiscalYear}",
+          "body": "{noteGiven, select, given {„{note}”} other {Deschideți raportul pentru a vedea ce a mai rămas de completat.}}",
+          "action": "Deschideți raportul"
+        }
       }
     }
   },

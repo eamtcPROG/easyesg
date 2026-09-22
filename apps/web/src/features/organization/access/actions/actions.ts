@@ -5,6 +5,7 @@ import type {
   Invitation,
   IssueInvitationRequest,
   Member,
+  SendReportReminderRequest,
 } from '@easyesg/contracts';
 import { revalidatePath } from 'next/cache';
 import { mapOutcome } from '@/lib/api-outcome';
@@ -109,5 +110,21 @@ export async function revokeInvitationAction(input: {
 }): Promise<AccessActionResult> {
   const outcome = await api.delete(`/invitations/${input.invitationId}`);
   revalidateAccess();
+  return mapOutcome(outcome, () => null);
+}
+
+/**
+ * UC-175's manual reminder (task 50.3) — raised about one open report, to one member, with an optional note.
+ * **Nothing on S-16 changes**, so nothing is revalidated: the reminder is a notice in someone else's centre.
+ */
+export async function sendReminderAction(input: {
+  readonly reportId: string;
+  readonly membershipId: string;
+  readonly note?: string;
+}): Promise<AccessActionResult> {
+  const outcome = await api.post<SendReportReminderRequest, undefined>(`/reports/${input.reportId}/reminders`, {
+    membershipId: input.membershipId,
+    note: input.note,
+  });
   return mapOutcome(outcome, () => null);
 }

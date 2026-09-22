@@ -2914,6 +2914,48 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/reminders": {
+      "post": {
+        "description": "Raises a reminder to one active member of the organization, the sender excepted, naming the report, the sender and an optional note. Accepted rather than delivered: the notice is written on this request and delivered by the worker, and each reminder is a notice of its own. Only an Organization Administrator sends one.",
+        "operationId": "ReportsController_remind",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendReportReminderRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The reminder is raised, and will reach the member’s centre."
+          },
+          "404": {
+            "description": "No such report in the active organization. Or no active member holds that membership."
+          },
+          "409": {
+            "description": "The report is no longer open, or the membership is the sender’s own."
+          }
+        },
+        "summary": "Remind a member about an open report (UC-175)",
+        "tags": [
+          "report"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/modules": {
       "get": {
         "description": "S-07's persistent module list (UX-5). Resolved from the report's OWN pinned taxonomy version, never the newest registered (DR-4).",
@@ -3131,53 +3173,6 @@
         ]
       }
     },
-    "/api/v1/reports/{id}/prior-period": {
-      "get": {
-        "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
-        "operationId": "ComparativesController_priorPeriod",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The prior period’s answers, each with its comparability verdict.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ResultObjectDto"
-                    },
-                    {
-                      "properties": {
-                        "object": {
-                          "$ref": "#/components/schemas/PriorPeriodResponseDto"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such report in the active organization."
-          }
-        },
-        "summary": "The prior period’s answers for this report",
-        "tags": [
-          "report"
-        ]
-      }
-    },
     "/api/v1/notifications": {
       "get": {
         "description": "The notices addressed to the caller that are still in their centre — not dismissed, not withdrawn — each with its title and text in the negotiated language and a link to what raised it. Read state is the caller’s own: a colleague reading the same notice leaves it unread here.",
@@ -3212,7 +3207,7 @@
             "name": "filters",
             "required": false,
             "in": "query",
-            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation. A value outside these, or a field this route does not define, is ignored rather than refused.",
+            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder. A value outside these, or a field this route does not define, is ignored rather than refused.",
             "schema": {}
           }
         ],
@@ -3359,6 +3354,53 @@
         "summary": "Dismiss a notification from the caller’s centre",
         "tags": [
           "platform"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/prior-period": {
+      "get": {
+        "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
+        "operationId": "ComparativesController_priorPeriod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The prior period’s answers, each with its comparability verdict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/PriorPeriodResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "The prior period’s answers for this report",
+        "tags": [
+          "report"
         ]
       }
     },
@@ -7936,6 +7978,25 @@
           }
         }
       },
+      "SendReportReminderRequestDto": {
+        "type": "object",
+        "properties": {
+          "membershipId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The membership of the person to remind — any active member of the organization but the sender."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Mai lipsesc datele despre consumul de energie.",
+            "description": "A note from the sender, shown to the person as written. Omitted, or only whitespace, is none."
+          }
+        },
+        "required": [
+          "membershipId"
+        ]
+      },
       "ApplicabilityDriverDto": {
         "type": "object",
         "properties": {
@@ -8602,6 +8663,80 @@
           "values"
         ]
       },
+      "NotificationItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The notice. The handle its read and dismiss actions take; the same for every recipient of it."
+          },
+          "categoryKey": {
+            "type": "string",
+            "enum": [
+              "identity.email_verification",
+              "identity.password_reset",
+              "identity.invitation",
+              "platform.admin_invitation",
+              "reporting.manual_reminder"
+            ],
+            "description": "What kind of notice this is — a key for the client to act on, never text to show."
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "The category’s name in the negotiated language, to show beside the notice. Absent when none is written."
+          },
+          "title": {
+            "type": "string",
+            "description": "The notice’s title in the negotiated language. Absent when the category has no in-app wording."
+          },
+          "body": {
+            "type": "string",
+            "description": "The notice’s text in the negotiated language. Absent when the category has no in-app wording."
+          },
+          "actionLabel": {
+            "type": "string",
+            "description": "The words of the link to what raised the notice — “Open the findings” — in the negotiated language. Absent when the category has none written, and then the title is the link."
+          },
+          "deepLink": {
+            "type": "string",
+            "example": "/reports/0192f000-0000-7000-8000-000000000001",
+            "description": "The path in the tenant application of the object that raised the notice, without a locale prefix — selecting the notice opens it (FR-162)."
+          },
+          "receivedAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC, when the notice reached this recipient’s centre.",
+            "example": 1790553600000
+          },
+          "readAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Unix epoch milliseconds, UTC, when this recipient first marked it read. Null while unread; another recipient reading the same notice leaves it null here.",
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "categoryKey",
+          "deepLink",
+          "receivedAt",
+          "readAt"
+        ]
+      },
+      "UnreadCountResponseDto": {
+        "type": "object",
+        "properties": {
+          "unread": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Notices in this recipient’s centre they have not read. A dismissed notice is not counted.",
+            "example": 3
+          }
+        },
+        "required": [
+          "unread"
+        ]
+      },
       "PriorReportPinDto": {
         "type": "object",
         "properties": {
@@ -8747,79 +8882,6 @@
           "availability",
           "prior",
           "values"
-        ]
-      },
-      "NotificationItemResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "The notice. The handle its read and dismiss actions take; the same for every recipient of it."
-          },
-          "categoryKey": {
-            "type": "string",
-            "enum": [
-              "identity.email_verification",
-              "identity.password_reset",
-              "identity.invitation",
-              "platform.admin_invitation"
-            ],
-            "description": "What kind of notice this is — a key for the client to act on, never text to show."
-          },
-          "categoryName": {
-            "type": "string",
-            "description": "The category’s name in the negotiated language, to show beside the notice. Absent when none is written."
-          },
-          "title": {
-            "type": "string",
-            "description": "The notice’s title in the negotiated language. Absent when the category has no in-app wording."
-          },
-          "body": {
-            "type": "string",
-            "description": "The notice’s text in the negotiated language. Absent when the category has no in-app wording."
-          },
-          "actionLabel": {
-            "type": "string",
-            "description": "The words of the link to what raised the notice — “Open the findings” — in the negotiated language. Absent when the category has none written, and then the title is the link."
-          },
-          "deepLink": {
-            "type": "string",
-            "example": "/reports/0192f000-0000-7000-8000-000000000001",
-            "description": "The path in the tenant application of the object that raised the notice, without a locale prefix — selecting the notice opens it (FR-162)."
-          },
-          "receivedAt": {
-            "type": "integer",
-            "description": "Unix epoch milliseconds, UTC, when the notice reached this recipient’s centre.",
-            "example": 1790553600000
-          },
-          "readAt": {
-            "type": "integer",
-            "nullable": true,
-            "description": "Unix epoch milliseconds, UTC, when this recipient first marked it read. Null while unread; another recipient reading the same notice leaves it null here.",
-            "example": null
-          }
-        },
-        "required": [
-          "id",
-          "categoryKey",
-          "deepLink",
-          "receivedAt",
-          "readAt"
-        ]
-      },
-      "UnreadCountResponseDto": {
-        "type": "object",
-        "properties": {
-          "unread": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Notices in this recipient’s centre they have not read. A dismissed notice is not counted.",
-            "example": 3
-          }
-        },
-        "required": [
-          "unread"
         ]
       },
       "SupportAccessDecisionResponseDto": {

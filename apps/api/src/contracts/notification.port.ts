@@ -26,6 +26,11 @@ export const NOTIFICATION_CATEGORY = {
   INVITATION: 'identity.invitation',
   /** An operator's invitation to the console (task 67.4). */
   ADMIN_INVITATION: 'platform.admin_invitation',
+  /**
+   * UC-175's manual reminder about an open report (task 50.3) — the first category a producer raises through
+   * `raise()`, and the first that travels in-app. **Optional**, so not among the mandatory set below.
+   */
+  MANUAL_REMINDER: 'reporting.manual_reminder',
 } as const;
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];

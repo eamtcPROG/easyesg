@@ -1091,6 +1091,38 @@
         "sentAction": "Puteți retrimite sau anula invitația din lista de mai sus.",
         "failedAction": "Găsiți persoana în lista de mai sus și alegeți ce faceți mai departe."
       },
+      "remind": {
+        "heading": "Trimiteți un memento",
+        "intro": "Amintiți-i unui coleg de un raport încă deschis. Mementoul ajunge în notificările persoanei, cu nota dumneavoastră, dacă adăugați una.",
+        "loading": "Se încarcă persoanele și rapoartele.",
+        "person": "Persoana",
+        "personPlaceholder": "Alegeți persoana",
+        "personRequired": "Alegeți persoana căreia îi trimiteți mementoul, altfel acesta nu poate fi trimis.",
+        "report": "Raportul",
+        "reportPlaceholder": "Alegeți raportul",
+        "reportOption": "{entity} · {year}",
+        "reportRequired": "Alegeți raportul despre care amintiți, ca persoana să știe ce are de completat.",
+        "note": "Notă (opțional)",
+        "noteHelp": "Apare în memento exact cum o scrieți.",
+        "noteCount": "{used} din {limit} de caractere",
+        "noteTooLong": "Nota are mai mult de {limit} de caractere, așa că mementoul nu poate fi trimis. Scurtați-o și trimiteți din nou.",
+        "submit": "Trimiteți mementoul",
+        "sent": "Mementoul a fost trimis către {name}.",
+        "sentBody": "Îl găsește în notificări, cu un link direct către raport.",
+        "noReport": {
+          "body": "Niciun raport nu este deschis acum, așa că nu aveți despre ce să amintiți. Un memento privește un raport încă în lucru.",
+          "action": "Vedeți rapoartele"
+        },
+        "noOne": {
+          "body": "Nimeni în afară de dumneavoastră nu are încă acces la organizație, așa că nu aveți cui să trimiteți un memento.",
+          "action": "Invitați un coleg"
+        },
+        "unavailable": {
+          "title": "Mementoul nu poate fi trimis deocamdată",
+          "body": "Nu am putut citi membrii sau rapoartele organizației, așa că nu știm ce vă putem oferi aici. Lista de mai sus este corectă.",
+          "retry": "Încercați din nou"
+        }
+      },
       "actions": {
         "changeRole": "Rolul lui {email}",
         "remove": "Retrageți accesul",
