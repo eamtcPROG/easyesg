@@ -1,5 +1,8 @@
 import {
+  EXPANSION_FLAG,
   LOCALES,
+  expandString,
+  expansionEnabled,
   isLabelStanding,
   type DisclosureLabel,
   type LabelStanding,
@@ -101,12 +104,28 @@ function readStanding(
   ) as Record<Locale, LabelStanding>;
 }
 
+/**
+ * UX-94's +40% harness, read once for this process (task 51.3; §12.5.6's task-51.3 row).
+ *
+ * These are the **largest body of wording the api resolves** — every question on S-07, its help and
+ * its member lists — and they travel by their own path, not through `app/messages/catalogue.ts`. So
+ * padding that one left OQ-58's labels measured at their Romanian length on a padded screen, which is
+ * the measurement not being taken rather than a check passing, and the same defect as the one that
+ * prompted the task. There is no second place to remember: all eighteen catalogues cross `pair`.
+ */
+const PADDED = expansionEnabled(process.env[EXPANSION_FLAG]);
+
 /** Pairs a locale's texts with that locale's standing, once, at module load. */
 function pair(
   texts: Readonly<Record<string, string>>,
   standing: LabelStanding,
 ): Readonly<Record<string, DisclosureLabel>> {
-  return Object.fromEntries(Object.entries(texts).map(([key, text]) => [key, { text, standing }]));
+  return Object.fromEntries(
+    Object.entries(texts).map(([key, text]) => [
+      key,
+      { text: PADDED ? expandString(text) : text, standing },
+    ]),
+  );
 }
 
 const STANDING_20260201 = readStanding(standing20260201, '2026-02-01');

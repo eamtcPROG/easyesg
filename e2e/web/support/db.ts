@@ -800,10 +800,13 @@ export async function seedNotices(input: {
       const id = randomUUID();
       const at = `now() - make_interval(mins => $3::int)`;
       await worker.query(
+        // `application` is the tenant app's for every notice this seeds, since the centre it seeds
+        // for is that app's (task 165). Literal, like the column's own CHECK: this statement stands
+        // in for the store's, and a constant here would hide a rename the database would refuse.
         `INSERT INTO notification.notification
-                (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, params, state,
-                 raised_at, last_raised_at, delivered_at)
-         VALUES ($1, $2, $6, $4, 'default', $5, $7::jsonb, 'delivered', ${at}, ${at}, ${at})`,
+                (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, application,
+                 params, state, raised_at, last_raised_at, delivered_at)
+         VALUES ($1, $2, $6, $4, 'default', $5, 'web', $7::jsonb, 'delivered', ${at}, ${at}, ${at})`,
         [
           id,
           input.organizationId,

@@ -97,9 +97,16 @@ for (const frame of FRAMES) {
     await expect(list.getByRole('listitem')).toHaveCount(2);
     // The worded item really is worded — its category, its title and its action words, from the api. Seeded under a
     // category with no wording, every assertion below still passes while the item draws at its narrowest.
-    await expect(list.getByText('Mementouri', { exact: true })).toBeVisible();
-    await expect(list.getByText('Ana Popescu vă reamintește de raportul Brutăria Lina pentru 2026')).toBeVisible();
-    await expect(list.getByRole('link', { name: 'Deschideți raportul' })).toBeVisible();
+    //
+    // **`exactlyPadded` here too, since task 51.3.** These three were the only assertions in the whole expansion
+    // suite naming words the api resolves, and they were written unpadded because the api served real words to a
+    // padded screen — the measurement UX-94 asks for, quietly not taken. They now say what every other assertion on
+    // this page says: the text arrived, and it arrived at +40%.
+    await expect(list.getByText(exactlyPadded('Mementouri'))).toBeVisible();
+    await expect(
+      list.getByText(exactlyPadded('Ana Popescu vă reamintește de raportul Brutăria Lina pentru 2026')),
+    ).toBeVisible();
+    await expect(list.getByRole('link', { name: exactlyPadded('Deschideți raportul') })).toBeVisible();
     // The list clips its rows, so a row's controls pushed past its edge would never widen the page.
     expect(await overflowWithin(list)).toBeLessThanOrEqual(1);
     const overflow = await page.evaluate(

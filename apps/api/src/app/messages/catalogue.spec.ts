@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { EXPANSION_FLAG } from '@easyesg/i18n';
 import { initialiseCatalogue, resetCatalogueForTests, translate } from './catalogue';
 
 /**
@@ -62,5 +63,51 @@ describe('message catalogue', () => {
     for (const locale of ['ro', 'en', 'ru'] as const) {
       expect(() => translate(locale, 'problem.nothing-here.title')).not.toThrow();
     }
+  });
+
+  /**
+   * UX-94's harness, on this side of the wire (task 51.3). The flag is read once per process, so
+   * every case here re-initialises — and the pair is the proof: padding that never turns off would
+   * pass a test that only ever looks at the padded arm, which is how the api came to serve real
+   * words to a padded screen for as long as it did.
+   */
+  describe('the +40% expansion harness', () => {
+    const KEY = 'problem.conflict.title';
+    const original = process.env[EXPANSION_FLAG];
+
+    afterEach(() => {
+      if (original === undefined) delete process.env[EXPANSION_FLAG];
+      else process.env[EXPANSION_FLAG] = original;
+    });
+
+    it('pads every resolved message when the flag is set', async () => {
+      process.env[EXPANSION_FLAG] = '1';
+      await initialiseCatalogue();
+
+      const padded = translate('ro', KEY);
+
+      expect(padded).toBeTruthy();
+      expect(padded).toMatch(/·$/u);
+    });
+
+    it('leaves the words alone when it is not', async () => {
+      delete process.env[EXPANSION_FLAG];
+      await initialiseCatalogue();
+
+      const plain = translate('ro', KEY);
+
+      expect(plain).toBeTruthy();
+      expect(plain).not.toContain('·');
+    });
+
+    // `expansionEnabled` admits only `'1'`, and this is the value that would otherwise read as on:
+    // a process padding production text because someone wrote `=false` is worse than the layout
+    // bug the harness exists to find.
+    it('stays off for a value that merely looks truthy', async () => {
+      process.env[EXPANSION_FLAG] = 'false';
+      await initialiseCatalogue();
+
+      expect(translate('ro', KEY)).not.toContain('·');
+    });
   });
 });

@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { STACK_API_BASE, STACK_ORIGIN, STACK_PORT } from './stack';
+import { STACK_API_BASE, STACK_EXPANSION_API_BASE, STACK_ORIGIN, STACK_PORT } from './stack';
 
 /**
  * Browser e2e for `apps/web` (task 20 — the first one). Runs against the SAME stack the api
@@ -25,6 +25,13 @@ import { STACK_API_BASE, STACK_ORIGIN, STACK_PORT } from './stack';
  * expansion harness (UX-94), because the flag is read per process — which lets the `expansion`
  * project assert layout tolerance in the same run that asserts behaviour.
  *
+ * **And two api servers, for the same reason one layer down** (task 51.3; §12.5.6's task-51.3 row).
+ * Every word a screen shows that the api resolved — a notice's wording, every disclosure label on
+ * S-07 — arrived unpadded until then, because one api serves all three projects: padding it would
+ * have padded what `identity` and `admin` assert against. So the padded api is a second process on
+ * its own port, the same built artefact with one environment value different, and only the padded
+ * web server is pointed at it.
+ *
  * No worker is started, deliberately. The journey needs the verification token, and the token
  * is IN the outbox row the moment registration commits (P-8, OQ-54) — the worker would only
  * turn it into an email. The spec reads the row as `esg_worker`, exactly like the api e2e.
@@ -44,6 +51,34 @@ const dbEnv = {
  * the choice is read here rather than inferred from a default nobody chose.
  */
 const STARTED_BY_THIS_RUN = { reuseExistingServer: false, timeout: 60_000 } as const;
+
+/**
+ * What both api processes share — everything but the port each listens on, the web origin each
+ * builds links against, and the expansion flag. Written once since task 51.3: two copies of a
+ * dozen credentials is two things to keep in step, and the one that drifted would be the one no
+ * project asserts against directly.
+ */
+const apiEnv = {
+  ...dbEnv,
+  MODE: 'http',
+  DB_USER: process.env.DB_USER ?? 'esg_app',
+  DB_PASSWORD: process.env.DB_PASSWORD ?? 'devonly-app',
+  // Task 67.3 — the HTTP tier refuses to start without `esg_admin_ro`, the console's reader
+  // across organizations (`admin-readonly.ts`).
+  DB_ADMIN_RO_USER: process.env.DB_ADMIN_RO_USER ?? 'esg_admin_ro',
+  DB_ADMIN_RO_PASSWORD: process.env.DB_ADMIN_RO_PASSWORD ?? 'devonly-admin-ro',
+  REDIS_HOST: process.env.REDIS_HOST ?? 'localhost',
+  REDIS_PORT: process.env.REDIS_PORT ?? '6379',
+  AUTH_PASSWORD_PEPPER: process.env.AUTH_PASSWORD_PEPPER ?? 'devonly-pepper',
+  // Task 23: the admin realm's secret and the console origin the api's CORS and Origin
+  // proof are configured for — the admin project's preview server below.
+  AUTH_ADMIN_SECRET: process.env.AUTH_ADMIN_SECRET ?? 'devonly-admin-secret',
+  // Task 27.1 — the admin store opens `totp_secret` on every sign-in, and
+  // `provisionOperator` seals it on the way in. Both are this one key.
+  SECRET_ENCRYPTION_KEY: process.env.SECRET_ENCRYPTION_KEY ?? 'devonly-secret-encryption-key',
+  ADMIN_ORIGIN: STACK_ORIGIN.CONSOLE,
+  BILLING_ENABLED: process.env.BILLING_ENABLED ?? 'true',
+};
 
 const webEnv = {
   NODE_ENV: 'production',
@@ -118,30 +153,27 @@ export default defineConfig({
       // These win over `apps/api/.env`, which sets `PORT` and `PUBLIC_WEB_URL` for the dev stack:
       // `@nestjs/config` copies a file's keys into `process.env` only where they are absent.
       env: {
-        ...dbEnv,
-        MODE: 'http',
+        ...apiEnv,
         PORT: String(STACK_PORT.API),
-        DB_USER: process.env.DB_USER ?? 'esg_app',
-        DB_PASSWORD: process.env.DB_PASSWORD ?? 'devonly-app',
-        // Task 67.3 — the HTTP tier refuses to start without `esg_admin_ro`, the console's reader
-        // across organizations (`admin-readonly.ts`).
-        DB_ADMIN_RO_USER: process.env.DB_ADMIN_RO_USER ?? 'esg_admin_ro',
-        DB_ADMIN_RO_PASSWORD: process.env.DB_ADMIN_RO_PASSWORD ?? 'devonly-admin-ro',
-        REDIS_HOST: process.env.REDIS_HOST ?? 'localhost',
-        REDIS_PORT: process.env.REDIS_PORT ?? '6379',
-        AUTH_PASSWORD_PEPPER: process.env.AUTH_PASSWORD_PEPPER ?? 'devonly-pepper',
-        // Task 23: the admin realm's secret and the console origin the api's CORS and Origin
-        // proof are configured for — the admin project's preview server below.
-        AUTH_ADMIN_SECRET: process.env.AUTH_ADMIN_SECRET ?? 'devonly-admin-secret',
-        // Task 27.1 — the admin store opens `totp_secret` on every sign-in, and
-        // `provisionOperator` seals it on the way in. Both are this one key.
-        SECRET_ENCRYPTION_KEY:
-          process.env.SECRET_ENCRYPTION_KEY ?? 'devonly-secret-encryption-key',
-        ADMIN_ORIGIN: STACK_ORIGIN.CONSOLE,
         // Read today only by the worker's mail consumers, which this run does not start — set so
         // that a later reader in the HTTP tier cannot send a browser to a developer's server.
         PUBLIC_WEB_URL: STACK_ORIGIN.WEB,
-        BILLING_ENABLED: process.env.BILLING_ENABLED ?? 'true',
+      },
+    },
+    {
+      ...STARTED_BY_THIS_RUN,
+      command: 'node dist/main.js',
+      cwd: '../apps/api',
+      url: `${STACK_ORIGIN.EXPANSION_API}/health`,
+      // The same artefact as the api above, with the harness on: every message this process
+      // resolves is padded to +40%, which is what the `expansion` project measures its screens
+      // against. It says so once at boot, at `warn`, so a padded process is never mistaken for
+      // the real one while reading a log.
+      env: {
+        ...apiEnv,
+        PORT: String(STACK_PORT.EXPANSION_API),
+        PUBLIC_WEB_URL: STACK_ORIGIN.EXPANSION,
+        EASYESG_PSEUDOLOCALE: '1',
       },
     },
     {
@@ -165,6 +197,8 @@ export default defineConfig({
         ...webEnv,
         PORT: String(STACK_PORT.EXPANSION),
         PUBLIC_WEB_URL: STACK_ORIGIN.EXPANSION,
+        // The padded api, so a word this screen did not author is measured too (task 51.3).
+        API_BASE_URL: STACK_EXPANSION_API_BASE,
         EASYESG_PSEUDOLOCALE: '1',
       },
     },

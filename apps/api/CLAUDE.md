@@ -1412,6 +1412,26 @@ every context depends on, so anything it reaches for becomes a transitive depend
   explicitly, and RFC 9457 makes every member optional. No `FR-`/`UC-` identifier, enum name or
   element key ever reaches a screen, an export or a problem+json `detail`.
 
+- **This process pads every word it resolves when `EASYESG_PSEUDOLOCALE=1`** (task 51.3; §12.5.6's
+  task-51.3 row). UX-94's +40% harness measures whether a layout survives translation, and its premise
+  is that the padded catalogue arrived — which held for `apps/web`'s own words and for nothing the api
+  resolves, so a notice's wording and every question on S-07 were measured at Romanian length inside a
+  padded screen. **Two paths, because there are two catalogues**: `app/messages/catalogue.ts` expands
+  at `initialiseCatalogue`, and the disclosure catalogues expand in `pair()`, the one function all
+  eighteen of them cross (`localization/constants/disclosure-catalogues.ts`). The flag is read once per
+  process, so the browser suite runs **a second api** carrying it and points only the padded web server
+  at it — padding the shared one would pad what `identity` and `admin` assert against. It says so at
+  `warn` on boot; a padded process must never be mistaken for the real one while reading a log.
+
+- **Every category's wording is a gate, not a habit** (task 51.3). `app/messages/notification-wording.spec.ts`
+  holds every category registered in `config/seed` to what its published channels need — `subject`/`body`
+  for `email`, `name` and `in_app.{title,body}` for `in_app`, `action` optional because the centre omits
+  an absent member — and every `*_TEMPLATE` constant under `modules/` to a subject and a body, in all
+  three locales. A category is configuration and needs no deploy (AD-4), so one can arrive with no
+  catalogue edit: `renderEmail` throws, but only on the worker, only when a notice is sent, and only for
+  that recipient's locale. **A template is not always a category** — `PASSWORD_SETUP_TEMPLATE` has no
+  artefact — which is why the constant is read as well as the seed.
+
 - **`DomainError` takes a message key and params, never a sentence.** The key is passed to
   `Error` so logs and traces still identify the failure — that surface is developer-facing and
   stays untranslated on purpose.

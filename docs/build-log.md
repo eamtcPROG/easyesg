@@ -23717,3 +23717,128 @@ decision of 13 Sep 2026). The change is `apps/api` plus documents:
 a tenant's centre shows opens the tenant application, which is the task-165 row's (3) stated the other way round.
 **The three review agents did not run**, per the same standing decision; the diff is one migration, four api files and
 their specs.
+
+## Task 51.3 — Template wording as release catalogues, and the api at +40% · 2026-09-23
+
+Taken next because 51.2 waits on task 41.3, which is Stage 2's. **Its first deliverable already held when
+it opened**, and establishing that was most of the task's thinking: tasks 49.2, 50.1.4 and 50.3 each
+authored their wording into the committed catalogues as they registered their category, so all sixteen
+notification keys resolve in all three locales, `renderEmail` takes both members from the catalogue and
+throws otherwise, and both adapters send `text` with no shell. There was no sentence in a `.ts` file to
+remove. What there was no way to do was *fail*.
+
+### Decisions (project owner, two batches)
+
+Recorded as §12.5.6's new task-51.3 row. The first batch asked what a row whose deliverable already
+holds should build; the second asked three questions the first batch's answers created.
+
+- **(1) A gate, and nothing else** (recommended). An ESLint selector banning sentence-shaped literals
+  was declined by name: the shape has no honest syntactic definition, so it would start green and later
+  fire on legitimate code, which is how this repository's own notes say the inline disable gets trained.
+- **(2) The api pads its catalogue here** — the owner's choice over the recommended *split it, and defer
+  the email half*. It closes **task 166** rather than leaving it a row with no content.
+- **(3) The gate lives in `apps/api`** (recommended), beside `message-keys.spec.ts`. The row's scope was
+  `pkg:i18n` and is now `api+e2e`: the gate needs the category vocabulary and the code's own constants,
+  neither of which `packages/i18n` has ever known.
+- **(4) A second api process** (recommended) carries the flag, and only the padded web server is pointed
+  at it. A header was declined — anything addressing the api could then change what a reader sees.
+- **(5) 166 closes with this**, absorbed rather than narrowed.
+- **(6) Overflow the padding reveals is fixed here**, not recorded and deferred.
+
+### What shipped
+
+- **`app/messages/notification-wording.spec.ts`** — every category registered in `config/seed` held to
+  what its published channels need, and every `*_TEMPLATE` constant to a subject and a body, in all three
+  locales. It reads the artefacts and the sources rather than importing them. Three mutations, each run
+  and restored: a removed `in_app.title` in `ru`, a removed `password_setup.subject` in `en`, and a
+  template constant renamed so the convention stops matching it — the third failing the case that counts
+  what was found, which is the half a reader would otherwise have to trust.
+- **The padding, on two paths, because there are two catalogues.** `catalogue.ts` expands at
+  `initialiseCatalogue`; the disclosure catalogues expand in `pair()`, the one function all eighteen of
+  them cross. It announces itself at `warn` on boot.
+- **A fifth server in the browser suite** — the same api artefact with one environment value different —
+  and `apiEnv` factored so the two processes cannot drift.
+
+### The decision was taken on a description, and the description was incomplete
+
+The second batch asked whether "padding the api" should close task 166, and it was answered yes. Only
+while checking that claim did the second catalogue surface: disclosure labels travel through
+`DisclosureLabelService` from `catalogues/disclosure/<version>/`, not through `app/messages`, so padding
+`catalogue.ts` alone would have closed 166 while leaving **the largest body of api-resolved wording in the
+product** — every question on S-07, its help and its member lists — unmeasured. The remedy was to make
+what shipped match what was decided rather than to narrow the claim to what had been built. Worth
+recording as a shape rather than an incident: a recommendation is only as good as the survey behind it,
+and this one had surveyed one of two paths.
+
+### What the padding found, which was not layout
+
+Every overflow check held, at all three frames, on all ten expansion specs. What had been passing on
+nothing was smaller and more interesting:
+
+- **Three assertions naming api words unpadded** — S-26's category name, its notice title and its action
+  link, the only places in the whole expansion suite that named words the api resolves. They were written
+  by task 50.3 against an api serving real words to a padded screen, so they could not have failed on
+  what they named.
+- **A wizard case whose green proved nothing.** `S-07 tolerates +40%` asserted the heading, the save
+  status and the exit link — none of them api-resolved — so the overflow check passed equally well with no
+  question on screen at all. It now names a disclosure's own label, and the mutation that turns the
+  disclosure padding off fails exactly those three cases.
+- **A label on screen twice, by design.** The first draft of that assertion matched two elements:
+  `DisclosureField` renders the visible `<span>` its group is named by, and the `Select` inside keeps its
+  own label clipped so the control has an accessible name. The locator names the group rather than taking
+  `.first()`, which would have recorded the ambiguity instead of resolving it.
+
+### Task 165 had broken the browser suite, and this task is what found it
+
+The first padded run failed six cases, none of them about padding: `e2e/web/support/db.ts` seeds
+`notification.notification` directly and did not supply the `application` column task 165 had made
+`NOT NULL` the day before. **165's close ran the gates its change reached and the routing table does not
+point an api-only migration at `pnpm e2e:web`** — which is right for almost every migration and wrong for
+one that changes a table the browser suite writes to itself. CI would have caught it on the next push to
+`dev`, which is the backstop the policy names; it cost nothing here because the fix is one column in one
+statement. It is recorded rather than quietly fixed because the assumption behind the split — *a defect CI
+finds shortly after a push costs less than the local minutes spent finding it first* — is the one this
+sits against, and the table has no line for a schema the e2e helpers mirror.
+
+### Verification, and the run this was closed on
+
+A sub-step, so the gates its change reaches: `pnpm lint` (a two-line `eslint-disable-next-line` pointed at
+its own second comment line — caught here), `pnpm typecheck`, `pnpm --filter @easyesg/api test` (154
+suites, 1,272 tests), `pnpm e2e` (52 suites, 1,303), `pnpm e2e:worker` (8 — both entrypoints await
+`initialiseCatalogue`, so the flag is read in the worker too), `pnpm e2e:web` (**252, all three projects**,
+rather than the two the table names, because the shared config and the seeding helper changed), and
+`pnpm docs:check` (46 claims). No `openapi:check`: no controller, DTO or contracts file changed.
+
+**Task 51's parent stays `TODO`** — 51.2 waits on 41.3 and 51.4 is unstarted — so 51.3 closes in place
+rather than moving, and only 166's row travels to the archive. **Yesterday's four added `docs:check`
+claims earned themselves back on their first use**: closing a row moved three of the four counts, and the
+gate named each one instead of leaving it to be noticed a task later.
+
+### The premise was challenged after it shipped, measured, and the work kept
+
+Raised by the project owner on review of this entry: *it looks like a useless implementation without
+value on product.* Measured rather than argued, against the committed catalogues — real Romanian to
+real Russian and English, 188 app strings and 143 disclosure labels:
+
+| vs Romanian | median | p90 | max | over 1.4x |
+| --- | --- | --- | --- | --- |
+| Russian, app catalogue | 0.95 | 1.14 | 1.88 | 3% |
+| Russian, disclosure labels | 0.94 | 1.21 | 1.89 | 1% |
+| English, both | 0.84–0.92 | ~1.10 | 1.44 | 0–1% |
+
+**UX-94's premise is inverted for this product.** *"Translations run 30–40% longer"* is a rule of
+thumb from English-source software; here the source is Romanian and both targets are **shorter** at
+the median and the ninetieth percentile. So the harness is simultaneously too strict for ~98% of
+strings and too lenient for the few that matter, since real Russian reaches 1.88 where the padding
+stops at 1.4 — and the real wording is committed in the repository, so a run in Russian would test
+the artefact rather than a proxy for it.
+
+**Kept, by the owner's decision (23 Sep 2026): it is a test, and it stays.** Recorded here rather
+than acted on, because UX-94 is `design_spec.md`'s and a measurement contradicting a spec is a
+question to raise, not one to close by deleting code. What a later reader needs to know: the number
+40 is not derived from this product's own text, and the table above is what any revisit starts from.
+
+**The failure worth carrying forward is the order of the questions.** Three well-formed decisions
+were taken about *how* to pad the api and the prior one — is the thing being simulated real here —
+was never asked, though the catalogues that answer it sit in the repository and took ninety seconds
+to measure. A specced number was treated as a settled fact rather than as a claim.
