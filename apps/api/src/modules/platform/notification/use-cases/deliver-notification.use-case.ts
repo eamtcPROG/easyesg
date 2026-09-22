@@ -18,6 +18,8 @@ export interface DeliverNotificationCommand {
   readonly organizationId: string;
   /** The outbox row's key: the id a new notice adopts (§12.5.6's task-49.3 row (3)). */
   readonly deliveryId: string;
+  /** The outbox row's time, which orders this raise against its key's cancellation (§12.5.6's task-50.1 row (12)). */
+  readonly raisedAt: Date;
 }
 
 export interface DeliverNotificationResult {
@@ -38,7 +40,8 @@ export interface DeliverNotificationResult {
  *    the send. An id naming no account is skipped, not fatal, and comes back as `unresolved`. Membership and
  *    standing are not checked: the producer named the recipients, and is where that decision belongs.
  * 3. **The notice opened in the store** — found by its own id when the job is a redelivery, folded into the open
- *    notice for the same key (FR-167), or recorded under this raise's id. A cancelled notice delivers nothing more.
+ *    notice for the same key (FR-167), or recorded under this raise's id. A cancelled notice delivers nothing more,
+ *    and nor does a raise its key's cancellation came after (task 50.1.3), whichever the workers took first.
  *    **What is delivered is the notice as recorded**: a folded raise adds recipients, and they receive what the
  *    others received.
  * 4. **In-app first, then email**, each only to whom the notice still owes on that channel — so the centre fills
@@ -70,6 +73,7 @@ export class DeliverNotification {
       categoryKey: notice.categoryKey,
       subjectRef: notice.subjectRef,
       recipientScope: notice.recipientScope,
+      raisedAt: command.raisedAt,
       deepLink: notice.deepLink,
       params: notice.params,
     });

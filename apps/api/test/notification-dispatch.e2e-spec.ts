@@ -46,6 +46,7 @@ class RecordingEmailPort implements EmailPort {
 interface OutboxRow {
   event_type: string;
   organization_id: string | null;
+  occurred_at: Date;
   idempotency_key: string;
   payload: Record<string, unknown>;
 }
@@ -119,7 +120,8 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
 
   const outboxRow = async (notificationId: string): Promise<OutboxRow | undefined> => {
     const rows: OutboxRow[] = await worker.query(
-      `SELECT event_type, organization_id, idempotency_key, payload FROM audit.outbox_event WHERE idempotency_key = $1`,
+      `SELECT event_type, organization_id, occurred_at, idempotency_key, payload
+         FROM audit.outbox_event WHERE idempotency_key = $1`,
       [notificationId],
     );
     return rows[0];
@@ -175,9 +177,9 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
       ),
     );
 
-    // What the dispatcher enqueues: the row's payload, with the row's organization beside it.
+    // What the dispatcher enqueues: the row's payload, with the row's organization and time beside it.
     await handler.handle(
-      { ...row.payload, organizationId: row.organization_id },
+      { ...row.payload, organizationId: row.organization_id, occurredAt: row.occurred_at.getTime() },
       { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 },
     );
 

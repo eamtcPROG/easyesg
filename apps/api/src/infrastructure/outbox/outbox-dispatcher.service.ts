@@ -17,6 +17,7 @@ interface PendingEvent {
   payload: Record<string, unknown>;
   idempotency_key: string;
   organization_id: string | null;
+  occurred_at: Date;
 }
 
 /**
@@ -89,7 +90,7 @@ export class OutboxDispatcher implements OnModuleInit, OnApplicationShutdown {
 
     try {
       const pending = (await queryRunner.query(
-        `SELECT id, event_type, payload, idempotency_key, organization_id
+        `SELECT id, event_type, payload, idempotency_key, organization_id, occurred_at
            FROM audit.outbox_event
           WHERE dispatched_at IS NULL
             AND attempts < $1
@@ -108,8 +109,11 @@ export class OutboxDispatcher implements OnModuleInit, OnApplicationShutdown {
         await this.queue.add(
           event.event_type,
           // The organization travels with the job: §7.6 has the worker set tenant context from the
-          // job payload's organization, since a consumer has no request to read it from.
-          { ...event.payload, organizationId: event.organization_id },
+          // job payload's organization, since a consumer has no request to read it from. So does the
+          // row's own time, in epoch milliseconds (task 50.1.3): when the decision behind the job
+          // committed, on the database's clock — which a consumer needs to order two jobs that
+          // parallel workers may take in either order (§12.5.6's task-50.1 row (12)).
+          { ...event.payload, organizationId: event.organization_id, occurredAt: event.occurred_at.getTime() },
           { jobId: event.idempotency_key },
         );
       }

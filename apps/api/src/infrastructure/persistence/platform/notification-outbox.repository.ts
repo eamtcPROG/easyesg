@@ -1,8 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import type { NotificationPort, RaiseNotificationCommand } from '@api/contracts/notification.port';
+import type {
+  CancelNotificationCommand,
+  NotificationPort,
+  RaiseNotificationCommand,
+} from '@api/contracts/notification.port';
 import {
   DEFAULT_RECIPIENT_SCOPE,
+  NOTIFICATION_CANCELLED,
   NOTIFICATION_RAISED,
+  type NotificationCancelled,
   type NotificationRaised,
 } from '@api/modules/platform/notification/constants/notification.constants';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
@@ -46,5 +52,23 @@ export class NotificationOutboxRepository extends TenantRepository<never> implem
       organizationId: command.organizationId,
     });
     return { notificationId };
+  }
+
+  /**
+   * FR-167's withdrawal — an outbox row on the same request transaction, for `raise()`'s reason (task 50.1.3). The
+   * payload is the key, with the audience resolved to the default as `raise()` resolves it, so the two name one
+   * key whichever the producer spelled out.
+   */
+  async cancel(command: CancelNotificationCommand): Promise<void> {
+    const payload: NotificationCancelled = {
+      categoryKey: command.categoryKey,
+      subjectRef: command.subjectRef,
+      recipientScope: command.recipientScope ?? DEFAULT_RECIPIENT_SCOPE,
+    };
+    await writeOutboxEvent(this.runner, {
+      eventType: NOTIFICATION_CANCELLED,
+      payload: { ...payload },
+      organizationId: command.organizationId,
+    });
   }
 }

@@ -30,3 +30,20 @@ export interface NotificationRaised {
  * — names each; the label is theirs, and is never derived from who the recipients are.
  */
 export const DEFAULT_RECIPIENT_SCOPE = 'default';
+
+/**
+ * A cancelled notice as it travels (task 50.1.3; FR-167; §12.5.6's task-50.1 rows (12), (13)) — an outbox event on
+ * the producer's transaction, as a raise is, so the cancellation commits with the decision that cleared the
+ * condition. `NotificationCancelledHandler` claims it on the worker.
+ */
+export const NOTIFICATION_CANCELLED = 'platform.notification.cancelled';
+
+/**
+ * The payload names **the key a raise deduplicates on**, never a notice's id: a raise folded into an open notice
+ * answered an id no notice carries, so an id is not what a producer can be sure of holding (row (13)).
+ */
+export interface NotificationCancelled {
+  readonly categoryKey: NotificationCategoryKey;
+  readonly subjectRef: string;
+  readonly recipientScope: string;
+}

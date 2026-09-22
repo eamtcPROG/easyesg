@@ -77,7 +77,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  cancellation, the email channel's bounces and suppression, and preferences (50 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
+  the email channel's bounces and suppression, and preferences (50 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -485,6 +485,24 @@ reading to see:
 - **`read_at` and `dismissed_at` are write-once**, by `notification.keep_read_state`; the store writes each with
   `COALESCE(…, now())`. Dismissing never writes `read_at`. The wording is resolved in `NotificationCentreService`
   from `notification.<category>.in_app.{title,body}`; a key with no entry leaves the member absent.
+
+**A cancellation outlives its notice, and every job carries its outbox row's time** (task 50.1.3; §12.5.6's
+task-50.1 rows (12), (13)). `NotificationPort.cancel()` names the raise's key and writes an outbox event on the
+producer's transaction; `NotificationCancelledHandler` applies it. Four things hold the ordering, and each has a case
+in `notification-store.e2e-spec.ts` that fails without it:
+
+- **`notification.cancellation` keeps each key's latest cancellation time**, moved forward only, even where no
+  notice was open — one to three worker replicas take jobs in either order, and a raise dispatched after the
+  cancellation that came after it must open nothing.
+- **The comparison is between outbox times**, `occurred_at`, which the dispatcher puts on every job as `occurredAt`
+  (epoch milliseconds) beside `organizationId`. A handler that builds a job by hand in a test must carry both;
+  `outbox.e2e-spec.ts` is what fails if the dispatcher stops.
+- **A notice's `last_raised_at` is its latest raise, a fold included**, and a cancellation closes only a notice
+  last raised no later than it.
+- **`open` and `cancel` take one advisory lock per key** before reading, so whichever runs second sees the other's
+  commit. A race cannot be shown absent by running it: the suite takes the lock itself, under
+  `notificationKeyLockName`, and shows both operations waiting. A dispatch already sending when a cancellation lands
+  finishes the recipients it is sending to.
 
 ### Withholding a column from the application
 

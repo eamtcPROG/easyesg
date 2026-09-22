@@ -26,7 +26,7 @@ import { DeliverNotification, type NotificationChannelDecision } from './deliver
  * own notice. So this pins what the use case does with what is recorded — deliver what is owed, in order, and only
  * that.
  */
-describe('DeliverNotification (tasks 49.3, 50.1.1)', () => {
+describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
   class RecordingEmailChannel implements EmailChannel {
     readonly sent: NotificationEmail[] = [];
     failWith: Error | null = null;
@@ -48,6 +48,12 @@ describe('DeliverNotification (tasks 49.3, 50.1.1)', () => {
   /** The record's rules, as the migration's constraints state them. Literals on purpose: they are stored values. */
   class FakeNotificationStore implements NotificationStore {
     readonly notices: Notice[] = [];
+    /** Each key's latest cancellation, as `notification.cancellation` holds it. */
+    readonly cancellations = new Map<string, Date>();
+
+    static key(command: { categoryKey: string; subjectRef: string; recipientScope: string }): string {
+      return `${command.categoryKey}|${command.subjectRef}|${command.recipientScope}`;
+    }
 
     open(command: OpenNotificationCommand): Promise<NotificationRecord> {
       const sameKey = (notice: Notice) =>
@@ -56,9 +62,18 @@ describe('DeliverNotification (tasks 49.3, 50.1.1)', () => {
         notice.command.categoryKey === command.categoryKey &&
         notice.command.subjectRef === command.subjectRef &&
         notice.command.recipientScope === command.recipientScope;
-      let notice =
-        this.notices.find((each) => each.command.notificationId === command.notificationId) ??
-        this.notices.find(sameKey);
+      const own = this.notices.find((each) => each.command.notificationId === command.notificationId);
+      const cancelledAt = this.cancellations.get(FakeNotificationStore.key(command));
+      if (!own && cancelledAt && cancelledAt >= command.raisedAt) {
+        return Promise.resolve({
+          notificationId: command.notificationId,
+          state: 'cancelled',
+          deepLink: command.deepLink,
+          params: command.params,
+          delivered: [],
+        });
+      }
+      let notice = own ?? this.notices.find(sameKey);
       if (!notice) {
         notice = { command, state: 'raised', deliveries: [] };
         this.notices.push(notice);
@@ -136,8 +151,8 @@ describe('DeliverNotification (tasks 49.3, 50.1.1)', () => {
       resolve: ({ userIds }) => Promise.resolve(people.filter((person) => userIds.includes(person.userId))),
     };
     const deliver = new DeliverNotification(recipients, email, decision, store, 'https://app.easyesg.md');
-    const run = (raised: NotificationRaised, deliveryId: string) =>
-      deliver.execute({ notice: raised, organizationId: ORGANIZATION, deliveryId });
+    const run = (raised: NotificationRaised, deliveryId: string, raisedAt = new Date('2026-09-22T08:00:00Z')) =>
+      deliver.execute({ notice: raised, organizationId: ORGANIZATION, deliveryId, raisedAt });
     return { run, email, store };
   };
 
@@ -281,5 +296,21 @@ describe('DeliverNotification (tasks 49.3, 50.1.1)', () => {
 
     expect(email.sent.map((sent) => sent.to)).toEqual(['ana@example.md']);
     expect(store.notices[0].state).toBe('cancelled');
+  });
+
+  // Row (12): a cancellation the workers applied first still stands against the raise it came after.
+  it('delivers nothing for a raise its key was cancelled after, and delivers a later one', async () => {
+    const { run, email, store } = build();
+    store.cancellations.set(
+      FakeNotificationStore.key({ categoryKey: 'identity.invitation', subjectRef: 'invitation:1', recipientScope: 'default' }),
+      new Date('2026-09-22T09:00:00Z'),
+    );
+
+    await run(notice({ recipientUserIds: [ANA] }), 'outbox-key-1', new Date('2026-09-22T08:59:59Z'));
+    expect(email.sent).toEqual([]);
+    expect(store.notices).toEqual([]);
+
+    await run(notice({ recipientUserIds: [ANA] }), 'outbox-key-2', new Date('2026-09-22T09:00:01Z'));
+    expect(email.sent.map((sent) => sent.idempotencyKey)).toEqual([`outbox-key-2:${ANA}`]);
   });
 });

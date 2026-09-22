@@ -9,7 +9,10 @@ import { EMAIL_VERIFICATION_REQUESTED, PASSWORD_RESET_REQUESTED } from '../src/m
 import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
 import { AuthGuard } from '../src/modules/identity/session/guards/auth.guard';
 import { ADMIN_INVITATION_ISSUED } from '../src/modules/platform/admin/constants/admin-invitation.constants';
-import { NOTIFICATION_RAISED } from '../src/modules/platform/notification/constants/notification.constants';
+import {
+  NOTIFICATION_CANCELLED,
+  NOTIFICATION_RAISED,
+} from '../src/modules/platform/notification/constants/notification.constants';
 
 /**
  * AD-1's backstop: **one image, two entrypoints, and both of them boot.**
@@ -83,6 +86,7 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
      */
     it.each([
       NOTIFICATION_RAISED,
+      NOTIFICATION_CANCELLED,
       EMAIL_VERIFICATION_REQUESTED,
       PASSWORD_RESET_REQUESTED,
       INVITATION_ISSUED,

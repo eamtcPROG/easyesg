@@ -8,7 +8,7 @@ import { NotificationRaisedHandler } from './notification-raised.handler';
  * handed on whole with the organization the dispatcher added beside it, and the recipients who named no account
  * said. The flow's decisions are the use case's spec.
  */
-describe('NotificationRaisedHandler (tasks 49.3, 50.1.1)', () => {
+describe('NotificationRaisedHandler (tasks 49.3, 50.1.1, 50.1.3)', () => {
   const context = { jobId: 'outbox-key-1' } as JobContext;
   const ORGANIZATION = '44444444-4444-4444-8444-444444444444';
   const notice = {
@@ -19,8 +19,9 @@ describe('NotificationRaisedHandler (tasks 49.3, 50.1.1)', () => {
     deepLink: '/invitation/abc',
     params: { organizationName: 'Brutăria' },
   };
-  /** What the dispatcher enqueues: the outbox row's payload, and the row's organization beside it. */
-  const payload = { ...notice, organizationId: ORGANIZATION };
+  const OCCURRED_AT = 1_790_640_000_000;
+  /** What the dispatcher enqueues: the outbox row's payload, and the row's organization and time beside it. */
+  const payload = { ...notice, organizationId: ORGANIZATION, occurredAt: OCCURRED_AT };
 
   const build = (unresolved: readonly string[] = []) => {
     const execute = jest.fn().mockResolvedValue({ unresolved });
@@ -40,7 +41,12 @@ describe('NotificationRaisedHandler (tasks 49.3, 50.1.1)', () => {
     const { handler, execute } = build();
     await handler.handle(payload, context);
 
-    expect(execute).toHaveBeenCalledWith({ notice, organizationId: ORGANIZATION, deliveryId: 'outbox-key-1' });
+    expect(execute).toHaveBeenCalledWith({
+      notice,
+      organizationId: ORGANIZATION,
+      raisedAt: new Date(OCCURRED_AT),
+      deliveryId: 'outbox-key-1',
+    });
     expect(warned).toEqual([]);
   });
 
@@ -57,6 +63,8 @@ describe('NotificationRaisedHandler (tasks 49.3, 50.1.1)', () => {
     ['no audience', { ...payload, recipientScope: undefined }],
     ['no organization', { ...payload, organizationId: null }],
     ['an organization that is not a UUID', { ...payload, organizationId: 'org-1' }],
+    ['no time', { ...payload, occurredAt: undefined }],
+    ['a time that is not a number', { ...payload, occurredAt: '2026-09-22' }],
     ['a deep link that is not a path', { ...payload, deepLink: 'https://elsewhere.example/x' }],
     ['no params', { ...payload, params: null }],
   ])('fails a payload with %s rather than delivering to a guess', async (_label, broken) => {

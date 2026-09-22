@@ -74,17 +74,37 @@ export interface RaiseNotificationCommand {
   params?: Record<string, unknown>;
 }
 
+/**
+ * Withdraws the open notice for a key when its condition clears (FR-167; §12.5.6's task-50.1 rows (12), (13)) — the
+ * disclosure supplied, the section declared omitted, the period locked. **Named by the raise's key**, the fields
+ * `RaiseNotificationCommand` deduplicates on, never by a notice id.
+ */
+export interface CancelNotificationCommand {
+  categoryKey: NotificationCategoryKey;
+  organizationId: string;
+  subjectRef: string;
+  /** The audience the raise named; the same default when omitted. */
+  recipientScope?: string;
+}
+
 export interface NotificationPort {
   /**
    * Raises a notice **on the caller's own request transaction** (task 49.3, P-8): it commits with the decision
    * that caused it or not at all. Dispatch happens on the worker, from the outbox, by the category's behaviour,
    * and records the notice and each delivery (task 50.1.1). The id is the outbox row's key, which a new notice
    * adopts; a raise folded into an open notice is delivered as part of that one.
-   *
-   * **FR-167's `cancel` returns with task 50.1.3**, which is what writes a cancellation; until then a method here
-   * could only pretend (§12.5.6's task-49.3 row (5)).
    */
   raise(command: RaiseNotificationCommand): Promise<{ notificationId: string }>;
+
+  /**
+   * Cancels the key's open notice, **on the caller's own request transaction** like `raise()` (task 50.1.3): the
+   * withdrawal commits with the decision that cleared the condition or not at all, and the worker applies it.
+   * Nothing further is delivered for the notice, it leaves every recipient's centre, and **a raise of the same key
+   * made before this cancellation opens nothing**, whichever order the two are processed in; a later raise opens a
+   * new notice. An email already sent stays sent. Cancelling a key with no open notice is not an error — the
+   * condition cleared either way — and it still stands against an earlier raise not yet delivered.
+   */
+  cancel(command: CancelNotificationCommand): Promise<void>;
 }
 
 export const NOTIFICATION_PORT = Symbol('NOTIFICATION_PORT');

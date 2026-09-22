@@ -349,6 +349,12 @@ const UNAUDITED_TABLES = [
    * argument, one table over.
    */
   'notification.delivery',
+  /**
+   * `notification.cancellation` (task 50.1.3) records when a key was last cancelled, written by the worker from a
+   * producer's cancellation. Nobody edits a value in it; the cancellation is the producer's decision, attributed
+   * where that decision is stored — `notification.notification`'s argument, one table over.
+   */
+  'notification.cancellation',
 ];
 
 const auditedTablesMissingCapture = (x: Executor) =>

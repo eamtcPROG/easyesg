@@ -22857,3 +22857,82 @@ Four, each the recommended option, recorded as §12.5.6's task-50.1 rows (8) …
   never serialized; `db-avoid-n-plus-one` — the page is one statement over one CTE, the counts one more.
   `one-idea-per-file`: four use cases, one file each; the narrowing pure with its spec; the store's marker vocabulary
   internal to its file, because nothing else writes those columns.
+
+## Task 50.1.3 — Cancellation · 2026-09-22
+
+FR-167's withdrawal: `NotificationPort.cancel()` is back on the port, with its implementation. A producer whose
+condition has cleared cancels the notice by its key, on its own transaction, and the worker applies it. From then on
+nothing more is delivered for that notice, it leaves every recipient's centre, and **a raise made before the
+cancellation opens nothing, whichever order the workers take the two in.** No producer calls it yet — 51.2's schedules
+are its first — so the proof is a producer's transaction in the e2e.
+
+### Decisions (project owner, one batch)
+
+Recorded as §12.5.6's task-50.1 rows (12) and (13), each the recommended option:
+
+- **A cancellation outlives its notice.** With one to three worker replicas taking jobs in parallel (§10.7), a
+  cancellation can be processed before the raise it cancels; recorded only on the notice it closes, it would leave no
+  trace for that raise, which would open a notice for a condition already cleared and email it. So the worker records
+  when each key was cancelled, even where no notice is open, and a raise whose outbox row is older opens nothing.
+- **`cancel()` names the raise's key**, not the id `raise()` answered — after a fold, that id names no notice.
+
+### What shipped
+
+- **The migration**: `notification.cancellation`, one row per key holding its latest cancellation's outbox time, the
+  worker's like the rest of the schema; and `last_raised_at` on the notice, the latest raise it absorbed, which a
+  cancellation is compared with. `raised_at` becomes the opening raise's outbox time. The backfill lifts `FORCE` for
+  its one statement, under which the owner would see no rows.
+- **The dispatcher carries `occurredAt`** — the outbox row's time, epoch milliseconds — onto every job beside
+  `organizationId`. Both times being the database's, the comparison never crosses two clocks.
+- **`NotificationOutboxRepository.cancel`**, an outbox row on the request transaction, the audience defaulted as
+  `raise()` defaults it so both spell one key. **`NotificationCancelledHandler`** and **`CancelNotification`** on the
+  worker, behind **`NOTIFICATION_CANCELLATION_STORE`** — a port of its own, since the delivery flow never withdraws,
+  aliased onto the one repository with `useExisting`.
+- **The store's ordering**, all under one advisory lock per key, which `open` and `cancel` each take before reading:
+  `open` refuses a raise no later than its key's cancellation, and a fold moves the open notice's `last_raised_at`
+  forward in the same `ON CONFLICT … DO UPDATE` that finds it — one statement where there were two, so there is no
+  second read to race. `cancel` moves the key's time forward only (`GREATEST`) and closes the open notice only if it
+  was last raised no later — a notice raised again after the cancellation was made found its condition outstanding
+  again. A cancellation and a raise in one transaction share a time, and the cancellation wins as the later call.
+- **One residual, stated rather than closed**: a dispatch already sending when a cancellation lands finishes the
+  recipients it is sending to. Holding the key's lock across provider calls would stall every raise and cancellation
+  of the key behind an email provider, and a re-check before each send only narrows the window rather than closing
+  it.
+
+### Proof
+
+- **Unit**: the cancel use case and handler, with five refusals; the raised handler's two new refusals for a missing
+  or non-numeric time; the delivery use case over a fake store that now models a key's cancellation — a raise before
+  it delivers nothing, one after it delivers.
+- **`notification-store.e2e-spec.ts` gains five cases** over the real schema: an open notice closed, and a redelivered
+  job for it reaching nobody; a raise whose cancellation the workers applied first opening nothing, and a later raise
+  opening a new notice; a notice raised again after a cancellation was made staying open; an older cancellation
+  applied after a newer one leaving the newer time standing; and the key's lock. **`outbox.e2e-spec.ts` gains the
+  case that reads a dispatched job's data back** — nothing had pinned what the dispatcher puts beside a payload, the
+  organization included, and the notification suites build their jobs by hand, so they would have stayed green had
+  the dispatcher stopped carrying the time.
+- **Every guard fails its check when removed**, each run and reverted: the supersession check, the latest-raise
+  comparison, the fold's move forward, the recorded cancellation, `GREATEST`, the dispatcher's time, and the lock in
+  `open` and in `cancel` separately. **The lock needed a different kind of check.** Its first case ran an older raise
+  and a newer cancellation at once and asserted no notice was left open; with the lock removed it passed three runs in
+  three. A race cannot be shown absent by running it, so the case now takes the key's lock itself on another
+  connection — under `notificationKeyLockName`, exported so the test and the store cannot spell it differently — and
+  shows both operations waiting for it, then finishing. Each lock removal fails it.
+
+### Verification
+
+- `pnpm --filter @easyesg/api test`: **146 suites, 1,197 tests**. `pnpm --filter @easyesg/api typecheck`; `pnpm lint`,
+  after one `no-unnecessary-type-assertion` in the cancel use case's spec; `pnpm boundaries`; `pnpm docs:check`, 42
+  claims.
+- `pnpm migrations:check`: apply, revert, re-apply, **56 invariants**, with the cancellation table classified.
+- `pnpm e2e`: **50 suites, 1,257 tests, 117 seconds**, a clean exit and no error line in the log. `pnpm e2e:worker`:
+  **8 of 8** — the routing case now hands the real consumer `platform.notification.cancelled` too, and it reaches its
+  handler.
+- **Which run, and why.** The api row, with `migrations:check` for the migration and `e2e:worker` for the new
+  consumer. No controller or DTO changed — `cancel()` is the in-process port — so no `openapi:check`, and nothing
+  reaches a browser, so no `e2e:web`. A sub-step: no `gates:clean` and no review agents.
+- **Skills, read against the diff.** `nestjs-best-practices`: `di-interface-segregation` — the withdrawal is a port of
+  its own rather than a fifth method the delivery flow would depend on and never call, and one repository serves both
+  tokens by `useExisting`; `db-use-transactions` — each withdrawal is one transaction holding the key's lock, and the
+  fold's two statements became one; `micro-use-queues` — the cancellation travels the outbox, never the request tier.
+  `one-idea-per-file`: one use case, one handler, one port, each with its spec where it has logic of its own.

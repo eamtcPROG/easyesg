@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { DataSource, QueryRunner } from 'typeorm';
 import type {
+  CancelNoticeCommand,
+  NotificationCancellationStore,
+} from '@api/modules/platform/notification/interfaces/notification-cancellation-store.interface';
+import type {
   DeliverInAppCommand,
   NoticeRef,
   NotificationRecord,
@@ -43,19 +47,37 @@ interface NoticeRow {
  * index from a predicate it can prove when planning: a bind parameter there works under a custom plan and fails
  * the statement under a generic one — *"no unique or exclusion constraint matching the ON CONFLICT specification"*,
  * measured with `plan_cache_mode = force_generic_plan` — so the literal keeps the insert independent of the plan
- * cache.
+ * cache. A raise meeting an open notice moves its `last_raised_at` forward in the same statement.
+ *
+ * **A cancellation and a raise of one key are serialized by the key's lock** (task 50.1.3; §12.5.6's task-50.1 row
+ * (12)): `open` and `cancel` each take a transaction-scoped advisory lock on the key before reading anything, so
+ * whichever runs second sees the other's commit. Without it, a raise could read *no cancellation* while a
+ * cancellation read *no open notice*, and both commit — the stale notice the row exists to prevent. The key is
+ * hashed, so a collision only makes two keys' writes wait on each other for one transaction: task 142's seat lock
+ * and its reasoning. `NOTIFICATION_CANCELLATION_STORE` is this class too.
  */
 @Injectable()
-export class NotificationStoreRepository implements NotificationStore {
+export class NotificationStoreRepository implements NotificationStore, NotificationCancellationStore {
   constructor(@InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource) {}
 
   open(command: OpenNotificationCommand): Promise<NotificationRecord> {
     return this.inOrganization(command.organizationId, async (runner) => {
+      await holdKeyLock(runner, command);
       // A redelivered job: its notice already carries its id, whatever state that notice is in now.
       const own = (await runner.query(
         `SELECT id, state, deep_link, params FROM notification.notification WHERE id = $1`,
         [command.notificationId],
       )) as NoticeRow[];
+      if (!own[0] && (await this.supersededByCancellation(runner, command))) {
+        // Row (12): the condition was cleared after this raise was made, so it opens nothing and delivers nothing.
+        return {
+          notificationId: command.notificationId,
+          state: NOTIFICATION_STATE.CANCELLED,
+          deepLink: command.deepLink,
+          params: command.params,
+          delivered: [],
+        };
+      }
       const notice = own[0] ?? (await this.admit(runner, command));
 
       const delivered = (await runner.query(
@@ -115,15 +137,58 @@ export class NotificationStoreRepository implements NotificationStore {
     });
   }
 
-  /** Opens a notice under the raise's id, or — when an open one holds its key — answers that one. */
+  /**
+   * FR-167's withdrawal (task 50.1.3): the key's cancellation time moved forward, never back, and its open notice
+   * closed if that notice's latest raise is no later — one raised again after the cancellation found its condition
+   * outstanding again, and stays open. A cancellation and a raise made in one transaction share a time, and the
+   * cancellation wins: it is the later call.
+   */
+  cancel(command: CancelNoticeCommand): Promise<void> {
+    return this.inOrganization(command.organizationId, async (runner) => {
+      await holdKeyLock(runner, command);
+      const key = [command.organizationId, command.categoryKey, command.subjectRef, command.recipientScope];
+      await runner.query(
+        `INSERT INTO notification.cancellation
+                (organization_id, category_key, subject_ref, recipient_scope, cancelled_at)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (organization_id, category_key, subject_ref, recipient_scope)
+         DO UPDATE SET cancelled_at = GREATEST(notification.cancellation.cancelled_at, EXCLUDED.cancelled_at)`,
+        [...key, command.cancelledAt],
+      );
+      await runner.query(
+        `UPDATE notification.notification SET state = $6, cancelled_at = $5
+          WHERE organization_id = $1 AND category_key = $2 AND subject_ref = $3 AND recipient_scope = $4
+            AND state <> $6 AND last_raised_at <= $5`,
+        [...key, command.cancelledAt, NOTIFICATION_STATE.CANCELLED],
+      );
+    });
+  }
+
+  /** Whether the key was cancelled at or after this raise was made — row (12)'s refusal. */
+  private async supersededByCancellation(runner: QueryRunner, command: OpenNotificationCommand): Promise<boolean> {
+    const rows = (await runner.query(
+      `SELECT 1 FROM notification.cancellation
+        WHERE organization_id = $1 AND category_key = $2 AND subject_ref = $3 AND recipient_scope = $4
+          AND cancelled_at >= $5`,
+      [command.organizationId, command.categoryKey, command.subjectRef, command.recipientScope, command.raisedAt],
+    )) as unknown[];
+    return rows.length > 0;
+  }
+
+  /**
+   * Opens a notice under the raise's id, or — when an open one holds its key — moves that one's latest raise forward
+   * and answers it. One statement either way: the key's lock is already held, and `DO UPDATE` returns the row it
+   * met, so there is no second read to race.
+   */
   private async admit(runner: QueryRunner, command: OpenNotificationCommand): Promise<NoticeRow> {
-    const opened = (await runner.query(
+    const [notice] = (await runner.query(
       `INSERT INTO notification.notification
-              (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, params)
-       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+              (id, organization_id, category_key, subject_ref, recipient_scope, deep_link, params,
+               raised_at, last_raised_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $8)
        ON CONFLICT (organization_id, category_key, subject_ref, recipient_scope)
           WHERE state <> '${NOTIFICATION_STATE.CANCELLED}'
-       DO NOTHING
+       DO UPDATE SET last_raised_at = GREATEST(notification.notification.last_raised_at, EXCLUDED.last_raised_at)
        RETURNING id, state, deep_link, params`,
       [
         command.notificationId,
@@ -133,25 +198,10 @@ export class NotificationStoreRepository implements NotificationStore {
         command.recipientScope,
         command.deepLink,
         JSON.stringify(command.params),
+        command.raisedAt,
       ],
     )) as NoticeRow[];
-    if (opened[0]) return opened[0];
-
-    const open = (await runner.query(
-      `SELECT id, state, deep_link, params FROM notification.notification
-        WHERE organization_id = $1 AND category_key = $2 AND subject_ref = $3 AND recipient_scope = $4
-          AND state <> $5`,
-      [
-        command.organizationId,
-        command.categoryKey,
-        command.subjectRef,
-        command.recipientScope,
-        NOTIFICATION_STATE.CANCELLED,
-      ],
-    )) as NoticeRow[];
-    // Only a cancellation between the two statements can leave neither; the job fails, and run again it opens one.
-    if (!open[0]) throw new Error(`Notification ${command.notificationId}'s open notice closed while it was admitted.`);
-    return open[0];
+    return notice;
   }
 
   /** One short transaction bound to the organization, committed on success and rolled back on anything else. */
@@ -172,3 +222,26 @@ export class NotificationStoreRepository implements NotificationStore {
     }
   }
 }
+
+interface NoticeKey {
+  readonly organizationId: string;
+  readonly categoryKey: string;
+  readonly subjectRef: string;
+  readonly recipientScope: string;
+}
+
+/**
+ * The name the key's lock is taken under, spelled as a JSON array so a subject containing a separator cannot share a
+ * spelling with another key. Exported for `notification-store.e2e-spec.ts`, which takes the same lock from outside to
+ * show that `open` and `cancel` both wait on it — a race cannot be shown to be absent by running it.
+ */
+export const notificationKeyLockName = (key: NoticeKey): string =>
+  `notification-key:${JSON.stringify([key.organizationId, key.categoryKey, key.subjectRef, key.recipientScope])}`;
+
+/**
+ * The key's transaction-scoped lock — `pg_advisory_xact_lock`, never session-scoped, for `holdSeatLock`'s reason:
+ * PgBouncer's transaction pooling would hand a session lock to the connection's next borrower.
+ */
+const holdKeyLock = async (runner: QueryRunner, key: NoticeKey): Promise<void> => {
+  await runner.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [notificationKeyLockName(key)]);
+};

@@ -15,8 +15,10 @@ import type { NotificationState } from '../models/notification-record.model';
 export interface NotificationStore {
   /**
    * The open notice this raise belongs to (FR-167). A raise whose own id is already recorded is a redelivered
-   * job and answers that notice, whatever its state; otherwise one open notice for the same organization,
-   * category, subject and recipient scope absorbs it; otherwise the raise opens a notice under its own id.
+   * job and answers that notice, whatever its state. **A raise no later than its key's latest cancellation is
+   * superseded** and answers `cancelled` with nothing recorded (task 50.1.3; §12.5.6's task-50.1 row (12)).
+   * Otherwise one open notice for the same organization, category, subject and recipient scope absorbs it, its
+   * latest raise moved forward; otherwise the raise opens a notice under its own id.
    */
   open(command: OpenNotificationCommand): Promise<NotificationRecord>;
   /** Writes each recipient's in-app delivery — which is the delivery, since the centre is the store (FR-168). */
@@ -40,6 +42,8 @@ export interface OpenNotificationCommand extends NoticeRef {
   readonly subjectRef: string;
   /** The producer-named audience (§12.5.6's task-50.1 row (6)); part of FR-167's key. */
   readonly recipientScope: string;
+  /** The raise's outbox time — the database's clock — which a cancellation of its key is ordered against. */
+  readonly raisedAt: Date;
   readonly deepLink: string;
   readonly params: Record<string, unknown>;
 }

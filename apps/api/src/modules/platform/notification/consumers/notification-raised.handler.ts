@@ -22,8 +22,8 @@ export class NotificationRaisedHandler implements JobHandler {
   constructor(private readonly deliver: DeliverNotification) {}
 
   async handle(payload: Record<string, unknown>, context: JobContext): Promise<void> {
-    const { notice, organizationId } = readEvent(payload);
-    const { unresolved } = await this.deliver.execute({ notice, organizationId, deliveryId: context.jobId });
+    const { notice, organizationId, raisedAt } = readEvent(payload);
+    const { unresolved } = await this.deliver.execute({ notice, organizationId, raisedAt, deliveryId: context.jobId });
     if (unresolved.length > 0) {
       this.logger.warn(
         `${NOTIFICATION_RAISED} ${context.jobId}: ${unresolved.length} recipient(s) name no account and were skipped`,
@@ -39,16 +39,21 @@ export class NotificationRaisedHandler implements JobHandler {
  *
  * **The organization is the dispatcher's, not the producer's**: it travels on the job beside the payload the
  * outbox row carried, and it is what the store's every statement is bound to — so a value that is not a UUID is
- * refused here rather than reaching `app.current_org`, where the policies' cast would fail the job less legibly.
+ * refused here rather than reaching `app.current_org`, where the policies' cast would fail the job less legibly. **So
+ * is the time** (task 50.1.3): the outbox row's, in epoch milliseconds, which orders the raise against a cancellation.
  */
 function readEvent(payload: Record<string, unknown>): {
   readonly notice: NotificationRaised;
   readonly organizationId: string;
+  readonly raisedAt: Date;
 } {
-  const { categoryKey, recipientUserIds, subjectRef, recipientScope, deepLink, params, organizationId } = payload;
+  const { categoryKey, recipientUserIds, subjectRef, recipientScope, deepLink, params, organizationId, occurredAt } =
+    payload;
 
   if (
     !isUuid(organizationId) ||
+    typeof occurredAt !== 'number' ||
+    !Number.isFinite(occurredAt) ||
     !isNotificationCategoryKey(categoryKey) ||
     !Array.isArray(recipientUserIds) ||
     !recipientUserIds.every((id) => typeof id === 'string') ||
@@ -73,5 +78,6 @@ function readEvent(payload: Record<string, unknown>): {
       params: params as Record<string, unknown>,
     },
     organizationId,
+    raisedAt: new Date(occurredAt),
   };
 }

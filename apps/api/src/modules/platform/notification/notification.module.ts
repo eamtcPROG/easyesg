@@ -9,9 +9,14 @@ import { NotificationRecipientsRepository } from '@api/infrastructure/persistenc
 import { NotificationCentreStoreRepository } from '@api/infrastructure/persistence/platform/notification-centre-store.repository';
 import { NotificationOutboxRepository } from '@api/infrastructure/persistence/platform/notification-outbox.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
+import { NotificationCancelledHandler } from './consumers/notification-cancelled.handler';
 import { NotificationRaisedHandler } from './consumers/notification-raised.handler';
 import { NotificationCentreController } from './controllers/notification-centre.controller';
 import { EMAIL_CHANNEL, type EmailChannel } from './interfaces/email-channel.interface';
+import {
+  NOTIFICATION_CANCELLATION_STORE,
+  type NotificationCancellationStore,
+} from './interfaces/notification-cancellation-store.interface';
 import {
   NOTIFICATION_CENTRE_STORE,
   type NotificationCentreStore,
@@ -22,6 +27,7 @@ import { EmailChannelService } from './services/email-channel.service';
 import { NotificationCategoryCatalog } from './services/notification-category-catalog.service';
 import { NotificationCentreService } from './services/notification-centre.service';
 import { NotificationEmailService } from './services/notification-email.service';
+import { CancelNotification } from './use-cases/cancel-notification.use-case';
 import { CountUnreadNotifications } from './use-cases/count-unread-notifications.use-case';
 import { DeliverNotification } from './use-cases/deliver-notification.use-case';
 import { DismissNotification } from './use-cases/dismiss-notification.use-case';
@@ -53,8 +59,8 @@ const { mode } = configuration();
 
 /**
  * What sends: the category catalogue and the channel seam over it, the one email channel, the category email the
- * outbox handlers ask for, who a notice reaches, the store a notice is recorded in, and the raised notice's use
- * case and handler. **All of it on the worker** — the catalogue included, since nothing in the request tier asks a
+ * outbox handlers ask for, who a notice reaches, the store a notice is recorded in, the raised notice's use
+ * case and handler, and since task 50.1.3 the withdrawn notice's. **All of it on the worker** — the catalogue included, since nothing in the request tier asks a
  * category's behaviour.
  */
 const workerProviders: Provider[] = [
@@ -64,6 +70,8 @@ const workerProviders: Provider[] = [
   { provide: NOTIFICATION_EMAIL_PORT, useClass: NotificationEmailService },
   { provide: NOTIFICATION_RECIPIENTS, useClass: NotificationRecipientsRepository },
   { provide: NOTIFICATION_STORE, useClass: NotificationStoreRepository },
+  // One repository, two narrow ports: the delivery flow never withdraws and the withdrawal never delivers.
+  { provide: NOTIFICATION_CANCELLATION_STORE, useExisting: NOTIFICATION_STORE },
   {
     // Framework-free, so `useFactory` over its ports (`apps/api/CLAUDE.md`, "No `@Injectable` means no `useClass`").
     provide: DeliverNotification,
@@ -77,6 +85,12 @@ const workerProviders: Provider[] = [
     ) => new DeliverNotification(recipients, email, channels, store, config.get('web.publicUrl', { infer: true })),
   },
   NotificationRaisedHandler,
+  {
+    provide: CancelNotification,
+    inject: [NOTIFICATION_CANCELLATION_STORE],
+    useFactory: (store: NotificationCancellationStore) => new CancelNotification(store),
+  },
+  NotificationCancelledHandler,
 ];
 
 /**

@@ -242,6 +242,31 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
     });
 
     /**
+     * What a job carries besides its payload, which no consumer can read from anywhere else: the organization, for
+     * §7.6's tenant binding, and since task 50.1.3 the row's own time, which is how a notification's cancellation
+     * and its raise are ordered when parallel workers take them in either order. The notification suites build their
+     * jobs by hand, so this is the case that fails if the dispatcher stops carrying either.
+     */
+    it("carries the row's organization and time onto the job, beside its payload", async () => {
+      await seed('export-carried');
+      const [row] = await owner.query<{ occurred_at: Date }[]>(
+        `SELECT occurred_at FROM audit.outbox_event WHERE idempotency_key = 'export-carried'`,
+      );
+      const carried: unknown[] = [];
+      const capturing = {
+        add: (_name: string, data: unknown, options: { jobId: string }) => {
+          carried.push(data);
+          return Promise.resolve({ id: options.jobId });
+        },
+      } as unknown as Queue;
+
+      expect(await new OutboxDispatcher(owner, capturing).dispatchBatch()).toBe(1);
+      expect(carried).toEqual([
+        { reportId: 'r-1', organizationId: ORGANIZATION, occurredAt: row.occurred_at.getTime() },
+      ]);
+    });
+
+    /**
      * **The one assertion in this file that is about the whole table**, and it has to be: the
      * dispatcher polls every pending row regardless of tenant, which is AD-6's design and the point
      * of §6.7's single producer. So this test cannot be scoped the way the cleanup above is — it is

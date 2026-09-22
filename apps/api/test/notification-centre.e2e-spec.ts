@@ -10,7 +10,7 @@ import { configureHttpApp } from '../src/main.http';
 import { NotificationStoreRepository } from '../src/infrastructure/persistence/platform/notification-store.repository';
 import { returnedRows } from '../src/infrastructure/persistence/returned-rows';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, databaseNow } from './support/database';
 import { deleteNotificationsOf } from './support/notification-store';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
@@ -85,6 +85,7 @@ describe('the notification centre (task 50.1.2)', () => {
       categoryKey: input.categoryKey,
       subjectRef: `centre:${input.id}`,
       recipientScope: 'default',
+      raisedAt: await databaseNow(worker),
       deepLink: `/reports/${input.id}`,
       params: { organizationName: 'Centru SRL' },
     });
