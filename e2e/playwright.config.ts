@@ -186,7 +186,14 @@ export default defineConfig({
       // `PUBLIC_WEB_URL` is the app's own origin, which `social-flow.ts` builds its redirects and
       // its OAuth callback from. Stated rather than left to its default, which is right only
       // because this server listens on the dev port.
-      env: { ...webEnv, PORT: String(STACK_PORT.WEB), PUBLIC_WEB_URL: STACK_ORIGIN.WEB },
+      // `PUBLIC_API_URL` is where the browser opens AD-15's socket (task 149) — the api above, which
+      // admits an upgrade only from `PUBLIC_WEB_URL`'s origin, so each web server names its own api.
+      env: {
+        ...webEnv,
+        PORT: String(STACK_PORT.WEB),
+        PUBLIC_WEB_URL: STACK_ORIGIN.WEB,
+        PUBLIC_API_URL: STACK_ORIGIN.API,
+      },
     },
     {
       ...STARTED_BY_THIS_RUN,
@@ -199,8 +206,10 @@ export default defineConfig({
         ...webEnv,
         PORT: String(STACK_PORT.EXPANSION),
         PUBLIC_WEB_URL: STACK_ORIGIN.EXPANSION,
-        // The padded api, so a word this screen did not author is measured too (task 51.3).
+        // The padded api, so a word this screen did not author is measured too (task 51.3) — and its
+        // socket, which admits this server's origin and not the other's.
         API_BASE_URL: STACK_EXPANSION_API_BASE,
+        PUBLIC_API_URL: STACK_ORIGIN.EXPANSION_API,
         EASYESG_PSEUDOLOCALE: '1',
       },
     },

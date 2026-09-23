@@ -11,17 +11,18 @@ import { RouteNotFound } from '~/app/providers/route-not-found';
  * here — a provider added at this level is global by definition, and this app's global surface
  * is deliberately two things.
  *
- * TanStack Query is the data layer because §11.2 settles the transport question for the console:
- * nothing pushes here. Order state, migration runs, export jobs and every exception queue poll,
- * so `refetchInterval` is the shape of every screen in `features/`.
+ * TanStack Query is the data layer, and **the poll is the console's only transport**: order
+ * state, migration runs, export jobs and every exception queue poll, so `refetchInterval` is the
+ * shape of every screen in `features/` — on OQ-36's intervals where a surface has one.
  *
- * **AD-15 added a push accelerator on 12 Sep 2026 and deliberately does not serve this app.** It
- * accelerates two tenant surfaces by fanning out contentless hints; the console is a static SPA
- * with no proxy tier to mint the handshake ticket, and NFR-65's network restriction is not a
- * surface to reopen for a latency gain. So the sentence that used to read "SSE and WebSockets
- * appear nowhere" is now false of the platform and still true of `apps/admin` — which is the only
- * reason it is worth restating rather than deleting. Extending the gateway here is an amendment
- * to AD-15's scope, not a ticket.
+ * **The authority for that is AD-15, not §11.1** (corrected by task 149): §11.1 rejected a push
+ * transport for the whole platform, and AD-15 is the amendment that added one — a socket the api
+ * serves, fanning out contentless hints to two tenant surfaces, S-26's count and S-16's list. **The
+ * console is not accelerated, by AD-15's own scope**: the socket admits an upgrade only from the
+ * tenant application's origin and its ticket is minted for a tenant session, and NFR-65 keeps the
+ * two realms disjoint, so reopening that for a latency gain on an operator's screen is not a
+ * trade this app gets to make. Accelerating a console screen is an amendment to AD-15, not a
+ * ticket — and until one is taken, "nothing pushes" stays true here and false of the platform.
  */
 const queryClient = new QueryClient({
   defaultOptions: {

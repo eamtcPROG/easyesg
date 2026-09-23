@@ -371,16 +371,20 @@ export type CategoryPublication = components['schemas']['CategoryPublicationResp
 export type SocketTicket = components['schemas']['SocketTicketResponseDto'];
 
 // platform — AD-15's event catalogue (task 146): each event a pushed hint may name, its audience, and the readable path
-// that is its authority. Empty until the first accelerated surface; `pnpm events:check` holds it to the contract.
+// that is its authority; `pnpm events:check` holds it to the contract. Since task 149 the names as a vocabulary, and
+// the socket's address and close codes as the browser's client meets them.
 export {
   EVENT_CATALOGUE,
+  EVENT_NAME,
   EVENT_ROUTING_KEY,
+  isEventName,
   type EventCatalogueEntry,
   type EventFrame,
   type EventName,
   type EventRoutingKey,
   type ReadablePath,
 } from './events/catalogue';
+export { SOCKET_CLOSE, SOCKET_PATH, SOCKET_TICKET_PARAMETER, type SocketCloseCode } from './events/socket';
 
 // platform — S-26's notification centre (FR-161, FR-162; tasks 50.1.2, 50.2.1). The words arrive resolved in the
 // request's language, each absent where none is written; the category key is for the client to act on, never to show.

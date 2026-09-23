@@ -2,6 +2,10 @@
  * AD-15's socket, as values (task 147; §12.5.6's task-147 rows). **The limits are the owner's**, set 23 Sep 2026 and
  * recorded there as instructions task 71's edge honours; until the edge exists the api enforces the first three — the
  * connection cap across replicas, in Redis, and the other two on each connection.
+ *
+ * **The path, the ticket parameter and the close codes are mirrored** in `packages/contracts/src/events/socket.ts`,
+ * which the browser's client reads (task 149), and `pnpm events:check` fails when the two disagree. **No import here**,
+ * so the checker can load this file directly.
  */
 export const SOCKET_PATH = '/api/v1/socket';
 

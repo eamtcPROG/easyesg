@@ -222,8 +222,12 @@ src/
   (architecture.md OQ-44). This bullet called it an assumption with nothing behind it until task
   67.1 found it stale, along with the `globals.css` comment that said the same.
 
-- **Nothing pushes.** Every queue, migration run and exception list polls (§11.2); `refetchInterval`
-  is the shape of every screen in `features/`. `staleTime: 0` is deliberate — an admin read is
+- **Nothing pushes here — and the platform does push, which is why this is worth saying.** Every
+  queue, migration run and exception list polls; `refetchInterval` is the shape of every screen in
+  `features/`. AD-15's socket accelerates two tenant surfaces and **the console is not accelerated**
+  by that decision's own scope: the upgrade admits only the tenant origin and its ticket is a
+  tenant session's (NFR-65). `providers.tsx` says so; accelerating a console screen is an amendment
+  to AD-15 (task 149 corrected both, which had cited §11.1/§11.2 as the authority). `staleTime: 0` is deliberate — an admin read is
   operator-driven and cross-tenant, so a stale queue is a wrong decision rather than a slow one.
   Retry is capped at 2 against §12.5.6's rate budget.
 

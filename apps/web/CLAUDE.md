@@ -289,7 +289,8 @@ compact bar keeps it beside the drawer's trigger, as all three 390 artboards dra
 phone's width the count was only in the drawer. Five things to know before touching them:
 
 - **The count is the browser's poll**, `client/notifications/use-unread-count.ts` on OQ-36's minute
-  (`client/polling/poll-schedule.ts`), stopped while the tab is hidden. **Its run of failures lives in the query's own
+  (`client/polling/poll-schedule.ts`), stopped while the tab is hidden — and sooner on a
+  `notification.unread_changed` frame since task 149, which invalidates the scope as a mark does. **Its run of failures lives in the query's own
   data**, because TanStack Query resets `fetchFailureCount` at the start of every fetch — with retries off it never
   passes one, and OQ-36's backoff reads the run across polls.
 - **Every mark invalidates it**, from S-26 or the panel, so the badge follows the reader's own mark rather than the
@@ -405,7 +406,7 @@ src/
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter), S-37's gate
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
-├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), unsent-work, polling, session (task 92 — the probe and the re-authentication posts), notifications (task 50.2 — the count's poll, the panel's read, the opening mark), query (the one Query client)
+├─ client/         browser-only: autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), unsent-work, polling, session (task 92 — the probe and the re-authentication posts), notifications (task 50.2 — the count's poll, the panel's read, the opening mark), push (task 149 — AD-15's socket, its backoff and `useFrame`), query (the one Query client)
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths, requested-path
 ```
 
@@ -843,12 +844,20 @@ conditional render, which is how it ends up half-suppressed on one screen.
   Route Handler support alone does not unblock it. Migrate when both are supported. Logged as
   OQ-39 in `architecture.md` §18.
 
-- **Nothing pushes.** Order state, export jobs and the notification unread count all poll (§11.2).
-  SSE and WebSockets exist nowhere in §5.4, §10.4 or the edge config; adding one is an amendment
-  to those sections, not a ticket.
+- **Everything polls, and two surfaces are also pushed to — never instead** (AD-15, task 149).
+  `client/push/` holds one socket per tab to the api's origin (`PUBLIC_API_URL`, read at request
+  time; unset, no socket opens), wanted only while the tab is visible and a surface subscribes. A
+  frame reaches a surface through `useFrame`, and **its handler is the surface's existing refetch
+  and nothing else** — nothing paints from a frame, and UX-138 admits no connected or reconnecting
+  state anywhere. **Every event in the catalogue names its poll floor** in
+  `client/polling/poll-schedule.ts`'s `ACCELERATED_POLL_INTERVAL`, typed over the catalogue, and
+  `src/test/poll-floor.spec.tsx` holds each surface to its schedule with the socket forced off —
+  so a new event fails `typecheck` until a surface polls its authority. A surface the server
+  renders polls with `useRefreshPoll` (S-16's `router.refresh()`), a client query with its own
+  `refetchInterval`; a frame must not lengthen either (NFR-110).
 
 - **TanStack Query is for client islands, and calling the API directly from one is a security
-  bug, not a shortcut.** It is here for the three polls above plus autosave's flush — its first
+  bug, not a shortcut.** It is here for the query polls — order state, export jobs, the unread count — plus autosave's flush — its first
   live consumer since task 35.2, as the *transport* of one mutation per step and not as the queue
   (§12.1, shared catalog pin with `apps/admin`; the provider is the `(app)` layout's since task 50.2.1, when the unread count became the second consumer). Everything reachable server-side keeps going
   through `src/app/api/[...path]` and `src/server/session.ts` — that proxy is what holds the
@@ -937,7 +946,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **127 files here are Client Components** (23 Sep 2026: four since task 52.3, S-27's form and its three sections; one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
+  **131 files here are Client Components** (23 Sep 2026: four since task 149, AD-15's provider, `useFrame`, `useRefreshPoll` and S-16's poll; four since task 52.3, S-27's form and its three sections; one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
   `organization/access/components/remind/`; twelve since task 50.2.2, the notification panel's under
   `notifications/panel/components/`, with the band's old bell corner gone into it; seven since task 50.2.1 — the
   unread count's hook under `client/notifications/`, the drawer's row under `notifications/count/components/`, the

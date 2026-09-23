@@ -24,6 +24,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { EVENT_CATALOGUE, EVENT_ROUTING_KEY } from '../packages/contracts/src/events/catalogue.ts';
 import { PUSH_EVENT_ROUTING } from '../apps/api/src/contracts/push.port.ts';
+import * as clientSocket from '../packages/contracts/src/events/socket.ts';
+import * as apiSocket from '../apps/api/src/modules/platform/push/constants/socket.constants.ts';
 
 const at = (relative) => fileURLToPath(new URL(`../${relative}`, import.meta.url));
 const OPENAPI = at('packages/contracts/openapi/v1.json');
@@ -100,10 +102,28 @@ if (mirrorProof.length > 0) {
   process.exit(1);
 }
 
+/**
+ * **The socket's address and close codes agree too** (task 149): the client's copy is `packages/contracts`' and the
+ * api's is its own, for the event names' reason. A path or a parameter renamed on one side would leave every client
+ * polling with no socket, and the poll floor would make that invisible on every screen — so this is the one place it
+ * can be seen. Each name the client reads must be the api's value; the api may declare more.
+ */
+const SOCKET_NAMES = ['SOCKET_PATH', 'SOCKET_TICKET_PARAMETER', 'SOCKET_CLOSE'];
+const socketFailures = ({ client, api }) =>
+  SOCKET_NAMES.filter((name) => JSON.stringify(client[name]) !== JSON.stringify(api[name])).map(
+    (name) => `${name}: the client reads ${JSON.stringify(client[name])}, the api serves ${JSON.stringify(api[name])}`,
+  );
+
+if (socketFailures({ client: { ...clientSocket, SOCKET_PATH: '/proof' }, api: apiSocket }).length === 0) {
+  console.error('events:check — the socket check failed its own proof: a disagreeing path was admitted.');
+  process.exit(1);
+}
+
 // ── The catalogue ──
 const failures = [
   ...catalogueFailures({ entries: EVENT_CATALOGUE, contract }),
   ...mirrorFailures({ entries: EVENT_CATALOGUE, mirror: PUSH_EVENT_ROUTING }),
+  ...socketFailures({ client: clientSocket, api: apiSocket }),
 ];
 if (failures.length > 0) {
   console.error(`events:check — ${failures.length} event(s) refused:\n\n${failures.map((f) => `  ✗ ${f}`).join('\n')}`);
@@ -116,6 +136,7 @@ const events = [...EVENT_CATALOGUE]
 writeFileSync(ARTEFACT, `${JSON.stringify({ events }, null, 2)}\n`);
 console.log(
   `events:check — ${events.length} event(s), each naming a readable path in the contract and routed as the api routes ` +
-    'it; the check proved it refuses a missing and a write-only authority and a disagreeing mirror. ' +
+    'it, the socket addressed as the api serves it; the check proved it refuses a missing and a write-only authority, ' +
+    'a disagreeing mirror and a disagreeing socket. ' +
     'Emitted packages/contracts/events/v1.json.',
 );

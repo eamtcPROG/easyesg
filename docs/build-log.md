@@ -24750,3 +24750,119 @@ decision: no `pnpm gates` and no review agents.
 | The api routes `access.changed` by account | `events:check` refuses it and names both sides |
 | `EventFrame` gains `accountIds` | The contracts `typecheck` fails |
 | Delivery (spec) | Hinted after the in-app write; a recipient who switched in-app off is not hinted; an email-only notice hints nobody |
+
+## Task 149 — The client: its states, its backoff, and the floor it never replaces · 2026-09-23
+
+AD-15's browser half. A signed-in tab now holds one socket to the api, and a frame makes the unread count or S-16
+read again sooner than their polls would. Nothing on any screen shows whether the socket is up. Task 150 proves each
+driver on screen, connected and disabled.
+
+### Decisions (project owner, one batch, before the code)
+
+Recorded in §12.5.6's task-149 row. All four took the recommended option.
+
+- **(1) S-16's 30 s poll is this task's.** No row built it, and `access.changed` was already in the catalogue, so a
+  frame would have had no poll behind it. The poll is the route's own server render, `router.refresh()`.
+- **(2) The socket's address is `PUBLIC_API_URL`.** The server reads it at request time and hands it to the client.
+  Unset, no socket opens. `API_BASE_URL` is not reused, because inside Compose it is an internal address.
+- **(3) One socket per tab, open only while the tab is visible and something on the screen subscribes.** The
+  reconnect base is the shortest accelerated interval, S-16's 30 s, full-jitter to the five-minute cap.
+- **(4) A `4001` parks the connection until the tab is next shown**, and so does a refused ticket. Reconnecting at
+  once would evict another of the account's tabs.
+
+### What the design settled that the batch did not ask
+
+- **Every catalogued event names its poll floor, at compile time.** `ACCELERATED_POLL_INTERVAL` in
+  `poll-schedule.ts` is typed `Record<EventName, number>`, and the invariant spec's surface table is typed the same
+  way. An event added to the catalogue fails `typecheck` in both places until a surface polls its authority.
+  `RECONNECT_BASE` is derived from that map, so a faster accelerated surface moves it.
+- **The socket's address and close codes are now wire contract.** They live in `packages/contracts/src/events/socket.ts`
+  for the browser. The api keeps its own copy, because it may not import the package. `events:check` fails when the
+  two disagree, and proves it can see a disagreement. Without that check, a renamed path would leave every client on
+  its poll, and the floor would hide it on every screen.
+- **`EVENT_NAME` and `isEventName` joined the catalogue.** A surface subscribes with a member, not a literal, and a
+  received frame is narrowed by the vocabulary's own operation.
+- **The socket's lifecycle is a class with everything it touches injected** (`push-connection.ts`): the socket, the
+  mint and the timers. A generation counter makes every async step check it is still current, so a ticket that
+  arrives after the tab was hidden opens nothing. A failed mint and a refused one are separate kinds of loss
+  (`LOSS`). An upgrade the api refuses reaches the browser as an abnormal close with no status, so it backs off
+  rather than parks.
+- **Two readers of one frame share one request.** The bell and the drawer's row both mount `useUnreadCount` and both
+  hear the frame. `cancelRefetch: false` makes the second invalidation join the first read instead of cancelling it.
+- **S-16's poll is a reducer beside a hook** (`refresh-poll-state.ts`, `use-refresh-poll.ts`). A refresh counts as
+  settled when the transition carrying it commits, which is also when the render's verdict on its read arrives. That
+  verdict, `readFailed`, drives the backoff. Each settle starts a new round, because a timer keyed on `failures`
+  alone would fire once and never again while every read succeeded. The poll sits outside the section's arms, so it
+  keeps running over a failed read.
+- **What S-16's poll costs, stated in the row.** A refresh re-renders the whole route, so one poll is several api
+  reads, not one. That is inside the budget by two orders of magnitude.
+- **`tab-visibility.ts` is declared once** and read by both the poll and the socket, after lint refused a bare
+  `'visible'` comparison in each.
+- **No Content Security Policy exists** (OQ-34, open), so task 147's note that this task owes one a `connect-src` has
+  nothing to amend. The constraint is recorded in OQ-34 and in the task-149 row.
+- **Corrected in the same change**, as the row asks: `apps/admin`'s `providers.tsx` and its `CLAUDE.md` bullet. Both
+  now cite AD-15 rather than §11.1/§11.2, and say the console is not accelerated and why. `apps/web/CLAUDE.md`'s
+  *"Nothing pushes"* trap is rewritten, not deleted.
+
+### The invariant, and what bites it
+
+`src/test/poll-floor.spec.tsx` is the deliverable. It mounts every catalogued event's surface in three states:
+
+- no socket configured;
+- a socket refused on every attempt;
+- a socket connected and silent, which is NFR-110's no-lengthening clause.
+
+In each state it asserts four intervals of reads, on the tick and not one millisecond before. It also checks the
+socket really was in the state the case names. A frame triggers the read at once, and a frame for another
+organization does not.
+
+**Mutations, each run and restored:**
+
+| Mutation | Result |
+| --- | --- |
+| The unread count polls at twice its interval | 3 cases fail (all three socket states) |
+| The unread count's `refetchInterval` removed | 3 cases fail |
+| S-16's poll removed, its frame kept (push as the authority) | 3 cases fail |
+| The connection drops every frame | 2 cases fail |
+| The frame's organization filter removed | 2 cases fail |
+| An event removed from the spec's surface table | `typecheck` fails |
+| An event removed from `ACCELERATED_POLL_INTERVAL` | `typecheck` fails |
+| The api's `SUPERSEDED` close code changed; the client's socket path changed | `events:check` fails, naming both sides |
+
+### Proven end to end, once, by hand — and what that found
+
+A green browser suite proves nothing about the socket, because the poll floor hides a socket that never opens. So a
+throwaway journey (deleted before commit) signed in, opened S-16, and published an `access.changed` hint on the api's
+Redis channel the way the worker does. What it showed:
+
+- the ticket mint answered 201 through the pass-through;
+- the socket opened on `ws://localhost:3000/api/v1/socket`;
+- the api's replica was the one subscriber;
+- the browser received exactly `{event, organizationId, since}`;
+- S-16 refreshed at once.
+
+It found three things:
+
+- **One refresh is five route renders, not one.** `router.refresh()` clears Next's router cache, so the workspace
+  navigation's four visible links prefetch again. §12.5.6's cost sentence had under-counted it, so I asked. **The
+  owner accepted it as measured**, and the row now records it as an assumption for task 71's edge metrics, with two
+  remedies named if it binds.
+- **This host runs its own `redis-server` on `127.0.0.1:6379`**, which shadows the Compose container for every
+  `localhost` connection. The api and every suite talk to it. A `redis-cli` inside the container therefore reaches a
+  Redis nobody subscribes to, and that cost a probe run to see. It is root `CLAUDE.md`'s *a second service able to
+  shadow the container*, for Redis. I left the process alone.
+- **The browser suite starts no worker**, so no write made in a journey is ever published as a frame there. Task 150's
+  connected half needs the worker in that stack, and its row now says so.
+
+### Verification
+
+A single-row group closing as its own parent. Per the owner's standing decision it runs the gates its change
+reaches, with no `pnpm gates` and no review agents.
+
+- **web**: unit **1,082** in 113 files, typecheck, and `e2e:web --project identity --project expansion` **246 passed**. The run logged three `destination stream closed early` lines, the benign abandoned-stream case `apps/web/CLAUDE.md` records, and no socket, Redis or unhandled-rejection line.
+  The suite now opens real sockets, because both web servers carry `PUBLIC_API_URL`.
+- **contracts, admin, api**: typecheck for contracts and admin. The api change is one docblock, so no api suite ran.
+- **Whole repo**: `events:check`, `pnpm lint`, `boundaries` and `docs:check` **46**.
+- **Skipped**: `e2e:web --project admin`. The console's change is a docblock.
+- **Not run: `pnpm gates`, `gates:clean` and the three review agents**, by the owner's standing decision
+  (13 Sep 2026). CI runs the full set on the push.

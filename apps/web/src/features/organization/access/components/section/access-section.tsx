@@ -1,6 +1,7 @@
 import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { Suspense, type ReactNode } from 'react';
+import { readActiveMembership } from '@/server/data/memberships';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
@@ -14,6 +15,7 @@ import { InviteMember } from '../invite/section/invite-member';
 import { RemindSection } from '../remind/section/remind-section';
 import { RemindLoading } from '../remind/states/remind-loading';
 import { SeatCounter } from '../heading/seat-counter';
+import { AccessPoll } from '../poll/access-poll';
 import styles from '../styles/access.module.css';
 
 /** The invite panel's heading, so the first-use empty state can send a reader straight to it. */
@@ -34,7 +36,9 @@ const INVITE_ANCHOR = 'invite-a-colleague';
  * is full — and the counter renders only on the ready arm, since a refused or failed read has no
  * count to state. **The reminder panel is a region of its own** (task 50.3, `remind-section.tsx`): it
  * reads under its own boundary inside the provider, so the list does not wait on its reads and a
- * failure of either is the panel's partial state rather than the screen's.
+ * failure of either is the panel's partial state rather than the screen's. **Its poll sits above the arms** (task 149,
+ * `access-poll.tsx`), keyed to the session's active organization — the membership read the global tier already made
+ * in this request — so an `access.changed` frame for another organization moves nothing.
  */
 export async function AccessSection({
   searchParams,
@@ -42,7 +46,11 @@ export async function AccessSection({
   readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const view = readAccessView(await searchParams);
-  const [read, t] = await Promise.all([readOrganizationAccess(view), getTranslations(ACCESS_MESSAGES)]);
+  const [read, membership, t] = await Promise.all([
+    readOrganizationAccess(view),
+    readActiveMembership(),
+    getTranslations(ACCESS_MESSAGES),
+  ]);
 
   let body: ReactNode;
   let counter: ReactNode = null;
@@ -90,6 +98,12 @@ export async function AccessSection({
 
   return (
     <div className={styles.screen}>
+      {membership ? (
+        <AccessPoll
+          organizationId={membership.organizationId}
+          readFailed={read.status === ACCESS_READ.UNREACHABLE}
+        />
+      ) : null}
       <div className={styles.header}>
         <hgroup>
           <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>

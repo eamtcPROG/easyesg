@@ -1,5 +1,7 @@
 import { Suspense, type ReactNode } from 'react';
+import { PushProvider } from '@/client/push/push-provider';
 import { QueryProvider } from '@/client/query/query-provider';
+import { env } from '@/lib/env';
 import { UnsentWorkProvider } from '@/client/unsent-work/unsent-work';
 import { OrganizationSwitchNotice } from '@/features/organization/switcher/components/organization-switch-notice';
 import { OrganizationSwitchProvider } from '@/features/organization/switcher/components/organization-switch-provider';
@@ -63,20 +65,26 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   //
   // **TanStack Query's client outermost since task 50.2.1**: the unread count in the band and the wizard's
   // autosave in `children` are its two consumers, and they share one client.
+  //
+  // **AD-15's accelerator inside it since task 149**: the surfaces it hurries are the count's query and S-16's
+  // refresh, both below, and it draws nothing of its own. Its origin is read here, at request time, so no build inlines
+  // it; unset, nothing is pushed and every surface runs on its poll.
   return (
     <QueryProvider>
-      <UnsentWorkProvider>
-        <SignOutProvider>
-          <OrganizationSwitchProvider>
-            <GlobalTier />
-            <OrganizationSwitchNotice />
-            <Suspense fallback={null}>
-              <SupportAccessBanners />
-            </Suspense>
-            {children}
-          </OrganizationSwitchProvider>
-        </SignOutProvider>
-      </UnsentWorkProvider>
+      <PushProvider apiOrigin={env.publicApiOrigin}>
+        <UnsentWorkProvider>
+          <SignOutProvider>
+            <OrganizationSwitchProvider>
+              <GlobalTier />
+              <OrganizationSwitchNotice />
+              <Suspense fallback={null}>
+                <SupportAccessBanners />
+              </Suspense>
+              {children}
+            </OrganizationSwitchProvider>
+          </SignOutProvider>
+        </UnsentWorkProvider>
+      </PushProvider>
     </QueryProvider>
   );
 }

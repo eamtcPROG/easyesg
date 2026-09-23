@@ -51,12 +51,21 @@ export interface EventCatalogueEntry {
   readonly authority: ReadablePath;
 }
 
-export const EVENT_CATALOGUE = [
+/**
+ * The events' names, as a vocabulary a client compares against (task 149) — declared once here and read by each entry
+ * below, so a surface subscribing to an event names a member rather than restating its spelling.
+ */
+export const EVENT_NAME = {
   /** S-16's list of members and invitations changed — any write that changes `GET /access`'s answer. */
-  { name: 'access.changed', routingKey: EVENT_ROUTING_KEY.ORGANIZATION, authority: '/api/v1/access' },
+  ACCESS_CHANGED: 'access.changed',
   /** A person's unread count changed — an in-app notice delivered, read, dismissed, all marked read, or withdrawn. */
+  NOTIFICATION_UNREAD_CHANGED: 'notification.unread_changed',
+} as const;
+
+export const EVENT_CATALOGUE = [
+  { name: EVENT_NAME.ACCESS_CHANGED, routingKey: EVENT_ROUTING_KEY.ORGANIZATION, authority: '/api/v1/access' },
   {
-    name: 'notification.unread_changed',
+    name: EVENT_NAME.NOTIFICATION_UNREAD_CHANGED,
     routingKey: EVENT_ROUTING_KEY.ACCOUNT,
     authority: '/api/v1/notifications/unread-count',
   },
@@ -64,6 +73,11 @@ export const EVENT_CATALOGUE = [
 
 /** The name of an event the catalogue declares. */
 export type EventName = (typeof EVENT_CATALOGUE)[number]['name'];
+
+const EVENT_NAMES: ReadonlySet<string> = new Set(EVENT_CATALOGUE.map((entry) => entry.name));
+
+/** Whether an unvalidated string — a received frame's `event` — is an event the catalogue declares (task 149). */
+export const isEventName = (value: string): value is EventName => EVENT_NAMES.has(value);
 
 /**
  * **The frame a browser receives — exactly three fields, and no tenant data** (AD-15's first constraint; §12.5.6's

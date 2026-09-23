@@ -62,4 +62,20 @@ export const env = {
   get publicOrigin(): string {
     return process.env.PUBLIC_WEB_URL ?? 'http://localhost:3100';
   },
+
+  /**
+   * The api's public origin, as a **browser** reaches it — where AD-15's socket is opened (task 149; §12.5.6's
+   * task-149 row (2)). Not `apiBaseUrl`, which inside Compose and behind the edge is an internal address. Read at
+   * request time and handed to the client by the `(app)` layout, so no build inlines it. **Unset, the accelerator is
+   * off**: no socket opens and every surface runs on its poll, which is the floor — the safe direction. Set to
+   * something that is not a URL, it fails naming itself rather than as a socket that never opens.
+   */
+  get publicApiOrigin(): string | null {
+    const value = process.env.PUBLIC_API_URL;
+    if (!value) return null;
+    if (!URL.canParse(value)) {
+      throw new Error(`PUBLIC_API_URL is not a URL: ${value}. See apps/web/.env.example.`);
+    }
+    return new URL(value).origin;
+  },
 } as const;
